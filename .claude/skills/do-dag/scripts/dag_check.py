@@ -16,7 +16,8 @@
 ⑥ 순환 부재.
 ⑦ 좌표 실재 — 파견문이 파일시스템에 있는가. 그 파견문의 `계약:` 슬롯과 `불변식:`
    슬롯이 실재하는 파일을 싣는가. `불변식:` 슬롯이 상위 전개의 불변식 전건을 승계하고,
-   그 좌표가 읽기 목록과 예산에 실렸는가. `모델 배정 근거:` 슬롯이 채워졌는가.
+   그 좌표가 읽기 목록과 예산에 실렸는가. `모델 배정 근거:`와 `반환:` 슬롯이
+   채워졌는가.
    【완결상태 · 완 · 비준】 행의 완료 신호가 전건 있고 비지 않았는가. 검증런 계약을
    적재한 완결 행은 동결·장부·종료보고와 장부의 라운드 1 본표·결산을 갖췄는가.
    그 종료보고의 「발견」 절에 항목이 있으면 같은 층의 전개 행이 그 종료보고를
@@ -49,7 +50,7 @@ partial은 **살아 있는 전개의 서브트리를 발견에서 제외한다.*
     python dag_check.py --table .sdd/dag/<국면>/파견표.md
     python dag_check.py --table ... --mode partial
     python dag_check.py --table ... --mode partial --writer 2.5
-    python dag_check.py --table ... --sink-return 2.z 완료미충족
+    python dag_check.py --table ... --sink-return 2.z 예외
     (exit 0 = 무발견, 1 = 발견. 발견 목록은 stdout)
 """
 
@@ -98,6 +99,10 @@ REPORT_SUFFIX = "-보고.md"
 SINK_RETURN_WORDS = (
     "DONE",
     "DONE-비준",
+    "상신",
+    "예외",
+)
+SINK_EXCEPTION_STATUSES = (
     "귀속불일치",
     "완료미충족",
     "병합충돌",
@@ -160,6 +165,10 @@ _TOP_LEVEL_SLOT = re.compile(r"^[-*][ \t]+[^\n:]+[ \t]*:", re.MULTILINE)
 _ASSIGN_SLOT = re.compile(
     r"^[ \t]*[-*]?[ \t]*모델 배정 근거[ \t]*:[ \t]*(.*)$", re.MULTILINE
 )
+
+# 파견문 최상위 슬롯 `- 반환: <공통 첫 줄과 역할 확장>`. 최종 반환이 공통 계약과
+# 역할 계약을 잇는 자리다.
+_RETURN_SLOT = re.compile(r"^[ \t]*[-*]?[ \t]*반환[ \t]*:[ \t]*(.*)$", re.MULTILINE)
 
 
 def _cell(raw: str) -> str:
@@ -785,10 +794,15 @@ def check_sink_return(
             continue
         text = target.read_text(encoding="utf-8", errors="replace")
         status = _frontmatter(text, "상태")
-        if status != return_word:
+        if return_word in ("DONE", "DONE-비준", "상신") and status != return_word:
             findings.append(
                 f"[반환] 싱크 {row_id}의 첫 낱말은 '{return_word}'인데 결산 상태가"
                 f" '{status or '없음'}'이다: {sig}"
+            )
+        if return_word == "예외" and status not in SINK_EXCEPTION_STATUSES:
+            findings.append(
+                f"[반환] 싱크 {row_id}이 예외로 반환했는데 결산 상태가"
+                f" '{status or '없음'}'이다(비완결 상태여야 한다): {sig}"
             )
         if return_word in ("DONE", "DONE-비준"):
             stage = _frontmatter(text, "단계")
@@ -847,6 +861,7 @@ def check_briefs(rows: list[Row], run_dir: Path, hidden: set[str] | None = None)
         findings += _check_contract(r, text, run_dir)
         findings += _check_invariants(r, rows, text, run_dir)
         findings += _check_assignment(r, text)
+        findings += _check_return(r, text)
     return findings
 
 
@@ -862,6 +877,18 @@ def _check_assignment(r: Row, text: str) -> list[str]:
         if _PLACEHOLDER.sub("", m.group(1)).strip():
             return []
     return [f"[실재] 행 {r.id}의 파견문에 `모델 배정 근거:` 슬롯이 없다: {r.brief}"]
+
+
+def _check_return(r: Row, text: str) -> list[str]:
+    """파견문이 공통 반환 첫 줄과 역할 확장의 결선 자리를 갖는가."""
+    matches = list(_RETURN_SLOT.finditer(text))
+    for match in matches:
+        if _PLACEHOLDER.sub("", match.group(1)).strip():
+            return []
+    if not matches and r.state in DONE_STATES:
+        # 반환 슬롯 도입 전 완결된 행은 파일 수정 금지다. 소급 파손하지 않는다.
+        return []
+    return [f"[실재] 행 {r.id}의 파견문에 `반환:` 슬롯이 없다: {r.brief}"]
 
 
 def _check_contract(r: Row, text: str, run_dir: Path) -> list[str]:

@@ -10,7 +10,7 @@
    마디 있는 행은 부모가 실재하고, 완결된 전개는 싱크를 실제로 깔았고,
    국면 종결 싱크는 정확히 하나다)
 ⑥ 순환 부재
-⑦ 좌표 실재(파견문·계약·불변식 승계와 적재·모델 배정 근거·완료 신호 전건. 비면 미충족.
+⑦ 좌표 실재(파견문·계약·불변식 승계와 적재·모델 배정 근거·반환·완료 신호 전건. 비면 미충족.
    완결된 싱크는 결산 `단계`가 `종결`)
 ⑧ 게이트 결정(완결된 게이트의 결정 절·상태, 결정 파일을 낳는 행이 선행 사슬에 있는가,
    게이트를 선행으로 지목한 행이 전개이고 그 파견문 `정본:` 슬롯이 결정 좌표를 싣는가)
@@ -43,6 +43,7 @@ CONTRACT = SCRIPTS.parent / "계약" / "공통.md"
 CONTRACT_LINE = f"- 계약: {CONTRACT}\n"
 VERIFY_CONTRACT = SCRIPTS.parent / "계약" / "검증런.md"
 ASSIGN_LINE = "- 모델 배정 근거: 배정표 기본(작업자 opus med)\n"
+RETURN_LINE = "- 반환: 공통 최종 반환 계약. 완료 첫 줄 DONE. 추가 필드 없음\n"
 
 
 def invariant_path(run_dir: Path, owner: str = "0", *, suffix: str = "") -> Path:
@@ -64,6 +65,7 @@ def valid_brief_body(run_dir: Path, *owners: str) -> str:
     return (
         CONTRACT_LINE
         + ASSIGN_LINE
+        + RETURN_LINE
         + f"- 불변식: {joined}\n"
         + f"- 읽기 목록: {joined}\n"
         + f"- 예산: python dag_measure.py budget --files {budget_files}\n"
@@ -631,20 +633,24 @@ class SettlementStageContractTest(unittest.TestCase):
                 written = [section.index(f"단계: {s}") for s in getattr(dag_check, attr)]
                 self.assertEqual(written, sorted(written), attr)
 
-    def test_sink_non_done_vocabulary_is_closed(self):
+    def test_sink_uses_common_return_words_and_keeps_detailed_statuses(self):
         text = self._doc()
         for word in ("귀속불일치", "완료미충족", "병합충돌", "계약이동", "대기"):
             self.assertIn(word, text)
-        self.assertNotIn("DONE`이 아닌 낱말", text)
+        self.assertIn("첫 줄에 `DONE`·`DONE-비준`·`상신`·", text)
+        self.assertIn("`예외` 중 하나만 쓴다", text)
 
-    def test_settlement_status_matches_the_return_word(self):
-        self.assertIn("결산 frontmatter `상태:`와 반환 첫 낱말은 같아야 한다", self._doc())
+    def test_settlement_status_extends_the_common_return_word(self):
+        text = self._doc()
+        self.assertIn("상세 결과는 결산", text)
+        self.assertIn("`상태:`에만 기록한다", text)
 
     def test_attribution_mismatch_is_closed_in_the_fact_and_common_contract(self):
         fact = (SCRIPTS.parent / "전거" / "의무.md").read_text(encoding="utf-8")
         common = (SCRIPTS.parent / "계약" / "공통.md").read_text(encoding="utf-8")
         for text in (fact, common):
-            self.assertIn("`귀속불일치`로 반환한다", text)
+            self.assertIn("결산 상태를 `귀속불일치`로 쓴다", text)
+            self.assertIn("반환 첫 줄은 `예외`다", text)
             self.assertNotIn("`DONE`이 아닌 낱말로 반환한다", text)
 
 
@@ -1096,6 +1102,31 @@ class AssignmentSlotTest(unittest.TestCase):
             self.assertTrue(any("`모델 배정 근거:` 슬롯이 없다" in f for f in found), found)
 
 
+class ReturnSlotTest(unittest.TestCase):
+    """⑦의 반환 축 — 공통 첫 줄과 역할 확장의 결선 자리를 요구한다."""
+
+    def test_brief_without_the_slot_is_found(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = Path(tmp)
+            (run_dir / "행").mkdir()
+            body = valid_brief_body(run_dir).replace(RETURN_LINE, "")
+            (run_dir / "행" / "1.md").write_text(body, encoding="utf-8")
+            text = table(row("1", brief="행/1.md"))
+            found = dag_check.check_briefs(dag_check.parse_rows(text), run_dir)
+            self.assertTrue(any("`반환:` 슬롯이 없다" in f for f in found), found)
+
+    def test_a_completed_legacy_brief_without_the_slot_is_clean(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = Path(tmp)
+            (run_dir / "행").mkdir()
+            body = valid_brief_body(run_dir).replace(RETURN_LINE, "")
+            (run_dir / "행" / "1.md").write_text(body, encoding="utf-8")
+            (run_dir / "행" / "1-보고.md").write_text("DONE\n", encoding="utf-8")
+            text = table(row("1", brief="행/1.md", signal="행/1-보고.md", state="완"))
+            found = dag_check.check_briefs(dag_check.parse_rows(text), run_dir)
+            self.assertEqual(found, [])
+
+
 class InvariantSlotTest(unittest.TestCase):
     """⑦의 불변식 축 — 불변식 파일과 상위 승계·실제 적재를 함께 본다."""
 
@@ -1107,7 +1138,7 @@ class InvariantSlotTest(unittest.TestCase):
                 brief /= f"{part}.d"
             brief /= f"{rid.split('.')[-1]}.md"
         brief.parent.mkdir(parents=True, exist_ok=True)
-        brief.write_text(CONTRACT_LINE + ASSIGN_LINE + body, encoding="utf-8")
+        brief.write_text(CONTRACT_LINE + ASSIGN_LINE + RETURN_LINE + body, encoding="utf-8")
         table_rows = rows or [row(rid, brief=str(brief.relative_to(run_dir)).replace("\\", "/"))]
         parsed = dag_check.parse_rows(table(*table_rows))
         for other in parsed:
@@ -1343,19 +1374,34 @@ class SinkReturnTest(unittest.TestCase):
             found = dag_check.check_sink_return(rows, run_dir, "2.z", "DONE")
             self.assertTrue(any("완료미충족" in item for item in found), found)
 
-    def test_non_done_return_and_frontmatter_mismatch_is_found(self):
+    def test_old_sink_specific_return_word_is_found(self):
         with tempfile.TemporaryDirectory() as tmp:
             rows, run_dir = self._case(tmp, status="병합충돌")
             found = dag_check.check_sink_return(
                 rows, run_dir, "2.z", "완료미충족"
             )
-            self.assertTrue(any("병합충돌" in item for item in found), found)
+            self.assertTrue(any("닫힌 목록 밖" in item for item in found), found)
 
-    def test_matching_non_done_return_is_clean(self):
+    def test_exception_return_accepts_each_noncompletion_settlement_status(self):
+        for status in dag_check.SINK_EXCEPTION_STATUSES:
+            with self.subTest(status=status), tempfile.TemporaryDirectory() as tmp:
+                rows, run_dir = self._case(tmp, status=status)
+                self.assertEqual(
+                    dag_check.check_sink_return(rows, run_dir, "2.z", "예외"),
+                    [],
+                )
+
+    def test_exception_return_rejects_a_completion_settlement_status(self):
         with tempfile.TemporaryDirectory() as tmp:
-            rows, run_dir = self._case(tmp, status="완료미충족")
+            rows, run_dir = self._case(tmp, status="DONE", stage="종결")
+            found = dag_check.check_sink_return(rows, run_dir, "2.z", "예외")
+            self.assertTrue(any("비완결 상태여야 한다" in item for item in found), found)
+
+    def test_submitted_return_matches_a_submitted_settlement(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            rows, run_dir = self._case(tmp, status="상신")
             self.assertEqual(
-                dag_check.check_sink_return(rows, run_dir, "2.z", "완료미충족"),
+                dag_check.check_sink_return(rows, run_dir, "2.z", "상신"),
                 [],
             )
 
@@ -1383,10 +1429,10 @@ class SinkReturnTest(unittest.TestCase):
             with contextlib.redirect_stdout(out):
                 code = dag_check.main([
                     "--table", str(table_path),
-                    "--sink-return", "2.z", "완료미충족",
+                    "--sink-return", "2.z", "예외",
                 ])
             self.assertEqual(code, 0, out.getvalue())
-            self.assertIn("싱크 반환: 2.z · 완료미충족", out.getvalue())
+            self.assertIn("싱크 반환: 2.z · 예외", out.getvalue())
 
 
 class GateTest(unittest.TestCase):
