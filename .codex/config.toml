@@ -1,0 +1,20 @@
+# Reduce only fixed, first-turn context overhead. Do not impose project-level
+# limits on the model context, compaction threshold, or tool-output capacity.
+
+# Use Codex's built-in unrestricted local permission profile in this project.
+default_permissions = ":danger-full-access"
+approval_policy = "never"
+model = "gpt-5.6-sol"
+model_context_window = 1000000
+model_auto_compact_token_limit = 900000
+
+# This repository keeps its durable Codex instructions under .agents/.
+project_doc_fallback_filenames = [".agents/AGENTS.md"]
+
+[skills]
+# Explicitly selected skills are loaded on demand without the full catalog.
+include_instructions = false
+
+[features]
+# Preserve discovery and installation suggestions for new capabilities.
+tool_suggest = true

@@ -1,0 +1,27 @@
+[features]
+hooks = true
+
+[agents]
+# The ported orchestrator agents spawn their own specialist workers.
+max_depth = 2
+
+[mcp_servers.dag-measure]
+command = "python"
+args = [".agents/skills/do-dag/scripts/dag_measure_mcp.py"]
+
+[mcp_servers.playwright]
+enabled = false
+
+[mcp_servers.node_repl]
+enabled = false
+
+[mcp_servers.context7]
+enabled = false
+command = "npx"
+args = ["-y", "@upstash/context7-mcp"]
+
+[plugins."context7@claude-plugins-official"]
+enabled = false
+
+[plugins."playwright@claude-plugins-official"]
+enabled = false

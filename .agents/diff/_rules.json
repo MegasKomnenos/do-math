@@ -1,0 +1,24 @@
+{
+  "substitutions": [
+    {"keep": "~/.claude/plugins"},
+    {"keep": "~/.claude/projects"},
+    {"keep": "'/.claude/'"},
+    {"keep": "`.claude/commands/`"},
+    {"from": "`.claude/settings.json`", "to": "`.agents/hooks.json`"},
+    {"from": ".claude/", "to": ".agents/"},
+    {"from": "CLAUDE.md", "to": "AGENTS.md"}
+  ],
+  "frontmatter_move": [
+    {"key": "argument-hint", "label": "호출 인자"},
+    {"key": "effort", "label": "권장 추론 수준"}
+  ],
+  "verbatim": [
+    "*/references/원본_대조.md",
+    "skill-creator/scripts/run_eval.py",
+    "writing-skills/examples/CLAUDE_MD_TESTING.md",
+    "writing-skills/references/멀티런타임_동기화.md",
+    "writing-skills/scripts/build_skill_mirrors.py",
+    "writing-skills/scripts/test_build_skill_mirrors.py",
+    "writing-skills/testing-skills-with-subagents.md"
+  ]
+}

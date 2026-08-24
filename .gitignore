@@ -1,0 +1,22 @@
+node_modules/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.pyc
+*.pyo
+
+.claude/settings.local.json
+
+# Claude Code가 남기는 API 요청·응답 로그. 머신별 산출물이므로 추적하지 않는다.
+/logs/
+
+.vscode
+.playwright-mcp/
+.skill-workspace/
+
+# 일반적인 빌드 산출물.
+/build/
+
+# wayfinder가 `gh issue create --body-file`에 넘기려고 만드는 임시 본문 파일.
+# 지도와 티켓의 정본은 이슈 트래커이므로 그 사본을 추적하지 않는다.
+.wayfinder-tmp/

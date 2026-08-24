@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "dag-measure": {
+      "command": "python",
+      "args": [".claude/skills/do-dag/scripts/dag_measure_mcp.py"]
+    }
+  }
+}
