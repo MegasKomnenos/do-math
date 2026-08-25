@@ -58,6 +58,52 @@ class TestVerifyRoundsInterface(unittest.TestCase):
         self.assertIn("명시값이 있으면 상속값을 덮는다", contract)
         self.assertIn("`mixed`에서 검증런 행 자체는 Claude", contract)
 
+    def test_내용_선택은_복수의_적합한_결과가_남을_때만_상신한다(self):
+        main = (SKILL / "전거" / "실행.md").read_text(encoding="utf-8")
+        contract = (SKILL / "계약" / "검증런.md").read_text(encoding="utf-8")
+        self.assertIn("현행 정본에 맞는 비동등한 결과가 둘 이상", main)
+        self.assertIn("정확성·완전성 결함이라는 사실만으로 4항이 성립하지 않는다", main)
+        self.assertNotIn("산출물의 내용 품질(논증·정확성·완전성 등 실질)", main)
+        self.assertIn("정확성·완전성 결함이라는 사실만으로 사용자에게", contract)
+
+    def test_전달_발견만_검토전개를_생성한다(self):
+        contract = (SKILL / "계약" / "검증런.md").read_text(encoding="utf-8")
+        self.assertIn("「호출자에게 전달」이 확정된", contract)
+        self.assertIn("기각·무처분 발견은 검토전개 생성 수에 포함하지 않는다", contract)
+        self.assertIn("### 발견의 호출자 후속", contract)
+
+    def test_심사자에게_검토전개_전체의_최소_규모를_알린다(self):
+        contract = (SKILL / "계약" / "검증런.md").read_text(encoding="utf-8")
+        flat = " ".join(contract.split())
+        self.assertIn("검토전개 행 하나의 비용만 뜻하지 않는다", contract)
+        self.assertIn("충족성 렌즈", contract)
+        self.assertIn("작업자 행 하나 이상", contract)
+        self.assertIn("검증런은 수리자·심사자 여러 기", flat)
+
+    def test_산출물_구현_누락의_뜻이_지급문에_보존된다(self):
+        body = (SKILL / "references" / "검증_체제.md").read_text(encoding="utf-8")
+        self.assertIn("원자료가 요구하지만 산출물에 구현되어 있지 않은", body)
+        self.assertNotIn("산출물 밖 공백", body)
+
+    def test_노드는_싱크_앞에_기각보관_검토전개를_둔다(self):
+        system = (SKILL / "references" / "검증_체제.md").read_text(encoding="utf-8")
+        contract = (SKILL / "계약" / "검증런.md").read_text(encoding="utf-8")
+        template = (SKILL / "기각보관_검토전개.md").read_text(encoding="utf-8")
+        self.assertIn("기각 보관", system)
+        self.assertIn("노드 싱크 직전", system)
+        self.assertIn("기각 보관:", contract)
+        self.assertIn("역할: 기각보관검토", template)
+        self.assertIn("기각·병합·타당", template)
+        self.assertIn("다음 검토전개를 반복할 실익", template)
+
+    def test_선택지_설명문은_사용자_확정_문면이_아니다(self):
+        duty = (SKILL / "전거" / "의무.md").read_text(encoding="utf-8")
+        form = (SKILL / "references" / "서식.md").read_text(encoding="utf-8")
+        self.assertIn("선택지의 「결정 효과」 전문은 확정 문면", duty)
+        self.assertIn("선택지 설명문을 사용자 발화로 기록하지 않는다", duty)
+        self.assertIn("응답 방식: {직접 규범을 담은 자유 입력 | 선택}", form)
+        self.assertIn("구현 세부는 사용자 확정 문면이 아니다", form)
+
     def test_codex_완료_대기_스크립트와_절차가_verify_rounds와_같다(self):
         local_wait = SKILL / "scripts" / "wait_outputs.py"
         verify_wait = SKILL.parent / "verify-rounds" / "scripts" / "wait_outputs.py"

@@ -1169,6 +1169,16 @@ class RealTreeTest(unittest.TestCase):
         초과」 대신 「미지 모델」을 exit 0으로 낸다(실측)."""
         self.assertEqual(set(dag_check.MODELS), set(dag_measure.BUDGETS))
 
+    def test_모델별_예산은_각각_오만_토큰_증가값이다(self):
+        self.assertEqual(dag_measure.BUDGETS, {
+            "sonnet": 200_000,
+            "opus": 250_000,
+            "fable": 250_000,
+            "gpt-5.6-sol": 250_000,
+            "gpt-5.6-terra": 250_000,
+            "gpt-5.6-luna": 250_000,
+        })
+
     def test_이름문법에서_파생한_둘이_사전을_딛는다(self):
         """파생이 끊어지면 값이 갈려도 아무 검사가 서지 않는다 — 두 대입이 실제로
         사전을 딛는지를 잰다. 딛지 않으면 그 자리가 두 번째 정본이다.

@@ -45,7 +45,7 @@ from pathlib import Path
 
 # 아래 생성 블록의 값은 `전거/`가 정본이고 `dag_facts.py --render`가 채운다.
 # 【생성 예산】
-BUDGETS = {"sonnet": 150_000, "opus": 200_000, "fable": 200_000, "gpt-5.6-sol": 200_000, "gpt-5.6-terra": 200_000, "gpt-5.6-luna": 200_000}
+BUDGETS = {"sonnet": 200_000, "opus": 250_000, "fable": 250_000, "gpt-5.6-sol": 250_000, "gpt-5.6-terra": 250_000, "gpt-5.6-luna": 250_000}
 # 【끝】
 CONTEXT_TRIM = 120
 

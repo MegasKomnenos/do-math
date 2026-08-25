@@ -232,7 +232,7 @@ class TestBudget(unittest.TestCase):
         lines = m.run_budget(m._expand("소.md", self.root)[0], self.root, "opus")
         self.assertIn("예산 안", "\n".join(lines))
         big = self.root / "대.md"
-        big.write_text("x" * 700_000, encoding="utf-8")  # 좁은문자 ~140k tok
+        big.write_text("x" * 1_000_000, encoding="utf-8")  # 좁은문자 ~200k tok
         lines = m.run_budget([big], self.root, "opus")
         self.assertIn("예산 초과", "\n".join(lines))
         lines = m.run_budget([big], self.root, "fable")
@@ -249,7 +249,7 @@ class TestBudget(unittest.TestCase):
         자리에서 진다.
         """
         big = self.root / "대.md"
-        big.write_text("x" * 700_000, encoding="utf-8")
+        big.write_text("x" * 1_000_000, encoding="utf-8")
         joined = "\n".join(m.run_budget([big], self.root, "opus"))
         self.assertIn("예산 초과", joined)
         self.assertNotIn("상향", joined)

@@ -7,6 +7,9 @@ __pycache__/
 
 .claude/settings.local.json
 
+# 외부 서비스 로그인 크리덴셜. PII 규율상 저장소·런 디렉토리에 싣지 않는다.
+/.credentials/
+
 # Claude Code가 남기는 API 요청·응답 로그. 머신별 산출물이므로 추적하지 않는다.
 /logs/
 

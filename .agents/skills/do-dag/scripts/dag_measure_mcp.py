@@ -75,7 +75,7 @@ TOOLS = [
         "name": "budget",
         "description": (
             "읽기 + 하네스 기저 + 도구 왕복 + 출력 유보의 합 대 모델 예산"
-            "(【예산 · sonnet 150k · opus 200k · fable 200k · gpt-5.6-sol 200k · gpt-5.6-terra 200k · gpt-5.6-luna 200k】) 판정. "
+            "(【예산 · sonnet 200k · opus 250k · fable 250k · gpt-5.6-sol 250k · gpt-5.6-terra 250k · gpt-5.6-luna 250k】) 판정. "
             "저작 행은 자기 출력이 최대 항이므로 저작 예상 바이트를 writes로 준다. "
             "선행이 저작할 산출을 읽어야 하는데 아직 없으면 그 바이트를 pending으로 "
             "준다(저작 행의 writes = 그 소비자의 pending)."

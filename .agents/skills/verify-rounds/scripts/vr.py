@@ -1444,7 +1444,7 @@ def cmd_분할(args) -> int:
 
 
 # 심사 판정 절의 칸 이름 전건. 정본은 계약/심사.md 「산출 서식」이다.
-심사_칸 = ("실측", "사유", "원인", "크기", "클래스")
+심사_칸 = ("실측", "사유", "원인", "크기", "클래스", "상신안", "검토전개 실익")
 
 # 판정 절의 필수 칸. 계약/심사.md 「산출 서식」이 판정 값마다 닫는다.
 심사_필수칸 = {
@@ -1462,8 +1462,10 @@ def _심사파일(path: str) -> tuple[int, dict, list[vrlib.Mismatch]]:
     아래를 어긋남 목록에 담는다. frontmatter `유형` 값이 「심사」가 아닌 것,
     `심사자 번호` 부재·비정수, `승인`+`기각` 합과 실측 절 수의 어긋남(§5.5
     산출 판독의 대조), 판정 줄 부재·어휘 밖 값, 승인 절의 처분 줄 부재·어휘
-    밖 값, 판정 절의 필수 칸 부재·빈 칸이다 — 필수 칸은 기각이 실측·사유,
-    승인이 실측·원인·크기·클래스다(계약/심사.md 「산출 서식」).
+    밖 값, 판정 절의 필수 칸 부재·빈 칸이다. 필수 칸은 기각이 실측·사유이고,
+    승인이 실측·원인·크기·클래스다. 「사용자에게 올린다」는 상신안을 더 요구한다.
+    발견 항목의 승인은 처분과 무관하게 검토전개 실익을 더 요구한다. 발견 여부는
+    심사 대상이나 `_항목.json`과 대조한다(계약/심사.md 「산출 서식」).
     """
     text = vrlib.read_text(path)
     fm, secs, _best = vrlib.parse_review_text(text)
@@ -1519,9 +1521,20 @@ def _심사파일(path: str) -> tuple[int, dict, list[vrlib.Mismatch]]:
                     file=str(path), line=sec["line"],
                     expected=f"{sec['id']} {판정} 절의 ### {name} 칸(계약/심사.md)",
                     actual="없음" if name not in 칸 else "빈 칸"))
+        if 판정 == "승인":
+            처분별칸 = {
+                "사용자에게 올린다": "상신안",
+                "호출자에게 전달": "검토전개 실익",
+            }.get(처분)
+            if 처분별칸 and not 칸.get(처분별칸, "").strip():
+                mismatches.append(vrlib.Mismatch(
+                    file=str(path), line=sec["line"],
+                    expected=f"{sec['id']} 처분 「{처분}」의 ### {처분별칸} 칸(계약/심사.md)",
+                    actual="없음" if 처분별칸 not in 칸 else "빈 칸"))
         items[sec["id"]] = {
             "판정": 판정, "처분": 처분, "승계": 승계,
             "사유": 칸.get("사유", "").strip() if 판정 == "기각" else "",
+            "검토전개 실익": 칸.get("검토전개 실익", "").strip(),
         }
     return 기, items, mismatches
 
@@ -1544,8 +1557,13 @@ def cmd_심사검산(args) -> int:
         fm, _ = vrlib.parse_frontmatter(대상문)
         mismatches += vrlib.check_count(대상경로, fm, "항목", len(대상절))
         전건 = {s.title for s in 대상절}
+        발견전건 = {
+            s.title for s in 대상절
+            if vrlib.parse_cells(s.body, ("발견",)).get("발견", "").strip()
+        }
     else:
         전건 = set(getattr(args, "항목") or [])
+        발견전건 = set()
     기대기 = getattr(args, "기")
     if 기 != 기대기:
         mismatches.append(vrlib.Mismatch(
@@ -1559,6 +1577,13 @@ def cmd_심사검산(args) -> int:
             file=심사경로, line=None,
             expected=f"판정 항목 = 심사 대상 {len(전건)}건",
             actual=f"판정 {len(실측)}건 — 남은 항목: {남은} / 대상 밖: {초과}"))
+    for iid in sorted(발견전건 & 실측, key=_natural_key):
+        row = items[iid]
+        if row["판정"] == "승인" and not row["검토전개 실익"]:
+            mismatches.append(vrlib.Mismatch(
+                file=심사경로, line=None,
+                expected=f"{iid}(발견) 승인 절의 ### 검토전개 실익 칸",
+                actual="없음 또는 빈 칸"))
     if mismatches:
         return vrlib.emit(mismatches, [])
     승인 = sum(1 for row in items.values() if row["판정"] == "승인")
@@ -1587,11 +1612,12 @@ def cmd_심사집계(args) -> int:
     올린다 > 승인하되 고치지 않는다 > 수리한다) — 어휘 밖 처분 값은 ①에서
     어긋남으로 잡히고 병합에 참여하지 않는다 ⑤ 상신 제안 항목(_항목.json의
     상신 참)의 처분 「수리한다」는 어휘 위반(exit 1) — 적용할 문면이 없다
-    ⑥ `승계:` 줄 수집 ⑦ 기각 판정의 `### 사유` 칸 수집.
+    ⑥ `승계:` 줄 수집 ⑦ 기각 판정의 `### 사유` 칸 수집 ⑧ `--기각보관`과
+    `--보관출처`가 있으면 기각·무처분 항목의 원문과 심사 기록을 보관한다.
 
     산출: `<런>/라운드N/_심사집계.json` — {라운드, 기수, 정족, 항목수,
     항목: [{id, 승인수, 승인기, 기각기, 확정, 처분, 처분기록, 승계,
-    기각사유}], 승계, 수리, 무처분, 상신, 기각}. 어긋남이 있으면 산출 없이
+    기각사유, 실익기록}], 승계, 수리, 무처분, 상신, 기각}. 어긋남이 있으면 산출 없이
     exit 1이다 — 어긋난 집계가 적용에 읽히지 않는다.
     stdout: 항목·기별 덮개·확정 수치 요약.
     """
@@ -1663,6 +1689,8 @@ def cmd_심사집계(args) -> int:
         처분기록 = {기: 판정들[기]["처분"] for 기 in 승인기
                 if 판정들[기]["처분"] in vrlib.DISPOSITIONS}
         기각사유 = {기: 판정들[기]["사유"] for 기 in 기각기 if 판정들[기]["사유"]}
+        실익기록 = {기: 판정들[기]["검토전개 실익"] for 기 in 승인기
+                if 판정들[기]["검토전개 실익"]}
         if iid in 상신항목:
             for 기, v in 처분기록.items():
                 if v in ("수리한다", "호출자에게 전달"):
@@ -1671,6 +1699,12 @@ def cmd_심사집계(args) -> int:
                         expected=f"{iid}(상신 제안)의 처분은 둘(계약/심사.md)",
                         actual=f"기 {기}: {v}"))
         elif iid in 발견항목:
+            for 기 in 승인기:
+                if not 판정들[기]["검토전개 실익"]:
+                    mismatches.append(vrlib.Mismatch(
+                        file=str(대상경로), line=None,
+                        expected=f"{iid}(발견) 승인 기 {기}의 검토전개 실익",
+                        actual="없음 또는 빈 칸"))
             for 기, v in 처분기록.items():
                 if v in ("수리한다", "사용자에게 올린다"):
                     mismatches.append(vrlib.Mismatch(
@@ -1704,6 +1738,7 @@ def cmd_심사집계(args) -> int:
             "처분기록": {str(k): v for k, v in sorted(처분기록.items())},
             "승계": [e for e in 승계목록 if e["항목"] == iid],
             "기각사유": {str(k): v for k, v in sorted(기각사유.items())},
+            "실익기록": {str(k): v for k, v in sorted(실익기록.items())},
         })
 
     if mismatches:
@@ -1716,6 +1751,49 @@ def cmd_심사집계(args) -> int:
     }
     out = round_dir / "_심사집계.json"
     _write_json(out, data)
+    보관경로 = getattr(args, "기각보관", None)
+    보관출처 = getattr(args, "보관출처", None)
+    if (보관경로 is None) != (보관출처 is None):
+        raise vrlib.UsageError("--기각보관과 --보관출처는 함께 준다")
+    archive = None
+    if 보관경로 is not None:
+        if not re.fullmatch(r"[A-Za-z0-9_.-]+", 보관출처):
+            raise vrlib.UsageError(f"보관출처 어휘 위반: {보관출처}")
+        보관대상 = set(기각) | set(무처분)
+        절사전 = {s.title: s for s in 대상절}
+        행사전 = {r["id"]: r for r in rows}
+        parts = [
+            "---", "유형: 기각보관", f"출처: {보관출처}",
+            f"라운드: {getattr(args, '라운드')}", f"항목: {len(보관대상)}", "---", "",
+            "# 기각 보관", "",
+        ]
+        for iid in 대상들:
+            if iid not in 보관대상:
+                continue
+            sec, row = 절사전[iid], 행사전[iid]
+            parts += [f"## {iid}", "", sec.body.rstrip(), "", "### 보관 심사", ""]
+            if row["확정"] == "기각":
+                parts.append("최종 판정: 기각")
+            else:
+                parts.append(f"최종 판정: 승인")
+                parts.append(f"최종 처분: {row['처분']}")
+            for 기 in range(1, 기수 + 1):
+                vote = 관측.get(기, {}).get(iid, {})
+                if not vote:
+                    continue
+                detail = vote["판정"]
+                if vote["처분"]:
+                    detail += f" · {vote['처분']}"
+                if vote["사유"]:
+                    detail += f" · {vote['사유']}"
+                if vote["검토전개 실익"]:
+                    detail += f" · 검토전개 실익: {vote['검토전개 실익']}"
+                parts.append(f"- 심사 {기}: {detail}")
+            parts.append("")
+        archive_dir = Path(보관경로)
+        archive_dir.mkdir(parents=True, exist_ok=True)
+        archive = archive_dir / f"{보관출처}-라운드{getattr(args, '라운드')}.md"
+        vrlib.write_text(archive, "\n".join(parts).rstrip() + "\n")
     lines = [
         f"항목 {len(대상들)}건, 기수 {기수}, 정족 {정족}",
         *[f"기 {기}: 덮개 {len(관측.get(기, {}))}건" for 기 in range(1, 기수 + 1)],
@@ -1724,6 +1802,8 @@ def cmd_심사집계(args) -> int:
         f"승계 {len(승계목록)}건",
         f"산출: {out}",
     ]
+    if archive is not None:
+        lines.append(f"기각 보관: {archive}")
     return vrlib.emit([], lines)
 
 
@@ -2345,6 +2425,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--심사", action="append", required=True)
     p.add_argument("--정족", type=int, required=True)
     p.add_argument("--기수", type=int, required=True)
+    p.add_argument("--기각보관")
+    p.add_argument("--보관출처")
 
     p = add("심사검산", "심사 산출 한 파일의 읽기 전용 검산", cmd_심사검산)
     p.add_argument("--심사", required=True)

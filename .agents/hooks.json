@@ -1,0 +1,43 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .agents/skills/do-dag/scripts/hooks/dag_session_note.py",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "python .agents/skills/ponytail/scripts/inject_ponytail.py",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .agents/skills/ponytail/scripts/inject_ponytail.py",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .agents/skills/do-dag/scripts/hooks/dag_session_note.py",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

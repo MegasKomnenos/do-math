@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """vr.py 심사집계 하위명령 시험. 직접 실행이 정본(`python .claude/skills/verify-rounds/scripts/tests/test_심사집계.py`).
 
-검사 대상은 열하나로 한정한다:
+검사 대상은 열다섯으로 한정한다:
 ① 통과 — 3기 정족 3에서 항목마다 승인 수를 세어 확정하고, 수리·무처분·상신·기각
    목록과 _심사집계.json을 낸다
 ② 처분 보수 병합 — 갈린 처분에서 보수 순서 최상위가 선다
@@ -15,6 +15,10 @@
 ⑨ 심사검산 통과 — 산출 하나의 기 번호·서식·대상 덮개를 검사하고 집계 파일을 만들지 않는다
 ⑩ 심사검산 대상 누락 — exit 1이고 집계 파일을 만들지 않는다
 ⑪ 심사검산 재개 — `--항목`으로 준 남은 항목만 대조한다
+⑫ 「사용자에게 올린다」의 상신안 칸 누락 — exit 1
+⑬ 「호출자에게 전달」의 검토전개 실익 칸 누락 — exit 1
+⑭ 발견 항목의 「승인하되 고치지 않는다」에도 검토전개 실익 칸을 요구한다
+⑮ 기각·무처분 항목의 원문·판정·근거를 기각 보관 파일에 남긴다
 그 밖의 검사는 두지 않는다. 재료는 _파이프라인재료.py가 정본이다.
 시험은 임시 디렉토리를 루트 삼아 chdir하고 상대 경로를 준다.
 """
@@ -41,12 +45,14 @@ def 심사쓰기(번호: int, 처분표: dict[str, str]):
                                             encoding="utf-8")
 
 
-def 실행(기수=3, 정족=3, 심사들=("심사_1.md", "심사_2.md", "심사_3.md")):
+def 실행(기수=3, 정족=3, 심사들=("심사_1.md", "심사_2.md", "심사_3.md"), 보관=False):
     argv = ["심사집계", "--런", "런", "--라운드", "1",
             "--대상", "런/라운드1/심사대상.md",
             "--정족", str(정족), "--기수", str(기수)]
     for f in 심사들:
         argv += ["--심사", f"런/라운드1/{f}"]
+    if 보관:
+        argv += ["--기각보관", "보관", "--보관출처", "2.3"]
     return run_vr(*argv)
 
 
@@ -104,6 +110,66 @@ class ReviewTallyTest(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn("남은 항목: R1-M2", err)
         self.assertFalse(Path("런/라운드1/_심사집계.json").exists())
+
+    def test_사용자에게_올린다의_상신안_누락은_exit1(self):
+        심사쓰기(1, {"R1-05": "사용자에게 올린다", "R1-M1": "수리한다",
+                 "R1-M2": "수리한다"})
+        path = Path("런/라운드1/심사_1.md")
+        text = vrlib.read_text(path)
+        text = text.replace("\n### 상신안\n선택지와 추천을 최종 상태로 대조했다.\n", "")
+        path.write_text(text, encoding="utf-8")
+        code, out, err = 단건검산()
+        self.assertEqual(code, 1)
+        self.assertIn("상신안", err)
+
+    def test_호출자에게_전달의_검토전개_실익_누락은_exit1(self):
+        심사쓰기(1, {"R1-05": "호출자에게 전달", "R1-M1": "수리한다",
+                 "R1-M2": "수리한다"})
+        path = Path("런/라운드1/심사_1.md")
+        text = vrlib.read_text(path)
+        text = text.replace("\n### 검토전개 실익\n방치 손상이 후속 작업 비용보다 크다.\n", "")
+        path.write_text(text, encoding="utf-8")
+        code, out, err = 단건검산()
+        self.assertEqual(code, 1)
+        self.assertIn("검토전개 실익", err)
+
+    def test_발견_무처분도_검토전개_실익을_요구한다(self):
+        data = json.loads(vrlib.read_text("런/라운드1/_항목.json"))
+        row = next(r for r in data["항목"] if r["id"] == "R1-05")
+        row["상신"] = False
+        row["발견"] = True
+        Path("런/라운드1/_항목.json").write_text(
+            json.dumps(data, ensure_ascii=False), encoding="utf-8")
+        target = Path("런/라운드1/심사대상.md")
+        target.write_text(vrlib.read_text(target).replace("### 상신", "### 발견", 1),
+                          encoding="utf-8")
+        심사쓰기(1, {"R1-05": "승인하되 고치지 않는다", "R1-M1": "수리한다",
+                 "R1-M2": "수리한다"})
+        path = Path("런/라운드1/심사_1.md")
+        path.write_text(vrlib.read_text(path).replace(
+            "\n### 검토전개 실익\n방치 손상이 후속 작업 비용보다 크다.\n", ""),
+            encoding="utf-8")
+        code, out, err = 단건검산()
+        self.assertEqual(code, 1)
+        self.assertIn("검토전개 실익", err)
+
+    def test_기각과_무처분을_보관한다(self):
+        심사쓰기(1, {"R1-05": "사용자에게 올린다", "R1-M1": "승인하되 고치지 않는다",
+                 "R1-M2": "기각"})
+        심사쓰기(2, {"R1-05": "사용자에게 올린다", "R1-M1": "승인하되 고치지 않는다",
+                 "R1-M2": "기각"})
+        심사쓰기(3, {"R1-05": "사용자에게 올린다", "R1-M1": "승인하되 고치지 않는다",
+                 "R1-M2": "기각"})
+        code, out, err = 실행(보관=True)
+        self.assertEqual(code, 0, err)
+        path = Path("보관/2.3-라운드1.md")
+        self.assertTrue(path.is_file())
+        text = path.read_text(encoding="utf-8")
+        self.assertIn("## R1-M1", text)
+        self.assertIn("## R1-M2", text)
+        self.assertIn("최종 처분: 승인하되 고치지 않는다", text)
+        self.assertIn("최종 판정: 기각", text)
+        self.assertIn("관문 3 불성립.", text)
 
     def test_심사검산_재개는_항목목록과_대조한다(self):
         Path("런/라운드1/심사_1_재개1.md").write_text(
