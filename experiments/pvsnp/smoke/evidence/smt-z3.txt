@@ -1,0 +1,27 @@
+{
+  "solver": {
+    "name": "z3",
+    "executable": "%LOCALAPPDATA%\\pvsnp-toolchain\\z3-5.1.0\\z3-5.1.0-x64-win\\bin\\z3.exe",
+    "version": {
+      "command": "%LOCALAPPDATA%\\pvsnp-toolchain\\z3-5.1.0\\z3-5.1.0-x64-win\\bin\\z3.exe -version",
+      "exit_code": 0,
+      "stdout": "Z3 version 5.1.0 - 64 bit",
+      "stderr": ""
+    },
+    "sat_input": "(declare-const x Bool)\n(assert x)\n(check-sat)\n",
+    "sat": {
+      "command": "%LOCALAPPDATA%\\pvsnp-toolchain\\z3-5.1.0\\z3-5.1.0-x64-win\\bin\\z3.exe %TEMP%\\sat.smt2",
+      "exit_code": 0,
+      "stdout": "sat",
+      "stderr": ""
+    },
+    "unsat_input": "(declare-const x Bool)\n(assert x)\n(assert (not x))\n(check-sat)\n",
+    "unsat": {
+      "command": "%LOCALAPPDATA%\\pvsnp-toolchain\\z3-5.1.0\\z3-5.1.0-x64-win\\bin\\z3.exe %TEMP%\\unsat.smt2",
+      "exit_code": 0,
+      "stdout": "unsat",
+      "stderr": ""
+    },
+    "status": "PASS"
+  }
+}
