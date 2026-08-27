@@ -1,0 +1,77 @@
+{
+ "라운드": 1,
+ "항목": [
+  {
+   "id": "R1-01",
+   "제목": "R1-1 — C14가 `time class`의 공종 조건을 빠뜨린다",
+   "기": 1,
+   "상신": false,
+   "발견": false,
+   "결합": [],
+   "조각": [
+    {
+     "파일": "research/pvsnp/literature/readings/L08.md",
+     "시작2": 126,
+     "끝2": 126,
+     "표기": "research/pvsnp/literature/readings/L08.md 63~63행",
+     "원래": "| C14 | 정리 5는 재귀적으로 열거 가능한 전재귀 함수족과 필요한 합성 상계를 갖는 `time class` \\(C\\)에 대해 \\(C\\)-시간 다대일·튜링 환원이 반사적이고 추이적이라고 말한다. 또한 정리 1–4에서 \\(P\\)를 \\(C^t\\)로 바꾼 결과가 성립한다고 말한다. | PDF 13–14쪽/저널 167–168쪽, 6절·정리 5 |",
+     "대체": "| C14 | 정리 5는 전재귀 함수의 재귀적 열거 집합에 공종이고, \\(f(n)\\ge n\\)인 함수를 하나 가지며, 환원 합성 상계를 갖는 `time class` \\(C\\)에 대해 \\(C\\)-시간 다대일·튜링 환원이 반사적이고 추이적이라고 말한다. 또한 정리 1–4에서 \\(P\\)를 \\(C^t\\)로 바꾼 결과가 성립한다고 말한다. | PDF 13–14쪽/저널 167–168쪽, 6절·정리 5 |"
+    }
+   ]
+  },
+  {
+   "id": "R1-02",
+   "제목": "R1-2 — C16이 Grzegorczyk 환원의 적용 범위를 넓힌다",
+   "기": 1,
+   "상신": false,
+   "발견": false,
+   "결합": [],
+   "조각": [
+    {
+     "파일": "research/pvsnp/literature/readings/L08.md",
+     "시작2": 130,
+     "끝2": 130,
+     "표기": "research/pvsnp/literature/readings/L08.md 65~65행",
+     "원래": "| C16 | 논문은 시간·작업공간·질의 작성 공간을 환원 절차의 세 매개변수로 구분한다. 마지막에는 Grzegorczyk 계층과 원시재귀 공간으로 정의한 추상 환원에도 정리 1–4를 옮긴다고 설명한다. | PDF 16–17쪽/저널 170–171쪽, 6절 말미 |",
+     "대체": "| C16 | 논문은 시간·작업공간·질의 작성 공간을 환원 절차의 세 매개변수로 구분한다. 마지막에는 \\(\\mathcal E^0\\)와 \\(\\mathcal E^1\\)의 병리를 구별하고, \\(n>2\\)인 Grzegorczyk \\(\\mathcal E^n\\) 환원과 원시재귀 환원에도 정리 1–4를 옮긴다고 설명한다. | PDF 16–17쪽/저널 170–171쪽, 6절 말미 |"
+    }
+   ]
+  },
+  {
+   "id": "R1-03",
+   "제목": "R1-1 I1 표지가 C13에 결속한다고 적은 오류",
+   "기": 2,
+   "상신": false,
+   "발견": false,
+   "결합": [],
+   "조각": [
+    {
+     "파일": "research/pvsnp/literature/readings/L08.md",
+     "시작2": 186,
+     "끝2": 186,
+     "표기": "research/pvsnp/literature/readings/L08.md 93~93행",
+     "원래": "| I1 | “Both relations prove to be dense” | PDF 1쪽/저널 155쪽, 초록 | C8, C13 |",
+     "대체": "| I1 | “Both relations prove to be dense” | PDF 1쪽/저널 155쪽, 초록 | C8 |"
+    }
+   ]
+  },
+  {
+   "id": "R1-04",
+   "제목": "I1의 결속 항목이 원문 주장과 다르다",
+   "기": 3,
+   "상신": false,
+   "발견": false,
+   "결합": [],
+   "조각": [
+    {
+     "파일": "research/pvsnp/literature/readings/L08.md",
+     "시작2": 186,
+     "끝2": 186,
+     "표기": "research/pvsnp/literature/readings/L08.md 93~93행",
+     "원래": "| I1 | “Both relations prove to be dense” | PDF 1쪽/저널 155쪽, 초록 | C8, C13 |",
+     "대체": "| I1 | “Both relations prove to be dense” | PDF 1쪽/저널 155쪽, 초록 | C8, C10 |"
+    }
+   ]
+  }
+ ]
+}

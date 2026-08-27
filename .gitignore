@@ -23,3 +23,12 @@ __pycache__/
 # wayfinder가 `gh issue create --body-file`에 넘기려고 만드는 임시 본문 파일.
 # 지도와 티켓의 정본은 이슈 트래커이므로 그 사본을 추적하지 않는다.
 .wayfinder-tmp/
+
+# 로컬 문헌 추출물과 작업 중간 산출물. 정본 문서는 research/에 둔다.
+/l17.txt
+/math_l16_tmp.txt
+/nul
+
+# do-dag 실행 때 생성하는 원시 대화 로그와 별도 작업트리 채록.
+.sdd/dag/**/_로그*
+.sdd/dag/**/worktree채록/

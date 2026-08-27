@@ -1,0 +1,15 @@
+{
+  "active_phases": {
+    "pvsnp-탐사-1": {
+      "opened_at": "2026-08-25T22:47:49Z"
+    }
+  },
+  "commit_grants": {
+    "grant-25": {
+      "reason": "검증런 2.7.10.55.9 0단계 기준 원문 대행 커밋",
+      "until": "2026-08-27T11:09:02Z"
+    }
+  },
+  "merge_lease": {},
+  "next_grant": 26
+}

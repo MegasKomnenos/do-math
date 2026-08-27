@@ -1,0 +1,26 @@
+{
+ "라운드": 1,
+ "묶음": [
+  {
+   "id": "R1-M1",
+   "구성": [
+    "R1-03",
+    "R1-04"
+   ],
+   "조각": [
+    {
+     "파일": "research/pvsnp/literature/readings/L08.md",
+     "시작2": 186,
+     "끝2": 186,
+     "표기": "research/pvsnp/literature/readings/L08.md 93~93행",
+     "원래": "| I1 | “Both relations prove to be dense” | PDF 1쪽/저널 155쪽, 초록 | C8, C13 |",
+     "대체": null
+    }
+   ]
+  }
+ ],
+ "단독": [
+  "R1-01",
+  "R1-02"
+ ]
+}
