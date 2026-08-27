@@ -18,10 +18,11 @@ class TestVerifyRoundsInterface(unittest.TestCase):
         invariant = body.split("**불변식 재료**", 1)[1].split("\n- **", 1)[0]
         self.assertNotIn("상위 문서의 원문 경로", invariant)
 
-    def test_검증런은_worktree에서_실행하고_여덟절을_조립한다(self):
+    def test_검증런은_파견문_작업디렉토리에서_실행한다(self):
         body = (SKILL / "계약" / "검증런.md").read_text(encoding="utf-8")
         self.assertIn("**기준 원문**", body)
-        self.assertIn("메인 체크아웃을 실행 좌표로 쓰지 않는다", body)
+        self.assertIn("제품 산출물을 검증하면 노드 worktree", body)
+        self.assertIn("설계 자산을\n검증하면 메인 체크아웃", body)
         self.assertIn("저장소 상대 경로 하나를 `- <경로>`", body)
 
     def test_누적변경은_changes_실측기를_쓴다(self):
@@ -76,9 +77,9 @@ class TestVerifyRoundsInterface(unittest.TestCase):
         contract = (SKILL / "계약" / "검증런.md").read_text(encoding="utf-8")
         flat = " ".join(contract.split())
         self.assertIn("검토전개 행 하나의 비용만 뜻하지 않는다", contract)
-        self.assertIn("충족성 렌즈", contract)
+        self.assertIn("전개 뒤 검증런", contract)
         self.assertIn("작업자 행 하나 이상", contract)
-        self.assertIn("검증런은 수리자·심사자 여러 기", flat)
+        self.assertIn("각 검증런은 수리자·심사자 여러 기", flat)
 
     def test_산출물_구현_누락의_뜻이_지급문에_보존된다(self):
         body = (SKILL / "references" / "검증_체제.md").read_text(encoding="utf-8")

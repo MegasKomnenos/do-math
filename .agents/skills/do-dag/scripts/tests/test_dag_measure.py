@@ -281,8 +281,8 @@ class TestBudget(unittest.TestCase):
         """
         구조 = [
             ("행 2 전개(저작 83,474바이트)", m.est_required(71_612, 83_474), 185_647),
-            ("2.1 운전성 렌즈", m.est_required(39_719 + m.est_pending(78_271), 0), 158_232),
-            ("2.2 정합성 렌즈", m.est_required(60_707 + m.est_pending(78_271), 0), 154_332),
+            ("2.1 운전성 수리자", m.est_required(39_719 + m.est_pending(78_271), 0), 158_232),
+            ("2.2 정합성 수리자", m.est_required(60_707 + m.est_pending(78_271), 0), 154_332),
         ]
         for 이름, 견적, 실측 in 구조:
             self.assertGreater(견적, 실측 * 0.95, f"{이름}: 낙관 {견적:,} < 실측 {실측:,}")

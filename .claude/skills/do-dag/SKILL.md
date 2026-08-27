@@ -35,9 +35,9 @@ disable-model-invocation: true
 
 `검증런_모델_프리셋`을 따로 지정하지 않으면 `모델_프리셋`을 상속한다. 명시값은
 상속값을 덮는다. 역할별 모델·노력과 Claude·Codex 대비표의 정본은
-`references/배정.md` 「배정표」다. `모델_프리셋`이 `mixed`이면 렌즈를 Codex로 돌리고
-검증런 행 자체와 나머지 do-dag 역할을 Claude로 돌린다. verify-rounds 수리·병합·심사의
-계열은 `검증런_모델_프리셋`이 정한다 — 그 값이 `mixed`이면 심사만 Codex다.
+`references/배정.md` 「배정표」다. 검증런 행 자체와 나머지 do-dag 역할은 Claude로
+돌린다. verify-rounds 수리·병합·심사의 계열은 `검증런_모델_프리셋`이 정한다.
+그 값이 `mixed`이면 심사만 Codex다.
 
 ## 메인의 임무 넷
 
@@ -333,15 +333,15 @@ python {scripts 경로}/agent_usage.py --description "do-dag 오케 {국면명} 
 | 파일 | 담는 것 | 읽는 주체 |
 |---|---|---|
 | `대응표.md` | 오케 사이클·판정·감시 | 오케 |
-| `행_0.md` | 체급 판정과 초판 전개 지시 | 0번 전개 |
+| `행_0.md` | 초판 전개 지시 | 0번 전개 |
 | `파견문_예외.md` | 예상 밖 반환의 처분 | 예외 에이전트 |
-| `검토전개.md` | 검증런 발견·충족성 렌즈 중대 지적의 자체 검토와 수리 설계 | 검토전개로 파견된 전개 |
+| `검토전개.md` | 검증런 발견의 자체 검토와 수리 설계 | 검토전개로 파견된 전개 |
 | `기각보관_검토전개.md` | worktree 종료 전 기각 보관의 병합·재판정·수리 설계 | 기각 보관 검토전개 |
 | `references/분해_원리.md` | 노드·간선·이음새 독트린, 깊이와 반복 | 정의 저작 전개 |
-| `references/검증_체제.md` | 검증런 배치·크리티컬 영역·렌즈·역할별 계약 배치 | 노드 전개 |
+| `references/검증_체제.md` | 검증런 배치·전개 검증 관점·크리티컬 영역·역할별 계약 배치 | 노드 전개 |
 | `references/서식.md` | 칸 계약·계약 자산 배치·행 파일과 결정·이음새·기준선 서식 | 메인 · 전개 |
 | `references/배정.md` | 배정표(모델·노력·예산)·Codex 일반 파견 | 메인 · 오케 · 전개 |
-| `계약/` | 역할별 계약 문면 — 공통·작업·보고·판정·렌즈·검증런·싱크 | 그 역할로 파견된 에이전트 |
+| `계약/` | 역할별 계약 문면 — 공통·작업·보고·검증런·싱크 | 그 역할로 파견된 에이전트 |
 | `전거/` | 다중 참조 사실의 등록소 — 항목이 정본이고 `scripts/dag_facts.py --render`가 소비 자리에 전사한다 | 이 스킬을 개정하는 주체 |
 | `scripts/dag_check.py` | 파견표 검산 9항목. 모드 둘 — partial·drive. `--ready`가 무발견 뒤 오케 운전 정보를 낸다 | 전개(자기검사) · 오케(사이클마다) · 예외(표 수리 뒤) |
 | `scripts/dag_marker.py` | 활성 국면 목록·커밋 grant·병합 lease·격리 생명주기와 회수 | 메인(status·open·install-hook) · 0번 전개(status) · 노드 전개(worktree-open) · 노드 싱크(lease·allow·clear-token) · 국면 종결 싱크(lease·allow·clear-token·sweep·close) · 예외 에이전트(lease) · 오케(status·조기 종결 close) · pre-commit 훅(gate) |

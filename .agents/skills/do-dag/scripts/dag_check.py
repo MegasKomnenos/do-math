@@ -18,6 +18,8 @@
    슬롯이 실재하는 파일을 싣는가. `불변식:` 슬롯이 상위 전개의 불변식 전건을 승계하고,
    그 좌표가 읽기 목록과 예산에 실렸는가. `모델 배정 근거:`와 `반환:` 슬롯이
    채워졌는가.
+   폐지 전에 완결된 렌즈 행은 `계약/렌즈.md`와 `계약/판정.md` 좌표를 역사 기록으로
+   보존한다. 이 두 좌표의 실재 검사는 완결 행에만 적용하지 않는다.
    【완결상태 · 완 · 비준】 행의 완료 신호가 전건 있고 비지 않았는가. 검증런 계약을
    적재한 완결 행은 동결·장부·종료보고와 장부의 라운드 1 본표·결산을 갖췄는가.
    그 종료보고의 「발견」 절에 항목이 있으면 같은 층의 전개 행이 그 종료보고를
@@ -44,7 +46,7 @@ partial은 **살아 있는 전개의 서브트리를 발견에서 제외한다.*
 `--sink-return <행번호> <첫 낱말>`은 두 모드와 별개인 반환 전용 게이트다. 전체 표를
 다시 재지 않고 실제 싱크 반환과 결산 frontmatter만 대조한다.
 
-목표 충실성·분해 타당성 같은 판단 성분은 코드가 아니라 렌즈와 판정 처분 전개의 몫이다.
+목표 충실성·분해 타당성 같은 판단 성분은 코드가 아니라 전개 뒤 검증런의 몫이다.
 
 사용:
     python dag_check.py --table .sdd/dag/<국면>/파견표.md
@@ -83,7 +85,7 @@ MODES = ("drive", "partial")
 MODELS = ("sonnet", "opus", "fable", "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna")
 # 【끝】
 # 【생성 노력】
-EFFORTS = ("low", "med", "high")
+EFFORTS = ("low", "med", "high", "xhigh")
 # 【끝】
 
 # 셋으로 가른다: 실제 값 · `—`(명시적 해당 없음) · 빈 칸(누락).
@@ -111,6 +113,7 @@ SINK_EXCEPTION_STATUSES = (
 )
 VERIFY_RUN_CONTRACT = Path(__file__).resolve().parent.parent / "계약" / "검증런.md"
 VERIFY_RUN_FILES = ("동결.md", "장부.md", "종료보고.md")
+RETIRED_COMPLETED_CONTRACTS = {"렌즈.md", "판정.md"}
 # verify-rounds 종료보고의 「발견」 절. 제목과 0건 표기의 정본은 verify-rounds SKILL.md
 # §7 종료 보고 10항이다(전거/의존.md 의존:verify-rounds-종료보고).
 _DISCOVERY_HEADING = re.compile(r"^(#{1,6})[ \t]*(?:\d+\.[ \t]*)?발견[ \t]*$", re.MULTILINE)
@@ -871,7 +874,7 @@ def _check_assignment(r: Row, text: str) -> list[str]:
     배정 이탈은 행마다 새로 도출한다 — 앞선 행의 이탈은 선례가 되지 못하고
     임계값 대입은 도출이 아니다(`references/서식.md` 배정표). 슬롯이 비면 그
     도출이 어디에도 없다. 서식 플레이스홀더만 남은 슬롯은 빈 슬롯이다.
-    도출이 배정표 문언에 서는지는 정합성 렌즈가 본다.
+    도출이 배정표 문언에 서는지는 전개 뒤 검증런의 정합성 수리자가 본다.
     """
     for m in _ASSIGN_SLOT.finditer(text):
         if _PLACEHOLDER.sub("", m.group(1)).strip():
@@ -897,7 +900,8 @@ def _check_contract(r: Row, text: str, run_dir: Path) -> list[str]:
     계약 문면은 파견문에 전사되지 않고 `계약/` 아래 산다(`references/서식.md`
     「계약 자산」). 슬롯이 비면 그 에이전트는 자기 역할 계약 없이 돈다.
     이 검사가 보는 것은 슬롯의 존재와 좌표의 실재까지다 — 역할에 맞는 계약이
-    실렸는지는 배치표를 읽는 전개와 정합성 렌즈의 몫이다.
+    실렸는지는 배치표를 읽는 전개와 전개 뒤 검증런의 정합성 수리자 몫이다.
+    완결된 구형 렌즈 행은 폐지된 렌즈·판정 계약 좌표를 역사 기록으로 보존한다.
     """
     coords = _contract_coords(text)
     if not coords:
@@ -906,6 +910,11 @@ def _check_contract(r: Row, text: str, run_dir: Path) -> list[str]:
         f"[실재] 행 {r.id}의 계약 좌표가 파일로 실재하지 않는다: {c}"
         for c in coords
         if not _contract_path(c, run_dir).is_file()
+        and not (
+            r.state in DONE_STATES
+            and _contract_path(c, run_dir).parent.name == "계약"
+            and _contract_path(c, run_dir).name in RETIRED_COMPLETED_CONTRACTS
+        )
     ]
 
 

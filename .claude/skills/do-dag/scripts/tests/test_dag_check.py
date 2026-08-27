@@ -1005,12 +1005,12 @@ class ContractSlotTest(unittest.TestCase):
     (`KINDS`는 넷, `references/서식.md` 「계약 자산」 표의 파견 대상 줄은 일곱).
     """
 
-    def _found(self, body: str, run_dir: Path) -> list[str]:
+    def _found(self, body: str, run_dir: Path, state: str = "미착수") -> list[str]:
         """계약 축만 흔든다 — 배정 근거는 언제나 채워 둔다."""
         (run_dir / "행").mkdir(exist_ok=True)
         valid = valid_brief_body(run_dir).replace(CONTRACT_LINE, "")
         (run_dir / "행" / "1.md").write_text(body + valid, encoding="utf-8")
-        text = table(row("1", brief="행/1.md"))
+        text = table(row("1", brief="행/1.md", state=state))
         return dag_check.check_briefs(dag_check.parse_rows(text), run_dir)
 
     def test_brief_without_the_slot_is_found(self):
@@ -1030,6 +1030,22 @@ class ContractSlotTest(unittest.TestCase):
     def test_missing_coordinate_is_found(self):
         with tempfile.TemporaryDirectory() as tmp:
             found = self._found("- 계약: 계약/없는것.md\n", Path(tmp))
+            self.assertTrue(any("실재하지 않는다" in f for f in found), found)
+
+    def test_completed_legacy_lens_contracts_are_historical(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            body = "- 계약: 계약/판정.md, 계약/렌즈.md\n"
+            self.assertEqual(self._found(body, Path(tmp), state="완"), [])
+
+    def test_unfinished_legacy_lens_contracts_are_found(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            body = "- 계약: 계약/판정.md, 계약/렌즈.md\n"
+            found = self._found(body, Path(tmp))
+            self.assertEqual(len(found), 2, found)
+
+    def test_other_missing_contract_stays_invalid_when_completed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            found = self._found("- 계약: 계약/없는것.md\n", Path(tmp), state="완")
             self.assertTrue(any("실재하지 않는다" in f for f in found), found)
 
     def test_every_listed_coordinate_is_checked(self):
@@ -1091,7 +1107,7 @@ class AssignmentSlotTest(unittest.TestCase):
             self.assertEqual(self._found(ASSIGN_LINE, Path(tmp)), [])
 
     def test_a_deviation_derivation_is_clean(self):
-        # 이탈도 도출만 실려 있으면 검산은 통과한다 — 도출의 내용은 렌즈의 몫이다.
+        # 이탈도 도출만 실려 있으면 검산은 통과한다 — 도출의 내용은 전개 뒤 검증런의 몫이다.
         with tempfile.TemporaryDirectory() as tmp:
             body = "- 모델 배정 근거: 판단의 질이 한 컨텍스트에 달려 fable로 올린다\n"
             self.assertEqual(self._found(body, Path(tmp)), [])
@@ -1542,7 +1558,7 @@ class GateBriefingTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             text = table(
                 row("1", brief="행/1.md", signal="기준선.md", model="opus high"),
-                row("g1", kind="게이트", deps="1", signal="결정/1-프레임체급.md", model="—"),
+                row("g1", kind="게이트", deps="1", signal="결정/1-프레임.md", model="—"),
             )
             found = dag_check.check_gates(dag_check.parse_rows(text), Path(tmp))
             self.assertTrue(any("낳는 행이 선행 사슬에 없다" in f for f in found), found)
@@ -1550,8 +1566,8 @@ class GateBriefingTest(unittest.TestCase):
     def test_gate_fed_by_its_predecessor_is_clean(self):
         with tempfile.TemporaryDirectory() as tmp:
             text = table(
-                row("1", brief="행/1.md", signal="기준선.md, 결정/1-프레임체급.md", model="opus high"),
-                row("g1", kind="게이트", deps="1", signal="결정/1-프레임체급.md", model="—"),
+                row("1", brief="행/1.md", signal="기준선.md, 결정/1-프레임.md", model="opus high"),
+                row("g1", kind="게이트", deps="1", signal="결정/1-프레임.md", model="—"),
             )
             self.assertEqual(dag_check.check_gates(dag_check.parse_rows(text), Path(tmp)), [])
 
@@ -1572,7 +1588,7 @@ class GateBriefingTest(unittest.TestCase):
 class GateConsumerTest(unittest.TestCase):
     """게이트 결정에 소비자가 배정됐는가 — 후행은 전개여야 하고 그 파견문이 좌표를 싣는다."""
 
-    DECISION = "결정/1-프레임체급.md"
+    DECISION = "결정/1-프레임.md"
 
     def _table(self, kind, brief="행/2.md"):
         return table(
@@ -1736,7 +1752,7 @@ class ColumnContractTest(unittest.TestCase):
     def test_gate_row_wants_dashes_and_a_decision_file(self):
         self.assertEqual(
             self._check(row("g1", kind="게이트", deps="1",
-                            signal="결정/1-프레임체급.md", model="—")),
+                            signal="결정/1-프레임.md", model="—")),
             [],
         )
 
@@ -1799,6 +1815,20 @@ class DriveTest(unittest.TestCase):
         text = table(
             row("1", brief="행/1.md", signal="기준선.md", model="opus high", state="완"),
             row("2", brief="행/2.md", deps="1", signal="행/2-보고.md", model="fable med"),
+        )
+        self.assertEqual(dag_check.check_drive(dag_check.parse_rows(text)), [])
+
+    def test_ready_codex_row_with_xhigh_effort_is_clean(self):
+        """행별 근거로 최상급 노력을 배정한 Codex 행은 운전할 수 있다."""
+        text = table(
+            row("1", brief="행/1.md", signal="기준선.md", model="opus high", state="완"),
+            row(
+                "2",
+                brief="행/2.md",
+                deps="1",
+                signal="행/2-보고.md",
+                model="gpt-5.6-sol xhigh",
+            ),
         )
         self.assertEqual(dag_check.check_drive(dag_check.parse_rows(text)), [])
 
@@ -1966,9 +1996,9 @@ class RunTest(unittest.TestCase):
             run_dir = self._run_dir(tmp)
             text = table(
                 row("1", brief="행/1.md",
-                    signal="기준선.md, 결정/1-프레임체급.md", model="opus high", state="완"),
+                    signal="기준선.md, 결정/1-프레임.md", model="opus high", state="완"),
                 row("g1", kind="게이트", deps="1",
-                    signal="결정/1-프레임체급.md", model="—", state="완"),
+                    signal="결정/1-프레임.md", model="—", state="완"),
                 row("2", kind="전개", brief="행/2.md", deps="g1",
                     signal="행/2-보고.md", model="fable med"),
                 row("2.1", brief="행/2.d/1.md", deps="2",
@@ -1978,14 +2008,14 @@ class RunTest(unittest.TestCase):
                     signal="행/z-결산.md", model="opus low"),
             )
             (run_dir / "결정").mkdir()
-            (run_dir / "결정" / "1-프레임체급.md").write_text(
+            (run_dir / "결정" / "1-프레임.md").write_text(
                 "---\n유형: 결정\n상태: 결정됨\n---\n\n"
-                "## 결정 (메인 기입 — 사용자 발화 축자)\n표준 체급으로 간다\n",
+                "## 결정 (메인 기입 — 사용자 발화 축자)\n프레임을 확정한다\n",
                 encoding="utf-8",
             )
             # 게이트 후행 전개의 파견문은 그 결정 좌표를 싣는다(⑧ 소비 계약).
             (run_dir / "행" / "2.md").write_text(
-                "- 정본: 결정/1-프레임체급.md\n" + valid_brief_body(run_dir),
+                "- 정본: 결정/1-프레임.md\n" + valid_brief_body(run_dir),
                 encoding="utf-8",
             )
             self.assertEqual(dag_check.run(text, run_dir), [])
