@@ -172,6 +172,11 @@ _ASSIGN_SLOT = re.compile(
 # 파견문 최상위 슬롯 `- 반환: <공통 첫 줄과 역할 확장>`. 최종 반환이 공통 계약과
 # 역할 계약을 잇는 자리다.
 _RETURN_SLOT = re.compile(r"^[ \t]*[-*]?[ \t]*반환[ \t]*:[ \t]*(.*)$", re.MULTILINE)
+_ROLE_SLOT = re.compile(r"^[ \t]*[-*]?[ \t]*역할[ \t]*:[ \t]*(.*)$", re.MULTILINE)
+_PRIOR_REVIEW_SLOT = re.compile(
+    r"^[ \t]*[-*]?[ \t]*앞선 기각 보관 검토[ \t]*:[ \t]*(.*)$", re.MULTILINE
+)
+_OUTPUT_HEADING = re.compile(r"^##[ \t]+산출물[ \t]*$", re.MULTILINE)
 
 
 def _cell(raw: str) -> str:
@@ -428,7 +433,9 @@ def _visible(rows: list[Row], scope: str) -> set[str]:
     return members | {m + SINK_SUFFIX for m in members}
 
 
-def check_closure(rows: list[Row], hidden: set[str] | None = None) -> list[str]:
+def check_closure(
+    rows: list[Row], hidden: set[str] | None = None, run_dir: Path | None = None
+) -> list[str]:
     """선행 지목의 범위 폐쇄.
 
     `known`·`_visible`은 `hidden`을 걷어내지 않는다 — 억제되는 것은 제외된 행
@@ -437,6 +444,22 @@ def check_closure(rows: list[Row], hidden: set[str] | None = None) -> list[str]:
     hidden = hidden or set()
     findings: list[str] = []
     known = {r.id for r in rows}
+    archive_edges: set[tuple[str, str]] = set()
+    if run_dir:
+        for current in rows:
+            if current.state in DONE_STATES or not _is_archive_review(current, run_dir):
+                continue
+            report = current.signal
+            for successor in rows:
+                if successor.scope != current.scope:
+                    continue
+                brief = run_dir / successor.brief
+                if not brief.is_file() or not _is_archive_review(successor, run_dir):
+                    continue
+                text = brief.read_text(encoding="utf-8", errors="replace")
+                if _prior_review_mentions(text, report):
+                    archive_edges.add((current.id + SINK_SUFFIX, successor.id + SINK_SUFFIX))
+                    archive_edges.update((successor.id, dep) for dep in successor.deps)
     # 아직 펼쳐지지 않은 전개의 싱크는 약속된 행이다 — 수렴 불변식이 그 존재를
     # 보장하므로 미리 지목할 수 있다.
     known |= {r.id + SINK_SUFFIX for r in rows if r.kind == "전개"}
@@ -453,7 +476,7 @@ def check_closure(rows: list[Row], hidden: set[str] | None = None) -> list[str]:
         for dep in r.deps:
             if dep not in known:
                 findings.append(f"[폐쇄] 행 {r.id}의 선행 {dep}이 파견표에 없다")
-            elif dep not in allowed:
+            elif dep not in allowed and (r.id, dep) not in archive_edges:
                 findings.append(
                     f"[폐쇄] 행 {r.id}이 자기 범위 밖을 지목한다: {dep}"
                     f" (범위 '{r.scope or '최상위'}'. 바깥은 싱크로 지목한다)"
@@ -637,6 +660,114 @@ def _uses_verify_run_contract(r: Row, run_dir: Path) -> bool:
         _same_path(_contract_path(coord, run_dir), VERIFY_RUN_CONTRACT)
         for coord in _contract_coords(text)
     )
+
+
+def _role(text: str) -> str:
+    """파견문의 역할 슬롯 값. 역할이 없으면 빈 문자열이다."""
+    match = _ROLE_SLOT.search(text)
+    return match.group(1).strip() if match else ""
+
+
+def _section(text: str, heading: re.Pattern[str]) -> str:
+    """수준 2 제목 하나의 본문. 다음 수준 2 제목 앞에서 닫는다."""
+    match = heading.search(text)
+    if not match:
+        return ""
+    rest = text[match.end():]
+    next_heading = re.search(r"^##[ \t]+", rest, re.MULTILINE)
+    return rest[:next_heading.start()] if next_heading else rest
+
+
+def _is_archive_review(r: Row, run_dir: Path) -> bool:
+    if r.kind != "전개" or not r.dispatched:
+        return False
+    brief = run_dir / r.brief
+    return brief.is_file() and _role(
+        brief.read_text(encoding="utf-8", errors="replace")
+    ) == "기각보관검토"
+
+
+def _prior_review_mentions(text: str, report: str) -> bool:
+    match = _PRIOR_REVIEW_SLOT.search(text)
+    return bool(match and _mentions_coord(match.group(1), report))
+
+
+def _has_expansion_output_scope(r: Row, rows: list[Row], text: str) -> bool:
+    """전개 뒤 첫 검증런이 동결할 전개 산출물 범위를 닫았는가."""
+    output = _section(text, _OUTPUT_HEADING)
+    normalized = output.replace("`", "")
+    rule = (
+        "자기 불변식" in normalized
+        and "자기 보고" in normalized
+        and "자기가 만든 미착수 자식 행 파일" in normalized
+        and "파견표.md" in normalized
+        and "이음새.md" in normalized
+    )
+    if rule:
+        return True
+
+    expected = [r.signal, "파견표.md", "이음새.md"]
+    expected.extend(
+        child.brief
+        for child in rows
+        if child.scope == r.id and child.state == "미착수" and child.dispatched
+    )
+    return bool(output) and all(_mentions_coord(output, coord) for coord in expected)
+
+
+def check_archive_review_expansions(rows: list[Row], run_dir: Path) -> list[str]:
+    """진행 중 기각 보관 검토전개의 후속 수렴과 첫 검증런 산출물 범위를 검사한다.
+
+    완결 행은 당시의 운전 기록이다. 이 검사는 완결 행을 소급 해석하지 않는다.
+    """
+    briefs = {
+        r.id: (run_dir / r.brief).read_text(encoding="utf-8", errors="replace")
+        for r in rows if r.dispatched and (run_dir / r.brief).is_file()
+    }
+    reviews = [r for r in rows if _is_archive_review(r, run_dir)]
+    findings: list[str] = []
+    for current in reviews:
+        if current.state in DONE_STATES:
+            continue
+        report = current.signal
+        successors = [
+            candidate for candidate in reviews
+            if candidate.state not in DONE_STATES
+            and candidate.scope == current.scope
+            and _prior_review_mentions(briefs[candidate.id], report)
+        ]
+        for successor in successors:
+            successor_sink = successor.id + SINK_SUFFIX
+            current_sink = current.id + SINK_SUFFIX
+            sink_row = next((row for row in rows if row.id == current_sink), None)
+            if not sink_row or successor_sink not in sink_row.deps:
+                findings.append(
+                    f"[기각보관검토] 진행 행 {current.id}의 무작업 싱크 {current_sink}가 "
+                    f"다음 검토전개 싱크 {successor_sink}를 선행으로 받지 않는다"
+                )
+            if not any(
+                dep_row and _uses_verify_run_contract(dep_row, run_dir)
+                for dep in successor.deps
+                for dep_row in [next((row for row in rows if row.id == dep), None)]
+            ):
+                findings.append(
+                    f"[기각보관검토] 다음 검토전개 {successor.id}가 "
+                    "마지막 수리 적용 검증런을 선행으로 받지 않는다"
+                )
+
+        first_runs = [
+            child for child in rows
+            if child.scope == current.id
+            and current.id in child.deps
+            and _uses_verify_run_contract(child, run_dir)
+        ]
+        for verify_run in first_runs:
+            if not _has_expansion_output_scope(verify_run, rows, briefs[verify_run.id]):
+                findings.append(
+                    f"[기각보관검토] 전개 뒤 첫 검증런 {verify_run.id}의 산출물 범위가 "
+                    "불변식·보고·미착수 행 파일·파견표 행·이음새 항목을 닫지 않는다"
+                )
+    return findings
 
 
 def _check_verify_run_artifacts(
@@ -1188,12 +1319,13 @@ def run(text: str, run_dir: Path, mode: str = "drive", writer: str | None = None
         + check_ids(rows, hidden)
         + check_states(rows, hidden)
         + check_columns(rows, hidden)
-        + check_closure(rows, hidden)
+        + check_closure(rows, hidden, run_dir)
         + check_convergence(rows, mode, hidden)
         + check_cycle(rows, hidden)
         + check_signals(rows, run_dir, hidden)
         + check_briefs(rows, run_dir, hidden)
         + check_gates(rows, run_dir, mode, hidden)
+        + check_archive_review_expansions(rows, run_dir)
     )
     if mode == "drive":
         findings += check_drive(rows)

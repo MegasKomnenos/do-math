@@ -194,6 +194,29 @@ class TestBuildEndToEnd(unittest.TestCase):
         ok, msgs = self.build(check=True)
         self.assertTrue(ok, msgs)
 
+    def test_check_fails_on_deleted_overlay_manifest_entry(self):
+        ok, _ = self.build()
+        self.assertTrue(ok)
+        (self.diff / "alpha").mkdir()
+        overlay = self.diff / "alpha" / "SKILL.md"
+        overlay.write_text(
+            (self.out / "alpha" / "SKILL.md").read_text(encoding="utf-8"),
+            encoding="utf-8",
+        )
+        ok, _ = self.build()
+        self.assertTrue(ok)
+        overlay.unlink()
+        manifest_path = self.diff / "_manifest.json"
+        manifest_before = manifest_path.read_text(encoding="utf-8")
+        ok, msgs = self.build(check=True)
+        self.assertFalse(ok)
+        self.assertTrue(any("기준 해시 잔존: alpha/SKILL.md" in m for m in msgs))
+        self.assertEqual(manifest_path.read_text(encoding="utf-8"), manifest_before)
+        ok, _ = self.build()
+        self.assertTrue(ok)
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        self.assertEqual(manifest["overlays"], {})
+
     def test_base_deletion_propagates_and_manifest_prunes(self):
         (self.diff / "alpha").mkdir()
         (self.diff / "alpha" / "SKILL.md").write_text("오버레이\n", encoding="utf-8")

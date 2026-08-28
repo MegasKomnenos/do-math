@@ -2026,6 +2026,160 @@ class RunTest(unittest.TestCase):
             self.assertGreaterEqual(len(dag_check.run(text, Path(tmp))), 2)
 
 
+class ArchiveReviewExpansionTest(unittest.TestCase):
+    """진행 중 기각 보관 검토전개의 수렴과 전개 뒤 검증런 산출물 계약."""
+
+    def _write_brief(self, run_dir: Path, rel: str, body: str) -> None:
+        target = run_dir / rel
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(body, encoding="utf-8")
+
+    def _fixture(self, tmp: str, *, bad_sink: bool = False, bad_output: bool = False,
+                 historical: bool = False) -> tuple[Path, str]:
+        run_dir = Path(tmp)
+        self._write_brief(run_dir, "행/1.md", valid_brief_body(run_dir))
+        review = valid_brief_body(run_dir, "0", "1") + "- 역할: 기각보관검토\n"
+        self._write_brief(run_dir, "행/1.d/1.md", review)
+        verify = valid_brief_body(run_dir, "0", "1", "1.1").replace(
+            CONTRACT_LINE, f"- 계약: {CONTRACT} · {VERIFY_CONTRACT}\n"
+        )
+        if bad_output:
+            verify += "\n## 산출물\n\n서브트리 전건\n"
+        else:
+            verify += (
+                "\n## 산출물\n\n자기 불변식, 자기 보고, 자기가 만든 미착수 자식 행 파일, "
+                "파견표.md, 이음새.md\n"
+            )
+        self._write_brief(run_dir, "행/1.d/1.d/1.md", verify)
+        self._write_brief(run_dir, "행/1.d/1.d/2.md", valid_brief_body(run_dir, "0", "1", "1.1"))
+        self._write_brief(run_dir, "행/1.d/1.d/3.md", verify)
+        successor = (
+            valid_brief_body(run_dir, "0", "1")
+            + "- 역할: 기각보관검토\n"
+            + "- 앞선 기각 보관 검토: 행/1.d/1-보고.md\n"
+        )
+        self._write_brief(run_dir, "행/1.d/4.md", successor)
+        successor_verify = valid_brief_body(run_dir, "0", "1", "1.4").replace(
+            CONTRACT_LINE, f"- 계약: {CONTRACT} · {VERIFY_CONTRACT}\n"
+        ) + "\n## 산출물\n\n자기 불변식, 자기 보고, 자기가 만든 미착수 자식 행 파일, 파견표.md, 이음새.md\n"
+        self._write_brief(run_dir, "행/1.d/4.d/1.md", successor_verify)
+        current_state = "완" if historical else "진행"
+        successor_state = "완" if historical else "미착수"
+        sink_deps = "1.1.3" if bad_sink else "1.4.z"
+        root_sink_deps = "1.1.z, 1.4.z" if bad_sink else "1.1.z"
+        text = table(
+            row("1", kind="전개", brief="행/1.md", signal="행/1-보고.md", model="opus low"),
+            row("1.1", kind="전개", brief="행/1.d/1.md", deps="1", signal="행/1.d/1-보고.md",
+                model="opus low", state=current_state),
+            row("1.1.1", brief="행/1.d/1.d/1.md", deps="1.1", signal="행/1.d/1.d/1.d/종료보고.md"),
+            row("1.1.2", brief="행/1.d/1.d/2.md", deps="1.1.1", signal="행/1.d/1.d/2-보고.md"),
+            row("1.1.3", brief="행/1.d/1.d/3.md", deps="1.1.2", signal="행/1.d/1.d/3.d/종료보고.md"),
+            row("1.4", kind="전개", brief="행/1.d/4.md", deps="1.1.z" if bad_sink else "1.1.3",
+                signal="행/1.d/4-보고.md", model="opus low", state=successor_state),
+            row("1.4.1", brief="행/1.d/4.d/1.md", deps="1.4",
+                signal="행/1.d/4.d/1.d/종료보고.md"),
+            row("1.4.z", kind="싱크", deps="1.4.1", model="—"),
+            row("1.1.z", kind="싱크", deps=sink_deps, model="—"),
+            row("1.z", kind="싱크", deps=root_sink_deps, model="—"),
+            row("z", kind="싱크", deps="1.z", model="—"),
+        )
+        return run_dir, text
+
+    def _without_successor(self, text: str) -> str:
+        """산출물 범위 RED에는 후속 수렴 변수를 넣지 않는다."""
+        lines = [
+            line for line in text.splitlines()
+            if not line.startswith("| 1.4")
+        ]
+        return "\n".join(
+            "| 1.1.z | 싱크 | — | 1.1.3 | — | — | 미착수 |"
+            if line.startswith("| 1.1.z ") else
+            "| 1.z | 싱크 | — | 1.1.z | — | — | 미착수 |"
+            if line.startswith("| 1.z ") else line
+            for line in lines
+        ) + "\n"
+
+    def test_wrong_successor_convergence_was_red_and_is_found(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir, text = self._fixture(tmp, bad_sink=True)
+            rows = dag_check.parse_rows(text)
+            self.assertTrue(any("무작업 싱크" in item for item in dag_check.check_archive_review_expansions(rows, run_dir)))
+
+    def test_dash_brief_is_left_to_the_column_contract(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = Path(tmp)
+            self._write_brief(run_dir, "—", "- 역할: 기각보관검토\n")
+            text = table(
+                row("1", kind="전개", brief="—", signal="행/1-보고.md", model="opus low"),
+            )
+            found = dag_check.run(text, run_dir)
+            self.assertTrue(any("파견문 칸이 해당 없음(—)" in item for item in found), found)
+
+    def test_missing_expansion_outputs_was_red_and_is_found(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir, text = self._fixture(tmp, bad_output=True)
+            text = self._without_successor(text)
+            found = dag_check.run(text, run_dir)
+            self.assertTrue(any("산출물 범위" in item for item in found), found)
+
+    def test_each_required_expansion_output_is_found_when_missing(self):
+        required_outputs = (
+            "자기 불변식",
+            "자기 보고",
+            "자기가 만든 미착수 자식 행 파일",
+            "파견표.md",
+            "이음새.md",
+        )
+        for required in required_outputs:
+            with self.subTest(required=required), tempfile.TemporaryDirectory() as tmp:
+                run_dir, text = self._fixture(tmp)
+                brief = run_dir / "행/1.d/1.d/1.md"
+                brief.write_text(brief.read_text(encoding="utf-8").replace(required, ""), encoding="utf-8")
+                found = dag_check.check_archive_review_expansions(dag_check.parse_rows(text), run_dir)
+                self.assertTrue(any("산출물 범위" in item for item in found), found)
+
+    def test_foreign_review_does_not_relax_closure(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = Path(tmp)
+            self._write_brief(run_dir, "행/1.d/1.md", "- 역할: 기각보관검토\n")
+            self._write_brief(
+                run_dir,
+                "행/2.d/1.md",
+                "- 역할: 기각보관검토\n"
+                "- 앞선 기각 보관 검토: 행/1.d/1-보고.md\n",
+            )
+            text = table(
+                row("1", kind="전개"),
+                row("1.1", kind="전개", brief="행/1.d/1.md", deps="1",
+                    signal="행/1.d/1-보고.md"),
+                row("1.1.3", brief="행/1.d/1.d/3.md", deps="1.1"),
+                row("2", kind="전개"),
+                row("2.1", kind="전개", brief="행/2.d/1.md", deps="1.1.3",
+                    signal="행/2.d/1-보고.md"),
+            )
+            found = dag_check.check_closure(dag_check.parse_rows(text), run_dir=run_dir)
+            self.assertTrue(any("[폐쇄] 행 2.1" in item for item in found), found)
+
+    def test_closed_scope_and_successor_verification_are_green(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir, text = self._fixture(tmp)
+            self.assertEqual(dag_check.run(text, run_dir), [])
+
+    def test_completed_successor_is_not_reinterpreted(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir, text = self._fixture(tmp, bad_sink=True)
+            rows = dag_check.parse_rows(text)
+            next(row for row in rows if row.id == "1.4").state = "완"
+            found = dag_check.check_archive_review_expansions(rows, run_dir)
+            self.assertEqual(found, [])
+
+    def test_completed_historical_review_is_not_reinterpreted(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir, text = self._fixture(tmp, bad_sink=True, bad_output=True, historical=True)
+            found = dag_check.check_archive_review_expansions(dag_check.parse_rows(text), run_dir)
+            self.assertEqual(found, [])
+
+
 class DocExampleTest(unittest.TestCase):
     """문면이 보여 주는 표는 검산을 통과해야 한다.
 

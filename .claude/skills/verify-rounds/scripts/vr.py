@@ -1595,9 +1595,17 @@ def cmd_심사집계(args) -> int:
     """심사집계 — SKILL.md §7 3단계 「집계」와 §5.3 덮개 검산.
 
     인자: --런 <작업 디렉토리> / --라운드 <N> / --대상 <심사대상.md> /
-    --심사 <심사 산출 파일> (반복) / --정족 <N> / --기수 <N>. 한 기의 산출이
-    여러 파일이면(배치 분할, §5.6 재개) 그 파일 전건을 --심사에 싣는다 —
-    기 번호는 frontmatter `심사자 번호`에서 읽고 같은 기의 판정을 합친다.
+    --심사 <심사 산출 파일> (반복) / --정족 <N> / --기수 <N> /
+    --기각보관 <디렉토리> (선택) / --보관출처 <문자열> (선택, --기각보관과 함께
+    준다). 한 기의 산출이 여러 파일이면(배치 분할, §5.6 재개) 그 파일 전건을
+    --심사에 싣는다 — 기 번호는 frontmatter `심사자 번호`에서 읽고 같은 기의
+    판정을 합친다.
+
+    기각 보관: --기각보관과 --보관출처를 함께 주면, 기각 또는 「승인하되
+    고치지 않는다」로 확정된 항목의 원문(`심사대상.md` 같은 ID 본문 축자)·판정(확정·승인기·
+    기각기·처분)·근거(기각 사유 또는 처분기록)를
+    `<디렉토리>/<출처>-라운드<N>.md`에 쓴다. 항목이 0건이어도 파일은 둔다.
+    둘 중 하나만 주면 exit 2(UsageError)다.
 
     입력 서식: 심사대상.md는 frontmatter `항목: <N>`과 `## <항목 ID>` 절 전건.
     심사 산출은 `계약/심사.md`의 산출 서식이다. 판정·처분·승계 줄은 계약이
@@ -1621,6 +1629,11 @@ def cmd_심사집계(args) -> int:
     exit 1이다 — 어긋난 집계가 적용에 읽히지 않는다.
     stdout: 항목·기별 덮개·확정 수치 요약.
     """
+    기각보관 = getattr(args, "기각보관", None)
+    보관출처 = getattr(args, "보관출처", None)
+    if bool(기각보관) != bool(보관출처):
+        raise vrlib.UsageError("--기각보관과 --보관출처는 함께 준다")
+
     대상경로 = getattr(args, "대상")
     대상문 = vrlib.read_text(대상경로)
     대상절 = vrlib.split_sections(대상문)
@@ -1629,6 +1642,12 @@ def cmd_심사집계(args) -> int:
     mismatches = vrlib.check_count(대상경로, fm, "항목", len(대상절))
 
     round_dir = _round_dir(args)
+    out = round_dir / "_심사집계.json"
+    try:
+        out.unlink(missing_ok=True)
+    except OSError as e:
+        raise vrlib.UsageError(
+            f"이전 심사 집계를 지우지 못함: {out} ({e})") from e
     상신항목: set[str] = set()
     발견항목: set[str] = set()
     항목json = round_dir / "_항목.json"
@@ -1749,51 +1768,6 @@ def cmd_심사집계(args) -> int:
         "항목수": len(대상들), "항목": rows, "승계": 승계목록,
         "수리": 수리, "무처분": 무처분, "상신": 상신, "전달": 전달, "기각": 기각,
     }
-    out = round_dir / "_심사집계.json"
-    _write_json(out, data)
-    보관경로 = getattr(args, "기각보관", None)
-    보관출처 = getattr(args, "보관출처", None)
-    if (보관경로 is None) != (보관출처 is None):
-        raise vrlib.UsageError("--기각보관과 --보관출처는 함께 준다")
-    archive = None
-    if 보관경로 is not None:
-        if not re.fullmatch(r"[A-Za-z0-9_.-]+", 보관출처):
-            raise vrlib.UsageError(f"보관출처 어휘 위반: {보관출처}")
-        보관대상 = set(기각) | set(무처분)
-        절사전 = {s.title: s for s in 대상절}
-        행사전 = {r["id"]: r for r in rows}
-        parts = [
-            "---", "유형: 기각보관", f"출처: {보관출처}",
-            f"라운드: {getattr(args, '라운드')}", f"항목: {len(보관대상)}", "---", "",
-            "# 기각 보관", "",
-        ]
-        for iid in 대상들:
-            if iid not in 보관대상:
-                continue
-            sec, row = 절사전[iid], 행사전[iid]
-            parts += [f"## {iid}", "", sec.body.rstrip(), "", "### 보관 심사", ""]
-            if row["확정"] == "기각":
-                parts.append("최종 판정: 기각")
-            else:
-                parts.append(f"최종 판정: 승인")
-                parts.append(f"최종 처분: {row['처분']}")
-            for 기 in range(1, 기수 + 1):
-                vote = 관측.get(기, {}).get(iid, {})
-                if not vote:
-                    continue
-                detail = vote["판정"]
-                if vote["처분"]:
-                    detail += f" · {vote['처분']}"
-                if vote["사유"]:
-                    detail += f" · {vote['사유']}"
-                if vote["검토전개 실익"]:
-                    detail += f" · 검토전개 실익: {vote['검토전개 실익']}"
-                parts.append(f"- 심사 {기}: {detail}")
-            parts.append("")
-        archive_dir = Path(보관경로)
-        archive_dir.mkdir(parents=True, exist_ok=True)
-        archive = archive_dir / f"{보관출처}-라운드{getattr(args, '라운드')}.md"
-        vrlib.write_text(archive, "\n".join(parts).rstrip() + "\n")
     lines = [
         f"항목 {len(대상들)}건, 기수 {기수}, 정족 {정족}",
         *[f"기 {기}: 덮개 {len(관측.get(기, {}))}건" for 기 in range(1, 기수 + 1)],
@@ -1802,8 +1776,61 @@ def cmd_심사집계(args) -> int:
         f"승계 {len(승계목록)}건",
         f"산출: {out}",
     ]
-    if archive is not None:
-        lines.append(f"기각 보관: {archive}")
+    if 기각보관:
+        if not re.fullmatch(r"[A-Za-z0-9_.-]+", 보관출처):
+            raise vrlib.UsageError(f"보관출처 어휘 위반: {보관출처}")
+        대상원문맵 = {s.title: s.body for s in 대상절}
+        보관대상 = 기각 + 무처분
+        보관경로 = Path(기각보관) / f"{보관출처}-라운드{getattr(args, '라운드')}.md"
+        blocks = [
+            "---", "유형: 기각보관", f"출처: {보관출처}",
+            f"라운드: {getattr(args, '라운드')}", f"항목: {len(보관대상)}", "---", "",
+            f"# 기각 보관 — {보관출처} 라운드{getattr(args, '라운드')}", "",
+        ]
+        if not 보관대상:
+            blocks.append("없음")
+        else:
+            row색인 = {r["id"]: r for r in rows}
+            for iid in 보관대상:
+                row = row색인[iid]
+                blocks.append(f"## {iid}")
+                blocks.append("")
+                blocks.append("### 원문")
+                blocks.append(대상원문맵[iid])
+                blocks.append("")
+                blocks.append("### 판정")
+                blocks.append(
+                    f"확정: {row['확정']} · 승인기 {row['승인기']} · "
+                    f"기각기 {row['기각기']} · 처분: {row['처분'] or '없음'}")
+                blocks.append(f"최종 판정: {row['확정']}")
+                if row["처분"]:
+                    blocks.append(f"최종 처분: {row['처분']}")
+                blocks.append("")
+                blocks.append("### 근거")
+                if row["기각사유"]:
+                    for 기, 사유 in row["기각사유"].items():
+                        blocks.append(f"- 기 {기}: {사유}")
+                elif row["처분기록"]:
+                    for 기, 처분값 in row["처분기록"].items():
+                        blocks.append(f"- 기 {기}: {처분값}")
+                else:
+                    blocks.append("없음")
+                blocks.append("")
+        try:
+            보관경로.parent.mkdir(parents=True, exist_ok=True)
+        except OSError as e:
+            return vrlib.emit([vrlib.Mismatch(
+                file=str(보관경로), line=None,
+                expected="기각 보관 디렉터리 생성", actual=str(e))], [])
+        try:
+            보관경로.write_text("\n".join(blocks), encoding="utf-8")
+        except OSError as e:
+            return vrlib.emit([vrlib.Mismatch(
+                file=str(보관경로), line=None,
+                expected="기각 보관 파일 쓰기", actual=str(e))], [])
+        lines.append(f"기각 보관: {보관경로} — {len(보관대상)}건")
+
+    _write_json(out, data)
     return vrlib.emit([], lines)
 
 

@@ -194,6 +194,11 @@ def build_target(target: str, check: bool, bless: bool) -> tuple[bool, list[str]
         else:
             new_manifest["overlays"][rel] = cur
 
+    if check:
+        for rel in sorted(set(manifest.get("overlays", {})) - set(overlay_files)):
+            ok = False
+            msgs.append(f"[{target}] 오버레이 기준 해시 잔존: {rel}")
+
     # 기존 트리와 대조
     existing = iter_files(out_root)
     created = [r for r in outputs if r not in existing]

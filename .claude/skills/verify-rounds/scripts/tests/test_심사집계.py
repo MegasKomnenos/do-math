@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """vr.py 심사집계 하위명령 시험. 직접 실행이 정본(`python .claude/skills/verify-rounds/scripts/tests/test_심사집계.py`).
 
-검사 대상은 열다섯으로 한정한다:
+검사 대상은 스물두 건으로 한정한다:
 ① 통과 — 3기 정족 3에서 항목마다 승인 수를 세어 확정하고, 수리·무처분·상신·기각
    목록과 _심사집계.json을 낸다
 ② 처분 보수 병합 — 갈린 처분에서 보수 순서 최상위가 선다
@@ -15,10 +15,17 @@
 ⑨ 심사검산 통과 — 산출 하나의 기 번호·서식·대상 덮개를 검사하고 집계 파일을 만들지 않는다
 ⑩ 심사검산 대상 누락 — exit 1이고 집계 파일을 만들지 않는다
 ⑪ 심사검산 재개 — `--항목`으로 준 남은 항목만 대조한다
-⑫ 「사용자에게 올린다」의 상신안 칸 누락 — exit 1
-⑬ 「호출자에게 전달」의 검토전개 실익 칸 누락 — exit 1
-⑭ 발견 항목의 「승인하되 고치지 않는다」에도 검토전개 실익 칸을 요구한다
-⑮ 기각·무처분 항목의 원문·판정·근거를 기각 보관 파일에 남긴다
+⑫ 기각 보관 — 기각·무처분 항목의 원문·판정·근거를 `<디렉토리>/<출처>-라운드<N>.md`에 쓴다
+⑬ 기각 보관 0건 — 보관 대상이 없어도 파일은 두고 본문은 「없음」이다
+⑭ 기각 보관 인자 한쪽만 — `--기각보관`·`--보관출처` 중 하나만 주면 exit 2다
+⑮ 기각 보관 산출 순서 — 기각 보관 파일을 성공적으로 쓴 뒤 집계 파일을 쓴다
+⑯ 기각 보관 디렉터리 생성 실패 — 실패 행위와 경로를 내고 집계 파일을 쓰지 않는다
+⑰ 기각 보관 파일 쓰기 실패 — 실패 행위와 경로를 내고 집계 파일을 쓰지 않는다
+⑱ 기각 보관 원문 — 병합·비병합 기각 또는 무처분 항목의 원문이 심사대상 본문과 같다
+⑲ 「사용자에게 올린다」의 상신안 칸 누락 — exit 1
+⑳ 「호출자에게 전달」의 검토전개 실익 칸 누락 — exit 1
+㉑ 발견 항목의 「승인하되 고치지 않는다」에도 검토전개 실익 칸을 요구한다
+㉒ 기각·무처분 항목의 원문·판정·근거를 기각 보관 파일에 남긴다
 그 밖의 검사는 두지 않는다. 재료는 _파이프라인재료.py가 정본이다.
 시험은 임시 디렉토리를 루트 삼아 chdir하고 상대 경로를 준다.
 """
@@ -32,11 +39,13 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import vrlib  # noqa: E402
+import vr  # noqa: E402
 from _파이프라인재료 import 런구축, 심사산출, run_vr  # noqa: E402
 
 
@@ -82,6 +91,7 @@ class ReviewTallyTest(unittest.TestCase):
         self.assertEqual(code, 0, err)
         data = json.loads(vrlib.read_text("런/라운드1/_심사집계.json"))
         self.assertEqual(data["수리"], ["R1-M1", "R1-M2"])
+        self.assertEqual(data["무처분"], [])
         self.assertEqual(data["상신"], ["R1-05"])
         self.assertEqual(data["기각"], [])
         self.assertIn("수리 2", out)
@@ -276,6 +286,163 @@ class ReviewTallyTest(unittest.TestCase):
         self.assertEqual(data["수리"], ["R1-M1", "R1-M2"])
         row = next(r for r in data["항목"] if r["id"] == "R1-M2")
         self.assertEqual(row["승인기"], [1, 2, 3])
+
+    def test_기각보관_파일_기재(self):
+        심사쓰기(1, {"R1-05": "사용자에게 올린다", "R1-M1": "기각", "R1-M2": "승인하되 고치지 않는다"})
+        심사쓰기(2, {"R1-05": "사용자에게 올린다", "R1-M1": "수리한다", "R1-M2": "승인하되 고치지 않는다"})
+        심사쓰기(3, {"R1-05": "사용자에게 올린다", "R1-M1": "수리한다", "R1-M2": "승인하되 고치지 않는다"})
+        code, out, err = run_vr(
+            "심사집계", "--런", "런", "--라운드", "1",
+            "--대상", "런/라운드1/심사대상.md", "--정족", "3", "--기수", "3",
+            "--심사", "런/라운드1/심사_1.md", "--심사", "런/라운드1/심사_2.md",
+            "--심사", "런/라운드1/심사_3.md",
+            "--기각보관", "보관", "--보관출처", "2.7.10.99")
+        self.assertEqual(code, 0, err)
+        보관경로 = Path("보관/2.7.10.99-라운드1.md")
+        self.assertTrue(보관경로.is_file())
+        본문 = vrlib.read_text(보관경로)
+        self.assertIn("## R1-M1", 본문)
+        self.assertIn("## R1-M2", 본문)
+        self.assertIn("관문 3 불성립.", 본문)          # 기각 사유
+        self.assertIn("승인하되 고치지 않는다", 본문)   # 무처분 처분기록
+        self.assertNotIn("## R1-05", 본문)              # 상신 항목은 보관 대상이 아니다
+        self.assertIn(f"기각 보관: {보관경로}", out)
+
+    def test_기각보관_원문은_심사대상_본문과_같다(self):
+        처분표 = {"R1-05": "승인하되 고치지 않는다", "R1-M1": "기각",
+                  "R1-M2": "승인하되 고치지 않는다"}
+        for n in (1, 2, 3):
+            심사쓰기(n, 처분표)
+        code, out, err = run_vr(
+            "심사집계", "--런", "런", "--라운드", "1",
+            "--대상", "런/라운드1/심사대상.md", "--정족", "3", "--기수", "3",
+            "--심사", "런/라운드1/심사_1.md", "--심사", "런/라운드1/심사_2.md",
+            "--심사", "런/라운드1/심사_3.md",
+            "--기각보관", "보관", "--보관출처", "2.7.10.99")
+        self.assertEqual(code, 0, err)
+        self.assertIn(f"기각 보관: {Path('보관/2.7.10.99-라운드1.md')}", out)
+        집계 = json.loads(vrlib.read_text("런/라운드1/_심사집계.json"))
+        self.assertEqual(집계["기각"], ["R1-M1"])
+        self.assertEqual(집계["무처분"], ["R1-05", "R1-M2"])
+
+        대상맵 = {s.title: s.body for s in vrlib.split_sections(
+            vrlib.read_text("런/라운드1/심사대상.md"))}
+        보관맵 = {s.title: s.body for s in vrlib.split_sections(
+            vrlib.read_text("보관/2.7.10.99-라운드1.md"))}
+        for iid in ("R1-05", "R1-M1", "R1-M2"):
+            원문, 판정 = 보관맵[iid].split("\n\n### 판정", 1)
+            self.assertEqual(원문.lstrip("\n").removeprefix("### 원문\n"), 대상맵[iid])
+            self.assertTrue(판정.startswith("\n확정:"))
+
+    def test_기각보관_0건도_파일_생성(self):
+        기본 = {"R1-05": "사용자에게 올린다", "R1-M1": "수리한다", "R1-M2": "수리한다"}
+        for n in (1, 2, 3):
+            심사쓰기(n, 기본)
+        code, out, err = run_vr(
+            "심사집계", "--런", "런", "--라운드", "1",
+            "--대상", "런/라운드1/심사대상.md", "--정족", "3", "--기수", "3",
+            "--심사", "런/라운드1/심사_1.md", "--심사", "런/라운드1/심사_2.md",
+            "--심사", "런/라운드1/심사_3.md",
+            "--기각보관", "보관", "--보관출처", "2.7.10.99")
+        self.assertEqual(code, 0, err)
+        보관경로 = Path("보관/2.7.10.99-라운드1.md")
+        self.assertTrue(보관경로.is_file())
+        self.assertIn("없음", vrlib.read_text(보관경로))
+
+    def test_기각보관은_집계산출보다_먼저_쓴다(self):
+        기본 = {"R1-05": "사용자에게 올린다", "R1-M1": "기각", "R1-M2": "수리한다"}
+        for n in (1, 2, 3):
+            심사쓰기(n, 기본)
+        보관경로 = Path("보관/2.7.10.99-라운드1.md")
+        기록 = []
+        원래_쓰기 = Path.write_text
+        원래_집계쓰기 = vr._write_json
+
+        def 기각보관_쓰기기록(path, data, *args, **kwargs):
+            if path == 보관경로:
+                기록.append("기각보관")
+            return 원래_쓰기(path, data, *args, **kwargs)
+
+        def 집계쓰기기록(path, data):
+            기록.append("심사집계")
+            return 원래_집계쓰기(path, data)
+
+        with patch.object(Path, "write_text", new=기각보관_쓰기기록), \
+             patch("vr._write_json", new=집계쓰기기록):
+            code, out, err = run_vr(
+                "심사집계", "--런", "런", "--라운드", "1",
+                "--대상", "런/라운드1/심사대상.md", "--정족", "3", "--기수", "3",
+                "--심사", "런/라운드1/심사_1.md", "--심사", "런/라운드1/심사_2.md",
+                "--심사", "런/라운드1/심사_3.md",
+                "--기각보관", "보관", "--보관출처", "2.7.10.99")
+
+        self.assertEqual(code, 0, err)
+        self.assertEqual(기록, ["기각보관", "심사집계"])
+        self.assertIn(f"기각 보관: {보관경로}", out)
+
+    def test_기각보관_디렉터리생성실패는_집계산출을_남기지_않는다(self):
+        기본 = {"R1-05": "사용자에게 올린다", "R1-M1": "기각", "R1-M2": "수리한다"}
+        for n in (1, 2, 3):
+            심사쓰기(n, 기본)
+        보관경로 = Path("보관/2.7.10.99-라운드1.md")
+        원래_생성 = Path.mkdir
+
+        def 기각보관_생성실패(path, *args, **kwargs):
+            if path == 보관경로.parent:
+                raise OSError("기각 보관 디렉터리 생성 실패")
+            return 원래_생성(path, *args, **kwargs)
+
+        with patch.object(Path, "mkdir", new=기각보관_생성실패):
+            code, out, err = run_vr(
+                "심사집계", "--런", "런", "--라운드", "1",
+                "--대상", "런/라운드1/심사대상.md", "--정족", "3", "--기수", "3",
+                "--심사", "런/라운드1/심사_1.md", "--심사", "런/라운드1/심사_2.md",
+                "--심사", "런/라운드1/심사_3.md",
+                "--기각보관", "보관", "--보관출처", "2.7.10.99")
+
+        self.assertEqual(code, 1)
+        self.assertEqual(out, "")
+        self.assertIn(str(보관경로), err)
+        self.assertIn("기각 보관 디렉터리 생성", err)
+        self.assertFalse(Path("런/라운드1/_심사집계.json").exists())
+
+    def test_기각보관_파일쓰기실패는_집계산출을_남기지_않는다(self):
+        기본 = {"R1-05": "사용자에게 올린다", "R1-M1": "기각", "R1-M2": "수리한다"}
+        for n in (1, 2, 3):
+            심사쓰기(n, 기본)
+        보관경로 = Path("보관/2.7.10.99-라운드1.md")
+        원래_쓰기 = Path.write_text
+
+        def 기각보관_쓰기실패(path, data, *args, **kwargs):
+            if path == 보관경로:
+                raise OSError("기각 보관 파일 쓰기 실패")
+            return 원래_쓰기(path, data, *args, **kwargs)
+
+        with patch.object(Path, "write_text", new=기각보관_쓰기실패):
+            code, out, err = run_vr(
+                "심사집계", "--런", "런", "--라운드", "1",
+                "--대상", "런/라운드1/심사대상.md", "--정족", "3", "--기수", "3",
+                "--심사", "런/라운드1/심사_1.md", "--심사", "런/라운드1/심사_2.md",
+                "--심사", "런/라운드1/심사_3.md",
+                "--기각보관", "보관", "--보관출처", "2.7.10.99")
+
+        self.assertEqual(code, 1)
+        self.assertEqual(out, "")
+        self.assertIn(str(보관경로), err)
+        self.assertIn("기각 보관 파일 쓰기", err)
+        self.assertFalse(Path("런/라운드1/_심사집계.json").exists())
+
+    def test_기각보관_인자_한쪽만은_exit2(self):
+        기본 = {"R1-05": "사용자에게 올린다", "R1-M1": "수리한다", "R1-M2": "수리한다"}
+        for n in (1, 2, 3):
+            심사쓰기(n, 기본)
+        for 인자, 값 in (("--기각보관", "보관"), ("--보관출처", "2.7.10.99")):
+            code, out, err = run_vr(
+                "심사집계", "--런", "런", "--라운드", "1",
+                "--대상", "런/라운드1/심사대상.md", "--정족", "3", "--기수", "3",
+                "--심사", "런/라운드1/심사_1.md", "--심사", "런/라운드1/심사_2.md",
+                "--심사", "런/라운드1/심사_3.md", 인자, 값)
+            self.assertEqual(code, 2)
 
 
 if __name__ == "__main__":
