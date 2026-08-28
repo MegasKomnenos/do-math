@@ -1,0 +1,2595 @@
+OpenAI Codex v0.149.1
+--------
+workdir: C:\math
+model: gpt-5.6-sol
+provider: openai
+approval: never
+sandbox: danger-full-access
+reasoning effort: high
+reasoning summaries: none
+session id: 01a043c3-6d36-7830-810a-58cfaf84897f
+--------
+user
+파견문: C:\math\.claude\skills\do-dag\파견문_예외.md
+이 파일 전문을 읽고 임무를 실행한다. 반환은 파견문의 반환 서식을 따른다.
+
+행 번호: 2.7.8
+
+검산 명령: python C:\math\.claude\skills\do-dag\scripts\dag_check.py --table C:\math\.sdd\dag\pvsnp-탐사-1\파견표.md
+마커 명령: python C:\math\.claude\skills\do-dag\scripts\dag_marker.py
+스킬 루트: C:\math\.claude\skills\do-dag
+
+반환 텍스트 전문 (행 2.7.8 파견 에이전트의 최종 반환문 그대로):
+
+예외
+코드: 비밀검사경계위반
+사유: 후행 종료보고 2건이 크리덴셜 값을 직접 검사했고 1건은 값을 보고에 남겼다.
+
+--- 반환 텍스트 전문 끝 ---
+
+오케 관측: 행 2.7.8의 목표는 크리덴셜 파일과 값을 읽지 않고, 후행 산출물이 크리덴셜을 직접 입력으로 받았는지·크리덴셜 값을 보고에 남겼는지를 감사하는 것이다(파견문 크리티컬 영역: "비밀 검사 증거 전수성 · 후행 크리덴셜 입력 0건"). 이 반환은 그 감사 결과 자체가 위반(크리덴셜 값이 후행 종료보고 1건에 남아 있다)을 발견했다는 뜻으로 읽힌다. 오케는 이 반환 텍스트의 내용을 해석하지 않았다 — 첫 줄 `예외`만 보고 처분 절차(사이클 5)를 따랐다.
+
+이 사안은 계약 공통.md의 PII 조항("PII를 인용하지 않는다 · 추상 지칭으로 쓴다")과 크리덴셜 비인용 불변식에 정면으로 걸린다. 처분 전 실측이 특히 중요하다 — 어느 종료보고 파일에 크리덴셜 값이 실제로 남아 있는지, 그 값이 무엇인지, 유출 범위(그 파일이 커밋됐는지·다른 파견문 입력으로 재사용됐는지)를 먼저 확인한다. 크리덴셜 값 자체는 이 예외 기록과 반환문에 절대 옮겨 적지 않는다 — 파일 경로와 좌표, 위반 유형만 기록한다.
+
+처분 지침: 위 처분표에 따라 실측 결과로 처분한다. 크리덴셜 값이 실제로 파일에 남아 있으면, 그 값을 제거하는 수리가 우선이다(공통 계약 「수리가 필요하면 수리 행을 그 행의 형제로 추가하고... 원래 행을 미착수로 되돌린다」). 이 사안이 공통 계약의 상신 사유 넷(불가침을 열어야 목표가 닫힌다 · 사용자가 확정한 문면의 내용·적용 범위를 바꿔야 한다 · 비가역 행위가 필요하다 · 코퍼스에 근거 없는 것을 발명해야 한다)에 해당하는지 — 특히 크리덴셜 값이 이미 커밋되어 히스토리에 남았다면 그 제거는 비가역 행위에 준하는 판단을 요구할 수 있다 — 판단해 필요하면 상신으로 반환한다.
+codex
+파견문 전문과 작업 기억 색인을 먼저 읽겠습니다. 그다음 크리덴셜 값은 출력하지 않고, 파일 경로·좌표·버전 관리 범위만 실측하겠습니다.
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "Get-Content -Raw -LiteralPath 'C:\\math\\.claude\\skills\\do-dag\\파견문_예외.md'; \""'`n<<<MEMORY_INDEX>>>`n"; Get-Content -Raw -LiteralPath '"'C:\\math\\기억\\색인.md'" in C:\math
+ succeeded in 5073ms:
+# 파견문: 예외 에이전트
+
+오케가 이 파일의 경로 한 줄로 파견한다. 모델은 `모델_프리셋`과 배정표의 예외 에이전트 값을 따른다. `claude-full`·`mixed`에서 fable 한도 소진으로 난 예외만 `opus high`다. 함께 오는 것은 행 번호와 반환 텍스트 전문, 또는 검산 출력 전문이고, 어느 쪽이든 **검산 명령·마커 명령·스킬 루트가 축자로 함께 온다**. 첫 행동 전에 `<스킬 루트>/계약/공통.md` 전문을 읽는다. 아래에서 그 두 명령을 그대로 돌린다 — scripts 경로도 파견표 경로도 재도출하지 않는다.
+
+---
+
+너는 do-dag 예외 에이전트다. 한 행이 예상 밖으로 끝났거나 파견표가 검산에 걸렸다. **상황을 실측하고 처분하고 죽는다.**
+
+## 대상이 표일 때
+
+함께 온 것이 행 번호가 아니라 검산 출력이면 대상은 파견표 자체다. 발견마다 그 행을
+저작한 자리를 실측해 표를 고친다. 함께 받은 검산 명령이 exit 0이 될 때까지 돌린다.
+산출은 `행/표.예외.md`다. 완료 반환의 첫 줄은 `DONE`, 둘째 줄은
+`닫은 발견: <수>`다. 아래 절은 대상이 행일 때의 절차다.
+
+## 첫 행동
+
+1. `파견표.md`에서 그 행과 선행·후행을 본다.
+2. 그 행의 파견문 파일과, 있어야 할 완료 신호 좌표의 실물을 확인한다.
+3. 반환 텍스트의 주장을 액면 수용하지 않는다 — 파일 실물이 정본이다.
+4. 첫 줄이 공통 반환어휘 밖이면 `반환형식위반`으로 기록한다.
+5. 둘째 줄이 `코드: 고아진행`이면 오케 사망으로 주인이 사라진 행이다. 실물만 보고
+   처분한다. 부분 산출이 있으면 worktree를 지우지 않는다.
+6. 둘째 줄이 `코드: 고아상신중`이면 상신을 올려 두고 주인이 사라진 행이다.
+   `결정/상신-<행번호>-*.md`가 실재하면 그 좌표를 행 파일 `정본:` 슬롯에 싣는다.
+   상태를 `미착수`로 되돌린다. 결정 파일이 없으면 상신 사유를 실물로 재확인한다.
+   공통 첫 줄 `상신` 뒤에 사유와 실측 좌표를 추가해 반환한다.
+7. 대상이 싱크이면 반환 첫 줄이 아니라 결산 frontmatter `상태:`로 상세 결과를 판정한다.
+
+## 처분
+
+```전거 예외처분
+요지: 미착수 · 완 · 파킹 · 상신 반환
+
+처분은 그 행의 상태를 바꾸거나 상신하는 것으로 끝난다.
+
+| 처분 | 언제 | 함께 하는 것 |
+|---|---|---|
+| `미착수` | 다시 쏘면 되는 것 — 컨텍스트 부족, 리밋·장애로 인한 소멸, 지시 결함, 결산 상태 `대기`, 주인이 사라진 행 중 결정 파일이 실재하는 `고아상신중` | 행 파일을 보강한다. 부족했던 좌표·값·정본을 채운다. `대기`는 보강할 것이 없다 |
+| `완` | 실물이 완료 기준을 이미 충족하는데 반환 문면만 어긋난 것 | 근거를 예외 기록에 남긴다 |
+| `파킹` | 진행 불가 — 보수 기본형조차 서지 않는 것 | 사유와 재개 조건을 예외 기록에 남긴다 |
+| `상신` 반환 | 처분이 `상신사유`에 닿는 것 | 파견표 상태는 예외가 바꾸지 않는다. 오케가 `반환어휘`대로 기입한다. 사유와 실측을 예외 기록에 적고 공통 첫 줄 `상신` 뒤에 사유와 좌표를 추가한다 |
+
+수리가 필요하면 수리 행을 그 행의 형제로 추가하고 그 층의 싱크 선행에 더한 뒤,
+원래 행을 `미착수`로 되돌린다. 수리 행은 작업자로 세운다.
+
+**예외 파견의 입력은 대상이 무엇이냐로 갈린다.**
+
+| 대상 | 함께 오는 것 |
+|---|---|
+| 행 | 행 번호 · 반환 텍스트 전문 · 검산 명령 축자 · 마커 명령 축자 · 스킬 루트 |
+| 파견표 | 검산 출력 전문 · 검산 명령 축자 · 마커 명령 축자 · 스킬 루트 |
+```
+
+상신 사유 넷은 【상신사유 · 불가침을 열어야 목표가 닫힌다 · 사용자가 확정한 문면의 내용·적용 범위를 바꿔야 한다 · 비가역 행위가 필요하다 · 코퍼스에 근거 없는 것을 발명해야 한다】다.
+
+새 행의 선행은 자기 범위 안만 지목한다. 예외 처분은 파견표 상태 변경과 예외 기록으로 끝난다. 수리 자체는 완료 기준을 갖는 수리 행이 한다. 그 파견문은 `references/서식.md` 「파견 행」의 필수 슬롯 전건을 갖춘다.
+
+**모델 배정을 바꾸면 파견표 모델 열과 그 행 파일의 `모델 배정 근거:` 슬롯을 같은 편집에서 함께 고친다.** 둘이 갈리면 파견표가 이긴다.
+
+**진행 불가를 파킹으로 처분할 때 질문을 올리지 않는다.** 종결 보고가 사용자에게 일괄로 간다.
+
+## 경계
+
+- 사용자가 확정한 목표·완료 기준에 손대야 하면 고치지 말고, **보수 기본형으로 진행하는 행**을 세운다. 그 행의 상태는 `미착수`다. 파견문의 `반환:` 슬롯에 완료 첫 줄 `DONE-비준`을 축자로 싣는다. `비준`은 그 행이 실제로 돌고 반환했을 때 오케가 기입한다. 보수 기본형조차 서지 않으면 상신이다(사유: 사용자 확정 변경).
+- 예외가 싱크 행이면 메인 체크아웃이 병합 중간 상태로 남았을 수 있다. `git diff --cached --name-only`·`git ls-files --unmerged`에 무언가 보이면 먼저 **병합 lease의 소유자를 확인한다**(`<마커 명령> lease --status`). 그 행이 소유자이거나 lease가 비어 있을 때만 `git reset --merge`로 되돌리고, 남이 쥐고 있으면 손대지 않는다. 되돌린 뒤 lease를 반납한다. 충돌 자체는 해소하지 않고 분해로 돌아간다. 노드 worktree의 산출은 지우지 않는다.
+- 그 행의 결산 파일이 있으면 `단계:`를 읽는다. 재개는 처음부터가 아니라 그 다음부터다 — `커밋완료 <SHA>`면 병합·커밋은 이미 선 것이고 회수부터 남았다. 값을 액면으로 받지 않고 그 값이 가리키는 다음 행위가 이미 섰는지 실물로 잰다(`계약/싱크.md` 재개 규약의 실측 표). `종결`이면 grant·lease까지 놓인 뒤이므로 남은 처분은 없다.
+
+## 산출
+
+- 예외 기록: `행/<번호>.예외.md`. 담을 것은 실측한 것(증거 블록), 처분과 근거, 추가한 행 목록.
+- 파견표를 고쳤으면 함께 받은 **검산 명령**을 돌려 exit 0을 확인한다.
+- 공통 최종 반환 계약을 그대로 따른다. 처분 완료의 첫 줄은 `DONE`, 둘째 줄은
+  `처분: <미착수|완|파킹>`이다. 상신의 첫 줄은 `상신`이고 둘째 줄부터 사유와 실측
+  좌표를 추가한다.
+
+
+<<<MEMORY_INDEX>>>
+
+# 색인
+
+`memory-harness` 그래프의 현행 색인이다. layer-3 노드 전체와 반영 수위 이후의 layer-1·layer-2 노드를 나열한다. 수위 이하의 layer-1·layer-2 줄은 `기억/색인_아카이브.md`에 둔다.
+
+- layer-3 형식: `- L-#### [주제] -- <현재 내용>`
+- layer-1 형식: `- M-#### [제목] -- <한 줄 요지>`
+- layer-2 형식: `- D-#### [제목] -- basis: <근거 ID> -- <한 줄 요지>`
+
+---
+
+## layer-3
+
+반영 수위: 없음. layer-1·layer-2 노드가 없다.
+
+- L-0001 [검증 설계 원리] -- 검증 신뢰의 네 차원, 사각의 세 축, 거짓 GREEN 방지, 검증 계약, 도구 운용
+- L-0004 [문서 추출과 렌더 판독] -- 바이너리 문서 추출, PDF 페이지 판정, vision 판독, 완전성 검증
+- L-0005 [AI 편향과 작업 방법론] -- 값싼 기본값, 표상 드리프트, 정박 편향, 외부 관점, 사용자 교정 해석
+- L-0006 [기억 하네스 운영] -- 통제 경계, 세 층의 역할, 읽기 경로, 삭제 무결성, 세션 경계
+- L-0009 [스킬 지형과 외래 스킬 각색] -- 스킬 정본의 관할, description 라우팅, 외래 스킬 처리, 각색, 사본 동기화, ponytail 계열
+- L-0012 [지시 거버넌스와 규범 발화] -- 발화층과 실체층, 세 도달 경로, 신호 배치, 지시 분해, 형해화 점검
+- L-0015 [컨텍스트 적재 경제] -- 적재 비용, 보상과 경보, 파일 분할, 성장 파일 선별 출력, 적재 측정
+- L-0016 [위임 파이프라인 운영] -- 상태 파일, 분해와 병렬화, 파견 계약, 재개, 회수 검증, verify-rounds
+- L-0019 [do-dag 실행 체제] -- 발동 조건, 역할과 상태, 분해와 검산, 격리와 병합, 게이트, 검증, 예산
+
+## layer-1
+
+- M-0001 [일반 AI 작업 템플릿 기준선] -- 기존 작업 환경의 구조와 일반 절차를 보존하고 프로젝트 고유 산출물·실행 상태를 제외함
+- M-0002 [do-dag 반환 계약 표준화] -- 공통 첫 줄과 역할별 확장 필드를 분리하고 검사기·계약·예외 처리를 같은 문법으로 맞춤
+- M-0003 [결함 상신과 승인 범위의 분리] -- 사용자 결정 필요 여부를 먼저 판정하고 발견 비용·결정 효과·추천 최종 상태를 계약에 결선함
+- M-0004 [반례 실험 도구 기준선의 병합과 광고·증거 대조] -- 보고 기재가 아니라 증거 실물을 열어 광고와 로그의 어긋남을 잡고, 측정 실패와 결과 부재를 같은 값으로 적는 스키마 결함을 수리 행이 닫음
+- M-0005 [pvsnp-탐사-1 조기 종결 — codex-full 전환과 여섯 마디 파킹] -- 다섯 마디 전개의 자식은 전부 여섯 마디라 예외가 재분해 없이 못 닫힘. Codex 첫 줄 위반이 지시로 안 막힘
+- M-0006 [pvsnp-탐사-1 앞선 판독 비열람 접근 감사 수리분 커밋 — 검증런 0단계 기준선 확립] -- 앞선 세션의 `56.8` 수리 산출 19건이 미커밋 상태로 인계돼, verify-rounds 0단계 전 대행 커밋. do-dag 완료-커밋 미결합 재현
+- M-0007 [pvsnp-탐사-1 전개 2.7.10.59 결정 소비분 커밋 — 검증런 2.7.10.59.1 0단계 기준선 확립] -- 결정 소비 산출 13건이 미커밋 상태로 인계돼, verify-rounds 0단계 전 대행 커밋. do-dag 완료-커밋 미결합 국면 내 3회째 재현
+- M-0008 [검증런 2.7.10.59.1 완주 — 두 라운드, 결정 소비 결손 5건 수리, 라운드 커밋 절차의 메모리 노드 결합 누락] -- 두 라운드로 결손 5건 수리·적용, dag_check green 유지. verify-rounds 라운드 커밋 절차와 commit-harness 결합 불변식의 절차 충돌 실측
+- M-0009 [pvsnp-탐사-1 전개 2.7.10.59 결정 소비분 커밋 — 검증런 2.7.10.59.2 0단계 기준선 확립] -- 행 14~23·파견표 미커밋 인계를 대행 커밋. do-dag 완료-커밋 미결합 국면 내 4회째 재현, 공유 산출물을 나눠 검사하는 자매 검증런 구조가 재확인 비용을 더함
+- M-0010 [pvsnp-탐사-1 전개 2.7.10.59 결정 소비분 커밋 — 검증런 2.7.10.59.5 0단계 기준선 확립] -- 행 44~53 결정 소비 산출 10건이 미커밋 상태로 인계돼 대행 커밋. 형제 검증런 병행 실행을 직접 관측(파견표.md는 형제 커밋이 선점)
+- M-0011 [pvsnp-탐사-1 전개 2.7.10.59 결정 소비분 커밋 — 검증런 2.7.10.59.4 0단계 기준선 확립] -- 행 34~43 결정 소비 산출 10건이 미커밋 상태로 인계돼 대행 커밋. do-dag 완료-커밋 미결합 국면 내 6회째 재현, dream 검토 문턱 초과
+- M-0012 [pvsnp-탐사-1 전개 2.7.10.59 결정 소비분 커밋 — 검증런 2.7.10.59.3 0단계 기준선 확립과 병행 세션 번호 재충돌 교정] -- 결정 소비 산출 10건 대행 커밋 도중 번호가 병행 세션(.2, .4)과 두 차례 연속 충돌해 M-0012로 재번호해 전진 수정. 다자간 번호 경합 재현 3회째
+- M-0013 [검증런 2.7.10.59.2 완주 — 두 라운드, L07~L11 결정 소비 결손 3건 수리, 병행 자매 검증런 Git 색인 공유 관측] -- 두 라운드로 결손 3건 수리·적용, dag_check green 유지. `git add` 직후 공유 색인에 자매 세션의 파일이 함께 스테이징되는 것을 실측하고 즉시 제외
+- M-0014 [검증런 2.7.10.59.3 완주 — 두 라운드, L12~L16 결정 소비 결손 4건 수리, 병합 묶음의 독립 수렴 관측] -- 두 라운드로 결손 4건 수리·적용, dag_check green 유지. 수리자 3기가 독립으로 같은 결함을 발견해 병합 묶음으로 수렴하고, 기각된 항목의 근본 문제를 다음 라운드가 정확한 위치로 재포착한 사례를 실증
+- M-0015 [pvsnp-탐사-1 전개 2.7.10.59 결정 소비분 커밋 — 검증런 2.7.10.59.6 0단계 기준선 확립] -- 누적 검증런 파견문(`54.md`·`60.md`)과 `파견표.md`가 미커밋 상태로 인계돼 대행 커밋. do-dag 완료-커밋 미결합 국면 내 7회째 재현, 대상이 작업자 행에서 파견문 자체로 확장
+- M-0016 [pvsnp-탐사-1 L17 부분 2/4 수리 산출물 커밋 — 검증런 2.7.10.37 0단계 기준선 확립] -- `L17-part2.md`가 미커밋 상태로 인계돼 워크트리(`dag/pvsnp-탐사-1/2.7` 브랜치)에서 대행 커밋. do-dag 완료-커밋 미결합 국면 내 8회째 재현, 메인 저장소와 워크트리 브랜치의 커밋 경계를 실측
+- M-0017 [pvsnp-탐사-1 L17 부분 1/4 재판독 산출물 커밋 — 검증런 2.7.10.35 0단계 기준선 확립] -- `L17-part1.md`가 미커밋 상태로 인계돼 대행 커밋. 형제 행(part2·part3)에는 이미 적용된 기준선 절차가 part1에는 빠져 있었음을 실측, do-dag 완료-커밋 미결합 국면 내 9회째 재현
+- M-0018 [pvsnp-탐사-1 L21 재판독 산출물 커밋 — 검증런 2.7.10.51 0단계 기준선 확립] -- `L21.md`가 미커밋 상태로 인계돼 대행 커밋. do-dag 완료-커밋 미결합 국면 내 10회째 재현. 조사 포크가 선례를 정확히 인용했으나 자기 권한 밖의 상신 대기를 시도한 사례를 실측
+- M-0019 [pvsnp-탐사-1 L01~L11 재판독 산출물 커밋 — 검증런 2.7.10.54 0단계 기준선 확립] -- L02~L11 산출물 10건이 미커밋 인계돼 L01과 함께 대행 커밋. do-dag 완료-커밋 미결합 국면 내 12회째 재현. verify-rounds 산출물이 노드 worktree·메인 체크아웃 두 저장소에 걸치는 첫 사례 — vr.py 단일 cwd 전제와 충돌해 산출물/정본 분할선을 명시로 그음
+- M-0020 [pvsnp-탐사-1 전개 2.7.10.55 산출물 커밋 — 검증런 2.7.10.55.1 0단계 기준선 확립] -- 기각 보관 검토전개 산출 17건이 미커밋 인계돼 대행 커밋. 국면 내 13회째 재현이자 상신 경로를 탄 첫 대행 커밋(결정 `상신-2.7.10.55.1-1.md`). dream 후보 둘: 【커밋금지】에 기준선 커밋 예외를 명시할 것, 전개가 파견표 행 번호를 바꿀 때 자식 파견문의 인용 번호를 검산할 것
+- M-0021 [pvsnp-탐사-1 L05 재작업 산출물 커밋 — 검증런 2.7.10.55.5 완주와 0단계 기준선 확립] -- L05.md·4-보고.md가 미커밋 인계돼 두 저장소에서 각각 대행 커밋(국면 내 14회째 재현). 메인 저장소 dag pre-commit 게이트에 처음 걸려 `dag_marker.py allow`로 grant 발급 후 통과. 라운드 1회 완주 — 수리 1건 제기, 심사 2기 독립 기각(정족 미달), 적용 0건
+- M-0022 [pvsnp-탐사-1 L02 수식 표기 수리 산출물 커밋 — 검증런 2.7.10.55.7 0단계 기준선 확립] -- L02.md·6-보고.md가 미커밋 인계돼 두 저장소에서 각각 대행 커밋(국면 내 15회째 재현). 메인 저장소 dag pre-commit 게이트가 M-0021 이후 재차 재현해 grant 발급 후 통과. Bash 도구 Windows 경로는 슬래시로 써야 함을 재확인(백슬래시가 POSIX 셸에 소거됨)
+- M-0023 [DAG 기록을 .sdd 작업 공간으로 이전하고 실행 산출물을 분리함] -- `dag/` 기록을 `.sdd/dag/`로 이전하고 원시 로그·작업트리 채록·문헌 추출물을 무시함
+- M-0024 [do-dag와 verify-rounds 계약을 현재 검증 흐름에 맞춤] -- 구형 완료 계약·Codex xhigh 노력값·검증런 책임 경계를 반영하고 미러와 직접 실행 테스트를 통과함
+- M-0025 [P 대 NP 연구 기준 문서와 이슈 추적 규칙을 추가함] -- 연구 용어·P 대 NP 정본 명제·GitHub Issues 운영 규칙을 추적하고 문헌 추출물은 무시함
+- M-0026 [pvsnp-탐사-1 전개 2.7.10.55.12.4 산출물 커밋 — 검증런 2.7.10.55.12.4.1 0단계 기준선 확립] -- 자매 행 넷(`55.12.1`~`55.12.4`)의 완료 산출이 한 번에 미커밋 인계돼 대행 커밋. 국면 내 16회째 재현, 단일 행이 아니라 형제 행군 누적 인계 사례
+- M-0027 [pvsnp-탐사-1 문헌 22건 판독 누적 산출물 커밋 — 검증런 2.7.6 0단계 기준선 확립] -- `dag_measure changes` 현존 43건이 전건 미커밋 인계돼 워크트리에서 대행 커밋. 국면 내 17회째 재현, 산출물이 파견문 실측으로 직접 닫혀 분할 재량 없이 vr.py·테스트 포함 전건 커밋, 테스트 게이트 18개 통과
+
+## layer-2
+
+(없음)
+
+
+codex
+파견문은 예외 처분 전에 공통 계약 전문을 요구합니다. 공통 계약과 do-dag 실행·위임 기억 노드를 읽고, 반환문의 주장을 실물과 대조하겠습니다.
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "Get-Content -Raw -LiteralPath 'C:\\math\\.claude\\skills\\do-dag\\계약\\공통.md'; \""'`n<<<MEMORY_FILES>>>`n"; rg --files '"'C:\\math\\기억' | rg 'L-0019|L-0016'" in C:\math
+ succeeded in 5168ms:
+# 계약: 공통 규율
+
+전 파견 에이전트가 적재한다.
+
+- 슬롯은 채우거나 **"없음"을 명시**한다. 침묵은 미완성이다.
+- **불변식 적재**: 첫 행동으로 `불변식:` 슬롯의 파일 전건을 읽는다. 파견문 임무와
+  불변식이 어긋나면 착수하지 않는다. 첫 줄 `예외`, 둘째 줄 `코드: 불변식충돌`로
+  반환한다. 불변식 항목이 자기 목적과 충돌하면 기계적으로 집행하지 않고 상신한다.
+  기존 산출을 읽지 말라는 지시는 불변식 파일을 차단하지 않는다.
+- **파손 검출**: 받은 파견문·지급물에 인코딩 파손이 있으면 임무를 역추정하지 않는다.
+  파손은 `?` 연속 치환·깨진 경로·판독 불능 문자다. 첫 줄 `예외`, 둘째 줄
+  `코드: 파손`으로 반환한다.
+- **작업 디렉토리 확인**: 착수 전에 `작업 디렉토리:` 슬롯 값에서
+  `git rev-parse --show-toplevel`을 돌린다. 결과가 슬롯 값과 다르면 착수하지 않는다.
+  첫 줄 `예외`, 둘째 줄 `코드: 작업디렉토리불일치`로 반환한다. 일치 결과는 보고에 적는다.
+- 산출은 반드시 **파일이 정본**이다. 반환 텍스트는 신호일 뿐이다.
+- **완료 신호는 그 행의 실행이 낳는다.** 저작 주체가 미리 만들지 않는다.
+- **상신 사유 넷** — 【상신사유 · 불가침을 열어야 목표가 닫힌다 · 사용자가 확정한 문면의 내용·적용 범위를 바꿔야 한다 · 비가역 행위가 필요하다 · 코퍼스에 근거 없는 것을 발명해야 한다】. 어떤 완료 기준도 그 권한을 만들지 못하는 경우가 상신이고, 그 밖은 집행하고 귀속한다.
+- **발명의 정의**: 발명은 근거 없는 사실·수치·전거를 지어내는 것이다. 확보한 원자료에 근거한 내용의 생성·재구성·판단은 발명이 아니라 작업의 본체다. 그 내용이 딛는 원자료 좌표를 산출에 남긴다.
+- **원자료** — 【원자료 · 작업 대상에 대한 사실·근거의 원본 · 상시 열람 자산이다 · 봉쇄·백지 조항은 산출물에만 걸린다】. 필요한 원자료가 지급물에 없으면 저장소에서 직접 연다. 저장소에도 없으면 확보(웹 검색·수급 도구·저장소 등록)를 먼저 시도하고, 확보가 실패한 경우에만 미확인 표지를 남긴다. 시도와 결과를 보고에 적는다.
+- **불가침** — 【불가침 · 결정/ 아래 결정 파일 「결정」 절의 사용자 응답과 확정 문면】. 어떤 완료 기준으로도 열리지 않는다.
+- **반증 의무** — 【반증의무 · 파견문·입력과 어긋난 지점을 발견하면 산출에 기재한다 · 없으면 「없음」을 명시한다】.
+- **하위 파견 동기 실행** — 【동기파견 · 완료 통지를 기다리며 턴을 마치지 않는다 · 대기가 필요하면 포그라운드 대기 호출을 반복한다 · 병행은 호출 여럿을 한 메시지에 담는다】. 파견을 여는 행(검증런)에 걸린다.
+- **산출 이름** — 【산출이름 · <번호>는 행 번호의 마지막 마디이고, 파일은 그 행이 속한 .d/ 아래에 놓인다】. 그 행에 실린 좌표는 파견문 `산출:` 슬롯이 정본이다.
+- 【PII · PII를 인용하지 않는다 · 추상 지칭으로 쓴다】.
+- 계약이 `계약/…`·`references/…`로 가리키는 상대 경로는 **스킬 루트 기준**이다.
+- **문체**: 볼드는 판정 결과와 불변식 머리에만 쓴다. 기록은 한 자리에 살고 가리킴은 한 방향만 간다. 사실·근거·영향으로 쓰고 서사·평가어를 얹지 않는다.
+- **작문**: 네 산출은 다음 행이 읽는 입력이다. `.claude/skills/write-for-reader/references/에이전트_채널.md`의 넷을 적용한다 — 범위·좌표를 닫힌 형태로, 지시와 배경을 갈라서, 반환 서식을 지정해서, 부재를 명시해서 쓴다. 위 「없음」 명시와 반환 어휘 규율이 그중 둘의 이 스킬 판이다. 같은 대상을 앞 행이 부른 말과 같은 말로 부른다 — 말이 바뀌면 다음 행이 다른 대상으로 읽는다.
+
+```전거 반환어휘
+요지: DONE · DONE-비준 · 상신 · 예외
+
+**모든 파견 에이전트는 어떤 경우에도 최종 반환을 이 형식에 맞춘다.** 성공·실패·조기
+중단·입력 파손에도 예외가 없다. 첫 줄은 아래 네 값 중 하나만 쓴다. 첫 줄 앞에는
+제목·설명·목록·코드 울타리·빈 문단을 두지 않는다.
+
+| 첫 줄 | 뜻 |
+|---|---|
+| `DONE` | 완결했다 |
+| `DONE-비준` | 완결했으나 사용자 비준이 남았다 |
+| `상신` | 상신 사유가 있다 |
+| `예외` | 정상 완결·비준·상신으로 처리할 수 없다 |
+
+역할 계약은 이 네 값을 바꾸거나 대체하지 않는다. 역할 계약은 공통 필드 뒤에 필요한
+필드만 추가한다. `상신`은 둘째 줄에 `사유: <한 줄>`을 쓴다. `예외`는 둘째 줄에
+`코드: <한 낱말>`, 셋째 줄에 `사유: <한 줄>`을 쓴다. 증거 좌표는 그 뒤에 추가한다.
+
+오케는 첫 줄의 한 낱말만 보고 처분한다. `DONE`은 상태 `완`, `DONE-비준`은 `비준`,
+`상신`은 `상신중`, `예외`는 `예외`로 기입한다. 네 값 밖의 첫 낱말은
+`반환형식위반` 예외다. 오케는 문면을 해석하지 않고 상태를 `예외`로 기입한다.
+
+싱크도 공통 반환어휘만 쓴다. 싱크의 상세 결과는 결산 frontmatter `상태:`가 진다.
+오케는 싱크 반환을 상태 열에 기입하기 전에 `dag_check.py --sink-return <행번호>
+<첫 낱말>`로 공통 첫 줄과 결산 상태·단계를 대조한다.
+
+`DONE-비준`은 파견문이 그 지시를 축자로 실은 행만 쓴다. 오케는 행이 반환한 뒤에만
+상태 `비준`을 기입한다.
+
+오케가 메인에 종료로 반환할 때도 공통 첫 줄을 쓴다. 교대는 둘째 줄에
+`종류: 교대준비`, 종결은 둘째 줄에 `종류: 종결`을 추가한다. 게이트·상신 중계는
+종료 반환이 아니다.
+```
+
+```전거 귀속
+요지: 바꾼 파일 전부를 보고의 편집 귀속 표에 적는다 — 파일 · 무엇을 · 어느 완료 기준을 위해
+
+**어느 완료 기준에도 귀속되지 않는 편집이 diff에 남으면 미충족이다.**
+
+겨냥 밖 파일이면 왜 겨냥 안에서 닫히지 않았는지를 그 행에 병기한다. 그 사유의
+타당성은 기계가 아니라 싱크와 다음 라운드가 판단으로 본다.
+
+노드 싱크의 첫 판정이 **귀속 대조**다 — worktree의 `git status --porcelain`·diff를
+보고의 편집 귀속 표와 대조한다(실측기 `attrib`). 미귀속 편집이 있으면 병합하지 않고
+결산 상태를 `귀속불일치`로 쓴다. 반환 첫 줄은 `예외`다.
+```
+
+```전거 증거블록
+요지: 실측 주장은 실측기 블록으로만 싣는다
+
+계수·좌표·표 구조·동문성·귀속 대조는 실측기가 낸 증거 블록의 붙여넣기다.
+파일의 바이트 수는 파일시스템이나 파일 바이트를 읽는 명령으로 잰다. 명세의 수치, 문자열 눈대중, 성공한 내용 assertion으로 바이트 수를 대신하지 않는다.
+**블록이 말한 것을 산문이 반복하지 않는다.** 실측기가 못 재는 수치에만 유도 식을
+병기한다.
+
+모든 하위명령이 공통 증거 블록을 낸다 — 명령 축자 · 시각 · 대상 해시 · 결과 · 문맥.
+```
+
+
+<<<MEMORY_FILES>>>
+
+C:\math\기억\layer3\L-0019.md
+C:\math\기억\layer3\L-0016.md
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "Get-Content -Raw -LiteralPath 'C:\\math\\기억\\layer3\\L-0019.md'; \""'`n<<<L0016>>>`n"; Get-Content -Raw -LiteralPath '"'C:\\math\\기억\\layer3\\L-0016.md'" in C:\math
+ succeeded in 4220ms:
+---
+id: L-0019
+layer: 3
+title: do-dag 실행 체제
+convention_version: 23
+---
+
+# do-dag 실행 체제
+
+복잡한 작업을 방향성 비순환 그래프(DAG)로 분해하고 다층 파견으로 실행하는 체제다. 실행 절차의 정본은 `.claude/skills/do-dag/SKILL.md`와 동반 계약이다. Codex는 생성 사본인 `.agents/skills/do-dag/SKILL.md`를 읽는다.
+
+## 발동 조건
+
+do-dag는 확정된 정본이 있는 대규모 실행 작업에 사용한다. 목표와 품질 기준이 아직 열려 있으면 먼저 설계나 착수 협의를 진행한다. 에이전트가 만든 정본은 실행 전에 적대 검토를 거친다.
+
+단일 에이전트가 안전하게 끝낼 수 있는 작업에는 DAG를 만들지 않는다. 분해, 격리, 검산, 병합 비용보다 접합면 위험 감소가 클 때 사용한다.
+
+## 역할과 상태
+
+메인은 국면을 만들고 오케스트레이터를 파견한다. 오케스트레이터는 파견표에 따라 작업 행을 운전한다. 작업자와 검증자는 각 행의 닫힌 계약을 수행한다. 싱크는 노드 산출을 병합하고 귀속과 접합면을 검사한다.
+
+파견표는 실행 상태의 정본이다. 행 파일은 각 노드의 입력, 산출, 완료 기준, 예산을 담는다. 보고문이 파견표와 다르면 파일 상태를 다시 측정한다.
+
+## 분해와 검산
+
+전개는 요구를 원자 항목으로 나누고 각 항목을 실행 행에 연결한다. 검산은 다음 방향을 모두 본다.
+
+- 행에서 정본으로: 행의 주장과 좌표가 실제 정본과 맞는가
+- 정본에서 행으로: 정본의 요구가 적어도 한 행과 완료 기준에 연결되는가
+- 행 사이: 생산자와 소비자의 파일, 형식, 시점이 맞는가.
+
+예시 목록을 닫힌 요구 목록으로 사용하지 않는다. 정본 전체에서 실제 필요한 동작과 산출을 역산한다. 완료 기준은 형식의 존재뿐 아니라 실제 결선을 검사해야 한다.
+
+## 격리와 병합
+
+서로 다른 노드는 독립 작업 공간에서 실행한다. 한 노드의 산출이 다른 노드나 현재 작업 트리에 섞이지 않게 쓰기 집합을 제한한다.
+
+병합 전에는 기준선, 귀속 파일, 변경 파일, 검증 결과를 다시 측정한다. 생성기 산출은 복사보다 현재 기준 트리에서 생성기를 다시 실행하는 편이 안전하다. 줄바꿈 정규화나 플랫폼 차이가 바이트 검사를 깨뜨릴 수 있기 때문이다.
+
+결산 파일은 완료 신호와 재개 좌표를 함께 담는다. 결산은 보고문이 아니라 단계 원장이다.
+
+## 게이트와 상신
+
+게이트는 사용자의 판단이 필요한 시점에서 실행을 멈춘다. 작업자는 다음 조건에서 상신한다.
+
+- 사용자 확정 문면의 내용이나 적용 범위를 바꿔야 한다.
+- 불가침 자산을 수정해야 목표를 닫을 수 있다.
+- 비가역 행위가 필요하다.
+- 지급된 원본에 없는 사실을 발명해야 한다.
+
+상신은 선택지와 추천을 함께 제공한다. 메인은 사용자 결정을 결정 파일에 기록하고, 영향받는 행 파일, 파견표, 불변식, 기준선, 진행 중 에이전트에 전파한다.
+
+## 검증 체제
+
+do-dag는 운전성, 정합성, 충족성을 구별해 검증한다.
+
+- 운전성은 오케스트레이터가 파일과 명령만으로 행을 실행할 수 있는지 본다.
+- 정합성은 행의 주장과 정본이 일치하는지 본다.
+- 충족성은 모든 행을 끝냈을 때 목표의 요구가 실제로 닫히는지 본다.
+
+검증런은 실제 파일과 실행 결과를 근거로 발견을 낸다. 수리 범위를 넘는 결함은 삭제하거나 축소하지 않고 검토전개 또는 상신 경로로 보낸다.
+
+## 예산과 측정
+
+모델, 노력, 토큰 예산의 현행 값은 `.claude/skills/do-dag/전거/파견단위.md`에서 읽는다. 렌더된 표나 기억 노드의 숫자를 정본으로 사용하지 않는다.
+
+예산은 분해 시점의 설계 도구다. 완료된 작업이 예산을 넘었다는 사실만으로 산출을 폐기하지 않는다. 초과가 품질, 비용, 재개 가능성에 미친 영향을 따로 판정한다.
+
+오케스트레이터가 계속 읽는 성장 파일은 전문 재독을 피한다. 검사 스크립트가 현재 파견 가능한 행과 진행 행만 선별 출력하게 한다. 선별 출력과 전체 검산은 같은 상태 술어를 공유한다.
+
+## 스킬 개정
+
+do-dag의 여러 문서에 같은 사실을 복제하지 않는다. 다중 참조 사실은 `전거/` 정본에서 고치고 생성기로 소비 위치를 갱신한다.
+
+스킬 파일을 고친 뒤에는 전거 검사, 스크립트 테스트, 런타임 사본 동기화를 실행한다. 렌더 파일과 생성 사본을 직접 고치지 않는다.
+
+
+<<<L0016>>>
+
+---
+id: L-0016
+layer: 3
+title: 위임 파이프라인 운영
+convention_version: 23
+---
+
+# 위임 파이프라인 운영
+
+메인 에이전트와 서브에이전트가 여러 단계로 작업할 때 쓰는 운영 원리다. 실제 파견은 사용자 지시와 현재 런타임 권한이 허용할 때만 한다.
+
+## 상태의 정본
+
+에이전트 컨텍스트는 휘발성 캐시다. 장기 작업의 판정, 진행 상태, 재개 좌표는 파일에 기록한다. 파일에 기록한 요약은 원문을 대체하지 않는다. 원문 문언이 필요한 단계는 원본을 다시 읽는다.
+
+서브에이전트는 큰 산출물을 파일에 직접 쓰고 반환에는 처분, 요약, 경로, 검증 상태를 적는다. 전문을 반환하고 다음 단계가 다시 읽으면 같은 텍스트가 여러 컨텍스트에 반복 적재된다.
+
+## 분해와 병렬화
+
+병렬 작업은 쓰기 집합과 접합면으로 나눈다. 두 작업이 같은 파일이나 같은 상태를 동시에 고치면 병렬화하지 않거나 소유권을 분리한다.
+
+분해 조건은 다음과 같다.
+
+- 각 작업의 입력과 산출 경로를 닫을 수 있다.
+- 작업 사이의 선행 관계를 명시할 수 있다.
+- 병합 후 확인할 접합면을 식별할 수 있다.
+- 한 작업의 실패가 다른 작업의 정본을 오염시키지 않는다.
+
+병렬화는 처리량을 늘리지만 공유 토큰 한도와 회수 비용도 늘린다. 각 단계가 끝날 때 파일로 상태를 결정화해 한도 도달과 세션 교대에 대비한다.
+
+## 파견 계약
+
+파견문에는 다음 항목을 둔다.
+
+- 임무와 완료 기준
+- 읽을 원본과 시작 좌표
+- 수정할 수 있는 파일
+- 수정하지 않을 파일
+- 실행할 검증과 실패 조건
+- 상신 조건
+- 반환 서식
+- 검사 결과가 없을 때 `없음`이라고 적는 규칙.
+
+범위는 닫되 읽기 범위를 고정 파일 목록으로만 제한하지 않는다. 개체를 따라 정의 파일, 정본 문서, 결정 기록을 찾는 절차를 제공할 수 있다. 읽기는 발견 절차로 열고, 쓰기 범위와 임무는 닫는다.
+
+## 통신과 재개
+
+완료 통지의 수신자가 누구인지 런타임마다 확인한다. 재개한 에이전트의 완료 통지가 중간 오케스트레이터가 아니라 메인에 도착할 수 있다. 이 경우 완료 신호 파일을 상태 정본으로 삼는다.
+
+중단된 작업을 재개할 때 이미 완료한 비가역 행위를 반복하지 않는다. 산출 파일, 마지막 판정, 남은 완료 기준을 먼저 읽고 다음 행위부터 잇는다.
+
+판정을 낸 검증자를 새 전범위 검증에 재사용하지 않는다. 기존 지적의 수정 확인과 새로운 독립 검증을 구별한다.
+
+## 회수 검증
+
+메인은 반환문보다 실제 파일을 우선한다. 다음 항목을 확인한다.
+
+- 산출 파일이 실재하고 비어 있지 않은가
+- 변경 범위가 파견 계약과 일치하는가
+- 검증 명령이 실제 대상을 검사했는가
+- 0건 출력이 검색 실패나 스키마 오독이 아닌가
+- “완료”가 목표 완료 기준을 모두 닫는가.
+
+발견 문장의 부정을 그대로 완료 기준으로 뒤집지 않는다. “X가 없다”를 “X를 만든다”로만 바꾸면 X를 읽고 쓰는 접합면이 빠질 수 있다. 수리가 바꾸는 구조의 정의, 읽기, 쓰기, 검증 위치를 함께 닫는다.
+
+## verify-rounds
+
+완성된 산출물의 다중 검토는 `.claude/skills/verify-rounds/SKILL.md`를 따른다. Codex는 생성 사본인 `.agents/skills/verify-rounds/SKILL.md`를 읽는다. 검증자는 근거 없는 지적을 내지 않는다. 수리자는 산출물 밖의 정책을 임의로 바꾸지 않는다. 상신 항목은 읽은 범위, 세계에 대한 물음, 선택지, 변형 가능성, 추천 하나를 갖춘다.
+
+검증 결과는 지적 수가 아니라 처분으로 닫는다. 재현된 결함은 고친다. 틀린 지적은 기각한다. 관할 밖 결정은 상신한다. 지적이 없으면 검사 범위와 통과를 명시한다.
+
+## 모델과 비용
+
+하위 모델로 충분한 작업은 경량 모델을 쓴다. 검증은 생성보다 높은 추론 역량이 필요할 수 있으므로 역할별 하한을 따로 정한다.
+
+대형 항목은 파견 전에 크기를 잰다. 파일 수, 페이지 수, 예상 토큰, 실행 시간을 확인하고 한 작업의 예산을 넘으면 분할하거나 상신한다.
+
+
+codex
+이제 행 2.7.8의 파견표 항목, 선행·후행, 행 파일, 완료 신호 좌표를 확인합니다. 검색은 크리덴셜 파일을 열지 않고 경로와 참조 관계만 대상으로 제한합니다.
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command '$table = '"'C:\\math\\.sdd\\dag\\pvsnp-탐사-1\\파견표.md'; rg -n --fixed-strings '2.7.8' "'$table; Get-ChildItem -LiteralPath '"'C:\\math\\.sdd\\dag\\pvsnp-탐사-1' -Force | Select-Object Name,Mode,Length; git -C 'C:\\math' status --short; git -C 'C:\\math' rev-parse --show-toplevel" in C:\math
+ succeeded in 8943ms:
+156:| 2.7.8 | 파견 | 행/2.d/7.d/8.md | 2.7.6 | 행/2.d/7.d/8-보고.md, 행/2.d/7.d/8-감사목록.tsv | gpt-5.6-terra med | 예외 |
+165:| 2.7.9 | 전개 | 행/2.d/7.d/9.md | 2.7.7.z, 2.7.3, 2.7.4, 2.7.5.z, 2.7.6, 2.7.8, 2.7.10.z | 행/2.d/7.d/9-보고.md | gpt-5.6-sol med | 미착수 |
+283:| 2.7.z | 싱크 | 행/2.d/7.d/z.md | 2.7.7.z, 2.7.3, 2.7.4, 2.7.5.z, 2.7.6, 2.7.8, 2.7.9.z, 2.7.10.z | 행/2.d/7.d/z-결산.md | opus low | 미착수 |
+
+ M .agents/AGENTS.md
+ M .claude/CLAUDE.md
+ M .sdd/dag/marker.json
+ M ".sdd/dag/pvsnp-\355\203\220\354\202\254-1/\355\214\214\352\262\254\355\221\234.md"
+?? ".sdd/dag/pvsnp-\355\203\220\354\202\254-1/\352\262\260\354\240\225/\354\203\201\354\213\240-2.7.6-1.md"
+?? ".sdd/dag/pvsnp-\355\203\220\354\202\254-1/\352\262\260\354\240\225/\354\203\201\354\213\240-2.7.6-2.md"
+?? ".sdd/dag/pvsnp-\355\203\220\354\202\254-1/\355\226\211/2.7.10.55.12.4.1-\354\230\210\354\231\270-codex.md"
+?? ".sdd/dag/pvsnp-\355\203\220\354\202\254-1/\355\226\211/2.7.8-\354\230\210\354\231\270-codex.md"
+?? ".sdd/dag/pvsnp-\355\203\220\354\202\254-1/\355\226\211/2.d/7.d/10.d/55.d/12.d/4.d/1.d/"
+?? ".sdd/dag/pvsnp-\355\203\220\354\202\254-1/\355\226\211/2.d/7.d/10.d/55.d/12.d/4.d/1.\354\230\210\354\231\270.md"
+?? ".sdd/dag/pvsnp-\355\203\220\354\202\254-1/\355\226\211/2.d/7.d/8-codex.md"
+?? ".sdd/dag/pvsnp-\355\203\220\354\202\254-1/\355\226\211/2.d/7.d/8-\352\260\220\354\202\254\353\252\251\353\241\235.tsv"
+?? ".sdd/dag/pvsnp-\355\203\220\354\202\254-1/\355\226\211/2.d/7.d/8-\353\263\264\352\263\240.md"
+?? ".sdd/dag/pvsnp-\355\203\220\354\202\254-1/\355\226\211/2.d/7.d/\352\270\260\352\260\201\353\263\264\352\264\200/2.7.6-\353\235\274\354\232\264\353\223\2341.md"
+?? ".sdd/dag/pvsnp-\355\203\220\354\202\254-1/\355\226\211/_\354\230\210\354\231\270\354\236\205\353\240\245_2.7.8.md"
+C:/math
+Name      Mode  Length
+----      ----  ------
+결정      d---- 
+행        d---- 
+기준선.md -a--- 32327
+이음새.md -a--- 4998
+파견표.md -a--- 38573
+
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "Get-Content -Raw -LiteralPath 'C:\\math\\.sdd\\dag\\pvsnp-탐사-1\\행\\2.d\\7.d\\8.md'" in C:\math
+ succeeded in 5189ms:
+---
+행: 2.7.8
+유형: 파견
+---
+
+# 최종 경계 감사 조사
+
+- 목표: 행 `2.7.6` 뒤의 최종 커밋 후보가 학술DB 비밀 검사 증거와 외부 원문 경계를 유지하는지 확인하고 병합 대상을 바이트 단위로 동결한다.
+- 완료 기준: (1) 행 `2.7.6`의 완료 신호와 HEAD 대비 커밋 후보 전건이 실재한다. (2) 행 `2.7.5.8` 보고의 비밀 검사 결과가 0건이고 네 대상 집합의 파일 목록·파일 수가 있어 대상 전수성이 성립한다. (3) 행 `2.7.5.8` 뒤의 파견문과 보고 전건이 크리덴셜 파일을 직접 입력으로 받지 않는다. (4) 저장소 밖 원본 루트 `C:\math-artifacts\pvsnp-탐사-1\2.7\originals\public\`과 `C:\math-artifacts\pvsnp-탐사-1\2.7\originals\subscription\`의 파일을 재귀 열거하고 각 파일의 SHA-256을 계산한다. 존재하지 않는 루트는 부재로 기록한다. (5) 커밋 후보의 허용 경로는 `research/pvsnp/literature/access/public-web.md`, `research/pvsnp/literature/access/academic-db.md`, `research/pvsnp/literature/source-ledger.md`, `research/pvsnp/literature/records/L01.md`~`L22.md`로 닫는다. 허용 경로 밖 커밋 후보는 외부 원문 여부와 별개로 `FAIL`이다. (6) 공개 PDF·공개 데이터셋·구독 원본을 포함한 외부 원문 편입 검사는 커밋 후보 전건의 상대 경로, 파일 확장자, 매직 바이트, 저장소 밖 원본과의 바이트 동문성을 함께 판정한다. 외부 원문으로 판정된 후보가 1건 이상이면 `FAIL`이다. (7) `C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\8-감사목록.tsv`는 커밋 후보마다 저장소 상대 경로, 바이트 길이, SHA-256을 기록한다. 첫 행은 `relative_path<TAB>byte_length<TAB>sha256`이다. 데이터 행은 상대 경로의 UTF-8 바이트 순서로 오름차순 정렬한다. (8) `8-보고.md`는 비밀 검사 증거 전수성과 외부 원문 검사를 따로 `PASS|FAIL`로 기록한다. 두 검사 중 하나가 `FAIL`이면 행의 최종 상태는 `예외`다. (9) `불변식:`·`읽기 목록:`·예산 `--files`는 2.7.5 불변식과 2.7.7 수리 불변식을 모두 싣는다.
+- 작업 디렉토리: C:\Users\wogud\AppData\Local\dag-wt\pvsnp-탐사-1+2.7
+- 명령: python C:\math\.claude\skills\do-dag\scripts\dag_check.py --table C:\math\.sdd\dag\pvsnp-탐사-1\파견표.md
+  python C:\math\.claude\skills\do-dag\scripts\dag_marker.py
+- 스킬 루트: C:\math\.claude\skills\do-dag
+- 모델_프리셋: codex-full
+- 검증런_모델_프리셋: codex-full
+- 계약: C:\math\.claude\skills\do-dag\계약\공통.md, C:\math\.claude\skills\do-dag\계약\작업.md, C:\math\.claude\skills\do-dag\계약\보고.md
+- 불변식: C:\math\.sdd\dag\pvsnp-탐사-1\행\0.d\불변식.md, C:\math\.sdd\dag\pvsnp-탐사-1\행\0.d\불변식-2.md, C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\불변식.md, C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\불변식.md
+  추가 적용 불변식: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\불변식.md, C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\7.d\불변식.md
+- 겨냥: 2.7 worktree의 HEAD 대비 커밋 후보 전건 · C:\math\.sdd\dag\pvsnp-탐사-1\행 아래 파견문·보고 전건 · C:\math-artifacts\pvsnp-탐사-1\2.7\originals\public\ 아래 원본 전건 · C:\math-artifacts\pvsnp-탐사-1\2.7\originals\subscription\ 아래 원본 전건 · C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\8-보고.md · C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\8-감사목록.tsv
+- 정본: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\1-판정.md, C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.md, C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\8-보고.md, C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\7.d\불변식.md, C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\6.d\종료보고.md
+- 읽기 목록: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\1-판정.md, C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.md, C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\8-보고.md, C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\6.d\종료보고.md, C:\math\.sdd\dag\pvsnp-탐사-1\파견표.md, C:\math\.sdd\dag\pvsnp-탐사-1\행\0.d\불변식.md, C:\math\.sdd\dag\pvsnp-탐사-1\행\0.d\불변식-2.md, C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\불변식.md, C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\불변식.md, C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\불변식.md, C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\7.d\불변식.md, C:\math\.claude\skills\do-dag\계약\공통.md, C:\math\.claude\skills\do-dag\계약\작업.md, C:\math\.claude\skills\do-dag\계약\보고.md
+- 모델 배정 근거: 배정표 codex-full(조사 gpt-5.6-terra med) — 사용자확정 결정(C:\math\.sdd\dag\pvsnp-탐사-1\결정\사용자확정-codexfull전환.md)의 재도출. 이 행은 크리덴셜 파일과 브라우저를 사용하지 않는다. 저장소 실물은 읽기만 하고 쓰기는 런 디렉토리 절대 경로뿐이라 불변식 6항 (3)에 걸리지 않는다.
+- 예산:
+  [실측기 budget]
+  명령: python dag_measure.py budget --files C:/math/.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/1-판정.md,C:/math/.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/5.md,C:/math/.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/6.d/종료보고.md,C:/math/.sdd/dag/pvsnp-탐사-1/파견표.md,C:/math/.sdd/dag/pvsnp-탐사-1/행/0.d/불변식.md,C:/math/.sdd/dag/pvsnp-탐사-1/행/0.d/불변식-2.md,C:/math/.sdd/dag/pvsnp-탐사-1/행/2.d/불변식.md,C:/math/.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/불변식.md,C:/math/.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/5.d/불변식.md,C:/math/.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/7.d/불변식.md,C:/math/.claude/skills/do-dag/계약/공통.md,C:/math/.claude/skills/do-dag/계약/작업.md,C:/math/.claude/skills/do-dag/계약/보고.md --model gpt-5.6-terra --writes 30000 --pending 30000
+  시각: 2026-08-25T15:11:47Z
+  대상해시: sha1:d5962f5e618e
+  미해석: C:/math/.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/6.d/종료보고.md
+  .claude\skills\do-dag\계약\공통.md: ~4,077tok
+  .claude\skills\do-dag\계약\보고.md: ~650tok
+  .claude\skills\do-dag\계약\작업.md: ~687tok
+  .sdd\dag\pvsnp-탐사-1\파견표.md: ~4,351tok
+  .sdd\dag\pvsnp-탐사-1\행\0.d\불변식-2.md: ~916tok
+  .sdd\dag\pvsnp-탐사-1\행\0.d\불변식.md: ~1,395tok
+  .sdd\dag\pvsnp-탐사-1\행\2.d\7.d\1-판정.md: ~5,548tok
+  .sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\불변식.md: ~1,948tok
+  .sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.md: ~4,337tok
+  .sdd\dag\pvsnp-탐사-1\행\2.d\7.d\7.d\불변식.md: ~1,346tok
+  .sdd\dag\pvsnp-탐사-1\행\2.d\7.d\불변식.md: ~2,479tok
+  .sdd\dag\pvsnp-탐사-1\행\2.d\불변식.md: ~2,875tok
+  미존재 정본: ~15,789tok (30,000바이트 — 측정 시점 미존재)
+  읽기 합계: ~46,398tok (문자계열 단가 견적)
+  하네스 기저: ~28,000tok (시스템 프롬프트·툴 스키마·스킬 목록 — 실측 상수)
+  도구 왕복: ~10,000tok (셸·검색 결과, 편집 회신 — 실측 상수)
+  출력 유보: ~35,000tok (하한 — 저작 예상 30,000바이트는 하한 미달)
+  소요 견적: ~119,398tok
+  판정: gpt-5.6-sol 250,000 대비 예산 안
+  [/실측기]
+- 산출: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\8-보고.md, C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\8-감사목록.tsv
+- 반환: 공통 최종 반환 계약을 따른다. 완료 첫 줄은 `DONE`이다. 둘째 줄은 `보고: <절대 경로>`다. 추가 필드 없음.
+- 이음새: 없음
+- 이월 사슬: 최종 감사 보고와 감사 목록을 행 `2.7.z`가 병합 직전에 소비한다.
+- 안전 속성·계약: 크리덴셜 파일을 읽지 않는다. 외부 원문을 저장소에 쓰지 않는다. 감사 중 커밋 후보를 바꾸지 않는다.
+- 크리티컬 영역: 비밀 검사 증거 전수성 · 후행 크리덴셜 입력 0건 · 외부 원문 편입 0건 · 허용 경로 밖 후보 0건 · 감사 목록의 정렬과 완전성.
+- 런타임: Windows PowerShell. Playwright와 브라우저를 사용하지 않는다.
+
+## 임무
+
+1. 불변식 파일 5건을 먼저 읽는다.
+2. 작업 디렉토리의 저장소 루트를 확인한다.
+3. 행 `2.7.6`의 완료 신호를 확인한다.
+4. HEAD 대비 추적 변경과 미추적 파일을 합쳐 커밋 후보를 동결한다.
+5. 파견문·보고·저장소 산출·커밋 후보의 닫힌 파일 목록을 만든다.
+6. 행 `2.7.5.8` 보고의 비밀 검사 0건과 대상 파일 목록·파일 수를 대조한다.
+7. 행 `2.7.5.8` 뒤 파견문과 보고 전건의 읽기 목록·예산 입력을 검사한다.
+8. 후행 행이 크리덴셜 파일을 직접 입력으로 받으면 `FAIL`로 판정한다.
+9. 크리덴셜 파일이나 값을 읽지 않는다.
+10. 저장소 밖 원본 루트 2건을 재귀 열거한다.
+11. 저장소 밖 원본마다 SHA-256을 계산한다.
+12. 커밋 후보 전건을 닫힌 허용 경로와 대조한다.
+13. 커밋 후보 전건의 확장자와 매직 바이트를 대조한다.
+14. 커밋 후보 전건을 저장소 밖 원본 전건과 바이트 단위로 대조한다.
+15. 커밋 후보마다 상대 경로·바이트 길이·SHA-256을 계산한다.
+16. 감사 목록을 지정한 헤더와 정렬 순서로 쓴다.
+17. 보고에는 비밀 검사 증거 전수성과 후행 직접 입력 검사 결과만 기록한다.
+18. 비밀 검사 증거와 외부 원문 검사를 따로 판정한다.
+19. 두 검사 중 하나가 `FAIL`이면 `DONE`으로 반환하지 않는다.
+20. 반증 의무가 없으면 `없음`을 적는다.
+
+
+codex
+행 2.7.8의 기존 산출물은 작업 트리에만 있고 아직 추적되지 않았습니다. 산출물 원문에 값이 남았을 가능성이 있으므로, 먼저 제목·좌표·판정만 마스킹해 읽겠습니다.
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command '$base='"'C:\\math\\.sdd\\dag\\pvsnp-탐사-1\\행\\2.d\\7.d'; "'$files=@("$base'"\\8-보고.md\", \""'$base'"\\8-감사목록.tsv\", \""'$base'"\\8-codex.md\", 'C:\\math\\.sdd\\dag\\pvsnp-탐사-1\\행\\2.7.8-예외-codex.md'); foreach("'$f in $files){ if(Test-Path -LiteralPath $f){ $fi=Get-Item -LiteralPath $f; "FILE=$($fi.FullName) BYTES=$($fi.Length)"; $n=0; Get-Content -LiteralPath $f | ForEach-Object { $n++; if($_ -match '"'"'^#{1,6}'"\\s'){ \""'${n}:$_" } elseif($_ -match '"'(?i)(PASS|FAIL|예외|위반|직접 입력|종료보고|credential|크리덴셜)'){ "'$s=$_ -replace '"'(?i)(api[_ -]?key|secret|token|password|credential)(\\s*[:=]\\s*)(["'^'"\\s|,;]+)', '"'$1$2[REDACTED]'"'; "'$s=$s -replace '"'(?i)(Authorization\\s*:\\s*)(\\S.*)"'$'"','"'$1[REDACTED]'"'; if("'$s.Length -gt 300){$s=$s.Substring(0,300)+'"'…'}; \""'${n}:$s" } } } else { "MISSING=$f" } }' in C:\math
+ succeeded in 7520ms:
+FILE=C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\8-보고.md BYTES=4241
+4:상태: 예외
+7:# 결산 블록
+9:## 완료 기준 충족 표
+13:| 작업 디렉토리와 행 `2.7.6` 완료 신호 | PASS | 부록 1절 |
+14:| HEAD 대비 커밋 후보 동결 | PASS | 부록 2절 |
+15:| 행 `2.7.5.8` 비밀 검사 증거 전수성 | FAIL | 부록 3절 |
+16:| 외부 원문 편입 검사 | PASS | 부록 4절 |
+17:| 감사 목록 헤더·정렬·완전성 | PASS | 부록 5절 |
+19:## 편집 귀속
+26:## 이음새 광고
+30:| S2 | 변경 필요 | 부록 3절의 FAIL 때문에 행 `2.7.z`는 병합할 수 없다. |
+32:## 이월 사슬
+34:행 `2.7.z`는 감사 목록의 헤더만 있는 공집합과 비밀 검사 `FAIL`을 소비한다. 행 `2.7.z`는 병합하지 않는다.
+36:## 잔여·처분
+38:후행 종료보고 2건이 크리덴셜 파일의 값을 검사 입력으로 사용했다. 한 종료보고는 값을 보고 본문에 남겼다. 이 행은 값을 재인용하지 않는다. 비밀 검사 증거 전수성은 `FAIL`이고, 행의 최종 상태는 `예외`다.
+40:## 반증 의무
+44:# 증거 부록
+46:## 1. 작업 디렉토리와 선행 완료
+48:`git rev-parse --show-toplevel` 결과는 `C:/Users/wogud/AppData/Local/dag-wt/pvsnp-탐사-1+2.7`이다. 파견표의 행 `2.7.6` 상태는 `완`이고 완료 신호는 `행/2.d/7.d/6.d/종료보고.md`다. 종료보고는 라운드 1 종료를 기록한다.
+50:## 2. 커밋 후보 동결
+52:동결 명령은 `git diff --name-only HEAD`와 `git ls-files --others --exclude-standard`다. 합집합의 중복 제거 결과는 0건이다. 허용 경로 대조, 확장자, 매직 바이트, 바이트 길이, SHA-256, 저장소 밖 원본 동문성은 검사할 후보가 없으므로 모두 공집합에서 PASS다.
+54:## 3. 비밀 검사 증거 전수성 — FAIL
+58:후행 파견문 187건의 `읽기 목록`과 예산 `--files`에는 크리덴셜 파일이 0건이다. 그러나 후행 종료보고 `행/2.d/7.d/5.d/10.d/종료보고.md`와 `행/2.d/7.d/10.d/54.d-시도1/종료보고.md`는 크리덴셜 값을 실제 검사 입력으로 사용했다. 전자는 값을 보고 본문에 남겼다. 행 `2.7.5.8` 뒤의 직접 입력 2건과 값 비인용 위반 때문에 비밀 검사 증거 전수성은 FAIL이다.
+60:## 4. 외부 원문 편입 검사 — PASS
+64:`C:\math-artifacts\pvsnp-탐사-1\2.7\originals\subscription\`은 존재하며 파일 2건을 재귀 열거하고 각 파일 SHA-256을 계산했다. 같은 형식 목록의 SHA-256은 `d77e8973b0564bae41bfce0974d1cdad1c1cece241123fcc8eef8d50d4ae8333`다. 커밋 후보가 0건이므로 원문 동문성 후보는 0건이고 외부 원문 편입은 PASS다.
+66:## 5. 감사 목록
+70:## 6. 명령 결과
+FILE=C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\8-감사목록.tsv BYTES=33
+FILE=C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\8-codex.md BYTES=152
+1:예외
+2:코드: 비밀검사경계위반
+3:사유: 후행 종료보고 2건이 크리덴셜 값을 직접 검사했고 1건은 값을 보고에 남겼다.
+FILE=C:\math\.sdd\dag\pvsnp-탐사-1\행\2.7.8-예외-codex.md BYTES=0
+
+codex
+두 종료보고의 내용을 그대로 출력하지 않고 구조적 토큰만 검사하겠습니다. 값이 있는 줄 번호, 값의 형태, 크리덴셜 파일 경로 참조, Git 추적 여부를 분리해 확인합니다.
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command '$repo='"'C:\\math'; "'$rel=@('"'.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/5.d/10.d/종료보고.md','.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/10.d/54.d-시도1/종료보고.md'); foreach("'$p in $rel){$f=Join-Path $repo $p; "FILE=$p EXISTS=$(Test-Path -LiteralPath $f)"; if(Test-Path -LiteralPath $f){$i=0; Get-Content -LiteralPath $f | ForEach-Object {$i++; $line=$_; $kw=@(); foreach($k in @('"'크리덴셜','credential','비밀번호','password','token','secret','API','검사','입력','값','PII')){if("'$line -match [regex]::Escape($k)){$kw+=$k}}; $spans=[regex]::Matches($line,'"'"'`([''^`]*)`'"'); if("'$kw.Count -gt 0 -or $spans.Count -gt 0){$classes=@(); foreach($m in $spans){$v=$m.Groups[1].Value; $c=if($v -match '"'"'^[A-Za-z]:'"\\\\|"'^/|['"\\\\/]'){ 'path-or-command' } elseif("'$v -match '"'"'^(PASS|FAIL|0건|없음)$'"'){ 'status' } elseif("'$v.Length -ge 8){ '"'literal>=8' } else {'short-literal'}; "'$classes+=("$c(len=$($v.Length))")}; "LINE=$i KEYWORDS=$($kw -join '"',') INLINE="'$($classes -join '"',')\" }}; git -C "'$repo ls-files --error-unmatch -- $p 2>$null; if($LASTEXITCODE -eq 0){'"'TRACKED=yes'}else{'TRACKED=no'}; git -C "'$repo log -1 --format='"'LAST_COMMIT=%H %cI' -- "'$p }}' in C:\math
+ succeeded in 18441ms:
+FILE=.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/5.d/10.d/종료보고.md EXISTS=True
+LINE=5 KEYWORDS= INLINE=short-literal(len=4)
+LINE=7 KEYWORDS=값 INLINE=short-literal(len=6),short-literal(len=6),short-literal(len=6)
+LINE=26 KEYWORDS=값 INLINE=path-or-command(len=40),path-or-command(len=46)
+LINE=27 KEYWORDS=값 INLINE=path-or-command(len=40),short-literal(len=6),short-literal(len=6)
+LINE=32 KEYWORDS= INLINE=literal>=8(len=10),literal>=8(len=12),path-or-command(len=59)
+LINE=36 KEYWORDS= INLINE=path-or-command(len=8),path-or-command(len=40),short-literal(len=6),short-literal(len=6),short-literal(len=6),literal>=8(len=8)
+LINE=42 KEYWORDS= INLINE=short-literal(len=1)
+LINE=44 KEYWORDS= INLINE=short-literal(len=5)
+LINE=48 KEYWORDS= INLINE=literal>=8(len=10),short-literal(len=6),short-literal(len=6),path-or-command(len=59)
+LINE=49 KEYWORDS= INLINE=path-or-command(len=14)
+LINE=50 KEYWORDS=검사 INLINE=path-or-command(len=46),path-or-command(len=42),path-or-command(len=42),literal>=8(len=10),short-literal(len=6),short-literal(len=7)
+LINE=51 KEYWORDS=credential,검사,값 INLINE=path-or-command(len=29),literal>=8(len=11),short-literal(len=6),path-or-command(len=26),path-or-command(len=19),path-or-command(len=19)
+LINE=52 KEYWORDS=검사 INLINE=path-or-command(len=96)
+LINE=53 KEYWORDS= INLINE=literal>=8(len=16),path-or-command(len=21)
+LINE=54 KEYWORDS= INLINE=short-literal(len=5)
+".sdd/dag/pvsnp-\355\203\220\354\202\254-1/\355\226\211/2.d/7.d/5.d/10.d/\354\242\205\353\243\214\353\263\264\352\263\240.md"
+TRACKED=yes
+LAST_COMMIT=64952423b2c5451e208e888a98803008f8c56211 2026-08-27T21:01:57+09:00
+FILE=.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/10.d/54.d-시도1/종료보고.md EXISTS=True
+LINE=12 KEYWORDS= INLINE=short-literal(len=6)
+LINE=13 KEYWORDS= INLINE=literal>=8(len=9)
+LINE=15 KEYWORDS=값 INLINE=
+LINE=20 KEYWORDS= INLINE=short-literal(len=6),literal>=8(len=9)
+LINE=22 KEYWORDS= INLINE=short-literal(len=6),short-literal(len=7),path-or-command(len=11)
+LINE=23 KEYWORDS= INLINE=short-literal(len=6),short-literal(len=7),path-or-command(len=11)
+LINE=24 KEYWORDS= INLINE=short-literal(len=6),short-literal(len=7),path-or-command(len=11)
+LINE=25 KEYWORDS= INLINE=short-literal(len=6),short-literal(len=7),path-or-command(len=11)
+LINE=26 KEYWORDS= INLINE=short-literal(len=6),literal>=8(len=8),path-or-command(len=12)
+LINE=27 KEYWORDS= INLINE=short-literal(len=6),literal>=8(len=8),path-or-command(len=12)
+LINE=28 KEYWORDS= INLINE=short-literal(len=6),literal>=8(len=8),path-or-command(len=12)
+LINE=29 KEYWORDS= INLINE=short-literal(len=6),literal>=8(len=8),path-or-command(len=12)
+LINE=30 KEYWORDS= INLINE=short-literal(len=6),literal>=8(len=8),path-or-command(len=12)
+LINE=31 KEYWORDS= INLINE=short-literal(len=6),literal>=8(len=8),path-or-command(len=12)
+LINE=32 KEYWORDS= INLINE=short-literal(len=6),literal>=8(len=8),path-or-command(len=12)
+LINE=35 KEYWORDS= INLINE=short-literal(len=6),short-literal(len=6)
+LINE=52 KEYWORDS= INLINE=path-or-command(len=12)
+LINE=53 KEYWORDS= INLINE=path-or-command(len=12)
+LINE=58 KEYWORDS= INLINE=path-or-command(len=41)
+LINE=59 KEYWORDS= INLINE=path-or-command(len=27),literal>=8(len=14)
+LINE=60 KEYWORDS= INLINE=literal>=8(len=9)
+LINE=61 KEYWORDS= INLINE=path-or-command(len=25)
+LINE=63 KEYWORDS= INLINE=path-or-command(len=20)
+LINE=64 KEYWORDS=값 INLINE=literal>=8(len=14)
+LINE=65 KEYWORDS= INLINE=literal>=8(len=17)
+LINE=67 KEYWORDS=크리덴셜,값 INLINE=
+LINE=69 KEYWORDS=값 INLINE=
+LINE=71 KEYWORDS= INLINE=short-literal(len=0)
+LINE=74 KEYWORDS= INLINE=path-or-command(len=27)
+LINE=75 KEYWORDS= INLINE=literal>=8(len=10)
+LINE=76 KEYWORDS= INLINE=short-literal(len=0)
+LINE=78 KEYWORDS=크리덴셜 INLINE=
+LINE=80 KEYWORDS=크리덴셜,credential,값 INLINE=path-or-command(len=29)
+LINE=81 KEYWORDS=검사 INLINE=
+LINE=82 KEYWORDS= INLINE=literal>=8(len=23)
+LINE=87 KEYWORDS= INLINE=short-literal(len=4)
+LINE=100 KEYWORDS= INLINE=path-or-command(len=60)
+LINE=114 KEYWORDS= INLINE=path-or-command(len=41)
+LINE=116 KEYWORDS= INLINE=path-or-command(len=41)
+LINE=118 KEYWORDS= INLINE=literal>=8(len=8)
+LINE=125 KEYWORDS= INLINE=short-literal(len=1)
+LINE=127 KEYWORDS= INLINE=short-literal(len=5)
+LINE=134 KEYWORDS= INLINE=short-literal(len=5),literal>=8(len=8)
+LINE=135 KEYWORDS= INLINE=short-literal(len=2),path-or-command(len=41),short-literal(len=6)
+LINE=139 KEYWORDS= INLINE=path-or-command(len=8)
+LINE=142 KEYWORDS= INLINE=literal>=8(len=18)
+LINE=143 KEYWORDS= INLINE=path-or-command(len=41),short-literal(len=6),short-literal(len=2)
+LINE=145 KEYWORDS= INLINE=short-literal(len=2)
+LINE=146 KEYWORDS= INLINE=literal>=8(len=8)
+LINE=147 KEYWORDS= INLINE=short-literal(len=2)
+LINE=149 KEYWORDS= INLINE=short-literal(len=5),literal>=8(len=10),path-or-command(len=9)
+LINE=151 KEYWORDS= INLINE=path-or-command(len=50),short-literal(len=3)
+LINE=152 KEYWORDS= INLINE=path-or-command(len=47)
+LINE=155 KEYWORDS= INLINE=path-or-command(len=9)
+LINE=160 KEYWORDS= INLINE=path-or-command(len=20)
+LINE=161 KEYWORDS= INLINE=short-literal(len=2),literal>=8(len=8)
+LINE=166 KEYWORDS= INLINE=short-literal(len=4)
+".sdd/dag/pvsnp-\355\203\220\354\202\254-1/\355\226\211/2.d/7.d/10.d/54.d-\354\213\234\353\217\2041/\354\242\205\353\243\214\353\263\264\352\263\240.md"
+TRACKED=yes
+LAST_COMMIT=64952423b2c5451e208e888a98803008f8c56211 2026-08-27T21:01:57+09:00
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command '$repo='"'C:\\math'; "'$files=@('"'C:\\math\\.sdd\\dag\\pvsnp-탐사-1\\행\\2.d\\7.d\\5.d\\10.d\\종료보고.md','C:\\math\\.sdd\\dag\\pvsnp-탐사-1\\행\\2.d\\7.d\\10.d\\54.d-시도1\\종료보고.md'); foreach("'$f in $files){"FILE=$f"; if(!(Test-Path -LiteralPath $f)){'"'MISSING'; continue}; "'$lines=Get-Content -LiteralPath $f; $start=[Math]::Max(1,$lines.Count-14); for($i=$start;$i -le $lines.Count;$i++){ $s=$lines[$i-1]; $s=[regex]::Replace($s,'"'"'`[''^`]*`'"','[INLINE REDACTED]'); "'$s=[regex]::Replace($s,'"'(?i)\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}\\b','[PII REDACTED]'); "'$s=[regex]::Replace($s,'"'(?i)(api[_ -]?key|secret|token|password|credential)(\\s*[:=]\\s*)(\\S+)','"'$1$2[REDACTED]'"'); \""'$i:$s" }; $credTokens=@(); foreach($line in $lines){foreach($m in [regex]::Matches($line,'"'"'`([''^`]*)`'"')){"'$v=$m.Groups[1].Value;if($v -match '"'(?i)credential|credentials|\\.env|비밀|인증'){"'$credTokens+=$v}}}; '"'CREDENTIAL_PATH_REFS=' + (("'$credTokens | Sort-Object -Unique) -join '"' | ')}" in C:\math
+ exited 1 in 4645ms:
+ParserError: 
+Line |
+   2 |  … assword|credential)(\s*[:=]\s*)(\S+)','$1$2[REDACTED]'); "$i:$s" }; $ …
+     |                                                              ~~~
+     | Variable reference is not valid. ':' was not followed by a valid variable name character. Consider using ${} to
+     | delimit the name.
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command '$repo='"'C:\\math'; "'$files=@('"'C:\\math\\.sdd\\dag\\pvsnp-탐사-1\\행\\2.d\\7.d\\5.d\\10.d\\종료보고.md','C:\\math\\.sdd\\dag\\pvsnp-탐사-1\\행\\2.d\\7.d\\10.d\\54.d-시도1\\종료보고.md'); foreach("'$f in $files){"FILE=$f"; if(!(Test-Path -LiteralPath $f)){'"'MISSING'; continue}; "'$lines=Get-Content -LiteralPath $f; $start=[Math]::Max(1,$lines.Count-14); for($i=$start;$i -le $lines.Count;$i++){ $s=$lines[$i-1]; $s=[regex]::Replace($s,'"'"'`[''^`]*`'"','[INLINE REDACTED]'); "'$s=[regex]::Replace($s,'"'(?i)\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}\\b','[PII REDACTED]'); "'$s=[regex]::Replace($s,'"'(?i)(api[_ -]?key|secret|token|password|credential)(\\s*[:=]\\s*)(\\S+)','"'$1$2[REDACTED]'"'); \""'${i}:$s" }; $credTokens=@(); foreach($line in $lines){foreach($m in [regex]::Matches($line,'"'"'`([''^`]*)`'"')){"'$v=$m.Groups[1].Value;if($v -match '"'(?i)credential|credentials|\\.env|비밀|인증'){"'$credTokens+=$v}}}; '"'CREDENTIAL_PATH_REFS=' + (("'$credTokens | Sort-Object -Unique) -join '"' | ')}" in C:\math
+ succeeded in 8381ms:
+FILE=C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\10.d\종료보고.md
+44:없음. 이 런은 공식 스크립트([INLINE REDACTED])만 사용했다.
+45:
+46:## 9. 운영 기록 요지
+47:
+48:- [INLINE REDACTED]가 기각 보관 인자([INLINE REDACTED]·[INLINE REDACTED])를 구현하지 않아(선례 2.7.5.9와 동일 결손), 기각 1건의 보관 파일([INLINE REDACTED])을 세션이 직접 썼다. 항목 원문·양 심사자 판정·근거를 전문으로 담았다.
+49:- 이 검증런은 누적런이다 — 부모 디렉토리([INLINE REDACTED])의 형제 검증런(3.d·7.d·9.d) 종료보고를 확인해 앞 런 잔여 2건(3.d의 무처분 R1-03·R1-10)을 이 런의 수리 지급물(영역 A)에 실었다. 두 잔여 모두 이 라운드에서 조각으로 다시 제기되어(R1-01·R1-02) 심사 2/2 승인, 적용까지 완결했다 — 무처분에서 적용 완결로 상태가 바뀌었다.
+50:- 「관점」 기(수리 3기)는 산출물 24파일 전건을 관통해 L01~L22 22건의 접근표·원장·대상 파일·제목 ID 동치를 검사했고 항목 0건(결함 없음)으로 반환했다. 세션은 이를 셸 명령으로 독립 재확인했다 — [INLINE REDACTED]와 [INLINE REDACTED]가 L01~L22 각각을 정확히 1회씩 인용하고, 22개 [INLINE REDACTED] 파일 전부가 실재하며, 각 파일의 첫 제목이 [INLINE REDACTED]로 시작해 ID가 일치한다. [INLINE REDACTED]는 이 런의 산출물 목록 밖(선행 커밋 [INLINE REDACTED]로 이미 HEAD에 있음)이지만 이 동치 검사에는 포함했고 이상이 없었다.
+51:- 비밀 검사: [INLINE REDACTED]의 ID([INLINE REDACTED])·PW([INLINE REDACTED]) 값을 [INLINE REDACTED] 아래 전 파일, 이 런의 산출 디렉토리([INLINE REDACTED] 아래), 파견문([INLINE REDACTED])에서 검색해 0건을 확인했다. 검사 대상은 이 런이 다루는 산출물 24파일과 이 런 자신의 산출물 전건이다.
+52:- 삭제 검사: [INLINE REDACTED]가 현존 24·삭제 0을 실측했다(동결 전 사전 검사). 동결문 「산출물」 절은 이 24건이다.
+53:- 구독 원문 비편입: 이 런이 다루는 산출물 24파일 어디에도 구독 기반 PDF 원문의 전문이 없다. [INLINE REDACTED] 「저장소 밖 원문 보관」 절이 L08·L11의 보관 좌표를 저장소 밖([INLINE REDACTED])으로만 기록한다(적용으로 바꾸지 않은 기존 내용).
+54:- 그 밖의 운영 기록(스크립트·시험 수정, 60분 초과 실행, 불변식 재실측, 런 도중 사용자 지시)은 전건 「없음」이다. 상세는 [INLINE REDACTED] 「운영 기록」 절.
+55:
+56:## 발견
+57:
+58:없음.
+CREDENTIAL_PATH_REFS=C:\math\.credentials\kudos.md
+FILE=C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\10.d\54.d-시도1\종료보고.md
+153:  절대 경로를 썼다 — worktree 밖(주 체크아웃)에 있어도 인자로 넘기는 데는 지장이
+154:  없다.
+155:- 커밋: do-dag [INLINE REDACTED] 「실행 규율」의 "커밋하지 않는다" 조항에 따라 이
+156:  검증런은 어떤 라운드도 커밋하지 않았다. 라운드 1의 적용 결과는 worktree 파일에
+157:  남아 있고, 노드 싱크가 커밋을 맡는다.
+158:- 발견 처리: 「호출자에게 전달」로 확정된 항목이 0건이므로 do-dag 계약/검증런.md
+159:  「발견 처리」의 검토전개 행 등재 절차는 밟지 않았다.
+160:- 반환 분기: 「누적 봉쇄 접근 판정: FAIL」이므로 파견문([INLINE REDACTED])
+161:  「반환」 절의 FAIL 분기(첫 줄 [INLINE REDACTED] · 코드 [INLINE REDACTED])를 따른다.
+162:
+163:## 10. 발견
+164:
+165:없음. 수리자 3기가 낸 항목 6건은 전건 조각 항목이었고, 상신 제안·발견 항목은
+166:0건이었다([INLINE REDACTED] 산출: 「상신 제안 0건, 발견 0건, 결합 간선 0건」). 검토전개
+167:행을 등재하지 않았다.
+CREDENTIAL_PATH_REFS=C:\math\.credentials\kudos.md
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command '$files=@('"'C:\\math\\.sdd\\dag\\pvsnp-탐사-1\\행\\2.d\\7.d\\5.d\\10.d\\종료보고.md','C:\\math\\.sdd\\dag\\pvsnp-탐사-1\\행\\2.d\\7.d\\10.d\\54.d-시도1\\종료보고.md'); foreach("'$f in $files){"FILE=$f"; $i=0; Get-Content -LiteralPath $f | ForEach-Object {$i++; if($_ -match '"'(?i)크리덴셜|credential|비밀 검사|ID\\(|PW\\(|직접 입력|값을|값이|kudos\\.md'){ "'$s=[regex]::Replace($_,'"'"'`[''^`]*`'"','[INLINE REDACTED]'); "'$s=[regex]::Replace($s,'"'(?i)\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}\\b','[PII REDACTED]'); \""'${i}:$s" }}}' in C:\math
+ succeeded in 5374ms:
+FILE=C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\10.d\종료보고.md
+51:- 비밀 검사: [INLINE REDACTED]의 ID([INLINE REDACTED])·PW([INLINE REDACTED]) 값을 [INLINE REDACTED] 아래 전 파일, 이 런의 산출 디렉토리([INLINE REDACTED] 아래), 파견문([INLINE REDACTED])에서 검색해 0건을 확인했다. 검사 대상은 이 런이 다루는 산출물 24파일과 이 런 자신의 산출물 전건이다.
+FILE=C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\10.d\54.d-시도1\종료보고.md
+67:크리덴셜 값 인용·구독 원문 저장소 편입도 발견되지 않았다(아래 참조). L09 자체의
+69:실행 과정(로그) 감사 결과다 — 두 값은 서로 다른 완료 기준이 요구하는 별개의 값이다.
+78:### 크리덴셜·구독 원문 대조
+80:크리덴셜 파일 [INLINE REDACTED]의 ID·PW 값은 산출물 10건, 작업자
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command '$f='"'C:\\math\\.sdd\\dag\\pvsnp-탐사-1\\행\\2.d\\7.d\\10.d\\54.d-시도1\\종료보고.md'; "'$lines=Get-Content -LiteralPath $f; foreach($i in 76..87){$s=$lines[$i-1]; $s=[regex]::Replace($s,'"'"'`[''^`]*`'"','[INLINE REDACTED]'); "'$s=[regex]::Replace($s,'"'(?i)\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}\\b','[PII REDACTED]'); \""'${i}:$s"}' in C:\math
+ succeeded in 6173ms:
+76:[INLINE REDACTED]`
+77:
+78:### 크리덴셜·구독 원문 대조
+79:
+80:크리덴셜 파일 [INLINE REDACTED]의 ID·PW 값은 산출물 10건, 작업자
+81:보고 11건, 직후 종료보고 11건 어디에도 인용되지 않았다(수리 관점 담당의 전수 검사,
+82:출현 0건). 구독 기반 문헌 PDF 실물은 저장소에 편입되지 않았다([INLINE REDACTED]
+83:0건, 작업트리 PDF 검색 0건).
+84:
+85:## 1. 종료집계 수치와 종료 항
+86:
+87:[INLINE REDACTED] 실측: 판정 종료 — 판정 순서 3항(라운드 수 1 ≥ 라운드_상한 1). 라운드 1
+
+codex
+실측상 첫 종료보고 51행에는 ID와 PW가 각각 비마스킹 인라인 리터럴로 남아 있습니다. 두 번째 종료보고 80~82행은 값 자체를 적지 않았지만 같은 크리덴셜 값을 검사 입력으로 사용했다고 명시합니다. 이제 두 파일의 커밋 이력과 후속 파견문 재사용 범위를 확인합니다.
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command '$repo='"'C:\\math'; "'$paths=@('"'.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/5.d/10.d/종료보고.md','.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/10.d/54.d-시도1/종료보고.md'); foreach("'$p in $paths){"PATH=$p"; $tracked=(git -C $repo ls-files -- $p); if($tracked){'"'TRACKED=yes'}else{'TRACKED=no'}; "'$status=git -C $repo status --short -- $p; if($status){"STATUS=$status"}else{'"'STATUS=clean'}; "'$commits=git -C $repo --no-pager log --all --format='"'%H|%cI|%s' -- "'$p; if($commits){$commits | ForEach-Object {"COMMIT=$_"}}else{'"'COMMIT=none'}}; "'$f='"'C:\\math\\.sdd\\dag\\pvsnp-탐사-1\\행\\2.d\\7.d\\5.d\\10.d\\종료보고.md'; "'$line=(Get-Content -LiteralPath $f)[50]; $m=[regex]::Match($line,'"'ID\\("'`([''^`]*)`'"\\).*PW\\("'`([''^`]*)`'"\\)'); if("'$m.Success){foreach($idx in 1,2){$v=$m.Groups[$idx].Value; $placeholder=($v -match '"'"'^([*xX]+|'"\\[?REDACTED\\]?|<["'^>]+>|ID|PW|username|password|none|없음)$'"'); "'$ascii=($v -cmatch '"'"'^['"\\x21-\\x7E]+"'$'"'); \"LINE51_FIELD="'$idx LENGTH=$($v.Length) PLACEHOLDER=$placeholder PRINTABLE_ASCII=$ascii"}}else{'"'LINE51_PARSE=failed'}" in C:\math
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "git -C 'C:\\math' status --short -- '.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/5.d/10.d/종료보고.md' '.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/10.d/54.d-시도1/종료보고.md'; git -C 'C:\\math' --no-pager log -1 --format='%H|%cI|%s' -- '.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/5.d/10.d/종료보고.md'; git -C 'C:\\math' --no-pager log -1 --format='%H|%cI|%s' -- '.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/10.d/54.d-시도1/종료보고.md'; "'$f='"'C:\\math\\.sdd\\dag\\pvsnp-탐사-1\\행\\2.d\\7.d\\5.d\\10.d\\종료보고.md'; "'$line=(Get-Content -LiteralPath $f)[50]; $m=[regex]::Match($line,'"'ID\\("'`([''^`]*)`'"\\).*PW\\("'`([''^`]*)`'"\\)'); if("'$m.Success){foreach($idx in 1,2){$v=$m.Groups[$idx].Value; $placeholder=($v -match '"'"'^([*xX]+|'"\\[?REDACTED\\]?|<["'^>]+>|ID|PW|username|password|none|없음)$'"'); "'$ascii=($v -cmatch '"'"'^['"\\x21-\\x7E]+"'$'"'); \"LINE51_FIELD="'$idx LENGTH=$($v.Length) PLACEHOLDER=$placeholder PRINTABLE_ASCII=$ascii"}}else{'"'LINE51_PARSE=failed'}" in C:\math
+ succeeded in 26345ms:
+PATH=.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/5.d/10.d/종료보고.md
+TRACKED=yes
+STATUS=clean
+COMMIT=64952423b2c5451e208e888a98803008f8c56211|2026-08-27T21:01:57+09:00|DAG 기록을 .sdd 작업 공간으로 이전한다
+PATH=.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/10.d/54.d-시도1/종료보고.md
+TRACKED=yes
+STATUS=clean
+COMMIT=64952423b2c5451e208e888a98803008f8c56211|2026-08-27T21:01:57+09:00|DAG 기록을 .sdd 작업 공간으로 이전한다
+LINE51_FIELD=1 LENGTH=11 PLACEHOLDER=False PRINTABLE_ASCII=True
+LINE51_FIELD=2 LENGTH=6 PLACEHOLDER=False PRINTABLE_ASCII=True
+
+ succeeded in 9341ms:
+64952423b2c5451e208e888a98803008f8c56211|2026-08-27T21:01:57+09:00|DAG 기록을 .sdd 작업 공간으로 이전한다
+64952423b2c5451e208e888a98803008f8c56211|2026-08-27T21:01:57+09:00|DAG 기록을 .sdd 작업 공간으로 이전한다
+LINE51_FIELD=1 LENGTH=11 PLACEHOLDER=False PRINTABLE_ASCII=True
+LINE51_FIELD=2 LENGTH=6 PLACEHOLDER=False PRINTABLE_ASCII=True
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command '$root='"'C:\\math\\.sdd\\dag\\pvsnp-탐사-1\\행'; "'$targets=@('"'2.d\\7.d\\5.d\\10.d\\종료보고.md','2.d\\7.d\\10.d\\54.d-시도1\\종료보고.md'); "'$files=Get-ChildItem -LiteralPath $root -Recurse -File -Filter '"'*.md'; foreach("'$target in $targets){"TARGET=$target"; $patterns=@(($target -replace '"'\\\\','/'),"'$target,('"'C:\\math\\.sdd\\dag\\pvsnp-탐사-1\\행\\'+"'$target)); $hits=@(); foreach($file in $files){$n=0; foreach($line in Get-Content -LiteralPath $file.FullName){$n++; $matched=$false; foreach($pattern in $patterns){if($line.Contains($pattern)){$matched=$true;break}}; if($matched){$slot=if($line -match '"'"'^'"\\s*-\\s*읽기 목록:'){'읽기 목록'}elseif("'$line -match '"'"'^'"\\s*-\\s*정본:'){'정본'}elseif("'$line -match '"'"'^'"\\s*-\\s*불변식:'){'불변식'}elseif("'$line -match '"'--files'){'예산 --files'}elseif("'$line -match '"'"'^'"\\s*-\\s*선행:'){'선행'}else{'기타 참조'}; "'$rel=$file.FullName.Substring($root.Length+1); $hits+=[pscustomobject]@{File=$rel;Line=$n;Slot=$slot}}}}; if($hits.Count -eq 0){'"'REFERENCES=0'}else{"'$hits | Sort-Object File,Line | ForEach-Object {"REF=$($_.File):$($_.Line) SLOT=$($_.Slot)"}}}' in C:\math
+ succeeded in 31135ms:
+TARGET=2.d\7.d\5.d\10.d\종료보고.md
+REF=2.d\7.d\5.d\10.md:74 SLOT=기타 참조
+REF=2.d\7.d\8-보고.md:58 SLOT=예산 --files
+TARGET=2.d\7.d\10.d\54.d-시도1\종료보고.md
+REF=2.d\7.d\8-보고.md:58 SLOT=예산 --files
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "rg -n --fixed-strings '2.d/7.d/5.d/10.d/종료보고.md' 'C:\\math\\.sdd\\dag\\pvsnp-탐사-1\\행'; rg -n --fixed-strings '2.d\\7.d\\5.d\\10.d\\종료보고.md' 'C:\\math\\.sdd\\dag\\pvsnp-탐사-1\\행'; rg -n --fixed-strings '54.d-시도1/종료보고.md' 'C:\\math\\.sdd\\dag\\pvsnp-탐사-1\\행'; rg -n --fixed-strings '54.d-시도1\\종료보고.md' 'C:\\math\\.sdd\\dag\\pvsnp-탐사-1\\행'" in C:\math
+ exited 1 in 7833ms:
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\8-보고.md:58:후행 파견문 187건의 `읽기 목록`과 예산 `--files`에는 크리덴셜 파일이 0건이다. 그러나 후행 종료보고 `행/2.d/7.d/5.d/10.d/종료보고.md`와 `행/2.d/7.d/10.d/54.d-시도1/종료보고.md`는 크리덴셜 값을 실제 검사 입력으로 사용했다. 전자는 값을 보고 본문에 남겼다. 행 `2.7.5.8` 뒤의 직접 입력 2건과 값 비인용 위반 때문에 비밀 검사 증거 전수성은 FAIL이다.
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\10.md:74:- 산출: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\10.d\종료보고.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\8-보고.md:58:후행 파견문 187건의 `읽기 목록`과 예산 `--files`에는 크리덴셜 파일이 0건이다. 그러나 후행 종료보고 `행/2.d/7.d/5.d/10.d/종료보고.md`와 `행/2.d/7.d/10.d/54.d-시도1/종료보고.md`는 크리덴셜 값을 실제 검사 입력으로 사용했다. 전자는 값을 보고 본문에 남겼다. 행 `2.7.5.8` 뒤의 직접 입력 2건과 값 비인용 위반 때문에 비밀 검사 증거 전수성은 FAIL이다.
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command '$root='"'C:\\math\\.sdd\\dag\\pvsnp-탐사-1\\행'; "'$needle='"'C:\\math\\.credentials\\kudos.md'; "'$hitFiles=rg -l -uu --fixed-strings $needle $root; if(-not $hitFiles){'"'CREDENTIAL_PATH_REFERENCES=0'; exit}; foreach("'$f in $hitFiles){$rel=$f.Substring($root.Length+1); $lineNos=rg -n -uu --fixed-strings $needle $f; foreach($hit in $lineNos){$num=($hit -split '"':',2)[0]; "'$line=(Get-Content -LiteralPath $f)[[int]$num-1]; $slot=if($line -match '"'"'^'"\\s*-\\s*읽기 목록:'){'읽기 목록'}elseif("'$line -match '"'"'^'"\\s*-\\s*정본:'){'정본'}elseif("'$line -match '"'"'^'"\\s*-\\s*불변식:'){'불변식'}elseif("'$line -match '"'--files'){'예산 --files'}elseif("'$line -match '"'"'^'"\\s*-\\s*산출:'){'산출'}else{'본문/실행기록'}; \"REF="'$rel:$num SLOT=$slot"}}' in C:\math
+ exited 1 in 3512ms:
+ParserError: 
+Line |
+   2 |  … ($line -match '^\s*-\s*산출:'){'산출'}else{'본문/실행기록'}; "REF=$rel:$num SLO …
+     |                                                            ~~~~~
+     | Variable reference is not valid. ':' was not followed by a valid variable name character. Consider using ${} to
+     | delimit the name.
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command '$root='"'C:\\math\\.sdd\\dag\\pvsnp-탐사-1\\행'; "'$needle='"'C:\\math\\.credentials\\kudos.md'; "'$hitFiles=rg -l -uu --fixed-strings $needle $root; if(-not $hitFiles){'"'CREDENTIAL_PATH_REFERENCES=0'; exit}; foreach("'$f in $hitFiles){$rel=$f.Substring($root.Length+1); $lineNos=rg -n -uu --fixed-strings $needle $f; foreach($hit in $lineNos){$num=($hit -split '"':',2)[0]; "'$line=(Get-Content -LiteralPath $f)[[int]$num-1]; $slot=if($line -match '"'"'^'"\\s*-\\s*읽기 목록:'){'읽기 목록'}elseif("'$line -match '"'"'^'"\\s*-\\s*정본:'){'정본'}elseif("'$line -match '"'"'^'"\\s*-\\s*불변식:'){'불변식'}elseif("'$line -match '"'--files'){'예산 --files'}elseif("'$line -match '"'"'^'"\\s*-\\s*산출:'){'산출'}else{'본문/실행기록'}; \"REF="'${rel}:$num SLOT=$slot"}}' in C:\math
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "rg -l -uu -g '*.md' --fixed-strings 'C:\\math\\.credentials\\kudos.md' 'C:\\math\\.sdd\\dag\\pvsnp-탐사-1\\행'" in C:\math
+ succeeded in 8371ms:
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\1.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\불변식.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\0.d\불변식.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\4-판정.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\불변식.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\15.d\2.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\기각보관\2.7.6-라운드1.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\불변식.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\8.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\8-보고.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\7.d\동결.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\7.d\불변식.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\7.d\2.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\10.d\55.d\3.d\동결.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\11.d\불변식.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\11.d\2.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\10.d\종료보고.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\10.d\장부.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\10.d\54.d-시도1\종료보고.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\10.d\54.d-시도1\동결.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\10.d\54.d\동결.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\10.d\55.d\1.d\동결.md
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "git -C 'C:\\math' --no-pager log --follow --format='%H|%cI|%s' -- '.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/5.d/10.d/종료보고.md'" in C:\math
+ succeeded in 5067ms:
+64952423b2c5451e208e888a98803008f8c56211|2026-08-27T21:01:57+09:00|DAG 기록을 .sdd 작업 공간으로 이전한다
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "git -C 'C:\\math' --no-pager blame -M -C -L 51,51 --line-porcelain -- '.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/5.d/10.d/종료보고.md' | Select-Object -First 12; git -C 'C:\\math' --no-pager blame -M -C -L 80,82 --line-porcelain -- '.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/10.d/54.d-시도1/종료보고.md' | Select-String '"'^[0-9a-f]{40} '"' | ForEach-Object {"'$_.Line.Split('"' ')[0]} | Sort-Object -Unique" in C:\math
+ succeeded in 7913ms:
+64952423b2c5451e208e888a98803008f8c56211 51 51 1
+author MegasKomnenos
+author-mail <35184490+MegasKomnenos@users.noreply.github.com>
+author-time 1787832117
+author-tz +0900
+committer MegasKomnenos
+committer-mail <35184490+MegasKomnenos@users.noreply.github.com>
+committer-time 1787832117
+committer-tz +0900
+summary DAG 기록을 .sdd 작업 공간으로 이전한다
+filename ".sdd/dag/pvsnp-\355\203\220\354\202\254-1/\355\226\211/2.d/7.d/5.d/10.d/\354\242\205\353\243\214\353\263\264\352\263\240.md"
+	- 비밀 검사: `C:\math\.credentials\kudos.md`의 ID(`***REMOVED***`)·PW(`***REMOVED***`) 값을 `research/pvsnp/literature/` 아래 전 파일, 이 런의 산출 디렉토리(`행\2.d\7.d\5.d\10.d\` 아래), 파견문(`행\2.d\7.d\5.d\10.md`)에서 검색해 0건을 확인했다. 검사 대상은 이 런이 다루는 산출물 24파일과 이 런 자신의 산출물 전건이다.
+64952423b2c5451e208e888a98803008f8c56211
+
+codex
+두 종료보고는 현재 Git에 추적되며 작업 트리 변경이 없습니다. 첫 파일의 위반 줄도 커밋된 상태입니다. 원격 추적 브랜치 포함 여부와 이동 전 경로의 이력까지 확인하겠습니다.
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command '$commit='"'64952423b2c5451e208e888a98803008f8c56211'; 'LOCAL_BRANCHES'; git -C 'C:\\math' for-each-ref --contains "'$commit --format='"'%(refname:short)' refs/heads; 'REMOTE_BRANCHES'; git -C 'C:\\math' for-each-ref --contains "'$commit --format='"'%(refname:short)' refs/remotes; 'REMOTES'; git -C 'C:\\math' remote; 'PARENT_MATCHES'; git -C 'C:\\math' ls-tree -r --name-only \""'$commit''^" | rg --fixed-strings '"'2.d/7.d/5.d/10.d/종료보고.md'; git -C 'C:\\math' ls-tree -r --name-only \""'$commit''^" | rg --fixed-strings '"'2.d/7.d/10.d/54.d-시도1/종료보고.md'" in C:\math
+ exited 1 in 7395ms:
+LOCAL_BRANCHES
+main
+REMOTE_BRANCHES
+REMOTES
+origin
+PARENT_MATCHES
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "git -C 'C:\\math' branch -r; git -C 'C:\\math' status -sb; git -C 'C:\\math' --no-pager show --format='%H%n%P%n%cI%n%s' --no-patch 64952423b2c5451e208e888a98803008f8c56211" in C:\math
+ succeeded in 7547ms:
+  origin/main
+## main...origin/main [ahead 39]
+ M .agents/AGENTS.md
+ M .claude/CLAUDE.md
+ M .sdd/dag/marker.json
+ M ".sdd/dag/pvsnp-\355\203\220\354\202\254-1/\355\214\214\352\262\254\355\221\234.md"
+?? ".sdd/dag/pvsnp-\355\203\220\354\202\254-1/\352\262\260\354\240\225/\354\203\201\354\213\240-2.7.6-1.md"
+?? ".sdd/dag/pvsnp-\355\203\220\354\202\254-1/\352\262\260\354\240\225/\354\203\201\354\213\240-2.7.6-2.md"
+?? ".sdd/dag/pvsnp-\355\203\220\354\202\254-1/\355\226\211/2.7.10.55.12.4.1-\354\230\210\354\231\270-codex.md"
+?? ".sdd/dag/pvsnp-\355\203\220\354\202\254-1/\355\226\211/2.7.8-\354\230\210\354\231\270-codex.md"
+?? ".sdd/dag/pvsnp-\355\203\220\354\202\254-1/\355\226\211/2.d/7.d/10.d/55.d/12.d/4.d/1.d/"
+?? ".sdd/dag/pvsnp-\355\203\220\354\202\254-1/\355\226\211/2.d/7.d/10.d/55.d/12.d/4.d/1.\354\230\210\354\231\270.md"
+?? ".sdd/dag/pvsnp-\355\203\220\354\202\254-1/\355\226\211/2.d/7.d/8-codex.md"
+?? ".sdd/dag/pvsnp-\355\203\220\354\202\254-1/\355\226\211/2.d/7.d/8-\352\260\220\354\202\254\353\252\251\353\241\235.tsv"
+?? ".sdd/dag/pvsnp-\355\203\220\354\202\254-1/\355\226\211/2.d/7.d/8-\353\263\264\352\263\240.md"
+?? ".sdd/dag/pvsnp-\355\203\220\354\202\254-1/\355\226\211/2.d/7.d/\352\270\260\352\260\201\353\263\264\352\264\200/2.7.6-\353\235\274\354\232\264\353\223\2341.md"
+?? ".sdd/dag/pvsnp-\355\203\220\354\202\254-1/\355\226\211/_\354\230\210\354\231\270\354\236\205\353\240\245_2.7.8.md"
+64952423b2c5451e208e888a98803008f8c56211
+f1c9a301556085211919bbdaf1954afe6ff629bf
+2026-08-27T21:01:57+09:00
+DAG 기록을 .sdd 작업 공간으로 이전한다
+
+codex
+현재 로컬 `main`은 위반 줄을 포함한 커밋을 가리키지만, `origin/main`보다 39커밋 앞서고 원격 추적 브랜치는 해당 커밋을 포함하지 않습니다. 현재 파일만 고치면 Git 이력에 값이 남으므로, 이력 제거와 크리덴셜 교체 여부는 비가역 처분 판단이 필요합니다.
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "rg --files 'C:\\math\\.sdd\\dag\\pvsnp-탐사-1\\행' | rg '\\.예외\\.md"'$|예외.*'"\\.md"'$'"'" in C:\math
+ succeeded in 4016ms:
+C:\math\.sdd\dag\pvsnp-탐사-1\행\표.예외.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\표.예외-codex.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\표.예외-2.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\표.예외-2-codex.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\_입력_표.예외-2.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\_예외입력_2.7.8.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\_예외입력_2.7.5.9.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\_예외입력_2.7.5.12.5.9.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\_예외입력_2.7.5.12.5.35.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\_예외입력_2.7.5.12.5.31.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\_예외입력_2.7.5.12.5.22.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\_예외입력_2.7.5.12.5.22-2.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\_예외입력_2.7.5.12.5.21.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\_예외입력_2.7.5.12.5.21-2.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\_예외입력_2.7.5.12.5.13.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\_예외입력_2.7.5.12.5.12.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\_예외입력_2.7.5.12.5.11.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\_예외입력_2.7.5.12.5.10.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\_예외반환_2.7.10.55.3.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\_예외반환_2.7.10.55.3-2.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\_예외반환_2.7.10.55.12.1.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\9.예외.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\7.예외.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\13.d\2.예외.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\12.d\5.d\9.예외.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\12.d\5.d\35.예외.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\12.d\5.d\31.예외.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\12.d\5.d\22.예외.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\12.d\5.d\22-예외2-codex.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\12.d\5.d\22-예외-codex.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\12.d\5.d\21.예외.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\12.d\5.d\21-예외2-codex.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\12.d\5.d\21-예외-codex.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\12.d\5.d\13.예외.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\12.d\5.d\12.예외.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\12.d\5.d\11.예외.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\12.d\5.d\10.예외.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\10.d\61.d\1.예외.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\10.d\60-예외입력.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\10.d\55.d\3.예외.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\10.d\55.d\12.d\4.d\1.예외.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\10.d\54.예외.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\10.d\43.예외.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\10.d\24.예외.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\6.d\z.예외.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\6.d\9.d\5.d\6.예외.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.7.8-예외-codex.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.7.5.9-예외-codex.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.7.5.7-예외-입력.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.7.5.7-예외-codex.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.7.5.13.2-예외-입력.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.7.5.13.2-예외-codex.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.7.5.12.5.9-예외-codex.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.7.5.12.5.35-예외-codex.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.7.5.12.5.31-예외-codex.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.7.5.12.5.13-예외-codex.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.7.5.12.5.12-예외-codex.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.7.5.12.5.11-예외-codex.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.7.5.12.5.10-예외-codex.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.7.10.55.12.4.1-예외-codex.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.7.10.24-예외-입력.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.7.10.24-예외-codex.md
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.6.z-예외-입력.md
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "Get-Content -Raw -LiteralPath 'C:\\math\\.sdd\\dag\\pvsnp-탐사-1\\행\\2.d\\7.d\\10.d\\54.예외.md'; \""'`n<<<EXAMPLE2>>>`n"; Get-Content -Raw -LiteralPath '"'C:\\math\\.sdd\\dag\\pvsnp-탐사-1\\행\\2.d\\7.d\\5.d\\9.예외.md'" in C:\math
+ succeeded in 4255ms:
+---
+유형: 예외
+행: 2.7.10.54
+코드: 반환형식위반
+처분: 미착수
+---
+
+이 파일은 행 2.7.10.54의 예외 기록 둘을 담는다. frontmatter는 최신인 2차 예외의 코드·처분이다. 1차 예외(코드 봉쇄접근FAIL)의 기록이 먼저 오고, 2차 예외(코드 반환형식위반)의 기록이 뒤에 온다.
+
+# 행 2.7.10.54 예외 기록 (1차, 봉쇄접근FAIL)
+
+## 접수
+
+- 반환 첫 줄 `예외`, 둘째 줄 `코드: 봉쇄접근FAIL` — 공통 반환어휘 안이다.
+- 반환에 `코드: 고아진행`과 `코드: 고아상신중`은 없다.
+- 반환 주장: verify-rounds 런을 완주했고, 직후 종료보고 11건 중 `19.d\종료보고.md` 1건의 `봉쇄 접근 판정: FAIL`이 파견문 완료 기준의 명문에 따라 누적 판정을 FAIL로 만들었다.
+
+## 행과 선후행
+
+- 대상 행: `2.7.10.54`. 처분 전 파견표 상태는 `예외`였다.
+- 선행: `2.7.10.56.z`와 직후 검증런 11행(`2.7.10.3`·`5`·`7`·`9`·`11`·`13`·`15`·`17`·`19`·`21`·`23`, 전건 `완`).
+- 대상 행을 선행으로 받는 행: `2.7.10.55`(전개 집계)와 `2.7.10.z`(층 싱크).
+- 완료 신호: `행/2.d/7.d/10.d/54.d/종료보고.md`.
+
+## 실측
+
+```text
+명령: ls 행/2.d/7.d/10.d/54.d/; Read 54.d/종료보고.md
+시각: 2026-08-27T04:00Z 무렵
+결과: 동결.md·장부.md·종료보고.md 실재. 종료보고 판정 — 누적 재판독 상태 판정 PASS ·
+  결정 적용 완료 기준 판정 PASS · 누적 봉쇄 접근 판정 FAIL(유일 근거: 19.d\종료보고.md의
+  봉쇄 접근 판정 FAIL). L04·L05 정리는 라운드 1에서 PASS→FAIL 정정이 worktree에 적용됨.
+문맥: 반환 텍스트의 주장과 실물이 일치한다. FAIL 분기 반환은 파견문 「반환」 슬롯의
+  명문을 따랐다.
+```
+
+```text
+명령: Read 19.d/종료보고.md 93~104행; stat 행/_로그_2.7.10.18.txt 19.d/종료보고.md
+시각: 2026-08-27T04:01Z 무렵
+결과:
+  19.d\종료보고.md의 FAIL 사유 — "원시 로그 C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\10.d\_로그_18.txt가
+  실재하지 않는다"(같은 디렉토리 ls·find 조회, 0건).
+  실물 로그 C:\math\.sdd\dag\pvsnp-탐사-1\행\_로그_2.7.10.18.txt — 1,090,057바이트,
+  mtime 2026-08-27 10:43:50 +0900.
+  19.d\종료보고.md mtime — 2026-08-27 11:43:01 +0900.
+문맥: 검증런 19의 종료 시점에 로그 실물은 이미 59분 전부터 관례 경로에 실재했다.
+  부재 판정은 탐색 경로 착오다. 이 국면의 로그 배치 관례는 행/ 최상위
+  `_로그_<전체 행번호>.txt`이고, 형제 검증런 3.d·17.d의 종료보고는 파견문의
+  `행/2.d/7.d/10.d/_로그_<짝수>.txt` 표기를 오기로 판정하고 관례 경로의 실물을
+  감사해 PASS를 냈다(3.d\종료보고.md 59~67행, 17.d\종료보고.md 76~84행·156~158행).
+  감사 자체는 아무도 수행하지 않았으므로 L09 작업자(행 2.7.10.18)의 봉쇄 준수는
+  현재 미검증이다.
+```
+
+```text
+명령: grep "봉쇄 접근 판정" 3.d~53.d 종료보고 전건; stat 행/_로그_2.7.10.{32,34,38,40,44,46,52}.txt
+시각: 2026-08-27T04:02Z 무렵
+결과: FAIL 8건 — 19.d(54의 소비 범위)와 33.d·35.d·39.d·41.d·45.d·47.d·53.d(60의 소비
+  범위). 43.d는 종료보고 부재(행 2.7.10.43 상태 진행). FAIL 8건 전건의 사유가 같은
+  로그 부재이고, 대응 로그 실물 7건(_로그_2.7.10.32·34·38·40·44·46·52.txt)이 전건
+  행/ 최상위에 실재하며 mtime(10:39~10:50)이 각 종료보고 mtime(11:38~11:50)보다
+  앞선다.
+문맥: 같은 부류의 오판이 행 2.7.10.60의 소비 범위에 7건 있다. 60은 미착수이고 선행
+  43이 진행 중이다. 이 예외의 처분 범위는 행 54이므로 60 범위의 7건은 고치지 않고
+  이 기록으로 남긴다. 60이 예외로 끝나면 그 예외 처분은 이 기록과 수리 행 2.7.10.63의
+  파견문을 선례로 쓸 수 있다.
+```
+
+## 판정
+
+반환 문면과 실물이 일치하므로 반환형식위반은 없다. 누적 봉쇄 접근 판정 FAIL은 파견문 완료 기준의 기계적 집행으로 옳다. 그러나 그 유일한 입력인 `19.d\종료보고.md`의 `봉쇄 접근 판정: FAIL`은 로그 부재라는 거짓 전제 위에 있다. 실물이 완료 기준을 충족하지 못하므로 `완` 처분은 성립하지 않고, 입력이 정정되지 않는 한 재파견도 같은 FAIL을 낳으므로 수리 행이 필요하다. 상신 사유 넷(불가침·사용자 확정 변경·비가역·발명)에 닿는 것은 없다 — 로그 배치 관례와 봉쇄 감사 절차는 국면 저작 문면이고, 사용자확정-문헌재판독.md의 확정 문면(봉쇄 대상·작업자 배정)은 손대지 않는다.
+
+## 처분
+
+**미착수** — 수리 행 추가 후 재파견.
+
+1. 수리 행 `2.7.10.63`을 추가했다(작업자, `gpt-5.6-terra med` — 배정표 codex-full 작업자 기본값. 사용자확정 배정 `gpt-5.6-sol xhigh`는 재판독 작업자 한정이라 적용되지 않는다). 임무: `행/_로그_2.7.10.18.txt`를 행 2.7.10.19의 감사 기준으로 전수 감사하고 `19.d\종료보고.md` 「봉쇄 접근 판정」 절을 감사 실측값으로 정정한다. 원 기록은 절 안에 축자 보존한다. 파견문 `행/2.d/7.d/10.d/63.md`.
+2. 파견표 — 행 `2.7.10.63`(선행 `2.7.10.19`, 완료 신호 `행/2.d/7.d/10.d/63-보고.md`, 미착수)을 추가하고, 행 `2.7.10.54`의 선행에 `2.7.10.63`을 더하고 상태를 `예외`에서 `미착수`로 바꾸고, 층 싱크 `2.7.10.z`의 선행에 `2.7.10.63`을 더했다.
+3. 1차 시도의 런 산출을 `54.d\`에서 `54.d-시도1\`로 이동해 보관했다. 재파견은 새 verify-rounds 런으로 `54.d\`를 새로 채운다. L04·L05 정정은 worktree 파일에 이미 적용되어 있어 이동의 영향을 받지 않는다.
+4. `54.md`에 「재파견」 절을 보강했다 — 1차 시도 보관 좌표와 판정, 정정된 19.d 소비, 로그 배치 관례.
+
+## 추가한 행
+
+- `2.7.10.63` — 행 2.7.10.18 원시 로그 봉쇄 접근 감사와 19.d 종료보고 정정 {수리}.
+
+## 반증 의무
+
+- 파견문·입력과 어긋난 지점: `54.md` 완료 기준·`19.md` 봉쇄 접근 완료 기준·`19.d\종료보고.md` 사유가 공유하는 로그 경로 표기 `행/2.d/7.d/10.d/_로그_<짝수>.txt`는 이 국면의 실제 로그 배치(`행/` 최상위 `_로그_<전체 행번호>.txt`)와 어긋난 오기다. 위 실측 블록이 증거다.
+- 그 밖에 반환 텍스트와 실물이 어긋난 지점: 없음.
+
+## 검산과 마커
+
+```text
+명령: python C:\math\.claude\skills\do-dag\scripts\dag_check.py --table C:\math\.sdd\dag\pvsnp-탐사-1\파견표.md
+결과: [dag_check] 무발견 (drive: 서식·어휘·칸 계약·폐쇄·수렴·순환·좌표 실재·게이트 결정·운전)
+exit 0
+문맥: 표 수정(63 추가·54 선행/상태·z 선행) 후 실행했다.
+```
+
+```text
+명령: python C:\math\.claude\skills\do-dag\scripts\dag_marker.py
+결과: 필수 하위 명령 cmd 누락 사용법 오류
+exit 2
+문맥: 지급된 마커 명령을 축자 실행했다. 상태를 바꾸는 하위 명령은 없었다.
+```
+
+# 행 2.7.10.54 예외 기록 (2차, 반환형식위반)
+
+## 접수
+
+- 재파견(1차 예외 처분 후 상태 미착수)의 반환 텍스트 첫 줄이 "do-dag 스킬은 `disable-model-invocation` 설정으로 인해 Skill 도구로 호출할 수 없습니다"다. 공통 반환어휘(DONE·DONE-비준·상신·예외) 밖이므로 반환형식위반으로 접수한다.
+- 반환 주장: 이 파견문의 수행에 do-dag 스킬의 Skill 도구 호출이 필요한데 그 스킬이 `disable-model-invocation: true`라서 불가하다. 사용자가 `/do-dag` 슬래시 명령을 직접 실행해야 한다.
+- 파견받은 에이전트는 도구 호출 2회, 12초 만에 임무를 수행하지 않고 종료했다.
+
+## 실측
+
+```text
+명령: ls 행/2.d/7.d/10.d/54.d; Read 행/2.d/7.d/10.d/54.md; git -C C:/Users/wogud/AppData/Local/dag-wt/pvsnp-탐사-1+2.7 rev-parse --show-toplevel
+시각: 2026-08-27
+결과: 산출 디렉토리 54.d\ 부재 — 이번 시도의 산출(동결.md·장부.md·종료보고.md)은 없다.
+  1차 시도 보관 54.d-시도1\은 실재. 파견문 54.md는 1차 예외 처분의 「재파견」 절 보강을
+  포함해 정상 판독된다. worktree C:\Users\wogud\AppData\Local\dag-wt\pvsnp-탐사-1+2.7은
+  실재하고 git 판독이 정상이다.
+문맥: 이번 에이전트는 아무 산출도 내지 않고 종료했다. 파견문·worktree에 이번 시도가
+  남긴 변경은 없다.
+```
+
+```text
+명령: head .claude/skills/do-dag/SKILL.md; head .claude/skills/verify-rounds/SKILL.md; grep -n "verify-rounds" .claude/skills/do-dag/계약/검증런.md
+시각: 2026-08-27
+결과: do-dag SKILL.md frontmatter에 disable-model-invocation: true 실재.
+  verify-rounds SKILL.md frontmatter에는 그 설정이 없다.
+  계약/검증런.md 7~10행 — 검증런 행은 "verify-rounds 스킬의 세션이 되어 런 하나를
+  완주한다. 1. verify-rounds SKILL.md 전문을 읽는다. 경로는 스킬 루트의 형제
+  디렉토리다 — <스킬 루트>/../verify-rounds/SKILL.md."
+문맥: 파견문 54.md와 그 계약 어디에도 do-dag 스킬을 Skill 도구로 호출하라는 지시가
+  없다. 지시된 수행 방식은 verify-rounds SKILL.md를 Read 도구로 읽고 에이전트가
+  스스로 런을 운전하는 것이다. disable-model-invocation은 이 수행을 막지 않는다.
+```
+
+## 판정
+
+반환의 전제가 사실과 어긋난다. 파견문 54.md의 임무는 verify-rounds 런의 자체 운전이고, do-dag 스킬 호출을 요구하는 문면은 파견문·계약 어디에도 없다. 같은 파견문의 1차 시도는 런을 완주해 종료보고까지 냈으므로 파견문은 실행 가능하다. 1차 시도 이후의 파견문 변경은 「재파견」 절 추가뿐이고 그 절도 스킬 호출을 지시하지 않는다. 결함은 파견문·verify-rounds 스킬이 아니라 이번 에이전트 개체의 오독이다. 이번 시도의 산출과 부수 변경이 없으므로 다시 쏘면 된다.
+
+## 처분
+
+**미착수** — 재파견.
+
+1. 54.md 「재파견」 절에 실행 방식 한 줄을 보강했다 — 계약 검증런.md 절차대로 verify-rounds SKILL.md를 Read 도구로 읽고 스스로 런을 운전하며, Skill 도구로 do-dag나 verify-rounds를 호출하지 않는다는 문면이다. 이번 오독의 재발을 막는다.
+2. 파견표 — 행 2.7.10.54의 상태를 `예외`에서 `미착수`로 바꿨다. 선행·완료 신호·모델은 바꾸지 않았다.
+3. 1차 시도 보관 54.d-시도1\과 worktree는 손대지 않았다.
+
+## 추가한 행
+
+없음.
+
+## 반증 의무
+
+- 파견문·입력과 어긋난 지점: 없음. 반환 텍스트의 주장(도구 호출 2회·12초 조기 종료, 산출 부재)은 실물과 일치하고, 어긋난 것은 반환의 전제(do-dag 스킬 호출 필요)뿐이다.
+
+## 검산과 마커
+
+```text
+명령: python C:\math\.claude\skills\do-dag\scripts\dag_check.py --table C:\math\.sdd\dag\pvsnp-탐사-1\파견표.md
+결과: [실재] 검증런 행 2.7.10.62.3이 완인데 장부에 라운드 1 본표가 없다 ·
+  [실재] 검증런 행 2.7.10.62.3이 완인데 장부에 라운드 1 결산가 없다 — 발견 2건, exit 1
+문맥: 두 발견은 행 54 상태 편집 전부터 있던 것이다. 행 54를 `예외`로 되돌린 표와
+  `미착수`로 고친 표에서 검산 출력이 동일함을 실행으로 확인했다. 발견의 대상인
+  행 2.7.10.62.3은 이 예외의 처분 범위 밖이고, 그 행의 상태 `완` 기입은 파견표
+  working tree의 커밋 전 변경(행 25·43·62.1·62.2·62.3 상태 갱신)에 속한 진행 중
+  오케 기입이다. 62.3의 장부는 원시 로그 부재로 라운드 1 시작 전에 런을 접었다고
+  기록한다 — 그 처분은 62.3을 관할하는 예외·오케의 몫이므로 이 기록으로만 남긴다.
+```
+
+```text
+명령: python C:\math\.claude\skills\do-dag\scripts\dag_marker.py
+결과: 필수 하위 명령 cmd 누락 사용법 오류, exit 2
+문맥: 지급된 마커 명령을 축자 실행했다. 상태를 바꾸는 하위 명령은 없었다. 대상이
+  싱크가 아니므로 lease 확인은 해당 없다.
+```
+
+
+<<<EXAMPLE2>>>
+
+---
+유형: 예외
+행: 2.7.5.9
+코드: 반환형식위반
+처분: 완
+---
+
+# 행 2.7.5.9 예외 기록
+
+처분 주체는 메인이다. 오케(7기)가 이 행의 중간 상태 보고("Both judge dispatches ... running")를 완료 반환으로 오판해 `반환형식위반`으로 `예외`를 기입했고, 오케가 띄운 Codex 예외 에이전트는 처분 없이 죽었다(`행/_로그_2.7.5.9-예외.txt` 끝의 `code-mode host closed its stdout` 오류, 반환 파일 `행/2.7.5.9-예외-codex.md`는 빈 파일). 사용자가 오케를 종료시키고 메인에게 정리를 지시했다.
+
+## 처분
+
+**완**
+
+실물이 완료 기준을 충족하고 반환 문면만 어긋난 경우다(`파견문_예외.md` 처분표).
+
+## 실측
+
+- 완료 신호 실재: `행/2.d/7.d/5.d/9.d/동결.md`(6,151바이트)·`장부.md`(5,383바이트)·`종료보고.md`(4,426바이트, 2026-08-26 19:11 KST).
+- 종료보고: 라운드 1 — 제기 8 / 적용 8. 상신·무처분 잔여 0. 발견 0. 종료 판정은 라운드 상한 도달(경량 프리셋 라운드 1 고정).
+- 기각 보관 파일 실재: `행/2.d/7.d/기각보관/2.7.5.9-라운드1.md`(항목 0건도 파일은 둔다는 계약 충족).
+- 적용 실물: `access/academic-db.md` 시각·문헌 ID 정정, `records/L08.md` 따름정리 결론·쪽수 인용 정정, `source-ledger.md` 동일 쪽수 정정 — 종료보고 6절의 변경 자리 서술과 일치.
+- 알려진 이탈: 이 검증런의 동결문 파라미터가 `모델_프리셋 mixed`를 얼려 내부 수리·병합이 Claude로 돌았다. 사용자확정 결정(`결정/사용자확정-codexfull재확인.md`)이 이 행에 한해 그대로 완주를 확정했으므로 처분 사유가 아니다.
+
+## 추가 행
+
+없음.
+
+
+codex
+예외 기록은 독립 문서이므로 `write-for-reader` 규칙을 적용합니다. 이 규칙에 맞춰 값은 모두 추상 지칭하고, 경로·행 번호·커밋 포함 여부·후속 입력 참조 여부만 기록하겠습니다.
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "Get-Content -Raw -LiteralPath 'C:\\math\\.claude\\skills\\write-for-reader\\SKILL.md'" in C:\math
+ succeeded in 3927ms:
+---
+name: write-for-reader
+description: 보고서·제안서·설계·운영 문서·매뉴얼·이메일처럼 독립 산문을 작성하거나 퇴고할 때 사용한다. "문서 써줘", "글 다듬어줘"처럼 문장과 정보 배치가 주된 과제에서 호출한다. 짧은 사용자 답변·진행 보고와 순수 코드·데이터 생성에는 쓰지 않는다.
+---
+
+# 수신자를 위한 평문
+
+읽는 사람이 문장을 해석하지 않고 사실과 관계를 바로 파악하게 쓴다.
+
+이 규칙은 한국어와 영어에 함께 적용한다. 수치가 언어마다 다른 자리는 그 자리에 따로 적었다.
+
+서브에이전트에 파견문을 쓰거나 그 반환을 받을 때도 이 규칙이 걸린다. 사람과 달리 에이전트는 모호한 문장을 만나도 되묻지 않고 한 가지 읽기를 골라 진행하므로, 열어 둔 읽기가 곧 갈라진 작업이 된다. 그 채널에만 걸리는 규칙 넷은 이 스킬의 `references/에이전트_채널.md`에 있다. 절차문 — 단계로 수행을 지시하는 문서 — 에 더 걸리는 규칙 일곱은 이 스킬의 `references/절차문.md`에 있다.
+
+규칙의 출처는 ASD-STE100 Simplified Technical English Issue 9의 작문 규칙 53항이다. 한국어에 그대로 옮길 수 없는 항(관사, 철자, 승인 어휘 목록)은 뺐고, 한국어에서 같은 모호함을 만드는 자리('의' 연쇄, 이중 피동, 명사 나열)를 더했다.
+
+## 0. 원리
+
+모호함은 선택지에서 나온다. 한 대상을 부르는 말이 여럿이면 읽는 사람이 그것들이 같은 것인지 판단해야 한다. 한 낱말에 뜻이 여럿이면 어느 뜻인지 골라야 한다. 문장을 엮는 방법이 여럿이면 어느 관계인지 복원해야 한다.
+
+**그래서 이 규칙은 선택지를 줄인다.** 표현을 다양하게 하지 않고, 같은 것을 늘 같은 말로 부르고, 문장 구조를 몇 가지로 고정한다. 글이 단조로워 보이는 것은 대가가 아니라 목적이다.
+
+규칙끼리 부딪히면 아래 순서로 정한다.
+
+1. **정확성**이 먼저다. 짧게 쓰려고 사실을 깎지 않는다.
+2. **완전성**이 그다음이다. 짧게 쓰려고 낱말을 생략하지 않는다. 생략한 문장은 짧아지지만 읽기 쉬워지지 않는다.
+3. **짧음**이 마지막이다.
+
+논증을 줄이는 규칙은 없다. 법률 문서에서 필요한 논증 단계는 그대로 두고, 그 단계를 담는 문장과 배치만 고친다.
+
+## 1. 낱말
+
+### 1.1 한 대상에 한 낱말을 쓴다
+
+같은 것을 다른 말로 바꾸어 부르지 않는다. 문장에 변화를 주려고 동의어를 쓰지 않는다.
+
+읽는 사람은 말이 바뀌면 대상도 바뀌었다고 읽는다. 그래서 동의어는 없던 구별을 만든다.
+
+> 나쁨: 청구인은 이 처분의 취소를 구한다. 신청인의 주장은 세 가지다. 원고가 제출한 증거는…
+>
+> 좋음: 청구인은 이 처분의 취소를 구한다. 청구인의 주장은 세 가지다. 청구인이 제출한 증거는…
+
+같은 규율이 절차 문서에도 걸린다. 같은 종류의 작업을 적을 때 늘 같은 문장 틀을 쓴다.
+
+> 나쁨: 2. 볼트 두 개에 윤활유를 바른다. … 6. 볼트 네 개의 나사산에 소량의 기름을 도포한다.
+>
+> 좋음: 2. 볼트 두 개의 나사산에 소량의 기름을 바른다. … 6. 볼트 네 개의 나사산에 소량의 기름을 바른다.
+
+### 1.2 한 낱말에 한 뜻을 쓴다
+
+한 글 안에서 같은 낱말을 두 뜻으로 쓰지 않는다. 두 뜻이 필요하면 한쪽에 다른 낱말을 준다.
+
+이 저장소에서 자주 어긋나는 자리는 '검토', '확인', '판단', '적용'이다. 각각을 어느 뜻으로 쓸지 그 글 안에서 정하고 지킨다.
+
+### 1.3 흔한 낱말을 고른다
+
+업계 속어, 은어, 지역어, 유행어를 쓰지 않는다. 아는 사람만 아는 낱말은 소통을 막는다.
+
+뜻이 부분의 합과 다른 관용구도 쓰지 않는다. '손을 보다', '털어 넣다', '치고 나가다'가 그런 예다. 읽는 사람이 글자 뜻과 관용 뜻 중에서 골라야 한다.
+
+### 1.4 약어를 줄인다
+
+약어는 처음 한 번 풀어 쓰고 괄호에 넣는다. `e.g.`, `i.e.`, `etc.` 같은 라틴 약어를 쓰지 않는다. '예를 들어', '즉', '그 밖에'로 쓴다.
+
+### 1.5 행위는 동사로 쓴다
+
+명사로 만들지 않는다. 동사가 행위를 더 분명하게 말한다.
+
+| 나쁨 | 좋음 |
+|---|---|
+| 검토를 수행한다 | 검토한다 |
+| 반영이 이루어졌다 | 반영했다 |
+| 확인을 진행한다 | 확인한다 |
+| 삭제 처리한다 | 삭제한다 |
+| 유닛의 제거 전에 전원을 끈다 | 유닛을 제거하기 전에 전원을 끈다 |
+
+## 2. 문장
+
+### 2.1 문장 하나에 주제 하나를 담는다
+
+주제가 둘이면 문장을 나눈다.
+
+> 나쁨: 사이드 스테이 조립체는 힌지로 이어진 접이 토글 두 개를 가지며 메인 기어 스트럿과 사이드 스테이 브래킷 사이에 힌지로 붙어 있다.
+>
+> 좋음: 사이드 스테이 조립체에는 접이 토글이 두 개 있다. 두 토글은 힌지로 서로 이어져 있다. 이 토글은 메인 기어 스트럿과 사이드 스테이 브래킷 사이에도 힌지로 붙어 있다.
+
+### 2.2 문장을 짧게 쓴다
+
+- **지시하거나 절차를 적는 문장**: 한국어 20어절, 영어 20단어를 넘기면 나눈다.
+- **설명하는 문장**: 한국어 30어절, 영어 25단어를 넘기면 나눈다.
+- **주석 문장**(괄호·각주에 넣는 설명): 한국어 30어절, 영어 25단어를 넘기면 나눈다.
+
+수치보다 먼저 보는 신호가 있다. **서술어가 셋 이상이면 나눌 자리를 찾는다.** '~하고, ~하며, ~한 뒤, ~하여'가 이어지는 자리가 그 자리다.
+
+쌍반점을 쓰지 않는다. 쌍반점은 아주 긴 문장을 허용한다. 쌍반점으로 이은 문장은 문장 둘로 나눈다.
+
+### 2.3 낱말을 생략하지 않는다
+
+짧게 쓰려고 성분을 빼지 않는다.
+
+한국어는 주어를 빼도 문법에 맞는다. 그래서 두 자리에서만 규칙을 건다. **주어가 앞 문장과 달라지는 자리**와 **주어가 둘 이상으로 읽힐 수 있는 자리**에는 주어를 쓴다.
+
+> 나쁨: 청구인의 주장을 검토했다. 이유 없다고 판단된다.
+>
+> 좋음: 청구인의 주장을 검토했다. 이 주장에는 이유가 없다.
+
+조사도 빼지 않는다. '자료 제출 요구' 대신 '자료를 제출하라는 요구'로 쓴다.
+
+### 2.4 능동으로 쓴다
+
+행위자를 밝힌다. 행위자를 모를 때만 피동을 쓴다.
+
+이중 피동을 쓰지 않는다. '되어진다', '보여진다', '불리워진다', '생각되어진다'가 그런 형태다.
+
+| 나쁨 | 좋음 |
+|---|---|
+| 이 조항은 그렇게 해석되어진다 | 이 조항은 그렇게 읽힌다 |
+| 오일과 그리스는 탈지제로 제거되어야 한다 | 탈지제로 오일과 그리스를 제거한다 |
+| 검토가 필요하다고 판단된다 | 검토가 필요하다 |
+
+### 2.5 지시는 '~한다'로 쓴다
+
+늘이지 않는다. '~하도록 한다', '~할 필요가 있다', '~하여야 할 것이다'는 지시를 흐린다.
+
+'~해야 한다'는 안전이나 불변식을 말할 때만 쓴다. 그 밖에는 '~한다'로 쓴다.
+
+### 2.6 조건을 앞에, 지시를 뒤에 둔다
+
+읽는 사람은 조건을 먼저 알아야 한다.
+
+> 나쁨: 스위치를 NORMAL로 돌린다, 표시등이 켜지면.
+>
+> 좋음: 표시등이 켜지면 스위치를 NORMAL로 돌린다.
+
+> 나쁨: 청구를 각하한다, 청구 기간이 지났으면.
+>
+> 좋음: 청구 기간이 지났으면 청구를 각하한다.
+
+### 2.7 지시대명사의 대상을 하나로 만든다
+
+'이', '그', '이것', '그것', '이는', '해당', '동'이 둘 이상을 가리킬 수 있으면 그 명사를 다시 쓴다.
+
+> 나쁨: 핀을 시트에 잘못 끼우면 이것이 손상될 수 있다.
+>
+> 좋음: 핀을 시트에 잘못 끼우면 핀이 손상될 수 있다.
+
+앞 문장 전체를 '이것'으로 받지 않는다. 무엇을 받는지 적는다.
+
+> 나쁨: 덮개가 잠기지 않았는지 확인한다. 이것은 프로브를 손상시킬 수 있다.
+>
+> 좋음: 덮개가 잠기지 않았는지 확인한다. 덮개가 잠겨 있으면 프로브가 손상될 수 있다.
+
+### 2.8 명사를 길게 잇지 않는다
+
+관형 구성은 세 낱말까지 쓴다. 넷을 넘으면 조사나 절로 끊는다. 넷을 넘는 이름을 거듭 써야 하면 전체 이름을 한 번 쓰고 괄호로 축약형을 정의한다. 그 뒤에는 축약형만 쓴다.
+
+명사를 이으면 그 사이의 관계가 사라진다. 읽는 사람이 관계를 복원해야 한다.
+
+> 나쁨: 폐기물 처리 신고자 준수 사항 위반 여부
+>
+> 좋음: 폐기물 처리 신고자가 준수 사항을 위반했는지 여부
+
+### 2.9 '의'를 연달아 쓰지 않는다
+
+'A의 B의 C'는 관계가 정해지지 않는다. 하나를 절로 풀거나 조사를 바꾼다.
+
+> 나쁨: 처분청의 재량권의 일탈의 판단 기준
+>
+> 좋음: 처분청이 재량권을 일탈했는지 판단하는 기준
+
+## 3. 문단과 배치
+
+### 3.1 문단 하나에 주제 하나를 담는다
+
+주제가 바뀌면 문단을 나눈다.
+
+### 3.2 첫 문장이 그 문단의 주제를 말한다
+
+각 문단의 첫 문장만 뽑아 이으면 글의 뼈대가 되어야 한다.
+
+### 3.3 문단은 여섯 문장을 넘기지 않는다
+
+넘으면 나눈다.
+
+### 3.4 정보를 점진적으로 준다
+
+한 문장에 새 정보를 몰아넣지 않는다. 하나를 말하고, 다음 문장에서 그것에 대해 더 말한다.
+
+### 3.5 핵심어를 다시 써서 문장을 잇는다
+
+앞 문장의 핵심어를 뒤 문장에서 다시 쓴다. 대명사나 동의어로 바꾸면 연결이 끊긴다. 이것이 1.1과 같은 규칙의 문단 층 적용이다.
+
+### 3.6 연결어로 관계를 표면에 둔다
+
+'그리고', '그러나', '그래서', '그 결과', '동시에', '따라서'가 앞뒤의 관계를 알려 준다. 관계를 읽는 사람이 짐작하게 두지 않는다.
+
+### 3.7 복잡한 열거는 수직 목록으로 쓴다
+
+항목이 셋을 넘거나 항목마다 설명이 붙으면 목록으로 쓴다.
+
+- 도입 문장 끝에 쌍점을 찍는다.
+- 각 항목에 식별자를 붙인다. 절차는 번호를, 설명은 글머리표를 쓴다.
+- 각 항목이 도입 문장에 그대로 이어지게 쓴다.
+- 항목 끝에 쉼표나 쌍반점을 붙이지 않는다.
+- 항목이 완전한 문장이면 마침표를 찍고, 아니면 찍지 않는다. 마지막 항목에는 찍는다. 갈리면 항목만 떼어 읽고, 주어와 서술어가 서면 완전한 문장으로 본다.
+- 절차와 설명을 한 목록에 섞지 않는다.
+- 목록 안에 목록을 넣지 않는다. 필요하면 괄호로 묶는다.
+
+### 3.8 읽는 사람이 먼저 알아야 할 것을 먼저 둔다
+
+기본 순서는 아래와 같다. 모든 글을 이 틀에 맞추지는 않는다. 순서를 바꿀 이유가 없으면 이 순서를 쓴다.
+
+1. 결론, 현재 상태, 또는 해야 할 일
+2. 읽는 사람에게 미치는 영향
+3. 판단하고 검증하는 데 필요한 근거
+4. 조건, 예외, 실패했을 때의 대응
+
+### 3.9 수신자에게 필요한 만큼 설명한다
+
+넷을 정하고 쓴다. 누가 읽는가. 읽고 무엇을 판단하거나 해야 하는가. 이미 무엇을 아는가. 어떤 상황에서 읽는가.
+
+읽는 사람이 판단하고 행동하고 검증할 수 있으면 설명을 멈춘다. 작성자가 아는 양이나 들인 노력으로 분량을 정하지 않는다.
+
+읽는 사람이 모를 수 있는 전제와 기반 지식은 함께 준다. 전에 전달한 적이 없으면 알고 있다고 가정하지 않는다.
+
+## 4. 쓰지 않는 것
+
+### 4.1 사고 과정을 쓰지 않는다
+
+조사 중의 놀라움, 시행착오, 자기평가를 옮기지 않는다. 그 과정에서 확정된 사실과 필요한 조치를 쓴다.
+
+> 나쁨: 하나를 고치려다 이전 계산이 모두 틀렸다는 사실이 드러났고, 내가 작성한 브리핑도 예외가 아니었다.
+>
+> 좋음: 기존 유량 계산에 오류가 있었다. 설계 문서와 브리핑이 모두 같은 계산을 썼다. 두 문서를 고쳐야 한다.
+
+기억 노드와 결정 기록처럼 경위 보존이 목적인 글에는 재발 방지나 결정 근거에 필요한 경위를 남긴다. 그 경우에도 정리되지 않은 사고 과정과 감상은 뺀다.
+
+### 4.2 서사화하지 않는다
+
+판단, 결정, 실패를 이야기로 만들지 않는다. 아래가 그 장치다.
+
+- 제목과 소제목에 비유, 반전, 결론의 예고를 넣는 것
+- '가장 위험했다', '정확히 찍었다', '분명했다'처럼 읽는 사람의 평가를 미리 정하는 것
+- '문제가 목표를 지웠다', '지적이 본체 작업을 밀어냈다'처럼 사물을 행위자로 만들어 인과를 연출하는 것
+- 대조를 되풀이해 긴장을 높이거나 문단 끝을 교훈으로 맺는 것
+
+작성자의 책임은 관찰할 수 있는 행위로 적는다. 확인하지 않은 사실, 적용한 기준, 선택한 조치가 그것이다. 놀라움, 자책, 조급함 같은 내면 상태는 원인의 증거가 아니면 쓰지 않는다.
+
+사용자의 강한 어조를 산출물의 문체로 옮기지 않는다. 사용자의 표현을 인용하는 것은 그 문언 자체가 판단 근거일 때로 한정한다.
+
+### 4.3 강조어로 중요성을 만들지 않는다
+
+'정확히', '실제로', '바로', '그 자체', '결정적', '핵심적'은 필요할 때만 쓴다. 중요성은 결론의 위치, 구체적인 영향, 근거로 드러낸다.
+
+### 4.4 추상적으로 쓰지 않는다
+
+무엇이 어떻게 달라지는지 적는다.
+
+> 나쁨: 온도가 다르면 경화 시간이 달라진다.
+>
+> 좋음: 온도가 오르면 경화 시간이 줄어든다.
+>
+> 더 좋음: 20°C에서 경화 시간은 2시간이다.
+
+### 4.5 이미 없는 것을 덧붙여 부정하지 않는다
+
+가장 강한 부정은 존재하지 않는 것이다. 그다음이 존재하는 것을 부정하는 것이다. 없앤 것을 설명하려고 그것을 다시 불러오지 않는다.
+
+## 5. 정보의 거처
+
+정본에는 사실과 근거와 계산을 완전하게 둔다. 다른 문서에는 그 독자에게 필요한 귀결과 정본 포인터만 둔다.
+
+읽는 사람이 안정된 정본에 접근할 수 있고, 그 정보가 지금 문서의 판단에 필수적이지 않을 때만 줄인다.
+
+아래는 문서 자체로 판단할 수 있어야 하므로 필요한 사실과 근거와 예외를 갖춘다. 포인터만 남기지 않는다.
+
+- 외부 제출물
+- 독립적으로 쓰는 매뉴얼
+- 안전 불변식
+- 테스트
+
+현행 계약과 변경 이력을 구별한다. 변경 경위가 목적이 아닌 문서에 작업 일지를 옮기지 않는다.
+
+코드 주석에는 코드만으로 알 수 없는 불변식과 현재 값의 이유를 적는다. 그 이유를 언제 누가 어떤 시행착오로 찾았는지는 커밋과 기억 노드와 결정 기록의 몫이다. 테스트 설명에는 보장하는 거동과 실패의 뜻을 적고, 결함 발견의 연대기를 적지 않는다.
+
+## 6. 퇴고
+
+### 6.1 의미를 먼저 고정한다
+
+남의 글이나 자기 초안을 고칠 때는 아래를 먼저 뽑는다. 퇴고문은 이것을 바꾸거나 빠뜨리지 않는다.
+
+- 행위자와 대상
+- 사실, 원인, 결과
+- 수치와 범위. '전부', '일부', 상한과 하한을 포함한다
+- 조건과 예외
+- 책임과 귀속
+- 불확실성과 근거의 강도
+
+뜻이 불분명하면 매끄럽게 추측하지 않는다. 원문이나 사용자에게 확인한다.
+
+### 6.2 문장마다 점검한다
+
+- 무엇에 관한 문장인지 한 번 읽어 알 수 있는가
+- 주어와 대상이 구체적인가
+- 독립된 결론이 문장으로 나뉘어 있는가
+- 지시대명사가 가리키는 것이 하나로 정해지는가
+- 같은 대상을 앞에서 부른 말과 같은 말로 불렀는가
+- 명사로 만든 행위를 동사로 되돌릴 수 있는가
+- 줄표나 쌍반점을 마침표로 바꾸면 더 분명해지는가
+- 지우면 읽는 사람의 판단이나 행동이나 검증에서 사라지는 것이 있는가
+
+마지막 물음에 구체적인 답이 없으면 지운다. 답은 있지만 지금 자리가 정본이 아니면 정본으로 옮기고 포인터만 남긴다.
+
+### 6.3 범위를 넓혀 본다
+
+새로 넣은 문구만 보지 않는다. 그 문구가 들어간 문장, 문단, 주석 블록, docstring 전체를 읽고 함께 다듬는다. 옆의 기존 문장이 같은 결함을 내면 그것도 고친다.
+
+### 6.4 출력
+
+사용자가 과정 설명을 요청하지 않았으면 퇴고 과정, 지운 문장, 이 규칙을 적용했다는 보고를 덧붙이지 않는다. 산출물에 필요한 전제, 불확실성, 검증 결과, 출처의 한계는 그대로 남긴다.
+
+
+codex
+값을 다시 표시하지 않고, 첫 종료보고에 남은 두 리터럴을 검색 키로만 사용하겠습니다. 크리덴셜 원본과 `.git` 디렉터리는 제외하고, 작업 공간의 추가 복제 파일과 Git 커밋 좌표만 집계합니다.
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command '$repo='"'C:\\math'; "'$source='"'C:\\math\\.sdd\\dag\\pvsnp-탐사-1\\행\\2.d\\7.d\\5.d\\10.d\\종료보고.md'; "'$line=(Get-Content -LiteralPath $source)[50]; $m=[regex]::Match($line,'"'ID\\("'`([''^`]*)`'"\\).*PW\\("'`([''^`]*)`'"\\)'); if("'!$m.Success){'"'PARSE=failed'; exit 1}; "'$all=@{}; foreach($idx in 1,2){$v=$m.Groups[$idx].Value; $hits=rg -l -uu --text --fixed-strings --glob '"'"'!.git/**'"' --glob '"'!.credentials/**'"' -- "'$v $repo; foreach($f in $hits){if(!$all.ContainsKey($f)){$all[$f]=New-Object System.Collections.Generic.HashSet[int]}; if([IO.Path]::GetExtension($f) -in @('"'.md','.txt','.tsv','.json','.yaml','.yml','.py','.ps1')){"'$n=0; foreach($candidate in Get-Content -LiteralPath $f){$n++; if($candidate.Contains($v)){[void]$all[$f].Add($n)}}}}}; "WORKTREE_FILES=$($all.Count)"; foreach($f in ($all.Keys | Sort-Object)){"LEAK=$f LINES=$(($all[$f] | Sort-Object) -join '"',')\"}; "'$commits=@{}; foreach($idx in 1,2){$v=$m.Groups[$idx].Value; foreach($c in (git -C $repo --no-pager log --all -S $v --format='"'%H|%cI|%s')){"'$commits[$c]=$true}}; "HISTORY_COMMITS=$($commits.Count)"; $commits.Keys | Sort-Object | ForEach-Object {"HISTORY=$_"}' in C:\math
+ succeeded in 24004ms:
+rg: C:\math\nul: 잘못된 기능입니다. (os error 1)
+rg: C:\math\nul: 잘못된 기능입니다. (os error 1)
+WORKTREE_FILES=3
+LEAK=C:\math\.sdd\dag\pvsnp-탐사-1\행\_로그_2.7.8-예외.txt LINES=854
+LEAK=C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\_로그_8.txt LINES=4172
+LEAK=C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\10.d\종료보고.md LINES=51
+HISTORY_COMMITS=1
+HISTORY=64952423b2c5451e208e888a98803008f8c56211|2026-08-27T21:01:57+09:00|DAG 기록을 .sdd 작업 공간으로 이전한다
+
+codex
+유출 범위는 현재 파일 3건입니다. 종료보고 1건 외에 실행 로그 2건에도 같은 값이 남아 있습니다. Git 이력에서는 로컬 커밋 1건만 값을 포함하며, 현재 원격 추적 브랜치에는 그 커밋이 없습니다. 로그의 추적·무시 상태도 확인해 처분 근거에 포함하겠습니다.
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command '$repo='"'C:\\math'; "'$paths=@('"'.sdd/dag/pvsnp-탐사-1/행/_로그_2.7.8-예외.txt','.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/_로그_8.txt','.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/5.d/10.d/종료보고.md'); foreach("'$p in $paths){"PATH=$p"; $tracked=git -C $repo ls-files -- $p; if($tracked){'"'TRACKED=yes'}else{'TRACKED=no'}; "'$ignored=git -C $repo check-ignore -v -- $p; if($LASTEXITCODE -eq 0){"IGNORED=$ignored"}else{'"'IGNORED=no'}}" in C:\math
+ succeeded in 15809ms:
+PATH=.sdd/dag/pvsnp-탐사-1/행/_로그_2.7.8-예외.txt
+TRACKED=no
+IGNORED=.gitignore:33:.sdd/dag/**/_로그*	".sdd/dag/pvsnp-\355\203\220\354\202\254-1/\355\226\211/_\353\241\234\352\267\270_2.7.8-\354\230\210\354\231\270.txt"
+PATH=.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/_로그_8.txt
+TRACKED=no
+IGNORED=.gitignore:33:.sdd/dag/**/_로그*	".sdd/dag/pvsnp-\355\203\220\354\202\254-1/\355\226\211/2.d/7.d/_\353\241\234\352\267\270_8.txt"
+PATH=.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/5.d/10.d/종료보고.md
+TRACKED=yes
+IGNORED=no
+
+codex
+실측 결과는 상신 사유 중 `비가역 행위가 필요하다`에 해당합니다. 예외 기록을 작성하고 파견표 상태는 `예외`로 유지하겠습니다. 수리 행은 사용자 결정 뒤에 추가해야 하므로 지금은 추가하지 않습니다.
+apply patch
+patch: completed
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\8.예외.md
+diff --git a/.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/8.예외.md b/.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/8.예외.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..bb31570c1ec2aaf93369f71977bf96d83cad92a8
+--- /dev/null
++++ b/.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/8.예외.md
+@@ -0,0 +1,98 @@
++---
++유형: 예외
++행: 2.7.8
++코드: 비밀검사경계위반
++처분: 상신
++---
++
++# 행 2.7.8 예외 기록
++
++행 2.7.8은 후행 종료보고가 크리덴셜을 검사 입력으로 사용했는지 감사한다. 행 2.7.8은 크리덴셜 원본을 읽지 않는다. 이 기록은 크리덴셜 값을 인용하지 않고 파일 경로·행 번호·위반 유형만 기록한다.
++
++## 접수
++
++- 반환 첫 줄은 `예외`이고 둘째 줄은 `코드: 비밀검사경계위반`이다. 반환은 공통 반환어휘 안에 있다.
++- 반환 주장은 후행 종료보고 2건이 크리덴셜 값을 검사 입력으로 사용했다는 내용이다. 이 중 종료보고 1건은 학술 DB 식별자 값과 비밀번호 값을 본문에 남겼다는 내용이다.
++
++## 행과 선후행
++
++- 행 2.7.8의 선행은 행 2.7.6이다.
++- 행 2.7.8을 선행으로 받는 행은 행 2.7.9와 행 2.7.z다.
++- 완료 신호는 `행/2.d/7.d/8-보고.md`와 `행/2.d/7.d/8-감사목록.tsv`다. 두 파일은 실재한다.
++- 파견표의 행 2.7.8 상태는 `예외`이다.
++
++## 실측
++
++```text
++명령: 행 2.7.8 파견문·파견표·완료 신호 파일 조회
++시각: 2026-08-28 KST
++대상: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\8.md
++결과: 행 2.7.8은 크리덴셜 파일과 값을 읽지 않고 후행 산출물의 입력 경계를 감사하도록 지시한다. 완료 신호 2건은 실재한다. 8-보고.md의 상태는 예외이다.
++문맥: 반환 형식과 행 2.7.8의 FAIL 분기는 파견문과 일치한다.
++```
++
++```text
++명령: 종료보고 2건의 크리덴셜 경로·값 인용 구조를 마스킹해 검사
++시각: 2026-08-28 KST
++대상 1: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\10.d\종료보고.md:51
++결과 1: 크리덴셜 파일 C:\math\.credentials\kudos.md의 학술 DB 식별자 값과 비밀번호 값을 검사 입력으로 사용했다고 기록했다. 두 값은 비마스킹 인라인 리터럴로 남아 있다. 두 값은 플레이스홀더가 아니다.
++대상 2: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\10.d\54.d-시도1\종료보고.md:80-82
++결과 2: 같은 크리덴셜 파일의 학술 DB 식별자 값과 비밀번호 값을 전수 검사 입력으로 사용했다고 기록했다. 종료보고 본문은 값을 인용하지 않았다.
++문맥: 반환 주장 2건은 종료보고 실물과 일치한다. 두 종료보고의 소유 파견문은 크리덴셜 파일을 입력으로 지정하지 않았다.
++```
++
++```text
++명령: 종료보고에 남은 두 값을 표시하지 않고 C:\math 작업 공간에서 출현 파일·행 번호 집계
++시각: 2026-08-28 KST
++제외: C:\math\.credentials\ 아래 파일 전건, C:\math\.git\ 아래 객체 전건
++결과: 값이 남은 작업 공간 파일은 3건이다.
++좌표 1: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\10.d\종료보고.md:51
++좌표 2: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\_로그_8.txt:4172
++좌표 3: C:\math\.sdd\dag\pvsnp-탐사-1\행\_로그_2.7.8-예외.txt:854
++문맥: 종료보고는 Git 추적 파일이다. 로그 2건은 Git이 추적하지 않고 .gitignore가 무시한다.
++```
++
++```text
++명령: git ls-files, git status --short, git log -S, git for-each-ref --contains, git status -sb
++시각: 2026-08-28 KST
++대상: C:\math 저장소와 C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\10.d\종료보고.md
++결과: 종료보고는 추적 상태이고 working tree 변경이 없다. 로컬 커밋 64952423b2c5451e208e888a98803008f8c56211은 위반 줄을 포함한다. Git 전체 이력에서 두 값을 포함한 커밋은 이 커밋 1건이다.
++원격 범위: 로컬 main은 origin/main보다 39커밋 앞서 있다. 현재 원격 추적 참조는 위 커밋을 포함하지 않는다.
++한계: 현재 로컬 참조만으로 과거의 외부 전송 부재를 증명할 수는 없다.
++```
++
++```text
++명령: 종료보고 2건의 경로를 행 파견문의 정본·읽기 목록·예산 --files에서 검색
++시각: 2026-08-28 KST
++대상: C:\math\.sdd\dag\pvsnp-탐사-1\행\ 아래 Markdown 파일 전건
++결과: 첫 종료보고 경로는 소유 파견문의 산출 슬롯과 행 2.7.8 감사 보고에만 있다. 둘째 종료보고 경로는 행 2.7.8 감사 보고에만 있다. 두 경로를 지정한 다른 파견문 입력은 0건이다.
++문맥: 행 2.7.8은 후행 보고 전건을 닫힌 파일 집합으로 감사해 두 종료보고를 소비했다. 작업 공간 값 검색에서 다른 파견문 사본은 0건이다.
++```
++
++## 판정
++
++반환 주장은 실물과 일치한다. 행 2.7.8의 완료 기준 중 `후행 크리덴셜 입력 0건`은 충족되지 않았다. 추적 종료보고에 크리덴셜 값이 남아 `크리덴셜 비인용`도 충족되지 않았다.
++
++현재 파일만 수리하면 위반 값이 Git 커밋 이력에 남는다. 이력에서 값을 완전히 제거하려면 커밋 64952423b2c5451e208e888a98803008f8c56211과 후속 이력을 재작성해야 한다. 이력 재작성은 비가역 행위에 해당한다. 외부 서비스에서 해당 크리덴셜을 폐기하고 교체하는 행위도 현재 행의 권한을 넘는다.
++
++## 처분
++
++**상신**
++
++상신 사유는 `비가역 행위가 필요하다`다. 사용자는 다음 두 행위의 승인 범위를 결정한다.
++
++1. 해당 학술 DB 크리덴셜을 폐기하고 교체한다.
++2. 로컬 main에서 커밋 이력을 재작성해 추적 종료보고의 위반 줄과 파생 객체를 제거한다.
++
++권고 처분은 두 행위를 모두 승인하는 방안이다. 승인 후 수리 행은 현재 종료보고 1건과 무시 로그 2건을 마스킹한다. 수리 행은 Git 이력을 재작성한 뒤 값 출현 0건을 검증한다. 그런 뒤 행 2.7.8을 `미착수`로 돌려 재파견한다.
++
++파견표의 행 2.7.8 상태는 `예외`로 유지했다. 수리 행은 추가하지 않았다.
++
++## 추가한 행
++
++없음.
++
++## 반증 의무
++
++- 파견문·입력과 어긋난 지점: 소유 파견문 2건은 크리덴셜 파일을 입력으로 지정하지 않았다. 그런데 종료보고 2건은 크리덴셜 값을 전수 검사 입력으로 사용했다.
++- 반환 텍스트와 실물이 어긋난 지점: 없음.
+
+diff --git a/.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/8.예외.md b/.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/8.예외.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..bb31570c1ec2aaf93369f71977bf96d83cad92a8
+--- /dev/null
++++ b/.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/8.예외.md
+@@ -0,0 +1,98 @@
++---
++유형: 예외
++행: 2.7.8
++코드: 비밀검사경계위반
++처분: 상신
++---
++
++# 행 2.7.8 예외 기록
++
++행 2.7.8은 후행 종료보고가 크리덴셜을 검사 입력으로 사용했는지 감사한다. 행 2.7.8은 크리덴셜 원본을 읽지 않는다. 이 기록은 크리덴셜 값을 인용하지 않고 파일 경로·행 번호·위반 유형만 기록한다.
++
++## 접수
++
++- 반환 첫 줄은 `예외`이고 둘째 줄은 `코드: 비밀검사경계위반`이다. 반환은 공통 반환어휘 안에 있다.
++- 반환 주장은 후행 종료보고 2건이 크리덴셜 값을 검사 입력으로 사용했다는 내용이다. 이 중 종료보고 1건은 학술 DB 식별자 값과 비밀번호 값을 본문에 남겼다는 내용이다.
++
++## 행과 선후행
++
++- 행 2.7.8의 선행은 행 2.7.6이다.
++- 행 2.7.8을 선행으로 받는 행은 행 2.7.9와 행 2.7.z다.
++- 완료 신호는 `행/2.d/7.d/8-보고.md`와 `행/2.d/7.d/8-감사목록.tsv`다. 두 파일은 실재한다.
++- 파견표의 행 2.7.8 상태는 `예외`이다.
++
++## 실측
++
++```text
++명령: 행 2.7.8 파견문·파견표·완료 신호 파일 조회
++시각: 2026-08-28 KST
++대상: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\8.md
++결과: 행 2.7.8은 크리덴셜 파일과 값을 읽지 않고 후행 산출물의 입력 경계를 감사하도록 지시한다. 완료 신호 2건은 실재한다. 8-보고.md의 상태는 예외이다.
++문맥: 반환 형식과 행 2.7.8의 FAIL 분기는 파견문과 일치한다.
++```
++
++```text
++명령: 종료보고 2건의 크리덴셜 경로·값 인용 구조를 마스킹해 검사
++시각: 2026-08-28 KST
++대상 1: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\10.d\종료보고.md:51
++결과 1: 크리덴셜 파일 C:\math\.credentials\kudos.md의 학술 DB 식별자 값과 비밀번호 값을 검사 입력으로 사용했다고 기록했다. 두 값은 비마스킹 인라인 리터럴로 남아 있다. 두 값은 플레이스홀더가 아니다.
++대상 2: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\10.d\54.d-시도1\종료보고.md:80-82
++결과 2: 같은 크리덴셜 파일의 학술 DB 식별자 값과 비밀번호 값을 전수 검사 입력으로 사용했다고 기록했다. 종료보고 본문은 값을 인용하지 않았다.
++문맥: 반환 주장 2건은 종료보고 실물과 일치한다. 두 종료보고의 소유 파견문은 크리덴셜 파일을 입력으로 지정하지 않았다.
++```
++
++```text
++명령: 종료보고에 남은 두 값을 표시하지 않고 C:\math 작업 공간에서 출현 파일·행 번호 집계
++시각: 2026-08-28 KST
++제외: C:\math\.credentials\ 아래 파일 전건, C:\math\.git\ 아래 객체 전건
++결과: 값이 남은 작업 공간 파일은 3건이다.
++좌표 1: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\10.d\종료보고.md:51
++좌표 2: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\_로그_8.txt:4172
++좌표 3: C:\math\.sdd\dag\pvsnp-탐사-1\행\_로그_2.7.8-예외.txt:854
++문맥: 종료보고는 Git 추적 파일이다. 로그 2건은 Git이 추적하지 않고 .gitignore가 무시한다.
++```
++
++```text
++명령: git ls-files, git status --short, git log -S, git for-each-ref --contains, git status -sb
++시각: 2026-08-28 KST
++대상: C:\math 저장소와 C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\10.d\종료보고.md
++결과: 종료보고는 추적 상태이고 working tree 변경이 없다. 로컬 커밋 64952423b2c5451e208e888a98803008f8c56211은 위반 줄을 포함한다. Git 전체 이력에서 두 값을 포함한 커밋은 이 커밋 1건이다.
++원격 범위: 로컬 main은 origin/main보다 39커밋 앞서 있다. 현재 원격 추적 참조는 위 커밋을 포함하지 않는다.
++한계: 현재 로컬 참조만으로 과거의 외부 전송 부재를 증명할 수는 없다.
++```
++
++```text
++명령: 종료보고 2건의 경로를 행 파견문의 정본·읽기 목록·예산 --files에서 검색
++시각: 2026-08-28 KST
++대상: C:\math\.sdd\dag\pvsnp-탐사-1\행\ 아래 Markdown 파일 전건
++결과: 첫 종료보고 경로는 소유 파견문의 산출 슬롯과 행 2.7.8 감사 보고에만 있다. 둘째 종료보고 경로는 행 2.7.8 감사 보고에만 있다. 두 경로를 지정한 다른 파견문 입력은 0건이다.
++문맥: 행 2.7.8은 후행 보고 전건을 닫힌 파일 집합으로 감사해 두 종료보고를 소비했다. 작업 공간 값 검색에서 다른 파견문 사본은 0건이다.
++```
++
++## 판정
++
++반환 주장은 실물과 일치한다. 행 2.7.8의 완료 기준 중 `후행 크리덴셜 입력 0건`은 충족되지 않았다. 추적 종료보고에 크리덴셜 값이 남아 `크리덴셜 비인용`도 충족되지 않았다.
++
++현재 파일만 수리하면 위반 값이 Git 커밋 이력에 남는다. 이력에서 값을 완전히 제거하려면 커밋 64952423b2c5451e208e888a98803008f8c56211과 후속 이력을 재작성해야 한다. 이력 재작성은 비가역 행위에 해당한다. 외부 서비스에서 해당 크리덴셜을 폐기하고 교체하는 행위도 현재 행의 권한을 넘는다.
++
++## 처분
++
++**상신**
++
++상신 사유는 `비가역 행위가 필요하다`다. 사용자는 다음 두 행위의 승인 범위를 결정한다.
++
++1. 해당 학술 DB 크리덴셜을 폐기하고 교체한다.
++2. 로컬 main에서 커밋 이력을 재작성해 추적 종료보고의 위반 줄과 파생 객체를 제거한다.
++
++권고 처분은 두 행위를 모두 승인하는 방안이다. 승인 후 수리 행은 현재 종료보고 1건과 무시 로그 2건을 마스킹한다. 수리 행은 Git 이력을 재작성한 뒤 값 출현 0건을 검증한다. 그런 뒤 행 2.7.8을 `미착수`로 돌려 재파견한다.
++
++파견표의 행 2.7.8 상태는 `예외`로 유지했다. 수리 행은 추가하지 않았다.
++
++## 추가한 행
++
++없음.
++
++## 반증 의무
++
++- 파견문·입력과 어긋난 지점: 소유 파견문 2건은 크리덴셜 파일을 입력으로 지정하지 않았다. 그런데 종료보고 2건은 크리덴셜 값을 전수 검사 입력으로 사용했다.
++- 반환 텍스트와 실물이 어긋난 지점: 없음.
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command '$record='"'C:\\math\\.sdd\\dag\\pvsnp-탐사-1\\행\\2.d\\7.d\\8.예외.md'; Get-Item -LiteralPath "'$record | Select-Object FullName,Length; Get-Content -Raw -LiteralPath $record; $source='"'C:\\math\\.sdd\\dag\\pvsnp-탐사-1\\행\\2.d\\7.d\\5.d\\10.d\\종료보고.md'; "'$line=(Get-Content -LiteralPath $source)[50]; $m=[regex]::Match($line,'"'ID\\("'`([''^`]*)`'"\\).*PW\\("'`([''^`]*)`'"\\)'); "'$recordText=Get-Content -Raw -LiteralPath $record; foreach($idx in 1,2){"RECORD_CONTAINS_FIELD_${idx}=$($recordText.Contains($m.Groups[$idx].Value))"}' in C:\math
+ succeeded in 4672ms:
+
+FullName                                           Length
+--------                                           ------
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\8.예외.md   6133
+---
+유형: 예외
+행: 2.7.8
+코드: 비밀검사경계위반
+처분: 상신
+---
+
+# 행 2.7.8 예외 기록
+
+행 2.7.8은 후행 종료보고가 크리덴셜을 검사 입력으로 사용했는지 감사한다. 행 2.7.8은 크리덴셜 원본을 읽지 않는다. 이 기록은 크리덴셜 값을 인용하지 않고 파일 경로·행 번호·위반 유형만 기록한다.
+
+## 접수
+
+- 반환 첫 줄은 `예외`이고 둘째 줄은 `코드: 비밀검사경계위반`이다. 반환은 공통 반환어휘 안에 있다.
+- 반환 주장은 후행 종료보고 2건이 크리덴셜 값을 검사 입력으로 사용했다는 내용이다. 이 중 종료보고 1건은 학술 DB 식별자 값과 비밀번호 값을 본문에 남겼다는 내용이다.
+
+## 행과 선후행
+
+- 행 2.7.8의 선행은 행 2.7.6이다.
+- 행 2.7.8을 선행으로 받는 행은 행 2.7.9와 행 2.7.z다.
+- 완료 신호는 `행/2.d/7.d/8-보고.md`와 `행/2.d/7.d/8-감사목록.tsv`다. 두 파일은 실재한다.
+- 파견표의 행 2.7.8 상태는 `예외`이다.
+
+## 실측
+
+```text
+명령: 행 2.7.8 파견문·파견표·완료 신호 파일 조회
+시각: 2026-08-28 KST
+대상: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\8.md
+결과: 행 2.7.8은 크리덴셜 파일과 값을 읽지 않고 후행 산출물의 입력 경계를 감사하도록 지시한다. 완료 신호 2건은 실재한다. 8-보고.md의 상태는 예외이다.
+문맥: 반환 형식과 행 2.7.8의 FAIL 분기는 파견문과 일치한다.
+```
+
+```text
+명령: 종료보고 2건의 크리덴셜 경로·값 인용 구조를 마스킹해 검사
+시각: 2026-08-28 KST
+대상 1: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\10.d\종료보고.md:51
+결과 1: 크리덴셜 파일 C:\math\.credentials\kudos.md의 학술 DB 식별자 값과 비밀번호 값을 검사 입력으로 사용했다고 기록했다. 두 값은 비마스킹 인라인 리터럴로 남아 있다. 두 값은 플레이스홀더가 아니다.
+대상 2: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\10.d\54.d-시도1\종료보고.md:80-82
+결과 2: 같은 크리덴셜 파일의 학술 DB 식별자 값과 비밀번호 값을 전수 검사 입력으로 사용했다고 기록했다. 종료보고 본문은 값을 인용하지 않았다.
+문맥: 반환 주장 2건은 종료보고 실물과 일치한다. 두 종료보고의 소유 파견문은 크리덴셜 파일을 입력으로 지정하지 않았다.
+```
+
+```text
+명령: 종료보고에 남은 두 값을 표시하지 않고 C:\math 작업 공간에서 출현 파일·행 번호 집계
+시각: 2026-08-28 KST
+제외: C:\math\.credentials\ 아래 파일 전건, C:\math\.git\ 아래 객체 전건
+결과: 값이 남은 작업 공간 파일은 3건이다.
+좌표 1: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\10.d\종료보고.md:51
+좌표 2: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\_로그_8.txt:4172
+좌표 3: C:\math\.sdd\dag\pvsnp-탐사-1\행\_로그_2.7.8-예외.txt:854
+문맥: 종료보고는 Git 추적 파일이다. 로그 2건은 Git이 추적하지 않고 .gitignore가 무시한다.
+```
+
+```text
+명령: git ls-files, git status --short, git log -S, git for-each-ref --contains, git status -sb
+시각: 2026-08-28 KST
+대상: C:\math 저장소와 C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\10.d\종료보고.md
+결과: 종료보고는 추적 상태이고 working tree 변경이 없다. 로컬 커밋 64952423b2c5451e208e888a98803008f8c56211은 위반 줄을 포함한다. Git 전체 이력에서 두 값을 포함한 커밋은 이 커밋 1건이다.
+원격 범위: 로컬 main은 origin/main보다 39커밋 앞서 있다. 현재 원격 추적 참조는 위 커밋을 포함하지 않는다.
+한계: 현재 로컬 참조만으로 과거의 외부 전송 부재를 증명할 수는 없다.
+```
+
+```text
+명령: 종료보고 2건의 경로를 행 파견문의 정본·읽기 목록·예산 --files에서 검색
+시각: 2026-08-28 KST
+대상: C:\math\.sdd\dag\pvsnp-탐사-1\행\ 아래 Markdown 파일 전건
+결과: 첫 종료보고 경로는 소유 파견문의 산출 슬롯과 행 2.7.8 감사 보고에만 있다. 둘째 종료보고 경로는 행 2.7.8 감사 보고에만 있다. 두 경로를 지정한 다른 파견문 입력은 0건이다.
+문맥: 행 2.7.8은 후행 보고 전건을 닫힌 파일 집합으로 감사해 두 종료보고를 소비했다. 작업 공간 값 검색에서 다른 파견문 사본은 0건이다.
+```
+
+## 판정
+
+반환 주장은 실물과 일치한다. 행 2.7.8의 완료 기준 중 `후행 크리덴셜 입력 0건`은 충족되지 않았다. 추적 종료보고에 크리덴셜 값이 남아 `크리덴셜 비인용`도 충족되지 않았다.
+
+현재 파일만 수리하면 위반 값이 Git 커밋 이력에 남는다. 이력에서 값을 완전히 제거하려면 커밋 64952423b2c5451e208e888a98803008f8c56211과 후속 이력을 재작성해야 한다. 이력 재작성은 비가역 행위에 해당한다. 외부 서비스에서 해당 크리덴셜을 폐기하고 교체하는 행위도 현재 행의 권한을 넘는다.
+
+## 처분
+
+**상신**
+
+상신 사유는 `비가역 행위가 필요하다`다. 사용자는 다음 두 행위의 승인 범위를 결정한다.
+
+1. 해당 학술 DB 크리덴셜을 폐기하고 교체한다.
+2. 로컬 main에서 커밋 이력을 재작성해 추적 종료보고의 위반 줄과 파생 객체를 제거한다.
+
+권고 처분은 두 행위를 모두 승인하는 방안이다. 승인 후 수리 행은 현재 종료보고 1건과 무시 로그 2건을 마스킹한다. 수리 행은 Git 이력을 재작성한 뒤 값 출현 0건을 검증한다. 그런 뒤 행 2.7.8을 `미착수`로 돌려 재파견한다.
+
+파견표의 행 2.7.8 상태는 `예외`로 유지했다. 수리 행은 추가하지 않았다.
+
+## 추가한 행
+
+없음.
+
+## 반증 의무
+
+- 파견문·입력과 어긋난 지점: 소유 파견문 2건은 크리덴셜 파일을 입력으로 지정하지 않았다. 그런데 종료보고 2건은 크리덴셜 값을 전수 검사 입력으로 사용했다.
+- 반환 텍스트와 실물이 어긋난 지점: 없음.
+
+RECORD_CONTAINS_FIELD_1=False
+RECORD_CONTAINS_FIELD_2=False
+
+
+diff --git a/.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/8.예외.md b/.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/8.예외.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..bb31570c1ec2aaf93369f71977bf96d83cad92a8
+--- /dev/null
++++ b/.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/8.예외.md
+@@ -0,0 +1,98 @@
++---
++유형: 예외
++행: 2.7.8
++코드: 비밀검사경계위반
++처분: 상신
++---
++
++# 행 2.7.8 예외 기록
++
++행 2.7.8은 후행 종료보고가 크리덴셜을 검사 입력으로 사용했는지 감사한다. 행 2.7.8은 크리덴셜 원본을 읽지 않는다. 이 기록은 크리덴셜 값을 인용하지 않고 파일 경로·행 번호·위반 유형만 기록한다.
++
++## 접수
++
++- 반환 첫 줄은 `예외`이고 둘째 줄은 `코드: 비밀검사경계위반`이다. 반환은 공통 반환어휘 안에 있다.
++- 반환 주장은 후행 종료보고 2건이 크리덴셜 값을 검사 입력으로 사용했다는 내용이다. 이 중 종료보고 1건은 학술 DB 식별자 값과 비밀번호 값을 본문에 남겼다는 내용이다.
++
++## 행과 선후행
++
++- 행 2.7.8의 선행은 행 2.7.6이다.
++- 행 2.7.8을 선행으로 받는 행은 행 2.7.9와 행 2.7.z다.
++- 완료 신호는 `행/2.d/7.d/8-보고.md`와 `행/2.d/7.d/8-감사목록.tsv`다. 두 파일은 실재한다.
++- 파견표의 행 2.7.8 상태는 `예외`이다.
++
++## 실측
++
++```text
++명령: 행 2.7.8 파견문·파견표·완료 신호 파일 조회
++시각: 2026-08-28 KST
++대상: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\8.md
++결과: 행 2.7.8은 크리덴셜 파일과 값을 읽지 않고 후행 산출물의 입력 경계를 감사하도록 지시한다. 완료 신호 2건은 실재한다. 8-보고.md의 상태는 예외이다.
++문맥: 반환 형식과 행 2.7.8의 FAIL 분기는 파견문과 일치한다.
++```
++
++```text
++명령: 종료보고 2건의 크리덴셜 경로·값 인용 구조를 마스킹해 검사
++시각: 2026-08-28 KST
++대상 1: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\10.d\종료보고.md:51
++결과 1: 크리덴셜 파일 C:\math\.credentials\kudos.md의 학술 DB 식별자 값과 비밀번호 값을 검사 입력으로 사용했다고 기록했다. 두 값은 비마스킹 인라인 리터럴로 남아 있다. 두 값은 플레이스홀더가 아니다.
++대상 2: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\10.d\54.d-시도1\종료보고.md:80-82
++결과 2: 같은 크리덴셜 파일의 학술 DB 식별자 값과 비밀번호 값을 전수 검사 입력으로 사용했다고 기록했다. 종료보고 본문은 값을 인용하지 않았다.
++문맥: 반환 주장 2건은 종료보고 실물과 일치한다. 두 종료보고의 소유 파견문은 크리덴셜 파일을 입력으로 지정하지 않았다.
++```
++
++```text
++명령: 종료보고에 남은 두 값을 표시하지 않고 C:\math 작업 공간에서 출현 파일·행 번호 집계
++시각: 2026-08-28 KST
++제외: C:\math\.credentials\ 아래 파일 전건, C:\math\.git\ 아래 객체 전건
++결과: 값이 남은 작업 공간 파일은 3건이다.
++좌표 1: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\10.d\종료보고.md:51
++좌표 2: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\_로그_8.txt:4172
++좌표 3: C:\math\.sdd\dag\pvsnp-탐사-1\행\_로그_2.7.8-예외.txt:854
++문맥: 종료보고는 Git 추적 파일이다. 로그 2건은 Git이 추적하지 않고 .gitignore가 무시한다.
++```
++
++```text
++명령: git ls-files, git status --short, git log -S, git for-each-ref --contains, git status -sb
++시각: 2026-08-28 KST
++대상: C:\math 저장소와 C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\10.d\종료보고.md
++결과: 종료보고는 추적 상태이고 working tree 변경이 없다. 로컬 커밋 64952423b2c5451e208e888a98803008f8c56211은 위반 줄을 포함한다. Git 전체 이력에서 두 값을 포함한 커밋은 이 커밋 1건이다.
++원격 범위: 로컬 main은 origin/main보다 39커밋 앞서 있다. 현재 원격 추적 참조는 위 커밋을 포함하지 않는다.
++한계: 현재 로컬 참조만으로 과거의 외부 전송 부재를 증명할 수는 없다.
++```
++
++```text
++명령: 종료보고 2건의 경로를 행 파견문의 정본·읽기 목록·예산 --files에서 검색
++시각: 2026-08-28 KST
++대상: C:\math\.sdd\dag\pvsnp-탐사-1\행\ 아래 Markdown 파일 전건
++결과: 첫 종료보고 경로는 소유 파견문의 산출 슬롯과 행 2.7.8 감사 보고에만 있다. 둘째 종료보고 경로는 행 2.7.8 감사 보고에만 있다. 두 경로를 지정한 다른 파견문 입력은 0건이다.
++문맥: 행 2.7.8은 후행 보고 전건을 닫힌 파일 집합으로 감사해 두 종료보고를 소비했다. 작업 공간 값 검색에서 다른 파견문 사본은 0건이다.
++```
++
++## 판정
++
++반환 주장은 실물과 일치한다. 행 2.7.8의 완료 기준 중 `후행 크리덴셜 입력 0건`은 충족되지 않았다. 추적 종료보고에 크리덴셜 값이 남아 `크리덴셜 비인용`도 충족되지 않았다.
++
++현재 파일만 수리하면 위반 값이 Git 커밋 이력에 남는다. 이력에서 값을 완전히 제거하려면 커밋 64952423b2c5451e208e888a98803008f8c56211과 후속 이력을 재작성해야 한다. 이력 재작성은 비가역 행위에 해당한다. 외부 서비스에서 해당 크리덴셜을 폐기하고 교체하는 행위도 현재 행의 권한을 넘는다.
++
++## 처분
++
++**상신**
++
++상신 사유는 `비가역 행위가 필요하다`다. 사용자는 다음 두 행위의 승인 범위를 결정한다.
++
++1. 해당 학술 DB 크리덴셜을 폐기하고 교체한다.
++2. 로컬 main에서 커밋 이력을 재작성해 추적 종료보고의 위반 줄과 파생 객체를 제거한다.
++
++권고 처분은 두 행위를 모두 승인하는 방안이다. 승인 후 수리 행은 현재 종료보고 1건과 무시 로그 2건을 마스킹한다. 수리 행은 Git 이력을 재작성한 뒤 값 출현 0건을 검증한다. 그런 뒤 행 2.7.8을 `미착수`로 돌려 재파견한다.
++
++파견표의 행 2.7.8 상태는 `예외`로 유지했다. 수리 행은 추가하지 않았다.
++
++## 추가한 행
++
++없음.
++
++## 반증 의무
++
++- 파견문·입력과 어긋난 지점: 소유 파견문 2건은 크리덴셜 파일을 입력으로 지정하지 않았다. 그런데 종료보고 2건은 크리덴셜 값을 전수 검사 입력으로 사용했다.
++- 반환 텍스트와 실물이 어긋난 지점: 없음.
+
+codex
+예외 기록에 두 값이 포함되지 않았음을 검사했습니다. 이제 지급된 검산 명령과 마커 명령을 축자 실행하고 결과를 예외 기록에 덧붙이겠습니다.
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "python C:\\math\\.claude\\skills\\do-dag\\scripts\\dag_check.py --table C:\\math\\.sdd\\dag\\pvsnp-탐사-1\\파견표.md" in C:\math
+ succeeded in 16350ms:
+[dag_check] 무발견 (drive: 서식·어휘·칸 계약·폐쇄·수렴·순환·좌표 실재·게이트 결정·운전)
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "python C:\\math\\.claude\\skills\\do-dag\\scripts\\dag_marker.py" in C:\math
+ exited 1 in 5632ms:
+usage: dag_marker.py [-h]
+                     {status,open,close,allow,lease,clear-token,sweep,worktree-open,gate,install-hook}
+                     ...
+dag_marker.py: error: the following arguments are required: cmd
+
+diff --git a/.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/8.예외.md b/.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/8.예외.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..bb31570c1ec2aaf93369f71977bf96d83cad92a8
+--- /dev/null
++++ b/.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/8.예외.md
+@@ -0,0 +1,98 @@
++---
++유형: 예외
++행: 2.7.8
++코드: 비밀검사경계위반
++처분: 상신
++---
++
++# 행 2.7.8 예외 기록
++
++행 2.7.8은 후행 종료보고가 크리덴셜을 검사 입력으로 사용했는지 감사한다. 행 2.7.8은 크리덴셜 원본을 읽지 않는다. 이 기록은 크리덴셜 값을 인용하지 않고 파일 경로·행 번호·위반 유형만 기록한다.
++
++## 접수
++
++- 반환 첫 줄은 `예외`이고 둘째 줄은 `코드: 비밀검사경계위반`이다. 반환은 공통 반환어휘 안에 있다.
++- 반환 주장은 후행 종료보고 2건이 크리덴셜 값을 검사 입력으로 사용했다는 내용이다. 이 중 종료보고 1건은 학술 DB 식별자 값과 비밀번호 값을 본문에 남겼다는 내용이다.
++
++## 행과 선후행
++
++- 행 2.7.8의 선행은 행 2.7.6이다.
++- 행 2.7.8을 선행으로 받는 행은 행 2.7.9와 행 2.7.z다.
++- 완료 신호는 `행/2.d/7.d/8-보고.md`와 `행/2.d/7.d/8-감사목록.tsv`다. 두 파일은 실재한다.
++- 파견표의 행 2.7.8 상태는 `예외`이다.
++
++## 실측
++
++```text
++명령: 행 2.7.8 파견문·파견표·완료 신호 파일 조회
++시각: 2026-08-28 KST
++대상: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\8.md
++결과: 행 2.7.8은 크리덴셜 파일과 값을 읽지 않고 후행 산출물의 입력 경계를 감사하도록 지시한다. 완료 신호 2건은 실재한다. 8-보고.md의 상태는 예외이다.
++문맥: 반환 형식과 행 2.7.8의 FAIL 분기는 파견문과 일치한다.
++```
++
++```text
++명령: 종료보고 2건의 크리덴셜 경로·값 인용 구조를 마스킹해 검사
++시각: 2026-08-28 KST
++대상 1: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\10.d\종료보고.md:51
++결과 1: 크리덴셜 파일 C:\math\.credentials\kudos.md의 학술 DB 식별자 값과 비밀번호 값을 검사 입력으로 사용했다고 기록했다. 두 값은 비마스킹 인라인 리터럴로 남아 있다. 두 값은 플레이스홀더가 아니다.
++대상 2: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\10.d\54.d-시도1\종료보고.md:80-82
++결과 2: 같은 크리덴셜 파일의 학술 DB 식별자 값과 비밀번호 값을 전수 검사 입력으로 사용했다고 기록했다. 종료보고 본문은 값을 인용하지 않았다.
++문맥: 반환 주장 2건은 종료보고 실물과 일치한다. 두 종료보고의 소유 파견문은 크리덴셜 파일을 입력으로 지정하지 않았다.
++```
++
++```text
++명령: 종료보고에 남은 두 값을 표시하지 않고 C:\math 작업 공간에서 출현 파일·행 번호 집계
++시각: 2026-08-28 KST
++제외: C:\math\.credentials\ 아래 파일 전건, C:\math\.git\ 아래 객체 전건
++결과: 값이 남은 작업 공간 파일은 3건이다.
++좌표 1: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\10.d\종료보고.md:51
++좌표 2: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\_로그_8.txt:4172
++좌표 3: C:\math\.sdd\dag\pvsnp-탐사-1\행\_로그_2.7.8-예외.txt:854
++문맥: 종료보고는 Git 추적 파일이다. 로그 2건은 Git이 추적하지 않고 .gitignore가 무시한다.
++```
++
++```text
++명령: git ls-files, git status --short, git log -S, git for-each-ref --contains, git status -sb
++시각: 2026-08-28 KST
++대상: C:\math 저장소와 C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\10.d\종료보고.md
++결과: 종료보고는 추적 상태이고 working tree 변경이 없다. 로컬 커밋 64952423b2c5451e208e888a98803008f8c56211은 위반 줄을 포함한다. Git 전체 이력에서 두 값을 포함한 커밋은 이 커밋 1건이다.
++원격 범위: 로컬 main은 origin/main보다 39커밋 앞서 있다. 현재 원격 추적 참조는 위 커밋을 포함하지 않는다.
++한계: 현재 로컬 참조만으로 과거의 외부 전송 부재를 증명할 수는 없다.
++```
++
++```text
++명령: 종료보고 2건의 경로를 행 파견문의 정본·읽기 목록·예산 --files에서 검색
++시각: 2026-08-28 KST
++대상: C:\math\.sdd\dag\pvsnp-탐사-1\행\ 아래 Markdown 파일 전건
++결과: 첫 종료보고 경로는 소유 파견문의 산출 슬롯과 행 2.7.8 감사 보고에만 있다. 둘째 종료보고 경로는 행 2.7.8 감사 보고에만 있다. 두 경로를 지정한 다른 파견문 입력은 0건이다.
++문맥: 행 2.7.8은 후행 보고 전건을 닫힌 파일 집합으로 감사해 두 종료보고를 소비했다. 작업 공간 값 검색에서 다른 파견문 사본은 0건이다.
++```
++
++## 판정
++
++반환 주장은 실물과 일치한다. 행 2.7.8의 완료 기준 중 `후행 크리덴셜 입력 0건`은 충족되지 않았다. 추적 종료보고에 크리덴셜 값이 남아 `크리덴셜 비인용`도 충족되지 않았다.
++
++현재 파일만 수리하면 위반 값이 Git 커밋 이력에 남는다. 이력에서 값을 완전히 제거하려면 커밋 64952423b2c5451e208e888a98803008f8c56211과 후속 이력을 재작성해야 한다. 이력 재작성은 비가역 행위에 해당한다. 외부 서비스에서 해당 크리덴셜을 폐기하고 교체하는 행위도 현재 행의 권한을 넘는다.
++
++## 처분
++
++**상신**
++
++상신 사유는 `비가역 행위가 필요하다`다. 사용자는 다음 두 행위의 승인 범위를 결정한다.
++
++1. 해당 학술 DB 크리덴셜을 폐기하고 교체한다.
++2. 로컬 main에서 커밋 이력을 재작성해 추적 종료보고의 위반 줄과 파생 객체를 제거한다.
++
++권고 처분은 두 행위를 모두 승인하는 방안이다. 승인 후 수리 행은 현재 종료보고 1건과 무시 로그 2건을 마스킹한다. 수리 행은 Git 이력을 재작성한 뒤 값 출현 0건을 검증한다. 그런 뒤 행 2.7.8을 `미착수`로 돌려 재파견한다.
++
++파견표의 행 2.7.8 상태는 `예외`로 유지했다. 수리 행은 추가하지 않았다.
++
++## 추가한 행
++
++없음.
++
++## 반증 의무
++
++- 파견문·입력과 어긋난 지점: 소유 파견문 2건은 크리덴셜 파일을 입력으로 지정하지 않았다. 그런데 종료보고 2건은 크리덴셜 값을 전수 검사 입력으로 사용했다.
++- 반환 텍스트와 실물이 어긋난 지점: 없음.
+
+apply patch
+patch: completed
+C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\8.예외.md
+diff --git a/.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/8.예외.md b/.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/8.예외.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..c07f306692bbc3b1128b5639acfaf647f76bf2df
+--- /dev/null
++++ b/.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/8.예외.md
+@@ -0,0 +1,114 @@
++---
++유형: 예외
++행: 2.7.8
++코드: 비밀검사경계위반
++처분: 상신
++---
++
++# 행 2.7.8 예외 기록
++
++행 2.7.8은 후행 종료보고가 크리덴셜을 검사 입력으로 사용했는지 감사한다. 행 2.7.8은 크리덴셜 원본을 읽지 않는다. 이 기록은 크리덴셜 값을 인용하지 않고 파일 경로·행 번호·위반 유형만 기록한다.
++
++## 접수
++
++- 반환 첫 줄은 `예외`이고 둘째 줄은 `코드: 비밀검사경계위반`이다. 반환은 공통 반환어휘 안에 있다.
++- 반환 주장은 후행 종료보고 2건이 크리덴셜 값을 검사 입력으로 사용했다는 내용이다. 이 중 종료보고 1건은 학술 DB 식별자 값과 비밀번호 값을 본문에 남겼다는 내용이다.
++
++## 행과 선후행
++
++- 행 2.7.8의 선행은 행 2.7.6이다.
++- 행 2.7.8을 선행으로 받는 행은 행 2.7.9와 행 2.7.z다.
++- 완료 신호는 `행/2.d/7.d/8-보고.md`와 `행/2.d/7.d/8-감사목록.tsv`다. 두 파일은 실재한다.
++- 파견표의 행 2.7.8 상태는 `예외`이다.
++
++## 실측
++
++```text
++명령: 행 2.7.8 파견문·파견표·완료 신호 파일 조회
++시각: 2026-08-28 KST
++대상: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\8.md
++결과: 행 2.7.8은 크리덴셜 파일과 값을 읽지 않고 후행 산출물의 입력 경계를 감사하도록 지시한다. 완료 신호 2건은 실재한다. 8-보고.md의 상태는 예외이다.
++문맥: 반환 형식과 행 2.7.8의 FAIL 분기는 파견문과 일치한다.
++```
++
++```text
++명령: 종료보고 2건의 크리덴셜 경로·값 인용 구조를 마스킹해 검사
++시각: 2026-08-28 KST
++대상 1: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\10.d\종료보고.md:51
++결과 1: 크리덴셜 파일 C:\math\.credentials\kudos.md의 학술 DB 식별자 값과 비밀번호 값을 검사 입력으로 사용했다고 기록했다. 두 값은 비마스킹 인라인 리터럴로 남아 있다. 두 값은 플레이스홀더가 아니다.
++대상 2: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\10.d\54.d-시도1\종료보고.md:80-82
++결과 2: 같은 크리덴셜 파일의 학술 DB 식별자 값과 비밀번호 값을 전수 검사 입력으로 사용했다고 기록했다. 종료보고 본문은 값을 인용하지 않았다.
++문맥: 반환 주장 2건은 종료보고 실물과 일치한다. 두 종료보고의 소유 파견문은 크리덴셜 파일을 입력으로 지정하지 않았다.
++```
++
++```text
++명령: 종료보고에 남은 두 값을 표시하지 않고 C:\math 작업 공간에서 출현 파일·행 번호 집계
++시각: 2026-08-28 KST
++제외: C:\math\.credentials\ 아래 파일 전건, C:\math\.git\ 아래 객체 전건
++결과: 값이 남은 작업 공간 파일은 3건이다.
++좌표 1: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\10.d\종료보고.md:51
++좌표 2: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\_로그_8.txt:4172
++좌표 3: C:\math\.sdd\dag\pvsnp-탐사-1\행\_로그_2.7.8-예외.txt:854
++문맥: 종료보고는 Git 추적 파일이다. 로그 2건은 Git이 추적하지 않고 .gitignore가 무시한다.
++```
++
++```text
++명령: git ls-files, git status --short, git log -S, git for-each-ref --contains, git status -sb
++시각: 2026-08-28 KST
++대상: C:\math 저장소와 C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\10.d\종료보고.md
++결과: 종료보고는 추적 상태이고 working tree 변경이 없다. 로컬 커밋 64952423b2c5451e208e888a98803008f8c56211은 위반 줄을 포함한다. Git 전체 이력에서 두 값을 포함한 커밋은 이 커밋 1건이다.
++원격 범위: 로컬 main은 origin/main보다 39커밋 앞서 있다. 현재 원격 추적 참조는 위 커밋을 포함하지 않는다.
++한계: 현재 로컬 참조만으로 과거의 외부 전송 부재를 증명할 수는 없다.
++```
++
++```text
++명령: 종료보고 2건의 경로를 행 파견문의 정본·읽기 목록·예산 --files에서 검색
++시각: 2026-08-28 KST
++대상: C:\math\.sdd\dag\pvsnp-탐사-1\행\ 아래 Markdown 파일 전건
++결과: 첫 종료보고 경로는 소유 파견문의 산출 슬롯과 행 2.7.8 감사 보고에만 있다. 둘째 종료보고 경로는 행 2.7.8 감사 보고에만 있다. 두 경로를 지정한 다른 파견문 입력은 0건이다.
++문맥: 행 2.7.8은 후행 보고 전건을 닫힌 파일 집합으로 감사해 두 종료보고를 소비했다. 작업 공간 값 검색에서 다른 파견문 사본은 0건이다.
++```
++
++## 판정
++
++반환 주장은 실물과 일치한다. 행 2.7.8의 완료 기준 중 `후행 크리덴셜 입력 0건`은 충족되지 않았다. 추적 종료보고에 크리덴셜 값이 남아 `크리덴셜 비인용`도 충족되지 않았다.
++
++현재 파일만 수리하면 위반 값이 Git 커밋 이력에 남는다. 이력에서 값을 완전히 제거하려면 커밋 64952423b2c5451e208e888a98803008f8c56211과 후속 이력을 재작성해야 한다. 이력 재작성은 비가역 행위에 해당한다. 외부 서비스에서 해당 크리덴셜을 폐기하고 교체하는 행위도 현재 행의 권한을 넘는다.
++
++## 처분
++
++**상신**
++
++상신 사유는 `비가역 행위가 필요하다`다. 사용자는 다음 두 행위의 승인 범위를 결정한다.
++
++1. 해당 학술 DB 크리덴셜을 폐기하고 교체한다.
++2. 로컬 main에서 커밋 이력을 재작성해 추적 종료보고의 위반 줄과 파생 객체를 제거한다.
++
++권고 처분은 두 행위를 모두 승인하는 방안이다. 승인 후 수리 행은 현재 종료보고 1건과 무시 로그 2건을 마스킹한다. 수리 행은 Git 이력을 재작성한 뒤 값 출현 0건을 검증한다. 그런 뒤 행 2.7.8을 `미착수`로 돌려 재파견한다.
++
++파견표의 행 2.7.8 상태는 `예외`로 유지했다. 수리 행은 추가하지 않았다.
++
++## 추가한 행
++
++없음.
++
++## 검산과 마커
++
++```text
++명령: python C:\math\.claude\skills\do-dag\scripts\dag_check.py --table C:\math\.sdd\dag\pvsnp-탐사-1\파견표.md
++결과: [dag_check] 무발견 (drive: 서식·어휘·칸 계약·폐쇄·수렴·순환·좌표 실재·게이트 결정·운전)
++exit 0
++문맥: 파견표를 바꾸지 않은 상태에서 지급된 명령을 축자 실행했다.
++```
++
++```text
++명령: python C:\math\.claude\skills\do-dag\scripts\dag_marker.py
++결과: 필수 하위 명령 cmd가 없어 사용법 오류가 발생했다.
++exit 1
++문맥: 지급된 명령을 축자 실행했다. 상태를 바꾸는 하위 명령은 없었다.
++```
++
++## 반증 의무
++
++- 파견문·입력과 어긋난 지점: 소유 파견문 2건은 크리덴셜 파일을 입력으로 지정하지 않았다. 그런데 종료보고 2건은 크리덴셜 값을 전수 검사 입력으로 사용했다.
++- 반환 텍스트와 실물이 어긋난 지점: 없음.
+
+diff --git a/.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/8.예외.md b/.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/8.예외.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..c07f306692bbc3b1128b5639acfaf647f76bf2df
+--- /dev/null
++++ b/.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/8.예외.md
+@@ -0,0 +1,114 @@
++---
++유형: 예외
++행: 2.7.8
++코드: 비밀검사경계위반
++처분: 상신
++---
++
++# 행 2.7.8 예외 기록
++
++행 2.7.8은 후행 종료보고가 크리덴셜을 검사 입력으로 사용했는지 감사한다. 행 2.7.8은 크리덴셜 원본을 읽지 않는다. 이 기록은 크리덴셜 값을 인용하지 않고 파일 경로·행 번호·위반 유형만 기록한다.
++
++## 접수
++
++- 반환 첫 줄은 `예외`이고 둘째 줄은 `코드: 비밀검사경계위반`이다. 반환은 공통 반환어휘 안에 있다.
++- 반환 주장은 후행 종료보고 2건이 크리덴셜 값을 검사 입력으로 사용했다는 내용이다. 이 중 종료보고 1건은 학술 DB 식별자 값과 비밀번호 값을 본문에 남겼다는 내용이다.
++
++## 행과 선후행
++
++- 행 2.7.8의 선행은 행 2.7.6이다.
++- 행 2.7.8을 선행으로 받는 행은 행 2.7.9와 행 2.7.z다.
++- 완료 신호는 `행/2.d/7.d/8-보고.md`와 `행/2.d/7.d/8-감사목록.tsv`다. 두 파일은 실재한다.
++- 파견표의 행 2.7.8 상태는 `예외`이다.
++
++## 실측
++
++```text
++명령: 행 2.7.8 파견문·파견표·완료 신호 파일 조회
++시각: 2026-08-28 KST
++대상: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\8.md
++결과: 행 2.7.8은 크리덴셜 파일과 값을 읽지 않고 후행 산출물의 입력 경계를 감사하도록 지시한다. 완료 신호 2건은 실재한다. 8-보고.md의 상태는 예외이다.
++문맥: 반환 형식과 행 2.7.8의 FAIL 분기는 파견문과 일치한다.
++```
++
++```text
++명령: 종료보고 2건의 크리덴셜 경로·값 인용 구조를 마스킹해 검사
++시각: 2026-08-28 KST
++대상 1: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\10.d\종료보고.md:51
++결과 1: 크리덴셜 파일 C:\math\.credentials\kudos.md의 학술 DB 식별자 값과 비밀번호 값을 검사 입력으로 사용했다고 기록했다. 두 값은 비마스킹 인라인 리터럴로 남아 있다. 두 값은 플레이스홀더가 아니다.
++대상 2: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\10.d\54.d-시도1\종료보고.md:80-82
++결과 2: 같은 크리덴셜 파일의 학술 DB 식별자 값과 비밀번호 값을 전수 검사 입력으로 사용했다고 기록했다. 종료보고 본문은 값을 인용하지 않았다.
++문맥: 반환 주장 2건은 종료보고 실물과 일치한다. 두 종료보고의 소유 파견문은 크리덴셜 파일을 입력으로 지정하지 않았다.
++```
++
++```text
++명령: 종료보고에 남은 두 값을 표시하지 않고 C:\math 작업 공간에서 출현 파일·행 번호 집계
++시각: 2026-08-28 KST
++제외: C:\math\.credentials\ 아래 파일 전건, C:\math\.git\ 아래 객체 전건
++결과: 값이 남은 작업 공간 파일은 3건이다.
++좌표 1: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\10.d\종료보고.md:51
++좌표 2: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\_로그_8.txt:4172
++좌표 3: C:\math\.sdd\dag\pvsnp-탐사-1\행\_로그_2.7.8-예외.txt:854
++문맥: 종료보고는 Git 추적 파일이다. 로그 2건은 Git이 추적하지 않고 .gitignore가 무시한다.
++```
++
++```text
++명령: git ls-files, git status --short, git log -S, git for-each-ref --contains, git status -sb
++시각: 2026-08-28 KST
++대상: C:\math 저장소와 C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\10.d\종료보고.md
++결과: 종료보고는 추적 상태이고 working tree 변경이 없다. 로컬 커밋 64952423b2c5451e208e888a98803008f8c56211은 위반 줄을 포함한다. Git 전체 이력에서 두 값을 포함한 커밋은 이 커밋 1건이다.
++원격 범위: 로컬 main은 origin/main보다 39커밋 앞서 있다. 현재 원격 추적 참조는 위 커밋을 포함하지 않는다.
++한계: 현재 로컬 참조만으로 과거의 외부 전송 부재를 증명할 수는 없다.
++```
++
++```text
++명령: 종료보고 2건의 경로를 행 파견문의 정본·읽기 목록·예산 --files에서 검색
++시각: 2026-08-28 KST
++대상: C:\math\.sdd\dag\pvsnp-탐사-1\행\ 아래 Markdown 파일 전건
++결과: 첫 종료보고 경로는 소유 파견문의 산출 슬롯과 행 2.7.8 감사 보고에만 있다. 둘째 종료보고 경로는 행 2.7.8 감사 보고에만 있다. 두 경로를 지정한 다른 파견문 입력은 0건이다.
++문맥: 행 2.7.8은 후행 보고 전건을 닫힌 파일 집합으로 감사해 두 종료보고를 소비했다. 작업 공간 값 검색에서 다른 파견문 사본은 0건이다.
++```
++
++## 판정
++
++반환 주장은 실물과 일치한다. 행 2.7.8의 완료 기준 중 `후행 크리덴셜 입력 0건`은 충족되지 않았다. 추적 종료보고에 크리덴셜 값이 남아 `크리덴셜 비인용`도 충족되지 않았다.
++
++현재 파일만 수리하면 위반 값이 Git 커밋 이력에 남는다. 이력에서 값을 완전히 제거하려면 커밋 64952423b2c5451e208e888a98803008f8c56211과 후속 이력을 재작성해야 한다. 이력 재작성은 비가역 행위에 해당한다. 외부 서비스에서 해당 크리덴셜을 폐기하고 교체하는 행위도 현재 행의 권한을 넘는다.
++
++## 처분
++
++**상신**
++
++상신 사유는 `비가역 행위가 필요하다`다. 사용자는 다음 두 행위의 승인 범위를 결정한다.
++
++1. 해당 학술 DB 크리덴셜을 폐기하고 교체한다.
++2. 로컬 main에서 커밋 이력을 재작성해 추적 종료보고의 위반 줄과 파생 객체를 제거한다.
++
++권고 처분은 두 행위를 모두 승인하는 방안이다. 승인 후 수리 행은 현재 종료보고 1건과 무시 로그 2건을 마스킹한다. 수리 행은 Git 이력을 재작성한 뒤 값 출현 0건을 검증한다. 그런 뒤 행 2.7.8을 `미착수`로 돌려 재파견한다.
++
++파견표의 행 2.7.8 상태는 `예외`로 유지했다. 수리 행은 추가하지 않았다.
++
++## 추가한 행
++
++없음.
++
++## 검산과 마커
++
++```text
++명령: python C:\math\.claude\skills\do-dag\scripts\dag_check.py --table C:\math\.sdd\dag\pvsnp-탐사-1\파견표.md
++결과: [dag_check] 무발견 (drive: 서식·어휘·칸 계약·폐쇄·수렴·순환·좌표 실재·게이트 결정·운전)
++exit 0
++문맥: 파견표를 바꾸지 않은 상태에서 지급된 명령을 축자 실행했다.
++```
++
++```text
++명령: python C:\math\.claude\skills\do-dag\scripts\dag_marker.py
++결과: 필수 하위 명령 cmd가 없어 사용법 오류가 발생했다.
++exit 1
++문맥: 지급된 명령을 축자 실행했다. 상태를 바꾸는 하위 명령은 없었다.
++```
++
++## 반증 의무
++
++- 파견문·입력과 어긋난 지점: 소유 파견문 2건은 크리덴셜 파일을 입력으로 지정하지 않았다. 그런데 종료보고 2건은 크리덴셜 값을 전수 검사 입력으로 사용했다.
++- 반환 텍스트와 실물이 어긋난 지점: 없음.
+
+codex
+검산은 exit 0으로 통과했습니다. 마커 명령은 하위 명령이 없어 exit 1을 반환했으며 상태는 바뀌지 않았습니다. 마지막으로 예외 기록의 비인용과 파견표 상태 유지를 확인합니다.
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command '$repo='"'C:\\math'; "'$record='"'C:\\math\\.sdd\\dag\\pvsnp-탐사-1\\행\\2.d\\7.d\\8.예외.md'; "'$source='"'C:\\math\\.sdd\\dag\\pvsnp-탐사-1\\행\\2.d\\7.d\\5.d\\10.d\\종료보고.md'; "'$line=(Get-Content -LiteralPath $source)[50]; $m=[regex]::Match($line,'"'ID\\("'`([''^`]*)`'"\\).*PW\\("'`([''^`]*)`'"\\)'); "'$text=Get-Content -Raw -LiteralPath $record; foreach($idx in 1,2){"RECORD_CONTAINS_FIELD_${idx}=$($text.Contains($m.Groups[$idx].Value))"}; rg -n --fixed-strings '"'| 2.7.8 |' 'C:\\math\\.sdd\\dag\\pvsnp-탐사-1\\파견표.md'; git -C "'$repo status --short -- '"'.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/8.예외.md' '.sdd/dag/pvsnp-탐사-1/파견표.md'" in C:\math
+ succeeded in 5283ms:
+RECORD_CONTAINS_FIELD_1=False
+RECORD_CONTAINS_FIELD_2=False
+156:| 2.7.8 | 파견 | 행/2.d/7.d/8.md | 2.7.6 | 행/2.d/7.d/8-보고.md, 행/2.d/7.d/8-감사목록.tsv | gpt-5.6-terra med | 예외 |
+ M ".sdd/dag/pvsnp-\355\203\220\354\202\254-1/\355\214\214\352\262\254\355\221\234.md"
+?? ".sdd/dag/pvsnp-\355\203\220\354\202\254-1/\355\226\211/2.d/7.d/8.\354\230\210\354\231\270.md"
+
+diff --git a/.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/8.예외.md b/.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/8.예외.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..c07f306692bbc3b1128b5639acfaf647f76bf2df
+--- /dev/null
++++ b/.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/8.예외.md
+@@ -0,0 +1,114 @@
++---
++유형: 예외
++행: 2.7.8
++코드: 비밀검사경계위반
++처분: 상신
++---
++
++# 행 2.7.8 예외 기록
++
++행 2.7.8은 후행 종료보고가 크리덴셜을 검사 입력으로 사용했는지 감사한다. 행 2.7.8은 크리덴셜 원본을 읽지 않는다. 이 기록은 크리덴셜 값을 인용하지 않고 파일 경로·행 번호·위반 유형만 기록한다.
++
++## 접수
++
++- 반환 첫 줄은 `예외`이고 둘째 줄은 `코드: 비밀검사경계위반`이다. 반환은 공통 반환어휘 안에 있다.
++- 반환 주장은 후행 종료보고 2건이 크리덴셜 값을 검사 입력으로 사용했다는 내용이다. 이 중 종료보고 1건은 학술 DB 식별자 값과 비밀번호 값을 본문에 남겼다는 내용이다.
++
++## 행과 선후행
++
++- 행 2.7.8의 선행은 행 2.7.6이다.
++- 행 2.7.8을 선행으로 받는 행은 행 2.7.9와 행 2.7.z다.
++- 완료 신호는 `행/2.d/7.d/8-보고.md`와 `행/2.d/7.d/8-감사목록.tsv`다. 두 파일은 실재한다.
++- 파견표의 행 2.7.8 상태는 `예외`이다.
++
++## 실측
++
++```text
++명령: 행 2.7.8 파견문·파견표·완료 신호 파일 조회
++시각: 2026-08-28 KST
++대상: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\8.md
++결과: 행 2.7.8은 크리덴셜 파일과 값을 읽지 않고 후행 산출물의 입력 경계를 감사하도록 지시한다. 완료 신호 2건은 실재한다. 8-보고.md의 상태는 예외이다.
++문맥: 반환 형식과 행 2.7.8의 FAIL 분기는 파견문과 일치한다.
++```
++
++```text
++명령: 종료보고 2건의 크리덴셜 경로·값 인용 구조를 마스킹해 검사
++시각: 2026-08-28 KST
++대상 1: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\10.d\종료보고.md:51
++결과 1: 크리덴셜 파일 C:\math\.credentials\kudos.md의 학술 DB 식별자 값과 비밀번호 값을 검사 입력으로 사용했다고 기록했다. 두 값은 비마스킹 인라인 리터럴로 남아 있다. 두 값은 플레이스홀더가 아니다.
++대상 2: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\10.d\54.d-시도1\종료보고.md:80-82
++결과 2: 같은 크리덴셜 파일의 학술 DB 식별자 값과 비밀번호 값을 전수 검사 입력으로 사용했다고 기록했다. 종료보고 본문은 값을 인용하지 않았다.
++문맥: 반환 주장 2건은 종료보고 실물과 일치한다. 두 종료보고의 소유 파견문은 크리덴셜 파일을 입력으로 지정하지 않았다.
++```
++
++```text
++명령: 종료보고에 남은 두 값을 표시하지 않고 C:\math 작업 공간에서 출현 파일·행 번호 집계
++시각: 2026-08-28 KST
++제외: C:\math\.credentials\ 아래 파일 전건, C:\math\.git\ 아래 객체 전건
++결과: 값이 남은 작업 공간 파일은 3건이다.
++좌표 1: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\10.d\종료보고.md:51
++좌표 2: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\_로그_8.txt:4172
++좌표 3: C:\math\.sdd\dag\pvsnp-탐사-1\행\_로그_2.7.8-예외.txt:854
++문맥: 종료보고는 Git 추적 파일이다. 로그 2건은 Git이 추적하지 않고 .gitignore가 무시한다.
++```
++
++```text
++명령: git ls-files, git status --short, git log -S, git for-each-ref --contains, git status -sb
++시각: 2026-08-28 KST
++대상: C:\math 저장소와 C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\10.d\종료보고.md
++결과: 종료보고는 추적 상태이고 working tree 변경이 없다. 로컬 커밋 64952423b2c5451e208e888a98803008f8c56211은 위반 줄을 포함한다. Git 전체 이력에서 두 값을 포함한 커밋은 이 커밋 1건이다.
++원격 범위: 로컬 main은 origin/main보다 39커밋 앞서 있다. 현재 원격 추적 참조는 위 커밋을 포함하지 않는다.
++한계: 현재 로컬 참조만으로 과거의 외부 전송 부재를 증명할 수는 없다.
++```
++
++```text
++명령: 종료보고 2건의 경로를 행 파견문의 정본·읽기 목록·예산 --files에서 검색
++시각: 2026-08-28 KST
++대상: C:\math\.sdd\dag\pvsnp-탐사-1\행\ 아래 Markdown 파일 전건
++결과: 첫 종료보고 경로는 소유 파견문의 산출 슬롯과 행 2.7.8 감사 보고에만 있다. 둘째 종료보고 경로는 행 2.7.8 감사 보고에만 있다. 두 경로를 지정한 다른 파견문 입력은 0건이다.
++문맥: 행 2.7.8은 후행 보고 전건을 닫힌 파일 집합으로 감사해 두 종료보고를 소비했다. 작업 공간 값 검색에서 다른 파견문 사본은 0건이다.
++```
++
++## 판정
++
++반환 주장은 실물과 일치한다. 행 2.7.8의 완료 기준 중 `후행 크리덴셜 입력 0건`은 충족되지 않았다. 추적 종료보고에 크리덴셜 값이 남아 `크리덴셜 비인용`도 충족되지 않았다.
++
++현재 파일만 수리하면 위반 값이 Git 커밋 이력에 남는다. 이력에서 값을 완전히 제거하려면 커밋 64952423b2c5451e208e888a98803008f8c56211과 후속 이력을 재작성해야 한다. 이력 재작성은 비가역 행위에 해당한다. 외부 서비스에서 해당 크리덴셜을 폐기하고 교체하는 행위도 현재 행의 권한을 넘는다.
++
++## 처분
++
++**상신**
++
++상신 사유는 `비가역 행위가 필요하다`다. 사용자는 다음 두 행위의 승인 범위를 결정한다.
++
++1. 해당 학술 DB 크리덴셜을 폐기하고 교체한다.
++2. 로컬 main에서 커밋 이력을 재작성해 추적 종료보고의 위반 줄과 파생 객체를 제거한다.
++
++권고 처분은 두 행위를 모두 승인하는 방안이다. 승인 후 수리 행은 현재 종료보고 1건과 무시 로그 2건을 마스킹한다. 수리 행은 Git 이력을 재작성한 뒤 값 출현 0건을 검증한다. 그런 뒤 행 2.7.8을 `미착수`로 돌려 재파견한다.
++
++파견표의 행 2.7.8 상태는 `예외`로 유지했다. 수리 행은 추가하지 않았다.
++
++## 추가한 행
++
++없음.
++
++## 검산과 마커
++
++```text
++명령: python C:\math\.claude\skills\do-dag\scripts\dag_check.py --table C:\math\.sdd\dag\pvsnp-탐사-1\파견표.md
++결과: [dag_check] 무발견 (drive: 서식·어휘·칸 계약·폐쇄·수렴·순환·좌표 실재·게이트 결정·운전)
++exit 0
++문맥: 파견표를 바꾸지 않은 상태에서 지급된 명령을 축자 실행했다.
++```
++
++```text
++명령: python C:\math\.claude\skills\do-dag\scripts\dag_marker.py
++결과: 필수 하위 명령 cmd가 없어 사용법 오류가 발생했다.
++exit 1
++문맥: 지급된 명령을 축자 실행했다. 상태를 바꾸는 하위 명령은 없었다.
++```
++
++## 반증 의무
++
++- 파견문·입력과 어긋난 지점: 소유 파견문 2건은 크리덴셜 파일을 입력으로 지정하지 않았다. 그런데 종료보고 2건은 크리덴셜 값을 전수 검사 입력으로 사용했다.
++- 반환 텍스트와 실물이 어긋난 지점: 없음.
+
+codex
+상신
+사유: 크리덴셜 값이 추적 파일과 로컬 커밋 이력에 남았다. 완전 제거에는 크리덴셜 교체와 비가역 Git 이력 재작성이 필요하다.
+실측 좌표: `행/2.d/7.d/5.d/10.d/종료보고.md:51`, `행/2.d/7.d/_로그_8.txt:4172`, `행/_로그_2.7.8-예외.txt:854`
+커밋: `64952423b2c5451e208e888a98803008f8c56211`
+원격 범위: 현재 원격 추적 참조에는 해당 커밋이 없다.
+후속 입력 재사용: 다른 파견문의 명시적 입력 0건.
+결정 요청: 학술 DB 크리덴셜 교체와 로컬 Git 이력 재작성 승인.
+예외 기록: `C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\8.예외.md`
+검산: exit 0
+처분: 파견표의 행 2.7.8 상태를 `예외`로 유지했다.
+diff --git a/.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/8.예외.md b/.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/8.예외.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..c07f306692bbc3b1128b5639acfaf647f76bf2df
+--- /dev/null
++++ b/.sdd/dag/pvsnp-탐사-1/행/2.d/7.d/8.예외.md
+@@ -0,0 +1,114 @@
++---
++유형: 예외
++행: 2.7.8
++코드: 비밀검사경계위반
++처분: 상신
++---
++
++# 행 2.7.8 예외 기록
++
++행 2.7.8은 후행 종료보고가 크리덴셜을 검사 입력으로 사용했는지 감사한다. 행 2.7.8은 크리덴셜 원본을 읽지 않는다. 이 기록은 크리덴셜 값을 인용하지 않고 파일 경로·행 번호·위반 유형만 기록한다.
++
++## 접수
++
++- 반환 첫 줄은 `예외`이고 둘째 줄은 `코드: 비밀검사경계위반`이다. 반환은 공통 반환어휘 안에 있다.
++- 반환 주장은 후행 종료보고 2건이 크리덴셜 값을 검사 입력으로 사용했다는 내용이다. 이 중 종료보고 1건은 학술 DB 식별자 값과 비밀번호 값을 본문에 남겼다는 내용이다.
++
++## 행과 선후행
++
++- 행 2.7.8의 선행은 행 2.7.6이다.
++- 행 2.7.8을 선행으로 받는 행은 행 2.7.9와 행 2.7.z다.
++- 완료 신호는 `행/2.d/7.d/8-보고.md`와 `행/2.d/7.d/8-감사목록.tsv`다. 두 파일은 실재한다.
++- 파견표의 행 2.7.8 상태는 `예외`이다.
++
++## 실측
++
++```text
++명령: 행 2.7.8 파견문·파견표·완료 신호 파일 조회
++시각: 2026-08-28 KST
++대상: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\8.md
++결과: 행 2.7.8은 크리덴셜 파일과 값을 읽지 않고 후행 산출물의 입력 경계를 감사하도록 지시한다. 완료 신호 2건은 실재한다. 8-보고.md의 상태는 예외이다.
++문맥: 반환 형식과 행 2.7.8의 FAIL 분기는 파견문과 일치한다.
++```
++
++```text
++명령: 종료보고 2건의 크리덴셜 경로·값 인용 구조를 마스킹해 검사
++시각: 2026-08-28 KST
++대상 1: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\10.d\종료보고.md:51
++결과 1: 크리덴셜 파일 C:\math\.credentials\kudos.md의 학술 DB 식별자 값과 비밀번호 값을 검사 입력으로 사용했다고 기록했다. 두 값은 비마스킹 인라인 리터럴로 남아 있다. 두 값은 플레이스홀더가 아니다.
++대상 2: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\10.d\54.d-시도1\종료보고.md:80-82
++결과 2: 같은 크리덴셜 파일의 학술 DB 식별자 값과 비밀번호 값을 전수 검사 입력으로 사용했다고 기록했다. 종료보고 본문은 값을 인용하지 않았다.
++문맥: 반환 주장 2건은 종료보고 실물과 일치한다. 두 종료보고의 소유 파견문은 크리덴셜 파일을 입력으로 지정하지 않았다.
++```
++
++```text
++명령: 종료보고에 남은 두 값을 표시하지 않고 C:\math 작업 공간에서 출현 파일·행 번호 집계
++시각: 2026-08-28 KST
++제외: C:\math\.credentials\ 아래 파일 전건, C:\math\.git\ 아래 객체 전건
++결과: 값이 남은 작업 공간 파일은 3건이다.
++좌표 1: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\10.d\종료보고.md:51
++좌표 2: C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\_로그_8.txt:4172
++좌표 3: C:\math\.sdd\dag\pvsnp-탐사-1\행\_로그_2.7.8-예외.txt:854
++문맥: 종료보고는 Git 추적 파일이다. 로그 2건은 Git이 추적하지 않고 .gitignore가 무시한다.
++```
++
++```text
++명령: git ls-files, git status --short, git log -S, git for-each-ref --contains, git status -sb
++시각: 2026-08-28 KST
++대상: C:\math 저장소와 C:\math\.sdd\dag\pvsnp-탐사-1\행\2.d\7.d\5.d\10.d\종료보고.md
++결과: 종료보고는 추적 상태이고 working tree 변경이 없다. 로컬 커밋 64952423b2c5451e208e888a98803008f8c56211은 위반 줄을 포함한다. Git 전체 이력에서 두 값을 포함한 커밋은 이 커밋 1건이다.
++원격 범위: 로컬 main은 origin/main보다 39커밋 앞서 있다. 현재 원격 추적 참조는 위 커밋을 포함하지 않는다.
++한계: 현재 로컬 참조만으로 과거의 외부 전송 부재를 증명할 수는 없다.
++```
++
++```text
++명령: 종료보고 2건의 경로를 행 파견문의 정본·읽기 목록·예산 --files에서 검색
++시각: 2026-08-28 KST
++대상: C:\math\.sdd\dag\pvsnp-탐사-1\행\ 아래 Markdown 파일 전건
++결과: 첫 종료보고 경로는 소유 파견문의 산출 슬롯과 행 2.7.8 감사 보고에만 있다. 둘째 종료보고 경로는 행 2.7.8 감사 보고에만 있다. 두 경로를 지정한 다른 파견문 입력은 0건이다.
++문맥: 행 2.7.8은 후행 보고 전건을 닫힌 파일 집합으로 감사해 두 종료보고를 소비했다. 작업 공간 값 검색에서 다른 파견문 사본은 0건이다.
++```
++
++## 판정
++
++반환 주장은 실물과 일치한다. 행 2.7.8의 완료 기준 중 `후행 크리덴셜 입력 0건`은 충족되지 않았다. 추적 종료보고에 크리덴셜 값이 남아 `크리덴셜 비인용`도 충족되지 않았다.
++
++현재 파일만 수리하면 위반 값이 Git 커밋 이력에 남는다. 이력에서 값을 완전히 제거하려면 커밋 64952423b2c5451e208e888a98803008f8c56211과 후속 이력을 재작성해야 한다. 이력 재작성은 비가역 행위에 해당한다. 외부 서비스에서 해당 크리덴셜을 폐기하고 교체하는 행위도 현재 행의 권한을 넘는다.
++
++## 처분
++
++**상신**
++
++상신 사유는 `비가역 행위가 필요하다`다. 사용자는 다음 두 행위의 승인 범위를 결정한다.
++
++1. 해당 학술 DB 크리덴셜을 폐기하고 교체한다.
++2. 로컬 main에서 커밋 이력을 재작성해 추적 종료보고의 위반 줄과 파생 객체를 제거한다.
++
++권고 처분은 두 행위를 모두 승인하는 방안이다. 승인 후 수리 행은 현재 종료보고 1건과 무시 로그 2건을 마스킹한다. 수리 행은 Git 이력을 재작성한 뒤 값 출현 0건을 검증한다. 그런 뒤 행 2.7.8을 `미착수`로 돌려 재파견한다.
++
++파견표의 행 2.7.8 상태는 `예외`로 유지했다. 수리 행은 추가하지 않았다.
++
++## 추가한 행
++
++없음.
++
++## 검산과 마커
++
++```text
++명령: python C:\math\.claude\skills\do-dag\scripts\dag_check.py --table C:\math\.sdd\dag\pvsnp-탐사-1\파견표.md
++결과: [dag_check] 무발견 (drive: 서식·어휘·칸 계약·폐쇄·수렴·순환·좌표 실재·게이트 결정·운전)
++exit 0
++문맥: 파견표를 바꾸지 않은 상태에서 지급된 명령을 축자 실행했다.
++```
++
++```text
++명령: python C:\math\.claude\skills\do-dag\scripts\dag_marker.py
++결과: 필수 하위 명령 cmd가 없어 사용법 오류가 발생했다.
++exit 1
++문맥: 지급된 명령을 축자 실행했다. 상태를 바꾸는 하위 명령은 없었다.
++```
++
++## 반증 의무
++
++- 파견문·입력과 어긋난 지점: 소유 파견문 2건은 크리덴셜 파일을 입력으로 지정하지 않았다. 그런데 종료보고 2건은 크리덴셜 값을 전수 검사 입력으로 사용했다.
++- 반환 텍스트와 실물이 어긋난 지점: 없음.
+
+tokens used
+171,827

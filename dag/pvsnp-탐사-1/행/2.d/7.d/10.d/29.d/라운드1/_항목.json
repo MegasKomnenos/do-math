@@ -1,0 +1,93 @@
+{
+ "라운드": 1,
+ "항목": [
+  {
+   "id": "R1-01",
+   "제목": "R1-1 — C10이 정리 4.1의 생성기 범위를 바꾼다",
+   "기": 1,
+   "상신": false,
+   "발견": false,
+   "결합": [],
+   "조각": [
+    {
+     "파일": "research/pvsnp/literature/readings/L14.md",
+     "시작2": 128,
+     "끝2": 128,
+     "표기": "research/pvsnp/literature/readings/L14.md 64~64행",
+     "원래": "| C10 | 정리 4.1은 $P/\\mathrm{poly}$-natural proof against $P/\\mathrm{poly}$가 있으면 모든 다항시간 길이-두배 생성기 $G_k$의 hardness가 $2^{k^{o(1)}}$ 이하라고 말한다. | PDF 13~14쪽, 본문 12~13쪽 §4, 정리 4.1 |",
+     "대체": "| C10 | 정리 4.1은 $P/\\mathrm{poly}$-natural proof against $P/\\mathrm{poly}$가 있으면, $P/\\mathrm{poly}$에 속하는 모든 길이-두배 의사난수 생성기 $G_k:\\{0,1\\}^k\\to\\{0,1\\}^{2k}$의 hardness가 $2^{k^{o(1)}}$ 이하라고 말한다. | PDF 13~14쪽, 본문 12~13쪽 §4, 정리 4.1 |"
+    }
+   ]
+  },
+  {
+   "id": "R1-02",
+   "제목": "R1-2 — C14가 따름정리 4.5의 비균일 회로 계급을 시간 계급으로 바꾼다",
+   "기": 1,
+   "상신": false,
+   "발견": false,
+   "결합": [],
+   "조각": [
+    {
+     "파일": "research/pvsnp/literature/readings/L14.md",
+     "시작2": 136,
+     "끝2": 136,
+     "표기": "research/pvsnp/literature/readings/L14.md 68~68행",
+     "원래": "| C14 | 따름정리 4.5는 위 결론을 $\\bigcap_{\\epsilon>0}DTIME(2^{n^\\epsilon})$에 대한 useful natural 성질로 특수화한다. | PDF 17쪽, 본문 16쪽, 따름정리 4.5 |",
+     "대체": "| C14 | 따름정리 4.5는 $P/\\mathrm{poly}$-constructivity와 largeness를 만족하면서 $\\bigcap_{\\epsilon>0}SIZE(2^{n^\\epsilon})$에 useful한 어떤 성질도 $B_{p,g}$ 꼴 함수를 유한 개보다 많이 포함할 수 없다고 한다. | PDF 17쪽, 본문 16쪽, 따름정리 4.5 |"
+    }
+   ]
+  },
+  {
+   "id": "R1-03",
+   "제목": "R1-3 — C16이 정리 5.2의 서로 다른 두 가설을 하나의 밀도 가설로 합친다",
+   "기": 1,
+   "상신": false,
+   "발견": false,
+   "결합": [],
+   "조각": [
+    {
+     "파일": "research/pvsnp/literature/readings/L14.md",
+     "시작2": 140,
+     "끝2": 140,
+     "표기": "research/pvsnp/literature/readings/L14.md 70~70행",
+     "원래": "| C16 | 정리 5.2는 충분히 조밀한 유한 불 대수 부분집합의 원소로 임의 원소를 짧게 표현한다. 이 표현 정리가 형식 복잡도 측도의 largeness를 강제한다. | PDF 18~20쪽, 본문 17~19쪽, 정리 5.2·보조정리 5.3 |",
+     "대체": "| C16 | 정리 5.2(a)는 $|S|>3|B|/4$이면 $B$의 모든 원소를 $S$의 네 원소로 표현한다. 정리 5.2(b)는 $S$가 모든 원자와 여원자를 포함하면 길이 $O(\\log(N\\lvert B\\rvert/\\lvert S\\rvert))$의 합-곱 표현을 준다. 이 두 표현은 정리 5.1의 형식 복잡도 측도 largeness를 이끈다. | PDF 18~20쪽, 본문 17~19쪽, 정리 5.2·보조정리 5.3 |"
+    }
+   ]
+  },
+  {
+   "id": "R1-04",
+   "제목": "무조건 이산 로그 장벽의 정리 결속을 바로잡는다",
+   "기": 2,
+   "상신": false,
+   "발견": false,
+   "결합": [],
+   "조각": [
+    {
+     "파일": "research/pvsnp/literature/readings/L14.md",
+     "시작2": 178,
+     "끝2": 180,
+     "표기": "research/pvsnp/literature/readings/L14.md 89~90행",
+     "원래": "| Q12 | 정리 4.4의 무조건 결론은 $B_{p,g}$ 함수군과 half-exponential $t(n)$에 한정된다. 이산 로그의 회로 복잡도를 일반적으로 판정하지 않는다. | PDF 15~17쪽, 본문 14~16쪽 §4.1, 정의 (5)·정리 4.4 |\n| Q13 | 따름정리 4.5는 특정 subexponential 시간 교집합에 대한 useful 성질을 다룬다. 고전적 $P$ 대 $NP$의 무조건 분리를 다루지 않는다. | PDF 17쪽, 본문 16쪽, 따름정리 4.5 |",
+     "대체": "| Q12 | 정리 4.5의 무조건 결론은 half-exponential $t(n)$마다 $P/\\mathrm{poly}$-constructivity와 largeness를 만족하고 $SIZE(t(n))$에 useful한 성질이 $B_{p,g}$ 형태 함수를 무한히 많이 포함할 수 없다는 명제다. 이 정리는 이산 로그의 회로 복잡도를 일반적으로 판정하지 않는다. | PDF 15~17쪽, 본문 14~16쪽 §4.1, 정의 (5)·정리 4.5 |\n| Q13 | 따름정리 4.6은 위 결론을 $\\bigcap_{\\epsilon>0} SIZE(2^{n^\\epsilon})$에 useful한 성질로 특수화한다. 고전적 $P$ 대 $NP$의 무조건 분리를 다루지 않는다. | PDF 17쪽, 본문 16쪽, 따름정리 4.6 |"
+    },
+    {
+     "파일": "research/pvsnp/literature/readings/L14.md",
+     "시작2": 232,
+     "끝2": 232,
+     "표기": "research/pvsnp/literature/readings/L14.md 116~116행",
+     "원래": "| E07 | 이산 로그 결과는 “무조건 장벽”의 범위를 점검하는 기준이다. 함수군, 회로 크기 함수, natural성 계급을 기록하지 않으면 결론을 $P$ 대 $NP$로 과장하게 된다. | PDF 15~17쪽, 본문 14~16쪽 §4.1; C13·C14·Q12·Q13 |",
+     "대체": "| E07 | 이산 로그 결과는 “무조건 장벽”의 범위를 점검하는 기준이다. 함수군, $t(n)$ 또는 특수화된 회로 크기 계급, constructivity와 largeness 조건을 기록하지 않으면 결론을 $P$ 대 $NP$로 과장하게 된다. | PDF 15~17쪽, 본문 14~16쪽 §4.1; Q12·Q13 |"
+    },
+    {
+     "파일": "research/pvsnp/literature/readings/L14.md",
+     "시작2": 256,
+     "끝2": 256,
+     "표기": "research/pvsnp/literature/readings/L14.md 128~128행",
+     "원래": "| 초록의 무조건 이산 로그 장벽과 본문의 정리 4.4·따름정리 4.5는 같은 제한을 둔다. | 일치 | PDF 1쪽 초록; PDF 15~17쪽, 본문 14~16쪽 §4.1 |",
+     "대체": "| 초록의 무조건 이산 로그 장벽과 본문의 정리 4.5·따름정리 4.6은 같은 결론을 요약·전개한다. | 일치 | PDF 1쪽 초록; PDF 15~17쪽, 본문 14~16쪽 §4.1 |"
+    }
+   ]
+  }
+ ]
+}

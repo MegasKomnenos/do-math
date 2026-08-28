@@ -1,0 +1,12 @@
+{
+ "라운드": 1,
+ "적용": [
+  "R1-01",
+  "R1-02",
+  "R1-M1"
+ ],
+ "조각수": 3,
+ "파일": [
+  "research/pvsnp/literature/readings/L08.md"
+ ]
+}
