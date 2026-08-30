@@ -238,6 +238,11 @@ def cmd_영역검산(args) -> int:
     산출물이 하나면 전 경로가 그 사본이고, 여럿이면 경로를 뒤끝으로 담는 사본
     하나가 대응한다(재정박·수리판독과 같은 규칙). 대응이 없으면 exit 1이다.
 
+    재정박 대응: 같은 라운드의 `<런>/라운드N/_재정박.json`이 있으면 행 범위
+    구간은 명세의 동결행 대신 그 파일의 라운드행을 사용한다. 영역 이름·경로·
+    동결행이 명세와 정확히 대응하지 않으면 exit 1이다. 재정박 파일이 없으면
+    명세의 행 범위를 그대로 쓴다.
+
     검사: ① frontmatter 영역 수 = 실측 절 수 ② 구간 경로가 사본에 대응한다
     ③ 행 범위가 대응 사본의 행 수 안이다 ④ 구간 합집합 = 사본 전건(빠진 행
     없음) ⑤ 서로 비중첩(겹친 행 없음). 어긋나면 exit 1과 좌표.
@@ -267,6 +272,27 @@ def cmd_영역검산(args) -> int:
             actual=str(len(sections))))
 
     line_counts = {c: len(vrlib.coord_lines(vrlib.read_text(c))[0]) for c in copies}
+    reanchor_path = _round_dir(args) / "_재정박.json"
+    reanchored: dict[tuple[str, str, int, int], tuple[int, int]] | None = None
+    if reanchor_path.is_file():
+        data = _load_json(reanchor_path)
+        if data.get("라운드") != getattr(args, "라운드"):
+            raise vrlib.UsageError(
+                f"재정박 라운드 불일치: {reanchor_path} "
+                f"(기대 {getattr(args, '라운드')}, 실측 {data.get('라운드')})")
+        reanchored = {}
+        try:
+            for area in data["영역"]:
+                for span in area["구간"]:
+                    frozen = span["동결행"]
+                    current = span["라운드행"]
+                    key = (area["이름"], span["경로"], int(frozen[0]), int(frozen[1]))
+                    if key in reanchored:
+                        raise vrlib.UsageError(f"재정박 구간 중복: {reanchor_path} ({key})")
+                    reanchored[key] = (int(current[0]), int(current[1]))
+        except (KeyError, TypeError, ValueError, IndexError) as e:
+            raise vrlib.UsageError(f"재정박 서식 불일치: {reanchor_path}") from e
+    used_reanchors: set[tuple[str, str, int, int]] = set()
     # 사본 → 행 번호 → 덮은 영역 이름 목록
     coverage = {c: {i: [] for i in range(1, n + 1)} for c, n in line_counts.items()}
     area_stats: list[tuple[str, int, int]] = []  # (영역 이름, 구간 수, 행 수)
@@ -300,7 +326,22 @@ def cmd_영역검산(args) -> int:
                 # 0행 파일의 전체 파일 구간 — 덮을 행이 없는 유효한 빈 구간
                 spans += 1
                 continue
-            a, b = (1, n) if m.group("a") is None else (int(m.group("a")), int(m.group("b")))
+            if m.group("a") is None:
+                a, b = 1, n
+            else:
+                frozen_a, frozen_b = int(m.group("a")), int(m.group("b"))
+                key = (sec.title, path, frozen_a, frozen_b)
+                if reanchored is not None:
+                    current = reanchored.get(key)
+                    if current is None:
+                        mismatches.append(vrlib.Mismatch(
+                            file=str(reanchor_path), line=None,
+                            expected=f"재정박 구간 {key}", actual="없음"))
+                        continue
+                    used_reanchors.add(key)
+                    a, b = current
+                else:
+                    a, b = frozen_a, frozen_b
             if a < 1 or b < a or b > n:
                 mismatches.append(vrlib.Mismatch(
                     file=str(spec_path), line=line_no,
@@ -311,6 +352,12 @@ def cmd_영역검산(args) -> int:
             for i in range(a, b + 1):
                 coverage[copy][i].append(sec.title)
         area_stats.append((sec.title, spans, rows))
+
+    if reanchored is not None:
+        for key in sorted(set(reanchored) - used_reanchors):
+            mismatches.append(vrlib.Mismatch(
+                file=str(reanchor_path), line=None,
+                expected="명세에 대응하는 재정박 구간", actual=f"남음 {key}"))
 
     def runs(nums):
         """정렬된 행 번호 목록을 (시작, 끝) 연속 구간 목록으로 접는다."""

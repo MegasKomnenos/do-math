@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """vr.py 영역검산 하위명령 시험. 직접 실행이 정본(`python .agents/skills/verify-rounds/scripts/tests/test_영역검산.py`).
 
-검사 대상은 열로 한정한다:
+검사 대상은 열하나로 한정한다:
 ① 통과 — 영역들의 합집합 = 산출물 전건, 비중첩이면 exit 0과 영역별 수치 stdout
 ② 빠진 구간 — exit 1과 stderr 좌표(파일·행 구간)
 ③ 겹친 구간 — exit 1과 stderr 좌표
@@ -12,6 +12,7 @@
 ⑧ 재정박 확장 명세(시작·끝 축자 줄)의 수용 — 축자 줄은 구간 부속으로 무시된다
 ⑨ 원본 경로와 사본 경로의 대응 — 사본이 `사본/` 아래 디렉토리 구조여도 원본 경로로 검산한다
 ⑩ 동결문 산출물 목록의 파일에 대응 사본이 없음 — exit 2
+⑪ 같은 라운드의 `_재정박.json`이 있으면 명세 동결행 대신 라운드행으로 검산
 그 밖의 검사는 두지 않는다. 명세 서식의 정본은 vr.py 영역검산 docstring이다.
 시험은 임시 디렉토리를 루트 삼아 chdir하고 상대 경로를 준다.
 """
@@ -20,6 +21,7 @@ from __future__ import annotations
 
 import contextlib
 import io
+import json
 import os
 import shutil
 import sys
@@ -141,6 +143,30 @@ class AreaCheckTest(unittest.TestCase):
             "  시작 축자: d\n  끝 축자: f\n")
         self.assertEqual(code, 0, err)
         self.assertIn("10행", out)
+
+    def test_재정박_결과의_라운드행으로_검산한다(self):
+        write("명세.md",
+              "---\n영역: 2\n---\n\n## 영역 1\n\n- 산출물.md 행 1-2\n"
+              "  시작 축자: 1행\n  끝 축자: 2행\n"
+              "\n## 영역 2\n\n- 산출물.md 행 3-4\n"
+              "  시작 축자: 3행\n  끝 축자: 4행\n")
+        동결쓰기("런/동결.md", ["산출물.md"])
+        write("런/라운드1/사본.md", "1행\n새 행\n2행\n3행\n4행\n")
+        write("런/라운드1/_재정박.json", json.dumps({
+            "라운드": 1,
+            "영역": [
+                {"이름": "영역 1", "구간": [{
+                    "경로": "산출물.md", "사본": "런/라운드1/사본.md",
+                    "동결행": [1, 2], "라운드행": [1, 3]}]},
+                {"이름": "영역 2", "구간": [{
+                    "경로": "산출물.md", "사본": "런/라운드1/사본.md",
+                    "동결행": [3, 4], "라운드행": [4, 5]}]},
+            ],
+        }, ensure_ascii=False) + "\n")
+        code, out, err = run_vr("영역검산", "--런", "런", "--라운드", "1",
+                                "--동결", "런/동결.md", "--명세", "명세.md")
+        self.assertEqual(code, 0, err)
+        self.assertIn("5행", out)
 
     def test_사본_부재는_exit2(self):
         # 사본 경로를 파생하므로 `사본` 하위명령을 먼저 돌리지 않으면 쓸 사본이 없다.
