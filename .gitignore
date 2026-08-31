@@ -29,6 +29,9 @@ __pycache__/
 /math_l16_tmp.txt
 /nul
 
+# P vs NP 초기 문헌 조사의 원문·코드·데이터 실물. 추적 manifest만 Git에 둔다.
+/research/pvsnp/literature-baseline/originals/
+
 # do-dag 실행 때 생성하는 원시 대화 로그와 별도 작업트리 채록.
 .sdd/dag/**/_로그*
 .sdd/dag/**/worktree채록/
