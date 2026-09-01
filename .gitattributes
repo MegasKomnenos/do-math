@@ -11,3 +11,7 @@ Dockerfile.* text eol=lf
 
 # 확장자 없는 셸 스크립트(`*.sh`가 못 잡는 구멍). 스킬 미러의 task-brief가 실물이다.
 **/scripts/task-brief text eol=lf
+
+# 계약 해시로 잠근 외부 규격 사본은 체크아웃에서도 원문 LF 바이트와
+# 원문 자체의 공백을 유지한다.
+docs/do-math/okf/SPEC-v0.2.md text eol=lf -whitespace
