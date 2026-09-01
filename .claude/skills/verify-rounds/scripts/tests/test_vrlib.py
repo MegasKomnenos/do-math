@@ -60,6 +60,16 @@ class FrontmatterTest(unittest.TestCase):
         self.assertIsNone(vrlib.fm_int(fm, "지적수"))
         self.assertEqual(vrlib.fm_int(fm, "항목"), 3)
 
+    def test_블록_목록_값을_읽는다(self):
+        text = ("---\n유형: 심사\n승인: 1\n읽은 범위:\n"
+                "  - 동결.md 전문\n  - 사본: 전문\n기각: 0\n---\n")
+        fm, body_start = vrlib.parse_frontmatter(text)
+        self.assertEqual(fm["읽은 범위"], "동결.md 전문, 사본: 전문")
+        self.assertEqual(fm["유형"], "심사")
+        self.assertEqual(vrlib.fm_int(fm, "승인"), 1)
+        self.assertEqual(vrlib.fm_int(fm, "기각"), 0)
+        self.assertEqual(body_start, 9)
+
     def test_fm_int_비정수는_ValueError(self):
         fm, _ = vrlib.parse_frontmatter("---\n항목: 셋\n---\n")
         with self.assertRaises(ValueError):

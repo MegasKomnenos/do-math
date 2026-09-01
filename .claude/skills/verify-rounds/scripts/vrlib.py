@@ -132,12 +132,19 @@ def parse_frontmatter(text: str) -> tuple[dict[str, str], int]:
     if not lines or lines[0].strip() != "---":
         return {}, 1
     fm: dict[str, str] = {}
+    last_key: str | None = None
     for i, line in enumerate(lines[1:], start=2):
         if line.strip() == "---":
             return fm, i + 1
+        if line[:1].isspace() and line.strip().startswith("- ") and last_key:
+            # 블록 목록 값(YAML 시퀀스): 직전 키의 값에 항목을 잇는다
+            item = line.strip()[2:].strip()
+            fm[last_key] = f"{fm[last_key]}, {item}" if fm[last_key] else item
+            continue
         if ":" in line:
             key, _, value = line.partition(":")
             fm[key.strip()] = value.strip()
+            last_key = key.strip()
     return {}, 1  # 닫는 ---가 없으면 frontmatter가 아니다
 
 
