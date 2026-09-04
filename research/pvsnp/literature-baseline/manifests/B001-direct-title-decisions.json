@@ -1,0 +1,48 @@
+{
+  "batch_id": "B001",
+  "builder": "scripts/build_b001_direct_decisions.py",
+  "builder_sha256": "68de32be68be857970919f3b8cfc5242070abdbdfd48e06982207c5db9e9157a",
+  "counts": {
+    "candidate_records": 165,
+    "clusters": 107,
+    "dispositions": {
+      "alternative_model_or_relativized_variant": 35,
+      "authoritative_status_or_history": 9,
+      "conditional_hardness_or_consequence": 17,
+      "education_or_commentary": 20,
+      "needs_full_text_review": 4,
+      "non_tcs_false_positive": 3,
+      "purported_resolution_requires_adversarial_review": 8,
+      "standard_pnp_research": 11
+    }
+  },
+  "inputs": [
+    {
+      "bytes": 86731,
+      "path": "catalog/B001-direct-title-queue.jsonl",
+      "sha256": "3eec23296cc024bef2793ee5a01e92485c853edb279b821bc8431e0aeb51cc3e"
+    },
+    {
+      "bytes": 4566,
+      "path": "reports/B001-direct-title-review-A.md",
+      "sha256": "89970e6afd846b52a328fce66c01a4f0bf3ca01b77e78b0e909fdcfb0c70e1f7"
+    },
+    {
+      "bytes": 14354,
+      "path": "reports/B001-direct-title-review-B.md",
+      "sha256": "1bec2b0d1a411cbbaad488a8ec9d07d2bda0b0489ea14c019d055af52e8ee3ed"
+    },
+    {
+      "bytes": 4262,
+      "path": "reports/B001-direct-title-review-C.md",
+      "sha256": "a78484572d7c677202112728ae471537a317108f1f26a003462d2f000f359073"
+    }
+  ],
+  "output": {
+    "bytes": 45010,
+    "path": "catalog/B001-direct-title-decisions.jsonl",
+    "record_count": 107,
+    "sha256": "2f7d1a19a3b134fa365b2df5a6ea06da36335fb90a5e5430463b4a4548d5b6f3"
+  },
+  "schema_version": "pvsnp-b001-direct-title-decision-manifest/1"
+}

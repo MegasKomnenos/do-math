@@ -1,0 +1,44 @@
+{
+  "analyzer": "scripts/crossref_title_review.py",
+  "analyzer_sha256": "e8247acbca0841cd58e15964a8f5aacc65cc2f67d9b452a25280a3fcc5e0c75e",
+  "batch_id": "B002",
+  "counts": {
+    "candidate_doi_links": 2762,
+    "classifications": {
+      "exact_title": 2501,
+      "missing_crossref_title": 1,
+      "similar_title": 49,
+      "title_containment": 148,
+      "title_mismatch_review": 49
+    },
+    "crossref_states": {
+      "found": 2693,
+      "found_alias": 55
+    },
+    "records": 2748
+  },
+  "inputs": [
+    {
+      "bytes": 10676699,
+      "path": "catalog/B002-candidates.jsonl",
+      "sha256": "9ef545666c916a192e9706154714b53e20ff447fcfca3d65dfa1d1f8b50179ea"
+    },
+    {
+      "bytes": 3641183,
+      "path": "catalog/B002-crossref.jsonl",
+      "sha256": "d5ac8cda11c625f910fe87b839ba0f547a3e4c61b5c03c9a96f9e13803c9db40"
+    },
+    {
+      "bytes": 821030,
+      "path": "manifests/B002-crossref.json",
+      "sha256": "d13faac7da628b5100bf4945e6cc3df938d98ad6f9c6994bba78c4db06093be8"
+    }
+  ],
+  "output": {
+    "bytes": 1465841,
+    "path": "catalog/B002-crossref-title-review.jsonl",
+    "record_count": 2748,
+    "sha256": "c203443be58d8d92379eae96ae378eb2208f8d82d94b8b836d42bf3ddfa1c11a"
+  },
+  "schema_version": "pvsnp-crossref-title-review-manifest/1"
+}

@@ -1,0 +1,60 @@
+{
+  "schema_version": "pvsnp-b002-relation-decisions/1",
+  "batch_id": "B002",
+  "reviewed_at": "2026-09-04",
+  "inputs": [
+    {
+      "path": "catalog/B002-candidates.jsonl",
+      "bytes": 10676699,
+      "sha256": "9ef545666c916a192e9706154714b53e20ff447fcfca3d65dfa1d1f8b50179ea",
+      "record_count": 5472
+    },
+    {
+      "path": "catalog/B002-relations.jsonl",
+      "bytes": 290627,
+      "sha256": "cb9f03769c8b1a58eb3a74179e4796a5053bd490d8ca96fdbbdd244b6324962e",
+      "record_count": 378
+    }
+  ],
+  "decisions": [
+    {
+      "path": "catalog/B002-doi-relation-decisions.jsonl",
+      "bytes": 7175,
+      "sha256": "46cd900aea9c848598c30855489bcc9ca7573e2804185fe994d1ca55e5ae6c13",
+      "record_count": 14,
+      "source_relation_type": "same_doi_candidate",
+      "source_group_count": 14,
+      "review_state": "complete"
+    },
+    {
+      "path": "catalog/B002-fingerprint-relation-decisions.jsonl",
+      "bytes": 4809,
+      "sha256": "9e163dde4c009d7f7c424e45340dbb542fc0a7e570e66a3a3d5f55bd65e9f826",
+      "record_count": 10,
+      "source_relation_type": "same_bibliographic_fingerprint_candidate",
+      "source_group_count": 10,
+      "review_state": "complete_with_two_unresolved_dispositions"
+    }
+  ],
+  "independent_reviews": [
+    {
+      "path": "reports/B002-doi-relation-independent-review.md",
+      "bytes": 11114,
+      "sha256": "b5d39f3c7c3eb56864599448090bee650d6c264f69d9564ffaf517a4c597a569",
+      "verdict": "PASS",
+      "checked_records": 14
+    },
+    {
+      "path": "reports/B002-fingerprint-relation-independent-review.md",
+      "bytes": 7272,
+      "sha256": "29f1e41824ef9bcb928fa8f87bf7fe53d7880a7f455ca25d6762d5553b6bdbd2",
+      "verdict": "PASS_AFTER_REPAIR",
+      "checked_records": 10
+    }
+  ],
+  "remaining": {
+    "edition_or_version_candidate_groups": 354,
+    "groups_with_equivalent_member_sets_already_reviewed": 12,
+    "groups_without_member_set_decision": 342
+  }
+}

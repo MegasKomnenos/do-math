@@ -1,0 +1,64 @@
+field_code	field_name	query
+00	General and overarching topics; collections	00-01 OR 00-02
+01	History and biography	01-00 OR 01-01 OR 01-02
+03	Mathematical logic and foundations	03-00 OR 03-01 OR 03-02
+05	Combinatorics	05-00 OR 05-01 OR 05-02
+06	Order, lattices, ordered algebraic structures	06-00 OR 06-01 OR 06-02
+08	General algebraic systems	08-00 OR 08-01 OR 08-02
+11	Number theory	11-00 OR 11-01 OR 11-02
+12	Field theory and polynomials	12-00 OR 12-01 OR 12-02
+13	Commutative algebra	13-00 OR 13-01 OR 13-02
+14	Algebraic geometry	14-00 OR 14-01 OR 14-02
+15	Linear and multilinear algebra; matrix theory	15-00 OR 15-01 OR 15-02
+16	Associative rings and algebras	16-00 OR 16-01 OR 16-02
+17	Nonassociative rings and algebras	17-00 OR 17-01 OR 17-02
+18	Category theory; homological algebra	18-00 OR 18-01 OR 18-02
+19	K-theory	19-00 OR 19-01 OR 19-02
+20	Group theory and generalizations	20-00 OR 20-01 OR 20-02
+22	Topological groups, Lie groups	22-00 OR 22-01 OR 22-02
+26	Real functions	26-00 OR 26-01 OR 26-02
+28	Measure and integration	28-00 OR 28-01 OR 28-02
+30	Functions of a complex variable	30-00 OR 30-01 OR 30-02
+31	Potential theory	31-00 OR 31-01 OR 31-02
+32	Several complex variables and analytic spaces	32-00 OR 32-01 OR 32-02
+33	Special functions	33-00 OR 33-01 OR 33-02
+34	Ordinary differential equations	34-00 OR 34-01 OR 34-02
+35	Partial differential equations	35-00 OR 35-01 OR 35-02
+37	Dynamical systems and ergodic theory	37-00 OR 37-01 OR 37-02
+39	Difference and functional equations	39-00 OR 39-01 OR 39-02
+40	Sequences, series, summability	40-00 OR 40-01 OR 40-02
+41	Approximations and expansions	41-00 OR 41-01 OR 41-02
+42	Harmonic analysis on Euclidean spaces	42-00 OR 42-01 OR 42-02
+43	Abstract harmonic analysis	43-00 OR 43-01 OR 43-02
+44	Integral transforms, operational calculus	44-00 OR 44-01 OR 44-02
+45	Integral equations	45-00 OR 45-01 OR 45-02
+46	Functional analysis	46-00 OR 46-01 OR 46-02
+47	Operator theory	47-00 OR 47-01 OR 47-02
+49	Calculus of variations and optimal control; optimization	49-00 OR 49-01 OR 49-02
+51	Geometry	51-00 OR 51-01 OR 51-02
+52	Convex and discrete geometry	52-00 OR 52-01 OR 52-02
+53	Differential geometry	53-00 OR 53-01 OR 53-02
+54	General topology	54-00 OR 54-01 OR 54-02
+55	Algebraic topology	55-00 OR 55-01 OR 55-02
+57	Manifolds and cell complexes	57-00 OR 57-01 OR 57-02
+58	Global analysis, analysis on manifolds	58-00 OR 58-01 OR 58-02
+60	Probability theory and stochastic processes	60-00 OR 60-01 OR 60-02
+62	Statistics	62-00 OR 62-01 OR 62-02
+65	Numerical analysis	65-00 OR 65-01 OR 65-02
+68	Computer science	68-00 OR 68-01 OR 68-02
+70	Mechanics of particles and systems	70-00 OR 70-01 OR 70-02
+74	Mechanics of deformable solids	74-00 OR 74-01 OR 74-02
+76	Fluid mechanics	76-00 OR 76-01 OR 76-02
+78	Optics, electromagnetic theory	78-00 OR 78-01 OR 78-02
+80	Classical thermodynamics, heat transfer	80-00 OR 80-01 OR 80-02
+81	Quantum theory	81-00 OR 81-01 OR 81-02
+82	Statistical mechanics, structure of matter	82-00 OR 82-01 OR 82-02
+83	Relativity and gravitational theory	83-00 OR 83-01 OR 83-02
+85	Astronomy and astrophysics	85-00 OR 85-01 OR 85-02
+86	Geophysics	86-00 OR 86-01 OR 86-02
+90	Operations research, mathematical programming	90-00 OR 90-01 OR 90-02
+91	Game theory, economics, finance, and other social and behavioral sciences	91-00 OR 91-01 OR 91-02
+92	Biology and other natural sciences	92-00 OR 92-01 OR 92-02
+93	Systems theory; control	93-00 OR 93-01 OR 93-02
+94	Information and communication theory, circuits	94-00 OR 94-01 OR 94-02
+97	Mathematics education	97-00 OR 97-01 OR 97-02

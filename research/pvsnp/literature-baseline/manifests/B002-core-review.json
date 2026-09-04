@@ -1,0 +1,87 @@
+{
+  "schema_version": "pvsnp-b002-core-review/1",
+  "batch_id": "B002",
+  "reviewed_at": "2026-09-04",
+  "inputs": [
+    {
+      "path": "catalog/B002-candidates.jsonl",
+      "bytes": 10676829,
+      "sha256": "e14ab6425ac952844e0c258528facd0ad37233c083dab49e191e9fc739895451",
+      "record_count": 5472
+    },
+    {
+      "path": "manifests/B002-normalized.json",
+      "bytes": 62074,
+      "sha256": "4bc24da5f5e7dbf8b296e8c76d0a4908364ebd99dfd32c5234f182d83423e626"
+    }
+  ],
+  "field_scans": [
+    {
+      "path": "reports/B002-core-review-00-33.md",
+      "bytes": 20062,
+      "sha256": "ad26c495e4a8141a152a881160c8306d6f0b7eb4bb09ca85dce493d87a2bd5ba",
+      "field_count": 23,
+      "occurrence_count": 2289,
+      "unique_mr_count": 2063,
+      "state": "initial_review_complete_not_covered"
+    },
+    {
+      "path": "reports/B002-core-review-34-65.md",
+      "bytes": 21156,
+      "sha256": "c4494d13fdac2f164f8fe1b98378598bc1555844c0846fbd8c74ed7cf8fdc58a",
+      "field_count": 23,
+      "occurrence_count": 2300,
+      "unique_mr_count": 2080,
+      "state": "initial_review_complete_not_covered"
+    },
+    {
+      "path": "reports/B002-core-review-68-97.md",
+      "bytes": 22293,
+      "sha256": "6d628cd6de045843bbfbcf2dba6d2b525a8ce7e097918cfab48ee26359241255",
+      "field_count": 17,
+      "occurrence_count": 1644,
+      "unique_mr_count": 1573,
+      "state": "initial_review_complete_not_covered"
+    }
+  ],
+  "public_searches": [
+    {
+      "path": "reports/B002-public-bridges-00-33.md",
+      "bytes": 6719,
+      "sha256": "3309ff58741b4f4f19b2253b1f154fa6b132cf93d0384b8568698288a8ac3337",
+      "field_count": 23,
+      "successful_scoped_queries": 21,
+      "failed_scoped_queries": 2,
+      "fields_with_new_candidates": 3,
+      "state": "targeted_public_search_complete_not_saturated"
+    },
+    {
+      "path": "reports/B002-public-bridges-34-65.md",
+      "bytes": 11940,
+      "sha256": "a137e23ca2502d716fc72bce507968f3e9042e8c2d5b00f7996f83a6318052b7",
+      "field_count": 23,
+      "successful_scoped_queries": 23,
+      "failed_scoped_queries": 0,
+      "fields_with_new_candidates": 19,
+      "state": "targeted_public_search_complete_not_saturated"
+    },
+    {
+      "path": "reports/B002-tcs-public-seeds.md",
+      "bytes": 11353,
+      "sha256": "e447ac653c2625bc4a12b73b0b07c5803551e5d065f68533d2a320792e3de098",
+      "theory_subaxis_count": 9,
+      "candidate_count": 18,
+      "outside_b002_exact_title_count": 11,
+      "state": "initial_public_seed_review_complete_not_saturated"
+    }
+  ],
+  "coverage": {
+    "msc_field_count": 63,
+    "b002_occurrence_count": 6233,
+    "all_b002_occurrences_scanned": true,
+    "targeted_public_search_field_count": 46,
+    "msc_68_97_fields_without_fielded_zbmath_bridge_search": 17,
+    "final_core_selection_complete": false,
+    "independent_omission_search_saturated": false
+  }
+}
