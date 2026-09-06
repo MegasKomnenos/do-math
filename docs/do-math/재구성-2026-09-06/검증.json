@@ -6,7 +6,7 @@
     "draft_sections": 102,
     "source_clause_rows": 292,
     "old_vectors": 246,
-    "new_vectors": 112,
+    "new_vectors": 117,
     "glossary_source_terms": 108,
     "glossary_candidate_terms": 103,
     "markdown_files": 6,
@@ -15,22 +15,20 @@
     "sync_patch_applies": true
   },
   "errors": [],
-  "pending_user_decisions": [
-    "Q1"
-  ],
+  "pending_user_decisions": [],
   "runtime_tests_executed": false,
   "draft": {
     "path": "docs/do-math/통합-설계-초안.md",
-    "sha256": "83aa1c5146f48a5bc21d291f49054832f5ac94d33d8179cf8db020ad06c97ebc",
-    "bytes": 180540,
-    "lines": 1399
+    "sha256": "5c07482348663da64bb4bf32a984ae999d3dd63de3df98ee1647af553d072154",
+    "bytes": 183975,
+    "lines": 1413
   },
   "file_hashes": {
-    "docs/do-math/통합-설계-초안.md": "83aa1c5146f48a5bc21d291f49054832f5ac94d33d8179cf8db020ad06c97ebc",
-    "docs/do-math/재구성-2026-09-06/검토기록.md": "0ca6e1ee96a1e8aacf640286444c135c907fb7732382684f3478a181f0627551",
-    "docs/do-math/재구성-2026-09-06/원문대응.md": "1e9ed6ca04d54f013ded9b1f9fde5dda63d889109471d018323b4b0babefb570",
-    "docs/do-math/재구성-2026-09-06/벡터대응.md": "ac22af2626c34dbb503e9a135a3d01789bcb65d2fadc1ca0c1fe7e2daa41bbc6",
-    "docs/do-math/재구성-2026-09-06/CONTEXT-개정안.md": "9805075da9944f2c187a826b000fbbea5d32b44ed8b665ba77d3c61398598eda",
+    "docs/do-math/통합-설계-초안.md": "5c07482348663da64bb4bf32a984ae999d3dd63de3df98ee1647af553d072154",
+    "docs/do-math/재구성-2026-09-06/검토기록.md": "36b2bff690e849b33714008b143f68292d2ccba89434d0b5880c100e108c87cb",
+    "docs/do-math/재구성-2026-09-06/원문대응.md": "0ec5648607ff141137b49ff76276f450f5ea922cd7fffa0cb753e1fcd824d436",
+    "docs/do-math/재구성-2026-09-06/벡터대응.md": "4ef08e16f89500d6d6f0c9b28d9e230e0d13c4ecfc16159e270daf085a015e7a",
+    "docs/do-math/재구성-2026-09-06/CONTEXT-개정안.md": "48fb5a79b91e8ba08eb8184adfa9054e752d61b7c05db650935ffbf8792b0326",
     "docs/do-math/재구성-2026-09-06/지도-컨텍스트-개정안.md": "e4b14206d7ca540eba5b9f6839bd5c31f09189efe0bd0fb3457a9229e42e5b7f"
   }
 }
