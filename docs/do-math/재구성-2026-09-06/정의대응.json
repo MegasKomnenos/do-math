@@ -1,0 +1,466 @@
+{
+  "terms": [
+    {
+      "term": "AI 연구 체계",
+      "disposition": "개정"
+    },
+    {
+      "term": "연구 운영자",
+      "disposition": "개정"
+    },
+    {
+      "term": "연구 책임자",
+      "disposition": "유지"
+    },
+    {
+      "term": "연구 대상",
+      "disposition": "유지"
+    },
+    {
+      "term": "인증 수학 영역 (`K`)",
+      "disposition": "유지"
+    },
+    {
+      "term": "형식 타당성",
+      "disposition": "유지"
+    },
+    {
+      "term": "신뢰 시대",
+      "disposition": "개정"
+    },
+    {
+      "term": "기초 프로필",
+      "disposition": "유지"
+    },
+    {
+      "term": "가시 연구 프런티어 (`F`)",
+      "disposition": "유지"
+    },
+    {
+      "term": "미지 지평 (`U`)",
+      "disposition": "유지"
+    },
+    {
+      "term": "탐색",
+      "disposition": "유지"
+    },
+    {
+      "term": "발견 후보",
+      "disposition": "개정"
+    },
+    {
+      "term": "집중 활용",
+      "disposition": "유지"
+    },
+    {
+      "term": "적응형 연구 포트폴리오",
+      "disposition": "유지"
+    },
+    {
+      "term": "프런티어 확장",
+      "disposition": "유지"
+    },
+    {
+      "term": "연구 진전",
+      "disposition": "유지"
+    },
+    {
+      "term": "연구 작업공간",
+      "disposition": "유지"
+    },
+    {
+      "term": "Lean 형식화 작업공간",
+      "disposition": "유지"
+    },
+    {
+      "term": "Lean 정본",
+      "disposition": "유지"
+    },
+    {
+      "term": "연구 작업대",
+      "disposition": "유지"
+    },
+    {
+      "term": "공용 작업대",
+      "disposition": "개정"
+    },
+    {
+      "term": "공용 작업대 판본",
+      "disposition": "개정"
+    },
+    {
+      "term": "연구 작업",
+      "disposition": "개정"
+    },
+    {
+      "term": "작업 공용 생명주기",
+      "disposition": "개정"
+    },
+    {
+      "term": "절차적 종결 처분",
+      "disposition": "개정"
+    },
+    {
+      "term": "실행 껍질",
+      "disposition": "제거",
+      "reason": "옛 실행 기구의 개념. 과제·활동·기계 예정 사건·실행·점검의 새 계약으로 기능을 대체한다."
+    },
+    {
+      "term": "작업 씨앗",
+      "disposition": "제거",
+      "reason": "옛 실행 기구의 개념. 과제·활동·기계 예정 사건·실행·점검의 새 계약으로 기능을 대체한다."
+    },
+    {
+      "term": "착수 가능성 판정",
+      "disposition": "제거",
+      "reason": "옛 실행 기구의 개념. 과제·활동·기계 예정 사건·실행·점검의 새 계약으로 기능을 대체한다."
+    },
+    {
+      "term": "발생 조건식",
+      "disposition": "제거",
+      "reason": "옛 실행 기구의 개념. 과제·활동·기계 예정 사건·실행·점검의 새 계약으로 기능을 대체한다."
+    },
+    {
+      "term": "발생 조건 평가",
+      "disposition": "제거",
+      "reason": "옛 실행 기구의 개념. 과제·활동·기계 예정 사건·실행·점검의 새 계약으로 기능을 대체한다."
+    },
+    {
+      "term": "작업 씨앗 생성 근거",
+      "disposition": "제거",
+      "reason": "옛 실행 기구의 개념. 과제·활동·기계 예정 사건·실행·점검의 새 계약으로 기능을 대체한다."
+    },
+    {
+      "term": "작업 진전 계약",
+      "disposition": "개정"
+    },
+    {
+      "term": "진전 신호",
+      "disposition": "유지"
+    },
+    {
+      "term": "작업자 공개 상태",
+      "disposition": "개정"
+    },
+    {
+      "term": "다음 관찰 조건",
+      "disposition": "제거",
+      "reason": "옛 실행 기구의 개념. 과제·활동·기계 예정 사건·실행·점검의 새 계약으로 기능을 대체한다."
+    },
+    {
+      "term": "외부 감시기",
+      "disposition": "제거",
+      "reason": "옛 실행 기구의 개념. 과제·활동·기계 예정 사건·실행·점검의 새 계약으로 기능을 대체한다."
+    },
+    {
+      "term": "외부 안전 발동 조건",
+      "disposition": "제거",
+      "reason": "옛 실행 기구의 개념. 과제·활동·기계 예정 사건·실행·점검의 새 계약으로 기능을 대체한다."
+    },
+    {
+      "term": "관찰 조건 평가",
+      "disposition": "제거",
+      "reason": "옛 실행 기구의 개념. 과제·활동·기계 예정 사건·실행·점검의 새 계약으로 기능을 대체한다."
+    },
+    {
+      "term": "관찰 입력 스냅샷",
+      "disposition": "개정"
+    },
+    {
+      "term": "감시 기록 원장",
+      "disposition": "제거",
+      "reason": "옛 실행 기구의 개념. 과제·활동·기계 예정 사건·실행·점검의 새 계약으로 기능을 대체한다."
+    },
+    {
+      "term": "관찰 조건 세대",
+      "disposition": "제거",
+      "reason": "옛 실행 기구의 개념. 과제·활동·기계 예정 사건·실행·점검의 새 계약으로 기능을 대체한다."
+    },
+    {
+      "term": "관찰 의무",
+      "disposition": "제거",
+      "reason": "옛 실행 기구의 개념. 과제·활동·기계 예정 사건·실행·점검의 새 계약으로 기능을 대체한다."
+    },
+    {
+      "term": "안전 제어 경계",
+      "disposition": "개정"
+    },
+    {
+      "term": "관찰 응답 조건",
+      "disposition": "제거",
+      "reason": "옛 실행 기구의 개념. 과제·활동·기계 예정 사건·실행·점검의 새 계약으로 기능을 대체한다."
+    },
+    {
+      "term": "작업 자기 점검",
+      "disposition": "개정"
+    },
+    {
+      "term": "작업 실행",
+      "disposition": "개정"
+    },
+    {
+      "term": "실행 상태 이력",
+      "disposition": "개정"
+    },
+    {
+      "term": "작업 점유",
+      "disposition": "개정"
+    },
+    {
+      "term": "운영 사례",
+      "disposition": "개정"
+    },
+    {
+      "term": "운영 점검 실행",
+      "disposition": "개정"
+    },
+    {
+      "term": "점검 발동 조건",
+      "disposition": "개정"
+    },
+    {
+      "term": "운영 점검 처분",
+      "disposition": "개정"
+    },
+    {
+      "term": "운영 처분 실행",
+      "disposition": "개정"
+    },
+    {
+      "term": "운영 처분 심사",
+      "disposition": "개정"
+    },
+    {
+      "term": "심사 미완료",
+      "disposition": "개정"
+    },
+    {
+      "term": "대응",
+      "disposition": "개정"
+    },
+    {
+      "term": "결정 질문",
+      "disposition": "개정"
+    },
+    {
+      "term": "사용자 결정 기록",
+      "disposition": "개정"
+    },
+    {
+      "term": "전례",
+      "disposition": "개정"
+    },
+    {
+      "term": "형식 검사",
+      "disposition": "개정"
+    },
+    {
+      "term": "전례 적용 판정",
+      "disposition": "개정"
+    },
+    {
+      "term": "전례 비적용 관계",
+      "disposition": "개정"
+    },
+    {
+      "term": "전례 효력 변경",
+      "disposition": "개정"
+    },
+    {
+      "term": "작업 체크포인트",
+      "disposition": "개정"
+    },
+    {
+      "term": "실행 이력 보관",
+      "disposition": "개정"
+    },
+    {
+      "term": "작업 이력 보관",
+      "disposition": "개정"
+    },
+    {
+      "term": "작업 인터페이스 계약",
+      "disposition": "개정"
+    },
+    {
+      "term": "착수 명세 검토",
+      "disposition": "개정"
+    },
+    {
+      "term": "작업 종결",
+      "disposition": "개정"
+    },
+    {
+      "term": "작업별 작업대",
+      "disposition": "개정"
+    },
+    {
+      "term": "핵심 기록",
+      "disposition": "개정"
+    },
+    {
+      "term": "핵심 기록 ID",
+      "disposition": "유지"
+    },
+    {
+      "term": "핵심 기록 판본",
+      "disposition": "개정"
+    },
+    {
+      "term": "핵심 기록 공통 외피",
+      "disposition": "개정"
+    },
+    {
+      "term": "역할별 기록 내용",
+      "disposition": "유지"
+    },
+    {
+      "term": "파생 보기",
+      "disposition": "유지"
+    },
+    {
+      "term": "공용 편입",
+      "disposition": "개정"
+    },
+    {
+      "term": "공용 편입 준비",
+      "disposition": "개정"
+    },
+    {
+      "term": "분할 종결",
+      "disposition": "개정"
+    },
+    {
+      "term": "결정 대기 씨앗",
+      "disposition": "제거",
+      "reason": "옛 실행 기구의 개념. 과제·활동·기계 예정 사건·실행·점검의 새 계약으로 기능을 대체한다."
+    },
+    {
+      "term": "중요 문제",
+      "disposition": "유지"
+    },
+    {
+      "term": "현상금",
+      "disposition": "유지"
+    },
+    {
+      "term": "프로젝트 입력",
+      "disposition": "개정"
+    },
+    {
+      "term": "입력 수입자",
+      "disposition": "개정"
+    },
+    {
+      "term": "수입 검토자",
+      "disposition": "개정"
+    },
+    {
+      "term": "연구 인스턴스",
+      "disposition": "개정"
+    },
+    {
+      "term": "연구 헌장",
+      "disposition": "유지"
+    },
+    {
+      "term": "연구 정책",
+      "disposition": "유지"
+    },
+    {
+      "term": "연구 맥락",
+      "disposition": "유지"
+    },
+    {
+      "term": "연구 설정",
+      "disposition": "개정"
+    },
+    {
+      "term": "공용 연구 기억",
+      "disposition": "유지"
+    },
+    {
+      "term": "자료·근거",
+      "disposition": "유지"
+    },
+    {
+      "term": "수학 해설",
+      "disposition": "유지"
+    },
+    {
+      "term": "해설–형식 동일성",
+      "disposition": "유지"
+    },
+    {
+      "term": "동일성 인증 철회",
+      "disposition": "개정"
+    },
+    {
+      "term": "동일성 대응표",
+      "disposition": "개정"
+    },
+    {
+      "term": "정본 편입 제안",
+      "disposition": "개정"
+    },
+    {
+      "term": "검토 계획",
+      "disposition": "개정"
+    },
+    {
+      "term": "동일성 검토자",
+      "disposition": "개정"
+    },
+    {
+      "term": "이의",
+      "disposition": "유지"
+    },
+    {
+      "term": "이의 심사자",
+      "disposition": "개정"
+    },
+    {
+      "term": "부분 전문 검토자",
+      "disposition": "개정"
+    },
+    {
+      "term": "Lean 정본 객체",
+      "disposition": "유지"
+    },
+    {
+      "term": "F 객체",
+      "disposition": "유지"
+    },
+    {
+      "term": "작업 기록",
+      "disposition": "개정"
+    },
+    {
+      "term": "포트폴리오 선택 세션",
+      "disposition": "개정"
+    },
+    {
+      "term": "메인 포트폴리오 heartbeat",
+      "disposition": "제거",
+      "reason": "옛 실행 기구의 개념. 과제·활동·기계 예정 사건·실행·점검의 새 계약으로 기능을 대체한다."
+    },
+    {
+      "term": "모델 용량",
+      "disposition": "개정"
+    }
+  ],
+  "added": [
+    "기계 실행기",
+    "AI 활동",
+    "공통 실행",
+    "작업 예산",
+    "운영 예산",
+    "실행 프로필",
+    "자원 예약",
+    "종료 장벽",
+    "연구 계획",
+    "학술 검증",
+    "판정 사용 효력"
+  ],
+  "apply_only_with_design_adoption": true
+}

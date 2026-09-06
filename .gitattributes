@@ -15,3 +15,9 @@ Dockerfile.* text eol=lf
 # 계약 해시로 잠근 외부 규격 사본은 체크아웃에서도 원문 LF 바이트와
 # 원문 자체의 공백을 유지한다.
 docs/do-math/okf/SPEC-v0.2.md text eol=lf -whitespace
+
+# do-math 재구성의 기준 해시는 체크아웃에서도 같은 문서 바이트를 읽는다.
+docs/do-math/통합-설계.md text eol=lf
+docs/do-math/통합-설계-초안.md text eol=lf
+CONTEXT.md text eol=lf
+docs/wayfinder/pvsnp-재설계/컨텍스트.md text eol=lf

@@ -1,0 +1,4 @@
+# 원문 사본과 감사 산출물의 실제 바이트를 보존한다.
+* -text
+# unified diff의 빈 문맥 행은 공백 한 칸이 형식의 일부다.
+동기화.patch -whitespace

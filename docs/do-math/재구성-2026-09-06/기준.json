@@ -1,0 +1,32 @@
+{
+  "sources": [
+    {
+      "source": "docs/do-math/통합-설계.md",
+      "copy": "기준-기존안.md",
+      "sha256": "782b2c8338372e45a61a2a5192fee6869a3874ab44a8ff9be0b1aee09abee872",
+      "bytes": 339911,
+      "lines": 3068
+    },
+    {
+      "source": "docs/do-math/통합-설계-초안.md",
+      "copy": "기준-3차-초안.md",
+      "sha256": "850d2f62d42f4111eeb2f5df23c3bd381ccd01a11a28f3bfdeb159b2fd992168",
+      "bytes": 141354,
+      "lines": 1258
+    },
+    {
+      "source": "CONTEXT.md",
+      "copy": "기준-CONTEXT.md",
+      "sha256": "d08ce749e1c120b3cfe238a94a6194edb1da269c5a495423c6870b80cb56e28d",
+      "bytes": 47781,
+      "lines": 439
+    },
+    {
+      "source": "docs/wayfinder/pvsnp-재설계/컨텍스트.md",
+      "copy": "기준-지도-컨텍스트.md",
+      "sha256": "282f643392b481194263dde38512d763e7a57660f902b4869c9813db1fc4112b",
+      "bytes": 18637,
+      "lines": 138
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "scope": "현재 Git 색인의 체크아웃 바이트가 검사한 워킹트리 문서와 같은지 대조한다.",
+  "checked_files": 22,
+  "failures": [],
+  "result": "passed"
+}
