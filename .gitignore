@@ -40,3 +40,6 @@ __pycache__/
 
 /임시/protoinput-research/
 /임시/windows-driver-samples-ref/
+
+# 자동 회수 근거는 로컬 보존한다. 별도 백업·이관 시 경로와 해시를 확인한다.
+/research/pvsnp/literature-baseline/catalog/version-review-evidence/
