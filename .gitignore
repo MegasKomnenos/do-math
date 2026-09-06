@@ -47,3 +47,9 @@ __pycache__/
 # 실행·묶음 배정 기록은 로컬 보존하며 별도 백업·이관에 포함한다.
 /research/pvsnp/literature-baseline/runs/
 /research/pvsnp/literature-baseline/manifests/version-review-v2-batch-*.json
+
+# 로컬 출력·재구성 상태. 재실행에 필요한 실제 파일은 유지한다.
+/-
+/임시/do-math-rebuild/inventory.json
+/임시/do-math-rebuild/last-write.json
+/임시/do-math-rebuild/memory-created.json
