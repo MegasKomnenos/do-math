@@ -1,0 +1,10 @@
+320 SetCapture
+1B6 GetRawInputData
+16A GetKeyState
+121 GetAsyncKeyState
+2F2 RegisterRawInputDevices
+159 GetFocus
+15A GetForegroundWindow
+XINPUT1_4.dll
+0000000146C7426F  0000000146C7426F     6 XInputSetState
+0000000146C7425D  0000000146C7425D     5 XInputGetState

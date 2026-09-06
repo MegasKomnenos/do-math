@@ -1,0 +1,45 @@
+{
+  "observed_local_date": "2026-09-06",
+  "timezone": "Asia/Seoul",
+  "environment": {
+    "os": "Windows 11 Pro",
+    "build": "22631",
+    "cpu": "Intel Core i5-4570, 4 cores / 4 logical processors",
+    "physical_memory_bytes": 17115017216,
+    "gpu": "NVIDIA GeForce GTX 970",
+    "hypervisor_present": false,
+    "firmware_virtualization_enabled": false,
+    "active_WmiMonitorID_entries": 1,
+    "UEFISecureBootEnabled_registry_value": 1,
+    "HVCI_Enabled_registry_value": "not returned; state not determined",
+    "free_physical_memory_KiB_single_sample": 6312748
+  },
+  "raw_registration_probe": {
+    "source": "probe_raw_registration.py",
+    "own_window_control": {"success": true, "error": 0},
+    "cross_process_window": {"success": false, "error": 87},
+    "parent_registered_keyboard_count_after_probe": 1,
+    "child_registered_device_count": 0,
+    "scope": "Two hidden message-only STATIC windows in disposable Python processes; INPUTSINK registration only. No input generation, key logging, suppression, forwarding, or game manipulation.",
+    "limitation": "Observed for this Windows build and these processes; not a universal Windows-version theorem. Transient window handles omitted."
+  },
+  "game_binary": {
+    "path": "C:\\Nexon\\MabinogiEternity\\Mabinogi\\Binaries\\Win64\\Mabinogi-Win64-Shipping.exe",
+    "size_bytes": 178001904,
+    "sha256": "8615BC2D35FE5A0765F362FEDDBD62BFBC3450C434F7DD83CC3ADF64643AB0A2",
+    "inspection": "Read-only dumpbin /imports",
+    "selected_imports_file": "game-input-imports.txt",
+    "limitation": "Imports establish availability, not active keyboard/gamepad bindings, background behavior, or anti-cheat compatibility."
+  },
+  "game_user_settings": {
+    "path": "C:\\Users\\wogud\\AppData\\Local\\Mabinogi\\Saved\\Config\\Windows\\GameUserSettings.ini",
+    "observation": "No background/focus/gamepad/raw-input settings found in the inspected saved INI files.",
+    "limitation": "Does not prove that defaults, internal options, or in-game menus lack these capabilities."
+  },
+  "protoinput_source": {
+    "repository": "https://github.com/SplitScreen-Me/splitscreenme-protoInput",
+    "commit": "e18e06bb345b86540e7464f7355c649bfdd17f38",
+    "local_checkout": "C:\\math\\임시\\protoinput-research",
+    "execution": "Source inspection only; not built, installed, or injected."
+  }
+}
