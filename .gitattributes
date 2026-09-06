@@ -16,7 +16,7 @@ Dockerfile.* text eol=lf
 # 원문 자체의 공백을 유지한다.
 docs/do-math/okf/SPEC-v0.2.md text eol=lf -whitespace
 
-# do-math 재구성의 기준 해시는 체크아웃에서도 같은 문서 바이트를 읽는다.
+# do-math 설계와 정본 전환 패치의 개행을 맞춘다.
 docs/do-math/통합-설계.md text eol=lf
 docs/do-math/통합-설계-초안.md text eol=lf
 CONTEXT.md text eol=lf

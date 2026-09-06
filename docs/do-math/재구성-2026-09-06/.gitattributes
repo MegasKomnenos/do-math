@@ -1,4 +1,4 @@
-# 원문 사본과 감사 산출물의 실제 바이트를 보존한다.
-* -text
+# 최종 검토 문서와 정본 전환 수정안의 개행을 유지한다.
+*.md text eol=lf
 # unified diff의 빈 문맥 행은 공백 한 칸이 형식의 일부다.
-동기화.patch -whitespace
+동기화.patch text eol=lf -whitespace
