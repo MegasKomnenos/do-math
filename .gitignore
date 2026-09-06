@@ -43,3 +43,7 @@ __pycache__/
 
 # 자동 회수 근거는 로컬 보존한다. 별도 백업·이관 시 경로와 해시를 확인한다.
 /research/pvsnp/literature-baseline/catalog/version-review-evidence/
+
+# 실행·묶음 배정 기록은 로컬 보존하며 별도 백업·이관에 포함한다.
+/research/pvsnp/literature-baseline/runs/
+/research/pvsnp/literature-baseline/manifests/version-review-v2-batch-*.json
