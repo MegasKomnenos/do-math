@@ -37,3 +37,6 @@ __pycache__/
 # do-dag 실행 때 생성하는 원시 대화 로그와 별도 작업트리 채록.
 .sdd/dag/**/_로그*
 .sdd/dag/**/worktree채록/
+
+/임시/protoinput-research/
+/임시/windows-driver-samples-ref/
