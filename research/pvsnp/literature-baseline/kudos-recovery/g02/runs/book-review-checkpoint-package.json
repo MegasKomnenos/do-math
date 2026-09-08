@@ -1,0 +1,43 @@
+{
+  "created_at": "2026-09-08T23:27:42.542569+00:00",
+  "tests": 166,
+  "files": {
+    "response_recovery.py": "fcb6783e0d4d1f5ea5e4cced15b4ba13fd97b10784a7454df4b7282e7c09b09f",
+    "source_kind.py": "2c94805cff89d2ceee037375b89c0b739ad9c2eb8ad4253585e2d41f36b1b57e",
+    "resume.py": "2a1bdb21a1ce8a53e633e2f6e5a1752d24191e7acc8188fbba8e4a70fa0f7f1f",
+    "abstract-content-decisions.json": "1839d94205aa69cfe74fa3d5f8ee588b5c0353fe4f177756e69109c9dd4a396c",
+    "test_source_kind.py": "1acb1730593d3c7e0b5a8208dbfe18bf1a733eabf392df3ddc14658009ebb418",
+    "test_book_review_identity.py": "29af7a4061f33c1a1a28efcc8715d4cc7484692e28e9ff03a443e395e45f811e",
+    "tdd/korean-loading-red.txt": "ecc4b68304d3e37ed5e6eab8d2269a39e0aa6bd3150aebb5fa722392798abade",
+    "tdd/korean-loading-green.txt": "5a5f749959c4ae7181e38c088af369be85d1a42b1b45a6b98ce7e8fe0b1f8f64",
+    "tdd/korean-loading-regression.txt": "160e6508c0249c30dea7fbe109e3ac6d2493b2bcde078972d4d8d3c2dc210055",
+    "tdd/book-review-red.txt": "c3eadc647cd045e07bd3b08d89804a125530add46dab48ce0a6c0fded3df7e5e",
+    "tdd/book-review-green.txt": "88fe21e73646ffed058842fde392bc591baa421e1741cc6c97211a0db52fd647",
+    "tdd/book-review-regression.txt": "70d15bb2ad3498607311ab5c5aa2fb77d8846b92fc6bb79d6884c3edbb114b8b",
+    "current-checkpoint.md": "c3bc737d5412002c651f20ca8ab6e87514aebe7a63c95e4cff209b919a48bc9f",
+    "book-review-type-impact-before.json": "2f57a2b8ab31e2e3f365a42b65d1732b918b466cb1da64215f5e76cd1f4e840d",
+    "korean-loading-impact.json": "b2bbda0f49bfcd5784473e26c89b8ce668489ba5a1a91d2c95160d1805d020e4",
+    "moonshine-fulltext-decision.json": "c08922daaeef841d09189614946f0d78d5b0aa455c7cc10b50d7c05975ec62e1",
+    "run.py": "faab1619bb7cff97662bbd941f59a720283adc21bfb1ff256d137ed235b7577c",
+    "test_atomic_store.py": "6dfef2a6c28de024081a5b3ee07dc1071a94bbb9e01c93236978186285c6ef51",
+    "tdd/atomic-store-red.txt": "08e77779db7d18e77a4bbbb8890a7ac688716a4ea34baef2b14d44c744e462e3",
+    "tdd/atomic-store-green.txt": "41303b4e6f8e453bec28da768393fcfe604adcd2555163220110b7e3c02a9df6",
+    "tdd/atomic-store-regression.txt": "bf0e539c10ad80947269b4b266ea1bb8a130bb748dcc74fa5c0871a7ff9ad0c9"
+  },
+  "production_manifests": [
+    "20260908T232335Z-20148.json",
+    "20260908T232554Z-45720.json"
+  ],
+  "pilots": [
+    "20260908T231537Z-19940.json",
+    "20260908T231548Z-17360.json",
+    "20260908T232335Z-32528.json"
+  ],
+  "saved_reassessment": "20260908T232048Z-17788.json",
+  "manual_application": "20260908T232311Z-18960.json",
+  "prior_atomic_package": "atomic-store-checkpoint-package.json",
+  "fixtures": {
+    "intake/kudos-recovery/g02/fixtures/book-review-mismatch-93fbac29fb63b565.json": "93fbac29fb63b56530755b00982cebb96425903a7cc197c46835426f1e0db68c",
+    "intake/kudos-recovery/g02/fixtures/book-types-positive-958b6064e61edcf3.json": "958b6064e61edcf38668e3d0249a8283437c68498c7085a03674df2a8a55bc31"
+  }
+}

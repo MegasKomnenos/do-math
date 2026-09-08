@@ -2,7 +2,7 @@
 import re
 def assess(text,status):
  if not text.strip():return 'retry'
- if re.fullmatch(r'(?:Loading|Please wait)[.\s…]*',text.strip(),re.I):return 'retry'
+ if re.fullmatch(r'(?:Loading|Please wait|불러오는 중)[.\s…]*',text.strip(),re.I):return 'retry'
  if re.fullmatch(r'Skip to main content\s+For Authors\s+For Librarians',text.strip(),re.I):return 'retry'
  if text.lstrip().startswith('There was a problem providing the content you requested') and 'CPE00001' in text:return 'provider_failure'
  if 'The handle you requested' in text and 'cannot be found' in text:return 'link_not_found'

@@ -1,0 +1,35 @@
+{
+  "created_at": "2026-09-08T23:09:27.865842+00:00",
+  "tests": 159,
+  "prior_snapshot": "e8cd7a0",
+  "files": {
+    "run.py": "faab1619bb7cff97662bbd941f59a720283adc21bfb1ff256d137ed235b7577c",
+    "test_atomic_store.py": "6dfef2a6c28de024081a5b3ee07dc1071a94bbb9e01c93236978186285c6ef51",
+    "tdd/atomic-store-red.txt": "08e77779db7d18e77a4bbbb8890a7ac688716a4ea34baef2b14d44c744e462e3",
+    "tdd/atomic-store-green.txt": "41303b4e6f8e453bec28da768393fcfe604adcd2555163220110b7e3c02a9df6",
+    "tdd/atomic-store-regression.txt": "bf0e539c10ad80947269b4b266ea1bb8a130bb748dcc74fa5c0871a7ff9ad0c9",
+    "current-checkpoint.md": "984daabaeaef7c6eda7cc074637e8b2c25931d00f63e800d7f62e285929e6c2e"
+  },
+  "production": [
+    {
+      "manifest": "20260908T230804Z-22056.json",
+      "pid": 22056,
+      "authentication_observed": true
+    },
+    {
+      "manifest": "20260908T230904Z-13992.json",
+      "pid": 13992,
+      "authentication_observed": false
+    }
+  ],
+  "pilots": [
+    {
+      "manifest": "20260908T230701Z-44224.json",
+      "check_exit_code": 0
+    },
+    {
+      "manifest": "20260908T230701Z-45592.json",
+      "check_exit_code": 0
+    }
+  ]
+}

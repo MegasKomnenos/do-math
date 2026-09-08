@@ -28,6 +28,7 @@ def document_matches(p,d):
   surname=norm(author.split(',')[0] if ',' in author else author.split()[0])
   if not surname or not any(re.search(r'(?<!\w)'+re.escape(surname)+r'(?!\w)',norm(a.get('surname') or a.get('fullname',''))) for a in observed):return False
  kind=' '.join([str(d.get('content_type') or '')]+[str(v) for v in d.get('content_types',[])]).lower();ptype=p.get('record_type')
+ if ptype in ('book','proceedings') and 'book review' in kind:return False
  if ptype in ('book','proceedings') and not any(v in kind for v in ('book','conference proceeding')):return False
  if ptype=='article' and not any(v in kind for v in ('article','journal','magazine')):return False
  if ptype=='incollection' and 'chapter' not in kind:return False

@@ -1,0 +1,930 @@
+{
+  "paper_count": 16,
+  "task_count": 77,
+  "rows": [
+    {
+      "paper_id": "VER-02f5cc6124a7d80e140c9839",
+      "task": "source:e92a6b28adee88f90c0c",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-02f5cc6124a7d80e140c9839/source-e92a6b28adee88f9.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/r4nbq5lqsf?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-02f5cc6124a7d80e140c9839",
+      "task": "source:6fc71ec2623c9806424e",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-02f5cc6124a7d80e140c9839/source-6fc71ec2623c9806.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/r4nbq5lqsf?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-02f5cc6124a7d80e140c9839",
+      "task": "source:a9f9a8e78ab5cf4e88a2",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-02f5cc6124a7d80e140c9839/source-a9f9a8e78ab5cf4e.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/r4nbq5lqsf?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-02f5cc6124a7d80e140c9839",
+      "task": "source:f419215fbefb67625e28",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-02f5cc6124a7d80e140c9839/source-f419215fbefb6762.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/r4nbq5lqsf?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-02f5cc6124a7d80e140c9839",
+      "task": "source:a06dc877575a1a905b74",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-02f5cc6124a7d80e140c9839/source-a06dc877575a1a90.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/r4nbq5lqsf?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-02f5cc6124a7d80e140c9839",
+      "task": "source:e4789919fec3d0780a51",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-02f5cc6124a7d80e140c9839/source-e4789919fec3d078.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/r4nbq5lqsf?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-0369585939ed4342f218fdd8",
+      "task": "source:38a634e238cf734d3310",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-0369585939ed4342f218fdd8/source-38a634e238cf734d.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/t7hyn4ogyz?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-0369585939ed4342f218fdd8",
+      "task": "source:be96d6901c7f2ca6d191",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-0369585939ed4342f218fdd8/source-be96d6901c7f2ca6.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/t7hyn4ogyz?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-0369585939ed4342f218fdd8",
+      "task": "source:4487fba092a8bc8a6efa",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-0369585939ed4342f218fdd8/source-4487fba092a8bc8a.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/t7hyn4ogyz?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-2a5c30c8400ff9836947af9b",
+      "task": "source:4817d04333fc96feefde",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-2a5c30c8400ff9836947af9b/source-4817d04333fc96fe.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/sctlyke5av?request-context=plink&db=nlebk",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-2a5c30c8400ff9836947af9b",
+      "task": "source:86c5f410eb7027a6584b",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-2a5c30c8400ff9836947af9b/source-86c5f410eb7027a6.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/sctlyke5av?request-context=plink&db=nlebk",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-2a6623e5a800c604c49c7d47",
+      "task": "source:40ad860497b9a57eaf52",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-2a6623e5a800c604c49c7d47/source-40ad860497b9a57e.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/qfdklsenqj?request-context=plink&db=nlebk",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-2a6623e5a800c604c49c7d47",
+      "task": "source:6f7e20ca9215de0d59b6",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-2a6623e5a800c604c49c7d47/source-6f7e20ca9215de0d.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/qfdklsenqj?request-context=plink&db=nlebk",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-2ac645180bea438681e09ac5",
+      "task": "source:71560a9b1dbc9e1204e0",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-2ac645180bea438681e09ac5/source-71560a9b1dbc9e12.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/bgcgmks7af?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-2ac645180bea438681e09ac5",
+      "task": "source:ee9f3075cfed1c408a56",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-2ac645180bea438681e09ac5/source-ee9f3075cfed1c40.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/bgcgmks7af?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-2ac645180bea438681e09ac5",
+      "task": "source:ba28ad3d8e3d6188ff4c",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-2ac645180bea438681e09ac5/source-ba28ad3d8e3d6188.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/bgcgmks7af?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-2ac645180bea438681e09ac5",
+      "task": "source:a0842324255846974bdb",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-2ac645180bea438681e09ac5/source-a084232425584697.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/bgcgmks7af?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-2ac645180bea438681e09ac5",
+      "task": "source:0b020df891bcd5bd1ef1",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-2ac645180bea438681e09ac5/source-0b020df891bcd5bd.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/bgcgmks7af?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-2ac645180bea438681e09ac5",
+      "task": "source:44ad10550c3b1b8a82b8",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-2ac645180bea438681e09ac5/source-44ad10550c3b1b8a.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/bgcgmks7af?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-2ac645180bea438681e09ac5",
+      "task": "source:e691ea52db906c3417b2",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-2ac645180bea438681e09ac5/source-e691ea52db906c34.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/bgcgmks7af?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-2b1befeee2ab850cad9d3803",
+      "task": "source:1fcfcb8d8aa57455ccdd",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-2b1befeee2ab850cad9d3803/source-1fcfcb8d8aa57455.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/axzu5firor?request-context=plink&db=e000bww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-2b1befeee2ab850cad9d3803",
+      "task": "source:5155cd02152c39dac54d",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-2b1befeee2ab850cad9d3803/source-5155cd02152c39da.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/axzu5firor?request-context=plink&db=e000bww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-2b1befeee2ab850cad9d3803",
+      "task": "source:bf8eff75d08758eaa022",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-2b1befeee2ab850cad9d3803/source-bf8eff75d08758ea.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/axzu5firor?request-context=plink&db=e000bww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-303b24c1ae67db912d1f03ee",
+      "task": "source:0f710598764ed58b1dc4",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-303b24c1ae67db912d1f03ee/source-0f710598764ed58b-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/hxyho3by3n?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-303b24c1ae67db912d1f03ee",
+      "task": "source:8f619fab5eaa2d9a67bc",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-303b24c1ae67db912d1f03ee/source-8f619fab5eaa2d9a-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/hxyho3by3n?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-303b24c1ae67db912d1f03ee",
+      "task": "source:5989b7979042d55e7c9d",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-303b24c1ae67db912d1f03ee/source-5989b7979042d55e-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/hxyho3by3n?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-303b24c1ae67db912d1f03ee",
+      "task": "source:78ca2cc7130d2e9cf91d",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-303b24c1ae67db912d1f03ee/source-78ca2cc7130d2e9c-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/hxyho3by3n?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-303b24c1ae67db912d1f03ee",
+      "task": "source:3f150b41a07a59ad052a",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-303b24c1ae67db912d1f03ee/source-3f150b41a07a59ad-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/hxyho3by3n?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-30b67d2eb480974b038a6f40",
+      "task": "source:6382d265810c3b9b1a21",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-30b67d2eb480974b038a6f40/source-6382d265810c3b9b-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/cvzhu3jdhb?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-30b67d2eb480974b038a6f40",
+      "task": "source:0064681095ebc8eacde9",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-30b67d2eb480974b038a6f40/source-0064681095ebc8ea-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/cvzhu3jdhb?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-30b67d2eb480974b038a6f40",
+      "task": "source:109a15cd79be538f12c3",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-30b67d2eb480974b038a6f40/source-109a15cd79be538f-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/cvzhu3jdhb?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-322f09560bb3f51758645a4f",
+      "task": "source:5f83c70dc863edc3ba04",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-322f09560bb3f51758645a4f/source-5f83c70dc863edc3-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/ckuitcf4kf?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-322f09560bb3f51758645a4f",
+      "task": "source:044b7a741afbb1a08589",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-322f09560bb3f51758645a4f/source-044b7a741afbb1a0-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/ckuitcf4kf?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-322f09560bb3f51758645a4f",
+      "task": "source:260ac9f655571e56d367",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-322f09560bb3f51758645a4f/source-260ac9f655571e56-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/ckuitcf4kf?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-322f09560bb3f51758645a4f",
+      "task": "source:53e5fbe372f177563df4",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-322f09560bb3f51758645a4f/source-53e5fbe372f17756-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/ckuitcf4kf?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-322f09560bb3f51758645a4f",
+      "task": "source:c61871d9014f23d5a1a1",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-322f09560bb3f51758645a4f/source-c61871d9014f23d5-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/ckuitcf4kf?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-322f09560bb3f51758645a4f",
+      "task": "source:c6cc83cbe494142e2159",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-322f09560bb3f51758645a4f/source-c6cc83cbe494142e-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/ckuitcf4kf?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-334e62a786eb5f0528d9b412",
+      "task": "source:b5a7c5177f7d2ee3d3e5",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-334e62a786eb5f0528d9b412/source-b5a7c5177f7d2ee3-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/qo3tdu2nvz?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-334e62a786eb5f0528d9b412",
+      "task": "source:7e95d468df8544bbedfa",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-334e62a786eb5f0528d9b412/source-7e95d468df8544bb-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/qo3tdu2nvz?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-334e62a786eb5f0528d9b412",
+      "task": "source:1ea1573f515e3019dabd",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-334e62a786eb5f0528d9b412/source-1ea1573f515e3019-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/qo3tdu2nvz?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-334e62a786eb5f0528d9b412",
+      "task": "source:f7361d34d408f63060b0",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-334e62a786eb5f0528d9b412/source-f7361d34d408f630-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/qo3tdu2nvz?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-334e62a786eb5f0528d9b412",
+      "task": "source:2c455fbefeb9bfa7f787",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-334e62a786eb5f0528d9b412/source-2c455fbefeb9bfa7-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/qo3tdu2nvz?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-34ea069567cd777511189726",
+      "task": "source:96f0e5eb33c9531aa73c",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-34ea069567cd777511189726/source-96f0e5eb33c9531a-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/zbqov2t4wn?request-context=plink&db=nlebk",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-34ea069567cd777511189726",
+      "task": "source:a8320de64e71695c0d88",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-34ea069567cd777511189726/source-a8320de64e71695c-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/zbqov2t4wn?request-context=plink&db=nlebk",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-34ea069567cd777511189726",
+      "task": "source:b02292f2965ec3083d6b",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-34ea069567cd777511189726/source-b02292f2965ec308-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/zbqov2t4wn?request-context=plink&db=nlebk",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-34ea069567cd777511189726",
+      "task": "source:f3d34e8609039921688c",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-34ea069567cd777511189726/source-f3d34e8609039921-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/zbqov2t4wn?request-context=plink&db=nlebk",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-34ea069567cd777511189726",
+      "task": "source:ac0b47728b80b74dd43a",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-34ea069567cd777511189726/source-ac0b47728b80b74d-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/zbqov2t4wn?request-context=plink&db=nlebk",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-34ea069567cd777511189726",
+      "task": "source:184828a6e7cea8966f24",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-34ea069567cd777511189726/source-184828a6e7cea896-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/zbqov2t4wn?request-context=plink&db=nlebk",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-34ea069567cd777511189726",
+      "task": "source:860396a4db25a4164076",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-34ea069567cd777511189726/source-860396a4db25a416-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/zbqov2t4wn?request-context=plink&db=nlebk",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-34ea069567cd777511189726",
+      "task": "source:87112f45ee515f11fd28",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-34ea069567cd777511189726/source-87112f45ee515f11-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/zbqov2t4wn?request-context=plink&db=nlebk",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-3739c4113a66dd75eb4dd2f9",
+      "task": "source:6f7b388842eac1273fef",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-3739c4113a66dd75eb4dd2f9/source-6f7b388842eac127-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/4rzuqejvzn?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-3739c4113a66dd75eb4dd2f9",
+      "task": "source:c266d08396c97b5a07a8",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-3739c4113a66dd75eb4dd2f9/source-c266d08396c97b5a-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/4rzuqejvzn?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-3739c4113a66dd75eb4dd2f9",
+      "task": "source:0f4a7af4f8cc8040fd5a",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-3739c4113a66dd75eb4dd2f9/source-0f4a7af4f8cc8040-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/4rzuqejvzn?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-3739c4113a66dd75eb4dd2f9",
+      "task": "source:ed73e318f4005492df56",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-3739c4113a66dd75eb4dd2f9/source-ed73e318f4005492-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/4rzuqejvzn?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-3739c4113a66dd75eb4dd2f9",
+      "task": "source:48b30fa3801c22eef06a",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-3739c4113a66dd75eb4dd2f9/source-48b30fa3801c22ee-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/4rzuqejvzn?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-3739c4113a66dd75eb4dd2f9",
+      "task": "source:599819f23854cc000743",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-3739c4113a66dd75eb4dd2f9/source-599819f23854cc00-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/4rzuqejvzn?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-3739c4113a66dd75eb4dd2f9",
+      "task": "source:86ed19b942db08815555",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-3739c4113a66dd75eb4dd2f9/source-86ed19b942db0881-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/4rzuqejvzn?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-3739c4113a66dd75eb4dd2f9",
+      "task": "source:2e327b68e74156f5c586",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-3739c4113a66dd75eb4dd2f9/source-2e327b68e74156f5-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/4rzuqejvzn?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-38b67aa8c4aa2d72114ea918",
+      "task": "source:8908fe9f265e898f1477",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-38b67aa8c4aa2d72114ea918/source-8908fe9f265e898f-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/4e7lu3vto5?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-38b67aa8c4aa2d72114ea918",
+      "task": "source:64c0cbf9285297e1b59b",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-38b67aa8c4aa2d72114ea918/source-64c0cbf9285297e1-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/4e7lu3vto5?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-38b67aa8c4aa2d72114ea918",
+      "task": "source:ce7f104d060e8071ecc3",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-38b67aa8c4aa2d72114ea918/source-ce7f104d060e8071-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/4e7lu3vto5?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-3a4b0128a1b7d2c42a3b3f9b",
+      "task": "source:684f4d0aeff0ce401994",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-3a4b0128a1b7d2c42a3b3f9b/source-684f4d0aeff0ce40-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/z25zxizamz?request-context=plink&db=e000bww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-3a4b0128a1b7d2c42a3b3f9b",
+      "task": "source:24d0a4bf20f1c82db4b6",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-3a4b0128a1b7d2c42a3b3f9b/source-24d0a4bf20f1c82d-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/z25zxizamz?request-context=plink&db=e000bww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-3a4b0128a1b7d2c42a3b3f9b",
+      "task": "source:ae2a9bfe695d009de4ef",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-3a4b0128a1b7d2c42a3b3f9b/source-ae2a9bfe695d009d-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/z25zxizamz?request-context=plink&db=e000bww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-3bfd8dfd4cbe6cc93ea57778",
+      "task": "source:048b8687df05c4831b00",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-3bfd8dfd4cbe6cc93ea57778/source-048b8687df05c483-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/did7efx6kr?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-3bfd8dfd4cbe6cc93ea57778",
+      "task": "source:f455edb06c7e9dbad09b",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-3bfd8dfd4cbe6cc93ea57778/source-f455edb06c7e9dba-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/did7efx6kr?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-3bfd8dfd4cbe6cc93ea57778",
+      "task": "source:0f1ac29cf2333d3baa72",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-3bfd8dfd4cbe6cc93ea57778/source-0f1ac29cf2333d3b-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/did7efx6kr?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-3bfd8dfd4cbe6cc93ea57778",
+      "task": "source:301d0f20796f9f5a55a4",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-3bfd8dfd4cbe6cc93ea57778/source-301d0f20796f9f5a-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/did7efx6kr?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-3bfd8dfd4cbe6cc93ea57778",
+      "task": "source:3e3b5f5babc9bb69d96e",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-3bfd8dfd4cbe6cc93ea57778/source-3e3b5f5babc9bb69-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/did7efx6kr?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-3bfd8dfd4cbe6cc93ea57778",
+      "task": "source:de1dde58a2a8a31b9ec7",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-3bfd8dfd4cbe6cc93ea57778/source-de1dde58a2a8a31b-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/did7efx6kr?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-3cd2136030a15c3673389a7b",
+      "task": "source:5d38d3a4825883c5226e",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-3cd2136030a15c3673389a7b/source-5d38d3a4825883c5-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/zivmyzpnqb?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-3cd2136030a15c3673389a7b",
+      "task": "source:56c126c68ba9dc66c030",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-3cd2136030a15c3673389a7b/source-56c126c68ba9dc66-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/zivmyzpnqb?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-3cd2136030a15c3673389a7b",
+      "task": "source:8c74fdc37d356357480d",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-3cd2136030a15c3673389a7b/source-8c74fdc37d356357-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/zivmyzpnqb?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-3cd2136030a15c3673389a7b",
+      "task": "source:ac48286247a87db7ee68",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-3cd2136030a15c3673389a7b/source-ac48286247a87db7-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/zivmyzpnqb?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-3cd2136030a15c3673389a7b",
+      "task": "source:6336f76bb1279b730442",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-3cd2136030a15c3673389a7b/source-6336f76bb1279b73-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/zivmyzpnqb?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-3cd2136030a15c3673389a7b",
+      "task": "source:ae31ac3389d9f1b25de5",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-3cd2136030a15c3673389a7b/source-ae31ac3389d9f1b2-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/zivmyzpnqb?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    },
+    {
+      "paper_id": "VER-3cd2136030a15c3673389a7b",
+      "task": "source:a9f94fda41ad81c351c0",
+      "status": "done",
+      "artifact": {
+        "path": "intake/kudos-recovery/g02/VER-3cd2136030a15c3673389a7b/source-a9f94fda41ad81c3-1035a5731b39d432.txt",
+        "sha256": "1035a5731b39d432a06ab6e6d896d67c6dc97ae19c26eb5f073c83e44bbd0c31",
+        "url": "https://research-ebsco-com.libproxy.knu.ac.kr/c/g536py/search/details/zivmyzpnqb?request-context=plink&db=e000xww",
+        "kind": "provider-page",
+        "media_type": "text/plain"
+      }
+    }
+  ]
+}

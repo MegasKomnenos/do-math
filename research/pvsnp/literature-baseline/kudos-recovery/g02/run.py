@@ -28,7 +28,14 @@ def status_tuple(record):
 def store_json(path,value):
  if path.parent==ROOT/'results' and OWNED_IDS is not None and path.stem not in OWNED_IDS:raise ValueError('Result belongs to another fixed shard.')
  path.parent.mkdir(parents=True,exist_ok=True)
- temp=path.with_suffix('.tmp'); temp.write_text(json.dumps(value,ensure_ascii=False,indent=2),encoding='utf-8'); temp.replace(path)
+ temp=path.with_suffix('.tmp'); temp.write_text(json.dumps(value,ensure_ascii=False,indent=2),encoding='utf-8')
+ for attempt in range(6):
+  try:
+   temp.replace(path)
+   break
+  except PermissionError:
+   if attempt==5:raise
+   time.sleep(0.1*(2**attempt))
  if _STATUS_ROWS is not None and path.parent==ROOT/'results':_STATUS_ROWS[path.stem]=status_tuple(value)
 
 def capture(pid,name,text,url,kind='detail-page'):

@@ -1,0 +1,254 @@
+test_abstract_kind.py
+.........
+----------------------------------------------------------------------
+Ran 9 tests in 0.008s
+
+OK
+EXIT=0
+test_abstract_notices.py
+......
+----------------------------------------------------------------------
+Ran 6 tests in 0.003s
+
+OK
+EXIT=0
+test_article_review.py
+...
+----------------------------------------------------------------------
+Ran 3 tests in 0.052s
+
+OK
+EXIT=0
+test_atomic_store.py
+...
+----------------------------------------------------------------------
+Ran 3 tests in 0.026s
+
+OK
+EXIT=0
+test_batch.py
+...
+----------------------------------------------------------------------
+Ran 3 tests in 0.000s
+
+OK
+EXIT=0
+test_bmstu.py
+..
+----------------------------------------------------------------------
+Ran 2 tests in 0.001s
+
+OK
+EXIT=0
+test_book_review_identity.py
+.....
+----------------------------------------------------------------------
+Ran 5 tests in 0.005s
+
+OK
+EXIT=0
+test_copyright_notice.py
+.....
+----------------------------------------------------------------------
+Ran 5 tests in 0.211s
+
+OK
+EXIT=0
+test_display_markup.py
+....
+----------------------------------------------------------------------
+Ran 4 tests in 0.008s
+
+OK
+EXIT=0
+test_fielded_search.py
+..
+----------------------------------------------------------------------
+Ran 2 tests in 0.002s
+
+OK
+EXIT=0
+test_grouped_review.py
+..
+----------------------------------------------------------------------
+Ran 2 tests in 2.627s
+
+OK
+EXIT=0
+test_literal_references.py
+....
+----------------------------------------------------------------------
+Ran 4 tests in 0.173s
+
+OK
+EXIT=0
+test_mixed_source_scope.py
+....
+----------------------------------------------------------------------
+Ran 4 tests in 0.034s
+
+OK
+EXIT=0
+test_mr_fields.py
+..
+----------------------------------------------------------------------
+Ran 2 tests in 0.001s
+
+OK
+EXIT=0
+test_mr_review.py
+....
+----------------------------------------------------------------------
+Ran 4 tests in 0.008s
+
+OK
+EXIT=0
+test_negative_review.py
+....
+----------------------------------------------------------------------
+Ran 4 tests in 0.080s
+
+OK
+EXIT=0
+test_original_title.py
+.....
+----------------------------------------------------------------------
+Ran 5 tests in 0.374s
+
+OK
+EXIT=0
+test_pdf_review.py
+...
+----------------------------------------------------------------------
+Ran 3 tests in 0.078s
+
+OK
+EXIT=0
+test_progress.py
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.038s
+
+OK
+EXIT=0
+test_reassess.py
+.<frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+<frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+<frozen importlib._bootstrap>:488: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+..
+----------------------------------------------------------------------
+Ran 3 tests in 0.246s
+
+OK
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+EXIT=0
+test_reclassify.py
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.258s
+
+OK
+EXIT=0
+test_recovery.py
+........
+----------------------------------------------------------------------
+Ran 8 tests in 0.002s
+
+OK
+EXIT=0
+test_response.py
+.......
+----------------------------------------------------------------------
+Ran 7 tests in 0.006s
+
+OK
+EXIT=0
+test_restart.py
+{"error": "RuntimeError", "stage": "batch-ui-search"}
+...
+----------------------------------------------------------------------
+Ran 3 tests in 0.032s
+
+OK
+EXIT=0
+test_resume.py
+................<frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+<frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+<frozen importlib._bootstrap>:488: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+....
+----------------------------------------------------------------------
+Ran 20 tests in 0.207s
+
+OK
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+EXIT=0
+test_run.py
+....
+----------------------------------------------------------------------
+Ran 4 tests in 0.052s
+
+OK
+EXIT=0
+test_scope_prune.py
+......
+----------------------------------------------------------------------
+Ran 6 tests in 0.068s
+
+OK
+EXIT=0
+test_scoped_links.py
+........
+----------------------------------------------------------------------
+Ran 8 tests in 0.023s
+
+OK
+EXIT=0
+test_selected_summary.py
+......
+----------------------------------------------------------------------
+Ran 6 tests in 0.298s
+
+OK
+EXIT=0
+test_shard.py
+.......
+----------------------------------------------------------------------
+Ran 7 tests in 0.410s
+
+OK
+EXIT=0
+test_snapshot_progress.py
+...
+----------------------------------------------------------------------
+Ran 3 tests in 0.000s
+
+OK
+EXIT=0
+test_source_filter.py
+...
+----------------------------------------------------------------------
+Ran 3 tests in 0.012s
+
+OK
+EXIT=0
+test_source_inventory.py
+.....
+----------------------------------------------------------------------
+Ran 5 tests in 0.080s
+
+OK
+EXIT=0
+test_source_kind.py
+........
+----------------------------------------------------------------------
+Ran 8 tests in 0.006s
+
+OK
+EXIT=0
+test_summon.py
+...
+----------------------------------------------------------------------
+Ran 3 tests in 1.871s
+
+OK
+EXIT=0

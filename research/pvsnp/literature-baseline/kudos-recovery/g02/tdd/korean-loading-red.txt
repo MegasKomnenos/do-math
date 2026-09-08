@@ -1,0 +1,16 @@
+....F...
+======================================================================
+FAIL: test_actual_korean_resolver_loading_is_not_content (__main__.SourceKindTests.test_actual_korean_resolver_loading_is_not_content)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_source_kind.py", line 8, in test_actual_korean_resolver_loading_is_not_content
+    self.assertEqual(assess(body,200),'retry')
+AssertionError: 'content' != 'retry'
+- content
++ retry
+
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.007s
+
+FAILED (failures=1)

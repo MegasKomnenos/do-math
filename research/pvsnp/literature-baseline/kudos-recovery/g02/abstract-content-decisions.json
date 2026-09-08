@@ -63,5 +63,18 @@
     "text_sha256": "877362247033018886e3151e8a3f77a65491e4ccb3261480aad9e88f87de2925",
     "kind": "bibliographic_note",
     "reason": "Direct reading of complete retained value: Only retitling/revision and earlier publication dates are stated; no subject/method/content summary."
+  },
+  {
+    "paper_id": "VER-3685f51128ad49a62ecf7d9b",
+    "artifact": {
+      "path": "intake/kudos-recovery/g02/VER-3685f51128ad49a62ecf7d9b/database-abstract-e90d4831f6619bcf.txt",
+      "sha256": "e90d4831f6619bcfe45bb8219bc8439f904bfb5846b861395bcd417d07038e22",
+      "url": "https://knu.summon.serialssolutions.com/ko-KO/search?ho=t&q=#!/search?pn=1&ho=f&include.ft.matches=f&l=ko-KO&q=(TitleCombined:(Stochastic%20processes))%20AND%20(AuthorCombined:(Ross))",
+      "kind": "database-indexing-abstract",
+      "media_type": "text/plain"
+    },
+    "text_sha256": "e90d4831f6619bcfe45bb8219bc8439f904bfb5846b861395bcd417d07038e22",
+    "kind": "review_excerpt",
+    "reason": "Direct reading: this complete one-sentence value only says that Wells reviews the named book by Ross. It describes a separate book-review record, not the book contents or methods. Source document explicitly has Book Review type, JASA 91(436),1754–1755, DOI10.2307/2291619."
   }
 ]

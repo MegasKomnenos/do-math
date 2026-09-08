@@ -495,8 +495,8 @@ def visit_source(context,p,r,t,metrics):
   page.wait_for_timeout(1000)
   body=page.locator('main').first if page.locator('main').count() else page.locator('body')
   text=body.inner_text(timeout=10000)
-  if re.fullmatch(r'(?:Loading|Please wait)[.\s…]*',text.strip(),re.I):
-   page.wait_for_function("() => {const t=(document.querySelector('main')||document.body).innerText.trim(); return t && !/^(Loading|Please wait)[.\\s…]*$/i.test(t)}",timeout=30000)
+  if re.fullmatch(r'(?:Loading|Please wait|불러오는 중)[.\s…]*',text.strip(),re.I):
+   page.wait_for_function("() => {const t=(document.querySelector('main')||document.body).innerText.trim(); return t && !/^(Loading|Please wait|불러오는 중)[.\\s…]*$/i.test(t)}",timeout=30000)
    body=page.locator('main').first if page.locator('main').count() else page.locator('body');text=body.inner_text()
   status=response.status if response else None
   if text.strip():e=capture(p['paper_id'],'source-'+sha(t['target'].encode())[:16]+'.txt',text,page.url,'provider-page')
