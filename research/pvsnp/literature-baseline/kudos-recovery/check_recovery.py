@@ -2,14 +2,45 @@
 import argparse
 import hashlib
 import json
+import math
 from collections import Counter
 from pathlib import Path
+from work_queue import pending_work
 
 STATES = {'found', 'not_found', 'unavailable', 'unresolved'}
 
 
 def digest(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+def source_region_errors(region, root):
+    if not isinstance(region, dict):
+        return ['abstract: source_region required for binary abstract']
+    if not all(isinstance(region.get(k), str) and region[k] for k in ['pdf', 'pdf_sha256']):
+        return ['source_region: PDF path and hash required']
+    path = (root / region['pdf']).resolve()
+    if not path.is_relative_to(root):
+        return ['source_region: PDF outside baseline']
+    try:
+        if digest(path) != region['pdf_sha256']:
+            return ['source_region: PDF hash mismatch']
+        if not path.read_bytes().startswith(b'%PDF-'):
+            return ['source_region: not a PDF']
+        import pymupdf
+        with pymupdf.open(path) as doc:
+            page = region.get('page')
+            if type(page) is not int or not 1 <= page <= len(doc):
+                return ['source_region: page out of range']
+            box = region.get('bbox_points')
+            if not isinstance(box, list) or len(box) != 4 or not all(type(v) in [int, float] and math.isfinite(v) for v in box):
+                return ['source_region: four finite PDF coordinates required']
+            rectangle = pymupdf.Rect(box)
+            if rectangle.is_empty or not doc[page - 1].rect.contains(rectangle):
+                return ['source_region: box outside page']
+    except (OSError, ValueError, RuntimeError):
+        return ['source_region: PDF unreadable']
+    return []
 
 
 def artifact_errors(artifact, root, component):
@@ -36,9 +67,22 @@ def artifact_errors(artifact, root, component):
                     with pymupdf.open(path) as doc:
                         if len(doc) == 0:
                             errors.append(component + ': PDF has no pages')
+                        if doc.needs_pass:
+                            errors.append(component + ': PDF requires a password')
                 except Exception:
                     errors.append(component + ': PDF cannot be opened')
-        if component == 'abstract':
+        is_image = str(artifact.get('media_type', '')).startswith('image/')
+        if is_image:
+            import pymupdf
+            try:
+                pixmap = pymupdf.Pixmap(path)
+                if pixmap.width <= 0 or pixmap.height <= 0:
+                    errors.append(component + ': image has no pixels')
+            except Exception:
+                errors.append(component + ': image cannot be opened')
+        if component == 'abstract' and (is_image or artifact.get('media_type') == 'application/pdf'):
+            errors += source_region_errors(artifact.get('source_region'), root)
+        elif component == 'abstract':
             value = data.decode('utf-8-sig').strip().strip(' [].').casefold()
             if value in {'no abstract available', 'abstract', 'n/a', 'no abstract', ''}:
                 errors.append('abstract: placeholder or empty text')
@@ -98,6 +142,7 @@ def check_assignment(assignment_path, partial=False):
     papers = {r['paper_id']: r for r in (json.loads(l) for l in members.read_text(encoding='utf-8-sig').splitlines() if l.strip())}
     result_dir = base / assignment['worker_root'] / 'results'
     seen, counts = set(), Counter()
+    work_remaining = []
     for path in sorted(result_dir.glob('*.json')):
         try:
             record = json.loads(path.read_text(encoding='utf-8-sig'))
@@ -109,6 +154,11 @@ def check_assignment(assignment_path, partial=False):
             problems = validate_record(record, papers[pid], base)
             if problems:
                 errors.append({'paper_id': pid, 'errors': problems})
+            pending = pending_work(record)
+            if pending:
+                work_remaining.append({'paper_id': pid, 'tasks': pending})
+                if not partial:
+                    errors.append({'paper_id': pid, 'errors': ['Required work or evidence review remains']})
             for component in ['abstract', 'fulltext']:
                 counts[component + ':' + record.get(component, {}).get('status', 'invalid')] += 1
             counts['identity:' + record.get('identity', {}).get('status', 'invalid')] += 1
@@ -120,10 +170,11 @@ def check_assignment(assignment_path, partial=False):
     missing = sorted(set(papers) - seen)
     if missing and not partial:
         errors.append({'paper_id': None, 'errors': ['Assigned candidates have no result']})
-    return {'passed': not errors, 'complete': not errors and not missing and not counts['identity:unresolved'] and
+    return {'passed': not errors, 'complete': not errors and not missing and not work_remaining and not counts['identity:unresolved'] and
             not any(counts[c + ':unresolved'] for c in ['abstract', 'fulltext']),
             'group_id': assignment['group_id'], 'assigned': len(papers), 'processed': len(seen),
-            'missing': len(missing), 'counts': dict(counts), 'errors': errors}
+            'missing': len(missing), 'counts': dict(counts), 'errors': errors,
+            'papers_with_remaining_work': len(work_remaining) + len(missing), 'work_remaining': work_remaining}
 
 
 def main():

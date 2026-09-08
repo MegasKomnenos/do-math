@@ -1,0 +1,17 @@
+{
+  "path": "intake/kudos-recovery/operator/fixtures/6e8d055d5565a32894445dcc7c9c7f532e5aea91719f6c2cc8c482d1ba60c936.png",
+  "sha256": "6e8d055d5565a32894445dcc7c9c7f532e5aea91719f6c2cc8c482d1ba60c936",
+  "url": "https://dl-acm-org.libproxy.knu.ac.kr/doi/pdf/10.1145/322217.322219",
+  "media_type": "image/png",
+  "source_region": {
+    "pdf": "intake/kudos-recovery/operator/fixtures/8e1804dc4f7684ac31a47116a03ed30664dcc464eb1883d2342dac1b5843f0ac.pdf",
+    "page": 1,
+    "bbox_points": [
+      45,
+      128,
+      408,
+      200
+    ],
+    "pdf_sha256": "8e1804dc4f7684ac31a47116a03ed30664dcc464eb1883d2342dac1b5843f0ac"
+  }
+}

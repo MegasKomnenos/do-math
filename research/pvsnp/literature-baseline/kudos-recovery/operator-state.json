@@ -1,0 +1,41 @@
+{
+  "objective": "Complete all 6101 assigned candidates across seven directory-specific gpt-6-astra/medium workers using actual Playwright UI learning, TDD collectors and verified abstract/fulltext/metadata artifacts.",
+  "operator": "/root",
+  "active_agents": {
+    "g02": "/root/kudos_g02_replacement",
+    "g05": "/root/kudos_g05_replacement",
+    "g08": "/root/kudos_g08_replacement"
+  },
+  "not_yet_dispatched": [
+    "g07",
+    "g09",
+    "g10",
+    "g12"
+  ],
+  "concurrency": "Four total slots including root; dispatch next dedicated worker when an active worker has completed and been checked.",
+  "contract": "contract.md",
+  "shared_knowledge": "shared-findings.md",
+  "assignments": "assignments.json",
+  "initial_contract_commit": "c9309a3",
+  "overall_task_complete": false,
+  "next_actions": [
+    "Inspect replacement workers feedback-response.md and TDD/live pilot before accepting full-run or completion claims.",
+    "Keep supervising current workers; inspect actual results with check_recovery.py --partial and return concrete failures for TDD repair.",
+    "Dispatch each remaining directory to its own gpt-6-astra/medium agent with fork_turns none and the same contract/assignment path.",
+    "Run full checks and inspect actual evidence before accepting COMPLETE; source access failures and absent results must have real scoped evidence.",
+    "Collect scripts/tests/reports/results without credentials or raw authenticated material in Git; preserve raw documents under ignored intake paths.",
+    "Complete memory-coupled commits and push when the entire requested work is finished."
+  ],
+  "notes": [
+    "KUDOS login succeeded. Protected bootstrap state is at C:/math/.credentials/kudos-recovery/bootstrap.json; never print credential values or cookies.",
+    "Actual Summon UI-generated /api/search JSON includes all document fields. UI search remains mandatory; unobserved API guessing is forbidden.",
+    "Root demonstrated two quoted DOI terms joined by OR in actual ho=f search; 5 results included both targets and one unrelated citing item, so document-level matching and overflow handling are required.",
+    "g02 is adopting max-six DOI/ISBN UI batches with split-on-overflow. It has 2428 DOI candidates, 2211 ISBN-only and 499 title-only.",
+    "Source and version misbindings, overwritten evidence hashes and raw PDF OCR errors have actual regression examples in shared-findings.md.",
+    "Other unrelated repository work may be staged concurrently. Commit with explicit --only path scopes and do not alter others staging."
+  ],
+  "restart_contract": "restart-contract.md",
+  "last_user_decision": "Stop old three workers, improve based on execution and efficiency feedback, continue with new workers.",
+  "replacement_snapshot": "restart-snapshot.json",
+  "g05_root_pdf_reservation": "All ten transferred to new g05 worker; root did not finish review."
+}

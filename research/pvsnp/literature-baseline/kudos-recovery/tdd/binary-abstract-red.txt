@@ -1,0 +1,63 @@
+FF<frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+<frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+<frozen importlib._bootstrap>:488: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+FFF
+======================================================================
+FAIL: test_actual_original_abstract_region_png_is_readable (__main__.BinaryAbstractTests.test_actual_original_abstract_region_png_is_readable)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\test_check_recovery.py", line 116, in test_actual_original_abstract_region_png_is_readable
+    self.assertEqual(c.artifact_errors(self.fixture, self.base, 'abstract'), [])
+AssertionError: Lists differ: ['abstract: artifact unreadable'] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+'abstract: artifact unreadable'
+
+- ['abstract: artifact unreadable']
++ []
+
+======================================================================
+FAIL: test_binary_abstract_needs_source_region (__main__.BinaryAbstractTests.test_binary_abstract_needs_source_region)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\test_check_recovery.py", line 120, in test_binary_abstract_needs_source_region
+    self.assertIn('abstract: source_region required for binary abstract', c.artifact_errors(self.fixture, self.base, 'abstract'))
+AssertionError: 'abstract: source_region required for binary abstract' not found in ['abstract: artifact unreadable']
+
+======================================================================
+FAIL: test_pdf_abstract_region_is_accepted (__main__.BinaryAbstractTests.test_pdf_abstract_region_is_accepted)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\test_check_recovery.py", line 148, in test_pdf_abstract_region_is_accepted
+    self.assertEqual(c.artifact_errors(artifact, root, 'abstract'), [])
+AssertionError: Lists differ: ['abstract: artifact unreadable'] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+'abstract: artifact unreadable'
+
+- ['abstract: artifact unreadable']
++ []
+
+======================================================================
+FAIL: test_region_page_and_box_must_exist (__main__.BinaryAbstractTests.test_region_page_and_box_must_exist)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\test_check_recovery.py", line 128, in test_region_page_and_box_must_exist
+    self.assertIn('source_region: page out of range', c.artifact_errors(self.fixture, self.base, 'abstract'))
+AssertionError: 'source_region: page out of range' not found in ['abstract: artifact unreadable']
+
+======================================================================
+FAIL: test_region_source_hash_must_match (__main__.BinaryAbstractTests.test_region_source_hash_must_match)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\test_check_recovery.py", line 124, in test_region_source_hash_must_match
+    self.assertIn('source_region: PDF hash mismatch', c.artifact_errors(self.fixture, self.base, 'abstract'))
+AssertionError: 'source_region: PDF hash mismatch' not found in ['abstract: artifact unreadable']
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.179s
+
+FAILED (failures=5)
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
