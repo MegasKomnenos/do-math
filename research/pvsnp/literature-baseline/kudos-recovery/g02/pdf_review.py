@@ -1,6 +1,7 @@
 """Conservative complete-book check for digitally readable title/copyright pages."""
 import re,fitz
 from response_recovery import norm
+from copyright_notice import matches_year
 def book_match(p,path):
  if p.get('record_type')!='book':return None
  ids=p.get('identifiers',{}).get('isbn',[])
@@ -21,7 +22,7 @@ def book_match(p,path):
    if surnames and all(re.search(r'(?<!\w)'+re.escape(s)+r'(?!\w)',normalized) for s in surnames):title_pages.append(i+1)
   if not title_pages:return None
   front='\n'.join(text)
-  if not re.search(r'(?:©|Copyright)\s*'+str(p.get('year'))+r'\b',front,re.I):return None
+  if not matches_year(front,p.get('year')):return None
   isbn_lines=[re.sub(r'[^0-9X]','',line.upper()) for line in front.splitlines() if 'ISBN' in line.upper()]
   if not any(re.sub(r'[^0-9X]','',v.upper()) in line for v in ids for line in isbn_lines):return None
   if not any(re.search(r'(?m)^\s*'+str(body_pages)+r'\s*$',doc[i].get_text()) for i in range(max(0,len(doc)-3),len(doc))):return None

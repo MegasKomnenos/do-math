@@ -4,6 +4,7 @@ from collections import defaultdict,deque
 from urllib.parse import urlsplit,parse_qsl
 from abstract_reclassify import valid_bytes
 from scoped_links import doi
+from literal_references import in_reference_section
 
 def roots(r):
  evidence={e['path']:e for e in r['evidence']};found={};body_cache={}
@@ -17,6 +18,11 @@ def roots(r):
    child=re.search(r'/book/(\d+)',target.path);source=re.search(r'/book/(\d+)',parent.path)
    if child and source and child[1]!=source[1]:found[t['key']]='Different Perlego book identifier reached from the target product page; related-book title slug -pdf is not a target download.';continue
    if child and source and child[1]==source[1] and t['kind']=='pdf':found[t['key']]='Duplicate HTML product/anchor navigation was mislabeled PDF by its -pdf slug; the original target source is preserved.';continue
+  if origin not in body_cache:
+   data=valid_bytes(evidence[origin])
+   try:body_cache[origin]=data.decode('utf-8-sig') if data else ''
+   except UnicodeError:body_cache[origin]=''
+  if in_reference_section(body_cache[origin],t['target']):found[t['key']]='The exact observed URL is printed inside the bounded References section of the parent source; it is a cited work, not a target download control.';continue
   current=doi(evidence[origin]['url']);candidate=doi(t['target'])
   if 'springer' in (parent.hostname or '') and t['kind']=='source' and current and candidate and current!=candidate:
    # Actual Springer reference controls use generic Article labels. Book-child

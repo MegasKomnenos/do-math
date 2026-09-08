@@ -1,0 +1,7 @@
+{
+  "path": "intake/kudos-recovery/g02/fixtures/scope-record-cases-f106b6ef0289c5af.json",
+  "sha256": "f106b6ef0289c5af52292ec90e295c3ab637e98c297bbe045c43db706ca6b037",
+  "case_count": 3,
+  "task_count": 12,
+  "status": "Prepared separately; production snapshot tests not yet changed."
+}

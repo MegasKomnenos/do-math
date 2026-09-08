@@ -1,0 +1,141 @@
+{
+  "paper_id": "VER-3191c2b73c67e60ee329b845",
+  "whole_artifact": {
+    "path": "intake/kudos-recovery/g02/VER-3191c2b73c67e60ee329b845/fulltext-candidate-9ea62d26f5ee89c7.pdf",
+    "sha256": "9ea62d26f5ee89c78af2f517eaf41163ac1baf6a256d401077f87ac2780b1fae",
+    "url": "https://link-springer-com.libproxy.knu.ac.kr/content/pdf/10.1007/978-3-319-76204-3.pdf",
+    "media_type": "application/pdf",
+    "kind": "fulltext-candidate"
+  },
+  "physical_pages": 723,
+  "component_pages": 722,
+  "cover_pages": 1,
+  "page_text_mismatches": [
+    10
+  ],
+  "native_page_labels": [
+    {
+      "startpage": 0,
+      "prefix": "<FEFF00430031>",
+      "firstpagenum": 1
+    },
+    {
+      "startpage": 1,
+      "prefix": "<FEFF>",
+      "firstpagenum": 1,
+      "style": "r"
+    },
+    {
+      "startpage": 16,
+      "prefix": "<FEFF>",
+      "firstpagenum": 1,
+      "style": "D"
+    },
+    {
+      "startpage": 483,
+      "prefix": "<FEFF>",
+      "firstpagenum": 469,
+      "style": "D"
+    },
+    {
+      "startpage": 666,
+      "prefix": "<FEFF>",
+      "firstpagenum": 653,
+      "style": "D"
+    },
+    {
+      "startpage": 691,
+      "prefix": "",
+      "firstpagenum": 679,
+      "style": "D"
+    },
+    {
+      "startpage": 694,
+      "prefix": "",
+      "firstpagenum": 683,
+      "style": "D"
+    },
+    {
+      "startpage": 697,
+      "prefix": "",
+      "firstpagenum": 687,
+      "style": "D"
+    }
+  ],
+  "components": [
+    {
+      "path": "intake/kudos-recovery/g02/VER-3191c2b73c67e60ee329b845/fulltext-candidate-18d9e9d41cd3650b.pdf",
+      "sha256": "18d9e9d41cd3650be302bf901c7cec87c0b5a2e14acc82f95c15a10031a65c8e",
+      "url": "https://link-springer-com.libproxy.knu.ac.kr/content/pdf/bfm:978-3-319-76204-3/1",
+      "media_type": "application/pdf",
+      "kind": "fulltext-candidate"
+    },
+    {
+      "path": "intake/kudos-recovery/g02/VER-3191c2b73c67e60ee329b845/fulltext-candidate-a044d71359f46a92.pdf",
+      "sha256": "a044d71359f46a9248c9f30ccc09caf51b56ad83ecbdacca883a0db5e3f36ae1",
+      "url": "https://link-springer-com.libproxy.knu.ac.kr/content/pdf/10.1007/978-3-319-76204-3_1",
+      "media_type": "application/pdf",
+      "kind": "fulltext-candidate"
+    },
+    {
+      "path": "intake/kudos-recovery/g02/VER-3191c2b73c67e60ee329b845/fulltext-candidate-665fddbb80faa587.pdf",
+      "sha256": "665fddbb80faa587186ae21bfc64fee2c2ec044d2ce124c270db56a83ef44a10",
+      "url": "https://link-springer-com.libproxy.knu.ac.kr/content/pdf/10.1007/978-3-319-76204-3_2",
+      "media_type": "application/pdf",
+      "kind": "fulltext-candidate"
+    },
+    {
+      "path": "intake/kudos-recovery/g02/VER-3191c2b73c67e60ee329b845/fulltext-candidate-17c5252144b66276.pdf",
+      "sha256": "17c5252144b66276ae9898ebaaf2ff6252aa4cb5f37bc99887f0d6a7feb96a86",
+      "url": "https://link-springer-com.libproxy.knu.ac.kr/content/pdf/10.1007/978-3-319-76204-3_3",
+      "media_type": "application/pdf",
+      "kind": "fulltext-candidate"
+    },
+    {
+      "path": "intake/kudos-recovery/g02/VER-3191c2b73c67e60ee329b845/fulltext-candidate-fb6faf3957222db0.pdf",
+      "sha256": "fb6faf3957222db0a08ecbd1f50f5b9ec2d09a79993f41b23864644b9805bcc9",
+      "url": "https://link-springer-com.libproxy.knu.ac.kr/content/pdf/10.1007/978-3-319-76204-3_4",
+      "media_type": "application/pdf",
+      "kind": "fulltext-candidate"
+    },
+    {
+      "path": "intake/kudos-recovery/g02/VER-3191c2b73c67e60ee329b845/fulltext-candidate-8c94e3c797edf8f4.pdf",
+      "sha256": "8c94e3c797edf8f4c2671c7edea3f38c828c7de02621d0cedde4146a4a0157ea",
+      "url": "https://link-springer-com.libproxy.knu.ac.kr/content/pdf/10.1007/978-3-319-76204-3_5",
+      "media_type": "application/pdf",
+      "kind": "fulltext-candidate"
+    },
+    {
+      "path": "intake/kudos-recovery/g02/VER-3191c2b73c67e60ee329b845/fulltext-candidate-e616f3d226ffc626.pdf",
+      "sha256": "e616f3d226ffc626a6cfd58f54ec20eed91efeac535e4ef6f6f929ae93f4a0c4",
+      "url": "https://link-springer-com.libproxy.knu.ac.kr/content/pdf/10.1007/978-3-319-76204-3_6",
+      "media_type": "application/pdf",
+      "kind": "fulltext-candidate"
+    },
+    {
+      "path": "intake/kudos-recovery/g02/VER-3191c2b73c67e60ee329b845/fulltext-candidate-e7b60abe91eb69df.pdf",
+      "sha256": "e7b60abe91eb69df9edbfb2f60e150e666b9a1bb7d6e98fa6e7d0340041eb59b",
+      "url": "https://link-springer-com.libproxy.knu.ac.kr/content/pdf/10.1007/978-3-319-76204-3_7",
+      "media_type": "application/pdf",
+      "kind": "fulltext-candidate"
+    },
+    {
+      "path": "intake/kudos-recovery/g02/VER-3191c2b73c67e60ee329b845/fulltext-candidate-1887977343873c89.pdf",
+      "sha256": "1887977343873c898422b31e70ca680a435dd182797ea0ef485098027547edf2",
+      "url": "https://link-springer-com.libproxy.knu.ac.kr/content/pdf/bbm:978-3-319-76204-3/1",
+      "media_type": "application/pdf",
+      "kind": "fulltext-candidate"
+    }
+  ],
+  "reason": "Official whole-book PDF comprises one cover and all 722 pages of the observed front matter, seven chapter PDFs and back matter. The page text matches in order except one documented space in a contents entry. Native publisher page labels explicitly represent the five numbering gaps; every distributed component is present. The book title, both authors, both assigned ISBNs and the publisher copyright line2018 match.",
+  "page_text_difference_details": [
+    {
+      "whole_pdf_page": 10,
+      "component_pdf_page": 9,
+      "whole": "Connection Between Inclusion- and Inhomogeneity-",
+      "component": "Connection Between Inclusion-and Inhomogeneity-",
+      "classification": "One space in a contents entry; no chapter/body text difference detected."
+    }
+  ],
+  "proposed_decision": "fulltext.found after checkpoint application"
+}

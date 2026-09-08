@@ -1,6 +1,7 @@
 import json,unittest
 from pathlib import Path
 from scoped_links import select_links,download_kind,public_link
+from test_scope_prune import frozen_record
 BASE=Path(__file__).resolve().parents[2]
 FX=BASE/'intake/kudos-recovery/g02/fixtures'
 class ScopedLinksTests(unittest.TestCase):
@@ -11,7 +12,7 @@ class ScopedLinksTests(unittest.TestCase):
   v={'text':'Save chapter','url':'https://publisher.example/save?doi=10.1000%2Fpaper&_csrf=fixture-only'}
   self.assertEqual(select_links([v]),[]);clean=public_link(v);self.assertNotIn('_csrf',clean['url']);self.assertIn('doi=',clean['url'])
  def test_actual_wiley_reference_parameter_is_not_fulltext_scope(self):
-  r=json.loads((BASE/'kudos-recovery/g02/results/VER-04473799966c247455ae8aeb.json').read_text(encoding='utf-8'));t=next(t for t in r['work_state']['tasks'] if 'linkLocation=Reference' in t['target'])
+  r=frozen_record('VER-04473799966c247455ae8aeb');t=next(t for t in r['work_state']['tasks'] if 'linkLocation=Reference' in t['target'])
   self.assertEqual(select_links([{'text':'Full Text','url':t['target']}]),[])
  def test_actual_springer_reference_article_links_are_excluded(self):
   r=json.loads((FX/'springer-scope-links-5f3a22b10ef1df0e.json').read_text(encoding='utf-8'));selected=select_links(r['links'],r['url'])
@@ -26,7 +27,7 @@ class ScopedLinksTests(unittest.TestCase):
   links=[{'text':'View PDF','url':'https://www.sciencedirect.com/science/article/pii/0022247X86903410/pdf'},{'text':'Download chapter','url':'https://www.degruyterbrill.com/document/doi/10.1515/9783110278606.1/pdf?licenseType=open-access'},{'text':'Download full issue PDF','url':'https://journal.example/issue/download?id=123'}]
   self.assertEqual(select_links(links),links)
  def test_actual_whole_book_download_is_preserved(self):
-  r=json.loads((BASE/'intake/kudos-recovery/g05/VER-0c26fc7b79631b63b132fbae/springer-download-links.json').read_text(encoding='utf-8'))
+  r=json.loads((FX/'whole-book-control-dbf7894651333359.json').read_text(encoding='utf-8'))
   links=r if isinstance(r,list) else r.get('links',[])
   full=[v for v in links if 'Download book PDF' in v.get('text','')]
   self.assertTrue(full);self.assertEqual(select_links(full),full)

@@ -1,0 +1,771 @@
+{
+  "checked_at": "2026-09-08T22:53:30.089525+00:00",
+  "package_path": "kudos-recovery/g02/runs/book-checkpoint-package.json",
+  "package_sha256": "ef8e0926855782996f581b700c85437e015a1ada1153b77eb4c9514326b808b2",
+  "verified_entries": 143,
+  "all_hashes_match": true,
+  "credential_literal_matches": [],
+  "test_log": "kudos-recovery/g02/tdd/book-checkpoint-regression.txt",
+  "test_counts_in_log": [
+    9,
+    6,
+    3,
+    3,
+    2,
+    5,
+    4,
+    2,
+    2,
+    4,
+    4,
+    2,
+    4,
+    4,
+    5,
+    3,
+    1,
+    3,
+    1,
+    8,
+    7,
+    3,
+    20,
+    4,
+    6,
+    8,
+    6,
+    7,
+    3,
+    3,
+    5,
+    6,
+    3
+  ],
+  "expected_tests": 156,
+  "test_count_matches": true,
+  "checks": [
+    {
+      "path": "kudos-recovery/g02/abstract_kind.py",
+      "matches": true,
+      "sha256": "ede039c463ce53fe7ec32c9d12422d06fc210943797b981079f46c11b14c1f84"
+    },
+    {
+      "path": "kudos-recovery/g02/abstract_reclassify.py",
+      "matches": true,
+      "sha256": "6f1987e13415f921a3dbae3a1e5ef9355c4702caf7a22388481090435c4b774a"
+    },
+    {
+      "path": "kudos-recovery/g02/article_review.py",
+      "matches": true,
+      "sha256": "847cf9029576ba0c20f742d68af942f7f0c5e927ca61d90bdc7b370744a4cccf"
+    },
+    {
+      "path": "kudos-recovery/g02/bmstu.py",
+      "matches": true,
+      "sha256": "3597fff4e7352e397a776f4bfcc4a6bcb2ea19f00f00ffd5817e116aa54ed5f5"
+    },
+    {
+      "path": "kudos-recovery/g02/book_pdf_audit.py",
+      "matches": true,
+      "sha256": "379908c2c26fa505f8342fde0aebd2f5667305b63fcfda4e2a78e51056fcee11"
+    },
+    {
+      "path": "kudos-recovery/g02/checkpoint_apply.py",
+      "matches": true,
+      "sha256": "f0a411c5c402e752d21d0d92ac5ca11637a74d75009fcc072e73523f17314145"
+    },
+    {
+      "path": "kudos-recovery/g02/copyright_notice.py",
+      "matches": true,
+      "sha256": "9e38115b55f2d0bb65027fd4eaf3fb2974524990beb4b0d5cf1e10f567aa8106"
+    },
+    {
+      "path": "kudos-recovery/g02/fielded_search.py",
+      "matches": true,
+      "sha256": "bef9af5548202498d84cd5a390896a934d5d5734923b6cae0480d9c412520c09"
+    },
+    {
+      "path": "kudos-recovery/g02/firefox_provider.py",
+      "matches": true,
+      "sha256": "7e513a04af479f1bd5c660ebe65b8dbcdcf8dba1dc7ca72a99f9eff7633fac75"
+    },
+    {
+      "path": "kudos-recovery/g02/literal_references.py",
+      "matches": true,
+      "sha256": "5763dc46313cd8cb475738a508a628c8fa90fc506bef1a800ea0596d7a97db40"
+    },
+    {
+      "path": "kudos-recovery/g02/mixed_source_scope.py",
+      "matches": true,
+      "sha256": "c587d74326e3364e6ad6e1001bd8925de14ca4c623bf6a7916f1efcc5203d833"
+    },
+    {
+      "path": "kudos-recovery/g02/mr_fields.py",
+      "matches": true,
+      "sha256": "459080567f77ea41531e602ef19307f8e520b581203e9387b82968f7a324c26d"
+    },
+    {
+      "path": "kudos-recovery/g02/mr_review.py",
+      "matches": true,
+      "sha256": "4c05bd841942679e67420dc1ee62c752c9e51f7140a817b573cf68bbaa0f8510"
+    },
+    {
+      "path": "kudos-recovery/g02/negative_review.py",
+      "matches": true,
+      "sha256": "e94e7ce72a55edccdbd6e780514303159175dc5e69dcc078ff51a17f452e1a59"
+    },
+    {
+      "path": "kudos-recovery/g02/original_title.py",
+      "matches": true,
+      "sha256": "af13c53744317b7a6b98ff5b9186e6640ad2949713e8dd13f2f8a01995e744a9"
+    },
+    {
+      "path": "kudos-recovery/g02/pdf_review.py",
+      "matches": true,
+      "sha256": "27a2d77e0d2179238931c7b9fd0d8e9e7691de1965484cf9e82116e4140d2373"
+    },
+    {
+      "path": "kudos-recovery/g02/recovery.py",
+      "matches": true,
+      "sha256": "fed7c49af788af6669e21cc314a192628070c09493f267882ed87e0dd66a61e8"
+    },
+    {
+      "path": "kudos-recovery/g02/response_recovery.py",
+      "matches": true,
+      "sha256": "df1185aed95873a910aed1b94aba4fe7a6987f27efa8052f7f7c211384447598"
+    },
+    {
+      "path": "kudos-recovery/g02/resume.py",
+      "matches": true,
+      "sha256": "4d1b3c73bd130ce4061201c6740615c2f82fe6fd54d4b955f5746179253198eb"
+    },
+    {
+      "path": "kudos-recovery/g02/run.py",
+      "matches": true,
+      "sha256": "5bf04a34bb9d0384027625c569ce4fcfd40110b882b59c7b3631aa83bab16af1"
+    },
+    {
+      "path": "kudos-recovery/g02/scoped_links.py",
+      "matches": true,
+      "sha256": "e23d0a6389f1c5ce50b37746c306cb7f42c34d197393128a73468d8c9505be70"
+    },
+    {
+      "path": "kudos-recovery/g02/scope_prune.py",
+      "matches": true,
+      "sha256": "7cfc1889583ef00f553de48d5ee4d53c9ccbd03e8dbeb17feee59caaf8edebb7"
+    },
+    {
+      "path": "kudos-recovery/g02/selected_summary.py",
+      "matches": true,
+      "sha256": "db33d3d099666be51307ab81e523fd64bc08a673338853b4e54b3dcf18d80223"
+    },
+    {
+      "path": "kudos-recovery/g02/shard.py",
+      "matches": true,
+      "sha256": "abbc1082063338fd87332eb12ff834205349a7a501d6ca83120be12e48564bbf"
+    },
+    {
+      "path": "kudos-recovery/g02/snapshot_progress.py",
+      "matches": true,
+      "sha256": "f9733d490ac01b35e98451aae4fec34ffbff0bc47c025dfe68e6967ae0ef7f7d"
+    },
+    {
+      "path": "kudos-recovery/g02/source_kind.py",
+      "matches": true,
+      "sha256": "e49c5d753364d6fd9b20d7f45ca225e7f235f9d15f21c145ebd2f1426eda039e"
+    },
+    {
+      "path": "kudos-recovery/g02/test_abstract_kind.py",
+      "matches": true,
+      "sha256": "6090c6fc531d85fe3013f9ea254d04ce4706ce3fd9d7c29e6191e89dd3e530f5"
+    },
+    {
+      "path": "kudos-recovery/g02/test_abstract_notices.py",
+      "matches": true,
+      "sha256": "b83ce16d26dc54815ba770a98dce7db89f6b680e2d0913041b8e8156883e1269"
+    },
+    {
+      "path": "kudos-recovery/g02/test_article_review.py",
+      "matches": true,
+      "sha256": "f219d5047d68ce145787c4684a9e6344895359e4dcbfd05f6afd9c274f87ae1c"
+    },
+    {
+      "path": "kudos-recovery/g02/test_batch.py",
+      "matches": true,
+      "sha256": "c5e1e4636e0a26d9f904d9ec971e2b5d65f5aa2d403b0073011ca30cdf9f2ae5"
+    },
+    {
+      "path": "kudos-recovery/g02/test_bmstu.py",
+      "matches": true,
+      "sha256": "40e6e7b122424cb3db83117c0772133ea3d1e3549a684735aec55754c65506fc"
+    },
+    {
+      "path": "kudos-recovery/g02/test_copyright_notice.py",
+      "matches": true,
+      "sha256": "2fb72239e8870563a051ad59c18ad80f5f3d88bc2491591e14f86b05348c8fa7"
+    },
+    {
+      "path": "kudos-recovery/g02/test_display_markup.py",
+      "matches": true,
+      "sha256": "90260cffe933cdbb5cb237d04a9241c99558815f3e364741ef648e6fbeecc021"
+    },
+    {
+      "path": "kudos-recovery/g02/test_fielded_search.py",
+      "matches": true,
+      "sha256": "13d94a27b1435829be802b74aab90b0b3eb579814698f4de20067d9ff5dd92be"
+    },
+    {
+      "path": "kudos-recovery/g02/test_grouped_review.py",
+      "matches": true,
+      "sha256": "8badc7be6a1495ad56e2bddeeef0bc3c0894491f42d262d18aa92d59e85b3fe8"
+    },
+    {
+      "path": "kudos-recovery/g02/test_literal_references.py",
+      "matches": true,
+      "sha256": "f0d8cab3070b763aec617d47ded0ef8faea6d5fd8b0ddeb5c42725407f4324d1"
+    },
+    {
+      "path": "kudos-recovery/g02/test_live_batch.py",
+      "matches": true,
+      "sha256": "234bd8b07c21cb9098439384dd0d59c3c9358efa653a9e5d4b32f4f950eb434b"
+    },
+    {
+      "path": "kudos-recovery/g02/test_live_firefox_provider.py",
+      "matches": true,
+      "sha256": "1d61e87d8e9df9c28603a98642f0be29ba81afb114fa474f96530bf288d1bb62"
+    },
+    {
+      "path": "kudos-recovery/g02/test_live_pdf_fallback.py",
+      "matches": true,
+      "sha256": "d417966dbef4322576b25d59f194d4f2c9b30e4ba79508777ea84f9d648b6a0e"
+    },
+    {
+      "path": "kudos-recovery/g02/test_live_responses.py",
+      "matches": true,
+      "sha256": "1ddaa1d4fea3295a7b3bd96e1355f5da0ca5bcc6ebb13c4564259339740650b6"
+    },
+    {
+      "path": "kudos-recovery/g02/test_live_retry.py",
+      "matches": true,
+      "sha256": "395b7cbc4051c631b4f5b11e29c7d5b0af046269bc5b73ecc05bbcfd8cebd43f"
+    },
+    {
+      "path": "kudos-recovery/g02/test_live_submit.py",
+      "matches": true,
+      "sha256": "7513d072b98e0f7f0ec7583b2c3b04d386ddad7871a7ddce126796237dc21ecf"
+    },
+    {
+      "path": "kudos-recovery/g02/test_live_transitions.py",
+      "matches": true,
+      "sha256": "77f1df659fc90e4e7ad53d4bb8ec9d18944563c43f78b27ee0582c40d004ff92"
+    },
+    {
+      "path": "kudos-recovery/g02/test_mixed_source_scope.py",
+      "matches": true,
+      "sha256": "1bea985a3a61a0872b3c04512a4c8af37407a32b96ba70c2211f6acc3dbf6bd8"
+    },
+    {
+      "path": "kudos-recovery/g02/test_mr_fields.py",
+      "matches": true,
+      "sha256": "54496b9205d27db8ce27b111844ed7c8ac9e52452cd2c75a4304eac8ac208293"
+    },
+    {
+      "path": "kudos-recovery/g02/test_mr_review.py",
+      "matches": true,
+      "sha256": "8eae6d3c9381746875d6fa26a307123acafd640f4487b8d3eba4fddc14266c17"
+    },
+    {
+      "path": "kudos-recovery/g02/test_negative_review.py",
+      "matches": true,
+      "sha256": "d44135cd5c980e236183029b71374695c235ce657cace6d734c28439a359b545"
+    },
+    {
+      "path": "kudos-recovery/g02/test_original_title.py",
+      "matches": true,
+      "sha256": "cd1175f02c4c69ee76b12c25d66b909820e2e5c664851526f5d046beabdd9d08"
+    },
+    {
+      "path": "kudos-recovery/g02/test_pdf_review.py",
+      "matches": true,
+      "sha256": "6a55669ff29cd3b47741afb7db501c97f8c86db6c277329c4a86199715e3a3f6"
+    },
+    {
+      "path": "kudos-recovery/g02/test_progress.py",
+      "matches": true,
+      "sha256": "d29c8c269d2d8756ff53ef226871c8e751278941915048afb79f8c864dfdb50d"
+    },
+    {
+      "path": "kudos-recovery/g02/test_reassess.py",
+      "matches": true,
+      "sha256": "fd3f084f152e3208d983cf72e74baacde3056e586f52470ce260966381ece8d9"
+    },
+    {
+      "path": "kudos-recovery/g02/test_reclassify.py",
+      "matches": true,
+      "sha256": "6125d79582270c5a35322c5482120903b90839b4a7f1146944b420eed6ba079c"
+    },
+    {
+      "path": "kudos-recovery/g02/test_recovery.py",
+      "matches": true,
+      "sha256": "37d21bda32d19c42a40d47851ca5d9682f9cccc37e6f6014185277dd25cdd3a2"
+    },
+    {
+      "path": "kudos-recovery/g02/test_response.py",
+      "matches": true,
+      "sha256": "904bcf0b83aeb9617ff22d21d983012448cf2d5e51c32f5b2bc46eadab434bdb"
+    },
+    {
+      "path": "kudos-recovery/g02/test_restart.py",
+      "matches": true,
+      "sha256": "5a9cc648dd9684e032f1a0a2f414f6df81a4e4508c2e500ecd3d87d3294e43c1"
+    },
+    {
+      "path": "kudos-recovery/g02/test_resume.py",
+      "matches": true,
+      "sha256": "451e89fe5393b57f87cfaabc5cc311ecd3ea1b9f143c70dbf36d525841834fec"
+    },
+    {
+      "path": "kudos-recovery/g02/test_run.py",
+      "matches": true,
+      "sha256": "5a953970034a3e0519e07a2dda971f88e787287cdd906f22ea97562a855f7868"
+    },
+    {
+      "path": "kudos-recovery/g02/test_scoped_links.py",
+      "matches": true,
+      "sha256": "12818a622643b66719a029582ecff2f4ec86185444d6e8b0298a0121d36e5162"
+    },
+    {
+      "path": "kudos-recovery/g02/test_scope_prune.py",
+      "matches": true,
+      "sha256": "0099611588941facf48f486bd65655043987c5c2e77e14eddb2a7befaa602530"
+    },
+    {
+      "path": "kudos-recovery/g02/test_selected_summary.py",
+      "matches": true,
+      "sha256": "f6b7761a08804090e859b1ead2cb124069a53781cf1563621c21957f3f9de266"
+    },
+    {
+      "path": "kudos-recovery/g02/test_shard.py",
+      "matches": true,
+      "sha256": "54c2d9f04c882a81e712706e6f9f50a082b953d53a40a2b32ce5db71b3f8864c"
+    },
+    {
+      "path": "kudos-recovery/g02/test_snapshot_progress.py",
+      "matches": true,
+      "sha256": "4761f7bf1c9fb121b2b90470df3b4b08c087b0a94a7c2e38d97f6efee43c0c67"
+    },
+    {
+      "path": "kudos-recovery/g02/test_source_filter.py",
+      "matches": true,
+      "sha256": "81841e0b7940177aeaa020a309a4234b2897b12143082e38d3619263d7f53c8e"
+    },
+    {
+      "path": "kudos-recovery/g02/test_source_inventory.py",
+      "matches": true,
+      "sha256": "9559dccea2ec07af1cae423b32dbff860da245ecbd8f6d3a04e191195521fa66"
+    },
+    {
+      "path": "kudos-recovery/g02/test_source_kind.py",
+      "matches": true,
+      "sha256": "df90f768708ff221fb9cbaf885de5222be2d8d0352bdb1660afe4bbca4191867"
+    },
+    {
+      "path": "kudos-recovery/g02/test_summon.py",
+      "matches": true,
+      "sha256": "4bdcc5b2e02990f378ec611f4587e777b56b9ca669a884f700383a8859c77e40"
+    },
+    {
+      "path": "kudos-recovery/g02/selected-summary-decisions.json",
+      "matches": true,
+      "sha256": "3974fea404a467f24663b44a84cd6f94c158fefc049bc54760b3914951dd372c"
+    },
+    {
+      "path": "kudos-recovery/g02/abstract-content-decisions.json",
+      "matches": true,
+      "sha256": "d1c218b563a16af284af1572d1b325f77a6720b28010f3b849dd7d044fbf8667"
+    },
+    {
+      "path": "kudos-recovery/work_queue.py",
+      "matches": true,
+      "sha256": "f32bb342891a025ecaf248acbfd2003933ddba1e3a9ebc8535f82a74b5c3a825"
+    },
+    {
+      "path": "kudos-recovery/check_recovery.py",
+      "matches": true,
+      "sha256": "76f8b53f588eb4aee4fc7f85598a7684b86bd6ac7e17ab45ed5e840a58c2b95f"
+    },
+    {
+      "path": "kudos-recovery/g02/abstract_kind.py",
+      "matches": true,
+      "sha256": "ede039c463ce53fe7ec32c9d12422d06fc210943797b981079f46c11b14c1f84"
+    },
+    {
+      "path": "kudos-recovery/g02/abstract_reclassify.py",
+      "matches": true,
+      "sha256": "6f1987e13415f921a3dbae3a1e5ef9355c4702caf7a22388481090435c4b774a"
+    },
+    {
+      "path": "kudos-recovery/g02/article_review.py",
+      "matches": true,
+      "sha256": "847cf9029576ba0c20f742d68af942f7f0c5e927ca61d90bdc7b370744a4cccf"
+    },
+    {
+      "path": "kudos-recovery/g02/bmstu.py",
+      "matches": true,
+      "sha256": "3597fff4e7352e397a776f4bfcc4a6bcb2ea19f00f00ffd5817e116aa54ed5f5"
+    },
+    {
+      "path": "kudos-recovery/g02/book_pdf_audit.py",
+      "matches": true,
+      "sha256": "379908c2c26fa505f8342fde0aebd2f5667305b63fcfda4e2a78e51056fcee11"
+    },
+    {
+      "path": "kudos-recovery/g02/checkpoint_apply.py",
+      "matches": true,
+      "sha256": "f0a411c5c402e752d21d0d92ac5ca11637a74d75009fcc072e73523f17314145"
+    },
+    {
+      "path": "kudos-recovery/g02/copyright_notice.py",
+      "matches": true,
+      "sha256": "9e38115b55f2d0bb65027fd4eaf3fb2974524990beb4b0d5cf1e10f567aa8106"
+    },
+    {
+      "path": "kudos-recovery/g02/fielded_search.py",
+      "matches": true,
+      "sha256": "bef9af5548202498d84cd5a390896a934d5d5734923b6cae0480d9c412520c09"
+    },
+    {
+      "path": "kudos-recovery/g02/firefox_provider.py",
+      "matches": true,
+      "sha256": "7e513a04af479f1bd5c660ebe65b8dbcdcf8dba1dc7ca72a99f9eff7633fac75"
+    },
+    {
+      "path": "kudos-recovery/g02/literal_references.py",
+      "matches": true,
+      "sha256": "5763dc46313cd8cb475738a508a628c8fa90fc506bef1a800ea0596d7a97db40"
+    },
+    {
+      "path": "kudos-recovery/g02/mixed_source_scope.py",
+      "matches": true,
+      "sha256": "c587d74326e3364e6ad6e1001bd8925de14ca4c623bf6a7916f1efcc5203d833"
+    },
+    {
+      "path": "kudos-recovery/g02/mr_fields.py",
+      "matches": true,
+      "sha256": "459080567f77ea41531e602ef19307f8e520b581203e9387b82968f7a324c26d"
+    },
+    {
+      "path": "kudos-recovery/g02/mr_review.py",
+      "matches": true,
+      "sha256": "4c05bd841942679e67420dc1ee62c752c9e51f7140a817b573cf68bbaa0f8510"
+    },
+    {
+      "path": "kudos-recovery/g02/negative_review.py",
+      "matches": true,
+      "sha256": "e94e7ce72a55edccdbd6e780514303159175dc5e69dcc078ff51a17f452e1a59"
+    },
+    {
+      "path": "kudos-recovery/g02/original_title.py",
+      "matches": true,
+      "sha256": "af13c53744317b7a6b98ff5b9186e6640ad2949713e8dd13f2f8a01995e744a9"
+    },
+    {
+      "path": "kudos-recovery/g02/pdf_review.py",
+      "matches": true,
+      "sha256": "27a2d77e0d2179238931c7b9fd0d8e9e7691de1965484cf9e82116e4140d2373"
+    },
+    {
+      "path": "kudos-recovery/g02/recovery.py",
+      "matches": true,
+      "sha256": "fed7c49af788af6669e21cc314a192628070c09493f267882ed87e0dd66a61e8"
+    },
+    {
+      "path": "kudos-recovery/g02/response_recovery.py",
+      "matches": true,
+      "sha256": "df1185aed95873a910aed1b94aba4fe7a6987f27efa8052f7f7c211384447598"
+    },
+    {
+      "path": "kudos-recovery/g02/resume.py",
+      "matches": true,
+      "sha256": "4d1b3c73bd130ce4061201c6740615c2f82fe6fd54d4b955f5746179253198eb"
+    },
+    {
+      "path": "kudos-recovery/g02/run.py",
+      "matches": true,
+      "sha256": "5bf04a34bb9d0384027625c569ce4fcfd40110b882b59c7b3631aa83bab16af1"
+    },
+    {
+      "path": "kudos-recovery/g02/scoped_links.py",
+      "matches": true,
+      "sha256": "e23d0a6389f1c5ce50b37746c306cb7f42c34d197393128a73468d8c9505be70"
+    },
+    {
+      "path": "kudos-recovery/g02/scope_prune.py",
+      "matches": true,
+      "sha256": "7cfc1889583ef00f553de48d5ee4d53c9ccbd03e8dbeb17feee59caaf8edebb7"
+    },
+    {
+      "path": "kudos-recovery/g02/selected_summary.py",
+      "matches": true,
+      "sha256": "db33d3d099666be51307ab81e523fd64bc08a673338853b4e54b3dcf18d80223"
+    },
+    {
+      "path": "kudos-recovery/g02/shard.py",
+      "matches": true,
+      "sha256": "abbc1082063338fd87332eb12ff834205349a7a501d6ca83120be12e48564bbf"
+    },
+    {
+      "path": "kudos-recovery/g02/snapshot_progress.py",
+      "matches": true,
+      "sha256": "f9733d490ac01b35e98451aae4fec34ffbff0bc47c025dfe68e6967ae0ef7f7d"
+    },
+    {
+      "path": "kudos-recovery/g02/source_kind.py",
+      "matches": true,
+      "sha256": "e49c5d753364d6fd9b20d7f45ca225e7f235f9d15f21c145ebd2f1426eda039e"
+    },
+    {
+      "path": "kudos-recovery/g02/test_abstract_kind.py",
+      "matches": true,
+      "sha256": "6090c6fc531d85fe3013f9ea254d04ce4706ce3fd9d7c29e6191e89dd3e530f5"
+    },
+    {
+      "path": "kudos-recovery/g02/test_abstract_notices.py",
+      "matches": true,
+      "sha256": "b83ce16d26dc54815ba770a98dce7db89f6b680e2d0913041b8e8156883e1269"
+    },
+    {
+      "path": "kudos-recovery/g02/test_article_review.py",
+      "matches": true,
+      "sha256": "f219d5047d68ce145787c4684a9e6344895359e4dcbfd05f6afd9c274f87ae1c"
+    },
+    {
+      "path": "kudos-recovery/g02/test_batch.py",
+      "matches": true,
+      "sha256": "c5e1e4636e0a26d9f904d9ec971e2b5d65f5aa2d403b0073011ca30cdf9f2ae5"
+    },
+    {
+      "path": "kudos-recovery/g02/test_bmstu.py",
+      "matches": true,
+      "sha256": "40e6e7b122424cb3db83117c0772133ea3d1e3549a684735aec55754c65506fc"
+    },
+    {
+      "path": "kudos-recovery/g02/test_copyright_notice.py",
+      "matches": true,
+      "sha256": "2fb72239e8870563a051ad59c18ad80f5f3d88bc2491591e14f86b05348c8fa7"
+    },
+    {
+      "path": "kudos-recovery/g02/test_display_markup.py",
+      "matches": true,
+      "sha256": "90260cffe933cdbb5cb237d04a9241c99558815f3e364741ef648e6fbeecc021"
+    },
+    {
+      "path": "kudos-recovery/g02/test_fielded_search.py",
+      "matches": true,
+      "sha256": "13d94a27b1435829be802b74aab90b0b3eb579814698f4de20067d9ff5dd92be"
+    },
+    {
+      "path": "kudos-recovery/g02/test_grouped_review.py",
+      "matches": true,
+      "sha256": "8badc7be6a1495ad56e2bddeeef0bc3c0894491f42d262d18aa92d59e85b3fe8"
+    },
+    {
+      "path": "kudos-recovery/g02/test_literal_references.py",
+      "matches": true,
+      "sha256": "f0d8cab3070b763aec617d47ded0ef8faea6d5fd8b0ddeb5c42725407f4324d1"
+    },
+    {
+      "path": "kudos-recovery/g02/test_live_batch.py",
+      "matches": true,
+      "sha256": "234bd8b07c21cb9098439384dd0d59c3c9358efa653a9e5d4b32f4f950eb434b"
+    },
+    {
+      "path": "kudos-recovery/g02/test_live_firefox_provider.py",
+      "matches": true,
+      "sha256": "1d61e87d8e9df9c28603a98642f0be29ba81afb114fa474f96530bf288d1bb62"
+    },
+    {
+      "path": "kudos-recovery/g02/test_live_pdf_fallback.py",
+      "matches": true,
+      "sha256": "d417966dbef4322576b25d59f194d4f2c9b30e4ba79508777ea84f9d648b6a0e"
+    },
+    {
+      "path": "kudos-recovery/g02/test_live_responses.py",
+      "matches": true,
+      "sha256": "1ddaa1d4fea3295a7b3bd96e1355f5da0ca5bcc6ebb13c4564259339740650b6"
+    },
+    {
+      "path": "kudos-recovery/g02/test_live_retry.py",
+      "matches": true,
+      "sha256": "395b7cbc4051c631b4f5b11e29c7d5b0af046269bc5b73ecc05bbcfd8cebd43f"
+    },
+    {
+      "path": "kudos-recovery/g02/test_live_submit.py",
+      "matches": true,
+      "sha256": "7513d072b98e0f7f0ec7583b2c3b04d386ddad7871a7ddce126796237dc21ecf"
+    },
+    {
+      "path": "kudos-recovery/g02/test_live_transitions.py",
+      "matches": true,
+      "sha256": "77f1df659fc90e4e7ad53d4bb8ec9d18944563c43f78b27ee0582c40d004ff92"
+    },
+    {
+      "path": "kudos-recovery/g02/test_mixed_source_scope.py",
+      "matches": true,
+      "sha256": "1bea985a3a61a0872b3c04512a4c8af37407a32b96ba70c2211f6acc3dbf6bd8"
+    },
+    {
+      "path": "kudos-recovery/g02/test_mr_fields.py",
+      "matches": true,
+      "sha256": "54496b9205d27db8ce27b111844ed7c8ac9e52452cd2c75a4304eac8ac208293"
+    },
+    {
+      "path": "kudos-recovery/g02/test_mr_review.py",
+      "matches": true,
+      "sha256": "8eae6d3c9381746875d6fa26a307123acafd640f4487b8d3eba4fddc14266c17"
+    },
+    {
+      "path": "kudos-recovery/g02/test_negative_review.py",
+      "matches": true,
+      "sha256": "d44135cd5c980e236183029b71374695c235ce657cace6d734c28439a359b545"
+    },
+    {
+      "path": "kudos-recovery/g02/test_original_title.py",
+      "matches": true,
+      "sha256": "cd1175f02c4c69ee76b12c25d66b909820e2e5c664851526f5d046beabdd9d08"
+    },
+    {
+      "path": "kudos-recovery/g02/test_pdf_review.py",
+      "matches": true,
+      "sha256": "6a55669ff29cd3b47741afb7db501c97f8c86db6c277329c4a86199715e3a3f6"
+    },
+    {
+      "path": "kudos-recovery/g02/test_progress.py",
+      "matches": true,
+      "sha256": "d29c8c269d2d8756ff53ef226871c8e751278941915048afb79f8c864dfdb50d"
+    },
+    {
+      "path": "kudos-recovery/g02/test_reassess.py",
+      "matches": true,
+      "sha256": "fd3f084f152e3208d983cf72e74baacde3056e586f52470ce260966381ece8d9"
+    },
+    {
+      "path": "kudos-recovery/g02/test_reclassify.py",
+      "matches": true,
+      "sha256": "6125d79582270c5a35322c5482120903b90839b4a7f1146944b420eed6ba079c"
+    },
+    {
+      "path": "kudos-recovery/g02/test_recovery.py",
+      "matches": true,
+      "sha256": "37d21bda32d19c42a40d47851ca5d9682f9cccc37e6f6014185277dd25cdd3a2"
+    },
+    {
+      "path": "kudos-recovery/g02/test_response.py",
+      "matches": true,
+      "sha256": "904bcf0b83aeb9617ff22d21d983012448cf2d5e51c32f5b2bc46eadab434bdb"
+    },
+    {
+      "path": "kudos-recovery/g02/test_restart.py",
+      "matches": true,
+      "sha256": "5a9cc648dd9684e032f1a0a2f414f6df81a4e4508c2e500ecd3d87d3294e43c1"
+    },
+    {
+      "path": "kudos-recovery/g02/test_resume.py",
+      "matches": true,
+      "sha256": "451e89fe5393b57f87cfaabc5cc311ecd3ea1b9f143c70dbf36d525841834fec"
+    },
+    {
+      "path": "kudos-recovery/g02/test_run.py",
+      "matches": true,
+      "sha256": "5a953970034a3e0519e07a2dda971f88e787287cdd906f22ea97562a855f7868"
+    },
+    {
+      "path": "kudos-recovery/g02/test_scoped_links.py",
+      "matches": true,
+      "sha256": "12818a622643b66719a029582ecff2f4ec86185444d6e8b0298a0121d36e5162"
+    },
+    {
+      "path": "kudos-recovery/g02/test_scope_prune.py",
+      "matches": true,
+      "sha256": "0099611588941facf48f486bd65655043987c5c2e77e14eddb2a7befaa602530"
+    },
+    {
+      "path": "kudos-recovery/g02/test_selected_summary.py",
+      "matches": true,
+      "sha256": "f6b7761a08804090e859b1ead2cb124069a53781cf1563621c21957f3f9de266"
+    },
+    {
+      "path": "kudos-recovery/g02/test_shard.py",
+      "matches": true,
+      "sha256": "54c2d9f04c882a81e712706e6f9f50a082b953d53a40a2b32ce5db71b3f8864c"
+    },
+    {
+      "path": "kudos-recovery/g02/test_snapshot_progress.py",
+      "matches": true,
+      "sha256": "4761f7bf1c9fb121b2b90470df3b4b08c087b0a94a7c2e38d97f6efee43c0c67"
+    },
+    {
+      "path": "kudos-recovery/g02/test_source_filter.py",
+      "matches": true,
+      "sha256": "81841e0b7940177aeaa020a309a4234b2897b12143082e38d3619263d7f53c8e"
+    },
+    {
+      "path": "kudos-recovery/g02/test_source_inventory.py",
+      "matches": true,
+      "sha256": "9559dccea2ec07af1cae423b32dbff860da245ecbd8f6d3a04e191195521fa66"
+    },
+    {
+      "path": "kudos-recovery/g02/test_source_kind.py",
+      "matches": true,
+      "sha256": "df90f768708ff221fb9cbaf885de5222be2d8d0352bdb1660afe4bbca4191867"
+    },
+    {
+      "path": "kudos-recovery/g02/test_summon.py",
+      "matches": true,
+      "sha256": "4bdcc5b2e02990f378ec611f4587e777b56b9ca669a884f700383a8859c77e40"
+    },
+    {
+      "path": "kudos-recovery/g02/selected-summary-decisions.json",
+      "matches": true,
+      "sha256": "3974fea404a467f24663b44a84cd6f94c158fefc049bc54760b3914951dd372c"
+    },
+    {
+      "path": "kudos-recovery/g02/abstract-content-decisions.json",
+      "matches": true,
+      "sha256": "d1c218b563a16af284af1572d1b325f77a6720b28010f3b849dd7d044fbf8667"
+    },
+    {
+      "path": "kudos-recovery/work_queue.py",
+      "matches": true,
+      "sha256": "f32bb342891a025ecaf248acbfd2003933ddba1e3a9ebc8535f82a74b5c3a825"
+    },
+    {
+      "path": "kudos-recovery/check_recovery.py",
+      "matches": true,
+      "sha256": "76f8b53f588eb4aee4fc7f85598a7684b86bd6ac7e17ab45ed5e840a58c2b95f"
+    },
+    {
+      "path": "intake/kudos-recovery/g02/fixtures/scope-record-cases-f106b6ef0289c5af.json",
+      "matches": true,
+      "sha256": "f106b6ef0289c5af52292ec90e295c3ab637e98c297bbe045c43db706ca6b037",
+      "expected_source": "fixed fixture captured in this checkpoint"
+    },
+    {
+      "path": "intake/kudos-recovery/g02/fixtures/whole-book-control-dbf7894651333359.json",
+      "matches": true,
+      "sha256": "dbf789465133335975b49c3cfaf07031ba92bb8b08b2eacf900308cbff2f18a1",
+      "expected_source": "fixed fixture captured in this checkpoint"
+    },
+    {
+      "path": "intake/kudos-recovery/g02/fixtures/literal-reference-tasks-d4c6d0f16a783a20.json",
+      "matches": true,
+      "sha256": "d4c6d0f16a783a2003cf1073a57ce592228d18a2517a5b4ee29ddcf0047eb8b4",
+      "expected_source": "fixed fixture captured in this checkpoint"
+    }
+  ],
+  "raw_fixture_paths_not_committed": [
+    "intake/kudos-recovery/g02/fixtures/scope-record-cases-f106b6ef0289c5af.json",
+    "intake/kudos-recovery/g02/fixtures/whole-book-control-dbf7894651333359.json",
+    "intake/kudos-recovery/g02/fixtures/literal-reference-tasks-d4c6d0f16a783a20.json"
+  ]
+}

@@ -142,7 +142,7 @@ def inventory(p,r):
  return r
 
 def record_review(r,component,reason,paths,scope_complete=False):
- value={'basis_sha256':component_basis(r,component),'reason':reason,'evidence_paths':list(dict.fromkeys(paths)),'rule_code_sha256':{name:sha((ROOT/name).read_bytes()) for name in ('response_recovery.py','abstract_kind.py','abstract-content-decisions.json','resume.py','pdf_review.py','source_kind.py','mr_fields.py')},'tests':['test_response.py','test_display_markup.py','test_abstract_kind.py','test_abstract_notices.py','test_resume.py','test_live_responses.py','test_pdf_review.py','test_source_kind.py','test_mr_fields.py']}
+ value={'basis_sha256':component_basis(r,component),'reason':reason,'evidence_paths':list(dict.fromkeys(paths)),'rule_code_sha256':{name:sha((ROOT/name).read_bytes()) for name in ('response_recovery.py','abstract_kind.py','abstract-content-decisions.json','resume.py','pdf_review.py','copyright_notice.py','source_kind.py','mr_fields.py','scoped_links.py','scope_prune.py','literal_references.py')},'tests':['test_response.py','test_display_markup.py','test_abstract_kind.py','test_abstract_notices.py','test_resume.py','test_live_responses.py','test_pdf_review.py','test_copyright_notice.py','test_source_kind.py','test_mr_fields.py','test_scoped_links.py','test_scope_prune.py','test_literal_references.py']}
  if scope_complete:value['scope_complete']=True
  value['method']='manual' if reason.startswith('Direct') else 'rule'
  r['work_state']['reviews'][component]=value
