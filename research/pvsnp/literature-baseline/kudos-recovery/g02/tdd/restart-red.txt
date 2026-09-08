@@ -1,0 +1,53 @@
+{"error": "RuntimeError", "stage": "batch-ui-search"}
+EFF
+======================================================================
+ERROR: test_batch_error_preserves_candidate_for_individual_retry (__main__.RestartTests.test_batch_error_preserves_candidate_for_individual_retry)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\run.py", line 84, in search_group
+    try:payload=search_ui(page,query)
+                ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wogud\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py", line 1139, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wogud\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py", line 1143, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wogud\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py", line 1198, in _execute_mock_call
+    raise effect
+RuntimeError: Observed UI search HTTP status 500
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_restart.py", line 20, in test_batch_error_preserves_candidate_for_individual_retry
+    rows=list(run.iter_batches(None,[PAPERS[0]]))
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\run.py", line 101, in iter_batches
+    if group:yield from search_group(group)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\run.py", line 87, in search_group
+    progress('needs-batch-ui-repair',group[0]['paper_id']);print(json.dumps({'error':type(exc).__name__,'stage':'batch-ui-search'}),flush=True);raise SystemExit(1)
+                                                                                                                                                ^^^^^^^^^^^^^^^^^^^
+SystemExit: 1
+
+======================================================================
+FAIL: test_exact_bibliography_without_identifiers (__main__.RestartTests.test_exact_bibliography_without_identifiers)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_restart.py", line 11, in test_exact_bibliography_without_identifiers
+    self.assertTrue(rr.document_matches(p,d))
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_stage_does_not_skip_unresolved_real_record (__main__.RestartTests.test_stage_does_not_skip_unresolved_real_record)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_restart.py", line 17, in test_stage_does_not_skip_unresolved_real_record
+    self.assertEqual(len(rows),1)
+AssertionError: 0 != 1
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.030s
+
+FAILED (failures=2, errors=1)

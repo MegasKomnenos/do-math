@@ -1,0 +1,5 @@
+Observed failure before retry/scoping repair:
+python research/pvsnp/literature-baseline/kudos-recovery/g02/run.py
+Exit 1, candidate VER-0eb44ae54d100935901ff151.
+Primary UI batch query "9782730215077" produced zero results. Following title/author/year search did not produce a matching response within 30000ms; process preserved the prior result and reported TimeoutError. Title input: neurogéométrie de la vision petitot 2008.
+Repair scopes fill and Enter to the same observed input id, accepts the actual search response regardless of HTTP status for explicit diagnosis, retries a missing UI response once, and preserves query/input observations if a retry is needed. It does not call an API directly.

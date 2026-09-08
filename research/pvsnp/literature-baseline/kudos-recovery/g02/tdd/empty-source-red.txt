@@ -1,0 +1,27 @@
+.E......E.....<frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+<frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+<frozen importlib._bootstrap>:488: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+...
+======================================================================
+ERROR: test_actual_empty_source_is_preserved_as_failed_observation (__main__.ResumeTests.test_actual_empty_source_is_preserved_as_failed_observation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_resume.py", line 11, in test_actual_empty_source_is_preserved_as_failed_observation
+    resume.repair_empty_evidence(r)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'resume' has no attribute 'repair_empty_evidence'
+
+======================================================================
+ERROR: test_narrow_query_uses_observed_matching_title (__main__.ResumeTests.test_narrow_query_uses_observed_matching_title)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_resume.py", line 16, in test_narrow_query_uses_observed_matching_title
+    query=resume.narrow_query(p,payload)
+          ^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'resume' has no attribute 'narrow_query'
+
+----------------------------------------------------------------------
+Ran 17 tests in 0.158s
+
+FAILED (errors=2)
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute

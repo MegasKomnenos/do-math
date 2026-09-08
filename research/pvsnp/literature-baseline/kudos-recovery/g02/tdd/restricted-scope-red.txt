@@ -1,0 +1,18 @@
+E.........<frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+<frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+<frozen importlib._bootstrap>:488: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+...
+======================================================================
+ERROR: test_actual_ieee_scope_closes_only_after_all_sources_visited (__main__.ResumeTests.test_actual_ieee_scope_closes_only_after_all_sources_visited)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_resume.py", line 10, in test_actual_ieee_scope_closes_only_after_all_sources_visited
+    resume.close_restricted_fulltext(r)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'resume' has no attribute 'close_restricted_fulltext'
+
+----------------------------------------------------------------------
+Ran 13 tests in 0.161s
+
+FAILED (errors=1)
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute

@@ -1,0 +1,13 @@
+...F
+======================================================================
+FAIL: test_real_wrong_doi_binding (__main__.IdentityTests.test_real_wrong_doi_binding)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_run.py", line 9, in test_real_wrong_doi_binding
+    self.assertFalse(run.modal_matches(p,(fx/'wrong-doi-detail.txt').read_text(encoding='utf-8')))
+AssertionError: True is not false
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.058s
+
+FAILED (failures=1)

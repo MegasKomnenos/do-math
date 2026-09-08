@@ -1,0 +1,29 @@
+FF.F
+======================================================================
+FAIL: test_actual_compound_spacing (__main__.DisplayMarkupTests.test_actual_compound_spacing)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_display_markup.py", line 15, in test_actual_compound_spacing
+    self.assertTrue(matches)
+AssertionError: [] is not true
+
+======================================================================
+FAIL: test_actual_title_query_highlighting_and_isbn_binding (__main__.DisplayMarkupTests.test_actual_title_query_highlighting_and_isbn_binding)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_display_markup.py", line 10, in test_actual_title_query_highlighting_and_isbn_binding
+    self.assertTrue(matches)
+AssertionError: [] is not true
+
+======================================================================
+FAIL: test_mathml_operator_difference_is_not_erased (__main__.DisplayMarkupTests.test_mathml_operator_difference_is_not_erased)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_display_markup.py", line 26, in test_mathml_operator_difference_is_not_erased
+    self.assertFalse(rr.document_matches(p,changed))
+AssertionError: True is not false
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.017s
+
+FAILED (failures=3)

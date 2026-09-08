@@ -1,0 +1,3 @@
+실물 실패: python research/pvsnp/literature-baseline/kudos-recovery/g02/run.py, exit 1.
+초기 Summon 화면 #ho0.check()에서 TimeoutError, 15000ms. input은 존재하고 활성이나 형제 span.checkmark가 pointer events를 intercept한다고 Playwright가 보고했다.
+수리 대상: 비구독 포함 선택의 포인터 입력. 키보드 포커스와 Space로 같은 실제 checkbox를 조작하고 checked 상태를 확인한다.

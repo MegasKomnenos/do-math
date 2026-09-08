@@ -39,9 +39,9 @@
   "last_user_decision": "Stop old three workers, improve based on execution and efficiency feedback, continue with new workers.",
   "replacement_snapshot": "restart-snapshot.json",
   "g05_root_pdf_reservation": "All ten transferred to new g05 worker; root did not finish review.",
-  "latest_checkpoint_commit": "f313ef8",
+  "latest_checkpoint_commit": "1795e8e",
   "latest_operator_audit": {
-    "updated_at": "2026-09-08T14:52:36.189966+00:00",
+    "updated_at": "2026-09-08T15:46:32.204440+00:00",
     "common_checks": "20 existing + 4 resume regressions + 12 work-queue boundary tests passed; actual old1556 result partial checks passed/incomplete.",
     "old_agents_stopped": true,
     "new_workers": "g02/g05/g08 replacements continue TDD, actual browser collection and evidence assessment.",
@@ -51,6 +51,13 @@
       "g05 combined highlights separated in current actual result; conflicting abstract variants unresolved."
     ],
     "runtime_observation": "g08 PID37012 startup5code hashes matched disk at audit; worker later checkpoint-stopped it after12candidates and began newrun session32592.",
-    "handoff": "New g05 accepted all10 former root PDF reservations; root independently reviewed first pages of2."
+    "handoff": "New g05 accepted all10 former root PDF reservations; root independently reviewed first pages of2.",
+    "new_public_sources": "Vakil actual7page extraction completed by g08; Burgos actual UB download href independently observed by root,25pagePDF recovered by g08. Public scope27records/54queries reopened.",
+    "advanced_search": "Root actual Summon TitleCombined + AuthorCombined dialog interaction validated,18/18 records,ho=f. Shared-findings and raw operator fixture record exact controls and first-row initialization failure.",
+    "latest_known_native_sessions": {
+      "g02": "75588 after73offline tests, conditional adjudication/source-priority repair; verify live PID/files before acting",
+      "g08": "Read latest runs/progress; earlier sessions may have checkpoint-stopped",
+      "g05": "Read runs/feedback-response; collection and source/PDF review ongoing"
+    }
   }
 }

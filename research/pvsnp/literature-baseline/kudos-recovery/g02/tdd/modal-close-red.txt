@@ -1,0 +1,5 @@
+Observed failing command: python research/pvsnp/literature-baseline/kudos-recovery/g02/run.py
+Exit: 1
+Candidate: VER-006e5a974134c5ef32a3a73d
+At search_summon close.click(), actual Playwright reported button #quick-look-close-btn not stable and then detached from DOM; timeout 15000ms.
+Preceding loop had already clicked the Quick Look close button. It had not waited for modal closure, so the next search attempted a second close during the exit animation. Existing valid results 12 were preserved; candidate 13 retains gathered evidence and no collection-stage completion marker.

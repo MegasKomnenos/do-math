@@ -1,0 +1,60 @@
+FFF.FF
+======================================================================
+FAIL: test_actual_book_review_excerpt (__main__.AbstractKindTests.test_actual_book_review_excerpt)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_abstract_kind.py", line 12, in test_actual_book_review_excerpt
+    self.assertEqual(classify((FX/'book-review-excerpt.txt').read_text(encoding='utf-8')),'review_excerpt')
+AssertionError: 'database_indexing_abstract' != 'review_excerpt'
+- database_indexing_abstract
++ review_excerpt
+
+
+======================================================================
+FAIL: test_actual_contents_field (__main__.AbstractKindTests.test_actual_contents_field)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_abstract_kind.py", line 18, in test_actual_contents_field
+    self.assertEqual(classify((FX/'contents-in-abstract-field.txt').read_text(encoding='utf-8')),'table_of_contents')
+AssertionError: 'database_indexing_abstract' != 'table_of_contents'
+- database_indexing_abstract
++ table_of_contents
+
+
+======================================================================
+FAIL: test_actual_other_paper_citation (__main__.AbstractKindTests.test_actual_other_paper_citation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_abstract_kind.py", line 10, in test_actual_other_paper_citation
+    self.assertEqual(classify((FX/'citation-in-abstract-field.txt').read_text(encoding='utf-8')),'bibliographic_citation')
+AssertionError: 'database_indexing_abstract' != 'bibliographic_citation'
+- database_indexing_abstract
++ bibliographic_citation
+
+
+======================================================================
+FAIL: test_placeholder (__main__.AbstractKindTests.test_placeholder)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_abstract_kind.py", line 20, in test_placeholder
+    self.assertEqual(classify('No abstract available'),'placeholder')
+AssertionError: 'database_indexing_abstract' != 'placeholder'
+- database_indexing_abstract
++ placeholder
+
+
+======================================================================
+FAIL: test_visible_snippet_is_incomplete (__main__.AbstractKindTests.test_visible_snippet_is_incomplete)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_abstract_kind.py", line 16, in test_visible_snippet_is_incomplete
+    self.assertEqual(classify(text),'truncated_snippet')
+AssertionError: 'database_indexing_abstract' != 'truncated_snippet'
+- database_indexing_abstract
++ truncated_snippet
+
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.046s
+
+FAILED (failures=5)

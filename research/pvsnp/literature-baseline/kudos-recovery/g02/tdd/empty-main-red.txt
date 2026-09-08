@@ -1,0 +1,23 @@
+{
+  "passed": false,
+  "complete": false,
+  "group_id": "g02",
+  "assigned": 5138,
+  "processed": 243,
+  "missing": 4895,
+  "counts": {
+    "abstract:found": 7,
+    "fulltext:unresolved": 243,
+    "identity:confirmed": 232,
+    "abstract:unresolved": 236,
+    "identity:unresolved": 11
+  },
+  "errors": [
+    {
+      "paper_id": "VER-090e02eb37447bed55893307",
+      "errors": [
+        "evidence: empty artifact"
+      ]
+    }
+  ]
+}

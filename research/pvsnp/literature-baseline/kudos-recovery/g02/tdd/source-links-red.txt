@@ -1,0 +1,13 @@
+.F.
+======================================================================
+FAIL: test_observed_fulltext_links (__main__.SummonTests.test_observed_fulltext_links)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_summon.py", line 18, in test_observed_fulltext_links
+    self.assertTrue(any('/2.0.0/link/' in v['url'] for v in links))
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 3 tests in 9.528s
+
+FAILED (failures=1)

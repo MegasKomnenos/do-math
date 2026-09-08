@@ -1,0 +1,14 @@
+.E........
+======================================================================
+ERROR: test_automatic_positive_uses_real_source_identity_and_boundary (__main__.ResumeTests.test_automatic_positive_uses_real_source_identity_and_boundary)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_resume.py", line 12, in test_automatic_positive_uses_real_source_identity_and_boundary
+    with patch.object(resume,'capture',return_value=e):resume.adjudicate_saved(p,r)
+                                                       ^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'resume' has no attribute 'adjudicate_saved'
+
+----------------------------------------------------------------------
+Ran 10 tests in 0.031s
+
+FAILED (errors=1)

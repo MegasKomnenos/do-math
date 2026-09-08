@@ -1,0 +1,31 @@
+FFF
+======================================================================
+FAIL: test_isbn_fallback (__main__.BatchTests.test_isbn_fallback)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_batch.py", line 8, in test_isbn_fallback
+    self.assertEqual(rr.primary_identifier({'identifiers':{'doi':[],'isbn':['9781848009974']}}),'9781848009974')
+AssertionError: None != '9781848009974'
+
+======================================================================
+FAIL: test_query_binds_both_ids (__main__.BatchTests.test_query_binds_both_ids)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_batch.py", line 6, in test_query_binds_both_ids
+    self.assertEqual(rr.batch_query([{'identifiers':{'doi':['10.1109/mcs.2008.931718']}},{'identifiers':{'doi':['10.1007/978-1-84800-998-1']}}]),'"10.1109/mcs.2008.931718" OR "10.1007/978-1-84800-998-1"')
+AssertionError: '' != '"10.1109/mcs.2008.931718" OR "10.1007/978-1-84800-998-1"'
++ "10.1109/mcs.2008.931718" OR "10.1007/978-1-84800-998-1"
+
+
+======================================================================
+FAIL: test_truncated_batch_must_split (__main__.BatchTests.test_truncated_batch_must_split)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_batch.py", line 10, in test_truncated_batch_must_split
+    self.assertTrue(rr.batch_truncated({'record_count':80,'documents':[{}]*25}))
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.003s
+
+FAILED (failures=3)

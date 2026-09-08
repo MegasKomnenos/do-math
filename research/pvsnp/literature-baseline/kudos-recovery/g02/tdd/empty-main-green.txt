@@ -1,0 +1,16 @@
+{
+  "passed": true,
+  "complete": false,
+  "group_id": "g02",
+  "assigned": 5138,
+  "processed": 244,
+  "missing": 4894,
+  "counts": {
+    "abstract:found": 7,
+    "fulltext:unresolved": 244,
+    "identity:confirmed": 234,
+    "abstract:unresolved": 237,
+    "identity:unresolved": 10
+  },
+  "errors": []
+}

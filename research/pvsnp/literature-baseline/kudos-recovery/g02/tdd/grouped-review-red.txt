@@ -1,0 +1,13 @@
+F
+======================================================================
+FAIL: test_requested_mr_owns_bibliography_and_link (__main__.GroupedReviewTests.test_requested_mr_owns_bibliography_and_link)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_grouped_review.py", line 12, in test_requested_mr_owns_bibliography_and_link
+    self.assertTrue(section.inner_text().startswith('MR1868930'))
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 1 test in 1.498s
+
+FAILED (failures=1)

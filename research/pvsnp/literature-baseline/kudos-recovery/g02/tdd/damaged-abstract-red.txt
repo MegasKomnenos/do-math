@@ -1,0 +1,16 @@
+..F....
+======================================================================
+FAIL: test_actual_gradient_flows_corrupted_glyphs_require_review (__main__.AbstractKindTests.test_actual_gradient_flows_corrupted_glyphs_require_review)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_abstract_kind.py", line 8, in test_actual_gradient_flows_corrupted_glyphs_require_review
+    self.assertEqual(classify(path.read_text(encoding='utf-8')),'damaged_text')
+AssertionError: 'database_indexing_abstract' != 'damaged_text'
+- database_indexing_abstract
++ damaged_text
+
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.006s
+
+FAILED (failures=1)

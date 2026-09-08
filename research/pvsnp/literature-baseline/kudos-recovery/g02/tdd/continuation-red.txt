@@ -1,0 +1,14 @@
+...E.....
+======================================================================
+ERROR: test_one_failed_source_does_not_stop_next (__main__.ResumeTests.test_one_failed_source_does_not_stop_next)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_resume.py", line 16, in test_one_failed_source_does_not_stop_next
+    resume.process_tasks(None,None,None,p,r,{'source_visits':0})
+    ^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'resume' has no attribute 'process_tasks'
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.009s
+
+FAILED (errors=1)

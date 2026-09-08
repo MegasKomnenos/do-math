@@ -1,0 +1,1 @@
+{"passed": true, "candidate": "intake/kudos-recovery/g02/VER-03d4f40f5e02f445ed375c27/fulltext-candidate-f9c35f3e50bf2881.pdf", "pages": 342}
