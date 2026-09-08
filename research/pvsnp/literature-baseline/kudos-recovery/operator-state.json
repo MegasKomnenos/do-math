@@ -39,9 +39,8 @@
   "last_user_decision": "Stop old three workers, improve based on execution and efficiency feedback, continue with new workers.",
   "replacement_snapshot": "restart-snapshot.json",
   "g05_root_pdf_reservation": "All ten transferred to new g05 worker; root did not finish review.",
-  "latest_checkpoint_commit": "1795e8e",
   "latest_operator_audit": {
-    "updated_at": "2026-09-08T15:46:32.204440+00:00",
+    "updated_at": "2026-09-08T18:33:05.080336+00:00",
     "common_checks": "20 existing + 4 resume regressions + 12 work-queue boundary tests passed; actual old1556 result partial checks passed/incomplete.",
     "old_agents_stopped": true,
     "new_workers": "g02/g05/g08 replacements continue TDD, actual browser collection and evidence assessment.",
@@ -50,14 +49,28 @@
       "g02 Gradient flows damaged database abstract found/review withdrawn; actual current result reread unresolved.",
       "g05 combined highlights separated in current actual result; conflicting abstract variants unresolved."
     ],
-    "runtime_observation": "g08 PID37012 startup5code hashes matched disk at audit; worker later checkpoint-stopped it after12candidates and began newrun session32592.",
+    "runtime_observation": "At 2026-09-08T18:25Z actual Python processes were g02 PID24072 and g08 PID17528. g05 had checkpoint-restarted for timeout and atomic-file replacement repair; later process state must be rechecked.",
     "handoff": "New g05 accepted all10 former root PDF reservations; root independently reviewed first pages of2.",
     "new_public_sources": "Vakil actual7page extraction completed by g08; Burgos actual UB download href independently observed by root,25pagePDF recovered by g08. Public scope27records/54queries reopened.",
     "advanced_search": "Root actual Summon TitleCombined + AuthorCombined dialog interaction validated,18/18 records,ho=f. Shared-findings and raw operator fixture record exact controls and first-row initialization failure.",
     "latest_known_native_sessions": {
-      "g02": "75588 after73offline tests, conditional adjudication/source-priority repair; verify live PID/files before acting",
-      "g08": "Read latest runs/progress; earlier sessions may have checkpoint-stopped",
-      "g05": "Read runs/feedback-response; collection and source/PDF review ongoing"
-    }
+      "g02": "Read current runs manifest and verify actual process; checkpoint repairs may replace PIDs.",
+      "g05": "Read current runs manifest and verify actual process; checkpoint repairs may replace PIDs.",
+      "g08": "Read current runs manifest and verify actual process; checkpoint repairs may replace PIDs."
+    },
+    "authentication": "KUDOS bootstrap expired (visible login/no logout); operator renewed atomically and validated fresh Chrome and Firefox contexts. Credentials remain private.",
+    "sciencedirect": "Chrome after renewed auth remained CPE; Firefox default normal homepage reproduced, but g05 institutional PII still CPE. Public Firefox article detail worked for Max-SAT abstract. Reopen affected CPE-only verdicts and follow per-document live evidence; do not claim institution lacks subscription.",
+    "g02_checkpoint": "8c15802 captured80-test stable code; only test_run trailing space changed with identicalAST/4test rerun. Later negative_review/source-link/reassessment repairs are ongoing, not in that checkpoint.",
+    "new_negative_counterexample": "Root directly read VER-2a20cc1ccaddd97f89693ecf: resolver no-electronic-resource was incorrectly marked restricted/unavailable. g02 was assigned actual regression, classification repair, URI inventory check and saved-evidence reassessment.",
+    "selected_summary": "Root read MR0733454 full quoted synopsis in Review section; contract now permits database_selected_summary while preserving actual section, wording source, quotation boundary and unverified author-abstract status."
+  },
+  "recorded_checkpoint_commit": "8c15802",
+  "pending_user_input": {
+    "topic": "Elsevier organizational email",
+    "question_sent": true,
+    "required_for": "Normal Elsevier organization access after exact Kyungpook National University selection",
+    "email_submitted": false,
+    "independent_collection_continues": true,
+    "evidence": "intake/kudos-recovery/operator/sciencedirect-organization-result.json"
   }
 }
