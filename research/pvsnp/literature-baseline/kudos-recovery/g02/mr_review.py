@@ -15,4 +15,9 @@ def inspect_mr(p,body):
  if len(re.findall(r'(?m)^MR\d+',body))!=1:return result
  match=re.search(r"(?s)\nSummary\s*\nSummary:\s*``(.*?)''\s*$",body)
  if match and classify(match.group(1))=='database_indexing_abstract':result['abstract']=match.group(1)
+ publisher=re.search(r"(?s)\nSummary\s*\n(?:Publisher['’]s description|From the publisher['’]s description):\s*``(.*?)''\s*(\{For\b.*\})?\s*$",body)
+ if publisher:
+  description=publisher.group(1);result['wording_source']='publisher description';result['editorial_note']=publisher.group(2) or ''
+  if classify(description)=='database_indexing_abstract':result['abstract']=description
+  else:result['additional_description']=description
  return result

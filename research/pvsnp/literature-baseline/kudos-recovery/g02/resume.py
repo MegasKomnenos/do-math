@@ -1,5 +1,5 @@
 """Resume g02 from retained evidence and explicit remaining work."""
-import argparse,hashlib,json,os,re,sys,time
+import argparse,hashlib,json,os,re,sys,time,copy
 from pathlib import Path
 from urllib.parse import urlsplit,urljoin
 import run
@@ -11,6 +11,14 @@ sys.path.insert(0,str(ROOT.parent))
 from work_queue import pending_work,component_basis
 
 def sha(data):return hashlib.sha256(data).hexdigest()
+
+def observe_response(response,metrics):
+ metrics['all_http_responses']=metrics.get('all_http_responses',0)+1
+ if response.status==429:metrics['all_http_429']=metrics.get('all_http_429',0)+1
+ if response.status>=500:metrics['all_http_5xx']=metrics.get('all_http_5xx',0)+1
+ if response.status==429 or response.status>=500:
+  url=urlsplit(response.url)
+  metrics.setdefault('http_failures',[]).append({'status':response.status,'host':url.hostname,'path':url.path,'resource_type':response.request.resource_type})
 
 def new_result(p):
  return {'schema_version':'kudos-recovery-result/1','paper_id':p['paper_id'],'version_sha256':p['version_sha256'],'identity':{'status':'unresolved','reason':'Source identity still requires verification.'},'metadata':{k:p.get(k) for k in ('title','authors','year','identifiers','publication')},'abstract':{'status':'unresolved','reason':'Abstract sources remain to be assessed.'},'fulltext':{'status':'unresolved','reason':'Fulltext sources remain to be assessed.'},'attempts':[],'evidence':[]}
@@ -27,6 +35,9 @@ def task(r,kind,target,status='pending',reason='Required source scope remains to
 def add_evidence(r,e):
  if not any(x['path']==e['path'] and x['sha256']==e['sha256'] for x in r['evidence']):r['evidence'].append(e)
 
+def response_attempt(r,payload,e,action):
+ r['attempts'].append({'method':'playwright','query':payload['query']['original_query'],'url':e['url'],'outcome':action+f"; observed {len(payload['documents'])} documents from {payload['record_count']} reported results.",'evidence_path':e['path']})
+
 def repair_empty_evidence(r):
  for e in list(r['evidence']):
   path=BASE/e['path']
@@ -37,14 +48,21 @@ def repair_empty_evidence(r):
   for t in r.get('work_state',{}).get('tasks',[]):
    if e['path'] in t.get('evidence_paths',[]):t.update(status='retry',reason='Empty provider rendering must be revisited.',evidence_paths=[observation['path']])
 
+def document_links(d):
+ links=[]
+ for key in ('link','fulltext_link','link_to_html','uris','open_access_link'):
+  values=d.get(key) or []
+  if isinstance(values,str):values=[values]
+  for value in values:
+   if isinstance(value,str) and value.startswith(('https://','http://')) and value not in links:links.append(value)
+ return links
+
 def consume_response(p,r,payload,e,save=True):
  rows=select_documents(p,payload,payload['query']['original_query'])
  for d in rows:
   if not any(x.get('document')==d for x in r.setdefault('identity_candidates',[])):
    r['identity_candidates'].append({'document':d,'evidence_path':e['path']})
-  for key in ('link','fulltext_link','link_to_html'):
-   url=d.get(key)
-   if isinstance(url,str) and url.startswith(('https://','http://')):task(r,'source',url)
+  for url in document_links(d):task(r,'source',url)
   for a in d.get('abstracts') or []:
    text=a.get('abstract','').strip()
    if not text or classify(text)!='database_indexing_abstract':continue
@@ -55,6 +73,27 @@ def consume_response(p,r,payload,e,save=True):
 def inventory(p,r):
  repair_empty_evidence(r)
  state=r.setdefault('work_state',{'version':'remaining-work/1','tasks':[],'reviews':{}})
+ from source_kind import assess
+ evidence_index={e['path']:e for e in r['evidence']}
+ for existing in state['tasks']:
+  if existing['kind']!='source':continue
+  for path in existing.get('evidence_paths',[]):
+   e=evidence_index.get(path);data=valid_bytes(e) if e else None
+   if not data:continue
+   try:body=data.decode('utf-8-sig')
+   except UnicodeError:continue
+   if assess(body,None)=='no_resource':
+    existing.update(source_outcome='no_resource',reason='Observed resolver offers no electronic resource; this does not establish access restriction or exhaustive content absence.')
+ # Earlier selected responses omitted URI fields, but full observed documents
+ # survived in identity_candidates. Reuse those bytes with explicit provenance.
+ for candidate in list(r.get('identity_candidates',[])):
+  d=candidate.get('document',{})
+  if not document_matches(p,d):continue
+  links=document_links(d)
+  if not links:continue
+  if any(not any(t['kind']=='source' and t['target']==url for t in state['tasks']) for url in links):
+   e=capture(p['paper_id'],'retained-document-'+sha(json.dumps(d,sort_keys=True).encode())[:16]+'.json',json.dumps({'document':d,'origin_evidence_path':candidate.get('evidence_path'),'provenance':'Full observed Summon document preserved in result identity_candidates before selected-field projection.'},ensure_ascii=False),next((item['url'] for item in r['evidence'] if item['path']==candidate.get('evidence_path')),'https://knu.summon.serialssolutions.com/'),'retained-observed-document');e['media_type']='application/json';add_evidence(r,e)
+   for url in links:task(r,'source',url,reason='Observed matching document content URI requires inspection.',evidence_paths=[e['path']])
  identifiers=p.get('identifiers',{})
  queries=list(dict.fromkeys(identifiers.get('doi',[])+identifiers.get('isbn',[])))
  surname=p.get('authors',[''])[0].split(',')[0].split()[0] if p.get('authors') else ''
@@ -99,9 +138,53 @@ def inventory(p,r):
 def record_review(r,component,reason,paths,scope_complete=False):
  value={'basis_sha256':component_basis(r,component),'reason':reason,'evidence_paths':list(dict.fromkeys(paths)),'rule_code_sha256':{name:sha((ROOT/name).read_bytes()) for name in ('response_recovery.py','abstract_kind.py','resume.py','pdf_review.py','source_kind.py','mr_fields.py')},'tests':['test_response.py','test_display_markup.py','test_abstract_kind.py','test_resume.py','test_live_responses.py','test_pdf_review.py','test_source_kind.py','test_mr_fields.py']}
  if scope_complete:value['scope_complete']=True
+ value['method']='manual' if reason.startswith('Direct') else 'rule'
  r['work_state']['reviews'][component]=value
  for t in r['work_state']['tasks']:
   if t['kind']=='review' and t['target']==component:t.update(status='done',reason=reason,evidence_paths=value['evidence_paths'])
+
+def should_process(prior,reassess=False):return bool(reassess or pending_work(prior))
+
+def reassess_saved(p,r):
+ old={c:copy.deepcopy(r[c]) for c in ('identity','abstract','fulltext')};reviews=copy.deepcopy(r['work_state'].get('reviews',{}))
+ automatic=[c for c in old if reviews.get(c,{}).get('method')!='manual' and not reviews.get(c,{}).get('reason','').startswith('Direct')]
+ for c in automatic:
+  r['work_state']['reviews'].pop(c,None)
+  if c!='identity' and r[c].get('status')=='found':
+   for a in r[c].get('artifacts',[]):
+    evidence=dict(a);evidence.setdefault('kind','previously-accepted-component');add_evidence(r,evidence)
+   r[c]={'status':'unresolved','reason':'Explicit saved-evidence reassessment under current semantic rules.'}
+  task(r,'review',c).update(status='needs_review',reason='Explicitly recheck current component under current semantic rules.')
+ if 'fulltext' in automatic or ('abstract' in automatic and p.get('record_type')=='article'):
+  for c in r.get('fulltext_candidates',[]):
+   if c.get('status')=='accepted':c['status']='needs_review'
+ adjudicate_saved(p,r)
+ for c in automatic:
+  current=r['work_state']['reviews'].get(c,{})
+  if current.get('basis_sha256')!=component_basis(r,c):
+   if c!='identity' or not any(v.get('method')=='manual' or v.get('reason','').startswith('Direct') for v in reviews.values()):r[c]={'status':'unresolved','reason':'Previous automatic conclusion was not reconfirmed; original artifacts retained for direct review.'}
+   task(r,'review',c).update(status='needs_review',reason='Current rule did not reconfirm the previous conclusion; inspect preserved evidence.')
+  before={a.get('sha256') for a in old[c].get('artifacts',[])};after={a.get('sha256') for a in r[c].get('artifacts',[])}
+  if old[c].get('status')!=r[c].get('status') or before!=after:r.setdefault('reassessment_history',[]).append({'component':c,'previous':old[c],'previous_review':reviews.get(c),'reason':'Explicit reassessment changed or reopened the conclusion.'})
+ return r
+
+def reopen_cpe_routes(r):
+ if r['abstract'].get('status')=='found' and r['fulltext'].get('status')=='found':return
+ from source_kind import assess
+ evidence={e['path']:e for e in r['evidence']};opened=False
+ for t in r.get('work_state',{}).get('tasks',[]):
+  if t['kind'] not in ('source','pdf') or t.get('last_browser')=='firefox':continue
+  for path in t.get('evidence_paths',[]):
+   e=evidence.get(path);data=valid_bytes(e) if e else None
+   if data:
+    try:body=data.decode('utf-8-sig')
+    except UnicodeError:continue
+    if assess(body,None)=='provider_failure':
+     t.update(status='retry',preferred_browser='firefox',reason='A normal authenticated Firefox ScienceDirect route is now verified; this source requires that alternative before any CPE-based conclusion.');opened=True;break
+ if opened:
+  for c in ('abstract','fulltext'):
+   if r[c].get('status') in ('unavailable','not_found'):
+    r.setdefault('reassessment_history',[]).append({'component':c,'previous':r[c],'reason':'New normal Firefox provider route requires renewed source investigation.'});r[c]={'status':'unresolved','reason':'Verified Firefox alternative has not yet been checked for this source.'};r['work_state']['reviews'].pop(c,None)
 
 def adjudicate_saved(p,r):
  if r['abstract'].get('status')=='found':
@@ -126,9 +209,28 @@ def adjudicate_saved(p,r):
   if not checked:continue
   if r['identity'].get('status')!='confirmed':r['identity']={'status':'confirmed','reason':checked['reason']}
   record_review(r,'identity',checked['reason'],[e['path']]);r['work_state']['reviews']['identity']['rule_code_sha256']['mr_review.py']=sha((ROOT/'mr_review.py').read_bytes());r['work_state']['reviews']['identity']['tests'].append('test_mr_review.py')
+  if r['abstract'].get('status')!='found':
+   from selected_summary import approved
+   decision_path=ROOT/'selected-summary-decisions.json'
+   selected=approved(p['paper_id'],data,json.loads(decision_path.read_text(encoding='utf-8')))
+   if selected:
+    a=capture(p['paper_id'],'mathscinet-selected-summary.txt',selected['text'],e['url'],'database-selected-summary')
+    r['abstract']=database_abstract(selected['text'],a)
+    r['abstract'].update(source_kind='database_selected_summary',provided_by='MathSciNet',section_heading=selected['section_heading'],wording_source=selected['wording_source'],author_abstract_verified=False,quotation_boundary={'open':selected['quotation_open'],'close':selected['quotation_close'],'quote_sha256':selected['quote_sha256']},raw_format='MathSciNet_text_with_TeX_preserved',reason=selected['reason'])
+    record_review(r,'abstract',selected['reason'],[e['path'],a['path']])
+    r['work_state']['reviews']['abstract']['rule_code_sha256'].update({'selected_summary.py':sha((ROOT/'selected_summary.py').read_bytes()),'selected-summary-decisions.json':sha(decision_path.read_bytes())});r['work_state']['reviews']['abstract']['tests'].append('test_selected_summary.py')
+    if selected['following']:
+     extra=capture(p['paper_id'],'mathscinet-following-selected-summary.txt',selected['following'],e['url'],'database-apparatus-outside-quotation')
+     if not any(v.get('artifact',{}).get('sha256')==extra['sha256'] for v in r.get('additional_content',[])):r.setdefault('additional_content',[]).append({'kind':'database-apparatus-outside-quotation','artifact':extra})
   if checked['abstract'] and r['abstract'].get('status')!='found':
    a=capture(p['paper_id'],'mathscinet-summary.txt',checked['abstract'],e['url'],'database-indexing-abstract');r['abstract']=database_abstract(checked['abstract'],a);r['abstract']['provided_by']='MathSciNet'
+   if checked.get('wording_source'):r['abstract']['wording_source']=checked['wording_source']
+   if re.search(r'\\[A-Za-z]|``',checked['abstract']):r['abstract']['raw_format']='MathSciNet_text_with_TeX_preserved'
    record_review(r,'abstract','Corresponding single-MR detail explicitly supplies a complete quoted Summary; source excerpts and shared reviews are excluded by the tested boundary rule.',[e['path'],a['path']]);r['work_state']['reviews']['abstract']['rule_code_sha256']['mr_review.py']=sha((ROOT/'mr_review.py').read_bytes());r['work_state']['reviews']['abstract']['tests'].append('test_mr_review.py')
+  for key,kind in [('editorial_note','editorial-bibliographic-note'),('additional_description','publisher-audience-description')]:
+   if checked.get(key):
+    a=capture(p['paper_id'],'mathscinet-'+key+'.txt',checked[key],e['url'],kind)
+    if not any(x.get('artifact',{}).get('sha256')==a['sha256'] for x in r.get('additional_content',[])):r.setdefault('additional_content',[]).append({'kind':kind,'artifact':a})
  matches=[]
  for e in r['evidence']:
   if not e['path'].endswith('.json'):continue
@@ -192,7 +294,12 @@ def adjudicate_saved(p,r):
      r['abstract']={'status':'found','source_kind':'printed_author_abstract','artifacts':[a],'reason':'Printed first-page ABSTRACT heading and complete body retained as image; keywords excluded; preserves typography and diacritics without OCR correction.'};record_review(r,'abstract',r['abstract']['reason'],[c['artifact']['path'],a['path']]);r['work_state']['reviews']['abstract']['rule_code_sha256']['article_review.py']=sha((ROOT/'article_review.py').read_bytes());r['work_state']['reviews']['abstract']['tests'].append('test_article_review.py')
     for t in r['work_state']['tasks']:
      if t['kind']=='review' and t['target']==c['artifact']['path']:t.update(status='done',reason=match['reason'],evidence_paths=[c['artifact']['path']])
+ reopen_cpe_routes(r)
  close_restricted_fulltext(r)
+ from negative_review import unavailable_abstract
+ negative=unavailable_abstract(p,r)
+ if negative:
+  r['abstract']={'status':negative['status'],'reason':negative['reason']};record_review(r,'abstract',negative['reason'],negative['evidence_paths'],scope_complete=True);r['work_state']['reviews']['abstract']['rule_code_sha256']['negative_review.py']=sha((ROOT/'negative_review.py').read_bytes());r['work_state']['reviews']['abstract']['tests'].append('test_negative_review.py')
  close_satisfied_work(r)
  return r
 
@@ -225,9 +332,11 @@ def close_restricted_fulltext(r):
    if data:
     try:bodies.append(data.decode('utf-8-sig'))
     except UnicodeError:pass
-  if not any(re.search(r'Unusual Traffic Detected \(Error 418\)|preview of subscription content|이용가능한 전자자료가 없습니다',body,re.I) for body in bodies):return
+  from source_kind import assess
+  if any(assess(body,None)=='provider_failure' for body in bodies):return
+  elif not any(re.search(r'Unusual Traffic Detected \(Error 418\)|preview of subscription content|보안 확인 수행 중',body,re.I) for body in bodies):return
   paths.extend(t['evidence_paths'])
- r['fulltext']={'status':'unavailable','reason':'All inventoried required searches and source/download links were visited; corresponding provider pages explicitly show traffic restriction, subscription preview or no available electronic resource. No complete fulltext PDF was obtained.'}
+ r['fulltext']={'status':'unavailable','reason':'All inventoried required searches and source/download links were visited; corresponding provider pages explicitly show traffic restriction, or subscription preview. No complete fulltext PDF was obtained.'}
  record_review(r,'fulltext',r['fulltext']['reason'],paths,scope_complete=True)
 
 def retry(fn,wait=time.sleep):
@@ -241,7 +350,14 @@ def page_progress(t,total,received,paths):
  t.update(discovered=total,attempted=received,remaining=max(0,total-received),evidence_paths=list(dict.fromkeys(paths)),status='done' if received>=total else 'pending',reason='Observed UI result documents processed; remaining count refers to documents, not pages.')
 
 def fulltext_links(links):
- return [v for v in links if v.get('url','').startswith(('https://','http://')) and not re.search(r'review|reference|citation|supplement|cover|table.of.contents',v.get('text',''),re.I) and re.search(r'pdf|full.?text|download|view article|read article|^article$|원문',v.get('text','')+' '+v.get('url',''),re.I)]
+ selected=[]
+ for v in links:
+  url=v.get('url','');label=' '.join(v.get('text','').split())
+  if not url.startswith(('https://','http://')):continue
+  if re.fullmatch(r'review pdf|references|cited by|table of contents|cover(?: image)?',label,re.I) or re.search(r'(?:export|download)\s+(?:a\s+)?citation',label,re.I):continue
+  if re.search(r'/(?:download/)?(?:cited-by|citation|bibtex|ris)(?:[/?]|$)',url,re.I):continue
+  if label.lower()=='article' or re.search(r'pdf|full.?text|download|view article|read article|원문',label+' '+url,re.I):selected.append(v)
+ return selected
 
 def narrow_query(p,payload):
  from response_recovery import display_text
@@ -286,6 +402,7 @@ def prefetch_identifiers(page,work,metrics):
   e=capture('_batches','resume-'+sha(query.encode())[:16]+'.json',json.dumps(selected_payload(payload),ensure_ascii=False,indent=2),page.url,'observed-ui-search-response');e['media_type']='application/json'
   for p,r,t in items:
    add_evidence(r,e);consume_response(p,r,payload,e);t.update(status='done',reason='Complete actual UI identifier batch response examined for this identifier.',evidence_paths=[e['path']]);metrics['batch_candidate_reuse']=metrics.get('batch_candidate_reuse',0)+1;adjudicate_saved(p,r)
+   response_attempt(r,payload,e,'Submitted identifier batch through actual Summon search UI')
    store_json(ROOT/'results'/f"{p['paper_id']}.json",r)
  for offset in range(0,len(group),6):fetch(group[offset:offset+6])
 
@@ -296,6 +413,7 @@ def search_pages(page,p,r,t,metrics):
   if query:
    payload=retry(lambda:search_ui(page,query));metrics['searches']+=1
    e=capture(p['paper_id'],'fielded-'+sha(query.encode())[:12]+'.json',json.dumps(selected_payload(payload),ensure_ascii=False,indent=2),page.url,'observed-ui-search-response');e['media_type']='application/json';add_evidence(r,e);rows=consume_response(p,r,payload,e)
+   response_attempt(r,payload,e,'Submitted observed title/author field expression through normal search UI')
    ft=task(r,'search',query);page_progress(ft,int(payload['record_count']),len(payload['documents']),[e['path']])
    if ft['status']=='done' and (rows or r['identity'].get('status')=='confirmed'):
     t.update(status='not_needed',reason='Required title/author search performed in the actual indexed TitleCombined/AuthorCombined fields; publication year and edition are checked in returned bibliography. Fulltext-only citation search superseded.',evidence_paths=[e['path']]);return
@@ -303,9 +421,11 @@ def search_pages(page,p,r,t,metrics):
  narrow=narrow_query(p,payload) if int(payload['record_count'])>100 else None
  if narrow and narrow!=t['target']:
   e=capture(p['paper_id'],'broad-'+sha(t['target'].encode())[:12]+'.json',json.dumps(selected_payload(payload),ensure_ascii=False,indent=2),page.url,'observed-ui-search-response');e['media_type']='application/json';add_evidence(r,e);consume_response(p,r,payload,e)
+  response_attempt(r,payload,e,'Submitted broad UI query before narrowing')
   narrow_payload=retry(lambda:search_ui(page,narrow));metrics['searches']+=2
   if int(narrow_payload['record_count'])<=len(narrow_payload['documents']) and select_documents(p,narrow_payload,narrow):
    ne=capture(p['paper_id'],'narrow-'+sha(narrow.encode())[:12]+'.json',json.dumps(selected_payload(narrow_payload),ensure_ascii=False,indent=2),page.url,'observed-ui-search-response');ne['media_type']='application/json';add_evidence(r,ne);consume_response(p,r,narrow_payload,ne)
+   response_attempt(r,narrow_payload,ne,'Submitted narrowed observed-title UI query')
    nt=task(r,'search',narrow);page_progress(nt,int(narrow_payload['record_count']),len(narrow_payload['documents']),[ne['path']])
    t.update(status='not_needed',reason='Exact observed title, author and year query confirms target bibliography in a complete narrower result set; broad fulltext term matches superseded.',evidence_paths=[e['path'],ne['path']],discovered=int(payload['record_count']),attempted=len(payload['documents']),remaining=int(payload['record_count'])-len(payload['documents']))
    return
@@ -314,6 +434,7 @@ def search_pages(page,p,r,t,metrics):
  while True:
   page_number+=1;metrics['searches']+=1
   e=capture(p['paper_id'],f"search-{sha(t['target'].encode())[:12]}-{page_number}.json",json.dumps(selected_payload(payload),ensure_ascii=False,indent=2),page.url,'observed-ui-search-response');e['media_type']='application/json';add_evidence(r,e)
+  response_attempt(r,payload,e,'Submitted search UI or followed observed next-page control')
   consume_response(p,r,payload,e);paths.append(e['path']);received+=len(payload['documents'])
   page_progress(t,int(payload['record_count']),received,paths)
   store_json(ROOT/'results'/f"{p['paper_id']}.json",r)
@@ -348,7 +469,7 @@ def save_pdf(p,r,data,url,metrics):
  return e
 
 def visit_source(context,p,r,t,metrics):
- page=context.new_page();metrics['source_visits']+=1
+ page=context.new_page();metrics['source_visits']+=1;t['last_browser']=context.browser.browser_type.name
  try:
   observed=[]
   page.on('response',lambda response:observed.append(response) if 'application/pdf' in response.headers.get('content-type','').lower() else None)
@@ -366,10 +487,14 @@ def visit_source(context,p,r,t,metrics):
      download=context.request.get(pdf.url,timeout=30000)
      e=save_pdf(p,r,download.body(),pdf.url,metrics)
    except Exception:continue
-   if e:t.update(status='done',reason='Observed PDF saved for worker content review.',evidence_paths=[e['path']]);return
+   if e:
+    t.update(status='done',reason='Observed PDF saved for worker content review.',evidence_paths=[e['path']]);r['attempts'].append({'method':'playwright','query':t['target'],'url':e['url'],'outcome':t['reason']});return
   page.wait_for_timeout(1000)
   body=page.locator('main').first if page.locator('main').count() else page.locator('body')
   text=body.inner_text(timeout=10000)
+  if re.fullmatch(r'(?:Loading|Please wait)[.\s…]*',text.strip(),re.I):
+   page.wait_for_function("() => {const t=(document.querySelector('main')||document.body).innerText.trim(); return t && !/^(Loading|Please wait)[.\\s…]*$/i.test(t)}",timeout=30000)
+   body=page.locator('main').first if page.locator('main').count() else page.locator('body');text=body.inner_text()
   status=response.status if response else None
   if text.strip():e=capture(p['paper_id'],'source-'+sha(t['target'].encode())[:16]+'.txt',text,page.url,'provider-page')
   else:e=capture(p['paper_id'],'source-'+sha(t['target'].encode())[:16]+'.observation.json',json.dumps({'body_text_length':0,'http_status':status,'outcome':'Empty rendered provider page; content not assessed.'}),page.url,'empty-page-observation')
@@ -387,6 +512,9 @@ def visit_source(context,p,r,t,metrics):
   outcome=assess(text,status);t['source_outcome']=outcome
   if outcome=='retry':t.update(status='retry',reason=f'Actual source HTTP {status} or empty rendering needs retry; retained response is not a content conclusion.')
   elif outcome=='link_not_found':t['reason']='Actual handle resolver explicitly reports this requested handle cannot be found; only this link is unavailable.'
+  elif outcome=='provider_failure':
+   if t['last_browser']=='firefox':t.update(status='needs_review',preferred_browser='firefox',reason='Firefox institution context was tried for this target but CPE persists; inspect the normal public detail/source route before a negative conclusion.')
+   else:t.update(status='retry',preferred_browser='firefox',reason='Observed CPE00001 content-provision failure; verified Firefox institution route remains to be checked. This is not a subscription rejection.')
   r['attempts'].append({'method':'playwright','query':t['target'],'url':page.url,'outcome':t['reason']})
  finally:page.close()
 
@@ -396,7 +524,8 @@ def download_link(context,p,r,t,metrics):
   return context.request.get(t['target'],timeout=30000)
  response=retry(request)
  e=save_pdf(p,r,response.body(),response.url,metrics)
- if e:t.update(status='done',reason='Observed UI download link returned a readable PDF; content review remains.',evidence_paths=[e['path']])
+ if e:
+  t.update(status='done',reason='Observed UI download link returned a readable PDF; content review remains.',evidence_paths=[e['path']]);r['attempts'].append({'method':'playwright','query':t['target'],'url':e['url'],'outcome':t['reason']})
  else:visit_source(context,p,r,t,metrics)
 
 def mr_search(page,p,r,t,metrics):
@@ -413,58 +542,89 @@ def mr_search(page,p,r,t,metrics):
  t.update(status='done',reason='MathSciNet identifier detail opened using actual search UI; bibliography preserved.',evidence_paths=[e['path']])
  r['attempts'].append({'method':'playwright','query':t['target'],'url':page.url,'outcome':t['reason']})
 
-def process_tasks(context,sp,mp,p,r,metrics):
+def process_tasks(context,sp,mp,p,r,metrics,firefox_provider=None):
  attempted=set()
  while True:
   active=next_task(r,attempted)
   if active is None:break
   attempted.add(active['key']);start=time.monotonic();before=tuple(len(r.get(k,[])) for k in ('identity_candidates','abstract_candidates','fulltext_candidates'))
   try:
+   source_context=context
+   if active.get('preferred_browser')=='firefox' and firefox_provider:
+    source_context,proof=firefox_provider.get()
+    if proof:
+     e=capture('_browser','firefox-provider-ready.json',json.dumps(proof,ensure_ascii=False,indent=2),proof['url'],'authenticated-provider-ui');add_evidence(r,e)
    if active['kind']=='search':
     if re.fullmatch(r'MR\d+',active['target']):mr_search(mp,p,r,active,metrics)
     else:search_pages(sp,p,r,active,metrics)
-   elif active['kind']=='pdf':download_link(context,p,r,active,metrics)
-   else:visit_source(context,p,r,active,metrics)
+   elif active['kind']=='pdf':download_link(source_context,p,r,active,metrics)
+   else:visit_source(source_context,p,r,active,metrics)
+   if active.get('source_outcome')=='provider_failure' and active.get('last_browser')!='firefox' and firefox_provider:
+    source_context,proof=firefox_provider.get()
+    if proof:
+     e=capture('_browser','firefox-provider-ready.json',json.dumps(proof,ensure_ascii=False,indent=2),proof['url'],'authenticated-provider-ui');add_evidence(r,e)
+    visit_source(source_context,p,r,active,metrics)
   except Exception as exc:
    message=re.sub(r'https?://\S+','[URL omitted]',str(exc))[:1800]
+   message=re.sub(r'(?im)^\s*[- ]*(?:cookie|set-cookie|authorization|x-api-key)\s*:.*$','[private header omitted]',message)
    active.update(status='retry',reason=type(exc).__name__+': '+message)
    r.setdefault('execution_errors',[]).append({'task':active['key'],'type':type(exc).__name__,'detail':message,'time':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime())})
+   error_url=active['target'] if active['target'].startswith(('https://','http://')) else getattr(mp if re.fullmatch(r'MR\d+',active['target']) else sp,'url','https://knu.summon.serialssolutions.com/')
+   parts=urlsplit(error_url);error_url=parts._replace(query='',fragment='').geturl()
+   e=capture(p['paper_id'],'collection-error-'+sha(active['key'].encode())[:12]+'.json',json.dumps({'task':active['key'],'query':active['target'],'exception_type':type(exc).__name__,'detail':message,'outcome':'Collection step failed; no absence conclusion follows.'},ensure_ascii=False,indent=2),error_url,'collector-error-observation');e['media_type']='application/json';add_evidence(r,e)
+   active['evidence_paths']=[e['path']];r['attempts'].append({'method':'playwright','query':active['target'],'url':error_url,'outcome':active['reason']})
   active['elapsed_seconds']=round(time.monotonic()-start,3)
   after=tuple(len(r.get(k,[])) for k in ('identity_candidates','abstract_candidates','fulltext_candidates'))
   if after!=before:adjudicate_saved(p,r)
   store_json(ROOT/'results'/f"{p['paper_id']}.json",r)
 
 def main():
- parser=argparse.ArgumentParser();parser.add_argument('--limit',type=int);parser.add_argument('--saved-only',action='store_true');parser.add_argument('--paper-id',action='append');args=parser.parse_args()
+ parser=argparse.ArgumentParser();parser.add_argument('--limit',type=int);parser.add_argument('--saved-only',action='store_true');parser.add_argument('--reassess',action='store_true');parser.add_argument('--paper-id',action='append');parser.add_argument('--shard-index',type=int,default=0);parser.add_argument('--shard-count',type=int,default=1);parser.add_argument('--max-papers',type=int);args=parser.parse_args()
  manifest_path,execution=manifest(sys.argv);start=time.monotonic();metrics=execution['metrics']
  papers=[json.loads(line) for line in (BASE/ASSIGN['members_path']).read_text(encoding='utf-8-sig').splitlines() if line.strip()]
+ from shard import partition
+ papers=partition(papers,args.shard_index,args.shard_count)
+ run.configure_scope(papers,args.shard_index,args.shard_count)
+ execution['shard']={'index':args.shard_index,'count':args.shard_count,'assigned':len(papers),'owned_ids_sha256':sha('\n'.join(p['paper_id'] for p in papers).encode())};store_json(manifest_path,execution)
  if args.paper_id:papers=[p for p in papers if p['paper_id'] in args.paper_id]
  if args.limit is not None:papers=papers[:args.limit]
- work=[]
+ work=[];missing_ids=set()
  for p in papers:
   path=ROOT/'results'/f"{p['paper_id']}.json"
   prior=json.loads(path.read_text(encoding='utf-8-sig')) if path.exists() else None
+  if prior is None:missing_ids.add(p['paper_id'])
   if args.saved_only and prior is None:continue
-  if prior and not pending_work(prior):continue
-  r=inventory(p,prior or new_result(p));adjudicate_saved(p,r);metrics['saved_evidence_reused']+=sum(t['status']=='done' for t in r['work_state']['tasks'])
+  if prior and not should_process(prior,args.reassess):continue
+  r=inventory(p,prior or new_result(p))
+  if args.reassess:reassess_saved(p,r)
+  else:adjudicate_saved(p,r)
+  metrics['saved_evidence_reused']+=sum(t['status']=='done' for t in r['work_state']['tasks'])
   if prior:store_json(path,r)
   work.append((p,r))
+ work.sort(key=lambda pair:pair[0]['paper_id'] not in missing_ids)
+ if args.max_papers is not None:work=work[:args.max_papers]
  if not args.saved_only:
   from playwright.sync_api import sync_playwright
   with sync_playwright() as pw:
+   from firefox_provider import FirefoxProvider
+   firefox_provider=FirefoxProvider(pw,ASSIGN['browser_state'])
    browser=pw.chromium.launch(channel='chrome',headless=True);context=browser.new_context(storage_state=ASSIGN['browser_state']);context.set_default_timeout(15000)
-   sp=context.new_page();sp.goto('https://knu.summon.serialssolutions.com/ko-KO/search?ho=t&q=');sp.locator('#ho0').wait_for()
+   context.on('response',lambda response:observe_response(response,metrics))
+   sp=context.new_page();sp.goto('https://kudos.knu.ac.kr/pages/index.htm',wait_until='domcontentloaded');sp.get_by_role('link',name='로그아웃',exact=True).wait_for(state='visible')
+   execution['authentication']=capture('_browser','chrome-authentication.json',json.dumps({'authenticated':True,'visible_logout':True,'observed_at':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),'pid':os.getpid()}),sp.url,'authentication-observation');store_json(manifest_path,execution)
+   sp.goto('https://knu.summon.serialssolutions.com/ko-KO/search?ho=t&q=');sp.locator('#ho0').wait_for()
    if not sp.locator('#ho0').is_checked():sp.locator('#ho0').press('Space')
    sp.wait_for_function("document.querySelector('#ho0').checked");sp.wait_for_timeout(1500)
    mp=context.new_page()
    for index,(p,r) in enumerate(work):
     if index%6==0:prefetch_identifiers(sp,work[index:index+6],metrics)
-    process_tasks(context,sp,mp,p,r,metrics)
+    process_tasks(context,sp,mp,p,r,metrics,firefox_provider=firefox_provider)
     adjudicate_saved(p,r);store_json(ROOT/'results'/f"{p['paper_id']}.json",r)
     metrics['review_waiting']=sum(t['status']=='needs_review' for t in r['work_state']['tasks'])
     metrics['elapsed_seconds']=round(time.monotonic()-start,3);store_json(manifest_path,execution)
     run.progress('resume-content-review-and-browser',p['paper_id']);print(json.dumps({'paper_id':p['paper_id'],'open_tasks':len(pending_work(r)),'abstract_candidates':len(r.get('abstract_candidates',[])),'fulltext_candidates':len(r.get('fulltext_candidates',[]))}),flush=True)
-   browser.close()
+   firefox_provider.close();browser.close()
+ if args.saved_only:run.progress('saved-evidence-reassessed' if args.reassess else 'saved-evidence-assessed')
  metrics['elapsed_seconds']=round(time.monotonic()-start,3);execution['ended_at']=time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime());store_json(manifest_path,execution)
  import subprocess
  execution['checker_at_launch']={'time':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),'code_sha256':{name:sha((ROOT.parent/name).read_bytes()) for name in ('check_recovery.py','work_queue.py')}};store_json(manifest_path,execution)
@@ -474,7 +634,7 @@ def main():
 def manifest(argv):
  now=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())
  path=ROOT/'runs'/f'{now}-{os.getpid()}.json'
- code=list(ROOT.glob('*.py'))+[ROOT.parent/'work_queue.py',ROOT.parent/'check_recovery.py']
+ code=list(ROOT.glob('*.py'))+[ROOT/'selected-summary-decisions.json',ROOT.parent/'work_queue.py',ROOT.parent/'check_recovery.py']
  value={'started_at':now,'pid':os.getpid(),'arguments':[sys.executable,*argv], 'code_sha256':{str(f.relative_to(ROOT.parent)):sha(f.read_bytes()) for f in code},'metrics':{'searches':0,'source_visits':0,'download_attempts':0,'pdf_responses':0,'new_pdf_files':0,'saved_evidence_reused':0,'review_waiting':0,'elapsed_seconds':0}}
  store_json(path,value);return path,value
 

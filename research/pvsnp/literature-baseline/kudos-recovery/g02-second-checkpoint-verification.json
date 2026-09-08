@@ -1,0 +1,20 @@
+{
+  "checked_at": "2026-09-08T19:34:08.885822+00:00",
+  "selection": "g02-second-checkpoint-paths.json",
+  "files_checked": 73,
+  "hash_mismatches": [],
+  "runtime_manifests": [
+    [
+      22016,
+      52
+    ],
+    [
+      20228,
+      52
+    ]
+  ],
+  "frozen_run_snapshot": "operator-checks/g02-two-shard-startup-checkpoint.json",
+  "snapshot_sha256": "886606fd196bad8519a0af3b1994e0f188bad99d0ff2ec9bf63291e818a8e59c",
+  "tests": "113 collector regressions in tdd/two-shard-production-regression.txt;3 operator snapshot regressions in tdd/snapshot-progress-green.txt",
+  "scope": "Runtime code, exact selected-summary source/quotation decisions, partition and atomic write tests. Later mixed_source_scope.py is not yet used by these runs and is excluded."
+}

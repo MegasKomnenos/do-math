@@ -1,0 +1,27 @@
+...EF.
+======================================================================
+ERROR: test_result_write_rejects_other_shard_before_creating_file (__main__.ShardTests.test_result_write_rejects_other_shard_before_creating_file)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_shard.py", line 26, in test_result_write_rejects_other_shard_before_creating_file
+    with tempfile.TemporaryDirectory() as directory,patch.object(run,'ROOT',Path(directory)),patch.object(run,'OWNED_IDS',{'mine'}):
+                                                                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wogud\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py", line 1467, in __enter__
+    original, local = self.get_original()
+                      ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wogud\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py", line 1437, in get_original
+    raise AttributeError(
+AttributeError: <module 'run' from 'C:\\math\\research\\pvsnp\\literature-baseline\\kudos-recovery\\g02\\run.py'> does not have the attribute 'OWNED_IDS'
+
+======================================================================
+FAIL: test_shared_capture_parallel_writes_preserve_every_hash (__main__.ShardTests.test_shared_capture_parallel_writes_preserve_every_hash)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_shard.py", line 36, in test_shared_capture_parallel_writes_preserve_every_hash
+    self.assertEqual(len({r['path'] for r in records}),32)
+AssertionError: 31 != 32
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.399s
+
+FAILED (failures=1, errors=1)

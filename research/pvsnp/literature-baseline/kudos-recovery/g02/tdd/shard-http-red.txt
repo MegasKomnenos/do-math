@@ -1,0 +1,14 @@
+..E....
+======================================================================
+ERROR: test_http_failure_metrics_retain_host_and_request_type_without_query (__main__.ShardTests.test_http_failure_metrics_retain_host_and_request_type_without_query)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_shard.py", line 44, in test_http_failure_metrics_retain_host_and_request_type_without_query
+    self.assertEqual(metrics['all_http_5xx'],1);self.assertEqual(metrics['http_failures'][0],{'status':503,'host':'provider.test','path':'/paper','resource_type':'document'})
+                                                                 ~~~~~~~^^^^^^^^^^^^^^^^^
+KeyError: 'http_failures'
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.434s
+
+FAILED (errors=1)

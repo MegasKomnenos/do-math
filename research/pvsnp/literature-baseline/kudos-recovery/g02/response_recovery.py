@@ -5,7 +5,7 @@ _LAST_SUBMIT=weakref.WeakKeyDictionary()
 SUBMIT_INTERVAL_SECONDS=0.55
 from urllib.parse import parse_qs
 from recovery import doi_key
-FIELDS=['title','full_title','dois','isbn','isbns','eisbns','authors','editors','corporate_authors','publication_years','publication_date','content_type','content_types','abstracts','page_count','page_counts','pages','start_pages','end_pages','volumes','issues','publication_title','publishers','publisher','genres','editions','edition','edition_statement','link','fulltext_link','link_to_html']
+FIELDS=['title','full_title','dois','isbn','isbns','eisbns','authors','editors','corporate_authors','publication_years','publication_date','content_type','content_types','abstracts','page_count','page_counts','pages','start_pages','end_pages','volumes','issues','publication_title','publishers','publisher','genres','editions','edition','edition_statement','link','fulltext_link','link_to_html','uris','open_access_link']
 
 def display_text(s):
  return re.sub(r'</?(?:mark|i|b|em|strong)(?:\s+[^<>]*?)?>','',html.unescape(str(s)),flags=re.I)

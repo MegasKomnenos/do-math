@@ -6,6 +6,8 @@ def classify(text):
  key=re.sub(r'[^a-z]','',t.lower())
  if not t or key in {'abstract','noabstract','noabstractavailable','noabstractprovided','na'}:return 'placeholder'
  if '\ufffd' in t or re.search(r'[A-Za-z]\?[A-Za-z]',t):return 'damaged_text'
+ audience=t.lstrip('`\"\'“” ')
+ if re.match(r'this (?:book|volume|text) is of interest to\b',audience,re.I) and not re.search(r'\b(?:(?:this|the)\s+(?:book|volume|text|edition)|it)\s+(?:\w+\s+){0,3}(?:presents|develops|contains|covers|explores|introduces|describes|examines|discusses)\b',audience,re.I):return 'audience_only'
  if re.search(r'\bI (?:earnestly )?recommend this book\b|\bI have always considered this book\b',t,re.I):return 'review_excerpt'
  if re.match(r'\s*(?:from\s+the\s+reviews?|reviewed\s+by|book\s+review\s*:)',t,re.I):return 'review_excerpt'
  if re.match(r'\s*(?:from\s+(?:the\s+)?(?:preface|introduction|text)|preface\s*:)',t,re.I):return 'source_excerpt'

@@ -40,7 +40,7 @@
   "replacement_snapshot": "restart-snapshot.json",
   "g05_root_pdf_reservation": "All ten transferred to new g05 worker; root did not finish review.",
   "latest_operator_audit": {
-    "updated_at": "2026-09-08T18:33:05.080336+00:00",
+    "updated_at": "2026-09-08T19:35:42.622547+00:00",
     "common_checks": "20 existing + 4 resume regressions + 12 work-queue boundary tests passed; actual old1556 result partial checks passed/incomplete.",
     "old_agents_stopped": true,
     "new_workers": "g02/g05/g08 replacements continue TDD, actual browser collection and evidence assessment.",
@@ -54,17 +54,21 @@
     "new_public_sources": "Vakil actual7page extraction completed by g08; Burgos actual UB download href independently observed by root,25pagePDF recovered by g08. Public scope27records/54queries reopened.",
     "advanced_search": "Root actual Summon TitleCombined + AuthorCombined dialog interaction validated,18/18 records,ho=f. Shared-findings and raw operator fixture record exact controls and first-row initialization failure.",
     "latest_known_native_sessions": {
-      "g02": "Read current runs manifest and verify actual process; checkpoint repairs may replace PIDs.",
-      "g05": "Read current runs manifest and verify actual process; checkpoint repairs may replace PIDs.",
-      "g08": "Read current runs manifest and verify actual process; checkpoint repairs may replace PIDs."
+      "g02": "Fixed shards:PID22016 and20228, start20260908T191233Z; verify current state before acting.",
+      "g05": "Read latest runs; new full HTML/MathML/image probe follows native institutional pass.",
+      "g08": "Chrome PID9884 at latest process observation; bounded separate MathSciNet6-record DOM reading allowed, results remain single-writer."
     },
     "authentication": "KUDOS bootstrap expired (visible login/no logout); operator renewed atomically and validated fresh Chrome and Firefox contexts. Credentials remain private.",
     "sciencedirect": "Chrome after renewed auth remained CPE; Firefox default normal homepage reproduced, but g05 institutional PII still CPE. Public Firefox article detail worked for Max-SAT abstract. Reopen affected CPE-only verdicts and follow per-document live evidence; do not claim institution lacks subscription.",
     "g02_checkpoint": "8c15802 captured80-test stable code; only test_run trailing space changed with identicalAST/4test rerun. Later negative_review/source-link/reassessment repairs are ongoing, not in that checkpoint.",
     "new_negative_counterexample": "Root directly read VER-2a20cc1ccaddd97f89693ecf: resolver no-electronic-resource was incorrectly marked restricted/unavailable. g02 was assigned actual regression, classification repair, URI inventory check and saved-evidence reassessment.",
-    "selected_summary": "Root read MR0733454 full quoted synopsis in Review section; contract now permits database_selected_summary while preserving actual section, wording source, quotation boundary and unverified author-abstract status."
+    "selected_summary": "Root read MR0733454 full quoted synopsis in Review section; contract now permits database_selected_summary while preserving actual section, wording source, quotation boundary and unverified author-abstract status.",
+    "g08_checkpoint": "106a866:56 specified files plus manifest,100 tests/logs, actual View PDF click/CPE boundary; source/result data collection continues.",
+    "g02_repair": "888 saved records reassessed;259 no_resource observations corrected; actual CiNii URI visited.900+ results now growing in two fixed shards.113 collector tests and3 operator snapshot tests passed.",
+    "g05_abstract_reassessment": "267 to264 reflected3 explicit mathematical formatting reviews. Root verified prior objects, retained artifacts and open review tasks; no simple source-failure overwrite.",
+    "scopus": "Firefox actual KUDOS route loaded basic DOI selector and changing input. First g07 DOI returned1/1, detailed metadata and Full text > observed institution DOI link were read. Raw captures under operator; no production g07 result written."
   },
-  "recorded_checkpoint_commit": "8c15802",
+  "recorded_checkpoint_commit": "106a866",
   "pending_user_input": {
     "topic": "Elsevier organizational email",
     "question_sent": true,

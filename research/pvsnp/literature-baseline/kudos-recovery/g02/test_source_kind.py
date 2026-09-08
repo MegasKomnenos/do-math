@@ -3,6 +3,11 @@ from pathlib import Path
 from source_kind import assess
 BASE=Path(__file__).resolve().parents[2]
 class SourceKindTests(unittest.TestCase):
+ def test_loading_wrapper_is_not_completed_content(self):self.assertEqual(assess('Loading...',200),'retry')
+ def test_actual_cpe_is_provider_failure_not_subscription_rejection(self):
+  import json
+  proof=json.loads((BASE/'intake/kudos-recovery/operator/sciencedirect-after-renewal.json').read_text(encoding='utf-8'))
+  self.assertEqual(assess(proof['body'],200),'provider_failure')
  def test_actual_handle_not_found_is_specific_to_link(self):
   text=(BASE/'intake/kudos-recovery/g02/VER-00108c1d6fee2df17ddd9c9d/source-62384b739ceb55ac.txt').read_text(encoding='utf-8')
   self.assertEqual(assess(text,500),'link_not_found')

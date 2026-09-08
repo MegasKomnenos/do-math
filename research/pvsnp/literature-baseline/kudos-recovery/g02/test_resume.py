@@ -5,6 +5,14 @@ import resume
 from unittest.mock import patch
 
 class ResumeTests(unittest.TestCase):
+ def test_preferred_firefox_uses_sequential_fallback_context(self):
+  r=resume.new_result(PAPERS[0]);t=resume.task(r,'source','https://example.org/provider');t['preferred_browser']='firefox';chrome=object();firefox=object();seen=[]
+  class Provider:
+   def get(self):return firefox,None
+  def visit(context,paper,record,active,metrics):seen.append(context);active.update(status='done',reason='fixture visit',evidence_paths=['fixture'])
+  with patch.object(resume,'visit_source',side_effect=visit),patch.object(resume,'store_json'):
+   resume.process_tasks(chrome,None,None,PAPERS[0],r,{},firefox_provider=Provider())
+  self.assertEqual(seen,[firefox])
  def test_fulltext_source_precedes_extra_search(self):
   r=resume.new_result(PAPERS[0]);resume.task(r,'search','extra title query');source=resume.task(r,'source','https://example.org/observed-fulltext')
   self.assertIs(resume.next_task(r,set()),source)
@@ -32,6 +40,12 @@ class ResumeTests(unittest.TestCase):
   self.assertTrue(resume.document_matches(PAPERS[2],payload['documents'][1]))
  def test_actual_ieee_scope_closes_only_after_all_sources_visited(self):
   p=PAPERS[0];r=json.loads((resume.ROOT/'results'/f"{p['paper_id']}.json").read_text(encoding='utf-8'))
+  r['fulltext']={'status':'unresolved','reason':'Actual newly inventoried URI remains open.'}
+  resume.close_restricted_fulltext(r)
+  self.assertEqual(r['fulltext']['status'],'unresolved')
+  # Replay the historically inspected restricted subset as a unit precondition;
+  # this is not the verdict for the expanded live source inventory.
+  r['work_state']['tasks']=[t for t in r['work_state']['tasks'] if t['kind']=='review' or t['status'] in ('done','not_needed')]
   resume.close_restricted_fulltext(r)
   self.assertEqual(r['fulltext']['status'],'unavailable');self.assertTrue(r['work_state']['reviews']['fulltext']['scope_complete'])
   r['fulltext']={'status':'unresolved','reason':'fixture'};resume.task(r,'source','https://example.org/unvisited')
@@ -42,6 +56,9 @@ class ResumeTests(unittest.TestCase):
   with patch.object(resume,'search_ui',return_value=payload),patch.object(resume,'store_json'):
    resume.prefetch_identifiers(type('Page',(),{'url':'https://knu.summon.serialssolutions.com/'})(),[(p,r)],{})
   t=next(t for t in r['work_state']['tasks'] if t['target']=='10.1109/mcs.2008.931718');self.assertEqual(t['status'],'done')
+  self.assertTrue(any(a.get('method')=='playwright' and a.get('query')==payload['query']['original_query'] and a.get('outcome') for a in r['attempts']))
+  from check_recovery import validate_record
+  self.assertEqual(validate_record(r,p,resume.BASE),[])
  def test_saved_pdf_does_not_increment_request_attempts(self):
   p=PAPERS[1];r=resume.new_result(p);real=json.loads((resume.ROOT/'results'/f"{p['paper_id']}.json").read_text(encoding='utf-8'));candidate=real['fulltext_candidates'][0];metrics={'downloads':0,'download_attempts':0}
   resume.save_pdf(p,r,(resume.BASE/candidate['artifact']['path']).read_bytes(),candidate['artifact']['url'],metrics)
@@ -60,9 +77,11 @@ class ResumeTests(unittest.TestCase):
    visited.append(t['target'])
    if t is first:raise RuntimeError('Observed UI search HTTP status 500')
    t.update(status='done',reason='Test source read.',evidence_paths=['fixture'])
-  with patch.object(resume,'visit_source',side_effect=visit),patch.object(resume,'store_json'):
+  capture=resume.capture
+  with patch.object(resume,'visit_source',side_effect=visit),patch.object(resume,'store_json'),patch.object(resume,'capture',side_effect=lambda pid,name,text,url,kind: capture('fixtures',name,text,url,kind)):
    resume.process_tasks(None,None,None,p,r,{'source_visits':0})
   self.assertEqual(visited,[first['target'],second['target']]);self.assertEqual(first['status'],'retry');self.assertEqual(second['status'],'done')
+  self.assertTrue(r['attempts']);self.assertTrue(r['evidence'])
  def test_single_query_pages_preserve_unvisited_count(self):
   r=resume.new_result(PAPERS[0]);t=resume.task(r,'search','q')
   resume.page_progress(t,80,25,['response.json'])

@@ -1,0 +1,185 @@
+
+COMMAND python C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_abstract_kind.py
+.........
+----------------------------------------------------------------------
+Ran 9 tests in 0.007s
+
+OK
+EXIT 0
+COMMAND python C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_article_review.py
+...
+----------------------------------------------------------------------
+Ran 3 tests in 0.043s
+
+OK
+EXIT 0
+COMMAND python C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_batch.py
+...
+----------------------------------------------------------------------
+Ran 3 tests in 0.000s
+
+OK
+EXIT 0
+COMMAND python C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_bmstu.py
+..
+----------------------------------------------------------------------
+Ran 2 tests in 0.001s
+
+OK
+EXIT 0
+COMMAND python C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_display_markup.py
+....
+----------------------------------------------------------------------
+Ran 4 tests in 0.006s
+
+OK
+EXIT 0
+COMMAND python C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_fielded_search.py
+..
+----------------------------------------------------------------------
+Ran 2 tests in 0.002s
+
+OK
+EXIT 0
+COMMAND python C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_grouped_review.py
+..
+----------------------------------------------------------------------
+Ran 2 tests in 3.252s
+
+OK
+EXIT 0
+COMMAND python C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_mr_fields.py
+..
+----------------------------------------------------------------------
+Ran 2 tests in 0.001s
+
+OK
+EXIT 0
+COMMAND python C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_mr_review.py
+....
+----------------------------------------------------------------------
+Ran 4 tests in 0.008s
+
+OK
+EXIT 0
+COMMAND python C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_negative_review.py
+....
+----------------------------------------------------------------------
+Ran 4 tests in 0.024s
+
+OK
+EXIT 0
+COMMAND python C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_pdf_review.py
+...
+----------------------------------------------------------------------
+Ran 3 tests in 0.067s
+
+OK
+EXIT 0
+COMMAND python C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_progress.py
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.028s
+
+OK
+EXIT 0
+COMMAND python C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_reassess.py
+.<frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+<frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+<frozen importlib._bootstrap>:488: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+..
+----------------------------------------------------------------------
+Ran 3 tests in 0.153s
+
+OK
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+EXIT 0
+COMMAND python C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_reclassify.py
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.214s
+
+OK
+EXIT 0
+COMMAND python C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_recovery.py
+........
+----------------------------------------------------------------------
+Ran 8 tests in 0.002s
+
+OK
+EXIT 0
+COMMAND python C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_response.py
+.......
+----------------------------------------------------------------------
+Ran 7 tests in 0.006s
+
+OK
+EXIT 0
+COMMAND python C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_restart.py
+{"error": "RuntimeError", "stage": "batch-ui-search"}
+...
+----------------------------------------------------------------------
+Ran 3 tests in 0.020s
+
+OK
+EXIT 0
+COMMAND python C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_resume.py
+................<frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+<frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+<frozen importlib._bootstrap>:488: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+....
+----------------------------------------------------------------------
+Ran 20 tests in 0.180s
+
+OK
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+EXIT 0
+COMMAND python C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_run.py
+....
+----------------------------------------------------------------------
+Ran 4 tests in 0.049s
+
+OK
+EXIT 0
+COMMAND python C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_selected_summary.py
+......
+----------------------------------------------------------------------
+Ran 6 tests in 0.261s
+
+OK
+EXIT 0
+COMMAND python C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_shard.py
+......
+----------------------------------------------------------------------
+Ran 6 tests in 0.387s
+
+OK
+EXIT 0
+COMMAND python C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_source_filter.py
+...
+----------------------------------------------------------------------
+Ran 3 tests in 0.003s
+
+OK
+EXIT 0
+COMMAND python C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_source_inventory.py
+....
+----------------------------------------------------------------------
+Ran 4 tests in 0.016s
+
+OK
+EXIT 0
+COMMAND python C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_source_kind.py
+.....
+----------------------------------------------------------------------
+Ran 5 tests in 0.006s
+
+OK
+EXIT 0
+COMMAND python C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_summon.py
+...
+----------------------------------------------------------------------
+Ran 3 tests in 2.002s
+
+OK
+EXIT 0

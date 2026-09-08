@@ -1,5 +1,5 @@
 """Sequential UI recovery; all unresolved components remain explicit for subsequent repair."""
-import argparse, hashlib, json, re, time
+import argparse, hashlib, json, re, time, uuid, sys
 from pathlib import Path
 from urllib.parse import quote
 from playwright.sync_api import sync_playwright
@@ -10,11 +10,23 @@ ROOT=Path(__file__).resolve().parent
 ASSIGN=json.loads((ROOT/'assignment.json').read_text(encoding='utf-8-sig'))
 RAW=BASE/ASSIGN['raw_root']
 _STATUS_ROWS=None
+OWNED_IDS=None
+SHARD_INDEX=0
+SHARD_COUNT=1
+PROGRESS_PATH=ROOT/'progress.json'
+
+def configure_scope(papers,index,count):
+ global OWNED_IDS,SHARD_INDEX,SHARD_COUNT,PROGRESS_PATH,_STATUS_ROWS
+ OWNED_IDS={p['paper_id'] for p in papers};SHARD_INDEX=index;SHARD_COUNT=count;_STATUS_ROWS=None
+ PROGRESS_PATH=ROOT/('progress.json' if count==1 else f'progress-shard-{index}-of-{count}.json')
 
 def status_tuple(record):
- return tuple(record.get(k,{}).get('status') for k in ('identity','abstract','fulltext'))
+ if str(Path(__file__).resolve().parent.parent) not in sys.path:sys.path.insert(0,str(Path(__file__).resolve().parent.parent))
+ from work_queue import pending_work
+ return tuple(record.get(k,{}).get('status') for k in ('identity','abstract','fulltext'))+(bool(pending_work(record)),)
 
 def store_json(path,value):
+ if path.parent==ROOT/'results' and OWNED_IDS is not None and path.stem not in OWNED_IDS:raise ValueError('Result belongs to another fixed shard.')
  path.parent.mkdir(parents=True,exist_ok=True)
  temp=path.with_suffix('.tmp'); temp.write_text(json.dumps(value,ensure_ascii=False,indent=2),encoding='utf-8'); temp.replace(path)
  if _STATUS_ROWS is not None and path.parent==ROOT/'results':_STATUS_ROWS[path.stem]=status_tuple(value)
@@ -22,16 +34,19 @@ def store_json(path,value):
 def capture(pid,name,text,url,kind='detail-page'):
  path=RAW/pid/name; path.parent.mkdir(parents=True,exist_ok=True)
  data=text.encode('utf-8')
- if path.exists() and path.read_bytes()!=data: path=path.with_name(path.stem+'-'+hashlib.sha256(data).hexdigest()[:16]+path.suffix)
- if not path.exists(): path.write_bytes(data)
+ if not path.exists() or path.read_bytes()!=data:path=path.with_name(path.stem+'-'+hashlib.sha256(data).hexdigest()[:16]+path.suffix)
+ if path.exists() and path.read_bytes()!=data:raise ValueError('Content-addressed evidence collision.')
+ if not path.exists():
+  temporary=path.with_name(path.name+'.'+uuid.uuid4().hex+'.tmp');temporary.write_bytes(data);temporary.replace(path)
  return {'path':path.relative_to(BASE).as_posix(),'sha256':hashlib.sha256(path.read_bytes()).hexdigest(),'url':url,'kind':kind,'media_type':'text/plain'}
 
 def progress(stage,pid=None):
  global _STATUS_ROWS
  if _STATUS_ROWS is None:
-  _STATUS_ROWS={f.stem:status_tuple(json.loads(f.read_text(encoding='utf-8'))) for f in (ROOT/'results').glob('*.json')}
+  _STATUS_ROWS={f.stem:status_tuple(json.loads(f.read_text(encoding='utf-8'))) for f in (ROOT/'results').glob('*.json') if OWNED_IDS is None or f.stem in OWNED_IDS}
  rs=list(_STATUS_ROWS.values())
- store_json(ROOT/'progress.json',{'stage':stage,'assigned':ASSIGN['count'],'processed':len(rs),'abstract_found':sum(r[1]=='found' for r in rs),'fulltext_found':sum(r[2]=='found' for r in rs),'unresolved':sum('unresolved' in r for r in rs),'remaining':ASSIGN['count']-len(rs),'last_paper_id':pid,'updated_at':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),'resume_command':'python research/pvsnp/literature-baseline/kudos-recovery/g02/resume.py'})
+ assigned=len(OWNED_IDS) if OWNED_IDS is not None else ASSIGN['count'];unprocessed=assigned-len(rs);pending=sum(r[3] for r in rs)
+ store_json(ROOT/('progress.json' if SHARD_COUNT==1 else f'progress-shard-{SHARD_INDEX}-of-{SHARD_COUNT}.json'),{'stage':stage,'shard_index':SHARD_INDEX,'shard_count':SHARD_COUNT,'assigned':assigned,'processed':len(rs),'abstract_found':sum(r[1]=='found' for r in rs),'fulltext_found':sum(r[2]=='found' for r in rs),'unresolved':sum('unresolved' in r for r in rs),'remaining':unprocessed,'unprocessed':unprocessed,'saved_with_remaining_work':pending,'total_remaining_papers':pending+unprocessed,'last_paper_id':pid,'updated_at':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),'resume_command':'python research/pvsnp/literature-baseline/kudos-recovery/g02/resume.py'})
 
 def search_summon(page,query):
  if page.locator('[role=dialog]:visible').count():

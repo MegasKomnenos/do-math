@@ -1,0 +1,656 @@
+{
+  "checked_at": "2026-09-08T19:15:12.078344+00:00",
+  "baseline_tests": {
+    "path": "tdd/two-shard-production-regression.txt",
+    "tests": 113,
+    "exit": 0
+  },
+  "operator_only_tests": {
+    "path": "tdd/snapshot-progress-green.txt",
+    "tests": 3,
+    "exit": 0
+  },
+  "runs": [
+    {
+      "manifest": "runs/20260908T191233Z-22016.json",
+      "pid": 22016,
+      "files": [
+        {
+          "path": "g02\\abstract_kind.py",
+          "started_sha256": "ac5e9b33af0974ea311281bb82c6fe976a341209490afd58d4b22ae2a242ebf0",
+          "current_sha256": "ac5e9b33af0974ea311281bb82c6fe976a341209490afd58d4b22ae2a242ebf0",
+          "matches": true
+        },
+        {
+          "path": "g02\\abstract_reclassify.py",
+          "started_sha256": "6f1987e13415f921a3dbae3a1e5ef9355c4702caf7a22388481090435c4b774a",
+          "current_sha256": "6f1987e13415f921a3dbae3a1e5ef9355c4702caf7a22388481090435c4b774a",
+          "matches": true
+        },
+        {
+          "path": "g02\\article_review.py",
+          "started_sha256": "847cf9029576ba0c20f742d68af942f7f0c5e927ca61d90bdc7b370744a4cccf",
+          "current_sha256": "847cf9029576ba0c20f742d68af942f7f0c5e927ca61d90bdc7b370744a4cccf",
+          "matches": true
+        },
+        {
+          "path": "g02\\bmstu.py",
+          "started_sha256": "3597fff4e7352e397a776f4bfcc4a6bcb2ea19f00f00ffd5817e116aa54ed5f5",
+          "current_sha256": "3597fff4e7352e397a776f4bfcc4a6bcb2ea19f00f00ffd5817e116aa54ed5f5",
+          "matches": true
+        },
+        {
+          "path": "g02\\fielded_search.py",
+          "started_sha256": "bef9af5548202498d84cd5a390896a934d5d5734923b6cae0480d9c412520c09",
+          "current_sha256": "bef9af5548202498d84cd5a390896a934d5d5734923b6cae0480d9c412520c09",
+          "matches": true
+        },
+        {
+          "path": "g02\\firefox_provider.py",
+          "started_sha256": "7e513a04af479f1bd5c660ebe65b8dbcdcf8dba1dc7ca72a99f9eff7633fac75",
+          "current_sha256": "7e513a04af479f1bd5c660ebe65b8dbcdcf8dba1dc7ca72a99f9eff7633fac75",
+          "matches": true
+        },
+        {
+          "path": "g02\\mr_fields.py",
+          "started_sha256": "459080567f77ea41531e602ef19307f8e520b581203e9387b82968f7a324c26d",
+          "current_sha256": "459080567f77ea41531e602ef19307f8e520b581203e9387b82968f7a324c26d",
+          "matches": true
+        },
+        {
+          "path": "g02\\mr_review.py",
+          "started_sha256": "4c05bd841942679e67420dc1ee62c752c9e51f7140a817b573cf68bbaa0f8510",
+          "current_sha256": "4c05bd841942679e67420dc1ee62c752c9e51f7140a817b573cf68bbaa0f8510",
+          "matches": true
+        },
+        {
+          "path": "g02\\negative_review.py",
+          "started_sha256": "862ad79ad8585d1beeaf5d3347e2fe4458f53fc808c7faeb1877398cbad14ce5",
+          "current_sha256": "862ad79ad8585d1beeaf5d3347e2fe4458f53fc808c7faeb1877398cbad14ce5",
+          "matches": true
+        },
+        {
+          "path": "g02\\pdf_review.py",
+          "started_sha256": "0d6eb5613c4ed08441fe423b8170112a4e8d735a6a710b6f8c629d88264ac3d4",
+          "current_sha256": "0d6eb5613c4ed08441fe423b8170112a4e8d735a6a710b6f8c629d88264ac3d4",
+          "matches": true
+        },
+        {
+          "path": "g02\\recovery.py",
+          "started_sha256": "fed7c49af788af6669e21cc314a192628070c09493f267882ed87e0dd66a61e8",
+          "current_sha256": "fed7c49af788af6669e21cc314a192628070c09493f267882ed87e0dd66a61e8",
+          "matches": true
+        },
+        {
+          "path": "g02\\response_recovery.py",
+          "started_sha256": "df1185aed95873a910aed1b94aba4fe7a6987f27efa8052f7f7c211384447598",
+          "current_sha256": "df1185aed95873a910aed1b94aba4fe7a6987f27efa8052f7f7c211384447598",
+          "matches": true
+        },
+        {
+          "path": "g02\\resume.py",
+          "started_sha256": "8af1a66683c338ce1b185ae7dc277f0fa14ead1f53f8db25494c710b48462587",
+          "current_sha256": "8af1a66683c338ce1b185ae7dc277f0fa14ead1f53f8db25494c710b48462587",
+          "matches": true
+        },
+        {
+          "path": "g02\\run.py",
+          "started_sha256": "5bf04a34bb9d0384027625c569ce4fcfd40110b882b59c7b3631aa83bab16af1",
+          "current_sha256": "5bf04a34bb9d0384027625c569ce4fcfd40110b882b59c7b3631aa83bab16af1",
+          "matches": true
+        },
+        {
+          "path": "g02\\selected_summary.py",
+          "started_sha256": "db33d3d099666be51307ab81e523fd64bc08a673338853b4e54b3dcf18d80223",
+          "current_sha256": "db33d3d099666be51307ab81e523fd64bc08a673338853b4e54b3dcf18d80223",
+          "matches": true
+        },
+        {
+          "path": "g02\\shard.py",
+          "started_sha256": "abbc1082063338fd87332eb12ff834205349a7a501d6ca83120be12e48564bbf",
+          "current_sha256": "abbc1082063338fd87332eb12ff834205349a7a501d6ca83120be12e48564bbf",
+          "matches": true
+        },
+        {
+          "path": "g02\\source_kind.py",
+          "started_sha256": "bfb996bc6ad3f852ab04e4d00adaace497dff096d20673578836f0915efcc644",
+          "current_sha256": "bfb996bc6ad3f852ab04e4d00adaace497dff096d20673578836f0915efcc644",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_abstract_kind.py",
+          "started_sha256": "6090c6fc531d85fe3013f9ea254d04ce4706ce3fd9d7c29e6191e89dd3e530f5",
+          "current_sha256": "6090c6fc531d85fe3013f9ea254d04ce4706ce3fd9d7c29e6191e89dd3e530f5",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_article_review.py",
+          "started_sha256": "f219d5047d68ce145787c4684a9e6344895359e4dcbfd05f6afd9c274f87ae1c",
+          "current_sha256": "f219d5047d68ce145787c4684a9e6344895359e4dcbfd05f6afd9c274f87ae1c",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_batch.py",
+          "started_sha256": "c5e1e4636e0a26d9f904d9ec971e2b5d65f5aa2d403b0073011ca30cdf9f2ae5",
+          "current_sha256": "c5e1e4636e0a26d9f904d9ec971e2b5d65f5aa2d403b0073011ca30cdf9f2ae5",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_bmstu.py",
+          "started_sha256": "40e6e7b122424cb3db83117c0772133ea3d1e3549a684735aec55754c65506fc",
+          "current_sha256": "40e6e7b122424cb3db83117c0772133ea3d1e3549a684735aec55754c65506fc",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_display_markup.py",
+          "started_sha256": "90260cffe933cdbb5cb237d04a9241c99558815f3e364741ef648e6fbeecc021",
+          "current_sha256": "90260cffe933cdbb5cb237d04a9241c99558815f3e364741ef648e6fbeecc021",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_fielded_search.py",
+          "started_sha256": "13d94a27b1435829be802b74aab90b0b3eb579814698f4de20067d9ff5dd92be",
+          "current_sha256": "13d94a27b1435829be802b74aab90b0b3eb579814698f4de20067d9ff5dd92be",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_grouped_review.py",
+          "started_sha256": "8badc7be6a1495ad56e2bddeeef0bc3c0894491f42d262d18aa92d59e85b3fe8",
+          "current_sha256": "8badc7be6a1495ad56e2bddeeef0bc3c0894491f42d262d18aa92d59e85b3fe8",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_live_batch.py",
+          "started_sha256": "234bd8b07c21cb9098439384dd0d59c3c9358efa653a9e5d4b32f4f950eb434b",
+          "current_sha256": "234bd8b07c21cb9098439384dd0d59c3c9358efa653a9e5d4b32f4f950eb434b",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_live_firefox_provider.py",
+          "started_sha256": "1d61e87d8e9df9c28603a98642f0be29ba81afb114fa474f96530bf288d1bb62",
+          "current_sha256": "1d61e87d8e9df9c28603a98642f0be29ba81afb114fa474f96530bf288d1bb62",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_live_pdf_fallback.py",
+          "started_sha256": "d417966dbef4322576b25d59f194d4f2c9b30e4ba79508777ea84f9d648b6a0e",
+          "current_sha256": "d417966dbef4322576b25d59f194d4f2c9b30e4ba79508777ea84f9d648b6a0e",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_live_responses.py",
+          "started_sha256": "1ddaa1d4fea3295a7b3bd96e1355f5da0ca5bcc6ebb13c4564259339740650b6",
+          "current_sha256": "1ddaa1d4fea3295a7b3bd96e1355f5da0ca5bcc6ebb13c4564259339740650b6",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_live_retry.py",
+          "started_sha256": "395b7cbc4051c631b4f5b11e29c7d5b0af046269bc5b73ecc05bbcfd8cebd43f",
+          "current_sha256": "395b7cbc4051c631b4f5b11e29c7d5b0af046269bc5b73ecc05bbcfd8cebd43f",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_live_submit.py",
+          "started_sha256": "7513d072b98e0f7f0ec7583b2c3b04d386ddad7871a7ddce126796237dc21ecf",
+          "current_sha256": "7513d072b98e0f7f0ec7583b2c3b04d386ddad7871a7ddce126796237dc21ecf",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_live_transitions.py",
+          "started_sha256": "77f1df659fc90e4e7ad53d4bb8ec9d18944563c43f78b27ee0582c40d004ff92",
+          "current_sha256": "77f1df659fc90e4e7ad53d4bb8ec9d18944563c43f78b27ee0582c40d004ff92",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_mr_fields.py",
+          "started_sha256": "54496b9205d27db8ce27b111844ed7c8ac9e52452cd2c75a4304eac8ac208293",
+          "current_sha256": "54496b9205d27db8ce27b111844ed7c8ac9e52452cd2c75a4304eac8ac208293",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_mr_review.py",
+          "started_sha256": "8eae6d3c9381746875d6fa26a307123acafd640f4487b8d3eba4fddc14266c17",
+          "current_sha256": "8eae6d3c9381746875d6fa26a307123acafd640f4487b8d3eba4fddc14266c17",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_negative_review.py",
+          "started_sha256": "d44135cd5c980e236183029b71374695c235ce657cace6d734c28439a359b545",
+          "current_sha256": "d44135cd5c980e236183029b71374695c235ce657cace6d734c28439a359b545",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_pdf_review.py",
+          "started_sha256": "6a55669ff29cd3b47741afb7db501c97f8c86db6c277329c4a86199715e3a3f6",
+          "current_sha256": "6a55669ff29cd3b47741afb7db501c97f8c86db6c277329c4a86199715e3a3f6",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_progress.py",
+          "started_sha256": "d29c8c269d2d8756ff53ef226871c8e751278941915048afb79f8c864dfdb50d",
+          "current_sha256": "d29c8c269d2d8756ff53ef226871c8e751278941915048afb79f8c864dfdb50d",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_reassess.py",
+          "started_sha256": "fd3f084f152e3208d983cf72e74baacde3056e586f52470ce260966381ece8d9",
+          "current_sha256": "fd3f084f152e3208d983cf72e74baacde3056e586f52470ce260966381ece8d9",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_reclassify.py",
+          "started_sha256": "6125d79582270c5a35322c5482120903b90839b4a7f1146944b420eed6ba079c",
+          "current_sha256": "6125d79582270c5a35322c5482120903b90839b4a7f1146944b420eed6ba079c",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_recovery.py",
+          "started_sha256": "37d21bda32d19c42a40d47851ca5d9682f9cccc37e6f6014185277dd25cdd3a2",
+          "current_sha256": "37d21bda32d19c42a40d47851ca5d9682f9cccc37e6f6014185277dd25cdd3a2",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_response.py",
+          "started_sha256": "904bcf0b83aeb9617ff22d21d983012448cf2d5e51c32f5b2bc46eadab434bdb",
+          "current_sha256": "904bcf0b83aeb9617ff22d21d983012448cf2d5e51c32f5b2bc46eadab434bdb",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_restart.py",
+          "started_sha256": "5a9cc648dd9684e032f1a0a2f414f6df81a4e4508c2e500ecd3d87d3294e43c1",
+          "current_sha256": "5a9cc648dd9684e032f1a0a2f414f6df81a4e4508c2e500ecd3d87d3294e43c1",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_resume.py",
+          "started_sha256": "451e89fe5393b57f87cfaabc5cc311ecd3ea1b9f143c70dbf36d525841834fec",
+          "current_sha256": "451e89fe5393b57f87cfaabc5cc311ecd3ea1b9f143c70dbf36d525841834fec",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_run.py",
+          "started_sha256": "5a953970034a3e0519e07a2dda971f88e787287cdd906f22ea97562a855f7868",
+          "current_sha256": "5a953970034a3e0519e07a2dda971f88e787287cdd906f22ea97562a855f7868",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_selected_summary.py",
+          "started_sha256": "f6b7761a08804090e859b1ead2cb124069a53781cf1563621c21957f3f9de266",
+          "current_sha256": "f6b7761a08804090e859b1ead2cb124069a53781cf1563621c21957f3f9de266",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_shard.py",
+          "started_sha256": "54c2d9f04c882a81e712706e6f9f50a082b953d53a40a2b32ce5db71b3f8864c",
+          "current_sha256": "54c2d9f04c882a81e712706e6f9f50a082b953d53a40a2b32ce5db71b3f8864c",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_source_filter.py",
+          "started_sha256": "81841e0b7940177aeaa020a309a4234b2897b12143082e38d3619263d7f53c8e",
+          "current_sha256": "81841e0b7940177aeaa020a309a4234b2897b12143082e38d3619263d7f53c8e",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_source_inventory.py",
+          "started_sha256": "97f3da5e553c583c244791d729030e33967b364a1b0c62666f6c6fda64e0abb8",
+          "current_sha256": "97f3da5e553c583c244791d729030e33967b364a1b0c62666f6c6fda64e0abb8",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_source_kind.py",
+          "started_sha256": "9b11261283924a485f9f32bdebbe9cdc2abedcafef3e761f45ac12bf033a05ea",
+          "current_sha256": "9b11261283924a485f9f32bdebbe9cdc2abedcafef3e761f45ac12bf033a05ea",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_summon.py",
+          "started_sha256": "4bdcc5b2e02990f378ec611f4587e777b56b9ca669a884f700383a8859c77e40",
+          "current_sha256": "4bdcc5b2e02990f378ec611f4587e777b56b9ca669a884f700383a8859c77e40",
+          "matches": true
+        },
+        {
+          "path": "g02\\selected-summary-decisions.json",
+          "started_sha256": "3974fea404a467f24663b44a84cd6f94c158fefc049bc54760b3914951dd372c",
+          "current_sha256": "3974fea404a467f24663b44a84cd6f94c158fefc049bc54760b3914951dd372c",
+          "matches": true
+        },
+        {
+          "path": "work_queue.py",
+          "started_sha256": "f32bb342891a025ecaf248acbfd2003933ddba1e3a9ebc8535f82a74b5c3a825",
+          "current_sha256": "f32bb342891a025ecaf248acbfd2003933ddba1e3a9ebc8535f82a74b5c3a825",
+          "matches": true
+        },
+        {
+          "path": "check_recovery.py",
+          "started_sha256": "50d257e7544b280a54cf71ec30d46cc9802461175b3714a8bfefb6184dbd6f9f",
+          "current_sha256": "50d257e7544b280a54cf71ec30d46cc9802461175b3714a8bfefb6184dbd6f9f",
+          "matches": true
+        }
+      ]
+    },
+    {
+      "manifest": "runs/20260908T191233Z-20228.json",
+      "pid": 20228,
+      "files": [
+        {
+          "path": "g02\\abstract_kind.py",
+          "started_sha256": "ac5e9b33af0974ea311281bb82c6fe976a341209490afd58d4b22ae2a242ebf0",
+          "current_sha256": "ac5e9b33af0974ea311281bb82c6fe976a341209490afd58d4b22ae2a242ebf0",
+          "matches": true
+        },
+        {
+          "path": "g02\\abstract_reclassify.py",
+          "started_sha256": "6f1987e13415f921a3dbae3a1e5ef9355c4702caf7a22388481090435c4b774a",
+          "current_sha256": "6f1987e13415f921a3dbae3a1e5ef9355c4702caf7a22388481090435c4b774a",
+          "matches": true
+        },
+        {
+          "path": "g02\\article_review.py",
+          "started_sha256": "847cf9029576ba0c20f742d68af942f7f0c5e927ca61d90bdc7b370744a4cccf",
+          "current_sha256": "847cf9029576ba0c20f742d68af942f7f0c5e927ca61d90bdc7b370744a4cccf",
+          "matches": true
+        },
+        {
+          "path": "g02\\bmstu.py",
+          "started_sha256": "3597fff4e7352e397a776f4bfcc4a6bcb2ea19f00f00ffd5817e116aa54ed5f5",
+          "current_sha256": "3597fff4e7352e397a776f4bfcc4a6bcb2ea19f00f00ffd5817e116aa54ed5f5",
+          "matches": true
+        },
+        {
+          "path": "g02\\fielded_search.py",
+          "started_sha256": "bef9af5548202498d84cd5a390896a934d5d5734923b6cae0480d9c412520c09",
+          "current_sha256": "bef9af5548202498d84cd5a390896a934d5d5734923b6cae0480d9c412520c09",
+          "matches": true
+        },
+        {
+          "path": "g02\\firefox_provider.py",
+          "started_sha256": "7e513a04af479f1bd5c660ebe65b8dbcdcf8dba1dc7ca72a99f9eff7633fac75",
+          "current_sha256": "7e513a04af479f1bd5c660ebe65b8dbcdcf8dba1dc7ca72a99f9eff7633fac75",
+          "matches": true
+        },
+        {
+          "path": "g02\\mr_fields.py",
+          "started_sha256": "459080567f77ea41531e602ef19307f8e520b581203e9387b82968f7a324c26d",
+          "current_sha256": "459080567f77ea41531e602ef19307f8e520b581203e9387b82968f7a324c26d",
+          "matches": true
+        },
+        {
+          "path": "g02\\mr_review.py",
+          "started_sha256": "4c05bd841942679e67420dc1ee62c752c9e51f7140a817b573cf68bbaa0f8510",
+          "current_sha256": "4c05bd841942679e67420dc1ee62c752c9e51f7140a817b573cf68bbaa0f8510",
+          "matches": true
+        },
+        {
+          "path": "g02\\negative_review.py",
+          "started_sha256": "862ad79ad8585d1beeaf5d3347e2fe4458f53fc808c7faeb1877398cbad14ce5",
+          "current_sha256": "862ad79ad8585d1beeaf5d3347e2fe4458f53fc808c7faeb1877398cbad14ce5",
+          "matches": true
+        },
+        {
+          "path": "g02\\pdf_review.py",
+          "started_sha256": "0d6eb5613c4ed08441fe423b8170112a4e8d735a6a710b6f8c629d88264ac3d4",
+          "current_sha256": "0d6eb5613c4ed08441fe423b8170112a4e8d735a6a710b6f8c629d88264ac3d4",
+          "matches": true
+        },
+        {
+          "path": "g02\\recovery.py",
+          "started_sha256": "fed7c49af788af6669e21cc314a192628070c09493f267882ed87e0dd66a61e8",
+          "current_sha256": "fed7c49af788af6669e21cc314a192628070c09493f267882ed87e0dd66a61e8",
+          "matches": true
+        },
+        {
+          "path": "g02\\response_recovery.py",
+          "started_sha256": "df1185aed95873a910aed1b94aba4fe7a6987f27efa8052f7f7c211384447598",
+          "current_sha256": "df1185aed95873a910aed1b94aba4fe7a6987f27efa8052f7f7c211384447598",
+          "matches": true
+        },
+        {
+          "path": "g02\\resume.py",
+          "started_sha256": "8af1a66683c338ce1b185ae7dc277f0fa14ead1f53f8db25494c710b48462587",
+          "current_sha256": "8af1a66683c338ce1b185ae7dc277f0fa14ead1f53f8db25494c710b48462587",
+          "matches": true
+        },
+        {
+          "path": "g02\\run.py",
+          "started_sha256": "5bf04a34bb9d0384027625c569ce4fcfd40110b882b59c7b3631aa83bab16af1",
+          "current_sha256": "5bf04a34bb9d0384027625c569ce4fcfd40110b882b59c7b3631aa83bab16af1",
+          "matches": true
+        },
+        {
+          "path": "g02\\selected_summary.py",
+          "started_sha256": "db33d3d099666be51307ab81e523fd64bc08a673338853b4e54b3dcf18d80223",
+          "current_sha256": "db33d3d099666be51307ab81e523fd64bc08a673338853b4e54b3dcf18d80223",
+          "matches": true
+        },
+        {
+          "path": "g02\\shard.py",
+          "started_sha256": "abbc1082063338fd87332eb12ff834205349a7a501d6ca83120be12e48564bbf",
+          "current_sha256": "abbc1082063338fd87332eb12ff834205349a7a501d6ca83120be12e48564bbf",
+          "matches": true
+        },
+        {
+          "path": "g02\\source_kind.py",
+          "started_sha256": "bfb996bc6ad3f852ab04e4d00adaace497dff096d20673578836f0915efcc644",
+          "current_sha256": "bfb996bc6ad3f852ab04e4d00adaace497dff096d20673578836f0915efcc644",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_abstract_kind.py",
+          "started_sha256": "6090c6fc531d85fe3013f9ea254d04ce4706ce3fd9d7c29e6191e89dd3e530f5",
+          "current_sha256": "6090c6fc531d85fe3013f9ea254d04ce4706ce3fd9d7c29e6191e89dd3e530f5",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_article_review.py",
+          "started_sha256": "f219d5047d68ce145787c4684a9e6344895359e4dcbfd05f6afd9c274f87ae1c",
+          "current_sha256": "f219d5047d68ce145787c4684a9e6344895359e4dcbfd05f6afd9c274f87ae1c",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_batch.py",
+          "started_sha256": "c5e1e4636e0a26d9f904d9ec971e2b5d65f5aa2d403b0073011ca30cdf9f2ae5",
+          "current_sha256": "c5e1e4636e0a26d9f904d9ec971e2b5d65f5aa2d403b0073011ca30cdf9f2ae5",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_bmstu.py",
+          "started_sha256": "40e6e7b122424cb3db83117c0772133ea3d1e3549a684735aec55754c65506fc",
+          "current_sha256": "40e6e7b122424cb3db83117c0772133ea3d1e3549a684735aec55754c65506fc",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_display_markup.py",
+          "started_sha256": "90260cffe933cdbb5cb237d04a9241c99558815f3e364741ef648e6fbeecc021",
+          "current_sha256": "90260cffe933cdbb5cb237d04a9241c99558815f3e364741ef648e6fbeecc021",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_fielded_search.py",
+          "started_sha256": "13d94a27b1435829be802b74aab90b0b3eb579814698f4de20067d9ff5dd92be",
+          "current_sha256": "13d94a27b1435829be802b74aab90b0b3eb579814698f4de20067d9ff5dd92be",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_grouped_review.py",
+          "started_sha256": "8badc7be6a1495ad56e2bddeeef0bc3c0894491f42d262d18aa92d59e85b3fe8",
+          "current_sha256": "8badc7be6a1495ad56e2bddeeef0bc3c0894491f42d262d18aa92d59e85b3fe8",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_live_batch.py",
+          "started_sha256": "234bd8b07c21cb9098439384dd0d59c3c9358efa653a9e5d4b32f4f950eb434b",
+          "current_sha256": "234bd8b07c21cb9098439384dd0d59c3c9358efa653a9e5d4b32f4f950eb434b",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_live_firefox_provider.py",
+          "started_sha256": "1d61e87d8e9df9c28603a98642f0be29ba81afb114fa474f96530bf288d1bb62",
+          "current_sha256": "1d61e87d8e9df9c28603a98642f0be29ba81afb114fa474f96530bf288d1bb62",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_live_pdf_fallback.py",
+          "started_sha256": "d417966dbef4322576b25d59f194d4f2c9b30e4ba79508777ea84f9d648b6a0e",
+          "current_sha256": "d417966dbef4322576b25d59f194d4f2c9b30e4ba79508777ea84f9d648b6a0e",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_live_responses.py",
+          "started_sha256": "1ddaa1d4fea3295a7b3bd96e1355f5da0ca5bcc6ebb13c4564259339740650b6",
+          "current_sha256": "1ddaa1d4fea3295a7b3bd96e1355f5da0ca5bcc6ebb13c4564259339740650b6",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_live_retry.py",
+          "started_sha256": "395b7cbc4051c631b4f5b11e29c7d5b0af046269bc5b73ecc05bbcfd8cebd43f",
+          "current_sha256": "395b7cbc4051c631b4f5b11e29c7d5b0af046269bc5b73ecc05bbcfd8cebd43f",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_live_submit.py",
+          "started_sha256": "7513d072b98e0f7f0ec7583b2c3b04d386ddad7871a7ddce126796237dc21ecf",
+          "current_sha256": "7513d072b98e0f7f0ec7583b2c3b04d386ddad7871a7ddce126796237dc21ecf",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_live_transitions.py",
+          "started_sha256": "77f1df659fc90e4e7ad53d4bb8ec9d18944563c43f78b27ee0582c40d004ff92",
+          "current_sha256": "77f1df659fc90e4e7ad53d4bb8ec9d18944563c43f78b27ee0582c40d004ff92",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_mr_fields.py",
+          "started_sha256": "54496b9205d27db8ce27b111844ed7c8ac9e52452cd2c75a4304eac8ac208293",
+          "current_sha256": "54496b9205d27db8ce27b111844ed7c8ac9e52452cd2c75a4304eac8ac208293",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_mr_review.py",
+          "started_sha256": "8eae6d3c9381746875d6fa26a307123acafd640f4487b8d3eba4fddc14266c17",
+          "current_sha256": "8eae6d3c9381746875d6fa26a307123acafd640f4487b8d3eba4fddc14266c17",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_negative_review.py",
+          "started_sha256": "d44135cd5c980e236183029b71374695c235ce657cace6d734c28439a359b545",
+          "current_sha256": "d44135cd5c980e236183029b71374695c235ce657cace6d734c28439a359b545",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_pdf_review.py",
+          "started_sha256": "6a55669ff29cd3b47741afb7db501c97f8c86db6c277329c4a86199715e3a3f6",
+          "current_sha256": "6a55669ff29cd3b47741afb7db501c97f8c86db6c277329c4a86199715e3a3f6",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_progress.py",
+          "started_sha256": "d29c8c269d2d8756ff53ef226871c8e751278941915048afb79f8c864dfdb50d",
+          "current_sha256": "d29c8c269d2d8756ff53ef226871c8e751278941915048afb79f8c864dfdb50d",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_reassess.py",
+          "started_sha256": "fd3f084f152e3208d983cf72e74baacde3056e586f52470ce260966381ece8d9",
+          "current_sha256": "fd3f084f152e3208d983cf72e74baacde3056e586f52470ce260966381ece8d9",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_reclassify.py",
+          "started_sha256": "6125d79582270c5a35322c5482120903b90839b4a7f1146944b420eed6ba079c",
+          "current_sha256": "6125d79582270c5a35322c5482120903b90839b4a7f1146944b420eed6ba079c",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_recovery.py",
+          "started_sha256": "37d21bda32d19c42a40d47851ca5d9682f9cccc37e6f6014185277dd25cdd3a2",
+          "current_sha256": "37d21bda32d19c42a40d47851ca5d9682f9cccc37e6f6014185277dd25cdd3a2",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_response.py",
+          "started_sha256": "904bcf0b83aeb9617ff22d21d983012448cf2d5e51c32f5b2bc46eadab434bdb",
+          "current_sha256": "904bcf0b83aeb9617ff22d21d983012448cf2d5e51c32f5b2bc46eadab434bdb",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_restart.py",
+          "started_sha256": "5a9cc648dd9684e032f1a0a2f414f6df81a4e4508c2e500ecd3d87d3294e43c1",
+          "current_sha256": "5a9cc648dd9684e032f1a0a2f414f6df81a4e4508c2e500ecd3d87d3294e43c1",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_resume.py",
+          "started_sha256": "451e89fe5393b57f87cfaabc5cc311ecd3ea1b9f143c70dbf36d525841834fec",
+          "current_sha256": "451e89fe5393b57f87cfaabc5cc311ecd3ea1b9f143c70dbf36d525841834fec",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_run.py",
+          "started_sha256": "5a953970034a3e0519e07a2dda971f88e787287cdd906f22ea97562a855f7868",
+          "current_sha256": "5a953970034a3e0519e07a2dda971f88e787287cdd906f22ea97562a855f7868",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_selected_summary.py",
+          "started_sha256": "f6b7761a08804090e859b1ead2cb124069a53781cf1563621c21957f3f9de266",
+          "current_sha256": "f6b7761a08804090e859b1ead2cb124069a53781cf1563621c21957f3f9de266",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_shard.py",
+          "started_sha256": "54c2d9f04c882a81e712706e6f9f50a082b953d53a40a2b32ce5db71b3f8864c",
+          "current_sha256": "54c2d9f04c882a81e712706e6f9f50a082b953d53a40a2b32ce5db71b3f8864c",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_source_filter.py",
+          "started_sha256": "81841e0b7940177aeaa020a309a4234b2897b12143082e38d3619263d7f53c8e",
+          "current_sha256": "81841e0b7940177aeaa020a309a4234b2897b12143082e38d3619263d7f53c8e",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_source_inventory.py",
+          "started_sha256": "97f3da5e553c583c244791d729030e33967b364a1b0c62666f6c6fda64e0abb8",
+          "current_sha256": "97f3da5e553c583c244791d729030e33967b364a1b0c62666f6c6fda64e0abb8",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_source_kind.py",
+          "started_sha256": "9b11261283924a485f9f32bdebbe9cdc2abedcafef3e761f45ac12bf033a05ea",
+          "current_sha256": "9b11261283924a485f9f32bdebbe9cdc2abedcafef3e761f45ac12bf033a05ea",
+          "matches": true
+        },
+        {
+          "path": "g02\\test_summon.py",
+          "started_sha256": "4bdcc5b2e02990f378ec611f4587e777b56b9ca669a884f700383a8859c77e40",
+          "current_sha256": "4bdcc5b2e02990f378ec611f4587e777b56b9ca669a884f700383a8859c77e40",
+          "matches": true
+        },
+        {
+          "path": "g02\\selected-summary-decisions.json",
+          "started_sha256": "3974fea404a467f24663b44a84cd6f94c158fefc049bc54760b3914951dd372c",
+          "current_sha256": "3974fea404a467f24663b44a84cd6f94c158fefc049bc54760b3914951dd372c",
+          "matches": true
+        },
+        {
+          "path": "work_queue.py",
+          "started_sha256": "f32bb342891a025ecaf248acbfd2003933ddba1e3a9ebc8535f82a74b5c3a825",
+          "current_sha256": "f32bb342891a025ecaf248acbfd2003933ddba1e3a9ebc8535f82a74b5c3a825",
+          "matches": true
+        },
+        {
+          "path": "check_recovery.py",
+          "started_sha256": "50d257e7544b280a54cf71ec30d46cc9802461175b3714a8bfefb6184dbd6f9f",
+          "current_sha256": "50d257e7544b280a54cf71ec30d46cc9802461175b3714a8bfefb6184dbd6f9f",
+          "matches": true
+        }
+      ]
+    }
+  ],
+  "all_startup_files_unchanged": true,
+  "operator_only_files": {
+    "snapshot_progress.py": "f9733d490ac01b35e98451aae4fec34ffbff0bc47c025dfe68e6967ae0ef7f7d",
+    "test_snapshot_progress.py": "4761f7bf1c9fb121b2b90470df3b4b08c087b0a94a7c2e38d97f6efee43c0c67"
+  }
+}
