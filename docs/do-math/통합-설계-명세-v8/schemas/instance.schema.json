@@ -1,0 +1,127 @@
+{
+  "$id": "https://do-math.invalid/schemas/draft/8/instance",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "active_charter_ref": {
+      "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/exact_ref"
+    },
+    "active_context_refs": {
+      "items": {
+        "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/exact_ref"
+      },
+      "minItems": 0,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "active_permission_refs": {
+      "items": {
+        "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/exact_ref"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "active_policy_refs": {
+      "items": {
+        "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/exact_ref"
+      },
+      "minItems": 0,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "active_settings_ref": {
+      "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/exact_ref"
+    },
+    "active_trust_ref": {
+      "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/exact_ref"
+    },
+    "conversation_loss_policy": {
+      "enum": [
+        "continue_authorized",
+        "pause"
+      ],
+      "type": "string"
+    },
+    "goal_reason": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "evidence_refs": {
+          "items": {
+            "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/exact_ref"
+          },
+          "minItems": 0,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "message": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "message",
+        "evidence_refs"
+      ],
+      "type": "object"
+    },
+    "goal_status": {
+      "enum": [
+        "unsolved",
+        "mathematically_solved"
+      ],
+      "type": "string"
+    },
+    "id": {
+      "allOf": [
+        {
+          "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/id"
+        },
+        {
+          "pattern": "^RI-"
+        }
+      ]
+    },
+    "implementation_ref": {
+      "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/exact_ref"
+    },
+    "name": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "object_format": {
+      "enum": [
+        "sha1",
+        "sha256"
+      ],
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "do-math-draft/instance/8"
+    }
+  },
+  "required": [
+    "schema_version",
+    "id",
+    "name",
+    "object_format",
+    "goal_status",
+    "goal_reason",
+    "active_policy_refs",
+    "active_context_refs",
+    "active_permission_refs",
+    "implementation_ref",
+    "conversation_loss_policy"
+  ],
+  "title": "instance",
+  "type": "object",
+  "x-contract-id": "do-math-draft/instance/8",
+  "x-id-prefix": "RI",
+  "x-owner-section": "1.4,14.1,19.2",
+  "x-storage": "research/instance.json"
+}

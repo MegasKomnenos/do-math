@@ -1,0 +1,10 @@
+{
+  "command": "resume",
+  "exit_code": 0,
+  "request_id": "RQ-00000000000000000000000001",
+  "result": {
+    "lifecycle": "initializing",
+    "snapshot_commit": "1111111111111111111111111111111111111111"
+  },
+  "schema_version": "do-math-draft/command-response/8"
+}

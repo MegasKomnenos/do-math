@@ -1,0 +1,448 @@
+{
+  "$id": "https://do-math.invalid/schemas/draft/8/execution-profile",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "actor_kind": {
+            "const": "ai"
+          }
+        },
+        "required": [
+          "actor_kind"
+        ]
+      },
+      "then": {
+        "required": [
+          "ai",
+          "stop_checkpoint",
+          "role_documents"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "actor_kind": {
+            "const": "machine"
+          }
+        },
+        "required": [
+          "actor_kind"
+        ]
+      },
+      "then": {
+        "allOf": [
+          {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "ai"
+                  ]
+                },
+                {
+                  "required": [
+                    "stop_checkpoint"
+                  ]
+                },
+                {
+                  "required": [
+                    "observation"
+                  ]
+                },
+                {
+                  "required": [
+                    "role_documents"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "required": [
+              "execution_window"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "properties": {
+    "actor_kind": {
+      "enum": [
+        "ai",
+        "machine"
+      ],
+      "type": "string"
+    },
+    "adapter_ref": {
+      "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/exact_ref"
+    },
+    "ai": {
+      "additionalProperties": false,
+      "properties": {
+        "capacity_refs": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "context_tokens": {
+          "maximum": 9007199254740991,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "effort": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "model": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "output_reserve_tokens": {
+          "maximum": 9007199254740991,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "provider": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "remote_recovery": {
+          "additionalProperties": false,
+          "properties": {
+            "evidence_ref": {
+              "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/artifact_ref"
+            },
+            "inspection_method": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "retention": {
+              "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/duration"
+            },
+            "supported_gap": {
+              "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/duration"
+            }
+          },
+          "required": [
+            "retention",
+            "supported_gap",
+            "inspection_method",
+            "evidence_ref"
+          ],
+          "type": "object"
+        },
+        "safety_margin_tokens": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "tokenizer": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "usage_constraint_ids": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 0,
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "model",
+        "effort",
+        "provider",
+        "tokenizer",
+        "context_tokens",
+        "output_reserve_tokens",
+        "safety_margin_tokens",
+        "capacity_refs",
+        "usage_constraint_ids",
+        "remote_recovery"
+      ],
+      "type": "object"
+    },
+    "evaluation_refs": {
+      "items": {
+        "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/exact_ref"
+      },
+      "minItems": 0,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "execution_window": {
+      "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/duration"
+    },
+    "host_capacity_refs": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "id": {
+      "allOf": [
+        {
+          "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/id"
+        },
+        {
+          "pattern": "^EP-"
+        }
+      ]
+    },
+    "implementation_ref": {
+      "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/exact_ref"
+    },
+    "io_contract_ref": {
+      "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/exact_ref"
+    },
+    "isolation_evidence_ref": {
+      "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/artifact_ref"
+    },
+    "observation": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "operational_review_mode": {
+                "const": "periodic"
+              }
+            },
+            "required": [
+              "operational_review_mode"
+            ]
+          },
+          "then": {
+            "required": [
+              "periodic_interval"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operational_review_mode": {
+                "const": "event_driven"
+              }
+            },
+            "required": [
+              "operational_review_mode"
+            ]
+          },
+          "then": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "periodic_interval"
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "properties": {
+        "allowed_operators": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 0,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "allowed_target_refs": {
+          "items": {
+            "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/exact_ref"
+          },
+          "minItems": 0,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "max_interval": {
+          "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/duration"
+        },
+        "operational_review_mode": {
+          "enum": [
+            "event_driven",
+            "periodic"
+          ],
+          "type": "string"
+        },
+        "periodic_interval": {
+          "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/duration"
+        },
+        "self_check_response_window": {
+          "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/duration"
+        },
+        "tool_review_window": {
+          "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/duration"
+        }
+      },
+      "required": [
+        "operational_review_mode",
+        "max_interval",
+        "self_check_response_window",
+        "tool_review_window",
+        "allowed_operators",
+        "allowed_target_refs"
+      ],
+      "type": "object"
+    },
+    "revision": {
+      "maximum": 9007199254740991,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "role_documents": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "media_type": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "path": {
+            "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/path"
+          },
+          "sha256": {
+            "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/sha256"
+          },
+          "size_bytes": {
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "path",
+          "sha256",
+          "media_type",
+          "size_bytes"
+        ],
+        "type": "object"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "do-math-draft/execution-profile/8"
+    },
+    "shutdown_grace": {
+      "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/duration"
+    },
+    "stop_checkpoint": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "disabled"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "allowed_paths": {
+              "items": {
+                "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/path"
+              },
+              "minItems": 1,
+              "type": "array",
+              "uniqueItems": true
+            },
+            "allowed_tools": {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "minItems": 0,
+              "type": "array",
+              "uniqueItems": true
+            },
+            "kind": {
+              "const": "bounded"
+            },
+            "max_usage": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "amount": {
+                    "maximum": 9007199254740991,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "constraint_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "constraint_id",
+                  "amount"
+                ],
+                "type": "object"
+              },
+              "minItems": 1,
+              "type": "array"
+            },
+            "window": {
+              "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/duration"
+            }
+          },
+          "required": [
+            "kind",
+            "window",
+            "allowed_tools",
+            "allowed_paths",
+            "max_usage"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "tool_manifest_ref": {
+      "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/artifact_ref"
+    }
+  },
+  "required": [
+    "schema_version",
+    "id",
+    "revision",
+    "actor_kind",
+    "adapter_ref",
+    "implementation_ref",
+    "tool_manifest_ref",
+    "host_capacity_refs",
+    "isolation_evidence_ref",
+    "io_contract_ref",
+    "shutdown_grace",
+    "evaluation_refs"
+  ],
+  "title": "execution-profile",
+  "type": "object",
+  "x-contract-id": "do-math-draft/execution-profile/8",
+  "x-id-prefix": "EP",
+  "x-owner-section": "6.1,6.4.1,12.1,16.1,16.2,19.4",
+  "x-storage": "research/governance/profiles/{id}.json"
+}

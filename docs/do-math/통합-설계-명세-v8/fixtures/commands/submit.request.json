@@ -1,0 +1,22 @@
+{
+  "caller": {
+    "conversation_id": "CV-00000000000000000000000001",
+    "kind": "user"
+  },
+  "command": "submit",
+  "payload": {
+    "execution_id": "E-00000000000000000000000001",
+    "files": [],
+    "result_ref": {
+      "bundle_id": "AB-00000000000000000000000001",
+      "path": "fixture/input.json",
+      "ref_kind": "artifact",
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+    },
+    "wait_request": {
+      "kind": "none"
+    }
+  },
+  "request_id": "RQ-00000000000000000000000001",
+  "schema_version": "do-math-draft/command-request/8"
+}

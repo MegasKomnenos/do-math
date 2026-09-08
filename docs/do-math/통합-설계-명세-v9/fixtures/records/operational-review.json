@@ -1,0 +1,35 @@
+{
+  "activity_id": "AC-00000000000000000000000001",
+  "actual_scope": [],
+  "basis": {
+    "absence_queries": [],
+    "record_refs": [],
+    "required_effects": []
+  },
+  "diagnosis_ref": {
+    "bundle_id": "AB-00000000000000000000000001",
+    "path": "fixture/input.json",
+    "ref_kind": "artifact",
+    "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+  },
+  "disposition": "continue",
+  "execution_id": "E-00000000000000000000000001",
+  "followups": [],
+  "id": "OR-00000000000000000000000001",
+  "next_review_at": "2026-09-07T00:00:00.000Z",
+  "observation_refs": [
+    {
+      "commit": "1111111111111111111111111111111111111111",
+      "record_id": "F-00000000000000000000000001",
+      "ref_kind": "record",
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "space": "research"
+    }
+  ],
+  "schema_version": "do-math-draft/operational-review/9",
+  "stage": "diagnosing",
+  "trigger_event_ids": [
+    "EVT-00000000000000000000000001"
+  ],
+  "uncertainties": []
+}

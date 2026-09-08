@@ -1,0 +1,103 @@
+{
+  "contract": {
+    "author_execution_ids": [
+      "E-00000000000000000000000001"
+    ],
+    "author_proposal_ref": {
+      "bundle_id": "AB-00000000000000000000000001",
+      "path": "fixture/input.json",
+      "ref_kind": "artifact",
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+    },
+    "authority_refs": [
+      {
+        "commit": "1111111111111111111111111111111111111111",
+        "record_id": "F-00000000000000000000000001",
+        "ref_kind": "record",
+        "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+        "space": "research"
+      }
+    ],
+    "basis_refs": [
+      {
+        "commit": "1111111111111111111111111111111111111111",
+        "record_id": "F-00000000000000000000000001",
+        "ref_kind": "record",
+        "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+        "space": "research"
+      }
+    ],
+    "completion_criteria": [
+      {
+        "assessor_kind": "maintenance",
+        "condition": "fixture",
+        "id": "fixture",
+        "required_inputs": []
+      }
+    ],
+    "excluded_scope": [],
+    "execution_profile_ref": {
+      "commit": "1111111111111111111111111111111111111111",
+      "record_id": "F-00000000000000000000000001",
+      "ref_kind": "record",
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "space": "research"
+    },
+    "expected_outputs": [
+      {
+        "kind": "fixture",
+        "scope": "fixture"
+      }
+    ],
+    "expected_research_change": "fixture",
+    "occurrence_condition": {
+      "op": "always"
+    },
+    "progress_criteria": {
+      "expected_changes": [
+        {
+          "description": "fixture",
+          "evidence_refs": [],
+          "id": "fixture"
+        }
+      ],
+      "initial_self_check_rules": [
+        {
+          "event_kind": "fixture",
+          "id": "fixture",
+          "op": "event_recorded",
+          "required_evidence": [],
+          "target_id": "F-00000000000000000000000001"
+        }
+      ],
+      "no_progress_limit": 2,
+      "observation_bounds": {
+        "allowed_operators": [],
+        "allowed_target_refs": [],
+        "max_wall_interval": "PT1S"
+      },
+      "reconsider_conditions": []
+    },
+    "question": "fixture",
+    "required_inputs": [],
+    "revision": 1,
+    "scope": [
+      {
+        "description": "fixture",
+        "evidence_refs": [],
+        "id": "fixture"
+      }
+    ],
+    "title": "fixture",
+    "work_class": "research_production"
+  },
+  "followups": [],
+  "id": "T-00000000000000000000000001",
+  "remaining_scope_ids": [
+    "fixture"
+  ],
+  "research_execution_ids": [],
+  "schema_version": "do-math-draft/task/9",
+  "scope_dispositions": [],
+  "state": "planned"
+}

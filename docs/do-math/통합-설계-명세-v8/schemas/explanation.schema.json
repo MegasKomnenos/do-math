@@ -1,0 +1,296 @@
+{
+  "$id": "https://do-math.invalid/schemas/draft/8/explanation",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "document_ref": {
+      "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/artifact_ref"
+    },
+    "evidence": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "anchors": {
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "minItems": 0,
+            "type": "array",
+            "uniqueItems": true
+          },
+          "artifact_ref": {
+            "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/artifact_ref"
+          },
+          "purpose": {
+            "enum": [
+              "literature_transcription",
+              "factual_support"
+            ],
+            "type": "string"
+          },
+          "source_id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_id",
+          "artifact_ref",
+          "anchors",
+          "purpose"
+        ],
+        "type": "object"
+      },
+      "minItems": 0,
+      "type": "array"
+    },
+    "formal_result_refs": {
+      "items": {
+        "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/exact_ref"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "id": {
+      "allOf": [
+        {
+          "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/id"
+        },
+        {
+          "pattern": "^EX-"
+        }
+      ]
+    },
+    "math_items": {
+      "items": {
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "const": "quantification"
+                }
+              },
+              "required": [
+                "kind"
+              ]
+            },
+            "then": {
+              "properties": {
+                "quantifiers": {
+                  "minItems": 1
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "enum": [
+                    "definition",
+                    "assumption",
+                    "statement",
+                    "proof_step",
+                    "scope",
+                    "conclusion"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "quantifiers": {
+                  "maxItems": 0
+                }
+              }
+            }
+          }
+        ],
+        "properties": {
+          "anchor": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "dependency_ids": {
+            "items": {
+              "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/id"
+            },
+            "minItems": 0,
+            "type": "array",
+            "uniqueItems": true
+          },
+          "id": {
+            "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/id"
+          },
+          "kind": {
+            "enum": [
+              "definition",
+              "assumption",
+              "statement",
+              "quantification",
+              "proof_step",
+              "scope",
+              "conclusion"
+            ],
+            "type": "string"
+          },
+          "lean_coordinates": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "anchor": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "coordinate_kind": {
+                  "enum": [
+                    "declaration",
+                    "binder",
+                    "subexpression",
+                    "lemma",
+                    "obligation"
+                  ],
+                  "type": "string"
+                },
+                "declaration": {
+                  "minLength": 1,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "declaration",
+                "coordinate_kind",
+                "anchor"
+              ],
+              "type": "object"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "quantifiers": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "declaration": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "depends_on": {
+                  "items": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "minItems": 0,
+                  "type": "array",
+                  "uniqueItems": true
+                },
+                "domain_item_id": {
+                  "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/id"
+                },
+                "id": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "kind": {
+                  "enum": [
+                    "forall",
+                    "exists",
+                    "exists_unique"
+                  ],
+                  "type": "string"
+                },
+                "lean_anchor": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "variable_anchor": {
+                  "minLength": 1,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "kind",
+                "variable_anchor",
+                "domain_item_id",
+                "depends_on",
+                "declaration",
+                "lean_anchor"
+              ],
+              "type": "object"
+            },
+            "minItems": 0,
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "anchor",
+          "dependency_ids",
+          "lean_coordinates",
+          "quantifiers"
+        ],
+        "type": "object"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "non_mathematical_anchors": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 0,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "origin_refs": {
+      "items": {
+        "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/exact_ref"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "required_domains": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 0,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "revision": {
+      "maximum": 9007199254740991,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "do-math-draft/explanation/8"
+    }
+  },
+  "required": [
+    "schema_version",
+    "id",
+    "revision",
+    "document_ref",
+    "formal_result_refs",
+    "math_items",
+    "non_mathematical_anchors",
+    "evidence",
+    "required_domains",
+    "origin_refs"
+  ],
+  "title": "explanation",
+  "type": "object",
+  "x-contract-id": "do-math-draft/explanation/8",
+  "x-id-prefix": "EX",
+  "x-owner-section": "11.1,19.6",
+  "x-storage": "research/formal/explanations/{id}.json"
+}

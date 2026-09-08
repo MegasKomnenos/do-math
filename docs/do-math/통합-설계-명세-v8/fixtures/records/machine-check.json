@@ -1,0 +1,19 @@
+{
+  "actual_scope": [],
+  "evidence_refs": [],
+  "failures": [],
+  "id": "MC-00000000000000000000000001",
+  "inputs": [],
+  "mode": "fixture",
+  "next_owner": {
+    "id": "F-00000000000000000000000001",
+    "kind": "instance"
+  },
+  "repairs": [],
+  "schema_version": "do-math-draft/machine-check/8",
+  "sequence": 0,
+  "tool": "fixture",
+  "uninspected_scope": [],
+  "verdict": "pass",
+  "version": "fixture"
+}

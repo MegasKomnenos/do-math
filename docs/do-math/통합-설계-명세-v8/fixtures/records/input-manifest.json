@@ -1,0 +1,104 @@
+{
+  "activity_kind": "research_preparation",
+  "authority_refs": [
+    {
+      "commit": "1111111111111111111111111111111111111111",
+      "record_id": "F-00000000000000000000000001",
+      "ref_kind": "record",
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "space": "research"
+    }
+  ],
+  "common_documents": [
+    {
+      "media_type": "fixture",
+      "path": "SKILL.md",
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "size_bytes": 0
+    },
+    {
+      "media_type": "fixture",
+      "path": "GLOSSARY.md",
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "size_bytes": 0
+    }
+  ],
+  "failure_refs": [],
+  "governance_refs": [],
+  "id": "IM-00000000000000000000000001",
+  "max_input_tokens": 100,
+  "output_schema_id": "fixture",
+  "planning_input": {
+    "actual_history_window": 0,
+    "actual_preparation_history_window": 0,
+    "candidate_listing": {
+      "algorithm": "hmac-sort-v1",
+      "items": [],
+      "loaded_count": 0,
+      "omitted_query": {
+        "family": "fixture",
+        "record_ids": [],
+        "space": "research"
+      },
+      "scope": {
+        "family": "fixture",
+        "record_ids": [],
+        "space": "research"
+      },
+      "shuffle_seed": "1111111111111111111111111111111111111111111111111111111111111111",
+      "snapshot_commit": "1111111111111111111111111111111111111111",
+      "total_count": 0,
+      "truncated": false
+    },
+    "canon_exposure": "full",
+    "canon_listing": {
+      "algorithm": "hmac-sort-v1",
+      "items": [],
+      "loaded_count": 0,
+      "omitted_query": {
+        "family": "fixture",
+        "record_ids": [],
+        "space": "research"
+      },
+      "scope": {
+        "family": "fixture",
+        "record_ids": [],
+        "space": "research"
+      },
+      "shuffle_seed": "1111111111111111111111111111111111111111111111111111111111111111",
+      "snapshot_commit": "1111111111111111111111111111111111111111",
+      "total_count": 0,
+      "truncated": false
+    },
+    "component_tokens": [],
+    "configured_history_window": 0,
+    "full_canon_tokens": 0,
+    "ongoing_refs": [],
+    "preparation_history": [],
+    "recent_history": [],
+    "required_failure_refs": []
+  },
+  "profile_ref": {
+    "commit": "1111111111111111111111111111111111111111",
+    "record_id": "F-00000000000000000000000001",
+    "ref_kind": "record",
+    "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+    "space": "research"
+  },
+  "provided_order": [],
+  "question": "fixture",
+  "read_scope": [],
+  "required_refs": [],
+  "role_documents": [
+    {
+      "media_type": "fixture",
+      "path": "fixture/input.json",
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "size_bytes": 0
+    }
+  ],
+  "schema_version": "do-math-draft/input-manifest/8",
+  "scope": [],
+  "snapshot_commit": "1111111111111111111111111111111111111111",
+  "token_count": 0
+}

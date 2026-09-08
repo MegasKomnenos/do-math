@@ -1,0 +1,510 @@
+{
+  "input_basis": [
+    {
+      "path": "do-math/통합-설계-초안.md",
+      "sha256": "e6fe76a68f74a76b8b4f39198e4528cfce1ee888d5f75c167b914b1abfcf0954"
+    },
+    {
+      "path": "do-math/통합-설계.md",
+      "sha256": "782b2c8338372e45a61a2a5192fee6869a3874ab44a8ff9be0b1aee09abee872"
+    },
+    {
+      "path": "형식과-절차.md",
+      "sha256": "152eb5ddb068036be98482359ab887a7a5c8f755ac84204713be6dcfe0f1a531"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/build_spec.py",
+      "sha256": "1020b9f908f469a43d0f6a7b28b27124dcc50e81be84a87150ba767b4c29be73"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/spec_checks.py",
+      "sha256": "b80d188b93d1ec3bcfa300c3b3fac846a5593f645efc5ff34e39abab8091304a"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/verify_spec.py",
+      "sha256": "cb14465e1b074f763ab88a636a675b8884cc6d5f5443d9692cae8a6738eaedce"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/schema-registry.json",
+      "sha256": "5ee3d5dd47d5d987168438c0cbd60b84f174446913125b75eaca5038afd43ba8"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/command-contracts.json",
+      "sha256": "22e58ddbb287df8013f33b9e0736c779fe3742df7d44374e978df96c8df6485d"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/role-contracts.json",
+      "sha256": "6728f36b5afeec4a8a801ae2d36dbb0238c16ec1bd6fc8341fd2de7bba4ed96c"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/semantic-rules.json",
+      "sha256": "a243bd0ad00c8c3b230383c13a208986255c470f220e440f632c17b16ad0f093"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/transitions.json",
+      "sha256": "ef4521ea5ae89be75add7c75f12b4b43d4fb8e46b474a3148b66f44e2a2eb0c6"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/source-vector-map.json",
+      "sha256": "0a667ca5a6fa6e214d2fdc668dd4ce4384145ec6b59899c35297832ee9e34cb4"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/relation-templates.json",
+      "sha256": "561887a83eb5432d255b680b9007808421318da8c9fdcad0a2d8324bba915000"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/toolchain-lock.json",
+      "sha256": "672963e22ee2e359f0d63990a88ee1e0b944a29c9c6a8ae19db441ce8601373d"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/schemas/action-result.schema.json",
+      "sha256": "686aad426291327be76e1b2d305d3f6d1c54f1773163df3e4eb68393464bd630"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/schemas/activity-result.schema.json",
+      "sha256": "b10346061ce7fe4cb9bb44fa5026b515f9227b031836fa59855502a6b94db137"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/schemas/activity.schema.json",
+      "sha256": "d3698b056679308c4912a1969c3ede7afb0874adccfaa4261f998ac2b2b03cd6"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/schemas/artifact.schema.json",
+      "sha256": "620b14e67d2ac9bee56d248ec15fb3d3e5b8f411f83ab23936f05e394e61443d"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/schemas/assessment-use.schema.json",
+      "sha256": "3ed4d51df78dc5106182f5669e79a60558fa97b912b6cc025ceaba8e9b665b72"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/schemas/assessment.schema.json",
+      "sha256": "e61dfd0a1c7f055869759a26ab48a2855f6aad1e7ca0acbbf5a5ed5508318161"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/schemas/budget.schema.json",
+      "sha256": "4f66340fe7e2e0c046d9c25714be0b0fa25bf78bce196047768ed5fbfbc5d8b1"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/schemas/command-request.schema.json",
+      "sha256": "2e73a857f14699f8c322a541b553e450551d4920672a987d68197f822845bab7"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/schemas/command-response.schema.json",
+      "sha256": "5623f11583f0007fa0b4fec9bf68eefc16f3f2f0e2e1b8a0ccaccb03d421959c"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/schemas/common.schema.json",
+      "sha256": "72a50d9878f85c86b6cb1988670d2651408666af40370663b7a37c4d87fc3236"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/schemas/conversation-state.schema.json",
+      "sha256": "80c71c0a74a9356b3d0165ff92993e119241e7c961187fda091cd2f034874351"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/schemas/decision.schema.json",
+      "sha256": "0fae443f1078178e5de9cd93fff29f8d20b81ce2808c4a3851966f4fd2d57325"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/schemas/execution-profile.schema.json",
+      "sha256": "263386f577b5a6fe88898b36cbd2bc615e62fab42f8c2fbd6d39a878d76f2774"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/schemas/execution.schema.json",
+      "sha256": "3552f15f43ddbcdfa3b6f1938288836aa141a6481e08997423af35fb2a9a93b6"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/schemas/explanation.schema.json",
+      "sha256": "935f2f056268202c44b9f2178a65e9dea91b578738966890443a70062848f524"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/schemas/external-action.schema.json",
+      "sha256": "7e03147013fddb1594b3a175a0d38223bc3887a72204de07f5e41bc7fe8f129e"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/schemas/formal-result.schema.json",
+      "sha256": "e2566cb1ee9b9096cd7b57c7c3451ce9db1fed1bea461e7731a1f2c1cd6e5c46"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/schemas/governance.schema.json",
+      "sha256": "4741b3c7bad950bf3c2e6bede24a5ed19e24f00f1f4a58d398d83661bf1ff94d"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/schemas/implementation-manifest.schema.json",
+      "sha256": "6fac3e38e5f112c5c8ae0ae0d5bd39c7a776916356120ed4752fc8b4c66225e7"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/schemas/input-manifest.schema.json",
+      "sha256": "d60e8ce00dcf2e27948f4ca3361922af82fef505149d4b200a89b15778d27024"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/schemas/instance.schema.json",
+      "sha256": "3a05eabe869af0c9f6a5d177822f5a9ba5ace9785058e1e913cbab3c1228b208"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/schemas/integration.schema.json",
+      "sha256": "2bbdc74a11b85ab338c2cf59f366f2db428dad174c1bba1e6508c6365f765ae1"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/schemas/issue-state.schema.json",
+      "sha256": "4c82f94427c8734f11856f695c2bf99b1feaf0bf6eb2ece0696fd306df224760"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/schemas/kind-definition.schema.json",
+      "sha256": "0fb82501fc502db7d17611d6d9968de1b611c4614f712ebddb919cf3c28f209c"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/schemas/knowledge.schema.json",
+      "sha256": "47e4746462b4d6c477d2216de22f2067ef0974d73b510c9f0161d93dffa10867"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/schemas/machine-check.schema.json",
+      "sha256": "01646e6f45d5074ea063ceef0b807914ad9cebc36198a726c35de60f1dc329c5"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/schemas/migration.schema.json",
+      "sha256": "a1663ef4446642f5e1fcb94b22035bda9cc47ec3e8c7e4d0620c20451a341b8b"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/schemas/operational-review.schema.json",
+      "sha256": "bfec787f9d040be78c750ded78b607f1cb663f08f9448157b582efb8c815efde"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/schemas/plan.schema.json",
+      "sha256": "c8299aaea53e4f9187f443596090f2d7b5060ab7dfea3d88e382ef52b09ebdd0"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/schemas/proposal.schema.json",
+      "sha256": "f7a6f6a9ac1bb549ad47a6e11c0c30263401349ed7af98c463a799d6c833d607"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/schemas/provider-operation.schema.json",
+      "sha256": "69bd16a461829dd0079296cc006e44d160ccf6b94aeaf2a128fed27b03d916f4"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/schemas/resource-reservation.schema.json",
+      "sha256": "35151dd36618d07348e6943ff8bb6dcee9bb183fbbdccc9e9b82bfc8ea58fb96"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/schemas/review-plan.schema.json",
+      "sha256": "ebbed39461be0770055f6f1fb7d5fd4a2e7fb4e16ee9db4f5ee53b4f6021adfe"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/schemas/review-policy.schema.json",
+      "sha256": "7d479a9e9e1af6e22e6868e1b787260835369abfe345d7a53b6f35977e6238ac"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/schemas/review-result.schema.json",
+      "sha256": "b463586ff88d108e5b984546675973e8696ada551ab463984551f2b8994afe83"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/schemas/runtime-event.schema.json",
+      "sha256": "480c10dd389468adb6df9b27b8471a160efdb59ecf2cebfd84475081f0f9f529"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/schemas/runtime.schema.json",
+      "sha256": "e81d14f9cc11fe5d87f296b56402cb1672d45a32de8182115f41965a59a3b51d"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/schemas/status.schema.json",
+      "sha256": "609c2b56382c2233c4a43396e733b92aaf21631db339238c54ab9f95b0c16f76"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/schemas/task.schema.json",
+      "sha256": "ba261671878f2525cdb69a0915bfac2c5e9e2a93980665c4da0a5b7604bf01af"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/schemas/trust-environment.schema.json",
+      "sha256": "78b1cf5cfbcdd80c05f6c0a15a2df027d293f6051b6272f4493d7e599b6bd56d"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/commands/apply.request.json",
+      "sha256": "2cdfe8b5e203432e590a3fef4663d463f5dfb3fffcc2285ae4703d212e198340"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/commands/apply.response.json",
+      "sha256": "be89a7debe40a6f5f9347775fc6e95e028a77767f72816416133534af7f73d87"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/commands/check.request.json",
+      "sha256": "562b2ca21cc0fa1640c72ed420687b9819004e3902cfe008889803fa9675a21a"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/commands/check.response.json",
+      "sha256": "dd81dea3e0f753d532021f8d79443c5157c2cc8031e5a627494a86d2acdea1a5"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/commands/checkpoint.request.json",
+      "sha256": "8f66c7bf48cd6e85f22814f6e480e71a01ccaa3a97e91a4634d2f74879aa6ac8"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/commands/checkpoint.response.json",
+      "sha256": "3ed88e7efbe393919f6a9d75dac1ccd27ba5dc3121f19738aa619cfdae911683"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/commands/decide.request.json",
+      "sha256": "afeb223f7238a442bc0eb5b115a9d7efef4e3d44e0ab2f6c00a430860db97331"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/commands/decide.response.json",
+      "sha256": "4ed94a245ebbc0a3898c1f7060531426421cbd317db17c560d2206a5e64a6ad3"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/commands/init.request.json",
+      "sha256": "8e7c2d7cc4b90fcba857fb00d4151c157219e87141b4ee29fb4ebfb35b7377f9"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/commands/init.response.json",
+      "sha256": "2b5a4864e717f2dfdabaf820f99f589d6cb22aafbe4bac54848fcc618a1de944"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/commands/migrate.request.json",
+      "sha256": "dff1f935cb1fdf7adb17c77bfcd3feb843e5cb3139286596efea16b3d2a58d8a"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/commands/migrate.response.json",
+      "sha256": "70184a487d9048fa0c338842ae445908c438b084b2f4eee4af45ff44c227391a"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/commands/pause.request.json",
+      "sha256": "7903f3f70816144ecf476fa98bd5b926cc64e7dfbcd05402a24768da9df9a090"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/commands/pause.response.json",
+      "sha256": "99cdbf496f07ca0e0f853b649273b9c75051ddc78ddbc5517ba1769bf0ac07e1"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/commands/query.request.json",
+      "sha256": "ab4492c27f3b350db2d351bc576d35ec27558cd4e250813986775b52ef9f3481"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/commands/query.response.json",
+      "sha256": "fae4ec0acebc3b9b0f9eda43a7ebdc72a579b80c8d445e86957d39fa9af03068"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/commands/read.request.json",
+      "sha256": "51a0b54cd0cc31061c68ff7568c4ab0beb130d00ec06e7f9dbb3f826159d2e17"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/commands/read.response.json",
+      "sha256": "76bbf0638e9974f9505353e28c292b93440b5afecccb0bfbad4afc08d0ea9c8b"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/commands/record.request.json",
+      "sha256": "8567fa3eccc4223ba02e1453d44a7335a6e7a87fe134b10b2b8e680bb228a99a"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/commands/record.response.json",
+      "sha256": "1b0b45b5f1e58e6366cb3e84751bae298b51b87aff36f94ed17d2d79bc24a40e"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/commands/recover.request.json",
+      "sha256": "1ea5fba2237c56125501d7efc0bbc05fa8615797661cd9af34ce556cd384e545"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/commands/recover.response.json",
+      "sha256": "3402fdf85513addcaa3c277333991395e0b950b70ba97969557457ffacda41a7"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/commands/resume.request.json",
+      "sha256": "ea1c05293823bac9c3a05b26238e6b28eb52d85e8e1de2137af5025dc83a4807"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/commands/resume.response.json",
+      "sha256": "b8a6bdf5bb675b288573e0b72bc962ae56e2c212d3332419c0c95053fd02d83a"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/commands/run.request.json",
+      "sha256": "324f588fd95cf312ae277775fb85adeafb9c7535072a4a0c9ba41746d9f99291"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/commands/run.response.json",
+      "sha256": "a117780f6a94b746774a75f19fc3523a3d76f46b8f6a40dfb8538623fa65d0f1"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/commands/status.request.json",
+      "sha256": "5ebc230a9f61105efca811ec553d426887627f9ef5f91ce344db73562a5fd491"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/commands/status.response.json",
+      "sha256": "78895cd48b50c795531629748e08baa0fd09752eec9b914ec527e1d018073eff"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/commands/submit.request.json",
+      "sha256": "3f10a182fa33ef59be65166fafffb9288d1f0cb8c1aca5dc36c91d2cbf7da3bb"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/commands/submit.response.json",
+      "sha256": "022bbde2ff22e9b6edec58e9a74d14f0bdf6de0002ef2e14aa7d757720277eb3"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/commands/trust.request.json",
+      "sha256": "37d8fb2d6b2529f4c3e7112f89a11c54cd1f6c623f1ec8b95086867922bed271"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/commands/trust.response.json",
+      "sha256": "9e1931c7248c0da1cd46b84e74edc4519c1b021ee28c3c8a2bfd1c73dbbab015"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/records/action-result.json",
+      "sha256": "7ef5347c95bd79f245cc6af2214888e3ec0b8e861281f0f7591515acdfbd7a64"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/records/activity-result.json",
+      "sha256": "82a4517b851c36b4391c2a4b522947ae1b06920d27346ac41a858dd9ef26618c"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/records/activity.json",
+      "sha256": "b47337e00ea0c321e4096979ba431170a5889cf61ba5ede4c62d13a44147d36c"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/records/artifact.json",
+      "sha256": "e1d34505a6f02d8c52673e4d9fd7a5e2206c7de43c2a2035d0c2d48836236de4"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/records/assessment-use.json",
+      "sha256": "bc66646691015cbf5808a6c82c7bdb5961c501680d76d945829561c24ed8a4ae"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/records/assessment.json",
+      "sha256": "884c98c277976bf707d1b00ad98d20a1bf8537ec2d51de12bb7b5b094992e568"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/records/budget.json",
+      "sha256": "675dcce28a3d6b6548650bcd4524a16a0019f07452222f6c418146b856aebae8"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/records/command-request.json",
+      "sha256": "8e7c2d7cc4b90fcba857fb00d4151c157219e87141b4ee29fb4ebfb35b7377f9"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/records/command-response.json",
+      "sha256": "2b5a4864e717f2dfdabaf820f99f589d6cb22aafbe4bac54848fcc618a1de944"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/records/conversation-state.json",
+      "sha256": "540dc4acd6d562410deb8dc6a571b39b63d39e5cbc2d377372bffe94f2fb2dd5"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/records/decision.json",
+      "sha256": "8dc3ddf246695f8d7723bb63d1e7601a9894a9302e928dfc223013ecd4d83b74"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/records/execution-profile.json",
+      "sha256": "260741482dc84795c585ca749fcaae6a9a606e3ad197a42ac74f090fbfecc468"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/records/execution.json",
+      "sha256": "7723fa07f02344145b277c6abe2e843b2ec0a67e3b0e3b9053e14f6af78c0244"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/records/explanation.json",
+      "sha256": "189eef5ea7b3e7a76d72f601f1986c83776c3d02108f71178e3e77eea51c2a2e"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/records/external-action.json",
+      "sha256": "6045324e3bc884a27a29f94246235370aab0ca872c501ecbd74f1715aa6eb06b"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/records/formal-result.json",
+      "sha256": "de75aff8f68423f27797591cead9d8a1afadf1ac8ff9754d4f9d1091e1598634"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/records/governance.json",
+      "sha256": "d6a288044a86422951ff09874dfddff5e7690792bee25f7217a73622f53ed9f8"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/records/implementation-manifest.json",
+      "sha256": "a18daddf85b620ab42ee0526041453adf62bce2281e9393da420dda96c1c6a63"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/records/input-manifest.json",
+      "sha256": "b579c499313dda777b736b30687d575d51aebfb4f1f5aeaa9612b4ebcf9183e4"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/records/instance.json",
+      "sha256": "8e690e62e32c3a7da0d5104928abac4e3a7cf4acf323568e832205bde2e5d3de"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/records/integration.json",
+      "sha256": "ae94ff6680b1bfc38e76fdb7d2d58ac30c38dd5d08ddd38d35d4960f88303a5f"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/records/issue-state.json",
+      "sha256": "700f45e8477ae76aa5b17b30dac4d4092a42ba76df157d14425dcebb5524565f"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/records/kind-definition.json",
+      "sha256": "ad7d6b0bda8a1ef34cdb503baf180f5481eb9a23273268af90aab615464841a8"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/records/knowledge.json",
+      "sha256": "0b5c5990886518c6fa1256e0dc68824a312d02f7ea82e7ad14bd779672ecdd27"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/records/machine-check.json",
+      "sha256": "a2e7093821ab0e50426ca5ba317d1546c2e01f6f5b0a770067f72525034dbb30"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/records/migration.json",
+      "sha256": "6edd8d0467c0b5870c2f4b3725d83386b25f0b7c5f6a11a6c11ab41bd16153b9"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/records/operational-review.json",
+      "sha256": "cf0f0370ee87c9a48b7fb3d77caa4833aaad56693a85d3d77c52f97284ceb909"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/records/plan.json",
+      "sha256": "2cf8d8c728663f99e4868112c15f980fa3c5851ec50e573357fc0641c5a78960"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/records/proposal.json",
+      "sha256": "5718bb48ea52b80d5674b7722343f8ccafb19384e68457a9ceeb6e7d372fb15d"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/records/provider-operation.json",
+      "sha256": "d1b2431b6dee2bf80669eb08970ca1dace37ee9f9dc5ecf045354414cf958b11"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/records/resource-reservation.json",
+      "sha256": "27613af613649f414f13fe3269a975949a0e5de933fca646336271d20bc8086b"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/records/review-plan.json",
+      "sha256": "ad7752d724950f2658b3d18680be55359167ba59363969e950f8d90d8eb35483"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/records/review-policy.json",
+      "sha256": "807247c8332d2bd7162e14a86a3c61a5985d2cc6b0040273b40a78a15ea1e557"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/records/review-result.json",
+      "sha256": "ef7256fe6b297c764063e98cf5ebe4baecad08361a0ae0852b41289477405c3a"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/records/runtime-event.json",
+      "sha256": "20414e65d91e00219df6f9314ce5eaea8653362ec89b53e7a0702a6c88941610"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/records/runtime.json",
+      "sha256": "ef3e4550034bbab9b28e0fe481d639a0e37fd630f9ec4fc9cc0b40262f4e8fd4"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/records/status.json",
+      "sha256": "02590088dd2b7ca43ca6097760e6809bb8bb1f2841c7f57f79c70313a4343146"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/records/task.json",
+      "sha256": "9f113772e55f7b5320f0c916299f0d3b73da6b670c6d09adf6f09508df8515b9"
+    },
+    {
+      "path": "do-math/통합-설계-명세-v8/fixtures/records/trust-environment.json",
+      "sha256": "6f3b5ac4f1f8b94116d82c79a4fcb6bad85905e686d004dd3a1dab14a604e1f7"
+    }
+  ],
+  "ledger": "장부.md",
+  "scope": "independent_text_review_before_author_corrections",
+  "snapshot": "검토대상.md",
+  "source": "../../../통합-설계-초안.md",
+  "source_sha256": "e6fe76a68f74a76b8b4f39198e4528cfce1ee888d5f75c167b914b1abfcf0954",
+  "units": 2796
+}

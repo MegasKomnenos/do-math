@@ -1,0 +1,601 @@
+{
+  "rules": [
+    {
+      "contract": "sum(work_slots, operations_slots) <= total_slots; local execution constraints and every provider call constraint are reserved atomically.",
+      "domain": "budget",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R01",
+      "owner_section": "4.1",
+      "source_vectors": [
+        "V01",
+        "V37",
+        "V72"
+      ]
+    },
+    {
+      "contract": "ended releases only proved local resources; unknown provider reservations survive execution termination.",
+      "domain": "reservation",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R02",
+      "owner_section": "4.2",
+      "source_vectors": [
+        "V10",
+        "V76",
+        "V77"
+      ]
+    },
+    {
+      "contract": "confirmed_consumed + returned <= reserved; settlement requires evidence; hard limits require enforceable upper bounds. Settled requires confirmed_consumed + returned == reserved.",
+      "domain": "reservation",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R03",
+      "owner_section": "4.5",
+      "source_vectors": [
+        "V56",
+        "V57",
+        "V58"
+      ]
+    },
+    {
+      "contract": "At most one non-ended research_work request per task, including queued; completed/closed require all owned research executions ended.",
+      "domain": "task",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R04",
+      "owner_section": "5.3",
+      "source_vectors": [
+        "V45",
+        "V46"
+      ]
+    },
+    {
+      "contract": "A contract revision applies only after previous research executions ended and independent approval exists; remaining_scope cannot waive contract obligations.",
+      "domain": "task",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R05",
+      "owner_section": "5.5",
+      "source_vectors": [
+        "V55",
+        "V69",
+        "V70"
+      ]
+    },
+    {
+      "contract": "Evaluate all AST branches at one snapshot; errors dominate true/false; missing dynamic records are false, broken declared artifact refs are errors.",
+      "domain": "occurrence",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R06",
+      "owner_section": "5.7",
+      "source_vectors": [
+        "V163",
+        "V164",
+        "V165"
+      ]
+    },
+    {
+      "contract": "Only documented execution transitions; stopping phases only checkpointing -> terminating; ended is immutable.",
+      "domain": "execution",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R07",
+      "owner_section": "6.2",
+      "source_vectors": [
+        "V07",
+        "V11",
+        "V39"
+      ]
+    },
+    {
+      "contract": "No substantive action before running authority; all startup reservations including bounded finishing usage are present.",
+      "domain": "execution",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R08",
+      "owner_section": "6.3",
+      "source_vectors": [
+        "V08",
+        "V09",
+        "V13",
+        "V167"
+      ]
+    },
+    {
+      "contract": "Stopping checkpoint authority is bounded in time/tools/paths/usage; immediate stop, expiry or integrity loss skips it.",
+      "domain": "execution",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R09",
+      "owner_section": "6.4.1",
+      "source_vectors": [
+        "V155",
+        "V156",
+        "V157",
+        "V158",
+        "V185"
+      ]
+    },
+    {
+      "contract": "Submission acknowledgement is not output acceptance; bytes are collected after the termination barrier and compared to the announced manifest.",
+      "domain": "execution",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R10",
+      "owner_section": "6.5",
+      "source_vectors": [
+        "V43",
+        "V11"
+      ]
+    },
+    {
+      "contract": "The initial state commit has no parent; every later state commit has exactly its preceding state as parent and contains research/runtime; runtime-only changes preserve research tree; artifacts cannot change or disappear.",
+      "domain": "state",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R11",
+      "owner_section": "7.1",
+      "source_vectors": [
+        "V14",
+        "V15",
+        "V42",
+        "V65",
+        "V67",
+        "V197"
+      ]
+    },
+    {
+      "contract": "Exact refs resolve to preserved bytes at the named snapshot/bundle; tree refs are same-space structural only and never judgment/permission inputs.",
+      "domain": "reference",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R12",
+      "owner_section": "7.2",
+      "source_vectors": [
+        "V41",
+        "V54"
+      ]
+    },
+    {
+      "contract": "Clock rollback or restart never grants a fresh deadline; expired events are merged once and permissions rechecked.",
+      "domain": "time",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R13",
+      "owner_section": "7.2.1",
+      "source_vectors": [
+        "V66",
+        "V79"
+      ]
+    },
+    {
+      "contract": "Record family/subkind/endpoint constraints and assessment dependencies are checked together; body mentions create no authority relation. Installed relation templates have no active instance identity; mathematical kinds require formal-result and assessment evidence.",
+      "domain": "knowledge",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R14",
+      "owner_section": "7.3,7.3.2",
+      "source_vectors": [
+        "V82",
+        "V85",
+        "V86",
+        "V87",
+        "V179",
+        "V193"
+      ]
+    },
+    {
+      "contract": "Mandatory common/role/governance text, pending failures and issues are present before judgment; required exact inputs cannot be replaced by summaries; stable components precede per-round components; governance or common text that cannot fit escalates to the user.",
+      "domain": "input",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R15",
+      "owner_section": "8.1",
+      "source_vectors": [
+        "V48",
+        "V103",
+        "V129",
+        "V161",
+        "V180",
+        "V204"
+      ]
+    },
+    {
+      "contract": "Same review slot receives its own messages in full and, uniformly, every tool-result body and prior proposal version as exact reference entries inside its read scope; overflow is classified into information-preserving reduction, self-repair, proposal-overflow closure or user escalation; non-restoring AI activities restart once with the failure measurement as input; a second accumulation overflow or a residual overflow after reference restoration escalates; a user hold closes the activity with its current result; a records-based replacement requires a user decision or general permission and records its cause.",
+      "domain": "input",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R16",
+      "owner_section": "8.3",
+      "source_vectors": [
+        "V144",
+        "V145",
+        "V146",
+        "V166",
+        "V201",
+        "V202",
+        "V208",
+        "V209",
+        "V210",
+        "V211",
+        "V212",
+        "V214"
+      ]
+    },
+    {
+      "contract": "Both listings are supplied in full when they fit; history windows shrink first; if the listings still overflow the engine escalates to the user without truncating; truncation happens only under a recorded permission whose closed truncation fields name the lists, order and activity kinds, with snapshot population/counts and retrievable omissions.",
+      "domain": "listing",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R17",
+      "owner_section": "8.5",
+      "source_vectors": [
+        "V18",
+        "V118",
+        "V119",
+        "V127",
+        "V141",
+        "V160",
+        "V178",
+        "V206",
+        "V207",
+        "V213"
+      ]
+    },
+    {
+      "contract": "Preparation/selection have one open activity each; opened_at anchors recurrence; only consumed input events advance cursors.",
+      "domain": "activity",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R18",
+      "owner_section": "9.1",
+      "source_vectors": [
+        "V78",
+        "V79",
+        "V130",
+        "V131",
+        "V172",
+        "V173"
+      ]
+    },
+    {
+      "contract": "Selector is not in candidate author_execution_ids and does not resume/fork author context; prepared tasks do not wait for unrelated reviews.",
+      "domain": "independence",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R19",
+      "owner_section": "9.2.1",
+      "source_vectors": [
+        "V123",
+        "V125"
+      ]
+    },
+    {
+      "contract": "Exactly one disposition per supplied candidate; dispositions name a listed task_id/revision and the engine binds exact refs in the activity result without editing plan bytes; a plan cut at max output is a receipt failure that escalates without retry and is not a selection failure; sum requests per shared execution constraint respects its cap.",
+      "domain": "plan",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R20",
+      "owner_section": "9.3",
+      "source_vectors": [
+        "V120",
+        "V183",
+        "V205"
+      ]
+    },
+    {
+      "contract": "Academic state uses exact current solution/requirements and unresolved external rejection; old completed work never silently carries to changed bases.",
+      "domain": "academic",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R21",
+      "owner_section": "9.4",
+      "source_vectors": [
+        "V97",
+        "V98",
+        "V99",
+        "V100"
+      ]
+    },
+    {
+      "contract": "Apply only declared changes to latest research and latest runtime; semantic merge is AI-owned; long checks rerun if their input closure changes.",
+      "domain": "integration",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R22",
+      "owner_section": "10.3",
+      "source_vectors": [
+        "V42",
+        "V67",
+        "V181"
+      ]
+    },
+    {
+      "contract": "Three basic perspectives plus every required domain and source fidelity; every reviewer reads the full proposal; if it does not fit no review plan is made, the activity closes unresolved and the next plan returns restructuring to the author or asks the user for a larger profile; planners never split proposals.",
+      "domain": "review",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R23",
+      "owner_section": "11.3",
+      "source_vectors": [
+        "V19",
+        "V44",
+        "V47",
+        "V90",
+        "V162",
+        "V177"
+      ]
+    },
+    {
+      "contract": "New proposal versions receive all new semantic judgments; same version/scope/input may retain other completed slots.",
+      "domain": "review",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R24",
+      "owner_section": "11.4",
+      "source_vectors": [
+        "V62",
+        "V139",
+        "V142",
+        "V143"
+      ]
+    },
+    {
+      "contract": "Unanimous approved establishes an objection; final split/unresolved stays unresolved; last unanimous rejected closes without new response.",
+      "domain": "review",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R25",
+      "owner_section": "11.4.1",
+      "source_vectors": [
+        "V136",
+        "V147",
+        "V149",
+        "V170"
+      ]
+    },
+    {
+      "contract": "Count every allocated execution ID once, including queued, start-failed, cancelled, organizer, recovery and retry requests. Fund planning, initial slots, organizer, answers and judges from explicit stage counts; protect all remaining mandatory allocations before optional work. Split issues inherit rounds.",
+      "domain": "review",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R26",
+      "owner_section": "11.3.1,11.4",
+      "source_vectors": [
+        "V20",
+        "V63",
+        "V137",
+        "V148",
+        "V190",
+        "V191"
+      ]
+    },
+    {
+      "contract": "All completed match => match; disputed path unanimous mismatch => mismatch; disagreement or incomplete scope => unresolved with findings retained.",
+      "domain": "review",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R27",
+      "owner_section": "11.5",
+      "source_vectors": [
+        "V21",
+        "V64",
+        "V91",
+        "V92"
+      ]
+    },
+    {
+      "contract": "Only actual assessment dependencies suspend. Revalidate the original assessment's kind, value, basis and effects to restore use; confirmed error in that assessment withdraws it. New positive/negative values alone imply neither outcome. Unresolved meta-review remains suspended; independent explanations and formally valid results remain.",
+      "domain": "assessment",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R28",
+      "owner_section": "11.8",
+      "source_vectors": [
+        "V22",
+        "V23",
+        "V27",
+        "V198",
+        "V199"
+      ]
+    },
+    {
+      "contract": "Valid self-check resets maximum interval anchor; retransmission/rule-only change does not; old obligations and no-progress history survive rule changes.",
+      "domain": "observation",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R29",
+      "owner_section": "12.1.1",
+      "source_vectors": [
+        "V134",
+        "V152",
+        "V153",
+        "V154",
+        "V169",
+        "V175",
+        "V176",
+        "V187"
+      ]
+    },
+    {
+      "contract": "The self-check time deadline is due time plus window without an in-flight tool, or first safe boundary plus window with one. Before that boundary it is unset; response must also precede the next research action. Independent tool_review_due and machine stop still apply.",
+      "domain": "observation",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R30",
+      "owner_section": "12.1.1",
+      "source_vectors": [
+        "V135",
+        "V168",
+        "V200"
+      ]
+    },
+    {
+      "contract": "One open operational review per execution; valid progress does not cancel explicitly scheduled review or periodic duty.",
+      "domain": "observation",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R31",
+      "owner_section": "12.2",
+      "source_vectors": [
+        "V133",
+        "V150",
+        "V151"
+      ]
+    },
+    {
+      "contract": "Exact user approval requires no universal second confirmation; newly interpreted scope requires checking and user decision.",
+      "domain": "decision",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R32",
+      "owner_section": "13.1",
+      "source_vectors": [
+        "V28",
+        "V101"
+      ]
+    },
+    {
+      "contract": "Repeated-work holds follow lineage and explicit continue decisions, not new IDs; proposal-limit decisions cannot be delegated; overflow escalations from 8.3/9.3 and capacity shortages are not selection failures.",
+      "domain": "threshold",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R33",
+      "owner_section": "13.1.1",
+      "source_vectors": [
+        "V174",
+        "V184",
+        "V205"
+      ]
+    },
+    {
+      "contract": "Case approval is not future delegation; independent blinded checking and current original authority are required for semantic reuse.",
+      "domain": "decision",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R34",
+      "owner_section": "13.2",
+      "source_vectors": [
+        "V29",
+        "V113",
+        "V114",
+        "V115",
+        "V116",
+        "V117"
+      ]
+    },
+    {
+      "contract": "Persist preparation before external action; unknown cannot be blindly resent; cancelled requires proof not invoked; partial effects are unknown.",
+      "domain": "external",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R35",
+      "owner_section": "13.3",
+      "source_vectors": [
+        "V30",
+        "V52",
+        "V53",
+        "V71",
+        "V108"
+      ]
+    },
+    {
+      "contract": "Pause preserves resume_lifecycle including initializing; queued ends without reservation and stopping remains visible until barrier.",
+      "domain": "lifecycle",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R36",
+      "owner_section": "13.5",
+      "source_vectors": [
+        "V04",
+        "V32",
+        "V39",
+        "V40"
+      ]
+    },
+    {
+      "contract": "Read-only integrity check precedes new engine_id; reconcile actual local/remote effects without new model inference.",
+      "domain": "recovery",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R37",
+      "owner_section": "14.2",
+      "source_vectors": [
+        "V49",
+        "V57",
+        "V75"
+      ]
+    },
+    {
+      "contract": "One active trust environment; transition freezes new K, validates full target set, and preserves old valid environment on failure.",
+      "domain": "trust",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R38",
+      "owner_section": "15",
+      "source_vectors": [
+        "V34",
+        "V110"
+      ]
+    },
+    {
+      "contract": "Actual capability receipts are mandatory for support; fixture success is not proof of input injection, isolation or remote termination. Adapters that cannot disable or report conversation compaction, return per-call stop reasons and per-result artifacts are not used for transcript-restoring activities. The Windows adapter implements the documented non-inherited Job handle, suspended startup, authority-before-resume and observed termination conditions.",
+      "domain": "adapter",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R39",
+      "owner_section": "16.1,16.1.1",
+      "source_vectors": [
+        "V33",
+        "V61",
+        "V106",
+        "V140",
+        "V194",
+        "V203"
+      ]
+    },
+    {
+      "contract": "Same request ID and canonical input => previous result; different input => rejection; identical checker/input disagreement is tool failure.",
+      "domain": "command",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R40",
+      "owner_section": "16.3",
+      "source_vectors": [
+        "V12",
+        "V104",
+        "V182"
+      ]
+    },
+    {
+      "contract": "initializing -> active requires complete activation evidence: approved governance, valid references, operations capacity, active trust and recovery.",
+      "domain": "lifecycle",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R41",
+      "owner_section": "14.1",
+      "source_vectors": [
+        "V08",
+        "V49"
+      ]
+    },
+    {
+      "contract": "waiting may resume only after its recorded wake condition resolves; a task additionally requires a committed new research request.",
+      "domain": "waiting",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R42",
+      "owner_section": "3.2.1,5.3",
+      "source_vectors": [
+        "V04",
+        "V45",
+        "V112"
+      ]
+    },
+    {
+      "contract": "The assigned execution fixes review-result phase and role slot; validate the output against that exact assignment as well as its schema. Organize/answer never authorize a semantic verdict.",
+      "domain": "review",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R43",
+      "owner_section": "11.3.2,16.5",
+      "source_vectors": [
+        "V192"
+      ]
+    },
+    {
+      "contract": "Quantifier order and witness dependencies are semantic obligations. A counterexample must meet every hypothesis and violate the conclusion; goal satisfaction follows the charter, not merely a proof of excluded middle.",
+      "domain": "mathematics",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R44",
+      "owner_section": "11.1,11.7,17.3.1",
+      "source_vectors": [
+        "V195",
+        "V196"
+      ]
+    },
+    {
+      "contract": "A profile used for transcript restoration has compaction disabled with evidence; an overflowing call fails without compaction and the execution ends execution_incomplete with cause context_overflow and measured components; reference-form transcript entries lie within the execution's read scope.",
+      "domain": "input",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R45",
+      "owner_section": "8.3,16.2",
+      "source_vectors": [
+        "V201",
+        "V203",
+        "V208"
+      ]
+    },
+    {
+      "contract": "Contract revisions of one task are numbered from 1; reaching contract_revision_limit holds authoring of the next revision until an explicit user decision; new IDs or renamed equivalents do not reset the count; other tasks continue.",
+      "domain": "threshold",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R46",
+      "owner_section": "5.5,13.1.1",
+      "source_vectors": [
+        "V215"
+      ]
+    }
+  ],
+  "version": 9
+}

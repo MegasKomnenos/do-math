@@ -1,0 +1,11 @@
+{
+  "command": "pause",
+  "exit_code": 0,
+  "request_id": "RQ-00000000000000000000000001",
+  "result": {
+    "snapshot_commit": "1111111111111111111111111111111111111111",
+    "stopping_execution_ids": [],
+    "unsettled_reservation_ids": []
+  },
+  "schema_version": "do-math-draft/command-response/9"
+}

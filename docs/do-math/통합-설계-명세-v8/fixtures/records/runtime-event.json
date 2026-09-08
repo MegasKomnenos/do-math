@@ -1,0 +1,20 @@
+{
+  "at": "2026-09-07T00:00:00.000Z",
+  "basis_refs": [],
+  "consumed_by": [],
+  "event_seq": 0,
+  "id": "EVT-00000000000000000000000001",
+  "kind": "activity_opened",
+  "owner": {
+    "id": "F-00000000000000000000000001",
+    "kind": "instance"
+  },
+  "payload_ref": {
+    "bundle_id": "AB-00000000000000000000000001",
+    "path": "fixture/input.json",
+    "ref_kind": "artifact",
+    "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+  },
+  "schema_version": "do-math-draft/runtime-event/8",
+  "trigger_key": "fixture"
+}

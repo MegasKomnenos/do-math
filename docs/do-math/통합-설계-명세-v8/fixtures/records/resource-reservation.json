@@ -1,0 +1,28 @@
+{
+  "authority_refs": [
+    {
+      "commit": "1111111111111111111111111111111111111111",
+      "record_id": "F-00000000000000000000000001",
+      "ref_kind": "record",
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "space": "research"
+    }
+  ],
+  "confirmed_consumed": 0,
+  "constraint_id": "fixture",
+  "evidence_refs": [],
+  "id": "RR-00000000000000000000000001",
+  "owner_id": "F-00000000000000000000000001",
+  "owner_kind": "execution",
+  "purpose": "normal",
+  "reconcile_owner": "engine",
+  "reobserve": {
+    "at": "2026-09-07T00:00:00.000Z",
+    "kind": "time"
+  },
+  "reserved": 0,
+  "returned": 0,
+  "schema_version": "do-math-draft/resource-reservation/8",
+  "state": "held",
+  "unit": "fixture"
+}

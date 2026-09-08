@@ -1,0 +1,120 @@
+{
+  "$id": "https://do-math.invalid/schemas/draft/8/runtime-event",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "at": {
+      "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/instant"
+    },
+    "basis_refs": {
+      "items": {
+        "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/exact_ref"
+      },
+      "minItems": 0,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "consumed_by": {
+      "items": {
+        "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/id"
+      },
+      "minItems": 0,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "event_seq": {
+      "maximum": 9007199254740991,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "execution_id": {
+      "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/id_E"
+    },
+    "id": {
+      "allOf": [
+        {
+          "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/id"
+        },
+        {
+          "pattern": "^EVT-"
+        }
+      ]
+    },
+    "kind": {
+      "enum": [
+        "activity_opened",
+        "activity_finished",
+        "execution_started",
+        "execution_ended",
+        "self_check_due",
+        "self_check_received",
+        "self_check_missed",
+        "rules_changed",
+        "rules_rejected",
+        "tool_review_due",
+        "permission_expired",
+        "conversation_lost",
+        "preparation_due",
+        "exhaustion",
+        "threshold_opened",
+        "threshold_continued",
+        "checkpointing_started",
+        "checkpoint_received",
+        "checkpoint_missed",
+        "external_action_changed",
+        "reservation_reconciled",
+        "integration_applied"
+      ],
+      "type": "string"
+    },
+    "owner": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/id"
+        },
+        "kind": {
+          "enum": [
+            "instance",
+            "task",
+            "activity"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "id"
+      ],
+      "type": "object"
+    },
+    "payload_ref": {
+      "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/artifact_ref"
+    },
+    "schema_version": {
+      "const": "do-math-draft/runtime-event/8"
+    },
+    "trigger_key": {
+      "minLength": 1,
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "id",
+    "event_seq",
+    "kind",
+    "at",
+    "owner",
+    "basis_refs",
+    "trigger_key",
+    "consumed_by",
+    "payload_ref"
+  ],
+  "title": "runtime-event",
+  "type": "object",
+  "x-contract-id": "do-math-draft/runtime-event/8",
+  "x-id-prefix": "EVT",
+  "x-owner-section": "3.2.1,9.1,12.1.1,13.1.1,19.4",
+  "x-storage": "runtime/events/{id}.json"
+}

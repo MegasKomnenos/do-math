@@ -1,0 +1,34 @@
+{
+  "actual_scope": [],
+  "execution_id": "E-00000000000000000000000001",
+  "followups": [],
+  "id": "AR-00000000000000000000000001",
+  "incidental_insights": [],
+  "input_manifest_ref": {
+    "commit": "1111111111111111111111111111111111111111",
+    "record_id": "F-00000000000000000000000001",
+    "ref_kind": "record",
+    "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+    "space": "research"
+  },
+  "kind": "research_preparation",
+  "owner_activity_id": "AC-00000000000000000000000001",
+  "payload": {
+    "attempts_ref": {
+      "bundle_id": "AB-00000000000000000000000001",
+      "path": "fixture/input.json",
+      "ref_kind": "artifact",
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+    },
+    "exploitation_consideration": "fixture",
+    "exploration_consideration": "fixture",
+    "frontier_proposals": [],
+    "observed_at": "2026-09-07T00:00:00.000Z",
+    "open_questions": [],
+    "receiver_check_refs": [],
+    "refinement_proposals": [],
+    "regenerate_after": "2026-09-07T00:00:01.000Z",
+    "task_proposals": []
+  },
+  "schema_version": "do-math-draft/activity-result/8"
+}

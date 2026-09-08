@@ -1,0 +1,162 @@
+{
+  "$id": "https://do-math.invalid/schemas/draft/9/proposal",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "revision": {
+            "minimum": 2
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "previous_proposal_ref",
+          "repair_map_ref",
+          "review_lineage_id"
+        ]
+      }
+    }
+  ],
+  "properties": {
+    "author_execution_ids": {
+      "items": {
+        "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/id_E"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "base_snapshot_commit": {
+      "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/oid"
+    },
+    "dependency_refs": {
+      "items": {
+        "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+      },
+      "minItems": 0,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "explanation_ref": {
+      "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/artifact_ref"
+    },
+    "formal_subject_refs": {
+      "items": {
+        "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "goal_claim_refs": {
+      "items": {
+        "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+      },
+      "minItems": 0,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "id": {
+      "allOf": [
+        {
+          "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/id"
+        },
+        {
+          "pattern": "^PR-"
+        }
+      ]
+    },
+    "preflight_check_refs": {
+      "items": {
+        "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+      },
+      "minItems": 0,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "previous_proposal_ref": {
+      "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/artifact_ref"
+    },
+    "repair_map_ref": {
+      "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/artifact_ref"
+    },
+    "required_domains": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 0,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "review_lineage_id": {
+      "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/id_AC"
+    },
+    "revision": {
+      "maximum": 9007199254740991,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "do-math-draft/proposal/9"
+    },
+    "source_manifest": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "media_type": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "path": {
+            "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/path"
+          },
+          "sha256": {
+            "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/sha256"
+          },
+          "size_bytes": {
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "path",
+          "sha256",
+          "media_type",
+          "size_bytes"
+        ],
+        "type": "object"
+      },
+      "minItems": 0,
+      "type": "array"
+    },
+    "trust_environment_ref": {
+      "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+    }
+  },
+  "required": [
+    "schema_version",
+    "id",
+    "revision",
+    "author_execution_ids",
+    "base_snapshot_commit",
+    "trust_environment_ref",
+    "formal_subject_refs",
+    "explanation_ref",
+    "source_manifest",
+    "dependency_refs",
+    "required_domains",
+    "goal_claim_refs",
+    "preflight_check_refs"
+  ],
+  "title": "proposal",
+  "type": "object",
+  "x-contract-id": "do-math-draft/proposal/9",
+  "x-id-prefix": "PR",
+  "x-owner-section": "11.1,11.4,19.6",
+  "x-storage": "runtime/artifacts/{bundle_id}/proposal.json"
+}

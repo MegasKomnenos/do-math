@@ -1,0 +1,130 @@
+{
+  "$id": "https://do-math.invalid/schemas/draft/8/review-policy",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "approval_ref": {
+      "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/exact_ref"
+    },
+    "execution_limit": {
+      "maximum": 9007199254740991,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "final_judges": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "perspective": {
+            "enum": [
+              "objection_establishment",
+              "objection_rebuttal",
+              "context_comparison"
+            ],
+            "type": "string"
+          },
+          "profile_ref": {
+            "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/exact_ref"
+          },
+          "qualification_ref": {
+            "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/artifact_ref"
+          }
+        },
+        "required": [
+          "id",
+          "perspective",
+          "profile_ref",
+          "qualification_ref"
+        ],
+        "type": "object"
+      },
+      "maxItems": 3,
+      "minItems": 3,
+      "type": "array"
+    },
+    "id": {
+      "allOf": [
+        {
+          "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/id"
+        },
+        {
+          "pattern": "^RP-"
+        }
+      ]
+    },
+    "independence_rules_ref": {
+      "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/artifact_ref"
+    },
+    "objection_round_limit": {
+      "maximum": 9007199254740991,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "required_evidence": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 0,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "required_perspectives": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "count": {
+            "maximum": 9007199254740991,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "name": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "count"
+        ],
+        "type": "object"
+      },
+      "minItems": 3,
+      "type": "array"
+    },
+    "revision": {
+      "maximum": 9007199254740991,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "do-math-draft/review-policy/8"
+    },
+    "scope_rule_ref": {
+      "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/artifact_ref"
+    }
+  },
+  "required": [
+    "schema_version",
+    "id",
+    "revision",
+    "required_perspectives",
+    "final_judges",
+    "execution_limit",
+    "objection_round_limit",
+    "scope_rule_ref",
+    "required_evidence",
+    "independence_rules_ref",
+    "approval_ref"
+  ],
+  "title": "review-policy",
+  "type": "object",
+  "x-contract-id": "do-math-draft/review-policy/8",
+  "x-id-prefix": "RP",
+  "x-owner-section": "11.3,19.6",
+  "x-storage": "research/governance/review-policies/{id}.json"
+}

@@ -1,0 +1,218 @@
+{
+  "binding": "The execution output_schema_id must equal the assigned role output family URI. Review-result outputs must also match the assigned output_phase, role_slot_id, execution, activity and input manifest. Exact proposal/revision bindings are checked against the referenced assignment.",
+  "roles": [
+    {
+      "activity_kind": "research_preparation",
+      "actor_kind": "ai",
+      "authority": "Submit an immutable role output; the engine owns state publication and applies all domain gates.",
+      "incomplete": "Return actual scope and partial bytes through execution_incomplete; do not fabricate a role verdict.",
+      "mandatory_input": "Exact activity assignment, common and role documents, applicable governance, required evidence, prior failures and permitted transcript.",
+      "output_family": "activity-result",
+      "stage": "drafting"
+    },
+    {
+      "activity_kind": "research_plan",
+      "actor_kind": "ai",
+      "authority": "Submit an immutable role output; the engine owns state publication and applies all domain gates.",
+      "incomplete": "Return actual scope and partial bytes through execution_incomplete; do not fabricate a role verdict.",
+      "mandatory_input": "Exact activity assignment, common and role documents, applicable governance, required evidence, prior failures and permitted transcript.",
+      "output_family": "plan",
+      "stage": "selecting"
+    },
+    {
+      "activity_kind": "research_work",
+      "actor_kind": "ai",
+      "authority": "Submit an immutable role output; the engine owns state publication and applies all domain gates.",
+      "incomplete": "Return actual scope and partial bytes through execution_incomplete; do not fabricate a role verdict.",
+      "mandatory_input": "Exact activity assignment, common and role documents, applicable governance, required evidence, prior failures and permitted transcript.",
+      "output_family": "activity-result",
+      "stage": "performing"
+    },
+    {
+      "activity_kind": "task_contract_review",
+      "actor_kind": "ai",
+      "authority": "Submit an immutable role output; the engine owns state publication and applies all domain gates.",
+      "incomplete": "Return actual scope and partial bytes through execution_incomplete; do not fabricate a role verdict.",
+      "mandatory_input": "Exact activity assignment, common and role documents, applicable governance, required evidence, prior failures and permitted transcript.",
+      "output_family": "activity-result",
+      "stage": "assessing"
+    },
+    {
+      "activity_kind": "identity_review",
+      "actor_kind": "ai",
+      "authority": "Allocate expertise, slots and execution counts for a proposal that fits in full; when it does not fit the engine closes the activity unresolved with the measurement and the next research plan owns restructuring or profile requests; no identity approval.",
+      "incomplete": "Return actual scope and partial bytes through execution_incomplete; do not fabricate a role verdict.",
+      "mandatory_input": "Exact proposal, policy, sources, domains, measured input fit, own restored transcript and execution capacity; calculate every mandatory stage allocation; no plan when the full proposal does not fit.",
+      "output_family": "review-plan",
+      "owner_section": "11.3.2",
+      "stage": "planning"
+    },
+    {
+      "activity_kind": "identity_review",
+      "actor_kind": "ai",
+      "authority": "Assess the assigned scope and submit explicit objections/remaining questions; do not edit the proposal.",
+      "incomplete": "Return actual scope and partial bytes through execution_incomplete; do not fabricate a role verdict.",
+      "mandatory_input": "Exact full proposal, sources, preflight, perspective and own restored transcript with tool-result bodies and prior versions as reference entries; no current peer verdicts.",
+      "output_family": "review-result",
+      "output_phases": [
+        "initial"
+      ],
+      "owner_section": "11.3.2",
+      "stage": "reviewing"
+    },
+    {
+      "activity_kind": "identity_review",
+      "actor_kind": "ai",
+      "authority": "Submit only the assigned organize or answer phase; do not issue a semantic verdict or overwrite issue-state.",
+      "incomplete": "Return actual scope and partial bytes through execution_incomplete; do not fabricate a role verdict.",
+      "mandatory_input": "Exact output_phase and role_slot_id. organize receives all published issues and missing-scope evidence; answer receives the original objection, all judge replies and its author's own restored transcript.",
+      "output_family": "review-result",
+      "output_phases": [
+        "organize",
+        "answer"
+      ],
+      "owner_section": "11.3.2",
+      "stage": "clarifying"
+    },
+    {
+      "activity_kind": "identity_review",
+      "actor_kind": "ai",
+      "authority": "Judge objections and whole-proposal identity separately; send new material disputes through the answer route; no proposal edits.",
+      "incomplete": "Return actual scope and partial bytes through execution_incomplete; do not fabricate a role verdict.",
+      "mandatory_input": "Exact proposal, all initial findings, objections, supplements, prior answers and own restored transcript; no current peer judge verdicts.",
+      "output_family": "review-result",
+      "output_phases": [
+        "judge"
+      ],
+      "owner_section": "11.3.2",
+      "stage": "judging"
+    },
+    {
+      "activity_kind": "goal_audit",
+      "actor_kind": "ai",
+      "authority": "Submit an immutable role output; the engine owns state publication and applies all domain gates.",
+      "incomplete": "Return actual scope and partial bytes through execution_incomplete; do not fabricate a role verdict.",
+      "mandatory_input": "Exact activity assignment, common and role documents, applicable governance, required evidence, prior failures and permitted transcript.",
+      "output_family": "assessment",
+      "stage": "assessing"
+    },
+    {
+      "activity_kind": "operational_review",
+      "actor_kind": "ai",
+      "authority": "Submit an immutable role output; the engine owns state publication and applies all domain gates.",
+      "incomplete": "Return actual scope and partial bytes through execution_incomplete; do not fabricate a role verdict.",
+      "mandatory_input": "Exact activity assignment, common and role documents, applicable governance, required evidence, prior failures and permitted transcript.",
+      "output_family": "operational-review",
+      "stage": "diagnosing"
+    },
+    {
+      "activity_kind": "operational_review",
+      "actor_kind": "ai",
+      "authority": "Submit an immutable role output; the engine owns state publication and applies all domain gates.",
+      "incomplete": "Return actual scope and partial bytes through execution_incomplete; do not fabricate a role verdict.",
+      "mandatory_input": "Exact activity assignment, common and role documents, applicable governance, required evidence, prior failures and permitted transcript.",
+      "output_family": "operational-review",
+      "stage": "checking_recovery"
+    },
+    {
+      "activity_kind": "intent_interpretation",
+      "actor_kind": "ai",
+      "authority": "Submit an immutable role output; the engine owns state publication and applies all domain gates.",
+      "incomplete": "Return actual scope and partial bytes through execution_incomplete; do not fabricate a role verdict.",
+      "mandatory_input": "Exact activity assignment, common and role documents, applicable governance, required evidence, prior failures and permitted transcript.",
+      "output_family": "activity-result",
+      "stage": "interpreting"
+    },
+    {
+      "activity_kind": "intent_interpretation",
+      "actor_kind": "ai",
+      "authority": "Submit an immutable role output; the engine owns state publication and applies all domain gates.",
+      "incomplete": "Return actual scope and partial bytes through execution_incomplete; do not fabricate a role verdict.",
+      "mandatory_input": "Exact activity assignment, common and role documents, applicable governance, required evidence, prior failures and permitted transcript.",
+      "output_family": "activity-result",
+      "stage": "checking"
+    },
+    {
+      "activity_kind": "supplemental_research",
+      "actor_kind": "ai",
+      "authority": "Submit an immutable role output; the engine owns state publication and applies all domain gates.",
+      "incomplete": "Return actual scope and partial bytes through execution_incomplete; do not fabricate a role verdict.",
+      "mandatory_input": "Exact activity assignment, common and role documents, applicable governance, required evidence, prior failures and permitted transcript.",
+      "output_family": "activity-result",
+      "stage": "investigating"
+    },
+    {
+      "activity_kind": "maintenance",
+      "actor_kind": "ai",
+      "authority": "Submit an immutable role output; the engine owns state publication and applies all domain gates.",
+      "incomplete": "Return actual scope and partial bytes through execution_incomplete; do not fabricate a role verdict.",
+      "mandatory_input": "Exact activity assignment, common and role documents, applicable governance, required evidence, prior failures and permitted transcript.",
+      "output_family": "activity-result",
+      "stage": "initializing"
+    },
+    {
+      "activity_kind": "maintenance",
+      "actor_kind": "ai",
+      "authority": "Submit an immutable role output; the engine owns state publication and applies all domain gates.",
+      "incomplete": "Return actual scope and partial bytes through execution_incomplete; do not fabricate a role verdict.",
+      "mandatory_input": "Exact activity assignment, common and role documents, applicable governance, required evidence, prior failures and permitted transcript.",
+      "output_family": "activity-result",
+      "stage": "integrating"
+    },
+    {
+      "activity_kind": "maintenance",
+      "actor_kind": "ai",
+      "authority": "Submit an immutable role output; the engine owns state publication and applies all domain gates.",
+      "incomplete": "Return actual scope and partial bytes through execution_incomplete; do not fabricate a role verdict.",
+      "mandatory_input": "Exact activity assignment, common and role documents, applicable governance, required evidence, prior failures and permitted transcript.",
+      "output_family": "activity-result",
+      "stage": "transitioning"
+    },
+    {
+      "activity_kind": "maintenance",
+      "actor_kind": "ai",
+      "authority": "Submit an immutable role output; the engine owns state publication and applies all domain gates.",
+      "incomplete": "Return actual scope and partial bytes through execution_incomplete; do not fabricate a role verdict.",
+      "mandatory_input": "Exact activity assignment, common and role documents, applicable governance, required evidence, prior failures and permitted transcript.",
+      "output_family": "activity-result",
+      "stage": "migrating"
+    },
+    {
+      "activity_kind": "maintenance",
+      "actor_kind": "machine",
+      "authority": "Perform only the assigned deterministic operation; no AI budget or model-facing documents.",
+      "incomplete": "Preserve actual checks, failures and uninspected scope; no semantic verdict.",
+      "mandatory_input": "Exact tool manifest, artifact inputs, host reservations and permission.",
+      "output_family": "machine-check",
+      "stage": "initializing"
+    },
+    {
+      "activity_kind": "maintenance",
+      "actor_kind": "machine",
+      "authority": "Perform only the assigned deterministic operation; no AI budget or model-facing documents.",
+      "incomplete": "Preserve actual checks, failures and uninspected scope; no semantic verdict.",
+      "mandatory_input": "Exact tool manifest, artifact inputs, host reservations and permission.",
+      "output_family": "machine-check",
+      "stage": "integrating"
+    },
+    {
+      "activity_kind": "maintenance",
+      "actor_kind": "machine",
+      "authority": "Perform only the assigned deterministic operation; no AI budget or model-facing documents.",
+      "incomplete": "Preserve actual checks, failures and uninspected scope; no semantic verdict.",
+      "mandatory_input": "Exact tool manifest, artifact inputs, host reservations and permission.",
+      "output_family": "machine-check",
+      "stage": "transitioning"
+    },
+    {
+      "activity_kind": "maintenance",
+      "actor_kind": "machine",
+      "authority": "Perform only the assigned deterministic operation; no AI budget or model-facing documents.",
+      "incomplete": "Preserve actual checks, failures and uninspected scope; no semantic verdict.",
+      "mandatory_input": "Exact tool manifest, artifact inputs, host reservations and permission.",
+      "output_family": "machine-check",
+      "stage": "migrating"
+    }
+  ],
+  "version": 9
+}

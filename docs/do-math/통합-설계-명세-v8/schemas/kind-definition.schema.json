@@ -1,0 +1,195 @@
+{
+  "$id": "https://do-math.invalid/schemas/draft/8/kind-definition",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "family": {
+            "const": "frontier"
+          }
+        },
+        "required": [
+          "family"
+        ]
+      },
+      "then": {
+        "properties": {
+          "constraints": {
+            "allOf": [
+              {
+                "required": [
+                  "allowed_epistemic_status",
+                  "required_fields"
+                ]
+              },
+              {
+                "not": {
+                  "anyOf": [
+                    {
+                      "required": [
+                        "from_families"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "to_families"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "requires_evidence"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "requires_assessment"
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "family": {
+            "const": "relation"
+          }
+        },
+        "required": [
+          "family"
+        ]
+      },
+      "then": {
+        "properties": {
+          "constraints": {
+            "allOf": [
+              {
+                "required": [
+                  "from_families",
+                  "to_families",
+                  "requires_evidence",
+                  "requires_assessment"
+                ]
+              },
+              {
+                "not": {
+                  "anyOf": [
+                    {
+                      "required": [
+                        "allowed_epistemic_status"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "required_fields"
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "properties": {
+    "constraints": {
+      "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/kind_constraints"
+    },
+    "family": {
+      "enum": [
+        "frontier",
+        "relation"
+      ],
+      "type": "string"
+    },
+    "generated": {
+      "additionalProperties": false,
+      "properties": {
+        "at": {
+          "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/instant"
+        },
+        "by": {
+          "pattern": "^(?:human:|process:|execution:).+$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "by",
+        "at"
+      ],
+      "type": "object"
+    },
+    "id": {
+      "allOf": [
+        {
+          "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/id"
+        },
+        {
+          "pattern": "^KD-"
+        }
+      ]
+    },
+    "lifecycle": {
+      "enum": [
+        "active",
+        "superseded",
+        "withdrawn"
+      ],
+      "type": "string"
+    },
+    "meaning": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "origin_refs": {
+      "items": {
+        "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/exact_ref"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "schema_version": {
+      "const": "do-math-draft/kind-definition/8"
+    },
+    "title": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "token": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "type": {
+      "const": "kind_definition"
+    }
+  },
+  "required": [
+    "schema_version",
+    "id",
+    "type",
+    "title",
+    "lifecycle",
+    "origin_refs",
+    "generated",
+    "family",
+    "token",
+    "meaning",
+    "constraints"
+  ],
+  "title": "kind-definition",
+  "type": "object",
+  "x-contract-id": "do-math-draft/kind-definition/8",
+  "x-id-prefix": "KD",
+  "x-owner-section": "7.3,19.3",
+  "x-storage": "research/knowledge/{path}.md#frontmatter"
+}

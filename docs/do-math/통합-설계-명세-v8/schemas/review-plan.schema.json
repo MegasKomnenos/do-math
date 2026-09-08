@@ -1,0 +1,299 @@
+{
+  "$id": "https://do-math.invalid/schemas/draft/8/review-plan",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "full_proposal_fits": {
+            "const": false
+          }
+        },
+        "required": [
+          "full_proposal_fits"
+        ]
+      },
+      "then": {
+        "required": [
+          "scope_reconstruction_ref"
+        ]
+      }
+    }
+  ],
+  "properties": {
+    "conclusion_dependencies": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "conclusion_id": {
+            "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/id"
+          },
+          "dependency_item_ids": {
+            "items": {
+              "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/id"
+            },
+            "minItems": 0,
+            "type": "array",
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "conclusion_id",
+          "dependency_item_ids"
+        ],
+        "type": "object"
+      },
+      "minItems": 0,
+      "type": "array"
+    },
+    "domain_reasons_ref": {
+      "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/artifact_ref"
+    },
+    "execution_limit": {
+      "maximum": 9007199254740991,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "final_judge_slot_ids": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "maxItems": 3,
+      "minItems": 3,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "full_proposal_fits": {
+      "type": "boolean"
+    },
+    "id": {
+      "allOf": [
+        {
+          "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/id"
+        },
+        {
+          "pattern": "^VP-"
+        }
+      ]
+    },
+    "initial_execution_count": {
+      "maximum": 9007199254740991,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "planner_execution_id": {
+      "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/id_E"
+    },
+    "policy_ref": {
+      "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/exact_ref"
+    },
+    "proposal_item_ids": {
+      "items": {
+        "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/id"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "proposal_ref": {
+      "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/artifact_ref"
+    },
+    "required_domains": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 0,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "reserved_answer_executions": {
+      "maximum": 9007199254740991,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "reserved_final_executions": {
+      "minimum": 6,
+      "type": "integer"
+    },
+    "reserved_organize_executions": {
+      "maximum": 9007199254740991,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "review_lineage_id": {
+      "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/id_AC"
+    },
+    "role_slots": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "context_origin_refs": {
+            "items": {
+              "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/exact_ref"
+            },
+            "minItems": 0,
+            "type": "array",
+            "uniqueItems": true
+          },
+          "id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "perspective": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "producer_execution_ids": {
+            "items": {
+              "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/id_E"
+            },
+            "minItems": 0,
+            "type": "array",
+            "uniqueItems": true
+          },
+          "profile_ref": {
+            "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/exact_ref"
+          },
+          "scope_item_ids": {
+            "items": {
+              "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/id"
+            },
+            "minItems": 0,
+            "type": "array",
+            "uniqueItems": true
+          },
+          "transcript_refs": {
+            "items": {
+              "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/exact_ref"
+            },
+            "minItems": 0,
+            "type": "array",
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "id",
+          "perspective",
+          "profile_ref",
+          "scope_item_ids",
+          "producer_execution_ids",
+          "context_origin_refs",
+          "transcript_refs"
+        ],
+        "type": "object"
+      },
+      "minItems": 3,
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "do-math-draft/review-plan/8"
+    },
+    "scope_allocations": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "checks_global_connections": {
+            "type": "boolean"
+          },
+          "conclusion_closures": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "conclusion_id": {
+                  "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/id"
+                },
+                "dependency_item_ids": {
+                  "items": {
+                    "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/id"
+                  },
+                  "minItems": 0,
+                  "type": "array",
+                  "uniqueItems": true
+                }
+              },
+              "required": [
+                "conclusion_id",
+                "dependency_item_ids"
+              ],
+              "type": "object"
+            },
+            "minItems": 0,
+            "type": "array"
+          },
+          "item_ids": {
+            "items": {
+              "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/id"
+            },
+            "minItems": 0,
+            "type": "array",
+            "uniqueItems": true
+          },
+          "required_inputs": {
+            "items": {
+              "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/exact_ref"
+            },
+            "minItems": 1,
+            "type": "array",
+            "uniqueItems": true
+          },
+          "slot_id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "slot_id",
+          "item_ids",
+          "conclusion_closures",
+          "checks_global_connections",
+          "required_inputs"
+        ],
+        "type": "object"
+      },
+      "minItems": 3,
+      "type": "array"
+    },
+    "scope_reconstruction_ref": {
+      "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/artifact_ref"
+    },
+    "transcript_refs": {
+      "items": {
+        "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/exact_ref"
+      },
+      "minItems": 0,
+      "type": "array",
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "schema_version",
+    "id",
+    "proposal_ref",
+    "review_lineage_id",
+    "planner_execution_id",
+    "policy_ref",
+    "role_slots",
+    "scope_allocations",
+    "required_domains",
+    "domain_reasons_ref",
+    "transcript_refs",
+    "execution_limit",
+    "initial_execution_count",
+    "reserved_organize_executions",
+    "reserved_answer_executions",
+    "reserved_final_executions",
+    "full_proposal_fits",
+    "proposal_item_ids",
+    "conclusion_dependencies",
+    "final_judge_slot_ids"
+  ],
+  "title": "review-plan",
+  "type": "object",
+  "x-contract-id": "do-math-draft/review-plan/8",
+  "x-id-prefix": "VP",
+  "x-owner-section": "11.3,19.6",
+  "x-storage": "runtime/artifacts/{bundle_id}/review-plan.json"
+}

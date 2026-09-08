@@ -1,0 +1,53 @@
+{
+  "author_dispositions": "첨삭보고_통합-설계-초안.md",
+  "correction_checks": [
+    {
+      "reviewer": "critique_a",
+      "scope": "11.8, V198, V199, R28, assessment-use transition and regression",
+      "status": "passed",
+      "tests_run": 1
+    },
+    {
+      "reviewer": "critique_c",
+      "scope": "0, 7.3 OKF, V195, V200, 17.3.1; current specification suite",
+      "status": "passed",
+      "tests_run": 65
+    },
+    {
+      "reviewer": "critique_d",
+      "scope": "12.1.1, 13.5, 16.6, 0.2, 17.2",
+      "status": "passed_after_pause_exception_correction"
+    }
+  ],
+  "findings": {
+    "applied": 19,
+    "original": 25,
+    "partially_applied": 4,
+    "rejected": 1,
+    "unique": 24
+  },
+  "historical_reviews": "Sibling reports and ledger address the preserved review snapshot; targeted follow-up checks address the author corrections.",
+  "not_verified": [
+    "actual_adapter",
+    "OS_isolation",
+    "remote_termination",
+    "provider_limits",
+    "all_runtime_domain_gates",
+    "Lean_execution",
+    "research_efficacy",
+    "external_definition_synchronization"
+  ],
+  "quality_contracts": 21,
+  "review_basis": "검토기준.json",
+  "reviewed_units": 2796,
+  "source": "../../../통합-설계-초안.md",
+  "source_sha256": "f4cd98953996015f8ac3507cfcea1a8751072f9348f595ea774ac496c80b19e7",
+  "source_vectors": {
+    "runtime_execution": "not_run",
+    "total": 200
+  },
+  "status": "corrected_and_specification_checks_passed",
+  "tests_run": 65,
+  "validation_report": "../../validation-report.json",
+  "validation_report_sha256": "cfa34533a49795ec402010906ef06536903806c3b741040ff88ae061ad4c9e95"
+}

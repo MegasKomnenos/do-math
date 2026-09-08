@@ -1,0 +1,443 @@
+{
+  "families": [
+    {
+      "contract_id": "do-math-draft/action-result/9",
+      "family": "action-result",
+      "id_prefix": "AX",
+      "owner_section": "3.2.1,10.3,13.2,16.3,19.7",
+      "path": "schemas/action-result.schema.json",
+      "schema_id": "https://do-math.invalid/schemas/draft/9/action-result",
+      "sha256": "8185674dfc09f1dca271cc54073e44def2dd74cc3ff297837e56445b433fece9",
+      "storage": "runtime/actions/results/{id}.json"
+    },
+    {
+      "contract_id": "do-math-draft/activity/9",
+      "family": "activity",
+      "id_prefix": "AC",
+      "owner_section": "3.2.1,19.5",
+      "path": "schemas/activity.schema.json",
+      "schema_id": "https://do-math.invalid/schemas/draft/9/activity",
+      "sha256": "a6c615eac700caac731621194817ef410390fcdc35e55fd13653083f2edcd645",
+      "storage": "runtime/activities/{id}/record.json"
+    },
+    {
+      "contract_id": "do-math-draft/activity-result/9",
+      "family": "activity-result",
+      "id_prefix": "AR",
+      "owner_section": "3.2.1,5.4,9.2.1,13.1,19.5",
+      "path": "schemas/activity-result.schema.json",
+      "schema_id": "https://do-math.invalid/schemas/draft/9/activity-result",
+      "sha256": "982c680acf58ec1536c674e8d1ba9b1ca65d7deedd51d32b74ffb53538dbac9c",
+      "storage": "runtime/artifacts/{bundle_id}/{path}"
+    },
+    {
+      "contract_id": "do-math-draft/artifact/9",
+      "family": "artifact",
+      "id_prefix": "AB",
+      "owner_section": "6.5,7.1,19.2",
+      "path": "schemas/artifact.schema.json",
+      "schema_id": "https://do-math.invalid/schemas/draft/9/artifact",
+      "sha256": "811cac7d62ad98c60cd85c45fb24fc2364a1d2a7c50ad712a8a69f9b34fe443e",
+      "storage": "runtime/artifacts/{id}/manifest.json"
+    },
+    {
+      "contract_id": "do-math-draft/assessment/9",
+      "family": "assessment",
+      "id_prefix": "AS",
+      "owner_section": "5.4,9.4,11,19.6",
+      "path": "schemas/assessment.schema.json",
+      "schema_id": "https://do-math.invalid/schemas/draft/9/assessment",
+      "sha256": "e1a1fa78b3809774dc0a41ef4534a4f993d5c58b555f7f9fba3e80a0296503c1",
+      "storage": "research/formal/assessments/{id}.json"
+    },
+    {
+      "contract_id": "do-math-draft/assessment-use/9",
+      "family": "assessment-use",
+      "id_prefix": "AU",
+      "owner_section": "11.8,19.6",
+      "path": "schemas/assessment-use.schema.json",
+      "schema_id": "https://do-math.invalid/schemas/draft/9/assessment-use",
+      "sha256": "b1fab6b8722c23130a9f7495f330f24b98755b3aa57f1b24c7aab6c916977be7",
+      "storage": "research/formal/uses/{id}.json"
+    },
+    {
+      "contract_id": "do-math-draft/budget/9",
+      "family": "budget",
+      "id_prefix": "BG",
+      "owner_section": "4,19.4",
+      "path": "schemas/budget.schema.json",
+      "schema_id": "https://do-math.invalid/schemas/draft/9/budget",
+      "sha256": "7c405cb9f430d32c8126269003af49953f9de756896a2a91312f9d4e79ef82c9",
+      "storage": "research/governance/budgets/{id}.json"
+    },
+    {
+      "contract_id": "do-math-draft/command-request/9",
+      "family": "command-request",
+      "id_prefix": null,
+      "owner_section": "16.3,19.7",
+      "path": "schemas/command-request.schema.json",
+      "schema_id": "https://do-math.invalid/schemas/draft/9/command-request",
+      "sha256": "d38c0669d448cf4ce768160d429e65de505c4cd4c10394592ebde3f1bd72c629",
+      "storage": "transport"
+    },
+    {
+      "contract_id": "do-math-draft/command-response/9",
+      "family": "command-response",
+      "id_prefix": null,
+      "owner_section": "16.3,19.7",
+      "path": "schemas/command-response.schema.json",
+      "schema_id": "https://do-math.invalid/schemas/draft/9/command-response",
+      "sha256": "fa50d056b2b2c2d8077fabee4ef030d39971fcbd0417e2a7775f974a84d119bd",
+      "storage": "transport"
+    },
+    {
+      "contract_id": "do-math-draft/common/9",
+      "family": "common",
+      "id_prefix": null,
+      "owner_section": "19.2",
+      "path": "schemas/common.schema.json",
+      "schema_id": "https://do-math.invalid/schemas/draft/9/common",
+      "sha256": "e63ae8a301bd85131c7072cc31059f6efec044f2391bbca82d3a13c1554f2431",
+      "storage": "schema_only"
+    },
+    {
+      "contract_id": "do-math-draft/conversation-state/9",
+      "family": "conversation-state",
+      "id_prefix": "CV",
+      "owner_section": "3.3,19.4",
+      "path": "schemas/conversation-state.schema.json",
+      "schema_id": "https://do-math.invalid/schemas/draft/9/conversation-state",
+      "sha256": "bb6ca434b572571d36c1194430186c7137a58c149a1dc87696be538f3809c17d",
+      "storage": "runtime/conversations/{id}.json"
+    },
+    {
+      "contract_id": "do-math-draft/decision/9",
+      "family": "decision",
+      "id_prefix": "DC",
+      "owner_section": "13.1,19.3",
+      "path": "schemas/decision.schema.json",
+      "schema_id": "https://do-math.invalid/schemas/draft/9/decision",
+      "sha256": "51daca057af951eb1f2ec4bfbb3790fc8dc0ee63c8ad0fc09e5a2a64e329d702",
+      "storage": "research/governance/decisions/{id}.json"
+    },
+    {
+      "contract_id": "do-math-draft/execution/9",
+      "family": "execution",
+      "id_prefix": "E",
+      "owner_section": "6,12,19.4",
+      "path": "schemas/execution.schema.json",
+      "schema_id": "https://do-math.invalid/schemas/draft/9/execution",
+      "sha256": "32dec05eb082c721611b80db8e259897c7c0522269d1585998ec15793d6217f2",
+      "storage": "runtime/executions/{id}/record.json"
+    },
+    {
+      "contract_id": "do-math-draft/execution-profile/9",
+      "family": "execution-profile",
+      "id_prefix": "EP",
+      "owner_section": "6.1,6.4.1,12.1,16.1,16.2,19.4",
+      "path": "schemas/execution-profile.schema.json",
+      "schema_id": "https://do-math.invalid/schemas/draft/9/execution-profile",
+      "sha256": "245d95d7e531458a6d93f1799b6ec225b246f2d30569e56c7814e91092140471",
+      "storage": "research/governance/profiles/{id}.json"
+    },
+    {
+      "contract_id": "do-math-draft/explanation/9",
+      "family": "explanation",
+      "id_prefix": "EX",
+      "owner_section": "11.1,19.6",
+      "path": "schemas/explanation.schema.json",
+      "schema_id": "https://do-math.invalid/schemas/draft/9/explanation",
+      "sha256": "de0c9c227b68b4fe24d6e7000bae061bdc3e3266541fdc6653f8efc46d1b5da9",
+      "storage": "research/formal/explanations/{id}.json"
+    },
+    {
+      "contract_id": "do-math-draft/external-action/9",
+      "family": "external-action",
+      "id_prefix": "EA",
+      "owner_section": "13.3,19.4",
+      "path": "schemas/external-action.schema.json",
+      "schema_id": "https://do-math.invalid/schemas/draft/9/external-action",
+      "sha256": "56fb185be0a71ad9f52e3d43abd939bfc1b566aa1897e3f06eee237bfd1532e8",
+      "storage": "runtime/actions/{id}.json"
+    },
+    {
+      "contract_id": "do-math-draft/formal-result/9",
+      "family": "formal-result",
+      "id_prefix": "K",
+      "owner_section": "1.2,11.1,11.6,15,19.6",
+      "path": "schemas/formal-result.schema.json",
+      "schema_id": "https://do-math.invalid/schemas/draft/9/formal-result",
+      "sha256": "d98c14d084177632d2af23d677d3b435f234aef7361603019694b7ffa9d14b19",
+      "storage": "research/formal/results/{id}.json"
+    },
+    {
+      "contract_id": "do-math-draft/governance/9",
+      "family": "governance",
+      "id_prefix": "GV",
+      "owner_section": "1.4,13.1,13.2,19.3",
+      "path": "schemas/governance.schema.json",
+      "schema_id": "https://do-math.invalid/schemas/draft/9/governance",
+      "sha256": "dfd19425c9a6980111649b13ad286979c54ff5a54d529dcc24ec954c845b4b85",
+      "storage": "research/governance/{id}.json"
+    },
+    {
+      "contract_id": "do-math-draft/implementation-manifest/9",
+      "family": "implementation-manifest",
+      "id_prefix": "IC",
+      "owner_section": "14.5,16.5,19.1",
+      "path": "schemas/implementation-manifest.schema.json",
+      "schema_id": "https://do-math.invalid/schemas/draft/9/implementation-manifest",
+      "sha256": "d06b646a8371b0485f8bea4d5dfc97e45fe7cf1da38020a42b8c07ecdfd6d212",
+      "storage": "installed/implementation-manifest.json"
+    },
+    {
+      "contract_id": "do-math-draft/input-manifest/9",
+      "family": "input-manifest",
+      "id_prefix": "IM",
+      "owner_section": "8,13.1,16.5,19.5",
+      "path": "schemas/input-manifest.schema.json",
+      "schema_id": "https://do-math.invalid/schemas/draft/9/input-manifest",
+      "sha256": "5dd80a138e7a6666f3389e82618e7a7ea5d9d1eda92ce19c329f64e6ce17aa60",
+      "storage": "runtime/artifacts/{bundle_id}/input-manifest.json"
+    },
+    {
+      "contract_id": "do-math-draft/instance/9",
+      "family": "instance",
+      "id_prefix": "RI",
+      "owner_section": "1.4,14.1,19.2",
+      "path": "schemas/instance.schema.json",
+      "schema_id": "https://do-math.invalid/schemas/draft/9/instance",
+      "sha256": "b6c6b7669bcaebefc71978437af493a41e37de01661b8e22704e79663d547a5c",
+      "storage": "research/instance.json"
+    },
+    {
+      "contract_id": "do-math-draft/integration/9",
+      "family": "integration",
+      "id_prefix": "IN",
+      "owner_section": "10,19.6",
+      "path": "schemas/integration.schema.json",
+      "schema_id": "https://do-math.invalid/schemas/draft/9/integration",
+      "sha256": "8f38efb99db672b1892dc240a4867c868b00293691b2abe88d5d2298949793d6",
+      "storage": "research/integrations/{id}.json"
+    },
+    {
+      "contract_id": "do-math-draft/issue-state/9",
+      "family": "issue-state",
+      "id_prefix": "IS",
+      "owner_section": "8.3,11.3,11.4,19.6",
+      "path": "schemas/issue-state.schema.json",
+      "schema_id": "https://do-math.invalid/schemas/draft/9/issue-state",
+      "sha256": "34777899d958ee00ef4197866aeeb5a60644765ae07f7e9f88198823ff0f8a21",
+      "storage": "runtime/activities/{activity_id}/issues/{id}.json"
+    },
+    {
+      "contract_id": "do-math-draft/kind-definition/9",
+      "family": "kind-definition",
+      "id_prefix": "KD",
+      "owner_section": "7.3,19.3",
+      "path": "schemas/kind-definition.schema.json",
+      "schema_id": "https://do-math.invalid/schemas/draft/9/kind-definition",
+      "sha256": "a5ad8ee3b849b79514600bb2c98d2853f0899c2b95790dc225b2c86748dfa37d",
+      "storage": "research/knowledge/{path}.md#frontmatter"
+    },
+    {
+      "contract_id": "do-math-draft/knowledge/9",
+      "family": "knowledge",
+      "id_prefix": null,
+      "owner_section": "7.3,19.3",
+      "path": "schemas/knowledge.schema.json",
+      "schema_id": "https://do-math.invalid/schemas/draft/9/knowledge",
+      "sha256": "073f7074d9255191a576833c1ceabe8cf8ca06cf4b98ecc6376cc71a0dda4728",
+      "storage": "research/knowledge/{path}.md#frontmatter"
+    },
+    {
+      "contract_id": "do-math-draft/machine-check/9",
+      "family": "machine-check",
+      "id_prefix": "MC",
+      "owner_section": "16.3,19.8",
+      "path": "schemas/machine-check.schema.json",
+      "schema_id": "https://do-math.invalid/schemas/draft/9/machine-check",
+      "sha256": "ebb59bf3f501ad4881095c7a6a7831a8ac6179217d67a2cce879814074dbd576",
+      "storage": "runtime/artifacts/{bundle_id}/checks/{path}.json"
+    },
+    {
+      "contract_id": "do-math-draft/migration/9",
+      "family": "migration",
+      "id_prefix": "MG",
+      "owner_section": "14.5,19.8",
+      "path": "schemas/migration.schema.json",
+      "schema_id": "https://do-math.invalid/schemas/draft/9/migration",
+      "sha256": "c12136f1f6c0577bc23a28b70a7dbb2d82c84a74b1c74252db236f8810554a95",
+      "storage": "research/integrations/migrations/{id}.json"
+    },
+    {
+      "contract_id": "do-math-draft/operational-review/9",
+      "family": "operational-review",
+      "id_prefix": "OR",
+      "owner_section": "12,19.4",
+      "path": "schemas/operational-review.schema.json",
+      "schema_id": "https://do-math.invalid/schemas/draft/9/operational-review",
+      "sha256": "dc5ed811e9ee569a9f331f490501799c4aff0b1f5a9b8c285822ccc301be8e78",
+      "storage": "runtime/activities/{activity_id}/reviews/{id}.json"
+    },
+    {
+      "contract_id": "do-math-draft/plan/9",
+      "family": "plan",
+      "id_prefix": "PN",
+      "owner_section": "9,19.5",
+      "path": "schemas/plan.schema.json",
+      "schema_id": "https://do-math.invalid/schemas/draft/9/plan",
+      "sha256": "4be22875d72ec1114aa7a63a8510732039dbc5e1539779db1aa94d33d35bec32",
+      "storage": "runtime/artifacts/{bundle_id}/plan.json"
+    },
+    {
+      "contract_id": "do-math-draft/proposal/9",
+      "family": "proposal",
+      "id_prefix": "PR",
+      "owner_section": "11.1,11.4,19.6",
+      "path": "schemas/proposal.schema.json",
+      "schema_id": "https://do-math.invalid/schemas/draft/9/proposal",
+      "sha256": "596fe9663978e62f9c1453843062977a8c991868ce3e7e6637639f69707cd629",
+      "storage": "runtime/artifacts/{bundle_id}/proposal.json"
+    },
+    {
+      "contract_id": "do-math-draft/provider-operation/9",
+      "family": "provider-operation",
+      "id_prefix": "PO",
+      "owner_section": "4.2,6.1,13.3,19.4",
+      "path": "schemas/provider-operation.schema.json",
+      "schema_id": "https://do-math.invalid/schemas/draft/9/provider-operation",
+      "sha256": "833950b519ff3d26e8f06fdb3cb1f07b49ecd79545977a6456de77f1de847e20",
+      "storage": "runtime/provider-operations/{id}/record.json"
+    },
+    {
+      "contract_id": "do-math-draft/resource-reservation/9",
+      "family": "resource-reservation",
+      "id_prefix": "RR",
+      "owner_section": "4.2,4.5,19.4",
+      "path": "schemas/resource-reservation.schema.json",
+      "schema_id": "https://do-math.invalid/schemas/draft/9/resource-reservation",
+      "sha256": "6517089af8713c4f2d4952e40233c1cb43d5da653e6398951d75020803d4848b",
+      "storage": "runtime/reservations/{id}.json"
+    },
+    {
+      "contract_id": "do-math-draft/review-plan/9",
+      "family": "review-plan",
+      "id_prefix": "VP",
+      "owner_section": "11.3,19.6",
+      "path": "schemas/review-plan.schema.json",
+      "schema_id": "https://do-math.invalid/schemas/draft/9/review-plan",
+      "sha256": "5c0fe1e3225c2f41b3882f462555a9abf8c612ebec530153ce1f9b35d736e15f",
+      "storage": "runtime/artifacts/{bundle_id}/review-plan.json"
+    },
+    {
+      "contract_id": "do-math-draft/review-policy/9",
+      "family": "review-policy",
+      "id_prefix": "RP",
+      "owner_section": "11.3,19.6",
+      "path": "schemas/review-policy.schema.json",
+      "schema_id": "https://do-math.invalid/schemas/draft/9/review-policy",
+      "sha256": "97642ca38f42927da2774b9ca1e8487b85de0afdd970c96ff5ec9620a2c0413a",
+      "storage": "research/governance/review-policies/{id}.json"
+    },
+    {
+      "contract_id": "do-math-draft/review-result/9",
+      "family": "review-result",
+      "id_prefix": "RV",
+      "owner_section": "11.3,11.4,11.4.1,19.6",
+      "path": "schemas/review-result.schema.json",
+      "schema_id": "https://do-math.invalid/schemas/draft/9/review-result",
+      "sha256": "c1764115b58af49a588ec63971f29e774031434943e091ae2f0c0c0881d9d98a",
+      "storage": "runtime/artifacts/{bundle_id}/review-result.json"
+    },
+    {
+      "contract_id": "do-math-draft/runtime/9",
+      "family": "runtime",
+      "id_prefix": "RT",
+      "owner_section": "3.1,9.1,13.5,14.2,19.2",
+      "path": "schemas/runtime.schema.json",
+      "schema_id": "https://do-math.invalid/schemas/draft/9/runtime",
+      "sha256": "10c8fd2098f00e66265189fcede5bc144e3c4805b9ac833e256c3b982cc8cbb4",
+      "storage": "runtime/state.json"
+    },
+    {
+      "contract_id": "do-math-draft/runtime-event/9",
+      "family": "runtime-event",
+      "id_prefix": "EVT",
+      "owner_section": "3.2.1,9.1,12.1.1,13.1.1,19.4",
+      "path": "schemas/runtime-event.schema.json",
+      "schema_id": "https://do-math.invalid/schemas/draft/9/runtime-event",
+      "sha256": "601217eb6ee9047c33baadfc76baa877a1faf44cd75bd5be50a846309888f63d",
+      "storage": "runtime/events/{id}.json"
+    },
+    {
+      "contract_id": "do-math-draft/status/9",
+      "family": "status",
+      "id_prefix": "ST",
+      "owner_section": "9.4,16.6,19.8",
+      "path": "schemas/status.schema.json",
+      "schema_id": "https://do-math.invalid/schemas/draft/9/status",
+      "sha256": "0b90909a2ce92c0fae229ff45aeb4c5f9d44a535a021e2c09b260885c3f4a502",
+      "storage": "derived/status.json"
+    },
+    {
+      "contract_id": "do-math-draft/task/9",
+      "family": "task",
+      "id_prefix": "T",
+      "owner_section": "5,9.4,19.5",
+      "path": "schemas/task.schema.json",
+      "schema_id": "https://do-math.invalid/schemas/draft/9/task",
+      "sha256": "64c4dcec0ba9d99a7351aec4ac8768ba4c019c85a0c51c999b24ff811433d549",
+      "storage": "runtime/tasks/{id}/record.json"
+    },
+    {
+      "contract_id": "do-math-draft/trust-environment/9",
+      "family": "trust-environment",
+      "id_prefix": "TE",
+      "owner_section": "15,19.6",
+      "path": "schemas/trust-environment.schema.json",
+      "schema_id": "https://do-math.invalid/schemas/draft/9/trust-environment",
+      "sha256": "7c79970cab7e6d8a6567e6a5b7a8aba4371a56f54976480ffcf8508d4eee6348",
+      "storage": "research/trust/{id}.json"
+    }
+  ],
+  "identifier_prefixes": {
+    "action_id": "EA",
+    "activity_id": "AC",
+    "activity_ids": "AC",
+    "assigned_execution_ids": "E",
+    "author_execution_ids": "E",
+    "bundle_id": "AB",
+    "consumed_event_ids": "EVT",
+    "continuation_of": "E",
+    "conversation_id": "CV",
+    "decision_id": "DC",
+    "dispatch_order": "T",
+    "engine_id": "EN",
+    "event_ids": "EVT",
+    "execution_id": "E",
+    "execution_ids": "E",
+    "followup_activity_ids": "AC",
+    "instance_id": "RI",
+    "integration_id": "IN",
+    "outstanding_reservation_ids": "RR",
+    "owner_activity_id": "AC",
+    "pending_event_ids": "EVT",
+    "planner_execution_id": "E",
+    "producer_execution_id": "E",
+    "producer_execution_ids": "E",
+    "provider_operation_ids": "PO",
+    "request_id": "RQ",
+    "research_execution_ids": "E",
+    "reservation_ids": "RR",
+    "review_lineage_id": "AC",
+    "stopping_execution_ids": "E",
+    "successor_task_ids": "T",
+    "task_id": "T",
+    "task_ids": "T",
+    "trigger_event_ids": "EVT",
+    "unsettled_reservation_ids": "RR"
+  },
+  "uri_resolution": "offline_exact_registry_only",
+  "version": 9
+}

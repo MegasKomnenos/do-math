@@ -1,0 +1,1127 @@
+{
+  "$id": "https://do-math.invalid/schemas/draft/8/command-request",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "command": {
+            "const": "init"
+          }
+        },
+        "required": [
+          "command"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "additionalProperties": false,
+            "properties": {
+              "budget_ref": {
+                "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/exact_ref"
+              },
+              "conversation_loss_policy": {
+                "enum": [
+                  "pause",
+                  "continue_authorized"
+                ],
+                "type": "string"
+              },
+              "initial_permission_ref": {
+                "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/exact_ref"
+              },
+              "name": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "profile_ref": {
+                "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/exact_ref"
+              },
+              "source_files": {
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "sha256": {
+                      "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/sha256"
+                    },
+                    "source_path": {
+                      "minLength": 1,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "source_path",
+                    "sha256"
+                  ],
+                  "type": "object"
+                },
+                "minItems": 1,
+                "type": "array"
+              },
+              "storage_location": {
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "storage_location",
+              "source_files",
+              "initial_permission_ref",
+              "profile_ref",
+              "budget_ref",
+              "conversation_loss_policy"
+            ],
+            "type": "object"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "command": {
+            "const": "run"
+          }
+        },
+        "required": [
+          "command"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "additionalProperties": false,
+            "properties": {
+              "instance_id": {
+                "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/id_RI"
+              },
+              "permission_ref": {
+                "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/exact_ref"
+              }
+            },
+            "required": [
+              "instance_id",
+              "permission_ref"
+            ],
+            "type": "object"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "command": {
+            "const": "pause"
+          }
+        },
+        "required": [
+          "command"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "additionalProperties": false,
+            "properties": {
+              "cause_ref": {
+                "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/exact_ref"
+              },
+              "immediate_all_actions": {
+                "type": "boolean"
+              },
+              "instance_id": {
+                "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/id_RI"
+              }
+            },
+            "required": [
+              "instance_id",
+              "cause_ref",
+              "immediate_all_actions"
+            ],
+            "type": "object"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "command": {
+            "const": "resume"
+          }
+        },
+        "required": [
+          "command"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "additionalProperties": false,
+            "properties": {
+              "instance_id": {
+                "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/id_RI"
+              },
+              "permission_ref": {
+                "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/exact_ref"
+              }
+            },
+            "required": [
+              "instance_id",
+              "permission_ref"
+            ],
+            "type": "object"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "command": {
+            "const": "status"
+          }
+        },
+        "required": [
+          "command"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "additionalProperties": false,
+            "properties": {
+              "snapshot_commit": {
+                "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/oid"
+              }
+            },
+            "required": [
+              "snapshot_commit"
+            ],
+            "type": "object"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "command": {
+            "const": "query"
+          }
+        },
+        "required": [
+          "command"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "additionalProperties": false,
+            "properties": {
+              "cursor": {
+                "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/cursor"
+              },
+              "family": {
+                "enum": [
+                  "instance",
+                  "runtime",
+                  "governance",
+                  "execution-profile",
+                  "budget",
+                  "resource-reservation",
+                  "provider-operation",
+                  "conversation-state",
+                  "task",
+                  "activity",
+                  "activity-result",
+                  "execution",
+                  "artifact",
+                  "input-manifest",
+                  "knowledge",
+                  "kind-definition",
+                  "plan",
+                  "integration",
+                  "formal-result",
+                  "explanation",
+                  "review-policy",
+                  "issue-state",
+                  "assessment",
+                  "assessment-use",
+                  "operational-review",
+                  "decision",
+                  "external-action",
+                  "action-result",
+                  "runtime-event",
+                  "trust-environment",
+                  "machine-check",
+                  "status",
+                  "migration",
+                  "proposal",
+                  "review-plan",
+                  "implementation-manifest",
+                  "review-result"
+                ],
+                "type": "string"
+              },
+              "ids": {
+                "items": {
+                  "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/id"
+                },
+                "minItems": 0,
+                "type": "array",
+                "uniqueItems": true
+              },
+              "page_size": {
+                "maximum": 9007199254740991,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "relation_neighbors": {
+                "items": {
+                  "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/id"
+                },
+                "minItems": 0,
+                "type": "array",
+                "uniqueItems": true
+              },
+              "snapshot_commit": {
+                "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/oid"
+              },
+              "source_refs": {
+                "items": {
+                  "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/exact_ref"
+                },
+                "minItems": 0,
+                "type": "array",
+                "uniqueItems": true
+              },
+              "space": {
+                "enum": [
+                  "research",
+                  "runtime"
+                ],
+                "type": "string"
+              },
+              "text_query": {
+                "minLength": 0,
+                "type": "string"
+              }
+            },
+            "required": [
+              "snapshot_commit",
+              "space",
+              "family",
+              "ids",
+              "text_query",
+              "relation_neighbors",
+              "source_refs",
+              "page_size"
+            ],
+            "type": "object"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "command": {
+            "const": "read"
+          }
+        },
+        "required": [
+          "command"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "additionalProperties": false,
+            "properties": {
+              "byte_range": {
+                "additionalProperties": false,
+                "properties": {
+                  "length": {
+                    "maximum": 9007199254740991,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "start": {
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "start",
+                  "length"
+                ],
+                "type": "object"
+              },
+              "target": {
+                "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/exact_ref"
+              }
+            },
+            "required": [
+              "target"
+            ],
+            "type": "object"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "command": {
+            "const": "record"
+          }
+        },
+        "required": [
+          "command"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "oneOf": [
+              {
+                "additionalProperties": false,
+                "allOf": [
+                  {
+                    "if": {
+                      "properties": {
+                        "family": {
+                          "const": "knowledge"
+                        }
+                      },
+                      "required": [
+                        "family"
+                      ]
+                    },
+                    "then": {
+                      "required": [
+                        "knowledge_type"
+                      ]
+                    }
+                  },
+                  {
+                    "if": {
+                      "properties": {
+                        "family": {
+                          "not": {
+                            "const": "knowledge"
+                          }
+                        }
+                      }
+                    },
+                    "then": {
+                      "not": {
+                        "anyOf": [
+                          {
+                            "required": [
+                              "knowledge_type"
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ],
+                "properties": {
+                  "family": {
+                    "enum": [
+                      "instance",
+                      "runtime",
+                      "governance",
+                      "execution-profile",
+                      "budget",
+                      "resource-reservation",
+                      "provider-operation",
+                      "conversation-state",
+                      "task",
+                      "activity",
+                      "activity-result",
+                      "execution",
+                      "artifact",
+                      "input-manifest",
+                      "knowledge",
+                      "kind-definition",
+                      "plan",
+                      "integration",
+                      "formal-result",
+                      "explanation",
+                      "review-policy",
+                      "issue-state",
+                      "assessment",
+                      "assessment-use",
+                      "operational-review",
+                      "decision",
+                      "external-action",
+                      "action-result",
+                      "runtime-event",
+                      "trust-environment",
+                      "machine-check",
+                      "migration",
+                      "proposal",
+                      "review-plan",
+                      "implementation-manifest",
+                      "review-result"
+                    ],
+                    "type": "string"
+                  },
+                  "knowledge_type": {
+                    "enum": [
+                      "frontier",
+                      "evidence",
+                      "relation",
+                      "context",
+                      "memory"
+                    ],
+                    "type": "string"
+                  },
+                  "mode": {
+                    "const": "allocate"
+                  }
+                },
+                "required": [
+                  "mode",
+                  "family"
+                ],
+                "type": "object"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "family": {
+                    "enum": [
+                      "instance",
+                      "runtime",
+                      "governance",
+                      "execution-profile",
+                      "budget",
+                      "resource-reservation",
+                      "provider-operation",
+                      "conversation-state",
+                      "task",
+                      "activity",
+                      "activity-result",
+                      "execution",
+                      "artifact",
+                      "input-manifest",
+                      "knowledge",
+                      "kind-definition",
+                      "plan",
+                      "integration",
+                      "formal-result",
+                      "explanation",
+                      "review-policy",
+                      "issue-state",
+                      "assessment",
+                      "assessment-use",
+                      "operational-review",
+                      "decision",
+                      "external-action",
+                      "action-result",
+                      "runtime-event",
+                      "trust-environment",
+                      "machine-check",
+                      "migration",
+                      "proposal",
+                      "review-plan",
+                      "implementation-manifest",
+                      "review-result"
+                    ],
+                    "type": "string"
+                  },
+                  "input_ref": {
+                    "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/artifact_ref"
+                  },
+                  "mode": {
+                    "const": "normalize"
+                  }
+                },
+                "required": [
+                  "mode",
+                  "family",
+                  "input_ref"
+                ],
+                "type": "object"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "command": {
+            "const": "check"
+          }
+        },
+        "required": [
+          "command"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "additionalProperties": false,
+            "properties": {
+              "input_refs": {
+                "items": {
+                  "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/exact_ref"
+                },
+                "minItems": 1,
+                "type": "array",
+                "uniqueItems": true
+              },
+              "mode": {
+                "enum": [
+                  "schema",
+                  "codec",
+                  "reference",
+                  "state",
+                  "readiness",
+                  "observation",
+                  "identity",
+                  "integration_preview",
+                  "contract"
+                ],
+                "type": "string"
+              },
+              "snapshot_commit": {
+                "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/oid"
+              }
+            },
+            "required": [
+              "mode",
+              "input_refs",
+              "snapshot_commit"
+            ],
+            "type": "object"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "command": {
+            "const": "checkpoint"
+          }
+        },
+        "required": [
+          "command"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "additionalProperties": false,
+            "properties": {
+              "execution_id": {
+                "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/id_E"
+              },
+              "files": {
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "media_type": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "path": {
+                      "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/path"
+                    },
+                    "sha256": {
+                      "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/sha256"
+                    },
+                    "size_bytes": {
+                      "maximum": 9007199254740991,
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "path",
+                    "sha256",
+                    "media_type",
+                    "size_bytes"
+                  ],
+                  "type": "object"
+                },
+                "minItems": 1,
+                "type": "array"
+              },
+              "next_rules": {
+                "items": {
+                  "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/observation_rule"
+                },
+                "minItems": 1,
+                "type": "array"
+              },
+              "progress_ref": {
+                "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/artifact_ref"
+              },
+              "self_check": {
+                "additionalProperties": false,
+                "properties": {
+                  "attempts_ref": {
+                    "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/artifact_ref"
+                  },
+                  "event_ids": {
+                    "items": {
+                      "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/id_EVT"
+                    },
+                    "minItems": 1,
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "evidence_refs": {
+                    "items": {
+                      "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/exact_ref"
+                    },
+                    "minItems": 0,
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "method_difference": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "next_method": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "results": {
+                    "items": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "description": {
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "evidence_refs": {
+                          "items": {
+                            "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/exact_ref"
+                          },
+                          "minItems": 0,
+                          "type": "array",
+                          "uniqueItems": true
+                        },
+                        "id": {
+                          "minLength": 1,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "description",
+                        "evidence_refs"
+                      ],
+                      "type": "object"
+                    },
+                    "minItems": 0,
+                    "type": "array"
+                  },
+                  "rule_revision": {
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "submitted_at": {
+                    "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/instant"
+                  },
+                  "value": {
+                    "enum": [
+                      "progress",
+                      "no_progress",
+                      "contract_mismatch"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "event_ids",
+                  "rule_revision",
+                  "value",
+                  "results",
+                  "evidence_refs",
+                  "attempts_ref",
+                  "next_method",
+                  "method_difference",
+                  "submitted_at"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "execution_id",
+              "files",
+              "progress_ref"
+            ],
+            "type": "object"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "command": {
+            "const": "submit"
+          }
+        },
+        "required": [
+          "command"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "additionalProperties": false,
+            "properties": {
+              "execution_id": {
+                "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/id_E"
+              },
+              "files": {
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "media_type": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "path": {
+                      "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/path"
+                    },
+                    "sha256": {
+                      "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/sha256"
+                    },
+                    "size_bytes": {
+                      "maximum": 9007199254740991,
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "path",
+                    "sha256",
+                    "media_type",
+                    "size_bytes"
+                  ],
+                  "type": "object"
+                },
+                "minItems": 0,
+                "type": "array"
+              },
+              "result_ref": {
+                "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/artifact_ref"
+              },
+              "wait_request": {
+                "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/optional_wait"
+              }
+            },
+            "required": [
+              "execution_id",
+              "files",
+              "result_ref",
+              "wait_request"
+            ],
+            "type": "object"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "command": {
+            "const": "decide"
+          }
+        },
+        "required": [
+          "command"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "additionalProperties": false,
+            "properties": {
+              "answer_ref": {
+                "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/artifact_ref"
+              },
+              "conversation_refs": {
+                "items": {
+                  "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/exact_ref"
+                },
+                "minItems": 1,
+                "type": "array",
+                "uniqueItems": true
+              },
+              "question_ref": {
+                "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/artifact_ref"
+              }
+            },
+            "required": [
+              "question_ref",
+              "answer_ref",
+              "conversation_refs"
+            ],
+            "type": "object"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "command": {
+            "const": "apply"
+          }
+        },
+        "required": [
+          "command"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "additionalProperties": false,
+            "properties": {
+              "expected_snapshot": {
+                "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/oid"
+              },
+              "integration_ref": {
+                "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/exact_ref"
+              }
+            },
+            "required": [
+              "integration_ref",
+              "expected_snapshot"
+            ],
+            "type": "object"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "command": {
+            "const": "trust"
+          }
+        },
+        "required": [
+          "command"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "additionalProperties": false,
+            "properties": {
+              "basis_refs": {
+                "items": {
+                  "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/exact_ref"
+                },
+                "minItems": 1,
+                "type": "array",
+                "uniqueItems": true
+              },
+              "environment_ref": {
+                "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/exact_ref"
+              },
+              "operation": {
+                "enum": [
+                  "prepare",
+                  "check",
+                  "transition",
+                  "invalidate"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "operation",
+              "environment_ref",
+              "basis_refs"
+            ],
+            "type": "object"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "command": {
+            "const": "recover"
+          }
+        },
+        "required": [
+          "command"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "additionalProperties": false,
+            "properties": {
+              "instance_id": {
+                "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/id_RI"
+              },
+              "profile_refs": {
+                "items": {
+                  "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/exact_ref"
+                },
+                "minItems": 1,
+                "type": "array",
+                "uniqueItems": true
+              }
+            },
+            "required": [
+              "instance_id",
+              "profile_refs"
+            ],
+            "type": "object"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "command": {
+            "const": "migrate"
+          }
+        },
+        "required": [
+          "command"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "additionalProperties": false,
+            "properties": {
+              "dry_run": {
+                "type": "boolean"
+              },
+              "migration_ref": {
+                "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/exact_ref"
+              }
+            },
+            "required": [
+              "migration_ref",
+              "dry_run"
+            ],
+            "type": "object"
+          }
+        }
+      }
+    }
+  ],
+  "properties": {
+    "caller": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "conversation_id": {
+              "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/id_CV"
+            },
+            "kind": {
+              "const": "user"
+            }
+          },
+          "required": [
+            "kind",
+            "conversation_id"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "execution_id": {
+              "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/id_E"
+            },
+            "kind": {
+              "const": "execution"
+            }
+          },
+          "required": [
+            "kind",
+            "execution_id"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "engine_id": {
+              "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/id_EN"
+            },
+            "kind": {
+              "const": "engine"
+            }
+          },
+          "required": [
+            "kind",
+            "engine_id"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "command": {
+      "enum": [
+        "init",
+        "run",
+        "pause",
+        "resume",
+        "status",
+        "query",
+        "read",
+        "record",
+        "check",
+        "checkpoint",
+        "submit",
+        "decide",
+        "apply",
+        "trust",
+        "recover",
+        "migrate"
+      ],
+      "type": "string"
+    },
+    "payload": {},
+    "request_id": {
+      "$ref": "https://do-math.invalid/schemas/draft/8/common#/$defs/id_RQ"
+    },
+    "schema_version": {
+      "const": "do-math-draft/command-request/8"
+    }
+  },
+  "required": [
+    "schema_version",
+    "request_id",
+    "command",
+    "caller",
+    "payload"
+  ],
+  "title": "command-request",
+  "type": "object",
+  "x-contract-id": "do-math-draft/command-request/8",
+  "x-owner-section": "16.3,19.7",
+  "x-storage": "transport"
+}

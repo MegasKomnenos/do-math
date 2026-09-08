@@ -1,0 +1,16 @@
+{
+  "command": "decide",
+  "exit_code": 0,
+  "request_id": "RQ-00000000000000000000000001",
+  "result": {
+    "decision_ref": {
+      "commit": "1111111111111111111111111111111111111111",
+      "record_id": "F-00000000000000000000000001",
+      "ref_kind": "record",
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "space": "research"
+    },
+    "kind": "decision"
+  },
+  "schema_version": "do-math-draft/command-response/8"
+}

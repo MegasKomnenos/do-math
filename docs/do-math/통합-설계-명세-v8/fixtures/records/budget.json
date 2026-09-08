@@ -1,0 +1,40 @@
+{
+  "activation_evidence_refs": [
+    {
+      "commit": "1111111111111111111111111111111111111111",
+      "record_id": "F-00000000000000000000000001",
+      "ref_kind": "record",
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "space": "research"
+    }
+  ],
+  "approval_refs": [
+    {
+      "commit": "1111111111111111111111111111111111111111",
+      "record_id": "F-00000000000000000000000001",
+      "ref_kind": "record",
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "space": "research"
+    }
+  ],
+  "constraints": [
+    {
+      "accounting_unit": "execution",
+      "id": "fixture",
+      "kind": "concurrency",
+      "operations_slots": 0,
+      "source": "local_budget",
+      "source_ref": {
+        "commit": "1111111111111111111111111111111111111111",
+        "record_id": "F-00000000000000000000000001",
+        "ref_kind": "record",
+        "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+        "space": "research"
+      },
+      "total_slots": 0,
+      "work_slots": 0
+    }
+  ],
+  "id": "BG-00000000000000000000000001",
+  "schema_version": "do-math-draft/budget/8"
+}

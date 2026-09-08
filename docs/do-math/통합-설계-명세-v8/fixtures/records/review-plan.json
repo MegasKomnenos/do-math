@@ -1,0 +1,168 @@
+{
+  "conclusion_dependencies": [
+    {
+      "conclusion_id": "MATH-00000000000000000000000001",
+      "dependency_item_ids": []
+    }
+  ],
+  "domain_reasons_ref": {
+    "bundle_id": "AB-00000000000000000000000001",
+    "path": "fixture/input.json",
+    "ref_kind": "artifact",
+    "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+  },
+  "execution_limit": 14,
+  "final_judge_slot_ids": [
+    "judge-1",
+    "judge-2",
+    "judge-3"
+  ],
+  "full_proposal_fits": true,
+  "id": "VP-00000000000000000000000001",
+  "initial_execution_count": 3,
+  "planner_execution_id": "E-00000000000000000000000001",
+  "policy_ref": {
+    "commit": "1111111111111111111111111111111111111111",
+    "record_id": "F-00000000000000000000000001",
+    "ref_kind": "record",
+    "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+    "space": "research"
+  },
+  "proposal_item_ids": [
+    "MATH-00000000000000000000000001"
+  ],
+  "proposal_ref": {
+    "bundle_id": "AB-00000000000000000000000001",
+    "path": "fixture/input.json",
+    "ref_kind": "artifact",
+    "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+  },
+  "required_domains": [],
+  "reserved_answer_executions": 3,
+  "reserved_final_executions": 6,
+  "reserved_organize_executions": 1,
+  "review_lineage_id": "AC-00000000000000000000000001",
+  "role_slots": [
+    {
+      "context_origin_refs": [],
+      "id": "reviewer-1",
+      "perspective": "argument_reconstruction",
+      "producer_execution_ids": [],
+      "profile_ref": {
+        "commit": "1111111111111111111111111111111111111111",
+        "record_id": "F-00000000000000000000000001",
+        "ref_kind": "record",
+        "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+        "space": "research"
+      },
+      "scope_item_ids": [
+        "MATH-00000000000000000000000001"
+      ],
+      "transcript_refs": []
+    },
+    {
+      "context_origin_refs": [],
+      "id": "reviewer-2",
+      "perspective": "adversarial_scope",
+      "producer_execution_ids": [],
+      "profile_ref": {
+        "commit": "1111111111111111111111111111111111111111",
+        "record_id": "F-00000000000000000000000001",
+        "ref_kind": "record",
+        "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+        "space": "research"
+      },
+      "scope_item_ids": [
+        "MATH-00000000000000000000000001"
+      ],
+      "transcript_refs": []
+    },
+    {
+      "context_origin_refs": [],
+      "id": "reviewer-3",
+      "perspective": "semantic_identity",
+      "producer_execution_ids": [],
+      "profile_ref": {
+        "commit": "1111111111111111111111111111111111111111",
+        "record_id": "F-00000000000000000000000001",
+        "ref_kind": "record",
+        "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+        "space": "research"
+      },
+      "scope_item_ids": [
+        "MATH-00000000000000000000000001"
+      ],
+      "transcript_refs": []
+    }
+  ],
+  "schema_version": "do-math-draft/review-plan/8",
+  "scope_allocations": [
+    {
+      "checks_global_connections": true,
+      "conclusion_closures": [
+        {
+          "conclusion_id": "MATH-00000000000000000000000001",
+          "dependency_item_ids": []
+        }
+      ],
+      "item_ids": [
+        "MATH-00000000000000000000000001"
+      ],
+      "required_inputs": [
+        {
+          "commit": "1111111111111111111111111111111111111111",
+          "record_id": "F-00000000000000000000000001",
+          "ref_kind": "record",
+          "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "space": "research"
+        }
+      ],
+      "slot_id": "reviewer-1"
+    },
+    {
+      "checks_global_connections": true,
+      "conclusion_closures": [
+        {
+          "conclusion_id": "MATH-00000000000000000000000001",
+          "dependency_item_ids": []
+        }
+      ],
+      "item_ids": [
+        "MATH-00000000000000000000000001"
+      ],
+      "required_inputs": [
+        {
+          "commit": "1111111111111111111111111111111111111111",
+          "record_id": "F-00000000000000000000000001",
+          "ref_kind": "record",
+          "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "space": "research"
+        }
+      ],
+      "slot_id": "reviewer-2"
+    },
+    {
+      "checks_global_connections": true,
+      "conclusion_closures": [
+        {
+          "conclusion_id": "MATH-00000000000000000000000001",
+          "dependency_item_ids": []
+        }
+      ],
+      "item_ids": [
+        "MATH-00000000000000000000000001"
+      ],
+      "required_inputs": [
+        {
+          "commit": "1111111111111111111111111111111111111111",
+          "record_id": "F-00000000000000000000000001",
+          "ref_kind": "record",
+          "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "space": "research"
+        }
+      ],
+      "slot_id": "reviewer-3"
+    }
+  ],
+  "transcript_refs": []
+}

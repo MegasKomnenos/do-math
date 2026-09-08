@@ -1,0 +1,12 @@
+{
+  "connection_generation": 1,
+  "event_ids": [],
+  "evidence_refs": [],
+  "heartbeat_interval": "PT1S",
+  "id": "CV-00000000000000000000000001",
+  "loss_grace": "PT1S",
+  "observed_at": "2026-09-07T00:00:00.000Z",
+  "policy": "pause",
+  "schema_version": "do-math-draft/conversation-state/8",
+  "state": "connected"
+}

@@ -1,0 +1,2993 @@
+{
+  "quality_contracts": [
+    {
+      "guarantee": "새 판본의 불변 부분에서도 기존 오류 재탐지",
+      "id": "Q01",
+      "owner": "11.4 전면 의미 검토·동일 판본 복구 구별",
+      "source_line": 2051,
+      "source_row_sha256": "2f53f9e12c8c3883cabb00aaf15da4b62c133bfbbacadcff786d48926339b244",
+      "source_vectors": [
+        "V62",
+        "V139",
+        "V142",
+        "V143"
+      ]
+    },
+    {
+      "guarantee": "검토 자리의 자기 메시지 연속성과 원자료 재열람",
+      "id": "Q02",
+      "owner": "8.3·11.3 자기 메시지 전건·참조 대체·단절 예외",
+      "source_line": 2052,
+      "source_row_sha256": "063b9e724f406a1bf592f49c91c159fbd053c162753c5dd9aed18da5958d8040",
+      "source_vectors": [
+        "V144",
+        "V145",
+        "V146",
+        "V166",
+        "V208",
+        "V209",
+        "V210"
+      ]
+    },
+    {
+      "guarantee": "원 이의 제기자의 응답·정련·분화 기회",
+      "id": "Q03",
+      "owner": "11.4·11.4.1 반환·회차·총한도·미해결",
+      "source_line": 2053,
+      "source_row_sha256": "cecac68eb929bd744b34be7ab92c345c117974036a3ab318dfa85c5170e3ce99",
+      "source_vectors": [
+        "V136",
+        "V137",
+        "V147",
+        "V148",
+        "V149",
+        "V170"
+      ]
+    },
+    {
+      "guarantee": "정상 진전의 정기 외부 AI 비용 절감",
+      "id": "Q04",
+      "owner": "12.1 event_driven·명시적 재점검·periodic",
+      "source_line": 2054,
+      "source_row_sha256": "b3ad1be89853bca668b7e82f42434bc991d92992f1ddedfb5f8b276fa858fd8b",
+      "source_vectors": [
+        "V133",
+        "V150",
+        "V151",
+        "V168",
+        "V169"
+      ]
+    },
+    {
+      "guarantee": "계약 경계 안 관찰 조건의 즉시 적응",
+      "id": "Q05",
+      "owner": "5.2·5.5·12.1.1 규칙 revision·기존 의무 보존",
+      "source_line": 2055,
+      "source_row_sha256": "5ba19245d336f96688af56c5e80b7523e099a35042d5abd96666bc90d13dd457",
+      "source_vectors": [
+        "V152",
+        "V153",
+        "V154",
+        "V169"
+      ]
+    },
+    {
+      "guarantee": "정지 직전 연구 상태의 기록 보존",
+      "id": "Q06",
+      "owner": "6.4.1·13.5 기록 전용 권한·기한·종료",
+      "source_line": 2056,
+      "source_row_sha256": "322f174d0aaa198fb9418c0902d5266eccb9e57269d497176dbb909c1dd55449",
+      "source_vectors": [
+        "V155",
+        "V156",
+        "V157",
+        "V158",
+        "V167"
+      ]
+    },
+    {
+      "guarantee": "K 목차 전건의 제공, 들어가지 않으면 상신",
+      "id": "Q07",
+      "owner": "8.5 전건 제공·상신·허가 아래 잘림",
+      "source_line": 2057,
+      "source_row_sha256": "69c10a3da6621ff29bb7b3471c911adabbe348b70e8365d72932f48e585f9117",
+      "source_vectors": [
+        "V127",
+        "V160",
+        "V206",
+        "V207",
+        "V213"
+      ]
+    },
+    {
+      "guarantee": "공통 정의·역할별 통치 전문의 기본 제공",
+      "id": "Q08",
+      "owner": "8.1·16.5 역할 읽기·정확한 입력",
+      "source_line": 2058,
+      "source_row_sha256": "aeb40886855c57997a798b89044a9dea53ac27cd2c9406d3a38d278d00696de1",
+      "source_vectors": [
+        "V103",
+        "V161"
+      ]
+    },
+    {
+      "guarantee": "들어가는 제안의 전문 검토와 안 들어가는 제안의 재구성",
+      "id": "Q09",
+      "owner": "11.3 전문 검토·재구성 반환",
+      "source_line": 2059,
+      "source_row_sha256": "4b76f5b2db798e7a36b29b2774c093edf9a450b2037a1ed877a49d26d01570cd",
+      "source_vectors": [
+        "V19",
+        "V47",
+        "V145",
+        "V162",
+        "V177"
+      ]
+    },
+    {
+      "guarantee": "복합 연구 조건의 결정론적 착수 판정",
+      "id": "Q10",
+      "owner": "5.7 AST·사건 재계산·적용 전 확인",
+      "source_line": 2060,
+      "source_row_sha256": "128bcad8e52312d8a14d888de90d306717aa299ca71ad1715ae76882af5047f6",
+      "source_vectors": [
+        "V163",
+        "V164",
+        "V165"
+      ]
+    },
+    {
+      "guarantee": "이전 후보 생성·정련·미편입의 다음 회차 환류",
+      "id": "Q11",
+      "owner": "8.5·9.2.1 준비 이력·필수 실패",
+      "source_line": 2061,
+      "source_row_sha256": "179a1c42ddccd47d23a99149a77e3f121a558456d34d5b7265d8747633f83ccb",
+      "source_vectors": [
+        "V171",
+        "V186"
+      ]
+    },
+    {
+      "guarantee": "주기와 독립된 고갈 탐색과 빈 반복의 통제",
+      "id": "Q12",
+      "owner": "9.1·13.1.1 고갈·재생성 시각·문턱",
+      "source_line": 2062,
+      "source_row_sha256": "f77de72d8ec3922f1de32c69c9571892a30c0509b41dfdb706aa1e06e617f658",
+      "source_vectors": [
+        "V172",
+        "V173",
+        "V174"
+      ]
+    },
+    {
+      "guarantee": "응답 뒤에도 끊기지 않는 최대 간격 관찰",
+      "id": "Q13",
+      "owner": "6.3·12.1.1 실행기 재예약·중복 구별",
+      "source_line": 2063,
+      "source_row_sha256": "c88c33fcc6fc03bc1763f0dfd24a06e34ffd48ce58745d183e91bc78f8fe6069",
+      "source_vectors": [
+        "V175",
+        "V176"
+      ]
+    },
+    {
+      "guarantee": "이력 때문에 들어가는 목차를 숨기지 않음",
+      "id": "Q14",
+      "owner": "8.5 목차 우선·창 축소",
+      "source_line": 2064,
+      "source_row_sha256": "d7774066c4ae553ebcf70eb4325619d1a0fa2e1136f7626e100fe1f4445f1810",
+      "source_vectors": [
+        "V178"
+      ]
+    },
+    {
+      "guarantee": "수입에서 기존 사용자 결정과 원문 범위의 기본 노출",
+      "id": "Q15",
+      "owner": "13.1 결정 전문의 조건부 직접 제공과 목차 전건 대조",
+      "source_line": 2065,
+      "source_row_sha256": "b3f2c409d0c3e4c18cb1a8b66b6fd0cdd7b0ae82e780c7238adb99e5c7116714",
+      "source_vectors": [
+        "V180"
+      ]
+    },
+    {
+      "guarantee": "재작업을 줄이는 사전 검사와 반복 결함 환류",
+      "id": "Q16",
+      "owner": "16.3 미리보기·검사 기록·resolved 집계",
+      "source_line": 2066,
+      "source_row_sha256": "02e85a92fc6f4cb1104a65bea12538bee6f343638c529e296c647ae93d66a9ef",
+      "source_vectors": [
+        "V181",
+        "V182"
+      ]
+    },
+    {
+      "guarantee": "선택 묶음의 용량 경계와 반복 교정의 결정권",
+      "id": "Q17",
+      "owner": "9.3·13.1.1 동시 상한·반복 문턱·계약 revision 상한",
+      "source_line": 2067,
+      "source_row_sha256": "b0411fad7e7c1201fd6c6eaec627e213b1a88bb6866c6446b70fb4acc25f1ccf",
+      "source_vectors": [
+        "V183",
+        "V184",
+        "V215"
+      ]
+    },
+    {
+      "guarantee": "F의 연구 상태와 기록 효력의 구별",
+      "id": "Q18",
+      "owner": "7.3 inactive·lifecycle",
+      "source_line": 2068,
+      "source_row_sha256": "8c9e1bb448d348b701c9009ea4cb1f61b603e7c3543036ae8f38f9e58bcc33d6",
+      "source_vectors": [
+        "V179"
+      ]
+    },
+    {
+      "guarantee": "필수 쟁점 정리·답변·심사를 실제로 배정할 실행 몫",
+      "id": "Q19",
+      "owner": "11.3.1 단계별 합계·미배정 몫 보호·실행 횟수",
+      "source_line": 2069,
+      "source_row_sha256": "791b3bba711217701f267835995e0e120ec06df9325469e96d02a3bae8c40b2b",
+      "source_vectors": [
+        "V190",
+        "V191"
+      ]
+    },
+    {
+      "guarantee": "공통 활동 안에서 단계별 의미 판단과 출력 권한의 구별",
+      "id": "Q20",
+      "owner": "11.3.2·16.5 stage·output_phase·논리 자리 결속",
+      "source_line": 2070,
+      "source_row_sha256": "a51b83ee0ae80abd6bcad17eb6e73bd1758a0b1245adab922623d5bbff4fbe5e",
+      "source_vectors": [
+        "V192"
+      ]
+    },
+    {
+      "guarantee": "재사용 가능한 수학 관계의 의미·방향·활성화 경계",
+      "id": "Q21",
+      "owner": "7.3.2 비활성 템플릿·종류 정의·근거",
+      "source_line": 2071,
+      "source_row_sha256": "ee731193a0d905b65b39964734d3b05b55256e56eb37ba435213d9e34fe02e06",
+      "source_vectors": [
+        "V193"
+      ]
+    },
+    {
+      "guarantee": "초과 상신의 대기·종료·재발 처분",
+      "id": "Q22",
+      "owner": "8.3 원인 분류·보류·재상신과 13.1.1 보류 기록",
+      "source_line": 2072,
+      "source_row_sha256": "44bc2979652d7aada539b03a4b64e0dfeac0be26cc8e98600d44faef2693a3e8",
+      "source_vectors": [
+        "V160",
+        "V204",
+        "V205",
+        "V210",
+        "V211",
+        "V212"
+      ]
+    }
+  ],
+  "source": "통합-설계.md",
+  "source_sha256": "fac94a735311199b90bd78bd00b748d04c603478f086c90db43cf9dfa15de22c",
+  "vectors": [
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "기존 허가 범위 운전, 새 권한 생성 없음",
+      "id": "V31",
+      "input": "대화 소실 정책이 continue_authorized",
+      "owner_section": "17.2",
+      "rule_ids": [],
+      "source_line": 1683,
+      "source_row_sha256": "e10a7b6a77fa9faa90b37cf5712f080e6833bd1dbf85aef07c482116423158d2"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "배정 중지·공통 종료, 종료 미완료를 완료로 보고하지 않음",
+      "id": "V32",
+      "input": "대화 소실 정책이 pause",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R36"
+      ],
+      "source_line": 1684,
+      "source_row_sha256": "3c000f1d50f5a098f604b2a666a40f0d87a38039a1d2cba45a33efa266b98de7"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "lost 사건 한 번 적용, 이전 신호가 정지를 취소하지 않음",
+      "id": "V60",
+      "input": "pause 연결의 유예 만료 뒤 이전 세대 heartbeat 도착",
+      "owner_section": "17.2",
+      "rule_ids": [],
+      "source_line": 1685,
+      "source_row_sha256": "cc755df3e3459939e063a23e31bf72f1b6367eb0a8ddc9fc8b6e08eb74ab8501"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "프로필의 실제 경계에서 거부, 일반·기록 전용 허가가 정한 broker 경로만 사용",
+      "id": "V61",
+      "input": "자식 연구 프로그램이 직접 소켓·주변 비밀·다른 실행 IPC에 접근",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R39"
+      ],
+      "source_line": 1686,
+      "source_row_sha256": "22af9fcd6f5fad8adaa7f09181511f9f29d7b95dc89905bb2da87e6ccf599ddb"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "같은 활동에 새 실행을 원자 연결, 선행조건·독립성·총한도 검사, 자식 활동 강제 없음",
+      "id": "V73",
+      "input": "working 활동의 첫 판정 종료 뒤 다음 판정 또는 다음 단계 실행 배정",
+      "owner_section": "17.2",
+      "rule_ids": [],
+      "source_line": 1687,
+      "source_row_sha256": "ea0b05a8270b470a670720eb078c7107fd01f0494f2da7979a696ca2cab92cb3"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "근거와 정보 상태로 보존하고 계획에 전달, 원 역할 판정과 K 효력은 그대로",
+      "id": "V83",
+      "input": "비작업 AI가 새로운 수학적 통찰을 부수 산출로 제출",
+      "owner_section": "17.2",
+      "rule_ids": [],
+      "source_line": 1688,
+      "source_row_sha256": "9fe87a01f2e198704b420c2f0c0d9b5e0b6c15a4636896fb42e7a266522db8a8"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "작업 정지 없이 운영 예산으로 점검 시작",
+      "id": "V01",
+      "input": "작업 예산이 모두 사용 중이고 운영 점검 도래",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R01"
+      ],
+      "source_line": 1694,
+      "source_row_sha256": "1774f4a8d7b42c849d6c9e1b9a33075ae33194ab9f0c7c3f3f2f880c7ca79c67"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "작업 예산을 사용하고 운영 예약을 소진하지 않음",
+      "id": "V02",
+      "input": "수학 검토 요청이 많음",
+      "owner_section": "17.2",
+      "rule_ids": [],
+      "source_line": 1695,
+      "source_row_sha256": "35ea320feca093f61380b81545e358dc2e945e93b9e5e6e12edeb5f0cafa932e"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "자기 결과를 봉인하고 종료, 조사 대기를 위한 운영 슬롯 없음",
+      "id": "V03",
+      "input": "운영 실행이 추가 조사를 요청하고 자기 호출 종료·사용량도 확인됨",
+      "owner_section": "17.2",
+      "rule_ids": [],
+      "source_line": 1696,
+      "source_row_sha256": "6254ed3426bd80073dabf4f59158520651713c8c3d5f14b5c0114e2834c1a61a"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "입력 격리를 유지한 순차 실행, 이미 봉인한 결과 재실행 없음",
+      "id": "V06",
+      "input": "독립 판정 셋을 실행할 작업 슬롯이 하나",
+      "owner_section": "17.2",
+      "rule_ids": [],
+      "source_line": 1697,
+      "source_row_sha256": "27f573a99574ab313c974cc6f191cd4c4dc913c50922af34b16a24e40ff3c70c"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "공유 제약과 모델별 제약 전건에서 원자 예약, 운영 용량 침범 없음",
+      "id": "V37",
+      "input": "모델 둘이 같은 계정 동시 상한을 공유",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R01"
+      ],
+      "source_line": 1698,
+      "source_row_sha256": "fd8d4f0eaf5ea7760ff246c814684f465a3c460e8633e49b0ad3ae3c463fed74"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "동시 슬롯이 있어도 새 호출 차단",
+      "id": "V56",
+      "input": "누적 허가량이 남은 것보다 다음 호출의 최대 소비가 큼",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R03"
+      ],
+      "source_line": 1699,
+      "source_row_sha256": "88376c77091a94ea7edb91ed2a00df4864ae598073affe2e62283ffdd129dd08"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "미정산·unrecoverable 예약 보존, 영향 범위 보고, 근거 없는 반환 없음",
+      "id": "V57",
+      "input": "사용량·종료의 원격 조회 보존 기간을 넘김",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R03",
+        "R37"
+      ],
+      "source_line": 1700,
+      "source_row_sha256": "ced5f9f73bdea8f3a16dfb096f30fd5fc75d9d8a30bfc88dd014a6259f4faea3"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "공유 예약에서 초과 시작 차단, 실행기 제어 여유 유지",
+      "id": "V58",
+      "input": "여러 정상 기계 작업의 합이 공유 호스트 한도를 넘음",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R03"
+      ],
+      "source_line": 1701,
+      "source_row_sha256": "fb67ec3e5ab4fbe39b297e996788d979e2128adfa35b2458487bf6d734d1ba2e"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "오래된 계획부터 배정, 건너뛴 요청의 최초 진입 순서도 유지",
+      "id": "V59",
+      "input": "필요한 자원을 확보할 수 있는 계획이 먼저 대기하고 새 점검이 계속 도착",
+      "owner_section": "17.2",
+      "rule_ids": [],
+      "source_line": 1702,
+      "source_row_sha256": "ede7946fd7f1b4c364a15e264a0c39bdfc9929183ae126bdfc40cd0d9d53227a"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "호출별 예약으로 두 번째 전송 차단, 로컬 실행 하나로 원격 둘을 숨기지 않음",
+      "id": "V72",
+      "input": "한 AI 실행이 원격 호출 둘을 동시에 요청하고 공급자 슬롯은 하나",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R01"
+      ],
+      "source_line": 1703,
+      "source_row_sha256": "93e9929aca6c3ae9b972fe9821a0fc846155a5f4ebd59ca87012a7d4fd6950fb"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "AI 예산 없이 starting 기록, 준비 회수 뒤 호스트 예약 한 번 반환",
+      "id": "V74",
+      "input": "기계 작업의 호스트 예약 뒤 프로세스 생성 실패",
+      "owner_section": "17.2",
+      "rule_ids": [],
+      "source_line": 1704,
+      "source_row_sha256": "45b81c93eab63b079954118525b21efcf83d4ec3e855c0a3ee0c288c79816bb8"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "X 요청의 순서 보존·대기, 자원 전건이 가용한 Y 요청은 시작",
+      "id": "V75",
+      "input": "오래된 운영 요청의 X는 unrecoverable이고 뒤 요청의 Y는 가용",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R37"
+      ],
+      "source_line": 1705,
+      "source_row_sha256": "92a5f335137913155c694e90544c87c62e1800a39ed02eaa2d0091113cd50690"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "별도 호출·예약을 근거대로 한 번 정산, 실행 재개·종료 결과 교체 없음",
+      "id": "V76",
+      "input": "ended 뒤 원격 종료·사용량 영수증이 도착",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R02"
+      ],
+      "source_line": 1706,
+      "source_row_sha256": "81ab633db4adbd5314e532aa41bd9c03f486be8480eb8dc0a3666ddc0c7a0288"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "미종료 실행 하나만 생성, 다른 요청은 기존 연결 반환 또는 충돌",
+      "id": "V45",
+      "input": "같은 과제에 연구 수행 실행 둘을 만들려 함",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R04",
+        "R42"
+      ],
+      "source_line": 1712,
+      "source_row_sha256": "5134c24606f54ca320d8102f40c42989508d7598a96ae517487b4bc006697ac5"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "전이 거부, 실행 종료와 범위 판정부터 완료",
+      "id": "V46",
+      "input": "자기 연구 수행 실행이 남은 과제를 completed·closed로 바꾸려 함",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R04"
+      ],
+      "source_line": 1713,
+      "source_row_sha256": "2270c3d527bf7a3bb4498889b959697155eb14691a83ffc2225eccee0c0046b2"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "승인된 개정 근거가 없으면 거부",
+      "id": "V55",
+      "input": "저자가 스스로 범위를 줄여 waived·completed를 제출",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R05"
+      ],
+      "source_line": 1714,
+      "source_row_sha256": "af793d7f7e97048ffa1d8f77b9d04539fe69ef2e5308c446a1aedef1295db673"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "착수 거부, 계약 개정 전 임의 대체 없음",
+      "id": "V68",
+      "input": "연구 수행 요청이 과제의 고정 프로필과 다른 모델·도구 프로필을 참조",
+      "owner_section": "17.2",
+      "rule_ids": [],
+      "source_line": 1715,
+      "source_row_sha256": "9c43f6d5c94a8b095c9f1ead4588659e850b731850a5de754cf891d4cd266a02"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "새 계약 revision과 계약 검토 필요, 옛 실행·승인 판본 불변",
+      "id": "V69",
+      "input": "질문은 같지만 필수 입력·산출 범위·허가·프로필을 변경",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R05"
+      ],
+      "source_line": 1716,
+      "source_row_sha256": "11037d377e46aa7d609fc8df9a9e90c7b86a09f74c7805b69cce7d402c4629a2"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "진행 상태와 remaining_scope 갱신, 계약 revision·필수 의무는 그대로",
+      "id": "V70",
+      "input": "부분 범위가 근거를 갖춰 fulfilled로 판정됨",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R05"
+      ],
+      "source_line": 1717,
+      "source_row_sha256": "d85b0d3d5314172a21f1cb41fa9f5ad302caf4d6975e4dd26c63389e21a56273"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "계약 검토가 revision_required 또는 unresolved, 실행 미개설",
+      "id": "V81",
+      "input": "작업 계약의 입력 파일은 존재하지만 질문을 수행할 범위가 부족",
+      "owner_section": "17.2",
+      "rule_ids": [],
+      "source_line": 1718,
+      "source_row_sha256": "089c775de76964ff0f1ddf2b7e7ddc945d78dc369e430b2c05f63d97e3755b30"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "완료/닫힘 검사 실패, 대기 또는 권위 있는 이전·철회 근거로 처리",
+      "id": "V112",
+      "input": "사용자 대기·실행 실패로 과제를 닫으면서 잔여 의무를 누락",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R42"
+      ],
+      "source_line": 1719,
+      "source_row_sha256": "79c59a460d6ee6f5678c5a87a4c74a451b4766c38c1b35a8bf0ccf1ab68fb0b6"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "계약 검토 결과 재사용, 매회 현재 착수 조건은 기계 확인. 두 비용 구분",
+      "id": "V121",
+      "input": "같은 계약·검토 전제에서 다섯 번 선택",
+      "owner_section": "17.2",
+      "rule_ids": [],
+      "source_line": 1720,
+      "source_row_sha256": "20dd0cc9ebf22fca1d92cace72d2c10123ba3e96c6c9b627482cbd9be2c86a03"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "이전 승인의 현재 적용 차단, 변경 근거를 준비·검토에 전달. 무관한 원장 전진은 승계 가능",
+      "id": "V122",
+      "input": "검토 뒤 관련 가정·입력·규칙의 내용 또는 효력이 변경",
+      "owner_section": "17.2",
+      "rule_ids": [],
+      "source_line": 1721,
+      "source_row_sha256": "59907582e8dcca49e597a299e3f9409d2f9205f878004e322623fe32b6033338"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "B의 선택·배정 가능, A를 ready로 추측하거나 B를 함께 대기시키지 않음",
+      "id": "V123",
+      "input": "새 계약 A의 검토는 대기하고 기존 B는 ready",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R19"
+      ],
+      "source_line": 1722,
+      "source_row_sha256": "9164efe0265e469ff8c6cc7edfade90413e1bc0cdd025f82fb0880d78c85f902"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "앞은 계약·검토 강제 없음, 뒤는 planned 계약과 독립 검토 가능. 생성만으로 실행·예약 없음",
+      "id": "V124",
+      "input": "원자료만 있는 거친 F 또는 미선택 계약 제안",
+      "owner_section": "17.2",
+      "rule_ids": [],
+      "source_line": 1723,
+      "source_row_sha256": "153851f423417ab68d424f9bcdc18d1aed6577acf72d8041422e1d9816461811"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "동일 스냅샷의 any·all·not 전건 평가로 ready 계산, 참이 돼도 별도 선택·예약 전 실행 없음",
+      "id": "V163",
+      "input": "(A 처분 또는 B 관계 성립)이고 C 조건이 아닐 때의 계약",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R06"
+      ],
+      "source_line": 1724,
+      "source_row_sha256": "123b3ebe30ca2e316dccb193ccdd479621226f811356f25d9ad6b9c283d2f0d3"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "evaluation_error. not·all도 오류를 숨기지 않음",
+      "id": "V164",
+      "input": "any의 한 분기는 참이고 다른 분기 참조가 깨짐",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R06"
+      ],
+      "source_line": 1725,
+      "source_row_sha256": "203308b5c1f81e842d6dacf5cd05de3ef0734ce42f96b332a41695142de5df99"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "현재 스냅샷으로 재평가해 미충족 작업만 배정 차단, 무관한 기록 갱신은 별도 판단",
+      "id": "V165",
+      "input": "선택 이후 시작 전에 발생 조건의 실제 대상·효력이 변경",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R06"
+      ],
+      "source_line": 1726,
+      "source_row_sha256": "cf3323af0f90c508d7a40c3a7d3c6749af6acd629a91b9a0deead24941873d79"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "앞은 description 저작, 뒤는 의미를 보존해 생략·요지 없음. 부재만으로 검사 실패 아님",
+      "id": "V186",
+      "input": "새 계약을 충실하게 한 줄로 요약할 수 있거나 없는 경우",
+      "owner_section": "17.2",
+      "rule_ids": [],
+      "source_line": 1727,
+      "source_row_sha256": "9d10d30807a623f8eddd1ad794396dceeceec9ba4319c52c86395dd81fb83ba0"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "다음 revision의 저작 전에 계속 개정·과제 철회·새 과제 생성의 사용자 결정 대기. 새 ID나 다른 이름의 같은 개정은 횟수 초기화 아님, 다른 과제의 준비·검토·선택은 계속",
+      "id": "V215",
+      "input": "같은 과제의 계약 revision이 contract_revision_limit에 이르렀는데 계약 검토가 다시 revision_required를 반환",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R46"
+      ],
+      "source_line": 1728,
+      "source_row_sha256": "7263764eba53c76b0eccc7bec366734b40e5697ffa08fc840af26560e3b6c9bd"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "과제 waiting, 실행 ended, 체크포인트 보존과 확인된 예약 반환",
+      "id": "V04",
+      "input": "사용자 결정이 필요하고 로컬·원격 종료가 확인된 작업",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R36",
+        "R42"
+      ],
+      "source_line": 1734,
+      "source_row_sha256": "fb365c3bd2a293c4696e7bfb0fd4fe9f64f8963fc8fafc6951880d733398530d"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "공통 stopping, 권한 회수·Job·모델 종료 대조",
+      "id": "V07",
+      "input": "비작업 AI가 실행 중일 때 정지",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R07"
+      ],
+      "source_line": 1735,
+      "source_row_sha256": "d778e895dc98c10ed30af352d665772c0500102ea7854bb16d0ef03839e2090d"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "실질 행동 없음, 준비 흔적 대조 뒤 start_failed",
+      "id": "V08",
+      "input": "권한 기록 전 실행기 소실",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R08",
+        "R41"
+      ],
+      "source_line": 1736,
+      "source_row_sha256": "1d6066befa873fa79f97d1036082080d89ae34522505455e8c8407a6a194a5f1"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "실제 시작 여부 대조, 불확실하면 stopping·미완료",
+      "id": "V09",
+      "input": "running 기록 뒤 루트 재개 전 소실",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R08"
+      ],
+      "source_line": 1737,
+      "source_row_sha256": "57cc2c211274c3cbac43c4aa90e564f3f0160606fe904c4cf8079e86ae53e73c"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "execution_incomplete로 ended, 로컬 슬롯 반환·원격 예약 유지, 과제 대기·정당한 종결 가능",
+      "id": "V10",
+      "input": "로컬 Job·새 효과 통로는 닫혔으나 원격 추론 종료와 최종 산출 미확인",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R02"
+      ],
+      "source_line": 1738,
+      "source_row_sha256": "0d95393958b54cfc57c78069dcd6f2fd40d5f71d23be833fb6f8bfe9a62fa048"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "쓰기·재허가·산출 교체 거부, 진단·자원 대조 근거로만 수신",
+      "id": "V11",
+      "input": "종료된 실행의 늦은 쓰기·완료 요청",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R07",
+        "R10"
+      ],
+      "source_line": 1739,
+      "source_row_sha256": "171d3bf6e7564dd5c1678e9492f9233a843edf38c46702f00e958e00972c0a49"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "준비 범위 회수, start_failed, 한 번만 예약 반환",
+      "id": "V13",
+      "input": "원장 예약 후 프로세스 생성 실패",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R08"
+      ],
+      "source_line": 1740,
+      "source_row_sha256": "50b83049c08fc7400d22c87edcfa69059293eed5b365edbfb218e7ed246e4d85"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "해당 예약·공간 보존, 독립 판단 가능한 다른 실행은 처리",
+      "id": "V35",
+      "input": "한 실행의 종료 장벽만 불확실",
+      "owner_section": "17.2",
+      "rule_ids": [],
+      "source_line": 1741,
+      "source_row_sha256": "f4bfd7ce16e4ec6463a0f2d9adf9e982862759c4c3fe4680f891ed66146e7f3f"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "queued는 ended/cancelled, starting은 terminating, running AI는 유효한 bounded 허가에서만 checkpointing. 마감 뒤 terminating·중복 반환 없음",
+      "id": "V39",
+      "input": "queued·starting·running 실행이 함께 있을 때 정지",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R07",
+        "R36"
+      ],
+      "source_line": 1742,
+      "source_row_sha256": "48671b9e1002f527a32a9448462259b4562548594e40dd25d2e7eab7298e2cff"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "원장에 제출 의도·manifest·stopping이 함께 남고 복구가 이를 회수",
+      "id": "V43",
+      "input": "최종 제출 수신 확인 직후 실행기가 소실",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R10"
+      ],
+      "source_line": 1743,
+      "source_row_sha256": "71faa3bf6511bd0929a5311b0398c89278e5bc2ba5477a7be6c59cf0d172aba6"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "장벽 미성립으로 stopping 유지, 출력 통로 차단만으로 ended 처리하지 않음",
+      "id": "V77",
+      "input": "로컬은 끝났지만 원격 도구가 독립적으로 새 효과를 낼 가능성이 남음",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R02"
+      ],
+      "source_line": 1744,
+      "source_row_sha256": "fe1a19ba410e10b4e0619250e38065102386ca9ad503858cb427ebd781eb08c4"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "일반 연구 권한 즉시 회수, bounded 구간에서 마지막 인계·자기 점검 보존 후 terminating. 새 관찰 재예약 없음",
+      "id": "V155",
+      "input": "마지막 체크포인트 뒤 새 연구 상태가 생긴 running AI에 정지 요청",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R09"
+      ],
+      "source_line": 1745,
+      "source_row_sha256": "d61d3a78785b3a58a548da292f61bdbfab46d26ed56179ea9b5fcea1b0ece314"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "기록 전용 허가 검사에서 거부, 일반 실행 권한 복원 없음",
+      "id": "V156",
+      "input": "checkpointing에서 새 증명 탐색·실험·외부 전송·범위 밖 쓰기",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R09"
+      ],
+      "source_line": 1746,
+      "source_row_sha256": "f948d654d53bb727d73b73b7172e3bf00126bffef54c4db173867b594146a669"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "마감 연장 없이 terminating·강제 종료·기존 자료 회수, 미수신 범위 보고",
+      "id": "V157",
+      "input": "도구가 복귀하지 않거나 정지 기록 마감을 넘김",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R09"
+      ],
+      "source_line": 1747,
+      "source_row_sha256": "8584bc91a13af019f0e087b100181077b48549901d9d06ea138aa1e181e9d7cf"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "checkpointing을 건너뛰고 terminating, 새 마무리 모델 호출 없음",
+      "id": "V158",
+      "input": "사용자 즉시 전면 중단 또는 마무리 허가 철회·만료",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R09"
+      ],
+      "source_line": 1748,
+      "source_row_sha256": "912d8fb5e559c45819c995f2377751b3948510cb4d985c461c8f050d85a895c1"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "시작 전 원자 예약·용도·정산 검사 실패. 정상 종료의 미사용 몫과 실제 마무리 소비만 한 번 정산",
+      "id": "V167",
+      "input": "bounded 실행 시작 때 마무리 예약 누락, 일반 연구의 그 몫 소비 또는 종료 뒤 재반환",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R08"
+      ],
+      "source_line": 1749,
+      "source_row_sha256": "2b9f83d401df3e80c70db3ebeb27504dbc1973b2ecc2de954abf68219882c1d0"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "앞은 마무리 예약·입력·도구 범위 안 허용, 뒤는 거부",
+      "id": "V185",
+      "input": "checkpointing의 허가된 인계 모델 호출과 그 밖의 외부 전송",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R09"
+      ],
+      "source_line": 1750,
+      "source_row_sha256": "107d785578ec519ff9625b049faf686fffa2ab6ce770c54be6535d50c77dfb34"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "어댑터가 압축 없이 호출 실패 반환, transcript·부분 산출 봉인, execution_incomplete와 원인 context_overflow, 구성별 실측 토큰",
+      "id": "V201",
+      "input": "실행 중 도구 결과 누적으로 모델 입력이 한도 도달",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R16",
+        "R45"
+      ],
+      "source_line": 1751,
+      "source_row_sha256": "49ed9b80b4975ea631c02b90697ebdf6c8a1900251d1d0dd3dce5067f94507a1"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "생성 때 받은 ID로 참조, 후보 트리의 참조 폐쇄 통과",
+      "id": "V16",
+      "input": "새 기록 둘과 관계를 함께 저작",
+      "owner_section": "17.2",
+      "rule_ids": [],
+      "source_line": 1757,
+      "source_row_sha256": "c1d24bd0ef3b8e88144d4e0590f888e4c92653056115f77f02498c9d6e4290d8"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "서로 다른 의미와 바이트, 왕복 직렬화에서 보존",
+      "id": "V17",
+      "input": "조사하지 않음과 조사 뒤 빈 목록",
+      "owner_section": "17.2",
+      "rule_ids": [],
+      "source_line": 1758,
+      "source_row_sha256": "76105ba8d8f87aa10f41e6001399884789a93d8157df0536fd7df2993b0fe2a9"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "결과·편입 유지, 정확한 경로의 후속 청소",
+      "id": "V36",
+      "input": "종료된 공간의 청소 실패",
+      "owner_section": "17.2",
+      "rule_ids": [],
+      "source_line": 1759,
+      "source_row_sha256": "5f6a4d0a9819922d67f7e4d7c3964f14d73196f61a1d805ef3104ad0ef175ec0"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "참조가 담긴 정확한 트리에서 해석, 미래 자기 OID 불필요",
+      "id": "V41",
+      "input": "새 기록 간 tree_record_ref를 편입하고 이후 다른 변경 추가",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R12"
+      ],
+      "source_line": 1760,
+      "source_row_sha256": "f5578125da6f7b5b1ebef7c5759ce8c699bae0b2b5c40558e5c2fa03d461660f"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "판정의 artifact_ref·record_ref 입력은 불변, tree_record_ref로 판정 입력을 만들면 거부",
+      "id": "V54",
+      "input": "과거 판정과 같은 트리의 해설이 후속 커밋에서 바뀜",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R12"
+      ],
+      "source_line": 1761,
+      "source_row_sha256": "ba62c8f50095d53008ba95a5c413ea435ef6e17ec066f370db468012d1c618e0"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "research subtree OID 불변, 별도 가변 ref 동기화 없음",
+      "id": "V65",
+      "input": "상태 변경이 research를 바꾸지 않고 runtime만 갱신",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R11"
+      ],
+      "source_line": 1762,
+      "source_row_sha256": "c8b869de0d901c09e3d318f82f7cae708f56f6dc17da7ce9fb5ff7476dd9c592"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "선택·과제 처분만으로 F 인식 상태 변경 불가",
+      "id": "V82",
+      "input": "미선택 F 또는 중단 과제를 반증으로 바꾸려 함",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R14"
+      ],
+      "source_line": 1763,
+      "source_row_sha256": "2d0b0338f5bc47261c4c64d815fb6622fddf33344d61b73af84b9572738ab424"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "동일 ID와 의미 참조 유지, 항해 경로만 변경",
+      "id": "V84",
+      "input": "지식 문서 이동 뒤 ID 색인 재생성",
+      "owner_section": "17.2",
+      "rule_ids": [],
+      "source_line": 1764,
+      "source_row_sha256": "62a751ab63a3f667cefb622a923b13357da9fc2b3315c208c3d500ca1afc7e2b"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "전자는 권위 참조 결함, 후자는 비차단 항해 결함으로 구별",
+      "id": "V85",
+      "input": "ID 색인 불일치와 본문 ID 링크 부재",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R14"
+      ],
+      "source_line": 1765,
+      "source_row_sha256": "cf5f7083973634c7b88ad575459a7609ed18ae70bfe7c5884af0ec087635e933"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "같은 후보에서 종류 정의부터 검사. 새 권한·전이를 정의하면 계약 확장 요구",
+      "id": "V86",
+      "input": "신종 F·관계를 기존 필드와 효과로 정의",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R14"
+      ],
+      "source_line": 1766,
+      "source_row_sha256": "17370584cecef29c4e89c9f3be696f8673fa99861266e91d1781eea8a95d1f85"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "관계 검사 실패, supports를 수학 함의로 대체하지 않음",
+      "id": "V87",
+      "input": "수학적 관계에 형식 결과·판정이 없거나 양끝 가족이 틀림",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R14"
+      ],
+      "source_line": 1767,
+      "source_row_sha256": "914abeba53f2dc27702ce1bfb36d6d42de6edd4b5375dacbab6fbf612531508a"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "규범 schema/codec 검사 실패. unknown을 허용값으로 추정하지 않음",
+      "id": "V105",
+      "input": "미지 필드·중복 원문 키·NFC 충돌·금지 YAML 구성·틀린 ID 또는 OID 길이",
+      "owner_section": "17.2",
+      "rule_ids": [],
+      "source_line": 1768,
+      "source_row_sha256": "69cab2738e50b3a28d467e33450d4c7a3f35c0bd1fd5d7644257adb53bb6bc4f"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "유효한 F로 조회·재검토, 반증·철회·삭제로 변환하지 않음",
+      "id": "V179",
+      "input": "F가 inactive이고 기록 효력은 active",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R14"
+      ],
+      "source_line": 1769,
+      "source_row_sha256": "fa805a48c4ec3dece98f4bedb9801637a9f1819fa0482dd4cd25cadf77402647"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "설치만으로 관계·조건 효력 없음. 활성 종류 정의와 양끝·형식 결과·판정의 유효 근거를 모두 갖춘 관계만 사용",
+      "id": "V193",
+      "input": "비활성 표준 환원 템플릿의 설치, 종류 정의의 활성화, 근거 없는 수학 관계 또는 틀린 양끝",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R14"
+      ],
+      "source_line": 1770,
+      "source_row_sha256": "4e0efaefe4b98af6f0af05581172753a901c3cef7aa35edd713cc8497a515c24"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "최초는 부모 없음, 후속은 직전 상태 하나만 부모. 사건 순서는 전역 event_seq이며 자기 OID 삽입 없음",
+      "id": "V197",
+      "input": "초기화의 최초 상태 커밋과 그 뒤 상태 커밋을 검사",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R11"
+      ],
+      "source_line": 1771,
+      "source_row_sha256": "06e3ad755071aa2e7fa44afe705552740121d8e56c430a627b737639b30d93e5"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "8.5절 기본 목차·최근 이력은 실제 한도 안에서 제공, 들어가지 않으면 상신, 허가 아래 부분 범위 명시와 고정 snapshot의 상세 페이지 조회 가능",
+      "id": "V18",
+      "input": "K·F·과거 판정이 크게 증가",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R17"
+      ],
+      "source_line": 1777,
+      "source_row_sha256": "88444fae36149bb99f491704daa7bb4d1cb7163c4522e98fdf0557408eb167d5"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "모집단·목차 완전성 검사 실패, 선택 입력 미확정",
+      "id": "V118",
+      "input": "ready 후보 20개가 입력에 모두 들어가는데 한 항목을 누락",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R17"
+      ],
+      "source_line": 1778,
+      "source_row_sha256": "2f34e2b48b25ad5d2dc8034855dadd27e69b8390430caf4cb8d0965d478e9aeb"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "total_count=20·loaded_count=5·truncated와 정확한 나머지 조회 범위, 허가 참조. 제공한 5개 전건의 처분만 요구",
+      "id": "V119",
+      "input": "사용자 허가 아래 큰 후보 20개 가운데 5개만 제공",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R17"
+      ],
+      "source_line": 1779,
+      "source_row_sha256": "7e4689a148c2f4331b2dba88d298832d7d0dbd42538468090e6931c2d7b9e9e5"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "같은 seed는 같은 순서, 새 회차는 새 seed·실제 순서 봉인. 순서를 수학적 우선순위로 사용하지 않음",
+      "id": "V126",
+      "input": "입력이 같고 같은 후보 shuffle seed 또는 새 회차 seed",
+      "owner_section": "17.2",
+      "rule_ids": [],
+      "source_line": 1780,
+      "source_row_sha256": "2c78cfbdd71de161a1a964cea8a577f3c8b958f4528f09aab65c52bf0fd7f208"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "들어가는 K는 ID 순서 전건 목차, 들어가지 않으면 상신. 발견 성공 여부는 별도 효능 평가",
+      "id": "V127",
+      "input": "K에 다른 이름의 결과가 있고 현재 키워드 질의로 찾지 못함",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R17"
+      ],
+      "source_line": 1781,
+      "source_row_sha256": "ee2c449cb227887540e7677673295353058b00de80aaf7cb117545df96342139"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "다음 준비·선택 입력에 기대와 실제 기록을 함께 제공. 미도착 결과는 별도 표시",
+      "id": "V128",
+      "input": "최근 선택의 낙관적 기대가 실제 실패·부분 결과로 끝남",
+      "owner_section": "17.2",
+      "rule_ids": [],
+      "source_line": 1782,
+      "source_row_sha256": "7c02d260497e415d8739c09e4415769923c28bc3c92a5e42cd353ec5a81a59b5"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "필수 자료는 유지, 실제 축소 창·토큰 표시. 이력 0에서도 넘으면 목차를 자르지 않고 상신, 필수 자체가 넘어도 상신",
+      "id": "V129",
+      "input": "최근 이력과 큰 목차가 입력을 초과하고 필수 실패·쟁점이 있음",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R15"
+      ],
+      "source_line": 1783,
+      "source_row_sha256": "605288a6ef7c51c342433895ade4e2a75fab609c6b351ae311e832b1840cecf8"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "K 목차에는 남기고 연결의 사용 효력 표시. 그 연결을 외부 의미·목표의 유효 근거로 사용하지 않음",
+      "id": "V141",
+      "input": "형식적으로 유효한 K 객체의 해설·동일성 연결만 정지 또는 철회",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R17"
+      ],
+      "source_line": 1784,
+      "source_row_sha256": "8a261dba8f500aef65bc5a4059d4eedb12bf4fdd48505b5a723878ffb69ab47b"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "이전 모델 가시 메시지의 순서·해시 일치, 도구 결과 본문과 이전 판본 전문은 참조 항목, 자기 메시지 전건, 새 입력 확인, 같은 단계 미공개 결과는 비노출",
+      "id": "V144",
+      "input": "동일 검토 자리의 다음 회차·새 제안 판본",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R16"
+      ],
+      "source_line": 1785,
+      "source_row_sha256": "1302b0662cdc8249955d91bb7aa73d546d0517cc44ecd35cc03d5d6bc311aa9a"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "요청 미시작, 질문 공개와 활동의 user_decision 대기, 다른 자리의 실행은 계속. 대화 소실로 위장한 요약·임의 대체 없음",
+      "id": "V145",
+      "input": "참조 대체 복원 뒤에도 시작 전 실측이 컨텍스트 초과",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R16"
+      ],
+      "source_line": 1786,
+      "source_row_sha256": "a174650b0903186f6f8a2f46e46b9da082615646a01186cb5b5a67a3af5ca548"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "실패 근거·보존 범위·continuity_broken과 기록 사슬 전건을 가진 대체 실행. 판단 재구성 불가이면 unresolved",
+      "id": "V146",
+      "input": "transcript 일부가 영구 복구 불가",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R16"
+      ],
+      "source_line": 1787,
+      "source_row_sha256": "a81dd054d6bdebec4c4247f954112395930703f4b584ba3a95a2ee32d695fee6"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "번호 미재사용",
+      "id": "V159",
+      "input": "철회. 8.5절의 partial 갈래 제거로 대상 규정 없음",
+      "owner_section": "17.2",
+      "rule_ids": [],
+      "source_line": 1788,
+      "source_row_sha256": "d33e0effa8cdd25eed00fc5c0ac1ac3b3cf784c755a44aaea21f192fa694e5d0"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "목차를 자르지 않고 상신 질문 생성과 선택 활동의 user_decision 대기, 실측·모집단·선택지 포함, 다른 활동 계속",
+      "id": "V160",
+      "input": "이력을 0으로 줄여도 두 목차 전건이 들어가지 않음",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R17"
+      ],
+      "source_line": 1789,
+      "source_row_sha256": "d5d98b8f52487bf756b90cd4bdf870fc81b31242240ae72b5cc7e69042396cc1"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "실질 판단 전 입력 검사 실패, 관련성 발췌로 전건 제공을 대신하지 않음",
+      "id": "V161",
+      "input": "공통 용어집 또는 계획자의 헌장·활성 정책·설정 일부 누락",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R15"
+      ],
+      "source_line": 1790,
+      "source_row_sha256": "e9ea9a68b90c2778a59862fb37850213fcf107c150be562987889622046fa145"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "독립성 검사 실패. 허용된 자기 대화와 이전 공개 회차만 복원",
+      "id": "V166",
+      "input": "같은 논리 자리라며 작성 컨텍스트 또는 다른 판정자의 이번 결과를 주입",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R16"
+      ],
+      "source_line": 1791,
+      "source_row_sha256": "ca75361a8f2c81ada476eae5a9d3485d800f736d7a6758ec7a47bc4fb1b55f25"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "이력 창을 줄여 전건 목차 제공, 축소 창 표시. 이력을 위해 목차를 줄이지 않음",
+      "id": "V178",
+      "input": "이력을 줄이면 후보·K 전건이 들어감",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R17"
+      ],
+      "source_line": 1792,
+      "source_row_sha256": "c810fa3e5f3458c6d6f7d39ed373519c079c8fbcfad2626f0f5393983fab9890"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "번호 미재사용",
+      "id": "V189",
+      "input": "철회. 8.5절의 최소 조합 탐색 제거로 대상 규정 없음",
+      "owner_section": "17.2",
+      "rule_ids": [],
+      "source_line": 1793,
+      "source_row_sha256": "291285d6ea3723484b656d731294a22ebc63fcba35a3fcab9ebc4434c51c80d6"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "참조 대체 복원으로 재시작. 그래도 넘으면 상신. 기록 기반 대체 실행은 사용자 결정 또는 일반 허가로만, 검토자 자체 개시 불가",
+      "id": "V202",
+      "input": "context_overflow로 끝난 검토 자리의 재개",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R16"
+      ],
+      "source_line": 1794,
+      "source_row_sha256": "690ddd3ce8c53bd9a7fee96a584a7054909311b456411db1e9b347a528a1da8c"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "요청 미시작, 소유 활동의 user_decision 대기와 상신 질문, 필수 정의 생략 없음",
+      "id": "V204",
+      "input": "공통 문서·역할 문서·통치 전문이 한도에 맞지 않음",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R15"
+      ],
+      "source_line": 1795,
+      "source_row_sha256": "b9934bccb406530be6c1deb896d636e057f8bd1e56571b3bb4b37568e7ac7882"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "허가가 지정한 목록·순서로 잘림, total_count·loaded_count·truncated·조회 조건, 허가 참조 봉인",
+      "id": "V206",
+      "input": "사용자가 목차 잘림을 허가함",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R17"
+      ],
+      "source_line": 1796,
+      "source_row_sha256": "92c83dbb42538ac71017440f580160fa5b1b2b002209199bb33a03273999237b"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "기계 적용 없이 다시 상신, 13.2절 일반 허가가 있을 때만 검사로 적용",
+      "id": "V207",
+      "input": "잘림 허가 없이 같은 초과가 재발",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R17"
+      ],
+      "source_line": 1797,
+      "source_row_sha256": "71e2be8a07716a12dbccb83975387ec5a20135573d63cd60e451aa58d5e9a1f4"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "같은 스냅샷의 read가 봉인 해시와 같은 바이트를 반환, 허용 읽기 범위 안, 다른 판정자의 미공개 결과 참조 없음",
+      "id": "V208",
+      "input": "참조 항목의 재열람",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R16",
+        "R45"
+      ],
+      "source_line": 1798,
+      "source_row_sha256": "30ac6dd744b9a54af64d16a3fd9336165c4af8f783289fa63ef738157ed59ebd"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "관련성 선별 없이 도구 결과 본문과 이전 판본 전문 전체를 대체, 자기 메시지와 이번 판본 필수 입력은 전문",
+      "id": "V209",
+      "input": "참조 대체의 균일성",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R16"
+      ],
+      "source_line": 1799,
+      "source_row_sha256": "7b909aeba128fc5edc32fe1251a4a8b6adbfba26edc8f59da8878d7897d1143b"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "질문 즉시 공개, 대기 조건을 미결 사항에 기록한 채 working 유지, 소유 실행 전건 ended 뒤 user_decision 대기",
+      "id": "V210",
+      "input": "상신하는 검토 활동에 다른 자리의 실행이 running",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R16"
+      ],
+      "source_line": 1800,
+      "source_row_sha256": "b685e013e81d0517668a84a7ae6d2a8c4d57eb88651eeb9fabe9aa15892f615e"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "실패 실측·좌표를 입력에 더해 한 번 재시작, 같은 활동의 두 번째 초과는 상신",
+      "id": "V211",
+      "input": "선택·준비·계약 검토처럼 대화를 복원하지 않는 AI 실행의 조회 누적 초과",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R16"
+      ],
+      "source_line": 1801,
+      "source_row_sha256": "586b2b9fff67af9b4201f8b9741eace9eafacf4fcd042433806ef716addd7d5a"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "검토 활동은 unresolved, 선택·준비 활동은 질문·결정을 결과 참조로 가진 무수행 finished, 같은 초과 재발 시 재상신",
+      "id": "V212",
+      "input": "사용자가 상신 질문에 보류를 택함",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R16"
+      ],
+      "source_line": 1802,
+      "source_row_sha256": "7c418ba87f65c157a57e3be9336cbacbf8c1441b3c264e23045bed3176ba2e34"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "입력 검사 실패, 허가에 없는 목록의 잘림 없음",
+      "id": "V213",
+      "input": "잘림 허가의 목록·순서와 manifest의 잘린 목록·순서가 다름",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R17"
+      ],
+      "source_line": 1803,
+      "source_row_sha256": "651beddb5fb0a8d2ef152111372df0d4677ca5ea5b69122125a27d82428d457d"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "최종 계수로 재포장, 그래도 넘으면 8.3절 원인 분류",
+      "id": "V214",
+      "input": "최종 계수가 항목별 합계와 환경 여유 이상 어긋남",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R16"
+      ],
+      "source_line": 1804,
+      "source_row_sha256": "16fe3fab6d8f03303a3cc9af05f066169e3cec55798b391c234152c12322daaa"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "정상 종료, 재검토 조건 전 같은 입력 재파견 없음",
+      "id": "V05",
+      "input": "연구 계획이 유효한 빈 선택을 반환",
+      "owner_section": "17.2",
+      "rule_ids": [],
+      "source_line": 1810,
+      "source_row_sha256": "166eb639d818b972642787491fc5b6038255fcf413f0a68ac2d431b99eec3d49"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "후보 준비 사건 하나를 보존하고 후보 밖 탐색 고려. 별도 선택과 새 연구 실행의 실제 배정은 해당 자원 범위 안에서 수행",
+      "id": "V78",
+      "input": "진행 작업과 준비된 후보가 있지만 연구 재검토 시각 도래",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R18"
+      ],
+      "source_line": 1811,
+      "source_row_sha256": "b6b478c97afbf1f7b2cd302b4e7f49fe3a6a850202b7abf0ca6528e3867e8272"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "재개 때 사건 하나, 후속 후보 준비의 개설 시각에서 다음 시각 계산. 결과 적용 때 주기 재가산 없음",
+      "id": "V79",
+      "input": "일시 정지 동안 여러 재검토 주기가 지남",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R13",
+        "R18"
+      ],
+      "source_line": 1812,
+      "source_row_sha256": "e4971b13a72c050c8a89d1d6dd9a9206797dee375c1fc7beba58941048657ab0"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "pending 또는 active, 전건 completed 아님",
+      "id": "V97",
+      "input": "현행 해결 근거에 학술 요구 둘 중 하나만 완료",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R21"
+      ],
+      "source_line": 1813,
+      "source_row_sha256": "45043bb0f13ada1d1e94cf48d8addfd3aa23e9c451a189170d2f5dbfcb1975c6"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "과거 결과 보존, 새 solution_basis에 대한 완료로 자동 승계하지 않음",
+      "id": "V98",
+      "input": "해설·해답 판본이 바뀌었는데 옛 전문가 검토만 있음",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R21"
+      ],
+      "source_line": 1814,
+      "source_row_sha256": "cfab2d487840b6601e5e64922337b8dcc089f1f01b23ee9c2d99099422fd779b"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "externally_rejected와 내부 검토, Lean 형식 타당성을 자동 철회하지 않음",
+      "id": "V99",
+      "input": "외부 거부가 있으나 내부 수학 결함은 미확인",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R21"
+      ],
+      "source_line": 1815,
+      "source_row_sha256": "c92208cf1ddf1342c84d9a402e93d4e5a2615dfcf5de2539295b6f52885d5427"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "준비·실행·행동 원장에서 적용 전제 재검사로 새 전송 차단",
+      "id": "V100",
+      "input": "해결 근거 정지 중 해당 원고의 외부 전송 요청",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R21"
+      ],
+      "source_line": 1816,
+      "source_row_sha256": "86cdd50ed1519f8c38d0712a616cee89c2e4fb1c835f9329fe0317ed7f165fe2"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "plan 수신 검사 실패. 상세 원문 미열람만으로 실패시키지는 않음",
+      "id": "V120",
+      "input": "제공된 목차 후보에 처분이 없거나 둘 이상 있음, 또는 manifest에 없는 ID를 지목",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R20"
+      ],
+      "source_line": 1817,
+      "source_row_sha256": "f9a229fa82275850469c14195c93b734c0e4b30bf86a30973d3d8b5d46ac25ff"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "별도 selecting 실행 요구. 같은 공통 activity·execution 체계 안에서 배정",
+      "id": "V125",
+      "input": "선택 실행이 제공 후보를 저작했거나 그 작성 컨텍스트를 이어받음",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R19"
+      ],
+      "source_line": 1818,
+      "source_row_sha256": "38cb3ae85103b8f17d457c90795a7cfd0179821c8d2aee2033b246d2dd3948e5"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "다음 도래는 화요일 00시. 결과 적용으로 06시까지 미루지 않음",
+      "id": "V130",
+      "input": "준비를 월요일 00시에 열고 06시에 결과 적용, 간격 PT24H",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R18"
+      ],
+      "source_line": 1819,
+      "source_row_sha256": "965b88538b784a1453b4c52c831429c14f81a92307342829ce3899f74c0d19d2"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "도래 사건 하나 유지, 재시도가 opened_at·다음 시각을 바꾸지 않음. 후속 회차에 밀린 횟수만큼 몰아 실행하지 않음",
+      "id": "V131",
+      "input": "준비가 주기보다 오래 진행되거나 같은 실행을 재시도",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R18"
+      ],
+      "source_line": 1820,
+      "source_row_sha256": "06313ea3ec083bd77239b554a85cb911cf59ef4e0f351fb258f65b0e7f01f40b"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "preparation_history와 처리할 실패 전건 제공, 미편입을 없던 회차로 처리하지 않음",
+      "id": "V171",
+      "input": "직전 준비의 제안이 미편입·기각됐고 새 준비 회차가 열림",
+      "owner_section": "17.2",
+      "rule_ids": [],
+      "source_line": 1821,
+      "source_row_sha256": "acc8c9455c93373034ad2cfb350d21d5df4dab7e099b6b6e8bc9de16e707fb61"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "주기 전에도 고갈 준비 하나, 주기와 동시에 도래해도 중복 없음",
+      "id": "V172",
+      "input": "active·unsolved, 미종료 연구 요청·ready 계약 없음, 외부 대기 가드 없음",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R18"
+      ],
+      "source_line": 1822,
+      "source_row_sha256": "3bf65e428d53102e1f2766201d1fec75b1263ea2da0a747e4db96bee9a1faa79"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "고갈 준비 대기·재관찰 근거, 독립된 정기 탐색은 유지",
+      "id": "V173",
+      "input": "고갈이며 외부 사건만 기다리거나 regenerate_after 전",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R18"
+      ],
+      "source_line": 1823,
+      "source_row_sha256": "3ee7fb292566d9caffc3703182cbfc872143e5bab6e921bc82abe1f35c817db3"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "사용자 질문·고갈 닫힘을 유지하며 주기 준비는 가능, 새 ID로 고갈 문턱 우회 불가",
+      "id": "V174",
+      "input": "고갈 무산출 문턱에 도달했고 이후 주기가 도래",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R33"
+      ],
+      "source_line": 1824,
+      "source_row_sha256": "6b8546d16140b873c8c16a1eca0e9072a243258a7fc918e3c28a6762f20d0978"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "선택 묶음 검사 실패, 넘는 일은 보류·후속이며 임의 큐 배정 없음",
+      "id": "V183",
+      "input": "한 선택의 새 연구 요청 넷이 동시 상한 셋을 공유",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R20"
+      ],
+      "source_line": 1825,
+      "source_row_sha256": "f6ec9c79bdebfb9270f56ff4ee48e776411e3180fd6900a9df9a61e05c10b35d"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "멈춘 이유로 수신 검사 실패, 같은 입력 재시도 없음, 선택 활동 user_decision 대기와 질문, 선택 실패 횟수 미산입",
+      "id": "V205",
+      "input": "계획 출력이 최대 출력에서 잘림",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R20",
+        "R33"
+      ],
+      "source_line": 1826,
+      "source_row_sha256": "d3731de2a4862911c2339973a96cd799e90441d205fcd09e95d5f363c71acce9"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "실패한 편입은 상태 ref를 바꾸지 않으며, 그 연구 변경·후속·예약 어느 것도 적용되지 않음",
+      "id": "V14",
+      "input": "공용 편입의 예상 상태 OID 불일치",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R11"
+      ],
+      "source_line": 1832,
+      "source_row_sha256": "081234c16739fdf45cecc4d8f3c07a6dd5176eb0b4367e3ae87012d3d70d8ced"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "과거 커밋·바이트 유효, 현재 머리 불일치만으로 결함 아님",
+      "id": "V15",
+      "input": "과거 편입 뒤 다른 정상 편입이 추가됨",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R11"
+      ],
+      "source_line": 1833,
+      "source_row_sha256": "4eabc02feaabfec1d03721e5a603a1180124a3fcb9ae71ebfe189571ede11719"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "실행기가 응답하고 최신 원장 사건 보존, 편입이 오래된 원장으로 덮어쓰지 않음",
+      "id": "V42",
+      "input": "긴 편입 검사 중 다른 실행이 체크포인트를 제출",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R11",
+        "R22"
+      ],
+      "source_line": 1834,
+      "source_row_sha256": "767b2798a09746e0913decc17cfcd80a25367758bc35ec85a6daf347f8035a4c"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "최신 research에 A 변경분만 적용, B와 최신 runtime 보존, 변경된 검사 입력은 재검사",
+      "id": "V67",
+      "input": "A의 긴 편입 검사 중 독립 변경 B가 research에 편입",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R11",
+        "R22"
+      ],
+      "source_line": 1835,
+      "source_row_sha256": "dcec886e666651250a01e895c9e5003a6867dcd4567b546dd6a64fbf7c75f79e"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "원문 대조와 해당 사용자 승인 없이는 적용 불가. F의 정의 후보 저작은 가능",
+      "id": "V107",
+      "input": "일반 연구 편입으로 통치 맥락의 정의를 변경",
+      "owner_section": "17.2",
+      "rule_ids": [],
+      "source_line": 1836,
+      "source_row_sha256": "fb439ea89b057a07073238eba50e00d641d7824b46aefb8cbebac7b66ef1561c"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "미리보기는 정본·권한 불변, 최종 최신 상태에서 적용 전 재검사",
+      "id": "V181",
+      "input": "생산자의 편입 미리보기 뒤 독립 공용 변경 도착",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R22"
+      ],
+      "source_line": 1837,
+      "source_row_sha256": "591a53183b84c45023d3bbf39ca667714ecff9cb2513d7e27031c0b3aefe4697"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "자동 resolved·규칙별 집계 또는 비교 없음. 표기 정규화는 반복 결함 수에서 제외",
+      "id": "V182",
+      "input": "같은 규칙이 실패·해소를 반복하거나 비교할 직전 검사가 없음",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R40"
+      ],
+      "source_line": 1838,
+      "source_row_sha256": "369be8304e48ab3f4cd0d91de241833ca87e78056157f46a91b06c0105d298cf"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "검토 계획 미개설·재구성 반환 또는 실행 미완료, 승인 없음",
+      "id": "V19",
+      "input": "필수 검토 입력이 프로필에 들어가지 않음",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R23"
+      ],
+      "source_line": 1844,
+      "source_row_sha256": "f67e532bcc9063131da042935b4e49f263b418aee3b8e3d06712f5e1451e8519"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "같은 활동의 총한도 적용, 미해결 종료",
+      "id": "V20",
+      "input": "보충 질문을 새 ID로 나누어 상한 우회 시도",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R26"
+      ],
+      "source_line": 1845,
+      "source_row_sha256": "96d642c6767d2d08dad5b26777a350c7c5908f1c4350af646c2ef4a68c87d598"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "unresolved, 인증 승인·확정 불일치로 바꾸지 않음",
+      "id": "V21",
+      "input": "최종 판정 match·match·mismatch",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R27"
+      ],
+      "source_line": 1846,
+      "source_row_sha256": "7acad40f50b95fca9fd8e8507cdec9fc533a7bd1d4370ec3649e9d2d298c350e"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "사용 suspended, 활동 종료·후속 과제·재검토 조건 존재",
+      "id": "V22",
+      "input": "재심사 unresolved",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R28"
+      ],
+      "source_line": 1847,
+      "source_row_sha256": "a628988bf9dfc7f63635d110564f856da8bd226b9b4c1deb9473d80b8fafb6b2"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "새 해설·판정 연결, 중복 Lean 선언 없음",
+      "id": "V23",
+      "input": "해설만 새로 인증하고 형식 대상은 기존 결과",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R28"
+      ],
+      "source_line": 1848,
+      "source_row_sha256": "32f9f879d0b65afb684efcd7a4625f241634d69b21cf66c996206bc9d343a78f"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "저장 무결성 결함, 새 제안으로 정당화하지 않음",
+      "id": "V24",
+      "input": "봉인한 제안 파일이 예기치 않게 바뀜",
+      "owner_section": "17.2",
+      "rule_ids": [],
+      "source_line": 1849,
+      "source_row_sha256": "bca392fed7a0fd55b4d84485b6c570da985a45c4e66395fd3091084822110196"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "옛 묶음 보존, 새 판본에 새 검토",
+      "id": "V25",
+      "input": "작성자가 내용을 고쳐 새 판본 제출",
+      "owner_section": "17.2",
+      "rule_ids": [],
+      "source_line": 1850,
+      "source_row_sha256": "97717d489637afb3a451464d05664774f918155c0de492481a0fbad5228d9716"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "K 편입 가능, 목표 unsolved",
+      "id": "V26",
+      "input": "H → P는 검증됐지만 목표는 P",
+      "owner_section": "17.2",
+      "rule_ids": [],
+      "source_line": 1851,
+      "source_row_sha256": "aa0c1840f3294a5af4c8c679f9918d804a7ec0ef9c7bd6e1ab10735fe61f1842"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "실제 의존에만 영향, 형식 결과·독립 연결 유지",
+      "id": "V27",
+      "input": "동일성 판정 하나만 철회되고 독립 연결은 유효",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R28"
+      ],
+      "source_line": 1852,
+      "source_row_sha256": "b5378d414be049a988b369dca03cab11d5249882c6e1538152a2cd7033e99d8f"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "방침 검사 실패, 공허한 만장일치 승인 없음",
+      "id": "V44",
+      "input": "최종 판정자 수가 0이거나 필수 관점 목록이 비어 있음",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R23"
+      ],
+      "source_line": 1853,
+      "source_row_sha256": "3fc7f7961c5d3fd1171d592f5d33b7b0d8ffc7c602ef2d186ef3d05a199e4015"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "경계 참조 검사 실패, 미검토 논증을 K로 취급하지 않음",
+      "id": "V47",
+      "input": "재구성된 후속 제안이 아직 인증되지 않은 보조 결과를 기존 K처럼 참조",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R23"
+      ],
+      "source_line": 1854,
+      "source_row_sha256": "556d28b0ac3e3b20e76d821bef3d2fc6caac38ed5d26b3a13203fd78387c3c3f"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "입력 불완전으로 보고, 기존 판단이 없었던 것처럼 검토 완료를 선언하지 않음",
+      "id": "V48",
+      "input": "후속 검토 입력에서 기존 쟁점의 반박 근거나 답변이 빠짐",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R15"
+      ],
+      "source_line": 1855,
+      "source_row_sha256": "c702dec26bdb7082b6e5b62118e1cd37f892ff1db1bac4dfb801549d831d4a10"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "승인 승계 거부. 불변 부분까지 새 의미 판정, 정확히 같은 기계 검사와 착수 계약 승인은 별도 재사용",
+      "id": "V62",
+      "input": "새 제안에서 입력·의존이 동일한 일부 의미 판정을 재사용하려 함",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R24"
+      ],
+      "source_line": 1856,
+      "source_row_sha256": "ddbe5b50490e4f1f580f2cc240bc853c0b75d3b33bb6fd3491b7031427bfe082"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "같은 총예산 안에서 후속 조사 가능, ID·자식 활동으로 한도 초기화 없음",
+      "id": "V63",
+      "input": "첫 보충 답변 뒤에야 다음 질문을 만들 수 있음",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R26"
+      ],
+      "source_line": 1857,
+      "source_row_sha256": "e6f05c8a6d566958fb3dd038f1ec7ecb4c37d89e8b865a20a92d1d7e1d06114f"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "unresolved에 주장·좌표·반박 보존, 단독 주장을 입증 사실로 승격하지 않음",
+      "id": "V64",
+      "input": "최종 판정이 갈리며 구체적 mismatch 주장이 있음",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R27"
+      ],
+      "source_line": 1858,
+      "source_row_sha256": "e646720f944fbf2356ddd7434d2da61286ea3d1675cce77442eca101130e1454"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "검토 개설 불가, 부족한 관점·범위 표시",
+      "id": "V90",
+      "input": "기본 세 관점 또는 필수 전문 분야를 뺀 검토 방침",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R23"
+      ],
+      "source_line": 1859,
+      "source_row_sha256": "4def4641c0882ea314bba9bf3b0fc070b31868a2598444618dd8759af476d788"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "초기 판정으로 직접 집계하고 최종 기계 검사. 중복 최종 AI 세션 없음",
+      "id": "V91",
+      "input": "필수 초기 판정 전건 match, 열린 쟁점 없음, 범위·경계·독립성 유효",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R27"
+      ],
+      "source_line": 1860,
+      "source_row_sha256": "0ab51b6dca8fae22ed3e2edb5e728de8d7fc3e62e68bc621e096fb8370056de0"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "직접 집계 금지. 총한도 안 보충·최종 판정, 미완료이면 unresolved",
+      "id": "V92",
+      "input": "초기 판정이 갈리거나 하나라도 unresolved",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R27"
+      ],
+      "source_line": 1861,
+      "source_row_sha256": "775757cc68e9901aeb853ceac58643c5048e875e5f2ac85062c1d4d5b973644b"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "기계 좌표 확인과 별도로 의미 검토가 불일치·미해결 근거를 반환",
+      "id": "V93",
+      "input": "해설의 양화 순서·영역·의존이 Lean 표현과 다름",
+      "owner_section": "17.2",
+      "rule_ids": [],
+      "source_line": 1862,
+      "source_row_sha256": "0a5d16d713c2c30755b6d488e5c18522e8501a29a18642c13f4a28ca70d463cb"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "원문 충실성 검토가 실제 결함·허용 생략·오독을 원문으로 구별",
+      "id": "V94",
+      "input": "문헌 전사의 허용 생략을 오류로 지적",
+      "owner_section": "17.2",
+      "rule_ids": [],
+      "source_line": 1863,
+      "source_row_sha256": "70ce0129793c7bc604f5eade8a00d1821cbce3aaad91c549530117f8f27f7b48"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "정책이 정한 보편 결과와 효과 적용. 목표 미해결, 정확한 부분 K는 보존",
+      "id": "V95",
+      "input": "프로젝트 추가 감사가 조건부 판정을 내고 해설은 정확",
+      "owner_section": "17.2",
+      "rule_ids": [],
+      "source_line": 1864,
+      "source_row_sha256": "04d4d18c5ac8d2cc39f14e60cba53c6ec5f61c4ff1b74dcc665180d4123558b8"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "목표 실패와 형식·신뢰·동일성 결함을 구별, 거리만으로 차단하지 않음",
+      "id": "V96",
+      "input": "목표와 거리가 멀다는 이유만으로 정확한 K 편입 차단 요구",
+      "owner_section": "17.2",
+      "rule_ids": [],
+      "source_line": 1865,
+      "source_row_sha256": "2fe156bb12d0f33ffbe25dfe13db15559c0f88fdb223d0c1dec04d76236b121c"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "마지막 회차 만장일치 기각 외에는 원 검토자 자리로 반환, 응답·살아 있는 반박·미응답 전건 전달",
+      "id": "V136",
+      "input": "심사자 하나의 기각·미해결 또는 초기 검토 뒤 중요한 새 반박",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R25"
+      ],
+      "source_line": 1866,
+      "source_row_sha256": "a9ae2ab1765eef86750cea794901d535523a2c0655b4b6f17dfd7d995754ecbe"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "unresolved, 원 이의 철회·해소로 표시하지 않음. 자식 활동으로 한도 우회 없음",
+      "id": "V137",
+      "input": "필요한 이의 답변 예산이 없고 다른 근거로도 쟁점을 해소하지 못함",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R26"
+      ],
+      "source_line": 1867,
+      "source_row_sha256": "8d874bd1f9533e77012ae849f8aab821b06162334635980487c672d05cc76e4e"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "필요한 이전 대화·도구 결과를 추가 회수. 회수 불가와 미열람 구분",
+      "id": "V138",
+      "input": "쟁점 기록만으로 재구성 불가 또는 같은 오독 재발",
+      "owner_section": "17.2",
+      "rule_ids": [],
+      "source_line": 1868,
+      "source_row_sha256": "0faaec12b2ef8a3e88373312ddee0ef5e7bab8f66714b1e101fffe3c137296b2"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "두 경우 모두 불변 부분 포함 전면 재검토. 한도를 지원하지 못하면 재구성 반환 또는 unresolved",
+      "id": "V139",
+      "input": "새 제안의 국소 수정 또는 전체 논증 해석 변경",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R24"
+      ],
+      "source_line": 1869,
+      "source_row_sha256": "96b18e456ae50f5a233ad6432798a08fb5f341787f522a5b015abb6bc79f017d"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "불변 할당도 새로 검토해 이의를 낼 수 있으며 옛 승인으로 건너뛰지 않음",
+      "id": "V142",
+      "input": "새 판본의 수정과 무관한 보조정리에 처음부터 누락 가정이 있음",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R24"
+      ],
+      "source_line": 1870,
+      "source_row_sha256": "7c054662ac5dcf55c63838237c13c6c25136cbb62ebd2f7cf5cd618beb59deba"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "그 자리만 복구, 정상 봉인한 다른 결과는 유지",
+      "id": "V143",
+      "input": "같은 제안 판본·입력에서 한 검토 실행만 소실",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R24"
+      ],
+      "source_line": 1871,
+      "source_row_sha256": "88d8a31eaa05b6ac2d7cd37360af4eef92694a654555ff1a52ab0a8d906cd6e5"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "원 검토자에게 세 이유를 반환하고 응답 기회 제공. 중요성 선별만으로 생략하지 않음",
+      "id": "V147",
+      "input": "마지막 회차 전 세 심사자가 모두 이의를 기각",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R25"
+      ],
+      "source_line": 1872,
+      "source_row_sha256": "55c051d74d17e363d1d220205e947f7060eca26585a45a36b7bd0fecddacfa27"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "이의별 계보·대응 유지, 정련·분화의 회차 및 같은 활동 총한도 유지",
+      "id": "V148",
+      "input": "검토자가 이의를 분화하거나 새로운 별도 이의를 제출",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R26"
+      ],
+      "source_line": 1873,
+      "source_row_sha256": "0e96c50cac87f4b600f9f083a77045ced6396e838dd46578b4afdf29c79836e5"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "unresolved와 근거·후속 보존. 확정 불일치·철회로 승격하지 않음",
+      "id": "V149",
+      "input": "마지막 회차 의견 분열 또는 답변 예산 소진",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R25"
+      ],
+      "source_line": 1874,
+      "source_row_sha256": "8ba228cd4266ef36efcecd9756462e33a0083b64af97e78a329b060c9a1891ac"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "검토 계획 미개설, 실측을 담은 활동 결과로 unresolved 종료, 다음 계획의 재구성 준비 요청 또는 사용자 결정 요청. 계획자·생성기의 임의 분할 없음",
+      "id": "V162",
+      "input": "제안 전문·원자료·필수 대화가 한도를 넘음",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R23"
+      ],
+      "source_line": 1875,
+      "source_row_sha256": "9d0b79c9db1cb7e3aaeaaee2789add4001be4532fc585346a5f6c6b55f64b7e5"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "현재 활동 unresolved·후속 입력 보존, 같은 활동의 추가 답변·심사나 상한 재부여 없음",
+      "id": "V170",
+      "input": "마지막 심사 회차의 판정이 갈리고 원 검토자의 답할 질문이 남음",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R25"
+      ],
+      "source_line": 1876,
+      "source_row_sha256": "4b2afe37914f5361ab187dffcd4169ade962a289a90dea591dc7c9cd169b294d"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "각 기본·조건부 검토자의 전건 검토, 부분 조사로 대체 불가",
+      "id": "V177",
+      "input": "제안 전문·원자료·필수 대화가 검토 프로필에 들어감",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R23"
+      ],
+      "source_line": 1877,
+      "source_row_sha256": "c221ac8207475dafa7f04d1f366a163658cc16f50cd8607b6f86e0e98a788800"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "최초 계획 1회까지 합쳐 14회 필요. 13은 계획 검사 실패, 14는 해당 필수 배치 가능. 정리 2회이면 15회 필요",
+      "id": "V190",
+      "input": "초기 검토 N=3, 정리 1회·답변 3회·심사 6회를 배정하며 총한도가 13 또는 14",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R26"
+      ],
+      "source_line": 1878,
+      "source_row_sha256": "7e2a4b28222411e30cc1686beb9130f71b51f25c5bf4c1f931ba115d2d071e44"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "선택적 보충 1회는 차단. 정리 배정은 used를 5로 하고 정리 몫을 0으로 함께 변경해 허용. 종료된 실행·새 ID로 횟수 초기화 없음",
+      "id": "V191",
+      "input": "이미 배정한 실행 4회, 남은 정리 1·답변 3·심사 6, 총한도 14",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R26"
+      ],
+      "source_line": 1879,
+      "source_row_sha256": "a858b8a94b0e2867c86f3931b26a9c26df9d2b39af01efd67a198821cb5c8749"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "산출 스키마 통과와 별도로 phase·자리 결속 검사 실패. 올바른 할당·원자료·실패 좌표로 반환",
+      "id": "V192",
+      "input": "clarifying 요청이 organize를 배정했는데 형식상 유효한 answer 결과, 또는 다른 논리 자리 결과 수신",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R43"
+      ],
+      "source_line": 1880,
+      "source_row_sha256": "1c9b8855eb35952f0f3824c0925ca83c57e17d4afdf434c6cff42107d3ddac92"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "양화 순서·증인 의존 불일치. 원래 명제는 성립하고 바뀐 명제는 x = 0과 x = 1을 대입하면 반박되며 동일성 match 불가",
+      "id": "V195",
+      "input": "자연수에서 각 x마다 y = x를 택하는 해설을 하나의 y가 모든 x와 같다는 형식 표현에 대응",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R44"
+      ],
+      "source_line": 1881,
+      "source_row_sha256": "cfe34fec654d9af6ac327c247730a155affde8c4153bebbf340fe74b52e82392"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "앞은 필요한 형식·동일성 관문 뒤 목표 충족 가능, 뒤는 원 목표 미충족과 반증 결과 보존. C∨¬C의 증명만으로 어느 쪽도 해결로 처리하지 않음",
+      "id": "V196",
+      "input": "같은 엄밀한 반증을 증명 또는 반증의 확보를 요구한 헌장과 C의 증명을 요구한 헌장에 적용",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R44"
+      ],
+      "source_line": 1882,
+      "source_row_sha256": "9603e5eb536ab28f118c27f09095a4199a58a37f6a94afbd5dbd598af3670d63"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "새 판정값만으로 복원·철회하지 않음. 원 판정의 종류·값·근거·효과 재확인과 현재 전제 유효성이 있으면 부정 판정도 active 복원 가능",
+      "id": "V198",
+      "input": "같은 대상·범위에서 원래의 match·mismatch·satisfied·not_satisfied 판정을 재심사",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R28"
+      ],
+      "source_line": 1883,
+      "source_row_sha256": "1d6ab1adcee1b5c9b247514722552212a9774ab6a3cf9d4c73d9ea534770b468"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "앞은 suspended 유지·후속 보존. 뒤는 새 판정 공개이며 과거 판정 오류로 자동 처리하지 않음. 철회에는 원 판정 오류 확인 필요",
+      "id": "V199",
+      "input": "원 판정 정확성의 재심사가 미해결이거나, 새 자료로 과거 unresolved가 해소됨",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R28"
+      ],
+      "source_line": 1884,
+      "source_row_sha256": "612937bd2573c5b70cd902256f67c14e977dfa98d1bf0901aca48f0acf558904"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "다른 점검 AI를 기다리지 않고 공통 종료, 사용 가능한 운영 자원으로 후속 판단",
+      "id": "V38",
+      "input": "운영 점검 AI가 기한을 넘음",
+      "owner_section": "17.2",
+      "rule_ids": [],
+      "source_line": 1890,
+      "source_row_sha256": "527bd83b6533379b27c378b5b116fddf13b72b1c9dde495731c814999a6cd01a"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "진전으로 승인하지 않으며 실제 시도·다음 방법을 읽어 점검",
+      "id": "V80",
+      "input": "체크포인트에 파일·토큰 수만 늘었고 계약상 증거 없음",
+      "owner_section": "17.2",
+      "rule_ids": [],
+      "source_line": 1891,
+      "source_row_sha256": "e9399c638396fa37d90cbab78bc2f81e08911d292afb429b646e617177662476"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "지정된 자기 점검과 증거를 먼저 공개. 사건 도래 자체를 수학적 실패로 판정하지 않음",
+      "id": "V132",
+      "input": "계약의 반복 경계가 도래하고 작업자가 다음 실질 행동을 하려 함",
+      "owner_section": "17.2",
+      "rule_ids": [],
+      "source_line": 1892,
+      "source_row_sha256": "c050af022f2efcac39b9479213f72939ad82cc884527b4c7c3b3cd24e5bd8794"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "event_driven의 정상 진전은 추가 AI 불요, 명시적 재점검·periodic은 유지. 반복 무진전은 조기 운영 점검·자동 중단 없음",
+      "id": "V133",
+      "input": "유효한 진전 보고, 또는 계약상 연속 no_progress 도달",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R31"
+      ],
+      "source_line": 1893,
+      "source_row_sha256": "b928c57ea4e7d3fa3b6d90cd1aa0892bde68d409fbd90520758949a75a8b6b3a"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "중복 기록·무진전 중복 집계 없음. 실제 새 자기 점검만 횟수에 포함",
+      "id": "V134",
+      "input": "같은 발동·자기 점검 재전송 또는 한 응답에 사건 여럿",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R29"
+      ],
+      "source_line": 1894,
+      "source_row_sha256": "72ab405d739bfea4e6fa924c31250f1c898ca10ef708e30a166069d27dbfab80"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "응답 불가능을 위반으로 추측하지 않음. 독립 tool_review_due·명시적 재점검·기계 정지는 유지, 첫 안전 제어 경계 뒤 자기 점검 응답",
+      "id": "V135",
+      "input": "시간 사건이 긴 도구 호출 중 도래",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R30"
+      ],
+      "source_line": 1895,
+      "source_row_sha256": "a312b956480917e223302edc4c4f0bf55863b3cd04bb708895bfd9b042009cf5"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "기계 관찰·벽시계 자기 점검 유지, 정기 외부 AI 추가 호출 없음",
+      "id": "V150",
+      "input": "event_driven에서 유효한 progress만 계속됨",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R31"
+      ],
+      "source_line": 1896,
+      "source_row_sha256": "a75a35400a9437fa52312f96036ea12ea146a62136372c0a5f1a634b136386c5"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "progress가 있어도 그 점검 수행, 작업자가 임의 삭제하지 못함",
+      "id": "V151",
+      "input": "periodic 또는 점검자가 명시한 재점검 시각 도래",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R31"
+      ],
+      "source_line": 1897,
+      "source_row_sha256": "a07c3c2a124d7cdbe362c462fc3bce787facbf99b3287c86c94fbcf2e54a4353"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "경계 안 유효 교체이면 같은 계약·실행에서 규칙 revision만 갱신, 새 계약 AI 검토 없음",
+      "id": "V152",
+      "input": "다음 관찰을 반복 경계에서 특정 도구 완료로 변경",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R29"
+      ],
+      "source_line": 1898,
+      "source_row_sha256": "a511c41476dea79864d184024a0e10748bbff501a27394a85df044a8e15b8f2d"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "기존 의무·마감·무진전 이력 유지, 같은 발동 사건 중복 집계 없음",
+      "id": "V153",
+      "input": "열린 자기 점검 의무가 있는데 규칙을 교체",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R29"
+      ],
+      "source_line": 1899,
+      "source_row_sha256": "801835eba0a3d6c44bf2a73eb84dfdfe65db3b7936b28d52108d48c2e84dc6d9"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "이전 유효 규칙 유지·거부 근거, 경계 변경이면 계약 개정",
+      "id": "V154",
+      "input": "새 규칙이 벽시계 상한·허용 대상·연산자를 위반",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R29"
+      ],
+      "source_line": 1900,
+      "source_row_sha256": "220f47f986a68a50a946a3e03c020d66a16335e334eae8706dbf5a3137e9e9dd"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "tool_review_due_at에 독립 운영 점검 개설. 자기 점검 마감 미확정이 발동을 막지 않으며 호출 부재를 수학 실패로 판정하지 않음",
+      "id": "V168",
+      "input": "event_driven의 도구·공급자 호출이 영구히 복귀하지 않음",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R30"
+      ],
+      "source_line": 1901,
+      "source_row_sha256": "1c2df36b38f0222349e077186a68d07d4e7d1852aead027d09fae27e6671e71a"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "첫째·둘째는 이력과 내부 적응만, 셋째에 운영 점검. 중간 progress와 규칙 교체는 각각 횟수 재시작·이력 유지",
+      "id": "V169",
+      "input": "no_progress_limit=3이고 유효한 no_progress가 연속 도착",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R29"
+      ],
+      "source_line": 1902,
+      "source_row_sha256": "88f91bb7d15e556702a62a6904aa6a0657a86bf09c659494cc038a702848e03f"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "수신 시각에서 next_self_check_at 재예약, 다음 도래는 이전 사건과 구별",
+      "id": "V175",
+      "input": "유효 자기 점검 뒤 작업자가 규칙 변경을 제출하지 않음",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R29"
+      ],
+      "source_line": 1903,
+      "source_row_sha256": "5b4759dc5eaa577c443709c067b1bf9bebf6a52ff8a85afbdb782754bf4c763c"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "앞은 다음 벽시계 관찰 유지, 뒤는 기준·마감·무진전 횟수 불변",
+      "id": "V176",
+      "input": "응답은 유효하나 새 규칙만 거부되거나 같은 응답을 재전송",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R29"
+      ],
+      "source_line": 1904,
+      "source_row_sha256": "02c17310de791a78b947aa80cae0e907ba3b351106efcb198ca97982f9b0fe50"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "벽시계와 호출별 관찰은 계속하며 새 유효 응답 뒤 다음 최대 간격을 예약",
+      "id": "V187",
+      "input": "외부 사건 대기로 활성 누적 시간이 멈추고 응답 후 규칙 변경도 없음",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R29"
+      ],
+      "source_line": 1905,
+      "source_row_sha256": "e5a745676033262c8a0e0e355919950560ceaea97d26223274e37b516a62514e"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "자기 자료·의무·기한·거부 사유는 제공, 관찰 평가·비공개 진단은 권한 범위 밖",
+      "id": "V188",
+      "input": "연구 작업자가 외부 관찰 평가를 자기 점검 근거로 조회",
+      "owner_section": "17.2",
+      "rule_ids": [],
+      "source_line": 1906,
+      "source_row_sha256": "b621e59bd51fdde174900e010f60a6005d9fdb408d52e90691242c9adf5e9ad3"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "시간 마감은 각각 120·170이며 다음 일반 행동 전 응답도 요구. 첫 경계 미확인은 마감 미확정이지만 호출별 점검·기계 정지는 계속",
+      "id": "V200",
+      "input": "밀리초 시험 시계에서 자기 점검 도래 T=100, window W=20, 도구 없음 또는 도구 중 첫 경계 B=150",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R30"
+      ],
+      "source_line": 1907,
+      "source_row_sha256": "d6d5b050c9ffd3061a9ec8639f234a0a0d1e40c4859e88a2d2382ee6097ea641"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "원문·대상 봉인, 불필요한 재승인 없이 범위 내 적용",
+      "id": "V28",
+      "input": "사용자가 제시한 정확한 변경을 명시적으로 승인",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R32"
+      ],
+      "source_line": 1913,
+      "source_row_sha256": "d8f10482ad12a3ecf585041d797d0e6ea0a1ee09ad3df961dd40029a987895a0"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "자동 실행 없음, 사용자 결정 요청",
+      "id": "V29",
+      "input": "유사 사례는 있지만 현재 행동을 허용한 범위 없음",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R34"
+      ],
+      "source_line": 1914,
+      "source_row_sha256": "3151979bd461f3ebc2dd7a177aa3a491c4c4745e4700e58d6beac3819eb0a516"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "unknown, 조회·멱등 확인 전 재전송 없음",
+      "id": "V30",
+      "input": "외부 전송 뒤 결과 기록 전 소실",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R35"
+      ],
+      "source_line": 1915,
+      "source_row_sha256": "4e779ce10f231998b681737b4cad199b5066fe26f2eabc8d30bfe3f621754007"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "initializing으로 복귀, 초기화를 마치지 않고 active가 되지 않음",
+      "id": "V40",
+      "input": "initializing에서 정지한 뒤 재개",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R36"
+      ],
+      "source_line": 1916,
+      "source_row_sha256": "b32af62a29519029c0ab51000b863d23166e000ac498e340d447f05b1e6aa09c"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "호출 전임이 확인되면 cancelled, 불명확하면 unknown",
+      "id": "V52",
+      "input": "prepared 뒤 호출 전 허가 철회",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R35"
+      ],
+      "source_line": 1917,
+      "source_row_sha256": "0841e0974dcf6c18abb182a989cb9da1f2d0bd08d8add06f1828f3445a0d589f"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "unknown, 멱등성·외부 대조 전 재전송 없음",
+      "id": "V53",
+      "input": "prepared 뒤 호출 여부를 모르는 채 복구",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R35"
+      ],
+      "source_line": 1918,
+      "source_row_sha256": "d291e382ff3df3f5d3a7985dcf69594646920ca2adb2cf4e752ec3407a4e9564"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "같은 action_id를 cancelled로 종료, 재전송 없음",
+      "id": "V71",
+      "input": "unknown 행동이 실제 미호출로 확인된 뒤 허가 철회",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R35"
+      ],
+      "source_line": 1919,
+      "source_row_sha256": "1e7240f5283e25a5bdb5251735496c72f8f1d8ddac3a7269a5ec1e36b66da927"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "기계 덮개·소유 검사 또는 독립 의미 대조 실패, 수입 미적용",
+      "id": "V88",
+      "input": "외부 입력 한 의미가 두 내부 정본에 중복 배정되거나 의미 단위가 빠짐",
+      "owner_section": "17.2",
+      "rule_ids": [],
+      "source_line": 1920,
+      "source_row_sha256": "4472316372b418cd837dd08e66ca34aee6c31bff73281f4c3e07ff9bfc03dd86"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "구간 검사와 별도로 의미 대조가 반려, 단순 덮개로 approved를 만들지 않음",
+      "id": "V89",
+      "input": "수입 구간은 전건 덮였지만 조건·예외의 의미가 왜곡됨",
+      "owner_section": "17.2",
+      "rule_ids": [],
+      "source_line": 1921,
+      "source_row_sha256": "f4db9615f6afa1fb26a432094afe1536dbb97c26227d2686cdd576f914a0ce46"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "그 선택을 확인하기 전 새 권한 없음. 정확한 직접 승인에는 보편 재승인 없음",
+      "id": "V101",
+      "input": "질문 답변에서 승인하지 않은 범위가 새로 해석됨",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R32"
+      ],
+      "source_line": 1922,
+      "source_row_sha256": "304906f324014541fae6258c6394334d95363e6d6868e662aa6bae71c2c8435c"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "해당 정책 변경 미적용, 원문·범위·사용자 결정으로 해소",
+      "id": "V102",
+      "input": "충돌하는 활성 정책에 명시적인 대체 순서가 없거나 순환",
+      "owner_section": "17.2",
+      "rule_ids": [],
+      "source_line": 1923,
+      "source_row_sha256": "7276f24a32fdc45acfce9d264966aeab1caff7daf96b1e15d79de66faee15b50"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "준비 기록에는 내부 action_id·요청·멱등 키를 남기고 확인 뒤 외부 ID 연결, 부재를 미호출로 쓰지 않음",
+      "id": "V108",
+      "input": "외부 호출 ID를 공급자가 호출 뒤에만 반환",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R35"
+      ],
+      "source_line": 1924,
+      "source_row_sha256": "b21150a96a84985933e85a8013b850d188a3d50efb5ce91d8c9e39ffa73509d1"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "현재 허가·효과를 확인해 범위 안 적용, 새 권한 생성 없음",
+      "id": "V113",
+      "input": "명시된 일반 재사용 허가와 조건 전건이 현재 사례에 맞음",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R34"
+      ],
+      "source_line": 1925,
+      "source_row_sha256": "e9286c58fb7ea98dd9686128a03acb17960e437178ba3ed4c6c6691fb043b8ae"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "현재성 재검사 뒤 적용, 원 위임·결정·사례·판단 참조 보존",
+      "id": "V114",
+      "input": "사례 기반 위임과 원 사용자 결정이 있고 두 단계 대조가 적용을 지지",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R34"
+      ],
+      "source_line": 1926,
+      "source_row_sha256": "7dd151d7024aa52759a13fa7448bc8fdb190f0edb1d768c776a1effb20bc999e"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "해당 행동은 사용자 결정 대기, 유사성으로 권한 확대 없음",
+      "id": "V115",
+      "input": "비슷한 원 결정은 있으나 재사용 위임이 없거나 적용 판단이 갈림",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R34"
+      ],
+      "source_line": 1927,
+      "source_row_sha256": "5556397656476ceed47593ad8d0004f15085fae5a101bb897023c78a388ffcc6"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "낡은 판단 적용 없음, 새 효과부터 차단하고 현재 범위를 대조",
+      "id": "V116",
+      "input": "적용 판단 뒤 위임이 철회되거나 특정 사례 비적용이 추가됨",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R34"
+      ],
+      "source_line": 1928,
+      "source_row_sha256": "a0b759c8093ed04f0ccc094fd4fc846ac18b4942c419394e1833fa71b26ef7f8"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "재사용 권한 원천으로 거부, 원 허가와 사용자 결정까지 추적",
+      "id": "V117",
+      "input": "자동 적용 결과를 다시 사용자 유래 전례로 등록하려 함",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R34"
+      ],
+      "source_line": 1929,
+      "source_row_sha256": "1d454305ea56a13422aa466f41924efb9115ef5e9952882947a4807ce5df1622"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "결정 전문이 들어가면 직접 제공, 아니면 목차와 파일별 회수. 누락·중복은 검사 실패",
+      "id": "V180",
+      "input": "큰 수입 원문 또는 이미 결정된 항목이 있는 수입",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R15"
+      ],
+      "source_line": 1930,
+      "source_row_sha256": "4cc006ab70f8647abcc32e47ab909c063498fc3b2484c3b852bca1b3225596db"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "해당 다음 실행 전 사용자 결정, 원자료·남은 의무·다른 독립 작업 유지",
+      "id": "V184",
+      "input": "수입 재저작·선택 실패·제안 판본이 각 문턱 도달",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R33"
+      ],
+      "source_line": 1931,
+      "source_row_sha256": "9c7b8e59124766f90b71de2127c1936d88c1fd8edf91b91734045dab6ac8ef3e"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "engine_id를 쓰기 전에 읽기 검사 실패, 정본 불변",
+      "id": "V49",
+      "input": "복구 시작 전 상태 커밋 또는 필수 트리가 손상됨",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R37",
+        "R41"
+      ],
+      "source_line": 1937,
+      "source_row_sha256": "4f6d919368bd1df5463107bd8291aeefe3d6581aae0113c69461c7b4858f68ee"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "종료 결과·활동 후속·해당 반환이 같은 커밋에 있거나 전부 미공개, 중복 처리 없음",
+      "id": "V50",
+      "input": "초기 의도 해석·계약 검토 실행이 종료되는 순간 소실",
+      "owner_section": "17.2",
+      "rule_ids": [],
+      "source_line": 1938,
+      "source_row_sha256": "fbe2e28893c0e0ce19bb06d59b58689ae20cce8c54caf0adfb65019722c73411"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "새 행동의 허가 시각을 추측하지 않음, 기한을 처음부터 다시 부여하지 않음",
+      "id": "V66",
+      "input": "운영체제 시계가 뒤로 이동하거나 기한 뒤에 복구",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R13"
+      ],
+      "source_line": 1939,
+      "source_row_sha256": "575791c4f55697b0a9955dd94b83c1d86f87ed444eaa8d08aa0f405ca8251664"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "현재 원장 쓰기·전환 없음, 원본 보존·변환 계획과 근거",
+      "id": "V111",
+      "input": "읽기만 호환되는 구현 또는 실패한 스키마 변환",
+      "owner_section": "17.2",
+      "rule_ids": [],
+      "source_line": 1940,
+      "source_row_sha256": "de91cd3146b8c590b82f5102f0cf36347b17a693725f30e03e1fc9cb95a53bba"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "대기시킨 뒤 전환 결과 환경에서 재검사",
+      "id": "V34",
+      "input": "신뢰 환경 전환 중 새 K 편입 도착",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R38"
+      ],
+      "source_line": 1946,
+      "source_row_sha256": "0dc881e6575444e99358d4620cbc2bef9b831bed949a95092c9a0a87ea2ed1ab"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "실패 환경 활성화 금지 또는 필요한 새 동일성 검토, 일부만 전환하지 않음",
+      "id": "V110",
+      "input": "전환한 기초에서 K 하나 재빌드 실패 또는 타입·본문·의존이 변함",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R38"
+      ],
+      "source_line": 1947,
+      "source_row_sha256": "2ffa3a9fcd65ef8e8b34669d5d6b20dc79dd23bc2cd374cfbf5e8785025b6369"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "같은 결과 반환, 중복 예약·편입·외부 행동 없음",
+      "id": "V12",
+      "input": "같은 요청 ID 재전송",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R40"
+      ],
+      "source_line": 1953,
+      "source_row_sha256": "83b36a0cc4a1815a8648af04356928bc3d913ce113b16b0d529f433911e99920"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "실행기 응답과 권한 회수·종료 대조를 호스트에서 확인",
+      "id": "V33",
+      "input": "도구 부하 중 운영 점검·정지 도래",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R39"
+      ],
+      "source_line": 1954,
+      "source_row_sha256": "4dd0e071bb63fe2d811a5543b4cddc9e33f37da9e25a27c372e5d0edf811b24b"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "분기 스키마 검사 실패, 의미 없는 null·예산을 생성하지 않음",
+      "id": "V51",
+      "input": "AI 작업·AI 운영·기계 요청의 조건부 필드가 잘못됨",
+      "owner_section": "17.2",
+      "rule_ids": [],
+      "source_line": 1955,
+      "source_row_sha256": "d92faae51266730cea2714dc1ef73a99f9ee789b80513752d3758f61c018fdd5"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "첫 실질 행동 전에 차단. 파일 이름이나 --describe 존재만으로 통과하지 않음",
+      "id": "V103",
+      "input": "설치 역할 지침이 입력 manifest와 다른 판본",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R15"
+      ],
+      "source_line": 1956,
+      "source_row_sha256": "a7b18614bb72a95f7738e5690fc5fc4e146f00de92c6391c8c55051d3b8a2837"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "도구 결함으로 기록, 산출 의미를 바꿔 통과시키지 않음",
+      "id": "V104",
+      "input": "같은 판본·같은 바이트의 생산자·수신자 검사 결과가 다름",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R40"
+      ],
+      "source_line": 1957,
+      "source_row_sha256": "2b1ad4f439f8d27aa1ca1813f0083a65812ee6022ddf9727720a18a9588dfbe9"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "보유 handle·생성 시각으로 정체성 대조, 첫 실질 행동 여부에 맞게 시작 실패·종료 처리",
+      "id": "V106",
+      "input": "PID가 재사용되거나 Job 편입·루트 재개가 실패",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R39"
+      ],
+      "source_line": 1958,
+      "source_row_sha256": "55756057ffbdf14f138cfe7425d1c4ac8dec672e13e0c174639e1140978e119f"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "양방향 계약 검사 실패, 미구현 이름만으로 지원 선언 없음",
+      "id": "V109",
+      "input": "스키마·레지스트리·describe·역할 읽기 목록의 한쪽 누락",
+      "owner_section": "17.2",
+      "rule_ids": [],
+      "source_line": 1959,
+      "source_row_sha256": "b35abfe5e3f64125484baeb91c9da261be350b5925dcf66b3ceebfd669070390"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "역할·문제군별 실제 평가 근거가 없으면 미평가·보증 한계 표시",
+      "id": "V140",
+      "input": "더 높은 노력값이나 어댑터 검사 통과만으로 연구 성능 우위 선언",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R39"
+      ],
+      "source_line": 1960,
+      "source_row_sha256": "3d32443ea0f83a2b4b9203e70176fdd92601ced291379f9c0e857db7651a6fab"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "16.1.1절의 실제 프로세스 정체성·시작 및 종료 증거 대조. 합성 영수증은 OS 시험 통과가 아님",
+      "id": "V194",
+      "input": "Windows Job 편입 실패·권한 공개 실패·루트 재개 실패·실행기 소실·PID 재사용",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R39"
+      ],
+      "source_line": 1961,
+      "source_row_sha256": "ad69b86b4fe8d678021a0cfd89db4e0a8e0c907621d715f0d0f334ec6078eb01"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "대화 복원이 필요한 활동에 미사용, 그 활동에 배정한 프로필의 활성화 검사 실패",
+      "id": "V203",
+      "input": "어댑터가 대화 자동 압축을 끌 수 없거나 보고하지 못함",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R39",
+        "R45"
+      ],
+      "source_line": 1962,
+      "source_row_sha256": "82a5d571f7c71b5f27a0bc666011c9c1a22f63cfbabfb8df034221efd071f2d4"
+    }
+  ],
+  "version": 9
+}

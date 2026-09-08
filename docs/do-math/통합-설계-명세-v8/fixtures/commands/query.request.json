@@ -1,0 +1,19 @@
+{
+  "caller": {
+    "conversation_id": "CV-00000000000000000000000001",
+    "kind": "user"
+  },
+  "command": "query",
+  "payload": {
+    "family": "instance",
+    "ids": [],
+    "page_size": 1,
+    "relation_neighbors": [],
+    "snapshot_commit": "1111111111111111111111111111111111111111",
+    "source_refs": [],
+    "space": "research",
+    "text_query": "fixture"
+  },
+  "request_id": "RQ-00000000000000000000000001",
+  "schema_version": "do-math-draft/command-request/8"
+}
