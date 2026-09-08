@@ -80,6 +80,10 @@ def artifact_errors(artifact, root, component):
                     errors.append(component + ': image has no pixels')
             except Exception:
                 errors.append(component + ': image cannot be opened')
+        media_type = str(artifact.get('media_type', '')).split(';', 1)[0].strip().casefold()
+        if component == 'fulltext' and media_type in {'text/html', 'application/xhtml+xml'}:
+            if not data.decode('utf-8-sig').strip():
+                errors.append('fulltext: empty text')
         if component == 'abstract' and (is_image or artifact.get('media_type') == 'application/pdf'):
             errors += source_region_errors(artifact.get('source_region'), root)
         elif component == 'abstract':

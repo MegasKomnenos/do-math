@@ -70,6 +70,23 @@ class ContractTests(unittest.TestCase):
                                    'url': 'https://example.org/paper', 'media_type': 'text/plain'}]}
         self.assertEqual(self.validate(), [])
 
+    def fulltext_html(self, data):
+        path = self.root / 'article.html'
+        path.write_bytes(data)
+        return {'path': path.name, 'sha256': hashlib.sha256(data).hexdigest(),
+                'url': 'https://example.org/article', 'media_type': 'text/html'}
+
+    def test_utf8_fulltext_html_preserves_non_ascii_math(self):
+        data = '<!doctype html><meta charset="utf-8"><article>α <math><msup><mi>x</mi><mn>3</mn></msup></math></article>'.encode('utf-8')
+        self.assertEqual(c.artifact_errors(self.fulltext_html(data), self.root, 'fulltext'), [])
+
+    def test_fulltext_html_rejects_invalid_utf8_even_with_matching_hash(self):
+        data = b'<!doctype html><meta charset="utf-8"><article>\xff</article>'
+        self.assertIn('fulltext: artifact unreadable', c.artifact_errors(self.fulltext_html(data), self.root, 'fulltext'))
+
+    def test_fulltext_html_rejects_blank_file(self):
+        self.assertIn('fulltext: empty text', c.artifact_errors(self.fulltext_html(b' \n\t '), self.root, 'fulltext'))
+
     def test_placeholder_is_not_abstract(self):
         path = self.root / 'abstract.txt';path.write_text('[No abstract available]', encoding='utf-8')
         self.result['identity'] = {'status': 'confirmed', 'reason': 'DOI and title agree.'}

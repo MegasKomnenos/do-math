@@ -1,0 +1,19 @@
+{
+  "artifact": {
+    "path": "intake/kudos-recovery/operator/fixtures/fulltext-html-fd040e64cf7a65cf.html",
+    "sha256": "fd040e64cf7a65cf79b8b9ffae27d00a66a1434c17d816254bf715b4b28fd38e",
+    "url": "https://www-sciencedirect-com.libproxy.knu.ac.kr/science/article/pii/S0166218X22001809",
+    "media_type": "text/html"
+  },
+  "errors": [],
+  "scope": "Actual UTF-8 archived HTML file and hash readable; full article boundaries and rendered mathematics remain worker content review.",
+  "original_candidate": "intake/kudos-recovery/g05/VER-2bb97c857e10d1adb8a73f9a/fulltext-offline-candidate.html",
+  "subsequently_accepted_artifact": {
+    "path": "intake/kudos-recovery/g05/VER-2bb97c857e10d1adb8a73f9a/fulltext-offline-candidate-d6b2de741d426479.html",
+    "sha256": "d6b2de741d426479372800e0889df94580a8d44db482ed99fb94b6677296a422",
+    "url": "https://www-sciencedirect-com.libproxy.knu.ac.kr/science/article/pii/S0166218X22001809",
+    "media_type": "text/html",
+    "kind": "verified-publisher-fulltext-html"
+  },
+  "root_visual_observation": "Read offline first-v2 and formula-v2 images; visible title/authors/abstract/Introduction and equation(1) superscript/subscript/label."
+}

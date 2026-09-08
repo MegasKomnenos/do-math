@@ -1,0 +1,27 @@
+<frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+<frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+<frozen importlib._bootstrap>:488: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+...........FF..........
+======================================================================
+FAIL: test_fulltext_html_rejects_blank_file (__main__.ContractTests.test_fulltext_html_rejects_blank_file)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\test_check_recovery.py", line 88, in test_fulltext_html_rejects_blank_file
+    self.assertIn('fulltext: empty text', c.artifact_errors(self.fulltext_html(b' \n\t '), self.root, 'fulltext'))
+AssertionError: 'fulltext: empty text' not found in []
+
+======================================================================
+FAIL: test_fulltext_html_rejects_invalid_utf8_even_with_matching_hash (__main__.ContractTests.test_fulltext_html_rejects_invalid_utf8_even_with_matching_hash)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\test_check_recovery.py", line 85, in test_fulltext_html_rejects_invalid_utf8_even_with_matching_hash
+    self.assertIn('fulltext: artifact unreadable', c.artifact_errors(self.fulltext_html(data), self.root, 'fulltext'))
+AssertionError: 'fulltext: artifact unreadable' not found in []
+
+----------------------------------------------------------------------
+Ran 23 tests in 0.823s
+
+FAILED (failures=2)
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+
+EXIT 1

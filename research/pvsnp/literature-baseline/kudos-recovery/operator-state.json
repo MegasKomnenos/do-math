@@ -40,8 +40,8 @@
   "replacement_snapshot": "restart-snapshot.json",
   "g05_root_pdf_reservation": "All ten transferred to new g05 worker; root did not finish review.",
   "latest_operator_audit": {
-    "updated_at": "2026-09-08T19:35:42.622547+00:00",
-    "common_checks": "20 existing + 4 resume regressions + 12 work-queue boundary tests passed; actual old1556 result partial checks passed/incomplete.",
+    "updated_at": "2026-09-08T20:41:18.783934+00:00",
+    "common_checks": "23 checker +4 resume +12 work queue tests passed after actual invalid UTF-8/blank HTML red cases. Actual archived HTML format and root sample rendering checked.",
     "old_agents_stopped": true,
     "new_workers": "g02/g05/g08 replacements continue TDD, actual browser collection and evidence assessment.",
     "root_review_examples": [
@@ -54,7 +54,7 @@
     "new_public_sources": "Vakil actual7page extraction completed by g08; Burgos actual UB download href independently observed by root,25pagePDF recovered by g08. Public scope27records/54queries reopened.",
     "advanced_search": "Root actual Summon TitleCombined + AuthorCombined dialog interaction validated,18/18 records,ho=f. Shared-findings and raw operator fixture record exact controls and first-row initialization failure.",
     "latest_known_native_sessions": {
-      "g02": "Fixed shards:PID22016 and20228, start20260908T191233Z; verify current state before acting.",
+      "g02": "Scope expansion defect discovered; both quality-fixed shards stopped. Verify new runs after target-context link repair; do not reuse old PID reports.",
       "g05": "Read latest runs; new full HTML/MathML/image probe follows native institutional pass.",
       "g08": "Chrome PID9884 at latest process observation; bounded separate MathSciNet6-record DOM reading allowed, results remain single-writer."
     },
@@ -66,9 +66,12 @@
     "g08_checkpoint": "106a866:56 specified files plus manifest,100 tests/logs, actual View PDF click/CPE boundary; source/result data collection continues.",
     "g02_repair": "888 saved records reassessed;259 no_resource observations corrected; actual CiNii URI visited.900+ results now growing in two fixed shards.113 collector tests and3 operator snapshot tests passed.",
     "g05_abstract_reassessment": "267 to264 reflected3 explicit mathematical formatting reviews. Root verified prior objects, retained artifacts and open review tasks; no simple source-failure overwrite.",
-    "scopus": "Firefox actual KUDOS route loaded basic DOI selector and changing input. First g07 DOI returned1/1, detailed metadata and Full text > observed institution DOI link were read. Raw captures under operator; no production g07 result written."
+    "scopus": "Firefox actual KUDOS route loaded basic DOI selector and changing input. First g07 DOI returned1/1, detailed metadata and Full text > observed institution DOI link were read. Raw captures under operator; no production g07 result written.",
+    "g02_scope_repair": "Global Europe PMC PDF index and Perlego related books were incorrectly expanded. Root read54,692 tasks/172attempts for VER-2f57a70bf9fdaa234cee4a31 and815tasks/228attempts for VER-2f0b8d4978e9dd62408de031. Correct target scope with evidence; no arbitrary link-count cap.",
+    "csrf_audit": "Worker reported one tool-output exposure from2rawlink captures. Sensitive originals moved to protected g02 state; sanitized content-addressed copies and references updated. _csrf/Save chapter actual visits0; root campaign working files and7committed revisions had no matching token values. See operator-checks/csrf-audit.json.",
+    "g05_html": "First accepted standalone HTML:Reachability in arborescence packings,1291MathML/25references/noimages/offlineHTTP0. Root read first and formula PNGs. Implementation checkpoint awaits confirmed generic-link-scope repair."
   },
-  "recorded_checkpoint_commit": "106a866",
+  "recorded_checkpoint_commit": "747a0c3",
   "pending_user_input": {
     "topic": "Elsevier organizational email",
     "question_sent": true,
