@@ -1,0 +1,51 @@
+{
+  "started_utc": "2026-09-08T18:40:08Z",
+  "pid": 20964,
+  "argv": [
+    "research/pvsnp/literature-baseline/kudos-recovery/g08/resume.py",
+    "--engine",
+    "firefox",
+    "--paper-id",
+    "VER-22d09f2a0e9222a1ac184678"
+  ],
+  "code_sha256": {
+    "C:\\math\\research\\pvsnp\\literature-baseline\\kudos-recovery\\g08\\resume.py": "f639c337e677a3b04488c314cf4f702f576970a77be60bc003e4290c51da4247",
+    "C:\\math\\research\\pvsnp\\literature-baseline\\kudos-recovery\\g08\\recover.py": "fe338a3fe3fd6ef12a843a069b8d0b327f16ac391df872da59d1801cc650d130",
+    "C:\\math\\research\\pvsnp\\literature-baseline\\kudos-recovery\\g08\\reconcile.py": "028aab4ce74e0e8574112c8630ec0cb506252268f7a9d24bf0be5602a230f6f5",
+    "C:\\math\\research\\pvsnp\\literature-baseline\\kudos-recovery\\g08\\content_review.py": "a2b0a03035b10797c8fdd686bc4c49582bb7da80fb97b10d28c895a232d5bd7f",
+    "C:\\math\\research\\pvsnp\\literature-baseline\\kudos-recovery\\g08\\scope_review.py": "671d01d36908e02702e3c8fe1e9495639d6b47f0220caf6cfcf96050f6673b0e",
+    "C:\\math\\research\\pvsnp\\literature-baseline\\kudos-recovery\\g08\\source_inventory.py": "e48136fcc043d57e6594fb3bdcf40bee1c20cf8f1fef211ab053839a8a8af017",
+    "C:\\math\\research\\pvsnp\\literature-baseline\\kudos-recovery\\g08\\native_source.py": "495b140801bfb018f2269c2488eec47ae2718ba7ad24fc3f9f08e5ec7e682250",
+    "C:\\math\\research\\pvsnp\\literature-baseline\\kudos-recovery\\work_queue.py": "f32bb342891a025ecaf248acbfd2003933ddba1e3a9ebc8535f82a74b5c3a825",
+    "C:\\math\\research\\pvsnp\\literature-baseline\\kudos-recovery\\check_recovery.py": "50d257e7544b280a54cf71ec30d46cc9802461175b3714a8bfefb6184dbd6f9f"
+  },
+  "finished_utc": "2026-09-08T18:40:52Z",
+  "elapsed_seconds": 43.613,
+  "metrics": {
+    "saved_evidence_reused": 2145,
+    "searches": 0,
+    "source_visits": 1,
+    "downloads": 0,
+    "papers_changed": 1,
+    "publisher_visits": 1,
+    "publisher_seconds": 1.063
+  },
+  "queue_counts": {
+    "assigned": 304,
+    "with_result": 304,
+    "completion_candidates": 31,
+    "papers_with_remaining_work": 273
+  },
+  "check": {
+    "command": [
+      "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+      "C:\\math\\research\\pvsnp\\literature-baseline\\kudos-recovery\\check_recovery.py",
+      "--assignment",
+      "C:\\math\\research\\pvsnp\\literature-baseline\\kudos-recovery\\g08\\assignment.json",
+      "--partial"
+    ],
+    "exit_code": 0,
+    "passed": true,
+    "complete": false
+  }
+}

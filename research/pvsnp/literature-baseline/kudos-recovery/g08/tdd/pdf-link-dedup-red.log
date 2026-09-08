@@ -1,0 +1,26 @@
+F...
+======================================================================
+FAIL: test_actual_pdf_control_hydrates_and_reference_pdfs_are_excluded (test_native_source.NativeSourceTests.test_actual_pdf_control_hydrates_and_reference_pdfs_are_excluded)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g08\test_native_source.py", line 15, in test_actual_pdf_control_hydrates_and_reference_pdfs_are_excluded
+    self.assertEqual([x['url'] for x in result['links']],[target]);self.assertFalse(result['pending'])
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['htt[85 chars]dfft', 'https://www-sciencedirect-com.libproxy[51 chars]fft'] != ['htt[85 chars]dfft']
+
+First list contains 1 additional elements.
+First extra element 1:
+'https://www-sciencedirect-com.libproxy.knu.ac.kr/science/article/pii/S0166218X22001809/pdfft'
+
+- ['https://www-sciencedirect-com.libproxy.knu.ac.kr/science/article/pii/S0166218X22001809/pdfft',
+?                                                                                                ^
+
++ ['https://www-sciencedirect-com.libproxy.knu.ac.kr/science/article/pii/S0166218X22001809/pdfft']
+?                                                                                                ^
+
+-  'https://www-sciencedirect-com.libproxy.knu.ac.kr/science/article/pii/S0166218X22001809/pdfft']
+
+----------------------------------------------------------------------
+Ran 4 tests in 4.072s
+
+FAILED (failures=1)

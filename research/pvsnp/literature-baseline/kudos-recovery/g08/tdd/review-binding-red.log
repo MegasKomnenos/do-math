@@ -1,0 +1,14 @@
+...E.......................
+======================================================================
+ERROR: test_actual_review_artifact_is_attached_to_result_evidence (test_resume.RestartTests.test_actual_review_artifact_is_attached_to_result_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g08\test_resume.py", line 17, in test_actual_review_artifact_is_attached_to_result_evidence
+    resume.attach_source_evidence(record)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'resume' has no attribute 'attach_source_evidence'
+
+----------------------------------------------------------------------
+Ran 27 tests in 0.273s
+
+FAILED (errors=1)

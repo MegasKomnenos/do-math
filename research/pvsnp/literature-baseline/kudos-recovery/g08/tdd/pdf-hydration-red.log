@@ -1,0 +1,14 @@
+E...
+======================================================================
+ERROR: test_actual_pdf_control_hydrates_and_reference_pdfs_are_excluded (test_native_source.NativeSourceTests.test_actual_pdf_control_hydrates_and_reference_pdfs_are_excluded)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g08\test_native_source.py", line 14, in test_actual_pdf_control_hydrates_and_reference_pdfs_are_excluded
+    result=native_source.wait_pdf_links(page,target.rsplit('/',1)[0],timeout=3000)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'native_source' has no attribute 'wait_pdf_links'
+
+----------------------------------------------------------------------
+Ran 4 tests in 3.026s
+
+FAILED (errors=1)

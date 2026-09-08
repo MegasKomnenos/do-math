@@ -1,0 +1,14 @@
+{
+  "started_utc": "2026-09-08T18:42:36Z",
+  "pid": 33120,
+  "argv": [
+    "probe_sd_pdf.py"
+  ],
+  "code_sha256": {
+    "C:\\math\\research\\pvsnp\\literature-baseline\\kudos-recovery\\g08\\probe_sd_pdf.py": "a2ee7765d42d73455d5a80cf047e02d9eb869ad3ee1e70be10c154080aea6c01",
+    "C:\\math\\research\\pvsnp\\literature-baseline\\kudos-recovery\\g08\\recover.py": "fe338a3fe3fd6ef12a843a069b8d0b327f16ac391df872da59d1801cc650d130",
+    "C:\\math\\research\\pvsnp\\literature-baseline\\kudos-recovery\\g08\\native_source.py": "495b140801bfb018f2269c2488eec47ae2718ba7ad24fc3f9f08e5ec7e682250",
+    "C:\\math\\research\\pvsnp\\literature-baseline\\kudos-recovery\\g08\\resume.py": "f639c337e677a3b04488c314cf4f702f576970a77be60bc003e4290c51da4247"
+  },
+  "finished_utc": "2026-09-08T18:43:00Z"
+}
