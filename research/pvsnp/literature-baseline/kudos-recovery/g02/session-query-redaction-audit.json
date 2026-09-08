@@ -1,0 +1,25 @@
+{
+  "sensitive_originals_protected": 2,
+  "public_redacted_files": [
+    {
+      "old_name": "springer-scope-links-49c270c0074f2a31.json",
+      "new_name": "springer-scope-links-5f3a22b10ef1df0e.json",
+      "redacted_links": 1
+    },
+    {
+      "old_path": "intake/kudos-recovery/g02/VER-043f28d4c78146e4a5e870d7/ciarlet-official-article-links-73f1a64664ac84e1.json",
+      "new_path": "intake/kudos-recovery/g02/VER-043f28d4c78146e4a5e870d7/ciarlet-official-article-links-86e0ddb2acc11feb.json",
+      "original_sha256": "73f1a64664ac84e1b0f3af69d59896503cb59e179e02447c0f4ca61a0b5badc7",
+      "redacted_sha256": "86e0ddb2acc11feb6dd4d3076feade7d1b84694d4fafadef47de8810bd29433b",
+      "redacted_links": 1
+    }
+  ],
+  "updated_references": [
+    "ciarlet-fulltext-decision.json",
+    "ciarlet-official-observation.json",
+    "results/VER-043f28d4c78146e4a5e870d7.json"
+  ],
+  "recorded_csrf_attempts": 0,
+  "recorded_csrf_tasks": 0,
+  "recorded_save_chapter_attempts": 0
+}

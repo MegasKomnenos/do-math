@@ -1,10 +1,18 @@
 """Distinguish source abstract fields from observed non-abstract material."""
-import re
+import re,json,hashlib
+from pathlib import Path
+_DECISIONS_PATH=Path(__file__).resolve().parent/'abstract-content-decisions.json'
+_DIRECT_KINDS={row['text_sha256']:row['kind'] for row in json.loads(_DECISIONS_PATH.read_text(encoding='utf-8'))}
 
 def classify(text):
  t=text.strip()
+ direct=_DIRECT_KINDS.get(hashlib.sha256(t.encode()).hexdigest())
+ if direct:return direct
  key=re.sub(r'[^a-z]','',t.lower())
  if not t or key in {'abstract','noabstract','noabstractavailable','noabstractprovided','na'}:return 'placeholder'
+ if re.fullmatch(r'''No (?:detailed )?(?:description|abstract) (?:is )?available(?: for (?:"[^"\n]+"|'[^'\n]+'|[^.\n]+))?[.]?''',t,re.I):return 'placeholder'
+ if re.fullmatch(r'Source: National Library of New Zealand Te Puna Matauranga o Aotearoa, licensed by the Department of Internal Affairs for re-use under the Creative Commons Attribution [0-9.]+ New Zealand Licence[.]?',t,re.I):return 'rights_notice'
+ if re.fullmatch(r'With contributions by (?:numerous|various) experts[.]?',t,re.I):return 'bibliographic_note'
  if '\ufffd' in t or re.search(r'[A-Za-z]\?[A-Za-z]',t):return 'damaged_text'
  audience=t.lstrip('`\"\'“” ')
  if re.match(r'this (?:book|volume|text) is of interest to\b',audience,re.I) and not re.search(r'\b(?:(?:this|the)\s+(?:book|volume|text|edition)|it)\s+(?:\w+\s+){0,3}(?:presents|develops|contains|covers|explores|introduces|describes|examines|discusses)\b',audience,re.I):return 'audience_only'

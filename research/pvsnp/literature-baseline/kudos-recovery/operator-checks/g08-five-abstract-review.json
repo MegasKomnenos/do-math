@@ -1,0 +1,68 @@
+{
+  "schema": "operator-content-review/1",
+  "reviewer": "root",
+  "method": "Read the supplied source files and actual rendered PDF pages; inspect every proposed abstract crop visually. This is a content decision for the five reserved records, not a claim that file hashes alone establish semantic validity.",
+  "input_batch": "kudos-recovery/g08/root-content-review-batch.json",
+  "decisions": [
+    {
+      "paper_id": "VER-470b52781c0256e5070fea54",
+      "abstract_decision": "not_found_in_reviewed_scope",
+      "reason": "The actual first page proceeds from Taylor's title and affiliation directly to Introduction. The publisher detail provides references and metadata without an abstract. The exact DOI result has an empty abstracts list; the later complete three-result refined search contains the target and distinct part-II papers. The older broad search also contains a Jarvis thesis with a different author, year and document type, whose abstract must not be assigned to Taylor. The MR text is Bas Edixhoven's independent review, including comparison with another proof, not an explicitly quoted source summary.",
+      "evidence_paths": [
+        "intake/kudos-recovery/operator/review-VER-470b52781c0256e5070fea54-first.png",
+        "intake/kudos-recovery/g08/VER-470b52781c0256e5070fea54/publisher-8ad609d541facecb.txt",
+        "intake/kudos-recovery/g08/VER-470b52781c0256e5070fea54/summon-response-e2e08be04142f396.json",
+        "intake/kudos-recovery/g08/VER-470b52781c0256e5070fea54/summon-response-14f67583578f9ddd.json",
+        "intake/kudos-recovery/g08/VER-470b52781c0256e5070fea54/mathscinet-review-74f027634e581d73.txt"
+      ]
+    },
+    {
+      "paper_id": "VER-6ee1834f4ab6b4802f1b8f0e",
+      "abstract_decision": "replace_damaged_text_with_verified_source_region",
+      "reason": "The PDF contains a complete three-paragraph Abstract, ending with existence of a solution of charge n. The stored publisher text has an erroneous colon in n∈:N and loses the original mathematical typography. The verified region retains the original bold N and excludes 1. Introduction. Preserve the previous text and its provenance in history.",
+      "region_path": "intake/kudos-recovery/operator/review-VER-6ee1834f4ab6b4802f1b8f0e-abstract.png",
+      "region_sha256": "0bae1cb2b8410706ef66d27d971215bd716f7e28839135310233dd607d228e62",
+      "source_path": "intake/kudos-recovery/g08/VER-6ee1834f4ab6b4802f1b8f0e/fulltext-5f2e4e1a40db28ec.pdf",
+      "page": 1,
+      "bbox_points": [54, 277, 387, 445],
+      "coordinate_note": "PyMuPDF page-relative clip coordinates. The source has a nonzero CropBox; do not reinterpret this rectangle as an absolute replacement CropBox.",
+      "render_scale": 3
+    },
+    {
+      "paper_id": "VER-90b2c6aad8583d67c96b28be",
+      "abstract_decision": "replace_damaged_text_with_verified_source_region",
+      "reason": "The actual Abstract has NEXP with RP as a superscript, an intersection over epsilon and nested exponents in the nondeterministic time bound. The stored plain text flattens these structures. The verified crop contains the entire Abstract through the word field and stops before Keywords and Subject classification. Preserve the previous text in history.",
+      "region_path": "intake/kudos-recovery/operator/review-VER-90b2c6aad8583d67c96b28be-abstract.png",
+      "region_sha256": "926152c14f59e75d5fc0f02f5ba1a80a5c7be1ab70707e13e9205913bbf8ddeb",
+      "source_path": "intake/kudos-recovery/g08/VER-90b2c6aad8583d67c96b28be/fulltext-e6001b8af89ee9b7.pdf",
+      "page": 1,
+      "bbox_points": [118, 202, 432, 498],
+      "render_scale": 3
+    },
+    {
+      "paper_id": "VER-9219a8ae30cce4c54be06369",
+      "abstract_decision": "not_found_in_reviewed_scope",
+      "reason": "The publisher explicitly shows ((Without Abstract)). Both the exact DOI result and the complete five-result refined search have empty abstract fields for the target. The first PDF page is the contents, and the second begins 0 Introduction. William P. Minicozzi II's featured MR review contains evaluative commentary, citations and an independent exposition; it is additional review information, not a quoted author or publisher summary.",
+      "evidence_paths": [
+        "intake/kudos-recovery/operator/review-VER-9219a8ae30cce4c54be06369-first.png",
+        "intake/kudos-recovery/operator/review-cheeger-second.png",
+        "intake/kudos-recovery/g08/VER-9219a8ae30cce4c54be06369/publisher-f38c1c11ca012bd0.txt",
+        "intake/kudos-recovery/g08/VER-9219a8ae30cce4c54be06369/summon-response-3275462fb6dd121a.json",
+        "intake/kudos-recovery/g08/VER-9219a8ae30cce4c54be06369/summon-response-9ef2d391586ff9a4.json",
+        "intake/kudos-recovery/g08/VER-9219a8ae30cce4c54be06369/mathscinet-review-925fb6512469078b.txt"
+      ]
+    },
+    {
+      "paper_id": "VER-d1859a7ea1e56e9e668f4b4f",
+      "abstract_decision": "found_verified_source_region",
+      "reason": "The first page has a distinct ABSTRACT. in the left column despite the current not_found state. It gives the random-lattice reduction, three worst-case lattice problems and one-way-function/subset-sum consequences. The verified crop includes the complete final sentence ending interval [1, r(m)], excludes Introduction immediately below and excludes the right column. Damaged OCR must not replace this readable original region.",
+      "region_path": "intake/kudos-recovery/operator/review-VER-d1859a7ea1e56e9e668f4b4f-abstract.png",
+      "region_sha256": "f6768e8d092818f3e4fec97d895d10b7f2410c430fde801128c0440547b8a8ef",
+      "source_path": "intake/kudos-recovery/g08/VER-d1859a7ea1e56e9e668f4b4f/fulltext-d20beea4a2372809.pdf",
+      "page": 1,
+      "bbox_points": [61, 112, 305, 398],
+      "render_scale": 3
+    }
+  ],
+  "handoff": "The g08 worker remains the sole result writer. Copy accepted crops into its content-addressed raw evidence, retain original PDF path and full SHA in source_region, bind review evidence to each result, add actual-fixture regressions for the demonstrated errors, and run the common partial validator. Negative decisions require the worker's current search/source scope checks as well as this content review."
+}

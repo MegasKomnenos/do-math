@@ -1,0 +1,67 @@
+[
+  {
+    "paper_id": "VER-0eb1eebb0b265001954f6541",
+    "artifact": {
+      "path": "intake/kudos-recovery/g02/VER-0eb1eebb0b265001954f6541/database-abstract.txt",
+      "sha256": "923dacf3408dce38e9201094d774d61bfea53091fa22392564ca86d3e88242ee",
+      "url": "https://knu.summon.serialssolutions.com/ko-KO/search?ho=t&q=#!/search?pn=1&ho=f&include.ft.matches=f&l=ko-KO&q=%2210.1017%2Fmag.2025.10119%22%20OR%20%2210.1007%2F978-1-4612-3968-0%22%20OR%20%220471941093%22%20OR%20%2210.1090%2Fmbk%2F069%22%20OR%20%2210.1017%2Fcbo9780511840531%22%20OR%20%2210.1016%2F0022-247x(86)90341-0%22",
+      "kind": "database-indexing-abstract",
+      "media_type": "text/plain"
+    },
+    "text_sha256": "923dacf3408dce38e9201094d774d61bfea53091fa22392564ca86d3e88242ee",
+    "kind": "unverified_formula",
+    "reason": "Direct reading of complete retained value: Flattened line layout leaves the relation between closing parenthesis and 2 ambiguous; verify original mathematical typography before confirmation."
+  },
+  {
+    "paper_id": "VER-14a1af1b0e513554e09c472a",
+    "artifact": {
+      "path": "intake/kudos-recovery/g02/VER-14a1af1b0e513554e09c472a/database-abstract.txt",
+      "sha256": "2013e8efca497020b67160b99055c617a6bf1caa3676263275bd0cdadccbfc80",
+      "url": "https://knu.summon.serialssolutions.com/ko-KO/search?ho=t&q=#!/search?pn=1&ho=f&include.ft.matches=f&l=ko-KO&q=%220387903453%22",
+      "kind": "database-indexing-abstract",
+      "media_type": "text/plain"
+    },
+    "text_sha256": "2013e8efca497020b67160b99055c617a6bf1caa3676263275bd0cdadccbfc80",
+    "kind": "table_of_contents",
+    "reason": "Direct reading of complete retained value: Two quoted component titles only; no explanatory summary."
+  },
+  {
+    "paper_id": "VER-18e7c75c197610201a71058c",
+    "artifact": {
+      "path": "intake/kudos-recovery/g02/VER-18e7c75c197610201a71058c/database-abstract.txt",
+      "sha256": "a910a6a9ef447648df75a4be8ba4d3ba964abc9eb20ee674440a1993502898be",
+      "url": "https://knu.summon.serialssolutions.com/ko-KO/search?ho=t&q=#!/search?pn=1&ho=f&include.ft.matches=f&l=ko-KO&q=%2210.1007%2F978-1-4471-0549-7%22%20OR%20%2210.1007%2F978-3-642-58169-4%22%20OR%20%220824770420%22",
+      "kind": "database-indexing-abstract",
+      "media_type": "text/plain"
+    },
+    "text_sha256": "a910a6a9ef447648df75a4be8ba4d3ba964abc9eb20ee674440a1993502898be",
+    "kind": "unverified_excerpt",
+    "reason": "Direct reading of complete retained value: Single background claim about Euclid and continued fractions does not establish a complete corresponding book summary; compare full source context."
+  },
+  {
+    "paper_id": "VER-1c64bd0484bf25d1781ed829",
+    "artifact": {
+      "path": "intake/kudos-recovery/g02/VER-1c64bd0484bf25d1781ed829/database-abstract-b47ea6a41f596e1b.txt",
+      "sha256": "b47ea6a41f596e1b44371c5defb03798f3110e08ec70508422fd4166497469dc",
+      "url": "https://knu.summon.serialssolutions.com/ko-KO/search?ho=t&q=#!/search?pn=1&ho=f&include.ft.matches=f&l=ko-KO&q=%2210.1007%2F978-1-4757-5323-3%22%20OR%20%2210.1007%2F978-1-4757-3845-2%22",
+      "kind": "database-indexing-abstract",
+      "media_type": "text/plain"
+    },
+    "text_sha256": "b47ea6a41f596e1b44371c5defb03798f3110e08ec70508422fd4166497469dc",
+    "kind": "review_excerpt",
+    "reason": "Direct reading of complete retained value: Quotation about Hilbert writing style, ending not.H.; no summary of the assigned book."
+  },
+  {
+    "paper_id": "VER-259ba20e4b3e9571448abe6d",
+    "artifact": {
+      "path": "intake/kudos-recovery/g02/VER-259ba20e4b3e9571448abe6d/database-abstract.txt",
+      "sha256": "877362247033018886e3151e8a3f77a65491e4ccb3261480aad9e88f87de2925",
+      "url": "https://knu.summon.serialssolutions.com/ko-KO/search?ho=t&q=#!/search?pn=1&ho=f&include.ft.matches=f&l=ko-KO&q=%2210.1007%2F978-3-662-06292-0_2%22%20OR%20%220198534981%22%20OR%20%221419627228%22%20OR%20%22044482569X%22%20OR%20%220521231612%22%20OR%20%2210.1007%2F978-3-0348-0563-6%22",
+      "kind": "database-indexing-abstract",
+      "media_type": "text/plain"
+    },
+    "text_sha256": "877362247033018886e3151e8a3f77a65491e4ccb3261480aad9e88f87de2925",
+    "kind": "bibliographic_note",
+    "reason": "Direct reading of complete retained value: Only retitling/revision and earlier publication dates are stated; no subject/method/content summary."
+  }
+]

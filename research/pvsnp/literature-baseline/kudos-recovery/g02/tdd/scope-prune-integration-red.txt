@@ -1,0 +1,13 @@
+..F
+======================================================================
+FAIL: test_resume_inventory_applies_scope_repair (__main__.PruneTests.test_resume_inventory_applies_scope_repair)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_scope_prune.py", line 10, in test_resume_inventory_applies_scope_repair
+    self.assertTrue(all(t['status']=='not_needed' for t in r['work_state']['tasks'] if 'europepmc.org/ftp/' in t['target']))
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 3 tests in 1.213s
+
+FAILED (failures=1)

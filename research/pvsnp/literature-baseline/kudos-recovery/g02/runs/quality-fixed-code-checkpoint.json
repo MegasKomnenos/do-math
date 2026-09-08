@@ -1,0 +1,26 @@
+{
+  "checked_at": "2026-09-08T20:07:17.312595+00:00",
+  "test_log": "tdd/readiness-quality-regression.txt",
+  "test_count": 128,
+  "runs": [
+    {
+      "manifest": "runs/20260908T200231Z-25076.json",
+      "pid": 25076,
+      "files": 59,
+      "changed_since_start": []
+    },
+    {
+      "manifest": "runs/20260908T200231Z-31620.json",
+      "pid": 31620,
+      "files": 59,
+      "changed_since_start": []
+    }
+  ],
+  "required_rule_data": [
+    "abstract-content-decisions.json",
+    "selected-summary-decisions.json"
+  ],
+  "new_test_data": [
+    "short-abstract-audit.json"
+  ]
+}

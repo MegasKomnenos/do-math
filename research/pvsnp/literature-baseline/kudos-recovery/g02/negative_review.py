@@ -7,7 +7,7 @@ from work_queue import component_basis
 def unavailable_abstract(p,r):
  if r['abstract'].get('status')=='found' or r['identity'].get('status')!='confirmed':return None
  if r.get('work_state',{}).get('reviews',{}).get('identity',{}).get('basis_sha256')!=component_basis(r,'identity'):return None
- scoped=[t for t in r.get('work_state',{}).get('tasks',[]) if t['kind'] in ('search','source','pdf')]
+ scoped=[t for t in r.get('work_state',{}).get('tasks',[]) if t['kind'] in ('search','source','pdf') and t.get('scope_relation')!='unrelated']
  sources=[t for t in scoped if t['kind']=='source']
  if not sources or not any(t['kind']=='search' for t in scoped) or any(t['status'] not in ('done','not_needed') for t in scoped):return None
  if any(r.get(flag) for flag in ('unvisited_link','unvisited_search_pages','collection_error','needs_mathscinet_revisit')):return None
@@ -33,7 +33,7 @@ def unavailable_abstract(p,r):
     if document_matches(p,d):
      for a in d.get('abstracts') or []:
       kind=classify(a.get('abstract',''))
-      if kind in ('database_indexing_abstract','damaged_text','truncated_snippet'):return None
+      if kind in ('database_indexing_abstract','damaged_text','truncated_snippet','unverified_formula','unverified_excerpt'):return None
    paths.append(e['path'])
  if not mr_seen or not summon_seen:return None
  for t in sources:

@@ -1,0 +1,14 @@
+F.......
+======================================================================
+FAIL: test_actual_open_access_author_information_is_not_a_download_control (__main__.ScopedLinksTests.test_actual_open_access_author_information_is_not_a_download_control)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_scoped_links.py", line 9, in test_actual_open_access_author_information_is_not_a_download_control
+    self.assertTrue(any('/9783110278606.1/pdf' in v['url'] for v in selected));self.assertFalse(any('/publishing/' in v['url'] for v in selected))
+                                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True is not false
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.025s
+
+FAILED (failures=1)

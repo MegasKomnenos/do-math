@@ -1,0 +1,206 @@
+[
+  {
+    "id": "VER-0b8833e7d0ecd8989c973df4",
+    "title": "martingale limit theory and its application",
+    "text": "Martingale Limit Theory and Its Application discusses the asymptotic properties of martingales, particularly as regards key prototype of probabilistic behavior that has wide applications.",
+    "artifact": {
+      "path": "intake/kudos-recovery/g02/VER-0b8833e7d0ecd8989c973df4/database-abstract.txt",
+      "sha256": "2f6eabd9664e4c7768fdf25ff8f0bc852beaf9ef54c138f84e676d1a688d0a16",
+      "url": "https://knu.summon.serialssolutions.com/ko-KO/search?ho=t&q=#!/search?pn=1&ho=f&include.ft.matches=f&l=ko-KO&q=%220123193508%22%20OR%20%2210.1007%2F978-1-4757-2184-3%22",
+      "kind": "database-indexing-abstract",
+      "media_type": "text/plain"
+    }
+  },
+  {
+    "id": "VER-0e3d2cb0861d1d48b2a79893",
+    "title": "what is a quadrature domain",
+    "text": "We give an overview of the theory of quadrature domains with indications of some if its ramifications.",
+    "artifact": {
+      "path": "intake/kudos-recovery/g02/VER-0e3d2cb0861d1d48b2a79893/database-abstract.txt",
+      "sha256": "080d8951cbcae49629b5055228ab04ee9af78ed68b733ca0ec97ea6dac654785",
+      "url": "https://knu.summon.serialssolutions.com/ko-KO/search?ho=t&q=#!/search?pn=1&ho=f&include.ft.matches=f&l=ko-KO&q=%2210.1007%2F3-7643-7316-4_1%22",
+      "kind": "database-indexing-abstract",
+      "media_type": "text/plain"
+    }
+  },
+  {
+    "id": "VER-0eb1eebb0b265001954f6541",
+    "title": "an iterative recurrence formula",
+    "text": "The recurrence\nG(0) = 0,\nG(\nn) =\nn −\nG(\nG(\nn − 1)) (\nn ⩾ 1), is shown to have the simple solution\nG(\nn)= [(\nn + 1)\na], where\na = (\n√5 − 1)\n2\n. Generalizations are disscussed.",
+    "artifact": {
+      "path": "intake/kudos-recovery/g02/VER-0eb1eebb0b265001954f6541/database-abstract.txt",
+      "sha256": "923dacf3408dce38e9201094d774d61bfea53091fa22392564ca86d3e88242ee",
+      "url": "https://knu.summon.serialssolutions.com/ko-KO/search?ho=t&q=#!/search?pn=1&ho=f&include.ft.matches=f&l=ko-KO&q=%2210.1017%2Fmag.2025.10119%22%20OR%20%2210.1007%2F978-1-4612-3968-0%22%20OR%20%220471941093%22%20OR%20%2210.1090%2Fmbk%2F069%22%20OR%20%2210.1017%2Fcbo9780511840531%22%20OR%20%2210.1016%2F0022-247x(86)90341-0%22",
+      "kind": "database-indexing-abstract",
+      "media_type": "text/plain"
+    }
+  },
+  {
+    "id": "VER-138da0ab4751283bc036828b",
+    "title": "handbook of stochastic methods for physics chemistry and the natural sciences",
+    "text": "Source: National Library of New Zealand Te Puna Matauranga o Aotearoa, licensed by the Department of Internal Affairs for re-use under the Creative Commons Attribution 3.0 New Zealand Licence.",
+    "artifact": {
+      "path": "intake/kudos-recovery/g02/VER-138da0ab4751283bc036828b/database-abstract.txt",
+      "sha256": "2cf352000d34eb78d3548b97b5dc527a10635777aed5df9496ecac555b1b97cd",
+      "url": "https://knu.summon.serialssolutions.com/ko-KO/search?ho=t&q=#!/search?pn=1&ho=f&include.ft.matches=f&l=ko-KO&q=3540208828",
+      "kind": "database-indexing-abstract",
+      "media_type": "text/plain"
+    }
+  },
+  {
+    "id": "VER-14a1af1b0e513554e09c472a",
+    "title": "a classical invitation to algebraic numbers and class fields",
+    "text": "\"Artin's 1932 Göttingen Lectures on Class Field Theory\" and \"Connections between Algebrac Number Theory and Integral Matrices\".",
+    "artifact": {
+      "path": "intake/kudos-recovery/g02/VER-14a1af1b0e513554e09c472a/database-abstract.txt",
+      "sha256": "2013e8efca497020b67160b99055c617a6bf1caa3676263275bd0cdadccbfc80",
+      "url": "https://knu.summon.serialssolutions.com/ko-KO/search?ho=t&q=#!/search?pn=1&ho=f&include.ft.matches=f&l=ko-KO&q=%220387903453%22",
+      "kind": "database-indexing-abstract",
+      "media_type": "text/plain"
+    }
+  },
+  {
+    "id": "VER-17abcde2f0819fe3afcd984f",
+    "title": "optimal control of differential and functional equations",
+    "text": "Optimal Control of Differential and Functional Equations presents a mathematical theory of deterministic optimal control, with emphasis on problems involving functional-integral equations and functional restrictions.",
+    "artifact": {
+      "path": "intake/kudos-recovery/g02/VER-17abcde2f0819fe3afcd984f/database-abstract.txt",
+      "sha256": "eeb0b2f336eb1e5356a571e3cb0adf5e9c943a86189cd607cdb3a701197b1dbc",
+      "url": "https://knu.summon.serialssolutions.com/ko-KO/search?ho=t&q=#!/search?pn=1&ho=f&include.ft.matches=f&l=ko-KO&q=optimal%20control%20of%20differential%20and%20functional%20equations%20warga%201972",
+      "kind": "database-indexing-abstract",
+      "media_type": "text/plain"
+    }
+  },
+  {
+    "id": "VER-18e7c75c197610201a71058c",
+    "title": "history of continued fractions and padé approximants",
+    "text": "The history of continued fractions is certainly one of the longest among those of mathematical concepts, since it begins with Euclid's algorithm for the great­ est common divisor at least three centuries B.C.",
+    "artifact": {
+      "path": "intake/kudos-recovery/g02/VER-18e7c75c197610201a71058c/database-abstract.txt",
+      "sha256": "a910a6a9ef447648df75a4be8ba4d3ba964abc9eb20ee674440a1993502898be",
+      "url": "https://knu.summon.serialssolutions.com/ko-KO/search?ho=t&q=#!/search?pn=1&ho=f&include.ft.matches=f&l=ko-KO&q=%2210.1007%2F978-1-4471-0549-7%22%20OR%20%2210.1007%2F978-3-642-58169-4%22%20OR%20%220824770420%22",
+      "kind": "database-indexing-abstract",
+      "media_type": "text/plain"
+    }
+  },
+  {
+    "id": "VER-1c64bd0484bf25d1781ed829",
+    "title": "additive number theory",
+    "text": "[Hilbert's] style has not the terseness of many of our modem authors in mathematics, which is based on the assumption that printer's labor and paper are costly but the reader's effort and time are not.H.",
+    "artifact": {
+      "path": "intake/kudos-recovery/g02/VER-1c64bd0484bf25d1781ed829/database-abstract-b47ea6a41f596e1b.txt",
+      "sha256": "b47ea6a41f596e1b44371c5defb03798f3110e08ec70508422fd4166497469dc",
+      "url": "https://knu.summon.serialssolutions.com/ko-KO/search?ho=t&q=#!/search?pn=1&ho=f&include.ft.matches=f&l=ko-KO&q=%2210.1007%2F978-1-4757-5323-3%22%20OR%20%2210.1007%2F978-1-4757-3845-2%22",
+      "kind": "database-indexing-abstract",
+      "media_type": "text/plain"
+    }
+  },
+  {
+    "id": "VER-216e7a446b03523628584349",
+    "title": "foundations of module and ring theory",
+    "text": "This volume provides a comprehensive introduction to module theory and the related part of ring theory, including original results as well as the most recent work.",
+    "artifact": {
+      "path": "intake/kudos-recovery/g02/VER-216e7a446b03523628584349/database-abstract.txt",
+      "sha256": "dfef6138b5f7e08b36aa44ffc43b0223a2366f20060a5b61a01013841d000c97",
+      "url": "https://knu.summon.serialssolutions.com/ko-KO/search?ho=t&q=#!/search?pn=1&ho=f&include.ft.matches=f&l=ko-KO&q=%2210.1007%2F978-3-662-03981-6%22%20OR%20%222881248055%22",
+      "kind": "database-indexing-abstract",
+      "media_type": "text/plain"
+    }
+  },
+  {
+    "id": "VER-21a50dd9a1b700cea41507fa",
+    "title": "boundary integral equations",
+    "text": "This article is devoted to boundary integral equations and their application to the solution of boundary and initial-boundary value problems for partial differential equations.",
+    "artifact": {
+      "path": "intake/kudos-recovery/g02/VER-21a50dd9a1b700cea41507fa/database-abstract.txt",
+      "sha256": "223a14938235507a0364af820a200474249021a1f9503fdd7c8554e38cc44604",
+      "url": "https://knu.summon.serialssolutions.com/ko-KO/search?ho=t&q=#!/search?pn=1&ho=f&include.ft.matches=f&l=ko-KO&q=%229782856297773%22%20OR%20%2210.1007%2F978-3-642-58175-5_2%22",
+      "kind": "database-indexing-abstract",
+      "media_type": "text/plain"
+    }
+  },
+  {
+    "id": "VER-23a648e54edbf09c6d51ac26",
+    "title": "nodal discontinuous galerkin methods",
+    "text": "This book offers an introduction to the key ideas, basic analysis, and efficient implementation of discontinuous Galerkin finite element methods (DG-FEM) for the solution of partial differential equations.",
+    "artifact": {
+      "path": "intake/kudos-recovery/g02/VER-23a648e54edbf09c6d51ac26/database-abstract.txt",
+      "sha256": "9ef4767fe9ccf97ac3cb7a1288845206a444bea885e7591887808dd235bae43a",
+      "url": "https://knu.summon.serialssolutions.com/ko-KO/search?ho=t&q=#!/search?pn=1&ho=f&include.ft.matches=f&l=ko-KO&q=%220828403031%22%20OR%20%2210.1090%2Fdimacs%2F062%2F05%22%20OR%20%2210.1007%2F978-0-387-72067-8%22",
+      "kind": "database-indexing-abstract",
+      "media_type": "text/plain"
+    }
+  },
+  {
+    "id": "VER-259ba20e4b3e9571448abe6d",
+    "title": "topology and groupoids",
+    "text": "Annotation\nThis is a retitled, revised, updated and extended edition of a classic text by the author, published previously in 1968 and 1988.",
+    "artifact": {
+      "path": "intake/kudos-recovery/g02/VER-259ba20e4b3e9571448abe6d/database-abstract.txt",
+      "sha256": "877362247033018886e3151e8a3f77a65491e4ccb3261480aad9e88f87de2925",
+      "url": "https://knu.summon.serialssolutions.com/ko-KO/search?ho=t&q=#!/search?pn=1&ho=f&include.ft.matches=f&l=ko-KO&q=%2210.1007%2F978-3-662-06292-0_2%22%20OR%20%220198534981%22%20OR%20%221419627228%22%20OR%20%22044482569X%22%20OR%20%220521231612%22%20OR%20%2210.1007%2F978-3-0348-0563-6%22",
+      "kind": "database-indexing-abstract",
+      "media_type": "text/plain"
+    }
+  },
+  {
+    "id": "VER-28118f372822326d214b3bc8",
+    "title": "inverse problems of mathematical physics",
+    "text": "No detailed description available for \"Inverse Problems of Mathematical Physics\".",
+    "artifact": {
+      "path": "intake/kudos-recovery/g02/VER-28118f372822326d214b3bc8/database-abstract.txt",
+      "sha256": "6e4eefbb99a9d12441672439c13ea81bff3e7ef9d6e0c07e470b8ee31ab627cd",
+      "url": "https://knu.summon.serialssolutions.com/ko-KO/search?ho=t&q=#!/search?pn=1&ho=f&include.ft.matches=f&l=ko-KO&q=%229067640565%22",
+      "kind": "database-indexing-abstract",
+      "media_type": "text/plain"
+    }
+  },
+  {
+    "id": "VER-2a6b483f6759df2066e2d36e",
+    "title": "quantum fluctuations",
+    "text": "No detailed description available for \"Quantum Fluctuations\".",
+    "artifact": {
+      "path": "intake/kudos-recovery/g02/VER-2a6b483f6759df2066e2d36e/database-abstract.txt",
+      "sha256": "76e8535f1dd95cb9ad55b1ca24fce52d8553994f8556b543c757a03f3231639f",
+      "url": "https://knu.summon.serialssolutions.com/ko-KO/search?ho=t&q=#!/search?pn=1&ho=f&include.ft.matches=f&l=ko-KO&q=%2210.1002%2F0471722162%22%20OR%20%220691083789%22",
+      "kind": "database-indexing-abstract",
+      "media_type": "text/plain"
+    }
+  },
+  {
+    "id": "VER-2b1befeee2ab850cad9d3803",
+    "title": "from perturbative to constructive renormalization",
+    "text": "No detailed description available for \"From Perturbative to Constructive Renormalization\".",
+    "artifact": {
+      "path": "intake/kudos-recovery/g02/VER-2b1befeee2ab850cad9d3803/database-abstract.txt",
+      "sha256": "b27734dd2017fa72b2a10a27d94a8febb3981743d80a6df708d9c1921fe6af04",
+      "url": "https://knu.summon.serialssolutions.com/ko-KO/search?ho=t&q=#!/search?pn=1&ho=f&include.ft.matches=f&l=ko-KO&q=0691085307",
+      "kind": "database-indexing-abstract",
+      "media_type": "text/plain"
+    }
+  },
+  {
+    "id": "VER-2e7910511dd428f5c539675e",
+    "title": "representation theory of semisimple groups",
+    "text": "No detailed description available for \"Representation Theory of Semisimple Groups\".",
+    "artifact": {
+      "path": "intake/kudos-recovery/g02/VER-2e7910511dd428f5c539675e/database-abstract-b108fcf2c1560845.txt",
+      "sha256": "b108fcf2c1560845b25346f7005e548e6789479feab3c532a8296c4b7d89b4e1",
+      "url": "https://knu.summon.serialssolutions.com/ko-KO/search?ho=t&q=#!/search?pn=1&ho=f&include.ft.matches=f&l=ko-KO&q=0691084017",
+      "kind": "database-indexing-abstract",
+      "media_type": "text/plain"
+    }
+  },
+  {
+    "id": "VER-2f1e11be0e153d6c6436d9bd",
+    "title": "solitons",
+    "text": "With contributions by numerous experts.",
+    "artifact": {
+      "path": "intake/kudos-recovery/g02/VER-2f1e11be0e153d6c6436d9bd/database-abstract-1d92944764f697b4.txt",
+      "sha256": "1d92944764f697b46a44a52e8a0b80f757c9d339b50e834792fed726d5329052",
+      "url": "https://knu.summon.serialssolutions.com/ko-KO/search?ho=t&q=#!/search?pn=1&ho=f&include.ft.matches=f&l=ko-KO&q=%2210.1007%2F978-3-319-61860-9%22%20OR%20%220486438716%22%20OR%20%223885384035%22%20OR%20%2210.1007%2F978-3-0348-6669-9%22%20OR%20%22354009962X%22%20OR%20%2210.1007%2F978-3-642-00873-3_5%22",
+      "kind": "database-indexing-abstract",
+      "media_type": "text/plain"
+    }
+  }
+]

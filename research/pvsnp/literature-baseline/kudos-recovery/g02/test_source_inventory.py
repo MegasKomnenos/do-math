@@ -22,4 +22,11 @@ class SourceInventoryTests(unittest.TestCase):
   self.assertTrue(any(t['kind']=='source' and t['target']=='https://cir.nii.ac.jp/crid/1971430859789970822' for t in r['work_state']['tasks']))
  def test_content_links_include_lists_but_not_thumbnails(self):
   self.assertEqual(resume.document_links({'uris':['https://a.test/record'],'open_access_link':'https://b.test/paper','thumbnail_small':'https://c.test/image'}),['https://a.test/record','https://b.test/paper'])
+ def test_completed_initialization_shell_is_reopened_from_preserved_evidence(self):
+  import hashlib
+  pid='VER-010fc459824818ec8e6bf762';p=next(json.loads(l) for l in (BASE/resume.ASSIGN['members_path']).read_text(encoding='utf-8').splitlines() if pid in l);r=resume.new_result(p)
+  path='intake/kudos-recovery/g02/'+pid+'/source-2b06cf9bd926dc42-41341e76469061ea.txt';url='https://www.degruyterbrill.com/document/doi/10.1515/9783110278606.1/html'
+  r['evidence']=[{'path':path,'sha256':hashlib.sha256((BASE/path).read_bytes()).hexdigest(),'url':url,'kind':'provider-page','media_type':'text/plain'}]
+  t=resume.task(r,'source',url,'done',evidence_paths=[path]);resume.inventory(p,r)
+  self.assertEqual(t['status'],'retry')
 if __name__=='__main__':unittest.main()

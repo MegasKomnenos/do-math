@@ -1,0 +1,29 @@
+{
+  "manifest": "runs/20260908T210841Z-47064.json",
+  "observations": [
+    {
+      "source": "springer",
+      "observed_links": 243,
+      "selected_links": 0,
+      "evidence": {
+        "path": "intake/kudos-recovery/g02/fixtures/springer-scope-live-fixed-69ad4c9cf4beea95.json",
+        "sha256": "69ad4c9cf4beea9567827d36bc8c9fe5af815b04f2cb46d746d2b6af361e3b12",
+        "url": "https://link.springer.com/chapter/10.1007/978-3-031-81217-0_5",
+        "kind": "observed-source-link-context",
+        "media_type": "application/json"
+      }
+    },
+    {
+      "source": "perlego",
+      "observed_links": 132,
+      "selected_links": 0,
+      "evidence": {
+        "path": "intake/kudos-recovery/g02/fixtures/perlego-scope-live-fixed-7c93308d7930e037.json",
+        "sha256": "7c93308d7930e037896429fbc47e1ae8b71b45f5eb306db3949f7c22f5316bca",
+        "url": "https://www.perlego.com/book/737286/differential-geometry-of-complex-vector-bundles-pdf",
+        "kind": "observed-source-link-context",
+        "media_type": "application/json"
+      }
+    }
+  ]
+}

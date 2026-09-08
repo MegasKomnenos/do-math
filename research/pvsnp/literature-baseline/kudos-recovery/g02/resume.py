@@ -73,15 +73,21 @@ def consume_response(p,r,payload,e,save=True):
 def inventory(p,r):
  repair_empty_evidence(r)
  state=r.setdefault('work_state',{'version':'remaining-work/1','tasks':[],'reviews':{}})
+ from scope_prune import prune
+ scope_change=prune(r)
+ if scope_change['newly_closed_tasks']:r.setdefault('scope_repair_history',[]).append(scope_change)
  from source_kind import assess
  evidence_index={e['path']:e for e in r['evidence']}
  for existing in state['tasks']:
+  if existing.get('scope_relation')=='unrelated':continue
   if existing['kind']!='source':continue
   for path in existing.get('evidence_paths',[]):
    e=evidence_index.get(path);data=valid_bytes(e) if e else None
    if not data:continue
    try:body=data.decode('utf-8-sig')
    except UnicodeError:continue
+   if assess(body,None)=='retry' and existing['status'] in ('done','not_needed'):
+    existing.update(status='retry',reason='Stored initialization shell or loading message did not establish source content; reopen under actual rendering-readiness rule.')
    if assess(body,None)=='no_resource':
     existing.update(source_outcome='no_resource',reason='Observed resolver offers no electronic resource; this does not establish access restriction or exhaustive content absence.')
  # Earlier selected responses omitted URI fields, but full observed documents
@@ -136,7 +142,7 @@ def inventory(p,r):
  return r
 
 def record_review(r,component,reason,paths,scope_complete=False):
- value={'basis_sha256':component_basis(r,component),'reason':reason,'evidence_paths':list(dict.fromkeys(paths)),'rule_code_sha256':{name:sha((ROOT/name).read_bytes()) for name in ('response_recovery.py','abstract_kind.py','resume.py','pdf_review.py','source_kind.py','mr_fields.py')},'tests':['test_response.py','test_display_markup.py','test_abstract_kind.py','test_resume.py','test_live_responses.py','test_pdf_review.py','test_source_kind.py','test_mr_fields.py']}
+ value={'basis_sha256':component_basis(r,component),'reason':reason,'evidence_paths':list(dict.fromkeys(paths)),'rule_code_sha256':{name:sha((ROOT/name).read_bytes()) for name in ('response_recovery.py','abstract_kind.py','abstract-content-decisions.json','resume.py','pdf_review.py','source_kind.py','mr_fields.py')},'tests':['test_response.py','test_display_markup.py','test_abstract_kind.py','test_abstract_notices.py','test_resume.py','test_live_responses.py','test_pdf_review.py','test_source_kind.py','test_mr_fields.py']}
  if scope_complete:value['scope_complete']=True
  value['method']='manual' if reason.startswith('Direct') else 'rule'
  r['work_state']['reviews'][component]=value
@@ -173,6 +179,7 @@ def reopen_cpe_routes(r):
  from source_kind import assess
  evidence={e['path']:e for e in r['evidence']};opened=False
  for t in r.get('work_state',{}).get('tasks',[]):
+  if t.get('scope_relation')=='unrelated':continue
   if t['kind'] not in ('source','pdf') or t.get('last_browser')=='firefox':continue
   for path in t.get('evidence_paths',[]):
    e=evidence.get(path);data=valid_bytes(e) if e else None
@@ -187,6 +194,10 @@ def reopen_cpe_routes(r):
     r.setdefault('reassessment_history',[]).append({'component':c,'previous':r[c],'reason':'New normal Firefox provider route requires renewed source investigation.'});r[c]={'status':'unresolved','reason':'Verified Firefox alternative has not yet been checked for this source.'};r['work_state']['reviews'].pop(c,None)
 
 def adjudicate_saved(p,r):
+ for candidate in r.get('abstract_candidates',[]):
+  kind=classify(candidate.get('text',''))
+  if kind in ('placeholder','rights_notice','bibliographic_note','table_of_contents','review_excerpt','source_excerpt','audience_only','bibliographic_citation'):
+   candidate.update(status='additional_information',kind=kind,reason='Current tested content rule identifies a whole non-abstract value; retained for provenance, not an unread abstract candidate.')
  if r['abstract'].get('status')=='found':
   for artifact in r['abstract'].get('artifacts',[]):
    data=valid_bytes(artifact)
@@ -319,25 +330,12 @@ def next_task(r,attempted):
  return min(active,key=lambda t:{'pdf':0,'source':1,'search':2}[t['kind']]) if active else None
 
 def close_restricted_fulltext(r):
- if r['identity'].get('status')!='confirmed' or r['fulltext'].get('status')=='found':return
- scoped=[t for t in r['work_state']['tasks'] if t['kind'] in ('search','source','pdf')]
- sources=[t for t in scoped if t['kind']=='source']
- if not sources or any(t['status'] not in ('done','not_needed') for t in scoped):return
- if any(c.get('status') not in ('not_fulltext','rejected_other_work') for c in r.get('fulltext_candidates',[])):return
- evidence={e['path']:e for e in r['evidence']};paths=[]
- for t in sources:
-  bodies=[]
-  for path in t.get('evidence_paths',[]):
-   e=evidence.get(path);data=valid_bytes(e) if e else None
-   if data:
-    try:bodies.append(data.decode('utf-8-sig'))
-    except UnicodeError:pass
-  from source_kind import assess
-  if any(assess(body,None)=='provider_failure' for body in bodies):return
-  elif not any(re.search(r'Unusual Traffic Detected \(Error 418\)|preview of subscription content|보안 확인 수행 중',body,re.I) for body in bodies):return
-  paths.extend(t['evidence_paths'])
- r['fulltext']={'status':'unavailable','reason':'All inventoried required searches and source/download links were visited; corresponding provider pages explicitly show traffic restriction, or subscription preview. No complete fulltext PDF was obtained.'}
- record_review(r,'fulltext',r['fulltext']['reason'],paths,scope_complete=True)
+ from mixed_source_scope import restricted_fulltext_evidence
+ mixed=restricted_fulltext_evidence(r)
+ if mixed:
+  r['fulltext']={'status':'unavailable','reason':'All inventoried required source and download tasks are closed. Corresponding provider pages explicitly restrict access to the full body; other resolver paths supply no electronic resource or report their particular handle cannot be found. Those latter paths are not access-restriction evidence. Preserved PDF candidates were independently rejected as front/back matter or other work; no unread PDF is used as absence evidence.','access_scope':{k:v for k,v in mixed.items() if k!='evidence_paths'}}
+  record_review(r,'fulltext',r['fulltext']['reason'],mixed['evidence_paths'],scope_complete=True);r['work_state']['reviews']['fulltext']['rule_code_sha256']['mixed_source_scope.py']=sha((ROOT/'mixed_source_scope.py').read_bytes());r['work_state']['reviews']['fulltext']['tests'].append('test_mixed_source_scope.py')
+  return
 
 def retry(fn,wait=time.sleep):
  for attempt in range(3):
@@ -349,15 +347,9 @@ def retry(fn,wait=time.sleep):
 def page_progress(t,total,received,paths):
  t.update(discovered=total,attempted=received,remaining=max(0,total-received),evidence_paths=list(dict.fromkeys(paths)),status='done' if received>=total else 'pending',reason='Observed UI result documents processed; remaining count refers to documents, not pages.')
 
-def fulltext_links(links):
- selected=[]
- for v in links:
-  url=v.get('url','');label=' '.join(v.get('text','').split())
-  if not url.startswith(('https://','http://')):continue
-  if re.fullmatch(r'review pdf|references|cited by|table of contents|cover(?: image)?',label,re.I) or re.search(r'(?:export|download)\s+(?:a\s+)?citation',label,re.I):continue
-  if re.search(r'/(?:download/)?(?:cited-by|citation|bibtex|ris)(?:[/?]|$)',url,re.I):continue
-  if label.lower()=='article' or re.search(r'pdf|full.?text|download|view article|read article|원문',label+' '+url,re.I):selected.append(v)
- return selected
+def fulltext_links(links,page_url=''):
+ from scoped_links import select_links
+ return select_links(links,page_url)
 
 def narrow_query(p,payload):
  from response_recovery import display_text
@@ -471,12 +463,23 @@ def save_pdf(p,r,data,url,metrics):
 def visit_source(context,p,r,t,metrics):
  page=context.new_page();metrics['source_visits']+=1;t['last_browser']=context.browser.browser_type.name
  try:
-  observed=[]
-  page.on('response',lambda response:observed.append(response) if 'application/pdf' in response.headers.get('content-type','').lower() else None)
+  observed=[];navigations=[]
+  def observe(response):
+   if 'application/pdf' in response.headers.get('content-type','').lower():observed.append(response)
+   if response.request.is_navigation_request() and response.frame==page.main_frame:navigations.append(response)
+  page.on('response',observe)
   response=None
   try:response=page.goto(t['target'],wait_until='domcontentloaded',timeout=30000)
   except Exception:
    if not observed:raise
+  if 'degruyter' in (urlsplit(page.url).hostname or ''):
+   deadline=time.monotonic()+15
+   while not observed and not page.locator('h1:visible').count():
+    if time.monotonic()>=deadline:raise TimeoutError('De Gruyter did not display its content heading or observed PDF after initialization.')
+    page.wait_for_timeout(100)
+   if not observed:page.wait_for_timeout(400)
+  if navigations:response=navigations[-1]
+  t['http_navigation_statuses']=[item.status for item in navigations]
   for pdf in observed:
    try:
     e=save_pdf(p,r,pdf.body(),pdf.url,metrics)
@@ -499,9 +502,17 @@ def visit_source(context,p,r,t,metrics):
   if text.strip():e=capture(p['paper_id'],'source-'+sha(t['target'].encode())[:16]+'.txt',text,page.url,'provider-page')
   else:e=capture(p['paper_id'],'source-'+sha(t['target'].encode())[:16]+'.observation.json',json.dumps({'body_text_length':0,'http_status':status,'outcome':'Empty rendered provider page; content not assessed.'}),page.url,'empty-page-observation')
   add_evidence(r,e)
-  links=page.locator('a[href]').evaluate_all("es=>es.map(e=>({text:e.textContent.trim(),url:e.href})).filter(e=>/^https?:/.test(e.url))")
-  for v in fulltext_links(links):
-   nt=task(r,'pdf' if re.search(r'pdf|download',v['text']+' '+v['url'],re.I) else 'source',v['url']);nt.setdefault('discovered_from',e['path'])
+  from scoped_links import LINK_SCRIPT,public_link,download_kind,excluded
+  links=page.locator('a[href]').evaluate_all(LINK_SCRIPT)
+  public=[public_link(v) for v in links if v['url'].startswith(('http://','https://'))]
+  link_e=capture(p['paper_id'],'source-link-context-'+sha(t['target'].encode())[:16]+'.json',json.dumps({'url':page.url,'links':public},ensure_ascii=False),page.url,'observed-source-link-context');link_e['media_type']='application/json';add_evidence(r,link_e)
+  selected=fulltext_links(links,page.url)
+  for v in selected:
+   nt=task(r,download_kind(v),v['url']);nt.setdefault('discovered_from',e['path']);nt.setdefault('link_context_evidence',link_e['path']);nt.setdefault('link_label',v['text'])
+  for v in links:
+   reason=excluded(v,page.url)
+   if reason and reason.startswith(('Archive file','Session-bound')) and re.match(r'^(?:download|view|read)\b',v.get('text',''),re.I):
+    safe=public_link(v);nt=task(r,'source',safe['url'],'needs_review',reason,[e['path'],link_e['path']]);nt.update(status='needs_review',reason=reason);nt.setdefault('discovered_from',e['path'])
   for selector in ('#Abs1','.c-article-section__content','#abstract','section.abstract','div.abstract','[data-test="abstract"]'):
    for node in page.locator(selector).all():
     value=node.inner_text().strip()
@@ -547,7 +558,7 @@ def process_tasks(context,sp,mp,p,r,metrics,firefox_provider=None):
  while True:
   active=next_task(r,attempted)
   if active is None:break
-  attempted.add(active['key']);start=time.monotonic();before=tuple(len(r.get(k,[])) for k in ('identity_candidates','abstract_candidates','fulltext_candidates'))
+  attempted.add(active['key']);start=time.monotonic();before=tuple(len(r.get(k,[])) for k in ('identity_candidates','abstract_candidates','fulltext_candidates'));request_before={k:metrics.get(k,0) for k in ('source_visits','download_attempts','pdf_responses','new_pdf_files')}
   try:
    source_context=context
    if active.get('preferred_browser')=='firefox' and firefox_provider:
@@ -574,6 +585,7 @@ def process_tasks(context,sp,mp,p,r,metrics,firefox_provider=None):
    e=capture(p['paper_id'],'collection-error-'+sha(active['key'].encode())[:12]+'.json',json.dumps({'task':active['key'],'query':active['target'],'exception_type':type(exc).__name__,'detail':message,'outcome':'Collection step failed; no absence conclusion follows.'},ensure_ascii=False,indent=2),error_url,'collector-error-observation');e['media_type']='application/json';add_evidence(r,e)
    active['evidence_paths']=[e['path']];r['attempts'].append({'method':'playwright','query':active['target'],'url':error_url,'outcome':active['reason']})
   active['elapsed_seconds']=round(time.monotonic()-start,3)
+  active['request_metrics']={key:metrics.get(key,0)-value for key,value in request_before.items()}
   after=tuple(len(r.get(k,[])) for k in ('identity_candidates','abstract_candidates','fulltext_candidates'))
   if after!=before:adjudicate_saved(p,r)
   store_json(ROOT/'results'/f"{p['paper_id']}.json",r)
@@ -634,7 +646,7 @@ def main():
 def manifest(argv):
  now=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())
  path=ROOT/'runs'/f'{now}-{os.getpid()}.json'
- code=list(ROOT.glob('*.py'))+[ROOT/'selected-summary-decisions.json',ROOT.parent/'work_queue.py',ROOT.parent/'check_recovery.py']
+ code=list(ROOT.glob('*.py'))+[ROOT/'selected-summary-decisions.json',ROOT/'abstract-content-decisions.json',ROOT.parent/'work_queue.py',ROOT.parent/'check_recovery.py']
  value={'started_at':now,'pid':os.getpid(),'arguments':[sys.executable,*argv], 'code_sha256':{str(f.relative_to(ROOT.parent)):sha(f.read_bytes()) for f in code},'metrics':{'searches':0,'source_visits':0,'download_attempts':0,'pdf_responses':0,'new_pdf_files':0,'saved_evidence_reused':0,'review_waiting':0,'elapsed_seconds':0}}
  store_json(path,value);return path,value
 
