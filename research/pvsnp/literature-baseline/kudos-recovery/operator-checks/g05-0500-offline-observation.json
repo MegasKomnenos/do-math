@@ -1,0 +1,49 @@
+{
+  "source_path": "intake/kudos-recovery/g05/VER-0500a5b14fb9aea2d4cf5f0f/saved-publisher-fulltext.html",
+  "sha256": "7a96e2437c94d622443f8d9c972a71c5f97a251fa5fb8ca13cc95b72a5c21a63",
+  "offline": true,
+  "http_request_attempts": 0,
+  "headings": [
+    "Maximum in-general-position set in a random subset of Fqd",
+    "Abstract",
+    "1. Introduction",
+    "2. Preliminary",
+    "2.1. Notation",
+    "2.2. Basic properties and tools",
+    "Supersaturation Lemma [13, Theorem 1]",
+    "[19, Theorem 1.2]",
+    "3. Proof outline",
+    "4. The structure vs. randomness lemma",
+    "5. The “structure” case",
+    "6. The “randomness” case with high density",
+    "7. The “randomness” case with low density",
+    "7.1. Support-enlarging substitution",
+    "7.2. Balanced supersaturation",
+    "8. Proof of Theorem 1.1",
+    "9. Concluding remarks",
+    "References"
+  ],
+  "mathml_count": 1309,
+  "remaining_chtml": 0,
+  "images": [
+    {
+      "width": 419,
+      "height": 210,
+      "complete": true,
+      "embedded": true
+    },
+    {
+      "width": 328,
+      "height": 98,
+      "complete": true,
+      "embedded": true
+    }
+  ],
+  "body_text_characters": 61144,
+  "screenshots": [
+    "g05-0500-offline-first.png",
+    "g05-0500-offline-last.png",
+    "g05-0500-offline-figure-1.png",
+    "g05-0500-offline-figure-2.png"
+  ]
+}

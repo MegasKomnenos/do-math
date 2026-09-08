@@ -40,7 +40,7 @@
   "replacement_snapshot": "restart-snapshot.json",
   "g05_root_pdf_reservation": "All ten transferred to new g05 worker; root did not finish review.",
   "latest_operator_audit": {
-    "updated_at": "2026-09-08T20:41:18.783934+00:00",
+    "updated_at": "2026-09-08T22:28:14.328072+00:00",
     "common_checks": "23 checker +4 resume +12 work queue tests passed after actual invalid UTF-8/blank HTML red cases. Actual archived HTML format and root sample rendering checked.",
     "old_agents_stopped": true,
     "new_workers": "g02/g05/g08 replacements continue TDD, actual browser collection and evidence assessment.",
@@ -49,29 +49,33 @@
       "g02 Gradient flows damaged database abstract found/review withdrawn; actual current result reread unresolved.",
       "g05 combined highlights separated in current actual result; conflicting abstract variants unresolved."
     ],
-    "runtime_observation": "At 2026-09-08T18:25Z actual Python processes were g02 PID24072 and g08 PID17528. g05 had checkpoint-restarted for timeout and atomic-file replacement repair; later process state must be rechecked.",
+    "runtime_observation": "At22:09UTC actual Python processes were g02 PID39028/47292 and g08 PID12516; later process state must be rechecked.",
     "handoff": "New g05 accepted all10 former root PDF reservations; root independently reviewed first pages of2.",
     "new_public_sources": "Vakil actual7page extraction completed by g08; Burgos actual UB download href independently observed by root,25pagePDF recovered by g08. Public scope27records/54queries reopened.",
     "advanced_search": "Root actual Summon TitleCombined + AuthorCombined dialog interaction validated,18/18 records,ho=f. Shared-findings and raw operator fixture record exact controls and first-row initialization failure.",
     "latest_known_native_sessions": {
-      "g02": "Scope expansion defect discovered; both quality-fixed shards stopped. Verify new runs after target-context link repair; do not reuse old PID reports.",
-      "g05": "Read latest runs; new full HTML/MathML/image probe follows native institutional pass.",
-      "g08": "Chrome PID9884 at latest process observation; bounded separate MathSciNet6-record DOM reading allowed, results remain single-writer."
+      "g02": "Fixed shards PID39028/47292 were verified against63 startup files each; see405ddd6 and current runs.",
+      "g05": "HTML MathJax/image integration and offline content validation; inspect new checkpoint before commit.",
+      "g08": "Chrome PID12516 at latest observation, then prepared Google preview scope inspection."
     },
-    "authentication": "KUDOS bootstrap expired (visible login/no logout); operator renewed atomically and validated fresh Chrome and Firefox contexts. Credentials remain private.",
+    "authentication": "KUDOS bootstrap renewed21:13:22UTC through normal login; independent new Chrome and Firefox contexts verified visible logout. Protected renewal helper exists; no values logged.",
     "sciencedirect": "Chrome after renewed auth remained CPE; Firefox default normal homepage reproduced, but g05 institutional PII still CPE. Public Firefox article detail worked for Max-SAT abstract. Reopen affected CPE-only verdicts and follow per-document live evidence; do not claim institution lacks subscription.",
-    "g02_checkpoint": "8c15802 captured80-test stable code; only test_run trailing space changed with identicalAST/4test rerun. Later negative_review/source-link/reassessment repairs are ongoing, not in that checkpoint.",
+    "g02_checkpoint": "46ae527:142 tests,63 startup file hashes per shard, actual2-record scope pilot and root partial1069records/errors0; collection incomplete.",
     "new_negative_counterexample": "Root directly read VER-2a20cc1ccaddd97f89693ecf: resolver no-electronic-resource was incorrectly marked restricted/unavailable. g02 was assigned actual regression, classification repair, URI inventory check and saved-evidence reassessment.",
     "selected_summary": "Root read MR0733454 full quoted synopsis in Review section; contract now permits database_selected_summary while preserving actual section, wording source, quotation boundary and unverified author-abstract status.",
     "g08_checkpoint": "106a866:56 specified files plus manifest,100 tests/logs, actual View PDF click/CPE boundary; source/result data collection continues.",
     "g02_repair": "888 saved records reassessed;259 no_resource observations corrected; actual CiNii URI visited.900+ results now growing in two fixed shards.113 collector tests and3 operator snapshot tests passed.",
     "g05_abstract_reassessment": "267 to264 reflected3 explicit mathematical formatting reviews. Root verified prior objects, retained artifacts and open review tasks; no simple source-failure overwrite.",
     "scopus": "Firefox actual KUDOS route loaded basic DOI selector and changing input. First g07 DOI returned1/1, detailed metadata and Full text > observed institution DOI link were read. Raw captures under operator; no production g07 result written.",
-    "g02_scope_repair": "Global Europe PMC PDF index and Perlego related books were incorrectly expanded. Root read54,692 tasks/172attempts for VER-2f57a70bf9fdaa234cee4a31 and815tasks/228attempts for VER-2f0b8d4978e9dd62408de031. Correct target scope with evidence; no arbitrary link-count cap.",
+    "g02_scope_repair": "6 records had56,168 irrelevant discovered tasks.989 observed steps and391 lower-bound download attempts recorded; original SDK retry counts are not inferred. Existing correct document/chapter links retained; repaired live pages produced no unrelated expansion.",
     "csrf_audit": "Worker reported one tool-output exposure from2rawlink captures. Sensitive originals moved to protected g02 state; sanitized content-addressed copies and references updated. _csrf/Save chapter actual visits0; root campaign working files and7committed revisions had no matching token values. See operator-checks/csrf-audit.json.",
-    "g05_html": "First accepted standalone HTML:Reachability in arborescence packings,1291MathML/25references/noimages/offlineHTTP0. Root read first and formula PNGs. Implementation checkpoint awaits confirmed generic-link-scope repair."
+    "g05_html": "Root independently validated0500a5b standalone publisher HTML offline:1309MathML,CHTML0,2embedded diagrams,HTTP attempts0; reference38 and title/math directly read. Earlier2bb97c stays reopened for missing original reference math.",
+    "g08_abstract_review": "Root reviewed5 reserved PDFs and source scope; Ajtai false negative and Benci/Kabanets mathematical damage repaired through source regions, adopted with actual render-hash regressions. Taylor/Cheeger scoped negatives retained.",
+    "g05_root_seven_review": "Root reviewed5 existing source units and2 math cases. Secant34-page explicitly DOI-linked arXiv author version and original abstract region adopted. Prophet DB two-paragraph summary separated from Highlights; older31-page author version remains additional candidate. Gasarch2000 column PDF document unit reopened.",
+    "micromechanics": "Root independently checked all723pages against observed components (one contents-space difference), actual title/copyright/final images; supports official book fulltext at worker checkpoint. See operator-checks/micromechanics-root-review.json.",
+    "g05_column_scope": "Actual ACM issue separates target1008648 from next reviews1008649/50/51; root verified and approved target publisher PDF unit with next-article spillover explicitly recorded."
   },
-  "recorded_checkpoint_commit": "747a0c3",
+  "recorded_checkpoint_commit": "46ae527",
   "pending_user_input": {
     "topic": "Elsevier organizational email",
     "question_sent": true,
@@ -79,5 +83,12 @@
     "email_submitted": false,
     "independent_collection_continues": true,
     "evidence": "intake/kudos-recovery/operator/sciencedirect-organization-result.json"
+  },
+  "completed_root_probe": {
+    "completed_at": "2026-09-08T22:28:14.328072+00:00",
+    "handoff": "operator-checks/g05-seven-content-review.json",
+    "browser_closed": true,
+    "worker_results_modified_by_root": false,
+    "result": "Actual public arXiv detail+observed PDF links for two reserved g05 papers; normal KUDOS ScienceDirect route checked. No current root browser session."
   }
 }

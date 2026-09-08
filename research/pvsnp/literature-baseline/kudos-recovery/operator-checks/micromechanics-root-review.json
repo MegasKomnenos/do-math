@@ -1,0 +1,74 @@
+{
+  "checked_at": "2026-09-08T22:24:51.109752+00:00",
+  "paper_id": "VER-3191c2b73c67e60ee329b845",
+  "source_sha256": "9ea62d26f5ee89c78af2f517eaf41163ac1baf6a256d401077f87ac2780b1fae",
+  "physical_pages": 723,
+  "cover_pages": 1,
+  "all_component_hashes_match": true,
+  "all_pages_accounted_for": true,
+  "components": [
+    {
+      "path": "intake/kudos-recovery/g02/VER-3191c2b73c67e60ee329b845/fulltext-candidate-18d9e9d41cd3650b.pdf",
+      "pages": 15,
+      "whole_start_page": 2
+    },
+    {
+      "path": "intake/kudos-recovery/g02/VER-3191c2b73c67e60ee329b845/fulltext-candidate-a044d71359f46a92.pdf",
+      "pages": 88,
+      "whole_start_page": 17
+    },
+    {
+      "path": "intake/kudos-recovery/g02/VER-3191c2b73c67e60ee329b845/fulltext-candidate-665fddbb80faa587.pdf",
+      "pages": 38,
+      "whole_start_page": 105
+    },
+    {
+      "path": "intake/kudos-recovery/g02/VER-3191c2b73c67e60ee329b845/fulltext-candidate-17c5252144b66276.pdf",
+      "pages": 62,
+      "whole_start_page": 143
+    },
+    {
+      "path": "intake/kudos-recovery/g02/VER-3191c2b73c67e60ee329b845/fulltext-candidate-fb6faf3957222db0.pdf",
+      "pages": 126,
+      "whole_start_page": 205
+    },
+    {
+      "path": "intake/kudos-recovery/g02/VER-3191c2b73c67e60ee329b845/fulltext-candidate-8c94e3c797edf8f4.pdf",
+      "pages": 153,
+      "whole_start_page": 331
+    },
+    {
+      "path": "intake/kudos-recovery/g02/VER-3191c2b73c67e60ee329b845/fulltext-candidate-e616f3d226ffc626.pdf",
+      "pages": 80,
+      "whole_start_page": 484
+    },
+    {
+      "path": "intake/kudos-recovery/g02/VER-3191c2b73c67e60ee329b845/fulltext-candidate-e7b60abe91eb69df.pdf",
+      "pages": 103,
+      "whole_start_page": 564
+    },
+    {
+      "path": "intake/kudos-recovery/g02/VER-3191c2b73c67e60ee329b845/fulltext-candidate-1887977343873c89.pdf",
+      "pages": 57,
+      "whole_start_page": 667
+    }
+  ],
+  "text_mismatches": [
+    {
+      "whole_page": 10,
+      "component_page": 9,
+      "equal_without_whitespace": true
+    }
+  ],
+  "visual_review": [
+    "Actual title page4: complete title and both authors.",
+    "Copyright page5: both assigned ISBNs, target DOI and Springer copyright2018.",
+    "Final file723: printed712, References596–614 end."
+  ],
+  "images": [
+    "intake/kudos-recovery/operator/micromechanics-review-page-4.png",
+    "intake/kudos-recovery/operator/micromechanics-review-page-5.png",
+    "intake/kudos-recovery/operator/micromechanics-review-page-723.png"
+  ],
+  "decision": "Supports fulltext.found for the supplied official whole-book artifact; retain publisher page-label discontinuities and the documented contents-space difference."
+}

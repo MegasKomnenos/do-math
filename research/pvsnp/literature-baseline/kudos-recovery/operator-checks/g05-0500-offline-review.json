@@ -1,0 +1,16 @@
+{
+  "schema": "operator-content-review/1",
+  "paper_id": "VER-0500a5b14fb9aea2d4cf5f0f",
+  "reviewer": "root",
+  "decision": "fulltext_found_verified_publisher_html",
+  "source_sha256": "7a96e2437c94d622443f8d9c972a71c5f97a251fa5fb8ca13cc95b72a5c21a63",
+  "source_path": "intake/kudos-recovery/g05/VER-0500a5b14fb9aea2d4cf5f0f/saved-publisher-fulltext.html",
+  "observation": "kudos-recovery/operator-checks/g05-0500-offline-observation.json",
+  "reason": "Root read the saved actual publisher metadata and independently opened the reconstructed HTML in Firefox with offline mode. The title displays F with subscript q and superscript d, explaining the different flattened text order. Four byline authors, DOI10.1016/j.jctb.2026.05.001, volume179 and publication date2026/07/01 bind the page to the target. The actual first screenshot displays the complete abstract and Introduction with correctly placed mathematical indices and exponents. Both saved diagrams were directly inspected, including their labels and captions; the final screenshot reaches complete reference38. The document has all observed main sections1–9 and References,1309 MathML nodes, no remaining CHTML and two successfully loaded embedded images at419×210 and328×98. HTTP request attempts were0. These observations support the supplied HTML as readable publisher fulltext; the worker remains responsible for result writing and common validation.",
+  "screenshots": [
+    "intake/kudos-recovery/operator/g05-0500-offline-first.png",
+    "intake/kudos-recovery/operator/g05-0500-offline-figure-1.png",
+    "intake/kudos-recovery/operator/g05-0500-offline-figure-2.png",
+    "intake/kudos-recovery/operator/g05-0500-offline-last.png"
+  ]
+}
