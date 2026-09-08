@@ -1,0 +1,14 @@
+{
+  "group_id": "g12",
+  "directory": "12-needs-source-author-page-evidence-json",
+  "members_path": "catalog/abstract-format-partition/groups/12-needs-source-author-page-evidence-json/members.jsonl",
+  "members_sha256": "04e33ee42604c31d8ace41a571c6ad48b306e7087e28d41f6d079eba7debd402",
+  "count": 1,
+  "worker_root": "kudos-recovery/g12",
+  "raw_root": "intake/kudos-recovery/g12",
+  "credential_file": "C:/math/.credentials/kudos.md",
+  "browser_state": "C:/math/.credentials/kudos-recovery/bootstrap.json",
+  "private_state_root": "C:/math/.credentials/kudos-recovery/g12",
+  "model": "gpt-6-astra",
+  "reasoning_effort": "medium"
+}

@@ -1,0 +1,13 @@
+.......F.....
+======================================================================
+FAIL: test_partial_check_never_calls_unresolved_identity_complete (__main__.ContractTests.test_partial_check_never_calls_unresolved_identity_complete)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\test_check_recovery.py", line 100, in test_partial_check_never_calls_unresolved_identity_complete
+    self.assertFalse(result['complete'])
+AssertionError: True is not false
+
+----------------------------------------------------------------------
+Ran 13 tests in 0.103s
+
+FAILED (failures=1)

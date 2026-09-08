@@ -1,0 +1,14 @@
+{
+  "group_id": "g10",
+  "directory": "10-needs-source-public-seed-json",
+  "members_path": "catalog/abstract-format-partition/groups/10-needs-source-public-seed-json/members.jsonl",
+  "members_sha256": "d80311962002bdcc13b97a2b8fea60c73a541e2ce17f086cb25a7e83138fde6a",
+  "count": 34,
+  "worker_root": "kudos-recovery/g10",
+  "raw_root": "intake/kudos-recovery/g10",
+  "credential_file": "C:/math/.credentials/kudos.md",
+  "browser_state": "C:/math/.credentials/kudos-recovery/bootstrap.json",
+  "private_state_root": "C:/math/.credentials/kudos-recovery/g10",
+  "model": "gpt-6-astra",
+  "reasoning_effort": "medium"
+}

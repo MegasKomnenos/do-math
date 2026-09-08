@@ -1,0 +1,19 @@
+이 문서는 이번 KUDOS 수집에서 확인한 공통 경로와 반례를 작업자에게 전달한다. 실제 수집 권한·결과 형식·종료 조건은 `contract.md`, 담당 범위는 각 `assignment.json`이 정한다. 새로운 문헌에는 아래 관찰을 그대로 참이라고 적용하지 말고 실제 화면과 대조한다.
+
+- 루트 확인: KUDOS 홈페이지는 `/pages/index.htm`으로 이동한다. 초기 DOM이 비어 있을 수 있다. 로그인 완료 뒤 `로그아웃` 링크를 확인했고, 보호된 bootstrap 상태를 새 context에서 재사용해 인증 유지도 확인했다.
+- 루트 확인: 홈페이지 `검색` 링크에 hover하면 학술DB 메뉴가 나타난다. 실제 학술DB 주소는 `https://kudos.knu.ac.kr/pages/sub.htm?nav_code=kud1641346542`다. 학술DB 검색 입력은 `#search_order`이고 입력 후 Enter로 검색한다. 관련 `바로가기`를 클릭해 기관 경유 서비스로 이동한다.
+- g02·g08 확인: MathSciNet 검색은 `https://mathscinet-ams-org.libproxy.knu.ac.kr/mathscinet/publications-search`에서 `#searchTextInput`에 MR 번호를 입력하고 Enter를 누르는 경로다. 상세의 MR 번호·제목·저자·출판 정보를 대조한다. `Review PDF`는 논문 전문과 구별한다. `From the text/preface`는 발췌이며, Summary·Review의 작성 주체와 내용 종류를 판독한다.
+- 루트 확인: 학술DB에서 Springer 검색 후 첫 `바로가기`를 클릭하면 `https://link-springer-com.libproxy.knu.ac.kr/`에 도착한다. 화면에 Kyungpook National University 기관 접근 표시가 있다. 홈페이지 검색은 `#homepage-search`, 헤더 검색은 `#eds-c-header-search`이며 name은 `query`다. 공개 Springer 페이지의 비로그인 미리보기와 이 기관 경유 경로를 구별한다.
+- 루트·g02·g05 확인: Summon은 `https://knu.summon.serialssolutions.com/ko-KO/search?ho=t&q=`에서 실제 검색 입력과 Enter로 조사한다. 관찰된 입력은 `input[name=q]:visible` 또는 `input[id^=searchBox_]:visible`이다. Quick Look은 `button[data-aid=quick-look-button]:visible`이며 숨은 중복 요소를 선택하면 실패할 수 있다. 명시된 초록은 상세의 `#quick-look-abstract [data-aid=abstract]` 등 실제 DOM에서 경계를 확인한다.
+- g02 확인: 기본 `ho=t` 검색에서 0건인 Digraphs DOI가 비구독 자료 포함 UI인 `#searchInfoBeyondHoldings`를 선택한 뒤 `ho=f`에서 정확한 2009년 2판 책 3건을 반환했다. 도서관 보유 범위의 0건을 문헌 부재로 확정하지 않는다. 실제 TDD 전환 검사는 양성 DOI, 비존재어 0건, 다음 책 DOI의 검색어와 확장 범위를 대조했다.
+- 루트 확인: Summon UI에서 DOI를 입력하고 Enter를 누르면 브라우저가 `/api/search` 응답을 받는다. `documents`의 `title/full_title`, `dois`, 전체 `authors`, `publication_years`, `content_type`, `abstracts[{abstract,attribution}]`, 쪽수 필드에 Quick Look에서 확인한 정보가 들어 있다. `query.original_query`로 해당 UI 검색어를 대조할 수 있다. 실제 응답의 선별 표본은 `intake/kudos-recovery/operator/summon-response-first.json`에 있다. UI 검색을 유지한 채 그 응답을 수신하면 반복 모달 클릭을 줄일 수 있다. 잘못 결합된 DOI를 그대로 받아들이지 않도록 제목·서지 필드를 함께 검사한다.
+- g05 발견·루트 독립 확인: DOI `10.1145/322217.322219` 검색의 Summon 상세는 Lee 1980 논문 대신 Catsimpoolas/Marti의 1992년 다른 회의 논문과 같은 DOI를 함께 표시했다. 루트의 새 context에서도 동일했다. DOI만으로 대응 문헌을 확정하면 안 된다. 실제 반례는 `intake/kudos-recovery/g05/VER-028dadfb49623dd97a98242c/detail-0-0.txt`에 있다.
+- g05 확인: 기관 ACM 상세의 `input[name=AllField]:visible`에 검색어를 입력하고 Enter로 검색한 뒤 실제 결과 제목 링크를 따라 Lee의 올바른 DOI 상세를 찾았다. ACM 검색 결과 화면은 이전 검색어를 chip으로 유지해 새 DOI와 결합할 수 있다. 각 문헌에 관찰한 빈 검색 폼을 사용하고 실제 현재 검색어를 검사한다.
+- g08 확인: 기관 ACM의 화면에 제시된 `/doi/pdf/10.1145/2488608.2488677`은 Chrome 탐색 응답으로 빈 비PDF처럼 보였지만, 동일한 관찰 링크를 Playwright `context.request.get`으로 수신해 정상 PDF를 얻었다. UI에서 확인한 링크의 인증된 다운로드 응답을 받는 경로이며, 미관찰 내부 API를 추측하는 경로가 아니다.
+- g08 발견·루트 독립 확인: Connes의 1994년 책에 잘못 붙은 47쪽 PDF는 Connes·van Suijlekom의 `Spectral Truncations in Noncommutative Geometry and Operator Systems`, DOI `10.1007/s00220-020-03825-x`, 2020년 온라인/2021년 권호 논문이었다. 제목 부분일치와 본문 저자 언급으로는 판본을 결박할 수 없다. 반례는 `intake/kudos-recovery/g08/VER-299d3105cede6b2302ad9759/`의 최초 `publisher.txt`, `fulltext.pdf`와 결과의 `rejected_other_work`에 보존되어 있다.
+- 루트 발견·g05 수리: Lee의 올바른 15쪽 PDF도 텍스트 레이어의 초록에 OCR 오류가 있었다. 루트는 `intake/kudos-recovery/operator/lee-first-page.png`로 실제 첫 면을 대조했고 g05가 초록을 이미지 기준으로 교정했다. 원시 OCR과 교정문, 품질 표지를 함께 보존한다. PDF의 바이트·쪽수 검증은 추출 텍스트의 정확성을 대신하지 않는다.
+- g02 발견: 동적 검색 화면을 같은 파일명에 덮어쓰면 이전 evidence의 해시가 무효가 된다. 내용이 바뀌는 캡처는 해시가 포함된 새 파일명으로 보존하고, 결과 JSON의 갱신과 원자료의 보존을 구별한다. 이전 오류 자료도 회귀 테스트와 철회 근거가 쓰는 동안 유지한다.
+
+문헌 동일성은 실제 서지 구획을 기준으로 판단한다. DOI/ISBN/MR 같은 식별자, 제목, 저자, 문헌 종류, 발행·판본 정보, 권호쪽을 함께 대조한다. 필요한 필드가 실제 UI에서 접혀 있으면 펼쳐 확인한다. 표기·전사·온라인/인쇄 연도 차이는 근거로 해소하고, 문자열 차이만으로 다른 문헌이라 단정하거나 동일성의 필수 차이를 지우지 않는다. 실제로 읽지 못한 저자명이나 날짜를 원래 후보 값으로 채워 확인한 것으로 보고하지 않는다.
+
+한 출처에서 확인한 트래픽 제한·보안 확인·CPE 오류는 해당 시도 근거로 남긴다. 다른 정상 기관 경유·출판사 경로가 작동한 사례도 있으므로, 한 화면의 실패를 다른 출처 전체에 복제하지 않는다. 개발 중 타임아웃이나 PDF viewer 처리 실패는 수리 가능한 도구 문제로 남기고 재개 때 영구 건너뛰지 않는다.
