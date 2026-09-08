@@ -1,0 +1,70 @@
+FFFFFF.........
+======================================================================
+FAIL: test_bound_source_hash_is_checked (__main__.PartitionTests.test_bound_source_hash_is_checked)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\catalog\abstract-format-partition\test_partition.py", line 102, in test_bound_source_hash_is_checked
+    with self.assertRaises(ValueError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_duplicate_paper_ids_are_not_silently_merged (__main__.PartitionTests.test_duplicate_paper_ids_are_not_silently_merged)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\catalog\abstract-format-partition\test_partition.py", line 85, in test_duplicate_paper_ids_are_not_silently_merged
+    with self.assertRaises(ValueError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_first_item_must_belong_to_requested_group (__main__.PartitionTests.test_first_item_must_belong_to_requested_group)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\catalog\abstract-format-partition\test_partition.py", line 81, in test_first_item_must_belong_to_requested_group
+    with self.assertRaises(ValueError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_no_abstract_and_other_formats_are_not_removed_as_success (__main__.PartitionTests.test_no_abstract_and_other_formats_are_not_removed_as_success)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\catalog\abstract-format-partition\test_partition.py", line 95, in test_no_abstract_and_other_formats_are_not_removed_as_success
+    self.assertEqual(removed, rows[:1])
+AssertionError: Lists differ: [] != [{'paper_id': '0'}]
+
+Second list contains 1 additional elements.
+First extra element 0:
+{'paper_id': '0'}
+
+- []
++ [{'paper_id': '0'}]
+
+======================================================================
+FAIL: test_remove_all_matches_preserving_order_and_contents (__main__.PartitionTests.test_remove_all_matches_preserving_order_and_contents)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\catalog\abstract-format-partition\test_partition.py", line 77, in test_remove_all_matches_preserving_order_and_contents
+    self.assertEqual(removed, [rows[0], rows[2]])
+AssertionError: Lists differ: [] != [{'paper_id': 'a'}, {'paper_id': 'c'}]
+
+Second list contains 2 additional elements.
+First extra element 0:
+{'paper_id': 'a'}
+
+- []
++ [{'paper_id': 'a'}, {'paper_id': 'c'}]
+
+======================================================================
+FAIL: test_repository_reads_actual_source_with_identity (__main__.PartitionTests.test_repository_reads_actual_source_with_identity)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\catalog\abstract-format-partition\test_partition.py", line 109, in test_repository_reads_actual_source_with_identity
+    self.assertEqual(len(sources), 1)
+AssertionError: 0 != 1
+
+----------------------------------------------------------------------
+Ran 15 tests in 2.571s
+
+FAILED (failures=6)

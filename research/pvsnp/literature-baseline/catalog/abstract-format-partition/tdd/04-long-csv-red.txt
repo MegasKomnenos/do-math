@@ -1,0 +1,27 @@
+F
+======================================================================
+FAIL: test_long_export_field_is_not_truncated (__main__.ScopusTests.test_long_export_field_is_not_truncated)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\catalog\abstract-format-partition\test_partition.py", line 18, in test_long_export_field_is_not_truncated
+    records = p.read_export(raw, 'scopus')
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\research\pvsnp\literature-baseline\catalog\abstract-format-partition\partition.py", line 24, in read_export
+    for row in reader:
+               ^^^^^^
+  File "C:\Users\wogud\AppData\Local\Programs\Python\Python312\Lib\csv.py", line 116, in __next__
+    row = next(self.reader)
+          ^^^^^^^^^^^^^^^^^
+_csv.Error: field larger than field limit (131072)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\catalog\abstract-format-partition\test_partition.py", line 20, in test_long_export_field_is_not_truncated
+    self.fail('Valid long export field was rejected: ' + str(exc))
+AssertionError: Valid long export field was rejected: field larger than field limit (131072)
+
+----------------------------------------------------------------------
+Ran 1 test in 0.004s
+
+FAILED (failures=1)

@@ -1,0 +1,35 @@
+FF
+======================================================================
+FAIL: test_title_markup_does_not_hide_same_doi_abstract (__main__.MetadataTests.test_title_markup_does_not_hide_same_doi_abstract) (raw_title='On <i>k</i>-Hulls and Related Problems')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\catalog\abstract-format-partition\test_partition.py", line 169, in test_title_markup_does_not_hide_same_doi_abstract
+    self.assertEqual(p.cache_record(envelope, 'crossref', [title], ['10.1/x'])['abstracts'],
+AssertionError: Lists differ: [] != [{'field': 'message.abstract', 'text': 'Actual abstract.'}]
+
+Second list contains 1 additional elements.
+First extra element 0:
+{'field': 'message.abstract', 'text': 'Actual abstract.'}
+
+- []
++ [{'field': 'message.abstract', 'text': 'Actual abstract.'}]
+
+======================================================================
+FAIL: test_title_markup_does_not_hide_same_doi_abstract (__main__.MetadataTests.test_title_markup_does_not_hide_same_doi_abstract) (raw_title="Bak's work on the<i>K</i>-theory of rings")
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\catalog\abstract-format-partition\test_partition.py", line 169, in test_title_markup_does_not_hide_same_doi_abstract
+    self.assertEqual(p.cache_record(envelope, 'crossref', [title], ['10.1/x'])['abstracts'],
+AssertionError: Lists differ: [] != [{'field': 'message.abstract', 'text': 'Actual abstract.'}]
+
+Second list contains 1 additional elements.
+First extra element 0:
+{'field': 'message.abstract', 'text': 'Actual abstract.'}
+
+- []
++ [{'field': 'message.abstract', 'text': 'Actual abstract.'}]
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+FAILED (failures=2)

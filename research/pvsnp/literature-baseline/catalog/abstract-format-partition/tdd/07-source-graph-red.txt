@@ -1,0 +1,76 @@
+FFFF..FFFF
+======================================================================
+FAIL: test_actual_three_captured_pages (__main__.PageTests.test_actual_three_captured_pages) (file='VER-8a23b7cd72b2672b87945837-9e4ce4c6ff90b44c.json')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\catalog\abstract-format-partition\test_partition.py", line 287, in test_actual_three_captured_pages
+    self.assertEqual(p.page_abstract(text), record['abstract'])
+AssertionError: '' != 'We present an introduction (with a few pr[195 chars]ory.'
++ We present an introduction (with a few proofs) to higher algebraic K-theory of schemes based on the work of Quillen, Waldhausen, Thomason and others. Our emphasis is on the application of triangulated category methods in algebraic K-theory.
+
+
+======================================================================
+FAIL: test_actual_three_captured_pages (__main__.PageTests.test_actual_three_captured_pages) (file='VER-8b174870dbd16a6c8a4586e9-faafde0a0b5ed12a.json')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\catalog\abstract-format-partition\test_partition.py", line 287, in test_actual_three_captured_pages
+    self.assertEqual(p.page_abstract(text), record['abstract'])
+AssertionError: '' != 'We investigate relativized versions of th[797 chars]bed.'
+Diff is 835 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_actual_three_captured_pages (__main__.PageTests.test_actual_three_captured_pages) (file='VER-962beed10254c9f9d421df60-33698e42cb564605.json')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\catalog\abstract-format-partition\test_partition.py", line 287, in test_actual_three_captured_pages
+    self.assertEqual(p.page_abstract(text), record['abstract'])
+AssertionError: '' != 'Proof complexity is a research area that [834 chars]ngs.'
+Diff is 884 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_inline_web_line_numbers_and_end_boundary (__main__.PageTests.test_inline_web_line_numbers_and_end_boundary)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\catalog\abstract-format-partition\test_partition.py", line 274, in test_inline_web_line_numbers_and_end_boundary
+    self.assertEqual(p.page_abstract(text), 'First paragraph.\nSecond paragraph.')
+AssertionError: '' != 'First paragraph.\nSecond paragraph.'
++ First paragraph.
++ Second paragraph.
+
+
+======================================================================
+FAIL: test_discovery_evidence_is_not_an_abstract (__main__.RepositoryTests.test_discovery_evidence_is_not_an_abstract)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\catalog\abstract-format-partition\test_partition.py", line 308, in test_discovery_evidence_is_not_an_abstract
+    self.assertTrue(sources)
+AssertionError: [] is not true
+
+======================================================================
+FAIL: test_local_originals_are_included_in_no_abstract_evidence (__main__.RepositoryTests.test_local_originals_are_included_in_no_abstract_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\catalog\abstract-format-partition\test_partition.py", line 314, in test_local_originals_are_included_in_no_abstract_evidence
+    self.assertTrue(any(s['family'] == 'local-pdf' for s in sources))
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_next_candidate_is_deferred_only_after_cached_metadata_check (__main__.RepositoryTests.test_next_candidate_is_deferred_only_after_cached_metadata_check)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\catalog\abstract-format-partition\test_partition.py", line 298, in test_next_candidate_is_deferred_only_after_cached_metadata_check
+    self.assertIn('mathscinet-fields-json', [s['family'] for s in sources])
+AssertionError: 'mathscinet-fields-json' not found in []
+
+======================================================================
+FAIL: test_page_can_supply_abstract_missing_in_primary_metadata (__main__.RepositoryTests.test_page_can_supply_abstract_missing_in_primary_metadata)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\catalog\abstract-format-partition\test_partition.py", line 304, in test_page_can_supply_abstract_missing_in_primary_metadata
+    self.assertTrue(any(s['family'] == 'captured-page' and s['abstracts'] for s in sources))
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 8 tests in 2.439s
+
+FAILED (failures=8)

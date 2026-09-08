@@ -1,0 +1,127 @@
+.FFFFFFFFFFFF.F
+======================================================================
+FAIL: test_actual_first_record (__main__.ScopusTests.test_actual_first_record)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\catalog\abstract-format-partition\test_partition.py", line 18, in test_actual_first_record
+    self.assertGreaterEqual(len(rows), locator['rank'], 'The export must expose the first candidate row')
+AssertionError: 0 not greater than or equal to 1863 : The export must expose the first candidate row
+
+======================================================================
+FAIL: test_bad_rank_is_rejected (__main__.ScopusTests.test_bad_rank_is_rejected) (rank=0)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\catalog\abstract-format-partition\test_partition.py", line 65, in test_bad_rank_is_rejected
+    with self.subTest(rank=rank), self.assertRaises(ValueError):
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_bad_rank_is_rejected (__main__.ScopusTests.test_bad_rank_is_rejected) (rank=-1)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\catalog\abstract-format-partition\test_partition.py", line 65, in test_bad_rank_is_rejected
+    with self.subTest(rank=rank), self.assertRaises(ValueError):
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_bad_rank_is_rejected (__main__.ScopusTests.test_bad_rank_is_rejected) (rank=2)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\catalog\abstract-format-partition\test_partition.py", line 65, in test_bad_rank_is_rejected
+    with self.subTest(rank=rank), self.assertRaises(ValueError):
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_bad_rank_is_rejected (__main__.ScopusTests.test_bad_rank_is_rejected) (rank=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\catalog\abstract-format-partition\test_partition.py", line 65, in test_bad_rank_is_rejected
+    with self.subTest(rank=rank), self.assertRaises(ValueError):
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_bad_rank_is_rejected (__main__.ScopusTests.test_bad_rank_is_rejected) (rank='1')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\catalog\abstract-format-partition\test_partition.py", line 65, in test_bad_rank_is_rejected
+    with self.subTest(rank=rank), self.assertRaises(ValueError):
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_csv_quotes_multiline_unicode_and_inequalities (__main__.ScopusTests.test_csv_quotes_multiline_unicode_and_inequalities)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\catalog\abstract-format-partition\test_partition.py", line 32, in test_csv_quotes_multiline_unicode_and_inequalities
+    self.assertEqual(len(rows), 1)
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_damaged_csv_rejected (__main__.ScopusTests.test_damaged_csv_rejected) (raw='EID,Title,Abstract,Source\nx,t,a,Scopus,extra\n')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\catalog\abstract-format-partition\test_partition.py", line 56, in test_damaged_csv_rejected
+    with self.subTest(raw=raw), self.assertRaises(ValueError):
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_damaged_csv_rejected (__main__.ScopusTests.test_damaged_csv_rejected) (raw='EID,Title,Abstract,Source\nx,t\n')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\catalog\abstract-format-partition\test_partition.py", line 56, in test_damaged_csv_rejected
+    with self.subTest(raw=raw), self.assertRaises(ValueError):
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_damaged_csv_rejected (__main__.ScopusTests.test_damaged_csv_rejected) (raw='EID,Title,Abstract,Abstract,Source\nx,t,a,b,Scopus\n')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\catalog\abstract-format-partition\test_partition.py", line 56, in test_damaged_csv_rejected
+    with self.subTest(raw=raw), self.assertRaises(ValueError):
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_other_csv_is_not_scopus (__main__.ScopusTests.test_other_csv_is_not_scopus)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\catalog\abstract-format-partition\test_partition.py", line 49, in test_other_csv_is_not_scopus
+    with self.assertRaises(ValueError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_real_sentence_containing_absence_words_is_kept (__main__.ScopusTests.test_real_sentence_containing_absence_words_is_kept)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\catalog\abstract-format-partition\test_partition.py", line 42, in test_real_sentence_containing_absence_words_is_kept
+    self.assertEqual(p.abstract_fields({'abstract': [value]}), [{'field': 'abstract', 'text': value}])
+AssertionError: Lists differ: [] != [{'field': 'abstract', 'text': 'No abstrac[34 chars]a.'}]
+
+Second list contains 1 additional elements.
+First extra element 0:
+{'field': 'abstract', 'text': 'No abstract model is available for these data.'}
+
+- []
++ [{'field': 'abstract',
++   'text': 'No abstract model is available for these data.'}]
+
+======================================================================
+FAIL: test_wrong_rank_identity_is_rejected (__main__.ScopusTests.test_wrong_rank_identity_is_rejected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\catalog\abstract-format-partition\test_partition.py", line 60, in test_wrong_rank_identity_is_rejected
+    with self.assertRaises(ValueError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.545s
+
+FAILED (failures=13)

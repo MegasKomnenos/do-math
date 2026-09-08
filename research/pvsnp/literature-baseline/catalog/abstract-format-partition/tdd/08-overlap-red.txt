@@ -1,0 +1,81 @@
+FFFFF
+======================================================================
+FAIL: test_all_same_format_sources_match_even_if_not_preferred (__main__.PartitionTests.test_all_same_format_sources_match_even_if_not_preferred)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\catalog\abstract-format-partition\test_partition.py", line 88, in test_all_same_format_sources_match_even_if_not_preferred
+    self.assertEqual(removed, rows[:2])
+AssertionError: Lists differ: [{'paper_id': 'a'}] != [{'paper_id': 'a'}, {'paper_id': 'b'}]
+
+Second list contains 1 additional elements.
+First extra element 1:
+{'paper_id': 'b'}
+
+- [{'paper_id': 'a'}]
++ [{'paper_id': 'a'}, {'paper_id': 'b'}]
+
+======================================================================
+FAIL: test_deferred_group_also_checks_nonpreferred_format (__main__.PartitionTests.test_deferred_group_also_checks_nonpreferred_format)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\catalog\abstract-format-partition\test_partition.py", line 96, in test_deferred_group_also_checks_nonpreferred_format
+    self.assertEqual(removed, rows)
+AssertionError: Lists differ: [{'paper_id': 'a'}] != [{'paper_id': 'a'}, {'paper_id': 'b'}]
+
+Second list contains 1 additional elements.
+First extra element 1:
+{'paper_id': 'b'}
+
+- [{'paper_id': 'a'}]
++ [{'paper_id': 'a'}, {'paper_id': 'b'}]
+
+======================================================================
+FAIL: test_empty_or_placeholder_jats_is_not_an_abstract (__main__.MetadataTests.test_empty_or_placeholder_jats_is_not_an_abstract) (value='<jats:abstract/>')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\catalog\abstract-format-partition\test_partition.py", line 167, in test_empty_or_placeholder_jats_is_not_an_abstract
+    self.assertEqual(p.abstract_fields({'abstract': [value]}), [])
+AssertionError: Lists differ: [{'field': 'abstract', 'text': '<jats:abstract/>'}] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+{'field': 'abstract', 'text': '<jats:abstract/>'}
+
+- [{'field': 'abstract', 'text': '<jats:abstract/>'}]
++ []
+
+======================================================================
+FAIL: test_empty_or_placeholder_jats_is_not_an_abstract (__main__.MetadataTests.test_empty_or_placeholder_jats_is_not_an_abstract) (value='<jats:abstract><jats:title>Abstract</jats:title></jats:abstract>')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\catalog\abstract-format-partition\test_partition.py", line 167, in test_empty_or_placeholder_jats_is_not_an_abstract
+    self.assertEqual(p.abstract_fields({'abstract': [value]}), [])
+AssertionError: Lists differ: [{'field': 'abstract', 'text': '<jats:abst[52 chars]t>'}] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+{'field': 'abstract', 'text': '<jats:abstract><jats:title>Abstract</jats:title></jats:abstract>'}
+
++ []
+- [{'field': 'abstract',
+-   'text': '<jats:abstract><jats:title>Abstract</jats:title></jats:abstract>'}]
+
+======================================================================
+FAIL: test_empty_or_placeholder_jats_is_not_an_abstract (__main__.MetadataTests.test_empty_or_placeholder_jats_is_not_an_abstract) (value='<p>[No abstract available]</p>')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\catalog\abstract-format-partition\test_partition.py", line 167, in test_empty_or_placeholder_jats_is_not_an_abstract
+    self.assertEqual(p.abstract_fields({'abstract': [value]}), [])
+AssertionError: Lists differ: [{'field': 'abstract', 'text': '<p>[No abstract available]</p>'}] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+{'field': 'abstract', 'text': '<p>[No abstract available]</p>'}
+
+- [{'field': 'abstract', 'text': '<p>[No abstract available]</p>'}]
++ []
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.003s
+
+FAILED (failures=5)

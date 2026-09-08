@@ -1,0 +1,15 @@
+F
+======================================================================
+FAIL: test_group_recognizer_filters_mixed_actual_records (__main__.ReplayTests.test_group_recognizer_filters_mixed_actual_records)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\catalog\abstract-format-partition\test_partition.py", line 380, in test_group_recognizer_filters_mixed_actual_records
+    self.assertEqual(result.returncode, 0, result.stderr)
+AssertionError: 2 != 0 : usage: format.py [-h] [--extract] [--check]
+format.py: error: unrecognized arguments: --recognize --input C:\Users\wogud\AppData\Local\Temp\tmp92pkvdt5\mixed.jsonl
+
+
+----------------------------------------------------------------------
+Ran 1 test in 1.178s
+
+FAILED (failures=1)

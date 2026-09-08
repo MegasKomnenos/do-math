@@ -1,0 +1,25 @@
+{
+  "passed": true,
+  "input_count": 23755,
+  "input_sha256": "dc94698d5c310e93613adf58276748eb8ba778925c6479fcb7a5577931ed90bc",
+  "unit_tests": {
+    "command": "python research/pvsnp/literature-baseline/catalog/abstract-format-partition/test_partition.py",
+    "tests": 55,
+    "exit_code": 0,
+    "log": "tdd/final-unit.txt"
+  },
+  "corpus_tests": {
+    "command": "python research/pvsnp/literature-baseline/catalog/abstract-format-partition/test_corpus.py",
+    "tests": 5,
+    "exit_code": 0,
+    "log": "tdd/14-corpus-green.txt"
+  },
+  "original_field_values_checked": 17877,
+  "group_script_configurations_checked": 12,
+  "actual_group_cli_values_checked": 2,
+  "availability_reference": {
+    "path": "catalog/abstract-inventory.jsonl",
+    "sha256": "d6581457d40df58c3b0328115a498c80e54ff9e1925a9f5bc0e9b58ebfd60e9d"
+  },
+  "scope": "Pinned 23755-candidate snapshot and checked local representations; no assertion of zero errors for all future inputs."
+}

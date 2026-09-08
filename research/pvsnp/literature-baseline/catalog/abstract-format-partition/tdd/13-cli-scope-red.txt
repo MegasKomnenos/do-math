@@ -1,0 +1,13 @@
+F
+======================================================================
+FAIL: test_repository_exposes_source_readers (__main__.PartitionTests.test_repository_exposes_source_readers)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\catalog\abstract-format-partition\test_partition.py", line 85, in test_repository_exposes_source_readers
+    self.assertTrue(callable(getattr(p.Repository, name, None)), name)
+AssertionError: False is not true : path
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+FAILED (failures=1)
