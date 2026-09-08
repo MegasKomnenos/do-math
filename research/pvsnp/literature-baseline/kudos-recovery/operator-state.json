@@ -32,10 +32,25 @@
     "Root demonstrated two quoted DOI terms joined by OR in actual ho=f search; 5 results included both targets and one unrelated citing item, so document-level matching and overflow handling are required.",
     "g02 is adopting max-six DOI/ISBN UI batches with split-on-overflow. It has 2428 DOI candidates, 2211 ISBN-only and 499 title-only.",
     "Source and version misbindings, overwritten evidence hashes and raw PDF OCR errors have actual regression examples in shared-findings.md.",
-    "Other unrelated repository work may be staged concurrently. Commit with explicit --only path scopes and do not alter others staging."
+    "Other unrelated repository work may be staged concurrently. Commit with explicit --only path scopes and do not alter others staging.",
+    "Web of Science institution Smart Search loaded after waiting, input #composeQuerySmartSearch; Scopus one startup probe showed Cloudflare before query. Details in shared-findings; not corpus-wide judgments."
   ],
   "restart_contract": "restart-contract.md",
   "last_user_decision": "Stop old three workers, improve based on execution and efficiency feedback, continue with new workers.",
   "replacement_snapshot": "restart-snapshot.json",
-  "g05_root_pdf_reservation": "All ten transferred to new g05 worker; root did not finish review."
+  "g05_root_pdf_reservation": "All ten transferred to new g05 worker; root did not finish review.",
+  "latest_checkpoint_commit": "f313ef8",
+  "latest_operator_audit": {
+    "updated_at": "2026-09-08T14:52:36.189966+00:00",
+    "common_checks": "20 existing + 4 resume regressions + 12 work-queue boundary tests passed; actual old1556 result partial checks passed/incomplete.",
+    "old_agents_stopped": true,
+    "new_workers": "g02/g05/g08 replacements continue TDD, actual browser collection and evidence assessment.",
+    "root_review_examples": [
+      "g05 Atallah/GMW first-page printed page differences visually verified.",
+      "g02 Gradient flows damaged database abstract found/review withdrawn; actual current result reread unresolved.",
+      "g05 combined highlights separated in current actual result; conflicting abstract variants unresolved."
+    ],
+    "runtime_observation": "g08 PID37012 startup5code hashes matched disk at audit; worker later checkpoint-stopped it after12candidates and began newrun session32592.",
+    "handoff": "New g05 accepted all10 former root PDF reservations; root independently reviewed first pages of2."
+  }
 }
