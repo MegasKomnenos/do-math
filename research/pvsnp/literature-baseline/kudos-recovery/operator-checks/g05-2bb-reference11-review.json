@@ -1,0 +1,9 @@
+{
+  "schema": "operator-content-review/1",
+  "paper_id": "VER-2bb97c857e10d1adb8a73f9a",
+  "reviewer": "root",
+  "observation": "kudos-recovery/operator-checks/g05-2bb-reference11-observation.json",
+  "decision": "restore_prior_fulltext_approval_for_the_same_file",
+  "reason": "Root opened the unchanged d6b2de741d426479 HTML in offline Firefox and directly read the screenshot of reference11. Its title correctly displays italic k in On decomposing a hypergraph into k connected sub-hypergraphs. The retained CHTML contains the actual Unicode mathematical italic small k (U+1D458) as a visible text leaf, with nonzero rendered dimensions; no external HTTP request occurs. The earlier report of a missing displayed character was not substantiated and is corrected. No MathML reconstruction or provider revisit is needed for this specific file and character. This verifies the remaining question on the previously approved fulltext and does not establish that arbitrary CHTML without its original resources is safe.",
+  "screenshot": "intake/kudos-recovery/operator/g05-2bb-reference11-offline.png"
+}

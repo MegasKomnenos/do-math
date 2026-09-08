@@ -1,0 +1,13 @@
+F
+======================================================================
+FAIL: test_actual_title_variant_retains_explicit_visual_pdf_review (test_review_reuse.ReviewReuseTests.test_actual_title_variant_retains_explicit_visual_pdf_review)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g05\test_review_reuse.py", line 10, in test_actual_title_variant_retains_explicit_visual_pdf_review
+    self.assertIsNotNone(matching_review(record,[entry]))
+AssertionError: unexpectedly None
+
+----------------------------------------------------------------------
+Ran 1 test in 0.003s
+
+FAILED (failures=1)

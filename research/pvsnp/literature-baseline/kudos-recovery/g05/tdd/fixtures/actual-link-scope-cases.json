@@ -1,0 +1,1457 @@
+[
+  {
+    "source_fixture": "intake/kudos-recovery/g02/fixtures/springer-scope-links-5f3a22b10ef1df0e.json",
+    "url": "https://link.springer.com/chapter/10.1007/978-3-031-81217-0_5",
+    "paper": {
+      "identifiers": {
+        "doi": [
+          "10.1007/978-3-031-81217-0_5"
+        ]
+      }
+    },
+    "links": [
+      {
+        "text": "Save chapter",
+        "url": "https://link.springer.com/chapter/10.1007/978-3-031-81217-0_5/save-research",
+        "excluded_context": null
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR1-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR2-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR3-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR4-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar_lookup",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR5-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR6-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "https://vimeo.com/user36100127",
+        "url": "https://vimeo.com/user36100127",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR7",
+          "classes": "c-article-references__text"
+        }
+      },
+      {
+        "text": "Article",
+        "url": "https://doi.org/10.1080%2F10511970.2015.1047545",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR8-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "MATH",
+        "url": "http://www.emis.de/MATH-item",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR8-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar_lookup",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR8-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "Article",
+        "url": "https://doi.org/10.1080%2F10511970.2020.1746450",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR9-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar_lookup",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR9-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR10-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "https://www.maa.org/programs-and-communities/professional-development/cominds",
+        "url": "https://www.maa.org/programs-and-communities/professional-development/cominds",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR11",
+          "classes": "c-article-references__text"
+        }
+      },
+      {
+        "text": "https://www.nais.org/magazine/independent-teacher/fall-2013/the-partially-flipped-classroom/",
+        "url": "https://www.nais.org/magazine/independent-teacher/fall-2013/the-partially-flipped-classroom/",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR12",
+          "classes": "c-article-references__text"
+        }
+      },
+      {
+        "text": "Article",
+        "url": "https://doi.org/10.1126%2Fscience.1201783",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR13-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar_lookup",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR13-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR14-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "https://www.districtadministration.com/article/flipping-script-k12",
+        "url": "https://www.districtadministration.com/article/flipping-script-k12",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR15",
+          "classes": "c-article-references__text"
+        }
+      },
+      {
+        "text": "MATH",
+        "url": "http://www.emis.de/MATH-item",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR15-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar_lookup",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR15-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "Article",
+        "url": "https://doi.org/10.1073%2Fpnas.1319030111",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR16-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar_lookup",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR16-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR17-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "http://acue.org/quality-teaching/",
+        "url": "http://acue.org/quality-teaching/",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR18",
+          "classes": "c-article-references__text"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar_lookup",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR18-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "Article",
+        "url": "https://doi.org/10.1080%2F10511970.2019.1709588",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR19-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "MATH",
+        "url": "http://www.emis.de/MATH-item",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR19-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar_lookup",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR19-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR20-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "MATH",
+        "url": "http://www.emis.de/MATH-item",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR21-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar_lookup",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR21-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "Article",
+        "url": "https://doi.org/10.1080%2F00031305.2000.10474508",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR22-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "MATH",
+        "url": "http://www.emis.de/MATH-item",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR22-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar_lookup",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR22-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR23-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR24-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR25-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "Article",
+        "url": "https://doi.org/10.1080%2F00220480009596759",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR26-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "MATH",
+        "url": "http://www.emis.de/MATH-item",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR26-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar_lookup",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR26-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "Article",
+        "url": "https://link.springer.com/doi/10.1007/BF02655854",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR27-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "MATH",
+        "url": "http://www.emis.de/MATH-item",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR27-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar_lookup",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR27-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR28-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "https://trefnycenter.mines.edu/resources/masterygrading/",
+        "url": "https://trefnycenter.mines.edu/resources/masterygrading/",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR29",
+          "classes": "c-article-references__text"
+        }
+      },
+      {
+        "text": "Article",
+        "url": "https://doi.org/10.20343%2Fteachlearninqu.3.2.37",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR30-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "MATH",
+        "url": "http://www.emis.de/MATH-item",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR30-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar_lookup",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR30-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR31-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "MATH",
+        "url": "http://www.emis.de/MATH-item",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR32-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar_lookup",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR32-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "Article",
+        "url": "https://doi.org/10.1080%2F13645570500402447",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR33-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "MATH",
+        "url": "http://www.emis.de/MATH-item",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR33-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar_lookup",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR33-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR34-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR35-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar_lookup",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR36-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "https://www.tandfonline.com/loi/upri20",
+        "url": "https://www.tandfonline.com/loi/upri20",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR37",
+          "classes": "c-article-references__text"
+        }
+      },
+      {
+        "text": "https://www.maa.org/programs-and-communities/professional-development/project-next",
+        "url": "https://www.maa.org/programs-and-communities/professional-development/project-next",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR38",
+          "classes": "c-article-references__text"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR39-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "Article",
+        "url": "https://doi.org/10.3102%2F0091732X16658650",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR40-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "MATH",
+        "url": "http://www.emis.de/MATH-item",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR40-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar_lookup",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR40-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "Book",
+        "url": "https://doi.org/10.5948%2F9781614441168",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR41-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "MATH",
+        "url": "http://www.emis.de/MATH-item",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR41-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar_lookup",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR41-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "https://doi.org/10.1080/10511970.2024.2352364",
+        "url": "https://doi.org/10.1080/10511970.2024.2352364",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR42",
+          "classes": "c-article-references__text"
+        }
+      },
+      {
+        "text": "MATH",
+        "url": "http://www.emis.de/MATH-item",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR43-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar_lookup",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR43-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "https://trefnycenter.mines.edu",
+        "url": "https://trefnycenter.mines.edu/",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR44",
+          "classes": "c-article-references__text"
+        }
+      },
+      {
+        "text": "http://www.weusemath.org",
+        "url": "http://www.weusemath.org/",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR45",
+          "classes": "c-article-references__text"
+        }
+      },
+      {
+        "text": "https://flippedlearning.org/definition-of-flipped-learning/",
+        "url": "https://flippedlearning.org/definition-of-flipped-learning/",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR46",
+          "classes": "c-article-references__text"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar",
+        "excluded_context": {
+          "tag": "P",
+          "id": "ref-CR47-links",
+          "classes": "c-article-references__links u-hide-print"
+        }
+      },
+      {
+        "text": "Download references",
+        "url": "https://citation-needed.springer.com/v2/references/10.1007/978-3-031-81217-0_5",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-article-references__download u-hide-print"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar_lookup",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "https://vimeo.com/user36100127",
+        "url": "https://vimeo.com/user36100127",
+        "excluded_context": {
+          "tag": "P",
+          "id": "rc-ref-CR7",
+          "classes": "c-reading-companion__reference-citation u-font-family-serif"
+        }
+      },
+      {
+        "text": "Article",
+        "url": "https://doi.org/10.1080%2F10511970.2015.1047545",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "MATH",
+        "url": "http://www.emis.de/MATH-item",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar_lookup",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "Article",
+        "url": "https://doi.org/10.1080%2F10511970.2020.1746450",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar_lookup",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "https://www.maa.org/programs-and-communities/professional-development/cominds",
+        "url": "https://www.maa.org/programs-and-communities/professional-development/cominds",
+        "excluded_context": {
+          "tag": "P",
+          "id": "rc-ref-CR11",
+          "classes": "c-reading-companion__reference-citation u-font-family-serif"
+        }
+      },
+      {
+        "text": "https://www.nais.org/magazine/independent-teacher/fall-2013/the-partially-flipped-classroom/",
+        "url": "https://www.nais.org/magazine/independent-teacher/fall-2013/the-partially-flipped-classroom/",
+        "excluded_context": {
+          "tag": "P",
+          "id": "rc-ref-CR12",
+          "classes": "c-reading-companion__reference-citation u-font-family-serif"
+        }
+      },
+      {
+        "text": "Article",
+        "url": "https://doi.org/10.1126%2Fscience.1201783",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar_lookup",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "https://www.districtadministration.com/article/flipping-script-k12",
+        "url": "https://www.districtadministration.com/article/flipping-script-k12",
+        "excluded_context": {
+          "tag": "P",
+          "id": "rc-ref-CR15",
+          "classes": "c-reading-companion__reference-citation u-font-family-serif"
+        }
+      },
+      {
+        "text": "MATH",
+        "url": "http://www.emis.de/MATH-item",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar_lookup",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "Article",
+        "url": "https://doi.org/10.1073%2Fpnas.1319030111",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar_lookup",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "http://acue.org/quality-teaching/",
+        "url": "http://acue.org/quality-teaching/",
+        "excluded_context": {
+          "tag": "P",
+          "id": "rc-ref-CR18",
+          "classes": "c-reading-companion__reference-citation u-font-family-serif"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar_lookup",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "Article",
+        "url": "https://doi.org/10.1080%2F10511970.2019.1709588",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "MATH",
+        "url": "http://www.emis.de/MATH-item",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar_lookup",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "MATH",
+        "url": "http://www.emis.de/MATH-item",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar_lookup",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "Article",
+        "url": "https://doi.org/10.1080%2F00031305.2000.10474508",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "MATH",
+        "url": "http://www.emis.de/MATH-item",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar_lookup",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "Article",
+        "url": "https://doi.org/10.1080%2F00220480009596759",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "MATH",
+        "url": "http://www.emis.de/MATH-item",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar_lookup",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "Article",
+        "url": "https://link.springer.com/doi/10.1007/BF02655854",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "MATH",
+        "url": "http://www.emis.de/MATH-item",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar_lookup",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "https://trefnycenter.mines.edu/resources/masterygrading/",
+        "url": "https://trefnycenter.mines.edu/resources/masterygrading/",
+        "excluded_context": {
+          "tag": "P",
+          "id": "rc-ref-CR29",
+          "classes": "c-reading-companion__reference-citation u-font-family-serif"
+        }
+      },
+      {
+        "text": "Article",
+        "url": "https://doi.org/10.20343%2Fteachlearninqu.3.2.37",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "MATH",
+        "url": "http://www.emis.de/MATH-item",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar_lookup",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "MATH",
+        "url": "http://www.emis.de/MATH-item",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar_lookup",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "Article",
+        "url": "https://doi.org/10.1080%2F13645570500402447",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "MATH",
+        "url": "http://www.emis.de/MATH-item",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar_lookup",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar_lookup",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "https://www.tandfonline.com/loi/upri20",
+        "url": "https://www.tandfonline.com/loi/upri20",
+        "excluded_context": {
+          "tag": "P",
+          "id": "rc-ref-CR37",
+          "classes": "c-reading-companion__reference-citation u-font-family-serif"
+        }
+      },
+      {
+        "text": "https://www.maa.org/programs-and-communities/professional-development/project-next",
+        "url": "https://www.maa.org/programs-and-communities/professional-development/project-next",
+        "excluded_context": {
+          "tag": "P",
+          "id": "rc-ref-CR38",
+          "classes": "c-reading-companion__reference-citation u-font-family-serif"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "Article",
+        "url": "https://doi.org/10.3102%2F0091732X16658650",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "MATH",
+        "url": "http://www.emis.de/MATH-item",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar_lookup",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "Book",
+        "url": "https://doi.org/10.5948%2F9781614441168",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "MATH",
+        "url": "http://www.emis.de/MATH-item",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar_lookup",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "https://doi.org/10.1080/10511970.2024.2352364",
+        "url": "https://doi.org/10.1080/10511970.2024.2352364",
+        "excluded_context": {
+          "tag": "P",
+          "id": "rc-ref-CR42",
+          "classes": "c-reading-companion__reference-citation u-font-family-serif"
+        }
+      },
+      {
+        "text": "MATH",
+        "url": "http://www.emis.de/MATH-item",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar_lookup",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      },
+      {
+        "text": "https://trefnycenter.mines.edu",
+        "url": "https://trefnycenter.mines.edu/",
+        "excluded_context": {
+          "tag": "P",
+          "id": "rc-ref-CR44",
+          "classes": "c-reading-companion__reference-citation u-font-family-serif"
+        }
+      },
+      {
+        "text": "http://www.weusemath.org",
+        "url": "http://www.weusemath.org/",
+        "excluded_context": {
+          "tag": "P",
+          "id": "rc-ref-CR45",
+          "classes": "c-reading-companion__reference-citation u-font-family-serif"
+        }
+      },
+      {
+        "text": "https://flippedlearning.org/definition-of-flipped-learning/",
+        "url": "https://flippedlearning.org/definition-of-flipped-learning/",
+        "excluded_context": {
+          "tag": "P",
+          "id": "rc-ref-CR46",
+          "classes": "c-reading-companion__reference-citation u-font-family-serif"
+        }
+      },
+      {
+        "text": "Google Scholar",
+        "url": "https://scholar.google.com/scholar",
+        "excluded_context": {
+          "tag": "P",
+          "id": "",
+          "classes": "c-reading-companion__reference-links"
+        }
+      }
+    ]
+  },
+  {
+    "source_fixture": "intake/kudos-recovery/g02/fixtures/perlego-scope-links-7f69469cc25518e4.json",
+    "url": "https://www.perlego.com/book/737286/differential-geometry-of-complex-vector-bundles-pdf",
+    "paper": {
+      "identifiers": {
+        "doi": []
+      }
+    },
+    "links": [
+      {
+        "text": "Skip to main content",
+        "url": "https://www.perlego.com/book/737286/differential-geometry-of-complex-vector-bundles-pdf",
+        "excluded_context": null
+      },
+      {
+        "text": "Differential Geometry of Complex Vector Bundles",
+        "url": "https://www.perlego.com/book/737286/differential-geometry-of-complex-vector-bundles-pdf",
+        "excluded_context": null
+      },
+      {
+        "text": "",
+        "url": "https://www.perlego.com/book/112829/an-introduction-to-differential-geometry-pdf",
+        "excluded_context": null
+      },
+      {
+        "text": "An Introduction to Differential Geometry",
+        "url": "https://www.perlego.com/book/112829/an-introduction-to-differential-geometry-pdf",
+        "excluded_context": null
+      },
+      {
+        "text": "",
+        "url": "https://www.perlego.com/book/1666958/twodimensional-geometries-a-problemsolving-approach-pdf",
+        "excluded_context": null
+      },
+      {
+        "text": "Two-Dimensional Geometries",
+        "url": "https://www.perlego.com/book/1666958/twodimensional-geometries-a-problemsolving-approach-pdf",
+        "excluded_context": null
+      },
+      {
+        "text": "",
+        "url": "https://www.perlego.com/book/853176/introduction-to-geometrical-physics-an-second-edition-pdf",
+        "excluded_context": null
+      },
+      {
+        "text": "Introduction To Geometrical Physics, An (Second Edition)",
+        "url": "https://www.perlego.com/book/853176/introduction-to-geometrical-physics-an-second-edition-pdf",
+        "excluded_context": null
+      },
+      {
+        "text": "",
+        "url": "https://www.perlego.com/book/112822/curvature-in-mathematics-and-physics-pdf",
+        "excluded_context": null
+      },
+      {
+        "text": "Curvature in Mathematics and Physics",
+        "url": "https://www.perlego.com/book/112822/curvature-in-mathematics-and-physics-pdf",
+        "excluded_context": null
+      },
+      {
+        "text": "Learn how to download books offline",
+        "url": "https://help.perlego.com/en/articles/3312996-downloading-books",
+        "excluded_context": null
+      },
+      {
+        "text": "9781400883899",
+        "url": "https://www.perlego.com/book/738841/introduction-to-fourier-analysis-on-euclidean-spaces-pdf",
+        "excluded_context": null
+      },
+      {
+        "text": "9781107108424",
+        "url": "https://www.perlego.com/book/3545905/algebraic-varieties-pdf",
+        "excluded_context": null
+      },
+      {
+        "text": "9781420056945",
+        "url": "https://www.perlego.com/book/2193406/geometry-topology-and-physics-pdf",
+        "excluded_context": null
+      },
+      {
+        "text": "9781400882526",
+        "url": "https://www.perlego.com/book/737914/introduction-to-toric-varieties-pdf",
+        "excluded_context": null
+      },
+      {
+        "text": "9781000516371",
+        "url": "https://www.perlego.com/book/3037623/introduction-to-inverse-problems-in-imaging-pdf",
+        "excluded_context": null
+      },
+      {
+        "text": "9780080570419",
+        "url": "https://www.perlego.com/book/4480828/a-first-course-in-stochastic-processes-pdf",
+        "excluded_context": null
+      }
+    ]
+  }
+]

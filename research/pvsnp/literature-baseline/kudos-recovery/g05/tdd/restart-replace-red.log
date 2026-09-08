@@ -1,0 +1,19 @@
+...............E
+======================================================================
+ERROR: test_transient_windows_replace_failure_preserves_json_and_retries (test_collect.RecoveryTests.test_transient_windows_replace_failure_preserves_json_and_retries)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g05\test_collect.py", line 20, in test_transient_windows_replace_failure_preserves_json_and_retries
+    collect.save_json(target,{'new':'preserved'})
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g05\collect.py", line 73, in save_json
+    tmp=path.with_suffix('.tmp');tmp.write_text(json.dumps(data,ensure_ascii=False,indent=2),encoding='utf-8');tmp.replace(path)
+                                                                                                               ^^^^^^^^^^^^^^^^^
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g05\test_collect.py", line 15, in replace_once
+    if len(calls)==1:raise PermissionError('[WinError 5] observed result replacement failure')
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+PermissionError: [WinError 5] observed result replacement failure
+
+----------------------------------------------------------------------
+Ran 16 tests in 1.544s
+
+FAILED (errors=1)

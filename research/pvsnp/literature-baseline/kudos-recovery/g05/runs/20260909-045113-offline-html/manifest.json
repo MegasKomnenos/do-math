@@ -1,0 +1,26 @@
+{
+  "pid": 40068,
+  "argv": [
+    "research/pvsnp/literature-baseline/kudos-recovery/g05/inspect_local_article.py"
+  ],
+  "code_sha256": {
+    "C:\\math\\research\\pvsnp\\literature-baseline\\kudos-recovery\\g05\\acm_collect.py": "716eb9f8ea5dc9afa4177dc8b3ba72f7e97ef5ff804abb98af1a5d6f9013301c",
+    "C:\\math\\research\\pvsnp\\literature-baseline\\kudos-recovery\\g05\\book_collect.py": "548da90cd6c200924a1906c0e14da3a6aeadf7205971ccec9d783b3788043a9f",
+    "C:\\math\\research\\pvsnp\\literature-baseline\\kudos-recovery\\g05\\collect.py": "bcc679ca4a28d90e081ba40ef108670e46404f8f4cb7ea42034395b4501f15b2",
+    "C:\\math\\research\\pvsnp\\literature-baseline\\kudos-recovery\\g05\\fulltext_html.py": "cd430d7cc8697491d986877841fd6b47be1f08b04f3a5700ae05534c891f3b10",
+    "C:\\math\\research\\pvsnp\\literature-baseline\\kudos-recovery\\g05\\inspect_local_article.py": "21151e29fd385cc7345fa32d9dff6bfb1a8d3f6c48cd916a5e08ded60c15d3de",
+    "C:\\math\\research\\pvsnp\\literature-baseline\\kudos-recovery\\g05\\probe_native_html.py": "128afc23f288c7dbb1e658d83fa001b5fb32285656c5b4341d04b78f6b71cc00",
+    "C:\\math\\research\\pvsnp\\literature-baseline\\kudos-recovery\\g05\\probe_native_pdf.py": "3a159f749a1d321d1f410123d7d6718a1674469bdceecf146745cd17a4f004e7",
+    "C:\\math\\research\\pvsnp\\literature-baseline\\kudos-recovery\\g05\\regions.py": "e3a4a5dbc0315284cccaf2884ad6e63a5d1f21283dff408d6f1335e98609bf9e",
+    "C:\\math\\research\\pvsnp\\literature-baseline\\kudos-recovery\\g05\\resume.py": "c7ad145ea6419b7ab93a213e293ff6d78377b1f26110919b080b2169c302889d",
+    "C:\\math\\research\\pvsnp\\literature-baseline\\kudos-recovery\\g05\\science_direct.py": "412c8847fee9ef8e027ef67d969363b032b14fdd06fc82cbba48efe896f1846b",
+    "C:\\math\\research\\pvsnp\\literature-baseline\\kudos-recovery\\g05\\summon_collect.py": "a80ebd982bed8ee5f2aea2d3cda3ac763c38786855e306efefd86bc0901eb02b",
+    "C:\\math\\research\\pvsnp\\literature-baseline\\kudos-recovery\\g05\\test_books.py": "560782400d8fb176bdc9c152b44feb64f115dc2f845e7e230d2474f4e95e900d",
+    "C:\\math\\research\\pvsnp\\literature-baseline\\kudos-recovery\\g05\\test_collect.py": "f9af69ae0b86c1167668b0dd5cb40138adc5aa71bd259b322badd34085e88642",
+    "C:\\math\\research\\pvsnp\\literature-baseline\\kudos-recovery\\g05\\test_fulltext_html.py": "b9504e4b7c9f5f58e02b9c6fe45ef1ff79d7dc44846867c17bd8e0e4d30ea151",
+    "C:\\math\\research\\pvsnp\\literature-baseline\\kudos-recovery\\g05\\test_regions.py": "5b036eba9b823ab5326db65270eb90508f293655dff869d0bed91fa7c7af2ac9",
+    "C:\\math\\research\\pvsnp\\literature-baseline\\kudos-recovery\\g05\\test_restart.py": "0a48fdd5b4fd961f8aa3ae9f723e1b61d1125b3a5a270bb1214cea848074bf93",
+    "C:\\math\\research\\pvsnp\\literature-baseline\\kudos-recovery\\g05\\test_science_direct.py": "d1ec07db3710cf98de655e2acbe42299b8fe55de481de51a2715053d216e2b7e",
+    "C:\\math\\research\\pvsnp\\literature-baseline\\kudos-recovery\\g05\\test_summon.py": "f76876a48c5a922044c2611671953f1aae43b27c58397afafd7ed91409a89c3d"
+  }
+}

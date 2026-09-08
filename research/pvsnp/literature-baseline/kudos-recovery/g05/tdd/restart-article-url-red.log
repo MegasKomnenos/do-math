@@ -1,0 +1,13 @@
+F
+======================================================================
+FAIL: test_resume_source_does_not_select_previous_pdf_response_as_article (test_science_direct.ScienceDirectTests.test_resume_source_does_not_select_previous_pdf_response_as_article)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g05\test_science_direct.py", line 76, in test_resume_source_does_not_select_previous_pdf_response_as_article
+    self.assertTrue(url.endswith('/S1071579725001467'),url)
+AssertionError: False is not true : https://www-sciencedirect-com.libproxy.knu.ac.kr/science/article/pii/S1071579725001467/pdfft
+
+----------------------------------------------------------------------
+Ran 1 test in 0.007s
+
+FAILED (failures=1)

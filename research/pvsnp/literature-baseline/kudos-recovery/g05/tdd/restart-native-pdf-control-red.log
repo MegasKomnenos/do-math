@@ -1,0 +1,13 @@
+F
+======================================================================
+FAIL: test_actual_pdf_anchor_without_href_is_a_clickable_control (test_science_direct.ScienceDirectTests.test_actual_pdf_anchor_without_href_is_a_clickable_control)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g05\test_science_direct.py", line 57, in test_actual_pdf_anchor_without_href_is_a_clickable_control
+    self.assertTrue(any(fn(x) for x in controls))
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 1 test in 0.004s
+
+FAILED (failures=1)

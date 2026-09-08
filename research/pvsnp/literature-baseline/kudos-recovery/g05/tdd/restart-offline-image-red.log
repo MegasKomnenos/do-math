@@ -1,0 +1,14 @@
+....F.
+======================================================================
+FAIL: test_offline_check_validates_embedded_actual_figure (test_native_article.NativeArticleTests.test_offline_check_validates_embedded_actual_figure)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g05\test_native_article.py", line 16, in test_offline_check_validates_embedded_actual_figure
+    self.assertTrue(result['passed']);self.assertEqual(result['image_dimensions'],[[640,208]])
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 6 tests in 15.816s
+
+FAILED (failures=1)

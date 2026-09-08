@@ -1,0 +1,43 @@
+.F.FF
+======================================================================
+FAIL: test_actual_references_and_perlego_pdf_slugs_are_not_downloads (test_link_scope.LinkScopeTests.test_actual_references_and_perlego_pdf_slugs_are_not_downloads)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g05\test_link_scope.py", line 12, in test_actual_references_and_perlego_pdf_slugs_are_not_downloads
+    for case in cases:self.assertEqual(self.select(case['paper'],case['url'],case['links']),[],case['url'])
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [{'text': 'Download references', 'url': 'h[177 chars]t'}}] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+{'text': 'Download references', 'url': 'https://citation-needed.springer.com/v2/references/10.1007/978-3-031-81217-0_5', 'excluded_context': {'tag': 'P', 'id': '', 'classes': 'c-article-references__download u-hide-print'}}
+
++ []
+- [{'excluded_context': {'classes': 'c-article-references__download u-hide-print',
+-                        'id': '',
+-                        'tag': 'P'},
+-   'text': 'Download references',
+-   'url': 'https://citation-needed.springer.com/v2/references/10.1007/978-3-031-81217-0_5'}] : https://link.springer.com/chapter/10.1007/978-3-031-81217-0_5
+
+======================================================================
+FAIL: test_actual_whole_book_pdf_is_kept_without_front_matter_or_other_chapters (test_link_scope.LinkScopeTests.test_actual_whole_book_pdf_is_kept_without_front_matter_or_other_chapters)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g05\test_link_scope.py", line 21, in test_actual_whole_book_pdf_is_kept_without_front_matter_or_other_chapters
+    self.assertEqual(len(chosen),1);self.assertEqual(chosen[0]['url'],links[0]['url'])
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 24 != 1
+
+======================================================================
+FAIL: test_reviewed_parent_book_link_is_kept_for_target_chapter_boundary_review (test_link_scope.LinkScopeTests.test_reviewed_parent_book_link_is_kept_for_target_chapter_boundary_review)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g05\test_link_scope.py", line 33, in test_reviewed_parent_book_link_is_kept_for_target_chapter_boundary_review
+    self.assertEqual(len(chosen),1);self.assertEqual(chosen[0].get('scope_role'),'parent')
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: None != 'parent'
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.008s
+
+FAILED (failures=3)

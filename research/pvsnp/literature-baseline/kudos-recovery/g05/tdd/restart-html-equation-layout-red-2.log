@@ -1,0 +1,13 @@
+F
+======================================================================
+FAIL: test_equation_label_is_inside_visible_formula_in_offline_browser (test_fulltext_html.FulltextHTMLTests.test_equation_label_is_inside_visible_formula_in_offline_browser)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g05\test_fulltext_html.py", line 28, in test_equation_label_is_inside_visible_formula_in_offline_browser
+    self.assertLessEqual(label['x']+label['width'],formula['x']+formula['width']+1)
+AssertionError: 1140 not less than or equal to 1106
+
+----------------------------------------------------------------------
+Ran 1 test in 5.731s
+
+FAILED (failures=1)

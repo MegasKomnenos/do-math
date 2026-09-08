@@ -60,7 +60,7 @@
     },
     "authentication": "KUDOS bootstrap renewed21:13:22UTC through normal login; independent new Chrome and Firefox contexts verified visible logout. Protected renewal helper exists; no values logged.",
     "sciencedirect": "Chrome after renewed auth remained CPE; Firefox default normal homepage reproduced, but g05 institutional PII still CPE. Public Firefox article detail worked for Max-SAT abstract. Reopen affected CPE-only verdicts and follow per-document live evidence; do not claim institution lacks subscription.",
-    "g02_checkpoint": "46ae527:142 tests,63 startup file hashes per shard, actual2-record scope pilot and root partial1069records/errors0; collection incomplete.",
+    "g02_checkpoint": "e8cd7a0 preserves156-test copyright/reference/fixed-fixture snapshot; later shard1 WinError5 atomic replacement failure is being repaired at a new checkpoint.",
     "new_negative_counterexample": "Root directly read VER-2a20cc1ccaddd97f89693ecf: resolver no-electronic-resource was incorrectly marked restricted/unavailable. g02 was assigned actual regression, classification repair, URI inventory check and saved-evidence reassessment.",
     "selected_summary": "Root read MR0733454 full quoted synopsis in Review section; contract now permits database_selected_summary while preserving actual section, wording source, quotation boundary and unverified author-abstract status.",
     "g08_checkpoint": "106a866:56 specified files plus manifest,100 tests/logs, actual View PDF click/CPE boundary; source/result data collection continues.",
@@ -69,13 +69,14 @@
     "scopus": "Firefox actual KUDOS route loaded basic DOI selector and changing input. First g07 DOI returned1/1, detailed metadata and Full text > observed institution DOI link were read. Raw captures under operator; no production g07 result written.",
     "g02_scope_repair": "6 records had56,168 irrelevant discovered tasks.989 observed steps and391 lower-bound download attempts recorded; original SDK retry counts are not inferred. Existing correct document/chapter links retained; repaired live pages produced no unrelated expansion.",
     "csrf_audit": "Worker reported one tool-output exposure from2rawlink captures. Sensitive originals moved to protected g02 state; sanitized content-addressed copies and references updated. _csrf/Save chapter actual visits0; root campaign working files and7committed revisions had no matching token values. See operator-checks/csrf-audit.json.",
-    "g05_html": "Root independently validated0500a5b standalone publisher HTML offline:1309MathML,CHTML0,2embedded diagrams,HTTP attempts0; reference38 and title/math directly read. Earlier2bb97c stays reopened for missing original reference math.",
+    "g05_html": "0500a5b1309MathML/2figures/HTTP0 independently verified. Earlier2bb reference11 has a visible Unicode italic k; root offline check passed and the same original HTML is restored. No displayed loss was proven; root corrected that earlier report.",
     "g08_abstract_review": "Root reviewed5 reserved PDFs and source scope; Ajtai false negative and Benci/Kabanets mathematical damage repaired through source regions, adopted with actual render-hash regressions. Taylor/Cheeger scoped negatives retained.",
     "g05_root_seven_review": "Root reviewed5 existing source units and2 math cases. Secant34-page explicitly DOI-linked arXiv author version and original abstract region adopted. Prophet DB two-paragraph summary separated from Highlights; older31-page author version remains additional candidate. Gasarch2000 column PDF document unit reopened.",
     "micromechanics": "Root independently checked all723pages against observed components (one contents-space difference), actual title/copyright/final images; supports official book fulltext at worker checkpoint. See operator-checks/micromechanics-root-review.json.",
-    "g05_column_scope": "Actual ACM issue separates target1008648 from next reviews1008649/50/51; root verified and approved target publisher PDF unit with next-article spillover explicitly recorded."
+    "g05_column_scope": "Actual ACM issue separates target1008648 from next reviews1008649/50/51; root verified and approved target publisher PDF unit with next-article spillover explicitly recorded.",
+    "g05_checkpoint": "Final implementation28 code/tests +2 docs,100 tests,118 manifest hashes verified; exact100-test source differs from earlier70-document run as explicitly recorded."
   },
-  "recorded_checkpoint_commit": "46ae527",
+  "recorded_checkpoint_commit": "e8cd7a0",
   "pending_user_input": {
     "topic": "Elsevier organizational email",
     "question_sent": true,

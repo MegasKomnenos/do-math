@@ -1,0 +1,23 @@
+{
+  "source_path": "intake/kudos-recovery/g05/VER-2bb97c857e10d1adb8a73f9a/fulltext-offline-candidate-d6b2de741d426479.html",
+  "source_sha256": "d6b2de741d426479372800e0889df94580a8d44db482ed99fb94b6677296a422",
+  "http_request_attempts": 0,
+  "reference_text": "Frank A., Király T., Kriesell M.\nOn decomposing a hypergraph into 𝑘 connected sub-hypergraphs\nDiscrete Appl. Math., 131 (2) (2003), pp. 373-383\nView PDFView articleView in ScopusGoogle Scholar",
+  "math_dom": [
+    "<mjx-container class=\"MathJax CtxtMenu_Attached_0\" jax=\"CHTML\" overflow=\"linebreak\" style=\"font-size: 110.3%;\" tabindex=\"0\" ctxtmenu_counter=\"0\"><mjx-math data-semantic-structure=\"0\" class=\"NCM-N\"><mjx-mi is=\"true\" data-semantic-type=\"identifier\" data-semantic-role=\"latinletter\" data-semantic-font=\"italic\" data-semantic-annotation=\"clearspeak:simple;nemeth:number;depth:1\" data-semantic-id=\"0\" aria-level=\"0\" data-speech-node=\"true\"><mjx-c class=\"mjx-c1D458\">𝑘</mjx-c></mjx-mi></mjx-math></mjx-container>"
+  ],
+  "character_observations": [
+    {
+      "text": "𝑘",
+      "unicode": [
+        "1d458"
+      ],
+      "visible": true,
+      "rect": {
+        "width": 9.73333740234375,
+        "height": 18
+      }
+    }
+  ],
+  "screenshot": "intake/kudos-recovery/operator/g05-2bb-reference11-offline.png"
+}

@@ -1,0 +1,21 @@
+F
+======================================================================
+FAIL: test_found_original_is_preserved_during_abstract_source_visit (test_link_scope.LinkScopeTests.test_found_original_is_preserved_during_abstract_source_visit)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g05\test_link_scope.py", line 43, in test_found_original_is_preserved_during_abstract_source_visit
+    self.assertEqual(calls,[]);self.assertEqual(record['fulltext'],before)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['https://example.org/doi/pdf/10.1145/322217.322219'] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+'https://example.org/doi/pdf/10.1145/322217.322219'
+
+- ['https://example.org/doi/pdf/10.1145/322217.322219']
++ []
+
+----------------------------------------------------------------------
+Ran 1 test in 0.027s
+
+FAILED (failures=1)
