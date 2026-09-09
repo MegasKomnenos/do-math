@@ -162,6 +162,34 @@ async def main():
             fetched = await call("fetch", {"source": "drops", "target": "10.4230/LIPIcs.CSL.2020.5", "parts": ["metadata", "abstract", "fulltext"]})
             assert fetched["status"] == "ok", fetched.get("code")
             assert fetched["components"]["fulltext"]["artifact"]["pages"] == 2
+        elif args.source == "springer":
+            search = await call('search', {'source': 'springer', 'query': 'P versus NP', 'options': {'field': 'Title'}, 'limit': 2, 'export': 'bibtex'})
+            assert search['status'] == 'ok', search.get('export')
+            assert search['received'] == 2
+            for citation in search['export']['artifacts']:
+                extracted = await call('extract', {'ref': citation['ref'], 'count': 2})
+                assert extracted['returned'] == 1
+            fetched = await call('fetch', {'source': 'springer', 'target': '10.1007/s00037-008-0249-x', 'parts': ['metadata','abstract','fulltext','export']})
+            assert fetched['status'] == 'ok', {k:v.get('status') for k,v in fetched.get('components',{}).items()}
+            assert fetched['components']['fulltext']['artifact']['pages'] == 28
+            following = await call('search', {'source': 'springer', 'query': '"P versus NP"', 'start': 19, 'limit': 2, 'export': 'csv'})
+            assert following['status'] == 'ok', following.get('code')
+            assert following['received'] == 2
+        elif args.source == "wiley":
+            search = await call("search", {"source": "wiley", "query": "random graphs", "options": {"field": "Title"}, "start": 19, "limit": 2, "export": "bibtex"})
+            assert search["status"] == "ok", search.get("export")
+            assert search["received"] == 2
+            records = await call("extract", {"ref": search["records"]["ref"], "count": 2})
+            assert len({row["doi"] for row in records["items"]}) == 2
+            citations = await call("extract", {"ref": search["export"]["artifact"]["ref"], "count": 2})
+            assert citations["returned"] == 2
+            fetched = await call("fetch", {"source": "wiley", "target": "10.1002/rsa.21210", "parts": ["metadata", "abstract", "fulltext"]})
+            assert fetched["status"] == "ok", {k:v.get("status") for k,v in fetched.get("components", {}).items()}
+            assert fetched["components"]["fulltext"]["artifact"]["pages"] > 1
+            pdf_page = await call('extract', {'ref': fetched['components']['fulltext']['artifact']['ref'], 'count': 1})
+            assert 'Weakly saturated random graphs' in ' '.join(pdf_page['items'][0]['text'].split())
+            empty = await call("search", {"source": "wiley", "query": "zzzzscholarlyabsent998314", "options": {"field": "Title"}, "limit": 2})
+            assert empty["status"] == "not_found"
         else:
             query = 'ti:"P versus NP"' if args.source == "arxiv" else "P versus NP"
             options = {"Title": "P versus NP"} if args.source == "zbmath" else {}

@@ -26,6 +26,25 @@ class PublisherContract(unittest.TestCase):
         links = self.mod.primary_pdf_links(raw, "https://link.springer.com/article/current")
         self.assertEqual(links, ["https://link.springer.com/article/current.pdf"])
 
+    def test_wiley_native_listing_preserves_publication_identity_and_range(self):
+        raw = (ROOT / "tests/fixtures/wiley-search.html").read_text("utf-8")
+        rows, total = self.mod.wiley_records(raw, "https://onlinelibrary.wiley.com")
+        self.assertEqual(total, 684)
+        self.assertEqual(len(rows), 20)
+        self.assertEqual(rows[0]["title"], "Random Graphs")
+        self.assertEqual(rows[1]["title"], "RANDOM GRAPHS")
+        self.assertNotEqual(rows[0]["doi"], rows[1]["doi"])
+        self.assertTrue(all(row["doi"].startswith("10.") for row in rows))
+        empty = '<span class="result__current">0</span><div class="search-result__no-result">Your search did not return any results.</div>'
+        self.assertEqual(self.mod.wiley_records(empty, 'https://onlinelibrary.wiley.com'), ([], 0))
+
+    def test_springer_advanced_result_identifies_chapters_and_native_total(self):
+        raw = (ROOT / "tests/fixtures/springer-search.html").read_text("utf-8")
+        rows, total, first = self.mod.springer_records(raw, "https://link.springer.com")
+        self.assertEqual((total, first, len(rows)), (6, 0, 6))
+        self.assertEqual(rows[0]["doi"], "10.1007/978-3-642-39053-1_17")
+        self.assertEqual(rows[0]["title"], "A Personal View of the P versus NP Problem")
+
 
 if __name__ == "__main__":
     unittest.main()

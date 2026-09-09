@@ -81,7 +81,7 @@ SOURCES["scopus"].usage = {
     "search": "KUDOS → 학술DB → Scopus → Advanced document search. query는 고급검색식 그대로 제출한다. 예: TITLE(\"P versus NP\"), TITLE-ABS-KEY(\"natural proofs\") AND PUBYEAR > 2020. AND·OR·AND NOT, 괄호, 큰따옴표 구문, 중괄호 정확 구문, W/n·PRE/n 근접 연산자는 Scopus 문법을 따른다.",
     "fields": {"TITLE": "제목", "ABS": "초록", "KEY": "키워드", "TITLE-ABS-KEY": "제목·초록·키워드", "AUTHLASTNAME": "저자 성", "AFFIL": "소속", "PUBYEAR": "발행연도", "DOI": "DOI", "EID": "Scopus 문서 ID"},
     "options": "options는 비운다. start는 0부터, limit는 1..1000. 기본 UI 정렬을 사용하며 primary 문서의 totalCount와 페이지를 대조한다. preprint 별도 집계는 섞지 않는다.",
-    "exports": "json은 UI가 받은 전체 원 필드, csv는 같은 필드를 기계적으로 직렬화하며 중첩값은 JSON 셀이다. native RIS·BibTeX 내보내기는 기관 접속 외에 Scopus 계정 로그인을 요구해 restricted를 반환하고 검색 원자료를 함께 보존한다.",
+    "exports": "json은 UI가 받은 전체 원 필드, csv는 같은 필드를 기계적으로 직렬화하며 중첩값은 JSON 셀이다. native RIS·BibTeX는 별도 웹 계정을 요구하므로 사용자 지시에 따라 보류한다. 요청 시 export_deferred와 검색 원자료를 반환하며 계정 입력을 요청하지 않는다.",
     "fetch": "EID(2-s2.0-숫자) 또는 DOI로 색인의 서지·초록을 확보한다. 제목은 TITLE 후보 검색으로 돌려준다. 출판사 원문·인용 관계의 별도 조회는 이 구현의 확보 범위에 포함되지 않는다.",
     "examples": [{"tool": "search", "arguments": {"source": "scopus", "query": "TITLE(\"P versus NP\")", "limit": 2, "export": "csv"}}],
     "official": ["https://www.elsevier.com/products/scopus/search"],
@@ -307,14 +307,15 @@ SOURCES["afp"].usage = {
     "official": ["https://isa-afp.org/download/", "https://foss.heptapod.net/isa-afp/afp-devel", "https://docs.gitlab.com/api/repositories/", "https://docs.gitlab.com/api/repository_files/"],
 }
 
-SOURCES["unpaywall"].implementation = "partial"
+SOURCES["unpaywall"].implementation = "deferred"
+SOURCES["unpaywall"].capabilities = ("source_guide",)
 SOURCES["unpaywall"].usage = {
     "search": "query는 제목 검색식이다. 공백으로 나눈 단어는 기본 AND, 큰따옴표는 구문, OR는 선택, -는 제외다. 예: \"natural proofs\" OR \"circuit complexity\". 제목 이외 필드 검색을 제공하는 endpoint로 해석하지 않는다.",
     "options": {"is_oa": "true면 OA, false면 비OA, 생략·null이면 OA 여부로 제한하지 않음"},
     "fetch": "DOI 또는 DOI resolver 링크로 OA 상태·서지·모든 OA location 메타데이터를 받는다. 외부 원문 링크는 반환 자료에 보존하며 그 호스트를 자동 방문하지 않는다.",
     "exports": "json은 레코드, native는 원 DOI 응답 또는 검색 응답들의 JSON 참조다. 저자 초록이나 문헌 전문을 제공하는 서비스로 표시하지 않는다.",
     "limits": "start는 0부터, limit는 1..1000. 원 API의 50건 페이지를 사용한다. 전체 건수를 제공하지 않으면 total=null이다. 마지막 수신 페이지가 50건이면 다음 페이지 조회 전까지 끝 여부가 확정되지 않는다. 공식 호출 제한은 하루 100,000회다.",
-    "configuration": "키·가입은 필요 없지만 실제 연락용 이메일이 필요하다. 운영자가 .credentials/scholarly-mcp/contact.json의 email 필드에 설정한다. 호출 AI의 인자로 전달하지 않는다. 현재 실제 연락 이메일을 기다리고 있어 정상 API 흐름의 실서비스 검증이 남았다.",
+    "configuration": "연락 이메일을 요구하므로 사용자 지시에 따라 사용을 보류한다. 서버는 이 자료원에 네트워크 요청을 보내지 않고 source_deferred를 반환한다. 이메일이나 계정을 요청하지 않는다.",
     "examples": [{"tool": "search", "arguments": {"source": "unpaywall", "query": "\"natural proofs\"", "options": {"is_oa": True}, "limit": 2}}, {"tool": "fetch", "arguments": {"source": "unpaywall", "target": "10.1038/nature12373", "parts": ["metadata"]}}],
     "official": ["https://unpaywall.org/api"],
 }
@@ -366,6 +367,30 @@ for identifier, label in (("project-euclid", "Project Euclid"), ("cambridge", "C
         "limits": "인식하지 못한 초록 영역은 source_page, PDF가 아닌 응답은 오류로 구별한다. 단순 OG 페이지 제목만으로 논문 메타데이터 확보를 선언하지 않는다. 다른 출판사 링크를 자동 시도하지 않는다.",
     }
 
+SOURCES['wiley'].implementation = 'partial'
+SOURCES['wiley'].transport = 'playwright'
+SOURCES['wiley'].usage = {
+    'search': 'query를 선택 필드의 Wiley 고급검색식으로 제출한다. 큰따옴표 구문과 AND·OR·NOT·괄호는 자료원의 검색 문법을 따른다. 검색 결과의 문헌별 DOI와 페이지 범위를 보존한다.',
+    'fields': ['Anywhere', 'Title', 'Author', 'Keywords', 'Abstract', 'Author Affiliation', 'Funding Agency'],
+    'options': {'field': '기본 Anywhere, fields 중 하나', 'terms': '추가 고급검색 행 최대 두 개: [{field: Title, query: 검색식}]. 원 사이트의 행 결합을 사용한다.', 'publication': '저널·책·참고서 제목', 'after_year': '시작 연도 정수', 'after_month': '시작 월 1..12', 'before_year': '끝 연도 정수', 'before_month': '끝 월 1..12', 'sort': 'relevance(기본) 또는 date; 사이트의 Relevance/Date 제어'},
+    'exports': 'json·html은 실제 검색 결과다. bibtex·ris·plain·endnote·medlars는 선택 문헌의 native 인용문 다운로드다. BibTeX·RIS의 DOI를 선택 문헌과 대조한다. export.artifact.ref로 인용문 파일을 추출한다.',
+    'fetch': 'DOI 또는 Wiley 문헌 URL로 metadata·abstract·fulltext·export·supplementary를 요청한다. 제목은 Title 검색 후보를 반환하므로 정확한 DOI를 선택한다.',
+    'limits': 'KUDOS 기관 바로가기를 사용한다. start 0부터, limit 1..1000이며 원 페이지는 20건이다. 검색 결과와 export 실패는 각각 보존한다. 문헌별 이용 권한에 따라 전문이 제한될 수 있다.',
+    'examples': [{'tool': 'search', 'arguments': {'source': 'wiley', 'query': 'random graphs', 'options': {'field': 'Title'}, 'start': 19, 'limit': 2, 'export': 'bibtex'}}],
+    'official': ['https://onlinelibrary.wiley.com/search/advanced'],
+}
+
+SOURCES['springer'].capabilities = ('source_guide','search','fetch','export')
+SOURCES['springer'].usage = {
+    'search': 'query는 검색식이다. field=Anywhere(기본), Title, Author를 선택한다. 큰따옴표는 구문, AND·OR·NOT·괄호는 Springer 검색 문법을 따른다. 추가 제목·저자·저널·날짜 조건은 고급검색의 해당 필드로 제출한다.',
+    'options': {'field': 'Anywhere, Title, Author', 'title': '제목 조건', 'author': '저자 조건', 'journal': '저널 제목', 'date_from': '시작 연도', 'date_to': '끝 연도', 'content_type': 'Article, Chapter, Conference Paper, Research 등 사이트의 표시 값', 'open_access': 'true이면 공개 접근으로 한정', 'language': 'En 등 사이트 언어 코드', 'subject': '사이트 주제 값', 'discipline': '사이트 학문 분야 값', 'subdiscipline': '사이트 세부 분야 값', 'sort': 'relevance, newest, oldest'},
+    'exports': 'json·html은 원 결과를 보존한다. csv는 같은 레코드의 기계적 CSV다. 사이트 일괄 CSV 제어는 로그인 경로로 이동하며 사용하지 않는다. bibtex·ris·endnote는 각 선택 문헌의 native citation 다운로드이며 export.artifacts에 파일 참조를 반환한다.',
+    'fetch': 'DOI 또는 Springer 문헌 URL. metadata·abstract·fulltext·export·supplementary를 요청한다. export는 해당 문헌의 native BibTeX다. 제목은 검색 후보로 반환하므로 정확한 문헌을 선택한다.',
+    'limits': 'KUDOS 기관 바로가기를 사용한다. start 0부터, limit 1..1000, 원 페이지는 20건이다. 문헌별 전문 제공 여부는 기관 이용 범위에 따른다. 검색 snippet을 저자 초록으로 표시하지 않는다.',
+    'examples': [{'tool':'search','arguments':{'source':'springer','query':'P versus NP','options':{'field':'Title'},'limit':2,'export':'bibtex'}}],
+    'official':['https://link.springer.com/advanced-search'],
+}
+
 for identifier, level in {
     "mathscinet": "live_mcp_search_export_fetch_extract",
     "wos": "live_mcp_search_full_record_export_extract",
@@ -384,7 +409,7 @@ for identifier, level in {
     "acm-dl": "live_mcp_search_export_original_pdf_fetch",
     "scopus": "live_mcp_pagination_extract_metadata_abstract_fetch",
     "drops": "live_mcp_search_metadata_abstract_pdf_fetch",
-    "springer": "live_adapter_metadata_abstract_pdf_fetch",
+    "springer": "live_mcp_advanced_search_native_citations_pdf_fetch_pagination",
     "ieee-xplore": "live_mcp_search_bibtex_extract_metadata_abstract_pdf_fetch",
     "crossmark": "live_mcp_search_extract",
     "afp": "live_mcp_entry_search_pinned_metadata_and_proof_source_fetch_extract",
@@ -398,6 +423,7 @@ for identifier, level in {
     "cambridge": "live_adapter_metadata_only",
     "oxford": "live_adapter_metadata_pdf_fetch",
     "aip": "live_adapter_metadata_abstract_fetch",
+    "wiley": "live_mcp_advanced_search_native_bibtex_pdf_fetch_empty_repeat",
 }.items():
     SOURCES[identifier].verification = level
 

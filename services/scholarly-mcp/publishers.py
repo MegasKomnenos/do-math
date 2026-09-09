@@ -3,16 +3,18 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import json
+import csv
+import io
 import re
 import time
-from urllib.parse import quote, urljoin, urlsplit
+from urllib.parse import quote, urljoin, urlsplit, urlunsplit, unquote, urlencode, parse_qs
 
 import httpx
 from bs4 import BeautifulSoup
 
 from api_adapters import doi
-from browser_adapters import browser_download, clean_html, goto_source, require_source_url
-from scholarly import ServiceError, encoded
+from browser_adapters import browser_download, clean_html, goto_source, require_source_url, dismiss_cookies
+from scholarly import ServiceError, encoded, bibliography
 
 
 @dataclass(frozen=True)
@@ -29,19 +31,19 @@ class Profile:
 
     @property
     def download_hosts(self):
-        return self.hosts | set(self.file_domains)
+        return self.hosts | set(self.file_domains) | {host.replace('-', '--').replace('.', '-') + '.libproxy.knu.ac.kr' for host in self.file_domains}
 
 
 PROFILES = [
     Profile("ams", ("www.ams.org", "ams.org", "pubs.ams.org"), "AMS"),
-    Profile("cambridge", ("www.cambridge.org", "resolve.cambridge.org"), "CUP"),
+    Profile("cambridge", ("www.cambridge.org", "resolve.cambridge.org"), "CUP", '.col.sec.summary, section.abstract, .abstract'),
     Profile("de-gruyter", ("www.degruyter.com", "www.degruyterbrill.com"), "De Gruyter"),
     Profile("jstor", ("www.jstor.org", "jstor.org"), "JSTOR"),
     Profile("oxford", ("academic.oup.com", "www.oxfordacademic.com"), "OUP", file_domains=("watermark02.silverchair.com",)),
     Profile("science-direct", ("www.sciencedirect.com", "sciencedirect.com", "linkinghub.elsevier.com"), "ScienceDirect"),
-    Profile("springer", ("link.springer.com", "link.springernature.com", "www.nature.com"), "Springer eJournal"),
+    Profile("springer", ("link.springer.com", "link.springernature.com", "www.nature.com"), "Springer eJournal", file_domains=('citation-needed.springer.com',)),
     Profile("taylor-francis", ("www.tandfonline.com", "tandfonline.com"), "Taylor & Francis"),
-    Profile("wiley", ("onlinelibrary.wiley.com", "www.onlinelibrary.wiley.com"), "Wiley Online Library"),
+    Profile("wiley", ("onlinelibrary.wiley.com", "www.onlinelibrary.wiley.com"), "Wiley Online Library", '.article-section__abstract'),
     Profile("aip", ("pubs.aip.org", "aip.scitation.org"), "AIP"),
     Profile("aps", ("www.aps.org", "journals.aps.org", "link.aps.org", "physics.aps.org"), "APS"),
     Profile("iop", ("iopscience.iop.org",), "IOP"),
@@ -76,6 +78,52 @@ def primary_pdf_links(raw, base):
         if tag.get("href"):
             urls.append(urljoin(base, tag["href"]))
     return list(dict.fromkeys(urls))
+
+
+def wiley_records(raw, base):
+    soup = BeautifulSoup(raw, "html.parser")
+    count = soup.select_one('.result__count')
+    if count is None and soup.select_one('.search-result__no-result') and soup.select_one('.result__current') and soup.select_one('.result__current').get_text(strip=True) == '0':
+        return [], 0
+    if count is None or not re.fullmatch(r'[\d,\s]+', count.get_text()):
+        raise ServiceError('invalid_response', 'Wiley did not return a search result count')
+    rows = []
+    for item in soup.select('li.search__item'):
+        title = item.select_one('.meta__title a.publication_title')
+        if title is None:
+            raise ServiceError('invalid_response', 'Wiley result is missing its publication link')
+        url = urljoin(base, title['href'])
+        match = re.search(r'/doi/(?:abs/|full/|epdf/)?(10\..+)', unquote(urlsplit(url).path))
+        if not match:
+            raise ServiceError('invalid_response', 'Wiley publication link has no DOI')
+        rows.append({'id': match[1], 'doi': match[1], 'title': title.get_text(' ', strip=True), 'url': url,
+                     'authors': [a.get_text(' ', strip=True) for a in item.select('.publication_contrib_author')],
+                     'listing': item.get_text('\n', strip=True)})
+    return rows, int(re.sub(r'[,\s]', '', count.get_text()))
+
+
+def springer_records(raw, base):
+    soup = BeautifulSoup(raw, 'html.parser')
+    matches = re.findall(r'Showing\s+([\d,]+)[–-]([\d,]+)\s+of\s+([\d,]+)\s+results', soup.get_text(' ', strip=True))
+    if not matches:
+        if re.search(r'\b0 results\b|No results|No search results', soup.get_text(' ', strip=True), re.I):
+            return [], 0, 0
+        raise ServiceError('invalid_response', 'Springer returned no recognized result range')
+    first, last, total = [int(x.replace(',', '')) for x in matches[0]]
+    rows = []
+    for item in soup.select('li.app-card-open'):
+        anchor = item.select_one('h3 a')
+        if anchor is None:
+            raise ServiceError('invalid_response', 'Springer record has no publication title')
+        url = urljoin(base, anchor['href'])
+        identity = re.search(r'/(10\..+)$', unquote(urlsplit(url).path))
+        if not identity:
+            raise ServiceError('invalid_response', 'Springer publication link has no DOI')
+        rows.append({'doi': identity[1], 'id': identity[1], 'title': anchor.get_text(' ', strip=True),
+                     'url': url, 'listing': item.get_text('\n', strip=True)})
+    if len(rows) != last-first+1:
+        raise ServiceError('range_mismatch', 'Springer listing does not match its displayed result range')
+    return rows, total, first-1
 
 
 class Publisher:
@@ -123,12 +171,222 @@ class Publisher:
         return page
 
     def search(self, query, *, options, start=0, limit=20, cursor=None, export=None):
+        if self.source == 'wiley':
+            return self.wiley_search(query, options=options, start=start, limit=limit, cursor=cursor, export=export)
+        if self.source == 'springer':
+            return self.springer_search(query, options=options, start=start, limit=limit, cursor=cursor, export=export)
         raise ServiceError("publisher_search_not_implemented", "This document adapter currently accepts exact publisher links and DOIs; native advanced search/export remains in development", status="not_implemented", source=self.source)
+
+    def springer_citation(self, page, identifier, format='bibtex'):
+        labels = {'bibtex': ('.BIB', 'application/x-bibtex'), 'ris': ('.RIS', 'application/x-research-info-systems'), 'endnote': ('.ENW', 'text/plain')}
+        label, media = labels[format]
+        control = page.locator('a[href*="/v2/references/"][href*="flavour=citation"]')
+        control.first.wait_for(state='attached', timeout=30000)
+        link = urljoin(page.url, control.first.get_attribute('href'))
+        location = urlsplit(link)
+        if unquote(location.path).lower() != '/v2/references/' + identifier.lower():
+            raise ServiceError('identity_mismatch', 'Springer citation control identifies another publication')
+        params = parse_qs(location.query)
+        params['format'] = [{'bibtex':'bibtex','ris':'refman','endnote':'endnote'}[format]]
+        link = urlunsplit((location.scheme,location.netloc,location.path,urlencode(params,doseq=True),''))
+        data, _, actual = browser_download(self.gateway.context, link, self.profile.download_hosts)
+        if format in ('bibtex', 'ris'):
+            parsed = bibliography(data, media)
+            observed = [row.get('doi') or row.get('fields', {}).get('do', [None])[0] or row.get('id') for row in parsed]
+            if len(observed) != 1 or doi(str(observed[0])).lower() != identifier.lower():
+                raise ServiceError('identity_mismatch', 'Springer citation does not identify the requested publication')
+        elif not data.strip() or data.lstrip().startswith(b'<'):
+            raise ServiceError('unexpected_content', 'Springer returned no citation text')
+        return self.store.put(data, media, self.source, actual, role='native_citation', doi=identifier, format=format)
+
+    def springer_search(self, query, *, options, start, limit, cursor, export):
+        if type(start) is not int or start < 0 or type(limit) is not int or not 1 <= limit <= 1000:
+            raise ServiceError('invalid_range', 'Use start >= 0 and limit 1..1000')
+        allowed = {'field', 'title', 'author', 'journal', 'date_from', 'date_to', 'content_type', 'open_access', 'language', 'subject', 'discipline', 'subdiscipline', 'sort'}
+        if cursor or set(options)-allowed or options.get('field', 'Anywhere') not in ('Anywhere', 'Title', 'Author'):
+            raise ServiceError('invalid_options', 'Use the documented Springer advanced-search fields and filters')
+        if export not in (None, 'json', 'html', 'csv', 'bibtex', 'ris', 'endnote'):
+            raise ServiceError('invalid_export', 'Use json, html, csv, bibtex, ris or endnote')
+        params = { {'Anywhere': 'query', 'Title': 'title', 'Author': 'contributor'}[options.get('field', 'Anywhere')]: query }
+        mapping = {'title': 'title', 'author': 'contributor', 'journal': 'journal', 'date_from': 'dateFrom', 'date_to': 'dateTo',
+                   'content_type': 'content-type', 'language': 'language', 'subject': 'taxonomy', 'discipline': 'facet-discipline', 'subdiscipline': 'facet-sub-discipline'}
+        for key, native in mapping.items():
+            if key in options:
+                if native in params:
+                    raise ServiceError('invalid_options', 'A query field cannot also be supplied as a separate filter')
+                params[native] = options[key]
+        if 'date_from' in options or 'date_to' in options:
+            params['date'] = 'custom'
+        if 'open_access' in options:
+            if type(options['open_access']) is not bool:
+                raise ServiceError('invalid_options', 'open_access requires a boolean')
+            if options['open_access']:
+                params['openAccess'] = 'true'
+        sorts = {'relevance': 'relevance', 'newest': 'newestFirst', 'oldest': 'oldestFirst'}
+        if options.get('sort', 'relevance') not in sorts:
+            raise ServiceError('invalid_options', 'Use sort relevance, newest or oldest')
+        params['sortBy'] = sorts[options.get('sort', 'relevance')]
+        page = self.gateway.open(self.source, self.profile.gateway_label, self.profile.hosts, 'body')
+        base = 'https://' + urlsplit(page.url).hostname
+        rows, evidence, total = [], [], None
+        for number in range(start//20+1, (start+limit-1)//20+2):
+            params['page'] = number
+            goto_source(page, base+'/search?'+urlencode(params, doseq=True), self.profile.hosts, wait_until='domcontentloaded', timeout=45000)
+            page.wait_for_function("() => /Showing\\s+[\\d,]+[–-][\\d,]+\\s+of\\s+[\\d,]+\\s+results|0 results|No results|No search results/i.test(document.body.innerText)", timeout=30000)
+            raw = clean_html(page.content(), self.store.sanitizer)
+            native, found, first = springer_records(raw, base)
+            if found and first != (number-1)*20 or total is not None and total != found:
+                raise ServiceError('range_mismatch', 'Springer returned a changed or different result range')
+            total = found
+            evidence.append(self.store.put(raw, 'text/html', self.source, page.url, role='search_page', query=query, options=options, page=number))
+            rows.extend(row for i,row in enumerate(native, first) if start <= i < start+limit)
+            if number*20 >= total:
+                break
+        artifact = self.store.put(encoded(rows), 'application/json', self.source, page.url, role='records', query=query, options=options, start=start, requested=limit, total=total)
+        exported, failures = artifact, []
+        if export == 'html':
+            exported = {'artifacts': evidence}
+        elif export == 'csv':
+            stream = io.StringIO(newline='')
+            writer = csv.DictWriter(stream, fieldnames=['doi','id','title','url','listing'])
+            writer.writeheader()
+            writer.writerows(rows)
+            exported = self.store.put(stream.getvalue(), 'text/csv', self.source, page.url, role='mechanical_export', parent_ref=artifact['ref'])
+        elif export in ('bibtex','ris','endnote'):
+            citations = []
+            for row in rows:
+                document = self.gateway.context.new_page()
+                try:
+                    goto_source(document, row['url'], self.profile.hosts, wait_until='domcontentloaded', timeout=45000)
+                    citations.append(self.springer_citation(document, row['doi'], export))
+                except ServiceError as error:
+                    failures.append({'doi': row['doi'], **error.result})
+                except Exception as error:
+                    failures.append({'doi': row['doi'], 'status': 'error', 'code': 'citation_export_failed', 'error_type': type(error).__name__})
+                finally:
+                    document.close()
+            exported = {'status': 'partial' if failures else 'available', 'artifacts': citations, 'failures': failures}
+        more = start+len(rows)<total
+        return {'status': 'partial' if failures else 'ok' if rows else 'not_found', 'source': self.source, 'query': query,
+                'start': start, 'requested': limit, 'received': len(rows), 'total': total, 'has_more': more,
+                'next': {'start': start+len(rows)} if more else None, 'records': artifact, 'export': exported, 'evidence': evidence,
+                'preview': [{k:r[k] for k in ('doi','title')} for r in rows[:3]]}
+
+    def wiley_search(self, query, *, options, start, limit, cursor, export):
+        fields = {'Anywhere': 'AllField', 'Title': 'Title', 'Author': 'Contrib', 'Keywords': 'Keyword',
+                  'Abstract': 'Abstract', 'Author Affiliation': 'Affiliation', 'Funding Agency': 'FundingAgency'}
+        formats = {'bibtex': ('BibTex', 'application/x-bibtex'), 'ris': ('RIS', 'application/x-research-info-systems'),
+                   'plain': ('txt', 'text/plain'), 'endnote': ('EndNote', 'text/plain'), 'medlars': ('Medlars', 'text/plain')}
+        if type(start) is not int or start < 0 or type(limit) is not int or not 1 <= limit <= 1000:
+            raise ServiceError('invalid_range', 'Use start >= 0 and limit 1..1000')
+        allowed = {'field', 'terms', 'publication', 'after_year', 'after_month', 'before_year', 'before_month', 'sort'}
+        if cursor or set(options) - allowed or options.get('field', 'Anywhere') not in fields:
+            raise ServiceError('invalid_options', 'Use the documented Wiley fields, date/publication filters and start/limit')
+        if export not in (None, 'json', 'html', *formats):
+            raise ServiceError('invalid_export', 'Use json, html, bibtex, ris, plain, endnote or medlars')
+        params = {'field1': fields[options.get('field', 'Anywhere')], 'text1': query, 'Ppub': '', 'pageSize': 20}
+        terms = options.get('terms', [])
+        if not isinstance(terms, list) or len(terms) > 2:
+            raise ServiceError('invalid_options', 'Wiley supports at most two additional advanced-search rows')
+        for i, term in enumerate(terms, 2):
+            if not isinstance(term, dict) or set(term) != {'field', 'query'} or term['field'] not in fields or not isinstance(term['query'], str):
+                raise ServiceError('invalid_options', 'Each additional row requires a documented field and query')
+            params.update({f'field{i}': fields[term['field']], f'text{i}': term['query']})
+        if options.get('publication'):
+            params['publication'] = options['publication']
+        for key, native in [('after_year', 'AfterYear'), ('before_year', 'BeforeYear'), ('after_month', 'AfterMonth'), ('before_month', 'BeforeMonth')]:
+            if key in options:
+                value = options[key]
+                if type(value) is not int or not (1 <= value <= (12 if 'month' in key else 9999)):
+                    raise ServiceError('invalid_options', 'Year and month filters require valid integers')
+                params[native] = value
+        sort = options.get('sort', 'relevance')
+        if sort == 'date':
+            params['sortBy'] = 'Earliest'
+        elif sort != 'relevance':
+            raise ServiceError('invalid_options', 'Use sort relevance or date, as labeled by Wiley')
+        page = self.gateway.open(self.source, self.profile.gateway_label, self.profile.hosts, '#searchField1')
+        base = 'https://' + urlsplit(page.url).hostname
+        rows, evidence, citations, failures, total = [], [], [], [], None
+        for number in range(start // 20, (start + limit - 1) // 20 + 1):
+            params['startPage'] = number
+            goto_source(page, base + '/action/doSearch?' + urlencode(params), self.profile.hosts, wait_until='domcontentloaded', timeout=45000)
+            page.locator('.result__count, .search-result__no-result').first.wait_for(timeout=30000)
+            dismiss_cookies(page)
+            actual = parse_qs(urlsplit(page.url).query)
+            if actual.get('text1') != [query] or actual.get('field1') != [params['field1']] or actual.get('startPage') != [str(number)]:
+                raise ServiceError('query_mismatch', 'Wiley returned a different search or page')
+            raw = clean_html(page.content(), self.store.sanitizer)
+            native, found = wiley_records(raw, base)
+            if total is not None and total != found:
+                raise ServiceError('range_changed', 'Wiley result count changed during pagination')
+            total = found
+            if len(native) != min(20, max(0, total-number*20)):
+                raise ServiceError('range_mismatch', 'Wiley result count does not match the requested page')
+            evidence.append(self.store.put(raw, 'text/html', self.source, page.url, role='search_page', query=query, options=options, page=number))
+            selected = [(i, row) for i, row in enumerate(native) if start <= number*20+i < start+limit]
+            rows.extend(row for _, row in selected)
+            if export in formats and selected:
+                try:
+                    page.get_by_role('link', name='Export Citation(s)', exact=True).click()
+                    boxes = page.locator('input[name=bulkDownload]')
+                    boxes.first.wait_for(state='attached')
+                    for i, row in selected:
+                        box = boxes.nth(i)
+                        if box.input_value().lower() != row['doi'].lower():
+                            raise ServiceError('identity_mismatch', 'Citation selection does not match the search record')
+                        if not box.is_checked():
+                            box.focus()
+                            box.press('Space')
+                    page.get_by_role('button', name='Next', exact=True).click()
+                    format_name, media = formats[export]
+                    radio = page.locator('#radio-format-' + format_name)
+                    radio.focus()
+                    radio.press('Space')
+                    with page.expect_download(timeout=30000) as pending:
+                        page.get_by_role('button', name='Export', exact=True).click()
+                    download = pending.value
+                    from pathlib import Path
+                    data = Path(download.path()).read_bytes()
+                    download.delete()
+                    if export in ('bibtex', 'ris'):
+                        parsed = bibliography(data, media)
+                        observed = [r.get('doi') or r.get('fields', {}).get('do', [None])[0] for r in parsed]
+                        if sorted(doi(str(x)).lower() for x in observed) != sorted(r['doi'].lower() for _, r in selected):
+                            raise ServiceError('identity_mismatch', 'Native citations do not match the selected DOIs')
+                    elif not data.strip() or data.lstrip().startswith(b'<'):
+                        raise ServiceError('unexpected_content', 'Wiley returned no citation text')
+                    citations.append(data)
+                    page.get_by_role('button', name='Close modal', exact=True).click()
+                except ServiceError as error:
+                    failures.append(error.result)
+                except Exception as error:
+                    failures.append({'status': 'error', 'code': 'citation_export_failed', 'error_type': type(error).__name__})
+            if (number+1)*20 >= total:
+                break
+        records = self.store.put(encoded(rows), 'application/json', self.source, page.url, role='records', query=query, options=options, start=start, requested=limit, total=total)
+        exported = records
+        if export == 'html':
+            exported = {'artifacts': evidence}
+        elif export in formats:
+            exported = {'status': 'partial' if failures else 'available', 'failures': failures}
+            if citations:
+                exported['artifact'] = self.store.put(b'\n\n'.join(citations), formats[export][1], self.source, page.url, role='native_citations', parent_ref=records['ref'])
+        more = start+len(rows) < total
+        return {'status': 'partial' if failures else 'ok' if rows else 'not_found', 'source': self.source,
+                'query': query, 'options': options, 'start': start, 'requested': limit, 'received': len(rows), 'total': total,
+                'has_more': more, 'next': {'start': start+len(rows)} if more else None,
+                'records': records, 'export': exported, 'evidence': evidence,
+                'preview': [{k:r[k] for k in ('doi','title')} for r in rows[:3]]}
 
     def fetch(self, target, *, parts):
         unknown = set(parts) - {"metadata", "abstract", "fulltext", "supplementary", "export"}
         if unknown:
             raise ServiceError("invalid_parts", "Unknown requested content", parts=sorted(unknown))
+        if not target.startswith(('http://', 'https://', '10.', 'doi:')):
+            candidates = self.search(target, options={'field': 'Title'}, limit=20)
+            return {**candidates, 'status': 'selection_required' if candidates.get('received') else candidates['status'],
+                    'message': 'Select the exact publication DOI or URL from the preserved candidates'}
         url, identifier = self.resolve_target(target)
         page = self.document(url)
         try:
@@ -153,7 +411,12 @@ class Publisher:
             artifact = self.store.put(encoded([record]), "application/json", self.source, page.url, role="records", evidence_ref=source_page["ref"])
             components = {}
             for part in parts:
-                if part in ("metadata", "export"):
+                if part == 'export' and self.source == 'springer':
+                    try:
+                        components[part] = {'status': 'available', 'artifact': self.springer_citation(page, identifier or observed_dois[0]), 'format': 'bibtex'}
+                    except ServiceError as error:
+                        components[part] = error.result
+                elif part in ("metadata", "export"):
                     components[part] = {"status": "available", "artifact": artifact, "format": "source_metadata_json"}
                 elif part == "abstract":
                     nodes = page.locator(self.profile.abstract_selector).filter(visible=True)
@@ -173,6 +436,20 @@ class Publisher:
                         origin = urlsplit(page.url)
                         headers = {"User-Agent": page.evaluate("navigator.userAgent"), "Referer": origin.scheme + "://" + origin.netloc + "/"}
                         data, media, obtained = browser_download(self.gateway.context, links[0], self.profile.download_hosts, headers=headers)
+                        if not data.startswith(b"%PDF-") and self.source == 'wiley':
+                            viewer = self.gateway.context.new_page()
+                            try:
+                                goto_source(viewer, links[0], self.profile.hosts, wait_until='domcontentloaded', timeout=45000)
+                                ready = viewer.wait_for_function("() => { const src = document.querySelector('#pdf-iframe')?.getAttribute('src'); return src && new URL(src, location.href).searchParams.get('file') ? src : false; }", timeout=30000)
+                                iframe = urljoin(viewer.url, ready.json_value())
+                                require_source_url(iframe, self.profile.hosts)
+                                candidates = parse_qs(urlsplit(iframe).query).get('file', [])
+                                if len(candidates) != 1:
+                                    raise ServiceError('invalid_response', 'Wiley PDF viewer has no unique document file')
+                                actual = urljoin(viewer.url, candidates[0])
+                                data, media, obtained = browser_download(self.gateway.context, actual, self.profile.download_hosts, headers=headers)
+                            finally:
+                                viewer.close()
                         if not data.startswith(b"%PDF-"):
                             raise ServiceError("unexpected_content", "Publisher document control returned non-PDF content")
                         import pymupdf

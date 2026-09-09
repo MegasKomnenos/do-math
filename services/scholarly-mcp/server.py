@@ -24,7 +24,6 @@ from scopus import Scopus
 from pqdt import PQDT
 from ieee import IEEE
 from afp import AFP
-from unpaywall import Unpaywall
 from toc import TheoryOfComputing
 from eudml import EuDML
 from aps import APS
@@ -75,6 +74,8 @@ def describe_source(source: str) -> ToolResult:
 
 def operation(source, name, *args, **kwargs):
     info = source_info(source)
+    if info.implementation == "deferred":
+        raise ServiceError("source_deferred", "This source is deferred by the user's access requirements", status="unsupported", source=source)
     if source not in ADAPTERS:
         raise ServiceError("adapter_not_implemented", "This source adapter is still being implemented", status="not_implemented", source=source, transport=info.transport)
     return getattr(ADAPTERS[source], name)(*args, **kwargs)
@@ -123,7 +124,6 @@ def main():
     ADAPTERS["afp"] = AFP(STORE)
     ADAPTERS["eudml"] = EuDML(STORE)
     ADAPTERS["aps"] = APS(STORE)
-    ADAPTERS["unpaywall"] = Unpaywall(STORE, contact_file=ROOT.parents[1] / ".credentials/scholarly-mcp/contact.json")
     gateway = KudosGateway(ROOT.parents[1] / ".credentials", STORE.sanitizer)
     firefox_gateway = KudosGateway(ROOT.parents[1] / ".credentials", STORE.sanitizer, engine="firefox")
     ADAPTERS["mathscinet"] = MathSciNet(STORE, gateway)
@@ -136,7 +136,7 @@ def main():
     ADAPTERS["pqdt"] = PQDT(STORE, firefox_gateway)
     ADAPTERS["ieee-xplore"] = IEEE(STORE, firefox_gateway)
     ADAPTERS["springer"] = Publisher(STORE, firefox_gateway, next(p for p in PROFILES if p.source == "springer"))
-    for identifier in ("project-euclid", "cambridge", "oxford", "aip"):
+    for identifier in ("project-euclid", "cambridge", "oxford", "aip", "wiley"):
         ADAPTERS[identifier] = Publisher(STORE, firefox_gateway, next(p for p in PROFILES if p.source == identifier))
     ADAPTERS["aps-institutional"] = Publisher(STORE, firefox_gateway, replace(next(p for p in PROFILES if p.source == "aps"), source="aps-institutional"))
     try:

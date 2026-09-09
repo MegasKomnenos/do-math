@@ -1,4 +1,4 @@
-전체 구현은 부분 완료다. 아래 표는 현재 등록된 자료원과 구현 상태를 대응시킨다. `partial`은 일부 기능 구현, `pending`은 미연결 또는 미구현이다. 자료원별 정확한 입력·제약은 `describe_source`가 제공한다. 실측 범위와 증거는 [검증 기록](VALIDATION.md)에 있다.
+전체 구현은 부분 완료다. `partial`은 일부 기능 구현, `pending`은 미연결 또는 미구현, `deferred`는 사용자 지시에 따른 사용 보류다. 자료원별 입력·제약은 `describe_source`, 실제 검증 범위는 [검증 기록](VALIDATION.md)을 따른다.
 
 | 자료원 | source | 경로 | 구현 | 기능 | 실측 표지 |
 |---|---|---|---|---|---|
@@ -19,7 +19,7 @@
 | OpenAlex | openalex | api | partial | source_guide, search, fetch, export | public_endpoint_search_observed |
 | Semantic Scholar | semantic-scholar | api | partial | source_guide, search, fetch, export | rate_limit_observed |
 | OpenCitations | opencitations | api | partial | source_guide, search, fetch, export | not_recorded |
-| Unpaywall | unpaywall | api | partial | source_guide, search, fetch, export | public_endpoint_contact_requirement_observed |
+| Unpaywall | unpaywall | api | deferred | source_guide | public_endpoint_contact_requirement_observed |
 | CORE | core | api | partial | source_guide, search, fetch, export | public_endpoint_success_and_rate_limit_observed |
 | Project Euclid | project-euclid | playwright | partial | source_guide, fetch, export | live_adapter_metadata_abstract_pdf_fetch |
 | EuDML | eudml | api | partial | source_guide, search, fetch, export | live_mcp_cql_rss_extract_nlm_fetch |
@@ -36,9 +36,9 @@
 | JSTOR | jstor | under_investigation | pending | 미구현 | not_recorded |
 | Oxford University Press | oxford | playwright | partial | source_guide, fetch, export | live_adapter_metadata_pdf_fetch |
 | ScienceDirect | science-direct | playwright | pending | 미구현 | not_recorded |
-| Springer Nature | springer | playwright | partial | source_guide, fetch, export | live_adapter_metadata_abstract_pdf_fetch |
+| Springer Nature | springer | playwright | partial | source_guide, search, fetch, export | live_mcp_advanced_search_native_citations_pdf_fetch_pagination |
 | Taylor & Francis | taylor-francis | under_investigation | pending | 미구현 | not_recorded |
-| Wiley | wiley | under_investigation | pending | 미구현 | not_recorded |
+| Wiley | wiley | playwright | partial | source_guide, search, fetch, export | live_mcp_advanced_search_native_bibtex_pdf_fetch_empty_repeat |
 | AIP | aip | playwright | partial | source_guide, fetch, export | live_adapter_metadata_abstract_fetch |
 | APS 공개 접근 | aps | api | partial | source_guide, search, fetch, export | live_mcp_open_access_feed_metadata_abstract_pdf_fetch |
 | IOP | iop | under_investigation | pending | 미구현 | not_recorded |
@@ -50,4 +50,4 @@
 | 일반 웹 후보 발견 | general-web | target_dependent | pending | 미구현 | not_recorded |
 | APS 기관 구독 접근 | aps-institutional | playwright | partial | source_guide, fetch, export | live_adapter_metadata_and_fulltext_restriction |
 
-개별 구독·학회 저널·저자 또는 기관 공개본·일반 웹은 아직 구체 서비스가 정해지지 않은 범주다. 이 표에 남겨 범위를 누락하지 않았으며 임의의 웹사이트를 지원하는 어댑터가 완료됐다는 뜻은 아니다.
+개별 구독·학회 저널·저자 또는 기관 공개본·일반 웹은 구체 서비스가 정해지지 않은 범주다. 범위를 누락하지 않도록 목록에 유지한다. Unpaywall과 Scopus의 별도 웹 계정 내보내기는 보류하며 해당 자격 정보를 요청하지 않는다.

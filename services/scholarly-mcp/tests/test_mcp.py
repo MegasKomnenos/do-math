@@ -47,6 +47,12 @@ class MCPContract(unittest.IsolatedAsyncioTestCase):
                 description = (await session.call_tool("describe_source", {"source": "mathscinet"})).structuredContent
                 self.assertIn("search", description["usage"])
                 self.assertIn("examples", description["usage"])
+                deferred = (await session.call_tool("fetch", {"source": "unpaywall", "target": "10.1038/nature12373"})).structuredContent
+                self.assertEqual(deferred["code"], "source_deferred")
+                self.assertEqual(deferred["status"], "unsupported")
+                guide = (await session.call_tool("describe_source", {"source": "unpaywall"})).structuredContent
+                self.assertEqual(guide["implementation"], "deferred")
+                self.assertEqual(guide["capabilities"], ["source_guide"])
 
 
 if __name__ == "__main__":

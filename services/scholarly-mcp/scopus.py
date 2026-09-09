@@ -91,8 +91,8 @@ class Scopus:
             exported = self.store.put(stream.getvalue(), "text/csv", self.source, page.url,
                 role="mechanical_export", format="csv", parent_ref=artifact["ref"])
         if export in ("ris", "bibtex"):
-            exported = {"status": "restricted", "code": "scopus_account_required",
-                "reason": "The native Export control requires a Scopus account in addition to institutional access; JSON records remain available"}
+            exported = {"status": "unsupported", "code": "export_deferred",
+                "reason": "Native export requires a separate web account and is deferred by user instruction; JSON records remain available"}
         more = start + len(rows) < total
         return {"status": "partial" if export in ("ris", "bibtex") else "ok" if rows else "not_found", "source": self.source,
             "query": query, "start": start, "requested": limit, "received": len(rows), "total": total,

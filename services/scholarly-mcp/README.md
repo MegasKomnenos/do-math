@@ -52,7 +52,7 @@ Chromium 어댑터는 호스트에 설치된 Chrome을 사용한다. 자료원�
 
 현재 실서비스 근거는 로컬 `data/validation/`과 [검증 기록](VALIDATION.md)에 있다. MathSciNet·Web of Science·ECCC·ACM·Scopus·IEEE·PQDT·DROPS·AFP의 구현 범위에 대해 실제 MCP 흐름을 수행했다. Crossref·Crossmark·arXiv·zbMATH는 MCP 검색·추출을 수행했다. GitHub의 고정 커밋 파일, Numdam의 JATS·PDF, Software Heritage의 origin 조회·cursor 순회, Springer의 서지·초록·PDF는 어댑터 직접 호출로 확인했다. 각 기록은 해당 시점·입력·호스트의 관측이며 모든 옵션의 검증으로 확대하지 않는다.
 
-Scopus의 native 내보내기는 기관 접속에 더해 Scopus 웹 계정 로그인을 요구했다. 검색 결과와 원 JSON·기계적 CSV는 사용할 수 있고, native RIS·BibTeX 요청에는 제한과 보존 결과를 함께 반환한다. PQDT는 docview 번호와 학위논문 publication number를 구별하며 실제 RIS의 AN 필드로 대조한다. IEEE는 Command Search와 초록을 포함한 native 인용문 내보내기를 사용한다.
+Scopus의 native 내보내기는 별도 웹 계정을 요구하므로 사용자 지시에 따라 보류한다. 검색 결과와 원 JSON·기계적 CSV는 사용할 수 있고, native RIS·BibTeX 요청에는 `export_deferred`와 보존 결과를 함께 반환한다. PQDT는 docview 번호와 학위논문 publication number를 구별하며 실제 RIS의 AN 필드로 대조한다. IEEE는 Command Search와 초록을 포함한 native 인용문 내보내기를 사용한다.
 
 AFP는 공식 Heptapod의 별도 인증 없는 API를 사용한다. 기본 대상은 개발 저장소 `afp-devel`이며, 조회한 Mercurial 커밋을 파일 요청에 고정한다. 항목 검색 결과의 `target`을 fetch에 전달하면 같은 커밋의 항목 메타데이터와 증명 소스를 회수한다. `fulltext`는 이 자료원에서 Isabelle 소스 묶음을 뜻하며, 증명 실행이나 수학적 타당성 판정은 수행하지 않는다.
 
@@ -68,4 +68,6 @@ EuDML은 CQL/OpenSearch와 NLM 메타데이터 API를 사용한다. 참고문헌
 
 `aps`는 별도 자격 없는 공개 Harvest API의 OA 자료 범위다. `aps-institutional`은 KUDOS를 거치는 기관 구독 접근으로 별도 등록했다. 호출자가 자료원을 선택하며 한 호출 안에서 접근 경로를 바꾸지 않는다. 기관 경로의 키워드 검색은 개발 중이다. Cambridge·Oxford·AIP·Project Euclid도 현재 문헌 조회 어댑터로 연결했고 고급검색과 일부 내보내기 형식의 개발이 남았다.
 
-Unpaywall에는 별도 키나 가입이 필요하지 않지만 실제 연락 이메일이 필요하다. 운영자가 `.credentials/scholarly-mcp/contact.json`의 `email` 필드에 설정하며 도구 인자로 전달하지 않는다. 현재 값이 없어 정상 API 호출 검증은 남아 있다. API의 외부 OA 링크는 메타데이터로 반환하고 그 원문 사이트를 자동 조회하지 않는다.
+연락 이메일을 요구하는 Unpaywall은 사용자 지시에 따라 사용을 보류한다. `describe_source`에는 보류 상태를 표시하며, 검색·확보 호출은 네트워크 요청 없이 `source_deferred`를 반환한다. 별도 웹 계정이나 연락 이메일은 요청하지 않는다.
+
+Springer는 제목·저자·저널·날짜의 고급검색, 검색 결과 페이지 조회와 문헌별 BibTeX·RIS·EndNote 인용문을 제공한다. `export=csv`는 검색 레코드의 기계적 CSV다. 사이트의 일괄 CSV 다운로드가 이동하는 로그인 경로는 사용하지 않는다. Wiley는 원 고급검색 필드와 날짜·발행물 조건, 선택 문헌의 native citation 다운로드를 제공한다. 인용문 파일은 `export.artifact` 또는 `export.artifacts`에 있으며 해당 자료원 설명의 예제를 따른다.
