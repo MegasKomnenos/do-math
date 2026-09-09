@@ -1,0 +1,56 @@
+{
+  "elapsed_seconds": 23.42440891265869,
+  "metrics": {
+    "searches": 3,
+    "source_visits": 1,
+    "download_attempts": 1,
+    "saved_evidence_reused": 2
+  },
+  "check": {
+    "passed": true,
+    "complete": false,
+    "group_id": "g12",
+    "assigned": 1,
+    "processed": 1,
+    "missing": 0,
+    "counts": {
+      "abstract:unresolved": 1,
+      "fulltext:found": 1,
+      "identity:confirmed": 1
+    },
+    "errors": [],
+    "papers_with_remaining_work": 1,
+    "work_remaining": [
+      {
+        "paper_id": "VER-c654aca561b693097c66a740",
+        "tasks": [
+          {
+            "key": "direct_review",
+            "kind": "review",
+            "reason": "Inspect complete source scope and PDF before completion."
+          },
+          {
+            "key": "review:identity",
+            "kind": "review",
+            "reason": "Review the current component and identity; previous conclusion is absent or stale."
+          },
+          {
+            "key": "abstract",
+            "kind": "source",
+            "reason": "abstract is unresolved."
+          },
+          {
+            "key": "review:abstract",
+            "kind": "review",
+            "reason": "Review the current component and identity; previous conclusion is absent or stale."
+          },
+          {
+            "key": "review:fulltext",
+            "kind": "review",
+            "reason": "Review the current component and identity; previous conclusion is absent or stale."
+          }
+        ]
+      }
+    ]
+  }
+}

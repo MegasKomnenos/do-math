@@ -1,0 +1,26 @@
+{
+  "elapsed_seconds": 0.04899168014526367,
+  "metrics": {
+    "searches": 0,
+    "source_visits": 0,
+    "download_attempts": 0,
+    "saved_evidence_reused": 20,
+    "browser_replayed": false
+  },
+  "check": {
+    "passed": true,
+    "complete": true,
+    "group_id": "g12",
+    "assigned": 1,
+    "processed": 1,
+    "missing": 0,
+    "counts": {
+      "abstract:not_found": 1,
+      "fulltext:found": 1,
+      "identity:confirmed": 1
+    },
+    "errors": [],
+    "papers_with_remaining_work": 0,
+    "work_remaining": []
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "private_original_count": 1,
+  "nested_tokens_identified_without_output": 1,
+  "scanned_public_files": 57,
+  "exact_token_and_urlencoded_matches": [],
+  "credential_and_cookie_matches": [],
+  "limitation": "Earlier tool output is not removed. The res_dat token authentication role remains unestablished; this scan checks stored public files only.",
+  "parser_note": "bx_open_url is a query-string value, so its outer query parameters are parsed directly; nested res_dat token was positively identified before comparison."
+}

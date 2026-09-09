@@ -1,0 +1,47 @@
+{
+  "schema": "g12-sensitive-output-audit/1",
+  "incident": "Initial diagnostic printed Summon documents including a nested res_dat token; earlier tool output cannot be deleted by this operation.",
+  "private_original_count": 1,
+  "observable_use": "bx_open_url field is an OpenURL bibliographic query; res_dat contains nested token. Whether that value grants login authority is not established.",
+  "endpoint_host": "knu.summon.serialssolutions.com",
+  "endpoint_path": "/api/search",
+  "observed_parameter_structure": [
+    {
+      "field": "bx_open_url",
+      "outer_parameter_keys": [
+        "ctx_enc",
+        "ctx_ver",
+        "paramdict",
+        "res_dat",
+        "rfr_id",
+        "rft.atitle",
+        "rft.au",
+        "rft.date",
+        "rft.eissn",
+        "rft.epage",
+        "rft.externalDocID",
+        "rft.genre",
+        "rft.jtitle",
+        "rft.pub",
+        "rft.spage",
+        "rft_id",
+        "rft_val_fmt"
+      ],
+      "nested_parameter_keys": [
+        "token"
+      ]
+    }
+  ],
+  "public_scan_findings": [],
+  "storage_state_printed": false,
+  "password_or_id_printed": false,
+  "remediation": "Original moved to private state; public fixture contains allowlisted bibliographic fields only.",
+  "scanned_files": 51,
+  "credential_fields_checked": [
+    "ID",
+    "PW"
+  ],
+  "cookie_values_checked_minimum_length": 12,
+  "credential_value_findings": [],
+  "scan_at": "2026-09-09T00:21:36.323329+00:00"
+}

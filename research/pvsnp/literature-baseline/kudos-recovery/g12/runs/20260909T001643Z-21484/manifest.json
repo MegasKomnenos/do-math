@@ -1,0 +1,15 @@
+{
+  "started_at": "2026-09-09T00:16:43.728667+00:00",
+  "pid": 21484,
+  "argv": [
+    "research/pvsnp/literature-baseline/kudos-recovery/g12/resume.py"
+  ],
+  "cwd": "C:\\math",
+  "code_sha256": {
+    "C:\\math\\research\\pvsnp\\literature-baseline\\kudos-recovery\\g12\\resume.py": "f4d30200979adbb1c5a1188a8abc9b01a5dfa4a1e691a9aadb710221e31666a8",
+    "C:\\math\\research\\pvsnp\\literature-baseline\\kudos-recovery\\g12\\recovery.py": "415eec821ffca6855f7cdbb755bd64bce695dddfd2e690541be0d7be95ef9b7b",
+    "C:\\math\\research\\pvsnp\\literature-baseline\\kudos-recovery\\g12\\test_recovery.py": "9b7cf7ca053d5c4f55e73b0d59d35cbd716ab794c0c9f8d0f760af6a4b1c1d70",
+    "C:\\math\\research\\pvsnp\\literature-baseline\\kudos-recovery\\work_queue.py": "f32bb342891a025ecaf248acbfd2003933ddba1e3a9ebc8535f82a74b5c3a825",
+    "C:\\math\\research\\pvsnp\\literature-baseline\\kudos-recovery\\check_recovery.py": "76f8b53f588eb4aee4fc7f85598a7684b86bd6ac7e17ab45ed5e840a58c2b95f"
+  }
+}

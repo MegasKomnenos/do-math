@@ -1,0 +1,20 @@
+{
+  "elapsed_seconds": 0.038489341735839844,
+  "reused_valid_result": 1,
+  "check": {
+    "passed": true,
+    "complete": true,
+    "group_id": "g12",
+    "assigned": 1,
+    "processed": 1,
+    "missing": 0,
+    "counts": {
+      "abstract:not_found": 1,
+      "fulltext:found": 1,
+      "identity:confirmed": 1
+    },
+    "errors": [],
+    "papers_with_remaining_work": 0,
+    "work_remaining": []
+  }
+}

@@ -1,0 +1,377 @@
+{
+  "author": {
+    "title": "Discontinuous groups acting on homogeneous spaces of reductive type",
+    "authors": [
+      "Toshiyuki Kobayashi"
+    ],
+    "year": null,
+    "pdf_url": "https://www.ms.u-tokyo.ac.jp/~toshi/texpdf/19-pro-ceed-preprint.pdf",
+    "record_type": "preprint",
+    "related_publication": {
+      "year": 1992,
+      "pages": "59-75",
+      "relation": "same_work_different_version"
+    }
+  },
+  "fulltext": {
+    "path": "originals/paper-summary/03e45d574d66af5430fc846a6be99778811758dc2668cc44bd9a4f7920daa957.pdf",
+    "sha256": "03e45d574d66af5430fc846a6be99778811758dc2668cc44bd9a4f7920daa957",
+    "url": "https://www.ms.u-tokyo.ac.jp/~toshi/texpdf/19-pro-ceed-preprint.pdf",
+    "media_type": "application/pdf"
+  },
+  "evidence": [
+    {
+      "path": "intake/kudos-recovery/g12/def833552d70fabf8750882ad127539260cb8628070d05af28a9920aaa242f58.json",
+      "sha256": "def833552d70fabf8750882ad127539260cb8628070d05af28a9920aaa242f58",
+      "url": "https://kudos.knu.ac.kr/pages/index.htm",
+      "kind": "authentication-state-without-secrets"
+    },
+    {
+      "path": "intake/kudos-recovery/g12/ad091b3d29060d86e8c09fcb61c8d8335cc21bf395d7c650ebf6153e4e360419.html",
+      "sha256": "ad091b3d29060d86e8c09fcb61c8d8335cc21bf395d7c650ebf6153e4e360419",
+      "url": "https://www.ms.u-tokyo.ac.jp/~toshi/pub/19.html",
+      "kind": "author-page"
+    },
+    {
+      "path": "intake/kudos-recovery/g12/cc9217ce06c9ebe74537484e21a6db3e29b7a2cb6dff80b98522c0bec6da22b9.json",
+      "sha256": "cc9217ce06c9ebe74537484e21a6db3e29b7a2cb6dff80b98522c0bec6da22b9",
+      "url": "https://www.ms.u-tokyo.ac.jp/~toshi/texpdf/19-pro-ceed-preprint.pdf",
+      "kind": "pdf-inspection"
+    },
+    {
+      "path": "intake/kudos-recovery/g12/8dedae010f172db6f284d1f2e284190ac78ea061960952fdcf7673e0ebbd929e.json",
+      "sha256": "8dedae010f172db6f284d1f2e284190ac78ea061960952fdcf7673e0ebbd929e",
+      "url": "https://knu.summon.serialssolutions.com/ko-KO/search?ho=t&q=",
+      "kind": "summon-title-holdings"
+    },
+    {
+      "path": "intake/kudos-recovery/g12/ec442250f5231edd3260a1524ce69cb525f51592bb8d2360a752e10a41a5ee1f.json",
+      "sha256": "ec442250f5231edd3260a1524ce69cb525f51592bb8d2360a752e10a41a5ee1f",
+      "url": "https://knu.summon.serialssolutions.com/ko-KO/search?ho=t&q=#!/search?pn=1&ho=f&include.ft.matches=f&l=ko-KO&q=%22Discontinuous%20groups%20acting%20on%20homogeneous%20spaces%20of%20reductive%20type%22",
+      "kind": "summon-title-expanded"
+    },
+    {
+      "path": "intake/kudos-recovery/g12/700bf5d8df1dc135ec8eb5bba11ade0249ea8541e6fcad7f855b9d4ad585a75f.txt",
+      "sha256": "700bf5d8df1dc135ec8eb5bba11ade0249ea8541e6fcad7f855b9d4ad585a75f",
+      "url": "https://knu.summon.serialssolutions.com/ko-KO/search?ho=t&q=#!/search?pn=1&ho=f&include.ft.matches=f&l=ko-KO&q=%22Discontinuous%20groups%20acting%20on%20homogeneous%20spaces%20of%20reductive%20type%22",
+      "kind": "summon-quick-look-0"
+    },
+    {
+      "path": "intake/kudos-recovery/g12/0514d23a03b855c749771b82ec7e23f0d50921285bdaf2796b763f3545e34461.txt",
+      "sha256": "0514d23a03b855c749771b82ec7e23f0d50921285bdaf2796b763f3545e34461",
+      "url": "https://knu.summon.serialssolutions.com/ko-KO/search?ho=t&q=#!/search?pn=1&ho=f&include.ft.matches=f&l=ko-KO&q=%22Discontinuous%20groups%20acting%20on%20homogeneous%20spaces%20of%20reductive%20type%22",
+      "kind": "summon-quick-look-1"
+    },
+    {
+      "path": "intake/kudos-recovery/g12/7c9ec6524380f50500efe18b269a15f1830519fe5f15c130d3b2ba63eaaa6f1b.txt",
+      "sha256": "7c9ec6524380f50500efe18b269a15f1830519fe5f15c130d3b2ba63eaaa6f1b",
+      "url": "https://knu.summon.serialssolutions.com/ko-KO/search?ho=t&q=#!/search?pn=1&ho=f&include.ft.matches=f&l=ko-KO&q=%22Discontinuous%20groups%20acting%20on%20homogeneous%20spaces%20of%20reductive%20type%22",
+      "kind": "summon-quick-look-2"
+    },
+    {
+      "path": "intake/kudos-recovery/g12/241dacc632fe9ae220fcd3c5c8eb4c631d54a21aa272b51dbadcfc3f780634b7.txt",
+      "sha256": "241dacc632fe9ae220fcd3c5c8eb4c631d54a21aa272b51dbadcfc3f780634b7",
+      "url": "https://knu.summon.serialssolutions.com/ko-KO/search?ho=t&q=#!/search?pn=1&ho=f&include.ft.matches=f&l=ko-KO&q=%22Discontinuous%20groups%20acting%20on%20homogeneous%20spaces%20of%20reductive%20type%22",
+      "kind": "summon-quick-look-3"
+    },
+    {
+      "path": "intake/kudos-recovery/g12/d826c9cabcf3b3ba9805f4a5a36cffa5fcbd3858d31f8ef2e1f7f5210e7f0813.txt",
+      "sha256": "d826c9cabcf3b3ba9805f4a5a36cffa5fcbd3858d31f8ef2e1f7f5210e7f0813",
+      "url": "https://knu.summon.serialssolutions.com/ko-KO/search?ho=t&q=#!/search?pn=1&ho=f&include.ft.matches=f&l=ko-KO&q=%22Discontinuous%20groups%20acting%20on%20homogeneous%20spaces%20of%20reductive%20type%22",
+      "kind": "summon-quick-look-4"
+    },
+    {
+      "path": "intake/kudos-recovery/g12/f5908b8d4b27b805c5c9d48c89f08550964be8ee001dbf9cbf09618cc6e1422e.txt",
+      "sha256": "f5908b8d4b27b805c5c9d48c89f08550964be8ee001dbf9cbf09618cc6e1422e",
+      "url": "https://knu.summon.serialssolutions.com/ko-KO/search?ho=t&q=#!/search?pn=1&ho=f&include.ft.matches=f&l=ko-KO&q=%22Discontinuous%20groups%20acting%20on%20homogeneous%20spaces%20of%20reductive%20type%22",
+      "kind": "summon-quick-look-5"
+    },
+    {
+      "path": "intake/kudos-recovery/g12/d465bf2806cae5bbcb9062f55afabee512df6a25876f27fa465870e79623f0a8.txt",
+      "sha256": "d465bf2806cae5bbcb9062f55afabee512df6a25876f27fa465870e79623f0a8",
+      "url": "https://knu.summon.serialssolutions.com/ko-KO/search?ho=t&q=#!/search?pn=1&ho=f&include.ft.matches=f&l=ko-KO&q=%22Discontinuous%20groups%20acting%20on%20homogeneous%20spaces%20of%20reductive%20type%22",
+      "kind": "summon-quick-look-6"
+    },
+    {
+      "path": "intake/kudos-recovery/g12/405ee05026fa718edfd243be3122b518c435904ae61eba6f615d974258dcfa30.txt",
+      "sha256": "405ee05026fa718edfd243be3122b518c435904ae61eba6f615d974258dcfa30",
+      "url": "https://knu.summon.serialssolutions.com/ko-KO/search?ho=t&q=#!/search?pn=1&ho=f&include.ft.matches=f&l=ko-KO&q=%22Discontinuous%20groups%20acting%20on%20homogeneous%20spaces%20of%20reductive%20type%22",
+      "kind": "summon-quick-look-7"
+    },
+    {
+      "path": "intake/kudos-recovery/g12/22137da1546d797db8a907be068d16bfc6a5289f3dd991e96b24a1cd5162316a.json",
+      "sha256": "22137da1546d797db8a907be068d16bfc6a5289f3dd991e96b24a1cd5162316a",
+      "url": "https://knu.summon.serialssolutions.com/ko-KO/search?ho=t&q=#!/search?pn=1&ho=f&include.ft.matches=f&l=ko-KO&q=Discontinuous%20groups%20acting%20on%20homogeneous%20spaces%20of%20reductive%20type%20Kobayashi",
+      "kind": "summon-title-author-expanded"
+    },
+    {
+      "path": "intake/kudos-recovery/g12/facb1a04456b9163143716137d18e449bbfc7531e8e94590ccbbcc3accbbb713.txt",
+      "sha256": "facb1a04456b9163143716137d18e449bbfc7531e8e94590ccbbcc3accbbb713",
+      "url": "https://mathscinet-ams-org.libproxy.knu.ac.kr/mathscinet/article",
+      "kind": "related-publication-mathscinet-review"
+    },
+    {
+      "path": "intake/kudos-recovery/g12/17590cb602e6c5b916a913e7b7919a8e5935d663de71fce8c096a9c03fa59db0.png",
+      "sha256": "17590cb602e6c5b916a913e7b7919a8e5935d663de71fce8c096a9c03fa59db0",
+      "url": "https://www.ms.u-tokyo.ac.jp/~toshi/texpdf/19-pro-ceed-preprint.pdf",
+      "kind": "direct-pdf-page-review"
+    },
+    {
+      "path": "intake/kudos-recovery/g12/60fc2cb5372d71a4027104890ac45acd6d462c91eec4031d73766c9ce6788ef1.png",
+      "sha256": "60fc2cb5372d71a4027104890ac45acd6d462c91eec4031d73766c9ce6788ef1",
+      "url": "https://www.ms.u-tokyo.ac.jp/~toshi/texpdf/19-pro-ceed-preprint.pdf",
+      "kind": "direct-pdf-page-review"
+    },
+    {
+      "path": "intake/kudos-recovery/g12/57d39a06b1378ce1731c64e18e6993fb9d3a9d873d1f09287cee604baf9af589.txt",
+      "sha256": "57d39a06b1378ce1731c64e18e6993fb9d3a9d873d1f09287cee604baf9af589",
+      "url": "https://www.ms.u-tokyo.ac.jp/~toshi/texpdf/19-pro-ceed-preprint.pdf",
+      "kind": "raw-derived-text-with-unrepaired-math"
+    },
+    {
+      "path": "intake/kudos-recovery/g12/626414c8fbece5c22ede7be4c902fb09e954232d0cf062e0cc3666fc665b719d.png",
+      "sha256": "626414c8fbece5c22ede7be4c902fb09e954232d0cf062e0cc3666fc665b719d",
+      "url": "https://www.ms.u-tokyo.ac.jp/~toshi/texpdf/19-pro-ceed-preprint.pdf",
+      "kind": "direct-pdf-page-2-review"
+    }
+  ],
+  "attempts": [
+    {
+      "method": "playwright",
+      "query": "Author title and explicit preprint version(pdf) link",
+      "url": "https://www.ms.u-tokyo.ac.jp/~toshi/pub/19.html",
+      "outcome": "Observed explicit link; HTTP 200 PDF equals local SHA and has 26 readable pages."
+    },
+    {
+      "method": "playwright",
+      "query": "\"Discontinuous groups acting on homogeneous spaces of reductive type\"",
+      "url": "https://knu.summon.serialssolutions.com/ko-KO/search?ho=t&q=#!/search?pn=1&ho=f&include.ft.matches=f&l=ko-KO&q=%22Discontinuous%20groups%20acting%20on%20homogeneous%20spaces%20of%20reductive%20type%22",
+      "outcome": "Holdings 0; beyond holdings 8; all 8 Quick Look dialogs read and saved."
+    },
+    {
+      "method": "playwright",
+      "query": "Discontinuous groups acting on homogeneous spaces of reductive type Kobayashi",
+      "url": "https://knu.summon.serialssolutions.com/ko-KO/search?ho=t&q=#!/search?pn=1&ho=f&include.ft.matches=f&l=ko-KO&q=Discontinuous%20groups%20acting%20on%20homogeneous%20spaces%20of%20reductive%20type%20Kobayashi",
+      "outcome": "Beyond holdings title-author query returned 21 documents; complete response preserved for review."
+    },
+    {
+      "method": "playwright",
+      "query": "KUDOS academic DB MathSciNet, then MR1190750",
+      "url": "https://mathscinet-ams-org.libproxy.knu.ac.kr/mathscinet/article",
+      "outcome": "Search navigated directly to MR1190750; 1992 pp59-75 and reviewer Shvartsman shown; Article is a span without href. Saved observed bibliographic/review section reused."
+    }
+  ],
+  "metrics": {
+    "searches": 3,
+    "source_visits": 1,
+    "download_attempts": 1,
+    "saved_evidence_reused": 2
+  },
+  "decisions": [
+    {
+      "same_title": true,
+      "preprint_abstract": false,
+      "reason": "Same title is insufficient to identify the undated 26-page preprint; no target preprint abstract established.",
+      "id": "FETCH-jndl_porta_oai_ndlsearch_ndl_go_jp_R100000136_I15733874490453847040",
+      "abstract_value_count": 0
+    },
+    {
+      "same_title": true,
+      "preprint_abstract": false,
+      "reason": "Same title is insufficient to identify the undated 26-page preprint; no target preprint abstract established.",
+      "id": "FETCH-nii_cinii_15733874490453847040",
+      "abstract_value_count": 0
+    },
+    {
+      "same_title": true,
+      "preprint_abstract": false,
+      "reason": "Same title is insufficient to identify the undated 26-page preprint; no target preprint abstract established.",
+      "id": "FETCH-jndl_porta_oai_ndlsearch_ndl_go_jp_R100000136_I15705727002670208000",
+      "abstract_value_count": 0
+    },
+    {
+      "same_title": true,
+      "preprint_abstract": false,
+      "reason": "Same title is insufficient to identify the undated 26-page preprint; no target preprint abstract established.",
+      "id": "FETCH-nii_cinii_15705727002670208000",
+      "abstract_value_count": 0
+    },
+    {
+      "same_title": true,
+      "preprint_abstract": false,
+      "reason": "Same title is insufficient to identify the undated 26-page preprint; no target preprint abstract established.",
+      "id": "FETCH-nii_cinii_15711356494857527040",
+      "abstract_value_count": 0
+    },
+    {
+      "same_title": true,
+      "preprint_abstract": false,
+      "reason": "Same title is insufficient to identify the undated 26-page preprint; no target preprint abstract established.",
+      "id": "FETCH-jndl_porta_oai_ndlsearch_ndl_go_jp_R100000136_I15711356494857527040",
+      "abstract_value_count": 0
+    },
+    {
+      "same_title": true,
+      "preprint_abstract": false,
+      "reason": "Same title is insufficient to identify the undated 26-page preprint; no target preprint abstract established.",
+      "id": "FETCH-proquest_ebookcentralchapters_4900214_8_680",
+      "abstract_value_count": 0
+    },
+    {
+      "same_title": false,
+      "preprint_abstract": false,
+      "reason": "Different title; book table of contents is not this preprint abstract.",
+      "id": "FETCH-worldscientific_books_10_1142_97898145371620",
+      "abstract_value_count": 1
+    }
+  ],
+  "author_decisions": [
+    {
+      "same_title": true,
+      "preprint_abstract": false,
+      "reason": "Same title is insufficient to identify the undated 26-page preprint; no target preprint abstract established.",
+      "id": "FETCH-nii_cinii_15733874490453847040",
+      "abstract_value_count": 0
+    },
+    {
+      "same_title": true,
+      "preprint_abstract": false,
+      "reason": "Same title is insufficient to identify the undated 26-page preprint; no target preprint abstract established.",
+      "id": "FETCH-jndl_porta_oai_ndlsearch_ndl_go_jp_R100000136_I15733874490453847040",
+      "abstract_value_count": 0
+    },
+    {
+      "same_title": true,
+      "preprint_abstract": false,
+      "reason": "Same title is insufficient to identify the undated 26-page preprint; no target preprint abstract established.",
+      "id": "FETCH-jndl_porta_oai_ndlsearch_ndl_go_jp_R100000136_I15705727002670208000",
+      "abstract_value_count": 0
+    },
+    {
+      "same_title": true,
+      "preprint_abstract": false,
+      "reason": "Same title is insufficient to identify the undated 26-page preprint; no target preprint abstract established.",
+      "id": "FETCH-nii_cinii_15705727002670208000",
+      "abstract_value_count": 0
+    },
+    {
+      "same_title": true,
+      "preprint_abstract": false,
+      "reason": "Same title is insufficient to identify the undated 26-page preprint; no target preprint abstract established.",
+      "id": "FETCH-jndl_porta_oai_ndlsearch_ndl_go_jp_R100000136_I15711356494857527040",
+      "abstract_value_count": 0
+    },
+    {
+      "same_title": true,
+      "preprint_abstract": false,
+      "reason": "Same title is insufficient to identify the undated 26-page preprint; no target preprint abstract established.",
+      "id": "FETCH-proquest_ebookcentralchapters_4900214_8_680",
+      "abstract_value_count": 0
+    },
+    {
+      "same_title": true,
+      "preprint_abstract": false,
+      "reason": "Same title is insufficient to identify the undated 26-page preprint; no target preprint abstract established.",
+      "id": "FETCH-nii_cinii_15711356494857527040",
+      "abstract_value_count": 0
+    },
+    {
+      "same_title": false,
+      "preprint_abstract": false,
+      "reason": "Different title; book table of contents is not this preprint abstract.",
+      "id": "FETCH-LOGICAL-j2582-172865ea09dcdafed97f719f8ce824a274cd414f8fc6e7ee3bdca635e8c51d253",
+      "abstract_value_count": 0
+    },
+    {
+      "same_title": false,
+      "preprint_abstract": false,
+      "reason": "Different title; book table of contents is not this preprint abstract.",
+      "id": "FETCH-LOGICAL-c287t-6689a6ac38b6f6d9dd0689709d4a16a1bc4ef74d05f94efec17c10ab5566d4070",
+      "abstract_value_count": 2
+    },
+    {
+      "same_title": false,
+      "preprint_abstract": false,
+      "reason": "Different title; book table of contents is not this preprint abstract.",
+      "id": "FETCH-LOGICAL-b247t-ad7665fc1f2b1b6a1889d4c4bd9a102b73cd06905ceb520cb5e3e1150fdf0fea3",
+      "abstract_value_count": 1
+    },
+    {
+      "same_title": false,
+      "preprint_abstract": false,
+      "reason": "Different title; book table of contents is not this preprint abstract.",
+      "id": "FETCH-LOGICAL-c268t-280900ba6e9f925a23cd64fca9faf38fd6b79b5e1c378ae93837b1ac948f8abd3",
+      "abstract_value_count": 2
+    },
+    {
+      "same_title": false,
+      "preprint_abstract": false,
+      "reason": "Different title; book table of contents is not this preprint abstract.",
+      "id": "FETCH-nii_cinii_15742318739755188480",
+      "abstract_value_count": 0
+    },
+    {
+      "same_title": false,
+      "preprint_abstract": false,
+      "reason": "Different title; book table of contents is not this preprint abstract.",
+      "id": "FETCH-nii_cinii_15700097503135997440",
+      "abstract_value_count": 0
+    },
+    {
+      "same_title": false,
+      "preprint_abstract": false,
+      "reason": "Different title; book table of contents is not this preprint abstract.",
+      "id": "FETCH-jndl_porta_oai_ndlsearch_ndl_go_jp_R100000136_I15700097503135997440",
+      "abstract_value_count": 0
+    },
+    {
+      "same_title": false,
+      "preprint_abstract": false,
+      "reason": "Different title; book table of contents is not this preprint abstract.",
+      "id": "FETCH-LOGICAL-a552-736ec5a132bb65104f604bdd06d98c35ce8a14a10cee53c7edbf3f1db7cfbf900",
+      "abstract_value_count": 0
+    },
+    {
+      "same_title": false,
+      "preprint_abstract": false,
+      "reason": "Different title; book table of contents is not this preprint abstract.",
+      "id": "FETCH-jndl_porta_oai_ndlsearch_ndl_go_jp_R100000136_I15742318739755188480",
+      "abstract_value_count": 0
+    },
+    {
+      "same_title": false,
+      "preprint_abstract": false,
+      "reason": "Different title; book table of contents is not this preprint abstract.",
+      "id": "FETCH-LOGICAL-b420t-37a5b103ba8fcded15db154c6b4b586df8814e28e6d4643ba63e0fb08a0912263",
+      "abstract_value_count": 2
+    },
+    {
+      "same_title": false,
+      "preprint_abstract": false,
+      "reason": "Different title; book table of contents is not this preprint abstract.",
+      "id": "FETCH-arxiv_primary_2309_083313",
+      "abstract_value_count": 1
+    },
+    {
+      "same_title": false,
+      "preprint_abstract": false,
+      "reason": "Different title; book table of contents is not this preprint abstract.",
+      "id": "FETCH-LOGICAL-j2251-e2e1f0c033e1312eac6bcf0b4a0a1ae366f22ca42481159a3895dbec2932238a0",
+      "abstract_value_count": 1
+    },
+    {
+      "same_title": false,
+      "preprint_abstract": false,
+      "reason": "Different title; book table of contents is not this preprint abstract.",
+      "id": "FETCH-proquest_journals_33016094413",
+      "abstract_value_count": 1
+    },
+    {
+      "same_title": false,
+      "preprint_abstract": false,
+      "reason": "Different title; book table of contents is not this preprint abstract.",
+      "id": "FETCH-proquest_journals_28659444393",
+      "abstract_value_count": 1
+    }
+  ]
+}

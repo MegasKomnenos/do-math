@@ -1,0 +1,54 @@
+F.FFFFF
+======================================================================
+FAIL: test_empty_search_is_not_unvisited_search (__main__.RecoveryTests.test_empty_search_is_not_unvisited_search)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g12\test_recovery.py", line 51, in test_empty_search_is_not_unvisited_search
+    with self.assertRaises(ValueError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_observed_author_preprint_link_and_distinct_date (__main__.RecoveryTests.test_observed_author_preprint_link_and_distinct_date)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g12\test_recovery.py", line 15, in test_observed_author_preprint_link_and_distinct_date
+    self.assertIsNotNone(result)
+AssertionError: unexpectedly None
+
+======================================================================
+FAIL: test_real_26_page_pdf_and_no_invented_abstract (__main__.RecoveryTests.test_real_26_page_pdf_and_no_invented_abstract)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g12\test_recovery.py", line 23, in test_real_26_page_pdf_and_no_invented_abstract
+    self.assertEqual(result['pages'], 26)
+AssertionError: 0 != 26
+
+======================================================================
+FAIL: test_real_expanded_records_do_not_supply_preprint_abstract (__main__.RecoveryTests.test_real_expanded_records_do_not_supply_preprint_abstract)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g12\test_recovery.py", line 37, in test_real_expanded_records_do_not_supply_preprint_abstract
+    self.assertEqual(len(decisions), 8)
+AssertionError: 0 != 8
+
+======================================================================
+FAIL: test_real_near_title_and_different_author_are_rejected (__main__.RecoveryTests.test_real_near_title_and_different_author_are_rejected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g12\test_recovery.py", line 45, in test_real_near_title_and_different_author_are_rejected
+    self.assertEqual(len(decisions), 7)
+AssertionError: 0 != 7
+
+======================================================================
+FAIL: test_safe_projection_drops_openurl_and_unknown_fields (__main__.RecoveryTests.test_safe_projection_drops_openurl_and_unknown_fields)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g12\test_recovery.py", line 56, in test_safe_projection_drops_openurl_and_unknown_fields
+    self.assertNotIn('private_field', recovery.safe_search(d))
+AssertionError: 'private_field' unexpectedly found in {'record_count': 0, 'page_count': 0, 'query': {'original_query': 'q', 'query_string': 's.ho=f'}, 'documents': [], 'private_field': 'synthetic'}
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.003s
+
+FAILED (failures=6)

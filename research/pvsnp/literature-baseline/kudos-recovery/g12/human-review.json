@@ -1,0 +1,50 @@
+{
+  "reviewer": "g12 assigned worker; direct source reading",
+  "identity": {
+    "reason": "Read the author's publication page and rendered PDF pages1,2,26. Page1 has the exact title and Toshiyuki KOBAYASHI; the author page explicitly labels the observed PDF link preprint version(pdf). Remote bytes equal the registered SHA03e45d574d66af5430fc846a6be99778811758dc2668cc44bd9a4f7920daa957. The author's 1992/59-75 citation and MathSciNet MR1190750 describe the related published version, not the undated26-page preprint. Keep input paper_id/version_sha256 and year=null."
+  },
+  "abstract": {
+    "status": "not_found",
+    "scope_complete": true,
+    "reason": "No eligible abstract found in the checked target-version scope. Direct images of pages1-2 show introductory exposition starting Let H be a closed subgroup, Question A-0, examples and Definition1, with a paragraph continuing across the page boundary; there is no independent abstract block. All26 pages have readable text; page structure continues through theorems, Appendix on21 and references on25-26, and no standalone Abstract/Summary heading was found. The official author page contains bibliography and version links, no abstract. Summon exact title: holdings0, beyond holdings8, all8 Quick Look dialogs directly read;7 title records have no abstract and describe World Scientific proceedings/chapter versions, the eighth value explicitly is a book table of contents. Expanded title-author search21/21 records was read: the same7 publication records recur and the other14 have different titles/works. MR1190750 describes the1992 published version and has an independently attributed Review by Shvartsman, not a preprint abstract or source-selected quotation. The preprint introduction, another article's abstract, the parent book's table of contents and this review are preserved/distinguished rather than promoted. This is a bounded source-scope absence conclusion, not a claim about every Internet source."
+  },
+  "fulltext": {
+    "reason": "Actual observed author PDF link returned a readable PDF with26 pages and the exact registered full SHA. Every page has a nonempty text layer and printed sequence1-26; direct page1 image confirms title/author and start, page2 confirms continuous body, page26 confirms final references and terminal26. The page inventory shows exposition/theorems on1-20, Appendix on21-25 and references on25-26. This is the entire registered author preprint, not the17-page1992 publication. Original PDF preserves mathematical typography; extracted text is explicitly a raw derivative with unrepaired mathematical flattening."
+  },
+  "source_dispositions": [
+    {
+      "key": "author-dvi",
+      "kind": "source",
+      "target": "https://www.ms.u-tokyo.ac.jp/~toshi/texdvi/pro-ceed.dvi",
+      "status": "not_needed",
+      "reason": "Author page labels this as the alternative DVI format of the same preprint. The explicit PDF counterpart was downloaded, matched the registered full SHA and directly read; another typesetting format is not needed to recover the already verified full preprint."
+    },
+    {
+      "key": "related-publication-links",
+      "kind": "source",
+      "target": "Author ZMath/Amazon/conference/related-papers links; Summon CiNii/World Scientific/ProQuest publication records",
+      "status": "not_needed",
+      "reason": "The author page and all8 exact-title Quick Look records identify these as indexing/retail/conference/related works or the1992 proceedings publication and parent book, not a second26-page preprint source. Actual publication bibliography and its MR review were read; the target preprint is already verified from the explicit author link. A different version's publication date, book contents or independently authored review cannot supply this target-version abstract."
+    }
+  ],
+  "reviewed_sources": {
+    "intake/kudos-recovery/g12/ad091b3d29060d86e8c09fcb61c8d8335cc21bf395d7c650ebf6153e4e360419.html": "ad091b3d29060d86e8c09fcb61c8d8335cc21bf395d7c650ebf6153e4e360419",
+    "intake/kudos-recovery/g12/cc9217ce06c9ebe74537484e21a6db3e29b7a2cb6dff80b98522c0bec6da22b9.json": "cc9217ce06c9ebe74537484e21a6db3e29b7a2cb6dff80b98522c0bec6da22b9",
+    "intake/kudos-recovery/g12/8dedae010f172db6f284d1f2e284190ac78ea061960952fdcf7673e0ebbd929e.json": "8dedae010f172db6f284d1f2e284190ac78ea061960952fdcf7673e0ebbd929e",
+    "intake/kudos-recovery/g12/ec442250f5231edd3260a1524ce69cb525f51592bb8d2360a752e10a41a5ee1f.json": "ec442250f5231edd3260a1524ce69cb525f51592bb8d2360a752e10a41a5ee1f",
+    "intake/kudos-recovery/g12/700bf5d8df1dc135ec8eb5bba11ade0249ea8541e6fcad7f855b9d4ad585a75f.txt": "700bf5d8df1dc135ec8eb5bba11ade0249ea8541e6fcad7f855b9d4ad585a75f",
+    "intake/kudos-recovery/g12/0514d23a03b855c749771b82ec7e23f0d50921285bdaf2796b763f3545e34461.txt": "0514d23a03b855c749771b82ec7e23f0d50921285bdaf2796b763f3545e34461",
+    "intake/kudos-recovery/g12/7c9ec6524380f50500efe18b269a15f1830519fe5f15c130d3b2ba63eaaa6f1b.txt": "7c9ec6524380f50500efe18b269a15f1830519fe5f15c130d3b2ba63eaaa6f1b",
+    "intake/kudos-recovery/g12/241dacc632fe9ae220fcd3c5c8eb4c631d54a21aa272b51dbadcfc3f780634b7.txt": "241dacc632fe9ae220fcd3c5c8eb4c631d54a21aa272b51dbadcfc3f780634b7",
+    "intake/kudos-recovery/g12/d826c9cabcf3b3ba9805f4a5a36cffa5fcbd3858d31f8ef2e1f7f5210e7f0813.txt": "d826c9cabcf3b3ba9805f4a5a36cffa5fcbd3858d31f8ef2e1f7f5210e7f0813",
+    "intake/kudos-recovery/g12/f5908b8d4b27b805c5c9d48c89f08550964be8ee001dbf9cbf09618cc6e1422e.txt": "f5908b8d4b27b805c5c9d48c89f08550964be8ee001dbf9cbf09618cc6e1422e",
+    "intake/kudos-recovery/g12/d465bf2806cae5bbcb9062f55afabee512df6a25876f27fa465870e79623f0a8.txt": "d465bf2806cae5bbcb9062f55afabee512df6a25876f27fa465870e79623f0a8",
+    "intake/kudos-recovery/g12/405ee05026fa718edfd243be3122b518c435904ae61eba6f615d974258dcfa30.txt": "405ee05026fa718edfd243be3122b518c435904ae61eba6f615d974258dcfa30",
+    "intake/kudos-recovery/g12/22137da1546d797db8a907be068d16bfc6a5289f3dd991e96b24a1cd5162316a.json": "22137da1546d797db8a907be068d16bfc6a5289f3dd991e96b24a1cd5162316a",
+    "intake/kudos-recovery/g12/facb1a04456b9163143716137d18e449bbfc7531e8e94590ccbbcc3accbbb713.txt": "facb1a04456b9163143716137d18e449bbfc7531e8e94590ccbbcc3accbbb713",
+    "intake/kudos-recovery/g12/17590cb602e6c5b916a913e7b7919a8e5935d663de71fce8c096a9c03fa59db0.png": "17590cb602e6c5b916a913e7b7919a8e5935d663de71fce8c096a9c03fa59db0",
+    "intake/kudos-recovery/g12/60fc2cb5372d71a4027104890ac45acd6d462c91eec4031d73766c9ce6788ef1.png": "60fc2cb5372d71a4027104890ac45acd6d462c91eec4031d73766c9ce6788ef1",
+    "intake/kudos-recovery/g12/57d39a06b1378ce1731c64e18e6993fb9d3a9d873d1f09287cee604baf9af589.txt": "57d39a06b1378ce1731c64e18e6993fb9d3a9d873d1f09287cee604baf9af589",
+    "intake/kudos-recovery/g12/626414c8fbece5c22ede7be4c902fb09e954232d0cf062e0cc3666fc665b719d.png": "626414c8fbece5c22ede7be4c902fb09e954232d0cf062e0cc3666fc665b719d"
+  }
+}
