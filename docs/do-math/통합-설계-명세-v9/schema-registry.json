@@ -197,7 +197,7 @@
       "owner_section": "8,13.1,16.5,19.5",
       "path": "schemas/input-manifest.schema.json",
       "schema_id": "https://do-math.invalid/schemas/draft/9/input-manifest",
-      "sha256": "5dd80a138e7a6666f3389e82618e7a7ea5d9d1eda92ce19c329f64e6ce17aa60",
+      "sha256": "90d01b0ab668ca0377a944b609d9a56ed3c39b45d68df31437125ca158f1b3fb",
       "storage": "runtime/artifacts/{bundle_id}/input-manifest.json"
     },
     {
@@ -227,7 +227,7 @@
       "owner_section": "8.3,11.3,11.4,19.6",
       "path": "schemas/issue-state.schema.json",
       "schema_id": "https://do-math.invalid/schemas/draft/9/issue-state",
-      "sha256": "34777899d958ee00ef4197866aeeb5a60644765ae07f7e9f88198823ff0f8a21",
+      "sha256": "de899df2c05cf909f24c147438194d460286c516a75ae99591aae32eac71b008",
       "storage": "runtime/activities/{activity_id}/issues/{id}.json"
     },
     {

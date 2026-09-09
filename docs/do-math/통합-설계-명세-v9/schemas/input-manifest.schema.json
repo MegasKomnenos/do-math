@@ -195,7 +195,8 @@
     "continuity_break_cause": {
       "enum": [
         "permanent_loss",
-        "context_overflow"
+        "context_overflow",
+        "profile_replaced"
       ],
       "type": "string"
     },
