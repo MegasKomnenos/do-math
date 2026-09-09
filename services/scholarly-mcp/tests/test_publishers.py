@@ -25,6 +25,8 @@ class PublisherContract(unittest.TestCase):
         raw = '<meta name="citation_pdf_url" content="/article/current.pdf"><a href="/references/other.pdf">PDF</a>'
         links = self.mod.primary_pdf_links(raw, "https://link.springer.com/article/current")
         self.assertEqual(links, ["https://link.springer.com/article/current.pdf"])
+        raw='<a class="show-pdf" href="/doi/epdf/10.1080/current">View PDF</a><a class="show-pdf" href="/doi/pdf/10.1080/current">Download PDF</a><a class="show-pdf" href="/doi/pdf/10.1080/related">Other</a>'
+        self.assertEqual(self.mod.primary_pdf_links(raw,'https://www.tandfonline.com/doi/abs/10.1080/current',identifier='10.1080/current'),['https://www.tandfonline.com/doi/pdf/10.1080/current'])
 
     def test_wiley_native_listing_preserves_publication_identity_and_range(self):
         raw = (ROOT / "tests/fixtures/wiley-search.html").read_text("utf-8")
@@ -89,6 +91,32 @@ class PublisherContract(unittest.TestCase):
         rows,total,first=records(raw,'https://academic.oup.com')
         self.assertEqual((len(rows),total,first),(20,75732,0))
         self.assertEqual(rows[0]['title'],'Journal of Complex Networks')
+
+    def test_taylor_listing_and_export_have_the_same_publication_identities(self):
+        from taylor import records
+        from scholarly import bibliography
+        raw=(ROOT / 'tests/fixtures/taylor-search.html').read_text('utf-8')
+        rows,total,first=records(raw,'https://www.tandfonline.com')
+        self.assertEqual((len(rows),total,first),(20,40675,0))
+        exported=bibliography((ROOT / 'tests/fixtures/taylor.bib').read_bytes(),'application/x-bibtex')
+        self.assertEqual([r['doi'] for r in rows[:2]],[r['doi'] for r in exported])
+
+    def test_degruyter_keeps_native_document_types_and_doi_identity(self):
+        from degruyter import records
+        raw=(ROOT / 'tests/fixtures/degruyter-search.html').read_text('utf-8')
+        rows,total=records(raw,'https://www.degruyterbrill.com')
+        self.assertEqual(len(rows),10)
+        self.assertGreaterEqual(total,10)
+        self.assertEqual(rows[0]['doi'],'10.1515/joc-2026-0248')
+        self.assertEqual(rows[0]['type'],'Article')
+
+    def test_jstor_ris_retains_its_provider_preamble(self):
+        from scholarly import bibliography
+        raw=(ROOT / 'tests/fixtures/jstor.ris').read_bytes()
+        rows=bibliography(raw,'application/x-research-info-systems')
+        self.assertEqual(len(rows),1)
+        self.assertIn('Provider: JSTOR',rows[0]['source_preamble'])
+        self.assertIn('345683',' '.join(rows[0]['fields']['ur']))
 
 
 if __name__ == "__main__":

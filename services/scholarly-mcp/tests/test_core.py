@@ -92,6 +92,14 @@ class CoreContract(unittest.TestCase):
         result = clean.value({"url": "https://www.webofscience.com/search?SID=PRIVATE-SESSION&query=NP", "access_token": "PRIVATE-ACCESS", "csrfToken": "PRIVATE-CSRF"})
         self.assertNotIn("PRIVATE-", json.dumps(result))
 
+    def test_access_challenge_objects_and_urls_do_not_expose_temporary_tokens(self):
+        clean=self.lib.Sanitizer()
+        value={'url':'https://example.org/search?q=NP&__cf_chl_rt_tk=PRIVATE-ONE',
+               '_cf_chl_opt':{'cUPMDTk':'PRIVATE-TWO'},'cUPMDTk':'PRIVATE-THREE','csrfmiddlewaretoken':'PRIVATE-FOUR'}
+        result=clean.value(value)
+        self.assertNotIn('PRIVATE-',json.dumps(result))
+        self.assertEqual(result['url'],'https://example.org/search?q=NP')
+
     def test_embedded_authenticated_urls_in_text_exports_are_sanitized(self):
         clean = self.lib.Sanitizer()
         text = 'UR https://www.webofscience.com/record?SID=PRIVATE-SESSION&query=NP\n'

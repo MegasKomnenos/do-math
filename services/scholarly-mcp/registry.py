@@ -425,6 +425,41 @@ SOURCES['cambridge'].usage = {
     'official':['https://www.cambridge.org/core/search','https://www.cambridge.org/core/services/aop-easybib/export'],
 }
 
+SOURCES['taylor-francis'].implementation='partial'
+SOURCES['taylor-francis'].transport='playwright'
+SOURCES['taylor-francis'].usage={
+    'search':'query를 선택 필드의 Taylor & Francis 고급검색식으로 제출한다. 큰따옴표와 AND·OR·NOT은 원 검색 문법을 따른다.',
+    'options':{'field':'Anywhere(기본), Title, Author, Keywords, Abstract, Affiliation, Funder','after_year':'시작 연도 정수','before_year':'끝 연도 정수','sort':'relevance(기본), newest, oldest, most_cited, most_read'},
+    'exports':'json·html은 원 결과, csv는 같은 레코드의 기계적 CSV다. bibtex·ris는 선택 문헌들의 native citation POST 응답이며 DOI 집합을 대조한다. export.artifacts의 ref로 읽는다.',
+    'fetch':'DOI 또는 Taylor & Francis 문헌 URL. metadata·abstract·fulltext·export·supplementary를 요청한다. abstract는 native BibTeX에 제공된 abstract 필드를 보존하고 export와 재사용한다. 제목은 Title 검색 후보를 반환한다.',
+    'limits':'KUDOS 학술DB에서 Taylor를 조회해 기관 바로가기에 진입한다. start 0부터, limit 1..1000, 원 페이지 20건. 별도 API 자격을 사용하지 않는다. native 내보내기에 초록이 없는 문헌은 source_page로 표시한다.',
+    'examples':[{'tool':'search','arguments':{'source':'taylor-francis','query':'complexity','options':{'field':'Title'},'start':19,'limit':2,'export':'bibtex'}}],
+    'official':['https://www.tandfonline.com/search/advanced'],
+}
+
+SOURCES['de-gruyter'].implementation='partial'
+SOURCES['de-gruyter'].transport='playwright'
+SOURCES['de-gruyter'].usage={
+    'search':'query는 자료원의 고급검색이 생성하는 검색식이다. title:(complexity), familyName:(Goldreich), title:(complexity) AND familyName:(Goldreich)처럼 필드와 괄호를 사용한다. 원 문자열을 그대로 제출한다.',
+    'options':{'sort':'relevance(기본), mostrecent, leastrecent, alphabetical, reversealpha','visibility':'all(기본), available(이용 가능), explicit(라이선스), open(OA), public(공개)'},
+    'exports':'json·html은 원 결과, csv는 같은 레코드의 기계적 CSV다. ris·native는 문헌에 연결된 RIS 다운로드이며 DOI를 대조한다. export.artifacts로 읽는다. DOI가 없는 자료 유형은 인용문 미확보를 따로 표시한다.',
+    'fetch':'De Gruyter Brill의 DOI 또는 문헌 URL로 metadata·abstract·fulltext·export·supplementary를 요청한다. export는 native RIS다. 검색에는 책·장·논문 외 자료도 있으므로 type을 확인한다.',
+    'limits':'KUDOS의 De Gruyter 기관 바로가기를 사용한다. start 0부터, limit 1..1000, 원 페이지 10건. 자료원에 표시된 검색 건수와 실제 회수 행을 대조한다.',
+    'examples':[{'tool':'search','arguments':{'source':'de-gruyter','query':'title:(complexity)','limit':2,'export':'ris'}}],
+    'official':['https://www.degruyterbrill.com/search/advanced'],
+}
+
+SOURCES['jstor'].implementation='partial'
+SOURCES['jstor'].transport='api (native citation); browser search/document pending'
+SOURCES['jstor'].capabilities=('source_guide','fetch','export')
+SOURCES['jstor'].usage={
+    'fetch':'JSTOR stable 번호, stable URL 또는 10.2307 DOI로 metadata·abstract·export를 요청한다. 별도 자격 없는 native RIS API를 사용한다.',
+    'exports':'export는 원 RIS다. 제공자 안내문을 source_preamble로 유지하며 원 파일도 그대로 보존한다. UR의 stable ID와 요청 대상을 대조한다.',
+    'limits':'검색과 전문·첨부 회수는 아직 연결하지 않았다. 기관 검색은 실제 CAPTCHA를 반환했으며 자료원 자체의 문헌 부재로 해석하지 않는다. 초록이 없는 RIS에는 not_offered를 표시한다.',
+    'examples':[{'tool':'fetch','arguments':{'source':'jstor','target':'345683','parts':['metadata','abstract','export']}}],
+    'official':['https://www.jstor.org/'],
+}
+
 for identifier, level in {
     "mathscinet": "live_mcp_search_export_fetch_extract",
     "wos": "live_mcp_search_full_record_export_extract",
@@ -458,6 +493,13 @@ for identifier, level in {
     "oxford": "live_mcp_search_citation_metadata_abstract_fetch_and_mixed_pagination",
     "aip": "live_mcp_advanced_search_native_citation_abstract_fetch_pagination",
     "wiley": "live_mcp_advanced_search_native_bibtex_pdf_fetch_empty_repeat",
+    "taylor-francis": "live_mcp_native_search_citation_abstract_pdf_fetch_pagination",
+    "de-gruyter": "live_mcp_native_search_ris_abstract_pdf_fetch_pagination",
+    "jstor": "live_mcp_public_ris_metadata_abstract_fetch; web_captcha_observed",
+    "iop": "institution_redirect_to_captcha_observed",
+    "siam": "browser_access_challenge_observed",
+    "ams": "browse_shell_and_script_restriction_observed",
+    "science-direct": "native_advanced_form_and_search_cpe_observed",
 }.items():
     SOURCES[identifier].verification = level
 

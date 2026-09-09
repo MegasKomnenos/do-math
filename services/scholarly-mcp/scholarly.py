@@ -84,7 +84,7 @@ class Sanitizer:
             for key, item in value.items():
                 normalized = re.sub(r"[^a-z0-9]", "", key.lower())
                 public_signature = normalized == "signature" and (item is None or (isinstance(item, str) and item.startswith(("-----BEGIN PGP SIGNATURE-----", "-----BEGIN SSH SIGNATURE-----"))))
-                if normalized in self.secret_fields and item is not None and not public_signature:
+                if (normalized in self.secret_fields or normalized.startswith('cfchl') or normalized in {'cupmdtk','csrfmiddlewaretoken'}) and item is not None and not public_signature:
                     result[key] = "[REDACTED]"
                 elif isinstance(item, str) and normalized.endswith(("url", "href", "src")):
                     result[key] = self.url(item)
@@ -257,6 +257,13 @@ def bibliography(data, media):
                     else:
                         row[field] = [row[field], value]
                 rows.append(row)
+            return rows
+        first = re.search(r'(?m)^TY  - ',text)
+        preamble = text[:first.start()] if first else ''
+        if preamble.strip() and all(not line.strip() or line.startswith(('Provider:', 'Database:', 'Content:')) for line in preamble.splitlines()):
+            rows = module.parse_ris(text[first.start():], source_name="artifact")
+            if rows:
+                rows[0]['source_preamble'] = preamble
             return rows
         return module.parse_ris(text, source_name="artifact")
     except ValueError:

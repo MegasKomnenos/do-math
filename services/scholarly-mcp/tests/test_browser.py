@@ -88,6 +88,34 @@ class BrowserContract(unittest.TestCase):
         self.assertEqual(raised.exception.result["blocked_host"], "other.example")
         self.assertNotIn("PRIVATE", str(raised.exception.result))
 
+    def test_citation_post_redirect_switches_to_get_without_replaying_form(self):
+        from types import SimpleNamespace
+        calls=[]
+        def post(url,**kwargs):
+            calls.append(('POST',url,kwargs))
+            return SimpleNamespace(status=303,headers={'location':'/citation.bib'},url=url)
+        def get(url,**kwargs):
+            calls.append(('GET',url,kwargs))
+            return SimpleNamespace(status=200,headers={'content-type':'text/plain'},url=url,body=lambda:b'@article{x,title={Example}}')
+        context=SimpleNamespace(request=SimpleNamespace(get=get,post=post))
+        data,media,url=self.mod.browser_download(context,'https://source.example/export',{'source.example'},form={'doi':'10.1234/a&b','format':'bibtex'})
+        self.assertEqual([c[0] for c in calls],['POST','GET'])
+        self.assertIn('doi=10.1234%2Fa%26b',calls[0][2]['data'])
+        self.assertNotIn('data',calls[1][2])
+        self.assertEqual(url,'https://source.example/citation.bib')
+
+    def test_citation_post_cannot_replay_form_to_another_source(self):
+        from types import SimpleNamespace
+        calls=[]
+        def post(url,**kwargs):
+            calls.append(url)
+            return SimpleNamespace(status=307,headers={'location':'https://other.example/export'},url=url)
+        context=SimpleNamespace(request=SimpleNamespace(post=post))
+        with self.assertRaises(ServiceError) as raised:
+            self.mod.browser_download(context,'https://source.example/export',{'source.example'},form={'doi':'10.1234/x'})
+        self.assertEqual(calls,['https://source.example/export'])
+        self.assertEqual(raised.exception.result['code'],'source_boundary')
+
     def test_fulltext_target_cannot_expand_mathscinet_into_another_provider(self):
         for target in ["https://www.sciencedirect.com/science/article/pii/X", "https://evil.libproxy.knu.ac.kr/mathscinet/article?mr=1"]:
             with self.subTest(target=target), self.assertRaises(ServiceError):

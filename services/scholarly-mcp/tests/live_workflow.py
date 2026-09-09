@@ -162,6 +162,37 @@ async def main():
             fetched = await call("fetch", {"source": "drops", "target": "10.4230/LIPIcs.CSL.2020.5", "parts": ["metadata", "abstract", "fulltext"]})
             assert fetched["status"] == "ok", fetched.get("code")
             assert fetched["components"]["fulltext"]["artifact"]["pages"] == 2
+        elif args.source == 'jstor':
+            fetched=await call('fetch',{'source':'jstor','target':'10.2307/345683','parts':['metadata','abstract','export']})
+            assert fetched['status']=='ok',fetched.get('code')
+            citation=await call('extract',{'ref':fetched['components']['export']['artifact']['ref'],'count':2})
+            assert citation['returned']==1
+            assert citation['items'][0]['fields']['do']==['10.2307/345683']
+            assert 'Provider: JSTOR' in citation['items'][0]['source_preamble']
+        elif args.source == 'de-gruyter':
+            search=await call('search', {'source':'de-gruyter','query':'title:(complexity)','options':{'visibility':'available'},'limit':2,'export':'ris'})
+            assert search['status']=='ok', search.get('export')
+            assert search['received']==2
+            for item in search['export']['artifacts']:
+                citation=await call('extract',{'ref':item['ref'],'count':2})
+                assert citation['returned']==1
+            records=await call('extract',{'ref':search['records']['ref'],'count':2})
+            fetched=await call('fetch',{'source':'de-gruyter','target':records['items'][0]['url'],'parts':['metadata','abstract','fulltext','export']})
+            assert fetched['status']=='ok', {k:v.get('status') for k,v in fetched.get('components',{}).items()}
+            assert fetched['components']['fulltext']['artifact']['pages']>=1
+            following=await call('search',{'source':'de-gruyter','query':'title:(complexity)','options':{'visibility':'available'},'start':9,'limit':2,'export':'csv'})
+            assert following['status']=='ok',following.get('code')
+            assert following['received']==2
+        elif args.source == 'taylor-francis':
+            search = await call('search', {'source':'taylor-francis','query':'complexity','options':{'field':'Title'},'start':19,'limit':2,'export':'bibtex'})
+            assert search['status']=='ok', search.get('export')
+            assert search['received']==2
+            for item in search['export']['artifacts']:
+                exported=await call('extract', {'ref':item['ref'],'count':2})
+                assert exported['returned']==1
+            fetched=await call('fetch', {'source':'taylor-francis','target':'10.1080/09557571.2011.558053','parts':['metadata','abstract','fulltext','export']})
+            assert fetched['status']=='ok', {k:v.get('status') for k,v in fetched.get('components',{}).items()}
+            assert fetched['components']['fulltext']['artifact']['pages']==23
         elif args.source == 'cambridge':
             search = await call('search', {'source':'cambridge','query':'"P versus NP"','options':{'content_type':'Articles','available':True},'limit':2,'export':'ris'})
             assert search['status']=='ok', search.get('code')

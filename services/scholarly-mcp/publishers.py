@@ -42,7 +42,7 @@ PROFILES = [
     Profile("oxford", ("academic.oup.com", "www.oxfordacademic.com"), "OUP", file_domains=("watermark02.silverchair.com",)),
     Profile("science-direct", ("www.sciencedirect.com", "sciencedirect.com", "linkinghub.elsevier.com"), "ScienceDirect"),
     Profile("springer", ("link.springer.com", "link.springernature.com", "www.nature.com"), "Springer eJournal", file_domains=('citation-needed.springer.com',)),
-    Profile("taylor-francis", ("www.tandfonline.com", "tandfonline.com"), "Taylor & Francis"),
+    Profile("taylor-francis", ("www.tandfonline.com", "tandfonline.com"), "Taylor"),
     Profile("wiley", ("onlinelibrary.wiley.com", "www.onlinelibrary.wiley.com"), "Wiley Online Library", '.article-section__abstract'),
     Profile("aip", ("pubs.aip.org", "aip.scitation.org"), "AIP", 'section.abstract:not(.abstractBorder)'),
     Profile("aps", ("www.aps.org", "journals.aps.org", "link.aps.org", "physics.aps.org"), "APS"),
@@ -68,11 +68,18 @@ def publication_metadata(raw):
     return fields
 
 
-def primary_pdf_links(raw, base):
+def primary_pdf_links(raw, base, *, identifier=None):
     soup = BeautifulSoup(raw, "html.parser")
     urls = [urljoin(base, tag["content"]) for tag in soup.select('meta[name="citation_pdf_url"][content]')]
     if urls:
         return list(dict.fromkeys(urls))
+    if identifier:
+        for tag in soup.select('a.show-pdf[href*="/doi/pdf/"]'):
+            link=urljoin(base,tag['href'])
+            if unquote(urlsplit(link).path).lower()=='/doi/pdf/'+identifier.lower():
+                urls.append(link)
+        if urls:
+            return list(dict.fromkeys(urls))
     # These explicitly identify the current publication; unrelated PDF links are not candidates.
     for tag in soup.select('a[data-track-action="download pdf"],a[data-test="pdf-link"],a.article-tools__pdf,a.c-pdf-download__link,a[data-item-name="download-pdf"]'):
         if tag.get("href"):
@@ -180,6 +187,12 @@ class Publisher:
             return search(self, query, options=options, start=start, limit=limit, cursor=cursor, export=export)
         if self.source == 'cambridge':
             from cambridge import search
+            return search(self,query,options=options,start=start,limit=limit,cursor=cursor,export=export)
+        if self.source == 'taylor-francis':
+            from taylor import search
+            return search(self,query,options=options,start=start,limit=limit,cursor=cursor,export=export)
+        if self.source == 'de-gruyter':
+            from degruyter import search
             return search(self,query,options=options,start=start,limit=limit,cursor=cursor,export=export)
         raise ServiceError("publisher_search_not_implemented", "This document adapter currently accepts exact publisher links and DOIs; native advanced search/export remains in development", status="not_implemented", source=self.source)
 
@@ -390,7 +403,7 @@ class Publisher:
         if unknown:
             raise ServiceError("invalid_parts", "Unknown requested content", parts=sorted(unknown))
         if not target.startswith(('http://', 'https://', '10.', 'doi:')):
-            candidates = self.search(target, options={'field':'Title'} if self.source in ('wiley','springer','oxford','aip') else {}, limit=20)
+            candidates = self.search(target, options={'field':'Title'} if self.source in ('wiley','springer','oxford','aip','taylor-francis') else {}, limit=20)
             return {**candidates, 'status': 'selection_required' if candidates.get('received') else candidates['status'],
                     'message': 'Select the exact publication DOI or URL from the preserved candidates'}
         url, identifier = self.resolve_target(target)
@@ -415,15 +428,20 @@ class Publisher:
             source_page = self.store.put(clean_html(raw, self.store.sanitizer), "text/html", self.source, page.url, role="source_page", requested_target=target)
             record = {"title": titles[0], "doi": identifier, "metadata": metadata, "url": self.store.sanitizer.url(page.url)}
             artifact = self.store.put(encoded([record]), "application/json", self.source, page.url, role="records", evidence_ref=source_page["ref"])
-            aip_citation = None
-            if self.source == 'aip' and set(parts) & {'abstract','export'}:
-                from silverchair import citation
+            native_citation = None
+            if self.source in ('aip','taylor-francis') and set(parts) & {'abstract','export'}:
                 try:
-                    aip_citation = {'status':'available','artifact':citation(self,page,identifier or observed_dois[0]),'format':'bibtex'}
+                    if self.source=='aip':
+                        from silverchair import citation
+                        cited=citation(self,page,identifier or observed_dois[0])
+                    else:
+                        from taylor import citation
+                        cited=citation(self,[identifier or observed_dois[0]],page.url)
+                    native_citation = {'status':'available','artifact':cited,'format':'bibtex'}
                 except ServiceError as error:
-                    aip_citation = error.result
+                    native_citation = error.result
                 except Exception as error:
-                    aip_citation = {'status':'error','code':'citation_export_failed','error_type':type(error).__name__}
+                    native_citation = {'status':'error','code':'citation_export_failed','error_type':type(error).__name__}
             components = {}
             for part in parts:
                 if part == 'export' and self.source == 'springer':
@@ -438,14 +456,20 @@ class Publisher:
                         components[part]={'status':'available','artifact':citation(self.store,[product_id]),'format':'ris'}
                     except ServiceError as error:
                         components[part]=error.result
-                elif part == 'export' and self.source == 'aip':
-                    components[part] = aip_citation
-                elif part == 'abstract' and self.source == 'aip' and aip_citation and aip_citation['status']=='available':
-                    native = self.store.read(aip_citation['artifact']['ref'])[1]
+                elif part == 'export' and self.source == 'de-gruyter':
+                    from degruyter import citation
+                    try:
+                        components[part]={'status':'available','artifact':citation(self,page,identifier or observed_dois[0]),'format':'ris'}
+                    except ServiceError as error:
+                        components[part]=error.result
+                elif part == 'export' and self.source in ('aip','taylor-francis'):
+                    components[part] = native_citation
+                elif part == 'abstract' and self.source in ('aip','taylor-francis') and native_citation and native_citation['status']=='available':
+                    native = self.store.read(native_citation['artifact']['ref'])[1]
                     rows = bibliography(native,'application/x-bibtex')
                     content = rows[0].get('abstract') if rows else None
                     if content:
-                        abstract = self.store.put(content,'text/plain',self.source,page.url,role='abstract',format='native_bibtex_field',parent_ref=aip_citation['artifact']['ref'])
+                        abstract = self.store.put(content,'text/plain',self.source,page.url,role='abstract',format='native_bibtex_field',parent_ref=native_citation['artifact']['ref'])
                         components[part] = {'status':'available','artifact':abstract}
                     else:
                         components[part] = {'status':'source_page','artifact':source_page,'reason':'The native citation does not include an abstract'}
@@ -467,7 +491,7 @@ class Publisher:
                     else:
                         components[part] = {"status": "source_page", "artifact": source_page, "reason": "Abstract region is not yet identified for this page layout"}
                 elif part == "fulltext":
-                    links = primary_pdf_links(raw, page.url)
+                    links = primary_pdf_links(page.content(), page.url, identifier=identifier or (observed_dois[0] if observed_dois else None))
                     if not links:
                         components[part] = {"status": "not_implemented", "reason": "No recognized document-bound PDF control; further layout/full-HTML handling is pending", "artifact": source_page}
                         continue

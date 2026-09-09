@@ -137,20 +137,26 @@ def acm_records(raw, base):
     return rows
 
 
-def browser_download(context, url, hosts, *, headers=None):
+def browser_download(context, url, hosts, *, headers=None, form=None):
     from playwright.sync_api import TimeoutError as BrowserTimeout, Error as BrowserError
     for _ in range(6):
         parsed = urlsplit(url)
         if parsed.scheme not in ("https", "http") or parsed.hostname not in hosts or parsed.username or parsed.password or parsed.port not in (None, 80, 443):
             raise ServiceError("source_boundary", "Observed document link left the selected source", blocked_host=parsed.hostname)
         try:
-            response = context.request.get(url, max_redirects=0, timeout=45000, headers=headers or {})
+            if form is None:
+                response = context.request.get(url, max_redirects=0, timeout=45000, headers=headers or {})
+            else:
+                response = context.request.post(url, data=urlencode(form,doseq=True), max_redirects=0, timeout=45000,
+                    headers={**(headers or {}),'Content-Type':'application/x-www-form-urlencoded'})
         except BrowserTimeout:
             raise ServiceError("timeout", "Source document did not respond within the download timeout", retryable=True) from None
         except BrowserError:
             raise ServiceError("connection_error", "Source document connection failed", retryable=True) from None
         if response.status in (301, 302, 303, 307, 308):
             url = urljoin(url, response.headers.get("location", ""))
+            if response.status in (301,302,303):
+                form = None
             continue
         if response.status in (401, 403):
             raise ServiceError("access_restricted", "Source restricted this document", status="restricted", http_status=response.status)
@@ -245,20 +251,26 @@ class KudosGateway:
         if cached and not cached.is_closed() and urlsplit(cached.url).hostname in hosts:
             return cached
         page = self.context.new_page()
+        stage = 'portal_login'
         try:
             self.login(page)
+            stage = 'academic_database_page'
             page.get_by_role("link", name="검색", exact=True).first.hover()
             page.get_by_role("link", name="학술DB", exact=True).first.click()
+            stage = 'database_filter'
             with page.expect_navigation(wait_until="domcontentloaded"):
                 page.locator("#search_order").fill(label)
                 page.locator("#search_order").press("Enter")
             row = page.locator(".db-tit").filter(has_text=label).first
+            stage = 'database_shortcut'
             shortcut = row.get_by_role("link", name="바로가기")
             shortcut.wait_for()
             with self.context.expect_page(timeout=25000) as popup:
                 shortcut.click()
             target = popup.value
+            stage = 'publisher_redirect'
             target.wait_for_url(lambda u: urlsplit(str(u)).hostname in hosts, wait_until="domcontentloaded", timeout=55000)
+            stage = 'publisher_ready'
             target.locator(ready).filter(visible=True).first.wait_for(timeout=55000)
             require_source_url(target.url, hosts)
             self.pages[source] = target
@@ -266,7 +278,7 @@ class KudosGateway:
         except ServiceError:
             raise
         except Exception as error:
-            raise ServiceError("gateway_navigation_failed", "KUDOS academic-DB shortcut did not reach a ready source page", source=source, error_type=type(error).__name__, retryable=True) from None
+            raise ServiceError("gateway_navigation_failed", "KUDOS academic-DB shortcut did not reach a ready source page", source=source, stage=stage, error_type=type(error).__name__, retryable=True) from None
         finally:
             page.close()
 

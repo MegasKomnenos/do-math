@@ -1,6 +1,6 @@
 부분 완료 상태의 중간 검증 기록이다. 2026-09-09~10 KST의 Windows 호스트에서 공통 서버와 아래 호출 경로를 확인했다. 보고 파일 이름의 시각은 UTC다. 선정 자료원 전체의 구현 완료 기록은 아니다.
 
-공통·자료원 검사 70개가 통과했다. 공개 응답 fixture와 오류 경로의 대역 검사, 실제 SDK 클라이언트와 서버 프로세스의 stdio 검사를 포함한다. 테스트 명령은 README에 있으며, 구현의 새 변경에는 관련 검사를 다시 적용한다.
+공통·자료원 검사 76개가 통과했다. 공개 응답 fixture와 오류 경로의 대역 검사, 실제 SDK 클라이언트와 서버 프로세스의 stdio 검사를 포함한다. 테스트 명령은 README에 있으며, 구현의 새 변경에는 관련 검사를 다시 적용한다.
 
 | 자료원 | 실제로 수행한 범위 | 로컬 근거 |
 |---|---|---|
@@ -68,4 +68,16 @@ Cambridge는 별도 키·계정·이메일 없이 공개 RIS API에서 두 문�
 
 Cambridge RIS 경로는 [Zotero의 Cambridge Core 번역기](https://github.com/zotero/translators/blob/master/Cambridge%20Core.js)를 조사 출발점으로 삼고 실제 Cambridge 응답으로 검증했다. 해당 코드를 복제해 실행하지 않았다. 현재 구현에서 native RIS를 제공하며, 다른 exportType 탐색의 빈 응답·오류를 다른 형식의 지원 근거로 세지 않는다. 주제·저널·출판사·학회 ID는 원 검색 facet에서 회수하여 `facets.ref`로 제공한다.
 
-전체 구현은 부분 완료이며 나머지 출판사·추가 기능의 구현을 계속한다. 별도 웹 계정 또는 연락 이메일을 요구하는 기능은 사용자 지시에 따라 보류하고 입력을 요청하지 않는다. 위 성공 기록은 해당 시점·입력의 검증이며 모든 옵션의 검증으로 확대하지 않는다.
+Taylor & Francis는 KUDOS 목록을 Taylor로 조회해 기관 프록시에 접속했다. native field1·text1 검색과 0부터 세는 startPage, 20건 페이지를 확인했다. 실제 MCP에서 40,675건 중 페이지 경계 두 문헌의 BibTeX, 10.1080/09557571.2011.558053의 서지·초록·23쪽 PDF·인용문을 통과했다. 근거는 `data/validation/20260909T180900949894Z-taylor-francis-workflow.json`이다. PDF 첫 쪽에서는 제목·저자와 DOI를 별도로 읽었다. 현재 문헌 DOI와 일치하는 Download PDF 제어를 선택하며 View PDF 뷰어나 관련 논문의 PDF로 바꾸지 않는다.
+
+Taylor & Francis의 `/action/downloadCitation`은 기관 context에서 두 DOI를 포함한 POST에 두 BibTeX 레코드를 반환했다. 공개 직접 POST의 HTTP 403과 구별한다. POST 리디렉션은 허용 호스트를 다음 요청 전에 검사하고, 303 등에서는 본문을 재전송하지 않는 GET으로 전환한다. 이 경계는 별도의 오류 경로 검사도 통과했다. KUDOS 진입 실패에는 로그인·학술DB·목록 조회·바로가기·자료원 이동·준비 중 어느 단계였는지를 안전한 이름으로 남긴다.
+
+De Gruyter Brill은 title:(complexity)와 familyName:(Goldreich)의 결합, 검색 가시성, 10건 페이지의 startItem을 확인했다. 실제 MCP에서 available 범위의 654건 중 두 문헌 RIS·추출, 서지·초록·9쪽 PDF·RIS와 9·10번째 위치의 검색을 통과했다. 근거는 `data/validation/20260909T183631515680Z-de-gruyter-workflow.json`이다. Download in RIS format 제어의 원 링크를 회수하고 doi: 접두어를 식별자 대조에 사용한다. all에는 저널 등 DOI가 없는 결과도 포함되며 그 인용문 미확보를 문헌별로 표시한다.
+
+JSTOR의 공개 `/citation/ris/345683`은 별도 자격 없이 원 RIS를 반환했다. 실제 MCP에서 10.2307/345683의 서지·초록·RIS와 추출을 통과했다(`data/validation/20260909T183927702687Z-jstor-workflow.json`). RIS의 TY 앞에 있는 Provider·Database·Content 안내문을 source_preamble로 보존하도록 추출기를 확장했다. 웹 검색과 전문 회수의 통과 기록은 아니다.
+
+추가 접근 관측에서는 JSTOR 검색의 이미지 CAPTCHA, IOP 기관 바로가기의 validate.perfdrive.com CAPTCHA, Project Euclid 검색의 Incapsula 차단, SIAM 검색의 Cloudflare 확인 화면을 기록했다. AMS는 browse 화면 틀을 열었지만 결과 준비를 확인하지 못했고 browse.js의 공개·기관 요청에서 HTTP 403을 관측했다. ScienceDirect는 고급검색 입력까지 열렸으나 검색 제출 뒤 CPE00001을 반환했다. 이 관측을 영구적인 서비스 부재로 해석하지 않으며, 미구현·미검증 기능은 지원표에 남긴다.
+
+이번 진단에서도 보안 규칙 위반이 두 번 발생했다. 압축 HTML의 첫 줄을 직접 출력하면서 Cloudflare 접근 확인 토큰이 포함됐고, Numdam 폼의 숨은 입력값 출력에 CSRF 토큰이 포함됐다. 사용자에게 즉시 알렸으며 값을 재기재하지 않았다. 해당 브라우저는 종료됐지만 기존 도구 출력은 삭제하지 않았고 토큰 폐기를 주장하지 않는다. 원 Numdam HTML은 보호된 probes로 이동했다. URL의 Cloudflare 토큰은 기존 정제 대상이었으며, 이번에는 구조화된 challenge 객체와 csrfmiddlewaretoken의 정제를 추가 검사했다. 이 수리가 원자료 직접 출력의 절차 위반 자체를 자동 방지한다고 주장하지 않는다. 이후 진단에는 원 HTML·숨은 입력값을 직접 출력하지 않는 경계가 필요하다.
+
+전체 구현은 부분 완료다. 나머지 자료원 검색·내보내기, 일부 문헌·첨부 형식과 Numdam 추가 검색 등은 남아 있다. 별도 웹 계정 또는 연락 이메일을 요구하는 기능은 사용자 지시에 따라 보류하고 입력을 요청하지 않는다. 위 성공 기록은 해당 시점·입력의 검증이며 모든 옵션의 검증으로 확대하지 않는다.

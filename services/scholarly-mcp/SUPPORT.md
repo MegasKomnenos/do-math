@@ -30,19 +30,19 @@
 | GitHub | github | api | partial | source_guide, search, fetch, export | live_adapter_pinned_file_fetch |
 | Zenodo | zenodo | api | partial | source_guide, search, fetch, export | live_mcp_search_file_checksum_fetch_extract |
 | Software Heritage | software-heritage | api | partial | source_guide, search, fetch, export | live_adapter_origin_search_fetch |
-| AMS publications | ams | under_investigation | pending | 미구현 | not_recorded |
+| AMS publications | ams | under_investigation | pending | 미구현 | browse_shell_and_script_restriction_observed |
 | Cambridge University Press | cambridge | fixed: citation API; institutional search/document Playwright | partial | source_guide, search, fetch, export | live_mcp_filtered_search_native_ris_abstract_pdf_fetch_pagination |
-| De Gruyter Brill | de-gruyter | under_investigation | pending | 미구현 | not_recorded |
-| JSTOR | jstor | under_investigation | pending | 미구현 | not_recorded |
+| De Gruyter Brill | de-gruyter | playwright | partial | source_guide, search, fetch, export | live_mcp_native_search_ris_abstract_pdf_fetch_pagination |
+| JSTOR | jstor | api (native citation); browser search/document pending | partial | source_guide, fetch, export | live_mcp_public_ris_metadata_abstract_fetch; web_captcha_observed |
 | Oxford University Press | oxford | playwright | partial | source_guide, search, fetch, export | live_mcp_search_citation_metadata_abstract_fetch_and_mixed_pagination |
-| ScienceDirect | science-direct | playwright | pending | 미구현 | not_recorded |
+| ScienceDirect | science-direct | playwright | pending | 미구현 | native_advanced_form_and_search_cpe_observed |
 | Springer Nature | springer | playwright | partial | source_guide, search, fetch, export | live_mcp_advanced_search_native_citations_pdf_fetch_pagination |
-| Taylor & Francis | taylor-francis | under_investigation | pending | 미구현 | not_recorded |
+| Taylor & Francis | taylor-francis | playwright | partial | source_guide, search, fetch, export | live_mcp_native_search_citation_abstract_pdf_fetch_pagination |
 | Wiley | wiley | playwright | partial | source_guide, search, fetch, export | live_mcp_advanced_search_native_bibtex_pdf_fetch_empty_repeat |
 | AIP | aip | playwright | partial | source_guide, search, fetch, export | live_mcp_advanced_search_native_citation_abstract_fetch_pagination |
 | APS 공개 접근 | aps | api | partial | source_guide, search, fetch, export | live_mcp_open_access_feed_metadata_abstract_pdf_fetch |
-| IOP | iop | under_investigation | pending | 미구현 | not_recorded |
-| SIAM | siam | under_investigation | pending | 미구현 | not_recorded |
+| IOP | iop | under_investigation | pending | 미구현 | institution_redirect_to_captcha_observed |
+| SIAM | siam | under_investigation | pending | 미구현 | browser_access_challenge_observed |
 | KNU FRIC | knu-fric | under_investigation | pending | 미구현 | not_recorded |
 | 개별 구독 자료원 | individual-subscription | target_dependent | pending | 미구현 | not_recorded |
 | 학회·저널 공식 사이트 | society-journal | target_dependent | pending | 미구현 | not_recorded |

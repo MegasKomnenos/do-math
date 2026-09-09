@@ -29,6 +29,7 @@ from eudml import EuDML
 from aps import APS
 from dataclasses import replace
 from publishers import PROFILES, Publisher
+from jstor import JSTOR
 
 ROOT = Path(__file__).resolve().parent
 STORE = ArtifactStore(ROOT / "data")
@@ -124,6 +125,7 @@ def main():
     ADAPTERS["afp"] = AFP(STORE)
     ADAPTERS["eudml"] = EuDML(STORE)
     ADAPTERS["aps"] = APS(STORE)
+    ADAPTERS["jstor"] = JSTOR(STORE)
     gateway = KudosGateway(ROOT.parents[1] / ".credentials", STORE.sanitizer)
     firefox_gateway = KudosGateway(ROOT.parents[1] / ".credentials", STORE.sanitizer, engine="firefox")
     ADAPTERS["mathscinet"] = MathSciNet(STORE, gateway)
@@ -136,7 +138,7 @@ def main():
     ADAPTERS["pqdt"] = PQDT(STORE, firefox_gateway)
     ADAPTERS["ieee-xplore"] = IEEE(STORE, firefox_gateway)
     ADAPTERS["springer"] = Publisher(STORE, firefox_gateway, next(p for p in PROFILES if p.source == "springer"))
-    for identifier in ("project-euclid", "cambridge", "oxford", "aip", "wiley"):
+    for identifier in ("project-euclid", "cambridge", "oxford", "aip", "wiley", "taylor-francis", "de-gruyter"):
         ADAPTERS[identifier] = Publisher(STORE, firefox_gateway, next(p for p in PROFILES if p.source == identifier))
     ADAPTERS["aps-institutional"] = Publisher(STORE, firefox_gateway, replace(next(p for p in PROFILES if p.source == "aps"), source="aps-institutional"))
     try:
