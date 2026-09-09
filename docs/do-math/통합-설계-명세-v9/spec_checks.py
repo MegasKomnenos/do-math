@@ -415,6 +415,21 @@ def pack_listings(candidates, canon, budget, permission=None):
             "remaining": remaining, "permission": permission}
 
 
+def check_operational_review(record, target_execution):
+    """Check the mode-dependent receipt; applying reservations still needs current evidence."""
+    if record["execution_id"] != target_execution["id"]:
+        raise ContractError("operational review targets a different execution")
+    if record["disposition"] != "continue":
+        return
+    mode = target_execution.get("operational_review_mode")
+    if mode not in ("periodic", "event_driven"):
+        raise ContractError("continue requires the target execution's review mode")
+    if mode == "periodic" and "next_review_at" not in record:
+        raise ContractError("periodic continue requires the next review time")
+    if mode == "event_driven" and "next_review_at" in record and not record["uncertainties"]:
+        raise ContractError("event-driven recheck requires remaining uncertainty")
+
+
 def overflow_disposition(*, reducible_by_window, tool_accumulation, activity_kind, restored_fits=None,
                          prior_overflows=0, proposal_overflow=False, common_overflow=False):
     """Proposal overflow is measured without restored dialogue; common text has priority."""

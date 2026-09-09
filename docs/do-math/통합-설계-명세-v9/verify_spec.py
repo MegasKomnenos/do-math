@@ -45,7 +45,7 @@ def validator(schema):
     return Draft202012Validator(schema, registry=REGISTRY, format_checker=FORMATS)
 
 
-def validate(family, value, *, review_policy=None):
+def validate(family, value, *, review_policy=None, target_execution=None):
     errors = sorted(validator(SCHEMAS[family]).iter_errors(value), key=lambda e: str(list(e.path)))
     if errors:
         raise checks.ContractError(str(list(errors[0].path)) + ": " + errors[0].message)
@@ -53,6 +53,8 @@ def validate(family, value, *, review_policy=None):
         checks.validate_budget(value)
     elif family == "resource-reservation":
         checks.validate_reservation(value)
+    elif family == "operational-review" and target_execution is not None:
+        checks.check_operational_review(value, target_execution)
     elif family == "execution":
         matches = [row for row in build_spec.ROLE_CONTRACTS if
                    all(row[key] == value[key] for key in ("actor_kind", "activity_kind", "stage"))]
@@ -506,6 +508,47 @@ class SpecificationTests(unittest.TestCase):
             if family != "common":
                 with self.subTest(family=family):
                     validate(family, read_example(family))
+
+    def test_event_driven_continue_can_finish_without_rescheduling(self):
+        review = read_example("operational-review")
+        review.update(disposition="continue", uncertainties=[])
+        review.pop("next_review_at", None)
+        execution = read_example("execution")
+        execution.update(activity_kind="research_work", stage="performing", budget_kind="work",
+                         operational_review_mode="event_driven", task_id="T-" + "0" * 25 + "1",
+                         task_revision=1)
+        execution.pop("execution_deadline")
+        validate("execution", execution)
+        validate("operational-review", review, target_execution=execution)
+
+        review["next_review_at"] = "2026-09-07T01:00:00.000Z"
+        with self.assertRaises(checks.ContractError):
+            validate("operational-review", review, target_execution=execution)
+        review["uncertainties"] = ["The running tool needs another status check."]
+        validate("operational-review", review, target_execution=execution)
+
+        review["next_review_at"] = None
+        with self.assertRaises(checks.ContractError):
+            validate("operational-review", review, target_execution=execution)
+
+    def test_periodic_continue_requires_time_from_bound_execution(self):
+        review = read_example("operational-review")
+        review.update(disposition="continue", uncertainties=[])
+        review.pop("next_review_at", None)
+        execution = read_example("execution")
+        execution.update(activity_kind="identity_review", stage="planning", budget_kind="work",
+                         output_schema_id=BASE + "review-plan", operational_review_mode="periodic",
+                         next_operational_review_at="2026-09-07T01:00:00.000Z")
+        execution.pop("execution_deadline")
+        validate("execution", execution)
+        validate("operational-review", review)  # The output alone does not contain the mode.
+        with self.assertRaises(checks.ContractError):
+            validate("operational-review", review, target_execution=execution)
+        review["next_review_at"] = "2026-09-07T02:00:00.000Z"
+        validate("operational-review", review, target_execution=execution)
+        execution["id"] = "E-" + "0" * 25 + "2"
+        with self.assertRaises(checks.ContractError):
+            validate("operational-review", review, target_execution=execution)
 
     def test_every_command_branch(self):
         for path in sorted((ROOT / "fixtures" / "commands").glob("*.json")):
@@ -1014,8 +1057,8 @@ class SpecificationTests(unittest.TestCase):
     def test_source_vectors_and_quality_bijection(self):
         mapping = checks.parse_json((ROOT / "source-vector-map.json").read_bytes())
         ids = [v["id"] for v in mapping["vectors"]]
-        self.assertEqual(set(ids), {"V" + str(i).zfill(2) for i in range(1, 223)})
-        self.assertEqual(len(ids), 222)
+        self.assertEqual(set(ids), {"V" + str(i).zfill(2) for i in range(1, 226)})
+        self.assertEqual(len(ids), 225)
         retired = {v["id"] for v in mapping["vectors"] if v["expected"] == "번호 미재사용"}
         self.assertEqual(retired, {"V159", "V189"})
         rules = checks.parse_json((ROOT / "semantic-rules.json").read_bytes())["rules"]

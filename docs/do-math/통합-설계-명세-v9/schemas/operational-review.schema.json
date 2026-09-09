@@ -2,25 +2,6 @@
   "$id": "https://do-math.invalid/schemas/draft/9/operational-review",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "allOf": [
-    {
-      "if": {
-        "properties": {
-          "disposition": {
-            "const": "continue"
-          }
-        },
-        "required": [
-          "disposition"
-        ]
-      },
-      "then": {
-        "required": [
-          "next_review_at"
-        ]
-      }
-    }
-  ],
   "properties": {
     "activity_id": {
       "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/id_AC"
@@ -193,7 +174,8 @@
       ]
     },
     "next_review_at": {
-      "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/instant"
+      "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/instant",
+      "description": "For continue, required by the target execution's periodic mode. In event_driven mode, absence means no further reservation for the reviewed duty; a supplied time requires remaining uncertainty and diagnosis evidence. Check against the bound target execution."
     },
     "observation_refs": {
       "items": {

@@ -277,7 +277,7 @@
       "owner_section": "12,19.4",
       "path": "schemas/operational-review.schema.json",
       "schema_id": "https://do-math.invalid/schemas/draft/9/operational-review",
-      "sha256": "dc5ed811e9ee569a9f331f490501799c4aff0b1f5a9b8c285822ccc301be8e78",
+      "sha256": "3ba3cca60633755105c6e38bd8e52e4af6cf4c628339ab2f618fb31f08a3c34e",
       "storage": "runtime/activities/{activity_id}/reviews/{id}.json"
     },
     {

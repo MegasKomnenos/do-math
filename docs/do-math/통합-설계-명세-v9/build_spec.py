@@ -683,11 +683,11 @@ register("operational-review", "12,19.4", "runtime/activities/{activity_id}/revi
     "trigger_event_ids": array(ID, 1, True), "observation_refs": NONEMPTY_REFS,
     "diagnosis_ref": ARTIFACT, "actual_scope": RANGES, "uncertainties": STRINGS,
     "disposition": enum("continue", "repair", "resume_checkpoint", "restart", "revise_task", "close_task", "ask_user", "no_action"),
-    "basis": BASIS, "next_review_at": TIME, "recovery_approval_ref": EXACT,
+    "basis": BASIS, "next_review_at": {**TIME, "description": "For continue, required by the target execution's periodic mode. In event_driven mode, absence means no further reservation for the reviewed duty; a supplied time requires remaining uncertainty and diagnosis evidence. Check against the bound target execution."}, "recovery_approval_ref": EXACT,
     "checkpoint_ref": ARTIFACT, "followups": FOLLOWUPS,
 }, ["id", "activity_id", "execution_id", "stage", "trigger_event_ids", "observation_refs",
     "diagnosis_ref", "actual_scope", "uncertainties", "disposition", "basis", "followups"],
-    [condition("disposition", "continue", require("next_review_at"))], "OR")
+    prefix="OR")
 
 register("decision", "13.1,19.3", "research/governance/decisions/{id}.json", {
     "id": ID, "question_ref": ARTIFACT, "answer_ref": ARTIFACT,
@@ -1048,7 +1048,7 @@ RULES = [
     ("R02", "4.2", "ended releases only proved local resources; unknown provider reservations survive execution termination.", ["V10", "V76", "V77"], "reservation"),
     ("R03", "4.5", "confirmed_consumed + returned <= reserved; settlement requires evidence; hard limits require enforceable upper bounds.", ["V56", "V57", "V58"], "reservation"),
     ("R04", "5.3", "At most one non-ended research_work request per task, including queued; completed/closed require all owned research executions ended.", ["V45", "V46"], "task"),
-    ("R05", "5.5", "A contract revision applies only after previous research executions ended and independent approval exists; remaining_scope cannot waive contract obligations.", ["V55", "V69", "V70"], "task"),
+    ("R05", "5.5,12.4", "A contract revision applies only after previous research executions ended and independent approval exists; remaining_scope cannot waive contract obligations. Termination without changing the contract preserves its revision and requires the designated completion or closure basis, scope disposition and ended research executions; operational review does not replace these judgments with contract rewriting.", ["V55", "V69", "V70", "V224"], "task"),
     ("R06", "5.7", "Evaluate all AST branches at one snapshot; errors dominate true/false; missing dynamic records are false, broken declared artifact refs are errors.", ["V163", "V164", "V165"], "occurrence"),
     ("R07", "6.2", "Only documented execution transitions; stopping phases only checkpointing -> terminating; ended is immutable.", ["V07", "V11", "V39"], "execution"),
     ("R08", "6.3", "No substantive action before running authority; all startup reservations including bounded finishing usage are present.", ["V08", "V09", "V13", "V167"], "execution"),
@@ -1074,7 +1074,7 @@ RULES = [
     ("R28", "11.8", "Only actual assessment dependencies suspend. Revalidate the original assessment's kind, value, basis and effects to restore use; confirmed error in that assessment withdraws it. New positive/negative values alone imply neither outcome. Unresolved meta-review remains suspended; independent explanations and formally valid results remain.", ["V22", "V23", "V27", "V198", "V199"], "assessment"),
     ("R29", "12.1.1", "Valid self-check resets maximum interval anchor; retransmission/rule-only change does not; old obligations and no-progress history survive rule changes.", ["V134", "V152", "V153", "V154", "V169", "V175", "V176", "V187"], "observation"),
     ('R30', '12.1.1', 'The self-check deadline is due time plus window only when both tool and provider calls are absent; otherwise it is the first confirmed safe boundary plus window, or unset before that boundary. Response must also precede the next research action. Independent call review and machine stop still apply.', ['V135', 'V168', 'V200'], 'observation'),
-    ("R31", "12.2", "One open operational review per execution; valid progress does not cancel explicitly scheduled review or periodic duty.", ["V133", "V150", "V151"], "observation"),
+    ("R31", "12.1,12.2,12.3,12.4", "One open operational review per execution; valid progress does not cancel explicitly scheduled review or periodic duty. Bind a continue result to the actual target execution: periodic requires the next review time; event_driven reserves a further review only for remaining uncertainty with diagnosis evidence. If the reviewed duty is complete and no further review is needed, clear that reservation while preserving unprocessed duties and checking current premises.", ["V133", "V150", "V151", "V223"], "observation"),
     ("R32", "13.1", "Exact user approval requires no universal second confirmation; newly interpreted scope requires checking and user decision.", ["V28", "V101"], "decision"),
     ('R33', '13.1.1', 'Repeated-work holds follow lineage and explicit continue decisions. Proposal and contract revision thresholds count current revision minus the revision bound by the latest explicit continue decision, or zero as the initial baseline; immutable revision numbers never reset. Existing holds and total limits remain. Proposal and contract continuation cannot use case delegation; overflow escalations and capacity shortages are not selection failures.', ['V174', 'V184', 'V205', 'V220'], 'threshold'),
     ("R34", "13.2", "Case approval is not future delegation; independent blinded checking and current original authority are required for semantic reuse.", ["V29", "V113", "V114", "V115", "V116", "V117"], "decision"),
@@ -1087,7 +1087,7 @@ RULES = [
     ("R41", "14.1", "initializing -> active requires complete activation evidence: approved governance, valid references, operations capacity, active trust and recovery.", ["V08", "V49"], "lifecycle"),
     ("R42", "3.2.1,5.3", "waiting may resume only after its recorded wake condition resolves; a task additionally requires a committed new research request.", ["V04", "V45", "V112"], "waiting"),
     ("R43", "11.3.2,16.5", "The assigned execution fixes review-result phase and role slot; validate the output against that exact assignment as well as its schema. Organize/answer never authorize a semantic verdict.", ["V192"], "review"),
-    ("R44", "11.1,11.7,17.3.1", "Quantifier order and witness dependencies are semantic obligations. A counterexample must meet every hypothesis and violate the conclusion; goal satisfaction follows the charter, not merely a proof of excluded middle.", ["V195", "V196"], "mathematics"),
+    ("R44", "11.1,11.7,17.3.1", "Quantifier order and witness dependencies are semantic obligations. A false formal statement without a valid proof stops at the preliminary gate and is not evidence of identity-review detection. Test the identity gate with a valid formal proof paired with both a faithful explanation and a quantifier-mismatched explanation. A counterexample must meet every hypothesis and violate the conclusion; goal satisfaction follows the charter, not merely a proof of excluded middle.", ["V195", "V196", "V225"], "mathematics"),
     ("R45", "8.3,16.2", "A profile used for transcript restoration has compaction disabled with evidence; an overflowing call fails without compaction and the execution ends execution_incomplete with cause context_overflow and measured components; reference-form transcript entries lie within the execution's read scope.", ["V201", "V203", "V208"], "input"),
     ('R46', '5.5,13.1.1', 'Contract revision numbers increase from 1. Threshold usage subtracts the revision named by the last explicit continuation decision, with zero before any such decision. With limit 3, continuation at revision 3 allows revisions 4 through 6 and holds authoring of 7. Existing holds, lineage and total limits survive; other tasks continue.', ['V215', 'V220'], 'threshold'),
 ]

@@ -48,15 +48,16 @@
       ]
     },
     {
-      "contract": "A contract revision applies only after previous research executions ended and independent approval exists; remaining_scope cannot waive contract obligations.",
+      "contract": "A contract revision applies only after previous research executions ended and independent approval exists; remaining_scope cannot waive contract obligations. Termination without changing the contract preserves its revision and requires the designated completion or closure basis, scope disposition and ended research executions; operational review does not replace these judgments with contract rewriting.",
       "domain": "task",
       "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
       "id": "R05",
-      "owner_section": "5.5",
+      "owner_section": "5.5,12.4",
       "source_vectors": [
         "V55",
         "V69",
-        "V70"
+        "V70",
+        "V224"
       ]
     },
     {
@@ -410,15 +411,16 @@
       ]
     },
     {
-      "contract": "One open operational review per execution; valid progress does not cancel explicitly scheduled review or periodic duty.",
+      "contract": "One open operational review per execution; valid progress does not cancel explicitly scheduled review or periodic duty. Bind a continue result to the actual target execution: periodic requires the next review time; event_driven reserves a further review only for remaining uncertainty with diagnosis evidence. If the reviewed duty is complete and no further review is needed, clear that reservation while preserving unprocessed duties and checking current premises.",
       "domain": "observation",
       "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
       "id": "R31",
-      "owner_section": "12.2",
+      "owner_section": "12.1,12.2,12.3,12.4",
       "source_vectors": [
         "V133",
         "V150",
-        "V151"
+        "V151",
+        "V223"
       ]
     },
     {
@@ -572,14 +574,15 @@
       ]
     },
     {
-      "contract": "Quantifier order and witness dependencies are semantic obligations. A counterexample must meet every hypothesis and violate the conclusion; goal satisfaction follows the charter, not merely a proof of excluded middle.",
+      "contract": "Quantifier order and witness dependencies are semantic obligations. A false formal statement without a valid proof stops at the preliminary gate and is not evidence of identity-review detection. Test the identity gate with a valid formal proof paired with both a faithful explanation and a quantifier-mismatched explanation. A counterexample must meet every hypothesis and violate the conclusion; goal satisfaction follows the charter, not merely a proof of excluded middle.",
       "domain": "mathematics",
       "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
       "id": "R44",
       "owner_section": "11.1,11.7,17.3.1",
       "source_vectors": [
         "V195",
-        "V196"
+        "V196",
+        "V225"
       ]
     },
     {

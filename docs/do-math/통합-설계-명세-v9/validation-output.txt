@@ -7,6 +7,7 @@ test_disagreement_is_unresolved (__main__.SpecificationTests.test_disagreement_i
 test_draft_schema_table_and_owner_sections (__main__.SpecificationTests.test_draft_schema_table_and_owner_sections) ... ok
 test_duration_positive_and_fixed_units (__main__.SpecificationTests.test_duration_positive_and_fixed_units) ... ok
 test_ended_execution_requires_end_record (__main__.SpecificationTests.test_ended_execution_requires_end_record) ... ok
+test_event_driven_continue_can_finish_without_rescheduling (__main__.SpecificationTests.test_event_driven_continue_can_finish_without_rescheduling) ... ok
 test_every_command_branch (__main__.SpecificationTests.test_every_command_branch) ... ok
 test_exact_ref_rejects_tree_input (__main__.SpecificationTests.test_exact_ref_rejects_tree_input) ... ok
 test_exact_reference_bytes (__main__.SpecificationTests.test_exact_reference_bytes) ... ok
@@ -22,6 +23,7 @@ test_machine_has_no_ai_budget (__main__.SpecificationTests.test_machine_has_no_a
 test_objection_round_boundary (__main__.SpecificationTests.test_objection_round_boundary) ... ok
 test_overflow_disposition_and_restore_forms (__main__.SpecificationTests.test_overflow_disposition_and_restore_forms) ... ok
 test_overflow_prioritizes_common_text_and_distinguishes_restoration (__main__.SpecificationTests.test_overflow_prioritizes_common_text_and_distinguishes_restoration) ... ok
+test_periodic_continue_requires_time_from_bound_execution (__main__.SpecificationTests.test_periodic_continue_requires_time_from_bound_execution) ... ok
 test_plan_binding_and_output_truncation (__main__.SpecificationTests.test_plan_binding_and_output_truncation) ... ok
 test_provided_order_stable_components_first (__main__.SpecificationTests.test_provided_order_stable_components_first) ... ok
 test_provider_only_call_defers_self_check_deadline (__main__.SpecificationTests.test_provider_only_call_defers_self_check_deadline) ... ok
@@ -75,6 +77,6 @@ test_yaml_golden_empty_typed_and_body (__main__.SpecificationTests.test_yaml_gol
 test_yaml_nested_duplicate_tags_and_aliases (__main__.SpecificationTests.test_yaml_nested_duplicate_tags_and_aliases) ... ok
 
 ----------------------------------------------------------------------
-Ran 75 tests in 2.523s
+Ran 77 tests in 2.196s
 
 OK
