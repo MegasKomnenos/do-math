@@ -391,6 +391,40 @@ SOURCES['springer'].usage = {
     'official':['https://link.springer.com/advanced-search'],
 }
 
+SOURCES['oxford'].capabilities = ('source_guide','search','fetch','export')
+SOURCES['oxford'].usage = {
+    'search': 'query를 선택 필드의 Query Builder에 제출한다. exact=true는 구문 일치다. exact=false이면 해당 필드의 원 검색식으로 처리한다. 문헌 결과와 자료원의 표시 건수가 일치한 뒤 반환한다.',
+    'options': {'field':'All(기본 검색), Full Text(고급검색의 본문 필드), Keywords, Title, Author, Abstract, References', 'exact':'구문 일치 여부, 기본 false', 'sort':'relevance(기본), newest, oldest, title_asc, title_desc'},
+    'exports': 'json·html은 실제 문헌 결과, csv는 그 레코드의 기계적 CSV다. bibtex·ris·endnote·plain은 선택 문헌의 native citation 다운로드이며 export.artifacts의 ref로 읽는다. 사이트 Export title list는 책·저널 제목 목록이며 문헌 CSV와 다르고 CAPTCHA를 요구하므로 사용하지 않는다.',
+    'fetch': 'Oxford Academic의 정확한 문헌 URL 또는 이 플랫폼으로 연결되는 DOI. 검색 결과의 url을 사용하면 같은 플랫폼의 해당 판본을 지정한다. metadata·abstract·fulltext·export·supplementary를 요청한다. export는 native BibTeX이며 그 DOI를 문헌 metadata와 대조한다. 제목 입력은 Title 검색 후보를 반환한다.',
+    'limits': 'KUDOS 기관 접속. start 0부터, limit 1..1000, 원 페이지 20건. 제휴 출판사의 책, 저널·그림 같은 결과도 포함하므로 type을 보고 문헌을 선택한다. All과 Full Text는 다른 검색 범위다. 별도 계정이나 CAPTCHA가 필요한 기능을 자동 수행하지 않는다.',
+    'examples': [{'tool':'search','arguments':{'source':'oxford','query':'P versus NP','options':{'field':'Title','exact':True},'limit':2,'export':'bibtex'}}],
+    'official':['https://academic.oup.com/search-results'],
+}
+
+SOURCES['aip'].capabilities = ('source_guide','search','fetch','export')
+SOURCES['aip'].usage = {
+    'search': 'query를 AIP Query Builder의 선택 필드에 제출한다. 추가 검색 행은 terms로 AND·OR·NOT을 결합한다. exact는 화면의 Exact Match 설정이다. 자료원의 검색 확장·어간 처리까지 문자열 동일성으로 해석하지 않는다.',
+    'options': {'field':'All(기본), Title, Author, Author Affiliations, Full Text, Abstract, Keyword, DOI, ISBN, EISBN, ISSN, EISSN, Issue, Volume, References', 'exact':'화면의 Exact Match 설정, 기본 false', 'terms':'추가 행 배열. 각 행은 field와 query, 선택적으로 condition(AND·OR·NOT, 기본 AND), exact(기본 false)를 지정한다.', 'sort':'relevance, newest, oldest'},
+    'exports': 'json·html은 실제 문헌 결과, csv는 같은 레코드의 기계적 CSV다. bibtex·ris·endnote는 문헌별 native citation 다운로드다. export.artifacts의 ref로 읽는다.',
+    'fetch': 'AIP 플랫폼의 DOI 또는 정확한 문헌 URL로 metadata·abstract·fulltext·export·supplementary를 요청한다. abstract는 현재 문헌의 native BibTeX abstract 필드를 보존하며 export와 같은 파일을 재사용한다. 제목은 Title 검색 후보를 반환한다. 문헌 PDF의 이용 권한은 해당 출판물에 따른다.',
+    'limits': 'KUDOS 학술DB 기관 바로가기를 사용한다. start 0부터, limit 1..1000, 원 페이지 20건. 검색 snippet과 저자 초록을 구별한다.',
+    'examples': [{'tool':'search','arguments':{'source':'aip','query':'quantum computation','options':{'field':'Title','exact':True},'limit':2,'export':'json'}}],
+    'official':['https://pubs.aip.org/advanced-search'],
+}
+
+SOURCES['cambridge'].capabilities = ('source_guide','search','fetch','export')
+SOURCES['cambridge'].transport = 'fixed: citation API; institutional search/document Playwright'
+SOURCES['cambridge'].usage = {
+    'search': 'query는 Cambridge Core의 검색식이다. 큰따옴표 구문과 AND·OR·NOT은 원 검색 문법을 따른다. 저자·연도·자료 유형·기관 이용 가능 여부를 별도 조건으로 지정할 수 있다.',
+    'options': {'author':'저자 검색 문자열','from_year':'시작 연도','to_year':'끝 연도','content_type':'Articles, Chapters, Books, Elements 중 하나 또는 배열','available':'true이면 기관에서 이용 가능한 내용으로 제한','subject':'검색 결과 facets.ref에서 얻은 주제 ID','journal':'facets.ref의 저널 ID','publisher':'facets.ref의 출판사 ID','society':'facets.ref의 학회 ID','sort':'relevance, title, newest'},
+    'exports': 'json·html은 검색 결과, csv는 같은 레코드의 기계적 CSV다. ris와 native는 Cambridge의 별도 자격 없는 API가 반환하는 RIS다. export.artifacts의 ref를 추출한다. RIS의 UR과 선택 문헌 product ID를 대조한다.',
+    'fetch': 'Cambridge의 DOI 또는 정확한 문헌 URL. metadata·abstract·fulltext·export·supplementary를 요청한다. export는 native RIS이며, DOI 필드는 원 파일에서 DOI: 접두어를 포함할 수 있다. 제목은 후보 검색으로 반환한다.',
+    'limits': '기관 검색과 문헌 접근은 KUDOS 바로가기를 사용한다. RIS API는 별도 키·계정·이메일 없이 호출한다. start 0부터, limit 1..1000, 원 페이지 20건. 온라인 발행일과 인쇄 발행일을 구별한다.',
+    'examples': [{'tool':'search','arguments':{'source':'cambridge','query':'"P versus NP"','options':{'content_type':'Articles','available':True},'limit':2,'export':'ris'}}],
+    'official':['https://www.cambridge.org/core/search','https://www.cambridge.org/core/services/aop-easybib/export'],
+}
+
 for identifier, level in {
     "mathscinet": "live_mcp_search_export_fetch_extract",
     "wos": "live_mcp_search_full_record_export_extract",
@@ -420,9 +454,9 @@ for identifier, level in {
     "aps": "live_mcp_open_access_feed_metadata_abstract_pdf_fetch",
     "aps-institutional": "live_adapter_metadata_and_fulltext_restriction",
     "project-euclid": "live_adapter_metadata_abstract_pdf_fetch",
-    "cambridge": "live_adapter_metadata_only",
-    "oxford": "live_adapter_metadata_pdf_fetch",
-    "aip": "live_adapter_metadata_abstract_fetch",
+    "cambridge": "live_mcp_filtered_search_native_ris_abstract_pdf_fetch_pagination",
+    "oxford": "live_mcp_search_citation_metadata_abstract_fetch_and_mixed_pagination",
+    "aip": "live_mcp_advanced_search_native_citation_abstract_fetch_pagination",
     "wiley": "live_mcp_advanced_search_native_bibtex_pdf_fetch_empty_repeat",
 }.items():
     SOURCES[identifier].verification = level

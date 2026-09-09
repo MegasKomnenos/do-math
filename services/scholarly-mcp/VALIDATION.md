@@ -1,6 +1,6 @@
-부분 완료 상태의 중간 검증 기록이다. 2026-09-09 Windows 호스트에서 공통 서버와 아래 호출 경로를 확인했다. 선정 자료원 전체의 구현 완료 기록은 아니다.
+부분 완료 상태의 중간 검증 기록이다. 2026-09-09~10 KST의 Windows 호스트에서 공통 서버와 아래 호출 경로를 확인했다. 보고 파일 이름의 시각은 UTC다. 선정 자료원 전체의 구현 완료 기록은 아니다.
 
-공통·자료원 검사 65개가 통과했다. 공개 응답 fixture와 오류 경로의 대역 검사, 실제 SDK 클라이언트와 서버 프로세스의 stdio 검사를 포함한다. 테스트 명령은 README에 있으며, 구현의 새 변경에는 관련 검사를 다시 적용한다.
+공통·자료원 검사 70개가 통과했다. 공개 응답 fixture와 오류 경로의 대역 검사, 실제 SDK 클라이언트와 서버 프로세스의 stdio 검사를 포함한다. 테스트 명령은 README에 있으며, 구현의 새 변경에는 관련 검사를 다시 적용한다.
 
 | 자료원 | 실제로 수행한 범위 | 로컬 근거 |
 |---|---|---|
@@ -55,5 +55,17 @@ Springer의 실제 MCP 고급검색·문헌별 BibTeX 추출, DOI `10.1007/s0003
 Wiley의 실제 MCP 제목 고급검색, 684건 중 19·20번째 위치의 두 문헌과 native BibTeX, `10.1002/rsa.21210`의 서지·초록·18쪽 PDF, PDF 첫 쪽 제목 대조와 이후 0건 검색을 통과했다. 근거는 `data/validation/20260909T145413656979Z-wiley-workflow.json`이다. 내보내기 선택 창의 체크박스는 focus·Space로 조작하고 값의 DOI를 결과와 대조한다. 인용문의 DOI URL 표기와 DOI 자체를 같은 식별자로 대조하되 원 파일 표현은 보존한다.
 
 Wiley의 문헌 PDF 링크는 뷰어 HTML을 반환했다. 실제 뷰어 iframe의 `file` 값이 채워진 시점의 src를 같은 관찰에서 회수하고, 그 파일 링크를 자료원 경계 안에서 다운로드하여 PDF 형식을 검사한다. 초기 빈 `file` 값과 나중의 다운로드 값을 구별한다. 0건 화면에는 양성 결과의 `.result__count`가 없고 `.result__current`와 `.search-result__no-result`가 있어 이 별도 레이아웃을 처리했다. 실패 기록은 `completed=false`로 보존하며 이후 성공 기록과 구별한다.
+
+Oxford는 실제 MCP에서 제목 구문 검색 1건, 문헌별 BibTeX·서지·초록, complexity 제목 검색의 19·20번째 위치를 회수했다. 성공 근거는 `data/validation/20260909T170011179553Z-oxford-workflow.json`이다. 새 서버 재검증 중 범위 대조 실패도 있었으므로 그 실패 기록을 성공으로 바꾸지 않는다. 동일 코드의 별도 범위 조회에서는 75,732건 중 두 위치를 다시 회수했다. 페이지 사이의 전체 건수 또는 시작 위치가 달라지면 대조 실패를 반환한다.
+
+Oxford의 검색에는 저널·그림·책·논문이 함께 나온다. 일부 제목 링크에 article-link 클래스가 없는데 그 클래스를 필수로 삼아 실제 행을 인식하지 못한 결함을 수리했다. 이 결함을 자료원 자체의 결과 부재로 분류하지 않는다. 인식할 수 없는 응답에는 `search_parse_failed`와 원 HTML 근거·이미 회수한 레코드를 반환한다. All 기본 검색과 고급검색의 Full Text 필드는 별도 요청으로 보존한다. 실제 0건 응답, 결과 범위가 맞지 않는 응답과 미인식 레이아웃을 구별한다.
+
+Oxford 인용문 창의 형식을 선택한 뒤에도 다운로드 버튼이 CSS disabled 상태에 남는 사례를 확인했다. 형식 재선택과 안정된 컨트롤 선택에서는 실제 파일이 내려왔다. 현재는 문헌의 실제 citationModal GET form에 있는 resourceId·resourceType과 제공된 citationFormat 값을 사용하고 `/Citation/Download`의 결과 DOI를 대조한다. 폼에서 얻지 않은 문헌 ID나 다른 자료원으로 교체하지 않는다. 일괄 Export title list는 책·저널 목록이며 CAPTCHA를 요구해 사용하지 않는다.
+
+AIP는 실제 MCP에서 quantum computation 제목 검색, 서지·초록·native BibTeX와 페이지 경계의 2건을 회수했다. 최신 성공 근거는 `data/validation/20260909T170612399307Z-aip-workflow.json`이다. 10.1119/5.0328433의 native BibTeX DOI를 대조했으며 abstract 필드의 830자를 확보했다. 초기 문헌 HTML에는 초록 위젯이 아직 없을 수 있어 abstract는 검증된 native citation 필드를 사용한다. 같은 fetch의 export와 파일을 재사용한다. Tools 메뉴의 Cite가 제공하는 실제 BibTex·RIS·EndNote 링크를 사용한다. 이 흐름은 AIP PDF·첨부 영상 확보의 통과 기록이 아니다.
+
+Cambridge는 별도 키·계정·이메일 없이 공개 RIS API에서 두 문헌의 인용문을 함께 회수했고, RIS UR의 product ID와 요청 ID를 대조했다. 실제 MCP에서는 기관 이용 가능 Articles로 제한한 2건, RIS·추출, DOI 10.1017/S1062798713000598의 서지·초록·16쪽 PDF·RIS와 67,908건 결과의 페이지 경계를 통과했다. 최신 근거는 `data/validation/20260909T170612296273Z-cambridge-workflow.json`이다. RIS의 DOI: 접두어, 온라인 날짜와 인쇄 날짜, 서명 역할 A2 등 원 필드를 유지한다.
+
+Cambridge RIS 경로는 [Zotero의 Cambridge Core 번역기](https://github.com/zotero/translators/blob/master/Cambridge%20Core.js)를 조사 출발점으로 삼고 실제 Cambridge 응답으로 검증했다. 해당 코드를 복제해 실행하지 않았다. 현재 구현에서 native RIS를 제공하며, 다른 exportType 탐색의 빈 응답·오류를 다른 형식의 지원 근거로 세지 않는다. 주제·저널·출판사·학회 ID는 원 검색 facet에서 회수하여 `facets.ref`로 제공한다.
 
 전체 구현은 부분 완료이며 나머지 출판사·추가 기능의 구현을 계속한다. 별도 웹 계정 또는 연락 이메일을 요구하는 기능은 사용자 지시에 따라 보류하고 입력을 요청하지 않는다. 위 성공 기록은 해당 시점·입력의 검증이며 모든 옵션의 검증으로 확대하지 않는다.

@@ -31,15 +31,15 @@
 | Zenodo | zenodo | api | partial | source_guide, search, fetch, export | live_mcp_search_file_checksum_fetch_extract |
 | Software Heritage | software-heritage | api | partial | source_guide, search, fetch, export | live_adapter_origin_search_fetch |
 | AMS publications | ams | under_investigation | pending | 미구현 | not_recorded |
-| Cambridge University Press | cambridge | playwright | partial | source_guide, fetch, export | live_adapter_metadata_only |
+| Cambridge University Press | cambridge | fixed: citation API; institutional search/document Playwright | partial | source_guide, search, fetch, export | live_mcp_filtered_search_native_ris_abstract_pdf_fetch_pagination |
 | De Gruyter Brill | de-gruyter | under_investigation | pending | 미구현 | not_recorded |
 | JSTOR | jstor | under_investigation | pending | 미구현 | not_recorded |
-| Oxford University Press | oxford | playwright | partial | source_guide, fetch, export | live_adapter_metadata_pdf_fetch |
+| Oxford University Press | oxford | playwright | partial | source_guide, search, fetch, export | live_mcp_search_citation_metadata_abstract_fetch_and_mixed_pagination |
 | ScienceDirect | science-direct | playwright | pending | 미구현 | not_recorded |
 | Springer Nature | springer | playwright | partial | source_guide, search, fetch, export | live_mcp_advanced_search_native_citations_pdf_fetch_pagination |
 | Taylor & Francis | taylor-francis | under_investigation | pending | 미구현 | not_recorded |
 | Wiley | wiley | playwright | partial | source_guide, search, fetch, export | live_mcp_advanced_search_native_bibtex_pdf_fetch_empty_repeat |
-| AIP | aip | playwright | partial | source_guide, fetch, export | live_adapter_metadata_abstract_fetch |
+| AIP | aip | playwright | partial | source_guide, search, fetch, export | live_mcp_advanced_search_native_citation_abstract_fetch_pagination |
 | APS 공개 접근 | aps | api | partial | source_guide, search, fetch, export | live_mcp_open_access_feed_metadata_abstract_pdf_fetch |
 | IOP | iop | under_investigation | pending | 미구현 | not_recorded |
 | SIAM | siam | under_investigation | pending | 미구현 | not_recorded |

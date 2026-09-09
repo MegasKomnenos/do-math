@@ -66,8 +66,12 @@ Theory of Computing은 공식 저자·주제 색인과 저널이 지정한 검�
 
 EuDML은 CQL/OpenSearch와 NLM 메타데이터 API를 사용한다. 참고문헌의 ID를 현재 문헌의 ID로 쓰지 않으며, 외부 원문 링크를 자동 방문하지 않는다. Zenodo는 레코드나 특정 파일 URL로 파일을 받아 제공된 크기·checksum과 대조한다. 파일 URL을 지정하면 해당 파일을 선택하고, 레코드에 fulltext·supplementary를 요청하면 그 레코드의 파일들을 회수한다.
 
-`aps`는 별도 자격 없는 공개 Harvest API의 OA 자료 범위다. `aps-institutional`은 KUDOS를 거치는 기관 구독 접근으로 별도 등록했다. 호출자가 자료원을 선택하며 한 호출 안에서 접근 경로를 바꾸지 않는다. 기관 경로의 키워드 검색은 개발 중이다. Cambridge·Oxford·AIP·Project Euclid도 현재 문헌 조회 어댑터로 연결했고 고급검색과 일부 내보내기 형식의 개발이 남았다.
+`aps`는 별도 자격 없는 공개 Harvest API의 OA 자료 범위다. `aps-institutional`은 KUDOS를 거치는 기관 구독 접근으로 별도 등록했다. 호출자가 자료원을 선택하며 한 호출 안에서 접근 경로를 바꾸지 않는다. 기관 경로와 Project Euclid의 추가 검색 기능은 개발 중이다.
 
 연락 이메일을 요구하는 Unpaywall은 사용자 지시에 따라 사용을 보류한다. `describe_source`에는 보류 상태를 표시하며, 검색·확보 호출은 네트워크 요청 없이 `source_deferred`를 반환한다. 별도 웹 계정이나 연락 이메일은 요청하지 않는다.
 
 Springer는 제목·저자·저널·날짜의 고급검색, 검색 결과 페이지 조회와 문헌별 BibTeX·RIS·EndNote 인용문을 제공한다. `export=csv`는 검색 레코드의 기계적 CSV다. 사이트의 일괄 CSV 다운로드가 이동하는 로그인 경로는 사용하지 않는다. Wiley는 원 고급검색 필드와 날짜·발행물 조건, 선택 문헌의 native citation 다운로드를 제공한다. 인용문 파일은 `export.artifact` 또는 `export.artifacts`에 있으며 해당 자료원 설명의 예제를 따른다.
+
+Oxford와 AIP는 원 검색 필드와 문헌별 인용문을 연결했다. Oxford 결과에는 저널·그림도 있으므로 `type`을 확인한다. 검색 HTML의 건수와 실제 행을 대조하지 못하면 근거 참조와 파싱 실패를 반환한다. AIP 초록은 현재 문헌의 native BibTeX `abstract` 필드로 확보하며 인용문 요청과 같은 파일을 재사용한다.
+
+Cambridge는 저자·연도·자료 유형·기관 이용 가능 여부의 검색 조건과 공개 RIS API를 사용한다. 주제·저널·출판사·학회 필터 ID는 검색 결과의 `facets.ref`를 `extract`로 읽어 선택한다. RIS의 `UR`에 있는 문헌 ID를 요청한 ID와 대조한다. 온라인 발행일과 인쇄 발행일을 원 검색 기록에 함께 보존한다.

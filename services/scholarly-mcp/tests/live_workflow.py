@@ -162,6 +162,44 @@ async def main():
             fetched = await call("fetch", {"source": "drops", "target": "10.4230/LIPIcs.CSL.2020.5", "parts": ["metadata", "abstract", "fulltext"]})
             assert fetched["status"] == "ok", fetched.get("code")
             assert fetched["components"]["fulltext"]["artifact"]["pages"] == 2
+        elif args.source == 'cambridge':
+            search = await call('search', {'source':'cambridge','query':'"P versus NP"','options':{'content_type':'Articles','available':True},'limit':2,'export':'ris'})
+            assert search['status']=='ok', search.get('code')
+            assert search['received']==2
+            records = await call('extract', {'ref':search['records']['ref'],'count':2})
+            citation = await call('extract', {'ref':search['export']['artifacts'][0]['ref'],'count':2})
+            assert citation['returned']==2
+            fetched = await call('fetch', {'source':'cambridge','target':records['items'][0]['url'],'parts':['metadata','abstract','fulltext','export']})
+            assert fetched['status']=='ok', {k:v.get('status') for k,v in fetched.get('components',{}).items()}
+            assert fetched['components']['fulltext']['artifact']['pages']>=2
+            following = await call('search', {'source':'cambridge','query':'complexity','start':19,'limit':2,'export':'ris'})
+            assert following['status']=='ok', following.get('code')
+            assert following['received']==2
+        elif args.source == 'aip':
+            search = await call('search', {'source':'aip','query':'quantum computation','options':{'field':'Title','exact':True},'limit':1})
+            assert search['status']=='ok', search.get('code')
+            assert search['received']==1
+            records = await call('extract', {'ref':search['records']['ref'],'count':1})
+            fetched = await call('fetch', {'source':'aip','target':records['items'][0]['url'],'parts':['metadata','abstract','export']})
+            assert fetched['status']=='ok', {k:v.get('status') for k,v in fetched.get('components',{}).items()}
+            citation = await call('extract', {'ref':fetched['components']['export']['artifact']['ref'],'count':1})
+            assert citation['returned']==1
+            following = await call('search', {'source':'aip','query':'quantum computation','options':{'field':'Title','exact':True},'start':19,'limit':2,'export':'csv'})
+            assert following['status']=='ok', following.get('code')
+            assert following['received']==2
+        elif args.source == 'oxford':
+            search = await call('search', {'source':'oxford','query':'P versus NP','options':{'field':'Title','exact':True},'limit':2,'export':'bibtex'})
+            assert search['status']=='ok', search.get('export')
+            assert search['received']==1
+            records = await call('extract', {'ref':search['records']['ref'],'count':2})
+            assert records['items'][0]['title']=='The Prehistory of P versus NP'
+            citation = await call('extract', {'ref':search['export']['artifacts'][0]['ref'],'count':2})
+            assert citation['items'][0]['doi']=='10.23943/princeton/9780691175782.003.0005'
+            fetched = await call('fetch', {'source':'oxford','target':records['items'][0]['url'],'parts':['metadata','abstract','export']})
+            assert fetched['status']=='ok', {k:v.get('status') for k,v in fetched.get('components',{}).items()}
+            following = await call('search', {'source':'oxford','query':'complexity','options':{'field':'Title'},'start':19,'limit':2,'export':'csv'})
+            assert following['status']=='ok', following.get('code')
+            assert following['received']==2
         elif args.source == "springer":
             search = await call('search', {'source': 'springer', 'query': 'P versus NP', 'options': {'field': 'Title'}, 'limit': 2, 'export': 'bibtex'})
             assert search['status'] == 'ok', search.get('export')

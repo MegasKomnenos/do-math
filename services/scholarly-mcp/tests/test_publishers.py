@@ -45,6 +45,51 @@ class PublisherContract(unittest.TestCase):
         self.assertEqual(rows[0]["doi"], "10.1007/978-3-642-39053-1_17")
         self.assertEqual(rows[0]["title"], "A Personal View of the P versus NP Problem")
 
+    def test_oxford_listing_uses_chapter_link_and_rejects_unrendered_results(self):
+        from silverchair import records
+        raw = (ROOT / 'tests/fixtures/oxford-search.html').read_text('utf-8')
+        rows, total, first = records(raw, 'https://academic.oup.com')
+        self.assertEqual((total,first,len(rows)), (1,0,1))
+        self.assertEqual(rows[0]['title'], 'The Prehistory of P versus NP')
+        from urllib.parse import urlsplit
+        self.assertTrue(urlsplit(rows[0]['url']).path.endswith('/chapter/180867790'))
+        from scholarly import ServiceError
+        with self.assertRaises(ServiceError):
+            records('<div class="sr-statistics">1-20 of 47</div>No results found.', 'https://academic.oup.com')
+
+    def test_aip_native_listing_keeps_its_twenty_records(self):
+        from silverchair import records
+        raw = (ROOT / 'tests/fixtures/aip-search.html').read_text('utf-8')
+        rows,total,first = records(raw, 'https://pubs.aip.org')
+        self.assertEqual((total,first,len(rows)),(367,0,20))
+        self.assertEqual(rows[0]['title'],'Teaching decoherence by simulating quantum channels on quantum computers')
+
+    def test_oxford_basic_search_and_advanced_empty_are_separate_observations(self):
+        from silverchair import records
+        raw = (ROOT / 'tests/fixtures/oxford-basic-search.html').read_text('utf-8')
+        rows,total,first = records(raw,'https://academic.oup.com')
+        self.assertEqual((len(rows),first),(20,0))
+        self.assertGreaterEqual(total,20)
+        empty = (ROOT / 'tests/fixtures/oxford-fulltext-search.html').read_text('utf-8')
+        self.assertEqual(records(empty,'https://academic.oup.com'),([],0,0))
+
+    def test_cambridge_preserves_chapter_identity_and_publication_listing(self):
+        from cambridge import records
+        raw=(ROOT / 'tests/fixtures/cambridge-search.html').read_text('utf-8')
+        rows,total=records(raw,'https://www.cambridge.org')
+        self.assertEqual((len(rows),total),(6,6))
+        self.assertEqual(rows[0]['id'],'2ECDBEBD92A45AB706481F71189B3599')
+        self.assertEqual(rows[0]['title'],'2 - The P versus NP Question')
+        self.assertIn('2012',rows[0]['listing'])
+        self.assertIn('2010',rows[0]['listing'])
+
+    def test_oxford_journals_and_figures_are_not_dropped_from_mixed_results(self):
+        from silverchair import records
+        raw=(ROOT / 'tests/fixtures/oxford-mixed-search.html').read_text('utf-8')
+        rows,total,first=records(raw,'https://academic.oup.com')
+        self.assertEqual((len(rows),total,first),(20,75732,0))
+        self.assertEqual(rows[0]['title'],'Journal of Complex Networks')
+
 
 if __name__ == "__main__":
     unittest.main()
