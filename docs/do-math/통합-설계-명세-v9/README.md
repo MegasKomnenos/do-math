@@ -22,7 +22,7 @@ verify_spec.py는 스키마·codec·명세 검사와 합성 반례를 실행한�
 | toolchain-lock.json | 실제 명세 검증에 사용한 Python·파서·스키마 검사기 판본 |
 | semantic-rules.json | 스키마만으로 판정할 수 없는 관계적·의미적 의무 |
 | transitions.json | 허용 전이와 추가 전제 규칙 |
-| source-vector-map.json | 본문의 V 벡터 215개·Q 계약 22개 원문 대응. 실제 실행 상태는 별도 |
+| source-vector-map.json | 본문의 V 벡터 222개·Q 계약 22개 원문 대응. 실제 실행 상태는 별도 |
 | fixtures/ | 합성 입력과 독립 반례 |
 | validation-report.json | 실제 수행한 명세 검사의 범위·결과 |
 | review/ | 각 검토가 고정한 판본의 독립 적대 검토와 작성자 판단. 이전 판본의 통과를 현행 통과로 승계하지 않음 |

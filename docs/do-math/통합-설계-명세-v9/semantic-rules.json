@@ -189,7 +189,7 @@
       ]
     },
     {
-      "contract": "Same review slot receives its own messages in full and, uniformly, every tool-result body and prior proposal version as exact reference entries inside its read scope; overflow is classified into information-preserving reduction, self-repair, proposal-overflow closure or user escalation; non-restoring AI activities restart once with the failure measurement as input; a second accumulation overflow or a residual overflow after reference restoration escalates; a user hold closes the activity with its current result; a records-based replacement requires a user decision or general permission and records its cause.",
+      "contract": "Same review slot receives every preserved public assistant response in full, including the final response not retransmitted to a model; retransmission of one conversation entry is not a new entry. Tool-result bodies and prior proposals uniformly become exact references. After permitted reduction, common-document overflow escalates first; proposal overflow excludes restored dialogue and closes unresolved; residual restoration overflow escalates. Accumulation permits one recovery before escalation; replacement requires recorded user authority.",
       "domain": "input",
       "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
       "id": "R16",
@@ -206,7 +206,9 @@
         "V210",
         "V211",
         "V212",
-        "V214"
+        "V214",
+        "V218",
+        "V222"
       ]
     },
     {
@@ -292,7 +294,7 @@
       ]
     },
     {
-      "contract": "Three basic perspectives plus every required domain and source fidelity; every reviewer reads the full proposal; if it does not fit no review plan is made, the activity closes unresolved and the next plan returns restructuring to the author or asks the user for a larger profile; planners never split proposals.",
+      "contract": "Three basic perspectives plus required domains and source fidelity; every reviewer reads the full proposal. Only the proposal-overflow branch defined in 8.3 closes unresolved for restructuring; restored dialogue is never omitted from actual review input. Restructure an ongoing same obligation by contract revision, or create a new task after a completed/closed author task. Planners never split proposals.",
       "domain": "review",
       "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
       "id": "R23",
@@ -303,7 +305,9 @@
         "V47",
         "V90",
         "V162",
-        "V177"
+        "V177",
+        "V219",
+        "V222"
       ]
     },
     {
@@ -333,7 +337,7 @@
       ]
     },
     {
-      "contract": "Count every allocated execution ID once, including queued, start-failed, cancelled, organizer, recovery and retry requests. Fund planning, initial slots, organizer, answers and judges from explicit stage counts; protect all remaining mandatory allocations before optional work. Split issues inherit rounds.",
+      "contract": "Count each AI execution owned by the review or its descendant activities once, including ended supplements, queued requests, failed starts, cancellations and retries; exclude machine executions. Check ownership completeness and cycles against one snapshot. Publish child assignment, parent count and consumed mandatory reserve atomically. Resolve the exact policy: one judging round reserves no answers and three judges; two or more reserve at least N answers and six judges. Protect the remaining mandatory allocations.",
       "domain": "review",
       "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
       "id": "R26",
@@ -344,7 +348,9 @@
         "V137",
         "V148",
         "V190",
-        "V191"
+        "V191",
+        "V216",
+        "V217"
       ]
     },
     {
@@ -392,7 +398,7 @@
       ]
     },
     {
-      "contract": "The self-check time deadline is due time plus window without an in-flight tool, or first safe boundary plus window with one. Before that boundary it is unset; response must also precede the next research action. Independent tool_review_due and machine stop still apply.",
+      "contract": "The self-check deadline is due time plus window only when both tool and provider calls are absent; otherwise it is the first confirmed safe boundary plus window, or unset before that boundary. Response must also precede the next research action. Independent call review and machine stop still apply.",
       "domain": "observation",
       "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
       "id": "R30",
@@ -427,7 +433,7 @@
       ]
     },
     {
-      "contract": "Repeated-work holds follow lineage and explicit continue decisions, not new IDs; proposal-limit decisions cannot be delegated; overflow escalations from 8.3/9.3 and capacity shortages are not selection failures.",
+      "contract": "Repeated-work holds follow lineage and explicit continue decisions. Proposal and contract revision thresholds count current revision minus the revision bound by the latest explicit continue decision, or zero as the initial baseline; immutable revision numbers never reset. Existing holds and total limits remain. Proposal and contract continuation cannot use case delegation; overflow escalations and capacity shortages are not selection failures.",
       "domain": "threshold",
       "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
       "id": "R33",
@@ -435,7 +441,8 @@
       "source_vectors": [
         "V174",
         "V184",
-        "V205"
+        "V205",
+        "V220"
       ]
     },
     {
@@ -504,7 +511,7 @@
       ]
     },
     {
-      "contract": "Actual capability receipts are mandatory for support; fixture success is not proof of input injection, isolation or remote termination. Adapters that cannot disable or report conversation compaction, return per-call stop reasons and per-result artifacts are not used for transcript-restoring activities. The Windows adapter implements the documented non-inherited Job handle, suspended startup, authority-before-resume and observed termination conditions.",
+      "contract": "Actual capability evidence is mandatory; fixture success is not proof of input injection, isolation or remote termination. Transcript-restoring adapters must disable and report compaction and preserve outputs. A Windows root is suspended and already a Job member at creation, before identity persistence; engine loss in that gap must still terminate it. Authority precedes resume and termination is observed. Unsupported creation paths cannot activate.",
       "domain": "adapter",
       "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
       "id": "R39",
@@ -519,7 +526,7 @@
       ]
     },
     {
-      "contract": "Same request ID and canonical input => previous result; different input => rejection; identical checker/input disagreement is tool failure.",
+      "contract": "Same request ID and canonical input => previous result; different input => rejection; identical checker/input disagreement is tool failure. Repair aggregation selects the latest history_window sealed role outputs by event_seq, breaking same-event ties by bundle ID and path bytes, and deduplicates their check records regardless of integration success. A zero window does not suppress mandatory current failures.",
       "domain": "command",
       "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
       "id": "R40",
@@ -527,7 +534,8 @@
       "source_vectors": [
         "V12",
         "V104",
-        "V182"
+        "V182",
+        "V221"
       ]
     },
     {
@@ -587,13 +595,14 @@
       ]
     },
     {
-      "contract": "Contract revisions of one task are numbered from 1; reaching contract_revision_limit holds authoring of the next revision until an explicit user decision; new IDs or renamed equivalents do not reset the count; other tasks continue.",
+      "contract": "Contract revision numbers increase from 1. Threshold usage subtracts the revision named by the last explicit continuation decision, with zero before any such decision. With limit 3, continuation at revision 3 allows revisions 4 through 6 and holds authoring of 7. Existing holds, lineage and total limits survive; other tasks continue.",
       "domain": "threshold",
       "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
       "id": "R46",
       "owner_section": "5.5,13.1.1",
       "source_vectors": [
-        "V215"
+        "V215",
+        "V220"
       ]
     }
   ],

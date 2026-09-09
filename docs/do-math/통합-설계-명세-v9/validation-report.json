@@ -6,7 +6,7 @@
   "input_basis": [
     {
       "path": "do-math/통합-설계.md",
-      "sha256": "a540c916da4193bdfa0b32bab151a781eb56cd177ca5659858baaf3d0f87f900"
+      "sha256": "6d9b8add5e08cb0a0f58649a61340769dc5a304c1e0e91d2f60ad3fbd552cfc6"
     },
     {
       "path": "형식과-절차.md",
@@ -14,19 +14,19 @@
     },
     {
       "path": "do-math/통합-설계-명세-v9/build_spec.py",
-      "sha256": "ba0ccda4fb0b08e5e43c1624ad51afb66df3f37631a1430f969f3ee1101f4f63"
+      "sha256": "0fbdfaebb8ad986d90ef3e1ad07e05307a92aefc94c46ed15747fbaa5e2f79cf"
     },
     {
       "path": "do-math/통합-설계-명세-v9/spec_checks.py",
-      "sha256": "9fa5f0e743c6e23681ff6ca39058e723f9c84987dc9b055a9f17f66c2f8b59b0"
+      "sha256": "bed7e8faff473d729d2c4b43017fdaa6cc30d7ae606e18ce840c5e1390e7f902"
     },
     {
       "path": "do-math/통합-설계-명세-v9/verify_spec.py",
-      "sha256": "213ae13014ee16ca4fe978707c410940dce07e121db85e0dc24cf40549009079"
+      "sha256": "3e5fa9974a6ee5e5c412ec882048ebd4eb1f4fb636ec705d3818dfca2abb602c"
     },
     {
       "path": "do-math/통합-설계-명세-v9/schema-registry.json",
-      "sha256": "c298a5330e32c2b130a85a204a0f54714ff91f73fccf62066d311024131782ef"
+      "sha256": "39cfb9ac7c824e40f7364f6ac77abd5938334fe6a326caa85b554f2b5fa011b9"
     },
     {
       "path": "do-math/통합-설계-명세-v9/command-contracts.json",
@@ -34,11 +34,11 @@
     },
     {
       "path": "do-math/통합-설계-명세-v9/role-contracts.json",
-      "sha256": "21f1ed5e9a6006eced5ababab9365f2168cb0d459e69442d6346b3ffbe7514e2"
+      "sha256": "1451fe8536ae7bd98d5d58f36ee78ab1741a7f227234f669f465f4ea13268b5f"
     },
     {
       "path": "do-math/통합-설계-명세-v9/semantic-rules.json",
-      "sha256": "0c3721b973619cab8ec810c314df8cacfe971b3e30a2f93bc6dd0be4a1d3b462"
+      "sha256": "f997056df9f43b1e6d34d261b05ac8ed01eb73454e074a8628136b08983d695e"
     },
     {
       "path": "do-math/통합-설계-명세-v9/transitions.json",
@@ -46,7 +46,7 @@
     },
     {
       "path": "do-math/통합-설계-명세-v9/source-vector-map.json",
-      "sha256": "6b08fefbd335c3de0aa3cad2203c550e13488fa950d9204175a25e1210edd273"
+      "sha256": "ebfeb30f8d47e43b9ed540d0ba50066c2c89cc180aeb70bbf7055853cab8876e"
     },
     {
       "path": "do-math/통합-설계-명세-v9/relation-templates.json",
@@ -186,7 +186,7 @@
     },
     {
       "path": "do-math/통합-설계-명세-v9/schemas/review-plan.schema.json",
-      "sha256": "5c0fe1e3225c2f41b3882f462555a9abf8c612ebec530153ce1f9b35d736e15f"
+      "sha256": "af552186e27918d41677207350006ba7b751bc3eb8563b55166a9000b8f31692"
     },
     {
       "path": "do-math/통합-설계-명세-v9/schemas/review-policy.schema.json",
@@ -474,7 +474,7 @@
     },
     {
       "path": "do-math/통합-설계-명세-v9/fixtures/records/review-policy.json",
-      "sha256": "88741918e9693041d1adbda1f921da3877670c7d41961b569c7c8cba78382b6c"
+      "sha256": "92f9d451a564f02709298363090f075852299751b73f220f3d26a568d31e67bd"
     },
     {
       "path": "do-math/통합-설계-명세-v9/fixtures/records/review-result.json",
@@ -527,7 +527,7 @@
       "V189"
     ],
     "runtime_execution": "not_run",
-    "total": 215
+    "total": 222
   },
-  "tests_run": 70
+  "tests_run": 75
 }

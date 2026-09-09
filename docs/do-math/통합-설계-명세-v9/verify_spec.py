@@ -45,7 +45,7 @@ def validator(schema):
     return Draft202012Validator(schema, registry=REGISTRY, format_checker=FORMATS)
 
 
-def validate(family, value):
+def validate(family, value, *, review_policy=None):
     errors = sorted(validator(SCHEMAS[family]).iter_errors(value), key=lambda e: str(list(e.path)))
     if errors:
         raise checks.ContractError(str(list(errors[0].path)) + ": " + errors[0].message)
@@ -65,7 +65,8 @@ def validate(family, value):
         names = [p["name"] for p in perspectives]
         if len(names) != len(set(names)) or not {"argument_reconstruction", "adversarial_scope", "semantic_identity"} <= set(names):
             raise checks.ContractError("three distinct basic perspectives required")
-        allocation = checks.review_execution_allocation(sum(p["count"] for p in perspectives))
+        allocation = checks.review_execution_allocation(sum(p["count"] for p in perspectives),
+                                                        objection_round_limit=value["objection_round_limit"])
         minimum = sum(allocation.values())
         if value["execution_limit"] < minimum:
             raise checks.ContractError("planning, reviewers, organizer, answers and judges do not fit")
@@ -86,7 +87,10 @@ def validate(family, value):
         n = value["initial_execution_count"]
         allocation = checks.review_execution_allocation(n,
             organize_count=value["reserved_organize_executions"],
-            answer_count=value["reserved_answer_executions"], judge_count=value["reserved_final_executions"])
+            answer_count=value["reserved_answer_executions"], judge_count=value["reserved_final_executions"],
+            objection_round_limit=review_policy["objection_round_limit"] if review_policy is not None else None)
+        if review_policy is not None and value["execution_limit"] != review_policy["execution_limit"]:
+            raise checks.ContractError("review plan limit differs from its resolved policy")
         if n != len(slots) or sum(allocation.values()) > value["execution_limit"]:
             raise checks.ContractError("review plan cannot fund mandatory allocation")
         universe = set(value["proposal_item_ids"])
@@ -291,6 +295,7 @@ def make_examples():
                 judge["id"] = "judge-" + str(i + 1)
                 judge["perspective"] = ["objection_establishment", "objection_rebuttal", "context_comparison"][i]
             value["execution_limit"] = 14
+            value["objection_round_limit"] = 3
         if family == "trust-environment":
             value["allowed_axioms"] = ["propext", "Quot.sound", "Classical.choice"]
         if family == "input-manifest":
@@ -920,11 +925,97 @@ class SpecificationTests(unittest.TestCase):
         with self.assertRaises(checks.ContractError):
             checks.self_check_deadline_ms(100, 20, tool_in_flight=True, first_safe_boundary_ms=99)
 
+    def test_provider_only_call_defers_self_check_deadline(self):
+        self.assertIsNone(checks.self_check_deadline_ms(100, 20, provider_in_flight=True))
+        self.assertEqual(checks.self_check_deadline_ms(100, 20, provider_in_flight=True,
+                                                     first_safe_boundary_ms=150), 170)
+        self.assertEqual(checks.self_check_deadline_ms(100, 20, tool_in_flight=True,
+                                                     provider_in_flight=True,
+                                                     first_safe_boundary_ms=160), 180)
+        with self.assertRaises(checks.ContractError):
+            checks.self_check_deadline_ms(100, 20, provider_in_flight=None)
+
+    def test_single_round_review_budget_and_resolved_policy(self):
+        policy = read_example("review-policy")
+        policy.update(objection_round_limit=1, execution_limit=8)
+        validate("review-policy", policy)
+        plan = read_example("review-plan")
+        plan.update(execution_limit=8, reserved_answer_executions=0, reserved_final_executions=3)
+        validate("review-plan", plan, review_policy=policy)
+        policy["execution_limit"] = plan["execution_limit"] = 7
+        with self.assertRaises(checks.ContractError):
+            validate("review-policy", policy)
+        with self.assertRaises(checks.ContractError):
+            validate("review-plan", plan, review_policy=policy)
+        policy.update(objection_round_limit=2, execution_limit=14)
+        plan["execution_limit"] = 14
+        with self.assertRaises(checks.ContractError):
+            validate("review-plan", plan, review_policy=policy)
+        plan.update(reserved_answer_executions=3, reserved_final_executions=6)
+        validate("review-plan", plan, review_policy=policy)
+
+    def test_review_budget_includes_finished_nested_supplements(self):
+        activities = {
+            "review": {"id": "review", "owner_ref": {"kind": "instance", "id": "instance"},
+                       "execution_limit": 15, "assigned_execution_ids": ["p", "a", "b", "c"]},
+            "supplement": {"id": "supplement", "owner_ref": {"kind": "activity", "id": "review"},
+                           "state": "finished", "assigned_execution_ids": ["s", "build"]},
+            "unrelated": {"id": "unrelated", "owner_ref": {"kind": "instance", "id": "instance"},
+                          "assigned_execution_ids": ["other"]}}
+        executions = {key: {"id": key, "owner_activity_id": "review", "actor_kind": "ai"}
+                      for key in ("p", "a", "b", "c")}
+        executions.update(s={"id": "s", "owner_activity_id": "supplement", "actor_kind": "ai"},
+                          build={"id": "build", "owner_activity_id": "supplement", "actor_kind": "machine"},
+                          other={"id": "other", "owner_activity_id": "unrelated", "actor_kind": "ai"})
+        state = dict(executions_used=5, execution_limit=15, reserved_organize_executions=1,
+                     reserved_answer_executions=3, reserved_final_executions=6)
+        context = dict(activity_id="review", activities=activities, executions=executions)
+        checks.validate_review_reserve(state, **context)
+        state["executions_used"] = 4
+        with self.assertRaises(checks.ContractError):
+            checks.validate_review_reserve(state, **context)
+        activities["nested"] = {"id": "nested", "owner_ref": {"kind": "activity", "id": "supplement"},
+                                "assigned_execution_ids": ["retry"]}
+        executions["retry"] = {"id": "retry", "owner_activity_id": "nested", "actor_kind": "ai"}
+        state["executions_used"] = 6
+        with self.assertRaises(checks.ContractError):
+            checks.validate_review_reserve(state, **context)
+
+    def test_review_execution_count_rejects_missing_links_and_cycles(self):
+        activities = {"review": {"id": "review", "owner_ref": {"kind": "instance", "id": "i"},
+                                 "execution_limit": 8, "assigned_execution_ids": ["p"]}}
+        executions = {"p": {"id": "p", "owner_activity_id": "review", "actor_kind": "ai"}}
+        state = dict(executions_used=1, execution_limit=8, reserved_organize_executions=1,
+                     reserved_answer_executions=0, reserved_final_executions=3)
+        context = dict(activity_id="review", activities=activities, executions=executions)
+        checks.validate_review_reserve(state, **context)
+        activities["review"]["assigned_execution_ids"] = []
+        with self.assertRaises(checks.ContractError):
+            checks.validate_review_reserve(state, **context)
+        activities["review"]["assigned_execution_ids"] = ["p", "missing"]
+        with self.assertRaises(checks.ContractError):
+            checks.validate_review_reserve(state, **context)
+        activities["review"]["assigned_execution_ids"] = ["p"]
+        activities["review"]["owner_ref"] = {"kind": "activity", "id": "review"}
+        with self.assertRaises(checks.ContractError):
+            checks.validate_review_reserve(state, **context)
+
+    def test_overflow_prioritizes_common_text_and_distinguishes_restoration(self):
+        base = dict(reducible_by_window=False, tool_accumulation=True, activity_kind="identity_review",
+                    restored_fits=False)
+        self.assertEqual(checks.overflow_disposition(**base, proposal_overflow=True,
+                                                    common_overflow=True), "escalate")
+        self.assertEqual(checks.overflow_disposition(**base, proposal_overflow=True),
+                         "close_unresolved_next_plan")
+        self.assertEqual(checks.overflow_disposition(**base), "escalate")
+        with self.assertRaises(checks.ContractError):
+            checks.overflow_disposition(**base, common_overflow=None)
+
     def test_source_vectors_and_quality_bijection(self):
         mapping = checks.parse_json((ROOT / "source-vector-map.json").read_bytes())
         ids = [v["id"] for v in mapping["vectors"]]
-        self.assertEqual(set(ids), {"V" + str(i).zfill(2) for i in range(1, 216)})
-        self.assertEqual(len(ids), 215)
+        self.assertEqual(set(ids), {"V" + str(i).zfill(2) for i in range(1, 223)})
+        self.assertEqual(len(ids), 222)
         retired = {v["id"] for v in mapping["vectors"] if v["expected"] == "번호 미재사용"}
         self.assertEqual(retired, {"V159", "V189"})
         rules = checks.parse_json((ROOT / "semantic-rules.json").read_bytes())["rules"]

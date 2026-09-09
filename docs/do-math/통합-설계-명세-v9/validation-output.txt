@@ -21,8 +21,10 @@ test_listings_fit_or_escalate_without_permission (__main__.SpecificationTests.te
 test_machine_has_no_ai_budget (__main__.SpecificationTests.test_machine_has_no_ai_budget) ... ok
 test_objection_round_boundary (__main__.SpecificationTests.test_objection_round_boundary) ... ok
 test_overflow_disposition_and_restore_forms (__main__.SpecificationTests.test_overflow_disposition_and_restore_forms) ... ok
+test_overflow_prioritizes_common_text_and_distinguishes_restoration (__main__.SpecificationTests.test_overflow_prioritizes_common_text_and_distinguishes_restoration) ... ok
 test_plan_binding_and_output_truncation (__main__.SpecificationTests.test_plan_binding_and_output_truncation) ... ok
 test_provided_order_stable_components_first (__main__.SpecificationTests.test_provided_order_stable_components_first) ... ok
+test_provider_only_call_defers_self_check_deadline (__main__.SpecificationTests.test_provider_only_call_defers_self_check_deadline) ... ok
 test_queued_execution_has_no_reservation (__main__.SpecificationTests.test_queued_execution_has_no_reservation) ... ok
 test_registry_exact_bijection_and_hash (__main__.SpecificationTests.test_registry_exact_bijection_and_hash) ... ok
 test_regression_activation_and_waiting_guards (__main__.SpecificationTests.test_regression_activation_and_waiting_guards) ... ok
@@ -47,6 +49,8 @@ test_required_perspectives_and_execution_budget (__main__.SpecificationTests.tes
 test_reservation_cannot_return_consumed_usage (__main__.SpecificationTests.test_reservation_cannot_return_consumed_usage) ... ok
 test_restoration_profile_requires_compaction_control (__main__.SpecificationTests.test_restoration_profile_requires_compaction_control) ... ok
 test_review_budget_counts_organizer_and_boundary (__main__.SpecificationTests.test_review_budget_counts_organizer_and_boundary) ... ok
+test_review_budget_includes_finished_nested_supplements (__main__.SpecificationTests.test_review_budget_includes_finished_nested_supplements) ... ok
+test_review_execution_count_rejects_missing_links_and_cycles (__main__.SpecificationTests.test_review_execution_count_rejects_missing_links_and_cycles) ... ok
 test_review_output_is_bound_to_assigned_phase_and_slot (__main__.SpecificationTests.test_review_output_is_bound_to_assigned_phase_and_slot) ... ok
 test_review_reserve_protects_pending_mandatory_stages (__main__.SpecificationTests.test_review_reserve_protects_pending_mandatory_stages) ... ok
 test_review_result_phase_authority (__main__.SpecificationTests.test_review_result_phase_authority) ... ok
@@ -55,6 +59,7 @@ test_schema_meta_and_offline_refs (__main__.SpecificationTests.test_schema_meta_
 test_self_check_deadline_uses_response_boundary (__main__.SpecificationTests.test_self_check_deadline_uses_response_boundary) ... ok
 test_self_check_retransmission_and_new_anchor (__main__.SpecificationTests.test_self_check_retransmission_and_new_anchor) ... ok
 test_shared_capacity_overcommit (__main__.SpecificationTests.test_shared_capacity_overcommit) ... ok
+test_single_round_review_budget_and_resolved_policy (__main__.SpecificationTests.test_single_round_review_budget_and_resolved_policy) ... ok
 test_source_vectors_and_quality_bijection (__main__.SpecificationTests.test_source_vectors_and_quality_bijection) ... ok
 test_task_cannot_complete_with_live_execution (__main__.SpecificationTests.test_task_cannot_complete_with_live_execution) ... ok
 test_task_cannot_hide_remaining_scope (__main__.SpecificationTests.test_task_cannot_hide_remaining_scope) ... ok
@@ -70,6 +75,6 @@ test_yaml_golden_empty_typed_and_body (__main__.SpecificationTests.test_yaml_gol
 test_yaml_nested_duplicate_tags_and_aliases (__main__.SpecificationTests.test_yaml_nested_duplicate_tags_and_aliases) ... ok
 
 ----------------------------------------------------------------------
-Ran 70 tests in 1.900s
+Ran 75 tests in 2.523s
 
 OK

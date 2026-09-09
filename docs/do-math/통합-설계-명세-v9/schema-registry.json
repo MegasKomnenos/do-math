@@ -327,7 +327,7 @@
       "owner_section": "11.3,19.6",
       "path": "schemas/review-plan.schema.json",
       "schema_id": "https://do-math.invalid/schemas/draft/9/review-plan",
-      "sha256": "5c0fe1e3225c2f41b3882f462555a9abf8c612ebec530153ce1f9b35d736e15f",
+      "sha256": "af552186e27918d41677207350006ba7b751bc3eb8563b55166a9000b8f31692",
       "storage": "runtime/artifacts/{bundle_id}/review-plan.json"
     },
     {

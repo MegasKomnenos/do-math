@@ -67,7 +67,7 @@
     "ref_kind": "artifact",
     "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
   },
-  "objection_round_limit": 1,
+  "objection_round_limit": 3,
   "required_evidence": [],
   "required_perspectives": [
     {

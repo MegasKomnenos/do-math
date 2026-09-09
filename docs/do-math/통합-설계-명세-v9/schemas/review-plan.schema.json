@@ -96,7 +96,7 @@
       "type": "integer"
     },
     "reserved_final_executions": {
-      "minimum": 6,
+      "minimum": 3,
       "type": "integer"
     },
     "reserved_organize_executions": {

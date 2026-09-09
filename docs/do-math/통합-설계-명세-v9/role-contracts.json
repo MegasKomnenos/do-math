@@ -40,9 +40,9 @@
     {
       "activity_kind": "identity_review",
       "actor_kind": "ai",
-      "authority": "Allocate expertise, slots and execution counts for a proposal that fits in full; when it does not fit the engine closes the activity unresolved with the measurement and the next research plan owns restructuring or profile requests; no identity approval.",
+      "authority": "Allocate expertise, slots and execution counts for a proposal that fits in full; only the 8.3 proposal-overflow branch closes unresolved for the next plan; common-text or residual restoration overflow escalates; no identity approval.",
       "incomplete": "Return actual scope and partial bytes through execution_incomplete; do not fabricate a role verdict.",
-      "mandatory_input": "Exact proposal, policy, sources, domains, measured input fit, own restored transcript and execution capacity; calculate every mandatory stage allocation; no plan when the full proposal does not fit.",
+      "mandatory_input": "Exact proposal, policy, sources, domains, measured input fit, own restored transcript and execution capacity; calculate every mandatory stage allocation; apply 8.3 overflow precedence; proposal-fit measurement excludes restored dialogue only for classification.",
       "output_family": "review-plan",
       "owner_section": "11.3.2",
       "stage": "planning"

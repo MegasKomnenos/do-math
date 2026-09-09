@@ -229,20 +229,74 @@ def validate_reservation(record):
 
 
 def review_execution_allocation(initial_count, *, organize_count=1, answer_count=None,
-                                judge_count=6):
-    """Counts for the mandatory initial review and first disputed-response path."""
+                                judge_count=None, objection_round_limit=3):
+    """Mandatory stages for the resolved policy; None checks structure only."""
+    if objection_round_limit is not None and (
+            type(objection_round_limit) is not int or objection_round_limit < 1):
+        raise ContractError("review round limit must be a positive integer")
+    multiple_rounds = objection_round_limit is not None and objection_round_limit >= 2
     if answer_count is None:
-        answer_count = initial_count
+        answer_count = initial_count if multiple_rounds else 0
+    if judge_count is None:
+        judge_count = 6 if multiple_rounds else 3
     counts = {"planning": 1, "initial": initial_count, "organize": organize_count,
               "answer": answer_count, "judge": judge_count}
     if any(type(count) is not int or count < 0 for count in counts.values()):
         raise ContractError("review allocation requires nonnegative integer counts")
-    if initial_count < 3 or organize_count < 1 or answer_count < initial_count or judge_count < 6:
+    if initial_count < 3 or organize_count < 1 or judge_count < 3:
         raise ContractError("review allocation omits a mandatory stage")
+    if multiple_rounds and (answer_count < initial_count or judge_count < 6):
+        raise ContractError("review allocation omits the mandatory response round")
+    if objection_round_limit == 1 and (answer_count != 0 or judge_count != 3):
+        raise ContractError("single-round policy has no answer or second judging round")
     return counts
 
 
-def validate_review_reserve(record):
+def review_execution_ids(activity_id, activities, executions):
+    """Resolve the review's activity subtree from one complete snapshot."""
+    if activity_id not in activities:
+        raise ContractError("missing review activity")
+    children = {}
+    for key, activity in activities.items():
+        owner = activity["owner_ref"]
+        if owner["kind"] == "activity":
+            children.setdefault(owner["id"], []).append(key)
+    members, pending = set(), [activity_id]
+    while pending:
+        key = pending.pop()
+        if key in members:
+            raise ContractError("cyclic activity ownership")
+        if activities[key]["id"] != key:
+            raise ContractError("activity index differs from record ID")
+        members.add(key)
+        pending.extend(children.get(key, []))
+    allocated, ai_ids = set(), set()
+    for key in members:
+        for execution_id in activities[key]["assigned_execution_ids"]:
+            if execution_id in allocated or execution_id not in executions:
+                raise ContractError("duplicate or missing assigned execution")
+            execution = executions[execution_id]
+            if execution["id"] != execution_id or execution["owner_activity_id"] != key:
+                raise ContractError("assigned execution differs from its actual owner")
+            allocated.add(execution_id)
+            if execution["actor_kind"] == "ai":
+                ai_ids.add(execution_id)
+            elif execution["actor_kind"] != "machine":
+                raise ContractError("unknown actor kind")
+    if {key for key, execution in executions.items()
+            if execution["owner_activity_id"] in members} != allocated:
+        raise ContractError("owned execution missing from activity assignment")
+    return ai_ids
+
+
+def validate_review_reserve(record, *, activity_id=None, activities=None, executions=None):
+    if any(value is not None for value in (activity_id, activities, executions)):
+        if any(value is None for value in (activity_id, activities, executions)):
+            raise ContractError("review accounting requires complete ownership inputs")
+        actual = review_execution_ids(activity_id, activities, executions)
+        if (record["executions_used"] != len(actual)
+                or record["execution_limit"] != activities[activity_id]["execution_limit"]):
+            raise ContractError("review count or limit differs from owning activities")
     fields = ("executions_used", "reserved_organize_executions",
               "reserved_answer_executions", "reserved_final_executions")
     if sum(record[field] for field in fields) > record["execution_limit"]:
@@ -362,14 +416,19 @@ def pack_listings(candidates, canon, budget, permission=None):
 
 
 def overflow_disposition(*, reducible_by_window, tool_accumulation, activity_kind, restored_fits=None,
-                         prior_overflows=0, proposal_overflow=False):
-    """8.3 overflow classification: reduction, self-repair, proposal-overflow closure, or user escalation."""
+                         prior_overflows=0, proposal_overflow=False, common_overflow=False):
+    """Proposal overflow is measured without restored dialogue; common text has priority."""
     if (type(reducible_by_window) is not bool or type(tool_accumulation) is not bool
-            or type(prior_overflows) is not int or type(proposal_overflow) is not bool):
+            or type(prior_overflows) is not int or prior_overflows < 0
+            or type(proposal_overflow) is not bool or type(common_overflow) is not bool):
         raise ContractError("overflow facts must be confirmed values")
     if reducible_by_window:
         return "reduce_history"
+    if common_overflow:
+        return "escalate"
     if proposal_overflow:
+        if activity_kind != "identity_review":
+            raise ContractError("proposal-overflow closure only applies to mathematical review")
         return "close_unresolved_next_plan"
     if tool_accumulation:
         if prior_overflows >= 1:
@@ -656,13 +715,14 @@ def evaluate_condition(node, snapshot):
         return "evaluation_error"
 
 
-def self_check_deadline_ms(due_ms, window_ms, *, tool_in_flight=False, first_safe_boundary_ms=None):
+def self_check_deadline_ms(due_ms, window_ms, *, tool_in_flight=False, provider_in_flight=False,
+                           first_safe_boundary_ms=None):
     """Time deadline only; responding before the next research action is separate."""
     if type(due_ms) is not int or type(window_ms) is not int or window_ms <= 0:
         raise ContractError("self-check clock and positive window must be integer milliseconds")
-    if type(tool_in_flight) is not bool:
-        raise ContractError("tool state must be a confirmed boolean")
-    if not tool_in_flight:
+    if type(tool_in_flight) is not bool or type(provider_in_flight) is not bool:
+        raise ContractError("tool and provider states must be confirmed booleans")
+    if not (tool_in_flight or provider_in_flight):
         return due_ms + window_ms
     if first_safe_boundary_ms is None:
         return None

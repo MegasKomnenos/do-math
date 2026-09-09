@@ -4,7 +4,7 @@
       "guarantee": "새 판본의 불변 부분에서도 기존 오류 재탐지",
       "id": "Q01",
       "owner": "11.4 전면 의미 검토·동일 판본 복구 구별",
-      "source_line": 2112,
+      "source_line": 2133,
       "source_row_sha256": "2f53f9e12c8c3883cabb00aaf15da4b62c133bfbbacadcff786d48926339b244",
       "source_vectors": [
         "V62",
@@ -17,8 +17,8 @@
       "guarantee": "검토 자리의 자기 메시지 연속성과 원자료 재열람",
       "id": "Q02",
       "owner": "8.3·11.3 자기 메시지 전건·참조 대체·단절 예외",
-      "source_line": 2113,
-      "source_row_sha256": "063b9e724f406a1bf592f49c91c159fbd053c162753c5dd9aed18da5958d8040",
+      "source_line": 2134,
+      "source_row_sha256": "740c0489087d5e1e1da889f10636a770a4cd38e14b89eaf1328717551d920296",
       "source_vectors": [
         "V144",
         "V145",
@@ -26,14 +26,15 @@
         "V166",
         "V208",
         "V209",
-        "V210"
+        "V210",
+        "V218"
       ]
     },
     {
       "guarantee": "원 이의 제기자의 응답·정련·분화 기회",
       "id": "Q03",
       "owner": "11.4·11.4.1 반환·회차·총한도·미해결",
-      "source_line": 2114,
+      "source_line": 2135,
       "source_row_sha256": "cecac68eb929bd744b34be7ab92c345c117974036a3ab318dfa85c5170e3ce99",
       "source_vectors": [
         "V136",
@@ -48,7 +49,7 @@
       "guarantee": "정상 진전의 정기 외부 AI 비용 절감",
       "id": "Q04",
       "owner": "12.1 event_driven·명시적 재점검·periodic",
-      "source_line": 2115,
+      "source_line": 2136,
       "source_row_sha256": "b3ad1be89853bca668b7e82f42434bc991d92992f1ddedfb5f8b276fa858fd8b",
       "source_vectors": [
         "V133",
@@ -62,7 +63,7 @@
       "guarantee": "계약 경계 안 관찰 조건의 즉시 적응",
       "id": "Q05",
       "owner": "5.2·5.5·12.1.1 규칙 revision·기존 의무 보존",
-      "source_line": 2116,
+      "source_line": 2137,
       "source_row_sha256": "5ba19245d336f96688af56c5e80b7523e099a35042d5abd96666bc90d13dd457",
       "source_vectors": [
         "V152",
@@ -75,7 +76,7 @@
       "guarantee": "정지 직전 연구 상태의 기록 보존",
       "id": "Q06",
       "owner": "6.4.1·13.5 기록 전용 권한·기한·종료",
-      "source_line": 2117,
+      "source_line": 2138,
       "source_row_sha256": "322f174d0aaa198fb9418c0902d5266eccb9e57269d497176dbb909c1dd55449",
       "source_vectors": [
         "V155",
@@ -89,7 +90,7 @@
       "guarantee": "K 목차 전건의 제공, 들어가지 않으면 상신",
       "id": "Q07",
       "owner": "8.5 전건 제공·상신·허가 아래 잘림",
-      "source_line": 2118,
+      "source_line": 2139,
       "source_row_sha256": "69c10a3da6621ff29bb7b3471c911adabbe348b70e8365d72932f48e585f9117",
       "source_vectors": [
         "V127",
@@ -103,7 +104,7 @@
       "guarantee": "공통 정의·역할별 통치 전문의 기본 제공",
       "id": "Q08",
       "owner": "8.1·16.5 역할 읽기·정확한 입력",
-      "source_line": 2119,
+      "source_line": 2140,
       "source_row_sha256": "aeb40886855c57997a798b89044a9dea53ac27cd2c9406d3a38d278d00696de1",
       "source_vectors": [
         "V103",
@@ -114,21 +115,23 @@
       "guarantee": "들어가는 제안의 전문 검토와 안 들어가는 제안의 재구성",
       "id": "Q09",
       "owner": "11.3 전문 검토·재구성 반환",
-      "source_line": 2120,
-      "source_row_sha256": "4b76f5b2db798e7a36b29b2774c093edf9a450b2037a1ed877a49d26d01570cd",
+      "source_line": 2141,
+      "source_row_sha256": "02098090a8f5b1da44c5679951d0c6102b4d7f5d1881822f3a02c42712d869d9",
       "source_vectors": [
         "V19",
         "V47",
         "V145",
         "V162",
-        "V177"
+        "V177",
+        "V219",
+        "V222"
       ]
     },
     {
       "guarantee": "복합 연구 조건의 결정론적 착수 판정",
       "id": "Q10",
       "owner": "5.7 AST·사건 재계산·적용 전 확인",
-      "source_line": 2121,
+      "source_line": 2142,
       "source_row_sha256": "128bcad8e52312d8a14d888de90d306717aa299ca71ad1715ae76882af5047f6",
       "source_vectors": [
         "V163",
@@ -140,7 +143,7 @@
       "guarantee": "이전 후보 생성·정련·미편입의 다음 회차 환류",
       "id": "Q11",
       "owner": "8.5·9.2.1 준비 이력·필수 실패",
-      "source_line": 2122,
+      "source_line": 2143,
       "source_row_sha256": "179a1c42ddccd47d23a99149a77e3f121a558456d34d5b7265d8747633f83ccb",
       "source_vectors": [
         "V171",
@@ -151,7 +154,7 @@
       "guarantee": "주기와 독립된 고갈 탐색과 빈 반복의 통제",
       "id": "Q12",
       "owner": "9.1·13.1.1 고갈·재생성 시각·문턱",
-      "source_line": 2123,
+      "source_line": 2144,
       "source_row_sha256": "f77de72d8ec3922f1de32c69c9571892a30c0509b41dfdb706aa1e06e617f658",
       "source_vectors": [
         "V172",
@@ -163,7 +166,7 @@
       "guarantee": "응답 뒤에도 끊기지 않는 최대 간격 관찰",
       "id": "Q13",
       "owner": "6.3·12.1.1 실행기 재예약·중복 구별",
-      "source_line": 2124,
+      "source_line": 2145,
       "source_row_sha256": "c88c33fcc6fc03bc1763f0dfd24a06e34ffd48ce58745d183e91bc78f8fe6069",
       "source_vectors": [
         "V175",
@@ -174,7 +177,7 @@
       "guarantee": "이력 때문에 들어가는 목차를 숨기지 않음",
       "id": "Q14",
       "owner": "8.5 목차 우선·창 축소",
-      "source_line": 2125,
+      "source_line": 2146,
       "source_row_sha256": "d7774066c4ae553ebcf70eb4325619d1a0fa2e1136f7626e100fe1f4445f1810",
       "source_vectors": [
         "V178"
@@ -184,7 +187,7 @@
       "guarantee": "수입에서 기존 사용자 결정과 원문 범위의 기본 노출",
       "id": "Q15",
       "owner": "13.1 결정 전문의 조건부 직접 제공과 목차 전건 대조",
-      "source_line": 2126,
+      "source_line": 2147,
       "source_row_sha256": "b3f2c409d0c3e4c18cb1a8b66b6fd0cdd7b0ae82e780c7238adb99e5c7116714",
       "source_vectors": [
         "V180"
@@ -194,30 +197,32 @@
       "guarantee": "재작업을 줄이는 사전 검사와 반복 결함 환류",
       "id": "Q16",
       "owner": "16.3 미리보기·검사 기록·resolved 집계",
-      "source_line": 2127,
-      "source_row_sha256": "02e85a92fc6f4cb1104a65bea12538bee6f343638c529e296c647ae93d66a9ef",
+      "source_line": 2148,
+      "source_row_sha256": "744d64833b19d58b54362fbd90de97b86fe2efe0c3d647fc145f52d57de44693",
       "source_vectors": [
         "V181",
-        "V182"
+        "V182",
+        "V221"
       ]
     },
     {
       "guarantee": "선택 묶음의 용량 경계와 반복 교정의 결정권",
       "id": "Q17",
       "owner": "9.3·13.1.1 동시 상한·반복 문턱·계약 revision 상한",
-      "source_line": 2128,
-      "source_row_sha256": "b0411fad7e7c1201fd6c6eaec627e213b1a88bb6866c6446b70fb4acc25f1ccf",
+      "source_line": 2149,
+      "source_row_sha256": "cfdf786203106e608b6a4ebf89e8e750199d655163af047ad035f0877a1c68d6",
       "source_vectors": [
         "V183",
         "V184",
-        "V215"
+        "V215",
+        "V220"
       ]
     },
     {
       "guarantee": "F의 연구 상태와 기록 효력의 구별",
       "id": "Q18",
       "owner": "7.3 inactive·lifecycle",
-      "source_line": 2129,
+      "source_line": 2150,
       "source_row_sha256": "8c9e1bb448d348b701c9009ea4cb1f61b603e7c3543036ae8f38f9e58bcc33d6",
       "source_vectors": [
         "V179"
@@ -227,18 +232,20 @@
       "guarantee": "필수 쟁점 정리·답변·심사를 실제로 배정할 실행 몫",
       "id": "Q19",
       "owner": "11.3.1 단계별 합계·미배정 몫 보호·실행 횟수",
-      "source_line": 2130,
-      "source_row_sha256": "791b3bba711217701f267835995e0e120ec06df9325469e96d02a3bae8c40b2b",
+      "source_line": 2151,
+      "source_row_sha256": "e9757e46c69f2b1ac4ea6f20c3d3d167b7669ca156f3beeb90c9430427b93018",
       "source_vectors": [
         "V190",
-        "V191"
+        "V191",
+        "V216",
+        "V217"
       ]
     },
     {
       "guarantee": "공통 활동 안에서 단계별 의미 판단과 출력 권한의 구별",
       "id": "Q20",
       "owner": "11.3.2·16.5 stage·output_phase·논리 자리 결속",
-      "source_line": 2131,
+      "source_line": 2152,
       "source_row_sha256": "a51b83ee0ae80abd6bcad17eb6e73bd1758a0b1245adab922623d5bbff4fbe5e",
       "source_vectors": [
         "V192"
@@ -248,7 +255,7 @@
       "guarantee": "재사용 가능한 수학 관계의 의미·방향·활성화 경계",
       "id": "Q21",
       "owner": "7.3.2 비활성 템플릿·종류 정의·근거",
-      "source_line": 2132,
+      "source_line": 2153,
       "source_row_sha256": "ee731193a0d905b65b39964734d3b05b55256e56eb37ba435213d9e34fe02e06",
       "source_vectors": [
         "V193"
@@ -258,7 +265,7 @@
       "guarantee": "초과 상신의 대기·종료·재발 처분",
       "id": "Q22",
       "owner": "8.3 원인 분류·보류·재상신과 13.1.1 보류 기록",
-      "source_line": 2133,
+      "source_line": 2154,
       "source_row_sha256": "44bc2979652d7aada539b03a4b64e0dfeac0be26cc8e98600d44faef2693a3e8",
       "source_vectors": [
         "V160",
@@ -271,7 +278,7 @@
     }
   ],
   "source": "통합-설계.md",
-  "source_sha256": "a540c916da4193bdfa0b32bab151a781eb56cd177ca5659858baaf3d0f87f900",
+  "source_sha256": "6d9b8add5e08cb0a0f58649a61340769dc5a304c1e0e91d2f60ad3fbd552cfc6",
   "vectors": [
     {
       "evidence_scope": "source_contract_only",
@@ -281,7 +288,7 @@
       "input": "대화 소실 정책이 continue_authorized",
       "owner_section": "17.2",
       "rule_ids": [],
-      "source_line": 1744,
+      "source_line": 1758,
       "source_row_sha256": "e10a7b6a77fa9faa90b37cf5712f080e6833bd1dbf85aef07c482116423158d2"
     },
     {
@@ -294,7 +301,7 @@
       "rule_ids": [
         "R36"
       ],
-      "source_line": 1745,
+      "source_line": 1759,
       "source_row_sha256": "3c000f1d50f5a098f604b2a666a40f0d87a38039a1d2cba45a33efa266b98de7"
     },
     {
@@ -305,7 +312,7 @@
       "input": "pause 연결의 유예 만료 뒤 이전 세대 heartbeat 도착",
       "owner_section": "17.2",
       "rule_ids": [],
-      "source_line": 1746,
+      "source_line": 1760,
       "source_row_sha256": "cc755df3e3459939e063a23e31bf72f1b6367eb0a8ddc9fc8b6e08eb74ab8501"
     },
     {
@@ -318,7 +325,7 @@
       "rule_ids": [
         "R39"
       ],
-      "source_line": 1747,
+      "source_line": 1761,
       "source_row_sha256": "22af9fcd6f5fad8adaa7f09181511f9f29d7b95dc89905bb2da87e6ccf599ddb"
     },
     {
@@ -329,7 +336,7 @@
       "input": "working 활동의 첫 판정 종료 뒤 다음 판정 또는 다음 단계 실행 배정",
       "owner_section": "17.2",
       "rule_ids": [],
-      "source_line": 1748,
+      "source_line": 1762,
       "source_row_sha256": "ea0b05a8270b470a670720eb078c7107fd01f0494f2da7979a696ca2cab92cb3"
     },
     {
@@ -340,7 +347,7 @@
       "input": "비작업 AI가 새로운 수학적 통찰을 부수 산출로 제출",
       "owner_section": "17.2",
       "rule_ids": [],
-      "source_line": 1749,
+      "source_line": 1763,
       "source_row_sha256": "9fe87a01f2e198704b420c2f0c0d9b5e0b6c15a4636896fb42e7a266522db8a8"
     },
     {
@@ -353,7 +360,7 @@
       "rule_ids": [
         "R01"
       ],
-      "source_line": 1755,
+      "source_line": 1769,
       "source_row_sha256": "1774f4a8d7b42c849d6c9e1b9a33075ae33194ab9f0c7c3f3f2f880c7ca79c67"
     },
     {
@@ -364,7 +371,7 @@
       "input": "수학 검토 요청이 많음",
       "owner_section": "17.2",
       "rule_ids": [],
-      "source_line": 1756,
+      "source_line": 1770,
       "source_row_sha256": "35ea320feca093f61380b81545e358dc2e945e93b9e5e6e12edeb5f0cafa932e"
     },
     {
@@ -375,7 +382,7 @@
       "input": "운영 실행이 추가 조사를 요청하고 자기 호출 종료·사용량도 확인됨",
       "owner_section": "17.2",
       "rule_ids": [],
-      "source_line": 1757,
+      "source_line": 1771,
       "source_row_sha256": "6254ed3426bd80073dabf4f59158520651713c8c3d5f14b5c0114e2834c1a61a"
     },
     {
@@ -386,7 +393,7 @@
       "input": "독립 판정 셋을 실행할 작업 슬롯이 하나",
       "owner_section": "17.2",
       "rule_ids": [],
-      "source_line": 1758,
+      "source_line": 1772,
       "source_row_sha256": "27f573a99574ab313c974cc6f191cd4c4dc913c50922af34b16a24e40ff3c70c"
     },
     {
@@ -399,7 +406,7 @@
       "rule_ids": [
         "R01"
       ],
-      "source_line": 1759,
+      "source_line": 1773,
       "source_row_sha256": "fd8d4f0eaf5ea7760ff246c814684f465a3c460e8633e49b0ad3ae3c463fed74"
     },
     {
@@ -412,7 +419,7 @@
       "rule_ids": [
         "R03"
       ],
-      "source_line": 1760,
+      "source_line": 1774,
       "source_row_sha256": "88376c77091a94ea7edb91ed2a00df4864ae598073affe2e62283ffdd129dd08"
     },
     {
@@ -426,7 +433,7 @@
         "R03",
         "R37"
       ],
-      "source_line": 1761,
+      "source_line": 1775,
       "source_row_sha256": "ced5f9f73bdea8f3a16dfb096f30fd5fc75d9d8a30bfc88dd014a6259f4faea3"
     },
     {
@@ -439,7 +446,7 @@
       "rule_ids": [
         "R03"
       ],
-      "source_line": 1762,
+      "source_line": 1776,
       "source_row_sha256": "fb67ec3e5ab4fbe39b297e996788d979e2128adfa35b2458487bf6d734d1ba2e"
     },
     {
@@ -450,7 +457,7 @@
       "input": "필요한 자원을 확보할 수 있는 계획이 먼저 대기하고 새 점검이 계속 도착",
       "owner_section": "17.2",
       "rule_ids": [],
-      "source_line": 1763,
+      "source_line": 1777,
       "source_row_sha256": "ede7946fd7f1b4c364a15e264a0c39bdfc9929183ae126bdfc40cd0d9d53227a"
     },
     {
@@ -463,7 +470,7 @@
       "rule_ids": [
         "R01"
       ],
-      "source_line": 1764,
+      "source_line": 1778,
       "source_row_sha256": "93e9929aca6c3ae9b972fe9821a0fc846155a5f4ebd59ca87012a7d4fd6950fb"
     },
     {
@@ -474,7 +481,7 @@
       "input": "기계 작업의 호스트 예약 뒤 프로세스 생성 실패",
       "owner_section": "17.2",
       "rule_ids": [],
-      "source_line": 1765,
+      "source_line": 1779,
       "source_row_sha256": "45b81c93eab63b079954118525b21efcf83d4ec3e855c0a3ee0c288c79816bb8"
     },
     {
@@ -487,7 +494,7 @@
       "rule_ids": [
         "R37"
       ],
-      "source_line": 1766,
+      "source_line": 1780,
       "source_row_sha256": "92a5f335137913155c694e90544c87c62e1800a39ed02eaa2d0091113cd50690"
     },
     {
@@ -500,7 +507,7 @@
       "rule_ids": [
         "R02"
       ],
-      "source_line": 1767,
+      "source_line": 1781,
       "source_row_sha256": "81ab633db4adbd5314e532aa41bd9c03f486be8480eb8dc0a3666ddc0c7a0288"
     },
     {
@@ -514,7 +521,7 @@
         "R04",
         "R42"
       ],
-      "source_line": 1773,
+      "source_line": 1787,
       "source_row_sha256": "5134c24606f54ca320d8102f40c42989508d7598a96ae517487b4bc006697ac5"
     },
     {
@@ -527,7 +534,7 @@
       "rule_ids": [
         "R04"
       ],
-      "source_line": 1774,
+      "source_line": 1788,
       "source_row_sha256": "2270c3d527bf7a3bb4498889b959697155eb14691a83ffc2225eccee0c0046b2"
     },
     {
@@ -540,7 +547,7 @@
       "rule_ids": [
         "R05"
       ],
-      "source_line": 1775,
+      "source_line": 1789,
       "source_row_sha256": "af793d7f7e97048ffa1d8f77b9d04539fe69ef2e5308c446a1aedef1295db673"
     },
     {
@@ -551,7 +558,7 @@
       "input": "연구 수행 요청이 과제의 고정 프로필과 다른 모델·도구 프로필을 참조",
       "owner_section": "17.2",
       "rule_ids": [],
-      "source_line": 1776,
+      "source_line": 1790,
       "source_row_sha256": "9c43f6d5c94a8b095c9f1ead4588659e850b731850a5de754cf891d4cd266a02"
     },
     {
@@ -564,7 +571,7 @@
       "rule_ids": [
         "R05"
       ],
-      "source_line": 1777,
+      "source_line": 1791,
       "source_row_sha256": "11037d377e46aa7d609fc8df9a9e90c7b86a09f74c7805b69cce7d402c4629a2"
     },
     {
@@ -577,7 +584,7 @@
       "rule_ids": [
         "R05"
       ],
-      "source_line": 1778,
+      "source_line": 1792,
       "source_row_sha256": "d85b0d3d5314172a21f1cb41fa9f5ad302caf4d6975e4dd26c63389e21a56273"
     },
     {
@@ -588,7 +595,7 @@
       "input": "작업 계약의 입력 파일은 존재하지만 질문을 수행할 범위가 부족",
       "owner_section": "17.2",
       "rule_ids": [],
-      "source_line": 1779,
+      "source_line": 1793,
       "source_row_sha256": "089c775de76964ff0f1ddf2b7e7ddc945d78dc369e430b2c05f63d97e3755b30"
     },
     {
@@ -601,7 +608,7 @@
       "rule_ids": [
         "R42"
       ],
-      "source_line": 1780,
+      "source_line": 1794,
       "source_row_sha256": "79c59a460d6ee6f5678c5a87a4c74a451b4766c38c1b35a8bf0ccf1ab68fb0b6"
     },
     {
@@ -612,7 +619,7 @@
       "input": "같은 계약·검토 전제에서 다섯 번 선택",
       "owner_section": "17.2",
       "rule_ids": [],
-      "source_line": 1781,
+      "source_line": 1795,
       "source_row_sha256": "20dd0cc9ebf22fca1d92cace72d2c10123ba3e96c6c9b627482cbd9be2c86a03"
     },
     {
@@ -623,7 +630,7 @@
       "input": "검토 뒤 관련 가정·입력·규칙의 내용 또는 효력이 변경",
       "owner_section": "17.2",
       "rule_ids": [],
-      "source_line": 1782,
+      "source_line": 1796,
       "source_row_sha256": "59907582e8dcca49e597a299e3f9409d2f9205f878004e322623fe32b6033338"
     },
     {
@@ -636,7 +643,7 @@
       "rule_ids": [
         "R19"
       ],
-      "source_line": 1783,
+      "source_line": 1797,
       "source_row_sha256": "9164efe0265e469ff8c6cc7edfade90413e1bc0cdd025f82fb0880d78c85f902"
     },
     {
@@ -647,7 +654,7 @@
       "input": "원자료만 있는 거친 F 또는 미선택 계약 제안",
       "owner_section": "17.2",
       "rule_ids": [],
-      "source_line": 1784,
+      "source_line": 1798,
       "source_row_sha256": "153851f423417ab68d424f9bcdc18d1aed6577acf72d8041422e1d9816461811"
     },
     {
@@ -660,7 +667,7 @@
       "rule_ids": [
         "R06"
       ],
-      "source_line": 1785,
+      "source_line": 1799,
       "source_row_sha256": "123b3ebe30ca2e316dccb193ccdd479621226f811356f25d9ad6b9c283d2f0d3"
     },
     {
@@ -673,7 +680,7 @@
       "rule_ids": [
         "R06"
       ],
-      "source_line": 1786,
+      "source_line": 1800,
       "source_row_sha256": "203308b5c1f81e842d6dacf5cd05de3ef0734ce42f96b332a41695142de5df99"
     },
     {
@@ -686,7 +693,7 @@
       "rule_ids": [
         "R06"
       ],
-      "source_line": 1787,
+      "source_line": 1801,
       "source_row_sha256": "cf3323af0f90c508d7a40c3a7d3c6749af6acd629a91b9a0deead24941873d79"
     },
     {
@@ -697,7 +704,7 @@
       "input": "새 계약을 충실하게 한 줄로 요약할 수 있거나 없는 경우",
       "owner_section": "17.2",
       "rule_ids": [],
-      "source_line": 1788,
+      "source_line": 1802,
       "source_row_sha256": "9d10d30807a623f8eddd1ad794396dceeceec9ba4319c52c86395dd81fb83ba0"
     },
     {
@@ -710,8 +717,22 @@
       "rule_ids": [
         "R46"
       ],
-      "source_line": 1789,
+      "source_line": 1803,
       "source_row_sha256": "7263764eba53c76b0eccc7bec366734b40e5697ffa08fc840af26560e3b6c9bd"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "번호는 유지. 판본 4의 구간 계산값은 1, 판본 6은 3이며 판본 7 저작 전 새 결정 필요. 제안·계약에 같은 계산 적용",
+      "id": "V220",
+      "input": "판본 문턱 3에서 판본 3의 계속을 명시적으로 승인하고 같은 계보의 판본 4·6·7을 준비",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R33",
+        "R46"
+      ],
+      "source_line": 1804,
+      "source_row_sha256": "5b46763ae7fe60521b9a65ad75bc6bd7f0cc75f0bdc0092eb29590dbe5585a14"
     },
     {
       "evidence_scope": "source_contract_only",
@@ -724,7 +745,7 @@
         "R36",
         "R42"
       ],
-      "source_line": 1795,
+      "source_line": 1810,
       "source_row_sha256": "fb365c3bd2a293c4696e7bfb0fd4fe9f64f8963fc8fafc6951880d733398530d"
     },
     {
@@ -737,7 +758,7 @@
       "rule_ids": [
         "R07"
       ],
-      "source_line": 1796,
+      "source_line": 1811,
       "source_row_sha256": "d778e895dc98c10ed30af352d665772c0500102ea7854bb16d0ef03839e2090d"
     },
     {
@@ -751,7 +772,7 @@
         "R08",
         "R41"
       ],
-      "source_line": 1797,
+      "source_line": 1812,
       "source_row_sha256": "1d6066befa873fa79f97d1036082080d89ae34522505455e8c8407a6a194a5f1"
     },
     {
@@ -764,7 +785,7 @@
       "rule_ids": [
         "R08"
       ],
-      "source_line": 1798,
+      "source_line": 1813,
       "source_row_sha256": "57cc2c211274c3cbac43c4aa90e564f3f0160606fe904c4cf8079e86ae53e73c"
     },
     {
@@ -777,7 +798,7 @@
       "rule_ids": [
         "R02"
       ],
-      "source_line": 1799,
+      "source_line": 1814,
       "source_row_sha256": "0d95393958b54cfc57c78069dcd6f2fd40d5f71d23be833fb6f8bfe9a62fa048"
     },
     {
@@ -791,7 +812,7 @@
         "R07",
         "R10"
       ],
-      "source_line": 1800,
+      "source_line": 1815,
       "source_row_sha256": "171d3bf6e7564dd5c1678e9492f9233a843edf38c46702f00e958e00972c0a49"
     },
     {
@@ -804,7 +825,7 @@
       "rule_ids": [
         "R08"
       ],
-      "source_line": 1801,
+      "source_line": 1816,
       "source_row_sha256": "50b83049c08fc7400d22c87edcfa69059293eed5b365edbfb218e7ed246e4d85"
     },
     {
@@ -815,7 +836,7 @@
       "input": "한 실행의 종료 장벽만 불확실",
       "owner_section": "17.2",
       "rule_ids": [],
-      "source_line": 1802,
+      "source_line": 1817,
       "source_row_sha256": "f4bfd7ce16e4ec6463a0f2d9adf9e982862759c4c3fe4680f891ed66146e7f3f"
     },
     {
@@ -829,7 +850,7 @@
         "R07",
         "R36"
       ],
-      "source_line": 1803,
+      "source_line": 1818,
       "source_row_sha256": "48671b9e1002f527a32a9448462259b4562548594e40dd25d2e7eab7298e2cff"
     },
     {
@@ -842,7 +863,7 @@
       "rule_ids": [
         "R10"
       ],
-      "source_line": 1804,
+      "source_line": 1819,
       "source_row_sha256": "71faa3bf6511bd0929a5311b0398c89278e5bc2ba5477a7be6c59cf0d172aba6"
     },
     {
@@ -855,7 +876,7 @@
       "rule_ids": [
         "R02"
       ],
-      "source_line": 1805,
+      "source_line": 1820,
       "source_row_sha256": "fe1a19ba410e10b4e0619250e38065102386ca9ad503858cb427ebd781eb08c4"
     },
     {
@@ -868,7 +889,7 @@
       "rule_ids": [
         "R09"
       ],
-      "source_line": 1806,
+      "source_line": 1821,
       "source_row_sha256": "d61d3a78785b3a58a548da292f61bdbfab46d26ed56179ea9b5fcea1b0ece314"
     },
     {
@@ -881,7 +902,7 @@
       "rule_ids": [
         "R09"
       ],
-      "source_line": 1807,
+      "source_line": 1822,
       "source_row_sha256": "f948d654d53bb727d73b73b7172e3bf00126bffef54c4db173867b594146a669"
     },
     {
@@ -894,7 +915,7 @@
       "rule_ids": [
         "R09"
       ],
-      "source_line": 1808,
+      "source_line": 1823,
       "source_row_sha256": "8584bc91a13af019f0e087b100181077b48549901d9d06ea138aa1e181e9d7cf"
     },
     {
@@ -907,7 +928,7 @@
       "rule_ids": [
         "R09"
       ],
-      "source_line": 1809,
+      "source_line": 1824,
       "source_row_sha256": "912d8fb5e559c45819c995f2377751b3948510cb4d985c461c8f050d85a895c1"
     },
     {
@@ -920,7 +941,7 @@
       "rule_ids": [
         "R08"
       ],
-      "source_line": 1810,
+      "source_line": 1825,
       "source_row_sha256": "2b9f83d401df3e80c70db3ebeb27504dbc1973b2ecc2de954abf68219882c1d0"
     },
     {
@@ -933,7 +954,7 @@
       "rule_ids": [
         "R09"
       ],
-      "source_line": 1811,
+      "source_line": 1826,
       "source_row_sha256": "107d785578ec519ff9625b049faf686fffa2ab6ce770c54be6535d50c77dfb34"
     },
     {
@@ -947,7 +968,7 @@
         "R16",
         "R45"
       ],
-      "source_line": 1812,
+      "source_line": 1827,
       "source_row_sha256": "49ed9b80b4975ea631c02b90697ebdf6c8a1900251d1d0dd3dce5067f94507a1"
     },
     {
@@ -958,7 +979,7 @@
       "input": "새 기록 둘과 관계를 함께 저작",
       "owner_section": "17.2",
       "rule_ids": [],
-      "source_line": 1818,
+      "source_line": 1833,
       "source_row_sha256": "c1d24bd0ef3b8e88144d4e0590f888e4c92653056115f77f02498c9d6e4290d8"
     },
     {
@@ -969,7 +990,7 @@
       "input": "조사하지 않음과 조사 뒤 빈 목록",
       "owner_section": "17.2",
       "rule_ids": [],
-      "source_line": 1819,
+      "source_line": 1834,
       "source_row_sha256": "76105ba8d8f87aa10f41e6001399884789a93d8157df0536fd7df2993b0fe2a9"
     },
     {
@@ -980,7 +1001,7 @@
       "input": "종료된 공간의 청소 실패",
       "owner_section": "17.2",
       "rule_ids": [],
-      "source_line": 1820,
+      "source_line": 1835,
       "source_row_sha256": "5f6a4d0a9819922d67f7e4d7c3964f14d73196f61a1d805ef3104ad0ef175ec0"
     },
     {
@@ -993,7 +1014,7 @@
       "rule_ids": [
         "R12"
       ],
-      "source_line": 1821,
+      "source_line": 1836,
       "source_row_sha256": "f5578125da6f7b5b1ebef7c5759ce8c699bae0b2b5c40558e5c2fa03d461660f"
     },
     {
@@ -1006,7 +1027,7 @@
       "rule_ids": [
         "R12"
       ],
-      "source_line": 1822,
+      "source_line": 1837,
       "source_row_sha256": "ba62c8f50095d53008ba95a5c413ea435ef6e17ec066f370db468012d1c618e0"
     },
     {
@@ -1019,7 +1040,7 @@
       "rule_ids": [
         "R11"
       ],
-      "source_line": 1823,
+      "source_line": 1838,
       "source_row_sha256": "c8b869de0d901c09e3d318f82f7cae708f56f6dc17da7ce9fb5ff7476dd9c592"
     },
     {
@@ -1032,7 +1053,7 @@
       "rule_ids": [
         "R14"
       ],
-      "source_line": 1824,
+      "source_line": 1839,
       "source_row_sha256": "2d0b0338f5bc47261c4c64d815fb6622fddf33344d61b73af84b9572738ab424"
     },
     {
@@ -1043,7 +1064,7 @@
       "input": "지식 문서 이동 뒤 ID 색인 재생성",
       "owner_section": "17.2",
       "rule_ids": [],
-      "source_line": 1825,
+      "source_line": 1840,
       "source_row_sha256": "62a751ab63a3f667cefb622a923b13357da9fc2b3315c208c3d500ca1afc7e2b"
     },
     {
@@ -1056,7 +1077,7 @@
       "rule_ids": [
         "R14"
       ],
-      "source_line": 1826,
+      "source_line": 1841,
       "source_row_sha256": "cf5f7083973634c7b88ad575459a7609ed18ae70bfe7c5884af0ec087635e933"
     },
     {
@@ -1069,7 +1090,7 @@
       "rule_ids": [
         "R14"
       ],
-      "source_line": 1827,
+      "source_line": 1842,
       "source_row_sha256": "17370584cecef29c4e89c9f3be696f8673fa99861266e91d1781eea8a95d1f85"
     },
     {
@@ -1082,7 +1103,7 @@
       "rule_ids": [
         "R14"
       ],
-      "source_line": 1828,
+      "source_line": 1843,
       "source_row_sha256": "914abeba53f2dc27702ce1bfb36d6d42de6edd4b5375dacbab6fbf612531508a"
     },
     {
@@ -1093,7 +1114,7 @@
       "input": "미지 필드·중복 원문 키·NFC 충돌·금지 YAML 구성·틀린 ID 또는 OID 길이",
       "owner_section": "17.2",
       "rule_ids": [],
-      "source_line": 1829,
+      "source_line": 1844,
       "source_row_sha256": "69cab2738e50b3a28d467e33450d4c7a3f35c0bd1fd5d7644257adb53bb6bc4f"
     },
     {
@@ -1106,7 +1127,7 @@
       "rule_ids": [
         "R14"
       ],
-      "source_line": 1830,
+      "source_line": 1845,
       "source_row_sha256": "fa805a48c4ec3dece98f4bedb9801637a9f1819fa0482dd4cd25cadf77402647"
     },
     {
@@ -1119,7 +1140,7 @@
       "rule_ids": [
         "R14"
       ],
-      "source_line": 1831,
+      "source_line": 1846,
       "source_row_sha256": "4e0efaefe4b98af6f0af05581172753a901c3cef7aa35edd713cc8497a515c24"
     },
     {
@@ -1132,7 +1153,7 @@
       "rule_ids": [
         "R11"
       ],
-      "source_line": 1832,
+      "source_line": 1847,
       "source_row_sha256": "06e3ad755071aa2e7fa44afe705552740121d8e56c430a627b737639b30d93e5"
     },
     {
@@ -1145,7 +1166,7 @@
       "rule_ids": [
         "R17"
       ],
-      "source_line": 1838,
+      "source_line": 1853,
       "source_row_sha256": "88444fae36149bb99f491704daa7bb4d1cb7163c4522e98fdf0557408eb167d5"
     },
     {
@@ -1158,7 +1179,7 @@
       "rule_ids": [
         "R17"
       ],
-      "source_line": 1839,
+      "source_line": 1854,
       "source_row_sha256": "2f34e2b48b25ad5d2dc8034855dadd27e69b8390430caf4cb8d0965d478e9aeb"
     },
     {
@@ -1171,7 +1192,7 @@
       "rule_ids": [
         "R17"
       ],
-      "source_line": 1840,
+      "source_line": 1855,
       "source_row_sha256": "7e4689a148c2f4331b2dba88d298832d7d0dbd42538468090e6931c2d7b9e9e5"
     },
     {
@@ -1182,7 +1203,7 @@
       "input": "입력이 같고 같은 후보 shuffle seed 또는 새 회차 seed",
       "owner_section": "17.2",
       "rule_ids": [],
-      "source_line": 1841,
+      "source_line": 1856,
       "source_row_sha256": "2c78cfbdd71de161a1a964cea8a577f3c8b958f4528f09aab65c52bf0fd7f208"
     },
     {
@@ -1195,7 +1216,7 @@
       "rule_ids": [
         "R17"
       ],
-      "source_line": 1842,
+      "source_line": 1857,
       "source_row_sha256": "ee2c449cb227887540e7677673295353058b00de80aaf7cb117545df96342139"
     },
     {
@@ -1206,7 +1227,7 @@
       "input": "최근 선택의 낙관적 기대가 실제 실패·부분 결과로 끝남",
       "owner_section": "17.2",
       "rule_ids": [],
-      "source_line": 1843,
+      "source_line": 1858,
       "source_row_sha256": "7c02d260497e415d8739c09e4415769923c28bc3c92a5e42cd353ec5a81a59b5"
     },
     {
@@ -1219,7 +1240,7 @@
       "rule_ids": [
         "R15"
       ],
-      "source_line": 1844,
+      "source_line": 1859,
       "source_row_sha256": "605288a6ef7c51c342433895ade4e2a75fab609c6b351ae311e832b1840cecf8"
     },
     {
@@ -1232,7 +1253,7 @@
       "rule_ids": [
         "R17"
       ],
-      "source_line": 1845,
+      "source_line": 1860,
       "source_row_sha256": "8a261dba8f500aef65bc5a4059d4eedb12bf4fdd48505b5a723878ffb69ab47b"
     },
     {
@@ -1245,21 +1266,34 @@
       "rule_ids": [
         "R16"
       ],
-      "source_line": 1846,
+      "source_line": 1861,
       "source_row_sha256": "1302b0662cdc8249955d91bb7aa73d546d0517cc44ecd35cc03d5d6bc311aa9a"
     },
     {
       "evidence_scope": "source_contract_only",
       "execution_status": "not_run",
-      "expected": "요청 미시작, 질문 공개와 활동의 user_decision 대기, 다른 자리의 실행은 계속. 대화 소실로 위장한 요약·임의 대체 없음",
-      "id": "V145",
-      "input": "참조 대체 복원 뒤에도 시작 전 실측이 컨텍스트 초과",
+      "expected": "최종 응답을 원 대화에 봉인하고 다음 회차에 전문 복원. 재전송되지 않았다는 이유로 누락하거나 같은 항목의 재전송을 중복 봉인하지 않음",
+      "id": "V218",
+      "input": "검토자가 최종 assistant 판정을 반환하고 다음 모델 호출 없이 종료",
       "owner_section": "17.2",
       "rule_ids": [
         "R16"
       ],
-      "source_line": 1847,
-      "source_row_sha256": "a174650b0903186f6f8a2f46e46b9da082615646a01186cb5b5a67a3af5ca548"
+      "source_line": 1862,
+      "source_row_sha256": "2b270c6f819a7859bc9936496352b66fc4e5d40847f50e401d593bd49c5ceba2"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "요청 미시작, 질문 공개와 활동의 user_decision 대기, 다른 자리의 실행은 계속. 제안 재구성 반환이나 대화 소실로 대체하지 않음",
+      "id": "V145",
+      "input": "이번 제안·필수 원자료와 공통 문면은 들어가지만 참조 대체 복원 대화를 더하면 시작 전 한도 초과",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R16"
+      ],
+      "source_line": 1863,
+      "source_row_sha256": "31d8be3735defb040128657be1e29edcb7c66666482584c0b741801ed1807802"
     },
     {
       "evidence_scope": "source_contract_only",
@@ -1271,7 +1305,7 @@
       "rule_ids": [
         "R16"
       ],
-      "source_line": 1848,
+      "source_line": 1864,
       "source_row_sha256": "a81dd054d6bdebec4c4247f954112395930703f4b584ba3a95a2ee32d695fee6"
     },
     {
@@ -1282,7 +1316,7 @@
       "input": "철회. 8.5절의 partial 갈래 제거로 대상 규정 없음",
       "owner_section": "17.2",
       "rule_ids": [],
-      "source_line": 1849,
+      "source_line": 1865,
       "source_row_sha256": "d33e0effa8cdd25eed00fc5c0ac1ac3b3cf784c755a44aaea21f192fa694e5d0"
     },
     {
@@ -1295,7 +1329,7 @@
       "rule_ids": [
         "R17"
       ],
-      "source_line": 1850,
+      "source_line": 1866,
       "source_row_sha256": "d5d98b8f52487bf756b90cd4bdf870fc81b31242240ae72b5cc7e69042396cc1"
     },
     {
@@ -1308,7 +1342,7 @@
       "rule_ids": [
         "R15"
       ],
-      "source_line": 1851,
+      "source_line": 1867,
       "source_row_sha256": "e9ea9a68b90c2778a59862fb37850213fcf107c150be562987889622046fa145"
     },
     {
@@ -1321,7 +1355,7 @@
       "rule_ids": [
         "R16"
       ],
-      "source_line": 1852,
+      "source_line": 1868,
       "source_row_sha256": "ca75361a8f2c81ada476eae5a9d3485d800f736d7a6758ec7a47bc4fb1b55f25"
     },
     {
@@ -1334,7 +1368,7 @@
       "rule_ids": [
         "R17"
       ],
-      "source_line": 1853,
+      "source_line": 1869,
       "source_row_sha256": "c810fa3e5f3458c6d6f7d39ed373519c079c8fbcfad2626f0f5393983fab9890"
     },
     {
@@ -1345,7 +1379,7 @@
       "input": "철회. 8.5절의 최소 조합 탐색 제거로 대상 규정 없음",
       "owner_section": "17.2",
       "rule_ids": [],
-      "source_line": 1854,
+      "source_line": 1870,
       "source_row_sha256": "291285d6ea3723484b656d731294a22ebc63fcba35a3fcab9ebc4434c51c80d6"
     },
     {
@@ -1358,7 +1392,7 @@
       "rule_ids": [
         "R16"
       ],
-      "source_line": 1855,
+      "source_line": 1871,
       "source_row_sha256": "690ddd3ce8c53bd9a7fee96a584a7054909311b456411db1e9b347a528a1da8c"
     },
     {
@@ -1371,8 +1405,22 @@
       "rule_ids": [
         "R15"
       ],
-      "source_line": 1856,
+      "source_line": 1872,
       "source_row_sha256": "b9934bccb406530be6c1deb896d636e057f8bd1e56571b3bb4b37568e7ac7882"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "8.3절의 우선 분류로 사용자 결정 대기. 공통 문면은 들어가고 이번 제안 자체가 초과할 때만 재구성 반환. 복원 대화만의 초과는 V145 적용",
+      "id": "V222",
+      "input": "공통 문면 자체의 초과와 제안·복원 대화 초과가 함께 관찰됨",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R16",
+        "R23"
+      ],
+      "source_line": 1873,
+      "source_row_sha256": "1970c9a29b1b19133ad386bbc5bd857bcf6a0f015f7d8f991d4e00e0c49c8747"
     },
     {
       "evidence_scope": "source_contract_only",
@@ -1384,7 +1432,7 @@
       "rule_ids": [
         "R17"
       ],
-      "source_line": 1857,
+      "source_line": 1874,
       "source_row_sha256": "92c83dbb42538ac71017440f580160fa5b1b2b002209199bb33a03273999237b"
     },
     {
@@ -1397,7 +1445,7 @@
       "rule_ids": [
         "R17"
       ],
-      "source_line": 1858,
+      "source_line": 1875,
       "source_row_sha256": "71e2be8a07716a12dbccb83975387ec5a20135573d63cd60e451aa58d5e9a1f4"
     },
     {
@@ -1411,7 +1459,7 @@
         "R16",
         "R45"
       ],
-      "source_line": 1859,
+      "source_line": 1876,
       "source_row_sha256": "30ac6dd744b9a54af64d16a3fd9336165c4af8f783289fa63ef738157ed59ebd"
     },
     {
@@ -1424,7 +1472,7 @@
       "rule_ids": [
         "R16"
       ],
-      "source_line": 1860,
+      "source_line": 1877,
       "source_row_sha256": "7b909aeba128fc5edc32fe1251a4a8b6adbfba26edc8f59da8878d7897d1143b"
     },
     {
@@ -1437,7 +1485,7 @@
       "rule_ids": [
         "R16"
       ],
-      "source_line": 1861,
+      "source_line": 1878,
       "source_row_sha256": "b685e013e81d0517668a84a7ae6d2a8c4d57eb88651eeb9fabe9aa15892f615e"
     },
     {
@@ -1450,7 +1498,7 @@
       "rule_ids": [
         "R16"
       ],
-      "source_line": 1862,
+      "source_line": 1879,
       "source_row_sha256": "586b2b9fff67af9b4201f8b9741eace9eafacf4fcd042433806ef716addd7d5a"
     },
     {
@@ -1463,7 +1511,7 @@
       "rule_ids": [
         "R16"
       ],
-      "source_line": 1863,
+      "source_line": 1880,
       "source_row_sha256": "7c418ba87f65c157a57e3be9336cbacbf8c1441b3c264e23045bed3176ba2e34"
     },
     {
@@ -1476,7 +1524,7 @@
       "rule_ids": [
         "R17"
       ],
-      "source_line": 1864,
+      "source_line": 1881,
       "source_row_sha256": "651beddb5fb0a8d2ef152111372df0d4677ca5ea5b69122125a27d82428d457d"
     },
     {
@@ -1489,7 +1537,7 @@
       "rule_ids": [
         "R16"
       ],
-      "source_line": 1865,
+      "source_line": 1882,
       "source_row_sha256": "16fe3fab6d8f03303a3cc9af05f066169e3cec55798b391c234152c12322daaa"
     },
     {
@@ -1500,7 +1548,7 @@
       "input": "연구 계획이 유효한 빈 선택을 반환",
       "owner_section": "17.2",
       "rule_ids": [],
-      "source_line": 1871,
+      "source_line": 1888,
       "source_row_sha256": "166eb639d818b972642787491fc5b6038255fcf413f0a68ac2d431b99eec3d49"
     },
     {
@@ -1513,7 +1561,7 @@
       "rule_ids": [
         "R18"
       ],
-      "source_line": 1872,
+      "source_line": 1889,
       "source_row_sha256": "b6b478c97afbf1f7b2cd302b4e7f49fe3a6a850202b7abf0ca6528e3867e8272"
     },
     {
@@ -1527,7 +1575,7 @@
         "R13",
         "R18"
       ],
-      "source_line": 1873,
+      "source_line": 1890,
       "source_row_sha256": "e4971b13a72c050c8a89d1d6dd9a9206797dee375c1fc7beba58941048657ab0"
     },
     {
@@ -1540,7 +1588,7 @@
       "rule_ids": [
         "R21"
       ],
-      "source_line": 1874,
+      "source_line": 1891,
       "source_row_sha256": "45043bb0f13ada1d1e94cf48d8addfd3aa23e9c451a189170d2f5dbfcb1975c6"
     },
     {
@@ -1553,7 +1601,7 @@
       "rule_ids": [
         "R21"
       ],
-      "source_line": 1875,
+      "source_line": 1892,
       "source_row_sha256": "cfab2d487840b6601e5e64922337b8dcc089f1f01b23ee9c2d99099422fd779b"
     },
     {
@@ -1566,7 +1614,7 @@
       "rule_ids": [
         "R21"
       ],
-      "source_line": 1876,
+      "source_line": 1893,
       "source_row_sha256": "c92208cf1ddf1342c84d9a402e93d4e5a2615dfcf5de2539295b6f52885d5427"
     },
     {
@@ -1579,7 +1627,7 @@
       "rule_ids": [
         "R21"
       ],
-      "source_line": 1877,
+      "source_line": 1894,
       "source_row_sha256": "86cdd50ed1519f8c38d0712a616cee89c2e4fb1c835f9329fe0317ed7f165fe2"
     },
     {
@@ -1592,7 +1640,7 @@
       "rule_ids": [
         "R20"
       ],
-      "source_line": 1878,
+      "source_line": 1895,
       "source_row_sha256": "f9a229fa82275850469c14195c93b734c0e4b30bf86a30973d3d8b5d46ac25ff"
     },
     {
@@ -1605,7 +1653,7 @@
       "rule_ids": [
         "R19"
       ],
-      "source_line": 1879,
+      "source_line": 1896,
       "source_row_sha256": "38cb3ae85103b8f17d457c90795a7cfd0179821c8d2aee2033b246d2dd3948e5"
     },
     {
@@ -1618,7 +1666,7 @@
       "rule_ids": [
         "R18"
       ],
-      "source_line": 1880,
+      "source_line": 1897,
       "source_row_sha256": "965b88538b784a1453b4c52c831429c14f81a92307342829ce3899f74c0d19d2"
     },
     {
@@ -1631,7 +1679,7 @@
       "rule_ids": [
         "R18"
       ],
-      "source_line": 1881,
+      "source_line": 1898,
       "source_row_sha256": "06313ea3ec083bd77239b554a85cb911cf59ef4e0f351fb258f65b0e7f01f40b"
     },
     {
@@ -1642,7 +1690,7 @@
       "input": "직전 준비의 제안이 미편입·기각됐고 새 준비 회차가 열림",
       "owner_section": "17.2",
       "rule_ids": [],
-      "source_line": 1882,
+      "source_line": 1899,
       "source_row_sha256": "acc8c9455c93373034ad2cfb350d21d5df4dab7e099b6b6e8bc9de16e707fb61"
     },
     {
@@ -1655,7 +1703,7 @@
       "rule_ids": [
         "R18"
       ],
-      "source_line": 1883,
+      "source_line": 1900,
       "source_row_sha256": "3bf65e428d53102e1f2766201d1fec75b1263ea2da0a747e4db96bee9a1faa79"
     },
     {
@@ -1668,7 +1716,7 @@
       "rule_ids": [
         "R18"
       ],
-      "source_line": 1884,
+      "source_line": 1901,
       "source_row_sha256": "3ee7fb292566d9caffc3703182cbfc872143e5bab6e921bc82abe1f35c817db3"
     },
     {
@@ -1681,7 +1729,7 @@
       "rule_ids": [
         "R33"
       ],
-      "source_line": 1885,
+      "source_line": 1902,
       "source_row_sha256": "6b8546d16140b873c8c16a1eca0e9072a243258a7fc918e3c28a6762f20d0978"
     },
     {
@@ -1694,7 +1742,7 @@
       "rule_ids": [
         "R20"
       ],
-      "source_line": 1886,
+      "source_line": 1903,
       "source_row_sha256": "f6ec9c79bdebfb9270f56ff4ee48e776411e3180fd6900a9df9a61e05c10b35d"
     },
     {
@@ -1708,7 +1756,7 @@
         "R20",
         "R33"
       ],
-      "source_line": 1887,
+      "source_line": 1904,
       "source_row_sha256": "d3731de2a4862911c2339973a96cd799e90441d205fcd09e95d5f363c71acce9"
     },
     {
@@ -1721,7 +1769,7 @@
       "rule_ids": [
         "R11"
       ],
-      "source_line": 1893,
+      "source_line": 1910,
       "source_row_sha256": "081234c16739fdf45cecc4d8f3c07a6dd5176eb0b4367e3ae87012d3d70d8ced"
     },
     {
@@ -1734,7 +1782,7 @@
       "rule_ids": [
         "R11"
       ],
-      "source_line": 1894,
+      "source_line": 1911,
       "source_row_sha256": "4eabc02feaabfec1d03721e5a603a1180124a3fcb9ae71ebfe189571ede11719"
     },
     {
@@ -1748,7 +1796,7 @@
         "R11",
         "R22"
       ],
-      "source_line": 1895,
+      "source_line": 1912,
       "source_row_sha256": "767b2798a09746e0913decc17cfcd80a25367758bc35ec85a6daf347f8035a4c"
     },
     {
@@ -1762,7 +1810,7 @@
         "R11",
         "R22"
       ],
-      "source_line": 1896,
+      "source_line": 1913,
       "source_row_sha256": "dcec886e666651250a01e895c9e5003a6867dcd4567b546dd6a64fbf7c75f79e"
     },
     {
@@ -1773,7 +1821,7 @@
       "input": "일반 연구 편입으로 통치 맥락의 정의를 변경",
       "owner_section": "17.2",
       "rule_ids": [],
-      "source_line": 1897,
+      "source_line": 1914,
       "source_row_sha256": "fb439ea89b057a07073238eba50e00d641d7824b46aefb8cbebac7b66ef1561c"
     },
     {
@@ -1786,7 +1834,7 @@
       "rule_ids": [
         "R22"
       ],
-      "source_line": 1898,
+      "source_line": 1915,
       "source_row_sha256": "591a53183b84c45023d3bbf39ca667714ecff9cb2513d7e27031c0b3aefe4697"
     },
     {
@@ -1799,8 +1847,21 @@
       "rule_ids": [
         "R40"
       ],
-      "source_line": 1899,
+      "source_line": 1916,
       "source_row_sha256": "369be8304e48ab3f4cd0d91de241833ca87e78056157f46a91b06c0105d298cf"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "수리 집계는 최근 산출 둘에 연결된 검사 기록을 중복 없이 포함. 성공 편입만 골라 실패를 누락하지 않음. 창 0에서도 현재 필수 실패 전달은 유지",
+      "id": "V221",
+      "input": "history_window=2이고 최근 봉인 산출 둘이 모두 미편입·반려이며 그 이전에 성공 편입이 있음",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R40"
+      ],
+      "source_line": 1917,
+      "source_row_sha256": "8854b4d54327fa5c80e5599ac06725c04b3d0179d85a93bae26ec63cd7c04c7a"
     },
     {
       "evidence_scope": "source_contract_only",
@@ -1812,7 +1873,7 @@
       "rule_ids": [
         "R23"
       ],
-      "source_line": 1905,
+      "source_line": 1923,
       "source_row_sha256": "f67e532bcc9063131da042935b4e49f263b418aee3b8e3d06712f5e1451e8519"
     },
     {
@@ -1825,7 +1886,7 @@
       "rule_ids": [
         "R26"
       ],
-      "source_line": 1906,
+      "source_line": 1924,
       "source_row_sha256": "96d642c6767d2d08dad5b26777a350c7c5908f1c4350af646c2ef4a68c87d598"
     },
     {
@@ -1838,7 +1899,7 @@
       "rule_ids": [
         "R27"
       ],
-      "source_line": 1907,
+      "source_line": 1925,
       "source_row_sha256": "7acad40f50b95fca9fd8e8507cdec9fc533a7bd1d4370ec3649e9d2d298c350e"
     },
     {
@@ -1851,7 +1912,7 @@
       "rule_ids": [
         "R28"
       ],
-      "source_line": 1908,
+      "source_line": 1926,
       "source_row_sha256": "a628988bf9dfc7f63635d110564f856da8bd226b9b4c1deb9473d80b8fafb6b2"
     },
     {
@@ -1864,7 +1925,7 @@
       "rule_ids": [
         "R28"
       ],
-      "source_line": 1909,
+      "source_line": 1927,
       "source_row_sha256": "32f9f879d0b65afb684efcd7a4625f241634d69b21cf66c996206bc9d343a78f"
     },
     {
@@ -1875,7 +1936,7 @@
       "input": "봉인한 제안 파일이 예기치 않게 바뀜",
       "owner_section": "17.2",
       "rule_ids": [],
-      "source_line": 1910,
+      "source_line": 1928,
       "source_row_sha256": "bca392fed7a0fd55b4d84485b6c570da985a45c4e66395fd3091084822110196"
     },
     {
@@ -1886,7 +1947,7 @@
       "input": "작성자가 내용을 고쳐 새 판본 제출",
       "owner_section": "17.2",
       "rule_ids": [],
-      "source_line": 1911,
+      "source_line": 1929,
       "source_row_sha256": "97717d489637afb3a451464d05664774f918155c0de492481a0fbad5228d9716"
     },
     {
@@ -1897,7 +1958,7 @@
       "input": "H → P는 검증됐지만 목표는 P",
       "owner_section": "17.2",
       "rule_ids": [],
-      "source_line": 1912,
+      "source_line": 1930,
       "source_row_sha256": "aa0c1840f3294a5af4c8c679f9918d804a7ec0ef9c7bd6e1ab10735fe61f1842"
     },
     {
@@ -1910,7 +1971,7 @@
       "rule_ids": [
         "R28"
       ],
-      "source_line": 1913,
+      "source_line": 1931,
       "source_row_sha256": "b5378d414be049a988b369dca03cab11d5249882c6e1538152a2cd7033e99d8f"
     },
     {
@@ -1923,7 +1984,7 @@
       "rule_ids": [
         "R23"
       ],
-      "source_line": 1914,
+      "source_line": 1932,
       "source_row_sha256": "3fc7f7961c5d3fd1171d592f5d33b7b0d8ffc7c602ef2d186ef3d05a199e4015"
     },
     {
@@ -1936,7 +1997,7 @@
       "rule_ids": [
         "R23"
       ],
-      "source_line": 1915,
+      "source_line": 1933,
       "source_row_sha256": "556d28b0ac3e3b20e76d821bef3d2fc6caac38ed5d26b3a13203fd78387c3c3f"
     },
     {
@@ -1949,7 +2010,7 @@
       "rule_ids": [
         "R15"
       ],
-      "source_line": 1916,
+      "source_line": 1934,
       "source_row_sha256": "c702dec26bdb7082b6e5b62118e1cd37f892ff1db1bac4dfb801549d831d4a10"
     },
     {
@@ -1962,7 +2023,7 @@
       "rule_ids": [
         "R24"
       ],
-      "source_line": 1917,
+      "source_line": 1935,
       "source_row_sha256": "ddbe5b50490e4f1f580f2cc240bc853c0b75d3b33bb6fd3491b7031427bfe082"
     },
     {
@@ -1975,7 +2036,7 @@
       "rule_ids": [
         "R26"
       ],
-      "source_line": 1918,
+      "source_line": 1936,
       "source_row_sha256": "e6f05c8a6d566958fb3dd038f1ec7ecb4c37d89e8b865a20a92d1d7e1d06114f"
     },
     {
@@ -1988,7 +2049,7 @@
       "rule_ids": [
         "R27"
       ],
-      "source_line": 1919,
+      "source_line": 1937,
       "source_row_sha256": "e646720f944fbf2356ddd7434d2da61286ea3d1675cce77442eca101130e1454"
     },
     {
@@ -2001,7 +2062,7 @@
       "rule_ids": [
         "R23"
       ],
-      "source_line": 1920,
+      "source_line": 1938,
       "source_row_sha256": "4def4641c0882ea314bba9bf3b0fc070b31868a2598444618dd8759af476d788"
     },
     {
@@ -2014,7 +2075,7 @@
       "rule_ids": [
         "R27"
       ],
-      "source_line": 1921,
+      "source_line": 1939,
       "source_row_sha256": "0ab51b6dca8fae22ed3e2edb5e728de8d7fc3e62e68bc621e096fb8370056de0"
     },
     {
@@ -2027,7 +2088,7 @@
       "rule_ids": [
         "R27"
       ],
-      "source_line": 1922,
+      "source_line": 1940,
       "source_row_sha256": "775757cc68e9901aeb853ceac58643c5048e875e5f2ac85062c1d4d5b973644b"
     },
     {
@@ -2038,7 +2099,7 @@
       "input": "해설의 양화 순서·영역·의존이 Lean 표현과 다름",
       "owner_section": "17.2",
       "rule_ids": [],
-      "source_line": 1923,
+      "source_line": 1941,
       "source_row_sha256": "0a5d16d713c2c30755b6d488e5c18522e8501a29a18642c13f4a28ca70d463cb"
     },
     {
@@ -2049,7 +2110,7 @@
       "input": "문헌 전사의 허용 생략을 오류로 지적",
       "owner_section": "17.2",
       "rule_ids": [],
-      "source_line": 1924,
+      "source_line": 1942,
       "source_row_sha256": "70ce0129793c7bc604f5eade8a00d1821cbce3aaad91c549530117f8f27f7b48"
     },
     {
@@ -2060,7 +2121,7 @@
       "input": "프로젝트 추가 감사가 조건부 판정을 내고 해설은 정확",
       "owner_section": "17.2",
       "rule_ids": [],
-      "source_line": 1925,
+      "source_line": 1943,
       "source_row_sha256": "04d4d18c5ac8d2cc39f14e60cba53c6ec5f61c4ff1b74dcc665180d4123558b8"
     },
     {
@@ -2071,7 +2132,7 @@
       "input": "목표와 거리가 멀다는 이유만으로 정확한 K 편입 차단 요구",
       "owner_section": "17.2",
       "rule_ids": [],
-      "source_line": 1926,
+      "source_line": 1944,
       "source_row_sha256": "2fe156bb12d0f33ffbe25dfe13db15559c0f88fdb223d0c1dec04d76236b121c"
     },
     {
@@ -2084,7 +2145,7 @@
       "rule_ids": [
         "R25"
       ],
-      "source_line": 1927,
+      "source_line": 1945,
       "source_row_sha256": "a9ae2ab1765eef86750cea794901d535523a2c0655b4b6f17dfd7d995754ecbe"
     },
     {
@@ -2097,7 +2158,7 @@
       "rule_ids": [
         "R26"
       ],
-      "source_line": 1928,
+      "source_line": 1946,
       "source_row_sha256": "8d874bd1f9533e77012ae849f8aab821b06162334635980487c672d05cc76e4e"
     },
     {
@@ -2108,7 +2169,7 @@
       "input": "쟁점 기록만으로 재구성 불가 또는 같은 오독 재발",
       "owner_section": "17.2",
       "rule_ids": [],
-      "source_line": 1929,
+      "source_line": 1947,
       "source_row_sha256": "0faaec12b2ef8a3e88373312ddee0ef5e7bab8f66714b1e101fffe3c137296b2"
     },
     {
@@ -2121,7 +2182,7 @@
       "rule_ids": [
         "R24"
       ],
-      "source_line": 1930,
+      "source_line": 1948,
       "source_row_sha256": "96b18e456ae50f5a233ad6432798a08fb5f341787f522a5b015abb6bc79f017d"
     },
     {
@@ -2134,7 +2195,7 @@
       "rule_ids": [
         "R24"
       ],
-      "source_line": 1931,
+      "source_line": 1949,
       "source_row_sha256": "7c054662ac5dcf55c63838237c13c6c25136cbb62ebd2f7cf5cd618beb59deba"
     },
     {
@@ -2147,7 +2208,7 @@
       "rule_ids": [
         "R24"
       ],
-      "source_line": 1932,
+      "source_line": 1950,
       "source_row_sha256": "88d8a31eaa05b6ac2d7cd37360af4eef92694a654555ff1a52ab0a8d906cd6e5"
     },
     {
@@ -2160,7 +2221,7 @@
       "rule_ids": [
         "R25"
       ],
-      "source_line": 1933,
+      "source_line": 1951,
       "source_row_sha256": "55c051d74d17e363d1d220205e947f7060eca26585a45a36b7bd0fecddacfa27"
     },
     {
@@ -2173,7 +2234,7 @@
       "rule_ids": [
         "R26"
       ],
-      "source_line": 1934,
+      "source_line": 1952,
       "source_row_sha256": "0e96c50cac87f4b600f9f083a77045ced6396e838dd46578b4afdf29c79836e5"
     },
     {
@@ -2186,7 +2247,7 @@
       "rule_ids": [
         "R25"
       ],
-      "source_line": 1935,
+      "source_line": 1953,
       "source_row_sha256": "8ba228cd4266ef36efcecd9756462e33a0083b64af97e78a329b060c9a1891ac"
     },
     {
@@ -2194,13 +2255,26 @@
       "execution_status": "not_run",
       "expected": "검토 계획 미개설, 실측을 담은 활동 결과로 unresolved 종료, 다음 계획의 재구성 준비 요청 또는 사용자 결정 요청. 계획자·생성기의 임의 분할 없음",
       "id": "V162",
-      "input": "제안 전문·원자료·필수 대화가 한도를 넘음",
+      "input": "공통 문면은 들어가지만 복원 대화를 제외해도 이번 제안 전문·필수 원자료를 더하면 한도를 넘음",
       "owner_section": "17.2",
       "rule_ids": [
         "R23"
       ],
-      "source_line": 1936,
-      "source_row_sha256": "9d0b79c9db1cb7e3aaeaaee2789add4001be4532fc585346a5f6c6b55f64b7e5"
+      "source_line": 1954,
+      "source_row_sha256": "0be204ac24a05690929e0b1780d3633b8e625f8d8adb9366e9d3a3cc4f8d5627"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "이전 과제는 종결 상태로 보존하고 새 연구 의무의 과제를 준비. 진행 중인 같은 의무만 계약 개정으로 반환",
+      "id": "V219",
+      "input": "제안 제출로 작성자 과제가 completed가 된 뒤 제안 재구성 필요가 확인됨",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R23"
+      ],
+      "source_line": 1955,
+      "source_row_sha256": "062a0b8967c94afb8e61f3749b5c22de4dc5dfe5f09edddf2685388b673ede0f"
     },
     {
       "evidence_scope": "source_contract_only",
@@ -2212,7 +2286,7 @@
       "rule_ids": [
         "R25"
       ],
-      "source_line": 1937,
+      "source_line": 1956,
       "source_row_sha256": "4b2afe37914f5361ab187dffcd4169ade962a289a90dea591dc7c9cd169b294d"
     },
     {
@@ -2225,7 +2299,7 @@
       "rule_ids": [
         "R23"
       ],
-      "source_line": 1938,
+      "source_line": 1957,
       "source_row_sha256": "c221ac8207475dafa7f04d1f366a163658cc16f50cd8607b6f86e0e98a788800"
     },
     {
@@ -2233,13 +2307,26 @@
       "execution_status": "not_run",
       "expected": "최초 계획 1회까지 합쳐 14회 필요. 13은 계획 검사 실패, 14는 해당 필수 배치 가능. 정리 2회이면 15회 필요",
       "id": "V190",
-      "input": "초기 검토 N=3, 정리 1회·답변 3회·심사 6회를 배정하며 총한도가 13 또는 14",
+      "input": "심사 회차 상한이 2 이상이고 초기 검토 N=3, 정리 1회·답변 3회·심사 6회를 배정하며 총한도가 13 또는 14",
       "owner_section": "17.2",
       "rule_ids": [
         "R26"
       ],
-      "source_line": 1939,
-      "source_row_sha256": "7e2a4b28222411e30cc1686beb9130f71b51f25c5bf4c1f931ba115d2d071e44"
+      "source_line": 1958,
+      "source_row_sha256": "a706cca0ae77ed48097322663715992fe01463cb4fff7b7d81ce531bd040cae1"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "7은 배정 불가, 8은 해당 필수 배치 가능. 같은 몫을 회차 상한 2 이상의 방침에 사용하면 관계 검사 실패",
+      "id": "V217",
+      "input": "N=3, 심사 회차 상한 1, 정리 1·답변 0·심사 3, 총한도 7 또는 8",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R26"
+      ],
+      "source_line": 1959,
+      "source_row_sha256": "13865dc09fcbfe5f6d9c07324bb1c586849ab47a8969299fa6769cfd1d617bec"
     },
     {
       "evidence_scope": "source_contract_only",
@@ -2251,8 +2338,21 @@
       "rule_ids": [
         "R26"
       ],
-      "source_line": 1940,
+      "source_line": 1960,
       "source_row_sha256": "a858b8a94b0e2867c86f3931b26a9c26df9d2b39af01efd67a198821cb5c8749"
+    },
+    {
+      "evidence_scope": "source_contract_only",
+      "execution_status": "not_run",
+      "expected": "첫 보충 뒤 executions_used=5. 두 번째 요청은 5+10+1이 상한을 넘어 차단. 종료·새 하위 ID로 소비를 지우지 않고 기계 실행은 AI 횟수에서 제외",
+      "id": "V216",
+      "input": "검토 상한 15, 상위 AI 실행 4·남은 필수 몫 10에서 하위 보충 AI 한 번 종료 뒤 두 번째 요청",
+      "owner_section": "17.2",
+      "rule_ids": [
+        "R26"
+      ],
+      "source_line": 1961,
+      "source_row_sha256": "3132af031a23f22a7c337d6899b740a1f9aa295d0ba0c48a8904a181a4ea2e4a"
     },
     {
       "evidence_scope": "source_contract_only",
@@ -2264,7 +2364,7 @@
       "rule_ids": [
         "R43"
       ],
-      "source_line": 1941,
+      "source_line": 1962,
       "source_row_sha256": "1c9b8855eb35952f0f3824c0925ca83c57e17d4afdf434c6cff42107d3ddac92"
     },
     {
@@ -2277,7 +2377,7 @@
       "rule_ids": [
         "R44"
       ],
-      "source_line": 1942,
+      "source_line": 1963,
       "source_row_sha256": "cfe34fec654d9af6ac327c247730a155affde8c4153bebbf340fe74b52e82392"
     },
     {
@@ -2290,7 +2390,7 @@
       "rule_ids": [
         "R44"
       ],
-      "source_line": 1943,
+      "source_line": 1964,
       "source_row_sha256": "9603e5eb536ab28f118c27f09095a4199a58a37f6a94afbd5dbd598af3670d63"
     },
     {
@@ -2303,7 +2403,7 @@
       "rule_ids": [
         "R28"
       ],
-      "source_line": 1944,
+      "source_line": 1965,
       "source_row_sha256": "1d6ab1adcee1b5c9b247514722552212a9774ab6a3cf9d4c73d9ea534770b468"
     },
     {
@@ -2316,7 +2416,7 @@
       "rule_ids": [
         "R28"
       ],
-      "source_line": 1945,
+      "source_line": 1966,
       "source_row_sha256": "612937bd2573c5b70cd902256f67c14e977dfa98d1bf0901aca48f0acf558904"
     },
     {
@@ -2327,7 +2427,7 @@
       "input": "운영 점검 AI가 기한을 넘음",
       "owner_section": "17.2",
       "rule_ids": [],
-      "source_line": 1951,
+      "source_line": 1972,
       "source_row_sha256": "527bd83b6533379b27c378b5b116fddf13b72b1c9dde495731c814999a6cd01a"
     },
     {
@@ -2338,7 +2438,7 @@
       "input": "체크포인트에 파일·토큰 수만 늘었고 계약상 증거 없음",
       "owner_section": "17.2",
       "rule_ids": [],
-      "source_line": 1952,
+      "source_line": 1973,
       "source_row_sha256": "e9399c638396fa37d90cbab78bc2f81e08911d292afb429b646e617177662476"
     },
     {
@@ -2349,7 +2449,7 @@
       "input": "계약의 반복 경계가 도래하고 작업자가 다음 실질 행동을 하려 함",
       "owner_section": "17.2",
       "rule_ids": [],
-      "source_line": 1953,
+      "source_line": 1974,
       "source_row_sha256": "c050af022f2efcac39b9479213f72939ad82cc884527b4c7c3b3cd24e5bd8794"
     },
     {
@@ -2362,7 +2462,7 @@
       "rule_ids": [
         "R31"
       ],
-      "source_line": 1954,
+      "source_line": 1975,
       "source_row_sha256": "b928c57ea4e7d3fa3b6d90cd1aa0892bde68d409fbd90520758949a75a8b6b3a"
     },
     {
@@ -2375,7 +2475,7 @@
       "rule_ids": [
         "R29"
       ],
-      "source_line": 1955,
+      "source_line": 1976,
       "source_row_sha256": "72ab405d739bfea4e6fa924c31250f1c898ca10ef708e30a166069d27dbfab80"
     },
     {
@@ -2388,7 +2488,7 @@
       "rule_ids": [
         "R30"
       ],
-      "source_line": 1956,
+      "source_line": 1977,
       "source_row_sha256": "a312b956480917e223302edc4c4f0bf55863b3cd04bb708895bfd9b042009cf5"
     },
     {
@@ -2401,7 +2501,7 @@
       "rule_ids": [
         "R31"
       ],
-      "source_line": 1957,
+      "source_line": 1978,
       "source_row_sha256": "a75a35400a9437fa52312f96036ea12ea146a62136372c0a5f1a634b136386c5"
     },
     {
@@ -2414,7 +2514,7 @@
       "rule_ids": [
         "R31"
       ],
-      "source_line": 1958,
+      "source_line": 1979,
       "source_row_sha256": "a07c3c2a124d7cdbe362c462fc3bce787facbf99b3287c86c94fbcf2e54a4353"
     },
     {
@@ -2427,7 +2527,7 @@
       "rule_ids": [
         "R29"
       ],
-      "source_line": 1959,
+      "source_line": 1980,
       "source_row_sha256": "a511c41476dea79864d184024a0e10748bbff501a27394a85df044a8e15b8f2d"
     },
     {
@@ -2440,7 +2540,7 @@
       "rule_ids": [
         "R29"
       ],
-      "source_line": 1960,
+      "source_line": 1981,
       "source_row_sha256": "801835eba0a3d6c44bf2a73eb84dfdfe65db3b7936b28d52108d48c2e84dc6d9"
     },
     {
@@ -2453,7 +2553,7 @@
       "rule_ids": [
         "R29"
       ],
-      "source_line": 1961,
+      "source_line": 1982,
       "source_row_sha256": "220f47f986a68a50a946a3e03c020d66a16335e334eae8706dbf5a3137e9e9dd"
     },
     {
@@ -2466,7 +2566,7 @@
       "rule_ids": [
         "R30"
       ],
-      "source_line": 1962,
+      "source_line": 1983,
       "source_row_sha256": "1c2df36b38f0222349e077186a68d07d4e7d1852aead027d09fae27e6671e71a"
     },
     {
@@ -2479,7 +2579,7 @@
       "rule_ids": [
         "R29"
       ],
-      "source_line": 1963,
+      "source_line": 1984,
       "source_row_sha256": "88f91bb7d15e556702a62a6904aa6a0657a86bf09c659494cc038a702848e03f"
     },
     {
@@ -2492,7 +2592,7 @@
       "rule_ids": [
         "R29"
       ],
-      "source_line": 1964,
+      "source_line": 1985,
       "source_row_sha256": "5b4759dc5eaa577c443709c067b1bf9bebf6a52ff8a85afbdb782754bf4c763c"
     },
     {
@@ -2505,7 +2605,7 @@
       "rule_ids": [
         "R29"
       ],
-      "source_line": 1965,
+      "source_line": 1986,
       "source_row_sha256": "02c17310de791a78b947aa80cae0e907ba3b351106efcb198ca97982f9b0fe50"
     },
     {
@@ -2518,7 +2618,7 @@
       "rule_ids": [
         "R29"
       ],
-      "source_line": 1966,
+      "source_line": 1987,
       "source_row_sha256": "e5a745676033262c8a0e0e355919950560ceaea97d26223274e37b516a62514e"
     },
     {
@@ -2529,21 +2629,21 @@
       "input": "연구 작업자가 외부 관찰 평가를 자기 점검 근거로 조회",
       "owner_section": "17.2",
       "rule_ids": [],
-      "source_line": 1967,
+      "source_line": 1988,
       "source_row_sha256": "b621e59bd51fdde174900e010f60a6005d9fdb408d52e90691242c9adf5e9ad3"
     },
     {
       "evidence_scope": "source_contract_only",
       "execution_status": "not_run",
-      "expected": "시간 마감은 각각 120·170이며 다음 일반 행동 전 응답도 요구. 첫 경계 미확인은 마감 미확정이지만 호출별 점검·기계 정지는 계속",
+      "expected": "시간 마감은 각각 120·170이며 다음 일반 행동 전 응답도 요구. 공급자 추론만 진행 중이어도 첫 경계 미확인은 마감 미확정. 호출별 점검·기계 정지는 계속",
       "id": "V200",
-      "input": "밀리초 시험 시계에서 자기 점검 도래 T=100, window W=20, 도구 없음 또는 도구 중 첫 경계 B=150",
+      "input": "밀리초 시험 시계에서 자기 점검 도래 T=100, window W=20. 도구·공급자 호출이 모두 없거나, 도구 또는 공급자 추론만 진행 중 첫 경계 B=150",
       "owner_section": "17.2",
       "rule_ids": [
         "R30"
       ],
-      "source_line": 1968,
-      "source_row_sha256": "d6d5b050c9ffd3061a9ec8639f234a0a0d1e40c4859e88a2d2382ee6097ea641"
+      "source_line": 1989,
+      "source_row_sha256": "62a46a8892b8689d21218af8ea1d8e48948b9e0d52a79935d87eeed728cf5fa0"
     },
     {
       "evidence_scope": "source_contract_only",
@@ -2555,7 +2655,7 @@
       "rule_ids": [
         "R32"
       ],
-      "source_line": 1974,
+      "source_line": 1995,
       "source_row_sha256": "d8f10482ad12a3ecf585041d797d0e6ea0a1ee09ad3df961dd40029a987895a0"
     },
     {
@@ -2568,7 +2668,7 @@
       "rule_ids": [
         "R34"
       ],
-      "source_line": 1975,
+      "source_line": 1996,
       "source_row_sha256": "3151979bd461f3ebc2dd7a177aa3a491c4c4745e4700e58d6beac3819eb0a516"
     },
     {
@@ -2581,7 +2681,7 @@
       "rule_ids": [
         "R35"
       ],
-      "source_line": 1976,
+      "source_line": 1997,
       "source_row_sha256": "4e779ce10f231998b681737b4cad199b5066fe26f2eabc8d30bfe3f621754007"
     },
     {
@@ -2594,7 +2694,7 @@
       "rule_ids": [
         "R36"
       ],
-      "source_line": 1977,
+      "source_line": 1998,
       "source_row_sha256": "b32af62a29519029c0ab51000b863d23166e000ac498e340d447f05b1e6aa09c"
     },
     {
@@ -2607,7 +2707,7 @@
       "rule_ids": [
         "R35"
       ],
-      "source_line": 1978,
+      "source_line": 1999,
       "source_row_sha256": "0841e0974dcf6c18abb182a989cb9da1f2d0bd08d8add06f1828f3445a0d589f"
     },
     {
@@ -2620,7 +2720,7 @@
       "rule_ids": [
         "R35"
       ],
-      "source_line": 1979,
+      "source_line": 2000,
       "source_row_sha256": "d291e382ff3df3f5d3a7985dcf69594646920ca2adb2cf4e752ec3407a4e9564"
     },
     {
@@ -2633,7 +2733,7 @@
       "rule_ids": [
         "R35"
       ],
-      "source_line": 1980,
+      "source_line": 2001,
       "source_row_sha256": "1e7240f5283e25a5bdb5251735496c72f8f1d8ddac3a7269a5ec1e36b66da927"
     },
     {
@@ -2644,7 +2744,7 @@
       "input": "외부 입력 한 의미가 두 내부 정본에 중복 배정되거나 의미 단위가 빠짐",
       "owner_section": "17.2",
       "rule_ids": [],
-      "source_line": 1981,
+      "source_line": 2002,
       "source_row_sha256": "4472316372b418cd837dd08e66ca34aee6c31bff73281f4c3e07ff9bfc03dd86"
     },
     {
@@ -2655,7 +2755,7 @@
       "input": "수입 구간은 전건 덮였지만 조건·예외의 의미가 왜곡됨",
       "owner_section": "17.2",
       "rule_ids": [],
-      "source_line": 1982,
+      "source_line": 2003,
       "source_row_sha256": "f4db9615f6afa1fb26a432094afe1536dbb97c26227d2686cdd576f914a0ce46"
     },
     {
@@ -2668,7 +2768,7 @@
       "rule_ids": [
         "R32"
       ],
-      "source_line": 1983,
+      "source_line": 2004,
       "source_row_sha256": "304906f324014541fae6258c6394334d95363e6d6868e662aa6bae71c2c8435c"
     },
     {
@@ -2679,7 +2779,7 @@
       "input": "충돌하는 활성 정책에 명시적인 대체 순서가 없거나 순환",
       "owner_section": "17.2",
       "rule_ids": [],
-      "source_line": 1984,
+      "source_line": 2005,
       "source_row_sha256": "7276f24a32fdc45acfce9d264966aeab1caff7daf96b1e15d79de66faee15b50"
     },
     {
@@ -2692,7 +2792,7 @@
       "rule_ids": [
         "R35"
       ],
-      "source_line": 1985,
+      "source_line": 2006,
       "source_row_sha256": "b21150a96a84985933e85a8013b850d188a3d50efb5ce91d8c9e39ffa73509d1"
     },
     {
@@ -2705,7 +2805,7 @@
       "rule_ids": [
         "R34"
       ],
-      "source_line": 1986,
+      "source_line": 2007,
       "source_row_sha256": "e9286c58fb7ea98dd9686128a03acb17960e437178ba3ed4c6c6691fb043b8ae"
     },
     {
@@ -2718,7 +2818,7 @@
       "rule_ids": [
         "R34"
       ],
-      "source_line": 1987,
+      "source_line": 2008,
       "source_row_sha256": "7dd151d7024aa52759a13fa7448bc8fdb190f0edb1d768c776a1effb20bc999e"
     },
     {
@@ -2731,7 +2831,7 @@
       "rule_ids": [
         "R34"
       ],
-      "source_line": 1988,
+      "source_line": 2009,
       "source_row_sha256": "5556397656476ceed47593ad8d0004f15085fae5a101bb897023c78a388ffcc6"
     },
     {
@@ -2744,7 +2844,7 @@
       "rule_ids": [
         "R34"
       ],
-      "source_line": 1989,
+      "source_line": 2010,
       "source_row_sha256": "a0b759c8093ed04f0ccc094fd4fc846ac18b4942c419394e1833fa71b26ef7f8"
     },
     {
@@ -2757,7 +2857,7 @@
       "rule_ids": [
         "R34"
       ],
-      "source_line": 1990,
+      "source_line": 2011,
       "source_row_sha256": "1d454305ea56a13422aa466f41924efb9115ef5e9952882947a4807ce5df1622"
     },
     {
@@ -2770,7 +2870,7 @@
       "rule_ids": [
         "R15"
       ],
-      "source_line": 1991,
+      "source_line": 2012,
       "source_row_sha256": "4cc006ab70f8647abcc32e47ab909c063498fc3b2484c3b852bca1b3225596db"
     },
     {
@@ -2783,7 +2883,7 @@
       "rule_ids": [
         "R33"
       ],
-      "source_line": 1992,
+      "source_line": 2013,
       "source_row_sha256": "9c7b8e59124766f90b71de2127c1936d88c1fd8edf91b91734045dab6ac8ef3e"
     },
     {
@@ -2797,7 +2897,7 @@
         "R37",
         "R41"
       ],
-      "source_line": 1998,
+      "source_line": 2019,
       "source_row_sha256": "4f6d919368bd1df5463107bd8291aeefe3d6581aae0113c69461c7b4858f68ee"
     },
     {
@@ -2808,7 +2908,7 @@
       "input": "초기 의도 해석·계약 검토 실행이 종료되는 순간 소실",
       "owner_section": "17.2",
       "rule_ids": [],
-      "source_line": 1999,
+      "source_line": 2020,
       "source_row_sha256": "fbe2e28893c0e0ce19bb06d59b58689ae20cce8c54caf0adfb65019722c73411"
     },
     {
@@ -2821,7 +2921,7 @@
       "rule_ids": [
         "R13"
       ],
-      "source_line": 2000,
+      "source_line": 2021,
       "source_row_sha256": "575791c4f55697b0a9955dd94b83c1d86f87ed444eaa8d08aa0f405ca8251664"
     },
     {
@@ -2832,7 +2932,7 @@
       "input": "읽기만 호환되는 구현 또는 실패한 스키마 변환",
       "owner_section": "17.2",
       "rule_ids": [],
-      "source_line": 2001,
+      "source_line": 2022,
       "source_row_sha256": "de91cd3146b8c590b82f5102f0cf36347b17a693725f30e03e1fc9cb95a53bba"
     },
     {
@@ -2845,7 +2945,7 @@
       "rule_ids": [
         "R38"
       ],
-      "source_line": 2007,
+      "source_line": 2028,
       "source_row_sha256": "0dc881e6575444e99358d4620cbc2bef9b831bed949a95092c9a0a87ea2ed1ab"
     },
     {
@@ -2858,7 +2958,7 @@
       "rule_ids": [
         "R38"
       ],
-      "source_line": 2008,
+      "source_line": 2029,
       "source_row_sha256": "2ffa3a9fcd65ef8e8b34669d5d6b20dc79dd23bc2cd374cfbf5e8785025b6369"
     },
     {
@@ -2871,7 +2971,7 @@
       "rule_ids": [
         "R40"
       ],
-      "source_line": 2014,
+      "source_line": 2035,
       "source_row_sha256": "83b36a0cc4a1815a8648af04356928bc3d913ce113b16b0d529f433911e99920"
     },
     {
@@ -2884,7 +2984,7 @@
       "rule_ids": [
         "R39"
       ],
-      "source_line": 2015,
+      "source_line": 2036,
       "source_row_sha256": "4dd0e071bb63fe2d811a5543b4cddc9e33f37da9e25a27c372e5d0edf811b24b"
     },
     {
@@ -2895,7 +2995,7 @@
       "input": "AI 작업·AI 운영·기계 요청의 조건부 필드가 잘못됨",
       "owner_section": "17.2",
       "rule_ids": [],
-      "source_line": 2016,
+      "source_line": 2037,
       "source_row_sha256": "d92faae51266730cea2714dc1ef73a99f9ee789b80513752d3758f61c018fdd5"
     },
     {
@@ -2908,7 +3008,7 @@
       "rule_ids": [
         "R15"
       ],
-      "source_line": 2017,
+      "source_line": 2038,
       "source_row_sha256": "a7b18614bb72a95f7738e5690fc5fc4e146f00de92c6391c8c55051d3b8a2837"
     },
     {
@@ -2921,7 +3021,7 @@
       "rule_ids": [
         "R40"
       ],
-      "source_line": 2018,
+      "source_line": 2039,
       "source_row_sha256": "2b1ad4f439f8d27aa1ca1813f0083a65812ee6022ddf9727720a18a9588dfbe9"
     },
     {
@@ -2934,7 +3034,7 @@
       "rule_ids": [
         "R39"
       ],
-      "source_line": 2019,
+      "source_line": 2040,
       "source_row_sha256": "55756057ffbdf14f138cfe7425d1c4ac8dec672e13e0c174639e1140978e119f"
     },
     {
@@ -2945,7 +3045,7 @@
       "input": "스키마·레지스트리·describe·역할 읽기 목록의 한쪽 누락",
       "owner_section": "17.2",
       "rule_ids": [],
-      "source_line": 2020,
+      "source_line": 2041,
       "source_row_sha256": "b35abfe5e3f64125484baeb91c9da261be350b5925dcf66b3ceebfd669070390"
     },
     {
@@ -2958,21 +3058,21 @@
       "rule_ids": [
         "R39"
       ],
-      "source_line": 2021,
+      "source_line": 2042,
       "source_row_sha256": "3d32443ea0f83a2b4b9203e70176fdd92601ced291379f9c0e857db7651a6fab"
     },
     {
       "evidence_scope": "source_contract_only",
       "execution_status": "not_run",
-      "expected": "16.1.1절의 실제 프로세스 정체성·시작 및 종료 증거 대조. 합성 영수증은 OS 시험 통과가 아님",
+      "expected": "생성 시 편입과 소실 뒤 실제 종료·회수 근거를 16.1.1절로 대조. 편입 전 고아 루트가 남는 경로는 미지원. 합성 영수증은 OS 시험 통과가 아님",
       "id": "V194",
-      "input": "Windows Job 편입 실패·권한 공개 실패·루트 재개 실패·실행기 소실·PID 재사용",
+      "input": "Windows 생성 시 Job 편입 실패·정지 루트 생성 직후 정체성 기록 전 소실·권한 공개 실패·루트 재개 실패·PID 재사용",
       "owner_section": "17.2",
       "rule_ids": [
         "R39"
       ],
-      "source_line": 2022,
-      "source_row_sha256": "ad69b86b4fe8d678021a0cfd89db4e0a8e0c907621d715f0d0f334ec6078eb01"
+      "source_line": 2043,
+      "source_row_sha256": "48b8708537252aebb967c3702bcf5ac011f2834caf0c7d58df424fd530c376e9"
     },
     {
       "evidence_scope": "source_contract_only",
@@ -2985,7 +3085,7 @@
         "R39",
         "R45"
       ],
-      "source_line": 2023,
+      "source_line": 2044,
       "source_row_sha256": "82a5d571f7c71b5f27a0bc666011c9c1a22f63cfbabfb8df034221efd071f2d4"
     }
   ],
