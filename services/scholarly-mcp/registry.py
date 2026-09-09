@@ -72,6 +72,7 @@ ROWS = [
 ]
 
 SOURCES = {row[0]: Source(*row) for row in ROWS}
+SOURCES["aps-institutional"] = Source("aps-institutional", "APS 기관 구독 접근", "fulltext", "https://journals.aps.org/", "playwright")
 SOURCES["mathscinet"].implementation = "partial"
 SOURCES["wos"].implementation = "partial"
 
@@ -204,8 +205,8 @@ MORE_API_USAGE = {
     "zenodo": {
         "search": "query는 Zenodo 검색식이다. 필드:값, 따옴표 구문, AND·OR·NOT, 괄호를 사용한다. 예: metadata.title:mathlib.",
         "options": {"sort": "bestmatch,mostrecent 등", "communities": "커뮤니티 식별자", "type": "자료 유형", "subtype": "자료 하위 유형", "access_right": "접근 유형", "keywords": "키워드"},
-        "fetch": "Zenodo record 번호, records/번호 URL 또는 10.5281/zenodo.번호 DOI. 현재 레코드와 파일 목록까지 구현했으며 파일별 선택 다운로드는 개발 중이다.",
-        "limits": "limit 1..100. start는 limit의 배수. json/native export. 특정 파일의 판본은 record ID로 고정하며 concept DOI는 단일 파일 판본을 뜻하지 않는다.",
+        "fetch": "Zenodo record 번호, records/번호 URL, 10.5281/zenodo.번호 DOI 또는 해당 record의 파일 URL. fulltext·supplementary는 레코드의 파일을 회수하며, 파일 URL이면 그 파일만 선택한다. artifacts 배열에 이름과 참조를 반환한다. 파일 크기와 제공된 checksum을 원자료와 대조한다. abstract는 레코드의 description이다.",
+        "limits": "검색 limit 1..100, start는 limit의 배수. json/native export. 파일 판본은 응답의 record_id로 고정한다. concept DOI가 개별 record로 해석되면 version_selection에 구별해 표시한다. 파일 실패도 이름별로 반환하며 다른 자료원으로 이동하지 않는다.",
         "examples": [{"tool": "search", "arguments": {"source": "zenodo", "query": "mathlib", "limit": 2}}],
         "official": ["https://developers.zenodo.org/"]},
 }
@@ -306,6 +307,65 @@ SOURCES["afp"].usage = {
     "official": ["https://isa-afp.org/download/", "https://foss.heptapod.net/isa-afp/afp-devel", "https://docs.gitlab.com/api/repositories/", "https://docs.gitlab.com/api/repository_files/"],
 }
 
+SOURCES["unpaywall"].implementation = "partial"
+SOURCES["unpaywall"].usage = {
+    "search": "query는 제목 검색식이다. 공백으로 나눈 단어는 기본 AND, 큰따옴표는 구문, OR는 선택, -는 제외다. 예: \"natural proofs\" OR \"circuit complexity\". 제목 이외 필드 검색을 제공하는 endpoint로 해석하지 않는다.",
+    "options": {"is_oa": "true면 OA, false면 비OA, 생략·null이면 OA 여부로 제한하지 않음"},
+    "fetch": "DOI 또는 DOI resolver 링크로 OA 상태·서지·모든 OA location 메타데이터를 받는다. 외부 원문 링크는 반환 자료에 보존하며 그 호스트를 자동 방문하지 않는다.",
+    "exports": "json은 레코드, native는 원 DOI 응답 또는 검색 응답들의 JSON 참조다. 저자 초록이나 문헌 전문을 제공하는 서비스로 표시하지 않는다.",
+    "limits": "start는 0부터, limit는 1..1000. 원 API의 50건 페이지를 사용한다. 전체 건수를 제공하지 않으면 total=null이다. 마지막 수신 페이지가 50건이면 다음 페이지 조회 전까지 끝 여부가 확정되지 않는다. 공식 호출 제한은 하루 100,000회다.",
+    "configuration": "키·가입은 필요 없지만 실제 연락용 이메일이 필요하다. 운영자가 .credentials/scholarly-mcp/contact.json의 email 필드에 설정한다. 호출 AI의 인자로 전달하지 않는다. 현재 실제 연락 이메일을 기다리고 있어 정상 API 흐름의 실서비스 검증이 남았다.",
+    "examples": [{"tool": "search", "arguments": {"source": "unpaywall", "query": "\"natural proofs\"", "options": {"is_oa": True}, "limit": 2}}, {"tool": "fetch", "arguments": {"source": "unpaywall", "target": "10.1038/nature12373", "parts": ["metadata"]}}],
+    "official": ["https://unpaywall.org/api"],
+}
+
+SOURCES["theory-of-computing"].implementation = "partial"
+SOURCES["theory-of-computing"].transport = "playwright"
+SOURCES["theory-of-computing"].usage = {
+    "search": "options.field는 text(기본), author, category다. text는 저널이 지정한 Google 검색 엔진의 웹페이지 검색으로, 큰따옴표 구문·OR·-제외·intitle: 등 그 검색 문법을 사용한다. 같은 문헌의 본문·저자 안내·주제 색인 페이지가 별도 결과일 수 있다. snippet을 저자 초록으로 표시하지 않는다.",
+    "indexes": "author와 category는 저널의 공식 저자·주제 색인을 선택한다. query를 표시 이름과 먼저 정확 일치하고, 없으면 부분 일치한다. 여러 항목이 맞으면 selection_required로 후보 이름을 반환한다. 예: field=category, query=geometric complexity theory 또는 field=author, query=Ikenmeyer, Christian.",
+    "fetch": "gs010 또는 v022a005 같은 문헌 ID, DOI, 저널 안의 문헌·웹페이지 링크를 지정한다. 현재 문헌 페이지에 연결된 PDF·PS·Source ZIP 등의 파일 URL도 받을 수 있다. 지정 파일을 다른 판본으로 바꾸지 않는다. 일반 웹페이지는 content_kind=web_page의 HTML로 보존한다.",
+    "exports": "검색의 json·html은 실제 결과, bibtex는 문헌 ID가 있는 행의 native 인용문 참조다. 웹페이지 행 중 인용문이 없는 것은 별도로 표시한다. fetch의 export는 native BibTeX, abstract는 plain text, 기본 fulltext는 PDF다. supplementary는 제공되는 Source ZIP·PostScript·HTML 참고문헌·저자 안내를 보존한다.",
+    "limits": "text 검색은 첫 100개 위치까지이며 Google 추정 건수는 reported_total에 표시하고 total은 null로 둔다. 저자·주제 목록은 실제 문헌 건수를 센다. API 키를 요구하는 Google JSON API는 사용하지 않는다. 저널이 공개한 기존 엔진 ID를 현재 검색 위젯으로 렌더링하여 옛 HTTP loader 문제를 처리한다.",
+    "examples": [{"tool": "search", "arguments": {"source": "theory-of-computing", "query": "geometric complexity theory", "options": {"field": "category"}, "limit": 2, "export": "bibtex"}}, {"tool": "fetch", "arguments": {"source": "theory-of-computing", "target": "gs010", "parts": ["metadata", "abstract", "fulltext", "supplementary"]}}],
+    "official": ["https://theoryofcomputing.org/search.html", "https://theoryofcomputing.org/articles/main/index.html", "https://developers.google.com/custom-search/docs/element"],
+}
+
+SOURCES["eudml"].implementation = "partial"
+SOURCES["eudml"].usage = {
+    "search": "query는 EuDML OpenSearch의 CQL 검색식이다. 필드·관계·조건을 쓴다. 예: all=\"P versus NP\" 또는 defName=\"Matematika\". 큰따옴표로 구문을 감싸고 AND·OR·NOT·괄호로 조건을 결합한다. 검색식을 서버가 새로 작성하지 않는다.",
+    "fields": {"all": "전체 검색 영역", "defName": "제목", "authorCoauthorName": "저자 이름", "language": "ISO 639-1 언어", "journalName": "저널명", "published": "발행일", "id": "식별자"},
+    "fetch": "196516 같은 문헌 번호, urn:eudml:doc:번호 또는 eudml.org/doc/번호 링크. eudml-nlm 원 메타데이터를 확보하고 현재 문헌의 article/book metadata header에 있는 EuDML ID를 대조한다. 제목 입력은 defName 후보 검색으로 반환한다.",
+    "exports": "json은 파싱한 레코드, native·rss는 원 RSS 표현, xml·html은 같은 검색 조건의 자료원 export다. year는 RSS dc:date이며 pubDate와 구별한다. fetch의 metadata·export·supplementary는 원 NLM 메타데이터다.",
+    "limits": "options는 비운다. start는 0부터, limit는 1..1000. 원 RSS의 totalResults·startIndex를 대조한다. NLM에 본문이 없고 외부 원문 링크만 있는 경우 fulltext는 not_offered다. 원 저장소를 호출 AI가 별도 자료원으로 선택한다. XML 내부 항목은 extract selection에 ./front/article-meta/article-id 또는 .//{*}abstract 같은 경로로 지정한다.",
+    "examples": [{"tool": "search", "arguments": {"source": "eudml", "query": "all=\"P versus NP\"", "start": 1, "limit": 2, "export": "rss"}}, {"tool": "fetch", "arguments": {"source": "eudml", "target": "196516", "parts": ["metadata"]}}],
+    "official": ["https://wiki.eudml.org/mediawiki/eudml/images/D6.4.pdf", "https://eudml.org/api/search?q=all%3D%22P%20versus%20NP%22&count=2&format=rss"],
+}
+
+SOURCES["aps"].implementation = "partial"
+SOURCES["aps"].transport = "api"
+SOURCES["aps"].name = "APS 공개 접근"
+SOURCES["aps"].usage = {
+    "search": "공개 Harvest API의 openaccess 집합을 조회한다. query는 비우고 options의 날짜·저널 조건을 사용한다. API가 제공하는 피드이며 키워드 검색을 대신 수행하지 않는다.",
+    "options": {"from": "시작 날짜 YYYY-MM-DD", "until": "종료 날짜 YYYY-MM-DD", "date": "published 또는 modified", "journals": "PRL 등 저널 식별자, 복수값은 서비스 문법에 맞춘 문자열"},
+    "fetch": "10.1103/... DOI. 공개 접근 범위의 서지·초록·PDF를 키 없이 회수한다. supplementary는 제공되는 XML·BagIt ZIP이다. 제한된 DOI에 대해 API 자격을 요구하거나 브라우저로 자동 전환하지 않는다. 기관 구독 접근은 aps-institutional을 별도 source로 선택한다.",
+    "limits": "limit 1..100, start는 limit의 배수. 전체 건수는 null, native next 링크로 후속 페이지를 판단한다. 수백 명 이상의 저자도 records에는 전부 보존하고 preview에는 저자 수만 표시한다. metadata·abstract의 title/abstract는 자료원이 제공한 value와 format 객체를 유지한다.",
+    "exports": "json 또는 native는 제공자 JSON이다. DOI별 제공 범위가 다르며 APS API에서 OA 문헌의 JSON·PDF 성공과 다른 문헌의 HTTP 401을 각각 확인했다.",
+    "examples": [{"tool": "search", "arguments": {"source": "aps", "query": "", "options": {"from": "2026-09-01", "until": "2026-09-02", "date": "published"}, "limit": 2}}, {"tool": "fetch", "arguments": {"source": "aps", "target": "10.1103/PhysRevLett.116.061102", "parts": ["metadata", "abstract", "fulltext"]}}],
+    "official": ["https://harvest.aps.org/", "https://harvest.aps.org/docs/harvest-api"],
+}
+
+for identifier, label in (("project-euclid", "Project Euclid"), ("cambridge", "Cambridge"), ("oxford", "Oxford"), ("aip", "AIP"), ("aps-institutional", "APS 기관 구독")):
+    SOURCES[identifier].implementation = "partial"
+    SOURCES[identifier].transport = "playwright"
+    SOURCES[identifier].capabilities = ("source_guide", "fetch", "export")
+    SOURCES[identifier].usage = {
+        "fetch": label + "의 DOI 또는 정확한 문헌 페이지 링크로 서지·초록 영역·문헌 PDF를 요청한다. 기관 경로가 있는 자료원은 KUDOS 학술DB 바로가기를 거친다. Project Euclid는 공식 공개 사이트를 사용한다.",
+        "exports": "metadata·export는 페이지의 citation/DC/prism/Schema.org 메타데이터를 보존한 JSON이다. supplementary는 원 문헌 페이지다. 다른 native citation 형식과 개별 첨부 파일의 연결은 개발 중이다.",
+        "search": "문헌 조회 어댑터다. 해당 사이트의 고급검색·키워드 검색 연결은 개발 중이며 not_implemented를 반환한다. 검색 기능이 제공되지 않는 사이트로 해석하지 않는다.",
+        "limits": "인식하지 못한 초록 영역은 source_page, PDF가 아닌 응답은 오류로 구별한다. 단순 OG 페이지 제목만으로 논문 메타데이터 확보를 선언하지 않는다. 다른 출판사 링크를 자동 시도하지 않는다.",
+    }
+
 for identifier, level in {
     "mathscinet": "live_mcp_search_export_fetch_extract",
     "wos": "live_mcp_search_full_record_export_extract",
@@ -320,7 +380,7 @@ for identifier, level in {
     "core": "public_endpoint_success_and_rate_limit_observed",
     "semantic-scholar": "rate_limit_observed",
     "dblp": "access_challenge_observed",
-    "zenodo": "timeout_observed",
+    "zenodo": "live_mcp_search_file_checksum_fetch_extract",
     "acm-dl": "live_mcp_search_export_original_pdf_fetch",
     "scopus": "live_mcp_pagination_extract_metadata_abstract_fetch",
     "drops": "live_mcp_search_metadata_abstract_pdf_fetch",
@@ -328,7 +388,16 @@ for identifier, level in {
     "ieee-xplore": "live_mcp_search_bibtex_extract_metadata_abstract_pdf_fetch",
     "crossmark": "live_mcp_search_extract",
     "afp": "live_mcp_entry_search_pinned_metadata_and_proof_source_fetch_extract",
-    "pqdt": "live_mcp_search_ris_extract_metadata_abstract_pdf_fetch",
+    "unpaywall": "public_endpoint_contact_requirement_observed",
+    "theory-of-computing": "live_mcp_indexes_citation_pdf_source_ps_references_fetch_and_text_pagination",
+    "pqdt": "live_mcp_repeat_search_pagination_ris_pdf_fetch",
+    "eudml": "live_mcp_cql_rss_extract_nlm_fetch",
+    "aps": "live_mcp_open_access_feed_metadata_abstract_pdf_fetch",
+    "aps-institutional": "live_adapter_metadata_and_fulltext_restriction",
+    "project-euclid": "live_adapter_metadata_abstract_pdf_fetch",
+    "cambridge": "live_adapter_metadata_only",
+    "oxford": "live_adapter_metadata_pdf_fetch",
+    "aip": "live_adapter_metadata_abstract_fetch",
 }.items():
     SOURCES[identifier].verification = level
 

@@ -69,6 +69,53 @@ async def main():
             fetched = await call("fetch", {"source": "acm-dl", "target": "10.1145/800157.805047", "parts": ["metadata", "abstract", "fulltext"]})
             assert fetched["status"] == "ok", fetched.get("code")
             assert fetched["components"]["fulltext"]["artifact"]["pages"] == 8
+        elif args.source == "numdam":
+            fetched = await call("fetch", {"source": "numdam", "target": "AIF_1956__6__1_0", "parts": ["metadata", "fulltext"]})
+            assert fetched["status"] == "ok", fetched.get("code")
+            page = await call("extract", {"ref": fetched["components"]["fulltext"]["artifact"]["ref"], "count": 1})
+            assert page["returned"] == 1
+        elif args.source == "aps":
+            search = await call("search", {"source": "aps", "query": "", "options": {"from": "2026-09-01", "until": "2026-09-02", "date": "published"}, "limit": 2})
+            assert search["status"] == "ok", search.get("code")
+            assert search["received"] == 2
+            fetched = await call("fetch", {"source": "aps", "target": "10.1103/PhysRevLett.116.061102", "parts": ["metadata", "abstract", "fulltext"]})
+            assert fetched["status"] == "ok", fetched.get("code")
+            first_page = await call("extract", {"ref": fetched["components"]["fulltext"]["artifact"]["ref"], "count": 1})
+            assert "Gravitational" in first_page["items"][0]["text"]
+        elif args.source == "eudml":
+            search = await call("search", {"source": "eudml", "query": 'all="P versus NP"', "start": 1, "limit": 2, "export": "rss"})
+            assert search["status"] == "ok", search.get("code")
+            assert search["received"] == 2
+            xml = await call("extract", {"ref": search["export"]["ref"], "selection": "./channel/item", "count": 2})
+            assert xml["returned"] == 2
+            fetched = await call("fetch", {"source": "eudml", "target": "196516", "parts": ["metadata"]})
+            assert fetched["status"] == "ok", fetched.get("code")
+            native = await call("extract", {"ref": fetched["components"]["metadata"]["artifact"]["ref"], "selection": "./front/article-meta/article-id", "count": 10})
+            assert any("urn:eudml:doc:196516" in item for item in native["items"])
+        elif args.source == "zenodo":
+            search = await call("search", {"source": "zenodo", "query": '"P versus NP"', "limit": 1})
+            assert search["status"] == "ok", search.get("code")
+            fetched = await call("fetch", {"source": "zenodo", "target": "822080", "parts": ["metadata", "fulltext"]})
+            assert fetched["status"] == "ok", fetched.get("code")
+            file = fetched["components"]["fulltext"]["artifacts"][0]["artifact"]
+            assert file["checksum_verified"] is True
+            assert file["provider_checksum"] == "md5:e2c576e39d4d885b7383cc3509eab9bf"
+            result = await call("extract", {"ref": file["ref"], "count": 1})
+            assert result["returned"] == 1
+        elif args.source == "theory-of-computing":
+            search = await call("search", {"source": args.source, "query": "geometric complexity theory", "options": {"field": "category"}, "limit": 2, "export": "bibtex"})
+            assert search["status"] == "ok", search.get("code")
+            rows = await call("extract", {"ref": search["records"]["ref"], "count": 2})
+            assert rows["items"][0]["id"] == "gs010"
+            fetched = await call("fetch", {"source": args.source, "target": "gs010", "parts": ["metadata", "abstract", "fulltext", "supplementary"]})
+            assert fetched["status"] == "ok", fetched.get("code")
+            assert fetched["components"]["fulltext"]["artifact"]["pages"] == 166
+            source = next(item["artifact"] for item in fetched["components"]["supplementary"]["artifacts"] if item["format"] == "source_zip")
+            archive = await call("extract", {"ref": source["ref"], "count": 10})
+            assert archive["returned"] > 0
+            web = await call("search", {"source": args.source, "query": '"geometric complexity"', "start": 10, "limit": 2})
+            assert web["status"] == "ok", web.get("code")
+            assert web["received"] == 2
         elif args.source == "afp":
             search = await call("search", {"source": "afp", "query": "Cook-Levin", "limit": 10})
             assert search["status"] == "ok", search.get("code")
@@ -97,6 +144,9 @@ async def main():
             fetched = await call("fetch", {"source": "pqdt", "target": "2618193239", "parts": ["metadata", "abstract", "fulltext"]})
             assert fetched["status"] == "ok", fetched.get("code")
             assert fetched["components"]["fulltext"]["artifact"]["pages"] >= 40
+            following = await call("search", {"source": "pqdt", "query": "TI(complexity)", "start": 20, "limit": 1, "export": "ris"})
+            assert following["status"] == "ok", following.get("code")
+            assert following["received"] == 1
         elif args.source == "scopus":
             search = await call("search", {"source": "scopus", "query": 'TITLE("P versus NP")', "start": 9, "limit": 2, "export": "csv"})
             assert search["status"] == "ok", search.get("code")

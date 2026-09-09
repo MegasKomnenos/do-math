@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?><article xml:lang="cs">
+   <front>
+      <journal-meta>
+         <journal-id journal-id-type="eudml-id">urn:eudml:journal:10037</journal-id>
+         <journal-id journal-id-type="dmlcz-id">140123</journal-id>
+         <journal-title-group>
+            <journal-title>Pokroky matematiky, fyziky a astronomie</journal-title>
+            <abbrev-journal-title abbrev-type="short-title">Pokroky Mat. Fyz. Astron.</abbrev-journal-title>
+         </journal-title-group>
+         <issn>0032-2423</issn>
+         <publisher>
+            <publisher-name>Jednota českých matematiků a fyziků Union of Czech Mathematicians and Physicists</publisher-name>
+            <publisher-loc>
+               <addr-line>Praha</addr-line>
+               <country>Czech Republic</country>
+            </publisher-loc>
+         </publisher>
+         <notes>
+            <p>Časopis přináší původní i přeložené přehledné a informativní články věnované historii a současnosti matematiky, fyziky a astronomie a výuce těchto oborů. Časopis je určen široké matematicko-fyzikální veřejnosti. Vedle odborných článků přináší také recenze knih a informace o činnosti Jednoty českých matematiků a fyziků (JČMF). The journal presents original as well as translated survey and informatory papers devoted to history and present of mathematics, physics and astronomy and to instruction of these fields. The journal is intended to broad public in mathematics and physics. Besides scholarly papers it brings also book reviews and information about activities in the Union of Czech Mathematicians and Physicists.</p>
+         </notes>
+      </journal-meta>
+      <article-meta>
+         <article-id pub-id-type="eudml-id">urn:eudml:doc:196516</article-id>
+         <article-id pub-id-type="dmlcz-id">141085</article-id>
+         <article-categories>
+            <subj-group subj-group-type="dmlcz-article-type">
+               <subject>math</subject>
+            </subj-group>
+         </article-categories>
+         <title-group>
+            <article-title>Matematika na přelomu tisíciletí</article-title>
+            <trans-title-group xml:lang="en">
+               <trans-title>Mathematics at the turn of the millennium</trans-title>
+            </trans-title-group>
+         </title-group>
+         <contrib-group content-type="authors">
+            <contrib contrib-type="author">
+               <name>
+                  <surname>Griffiths</surname>
+                  <given-names>Phillip A.</given-names>
+               </name>
+            </contrib>
+         </contrib-group>
+         <pub-date>
+            <year>2001</year>
+         </pub-date>
+         <volume>46</volume>
+         <volume-id pub-id-type="eudml-id">urn:eudml:journal:10037_2001_46</volume-id>
+         <volume-id pub-id-type="dmlcz-id">141057</volume-id>
+         <issue>3</issue>
+         <issue-id pub-id-type="eudml-id">urn:eudml:journal:10037_2001_46_3</issue-id>
+         <issue-id pub-id-type="dmlcz-id">141081</issue-id>
+         <issue-title>3</issue-title>
+         <fpage>205</fpage>
+         <lpage>218</lpage>
+         <ext-link xmlns:xlink="http://www.w3.org/1999/xlink" ext-link-type="zbl-item-id" xlink:href="http://www.zentralblatt-math.org/zmath/en/advanced/?q=an:Zbl 1055.01506">1055.01506</ext-link>
+         <self-uri xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="http://dml.cz/handle/10338.dmlcz/141085">Access to full text</self-uri>
+         <self-uri xmlns:xlink="http://www.w3.org/1999/xlink" content-type="application/pdf" xlink:href="http://dml.cz/bitstream/handle/10338.dmlcz/141085/PokrokyMFA_46-2001-3_5.pdf">Full (PDF)</self-uri>
+         <kwd-group kwd-group-type="msc">
+            <kwd>01A60</kwd>
+            <kwd>01A61</kwd>
+            <kwd>03A05</kwd>
+         </kwd-group>
+         <custom-meta-group>
+            <custom-meta>
+               <meta-name>provider</meta-name>
+               <meta-value>dmlcz</meta-value>
+            </custom-meta>
+         </custom-meta-group>
+      </article-meta>
+      <notes>
+         <p content-type="public-note" xml:lang="en">From Amer. Math. Monthly, 107 (2000), No. 1, 1-14, translated by N. Stehlíková.</p>
+      </notes>
+      <notes>
+         <p content-type="public-note" xml:lang="cs">Z Amer. Math. Monthly, 107 (2000), č. 1, 1-14, přeložila N. Stehlíková.</p>
+      </notes>
+   </front>
+</article>

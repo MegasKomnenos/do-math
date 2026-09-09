@@ -39,6 +39,10 @@ class APIAdapter:
         self.last_request = 0.0
 
     def request(self, url, *, params=None, headers=None, accept="json"):
+        request_headers = httpx.Headers(headers or {})
+        if "Accept" not in request_headers:
+            request_headers["Accept"] = {"json": "application/json", "xml": "application/xml, application/atom+xml, application/rss+xml, text/xml;q=0.9, */*;q=0.1",
+                "html": "text/html, application/xhtml+xml;q=0.9, */*;q=0.1"}.get(accept, "*/*")
         for hop in range(6):
             parts = urlsplit(url)
             if parts.scheme != "https" or parts.username or parts.password or parts.hostname not in self.hosts or parts.port not in (None, 443):
@@ -48,7 +52,7 @@ class APIAdapter:
                 time.sleep(wait)
             self.last_request = time.monotonic()
             try:
-                response = self.client.get(url, params=params, headers=headers, follow_redirects=False)
+                response = self.client.get(url, params=params, headers=request_headers, follow_redirects=False)
             except httpx.TimeoutException:
                 raise ServiceError("timeout", "Source did not respond within the request timeout", source=self.source, retryable=True) from None
             except httpx.HTTPError:
@@ -81,9 +85,10 @@ class APIAdapter:
             raise ServiceError("invalid_response", "Source response could not be decoded as JSON", source=self.source) from None
         next_link = response.links.get("next", {}).get("url", "")
         page_cursor = parse_qs(urlsplit(next_link).query).get("page_token", [None])[0]
+        page_number = parse_qs(urlsplit(next_link).query).get("page", [""])[0]
         evidence = self.store.put(encoded(payload) if accept == "json" else response.content,
             "application/json" if accept == "json" else (media or "application/octet-stream"), self.source, str(response.url), preserve_bytes=accept == "binary", role="provider_response",
-            **({"next_cursor": page_cursor} if page_cursor else {}))
+            **({"next_cursor": page_cursor} if page_cursor else {}), **({"next_page": int(page_number)} if page_number.isdigit() else {}))
         return payload, evidence
 
     def validate(self, options, start, limit, cursor=None):
@@ -483,20 +488,80 @@ class Zenodo(APIAdapter):
         raw, evidence = self.request("https://zenodo.org/api/records", params={"q": query, "page": start // limit + 1, "size": limit, **options})
         total = raw["hits"]["total"]
         if isinstance(total, dict): total = total["value"]
-        return self.export_page(self.page(raw["hits"]["hits"], total, evidence, query, options, start, limit), export)
+        rows = [{**row, "title": row.get("metadata", {}).get("title"), "DOI": row.get("doi")} for row in raw["hits"]["hits"]]
+        return self.export_page(self.page(rows, total, evidence, query, options, start, limit), export)
 
     def fetch(self, target, *, parts):
-        value = re.sub(r"^(?:https://zenodo.org/(?:records?|record)/|https://doi.org/10.5281/zenodo\.|10.5281/zenodo\.)", "", target)
+        filename = None
+        value = target.strip()
+        if value.startswith(("https://", "http://")):
+            parsed = urlsplit(value)
+            if parsed.hostname in self.hosts:
+                match = re.fullmatch(r"/(?:api/)?records?/(\d+)(?:/files/(.+?)(?:/content)?)?/?", parsed.path)
+                if not match:
+                    raise ServiceError("invalid_target", "Use a Zenodo record or record-file URL")
+                value, filename = match[1], unquote(match[2]) if match[2] else None
+            elif parsed.hostname in ("doi.org", "dx.doi.org"):
+                value = doi(value)
+            else:
+                raise ServiceError("source_boundary", "The target is outside Zenodo")
+        value = re.sub(r"^(?:doi:)?10\.5281/zenodo\.", "", value)
         if not value.isdigit():
-            raise ServiceError("invalid_target", "Use a Zenodo record number or its record DOI")
+            result = self.search("metadata.title:" + json.dumps(target, ensure_ascii=False), options={}, limit=20)
+            result["status"] = "selection_required" if result["received"] else "not_found"
+            return result
         raw, evidence = self.request("https://zenodo.org/api/records/" + value)
-        result = self.fetched([raw], evidence, parts, ("metadata", "export", "abstract"))
+        identifier = str(raw.get("id", ""))
+        concept = str(raw.get("conceptrecid", ""))
+        if value not in (identifier, concept):
+            raise ServiceError("identity_mismatch", "Zenodo returned a different record", evidence=evidence)
+        result = self.fetched([raw], evidence, parts, ("metadata", "export") + (("abstract",) if raw.get("metadata", {}).get("description") else ()))
+        result.update(target=target, record_id=identifier, concept_id=concept or None,
+            version_selection="concept_resolved_to_record" if value != identifier else "explicit_record")
         if "supplementary" in parts or "fulltext" in parts:
-            result["files"] = raw.get("files", [])
-            result["status"] = "partial"
+            files = raw.get("files", [])
+            if not isinstance(files, list):
+                raise ServiceError("invalid_response", "Zenodo file metadata is not in the expected format", evidence=evidence)
+            result["files"] = files
+            selected = [file for file in files if filename is None or file.get("key") == filename]
+            acquired, failures = [], []
+            import hashlib, mimetypes
+            for file in selected:
+                try:
+                    link = file.get("links", {}).get("self")
+                    if not link:
+                        raise ServiceError("file_link_missing", "Zenodo did not provide this file's content link")
+                    data, downloaded = self.request(link, accept="binary")
+                    expected_size = file.get("size")
+                    checksum = file.get("checksum", "")
+                    algorithm, separator, expected_digest = checksum.partition(":")
+                    if expected_size is not None and len(data) != expected_size:
+                        raise ServiceError("file_integrity_mismatch", "Zenodo file size differs from the record metadata", evidence=downloaded)
+                    if separator:
+                        try:
+                            actual_digest = hashlib.new(algorithm, data, usedforsecurity=False).hexdigest()
+                        except ValueError:
+                            raise ServiceError("checksum_algorithm_not_supported", "Zenodo reported an unsupported checksum algorithm", evidence=downloaded) from None
+                        if actual_digest.lower() != expected_digest.lower():
+                            raise ServiceError("file_integrity_mismatch", "Zenodo file checksum differs from the record metadata", evidence=downloaded)
+                    media = mimetypes.guess_type(file["key"])[0] or downloaded["media_type"]
+                    extra = {}
+                    if data.startswith(b"%PDF-"):
+                        import pymupdf
+                        with pymupdf.open(stream=data, filetype="pdf") as document:
+                            extra["pages"] = len(document)
+                        media = "application/pdf"
+                    artifact = self.store.put(data, media, self.source, downloaded["url"], preserve_bytes=True, role="record_file",
+                        record_id=identifier, filename=file["key"], provider_checksum=checksum, checksum_verified=bool(separator),
+                        metadata_ref=evidence["ref"], **extra)
+                    acquired.append({"name": file["key"], "artifact": artifact})
+                except ServiceError as error:
+                    failures.append({"name": file.get("key"), **error.result})
             for part in ("supplementary", "fulltext"):
                 if part in parts:
-                    result["components"][part] = {"status": "not_implemented", "reason": "Record file selection and download are pending; file metadata is preserved"}
+                    result["components"][part] = {"status": "partial" if failures else "available" if acquired else "not_found" if filename else "not_offered",
+                        "artifacts": acquired, "failures": failures, "content_kind": "record_files", "requested_files": len(selected)}
+        result["status"] = "ok" if all(component["status"] == "available" for component in result["components"].values()) else "partial"
         return result
 
 

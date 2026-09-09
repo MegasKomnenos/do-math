@@ -38,9 +38,9 @@ class PQDT:
 
     def page(self):
         page = self.gateway.open(self.source, "PQDT", self.hosts, "#searchTerm, #pqResultsCount")
-        page.wait_for_load_state("load", timeout=45000)
-        page.wait_for_function("typeof OneTrust !== 'undefined' && typeof OneTrust.RejectAll === 'function'", timeout=30000)
+        page.wait_for_load_state("domcontentloaded", timeout=45000)
         if not page.evaluate("document.cookie.includes('OptanonAlertBoxClosed=')"):
+            page.wait_for_function("typeof OneTrust !== 'undefined' && typeof OneTrust.RejectAll === 'function'", timeout=30000)
             page.locator("#onetrust-banner-sdk").wait_for(timeout=30000)
             page.evaluate("OneTrust.RejectAll()")
             page.locator(".onetrust-pc-dark-filter").wait_for(state="hidden", timeout=20000)
@@ -76,20 +76,20 @@ class PQDT:
         if options or cursor or export not in (None, "json", "ris", "html"):
             raise ServiceError("invalid_options", "Use the native query and start/limit; export is json/ris/html")
         page = self.page()
-        # Marked items persist across searches. Clear only this server's browser selection.
-        clear = page.locator("#selecteditemsclear_link")
-        if clear.count() and clear.is_visible():
-            clear.click()
-            dialog = page.locator("#selecteditemsclear_confirm_clear_overlay")
-            if dialog.is_visible():
-                dialog.get_by_role("button", name="Yes", exact=True).click()
-        if not page.locator("#searchTerm").count():
-            goto_source(page, "https://" + urlsplit(page.url).hostname + "/pqdtglobal", self.hosts, wait_until="load", timeout=45000)
+        goto_source(page, "https://" + urlsplit(page.url).hostname + "/pqdtglobal", self.hosts, wait_until="load", timeout=45000)
         page.locator("#searchTerm").fill(query)
         page.locator("#searchTerm").press("Tab")
         with page.expect_navigation(wait_until="load", timeout=60000):
             page.locator("#expandedSearch").click()
         page.locator("#pqResultsCount").wait_for(timeout=60000)
+        # Marked items persist across searches. Clear this server's earlier selection.
+        clear = page.locator("#selecteditemsclear_link")
+        if clear.count() and clear.is_visible():
+            clear.click()
+            dialog = page.locator("#selecteditemsclear_confirm_clear_overlay")
+            dialog.wait_for()
+            dialog.get_by_role("button", name="Yes", exact=True).click()
+            dialog.wait_for(state="hidden")
         rows, evidence, offset, total = [], [], 0, None
         while True:
             require_source_url(page.url, self.hosts)
@@ -110,7 +110,7 @@ class PQDT:
             offset += len(native)
             if offset >= min(total, start + limit) or not native:
                 break
-            next_page = page.locator('a[title="Next page"],a[aria-label="Next page"],a[title="Next"],a[rel="next"]').filter(visible=True)
+            next_page = page.locator('a[title="Next Page"],a[aria-label="Next Page"],a[title="Next page"],a[aria-label="Next page"],a[title="Next"],a[rel="next"]').filter(visible=True)
             if not next_page.count():
                 raise ServiceError("pagination_control_missing", "PQDT next-page control could not be identified", evidence=evidence)
             with page.expect_navigation(wait_until="load", timeout=60000):

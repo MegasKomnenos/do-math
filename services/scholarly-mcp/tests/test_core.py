@@ -125,6 +125,7 @@ class CoreContract(unittest.TestCase):
             zipped.writestr("../outside.txt", "archive bytes, not a filesystem write")
             zipped.writestr("repo/Mathlib/Test.lean", "theorem example : True := True.intro\n")
             zipped.writestr("repo/data.json", '{ "precision": 1.234567890123456789, "access_token": "documentation-example" }\n')
+            zipped.writestr("repo/references.bib", '@article{example, title={Exact title}, year={2025}}\n')
         ref = self.store.put(archive.getvalue(), "application/zip", "github", "https://api.github.com/repos/test/test/zipball/x")
         result = self.lib.extract_artifact(self.store, ref["ref"], selection="repo/Mathlib/Test.lean")
         child = result["items"][0]["artifact"]
@@ -132,10 +133,15 @@ class CoreContract(unittest.TestCase):
         self.assertFalse((Path(self.tmp.name).parent / "outside.txt").exists())
         data = self.lib.extract_artifact(self.store, ref["ref"], selection="repo/data.json")["items"][0]["artifact"]
         self.assertEqual(self.store.read(data["ref"])[1], b'{ "precision": 1.234567890123456789, "access_token": "documentation-example" }\n')
+        citation = self.lib.extract_artifact(self.store, ref["ref"], selection="repo/references.bib")["items"][0]["artifact"]
+        parsed = self.lib.extract_artifact(self.store, citation["ref"], fields=["title"], count=1)
+        self.assertEqual(parsed["items"][0]["title"], "Exact title")
 
     def test_public_commit_signatures_and_pagination_are_not_authentication_secrets(self):
         original = {"signature": "-----BEGIN PGP SIGNATURE-----\npublic verification data", "page_token": "public-pagination", "token_count": 42}
         self.assertEqual(self.lib.Sanitizer().value(original), original)
+        payload = {"signature": original["signature"], "payload": "message https://Example.org/search?q=two%20words&sort=desc\n"}
+        self.assertEqual(self.lib.Sanitizer().value(payload), payload)
 
     def test_signed_proquest_media_and_nested_viewer_urls_remove_access_parameters(self):
         from urllib.parse import quote, unquote
@@ -145,6 +151,34 @@ class CoreContract(unittest.TestCase):
         self.assertIn("Article", clean)
         nested = "/viewer.html?file=" + quote(link, safe="")
         self.assertNotIn("PRIVATE", unquote(self.lib.Sanitizer().url(nested)))
+
+    def test_xml_url_redaction_preserves_well_formed_markup_and_namespace_values(self):
+        raw = b'<r xmlns:x="urn:types" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="x:Record"><link>https://source.example/search?q=NP&amp;start=2&amp;token=PRIVATE</link></r>'
+        artifact = self.store.put(raw, "application/xml", "source", "https://source.example/")
+        result = self.lib.extract_artifact(self.store, artifact["ref"], selection="link", count=1)
+        from xml.etree import ElementTree
+        element = ElementTree.fromstring(result["items"][0])
+        self.assertEqual(element.text, "https://source.example/search?q=NP&start=2")
+        stored = self.store.read(artifact["ref"])[1]
+        self.assertNotIn(b"PRIVATE", stored)
+        self.assertIn(b'xmlns:x="urn:types"', stored)
+
+    def test_bibtex_free_annotations_outside_entries_do_not_hide_records(self):
+        text = b'Editorial note\n@article{one,title={First},year=2025}\n#OK\n@article{two,title={Second},journal=eccc}\n'
+        artifact = self.store.put(text, "application/x-bibtex", "source", "https://source.example/references.bib")
+        result = self.lib.extract_artifact(self.store, artifact["ref"], count=2)
+        self.assertEqual([row["id"] for row in result["items"]], ["one", "two"])
+        raw = self.lib.extract_artifact(self.store, artifact["ref"], selection="raw", start=2, count=1)
+        self.assertEqual(raw["items"], ["#OK"])
+
+    def test_xml_external_entities_are_not_read_from_preserved_source_files(self):
+        private = Path(self.tmp.name) / "private.txt"
+        private.write_text("PRIVATE FILE CONTENT", "utf-8")
+        data = '<!DOCTYPE root [<!ENTITY external SYSTEM "' + private.as_uri() + '">]><root>&external;</root>'
+        artifact = self.store.put(data, "application/xml", "source", "https://source.example/data.xml", preserve_bytes=True)
+        with self.assertRaises(self.lib.ServiceError) as raised:
+            self.lib.extract_artifact(self.store, artifact["ref"])
+        self.assertEqual(raised.exception.result["code"], "xml_entities_not_supported")
 
 
 if __name__ == "__main__":

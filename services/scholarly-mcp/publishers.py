@@ -21,10 +21,15 @@ class Profile:
     domains: tuple[str, ...]
     gateway_label: str | None
     abstract_selector: str = 'section.abstract, .abstract, #abstract, #Abs1, #abstracts'
+    file_domains: tuple[str, ...] = ()
 
     @property
     def hosts(self):
         return set(self.domains) | {host.replace('.', '-') + '.libproxy.knu.ac.kr' for host in self.domains}
+
+    @property
+    def download_hosts(self):
+        return self.hosts | set(self.file_domains)
 
 
 PROFILES = [
@@ -32,7 +37,7 @@ PROFILES = [
     Profile("cambridge", ("www.cambridge.org", "resolve.cambridge.org"), "CUP"),
     Profile("de-gruyter", ("www.degruyter.com", "www.degruyterbrill.com"), "De Gruyter"),
     Profile("jstor", ("www.jstor.org", "jstor.org"), "JSTOR"),
-    Profile("oxford", ("academic.oup.com", "www.oxfordacademic.com"), "OUP"),
+    Profile("oxford", ("academic.oup.com", "www.oxfordacademic.com"), "OUP", file_domains=("watermark02.silverchair.com",)),
     Profile("science-direct", ("www.sciencedirect.com", "sciencedirect.com", "linkinghub.elsevier.com"), "ScienceDirect"),
     Profile("springer", ("link.springer.com", "link.springernature.com", "www.nature.com"), "Springer eJournal"),
     Profile("taylor-francis", ("www.tandfonline.com", "tandfonline.com"), "Taylor & Francis"),
@@ -41,7 +46,7 @@ PROFILES = [
     Profile("aps", ("www.aps.org", "journals.aps.org", "link.aps.org", "physics.aps.org"), "APS"),
     Profile("iop", ("iopscience.iop.org",), "IOP"),
     Profile("siam", ("epubs.siam.org", "www.siam.org"), None),
-    Profile("project-euclid", ("projecteuclid.org", "www.projecteuclid.org"), None),
+    Profile("project-euclid", ("projecteuclid.org", "www.projecteuclid.org"), None, 'text.ArticleContentText > h2:text-is("Abstract") + div'),
     Profile("theory-of-computing", ("theoryofcomputing.org", "www.theoryofcomputing.org"), None),
 ]
 
@@ -165,7 +170,9 @@ class Publisher:
                         components[part] = {"status": "not_implemented", "reason": "No recognized document-bound PDF control; further layout/full-HTML handling is pending", "artifact": source_page}
                         continue
                     try:
-                        data, media, obtained = browser_download(self.gateway.context, links[0], self.profile.hosts)
+                        origin = urlsplit(page.url)
+                        headers = {"User-Agent": page.evaluate("navigator.userAgent"), "Referer": origin.scheme + "://" + origin.netloc + "/"}
+                        data, media, obtained = browser_download(self.gateway.context, links[0], self.profile.download_hosts, headers=headers)
                         if not data.startswith(b"%PDF-"):
                             raise ServiceError("unexpected_content", "Publisher document control returned non-PDF content")
                         import pymupdf

@@ -22,7 +22,7 @@
 
 `start`는 0부터 센다. `limit`는 검색에서 요청할 레코드 수이고, `count`는 추출할 레코드·줄·쪽·파일 수다. 자료원 고유의 페이지 제한은 `describe_source`가 정한다. `received`는 해당 결과에 보존한 레코드 수다. `total=null`은 자료원이 전체 검색 건수를 제공하지 않은 경우이며 0건을 뜻하지 않는다. 큰 결과는 파일로 보존하고 모델에는 참조·건수·작은 미리보기를 보낸다. 원자료 전체를 다시 받을 때는 같은 `scholarly://artifact/…` URI에 MCP `resources/read`를 호출한다.
 
-자료 참조는 manifest와 파일의 SHA-256으로 검사한다. 같은 바이트를 서로 다른 자료원에서 얻어도 출처 manifest는 분리된다. 저장된 자료는 서버 재시작 뒤에도 회수할 수 있다. API JSON의 표현 정규화와 인증 정보 정제, 화면 HTML의 실행 코드 제거는 보존 사본에 적용된다. PDF·이미지·압축 파일은 원 바이트로 보존한다.
+자료 참조는 manifest와 파일의 SHA-256으로 검사한다. 같은 바이트를 서로 다른 자료원에서 얻어도 출처 manifest는 분리된다. 저장된 자료는 서버 재시작 뒤에도 회수할 수 있다. API JSON의 표현 정규화와 인증 정보 정제, 화면 HTML의 실행 코드 제거는 보존 사본에 적용된다. API XML은 네임스페이스를 유지하며 읽고 정제한 뒤 UTF-8로 직렬화하고 `xml_normalized`를 표시한다. 외부 XML 엔터티를 읽거나 확장하지 않는다. PDF·이미지·압축 파일과 저장소 원 파일은 원 바이트로 보존한다.
 
 추출에서 JSON `selection`은 JSON Pointer다. 예를 들어 `/0/fields/cr`은 첫 Web of Science 레코드의 인용문헌 필드다. HTML은 CSS 선택자, XML은 ElementTree가 지원하는 XPath 부분집합을 사용한다. PDF는 원 텍스트 레이어를 추출하고, `render=true`이면 해당 쪽의 이미지도 보존한다. 이미지 ref를 다시 `extract`에 주면 MCP 이미지 내용으로 전달한다. 이미지 의미 판독과 OCR 교정은 서버가 수행하지 않는다. ZIP·tar 계열은 파일 목록을 반환하며 `selection`에 목록의 정확한 파일 이름을 주면 해당 바이트를 별도 자료로 보존한다. 압축 파일의 경로를 작업 디렉터리에 풀지 않는다. 원 저장소 파일과 압축 파일에서 꺼낸 파일은 원 바이트를 유지한다.
 
@@ -60,4 +60,12 @@ AFP는 공식 Heptapod의 별도 인증 없는 API를 사용한다. 기본 대�
 
 ACM 인용문 생성은 실제 검색 UI가 수신한 원 서지·CSL 스타일·locale과 자료원이 제공한 citeproc 처리기를 사용한다. 처리기는 외부 통신을 막은 별도 렌더 페이지에서 실행한다. 사이트의 인용문 미리보기 초기화 오류가 자료 확보를 막지 않으며, 서버에 문헌을 해석하는 AI를 넣지 않는다. 서지 응답·처리기·생성 파일의 참조를 함께 보존한다.
 
-`.venv/`와 `data/`는 Git에서 제외한다. 재현에 쓰는 작은 공개 응답은 `tests/fixtures/`에 보존한다. 실행 자료를 다른 환경으로 옮길 때는 `data/` 전체와 해시 검사를 함께 보존한다. 인증 상태는 `.credentials/scholarly-mcp/`에 따로 두며 자료·로그·커밋에 포함하지 않는다. 전체 선정 범위와 아직 조사·개발 중인 자료원은 `registry.py`와 `list_sources`에 남아 있다.
+`.venv/`와 `data/`는 Git에서 제외한다. 재현에 쓰는 작은 공개 응답은 `tests/fixtures/`에 보존한다. 실행 자료를 다른 환경으로 옮길 때는 `data/` 전체와 해시 검사를 함께 보존한다. 인증 상태는 `.credentials/scholarly-mcp/`에 따로 두며 자료·로그·커밋에 포함하지 않는다. 전체 선정 범위와 아직 조사·개발 중인 자료원은 [지원표](SUPPORT.md), `registry.py`, `list_sources`에 남아 있다.
+
+Theory of Computing은 공식 저자·주제 색인과 저널이 지정한 검색 엔진을 사용한다. PDF·초록 텍스트·BibTeX 외에 제공되는 PostScript·LaTeX 소스 ZIP·HTML 참고문헌·저자 안내를 회수한다. 본문 검색은 웹페이지 단위이며 같은 문헌의 여러 페이지가 결과에 포함될 수 있다. 압축에서 꺼낸 `.bib`·`.ris`도 서지 형식으로 추출하며, BibTeX·RIS·WOS·CSV의 `selection="raw"`는 원 줄을 읽는다.
+
+EuDML은 CQL/OpenSearch와 NLM 메타데이터 API를 사용한다. 참고문헌의 ID를 현재 문헌의 ID로 쓰지 않으며, 외부 원문 링크를 자동 방문하지 않는다. Zenodo는 레코드나 특정 파일 URL로 파일을 받아 제공된 크기·checksum과 대조한다. 파일 URL을 지정하면 해당 파일을 선택하고, 레코드에 fulltext·supplementary를 요청하면 그 레코드의 파일들을 회수한다.
+
+`aps`는 별도 자격 없는 공개 Harvest API의 OA 자료 범위다. `aps-institutional`은 KUDOS를 거치는 기관 구독 접근으로 별도 등록했다. 호출자가 자료원을 선택하며 한 호출 안에서 접근 경로를 바꾸지 않는다. 기관 경로의 키워드 검색은 개발 중이다. Cambridge·Oxford·AIP·Project Euclid도 현재 문헌 조회 어댑터로 연결했고 고급검색과 일부 내보내기 형식의 개발이 남았다.
+
+Unpaywall에는 별도 키나 가입이 필요하지 않지만 실제 연락 이메일이 필요하다. 운영자가 `.credentials/scholarly-mcp/contact.json`의 `email` 필드에 설정하며 도구 인자로 전달하지 않는다. 현재 값이 없어 정상 API 호출 검증은 남아 있다. API의 외부 OA 링크는 메타데이터로 반환하고 그 원문 사이트를 자동 조회하지 않는다.

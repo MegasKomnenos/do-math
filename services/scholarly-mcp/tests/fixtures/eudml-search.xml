@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+<channel>
+ <title>EuDML OpenSearch</title>
+ <link>http://eudml.org/api/search?q=all%3d%22P+versus+NP%22&amp;startIndex=0&amp;count=2&amp;format=rss</link>
+ <description>EuDML OpenSearch Interface</description>
+ <opensearch:totalResults>8</opensearch:totalResults>
+ <opensearch:startIndex>0</opensearch:startIndex>
+ <opensearch:itemsPerPage>2</opensearch:itemsPerPage>
+ <opensearch:Url rel="self" type="application/opensearchdescription+xml" href="http://eudml.org/api/search"/>
+ <opensearch:Contact>a7xxxxxx@eeee.test</opensearch:Contact>
+ <opensearch:Image height="16" width="16" type="image/x-icon">http://eudml.org/favicon.ico</opensearch:Image>
+ <opensearch:Query role="request" searchTerms="all=&#034;P versus NP&#034;" startIndex="0" count="2" format="rss" />
+ <opensearch:Developer>CeON, ICM, University of Warsaw</opensearch:Developer>
+ <opensearch:Attribution>EuDML</opensearch:Attribution>
+ <opensearch:SyndicationRight>open</opensearch:SyndicationRight>
+ <opensearch:AdultContent>false</opensearch:AdultContent>
+ <opensearch:InputEncoding>UTF-8</opensearch:InputEncoding>
+ <opensearch:OutputEncoding>UTF-8</opensearch:OutputEncoding>
+ <item>
+  <title>Matematika na přelomu tisíciletí</title>
+  <pubDate>Thu, 23 Jun 2016 00:00:00 +0000</pubDate>
+  <lastBuildDate>Fri, 24 Jun 2016 00:00:00 +0000</lastBuildDate>
+  <guid>urn:eudml:doc:196516</guid>
+  <link>http://eudml.org/doc/196516</link>
+  <dc:creator>Phillip A. Griffiths</dc:creator>
+  <dc:identifier>urn:eudml:doc:196516</dc:identifier>
+  <dc:type>article</dc:type>
+  <dc:date>2001</dc:date>
+  <dc:relation>Pokroky matematiky, fyziky a astronomie</dc:relation>
+  </item>
+ <item>
+  <title>Počítačový vědec objevil algoritmus pro řešení fundamentálního problému teorie grafů v malém paměťovém prostoru</title>
+  <pubDate>Thu, 23 Jun 2016 00:00:00 +0000</pubDate>
+  <lastBuildDate>Fri, 24 Jun 2016 00:00:00 +0000</lastBuildDate>
+  <guid>urn:eudml:doc:246353</guid>
+  <link>http://eudml.org/doc/246353</link>
+  <dc:creator>Sara Robinson</dc:creator>
+  <dc:identifier>urn:eudml:doc:246353</dc:identifier>
+  <dc:type>article</dc:type>
+  <dc:date>2008</dc:date>
+  <dc:relation>Pokroky matematiky, fyziky a astronomie</dc:relation>
+  </item>
+ </channel>
+</rss>

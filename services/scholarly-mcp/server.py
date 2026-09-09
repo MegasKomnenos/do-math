@@ -24,6 +24,11 @@ from scopus import Scopus
 from pqdt import PQDT
 from ieee import IEEE
 from afp import AFP
+from unpaywall import Unpaywall
+from toc import TheoryOfComputing
+from eudml import EuDML
+from aps import APS
+from dataclasses import replace
 from publishers import PROFILES, Publisher
 
 ROOT = Path(__file__).resolve().parent
@@ -91,7 +96,7 @@ async def fetch(source: str, target: str, parts: list[str] | None = None) -> Too
 
 @mcp.tool()
 def extract(ref: str, fields: list[str] | None = None, start: int = 0, count: int = 20, selection: str = "", render: bool = False) -> ToolResult:
-    """보존 자료를 기계적으로 읽는다. start는 0부터, count는 레코드·줄·쪽의 수다. JSON selection은 /경로 형식, HTML은 CSS 선택자, XML은 ElementTree XPath 부분집합이다. JSON fields는 원 필드 이름이다. PDF는 쪽별 텍스트와 선택적 이미지 ref를 반환한다. 이미지 ref를 extract에 주면 이미지를 그대로 전달하며 판독은 호출 AI가 한다."""
+    """보존 자료를 기계적으로 읽는다. start는 0부터, count는 레코드·줄·쪽의 수다. JSON selection은 /경로 형식, HTML은 CSS 선택자, XML은 ElementTree XPath 부분집합이다. BibTeX·RIS·WOS·CSV의 selection=raw는 원 줄을 읽는다. JSON fields는 원 필드 이름이다. PDF는 쪽별 텍스트와 선택적 이미지 ref를 반환한다. 이미지 ref를 extract에 주면 이미지를 그대로 전달하며 판독은 호출 AI가 한다."""
     result = run_call(extract_artifact, STORE, ref, fields=fields, start=start, count=count, selection=selection, render=render)
     payload = result.model_dump(mode="json")
     if payload.get("image_ref"):
@@ -116,6 +121,9 @@ def main():
     STORE = ArtifactStore(args.data_dir)
     ADAPTERS.update(make_adapters(STORE))
     ADAPTERS["afp"] = AFP(STORE)
+    ADAPTERS["eudml"] = EuDML(STORE)
+    ADAPTERS["aps"] = APS(STORE)
+    ADAPTERS["unpaywall"] = Unpaywall(STORE, contact_file=ROOT.parents[1] / ".credentials/scholarly-mcp/contact.json")
     gateway = KudosGateway(ROOT.parents[1] / ".credentials", STORE.sanitizer)
     firefox_gateway = KudosGateway(ROOT.parents[1] / ".credentials", STORE.sanitizer, engine="firefox")
     ADAPTERS["mathscinet"] = MathSciNet(STORE, gateway)
@@ -123,10 +131,14 @@ def main():
     ADAPTERS["eccc"] = ECCC(STORE, gateway)
     ADAPTERS["acm-dl"] = ACM(STORE, firefox_gateway)
     ADAPTERS["drops"] = DROPS(STORE, gateway)
+    ADAPTERS["theory-of-computing"] = TheoryOfComputing(STORE, gateway)
     ADAPTERS["scopus"] = Scopus(STORE, firefox_gateway)
     ADAPTERS["pqdt"] = PQDT(STORE, firefox_gateway)
     ADAPTERS["ieee-xplore"] = IEEE(STORE, firefox_gateway)
     ADAPTERS["springer"] = Publisher(STORE, firefox_gateway, next(p for p in PROFILES if p.source == "springer"))
+    for identifier in ("project-euclid", "cambridge", "oxford", "aip"):
+        ADAPTERS[identifier] = Publisher(STORE, firefox_gateway, next(p for p in PROFILES if p.source == identifier))
+    ADAPTERS["aps-institutional"] = Publisher(STORE, firefox_gateway, replace(next(p for p in PROFILES if p.source == "aps"), source="aps-institutional"))
     try:
         mcp.run(transport="stdio")
     finally:

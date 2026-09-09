@@ -16,6 +16,19 @@ class ServiceError(Exception):
         self.result = {"status": status, "code": code, "message": message, **details}
 
 
+def xml_tree(data):
+    from lxml import etree
+    try:
+        root = etree.fromstring(data, parser=etree.XMLParser(resolve_entities=False, load_dtd=False, no_network=True, strip_cdata=False))
+        tree = root.getroottree()
+    except etree.XMLSyntaxError:
+        raise ServiceError("invalid_xml", "The XML document is not well formed") from None
+    dtd = tree.docinfo.internalDTD
+    if dtd is not None and any(dtd.iterentities()) or any(isinstance(node, etree._Entity) for node in root.iter()):
+        raise ServiceError("xml_entities_not_supported", "XML entity declarations and references are not expanded")
+    return tree
+
+
 class Sanitizer:
     sensitive = re.compile(r"(?:api[-_]?key|password|passwd\d*|authorization|cookie|secret|token|ticket|csrf|signature|session(?:id)?|__cf_chl|^sid$|^_[as]$)", re.I)
     secret_fields = {"apikey", "password", "passwd", "passwd2", "authorization", "cookie", "setcookie", "secret", "clientsecret", "secretkey", "token", "accesstoken", "refreshtoken", "authtoken", "ticket", "csrf", "csrftoken", "xcsrftoken", "xsrftoken", "signature", "sid", "session", "sessionid", "jsessionid", "xapikey", "xelsapikey", "xelsinsttoken", "xamzcredential", "xamzsignature", "xamzsecuritytoken"}
@@ -32,18 +45,37 @@ class Sanitizer:
     def url(self, url):
         return self.text(self._url(url))
 
+    def xml(self, data):
+        from lxml import etree
+        tree = xml_tree(data)
+        for node in tree.iter():
+            for name, value in list(node.attrib.items()):
+                local_name = name.rsplit("}", 1)[-1]
+                node.attrib[name] = self.value({local_name: value})[local_name]
+            for field in ("text", "tail"):
+                value = getattr(node, field)
+                if value:
+                    cleaned = self.text(value)
+                    if cleaned != value:
+                        setattr(node, field, cleaned)
+        return etree.tostring(tree, encoding="utf-8", xml_declaration=True)
+
     def _url(self, url):
+        original = url
         url = url.replace("&amp;", "&")
         parts = urlsplit(url)
         # Credentials in userinfo, fragments and authentication query fields are never evidence.
         host = parts.hostname or ""
         if parts.port:
             host += ":" + str(parts.port)
+        pairs = parse_qsl(parts.query, keep_blank_values=True)
         query = [(k, self._url(v) if v.startswith(("http://", "https://")) else v)
-            for k, v in parse_qsl(parts.query, keep_blank_values=True) if not self.sensitive.search(k)]
+            for k, v in pairs if not self.sensitive.search(k)]
         fragment = parts.fragment
         if any(self.sensitive.search(k) for k, _ in parse_qsl(fragment, keep_blank_values=True)):
             fragment = ""
+        if not parts.username and not parts.password and query == pairs and fragment == parts.fragment:
+            return original
         return urlunsplit((parts.scheme, host, parts.path, urlencode(query), fragment))
 
     def value(self, value):
@@ -105,7 +137,10 @@ class ArtifactStore:
             data = data.encode("utf-8")
         if not preserve_bytes and media_type == "application/json":
             data = encoded(self.sanitizer.value(json.loads(data)))
-        elif not preserve_bytes and (media_type.startswith("text/") or "xml" in media_type or media_type in {"application/x-wos", "application/x-bibtex", "application/x-research-info-systems", "application/x-endnote-refer", "application/x-tex"}):
+        elif not preserve_bytes and "xml" in media_type and "html" not in media_type:
+            data = self.sanitizer.xml(data)
+            context["xml_normalized"] = True
+        elif not preserve_bytes and (media_type.startswith("text/") or media_type in {"application/x-wos", "application/x-bibtex", "application/x-research-info-systems", "application/x-endnote-refer", "application/x-tex"}):
             data = self.sanitizer.text(data.decode("utf-8")).encode("utf-8")
         sha = digest(data)
         manifest = self.sanitizer.value({"sha256": sha, "bytes": len(data), "media_type": media_type,
@@ -201,7 +236,18 @@ def bibliography(data, media):
     try:
         if media == "application/x-bibtex":
             rows = []
-            for entry in module.parse_bibtex(text, source_name="artifact"):
+            scanner = module._BibScanner(text, source_name="artifact")
+            entries = []
+            while scanner.position < len(text):
+                scanner.skip_space_and_comments()
+                if scanner.position == len(text):
+                    break
+                if text[scanner.position] != "@":
+                    # BibTeX ignores free annotations outside entries; the artifact retains them.
+                    scanner.position += 1
+                    continue
+                entries.append(scanner.read_entry())
+            for entry in entries:
                 row = {"id": entry.key, "type": entry.entry_type, "raw_text": entry.raw_text, "parse_warnings": list(entry.parse_warnings)}
                 for field, value in entry.field_items:
                     if field not in row:
@@ -248,7 +294,8 @@ def extract_artifact(store, ref, *, fields=None, start=0, count=20, selection=""
                 if row["bytes"] > 256 * 1024 * 1024:
                     raise ServiceError("resource_limit", "Selected archive member exceeds the 256 MiB extraction limit; the archive remains preserved")
                 content = archive.read(member) if is_zip else archive.extractfile(member).read()
-                mime = mimetypes.guess_type(selection)[0]
+                suffix = Path(selection).suffix.lower()
+                mime = {".bib": "application/x-bibtex", ".ris": "application/x-research-info-systems"}.get(suffix) or mimetypes.guess_type(selection)[0]
                 if mime is None:
                     try:
                         content.decode("utf-8")
@@ -259,7 +306,10 @@ def extract_artifact(store, ref, *, fields=None, start=0, count=20, selection=""
                 rows = [{**row, "artifact": child}]
         unit = "archive_members"
     elif media in {"text/csv", "application/x-research-info-systems", "application/x-bibtex", "application/x-wos"}:
-        if media == "text/csv":
+        if selection == "raw":
+            rows = data.decode("utf-8-sig").splitlines()
+            unit = "lines"
+        elif media == "text/csv":
             import csv, io
             rows = list(csv.DictReader(io.StringIO(data.decode("utf-8-sig"))))
         else:
@@ -276,11 +326,12 @@ def extract_artifact(store, ref, *, fields=None, start=0, count=20, selection=""
             rows = data.decode("utf-8").splitlines()
             unit = "lines"
     elif "xml" in media:
-        from defusedxml import ElementTree
-        from xml.etree.ElementTree import tostring
+        from lxml import etree
         try:
-            root = ElementTree.fromstring(data)
-            rows = [tostring(node, encoding="unicode") for node in root.findall(selection)] if selection else [data.decode("utf-8")]
+            tree = xml_tree(data)
+            rows = [etree.tostring(node, encoding="unicode") for node in tree.getroot().findall(selection)] if selection else [etree.tostring(tree, encoding="unicode")]
+        except ServiceError:
+            raise
         except Exception:
             raise ServiceError("invalid_selection", "XML could not be parsed or the XPath subset is invalid") from None
         unit = "elements"

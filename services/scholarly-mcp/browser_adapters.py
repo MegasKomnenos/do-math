@@ -137,14 +137,14 @@ def acm_records(raw, base):
     return rows
 
 
-def browser_download(context, url, hosts):
+def browser_download(context, url, hosts, *, headers=None):
     from playwright.sync_api import TimeoutError as BrowserTimeout, Error as BrowserError
     for _ in range(6):
         parsed = urlsplit(url)
-        if parsed.scheme not in ("https", "http") or parsed.hostname not in hosts or parsed.username or parsed.password:
+        if parsed.scheme not in ("https", "http") or parsed.hostname not in hosts or parsed.username or parsed.password or parsed.port not in (None, 80, 443):
             raise ServiceError("source_boundary", "Observed document link left the selected source", blocked_host=parsed.hostname)
         try:
-            response = context.request.get(url, max_redirects=0, timeout=45000)
+            response = context.request.get(url, max_redirects=0, timeout=45000, headers=headers or {})
         except BrowserTimeout:
             raise ServiceError("timeout", "Source document did not respond within the download timeout", retryable=True) from None
         except BrowserError:
@@ -227,6 +227,7 @@ class KudosGateway:
             return
         fields = self.credentials()
         login.click()
+        require_source_url(page.url, {"kudos.knu.ac.kr"})
         page.locator("#userid").fill(fields["ID"])
         page.locator("#passwd").fill(fields["PW"])
         page.locator("#passwd").press("Enter")
