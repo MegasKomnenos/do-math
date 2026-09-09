@@ -1,0 +1,74 @@
+{
+  "metadata": {
+    "offset": 0,
+    "totalCount": 1,
+    "itemCount": 10,
+    "numberOfPages": 0
+  },
+  "items": [
+    {
+      "citations": {
+        "count": 3,
+        "link": "https://www-scopus-com.libproxy.knu.ac.kr/api/documents/citations/count?eid=2-s2.0-77957268169"
+      },
+      "references": {
+        "count": 48,
+        "link": "https://www-scopus-com.libproxy.knu.ac.kr/api/documents/reference/count?eid=2-s2.0-77957268169"
+      },
+      "totalAuthors": 1,
+      "abstractText": [
+        "In this primarily expository article, I describe geometric approaches to variants of P versus NP, present several results that illustrate the role of group actions in complexity theory, and make a first step towards geometric definitions of complexity classes. My goal is to help bring geometry and complexity theory closer together. © 2010 Elsevier Ltd."
+      ],
+      "eid": "2-s2.0-77957268169",
+      "pii": "S0747717110000957",
+      "documentType": "ar",
+      "doi": "10.1016/j.jsc.2010.06.015",
+      "authors": [
+        {
+          "authorId": "7005761121",
+          "preferredName": {
+            "first": "J.M.",
+            "last": "Landsberg",
+            "full": "Landsberg J.M."
+          }
+        }
+      ],
+      "subjectAreas": [
+        "MATH"
+      ],
+      "scopusId": "77957268169",
+      "pubYear": 2010,
+      "databaseDocumentIds": {
+        "SCP": "77957268169",
+        "PUI": "50986246",
+        "SGR": "77957268169"
+      },
+      "titles": [
+        "P versus NP and geometry"
+      ],
+      "statusType": "core",
+      "abstractAvailable": true,
+      "publicationStage": "final",
+      "sourceRelationship": {
+        "volume": "45",
+        "issue": "12",
+        "pages": [
+          {
+            "pageFirst": "1359",
+            "pageLast": "1377"
+          }
+        ]
+      },
+      "source": {
+        "sourceType": "j",
+        "issn": "07477171",
+        "publicationYear": "2010",
+        "issnp": "07477171",
+        "sourceTitleAbbreviation": "J. Symb. Comput.",
+        "id": "28503",
+        "title": "Journal of Symbolic Computation"
+      },
+      "title": "P versus NP and geometry"
+    }
+  ]
+}

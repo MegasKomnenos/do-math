@@ -1,0 +1,34 @@
+TY  - THES
+T1  - Resource Bounded Measure and P Versus NP Problem-A Critical Study
+AN  - 2618193239
+AB  - This reports deals with the concept of resource-bounded measure that provides a quantative approach to deal with many questions of Structural Complexity Theory. Ia particular, we examine the consequences of the hypothesis that NP does not have p-measure 0 which is is a stronger hypothesis than that of NP ≠ P.In the first chapter , we introduce the concept of resource-bounded measure and survey some basic results about it. We also give examples of classes with p-measure 0 or p-measure 1. In particular, (a) we give a sufficient condition for a class to have p-measure 0 in E and (b) we define , for each infinite language L € P, a class of languages XL that has p-measure 0. In the second chapter , we define a measure inside the class PSPACE. and survey some basic results about it. In the third chapter, we study nice properties like P-immunity and Incompressibility of languages in relation to resource bounded measure. Then we have made a small observation that if Bertman-Hartmanis conjecture is true then the class NPC has p-measure Oin E. Also we have shown that if Berman- Hartmanis conjecture holds and for any two language L1 and L2 € NPI we have L1ΔL2 € NPC then NP can have either measure 0 or it is non-measurable in E. In the fourth chapter , we present a notion of resource-bounded measure for P and other subexponential-time classes and examine its basic properties. In Chapter 5, we study the reasonableness and consequnces of the "hypethesis  NP does not have p-measure 0".
+JF  - PQDT - Global
+AU  - Mukhopadhyay, Chinmay
+A3  - Sikdar, K.
+Y1  - 2000
+PY  - 2000
+DA  - 2000
+SP  - 40
+CY  - India
+PB  - Indian Statistical Institute - Kolkata
+PP  - India
+SN  - 9798496583626
+KW  - Language
+KW  - Gambling
+KW  - Q R
+KW  - 0679:Language
+UR  - https://www.proquest.com/dissertations-theses/resource-bounded-measure-p-versus-np-problem/docview/2618193239/se-2?accountid=11933
+L2  - https://fp3kg2be7r.search.serialssolutions.com?ctx_ver=Z39.88-2004&ctx_enc=info%3Aofi%2Fenc%3AUTF-8&rfr_id=info%3Asid%2FProQuest+Dissertations+%26+Theses+Global&rft_val_fmt=info%3Aofi%2Ffmt%3Akev%3Amtx%3Adissertation&rft.genre=dissertations&rft.jtitle=&rft.atitle=&rft.au=Mukhopadhyay%2C+Chinmay&rft.aulast=Mukhopadhyay&rft.aufirst=Chinmay&rft.date=2000-01-01&rft.volume=&rft.issue=&rft.spage=&rft.isbn=9798496583626&rft.btitle=&rft.title=Resource+Bounded+Measure+and+P+Versus+NP+Problem-A+Critical+Study&rft.issn=&rft_id=info%3Adoi%2F
+LA  - English
+DB  - ProQuest Dissertations & Theses Global
+N1  - Copyright - Database copyright ProQuest LLC; ProQuest does not claim copyright in the individual underlying works.
+N1  - People - Q R
+N1  - Last updated - 2026-06-25
+N1  - SubjectsTermNotLitGenreText - Q R
+M3  - M.Tech.
+M1  - 28843251
+L1  - https://media.proquest.com/media/hms/PFT/2/kl1jL
+ER  - 
+
+
+

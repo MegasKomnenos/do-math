@@ -17,7 +17,7 @@ class ServiceError(Exception):
 
 
 class Sanitizer:
-    sensitive = re.compile(r"(?:api[-_]?key|password|passwd\d*|authorization|cookie|secret|token|ticket|csrf|signature|session(?:id)?|__cf_chl|^sid$)", re.I)
+    sensitive = re.compile(r"(?:api[-_]?key|password|passwd\d*|authorization|cookie|secret|token|ticket|csrf|signature|session(?:id)?|__cf_chl|^sid$|^_[as]$)", re.I)
     secret_fields = {"apikey", "password", "passwd", "passwd2", "authorization", "cookie", "setcookie", "secret", "clientsecret", "secretkey", "token", "accesstoken", "refreshtoken", "authtoken", "ticket", "csrf", "csrftoken", "xcsrftoken", "xsrftoken", "signature", "sid", "session", "sessionid", "jsessionid", "xapikey", "xelsapikey", "xelsinsttoken", "xamzcredential", "xamzsignature", "xamzsecuritytoken"}
 
     def __init__(self, secrets=()):
@@ -39,8 +39,12 @@ class Sanitizer:
         host = parts.hostname or ""
         if parts.port:
             host += ":" + str(parts.port)
-        query = [(k, v) for k, v in parse_qsl(parts.query, keep_blank_values=True) if not self.sensitive.search(k)]
-        return urlunsplit((parts.scheme, host, parts.path, urlencode(query), ""))
+        query = [(k, self._url(v) if v.startswith(("http://", "https://")) else v)
+            for k, v in parse_qsl(parts.query, keep_blank_values=True) if not self.sensitive.search(k)]
+        fragment = parts.fragment
+        if any(self.sensitive.search(k) for k, _ in parse_qsl(fragment, keep_blank_values=True)):
+            fragment = ""
+        return urlunsplit((parts.scheme, host, parts.path, urlencode(query), fragment))
 
     def value(self, value):
         if isinstance(value, dict):
@@ -48,7 +52,12 @@ class Sanitizer:
             for key, item in value.items():
                 normalized = re.sub(r"[^a-z0-9]", "", key.lower())
                 public_signature = normalized == "signature" and (item is None or (isinstance(item, str) and item.startswith(("-----BEGIN PGP SIGNATURE-----", "-----BEGIN SSH SIGNATURE-----"))))
-                result[key] = "[REDACTED]" if normalized in self.secret_fields and item is not None and not public_signature else self.value(item)
+                if normalized in self.secret_fields and item is not None and not public_signature:
+                    result[key] = "[REDACTED]"
+                elif isinstance(item, str) and normalized.endswith(("url", "href", "src")):
+                    result[key] = self.url(item)
+                else:
+                    result[key] = self.value(item)
             return result
         if isinstance(value, list):
             return [self.value(v) for v in value]

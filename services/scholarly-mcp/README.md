@@ -48,9 +48,15 @@ python -m venv services/scholarly-mcp/.venv
 
 Chromium 어댑터는 호스트에 설치된 Chrome을 사용한다. 자료원별로 검증한 브라우저를 서버가 선택하며 호출 AI가 지정하지 않는다. stdio의 stdout은 MCP 메시지 전용이고 진단은 stderr로 보낸다.
 
-오프라인 계약 검사는 `tests/test_core.py`, `tests/test_api.py`, `tests/test_browser.py`, `tests/test_mcp.py`를 전용 Python으로 각각 실행한다. `test_mcp.py`는 실제 SDK 클라이언트와 별도 서버 프로세스로 stdio·도구 조회·파일 추출·자료 읽기를 확인한다. 실서비스 흐름은 `tests/live_workflow.py --source <자료원>`으로 실행하며 지원하는 검증 시나리오는 그 파일에 있다. 오프라인 응답 대역의 통과는 실서비스 통과로 세지 않는다.
+오프라인 계약 검사는 `python -m unittest discover -s services/scholarly-mcp/tests -p 'test_*.py'`를 전용 Python으로 실행한다. `test_mcp.py`는 실제 SDK 클라이언트와 별도 서버 프로세스로 stdio·도구 조회·파일 추출·자료 읽기를 확인한다. 실서비스 흐름은 `tests/live_workflow.py --source <자료원>`으로 실행하며 지원하는 검증 시나리오는 그 파일에 있다. 오프라인 응답 대역의 통과는 실서비스 통과로 세지 않는다.
 
-현재 실서비스 근거는 로컬 `data/validation/`에 있다. MathSciNet·Web of Science·ECCC·ACM은 실제 MCP 클라이언트 흐름을 수행했고, Crossref·arXiv·zbMATH는 MCP 검색·추출을 수행했다. GitHub의 고정 커밋 파일, Numdam의 JATS·PDF, Software Heritage의 origin 검색·조회·cursor 순회는 어댑터 직접 호출로 확인했다. 각 기록은 해당 시점·입력·호스트의 관측이며 다른 자료원이나 모든 기능에 복제하지 않는다.
+현재 실서비스 근거는 로컬 `data/validation/`과 [검증 기록](VALIDATION.md)에 있다. MathSciNet·Web of Science·ECCC·ACM·Scopus·IEEE·PQDT·DROPS·AFP의 구현 범위에 대해 실제 MCP 흐름을 수행했다. Crossref·Crossmark·arXiv·zbMATH는 MCP 검색·추출을 수행했다. GitHub의 고정 커밋 파일, Numdam의 JATS·PDF, Software Heritage의 origin 조회·cursor 순회, Springer의 서지·초록·PDF는 어댑터 직접 호출로 확인했다. 각 기록은 해당 시점·입력·호스트의 관측이며 모든 옵션의 검증으로 확대하지 않는다.
+
+Scopus의 native 내보내기는 기관 접속에 더해 Scopus 웹 계정 로그인을 요구했다. 검색 결과와 원 JSON·기계적 CSV는 사용할 수 있고, native RIS·BibTeX 요청에는 제한과 보존 결과를 함께 반환한다. PQDT는 docview 번호와 학위논문 publication number를 구별하며 실제 RIS의 AN 필드로 대조한다. IEEE는 Command Search와 초록을 포함한 native 인용문 내보내기를 사용한다.
+
+AFP는 공식 Heptapod의 별도 인증 없는 API를 사용한다. 기본 대상은 개발 저장소 `afp-devel`이며, 조회한 Mercurial 커밋을 파일 요청에 고정한다. 항목 검색 결과의 `target`을 fetch에 전달하면 같은 커밋의 항목 메타데이터와 증명 소스를 회수한다. `fulltext`는 이 자료원에서 Isabelle 소스 묶음을 뜻하며, 증명 실행이나 수학적 타당성 판정은 수행하지 않는다.
+
+응답의 `components`에는 부분별 상태가 들어간다. `available`은 해당 자료를 확보했다는 뜻이고, `source_page`는 원 페이지를 보존했으나 요청 내용을 개별 자료로 분리·확보하지 못한 상태다. `not_offered`는 명시된 endpoint가 그 내용을 제공하지 않는 경우다. 이를 자료원 전체의 기능 부재나 구현 완료로 해석하지 않는다.
 
 ACM 인용문 생성은 실제 검색 UI가 수신한 원 서지·CSL 스타일·locale과 자료원이 제공한 citeproc 처리기를 사용한다. 처리기는 외부 통신을 막은 별도 렌더 페이지에서 실행한다. 사이트의 인용문 미리보기 초기화 오류가 자료 확보를 막지 않으며, 서버에 문헌을 해석하는 AI를 넣지 않는다. 서지 응답·처리기·생성 파일의 참조를 함께 보존한다.
 

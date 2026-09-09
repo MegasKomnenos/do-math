@@ -14,11 +14,12 @@ class Source:
     usage: dict = field(default_factory=dict)
     implementation: str = "pending"
     verification: str = "not_recorded"
+    capabilities: tuple[str, ...] | None = None
 
     def summary(self):
         return {"id": self.id, "name": self.name, "role": self.role, "transport": self.transport,
             "implementation": self.implementation, "verification": self.verification,
-            "capabilities": ["source_guide", "search", "fetch", "export"] if self.implementation == "partial" else []}
+            "capabilities": list(self.capabilities) if self.capabilities is not None else ["source_guide", "search", "fetch", "export"] if self.implementation == "partial" else []}
 
 
 ROWS = [
@@ -71,6 +72,19 @@ ROWS = [
 ]
 
 SOURCES = {row[0]: Source(*row) for row in ROWS}
+SOURCES["mathscinet"].implementation = "partial"
+SOURCES["wos"].implementation = "partial"
+
+SOURCES["scopus"].implementation = "partial"
+SOURCES["scopus"].usage = {
+    "search": "KUDOS → 학술DB → Scopus → Advanced document search. query는 고급검색식 그대로 제출한다. 예: TITLE(\"P versus NP\"), TITLE-ABS-KEY(\"natural proofs\") AND PUBYEAR > 2020. AND·OR·AND NOT, 괄호, 큰따옴표 구문, 중괄호 정확 구문, W/n·PRE/n 근접 연산자는 Scopus 문법을 따른다.",
+    "fields": {"TITLE": "제목", "ABS": "초록", "KEY": "키워드", "TITLE-ABS-KEY": "제목·초록·키워드", "AUTHLASTNAME": "저자 성", "AFFIL": "소속", "PUBYEAR": "발행연도", "DOI": "DOI", "EID": "Scopus 문서 ID"},
+    "options": "options는 비운다. start는 0부터, limit는 1..1000. 기본 UI 정렬을 사용하며 primary 문서의 totalCount와 페이지를 대조한다. preprint 별도 집계는 섞지 않는다.",
+    "exports": "json은 UI가 받은 전체 원 필드, csv는 같은 필드를 기계적으로 직렬화하며 중첩값은 JSON 셀이다. native RIS·BibTeX 내보내기는 기관 접속 외에 Scopus 계정 로그인을 요구해 restricted를 반환하고 검색 원자료를 함께 보존한다.",
+    "fetch": "EID(2-s2.0-숫자) 또는 DOI로 색인의 서지·초록을 확보한다. 제목은 TITLE 후보 검색으로 돌려준다. 출판사 원문·인용 관계의 별도 조회는 이 구현의 확보 범위에 포함되지 않는다.",
+    "examples": [{"tool": "search", "arguments": {"source": "scopus", "query": "TITLE(\"P versus NP\")", "limit": 2, "export": "csv"}}],
+    "official": ["https://www.elsevier.com/products/scopus/search"],
+}
 
 SOURCES["mathscinet"].usage = {
     "search": "query는 MathSciNet 검색창의 검색식이다. 고급 필드 태그를 query 안에 쓴다. 기관 인증은 서버가 KUDOS 로그인 → 검색 → 학술DB → MathSciNet 바로가기로 처리한다.",
@@ -230,6 +244,68 @@ SOURCES["software-heritage"].usage = {
     "official": ["https://archive.softwareheritage.org/api/"],
 }
 
+SOURCES["drops"].implementation = "partial"
+SOURCES["drops"].transport = "fixed: metadata API; search/document links Playwright"
+SOURCES["drops"].usage = {
+    "search": "query를 DROPS Search All Entities 입력에 그대로 제출한다. 문헌·volume·artifact 등 실제 검색 결과를 보존한다. options는 비운다.",
+    "fetch": "10.4230/… DOI 또는 drops.dagstuhl.de/entities/… 링크. 서지·초록은 별도 자격 없는 metadata/schema-org 응답으로 회수한다. 원문을 요청하면 해당 문헌 페이지의 실제 PDF 링크를 찾아 같은 DROPS에서 받는다.",
+    "exports": "검색은 json 또는 html. fetch의 metadata·export는 원 Schema.org JSON이다. XML·BibTeX 등 나머지 native 형식의 연결은 구현 중이다.",
+    "limits": "start 0부터, limit 1..1000. 기능별 경로는 고정되어 있다. 서지 API 실패를 브라우저 전환 조건으로 쓰지 않는다. 추가 첨부파일은 source_page에 보존하되 자동 분류·회수는 구현 중이다.",
+    "examples": [{"tool": "search", "arguments": {"source": "drops", "query": "P versus NP", "limit": 2}}, {"tool": "fetch", "arguments": {"source": "drops", "target": "10.4230/LIPIcs.CSL.2020.5", "parts": ["metadata", "abstract", "fulltext"]}}],
+    "official": ["https://drops.dagstuhl.de/metadata", "https://drops.dagstuhl.de/oai"],
+}
+
+SOURCES["crossmark"].implementation = "partial"
+SOURCES["crossmark"].usage = {
+    **SOURCES["crossref"].usage,
+    "search": "Crossmark에 등록된 갱신·정정·철회 정보는 Crossref 공개 REST API로 조회한다. query와 필드 옵션은 Crossref 문법이다. options.filter에 has-update-policy:true(갱신 정책 등록), has-update:true(다른 DOI로 갱신됨), is-update:true(다른 DOI의 갱신 문헌), updates:DOI(지정 문헌의 갱신) 등을 목적에 맞게 지정한다.",
+    "fetch": "DOI의 원 등록 메타데이터 전체를 보존한다. update-policy·update-to·assertion·relation·content-domain 필드의 존재와 값을 extract로 확인한다. 필드가 없다는 사실로 정정이나 철회가 없다고 단정하지 않는다.",
+    "examples": [{"tool": "search", "arguments": {"source": "crossmark", "query": "", "options": {"filter": "is-update:true"}, "limit": 2}}],
+    "official": ["https://www.crossref.org/services/crossmark/", "https://www.crossref.org/documentation/retrieve-metadata/rest-api/rest-api-filters/"],
+}
+
+SOURCES["springer"].implementation = "partial"
+SOURCES["springer"].capabilities = ("source_guide", "fetch", "export")
+SOURCES["springer"].usage = {
+    "fetch": "Springer 문헌의 DOI 또는 정확한 link.springer.com·link.springernature.com 문헌 링크를 지정한다. KUDOS Springer eJournal 경로로 접속한 뒤 문헌 페이지의 서지·초록·문헌 PDF를 회수한다. metadata·abstract·fulltext·export·supplementary를 선택할 수 있다.",
+    "exports": "export는 페이지가 제공하는 서지 필드를 보존한 JSON이다. supplementary는 부록 링크가 포함된 정제 원 페이지이며 첨부파일 자동 회수는 구현 중이다.",
+    "search": "출판사의 검색·고급검색·native citation export 연결은 개발 중이다. 제목으로 fetch하는 기능도 개발 중이므로 정확한 DOI 또는 문헌 링크를 사용한다.",
+    "limits": "별도 자격 없는 API 경로가 아닌 기관 웹 경로로 고정한다. PDF와 HTML 전용 자료를 구별하며 인식하지 못한 형식은 not_implemented로 표시한다.",
+    "examples": [{"tool": "fetch", "arguments": {"source": "springer", "target": "10.1007/s00037-008-0249-x", "parts": ["metadata", "abstract", "fulltext"]}}],
+}
+
+SOURCES["pqdt"].implementation = "partial"
+SOURCES["pqdt"].transport = "playwright"
+SOURCES["pqdt"].usage = {
+    "search": "KUDOS → 학술DB → PQDT Global에서 query를 자료원 검색창에 그대로 제출한다. 예: TI(\"P versus NP\"). 필드 괄호와 AND·OR·NOT·큰따옴표 구문을 결합한다. TI는 제목, AU는 저자, AB는 초록, SU는 주제다. 화면의 개별 필터 제어는 개발 중이다.",
+    "exports": "json은 검색 행과 native RIS의 원 필드를 함께 보존한다. ris는 Citation, abstract, indexing 옵션의 실제 원파일이다. html은 보존 검색 페이지의 참조다. 다른 native 형식 연결은 개발 중이다.",
+    "fetch": "docview 문서 번호 또는 ProQuest docview 링크를 지정한다. publication number와 docview 번호는 다르다. metadata·abstract·export·fulltext를 요청할 수 있다. 제목은 TI 후보 검색으로 반환한다. PDF는 같은 ProQuest의 실제 Download PDF 링크에서 회수한다.",
+    "limits": "options는 비운다. start는 0부터, limit는 1..1000. 선택한 문서 ID와 RIS의 AN 필드를 대조한다. 별도 첨부파일과 일부 페이지 이동 제어는 검증 중이다.",
+    "examples": [{"tool": "search", "arguments": {"source": "pqdt", "query": "TI(\"P versus NP\")", "limit": 1, "export": "ris"}}, {"tool": "fetch", "arguments": {"source": "pqdt", "target": "2618193239", "parts": ["metadata", "abstract", "fulltext"]}}],
+}
+
+SOURCES["ieee-xplore"].implementation = "partial"
+SOURCES["ieee-xplore"].usage = {
+    "search": "KUDOS → 학술DB → IEEE → Command Search에서 query를 그대로 입력한다. 필드 이름을 큰따옴표로 감싸고 콜론 뒤에 조건을 쓴다. 예: \"Document Title\":\"P versus NP\". AND·OR·NOT·괄호, 구문 따옴표, * 와일드카드 등을 IEEE 문법대로 사용한다.",
+    "fields": ["All Metadata", "Full Text & Metadata", "Full Text Only", "Document Title", "Authors", "Publication Title", "Abstract", "Index Terms", "Article Number", "Author Affiliations", "Author Keywords", "DOI", "Funding Agency", "IEEE Terms", "ISBN", "ISSN", "Publisher", "Standard Number"],
+    "exports": "json은 UI의 원 문헌 필드·초록이다. bibtex·ris·plain은 native Citations의 Citation and Abstract, csv는 native Results export다. 여러 페이지의 파일은 export.artifacts로 나누어 보존한다.",
+    "fetch": "IEEE 문헌 번호, /document/번호 링크 또는 DOI를 지정한다. 서지·초록·원문 PDF를 해당 IEEE에서 회수한다. 제목은 후보 검색으로 반환한다. supplementary는 원 문헌 페이지이며 개별 부록 다운로드는 개발 중이다.",
+    "limits": "options는 비운다. start 0부터, limit 1..1000. 자료원의 25건 페이지를 순회한다. 추가 UI facet과 일부 페이지 이동 제어는 검증 중이다. 요청한 원 검색식과 실제 UI 요청을 대조한다.",
+    "examples": [{"tool": "search", "arguments": {"source": "ieee-xplore", "query": "\"Document Title\":\"P versus NP\"", "limit": 1, "export": "bibtex"}}, {"tool": "fetch", "arguments": {"source": "ieee-xplore", "target": "10488889", "parts": ["metadata", "abstract", "fulltext"]}}],
+}
+
+SOURCES["afp"].implementation = "partial"
+SOURCES["afp"].transport = "api"
+SOURCES["afp"].usage = {
+    "search": "공식 Heptapod 공개 API에서 고정 커밋의 AFP 항목 메타데이터를 받아 검색한다. query는 선택 필드에 대한 대소문자 무시 부분 문자열이다. 메타데이터의 TOML 원문과 archive를 보존하며 검색 결과는 항목 ID 순서다. 논리적 정리 검색이나 의미 유사도 검색을 수행하지 않는다.",
+    "options": {"project": "기본 afp-devel(개발판), 또는 실제 AFP 릴리스 저장소명 afp-2025 등", "revision": "Mercurial ref 또는 정확한 40자리 커밋. 생략하면 해당 저장소 기본 branch를 먼저 커밋으로 고정한다", "fields": "id/title/abstract/topics/authors 중 배열; 기본 title와 abstract", "topic": "공식 topics 배열 값의 정확 일치", "author": "공식 authors 객체의 저자 ID 정확 일치"},
+    "fetch": "항목 ID Cook_Levin, AFP 항목 URL, project@revision:파일경로, 또는 검색 레코드의 target을 지정한다. target의 thys/항목/은 해당 커밋의 항목 서지·초록과 증명 소스 묶음이다. 파일 지정 시 원 바이트를 회수한다.",
+    "exports": "검색 json은 정규화 메타데이터, native는 원 TOML 파일의 archive다. 날짜는 JSON에서 ISO 문자열이며 원 TOML은 archive 안에 보존한다. fulltext는 Isabelle 증명 소스이며 PDF나 검증 성공 판정을 뜻하지 않는다.",
+    "limits": "start 0부터, limit 1..1000. API 자격 없이 호출한다. AFP 개발판과 안정 릴리스를 구별하고 응답의 project·commit을 확인한다. 같은 커밋의 archive는 서버 세션 안에서 재사용한다.",
+    "examples": [{"tool": "search", "arguments": {"source": "afp", "query": "Cook-Levin", "limit": 2}}, {"tool": "fetch", "arguments": {"source": "afp", "target": "Cook_Levin", "parts": ["metadata", "abstract", "fulltext"]}}],
+    "official": ["https://isa-afp.org/download/", "https://foss.heptapod.net/isa-afp/afp-devel", "https://docs.gitlab.com/api/repositories/", "https://docs.gitlab.com/api/repository_files/"],
+}
+
 for identifier, level in {
     "mathscinet": "live_mcp_search_export_fetch_extract",
     "wos": "live_mcp_search_full_record_export_extract",
@@ -246,9 +322,13 @@ for identifier, level in {
     "dblp": "access_challenge_observed",
     "zenodo": "timeout_observed",
     "acm-dl": "live_mcp_search_export_original_pdf_fetch",
-    "scopus": "institutional_browser_landing_observed",
-    "ieee-xplore": "institutional_browser_landing_observed",
-    "pqdt": "institutional_browser_landing_observed",
+    "scopus": "live_mcp_pagination_extract_metadata_abstract_fetch",
+    "drops": "live_mcp_search_metadata_abstract_pdf_fetch",
+    "springer": "live_adapter_metadata_abstract_pdf_fetch",
+    "ieee-xplore": "live_mcp_search_bibtex_extract_metadata_abstract_pdf_fetch",
+    "crossmark": "live_mcp_search_extract",
+    "afp": "live_mcp_entry_search_pinned_metadata_and_proof_source_fetch_extract",
+    "pqdt": "live_mcp_search_ris_extract_metadata_abstract_pdf_fetch",
 }.items():
     SOURCES[identifier].verification = level
 

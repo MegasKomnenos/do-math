@@ -1,0 +1,337 @@
+{
+  "records": [
+    {
+      "authors": [
+        {
+          "preferredName": "Doron Drusinsky",
+          "normalizedName": "D. Drusinsky",
+          "firstName": "Doron",
+          "lastName": "Drusinsky",
+          "searchablePreferredName": "Doron Drusinsky",
+          "id": 37276755800
+        }
+      ],
+      "patentCitationCount": 0,
+      "accessType": {
+        "type": "subscribed",
+        "message": "Included in Your Digital Subscription"
+      },
+      "publicationDate": "April 2024",
+      "publicationNumber": "2",
+      "doi": "10.1109/MC.2024.3358928",
+      "publicationYear": "2024",
+      "ephemera": false,
+      "publicationLink": "/xpl/RecentIssue.jsp?punumber=2",
+      "documentLink": "/document/10488889/",
+      "volume": "57",
+      "issue": "4",
+      "articleTitle": "From P Versus NP to Probabilistic and Zero Knowledge Proof Systems",
+      "graphicalAbstract": {},
+      "startPage": "119",
+      "endPage": "130",
+      "pdfSize": "1098",
+      "articleNumber": "10488889",
+      "isNumber": "10488870",
+      "citationCount": 1,
+      "rightslinkFlag": false,
+      "showAlgorithm": false,
+      "showHtml": true,
+      "citationsLink": "/document/10488889/citations?tabFilter=papers",
+      "htmlLink": "/document/10488889/",
+      "downloadCount": 439,
+      "vj": false,
+      "showVideo": false,
+      "showDataset": false,
+      "publisher": "IEEE",
+      "redline": false,
+      "handleProduct": false,
+      "showCheckbox": true,
+      "contentType": "IEEE Magazines",
+      "majorTopic": "Algorithms",
+      "pdfLink": "/stamp/stamp.jsp?tp=&arnumber=10488889",
+      "displayPublicationTitle": "Computer",
+      "isOnlineOnly": false,
+      "abstract": "I present an overview of the field of zero knowledge proof systems, which has evolved considerably over the last four decades, with applications ranging from secure authentication, secure communications, crypto-currency, and online privacy.",
+      "articleContentType": "Magazines",
+      "highlightedTitle": "From [::P Versus NP::] to Probabilistic and Zero Knowledge Proof Systems",
+      "isImmersiveArticle": false,
+      "publicationTitle": "Computer",
+      "isConference": false,
+      "docIdentifier": "IEEE Magazines",
+      "isJournal": false,
+      "isStandard": false,
+      "isBookWithoutChapters": false,
+      "course": false,
+      "isEarlyAccess": false,
+      "isBook": false,
+      "isJournalAndMagazine": true,
+      "displayContentType": "Magazine Article",
+      "isMagazine": false
+    }
+  ],
+  "breadCrumbs": [
+    {
+      "type": "search",
+      "children": [
+        {
+          "value": "(\"Document Title\":\"P versus NP\")",
+          "reference": "(title:\"P versus NP\")",
+          "display": "(\"Document Title\":\"P versus NP\")"
+        }
+      ]
+    }
+  ],
+  "showStandardDictionary": true,
+  "facets": [
+    {
+      "id": "ContentType",
+      "name": "Content Type",
+      "numRecords": -1,
+      "children": [
+        {
+          "id": "ContentType:Magazines",
+          "name": "Magazines",
+          "numRecords": 1,
+          "active": "true"
+        }
+      ],
+      "active": "true"
+    },
+    {
+      "id": "PublicationYear",
+      "name": "Year",
+      "numRecords": -1,
+      "children": [
+        {
+          "id": "PublicationYear:2024",
+          "name": "2024",
+          "numRecords": 1,
+          "active": "true"
+        }
+      ],
+      "active": "true"
+    },
+    {
+      "id": "Author",
+      "name": "Author",
+      "numRecords": -1,
+      "children": [
+        {
+          "id": "Author:Doron Drusinsky",
+          "name": "Doron Drusinsky",
+          "numRecords": 1,
+          "active": "true"
+        }
+      ],
+      "active": "true"
+    },
+    {
+      "id": "Affiliation",
+      "name": "Affiliation",
+      "numRecords": -1,
+      "children": [
+        {
+          "id": "Affiliation:Department of Computer Science, Naval Postgraduate School, Monterey, CA, USA",
+          "name": "Department of Computer Science, Naval Postgraduate School, Monterey, CA, USA",
+          "numRecords": 1,
+          "active": "true"
+        }
+      ],
+      "active": "true"
+    },
+    {
+      "id": "PublicationTitle",
+      "name": "Publication Title",
+      "numRecords": -1,
+      "children": [
+        {
+          "id": "PublicationTitle:Computer",
+          "name": "Computer",
+          "numRecords": 1,
+          "active": "true"
+        }
+      ],
+      "active": "true"
+    },
+    {
+      "id": "Publisher",
+      "name": "Publisher",
+      "numRecords": -1,
+      "children": [
+        {
+          "id": "Publisher:IEEE",
+          "name": "IEEE",
+          "numRecords": 1,
+          "active": "true"
+        }
+      ],
+      "active": "true"
+    },
+    {
+      "id": "PublicationTopics",
+      "name": "Publication Topics",
+      "numRecords": -1,
+      "children": [
+        {
+          "id": "PublicationTopics:Acceptance Criteria",
+          "name": "Acceptance Criteria",
+          "numRecords": 1,
+          "active": "true"
+        },
+        {
+          "id": "PublicationTopics:Algorithm For Problem",
+          "name": "Algorithm For Problem",
+          "numRecords": 1,
+          "active": "true"
+        },
+        {
+          "id": "PublicationTopics:Binary String",
+          "name": "Binary String",
+          "numRecords": 1,
+          "active": "true"
+        },
+        {
+          "id": "PublicationTopics:Candidate Solutions",
+          "name": "Candidate Solutions",
+          "numRecords": 1,
+          "active": "true"
+        },
+        {
+          "id": "PublicationTopics:Class Of Systems",
+          "name": "Class Of Systems",
+          "numRecords": 1,
+          "active": "true"
+        },
+        {
+          "id": "PublicationTopics:Complex Class",
+          "name": "Complex Class",
+          "numRecords": 1,
+          "active": "true"
+        },
+        {
+          "id": "PublicationTopics:Decision Problem",
+          "name": "Decision Problem",
+          "numRecords": 1,
+          "active": "true"
+        },
+        {
+          "id": "PublicationTopics:Discrete Logarithm",
+          "name": "Discrete Logarithm",
+          "numRecords": 1,
+          "active": "true"
+        },
+        {
+          "id": "PublicationTopics:Error Probability",
+          "name": "Error Probability",
+          "numRecords": 1,
+          "active": "true"
+        },
+        {
+          "id": "PublicationTopics:Example Of Problem",
+          "name": "Example Of Problem",
+          "numRecords": 1,
+          "active": "true"
+        },
+        {
+          "id": "PublicationTopics:First-order Logic",
+          "name": "First-order Logic",
+          "numRecords": 1,
+          "active": "true"
+        },
+        {
+          "id": "PublicationTopics:Hamiltonian Path",
+          "name": "Hamiltonian Path",
+          "numRecords": 1,
+          "active": "true"
+        },
+        {
+          "id": "PublicationTopics:Input Graph",
+          "name": "Input Graph",
+          "numRecords": 1,
+          "active": "true"
+        },
+        {
+          "id": "PublicationTopics:Inverse Problem",
+          "name": "Inverse Problem",
+          "numRecords": 1,
+          "active": "true"
+        },
+        {
+          "id": "PublicationTopics:Isomorphism",
+          "name": "Isomorphism",
+          "numRecords": 1,
+          "active": "true"
+        },
+        {
+          "id": "PublicationTopics:Non-deterministic Polynomial-time",
+          "name": "Non-deterministic Polynomial-time",
+          "numRecords": 1,
+          "active": "true"
+        },
+        {
+          "id": "PublicationTopics:Non-negligible Probability",
+          "name": "Non-negligible Probability",
+          "numRecords": 1,
+          "active": "true"
+        },
+        {
+          "id": "PublicationTopics:Online Privacy",
+          "name": "Online Privacy",
+          "numRecords": 1,
+          "active": "true"
+        },
+        {
+          "id": "PublicationTopics:Permutation",
+          "name": "Permutation",
+          "numRecords": 1,
+          "active": "true"
+        },
+        {
+          "id": "PublicationTopics:Polynomial-time Algorithm",
+          "name": "Polynomial-time Algorithm",
+          "numRecords": 1,
+          "active": "true"
+        },
+        {
+          "id": "PublicationTopics:Probabilistic Polynomial Time",
+          "name": "Probabilistic Polynomial Time",
+          "numRecords": 1,
+          "active": "true"
+        },
+        {
+          "id": "PublicationTopics:Proof Of Knowledge",
+          "name": "Proof Of Knowledge",
+          "numRecords": 1,
+          "active": "true"
+        },
+        {
+          "id": "PublicationTopics:Proof System",
+          "name": "Proof System",
+          "numRecords": 1,
+          "active": "true"
+        },
+        {
+          "id": "PublicationTopics:Random Generation",
+          "name": "Random Generation",
+          "numRecords": 1,
+          "active": "true"
+        },
+        {
+          "id": "PublicationTopics:Sample Space",
+          "name": "Sample Space",
+          "numRecords": 1,
+          "active": "true"
+        }
+      ],
+      "active": "true"
+    }
+  ],
+  "searchType": "basic",
+  "startRecord": 0,
+  "endRecord": 1,
+  "totalPages": 1,
+  "totalRecords": 1,
+  "recordsPerPage": 25,
+  "subscribedContentApplied": false,
+  "promoApplied": false
+}

@@ -156,6 +156,11 @@ class Crossref(APIAdapter):
         return result
 
 
+class Crossmark(Crossref):
+    """Crossmark deposits are exposed through the same public Crossref works API."""
+    source = "crossmark"
+
+
 class Arxiv(APIAdapter):
     source = "arxiv"
     hosts = ("export.arxiv.org", "arxiv.org", "www.arxiv.org")
@@ -674,4 +679,4 @@ class SoftwareHeritage(APIAdapter):
 def make_adapters(store, client=None):
     client = client or httpx.Client(timeout=httpx.Timeout(45, connect=20), follow_redirects=False,
         headers={"User-Agent": "scholarly-mcp/0.1 (local scholarly research)", "Accept": "application/json"})
-    return {cls.source: cls(store, client=client) for cls in (Crossref, Arxiv, DBLP, ZBMath, OpenAlex, SemanticScholar, OpenCitations, Numdam, CORE, Zenodo, GitHub, Mathlib, MathComp, SoftwareHeritage)}
+    return {cls.source: cls(store, client=client) for cls in (Crossref, Crossmark, Arxiv, DBLP, ZBMath, OpenAlex, SemanticScholar, OpenCitations, Numdam, CORE, Zenodo, GitHub, Mathlib, MathComp, SoftwareHeritage)}

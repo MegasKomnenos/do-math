@@ -13,6 +13,19 @@ from scholarly import ServiceError, encoded, bibliography
 MSC_HOSTS = {"mathscinet.ams.org", "mathscinet-ams-org.libproxy.knu.ac.kr"}
 
 
+def require_source_url(url, hosts):
+    parsed = urlsplit(url)
+    if parsed.scheme not in ("https", "http") or parsed.hostname not in hosts or parsed.username or parsed.password or parsed.port not in (None, 80, 443):
+        raise ServiceError("source_boundary", "Document navigation left the named source")
+
+
+def goto_source(page, url, hosts, **kwargs):
+    require_source_url(url, hosts)
+    response = page.goto(url, **kwargs)
+    require_source_url(page.url, hosts)
+    return response
+
+
 def clean_html(raw, sanitizer):
     soup = BeautifulSoup(raw, "html.parser")
     for tag in list(soup.find_all(["script", "input", "form", "iframe", "object", "embed", "button"])):
@@ -28,10 +41,10 @@ def clean_html(raw, sanitizer):
                 del tag.attrs[key]
             elif key in ("href", "src"):
                 value = tag.get(key, "")
-                if value.startswith(("https://", "http://")):
-                    tag[key] = sanitizer.url(value)
-                elif value.lower().startswith(("javascript:", "data:text/html")):
+                if value.lower().startswith(("javascript:", "data:text/html")):
                     del tag.attrs[key]
+                elif not value.startswith("data:"):
+                    tag[key] = sanitizer.url(value)
     return sanitizer.text(str(soup))
 
 
@@ -125,11 +138,17 @@ def acm_records(raw, base):
 
 
 def browser_download(context, url, hosts):
+    from playwright.sync_api import TimeoutError as BrowserTimeout, Error as BrowserError
     for _ in range(6):
         parsed = urlsplit(url)
         if parsed.scheme not in ("https", "http") or parsed.hostname not in hosts or parsed.username or parsed.password:
-            raise ServiceError("source_boundary", "Observed document link left the selected source")
-        response = context.request.get(url, max_redirects=0, timeout=45000)
+            raise ServiceError("source_boundary", "Observed document link left the selected source", blocked_host=parsed.hostname)
+        try:
+            response = context.request.get(url, max_redirects=0, timeout=45000)
+        except BrowserTimeout:
+            raise ServiceError("timeout", "Source document did not respond within the download timeout", retryable=True) from None
+        except BrowserError:
+            raise ServiceError("connection_error", "Source document connection failed", retryable=True) from None
         if response.status in (301, 302, 303, 307, 308):
             url = urljoin(url, response.headers.get("location", ""))
             continue
@@ -145,6 +164,23 @@ def browser_download(context, url, hosts):
     raise ServiceError("redirect_limit", "Document download returned too many redirects")
 
 
+def dismiss_cookies(page):
+    for selector in ("#onetrust-reject-all-handler", 'button.osano-cm-denyAll'):
+        button = page.locator(selector)
+        if button.count() and button.first.is_visible():
+            button.first.click()
+            return
+    osano = page.get_by_role("button", name="Reject Non-Essential", exact=True)
+    if osano.count() and osano.first.is_visible():
+        osano.first.click()
+        return
+    banner = page.locator("#onetrust-banner-sdk")
+    if banner.count() and banner.is_visible():
+        page.wait_for_function("typeof OneTrust !== 'undefined' && typeof OneTrust.RejectAll === 'function'", timeout=15000)
+        page.evaluate("OneTrust.RejectAll()")
+        banner.wait_for(state="hidden", timeout=15000)
+
+
 class KudosGateway:
     def __init__(self, credential_root, sanitizer, engine="chromium"):
         self.root = Path(credential_root)
@@ -152,6 +188,25 @@ class KudosGateway:
         self.engine = engine
         self.context = self.browser = self.playwright = None
         self.pages = {}
+        self.credentials(required=False)
+
+    def credentials(self, required=True):
+        path = self.root / "kudos.md"
+        if not path.exists():
+            if not required:
+                return {}
+            raise ServiceError("credentials_missing", "KUDOS credentials are absent from the protected store", status="restricted", provider="kudos")
+        raw = path.read_text("utf-8-sig")
+        fields = {}
+        for key in ("ID", "PW"):
+            match = re.search(r"(?mi)^\s*(?:[-*]\s*)?" + key + r"\s*:\s*(.+?)\s*$", raw)
+            if not match:
+                if required:
+                    raise ServiceError("credentials_invalid", "KUDOS credential file does not contain the expected fields", status="restricted")
+                continue
+            fields[key] = match.group(1).strip().strip("`")
+        self.sanitizer.secrets = tuple(sorted(set(self.sanitizer.secrets) | set(fields.values()), key=len, reverse=True))
+        return fields
 
     def start(self):
         if self.context:
@@ -170,17 +225,7 @@ class KudosGateway:
         login.or_(logout).wait_for(timeout=20000)
         if logout.count() and logout.is_visible():
             return
-        path = self.root / "kudos.md"
-        if not path.exists():
-            raise ServiceError("credentials_missing", "KUDOS credentials are absent from the protected store", status="restricted", provider="kudos")
-        raw = path.read_text("utf-8-sig")
-        fields = {}
-        for key in ("ID", "PW"):
-            match = re.search(r"(?mi)^\s*(?:[-*]\s*)?" + key + r"\s*:\s*(.+?)\s*$", raw)
-            if not match:
-                raise ServiceError("credentials_invalid", "KUDOS credential file does not contain the expected fields", status="restricted")
-            fields[key] = match.group(1).strip().strip("`")
-        self.sanitizer.secrets = tuple(set(self.sanitizer.secrets) | set(fields.values()))
+        fields = self.credentials()
         login.click()
         page.locator("#userid").fill(fields["ID"])
         page.locator("#passwd").fill(fields["PW"])
@@ -212,8 +257,9 @@ class KudosGateway:
             with self.context.expect_page(timeout=25000) as popup:
                 shortcut.click()
             target = popup.value
-            target.wait_for_url(lambda u: urlsplit(str(u)).hostname in hosts, timeout=55000)
+            target.wait_for_url(lambda u: urlsplit(str(u)).hostname in hosts, wait_until="domcontentloaded", timeout=55000)
             target.locator(ready).filter(visible=True).first.wait_for(timeout=55000)
+            require_source_url(target.url, hosts)
             self.pages[source] = target
             return target
         except ServiceError:
@@ -274,7 +320,7 @@ class MathSciNet:
                 return url.hostname == host and url.path == "/mathscinet/api/publications/search" and params.get("query") == [query] and params.get("currentPage") == [str(page_number)] and params.get("pageSize") == [str(size)]
             try:
                 with page.expect_response(matching, timeout=45000) as captured:
-                    page.goto(query_url, wait_until="domcontentloaded", timeout=45000)
+                    goto_source(page, query_url, MSC_HOSTS, wait_until="domcontentloaded", timeout=45000)
                 response = captured.value
                 if response.status != 200:
                     raise ServiceError("provider_error", "MathSciNet search request failed", http_status=response.status)
@@ -329,7 +375,7 @@ class MathSciNet:
         page = self.page()
         host = urlsplit(page.url).hostname
         url = "https://" + host + "/mathscinet/article?mr=" + mr
-        page.goto(url, wait_until="domcontentloaded", timeout=45000)
+        goto_source(page, url, MSC_HOSTS, wait_until="domcontentloaded", timeout=45000)
         page.locator("main h1").filter(has_text="MR" + mr).wait_for(timeout=45000)
         raw = page.locator("main").inner_html()
         html = clean_html(raw, self.store.sanitizer)
@@ -382,18 +428,7 @@ class WebOfScience:
         self.store, self.gateway = store, gateway
 
     def cookies(self, page):
-        banner = page.locator("#onetrust-banner-sdk")
-        if banner.count() and banner.is_visible():
-            page.locator("#onetrust-pc-btn-handler").click()
-            for group in ("C0003", "C0004"):
-                header = page.locator("#ot-header-id-" + group)
-                if header.count():
-                    header.click()
-                    switch = page.locator("#ot-group-id-" + group)
-                    if switch.is_checked():
-                        switch.focus()
-                        switch.press("Space")
-            page.get_by_role("button", name=re.compile("내 선택 확인|Confirm My Choices", re.I)).click()
+        dismiss_cookies(page)
 
     def export_records(self, page, start, end, format):
         label, media = self.formats[format]
@@ -431,7 +466,7 @@ class WebOfScience:
         page.get_by_text("QUERY BUILDER", exact=True).click()
         area = page.locator("#advancedSearchInputArea")
         area.fill(query)
-        with page.expect_response(lambda r: urlsplit(r.url).path == "/api/wosnx/core/runQuerySearch", timeout=60000) as event:
+        with page.expect_response(lambda r: urlsplit(r.url).hostname in self.hosts and urlsplit(r.url).path == "/api/wosnx/core/runQuerySearch", timeout=60000) as event:
             page.get_by_role("button", name="Search", exact=True).click()
         response = event.value
         if response.status != 200:
@@ -506,12 +541,13 @@ class ECCC:
         if type(start) is not int or start < 0 or type(limit) is not int or not 1 <= limit <= 1000:
             raise ServiceError("invalid_range", "Use start >= 0 and limit 1..1000")
         page = self.gateway.public_page(self.source)
-        page.goto("https://eccc.weizmann.ac.il/", wait_until="domcontentloaded", timeout=45000)
+        goto_source(page, "https://eccc.weizmann.ac.il/", self.hosts, wait_until="domcontentloaded", timeout=45000)
         page.locator('input[name="search"]').fill(query)
         with page.expect_navigation(wait_until="domcontentloaded"):
             page.locator('input[name="search"]').press("Enter")
         if parse_qs(urlsplit(page.url).query).get("search") != [query]:
             raise ServiceError("query_mismatch", "ECCC did not navigate to the requested search")
+        require_source_url(page.url, self.hosts)
         raw = page.content()
         if "Results for query" not in page.locator("body").inner_text():
             raise ServiceError("invalid_response", "ECCC did not return its result listing")
@@ -546,7 +582,7 @@ class ECCC:
             revision = int(match.group(3)) if match.group(3) else None
         url = f"https://eccc.weizmann.ac.il/report/{year}/{number:03d}/"
         page = self.gateway.public_page(self.source)
-        response = page.goto(url, wait_until="domcontentloaded", timeout=45000)
+        response = goto_source(page, url, self.hosts, wait_until="domcontentloaded", timeout=45000)
         if response and response.status >= 400:
             raise ServiceError("provider_error", "ECCC report request failed", http_status=response.status)
         raw = page.content()
@@ -675,7 +711,7 @@ class ACM:
             raise ServiceError("invalid_options", "collection must be fulltext or guide")
         page = self.page()
         host = urlsplit(page.url).hostname
-        page.goto("https://" + host + "/search/advanced", wait_until="domcontentloaded", timeout=45000)
+        goto_source(page, "https://" + host + "/search/advanced", self.hosts, wait_until="domcontentloaded", timeout=45000)
         page.locator('select[name="expand"]').select_option(collection)
         for index, term in enumerate(terms, 1):
             if index > 1:
@@ -710,7 +746,7 @@ class ACM:
         for page_index in range(start // size, (start + limit - 1) // size + 1):
             params["startPage"] = [str(page_index)]
             url = urlunsplit((parsed.scheme, parsed.netloc, parsed.path, urlencode(params, doseq=True), ""))
-            page.goto(url, wait_until="domcontentloaded", timeout=45000)
+            goto_source(page, url, self.hosts, wait_until="domcontentloaded", timeout=45000)
             main = page.locator("main")
             main.wait_for()
             text = main.inner_text()
@@ -770,7 +806,7 @@ class ACM:
         record, citation_source = self.known_records[identifier.lower()]
         page = self.page()
         url = "https://" + urlsplit(page.url).hostname + "/doi/" + quote(identifier, safe="/")
-        page.goto(url, wait_until="domcontentloaded", timeout=45000)
+        goto_source(page, url, self.hosts, wait_until="domcontentloaded", timeout=45000)
         page.get_by_role("heading", level=1).first.wait_for()
         records = [record]
         native = self.store.put(record["raw_text"], "application/x-bibtex", self.source, page.url, role="citation_export", identifiers=[identifier], parent_ref=citation_source["ref"])

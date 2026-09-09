@@ -19,6 +19,12 @@ from scholarly import ArtifactStore, ServiceError, extract_artifact
 from scholarly import Sanitizer
 from api_adapters import make_adapters
 from browser_adapters import KudosGateway, MathSciNet, WebOfScience, ECCC, ACM
+from drops import DROPS
+from scopus import Scopus
+from pqdt import PQDT
+from ieee import IEEE
+from afp import AFP
+from publishers import PROFILES, Publisher
 
 ROOT = Path(__file__).resolve().parent
 STORE = ArtifactStore(ROOT / "data")
@@ -109,14 +115,18 @@ def main():
     args = parser.parse_args()
     STORE = ArtifactStore(args.data_dir)
     ADAPTERS.update(make_adapters(STORE))
+    ADAPTERS["afp"] = AFP(STORE)
     gateway = KudosGateway(ROOT.parents[1] / ".credentials", STORE.sanitizer)
     firefox_gateway = KudosGateway(ROOT.parents[1] / ".credentials", STORE.sanitizer, engine="firefox")
     ADAPTERS["mathscinet"] = MathSciNet(STORE, gateway)
     ADAPTERS["wos"] = WebOfScience(STORE, gateway)
     ADAPTERS["eccc"] = ECCC(STORE, gateway)
     ADAPTERS["acm-dl"] = ACM(STORE, firefox_gateway)
-    SOURCES["mathscinet"].implementation = "partial"
-    SOURCES["wos"].implementation = "partial"
+    ADAPTERS["drops"] = DROPS(STORE, gateway)
+    ADAPTERS["scopus"] = Scopus(STORE, firefox_gateway)
+    ADAPTERS["pqdt"] = PQDT(STORE, firefox_gateway)
+    ADAPTERS["ieee-xplore"] = IEEE(STORE, firefox_gateway)
+    ADAPTERS["springer"] = Publisher(STORE, firefox_gateway, next(p for p in PROFILES if p.source == "springer"))
     try:
         mcp.run(transport="stdio")
     finally:

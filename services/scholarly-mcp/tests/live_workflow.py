@@ -69,6 +69,49 @@ async def main():
             fetched = await call("fetch", {"source": "acm-dl", "target": "10.1145/800157.805047", "parts": ["metadata", "abstract", "fulltext"]})
             assert fetched["status"] == "ok", fetched.get("code")
             assert fetched["components"]["fulltext"]["artifact"]["pages"] == 8
+        elif args.source == "afp":
+            search = await call("search", {"source": "afp", "query": "Cook-Levin", "limit": 10})
+            assert search["status"] == "ok", search.get("code")
+            records = await call("extract", {"ref": search["records"]["ref"], "count": 10})
+            entry = next(row for row in records["items"] if row["id"] == "Cook_Levin")
+            fetched = await call("fetch", {"source": "afp", "target": entry["target"], "parts": ["metadata", "abstract", "fulltext"]})
+            assert fetched["status"] == "ok", fetched.get("code")
+            assert fetched["commit"] == search["commit"]
+            archive = await call("extract", {"ref": fetched["components"]["fulltext"]["artifact"]["ref"], "count": 1000})
+            assert archive["returned"] > 1
+        elif args.source == "ieee-xplore":
+            search = await call("search", {"source": "ieee-xplore", "query": '"Document Title":"P versus NP"', "limit": 1, "export": "bibtex"})
+            assert search["status"] == "ok", search.get("code")
+            records = await call("extract", {"ref": search["records"]["ref"], "count": 1})
+            assert records["items"][0]["articleNumber"] == "10488889"
+            bib = await call("extract", {"ref": search["export"]["ref"], "count": 1})
+            assert bib["items"][0]["doi"] == "10.1109/MC.2024.3358928"
+            fetched = await call("fetch", {"source": "ieee-xplore", "target": "10488889", "parts": ["metadata", "abstract", "fulltext"]})
+            assert fetched["status"] == "ok", fetched.get("code")
+            assert fetched["components"]["fulltext"]["artifact"]["pages"] >= 2
+        elif args.source == "pqdt":
+            search = await call("search", {"source": "pqdt", "query": 'TI("P versus NP")', "limit": 1, "export": "ris"})
+            assert search["status"] == "ok", search.get("code")
+            records = await call("extract", {"ref": search["records"]["ref"], "count": 1})
+            assert records["items"][0]["id"] == "2618193239"
+            fetched = await call("fetch", {"source": "pqdt", "target": "2618193239", "parts": ["metadata", "abstract", "fulltext"]})
+            assert fetched["status"] == "ok", fetched.get("code")
+            assert fetched["components"]["fulltext"]["artifact"]["pages"] >= 40
+        elif args.source == "scopus":
+            search = await call("search", {"source": "scopus", "query": 'TITLE("P versus NP")', "start": 9, "limit": 2, "export": "csv"})
+            assert search["status"] == "ok", search.get("code")
+            assert search["received"] == 2
+            records = await call("extract", {"ref": search["records"]["ref"], "count": 2})
+            assert records["items"][0]["title"] == "P versus NP and geometry"
+            assert records["items"][0]["eid"] != records["items"][1]["eid"]
+            fetched = await call("fetch", {"source": "scopus", "target": records["items"][0]["eid"], "parts": ["metadata", "abstract"]})
+            assert fetched["status"] == "ok", fetched.get("code")
+        elif args.source == "drops":
+            search = await call("search", {"source": "drops", "query": "P versus NP", "limit": 2})
+            assert search["status"] == "ok", search.get("code")
+            fetched = await call("fetch", {"source": "drops", "target": "10.4230/LIPIcs.CSL.2020.5", "parts": ["metadata", "abstract", "fulltext"]})
+            assert fetched["status"] == "ok", fetched.get("code")
+            assert fetched["components"]["fulltext"]["artifact"]["pages"] == 2
         else:
             query = 'ti:"P versus NP"' if args.source == "arxiv" else "P versus NP"
             options = {"Title": "P versus NP"} if args.source == "zbmath" else {}

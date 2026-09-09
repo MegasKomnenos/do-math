@@ -39,6 +39,55 @@ class BrowserContract(unittest.TestCase):
         self.assertIn("1971", cleaned)
         self.assertNotIn("<form", cleaned)
 
+    def test_relative_export_links_are_sanitized_in_preserved_html(self):
+        cleaned = self.mod.clean_html('<a href="/export?_csrf=PRIVATE-CSRF&amp;format=RIS">Export</a>', Sanitizer())
+        self.assertNotIn("PRIVATE-CSRF", cleaned)
+        self.assertIn("format=RIS", cleaned)
+
+    def test_cached_login_still_registers_credentials_for_output_redaction(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as folder:
+            Path(folder, "kudos.md").write_text("ID: private-test-user\nPW: private-test-password\n", "utf-8")
+            sanitizer = Sanitizer()
+            self.mod.KudosGateway(folder, sanitizer)
+            self.assertEqual(sanitizer.text("private-test-user private-test-password"), "[REDACTED] [REDACTED]")
+
+    def test_browser_document_redirect_outside_named_source_is_rejected(self):
+        from types import SimpleNamespace
+        self.assertTrue(hasattr(self.mod, "goto_source"), "Browser document boundary helper is absent")
+        page = SimpleNamespace(url="https://source.example/article")
+        def navigate(url, **kwargs):
+            page.url = "https://another-publisher.example/article"
+        page.goto = navigate
+        with self.assertRaises(ServiceError) as raised:
+            self.mod.goto_source(page, "https://source.example/article", {"source.example"})
+        self.assertEqual(raised.exception.result["code"], "source_boundary")
+
+    def test_browser_download_timeout_has_a_safe_typed_result(self):
+        from types import SimpleNamespace
+        from playwright.sync_api import TimeoutError as BrowserTimeout
+        def get(*args, **kwargs):
+            raise BrowserTimeout("signed URL must not enter the error result")
+        context = SimpleNamespace(request=SimpleNamespace(get=get))
+        with self.assertRaises(ServiceError) as raised:
+            self.mod.browser_download(context, "https://source.example/file.pdf", {"source.example"})
+        self.assertEqual(raised.exception.result["code"], "timeout")
+        self.assertNotIn("signed URL", str(raised.exception.result))
+
+    def test_browser_download_does_not_request_an_external_redirect(self):
+        from types import SimpleNamespace
+        calls = []
+        def get(url, **kwargs):
+            calls.append(url)
+            return SimpleNamespace(status=302, headers={"location": "https://other.example/file.pdf?token=PRIVATE"}, url=url)
+        context = SimpleNamespace(request=SimpleNamespace(get=get))
+        with self.assertRaises(ServiceError) as raised:
+            self.mod.browser_download(context, "https://source.example/file.pdf", {"source.example"})
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(raised.exception.result["code"], "source_boundary")
+        self.assertEqual(raised.exception.result["blocked_host"], "other.example")
+        self.assertNotIn("PRIVATE", str(raised.exception.result))
+
     def test_fulltext_target_cannot_expand_mathscinet_into_another_provider(self):
         for target in ["https://www.sciencedirect.com/science/article/pii/X", "https://evil.libproxy.knu.ac.kr/mathscinet/article?mr=1"]:
             with self.subTest(target=target), self.assertRaises(ServiceError):

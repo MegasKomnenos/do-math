@@ -104,6 +104,12 @@ class CoreContract(unittest.TestCase):
         cleaned = self.lib.Sanitizer().text(original)
         self.assertEqual(cleaned, '@article{x, title={A}, url={https://example.org/p?q=NP}}\n')
 
+    def test_relative_url_fields_do_not_expose_request_forgery_tokens(self):
+        value = {"href": "/export?_csrf=PRIVATE-CSRF&format=RIS", "url": "/document?SID=PRIVATE-SID&id=1"}
+        cleaned = self.lib.Sanitizer().value(value)
+        self.assertNotIn("PRIVATE-", str(cleaned))
+        self.assertEqual(cleaned["href"], "/export?format=RIS")
+
     def test_wos_native_export_keeps_full_records_and_cited_references(self):
         data = (ROOT / "tests/fixtures/wos.txt").read_bytes()
         artifact = self.store.put(data, "application/x-wos", "wos", "https://www.webofscience.com/")
@@ -130,6 +136,15 @@ class CoreContract(unittest.TestCase):
     def test_public_commit_signatures_and_pagination_are_not_authentication_secrets(self):
         original = {"signature": "-----BEGIN PGP SIGNATURE-----\npublic verification data", "page_token": "public-pagination", "token_count": 42}
         self.assertEqual(self.lib.Sanitizer().value(original), original)
+
+    def test_signed_proquest_media_and_nested_viewer_urls_remove_access_parameters(self):
+        from urllib.parse import quote, unquote
+        link = "https://media.proquest.com/media/document?_a=PRIVATE-ACCESS&_s=PRIVATE-SIGNATURE&cit%3Atitle=Article"
+        clean = self.lib.Sanitizer().url(link)
+        self.assertNotIn("PRIVATE", clean)
+        self.assertIn("Article", clean)
+        nested = "/viewer.html?file=" + quote(link, safe="")
+        self.assertNotIn("PRIVATE", unquote(self.lib.Sanitizer().url(nested)))
 
 
 if __name__ == "__main__":
