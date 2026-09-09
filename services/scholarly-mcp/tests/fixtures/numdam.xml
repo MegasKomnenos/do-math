@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="/static/oai/xsl/oai2.xsl"?>
+<OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/ http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd"
+         xmlns:xlink="http://www.w3.org/1999/xlink">
+<responseDate>2026-09-09T05:48:17.262498+02:00</responseDate>
+<request verb="GetRecord" identifier="oai:numdam.org:AIF_1956__6__1_0" metadataPrefix="eudml-article2">www.numdam.org</request>
+<GetRecord>
+     <record>
+<header>
+    <identifier>oai:numdam.org:AIF_1956__6__1_0</identifier>
+    <datestamp>2026-02-17</datestamp>
+    <setSpec>NUMDAM</setSpec>
+    <setSpec>AIF</setSpec>
+    
+</header>
+
+<metadata>
+
+<article xmlns="http://jats.nlm.nih.gov" xml:lang="fr" article-type="normal" xsi:schemaLocation="http://jats.nlm.nih.gov http://eudml.org/schema/2.0/eudml-article-2.0.xsd"  xmlns:xlink="http://www.w3.org/1999/xlink">
+
+<front>
+<journal-meta>
+<journal-id journal-id-type="mathdoc-id">AIF</journal-id>
+<journal-title-group><journal-title>Annales de l&#x27;Institut Fourier</journal-title></journal-title-group>
+<issn pub-type="ppub">0373-0956</issn>
+<issn pub-type="epub">1777-5310</issn>
+
+    <publisher>
+<publisher-name>Imprimerie Louis-Jean</publisher-name>
+<publisher-loc>Gap</publisher-loc>
+</publisher>
+
+
+</journal-meta>
+
+<article-meta>
+
+
+
+<article-id pub-id-type="mathdoc-id">AIF_1956__6__1_0</article-id>
+<article-id pub-id-type="doi">10.5802/aif.59</article-id>
+
+
+<title-group><article-title >Géométrie algébrique et géométrie analytique</article-title></title-group>
+
+
+    
+
+
+
+    <contrib-group content-type="authors">
+    
+        <contrib><name>
+                <surname>Serre</surname>
+                <given-names>Jean-Pierre</given-names>
+              </name><contrib-id contrib-id-type="idref">027133222</contrib-id></contrib>
+    </contrib-group>
+
+
+
+
+    
+
+
+
+
+
+
+    
+
+
+
+
+
+
+    
+
+
+
+
+
+
+    
+
+
+
+
+
+
+    
+
+
+
+
+
+
+    
+
+
+
+
+
+
+    
+
+
+
+
+
+
+    
+
+
+
+
+
+
+
+
+
+
+
+<volume>6</volume>
+
+
+<issue-id pub-id-type="mathdoc-id">AIF_1956__6_</issue-id>
+
+
+
+
+
+<fpage>1</fpage>
+<lpage>42</lpage>
+
+
+
+
+<ext-link  ext-link-type="mr-item-id" xlink:href="https://mathscinet.ams.org/mathscinet-getitem?mr=18,511a">18,511a</ext-link>
+<ext-link  ext-link-type="zbl-item-id" xlink:href="https://zbmath.org/?q=an:0075.30401">0075.30401</ext-link>
+
+
+
+
+
+    <self-uri xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.numdam.org/articles/10.5802/aif.59/">Access to full text</self-uri>
+    
+        
+            <self-uri xmlns:xlink="http://www.w3.org/1999/xlink" content-type="application/pdf" xlink:href="https://www.numdam.org/item/10.5802/aif.59.pdf">Full (PDF)</self-uri>
+        
+    
+        
+            <self-uri xmlns:xlink="http://www.w3.org/1999/xlink" content-type="image/x.djvu" xlink:href="https://www.numdam.org/item/10.5802/aif.59.djvu">Full (DJVU)</self-uri>
+        
+    
+
+
+
+
+
+
+<abstract>
+            <p xml:space="preserve">Toute variété algébrique <inline-formula><alternatives><math xmlns="http://www.w3.org/1998/Math/MathML"><mi>X</mi></math><tex-math>$X$</tex-math></alternatives></inline-formula> sur le corps des nombres complexes peut être munie, de façon canonique, d’une structure d’espace analytique ; tout faisceau algébrique cohérent sur <inline-formula><alternatives><math xmlns="http://www.w3.org/1998/Math/MathML"><mi>X</mi></math><tex-math>$X$</tex-math></alternatives></inline-formula> détermine un faisceau analytique cohérent. Lorsque <inline-formula><alternatives><math xmlns="http://www.w3.org/1998/Math/MathML"><mi>X</mi></math><tex-math>$X$</tex-math></alternatives></inline-formula> est une variété projective, nous montrons que, réciproquement, tout faisceau analytique cohérent sur <inline-formula><alternatives><math xmlns="http://www.w3.org/1998/Math/MathML"><mi>X</mi></math><tex-math>$X$</tex-math></alternatives></inline-formula> peut être obtenu ainsi, et de façon unique ; de plus, cette correspondance préserve les groupes de cohomologie. Ces résultats contiennent comme cas particuliers des théorèmes classiques de Chow et Lefschetz, et permettent d’aborder la comparaison entre espaces fibrés algébriques et espaces fibrés analytiques de base une variété algébrique projective.</p>
+          </abstract>
+
+  
+  
+  
+
+
+
+
+
+
+
+
+    
+</article-meta>
+</front>
+
+
+ <back>
+ 
+ 
+
+ 
+  <ref-list><ref><mixed-citation xml:space="preserve">[1] <string-name xml:space="preserve">H. CARTAN</string-name>. <article-title xml:space="preserve">Idéaux et modules de fonctions analytiques de variables complexes</article-title>. Bull. Soc. Math. France, 78, <year>1950</year>, pp. 29-64.<ext-link ext-link-type="zbl-item-id">0038.23703</ext-link><ext-link ext-link-type="mr-item-id">12,172f</ext-link><ext-link ext-link-type="numdam-id">BSMF_1950__78__29_0</ext-link></mixed-citation></ref><ref><mixed-citation xml:space="preserve">[2] <string-name xml:space="preserve">H. CARTAN</string-name>. <article-title xml:space="preserve">Séminaire E. N. S.</article-title>, <year>1951</year>-<year>1952</year>.</mixed-citation></ref><ref><mixed-citation xml:space="preserve">[3] <string-name xml:space="preserve">H. CARTAN</string-name>. <article-title xml:space="preserve">Séminaire E. N. S.</article-title>, <year>1953</year>-<year>1954</year>.</mixed-citation></ref><ref><mixed-citation xml:space="preserve">[4] <string-name xml:space="preserve">H. CARTAN</string-name> et <string-name xml:space="preserve">C. CHEVALLEY</string-name>. <article-title xml:space="preserve">Séminaire E. N. S.</article-title>, <year>1955</year>-<year>1956</year>.<ext-link ext-link-type="zbl-item-id">0074.36602</ext-link></mixed-citation></ref><ref><mixed-citation xml:space="preserve">[5] <string-name xml:space="preserve">H. CARTAN</string-name> et <string-name xml:space="preserve">J.-P. SERRE</string-name>. <article-title xml:space="preserve">Un théorème de finitude concernant les variétés analytiques compactes</article-title>. C. R., 237, <year>1953</year>, pp. 128-130.<ext-link ext-link-type="zbl-item-id">0050.17701</ext-link><ext-link ext-link-type="mr-item-id">16,517e</ext-link></mixed-citation></ref><ref><mixed-citation xml:space="preserve">[6] <string-name xml:space="preserve">W-L. CHOW</string-name>. <article-title xml:space="preserve">On compact complex analytic varieties</article-title>. Amer. J. of Maths., 71, <year>1949</year>, pp. 893-914.<ext-link ext-link-type="zbl-item-id">0041.48302</ext-link><ext-link ext-link-type="mr-item-id">11,389f</ext-link></mixed-citation></ref><ref><mixed-citation xml:space="preserve">[7] <string-name xml:space="preserve">W-L. CHOW</string-name>. <article-title xml:space="preserve">On the projective embedding of homogeneous varieties</article-title>. Lefschetz's volume, Princeton, <year>1956</year>.<ext-link ext-link-type="zbl-item-id">0091.33302</ext-link></mixed-citation></ref><ref><mixed-citation xml:space="preserve">[8] <string-name xml:space="preserve">P. DOLBEAULT</string-name>. <article-title xml:space="preserve">Sur la cohomologie des variétés analytiques complexes</article-title>. C. R., 236, <year>1953</year>, pp. 175-177.<ext-link ext-link-type="zbl-item-id">0050.17702</ext-link><ext-link ext-link-type="mr-item-id">14,673a</ext-link></mixed-citation></ref><ref><mixed-citation xml:space="preserve">[9] <string-name xml:space="preserve">J. FRENKEL</string-name>. <article-title xml:space="preserve">Cohomologie à valeurs dans un faisceau non abélien</article-title>. C. R., 240, <year>1955</year>, pp. 2368-2370.<ext-link ext-link-type="zbl-item-id">0065.16404</ext-link><ext-link ext-link-type="mr-item-id">16,1141f</ext-link></mixed-citation></ref><ref><mixed-citation xml:space="preserve">[10] <string-name xml:space="preserve">A. GROTHENDIECK</string-name>. <article-title xml:space="preserve">A general theory of fibre spaces with structure sheaf</article-title>. Kansas Univ., <year>1955</year>.</mixed-citation></ref><ref><mixed-citation xml:space="preserve">[11] <string-name xml:space="preserve">K. KODAIRA</string-name>. <article-title xml:space="preserve">On Kähler varieties of restricted type (an intrinsic characterization of algebraic varieties)</article-title>. Ann. of Maths., 60, <year>1954</year>, pp. 28-48.<ext-link ext-link-type="zbl-item-id">0057.14102</ext-link><ext-link ext-link-type="mr-item-id">16,952b</ext-link></mixed-citation></ref><ref><mixed-citation xml:space="preserve">[12] <string-name xml:space="preserve">K. KODAIRA</string-name> and <string-name xml:space="preserve">D. C. SPENCER</string-name>. <article-title xml:space="preserve">Divisor class groups on algebraic varieties</article-title>. Proc. Nat. Acad. Sci. U. S. A., 39, <year>1953</year>, pp. 872-877.<ext-link ext-link-type="zbl-item-id">0051.14601</ext-link><ext-link ext-link-type="mr-item-id">16,75b</ext-link></mixed-citation></ref><ref><mixed-citation xml:space="preserve">[13] <string-name xml:space="preserve">M. ROSENLICHT</string-name>. <article-title xml:space="preserve">Some basic theorems on algebraic groups</article-title>. Amer J. of Maths., 78, <year>1956</year>, pp. 401-443.<ext-link ext-link-type="zbl-item-id">0073.37601</ext-link><ext-link ext-link-type="mr-item-id">18,514a</ext-link></mixed-citation></ref><ref><mixed-citation xml:space="preserve">[14] <string-name xml:space="preserve">W. RÜCKERT</string-name>. <article-title xml:space="preserve">Zum Eliminationsproblem der Potenzreihenideale</article-title>. Math. Ann., 107, <year>1933</year>, pp. 259-281.<ext-link ext-link-type="zbl-item-id">0005.09802</ext-link><ext-link ext-link-type="jfm-item-id">58.1027.02</ext-link></mixed-citation></ref><ref><mixed-citation xml:space="preserve">[15] <string-name xml:space="preserve">P. SAMUEL</string-name>. <article-title xml:space="preserve">Commutative Algebra (Notes by D. Herzig)</article-title>. Cornell Univ., <year>1953</year>.</mixed-citation></ref><ref><mixed-citation xml:space="preserve">[16] <string-name xml:space="preserve">P. SAMUEL</string-name>. <article-title xml:space="preserve">Algèbre locale</article-title>. Mém. Sci. Math., 123, Paris, <year>1953</year>.<ext-link ext-link-type="zbl-item-id">0053.01901</ext-link><ext-link ext-link-type="mr-item-id">14,1012c</ext-link><ext-link ext-link-type="numdam-id">MSM_1953__123__1_0</ext-link></mixed-citation></ref><ref><mixed-citation xml:space="preserve">[17] <string-name xml:space="preserve">P. SAMUEL</string-name>. <article-title xml:space="preserve">Méthodes d'algèbre abstraite en géométrie algébrique</article-title>. Ergebn. der Math., Springer, <year>1955</year>.<ext-link ext-link-type="zbl-item-id">0067.38904</ext-link><ext-link ext-link-type="mr-item-id">17,300b</ext-link></mixed-citation></ref><ref><mixed-citation xml:space="preserve">[18] <string-name xml:space="preserve">J.-P. SERRE</string-name>. <article-title xml:space="preserve">Faisceaux algébriques cohérents</article-title>. Ann. of Maths., 61, <year>1955</year>, pp. 197-278.<ext-link ext-link-type="zbl-item-id">0067.16201</ext-link><ext-link ext-link-type="mr-item-id">16,953c</ext-link></mixed-citation></ref><ref><mixed-citation xml:space="preserve">[19] <string-name xml:space="preserve">J.-P. SERRE</string-name>. <article-title xml:space="preserve">Sur la cohomologie des variétés algébriques</article-title>. J. de Maths. Pures et Appl., 35, <year>1956</year>.<ext-link ext-link-type="zbl-item-id">0078.34604</ext-link></mixed-citation></ref><ref><mixed-citation xml:space="preserve">[20] <string-name xml:space="preserve">A. WEIL</string-name>. <article-title xml:space="preserve">Fibre-spaces in algebraic geometry</article-title> (Notes by A. Wallace). Chicago Univ., <year>1952</year>.<ext-link ext-link-type="zbl-item-id">0068.34204</ext-link></mixed-citation></ref></ref-list>
+
+
+
+ </back>
+
+
+
+</article>
+
+
+</metadata>
+
+     </record>
+  </GetRecord>
+</OAI-PMH>

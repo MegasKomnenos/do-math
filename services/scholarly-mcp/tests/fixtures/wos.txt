@@ -1,0 +1,376 @@
+﻿FN Clarivate Analytics Web of Science
+VR 1.0
+PT J
+AU Landsberg, JM
+AF Landsberg, J. M.
+TI P versus NP and geometry
+SO JOURNAL OF SYMBOLIC COMPUTATION
+LA English
+DT Article
+DE Holographic algorithms; P; NP; Determinant; Permanent; Geometric
+   complexity theory; Spinor; Grassmannian
+ID VALIANTS HOLANT THEOREM; HOLOGRAPHIC ALGORITHMS; PERMANENT; DETERMINANT
+AB In this primarily expository article, I describe geometric approaches to variants of P versus NP, present several results that illustrate the role of group actions in complexity theory, and make a first step towards geometric definitions of complexity classes. My goal is to help bring geometry and complexity theory closer together. (C) 2010 Elsevier Ltd. All rights reserved.
+C1 Texas A&M Univ, Dept Math, College Stn, TX 77843 USA.
+C3 Texas A&M University System; Texas A&M University College Station
+RP Landsberg, JM (corresponding author), Texas A&M Univ, Dept Math, Mailstop 3368, College Stn, TX 77843 USA.
+EM a8x@eeeeeeee.test
+FU NSF [DMS-0805782]; Direct For Mathematical & Physical Scien; Division Of
+   Mathematical Sciences [1006353] Funding Source: National Science
+   Foundation
+FX This work was supported by NSF grant DMS-0805782.
+CR [Anonymous], ARXIV10044802
+   [Anonymous], 2007, P ICM 06
+   Blum L., 1998, Complexity and Real Computation, DOI DOI 10.1007/978-1-4612-0701-6
+   BUERGISSER P, ARXIV09072850
+   BURGISSER P, 2009, ARXIV09104512
+   Burgisser P., 1997, ALGEBRAIC COMPLEXITY, V315, pxxiii + 618
+   Burgisser Peter., 2000, ALGORITHM COMP MATH, V7
+   Cai JY, 2008, COMPUT COMPLEX, V17, P254, DOI 10.1007/s00037-008-0249-x
+   Cai JY, 2007, THEOR COMPUT SCI, V384, P22, DOI 10.1016/j.tcs.2007.05.015
+   Cai JY, 2007, LECT NOTES COMPUT SC, V4596, P631
+   Cai JY, 2007, LECT NOTES COMPUT SC, V4393, P429
+   Cai JY, 2006, LECT NOTES COMPUT SC, V4051, P703, DOI 10.1007/11786986_61
+   Cai JY, 2006, LECT NOTES COMPUT SC, V3959, P248
+   Cai JY, 2007, ACM S THEORY COMPUT, P401, DOI 10.1145/1250790.1250850
+   CAI JY, 1990, INFORM COMPUT, V84, P119, DOI 10.1016/0890-5401(90)90036-H
+   CHEVALLEY C, 1997, COLLECTED WORKS, V2
+   Coelho MP, 1996, LINEAR ALGEBRA APPL, V247, P265, DOI 10.1016/0024-3795(95)00115-8
+   DUFFNER MA, 1994, LINEAR ALGEBRA APPL, V198, P567
+   Harvey F. R., 1990, PERSPECTIVES MATH, V9
+   KASTELEYN P.W., 1967, GRAPH THEORY THEORET, P43
+   Landsberg J. M., 2003, GRADUATE STUDIES MAT, V61
+   Landsberg JM, 2003, COMMENT MATH HELV, V78, P65, DOI 10.1007/s000140300003
+   LANDSBERG JM, ARXIV09040471
+   Landsberg JosephM., 2002, SELECTA MATH, V8, P137
+   Littlewood D.E., 2006, THEORY GROUP CHARACT
+   Malod G, 2008, J COMPLEXITY, V24, P16, DOI 10.1016/j.jco.2006.09.006
+   Mignon T, 2004, INT MATH RES NOTICES, V2004, P4241
+   Mulmuley K., 2007, TR200705 U CHIC COMP
+   Mulmuley K., 2007, TR200704 U CHIC COMP
+   Mulmuley K.D., 2007, GEOMETRIC COMPLEXITY
+   Mulmuley KD, 2001, SIAM J COMPUT, V31, P496, DOI 10.1137/S009753970038715X
+   MULMULEY KD, GEOMETRIC COMPLEXITY, V4
+   MULMULEY KD, ARXIVCC0501076
+   MULMULEY KD, GEOMETRIC COMPLEXITY, V7
+   Mulmuley KD, 2008, SIAM J COMPUT, V38, P1175, DOI 10.1137/080718115
+   TEMPERLEY HNV, 1961, PHILOS MAG, V6, P1061, DOI 10.1080/14786436108243366
+   Valiant L.G., 2001, P 33 ANN ACM S THEOR, P114, DOI DOI 10.1145/380752.380785
+   Valiant L.G., 1982, Logic and Algorithmic: an International Symposium held in honor of Ernst Specker, vol. 30, P365
+   Valiant L.G., 1979, Proceedings of the 11th Annual ACM Symposium on Theory of Computing (STOC), P249, DOI [DOI 10.1145/800135.804419, 10.1145/800135.804419]
+   Valiant LG, 2006, ANN IEEE SYMP FOUND, P509
+   Valiant LG, 2008, SIAM J COMPUT, V37, P1565, DOI 10.1137/070682575
+   Valiant LG, 2004, ANN IEEE SYMP FOUND, P306, DOI 10.1109/FOCS.2004.34
+   Valiant LG, 2005, LECT NOTES COMPUT SC, V3580, P1
+   Valiant LG, 2002, THEOR COMPUT SCI, V289, P457, DOI 10.1016/S0304-3975(01)00325-5
+   Valiant LG, 2002, SIAM J COMPUT, V31, P1229, DOI 10.1137/S0097539700377025
+   VONZURGATHEN J, 1987, LINEAR ALGEBRA APPL, V96, P87, DOI 10.1016/0024-3795(87)90337-5
+   YE K, STABILIZER IMMANANTS
+NR 47
+TC 2
+Z9 2
+U1 0
+U2 14
+PU ACADEMIC PRESS LTD- ELSEVIER SCIENCE LTD
+PI LONDON
+PA 24-28 OVAL RD, LONDON NW1 7DX, ENGLAND
+SN 0747-7171
+J9 J SYMB COMPUT
+JI J. Symb. Comput.
+PD DEC
+PY 2010
+VL 45
+IS 12
+SI SI
+BP 1359
+EP 1377
+DI 10.1016/j.jsc.2010.06.015
+PG 19
+WC Computer Science, Theory & Methods; Mathematics, Applied
+WE Science Citation Index Expanded (SCI-EXPANDED)
+SC Computer Science; Mathematics
+GA 679CF
+UT WOS:000284136300009
+DA 2026-09-09
+ER
+
+PT J
+AU Syzdykov, MB
+   Kardeis, YL
+AF Syzdykov, M. B.
+   Kardeis, Y. L.
+TI ON EXPERIMENTAL PROOF OF "P VERSUS NP"THEOREM
+SO JOURNAL OF MATHEMATICS MECHANICS AND COMPUTER SCIENCE
+LA English
+DT Article
+DE P versus NP; complexity; theorem; experimental; proof
+AB We propose a simple and intuitive algorithm for solving md-DFA problem using algorithm concepts within extended operators, our approach shows quadratic polynomial time and hence proves the equivalence between polynomial and non-polynomial classes, we have also shown that minimal nonemptiness of automata problem can be solved in polynomial time with help of modified subset construction, rather that building a product automaton, which lead to factorial size of the memory and time, in this work we also have used many non-tractable existing examples and computed them in polynomial time, which guarantees that our algorithm solves NP-complete problem in almost linear polynomial time, we have also avoided the problem of product automata by an algorithmic approach, we are also giving the starting ground for the proof of back-reference problem which was discussed before, notion to the globally local increment is also given as the main argument towards the resolution of "P versus NP"theorem, which coincides with the finitarity term in general mathematics.
+C1 [Syzdykov, M. B.] Satbayev Univ, Alma Ata, Kazakhstan.
+   [Kardeis, Y. L.] Rheinland Pfalz Tech Univ Kaiserslautern Landau, Pfalz, Germany.
+C3 Satbayev University
+RP Syzdykov, MB (corresponding author), Satbayev Univ, Alma Ata, Kazakhstan.
+EM a13xxxxxxxx@eeeee.test; a19xxxxxxxxxxx@eeee.test
+RI Kardeis, Yannick-Leon/NXC-7156-2025; Syzdykov, Mirzakhmet/ABF-6427-2021
+OI Kardeis, Yannick-Leon/0009-0006-9704-6145; Syzdykov,
+   Mirzakhmet/0000-0002-8086-775X
+CR Broda Sabine, 2016, DCFS, V9777, P45, DOI DOI 10.1007/978-3-319-41114-9_4
+   Collins ER, 2025, Arxiv, DOI [arXiv:2410.00548, arXiv:2410.00548, arXiv:2410.00548, 10.48550/arXiv.2410.00548, DOI 10.48550/ARXIV.2410.00548]
+   Cook S, 2003, J ACM, V50, P27, DOI 10.1145/602382.602398
+   Fernau H., 2021, arXiv, DOI DOI 10.48550/ARXIV.2108.05244
+   Gelade W, 2010, THEOR COMPUT SCI, V411, P2987, DOI 10.1016/j.tcs.2010.04.036
+   Hsieh SC, 2010, LECT NOTES ENG COMP, P141
+   Kardeis YL., 2025, The Universal Fractal Chirality of Riemann Zeta-Function: On the Symmetric Distribution of Prime Numbers, the Uniform Distribution of Nontrivial Zeros along the Critical Line, their Physical and Chemical Correlations, DOI [10.13140/RG.2.2.34775.69285, DOI 10.13140/RG.2.2.34775.69285]
+   Kupferman O, 2002, LECT NOTES COMPUT SC, V2420, P446
+   Louiz A, 2025, The proof of a series as an upper bound for the number of positive square-free numbers and thus for the Mertens function, DOI [10.13140/RG.2.2.26294.82247, DOI 10.13140/RG.2.2.26294.82247]
+   Louiz A, 2023, WSEAS TRANSACTIONS ON COMPUTERS, V22, P159, DOI 10.37394/23205.2023.22.19
+   Martens J, 2023, Arxiv, DOI [arXiv:2306.03533, 10.48550/arXiv.2306.03533, DOI 10.48550/ARXIV.2306.03533]
+   Meel KS, 2024, Arxiv, DOI arXiv:2406.18224
+   Oliveira MD, 2018, LECT NOTES COMPUT SC, V11088, P282, DOI 10.1007/978-3-319-98654-8_23
+   Pitt Leonard, 1989, P 21 ANN S THEOR COM, P421
+   RABIN MO, 1959, IBM J RES DEV, V3, P114, DOI 10.1147/rd.32.0114
+   Sen K., 2003, Electr. Notes Theor. Comput. Sci, V89, P226, DOI [DOI 10.1016/S1571-0661(04)81051-X, 10.1016/S1571-0661(04)81051-X]
+NR 16
+TC 0
+Z9 0
+U1 0
+U2 0
+PU AL-FARABI KAZAKH NATL UNIV
+PI ALMATY
+PA 71, AL-FARABI AVE, ALMATY, 00000, KAZAKHSTAN
+SN 1563-0277
+EI 2617-4871
+J9 J MATH MECH COMPUT S
+JI J. Math. Mech. Comput. Sci.
+PY 2025
+VL 127
+IS 3
+BP 66
+EP 95
+DI 10.26577/JMMCS202512735
+PG 30
+WC Mathematics; Mechanics
+WE Emerging Sources Citation Index (ESCI)
+SC Mathematics; Mechanics
+GA 8IB2F
+UT WOS:001589175500005
+OA gold
+DA 2026-09-09
+ER
+
+PT J
+AU Meester, RWJ
+   Slooten, K
+AF Meester, R. W. J.
+   Slooten, K.
+TI DNA database matches: A p versus np problem
+SO FORENSIC SCIENCE INTERNATIONAL-GENETICS
+LA English
+DT Article
+DE DNA database; Likelihood ratio; Evidential value; Criminal casework;
+   Database controversy
+ID SEARCH CONTROVERSY; LIKELIHOOD RATIOS; SUSPECT
+AB The evidential value of a unique DNA database match has been extensively discussed. In principle the matter has been mathematically resolved, since the posterior odds on the match being with the trace donor are unambiguously defined. There are multiple ways to express these odds as a product of likelihood ratio and prior odds, and so the mathematics do not immediately tell us what to do in concrete cases, in particular which likelihood ratio to choose for reporting. With p the random match probability for the matching person, if innocent, and n the database size, both 1/p, originating from a suspect-centered framework, and 1/(np), originating from a database-centered framework, arise as likelihood ratio. Both have been defended and both have been criticized in the literature.
+   We will clarify the situation by not introducing models and choices of prior probabilities until they are needed. This allows to derive the posterior odds in their most general form, which applies whenever we know that a single person among a list is not excluded as potential trace donor. We show that we need only three probabilities, that pertain to the observed match, to the database, and to the matching person respectively.
+   How these required probabilities behave in a given context, then, differs from one situation to another. This is understandable since database searches may be done under various circumstances. They may be carried out with or without a suspect already in mind and, depending on the operational procedures, one may or may not be informed about the personal details of the person who gives the match. We show how to evaluate the required probabilities in all such cases.
+   We will motivate why we believe that for some database searches, the 1/p likelihood ratio is more natural, whereas for others, 1/(np) seems the more sensible choice. This is not motivated by the mathematics: mathematically, the approaches are equivalent. It is motivated by considering which model best reflects the actual situation, taking into account what question was asked to begin with, and by the practical consideration of judging which likelihood ratio comes closer to the posterior odds based on the information available in the case.
+   This article is intended to be both a research and a review article, and we end with an in-depth discussion of various arguments that have been brought forward in favor or against either 1/p or 1/(np).
+C1 [Meester, R. W. J.; Slooten, K.] Vrije Univ Amsterdam, Amsterdam, Netherlands.
+   [Slooten, K.] Netherlands Forens Inst, The Hague, Netherlands.
+C3 Vrije Universiteit Amsterdam
+RP Slooten, K (corresponding author), Netherlands Forens Inst, The Hague, Netherlands.
+EM a9xxxxxxx@eeeeeeeee.test
+CR [Anonymous], [No title captured]
+   [Anonymous], [No title captured]
+   [Anonymous], [No title captured]
+   [Anonymous], [No title captured]
+   [Anonymous], [No title captured]
+   [Anonymous], [No title captured]
+   [Anonymous], [No title captured]
+   Ayres I, 2015, STANFORD LAW REV, V67, P1447
+   BALDING DJ, 1995, P NATL ACAD SCI USA, V92, P11741, DOI 10.1073/pnas.92.25.11741
+   Balding DJ, 1996, J FORENSIC SCI, V41, P603
+   Biedermann A, 2011, FORENSIC SCI INT, V212, P51, DOI 10.1016/j.forsciint.2011.05.013
+   COLLINS A, 1994, P NATL ACAD SCI USA, V91, P6007, DOI 10.1073/pnas.91.13.6007
+   Dawid AP, 2001, BIOMETRICS, V57, P976
+   Evett IW, 2000, BIOMETRICS, V56, P1274
+   Meester R, 2003, BIOMETRICS, V59, P727, DOI 10.1111/1541-0420.00084
+   Schneider PM, 2010, RECHTSMEDIZIN, V20, P111, DOI 10.1007/s00194-009-0652-x
+   Stockmarr A, 1999, BIOMETRICS, V55, P671, DOI 10.1111/j.0006-341X.1999.00671.x
+   Storvik G, 2007, BIOMETRICS, V63, P922, DOI 10.1111/j.1541-0420.2007.00751.x
+   Weir BS, 1996, AM J HUM GENET, V59, P497
+NR 19
+TC 0
+Z9 0
+U1 0
+U2 7
+PU ELSEVIER IRELAND LTD
+PI CLARE
+PA ELSEVIER HOUSE, BROOKVALE PLAZA, EAST PARK SHANNON, CO, CLARE, 00000,
+   IRELAND
+SN 1872-4973
+EI 1878-0326
+J9 FORENSIC SCI INT-GEN
+JI Forensic Sci. Int.-Genet.
+PD MAY
+PY 2020
+VL 46
+AR 102229
+DI 10.1016/j.fsigen.2019.102229
+PG 12
+WC Genetics & Heredity; Medicine, Legal
+WE Science Citation Index Expanded (SCI-EXPANDED)
+SC Genetics & Heredity; Legal Medicine
+GA KY7CQ
+UT WOS:000522732000010
+PM 32058298
+OA Green Submitted, Bronze
+DA 2026-09-09
+ER
+
+PT J
+AU Fortnow, L
+AF Fortnow, Lance
+TI The Status of the P versus NP Problem
+SO COMMUNICATIONS OF THE ACM
+LA English
+DT Article
+ID SATISFIABILITY; ALGORITHMS; CUT
+C1 Northwestern Univ, McCormick Sch Engn, Evanston, IL 60208 USA.
+C3 Northwestern University
+RP Fortnow, L (corresponding author), Northwestern Univ, McCormick Sch Engn, Evanston, IL 60208 USA.
+EM a5xxxxx@eeeeeeeeeeeeeeee.test
+RI Fortnow, Lance/B-7148-2009
+CR AARONSON S, 2003, B EUROPEAN ASS THEOR, V81
+   Agrawal M, 2004, ANN MATH, V160, P781, DOI 10.4007/annals.2004.160.781
+   Applegate D., 1998, DOCUMENTA MATH J DTS, P645
+   Arora S, 1998, J ACM, V45, P753, DOI 10.1145/290179.290180
+   Arora Sanjeev., 2009, Complexity Theory: A Modern Approach
+   Baker T., 1975, SIAM Journal on Computing, V4, P431, DOI 10.1137/0204037
+   Cantor Gregor., 1874, CRELLES J MATH, V77, P258
+   Cipra B.A., 2000, SIAM NEWS, V33, P1
+   Conitzer V, 2008, GAME ECON BEHAV, V63, P621, DOI 10.1016/j.geb.2008.02.015
+   Cook S.A., 1971, P 3 ANN ACM S THEORY, P151, DOI [10.1145/800157.805047, DOI 10.1145/800157.805047]
+   Downey R.G., 1999, MG COMP SCI, DOI [10.1007/978-1-4471-5559-1, DOI 10.1007/978-1-4471-5559-1, 10.1007/978-1-4612-0515-9]
+   EDMONDS J, 1965, CANADIAN J MATH, V17, P449, DOI 10.4153/CJM-1965-045-4
+   FORTNOW L, COMPUTATIONAL COMPLE
+   FORTNOW L, 1980, B EUROPEAN ASS THEOR, V80
+   FURST M, 1984, MATH SYST THEORY, V17, P13, DOI 10.1007/BF01744431
+   Garey M. R., 1979, Computers and intractability. A guide to the theory of NP-completeness
+   Goemans MX, 1995, J ACM, V42, P1115, DOI 10.1145/227683.227684
+   Goldreich Oded, 2005, Foundations and Trends in Theoretical Computer Science, V1, P1, DOI 10.1561/0400000001
+   Grover LovK., 1996, Proceedings of the twenty-eighth annual ACM symposium on Theory of computing, P212, DOI [10.1145/237814.237866, DOI 10.1145/237814.237866]
+   Gusfield D., 1997, Algorithms on strings, trees and sequences: computer science and computational biology, DOI [10.1017/cbo9780511574931, DOI 10.1017/CBO9780511574931, 10.1017/CBO9780511574931]
+   HAKEN A, 1985, THEOR COMPUT SCI, V39, P297, DOI 10.1016/0304-3975(85)90144-6
+   IMPAGLIAZZO R, 1995, STRUCT COMPL TH CONF, P134, DOI 10.1109/SCT.1995.514853
+   Impagliazzo R., 1997, PROC 29 STOC, P220, DOI DOI 10.1145/258533.258590
+   Karp R.M., 1972, Reducibility among Combinatorial Problems, P85, DOI [DOI 10.1007/978-1-4684-2001-2_9, 10.1007/978-1-4684-2001-2_, 10.1007/978-1-4684-2001-29, DOI 10.1007/978-1-4684-2001-29]
+   Khot S, 2007, SIAM J COMPUT, V37, P319, DOI 10.1137/S0097539705447372
+   LATHROP RH, 1994, PROTEIN ENG, V7, P1059, DOI 10.1093/protein/7.9.1059
+   LEVIN LA, 1986, SIAM J COMPUT, V15, P285, DOI 10.1137/0215020
+   Levin Leonid., 1973, Problemy Peredachi Informatsii, V9, P115
+   Mulmuley KD, 2001, SIAM J COMPUT, V31, P496, DOI 10.1137/S009753970038715X
+   Raghavendra P, 2008, ACM S THEORY COMPUT, P245
+   RAZBOROV A, 1985, SOV MATH DOKL, V31, P485
+   Razborov A. A., 1989, Proceedings of the Twenty First Annual ACM Symposium on Theory of Computing, P167, DOI 10.1145/73007.73023
+   Razborov AA, 1997, J COMPUT SYST SCI, V55, P24, DOI 10.1006/jcss.1997.1494
+   Shor PW, 1997, SIAM J COMPUT, V26, P1484, DOI [10.1137/S0097539795293172, 10.1137/S0036144598347011]
+   Solovay R., 1977, SIAM Journal on Computing, V6, P84, DOI 10.1137/0206006
+   Solovay Robert, 1978, SIAM J COMPUT, V7, P118, DOI [DOI 10.1137/0207009, 10.1137/0207009]
+   Sudan M, 2009, COMMUN ACM, V52, P76, DOI 10.1145/1467247.1467267
+   TRAKHTENBROT BA, 1984, ANN HIST COMPUT, V6, P384
+   Turing AM, 1937, P LOND MATH SOC, V42, P230, DOI 10.1112/plms/s2-42.1.230
+   van Melkebeek D, 2006, FOUND TRENDS THEOR C, V2, P197, DOI 10.1561/0400000012
+NR 40
+TC 136
+Z9 181
+U1 1
+U2 35
+PU ASSOC COMPUTING MACHINERY
+PI NEW YORK
+PA 1601 Broadway, 10th Floor, NEW YORK, NY USA
+SN 0001-0782
+EI 1557-7317
+J9 COMMUN ACM
+JI Commun. ACM
+PD SEP
+PY 2009
+VL 52
+IS 9
+BP 78
+EP 86
+DI 10.1145/1562164.1562186
+PG 9
+WC Computer Science, Hardware & Architecture; Computer Science, Software
+   Engineering; Computer Science, Theory & Methods
+WE Science Citation Index Expanded (SCI-EXPANDED)
+SC Computer Science
+GA 489KK
+UT WOS:000269418800023
+DA 2026-09-09
+ER
+
+PT J
+AU Song, D
+AF Song, Daegene
+TI The P versus NP Problem in Quantum Physics
+SO NEUROQUANTOLOGY
+LA English
+DT Article
+DE NP problem; polynomial
+AB Motivated by the fact that information is encoded and processed by physical systems, the P versus NP problem is examined in terms of physical processes. In particular, we consider P as a class of deterministic, and NP as nondeterministic, polynomial-time physical processes. Based on these identifications, we review a self-reference physical process in quantum theory, which belongs to NP but cannot be contained in P.
+C1 KoreaTech, Sch Liberal Arts, Chungnam 330708, South Korea.
+C3 Korea University of Technology & Education
+RP Song, D (corresponding author), KoreaTech, Sch Liberal Arts, Chungnam 330708, South Korea.
+EM a4xxx@eeeeeeeeee.test
+CR [Anonymous], 2005, ARXIVQUANTPH0502072
+   Bell J.S., 1964, PHYSICS, V1, P195, DOI [DOI 10.1103/PHYSICSPHYSIQUEFIZIKA.1.195, 10.1103/PhysicsPhysiqueFizika.1.195]
+   Bennett C., 1984, [No title captured], P175
+   Bennett CH, 1997, SIAM J COMPUT, V26, P1510, DOI 10.1137/S0097539796300933
+   Chi-Chih Yao A., 1993, Proceedings. 34th Annual Symposium on Foundations of Computer Science (Cat. No.93CH3368-8), P352, DOI 10.1109/SFCS.1993.366852
+   Church A, 1936, AM J MATH, V58, P345, DOI 10.2307/2371045
+   Cook S. A., 1971, Proceedings of the 3rd annual ACM symposium on theory of computing, P151
+   Deutsch D, 2000, B SYMB LOG, V6, P265, DOI 10.2307/421056
+   Deutsch D, 2000, P ROY SOC A-MATH PHY, V456, P1759, DOI 10.1098/rspa.2000.0585
+   DEUTSCH D, 1992, P ROY SOC LOND A MAT, V439, P553, DOI 10.1098/rspa.1992.0167
+   DEUTSCH D, 1985, P ROY SOC LOND A MAT, V400, P97, DOI 10.1098/rspa.1985.0070
+   Ekert A, 1996, REV MOD PHYS, V68, P733, DOI 10.1103/RevModPhys.68.733
+   EKERT AK, 1991, PHYS REV LETT, V67, P661, DOI 10.1103/PhysRevLett.67.661
+   Fortnow L, 2009, COMMUN ACM, V52, P78, DOI 10.1145/1562164.1562186
+   Goldreich O., 2008, COMPUTATIONAL COMPLE
+   Gottesman D, 1998, ARXIVQUANTPH9807006V
+   Grover LK, 1997, PHYS REV LETT, V79, P325, DOI 10.1103/PhysRevLett.79.325
+   Hewitt-Horsman C, 2007, NEW J PHYS, V9, DOI 10.1088/1367-2630/9/5/135
+   Landauer R, 1996, PHYS LETT A, V217, P188, DOI 10.1016/0375-9601(96)00453-7
+   Landauer R, 1991, PHYS TOD        0523
+   SHOR PW, 1996, P 35 ANN S FDN COMP, P124
+   SONG D., 2007, NeuroQuantology, V5, P382
+   Turing AM, 1937, P LOND MATH SOC, V42, P230, DOI 10.1112/plms/s2-42.1.230
+   Tusarova T, ARXIVCS0409051CSCC
+   Vazirani U., 2002, P S APPL MATH, V1, P58
+NR 25
+TC 6
+Z9 6
+U1 0
+U2 9
+PU ANKA PUBLISHER
+PI BORNOVA
+PA 116-11 SOK NO.10 K 2 D 2, BORNOVA, IZMIR 35050, TURKEY
+SN 1303-5150
+J9 NEUROQUANTOLOGY
+JI NeuroQuantology
+PD DEC
+PY 2014
+VL 12
+IS 4
+BP 350
+EP 354
+PG 5
+WC Neurosciences
+WE Science Citation Index Expanded (SCI-EXPANDED)
+SC Neurosciences & Neurology
+GA CA6GF
+UT WOS:000349007800002
+DA 2026-09-09
+ER
+
+EF

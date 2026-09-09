@@ -1,0 +1,41 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:arxiv="http://arxiv.org/schemas/atom" xmlns="http://www.w3.org/2005/Atom">
+  <id>https://arxiv.org/api/d9LZvdOxqxGJQKPBbnBMr0iKehg</id>
+  <title>arXiv Query: search_query=ti:"P versus NP"&amp;id_list=&amp;start=0&amp;max_results=2</title>
+  <updated>2026-09-09T03:21:59Z</updated>
+  <link href="https://arxiv.org/api/query?search_query=ti:%22P+versus+NP%22&amp;start=0&amp;max_results=2&amp;id_list=" type="application/atom+xml"/>
+  <opensearch:itemsPerPage>2</opensearch:itemsPerPage>
+  <opensearch:totalResults>19</opensearch:totalResults>
+  <opensearch:startIndex>0</opensearch:startIndex>
+  <entry>
+    <id>http://arxiv.org/abs/2209.15410v7</id>
+    <title>Exploring P versus NP</title>
+    <updated>2024-03-25T13:50:05Z</updated>
+    <link href="https://arxiv.org/abs/2209.15410v7" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2209.15410v7" rel="related" type="application/pdf" title="pdf"/>
+    <summary>In this article, we discuss the question of whether P equals NP, we do not follow the line of research of many researchers, which is to try to find such a problem Q, and the problem Q belongs to the class of NP-complete, if the problem Q is proved to belong to P, then P and NP are the same, if the problem Q is proved not to belong to P, then P and NP are separated. Our research strategy in this article: Select a problem S of EXP-complete and reduce it to a problem of NP in polynomial time, then S belongs to NP, so EXP = NP, and then from the well-known P neq NP, derive P neq NP.</summary>
+    <category term="cs.CC" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="math.LO" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2022-09-30T12:15:06Z</published>
+    <arxiv:comment>In the recently submitted version titled "Exploring P versus NP," meticulous annotations have been incorporated for each theorem conclusion in the original manuscript. The primary objective of these annotations is to enhance readers' comprehension and readability of the theorem conclusions</arxiv:comment>
+    <arxiv:primary_category term="cs.CC"/>
+    <author>
+      <name>Jian-Gang Tang</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2005.00809v10</id>
+    <title>On P Versus NP</title>
+    <updated>2026-05-12T20:08:16Z</updated>
+    <link href="https://arxiv.org/abs/2005.00809v10" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2005.00809v10" rel="related" type="application/pdf" title="pdf"/>
+    <summary>It is shown that graph-theoretic problem CLIQUE can't be solved in polynomial time by any deterministic TM. This upgrades the well-known partial result that claims only monotone unsolvability thereof, and eventually implies P $\neq$ NP as CLIQUE is NP-complete. This paper essentially simplifies my previous presentation that used more complex models of computation based on standard Boolean semantics while fixing technical errors spotted by a generic proof assistant Isabelle that has been implemented by René Thiemann.</summary>
+    <category term="cs.CC" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2020-05-02T12:03:50Z</published>
+    <arxiv:comment>This is a refined two-side version of arXiv:2104.07166</arxiv:comment>
+    <arxiv:primary_category term="cs.CC"/>
+    <author>
+      <name>Lev Gordeev</name>
+    </author>
+  </entry>
+</feed>

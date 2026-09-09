@@ -1,0 +1,161 @@
+﻿TY  - JOUR
+AU  - Landsberg, JM
+TI  - P versus NP and geometry
+T2  - JOURNAL OF SYMBOLIC COMPUTATION
+LA  - English
+KW  - Holographic algorithms
+KW  - P
+KW  - NP
+KW  - Determinant
+KW  - Permanent
+KW  - Geometric complexity theory
+KW  - Spinor
+KW  - Grassmannian
+KW  - VALIANTS HOLANT THEOREM
+KW  - HOLOGRAPHIC ALGORITHMS
+KW  - PERMANENT
+KW  - DETERMINANT
+AB  - In this primarily expository article, I describe geometric approaches to variants of P versus NP, present several results that illustrate the role of group actions in complexity theory, and make a first step towards geometric definitions of complexity classes. My goal is to help bring geometry and complexity theory closer together. (C) 2010 Elsevier Ltd. All rights reserved.
+AD  - Texas A&M Univ, Dept Math, College Stn, TX 77843 USAC3  - Texas A&M University SystemC3  - Texas A&M University College StationFU  - NSF [DMS-0805782]; Direct For Mathematical & Physical Scien; Division Of Mathematical Sciences [1006353] Funding Source: National Science Foundation
+FX  - This work was supported by NSF grant DMS-0805782.
+PU  - ACADEMIC PRESS LTD- ELSEVIER SCIENCE LTD
+PI  - LONDON
+PA  - 24-28 OVAL RD, LONDON NW1 7DX, ENGLAND
+SN  - 0747-7171
+J9  - J SYMB COMPUT
+JI  - J. Symb. Comput.
+DA  - DEC
+PY  - 2010
+VL  - 45
+IS  - 12
+SP  - 1359
+EP  - 1377
+DO  - 10.1016/j.jsc.2010.06.015
+WE  - Science Citation Index Expanded (SCI-EXPANDED)AN  - WOS:000284136300009
+N1  - Times Cited in Web of Science Core Collection:  2
+Total Times Cited:  2
+Cited Reference Count:  47
+ER  -
+
+TY  - JOUR
+AU  - Syzdykov, MB
+AU  - Kardeis, YL
+TI  - ON EXPERIMENTAL PROOF OF "P VERSUS NP"THEOREM
+T2  - JOURNAL OF MATHEMATICS MECHANICS AND COMPUTER SCIENCE
+LA  - English
+KW  - P versus NP
+KW  - complexity
+KW  - theorem
+KW  - experimental
+KW  - proof
+AB  - We propose a simple and intuitive algorithm for solving md-DFA problem using algorithm concepts within extended operators, our approach shows quadratic polynomial time and hence proves the equivalence between polynomial and non-polynomial classes, we have also shown that minimal nonemptiness of automata problem can be solved in polynomial time with help of modified subset construction, rather that building a product automaton, which lead to factorial size of the memory and time, in this work we also have used many non-tractable existing examples and computed them in polynomial time, which guarantees that our algorithm solves NP-complete problem in almost linear polynomial time, we have also avoided the problem of product automata by an algorithmic approach, we are also giving the starting ground for the proof of back-reference problem which was discussed before, notion to the globally local increment is also given as the main argument towards the resolution of "P versus NP"theorem, which coincides with the finitarity term in general mathematics.
+AD  - Satbayev Univ, Alma Ata, KazakhstanAD  - Rheinland Pfalz Tech Univ Kaiserslautern Landau, Pfalz, GermanyC3  - Satbayev UniversityPU  - AL-FARABI KAZAKH NATL UNIV
+PI  - ALMATY
+PA  - 71, AL-FARABI AVE, ALMATY, 00000, KAZAKHSTAN
+SN  - 1563-0277
+SN  - 2617-4871
+J9  - J MATH MECH COMPUT S
+JI  - J. Math. Mech. Comput. Sci.
+PY  - 2025
+VL  - 127
+IS  - 3
+SP  - 66
+EP  - 95
+DO  - 10.26577/JMMCS202512735
+WE  - Emerging Sources Citation Index (ESCI)AN  - WOS:001589175500005
+N1  - Times Cited in Web of Science Core Collection:  0
+Total Times Cited:  0
+Cited Reference Count:  16
+ER  -
+
+TY  - JOUR
+AU  - Meester, RWJ
+AU  - Slooten, K
+TI  - DNA database matches: A p versus np problem
+T2  - FORENSIC SCIENCE INTERNATIONAL-GENETICS
+LA  - English
+KW  - DNA database
+KW  - Likelihood ratio
+KW  - Evidential value
+KW  - Criminal casework
+KW  - Database controversy
+KW  - SEARCH CONTROVERSY
+KW  - LIKELIHOOD RATIOS
+KW  - SUSPECT
+AB  - The evidential value of a unique DNA database match has been extensively discussed. In principle the matter has been mathematically resolved, since the posterior odds on the match being with the trace donor are unambiguously defined. There are multiple ways to express these odds as a product of likelihood ratio and prior odds, and so the mathematics do not immediately tell us what to do in concrete cases, in particular which likelihood ratio to choose for reporting. With p the random match probability for the matching person, if innocent, and n the database size, both 1/p, originating from a suspect-centered framework, and 1/(np), originating from a database-centered framework, arise as likelihood ratio. Both have been defended and both have been criticized in the literature.
+   We will clarify the situation by not introducing models and choices of prior probabilities until they are needed. This allows to derive the posterior odds in their most general form, which applies whenever we know that a single person among a list is not excluded as potential trace donor. We show that we need only three probabilities, that pertain to the observed match, to the database, and to the matching person respectively.
+   How these required probabilities behave in a given context, then, differs from one situation to another. This is understandable since database searches may be done under various circumstances. They may be carried out with or without a suspect already in mind and, depending on the operational procedures, one may or may not be informed about the personal details of the person who gives the match. We show how to evaluate the required probabilities in all such cases.
+   We will motivate why we believe that for some database searches, the 1/p likelihood ratio is more natural, whereas for others, 1/(np) seems the more sensible choice. This is not motivated by the mathematics: mathematically, the approaches are equivalent. It is motivated by considering which model best reflects the actual situation, taking into account what question was asked to begin with, and by the practical consideration of judging which likelihood ratio comes closer to the posterior odds based on the information available in the case.
+   This article is intended to be both a research and a review article, and we end with an in-depth discussion of various arguments that have been brought forward in favor or against either 1/p or 1/(np).
+AD  - Vrije Univ Amsterdam, Amsterdam, NetherlandsAD  - Netherlands Forens Inst, The Hague, NetherlandsC3  - Vrije Universiteit AmsterdamPU  - ELSEVIER IRELAND LTD
+PI  - CLARE
+PA  - ELSEVIER HOUSE, BROOKVALE PLAZA, EAST PARK SHANNON, CO, CLARE, 00000, IRELAND
+SN  - 1872-4973
+SN  - 1878-0326
+J9  - FORENSIC SCI INT-GEN
+JI  - Forensic Sci. Int.-Genet.
+DA  - MAY
+PY  - 2020
+VL  - 46
+C7  - 102229
+DO  - 10.1016/j.fsigen.2019.102229
+WE  - Science Citation Index Expanded (SCI-EXPANDED)AN  - WOS:000522732000010
+N1  - Times Cited in Web of Science Core Collection:  0
+Total Times Cited:  0
+Cited Reference Count:  19
+ER  -
+
+TY  - JOUR
+AU  - Fortnow, L
+TI  - The Status of the P versus NP Problem
+T2  - COMMUNICATIONS OF THE ACM
+LA  - English
+KW  - SATISFIABILITY
+KW  - ALGORITHMS
+KW  - CUT
+AD  - Northwestern Univ, McCormick Sch Engn, Evanston, IL 60208 USAC3  - Northwestern UniversityPU  - ASSOC COMPUTING MACHINERY
+PI  - NEW YORK
+PA  - 1601 Broadway, 10th Floor, NEW YORK, NY USA
+SN  - 0001-0782
+SN  - 1557-7317
+J9  - COMMUN ACM
+JI  - Commun. ACM
+DA  - SEP
+PY  - 2009
+VL  - 52
+IS  - 9
+SP  - 78
+EP  - 86
+DO  - 10.1145/1562164.1562186
+WE  - Science Citation Index Expanded (SCI-EXPANDED)AN  - WOS:000269418800023
+N1  - Times Cited in Web of Science Core Collection:  136
+Total Times Cited:  181
+Cited Reference Count:  40
+ER  -
+
+TY  - JOUR
+AU  - Song, D
+TI  - The P versus NP Problem in Quantum Physics
+T2  - NEUROQUANTOLOGY
+LA  - English
+KW  - NP problem
+KW  - polynomial
+AB  - Motivated by the fact that information is encoded and processed by physical systems, the P versus NP problem is examined in terms of physical processes. In particular, we consider P as a class of deterministic, and NP as nondeterministic, polynomial-time physical processes. Based on these identifications, we review a self-reference physical process in quantum theory, which belongs to NP but cannot be contained in P.
+AD  - KoreaTech, Sch Liberal Arts, Chungnam 330708, South KoreaC3  - Korea University of Technology & EducationPU  - ANKA PUBLISHER
+PI  - BORNOVA
+PA  - 116-11 SOK NO.10 K 2 D 2, BORNOVA, IZMIR 35050, TURKEY
+SN  - 1303-5150
+J9  - NEUROQUANTOLOGY
+JI  - NeuroQuantology
+DA  - DEC
+PY  - 2014
+VL  - 12
+IS  - 4
+SP  - 350
+EP  - 354
+WE  - Science Citation Index Expanded (SCI-EXPANDED)AN  - WOS:000349007800002
+N1  - Times Cited in Web of Science Core Collection:  6
+Total Times Cited:  6
+Cited Reference Count:  25
+ER  -
+

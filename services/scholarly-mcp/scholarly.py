@@ -1,0 +1,317 @@
+"""Preserved scholarly artifacts and mechanical extraction; no model calls."""
+from __future__ import annotations
+
+from datetime import datetime, timezone
+import hashlib
+import json
+from pathlib import Path
+import re
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit, quote, unquote
+from uuid import uuid4
+
+
+class ServiceError(Exception):
+    def __init__(self, code, message, *, status="error", **details):
+        super().__init__(message)
+        self.result = {"status": status, "code": code, "message": message, **details}
+
+
+class Sanitizer:
+    sensitive = re.compile(r"(?:api[-_]?key|password|passwd\d*|authorization|cookie|secret|token|ticket|csrf|signature|session(?:id)?|__cf_chl|^sid$)", re.I)
+    secret_fields = {"apikey", "password", "passwd", "passwd2", "authorization", "cookie", "setcookie", "secret", "clientsecret", "secretkey", "token", "accesstoken", "refreshtoken", "authtoken", "ticket", "csrf", "csrftoken", "xcsrftoken", "xsrftoken", "signature", "sid", "session", "sessionid", "jsessionid", "xapikey", "xelsapikey", "xelsinsttoken", "xamzcredential", "xamzsignature", "xamzsecuritytoken"}
+
+    def __init__(self, secrets=()):
+        self.secrets = tuple(sorted({str(s) for s in secrets if s}, key=len, reverse=True))
+
+    def text(self, text):
+        for secret in self.secrets:
+            for variant in {secret, quote(secret, safe=""), quote(quote(secret, safe=""), safe="")}:
+                text = text.replace(variant, "[REDACTED]")
+        return re.sub(r"https?://[^\s<>\"'{}]+", lambda match: self._url(match.group()), text)
+
+    def url(self, url):
+        return self.text(self._url(url))
+
+    def _url(self, url):
+        url = url.replace("&amp;", "&")
+        parts = urlsplit(url)
+        # Credentials in userinfo, fragments and authentication query fields are never evidence.
+        host = parts.hostname or ""
+        if parts.port:
+            host += ":" + str(parts.port)
+        query = [(k, v) for k, v in parse_qsl(parts.query, keep_blank_values=True) if not self.sensitive.search(k)]
+        return urlunsplit((parts.scheme, host, parts.path, urlencode(query), ""))
+
+    def value(self, value):
+        if isinstance(value, dict):
+            result = {}
+            for key, item in value.items():
+                normalized = re.sub(r"[^a-z0-9]", "", key.lower())
+                public_signature = normalized == "signature" and (item is None or (isinstance(item, str) and item.startswith(("-----BEGIN PGP SIGNATURE-----", "-----BEGIN SSH SIGNATURE-----"))))
+                result[key] = "[REDACTED]" if normalized in self.secret_fields and item is not None and not public_signature else self.value(item)
+            return result
+        if isinstance(value, list):
+            return [self.value(v) for v in value]
+        if isinstance(value, str):
+            if value.startswith(("https://", "http://")):
+                return self.url(value)
+            return self.text(value)
+        return value
+
+
+def encoded(value):
+    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+
+
+def digest(data):
+    return hashlib.sha256(data).hexdigest()
+
+
+class ArtifactStore:
+    def __init__(self, root, sanitizer=None):
+        self.root = Path(root).resolve()
+        self.sanitizer = sanitizer or Sanitizer()
+
+    def _path(self, area, key):
+        path = (self.root / area / key).resolve()
+        if not path.is_relative_to(self.root):
+            raise ServiceError("invalid_reference", "Artifact resolves outside its store")
+        return path
+
+    def _write(self, path, data):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        if path.exists():
+            if path.read_bytes() != data:
+                raise ServiceError("integrity_error", "Stored artifact bytes do not match their identity")
+            return
+        temporary = path.with_name("." + uuid4().hex + ".tmp")
+        try:
+            temporary.write_bytes(data)
+            temporary.replace(path)
+        finally:
+            temporary.unlink(missing_ok=True)
+
+    def put(self, data, media_type, source, url, *, preserve_bytes=False, **context):
+        if isinstance(data, str):
+            data = data.encode("utf-8")
+        if not preserve_bytes and media_type == "application/json":
+            data = encoded(self.sanitizer.value(json.loads(data)))
+        elif not preserve_bytes and (media_type.startswith("text/") or "xml" in media_type or media_type in {"application/x-wos", "application/x-bibtex", "application/x-research-info-systems", "application/x-endnote-refer", "application/x-tex"}):
+            data = self.sanitizer.text(data.decode("utf-8")).encode("utf-8")
+        sha = digest(data)
+        manifest = self.sanitizer.value({"sha256": sha, "bytes": len(data), "media_type": media_type,
+            "source": source, "url": self.sanitizer.url(url),
+            "retrieved_at": datetime.now(timezone.utc).isoformat(), **context})
+        raw_manifest = encoded(manifest)
+        key = digest(raw_manifest)
+        self._write(self._path("blobs", sha), data)
+        self._write(self._path("manifests", key), raw_manifest)
+        return {"ref": "scholarly://artifact/" + key, **manifest}
+
+    def read(self, ref):
+        match = re.fullmatch(r"scholarly://artifact/([0-9a-f]{64})", ref)
+        if not match:
+            raise ServiceError("invalid_reference", "Use an artifact ref returned by this server")
+        key = match.group(1)
+        try:
+            raw = self._path("manifests", key).read_bytes()
+            if digest(raw) != key:
+                raise ServiceError("integrity_error", "Artifact manifest has changed")
+            manifest = json.loads(raw)
+            sha = manifest["sha256"]
+            if not re.fullmatch(r"[0-9a-f]{64}", sha):
+                raise ServiceError("integrity_error", "Invalid artifact content hash")
+            data = self._path("blobs", sha).read_bytes()
+            if digest(data) != sha or len(data) != manifest["bytes"]:
+                raise ServiceError("integrity_error", "Artifact content has changed")
+            return manifest, data
+        except FileNotFoundError:
+            raise ServiceError("artifact_not_found", "Artifact is not present in this store", status="not_found") from None
+
+
+def pointer(value, path):
+    """RFC 6901 JSON Pointer, with no expression evaluation."""
+    if not path:
+        return value
+    if not path.startswith("/"):
+        raise ServiceError("invalid_selection", "JSON selection must be a JSON Pointer starting with /")
+    try:
+        for part in path[1:].split("/"):
+            part = part.replace("~1", "/").replace("~0", "~")
+            if isinstance(value, list):
+                if not re.fullmatch(r"0|[1-9][0-9]*", part):
+                    raise KeyError(part)
+                value = value[int(part)]
+            else:
+                value = value[part]
+        return value
+    except (KeyError, IndexError, TypeError):
+        raise ServiceError("selection_not_found", "Requested JSON location does not exist", status="not_found", selection=path) from None
+
+
+def bibliography(data, media):
+    """Reuse the repository's preserving parsers without invoking their catalog builders."""
+    if media == "application/x-wos":
+        rows, fields, raw_lines, last = [], None, [], None
+        for line in data.decode("utf-8-sig").splitlines():
+            tag = line[:2]
+            if tag == "PT":
+                if fields is not None:
+                    raise ServiceError("bibliography_parse_error", "WOS record is missing ER")
+                fields, raw_lines = {}, []
+            if fields is None:
+                if line.strip() and tag not in ("FN", "VR", "EF"):
+                    raise ServiceError("bibliography_parse_error", "Unexpected text outside a WOS record")
+                continue
+            raw_lines.append(line)
+            if tag == "ER":
+                rows.append({"id": fields.get("ut", [None])[0], "fields": fields, "raw_text": "\n".join(raw_lines)})
+                fields, last = None, None
+            elif re.match(r"^[A-Z0-9]{2} ", line):
+                last = tag.lower()
+                fields.setdefault(last, []).append(line[3:])
+            elif line.startswith("   ") and last:
+                fields[last].append(line[3:])
+            elif line.strip():
+                raise ServiceError("bibliography_parse_error", "Malformed WOS field or continuation")
+        if fields is not None:
+            raise ServiceError("bibliography_parse_error", "Final WOS record is missing ER")
+        return rows
+    import importlib.util
+    import sys
+    script_name = "build_b002_catalog" if media == "application/x-bibtex" else "build_b001_catalog"
+    module_name = "scholarly_" + script_name
+    if module_name not in sys.modules:
+        path = Path(__file__).resolve().parents[2] / "research/pvsnp/literature-baseline/scripts" / (script_name + ".py")
+        spec = importlib.util.spec_from_file_location(module_name, path)
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[module_name] = module
+        spec.loader.exec_module(module)
+    module = sys.modules[module_name]
+    text = data.decode("utf-8-sig")
+    try:
+        if media == "application/x-bibtex":
+            rows = []
+            for entry in module.parse_bibtex(text, source_name="artifact"):
+                row = {"id": entry.key, "type": entry.entry_type, "raw_text": entry.raw_text, "parse_warnings": list(entry.parse_warnings)}
+                for field, value in entry.field_items:
+                    if field not in row:
+                        row[field] = value
+                    elif isinstance(row[field], list):
+                        row[field].append(value)
+                    else:
+                        row[field] = [row[field], value]
+                rows.append(row)
+            return rows
+        return module.parse_ris(text, source_name="artifact")
+    except ValueError:
+        raise ServiceError("bibliography_parse_error", "Bibliographic input is malformed or uses syntax not supported by the preserving parser; original bytes remain in the artifact") from None
+
+
+def extract_artifact(store, ref, *, fields=None, start=0, count=20, selection="", render=False):
+    if type(start) is not int or start < 0 or type(count) is not int or count < 1:
+        raise ServiceError("invalid_range", "start must be nonnegative and count must be positive")
+    meta, data = store.read(ref)
+    media = meta["media_type"]
+    unit, missing = "records", []
+    if media in {"image/png", "image/jpeg", "image/webp", "image/gif"}:
+        if selection or fields or start:
+            raise ServiceError("invalid_selection", "An image ref is read as one whole image")
+        return {"status": "ok", "artifact": ref, "unit": "image", "image_ref": ref, "media_type": media, "bytes": len(data)}
+    if media == "application/json":
+        value = pointer(json.loads(data), selection)
+        rows = value if isinstance(value, list) else [value]
+    elif media in {"application/zip", "application/x-zip-compressed", "application/gzip", "application/x-gzip", "application/x-tar"}:
+        import io, mimetypes, tarfile, zipfile
+        is_zip = zipfile.is_zipfile(io.BytesIO(data))
+        archive = zipfile.ZipFile(io.BytesIO(data)) if is_zip else tarfile.open(fileobj=io.BytesIO(data), mode="r:*")
+        with archive:
+            members = archive.infolist() if is_zip else archive.getmembers()
+            rows = [{"path": m.filename if is_zip else m.name, "bytes": m.file_size if is_zip else m.size,
+                "directory": m.is_dir() if is_zip else m.isdir()} for m in members]
+            if selection:
+                matches = [(m, row) for m, row in zip(members, rows) if row["path"] == selection]
+                if len(matches) != 1:
+                    raise ServiceError("selection_not_found", "Archive member must exist exactly once", status="not_found", selection=selection)
+                member, row = matches[0]
+                if row["directory"] or (not is_zip and not member.isfile()):
+                    raise ServiceError("invalid_selection", "Select a regular archive file")
+                if row["bytes"] > 256 * 1024 * 1024:
+                    raise ServiceError("resource_limit", "Selected archive member exceeds the 256 MiB extraction limit; the archive remains preserved")
+                content = archive.read(member) if is_zip else archive.extractfile(member).read()
+                mime = mimetypes.guess_type(selection)[0]
+                if mime is None:
+                    try:
+                        content.decode("utf-8")
+                        mime = "text/plain" if b"\x00" not in content else "application/octet-stream"
+                    except UnicodeDecodeError:
+                        mime = "application/octet-stream"
+                child = store.put(content, mime, meta["source"], meta["url"], preserve_bytes=True, parent_ref=ref, archive_member=selection)
+                rows = [{**row, "artifact": child}]
+        unit = "archive_members"
+    elif media in {"text/csv", "application/x-research-info-systems", "application/x-bibtex", "application/x-wos"}:
+        if media == "text/csv":
+            import csv, io
+            rows = list(csv.DictReader(io.StringIO(data.decode("utf-8-sig"))))
+        else:
+            rows = bibliography(data, media)
+    elif "html" in media:
+        from bs4 import BeautifulSoup
+        soup = BeautifulSoup(data, "html.parser")
+        if selection:
+            try:
+                rows = [str(node) for node in soup.select(selection)]
+            except Exception:
+                raise ServiceError("invalid_selection", "Invalid HTML CSS selector") from None
+        else:
+            rows = data.decode("utf-8").splitlines()
+            unit = "lines"
+    elif "xml" in media:
+        from defusedxml import ElementTree
+        from xml.etree.ElementTree import tostring
+        try:
+            root = ElementTree.fromstring(data)
+            rows = [tostring(node, encoding="unicode") for node in root.findall(selection)] if selection else [data.decode("utf-8")]
+        except Exception:
+            raise ServiceError("invalid_selection", "XML could not be parsed or the XPath subset is invalid") from None
+        unit = "elements"
+    elif media == "application/pdf":
+        import pymupdf
+        try:
+            doc = pymupdf.open(stream=data, filetype="pdf")
+        except Exception:
+            raise ServiceError("invalid_document", "PDF cannot be opened") from None
+        with doc:
+            total = len(doc)
+            rows = []
+            for index in range(start, min(start + count, total)):
+                page = doc[index]
+                text = page.get_text(sort=True)
+                row = {"page": index + 1, "text": text, "text_layer_empty": not text.strip()}
+                if render or not text.strip():
+                    png = page.get_pixmap(dpi=144).tobytes("png")
+                    row["image"] = store.put(png, "image/png", meta["source"], meta["url"], parent_ref=ref, page=index + 1)
+                rows.append(row)
+        return {"status": "ok", "artifact": ref, "unit": "pages", "start": start, "total": total,
+            "returned": len(rows), "next_start": start + len(rows) if start + len(rows) < total else None,
+            "items": rows, "interpretation": "Mechanical text and rendering; image meaning and text accuracy are assessed by the caller"}
+    elif media.startswith("text/"):
+        rows = data.decode("utf-8").splitlines()
+        unit = "lines"
+    else:
+        raise ServiceError("format_not_supported", "Use the preserved binary artifact; this format has no mechanical extractor", status="unsupported", artifact=ref)
+    total = len(rows)
+    window = rows[start:start + count]
+    if fields:
+        selected = []
+        for index, row in enumerate(window, start):
+            if not isinstance(row, dict):
+                raise ServiceError("invalid_selection", "fields requires object records")
+            absent = [field for field in fields if field not in row]
+            if absent:
+                missing.append({"index": index, "fields": absent})
+            selected.append({field: row[field] for field in fields if field in row})
+        window = selected
+    return {"status": "ok", "artifact": ref, "unit": unit, "start": start, "total": total,
+        "returned": len(window), "next_start": start + len(window) if start + len(window) < total else None,
+        "items": window, "missing_fields": missing}
