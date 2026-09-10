@@ -243,3 +243,9 @@ OpenAlex의 현행 공식 문서는 [help.openalex.org](https://help.openalex.or
 OpenAlex abstract_inverted_index는 단어와 위치의 원 대응을 검증해 한 칸 공백으로 복원한다. 중복·음수·잘못된 위치·빈 구간을 추측해 채우지 않는다. 원 색인은 metadata에 남는다. [공식 속성 설명](https://help.openalex.org/data/works/attributes/)처럼 이 색인상 초록은 출처가 다양하고 원 저자 초록과 다른 텍스트를 포함할 수 있으므로 출판사 원문과의 동일성을 주장하지 않는다. supplementary에는 나가는 referenced_works와 related_works를 별도 배열로 보존하며 연결 문헌을 자동 확보하지 않는다.
 
 실제 MCP `data/validation/20260910T101414398637Z-openalex-workflow.json`은 completed=true다. 구문 검색의 앞 4건과 start=1/limit=2를 대조하고, 그룹 두 페이지, works/W2741809807 URL·1,630바이트 복원 초록·참고 54개·관련 10개, 이름 후보, DOI 10.1006/jcss.1997.1494의 초록 not_found·참고 36개를 확인했다. 공통 검사 162개가 통과했다.
+
+Semantic Scholar의 [공식 Swagger](https://api.semanticscholar.org/graph/v1/swagger.json)에서 문헌 조회·참고/피인용 페이지·citationStyles·필터 의미를 확인했다. openAccessPdf는 값 없는 존재 필터라 기존 false 직렬화도 필터를 켤 수 있었다. true일 때만 빈 값으로 보내고 false/null은 제외하도록 수리했다. 이름 조회에는 문서화된 하이픈 제약을 반영하되 명시적 search query는 바꾸지 않는다. 원 요청 이름도 보존한다.
+
+Semantic Scholar 문헌 URL·별칭 ID를 대조하고, 문헌 검색 100건·관계 검색 1000건 상한과 원 offset/next를 구별했다. relation record의 paperId=null도 버리지 않는다. supplementary는 나가는 참조 페이지를 회수하며 뒤에서 제한되면 이미 받은 참조와 원 reported count를 유지한다. 피인용은 search kind=citations로 필요한 범위를 지정한다. 기본 metadata 요청에 references/citations 전체 배열을 포함하지 않는다. 원 citationStyles.bibtex는 파싱 가능한 한 건인지와 제공되는 DOI를 대조하며, 잘못된 원 파일은 고쳐 쓰지 않고 오류와 source_export로 보존한다.
+
+이 신규 Semantic Scholar 범위의 검증은 원 검색 record fixture와 공식 응답 구조에 근거한 대역 검사다. 새 실제 MCP `data/validation/20260910T103916Z-semantic-scholar-mcp.json`은 첫 검색에서 rate_limited라 completed=false다. 앞선 공개 검색 양성 기록과 이 미완료 기록을 구별하며, 관계·BibTeX가 실제 API에서 통과했다고 주장하지 않는다. 429 뒤 후속 원격 요청을 계속하지 않았다. 공통 검사 171개가 통과했다.

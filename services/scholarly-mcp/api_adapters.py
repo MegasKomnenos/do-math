@@ -507,23 +507,17 @@ class OpenAlex(APIAdapter):
 class SemanticScholar(APIAdapter):
     source = "semantic-scholar"
     hosts = ("api.semanticscholar.org",)
-    options = ("year", "fieldsOfStudy", "publicationTypes", "venue", "openAccessPdf", "minCitationCount", "publicationDateOrYear", "fields")
+    options = ("kind", "year", "fieldsOfStudy", "publicationTypes", "venue", "openAccessPdf", "minCitationCount", "publicationDateOrYear", "fields")
+    max_limit=1000
+    min_interval=1.05
 
     def search(self, query, *, options, start=0, limit=20, cursor=None, export=None):
-        self.validate(options, start, limit)
-        params = {"query": query, "offset": start, "limit": limit,
-            "fields": "title,authors,year,abstract,externalIds,url,openAccessPdf,publicationTypes", **options}
-        raw, evidence = self.request("https://api.semanticscholar.org/graph/v1/paper/search", params=params)
-        return self.export_page(self.page(raw["data"], raw.get("total"), evidence, query, options, start, limit, more="next" in raw), export)
+        from semantic_scholar import search
+        return search(self,query,options=options,start=start,limit=limit,cursor=cursor,export=export)
 
     def fetch(self, target, *, parts):
-        value = target
-        if value.startswith(("10.", "https://doi.org/", "doi:")): value = "DOI:" + doi(value)
-        if not re.fullmatch(r"(?:[0-9a-f]{40}|(?:DOI|ARXIV|PMID|CorpusId):\S+)", value, re.I):
-            raise ServiceError("invalid_target", "Use a paper ID, DOI, ARXIV:id or CorpusId:id")
-        raw, evidence = self.request("https://api.semanticscholar.org/graph/v1/paper/" + quote(value, safe=""),
-            params={"fields": "title,authors,year,abstract,externalIds,url,openAccessPdf,publicationTypes,references,citations"})
-        return self.fetched([raw], evidence, parts, ("metadata", "export") + (("abstract",) if raw.get("abstract") else ()))
+        from semantic_scholar import fetch
+        return fetch(self,target,parts=parts)
 
 
 class OpenCitations(APIAdapter):

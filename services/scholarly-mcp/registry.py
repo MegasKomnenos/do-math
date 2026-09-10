@@ -173,12 +173,13 @@ API_USAGE = {
         "examples": [{"tool": "search", "arguments": {"source": "openalex", "query": "\"natural proofs\"", "start":1,"limit": 2}},{"tool":"search","arguments":{"source":"openalex","query":"natural proofs","options":{"group_by":"publication_year"},"limit":2}},{"tool":"fetch","arguments":{"source":"openalex","target":"https://openalex.org/works/W2741809807","parts":["metadata","abstract","supplementary"]}}],
         "official": ["https://help.openalex.org/api/", "https://help.openalex.org/data/works/attributes/", "https://help.openalex.org/api/grouping/"]},
     "semantic-scholar": {
-        "search": "query는 논문 텍스트 검색어다. 연도·학문 분야·발행 유형·venue·공개 PDF 조건은 options로 준다.",
-        "options": {"year": "2020 또는 2020-2025", "fieldsOfStudy": "Computer Science,Mathematics 등", "publicationTypes": "JournalArticle,Conference,Review 등", "venue": "발행처 이름의 쉼표 목록", "openAccessPdf": "공개 PDF 존재 조건", "minCitationCount": "최소 인용 수", "publicationDateOrYear": "날짜 또는 기간", "fields": "필요한 원 필드 이름의 쉼표 목록"},
-        "fetch": "paperId, DOI, ARXIV:id 또는 CorpusId:id. 초록·서지·인용 관계를 보존한다. openAccessPdf의 외부 호스트는 자동 방문하지 않는다.",
-        "limits": "limit 1..100, start로 순회. 별도 자격 없는 공개 접근만 사용한다. 429는 요청 제한이며 자료 부재가 아니다. 실행 중 브라우저로 전환하지 않는다.",
-        "examples": [{"tool": "search", "arguments": {"source": "semantic-scholar", "query": "P versus NP", "limit": 2}}],
-        "official": ["https://api.semanticscholar.org/api-docs/graph"]},
+        "search": "kind=papers(기본)는 원 plain-text 논문 검색이다. Boolean 등 별도 검색 문법은 없고 명시한 query는 바꾸지 않는다. 원 API에서 하이픈 검색어가 매칭되지 않을 수 있다. kind=references 또는 citations이면 query에 문헌 식별자를 주고 해당 관계의 범위를 조회한다.",
+        "options": {"kind":"papers,references,citations", "year": "papers의 2020 또는 2020-2025", "fieldsOfStudy": "papers의 Computer Science,Mathematics 등", "publicationTypes": "papers의 JournalArticle,Conference,Review 등", "venue": "papers의 발행처 이름 쉼표 목록", "openAccessPdf": "papers에서 true는 공개 PDF 보유 조건, false/null은 그 필터 해제. 비공개 PDF만 고르는 뜻은 아니다.", "minCitationCount": "papers의 최소 인용 수", "publicationDateOrYear": "papers/citations의 날짜 또는 기간", "fields": "필요한 원 필드 이름 쉼표 목록. 예: title,authors,year,externalIds,url; 관계에는 contexts,intents,isInfluential도 제공된다."},
+        "fetch": "paperId·Semantic Scholar 문헌 URL·DOI·ARXIV:id·PMID:id·CorpusId:id를 대조한다. 이름은 원 API 특성에 맞춰 하이픈을 공백으로 바꿔 후보를 찾고 원 이름도 보존한다. 자동으로 후보를 고르지 않는다. metadata 조회에 전체 인용 배열을 붙이지 않는다. supplementary는 나가는 참고문헌의 페이지들을 회수하며 부분 실패·원 count와의 차이를 남긴다. 들어오는 인용은 search kind=citations로 범위를 지정한다. openAccessPdf의 외부 호스트는 자동 방문하지 않는다.",
+        "exports":"search의 json/native는 원 레코드·응답이다. papers의 bibtex와 fetch export는 citationStyles.bibtex 원 문자열이며 한 문헌과의 결합 및 파싱을 검사한다. 잘못된 원 형식은 고쳐 쓰지 않고 errors.source_export에 원 파일을 남긴다. 관계 페이지는 json/native로 보존한다.",
+        "limits": "papers limit 1..100, 관계 limit 1..1000. start와 원 next offset으로 순회하며 cursor는 사용하지 않는다. 관계 전체 건수는 제공되지 않아 total=null이다. 원 API가 count보다 앞서 순회를 끝내면 continuation_limited를 표시한다. 별도 자격 없는 공개 접근만 사용하고 호출 간격은 최소 1.05초다. 429는 요청 제한이며 자료 부재가 아니다. 신규 관계·BibTeX 실서비스 검증은 호출 제한으로 미완료다.",
+        "examples": [{"tool":"search","arguments":{"source":"semantic-scholar","query":"natural proofs","limit":2}},{"tool":"search","arguments":{"source":"semantic-scholar","query":"9a350a6787a5a79805ddb474feb256a5adfdbefb","options":{"kind":"citations"},"limit":2}}],
+        "official": ["https://api.semanticscholar.org/api-docs/graph", "https://api.semanticscholar.org/graph/v1/swagger.json"]},
 }
 for identifier, usage in API_USAGE.items():
     SOURCES[identifier].usage = usage
@@ -585,7 +586,7 @@ for identifier, level in {
     "software-heritage": "live_adapter_origin_search_fetch",
     "openalex": "live_mcp_arbitrary_window_group_cursor_abstract_relationships_name_doi",
     "core": "live_mcp_search_extract; fetch_rate_limit; fulltext_notice_regression",
-    "semantic-scholar": "rate_limit_observed",
+    "semantic-scholar": "live_mcp_search_extract; new_workflow_rate_limited; schema_regressions",
     "dblp": "access_challenge_observed",
     "zenodo": "live_mcp_search_file_checksum_fetch_extract",
     "figshare": "live_mcp_public_search_window_collection_versioned_file_md5_pdf_extract",

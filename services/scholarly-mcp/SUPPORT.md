@@ -17,7 +17,7 @@
 | Crossref | crossref | api | partial | source_guide, search, fetch, export | live_mcp_search_native_citation_eight_formats_extract |
 | Crossmark | crossmark | api | partial | source_guide, search, fetch, export | live_mcp_search_extract |
 | OpenAlex | openalex | api | partial | source_guide, search, fetch, export | live_mcp_arbitrary_window_group_cursor_abstract_relationships_name_doi |
-| Semantic Scholar | semantic-scholar | api | partial | source_guide, search, fetch, export | rate_limit_observed |
+| Semantic Scholar | semantic-scholar | api | partial | source_guide, search, fetch, export | live_mcp_search_extract; new_workflow_rate_limited; schema_regressions |
 | OpenCitations | opencitations | api | partial | source_guide, search, fetch, export | live_mcp_native_csv_window_oci_fetch_reference_count |
 | Unpaywall | unpaywall | api | deferred | source_guide | public_endpoint_contact_requirement_observed |
 | CORE | core | api | partial | source_guide, search, fetch, export | live_mcp_search_extract; fetch_rate_limit; fulltext_notice_regression |

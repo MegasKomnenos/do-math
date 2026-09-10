@@ -1,0 +1,44 @@
+{
+  "abstract": "Buhrman, Patro, and Speelman presented a framework of conjectures that together form a quantum analogue of the strong exponential-time hypothesis and its variants. They called it the QSETH framework. In this paper, using a notion of quantum natural proofs (built from natural proofs introduced by Razborov and Rudich), we show how part of the QSETH conjecture that requires properties to be `compression oblivious'can in many cases be replaced by assuming the existence of quantum-secure pseudorandom functions, a standard hardness assumption. Combined with techniques from Fourier analysis of Boolean functions, we show that properties such as PARITY and MAJORITY are compression oblivious for certain circuit class $\\Lambda$ if subexponentially secure quantum pseudorandom functions exist in $\\Lambda$, answering an open question in [Buhrman-Patro-Speelman 2021].",
+  "authors": [
+    {
+      "authorId": "2109266175",
+      "name": "Yanlin Chen"
+    },
+    {
+      "authorId": "1964412",
+      "name": "Yilei Chen"
+    },
+    {
+      "authorId": "2248206823",
+      "name": "Rajendra Kumar"
+    },
+    {
+      "authorId": "145278656",
+      "name": "Subhasree Patro"
+    },
+    {
+      "authorId": "1809994",
+      "name": "F. Speelman"
+    }
+  ],
+  "externalIds": {
+    "ArXiv": "2504.10363",
+    "CorpusId": 277780319,
+    "DBLP": "journals/corr/abs-2504-10363",
+    "DOI": "10.48550/arXiv.2504.10363"
+  },
+  "openAccessPdf": {
+    "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/2504.10363, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use.",
+    "license": null,
+    "status": null,
+    "url": ""
+  },
+  "paperId": "9a350a6787a5a79805ddb474feb256a5adfdbefb",
+  "publicationTypes": [
+    "JournalArticle"
+  ],
+  "title": "Fine-Grained Complexity via Quantum Natural Proofs",
+  "url": "https://www.semanticscholar.org/paper/9a350a6787a5a79805ddb474feb256a5adfdbefb",
+  "year": 2025
+}
