@@ -1,0 +1,36 @@
+<?xml version='1.0' encoding='utf-8'?>
+<records>
+  <record>
+    <language>eng</language>
+    <publisher>Schloss Dagstuhl – Leibniz-Zentrum für Informatik</publisher>
+    <journalTitle>Leibniz International Proceedings in Informatics</journalTitle>
+    <eissn>1868-8969</eissn>
+    <publicationDate>2020-01-06</publicationDate>
+    <startPage>5:1</startPage>
+    <endPage>5:2</endPage>
+    <doi>10.4230/LIPIcs.CSL.2020.5</doi>
+    <documentType>article</documentType>
+    <title language="eng">From Classical Proof Theory to P versus NP: a Guide to Bounded Theories (Invited Talk)</title>
+    <authors>
+      <author>
+        <name>Tzameret, Iddo</name>
+        <affiliationId>1</affiliationId>
+      </author>
+    </authors>
+    <affiliationsList>
+      <affiliationName affiliationId="1">Royal Holloway, University of London, UK</affiliationName>
+    </affiliationsList>
+    <abstract language="eng">This talk explores the question of what does logic and specifically proof theory can tell us about the fundamental hardness questions in computational complexity. We start with a brief description of the main concepts behind bounded arithmetic which is a family of weak formal theories of arithmetic that mirror in a precise manner the world of propositional proofs: if a statement of a given form is provable in a given bounded arithmetic theory then the same statement is suitably translated to a family of propositional formulas with short (polynomial-size) proofs in a corresponding propositional proof system.&#13;
+We will proceed to describe the motivations behind the study of bounded arithmetic theories, their corresponding propositional proof systems, and how they relate to the fundamental complexity class separations and circuit lower bounds questions in computational complexity. We provide a collage of results and recent developments showing how bounded arithmetic and propositional proof complexity form a cohesive framework in which both concrete combinatorial questions about complexity as well as meta-mathematical questions about provability of statements of complexity theory itself, are studied.&#13;
+Specific topics we shall mention are: (i) The bounded reverse mathematics program [Stephen Cook and Phuong Nguyen, 2010]: studying the weakest possible axiomatic assumptions that can prove important results in mathematics and computing (cf. [Iddo Tzameret and Stephen A. Cook, 2017; Pavel Hrubeš and Iddo Tzameret, 2015]), and the correspondence between circuit classes and theories. (ii) The meta-mathematics of computational complexity: what kind of reasoning power do we need in order to prove major results in complexity theory itself, and applications to complexity lower bounds (cf. [Razborov, 1995; Rahul Santhanam and Jan Pich, 2019]). (iii) Proof complexity: the systematic treatment of propositional proofs as combinatorial and algebraic objects and their algorithmic applications (cf. [Samuel Buss, 2012; Tonnian Pitassi and Iddo Tzameret, 2016; Noah Fleming et al., 2019]).</abstract>
+    <fullTextUrl format="pdf">https://drops.dagstuhl.de/storage/00lipics/lipics-vol152-csl2020/LIPIcs.CSL.2020.5/LIPIcs.CSL.2020.5.pdf</fullTextUrl>
+    <keywords language="eng">
+      <keyword>Bounded arithmetic</keyword>
+      <keyword>complexity class separations</keyword>
+      <keyword>circuit complexity</keyword>
+      <keyword>proof complexity</keyword>
+      <keyword>weak theories of arithmetic</keyword>
+      <keyword>feasible mathematics</keyword>
+    </keywords>
+  </record>
+</records>

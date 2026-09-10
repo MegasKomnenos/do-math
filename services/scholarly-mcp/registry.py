@@ -183,9 +183,9 @@ for identifier, usage in API_USAGE.items():
 MORE_API_USAGE = {
     "opencitations": {
         "search": "query에 DOI 또는 doi:…,pmid:…,omid:… 식별자를 넣는다. 키워드 검색 대신 지정 문헌의 인용 관계를 조회한다.",
-        "options": {"direction": "references는 나가는 참고문헌, citations는 들어오는 인용", "filter": "필드:값 또는 필드:>값, 필드:<값. 정규식 값도 서비스 문법대로 사용", "sort": "asc(필드) 또는 desc(필드)", "require": "값이 존재해야 하는 필드"},
-        "fetch": "지정 식별자의 참고문헌 관계를 반환한다. 연결된 논문은 자동 확보하지 않는다.",
-        "limits": "API가 반환한 전체 관계는 evidence로 보존하고 start·limit 창은 records에 둔다. json/native export. 전체 반환을 모든 자료원의 인용 관계로 해석하지 않는다.",
+        "options": {"direction": "references(기본)는 나가는 참고문헌, citations는 들어오는 인용. reference-count·citation-count는 각 관계 건수, citation은 OCI 한 건, venue-citation-count는 issn:번호의 저널 인용 건수", "filter": "필드:값 또는 필드:>값, 필드:<값. 정규식 값도 서비스 문법대로 사용. 여러 조건은 배열", "sort": "asc(필드) 또는 desc(필드)", "require": "값이 존재해야 하는 필드 또는 필드 배열", "json": "원 API의 array(\"구분자\",필드) 또는 dict(\"구분자\",필드,새필드,...) 변환. CSV에는 사용하지 않는다."},
+        "fetch": "DOI·PMID·OMID의 metadata·export는 전체 나가는 참고문헌 관계다. supplementary는 들어오는 인용 관계다. oci:두숫자-두숫자 또는 https://opencitations.net/oci/번호는 그 인용 관계 한 건을 반환한다. 연결된 논문은 자동 확보하지 않는다.",
+        "limits": "API가 반환한 전체 관계는 evidence로 보존하고 start·limit 창은 records에 둔다. json/native/csv export. csv의 export는 요청 구간을 원 필드로 재직렬화한 파일이고 native_export는 전체 원 CSV다. DOI 등이 가진 관계 0건은 논문 자체의 부재를 입증하지 않는다. 초록·전문은 이 인용 색인의 제공 대상이 아니다.",
         "examples": [{"tool": "search", "arguments": {"source": "opencitations", "query": "doi:10.1145/321250.321251", "options": {"direction": "references"}, "limit": 2}}],
         "official": ["https://api.opencitations.net/index/v2"]},
     "numdam": {
@@ -250,9 +250,9 @@ SOURCES["drops"].implementation = "partial"
 SOURCES["drops"].transport = "fixed: metadata API; search/document links Playwright"
 SOURCES["drops"].usage = {
     "search": "query를 DROPS Search All Entities 입력에 그대로 제출한다. 문헌·volume·artifact 등 실제 검색 결과를 보존한다. options는 비운다.",
-    "fetch": "10.4230/… DOI 또는 drops.dagstuhl.de/entities/… 링크. 서지·초록은 별도 자격 없는 metadata/schema-org 응답으로 회수한다. 원문을 요청하면 해당 문헌 페이지의 실제 PDF 링크를 찾아 같은 DROPS에서 받는다.",
-    "exports": "검색은 json 또는 html. fetch의 metadata·export는 원 Schema.org JSON이다. XML·BibTeX 등 나머지 native 형식의 연결은 구현 중이다.",
-    "limits": "start 0부터, limit 1..1000. 기능별 경로는 고정되어 있다. 서지 API 실패를 브라우저 전환 조건으로 쓰지 않는다. 추가 첨부파일은 source_page에 보존하되 자동 분류·회수는 구현 중이다.",
+    "fetch": "10.4230/… DOI 또는 drops.dagstuhl.de/entities/… 링크. artifacts. DOI는 artifact로 해석한다. 서지·초록은 공개 metadata/schema-org API다. fulltext는 현재 문헌의 Files 영역에 있는 PDF·HTML 파일들을 회수한다. /storage/의 PDF·HTML 파일 URL을 직접 지정하면 문헌과 링크를 대조해 해당 파일만 받는다. supplementary는 현재 문헌의 부가자료 설명과 링크이며 외부 저장소 파일을 방문하지 않는다.",
+    "exports": "검색은 json·html 또는 원 bibtex·xml·acm-xml·doaj-xml·schema-org·codemeta-json. 선택한 결과의 문헌별 파일과 실패를 보존한다. BibTeX에는 결합 파일 ref도 있다. fetch export는 논문의 Schema.org·BibTeX·XML·ACM-XML·DOAJ-XML이며 소프트웨어 artifact는 Schema.org·BibTeX·XML·CodeMeta다. CodeMeta의 identifier는 SWHID일 수 있으며 DOI와 구별한다.",
+    "limits": "start 0부터, limit 1..1000. 서지·내보내기는 공개 API, 검색·문헌 파일 링크 발견은 Playwright로 고정한다. BibTeX·CodeMeta는 원 다운로드 endpoint를 사용한다. XML의 현재 문헌 헤더와 요청 DOI를 대조하며 참고문헌 DOI로 대체하지 않는다. 자료 유형에 없는 export 형식은 해당 결과의 실패로 구별한다. 외부 부가파일은 링크만 보존한다.",
     "examples": [{"tool": "search", "arguments": {"source": "drops", "query": "P versus NP", "limit": 2}}, {"tool": "fetch", "arguments": {"source": "drops", "target": "10.4230/LIPIcs.CSL.2020.5", "parts": ["metadata", "abstract", "fulltext"]}}],
     "official": ["https://drops.dagstuhl.de/metadata", "https://drops.dagstuhl.de/oai"],
 }
@@ -471,6 +471,9 @@ for identifier, level in {
     "arxiv": "live_mcp_search_extract",
     "zbmath": "live_mcp_search_extract",
     "github": "live_adapter_pinned_file_fetch",
+    "mathlib": "live_mcp_pinned_source_search_file_fetch_line_comparison",
+    "math-comp": "live_mcp_pinned_source_search_file_fetch_line_comparison",
+    "opencitations": "live_mcp_native_csv_window_oci_fetch_reference_count",
     "numdam": "live_mcp_native_search_citations_jats_pdf_djvu_fetch_pagination",
     "software-heritage": "live_adapter_origin_search_fetch",
     "openalex": "public_endpoint_search_observed",
@@ -480,7 +483,7 @@ for identifier, level in {
     "zenodo": "live_mcp_search_file_checksum_fetch_extract",
     "acm-dl": "live_mcp_search_export_original_pdf_fetch",
     "scopus": "live_mcp_pagination_extract_metadata_abstract_fetch",
-    "drops": "live_mcp_search_metadata_abstract_pdf_fetch",
+    "drops": "live_mcp_native_exports_pdf_html_codemeta_and_supplementary_references",
     "springer": "live_mcp_advanced_search_native_citations_pdf_fetch_pagination",
     "ieee-xplore": "live_mcp_search_bibtex_extract_metadata_abstract_pdf_fetch",
     "crossmark": "live_mcp_search_extract",

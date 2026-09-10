@@ -12,21 +12,21 @@
 | arXiv | arxiv | api | partial | source_guide, search, fetch, export | live_mcp_search_extract |
 | DBLP | dblp | api | partial | source_guide, search, fetch, export | access_challenge_observed |
 | ECCC | eccc | playwright | partial | source_guide, search, fetch, export | live_mcp_search_revision_fetch |
-| DROPS / LIPIcs | drops | fixed: metadata API; search/document links Playwright | partial | source_guide, search, fetch, export | live_mcp_search_metadata_abstract_pdf_fetch |
+| DROPS / LIPIcs | drops | fixed: metadata API; search/document links Playwright | partial | source_guide, search, fetch, export | live_mcp_native_exports_pdf_html_codemeta_and_supplementary_references |
 | Theory of Computing | theory-of-computing | playwright | partial | source_guide, search, fetch, export | live_mcp_indexes_citation_pdf_source_ps_references_fetch_and_text_pagination |
 | Crossref | crossref | api | partial | source_guide, search, fetch, export | live_mcp_search_extract |
 | Crossmark | crossmark | api | partial | source_guide, search, fetch, export | live_mcp_search_extract |
 | OpenAlex | openalex | api | partial | source_guide, search, fetch, export | public_endpoint_search_observed |
 | Semantic Scholar | semantic-scholar | api | partial | source_guide, search, fetch, export | rate_limit_observed |
-| OpenCitations | opencitations | api | partial | source_guide, search, fetch, export | not_recorded |
+| OpenCitations | opencitations | api | partial | source_guide, search, fetch, export | live_mcp_native_csv_window_oci_fetch_reference_count |
 | Unpaywall | unpaywall | api | deferred | source_guide | public_endpoint_contact_requirement_observed |
 | CORE | core | api | partial | source_guide, search, fetch, export | public_endpoint_success_and_rate_limit_observed |
 | Project Euclid | project-euclid | playwright | partial | source_guide, fetch, export | live_adapter_metadata_abstract_pdf_fetch |
 | EuDML | eudml | api | partial | source_guide, search, fetch, export | live_mcp_cql_rss_extract_nlm_fetch |
 | Numdam | numdam | fixed: OAI/citation API; native search/DOI resolution Playwright | partial | source_guide, search, fetch, export | live_mcp_native_search_citations_jats_pdf_djvu_fetch_pagination |
-| Mathlib | mathlib | api | partial | source_guide, search, fetch, export | not_recorded |
+| Mathlib | mathlib | api | partial | source_guide, search, fetch, export | live_mcp_pinned_source_search_file_fetch_line_comparison |
 | Archive of Formal Proofs | afp | api | partial | source_guide, search, fetch, export | live_mcp_entry_search_pinned_metadata_and_proof_source_fetch_extract |
-| Mathematical Components | math-comp | api | partial | source_guide, search, fetch, export | not_recorded |
+| Mathematical Components | math-comp | api | partial | source_guide, search, fetch, export | live_mcp_pinned_source_search_file_fetch_line_comparison |
 | GitHub | github | api | partial | source_guide, search, fetch, export | live_adapter_pinned_file_fetch |
 | Zenodo | zenodo | api | partial | source_guide, search, fetch, export | live_mcp_search_file_checksum_fetch_extract |
 | Software Heritage | software-heritage | api | partial | source_guide, search, fetch, export | live_adapter_origin_search_fetch |

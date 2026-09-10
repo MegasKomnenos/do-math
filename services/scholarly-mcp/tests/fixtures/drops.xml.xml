@@ -1,0 +1,70 @@
+<?xml version='1.0' encoding='utf-8'?>
+<metadata xmlns="https://drops.dagstuhl.de/storage/schema/dagstuhl/dagpub.xsd">
+  <article articleNo="5">
+    <title>From Classical Proof Theory to P versus NP: a Guide to Bounded Theories (Invited Talk)</title>
+    <abstract>This talk explores the question of what does logic and specifically proof theory can tell us about the fundamental hardness questions in computational complexity. We start with a brief description of the main concepts behind bounded arithmetic which is a family of weak formal theories of arithmetic that mirror in a precise manner the world of propositional proofs: if a statement of a given form is provable in a given bounded arithmetic theory then the same statement is suitably translated to a family of propositional formulas with short (polynomial-size) proofs in a corresponding propositional proof system.&#13;
+We will proceed to describe the motivations behind the study of bounded arithmetic theories, their corresponding propositional proof systems, and how they relate to the fundamental complexity class separations and circuit lower bounds questions in computational complexity. We provide a collage of results and recent developments showing how bounded arithmetic and propositional proof complexity form a cohesive framework in which both concrete combinatorial questions about complexity as well as meta-mathematical questions about provability of statements of complexity theory itself, are studied.&#13;
+Specific topics we shall mention are: (i) The bounded reverse mathematics program [Stephen Cook and Phuong Nguyen, 2010]: studying the weakest possible axiomatic assumptions that can prove important results in mathematics and computing (cf. [Iddo Tzameret and Stephen A. Cook, 2017; Pavel Hrubeš and Iddo Tzameret, 2015]), and the correspondence between circuit classes and theories. (ii) The meta-mathematics of computational complexity: what kind of reasoning power do we need in order to prove major results in complexity theory itself, and applications to complexity lower bounds (cf. [Razborov, 1995; Rahul Santhanam and Jan Pich, 2019]). (iii) Proof complexity: the systematic treatment of propositional proofs as combinatorial and algebraic objects and their algorithmic applications (cf. [Samuel Buss, 2012; Tonnian Pitassi and Iddo Tzameret, 2016; Noah Fleming et al., 2019]).</abstract>
+    <keyword>Bounded arithmetic</keyword>
+    <keyword>complexity class separations</keyword>
+    <keyword>circuit complexity</keyword>
+    <keyword>proof complexity</keyword>
+    <keyword>weak theories of arithmetic</keyword>
+    <keyword>feasible mathematics</keyword>
+    <subjectClassification acmID="10003752.10003777.10003785">Theory of computation~Proof complexity</subjectClassification>
+    <subjectClassification acmID="10003752.10003777.10003787">Theory of computation~Complexity theory and logic</subjectClassification>
+    <subjectClassification acmID="10003752.10003777.10003781">Theory of computation~Circuit complexity</subjectClassification>
+    <subjectClassification acmID="10003752.10003790.10003792">Theory of computation~Proof theory</subjectClassification>
+    <subjectClassification acmID="10003752.10003777.10003783">Theory of computation~Algebraic complexity theory</subjectClassification>
+    <pages>5:1-5:2</pages>
+    <category>Invited Talk</category>
+    <acknowledgements/>
+    <author>
+      <firstName>Iddo</firstName>
+      <lastName>Tzameret</lastName>
+      <name>Iddo Tzameret</name>
+      <affiliation>Royal Holloway, University of London, UK</affiliation>
+      <homepageUrl>http://www.cs.rhul.ac.uk/home/tzameret</homepageUrl>
+      <orcid/>
+    </author>
+    <doi>10.4230/LIPIcs.CSL.2020.5</doi>
+    <contentUrl/>
+    <archivedUrl/>
+    <reference refNo="1">
+      <text>Samuel Buss. Towards NP-P via Proof Complexity and Search. Annals of Pure and Applied Logic, 163(7):906-917, 2012.</text>
+      <url/>
+    </reference>
+    <reference refNo="2">
+      <text>Stephen Cook and Phuong Nguyen. Logical Foundations of Proof Complexity. ASL Perspectives in Logic. Cambridge University Press, 2010.</text>
+      <url/>
+    </reference>
+    <reference refNo="3">
+      <text>Noah Fleming, Pravesh Kothari, and Toniann Pitassi. Semialgebraic Proofs and Efficient Algorithm Design. Electronic Colloquium on Computational Complexity (ECCC), 26:106, 2019. URL: https://eccc.weizmann.ac.il/report/2019/106.</text>
+      <url>https://eccc.weizmann.ac.il/report/2019/106</url>
+    </reference>
+    <reference refNo="4">
+      <text>Pavel Hrubeš and Iddo Tzameret. Short Proofs for the Determinant Identities. SIAM J. Comput., 44(2):340-383, 2015. (A preliminary version appeared in Proceedings of the 44th Annual ACM Symposium on the Theory of Computing (STOC'12)). URL: https://doi.org/10.1137/130917788.</text>
+      <url>https://doi.org/10.1137/130917788</url>
+    </reference>
+    <reference refNo="5">
+      <text>Tonnian Pitassi and Iddo Tzameret. Algebraic Proof Complexity: Progress, Frontiers and Challenges. ACM SIGLOG News, 3(3), 2016.</text>
+      <url/>
+    </reference>
+    <reference refNo="6">
+      <text>Alexander A. Razborov. Unprovability of lower bounds on circuit size in certain fragments of bounded arithmetic. Izv. Ross. Akad. Nauk Ser. Mat., 59(1):201-224, 1995.</text>
+      <url/>
+    </reference>
+    <reference refNo="7">
+      <text>Rahul Santhanam and Jan Pich. Why are proof complexity lower bounds hard? In 60th Annual IEEE Symposium on Foundations of Computer Science FOCS 2019, November 9-12, 2019, Baltimore, Maryland USA, 2019.</text>
+      <url/>
+    </reference>
+    <reference refNo="8">
+      <text>Iddo Tzameret and Stephen A. Cook. Uniform, integral and efficient proofs for the determinant identities. In 32nd Annual ACM/IEEE Symposium on Logic in Computer Science, LICS 2017, Reykjavik, Iceland, June 20-23, 2017, pages 1-12, 2017. URL: https://doi.org/10.1109/LICS.2017.8005099.</text>
+      <url>https://doi.org/10.1109/LICS.2017.8005099</url>
+    </reference>
+    <copyright>Iddo Tzameret</copyright>
+    <license>Creative Commons Attribution 3.0 Unported license</license>
+    <licenseUrl>https://creativecommons.org/licenses/by/3.0/legalcode</licenseUrl>
+    <publishedAt>2020-01-06</publishedAt>
+  </article>
+</metadata>

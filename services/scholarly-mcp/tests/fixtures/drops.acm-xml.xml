@@ -1,0 +1,113 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE book-part-wrapper PUBLIC "-//NLM//DTD BITS Book Interchange DTD with OASIS and XHTML Tables v2.0 20151225//EN" "BITS-book-oasis2.dtd">
+<book-part-wrapper xmlns:xlink="http://www.w3.org/1999/xlink" dtd-version="2.0" xml:lang="en" content-type="research-article">
+  <collection-meta collection-type="book-series">
+    <collection-id collection-id-type="doi">10.1145/acmotherconferences</collection-id>
+    <title-group>
+      <title>ACM Other Conferences</title>
+    </title-group>
+  </collection-meta>
+  <book-meta>
+    <book-id book-id-type="acm-id">0000000</book-id>
+    <book-id book-id-type="doi">10.5555/0000000</book-id>
+    <book-title-group>
+      <book-title>Proceedings of the 28th EACSL Annual Conference on Computer Science Logic (CSL 2020)</book-title>
+      <alt-title alt-title-type="acronym">CSL 2020</alt-title>
+    </book-title-group>
+  </book-meta>
+  <book-part book-part-type="chapter" xml:lang="en">
+    <book-part-meta>
+      <book-part-id book-part-id-type="doi">10.4230/LIPIcs.CSL.2020.5</book-part-id>
+      <book-part-id book-part-id-type="article-no">5</book-part-id>
+      <subj-group subj-group-type="ccs2012">
+        <compound-subject>
+          <compound-subject-part content-type="code">10003752.10003777.10003785</compound-subject-part>
+          <compound-subject-part content-type="text">Theory of computation~Proof complexity</compound-subject-part>
+          <compound-subject-part content-type="weight">500</compound-subject-part>
+        </compound-subject>
+        <compound-subject>
+          <compound-subject-part content-type="code">10003752.10003777.10003787</compound-subject-part>
+          <compound-subject-part content-type="text">Theory of computation~Complexity theory and logic</compound-subject-part>
+          <compound-subject-part content-type="weight">500</compound-subject-part>
+        </compound-subject>
+        <compound-subject>
+          <compound-subject-part content-type="code">10003752.10003777.10003781</compound-subject-part>
+          <compound-subject-part content-type="text">Theory of computation~Circuit complexity</compound-subject-part>
+          <compound-subject-part content-type="weight">500</compound-subject-part>
+        </compound-subject>
+        <compound-subject>
+          <compound-subject-part content-type="code">10003752.10003790.10003792</compound-subject-part>
+          <compound-subject-part content-type="text">Theory of computation~Proof theory</compound-subject-part>
+          <compound-subject-part content-type="weight">500</compound-subject-part>
+        </compound-subject>
+        <compound-subject>
+          <compound-subject-part content-type="code">10003752.10003777.10003783</compound-subject-part>
+          <compound-subject-part content-type="text">Theory of computation~Algebraic complexity theory</compound-subject-part>
+          <compound-subject-part content-type="weight">500</compound-subject-part>
+        </compound-subject>
+      </subj-group>
+      <title-group>
+        <title>From Classical Proof Theory to P versus NP: a Guide to Bounded Theories (Invited Talk)</title>
+      </title-group>
+      <contrib-group>
+        <contrib contrib-type="author" id="artseq-00001">
+          <name>
+            <surname>Tzameret</surname>
+            <given-names>Iddo</given-names>
+          </name>
+          <aff>Royal Holloway, University of London, UK</aff>
+          <email>a0xxxxxxxxxxx@eeeee.test</email>
+          <role>Author</role>
+        </contrib>
+      </contrib-group>
+      <pub-date date-type="publication">
+        <day>06</day>
+        <month>01</month>
+        <year>2020</year>
+      </pub-date>
+      <fpage>5:1</fpage>
+      <lpage>5:2</lpage>
+      <abstract>
+        <p>This talk explores the question of what does logic and specifically proof theory can tell us about the fundamental hardness questions in computational complexity. We start with a brief description of the main concepts behind bounded arithmetic which is a family of weak formal theories of arithmetic that mirror in a precise manner the world of propositional proofs: if a statement of a given form is provable in a given bounded arithmetic theory then the same statement is suitably translated to a family of propositional formulas with short (polynomial-size) proofs in a corresponding propositional proof system.&#13;</p>
+        <p>We will proceed to describe the motivations behind the study of bounded arithmetic theories, their corresponding propositional proof systems, and how they relate to the fundamental complexity class separations and circuit lower bounds questions in computational complexity. We provide a collage of results and recent developments showing how bounded arithmetic and propositional proof complexity form a cohesive framework in which both concrete combinatorial questions about complexity as well as meta-mathematical questions about provability of statements of complexity theory itself, are studied.&#13;</p>
+        <p>Specific topics we shall mention are: (i) The bounded reverse mathematics program [Stephen Cook and Phuong Nguyen, 2010]: studying the weakest possible axiomatic assumptions that can prove important results in mathematics and computing (cf. [Iddo Tzameret and Stephen A. Cook, 2017; Pavel Hrubeš and Iddo Tzameret, 2015]), and the correspondence between circuit classes and theories. (ii) The meta-mathematics of computational complexity: what kind of reasoning power do we need in order to prove major results in complexity theory itself, and applications to complexity lower bounds (cf. [Razborov, 1995; Rahul Santhanam and Jan Pich, 2019]). (iii) Proof complexity: the systematic treatment of propositional proofs as combinatorial and algebraic objects and their algorithmic applications (cf. [Samuel Buss, 2012; Tonnian Pitassi and Iddo Tzameret, 2016; Noah Fleming et al., 2019]).</p>
+      </abstract>
+      <kwd-group>
+        <kwd>Bounded arithmetic</kwd>
+        <kwd>complexity class separations</kwd>
+        <kwd>circuit complexity</kwd>
+        <kwd>proof complexity</kwd>
+        <kwd>weak theories of arithmetic</kwd>
+        <kwd>feasible mathematics</kwd>
+      </kwd-group>
+    </book-part-meta>
+    <back>
+      <ref-list specific-use="unparsed">
+        <ref id="ref-00001">
+          <mixed-citation>Samuel Buss. Towards NP-P via Proof Complexity and Search. Annals of Pure and Applied Logic, 163(7):906-917, 2012.</mixed-citation>
+        </ref>
+        <ref id="ref-00002">
+          <mixed-citation>Stephen Cook and Phuong Nguyen. Logical Foundations of Proof Complexity. ASL Perspectives in Logic. Cambridge University Press, 2010.</mixed-citation>
+        </ref>
+        <ref id="ref-00003">
+          <mixed-citation>Noah Fleming, Pravesh Kothari, and Toniann Pitassi. Semialgebraic Proofs and Efficient Algorithm Design. Electronic Colloquium on Computational Complexity (ECCC), 26:106, 2019. URL: https://eccc.weizmann.ac.il/report/2019/106.</mixed-citation>
+        </ref>
+        <ref id="ref-00004">
+          <mixed-citation>Pavel Hrubeš and Iddo Tzameret. Short Proofs for the Determinant Identities. SIAM J. Comput., 44(2):340-383, 2015. (A preliminary version appeared in Proceedings of the 44th Annual ACM Symposium on the Theory of Computing (STOC'12)).<pub-id pub-id-type="doi" xlink:href="10.1137/130917788">10.1137/130917788</pub-id></mixed-citation>
+        </ref>
+        <ref id="ref-00005">
+          <mixed-citation>Tonnian Pitassi and Iddo Tzameret. Algebraic Proof Complexity: Progress, Frontiers and Challenges. ACM SIGLOG News, 3(3), 2016.</mixed-citation>
+        </ref>
+        <ref id="ref-00006">
+          <mixed-citation>Alexander A. Razborov. Unprovability of lower bounds on circuit size in certain fragments of bounded arithmetic. Izv. Ross. Akad. Nauk Ser. Mat., 59(1):201-224, 1995.</mixed-citation>
+        </ref>
+        <ref id="ref-00007">
+          <mixed-citation>Rahul Santhanam and Jan Pich. Why are proof complexity lower bounds hard? In 60th Annual IEEE Symposium on Foundations of Computer Science FOCS 2019, November 9-12, 2019, Baltimore, Maryland USA, 2019.</mixed-citation>
+        </ref>
+        <ref id="ref-00008">
+          <mixed-citation>Iddo Tzameret and Stephen A. Cook. Uniform, integral and efficient proofs for the determinant identities. In 32nd Annual ACM/IEEE Symposium on Logic in Computer Science, LICS 2017, Reykjavik, Iceland, June 20-23, 2017, pages 1-12, 2017.<pub-id pub-id-type="doi" xlink:href="10.1109/LICS.2017.8005099">10.1109/LICS.2017.8005099</pub-id></mixed-citation>
+        </ref>
+      </ref-list>
+    </back>
+  </book-part>
+</book-part-wrapper>

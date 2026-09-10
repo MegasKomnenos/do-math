@@ -75,7 +75,8 @@ class APIAdapter:
         if code >= 400:
             raise ServiceError("provider_error", "Source returned an HTTP error", source=self.source, http_status=code, retryable=code >= 500)
         media = response.headers.get("content-type", "").split(";")[0].strip().lower()
-        if accept in ("json", "xml") and (media == "text/html" or response.content.lstrip().lower().startswith((b"<!doctype html", b"<html"))):
+        is_html = media in ('text/html', 'application/xhtml+xml') or response.content.lstrip().lower().startswith((b'<!doctype html', b'<html'))
+        if accept != 'html' and is_html:
             challenged = bool(re.search(r"verify|human|captcha|robot|anubis|just a moment|access denied", response.text, re.I))
             raise ServiceError("access_challenge" if challenged else "unexpected_content", "Source returned HTML instead of the requested API data",
                 status="restricted" if challenged else "error", source=self.source)
@@ -86,7 +87,11 @@ class APIAdapter:
         next_link = response.links.get("next", {}).get("url", "")
         page_cursor = parse_qs(urlsplit(next_link).query).get("page_token", [None])[0]
         page_number = parse_qs(urlsplit(next_link).query).get("page", [""])[0]
-        evidence = self.store.put(encoded(payload) if accept == "json" else response.content,
+        preserved = encoded(payload) if accept == 'json' else response.content
+        if is_html:
+            from browser_adapters import clean_html
+            preserved = clean_html(preserved, self.store.sanitizer)
+        evidence = self.store.put(preserved,
             "application/json" if accept == "json" else (media or "application/octet-stream"), self.source, str(response.url), preserve_bytes=accept == "binary", role="provider_response",
             **({"next_cursor": page_cursor} if page_cursor else {}), **({"next_page": int(page_number)} if page_number.isdigit() else {}))
         return payload, evidence
@@ -354,7 +359,7 @@ class SemanticScholar(APIAdapter):
 class OpenCitations(APIAdapter):
     source = "opencitations"
     hosts = ("api.opencitations.net",)
-    options = ("direction", "filter", "sort", "require")
+    options = ("direction", "filter", "sort", "require", "json")
     max_limit = 1000
     min_interval = 0.34
 
@@ -364,19 +369,69 @@ class OpenCitations(APIAdapter):
             raise ServiceError("invalid_cursor", "Use start for the preserved citation-edge list")
         if query.startswith(("10.", "https://doi.org/")):
             query = "doi:" + doi(query)
-        if not re.fullmatch(r"(?:doi|pmid|omid):\S+", query):
-            raise ServiceError("invalid_query", "OpenCitations requires a DOI, PMID or OMID, not a keyword query")
         direction = options.get("direction", "references")
-        if direction not in ("references", "citations"):
-            raise ServiceError("invalid_options", "direction must be references or citations")
+        if direction not in ('references', 'citations', 'citation', 'reference-count', 'citation-count', 'venue-citation-count'):
+            raise ServiceError('invalid_options', 'Use a documented OpenCitations relation or count operation')
+        if direction == 'citation':
+            query = query.removeprefix('oci:')
+            valid = re.fullmatch(r'\d+-\d+', query)
+        elif direction == 'venue-citation-count':
+            valid = re.fullmatch(r'issn:\d{4}-\d{3}[0-9Xx]', query)
+        else:
+            valid = re.fullmatch(r'(?:doi|pmid|omid):\S+', query)
+        if not valid:
+            raise ServiceError('invalid_query', 'Use DOI/PMID/OMID for document relations, OCI for citation, or ISSN for venue-citation-count')
+        if export not in (None, 'json', 'native', 'csv') or (export == 'csv' and 'json' in options):
+            raise ServiceError('invalid_export', 'Use json/native/csv; json transformations require JSON output')
         params = {k: v for k, v in options.items() if k != "direction"}
-        raw, evidence = self.request("https://api.opencitations.net/index/v2/" + direction + "/" + quote(query, safe=""), params=params)
+        url = 'https://api.opencitations.net/index/v2/' + direction + '/' + quote(query, safe='')
+        if export == 'csv':
+            import csv, io
+            data, evidence = self.request(url, params={**params, 'format': 'csv'}, headers={'Accept': 'text/csv'}, accept='binary')
+            reader = csv.DictReader(io.StringIO(data.decode('utf-8-sig')))
+            raw = list(reader)
+            if not reader.fieldnames or not ({'oci', 'count'} & set(reader.fieldnames)) or any(None in row for row in raw):
+                raise ServiceError('invalid_response', 'OpenCitations returned no recognized CSV table', evidence=evidence)
+            native = self.store.put(data, 'text/csv', self.source, evidence['url'], role='native_csv', evidence_ref=evidence['ref'])
+        else:
+            raw, evidence = self.request(url, params={**params, 'format': 'json'})
         if not isinstance(raw, list):
             raise ServiceError("invalid_response", "OpenCitations did not return a citation-edge array", evidence=evidence)
-        return self.export_page(self.page(raw[start:start + limit], len(raw), evidence, query, options, start, limit), export)
+        result = self.page(raw[start:start + limit], len(raw), evidence, query, options, start, limit)
+        if export == 'csv':
+            output = io.StringIO(newline='')
+            writer = csv.DictWriter(output, fieldnames=reader.fieldnames)
+            writer.writeheader()
+            writer.writerows(raw[start:start + limit])
+            result['export'] = self.store.put(output.getvalue(), 'text/csv', self.source, evidence['url'], role='selected_csv', parent_ref=native['ref'], start=start, requested=limit)
+            result['native_export'] = native
+            result['export_scope'] = 'Requested window in export; complete provider CSV in native_export'
+            return result
+        return self.export_page(result, export)
 
     def fetch(self, target, *, parts):
-        return self.search(target, options={"direction": "references"}, limit=1000)
+        if set(parts) - {'metadata', 'abstract', 'fulltext', 'export', 'supplementary'}:
+            raise ServiceError('invalid_parts', 'Use metadata, abstract, fulltext, export or supplementary')
+        if target.startswith('https://opencitations.net/oci/'):
+            target = 'oci:' + urlsplit(target).path.removeprefix('/oci/')
+        operation = 'citation' if target.startswith('oci:') or re.fullmatch(r'\d+-\d+', target) else 'references'
+        result = self.search(target, options={'direction': operation}, limit=1000)
+        components = {}
+        for part in parts:
+            if part in ('metadata', 'export'):
+                components[part] = {'status': 'available', 'artifact': result['evidence'], 'scope': 'Complete native citation relationship data'}
+            elif part == 'supplementary' and operation == 'references':
+                try:
+                    incoming = self.search(target, options={'direction': 'citations'}, limit=1000)
+                    components[part] = {'status': 'available', 'artifact': incoming['evidence'], 'scope': 'Incoming citation relationships'}
+                except ServiceError as error:
+                    components[part] = error.result
+            else:
+                components[part] = {'status': 'not_offered', 'reason': 'The citation index provides relationships, not article abstract or fulltext'}
+        result.update(target=target, components=components)
+        if any(c['status'] != 'available' for c in components.values()):
+            result['status'] = 'partial'
+        return result
 
 
 class Numdam(APIAdapter):

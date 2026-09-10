@@ -106,6 +106,17 @@ async def main():
             assert fetched["status"] == "ok", fetched.get("code")
             native = await call("extract", {"ref": fetched["components"]["metadata"]["artifact"]["ref"], "selection": "./front/article-meta/article-id", "count": 10})
             assert any("urn:eudml:doc:196516" in item for item in native["items"])
+        elif args.source == 'opencitations':
+            found = await call('search', {'source': args.source, 'query': 'doi:10.1186/1756-8722-6-59', 'start': 1, 'limit': 2, 'export': 'csv'})
+            assert found['status'] == 'ok' and found['received'] == 2
+            rows = await call('extract', {'ref': found['export']['ref'], 'count': 2})
+            assert rows['returned'] == 2
+            first = rows['items'][0]
+            fetched = await call('fetch', {'source': args.source, 'target': 'oci:' + first['oci'], 'parts': ['metadata', 'export']})
+            assert fetched['status'] == 'ok' and fetched['received'] == 1
+            count = await call('search', {'source': args.source, 'query': 'doi:10.1186/1756-8722-6-59', 'options': {'direction': 'reference-count'}, 'limit': 1})
+            value = await call('extract', {'ref': count['records']['ref'], 'count': 1})
+            assert int(value['items'][0]['count']) == found['total']
         elif args.source == "zenodo":
             search = await call("search", {"source": "zenodo", "query": '"P versus NP"', "limit": 1})
             assert search["status"] == "ok", search.get("code")
@@ -130,6 +141,17 @@ async def main():
             web = await call("search", {"source": args.source, "query": '"geometric complexity"', "start": 10, "limit": 2})
             assert web["status"] == "ok", web.get("code")
             assert web["received"] == 2
+        elif args.source in ('mathlib', 'math-comp'):
+            path_prefix = 'Mathlib/Computability/' if args.source == 'mathlib' else 'algebra/'
+            query = 'theorem' if args.source == 'mathlib' else 'Lemma'
+            found = await call('search', {'source': args.source, 'query': query, 'options': {'path': path_prefix}, 'limit': 2})
+            assert found['status'] == 'ok' and found['received'] == 2
+            rows = await call('extract', {'ref': found['records']['ref'], 'count': 2})
+            first = rows['items'][0]
+            fetched = await call('fetch', {'source': args.source, 'target': found['revision'] + ':' + first['path'], 'parts': ['metadata', 'fulltext']})
+            assert fetched['status'] == 'ok' and fetched['revision'] == found['revision']
+            lines = await call('extract', {'ref': fetched['components']['fulltext']['artifact']['ref'], 'start': first['line'] - 1, 'count': 1})
+            assert lines['items'][0] == first['text']
         elif args.source == "afp":
             search = await call("search", {"source": "afp", "query": "Cook-Levin", "limit": 10})
             assert search["status"] == "ok", search.get("code")
@@ -171,11 +193,22 @@ async def main():
             fetched = await call("fetch", {"source": "scopus", "target": records["items"][0]["eid"], "parts": ["metadata", "abstract"]})
             assert fetched["status"] == "ok", fetched.get("code")
         elif args.source == "drops":
-            search = await call("search", {"source": "drops", "query": "P versus NP", "limit": 2})
+            search = await call("search", {"source": "drops", "query": "P versus NP", "limit": 2, "export": "bibtex"})
             assert search["status"] == "ok", search.get("code")
-            fetched = await call("fetch", {"source": "drops", "target": "10.4230/LIPIcs.CSL.2020.5", "parts": ["metadata", "abstract", "fulltext"]})
+            cited = await call('extract', {'ref': search['export']['ref'], 'count': 2})
+            assert cited['returned'] == 2
+            fetched = await call("fetch", {"source": "drops", "target": "10.4230/LIPIcs.CSL.2020.5", "parts": ["metadata", "abstract", "fulltext", "export"]})
             assert fetched["status"] == "ok", fetched.get("code")
             assert fetched["components"]["fulltext"]["artifact"]["pages"] == 2
+            assert len(fetched['components']['export']['artifacts']) == 5
+            html = await call('fetch', {'source': 'drops', 'target': 'https://drops.dagstuhl.de/storage/00lipics/lipics-vol347-dna31/html/LIPIcs.DNA.31.9/LIPIcs.DNA.31.9.html', 'parts': ['metadata', 'fulltext', 'supplementary']})
+            assert html['status'] == 'ok', html.get('code')
+            assert html['components']['fulltext']['artifact']['media_type'] == 'text/html'
+            extracted = await call('extract', {'ref': html['components']['fulltext']['artifact']['ref'], 'selection': 'article', 'count': 1})
+            assert extracted['returned'] == 1
+            artifact = await call('fetch', {'source': 'drops', 'target': '10.4230/artifacts.27685', 'parts': ['metadata', 'export']})
+            assert artifact['status'] == 'ok'
+            assert {x['format'] for x in artifact['components']['export']['artifacts']} == {'schema-org', 'bibtex', 'xml', 'codemeta-json'}
         elif args.source == 'jstor':
             fetched=await call('fetch',{'source':'jstor','target':'10.2307/345683','parts':['metadata','abstract','export']})
             assert fetched['status']=='ok',fetched.get('code')

@@ -90,3 +90,16 @@ JSTOR의 공개 `/citation/ris/345683`은 별도 자격 없이 원 RIS를 반환
 Numdam이 제공한 실제 EndNote 파일에 extract를 호출하여 format_not_supported를 재현한 뒤 공통 추출기를 확장했다. 원 태그의 대소문자, 반복 저자, 이어지는 줄과 원 레코드 텍스트를 보존한다. 실제 공개 파일은 `tests/fixtures/numdam.enw`, 정제한 검색 응답은 `tests/fixtures/numdam-search.html`이다. 새 회귀 검사를 포함해 공통 검사 81개가 통과했다. 검색 문법은 [Numdam 도움말](https://www.numdam.org/help/), OAI의 역할은 [메타데이터 안내](https://www.numdam.org/metadata/)와 대조했다. OAI 갱신일과 웹 검색의 발행연도를 같은 필터로 취급하지 않는다.
 
 같은 날 ScienceDirect의 공개 citation endpoint는 HTTP 403의 HTML을 반환했고, KUDOS 기관 경로에서 Natural Proofs의 정확한 PII 문헌 조회는 publisher_access_restricted였다. AMS의 DOI 10.1090/jams/1019 기관 문헌 조회도 publisher_access_restricted였다. 이 확인을 검색·전문 구현 완료나 자료 부재의 근거로 사용하지 않는다. 원 HTML·숨은 입력값·인증 URL을 출력하지 않고 허용한 상태·제어 이름·공개 문헌 식별자만 진단에 사용했다.
+
+
+2026-09-10 DROPS의 추가 검색 내보내기와 원문 형식을 실제 MCP에서 검증했다. P versus NP 44건 중 두 문헌의 native BibTeX와 추출, 10.4230/LIPIcs.CSL.2020.5의 Schema.org·BibTeX·XML·ACM-XML·DOAJ-XML 및 2쪽 PDF를 회수했다. 10.4230/LIPIcs.DNA.31.9의 정확한 HTML 파일 URL은 현재 문헌의 Files 영역과 대조해 HTML만 회수했고 article 선택 추출과 부가자료 설명·링크 보존을 통과했다. 10.4230/artifacts.27685는 소프트웨어 artifact로 해석해 Schema.org·BibTeX·XML·CodeMeta를 받았다. CodeMeta의 identifier는 SWHID이며 DOI로 바꾸지 않는다. 외부 코드 저장소는 방문하지 않았다. 최신 전체 근거는 `data/validation/20260910T003901636855Z-drops-workflow.json`이다.
+
+DROPS의 /metadata/bibtex와 /metadata/codemeta-json은 원 파일의 HTML 미리보기였다. 미리보기에 제공된 /download 링크를 실제로 확인했고, 최종 구현은 이 공개 API로 원 파일을 받는다. XML의 article와 artifact 헤더를 구별하며 참고문헌 DOI를 현재 문헌의 식별자로 취하지 않는다. 공개 XML·BibTeX·CodeMeta 응답은 tests/fixtures에 보존했다.
+
+이 조사에서 바이너리 요청이 받은 HTML을 그대로 보존하던 공통 경계의 결함을 확인했다. 임시 DROPS 응답 3건에 폼 토큰이 저장되어 있었으며 값은 도구 출력에 표시하지 않았다. 세 blob과 manifest를 `.credentials/scholarly-mcp/probes/quarantine-drops-20260910/`으로 이동해 일반 artifact 저장소에서 격리했다. 토큰 폐기를 수행한 것은 아니다. 바이너리·JSON·XML 요청에 HTML이 오면 저장 전에 거부하고, 명시적인 HTML 요청은 활성 요소와 폼 값을 제거한 뒤 보존하도록 수리했다. 합성 토큰을 쓴 실패 재현과 회귀 검사를 통과했다. 이 수리를 모든 과거 산출물의 전수 보안 감사로 확대하지 않는다.
+
+Mathlib는 고정 커밋의 Mathlib/Computability/에서 theorem 문자열 1,014개, Mathematical Components는 algebra/에서 Lemma 문자열 5,284개 중 각 두 소스 줄을 검색했다. 선택한 첫 줄의 파일을 같은 커밋으로 fetch하고 해당 줄의 원문이 정확히 같은지 실제 MCP extract로 대조했다. 이는 소스 회수 검증이며 Lean·Rocq의 형식 검증 실행은 아니다. 근거는 `data/validation/20260910T002906509697Z-mathlib-workflow.json`과 `20260910T002944472828Z-math-comp-workflow.json`이다. Mathematical Components의 첫 0건은 검증 입력의 오래된 mathcomp/ssreflect/ 경로였고 실제 archive의 현재 경로를 확인해 입력을 고쳤다.
+
+OpenCitations에서는 DOI 10.1186/1756-8722-6-59의 참고문헌 72건 원 CSV와 start=1, limit=2 창, 해당 OCI의 단건 조회, reference-count의 72건 대조를 실제 MCP에서 통과했다. 근거는 `data/validation/20260910T003511813034Z-opencitations-workflow.json`이다. 첫 MCP CSV 요청은 Accept: text/csv에도 JSON을 받아 실패했으므로 제공자가 문서화한 format=csv를 명시했고, JSON에도 format=json을 사용한다. 선택 CSV의 원 필드와 순서는 보존하되 파일 재직렬화와 전체 native CSV를 구별한다. 원인으로 캐시를 단정하지 않는다.
+
+새 회귀 검사를 포함해 공통 검사 89개가 통과했다. 별도 자격 없는 OpenAlex·CORE 검색도 실제 응답했으며 CORE는 다른 검색식과 무작위 문자열의 0건을 대조했다. DBLP는 두 공식 호스트의 검색 API와 단건 XML·BibTeX에서 접근 확인 화면, Semantic Scholar는 rate_limited를 반환했다. 이러한 접근 상태를 전체 문헌 부재나 어댑터 기능의 검증 완료로 표시하지 않는다.

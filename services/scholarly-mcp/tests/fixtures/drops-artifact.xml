@@ -1,0 +1,38 @@
+<?xml version='1.0' encoding='utf-8'?>
+<metadata xmlns="https://drops.dagstuhl.de/storage/schema/dagstuhl/dagpub.xsd">
+  <artifact>
+    <title>softlang/s2s</title>
+    <abstract/>
+    <keyword>description-logics</keyword>
+    <keyword>ontologies</keyword>
+    <keyword>semantic-web</keyword>
+    <keyword>web-ontology-language</keyword>
+    <programmingLanguage>Scala</programmingLanguage>
+    <programmingLanguage>Python</programmingLanguage>
+    <programmingLanguage>Shell</programmingLanguage>
+    <programmingLanguage>ANTLR</programmingLanguage>
+    <programmingLanguage>Makefile</programmingLanguage>
+    <programmingLanguage>Batchfile</programmingLanguage>
+    <category>Software</category>
+    <isSupplementTo>
+      <text>Philipp Seifer, Daniel Hernández, Ralf Lämmel, and Steffen Staab. Transforming Shape Schemas with Composable Property-Graph Queries (Research). In Special Issue on Data Management for (Knowledge) Graphs. Transactions on Graph Data and Knowledge (TGDK), Volume 4, Issue 2, pp. 3:1-3:29, Schloss Dagstuhl – Leibniz-Zentrum für Informatik (2026)</text>
+      <url>https://doi.org/10.4230/TGDK.4.2.3</url>
+    </isSupplementTo>
+    <acknowledgements/>
+    <author>
+      <firstName>Philipp</firstName>
+      <lastName>Seifer</lastName>
+      <name>Philipp Seifer</name>
+      <affiliation>University of Koblenz</affiliation>
+      <homepageUrl/>
+      <orcid>https://orcid.org/0000-0002-7421-2060</orcid>
+    </author>
+    <doi>10.4230/artifacts.27685</doi>
+    <contentUrl>https://github.com/softlang/s2s</contentUrl>
+    <archivedUrl>https://archive.softwareheritage.org/swh:1:dir:a38354c2cab3efb8abdc9e80f611d19aa3531d82</archivedUrl>
+    <copyright>Philipp Seifer</copyright>
+    <license>MIT License</license>
+    <licenseUrl>https://spdx.org/licenses/MIT.html#licenseText</licenseUrl>
+    <publishedAt>2026-09-03</publishedAt>
+  </artifact>
+</metadata>

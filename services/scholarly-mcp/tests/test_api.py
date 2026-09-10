@@ -59,6 +59,25 @@ class APIContract(unittest.TestCase):
             adapter.search("NP", options={}, start=0, limit=1)
         self.assertEqual(cm.exception.result["status"], "restricted")
 
+    def test_binary_request_rejects_html_before_preserving_a_form_token(self):
+        token = 'synthetic-hidden-form-credential-for-test'
+        client = httpx.Client(transport=httpx.MockTransport(lambda req: httpx.Response(200, headers={'Content-Type': 'text/html'}, text='<html><form><input name="_token" value="' + token + '"></form></html>')))
+        self.addCleanup(client.close)
+        adapter = self.mod.APIAdapter(self.store, client)
+        adapter.source, adapter.hosts = 'drops', ('drops.dagstuhl.de',)
+        with self.assertRaises(ServiceError):
+            adapter.request('https://drops.dagstuhl.de/example.pdf', accept='binary')
+        self.assertFalse(any(token.encode() in p.read_bytes() for p in Path(self.tmp.name).rglob('*') if p.is_file()))
+
+    def test_explicit_html_request_preserves_content_after_removing_form_values(self):
+        token = 'synthetic-hidden-form-credential-for-test'
+        adapter = self.adapter('numdam', lambda req: httpx.Response(200, headers={'Content-Type': 'text/html'}, text='<html><pre>citation</pre><input name="_token" value="' + token + '"><script>hidden</script></html>'))
+        raw, evidence = adapter.request('https://www.numdam.org/', accept='html')
+        stored = self.store.read(evidence['ref'])[1]
+        self.assertIn(b'citation', stored)
+        self.assertNotIn(token.encode(), stored)
+        self.assertNotIn(b'<script', stored)
+
     def test_cross_source_target_and_redirect_are_rejected(self):
         adapter = self.adapter("arxiv", lambda req: httpx.Response(302, headers={"Location": "https://api.crossref.org/works"}))
         with self.assertRaises(ServiceError):
@@ -102,6 +121,29 @@ class APIContract(unittest.TestCase):
         self.assertEqual(len(self.calls), 1)
         self.assertEqual(result["total"], len(json.loads(raw)))
         self.assertEqual(json.loads(self.store.read(result["records"]["ref"])[1]), json.loads(raw)[:2])
+
+    def test_opencitations_csv_preserves_native_table_and_selected_window(self):
+        import csv, io
+        raw = (ROOT / 'tests/fixtures/opencitations.csv').read_bytes()
+        rows = list(csv.DictReader(io.StringIO(raw.decode('utf-8'))))
+        adapter = self.adapter('opencitations', lambda req: httpx.Response(200, content=raw, headers={'Content-Type': 'text/csv'}))
+        result = adapter.search('doi:10.1186/1756-8722-6-59', options={}, start=1, limit=2, export='csv')
+        self.assertEqual(self.calls[0].headers['Accept'], 'text/csv')
+        self.assertEqual(self.calls[0].url.params['format'], 'csv')
+        self.assertEqual(self.store.read(result['native_export']['ref'])[1], raw)
+        selected = list(csv.DictReader(io.StringIO(self.store.read(result['export']['ref'])[1].decode('utf-8'))))
+        self.assertEqual(selected, rows[1:3])
+        self.assertEqual(result['total'], len(rows))
+
+    def test_opencitations_oci_fetch_and_parts_do_not_retrieve_papers(self):
+        raw = [{'oci': '06101801781-06180334099', 'citing': 'doi:10.7717/peerj-cs.421', 'cited': 'doi:10.1108/jd-12-2013-0166'}]
+        adapter = self.adapter('opencitations', lambda req: httpx.Response(200, json=raw))
+        result = adapter.fetch('oci:06101801781-06180334099', parts=['metadata', 'fulltext'])
+        self.assertEqual(self.calls[0].url.path, '/index/v2/citation/06101801781-06180334099')
+        self.assertEqual(len(self.calls), 1)
+        self.assertEqual(result['status'], 'partial')
+        self.assertEqual(result['components']['fulltext']['status'], 'not_offered')
+        self.assertEqual(result['components']['metadata']['status'], 'available')
 
     def test_numdam_oai_metadata_preserves_jats_and_observed_fulltext_links(self):
         raw = (ROOT / "tests/fixtures/numdam.xml").read_bytes()
