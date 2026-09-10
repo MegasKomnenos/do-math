@@ -270,3 +270,10 @@ DOI 10.1214/24-AOAS1990의 새 MCP data/validation/20260910T124043Z-project-eucl
 IEEE 문헌 8626436, Bio-LSTM: A Biomechanically Inspired Recurrent Neural Network for 3-D Pedestrian Pose and Gait Prediction은 metadata.sections.multimedia=true와 Media 탭의 원 MP4를 제공했다. 실제 등록 MCP의 기존 구현은 해당 첨부를 not_implemented로 반환했다. 원 화면은 media-tab 영역을 두 번 렌더했으며 두 다운로드 href가 같았다. .media-item의 문헌 번호가 포함된 파일만 파싱하고 URL로 중복을 제거한다. 옆의 /Xplorehelp/Help_Multimedia.html은 일반 도움말이라 제외한다. 원 설명과 파일명은 native_index에 보존한다.
 
 새 SDK stdio의 data/validation/20260910T124350Z-ieee-media-tab-mcp.json은 completed=true다. BioLSTM_RA-L_video.mp4 40381857바이트를 10개의 HTTP 구간으로 회수했고 Last-Modified 검증자·구간 위치·총 크기와 MP4 컨테이너를 대조했다. 같은 문헌의 참고문헌 30개도 확보됐다. 동영상 의미 판독은 수행하지 않았다. 새 Media 탭 파싱 검사와 기존 그래픽 초록·구간·실패 보존 회귀를 포함한 공통 175개 검사가 통과했다. 다른 Media 탭 파일 형식의 실제 성공으로 확대하지 않는다.
+
+
+Nature의 명시적 fulltext_html 요청은 기존 실제 MCP에서 invalid_parts였다. 관측된 c-article-body/main-content 영역, 원 TeX 표현, 문헌 DOI에 묶인 MediaObjects의 PNG/JPEG 그림을 회수하도록 추가했다. 추천 문헌 위젯을 제외하고 초록만 있는 화면을 전문으로 표시하지 않는다. 그림 요청 실패 때 HTML과 각 오류를 보존한다. 그림 src는 저장된 artifact ref이며 일반 브라우저용 독립 웹페이지 렌더링을 검증한 것은 아니다.
+
+새 SDK stdio data/validation/20260910T125713Z-nature-html-mcp.json은 completed=true다. The complexity of NISQ의 HTML 151275바이트·TeX 두 항목·PNG 그림 56058바이트(685×220)와 실제 ImageContent 한 개를 확인했다. 기계적 PNG 검사만 수행했고 이미지 의미 판독·MathJax 실행은 추가하지 않았다. 이 경로는 현재 관측된 Nature 레이아웃이며 다른 Springer 문헌 전체의 성공으로 확대하지 않는다. 원 fixture·초록 전용·그림 실패 검사와 공통 178개 검사가 통과했다.
+
+CORE와 Semantic Scholar의 후속 새 SDK stdio 재검증도 각각 data/validation/20260910T125019Z-core-public-mcp.json, data/validation/20260910T125018Z-semantic-scholar-mcp.json에 보존했다. 두 경로 모두 첫 실제 요청에서 rate_limited였고 completed=false다. 추가 API 자격을 사용하지 않았으며 반복 후속 요청을 하지 않았다.

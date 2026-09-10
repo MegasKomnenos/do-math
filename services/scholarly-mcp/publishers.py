@@ -479,7 +479,9 @@ class Publisher:
                 'preview': [{k:r[k] for k in ('doi','title')} for r in rows[:3]]}
 
     def fetch(self, target, *, parts):
-        unknown = set(parts) - {"metadata", "abstract", "fulltext", "supplementary", "export"}
+        allowed={"metadata", "abstract", "fulltext", "supplementary", "export"}
+        if self.source=='springer':allowed.add('fulltext_html')
+        unknown = set(parts) - allowed
         if unknown:
             raise ServiceError("invalid_parts", "Unknown requested content", parts=sorted(unknown))
         if not target.startswith(('http://', 'https://', '10.', 'doi:')):
@@ -593,6 +595,12 @@ class Publisher:
                         components[part] = {"status": "available" if content.strip() else "source_page", "artifact": abstract, "region_text_present": bool(content.strip())}
                     else:
                         components[part] = {"status": "source_page", "artifact": source_page, "reason": "Abstract region is not yet identified for this page layout"}
+                elif part=='fulltext_html':
+                    from publisher_html import fetch_html
+                    try:
+                        components[part]=fetch_html(self,page,identifier or (observed_dois[0] if observed_dois else None),source_page)
+                    except ServiceError as error:
+                        components[part]=error.result
                 elif part == "fulltext":
                     links = primary_pdf_links(page.content(), page.url, identifier=identifier or (observed_dois[0] if observed_dois else None))
                     if not links:

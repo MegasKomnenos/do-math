@@ -102,7 +102,7 @@ async def search(source: str, query: str, options: dict | None = None, start: in
 
 @mcp.tool()
 async def fetch(source: str, target: str, parts: list[str] | None = None) -> ToolResult:
-    """지정 자료원의 식별자·링크·이름으로 자료를 확보한다. parts는 metadata, abstract, fulltext, supplementary, export 중 필요한 항목이다. 모호한 이름은 후보를 반환한다. 다른 자료원의 링크는 자동 방문하지 않는다."""
+    """지정 자료원의 식별자·링크·이름으로 자료를 확보한다. parts의 기본 항목은 metadata, abstract, fulltext, supplementary, export이며 자료원별 추가 항목은 describe_source를 따른다. 모호한 이름은 후보를 반환한다. 다른 자료원의 링크는 자동 방문하지 않는다."""
     loop = asyncio.get_running_loop()
     return await loop.run_in_executor(WORKER, lambda: run_call(operation, source, "fetch", target, parts=parts or ["metadata", "abstract", "fulltext"]))
 

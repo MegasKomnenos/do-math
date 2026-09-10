@@ -37,7 +37,7 @@
 | JSTOR | jstor | api (native citation); browser search/document pending | partial | source_guide, fetch, export | live_mcp_public_ris_metadata_abstract_fetch; web_captcha_observed |
 | Oxford University Press | oxford | playwright | partial | source_guide, search, fetch, export | live_mcp_search_citation_metadata_abstract_pagination_and_supplement_pdf |
 | ScienceDirect | science-direct | playwright | partial | source_guide, fetch, export | live_mcp_institutional_ris_bibtex_plain_metadata_abstract_fetch |
-| Springer Nature | springer | playwright | partial | source_guide, search, fetch, export | live_mcp_advanced_search_citations_pdf_pagination_and_supplementary_files |
+| Springer Nature | springer | playwright | partial | source_guide, search, fetch, export | live_mcp_advanced_search_citations_pdf_supplements_and_nature_html_tex_figure |
 | Taylor & Francis | taylor-francis | playwright | partial | source_guide, search, fetch, export | live_mcp_search_citation_pdf_dublin_doi_supplement_zip_tables_nested_source |
 | Wiley | wiley | playwright | partial | source_guide, search, fetch, export | live_mcp_advanced_search_citations_pdf_empty_repeat_and_supplementary_zip |
 | AIP | aip | playwright | partial | source_guide, search, fetch, export | live_mcp_advanced_search_citation_pdf_and_explicit_figshare_supplement_reference |

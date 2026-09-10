@@ -133,6 +133,8 @@ SIAM의 /doi/pdf/DOI 주소도 명시적 PDF 파일로 처리한다. First-Order
 
 Springer Nature의 인식된 Supplementary Information·Peer Review File 제어는 실제 파일을 회수한다. supplementary.index는 원 파일 목록이고 files의 각 artifact를 extract로 읽는다. 파일별 실패와 이미 회수한 파일을 함께 반환한다. Nature Communications의 The complexity of NISQ에서 보충 설명 42쪽과 심사 기록 19쪽을 실제 MCP로 확인했다. 다른 레이아웃에서 제어를 찾지 못하면 원 페이지와 source_page 상태를 유지한다.
 
+Nature 문헌은 추가 parts 항목인 fulltext_html로 HTML 본문과 그림을 요청할 수 있다. 본문의 원 TeX 표현을 보존하고 PNG/JPEG 그림을 문헌 DOI와 대조해 회수한다. HTML은 CSS selection으로, figures의 artifact는 이미지 extract로 읽는다. HTML의 그림 src는 저장된 artifact ref이며 일반 웹 브라우저에서 열기 위한 독립 웹페이지는 아니다. 그림이 실패해도 본문과 개별 오류를 남긴다. 이 형식은 현재 관측된 Nature 문헌 레이아웃에서 지원한다.
+
 zbMATH는 DOI·이름·Zbl 번호·기존 문헌 링크를 받아 조회하고, 검색의 임의 start 위치를 원 페이지에서 조합한다. 리뷰·요약은 원 editorial_contributions 유형을 유지한다. 라이선스 충돌 안내는 abstract available로 표시하지 않는다. supplementary의 selection을 extract에 전달하면 원 참고문헌 배열을 읽을 수 있다.
 
 Wiley의 Supporting Information 표에서도 원 파일을 회수한다. Models of Random Spanning Trees의 보충 ZIP을 실제 MCP로 받고, 내부 Python 파일 두 개를 선택해 줄 단위로 읽었다. 코드 실행은 포함하지 않는다. 파일명·설명·연결 DOI와 실제 ZIP 형식을 확인하며, Springer Nature와 파일별 실패 보존 처리를 공유한다.
