@@ -286,3 +286,8 @@ DBLP의 기본 검색 API와 Trier·Dagstuhl 미러는 익명 요청에서 모�
 직접 어댑터 data/validation/20260910T132945Z-dblp-kg-terms.json에서는 원 JSON의 xsd:gYear 1997이 TSV에서 정수 표기로 바뀌었다. 이 파일을 고쳐 쓰지 않고 partial과 source_export로 보존한다. 당시 오류 코드는 export_range_mismatch였으며 현재는 export_term_mismatch로 구별한다. 원 fixture로 같은 불일치를 검증했다. data/validation/20260910T133158Z-dblp-kg-extra-terms.json은 저자 수·언어 표지와 개행/따옴표·미결합 변수·빈 결과를 직접 검증해 completed=true다. 이 직접 어댑터 검사를 MCP 검증으로 확대하지 않는다. RDFLib 7.6.0·pyparsing 3.3.2를 고정했고 공통 186개 검사와 pip check를 통과했다.
 
 APS 원 인용문 조사에서 최초 직접 요청은 www.aps.org 바로가기 origin에 저널 경로를 붙여 잘못된 호스트에 요청했으므로 유효한 인용문 검증에서 제외했다. 이후 KUDOS를 통해 journals.aps.org로 진입한 뒤 이전 원 Download Citation 링크 /prl/export/10.1103/PhysRevLett.89.190402의 BibTeX를 요청했지만 HTTP 403이었다. 보호된 관측은 .credentials/scholarly-mcp/probes/20260910T130807Z-aps-citation-failure.html이다. 이 경로의 native citation 구현·실측 완료로 세지 않는다.
+
+
+JSTOR의 [공식 내보내기 안내](https://support.jstor.org/hc/en-us/articles/115004871747-Citation-Management-Exporting-Citations-from-JSTOR)와 실제 공개 응답을 대조했다. citation/text/345683은 text/plain 1308바이트의 BibTeX이며 citation/bibtex 경로는 404였다. 실제 작동하는 Text file 경로를 연결하고 원 바이트를 application/x-bibtex로 보존하며 원 MIME도 기록한다. DOI 필드는 없었으나 url이 요청 문헌의 stable ID를 식별했다. jj.8306294는 원 RIS가 BOOK을 반환하지만 기존 식별자 검증이 거부하던 현행 도서 ID였다.
+
+새 SDK stdio data/validation/20260910T223621032180Z-jstor-workflow.json은 completed=true다. 문헌 345683의 서지·초록·원 RIS·BibTeX, jj.8306294 도서의 서지·두 인용문을 회수·추출했다. 원 제공자 안내문과 도서 유형·필드를 유지한다. 추가 형식 실패·다른 문헌 반환을 검사해 먼저 받은 서지/RIS 및 잘못된 원 export의 source_export를 보존했다. JSTOR 신규 회귀 4개가 통과했다. 검색·전문 회수는 이 성공 범위에 포함하지 않는다.

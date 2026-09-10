@@ -142,3 +142,6 @@ dblp-kg의 JSON은 RDF binding의 자료형·언어·미결합 변수를 보존�
 zbMATH는 DOI·이름·Zbl 번호·기존 문헌 링크를 받아 조회하고, 검색의 임의 start 위치를 원 페이지에서 조합한다. 리뷰·요약은 원 editorial_contributions 유형을 유지한다. 라이선스 충돌 안내는 abstract available로 표시하지 않는다. supplementary의 selection을 extract에 전달하면 원 참고문헌 배열을 읽을 수 있다.
 
 Wiley의 Supporting Information 표에서도 원 파일을 회수한다. Models of Random Spanning Trees의 보충 ZIP을 실제 MCP로 받고, 내부 Python 파일 두 개를 선택해 줄 단위로 읽었다. 코드 실행은 포함하지 않는다. 파일명·설명·연결 DOI와 실제 ZIP 형식을 확인하며, Springer Nature와 파일별 실패 보존 처리를 공유한다.
+
+
+JSTOR의 export는 원 RIS와 Text file 주소에서 받은 BibTeX를 함께 반환한다. 기본 artifact는 RIS이고 추가 파일은 artifacts에서 선택한다. 숫자 ID와 j.…·jj.… 도서/장 ID 및 stable URL을 지원한다. 인용문 URL의 stable ID를 대조하며 DOI 필드가 없는 BibTeX도 원 URL로 식별한다. 추가 형식의 실패는 이미 받은 서지·인용문과 함께 보존한다.

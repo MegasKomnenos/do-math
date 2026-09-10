@@ -512,8 +512,8 @@ SOURCES['project-euclid'].usage={
 SOURCES['jstor'].transport='api (native citation); browser search/document pending'
 SOURCES['jstor'].capabilities=('source_guide','fetch','export')
 SOURCES['jstor'].usage={
-    'fetch':'JSTOR stable 번호, stable URL 또는 10.2307 DOI로 metadata·abstract·export를 요청한다. 별도 자격 없는 native RIS API를 사용한다.',
-    'exports':'export는 원 RIS다. 제공자 안내문을 source_preamble로 유지하며 원 파일도 그대로 보존한다. UR의 stable ID와 요청 대상을 대조한다.',
+    'fetch':'JSTOR stable 번호, j.…·jj.… 도서/장 ID, stable URL 또는 10.2307 DOI로 metadata·abstract·export를 요청한다. 별도 자격 없는 native citation API를 사용한다. 도서와 논문의 원 RIS 유형·필드를 유지한다.',
+    'exports':'export.artifacts에 원 RIS와 BibTeX를 반환한다. 기본 artifact는 RIS이며 제공자 안내문은 source_preamble로 유지한다. JSTOR의 Text file은 실제 BibTeX이고 source_media_type은 text/plain이다. RIS의 UR·BibTeX의 url에 있는 stable ID를 요청 대상과 대조하며 BibTeX DOI 필드가 없다고 실패시키지 않는다. 형식별 오류와 먼저 받은 인용문을 함께 보존하고 잘못된 문헌의 원 파일도 오류의 source_export로 읽을 수 있다.',
     'limits':'검색과 전문·첨부 회수는 아직 연결하지 않았다. 기관 검색은 실제 CAPTCHA를 반환했으며 자료원 자체의 문헌 부재로 해석하지 않는다. 초록이 없는 RIS에는 not_offered를 표시한다.',
     'examples':[{'tool':'fetch','arguments':{'source':'jstor','target':'345683','parts':['metadata','abstract','export']}}],
     'official':['https://www.jstor.org/'],
@@ -624,7 +624,7 @@ for identifier, level in {
     "wiley": "live_mcp_advanced_search_citations_pdf_empty_repeat_and_supplementary_zip",
     "taylor-francis": "live_mcp_search_citation_pdf_dublin_doi_supplement_zip_tables_nested_source",
     "de-gruyter": "live_mcp_search_ris_pdf_and_supplement_zip_cif_lines; broken_link_observed",
-    "jstor": "live_mcp_public_ris_metadata_abstract_fetch; web_captcha_observed",
+    "jstor": "live_mcp_public_ris_bibtex_article_and_jj_book; web_search_pending",
     "iop": "live_mcp_metadata_abstract; earlier_adapter_pdf; file_and_gateway_challenge",
     "siam": "live_mcp_public_front_matter_pdf_fetch_extract; search_challenge_observed",
     "ams": "live_mcp_explicit_pdf; native_browser_mixed_search; search_adapter_restricted",

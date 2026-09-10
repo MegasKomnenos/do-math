@@ -396,6 +396,15 @@ async def main():
             assert citation['returned']==1
             assert citation['items'][0]['fields']['do']==['10.2307/345683']
             assert 'Provider: JSTOR' in citation['items'][0]['source_preamble']
+            formats={item['format']:item['artifact'] for item in fetched['components']['export']['artifacts']}
+            assert set(formats)=={'ris','bibtex'}
+            bib=await call('extract',{'ref':formats['bibtex']['ref'],'count':1})
+            assert bib['items'][0]['url'].endswith('/stable/345683')
+            book=await call('fetch',{'source':'jstor','target':'https://www.jstor.org/stable/jj.8306294','parts':['metadata','export']})
+            assert book['status']=='ok'
+            metadata=await call('extract',{'ref':book['records']['ref'],'count':1})
+            assert metadata['items'][0]['fields']['ty']==['BOOK']
+            assert len(book['components']['export']['artifacts'])==2
         elif args.source == 'de-gruyter':
             search=await call('search', {'source':'de-gruyter','query':'title:(complexity)','options':{'visibility':'available'},'limit':2,'export':'ris'})
             assert search['status']=='ok', search.get('export')
