@@ -100,9 +100,22 @@ def degruyter_links(raw,base):
     return rows
 
 
-def fetch_supplementary(adapter,page,identifier,source_page):
+def acm_links(raw,base):
+    soup=BeautifulSoup(raw,'html.parser');rows=[]
+    for item in soup.select('.core-supplementary-materials .core-supplementary-material'):
+        label=item.select_one('.core-label');description=item.select_one('.core-description > div')
+        for anchor in item.select('.core-link a[href]'):
+            url=urljoin(base,anchor['href']);path=unquote(urlsplit(url).path)
+            match=re.fullmatch(r'/doi/suppl/(10\..+?)/suppl_file/([^/]+)',path)
+            rows.append({'label':label.get_text(' ',strip=True) if label else anchor.get_text(' ',strip=True),
+                'description':description.get_text(' ',strip=True) if description else None,'url':url,
+                'linked_doi':match[1] if match else None,'filename':match[2] if match else None,'invalid_link':match is None})
+    return rows
+
+
+def fetch_supplementary(adapter,page,identifier,source_page,*,download_hosts=None):
     raw=page.content()
-    rows={'springer':springer_links,'wiley':wiley_links,'aip':aip_links,'cambridge':cambridge_links,'oxford':oxford_links,'taylor-francis':taylor_links,'de-gruyter':degruyter_links}[adapter.source](raw,page.url)
+    rows={'springer':springer_links,'wiley':wiley_links,'aip':aip_links,'cambridge':cambridge_links,'oxford':oxford_links,'taylor-francis':taylor_links,'de-gruyter':degruyter_links,'acm-dl':acm_links}[adapter.source](raw,page.url)
     if not rows:
         return {'status':'source_page','artifact':source_page,'reason':'No recognized document attachment controls; other supplementary layouts remain in development'}
     index=adapter.store.put(encoded(rows),'application/json',adapter.source,page.url,role='supplementary_index',doi=identifier,parent_ref=source_page['ref'])
@@ -124,7 +137,7 @@ def fetch_supplementary(adapter,page,identifier,source_page):
                 raise ServiceError('linked_publication_differs','The attachment path differs from the encoded document DOI',status='selection_required',linked_doi_path=row['linked_doi_path'])
             if row.get('linked_pii') and expected_pii and row['linked_pii'] not in expected_pii:
                 raise ServiceError('linked_publication_differs','The attachment PII differs from the document PDF metadata',status='selection_required',linked_pii=row['linked_pii'])
-            data,media,url=browser_download(adapter.gateway.context,row['url'],adapter.profile.download_hosts)
+            data,media,url=browser_download(adapter.gateway.context,row['url'],adapter.profile.download_hosts if download_hosts is None else download_hosts)
             if media in ('text/html','application/xhtml+xml') or data.lstrip().lower().startswith((b'<!doctype html',b'<html')):
                 raise ServiceError('unexpected_content','Attachment control returned an HTML page')
             suffix=PurePosixPath(row.get('filename') or urlsplit(row['url']).path).suffix.lower()

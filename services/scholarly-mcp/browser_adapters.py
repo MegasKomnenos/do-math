@@ -877,7 +877,12 @@ class ACM:
                 except ServiceError as error:
                     components[part] = error.result
             elif part == "supplementary":
-                components[part] = {"status": "source_page", "artifact": source_page, "reason": "References, supplemental links and source details are preserved; attachment extraction is pending"}
+                try:
+                    from supplements import fetch_supplementary
+                    components[part]=fetch_supplementary(self,page,identifier,source_page,download_hosts=self.hosts)
+                    components[part].setdefault('artifact',source_page)
+                except ServiceError as exc:components[part]=exc.result
+                except Exception as exc:components[part]={'status':'error','code':'supplementary_retrieval_failed','error_type':type(exc).__name__,'artifact':source_page}
             else:
                 raise ServiceError("invalid_parts", "Unknown requested content", part=part)
         return {"status": "ok" if all(v["status"] == "available" for v in components.values()) else "partial", "source": self.source,

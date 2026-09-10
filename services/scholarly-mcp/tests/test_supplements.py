@@ -4,6 +4,15 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 
 class SupplementContract(unittest.TestCase):
+    def test_acm_supplement_is_bound_to_its_own_doi(self):
+        from supplements import acm_links
+        raw=(ROOT/'tests/fixtures/acm-supplement-region.html').read_text('utf-8')
+        rows=acm_links(raw,'https://dl.acm.org/')
+        self.assertEqual(len(rows),1)
+        self.assertEqual(rows[0]['filename'],'george.zip')
+        self.assertEqual(rows[0]['linked_doi'],'10.1145/3425501')
+        self.assertIn('Supplemental movie',rows[0]['description'])
+
     def test_degruyter_native_attachment_retains_its_document_doi(self):
         from supplements import degruyter_links
         raw=(ROOT/'tests/fixtures/degruyter-supplement-region.html').read_text('utf-8')

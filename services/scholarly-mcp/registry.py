@@ -130,7 +130,8 @@ SOURCES["acm-dl"].usage = {
     "options": {"field": "위 필드 이름. 기본 AllField", "fields": "추가 {field,value} 배열. native AND로 결합", "collection": "fulltext는 ACM Full-Text Collection, guide는 Guide to Computing Literature", "from_year,to_year,from_month,to_month": "발행 날짜의 사용자 지정 범위", "sort": "EpubDate_asc 또는 EpubDate_desc"},
     "fetch": "ACM DOI 또는 ACM 문헌·PDF 링크. 이름은 제목 검색 후보를 반환하므로 정확한 DOI를 선택한다. 원 논문과 재수록본은 별도 DOI·연도로 보존한다. 같은 ACM 문헌의 실제 PDF 제어만 사용한다.",
     "exports": "json은 검색 행과 BibTeX 필드를 함께 보존한다. bibtex·endnote·acmref는 실제 UI 응답의 원 서지와 자료원이 제공한 CSL 스타일·처리기로 생성한다. 서지 응답과 처리기 참조도 보존한다. 넓은 검색에서 한 페이지의 결과와 요청한 선택 범위는 구별한다.",
-    "limits": "KUDOS 기관 프록시와 기본 Firefox를 사용한다. start 0부터, limit 1..1000. 추가 분류 facet·필드 사이 OR 편집·HTML 전용 전문·첨부파일 자동 회수는 구현 중이다.",
+    "supplementary":"문헌의 보충자료 목록에서 원 파일명·설명·DOI를 대조하고 파일을 회수한다. files의 artifact로 ZIP 등을 읽고 내부 파일을 selection으로 꺼낸다. 기존 참고문헌 문맥은 원 source_page에 유지한다. 인식하지 못한 다른 첨부 레이아웃은 source_page로 남긴다.",
+    "limits": "KUDOS 기관 프록시와 기본 Firefox를 사용한다. start 0부터, limit 1..1000. 추가 분류 facet·필드 사이 OR 편집·HTML 전용 전문은 구현 중이다.",
     "examples": [{"tool": "search", "arguments": {"source": "acm-dl", "query": "\"The complexity of theorem-proving procedures\"", "options": {"field": "Title", "collection": "fulltext"}, "limit": 2, "export": "bibtex"}}, {"tool": "fetch", "arguments": {"source": "acm-dl", "target": "10.1145/800157.805047", "parts": ["metadata", "abstract", "fulltext"]}}],
     "official": ["https://dl.acm.org/search/advanced"],
 }
@@ -588,7 +589,7 @@ for identifier, level in {
     "dblp": "access_challenge_observed",
     "zenodo": "live_mcp_search_file_checksum_fetch_extract",
     "figshare": "live_mcp_public_search_window_collection_versioned_file_md5_pdf_extract",
-    "acm-dl": "live_mcp_search_export_original_pdf_fetch",
+    "acm-dl": "live_mcp_search_citation_pdf_and_supplement_zip_inner_pdf_extract",
     "scopus": "live_mcp_search_fetch_references_pagination_cited_by_extract",
     "drops": "live_mcp_native_exports_pdf_html_codemeta_and_supplementary_references",
     "springer": "live_mcp_advanced_search_citations_pdf_pagination_and_supplementary_files",

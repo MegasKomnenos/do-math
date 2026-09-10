@@ -67,19 +67,28 @@ class Sanitizer:
     def _url(self, url):
         original = url
         url = url.replace("&amp;", "&")
-        parts = urlsplit(url)
+        try:
+            parts = urlsplit(url)
+            port = parts.port
+        except ValueError:
+            return '[REDACTED_INVALID_URL]'
         path = parts.path
         # Some download actions embed a signed URL as a Tapestry/percent-encoded path argument.
         for match in re.finditer(r'https?(?::|\$3a|%3a)(?:/|\$2f|%2f){2}', path, re.I):
             nested = re.sub(r'\$([0-9a-f]{2})', lambda m: chr(int(m[1], 16)), path[match.start():], flags=re.I)
-            nested = urlsplit(unquote(nested))
+            try:
+                nested = urlsplit(unquote(nested))
+                nested.port
+            except ValueError:
+                path = path[:match.start()] + '[REDACTED_INVALID_URL]'
+                break
             if nested.username or nested.password or any(self.sensitive.search(k) for k, _ in parse_qsl(nested.query, keep_blank_values=True)):
                 path = path[:match.start()] + '[REDACTED_DOWNLOAD_URL]'
                 break
         # Credentials in userinfo, fragments and authentication query fields are never evidence.
         host = parts.hostname or ""
-        if parts.port:
-            host += ":" + str(parts.port)
+        if port:
+            host += ":" + str(port)
         pairs = parse_qsl(parts.query, keep_blank_values=True)
         query = [(k, self._url(v) if v.startswith(("http://", "https://")) else v)
             for k, v in pairs if not self.sensitive.search(k)]
