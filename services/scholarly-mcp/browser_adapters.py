@@ -137,7 +137,7 @@ def acm_records(raw, base):
     return rows
 
 
-def browser_download(context, url, hosts, *, headers=None, form=None):
+def browser_download(context, url, hosts, *, headers=None, form=None, response_info=None):
     from playwright.sync_api import TimeoutError as BrowserTimeout, Error as BrowserError
     for _ in range(6):
         parsed = urlsplit(url)
@@ -166,6 +166,9 @@ def browser_download(context, url, hosts, *, headers=None, form=None):
             raise ServiceError("not_found_at_source", "Document not found at this source", status="not_found")
         if response.status >= 400:
             raise ServiceError("provider_error", "Document download failed", http_status=response.status)
+        if response_info is not None:
+            response_info.update(status=response.status, **{key:response.headers[key] for key in
+                ('content-range','content-length','content-encoding','etag','last-modified','date') if key in response.headers})
         return response.body(), response.headers.get("content-type", "application/octet-stream").split(";")[0], response.url
     raise ServiceError("redirect_limit", "Document download returned too many redirects")
 

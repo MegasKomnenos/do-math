@@ -293,7 +293,7 @@ SOURCES["ieee-xplore"].usage = {
     "search": "KUDOS → 학술DB → IEEE → Command Search에서 query를 그대로 입력한다. 필드 이름을 큰따옴표로 감싸고 콜론 뒤에 조건을 쓴다. 예: \"Document Title\":\"P versus NP\". AND·OR·NOT·괄호, 구문 따옴표, * 와일드카드 등을 IEEE 문법대로 사용한다.",
     "fields": ["All Metadata", "Full Text & Metadata", "Full Text Only", "Document Title", "Authors", "Publication Title", "Abstract", "Index Terms", "Article Number", "Author Affiliations", "Author Keywords", "DOI", "Funding Agency", "IEEE Terms", "ISBN", "ISSN", "Publisher", "Standard Number"],
     "exports": "json은 UI의 원 문헌 필드·초록이다. bibtex·ris·plain은 native Citations의 Citation and Abstract, csv는 native Results export다. 여러 페이지의 파일은 export.artifacts로 나누어 보존한다.",
-    "fetch": "IEEE 문헌 번호, /document/번호 링크 또는 DOI를 지정한다. 서지·초록·원문 PDF를 해당 IEEE에서 회수한다. 제목은 후보 검색으로 반환한다. supplementary.references는 문헌 번호를 대조한 원 참고문헌 배열이며 artifact를 extract로 읽는다. order·id·title·text·links 등 원 필드를 보존하고 외부 인용 링크는 따라가지 않는다. 개별 첨부 회수는 개발 중이므로 supplementary 전체 상태는 partial이다.",
+    "fetch": "IEEE 문헌 번호, /document/번호 링크 또는 DOI를 지정한다. 서지·초록·원문 PDF를 해당 IEEE에서 회수한다. 제목은 후보 검색으로 반환한다. supplementary.references는 문헌 번호를 대조한 원 참고문헌 배열이며 artifact를 extract로 읽는다. order·id·title·text·links 등 원 필드를 보존하고 외부 인용 링크는 따라가지 않는다. supplementary.attachments는 문헌 metadata의 graphicalAbstract 파일과 표지다. 파일별 역할·상태·artifact를 유지한다. MP4는 HTTP byte range와 버전 검증자를 대조하며 전체 바이트를 조립하고 각 요청의 제한은 45초다. 동영상 분석이나 연구 코드 실행은 수행하지 않는다. 별도 Media 탭이 있는 문헌은 그 첨부 회수가 개발 중임을 표시한다. 원 metadata의 multimedia=false와 그래픽 초록 부재는 해당 문헌의 not_found이며 자료원 전체의 부재가 아니다.",
     "limits": "options는 비운다. start 0부터, limit 1..1000. 자료원의 25건 페이지를 순회한다. 추가 UI facet과 일부 페이지 이동 제어는 검증 중이다. 요청한 원 검색식과 실제 UI 요청을 대조한다.",
     "examples": [{"tool": "search", "arguments": {"source": "ieee-xplore", "query": "\"Document Title\":\"P versus NP\"", "limit": 1, "export": "bibtex"}}, {"tool": "fetch", "arguments": {"source": "ieee-xplore", "target": "10488889", "parts": ["metadata", "abstract", "fulltext"]}}],
 }
@@ -589,7 +589,7 @@ for identifier, level in {
     "scopus": "live_mcp_search_fetch_references_pagination_cited_by_extract",
     "drops": "live_mcp_native_exports_pdf_html_codemeta_and_supplementary_references",
     "springer": "live_mcp_advanced_search_citations_pdf_pagination_and_supplementary_files",
-    "ieee-xplore": "live_mcp_search_citation_pdf_and_native_references_fetch_extract",
+    "ieee-xplore": "live_mcp_search_citation_pdf_references_and_graphical_video_ranges_cover",
     "crossmark": "live_mcp_search_extract",
     "afp": "live_mcp_entry_search_pinned_metadata_and_proof_source_fetch_extract",
     "unpaywall": "public_endpoint_contact_requirement_observed",

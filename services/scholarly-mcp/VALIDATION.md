@@ -201,3 +201,11 @@ Oxford DOI 10.1093/restud/rdag022에는 본문에 같은 보충 PDF를 가리키
 PQDT 문헌 2485541561의 보충 파일 조사에서 다운로드 동작 URL은 Tapestry 형식의 경로 인자로 서명된 미디어 URL을 포함했다. 진단이 호스트·경로를 안전한 정보로 취급해 이 경로를 출력한 누락이 있었다. 사용자에게 즉시 알렸으며 서명 값을 이 기록에 반복하지 않는다. 기존 정제기는 일반 쿼리의 인증 필드를 제거했지만 $2f·$3f·$3d로 인코딩된 경로 내부 URL을 처리하지 못했다.
 
 Sanitizer는 Tapestry 또는 percent 인코딩된 경로 내부 URL에서 인증 쿼리·userinfo가 발견되면 그 내부 URL 인자를 제거하고 원 다운로드 동작·파일명은 유지한다. 합성 값으로 URL·문자열·구조화 필드와 일반 공개 DOI 참조 보존을 검사했다. 진단 자체는 이제 다운로드 경로를 출력하지 않고 이름·호스트·제어 구조만 읽는다. 로컬 pqdt-supplements-clean.html도 다시 정제해 해당 인자를 제거했다. 보호된 원 응답은 .credentials 아래에 남겼다. 이미 표시된 도구 출력 삭제나 서명 무효화는 확인하지 않았으며 전체 과거 로그를 감사했다고 주장하지 않는다. 이 정제 단위의 새 검사 2개가 통과했다.
+
+IEEE 문헌 10488889와 7780459의 실제 화면에는 Media 탭이 없었다. [IEEE의 공식 동영상 수상 목록](https://ieeeaccess.ieee.org/authors/awards/)에서 확인한 문헌 11259066, A Comparative Study of Coherent Ising Machine Architectures Through a Unified Simulation Model도 sections.multimedia=false였지만 graphicalAbstract에는 video·file·coverImage가 있었다. 따라서 Media 탭 부재를 모든 부가 파일의 부재로 보지 않는다. 문헌의 xplGlobal.document.metadata JSON을 실행 없이 파싱하고 문헌 번호·허용 필드를 대조해 그래픽 초록과 표지를 회수한다. userInfo와 운영 설정은 보존 대상에서 제외한다.
+
+같은 문헌 경로의 표지 JPEG는 36,328바이트로 바로 회수됐다. 표시 크기 99.32MB의 MP4는 일반 요청에서 45초·180초 모두 시간 초과였고 실제 MCP `data/validation/20260910T084913Z-ieee-media-mcp.json`은 partial/미완료로 남겼다. 제한 시간을 계속 늘리지 않고 실제 Range bytes=0-65535 응답을 확인했다. HTTP 206, Content-Range bytes 0-65535/104143825, video/mp4, Last-Modified가 있었고 ETag는 없었다.
+
+MP4 회수는 4MiB 단위 요청으로 바꿨다. 모든 응답의 Content-Range 시작·끝·전체 크기·실제 바이트 길이와 같은 URL을 검사한다. 강한 ETag를 우선 사용하며 없으면 충분히 분리된 Date/Last-Modified를 사용한다. [RFC 9110의 validator·If-Range 규칙](https://www.rfc-editor.org/rfc/rfc9110.html#section-13.1.5)을 따르고 날짜 비교에는 60초의 보수적 간격을 둔다. weak ETag나 검증자 부재는 조립 실패이며, 원 45초 요청 제한을 유지한다. 일반 browser_download에는 필요한 상태·range·validator 헤더만 선별해 전달하는 내부 옵션을 추가했다.
+
+최종 실제 MCP `data/validation/20260910T085604Z-ieee-media-mcp.json`은 completed=true다. 문헌 11259066의 참고문헌 30건, 표지 JPEG, 25개 구간의 MP4 104,143,825바이트와 이미지 추출을 확인했다. 원 MP4 컨테이너 서명과 저장 해시를 확인했으며 동영상 내용을 판독하지 않았다. 이어 문헌 10488889는 참고문헌 22건·첨부 not_found로 구별했다. 참고문헌과 첨부는 독립적으로 처리해 한쪽 실패가 다른 쪽의 자료를 버리지 않는다. 별도 multimedia=true 레코드의 Media 탭 회수는 미구현으로 남는다. 중첩 다운로드 URL 정제를 포함한 공통 검사 142개가 통과했다.

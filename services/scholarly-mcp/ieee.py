@@ -198,13 +198,14 @@ class IEEE:
                 except ServiceError as error:
                     components[part] = error.result
             else:
-                try:
-                    references=self.references(identifier,base)
-                    components[part]={'status':'partial','artifact':references['artifact'],'references':references,
-                                      'attachments':{'status':'not_implemented','reason':'Individual supplementary attachment retrieval remains in development'}}
-                except ServiceError as error:
-                    components[part]=error.result
-                except Exception as error:
-                    components[part]={'status':'error','code':'reference_retrieval_failed','error_type':type(error).__name__}
+                from ieee_media import fetch_media
+                details={}
+                for name,operation in [('references',lambda:self.references(identifier,base)),('attachments',lambda:fetch_media(self,identifier,base))]:
+                    try: details[name]=operation()
+                    except ServiceError as error: details[name]=error.result
+                    except Exception as error: details[name]={'status':'error','code':name+'_retrieval_failed','error_type':type(error).__name__}
+                clean=all(item['status'] in ('available','not_found','not_offered') for item in details.values())
+                components[part]={'status':'available' if clean and any(item['status']=='available' for item in details.values()) else 'not_found' if clean else 'partial',**details}
+                if details['references'].get('artifact'): components[part]['artifact']=details['references']['artifact']
         return {"status": "ok" if all(v["status"] == "available" for v in components.values()) else "partial", "source": self.source,
             "target": identifier, "records": artifact, "components": components}
