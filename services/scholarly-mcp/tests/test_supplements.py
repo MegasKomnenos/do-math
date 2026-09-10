@@ -4,6 +4,40 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 
 class SupplementContract(unittest.TestCase):
+    def test_cambridge_native_table_keeps_two_files_with_the_same_title(self):
+        from supplements import cambridge_links
+        raw=(ROOT/'tests/fixtures/cambridge-supplement-region.html').read_text('utf-8')
+        rows=cambridge_links(raw,'https://www-cambridge-org.libproxy.knu.ac.kr/')
+        self.assertEqual(len(rows),2)
+        self.assertEqual(rows[0]['label'],rows[1]['label'])
+        self.assertTrue(rows[0]['filename'].endswith('sup001.pdf'))
+        self.assertTrue(rows[1]['filename'].endswith('sup002.zip'))
+        self.assertEqual(rows[0]['linked_pii'],'S0033312300006608')
+
+    def test_oxford_uses_attachment_widget_and_retains_embedded_doi(self):
+        from supplements import oxford_links
+        raw=(ROOT/'tests/fixtures/oxford-supplement-region.html').read_text('utf-8')
+        rows=oxford_links(raw+'<a href="https://other.example/file.pdf">Other paper</a>','https://academic.oup.com/')
+        self.assertEqual(len(rows),1)
+        self.assertEqual(rows[0]['linked_doi_path'],'10.1093_restud_rdag022')
+        self.assertEqual(rows[0]['filename'],'rdag022_supplementary_data.pdf')
+
+    def test_cambridge_attachment_with_a_different_pii_is_not_downloaded(self):
+        from types import SimpleNamespace
+        from unittest.mock import Mock,patch
+        from scholarly import ArtifactStore
+        from supplements import fetch_supplementary
+        raw='<meta name="citation_pdf_url" content="https://www.cambridge.org/content/S9999999999999999a.pdf/paper.pdf">'+(ROOT/'tests/fixtures/cambridge-supplement-region.html').read_text('utf-8')
+        with tempfile.TemporaryDirectory() as temp:
+            store=ArtifactStore(temp); source=store.put(raw,'text/html','cambridge','https://www.cambridge.org/')
+            adapter=SimpleNamespace(store=store,source='cambridge',gateway=SimpleNamespace(context=None),profile=SimpleNamespace(download_hosts={'static.cambridge.org'}))
+            page=SimpleNamespace(url='https://www.cambridge.org/',content=Mock(return_value=raw))
+            with patch('supplements.browser_download') as download:
+                result=fetch_supplementary(adapter,page,'10.1007/s11336-020-09720-7',source)
+            download.assert_not_called()
+            self.assertEqual(result['received'],0)
+            self.assertTrue(all(x['status']=='selection_required' for x in result['files']))
+
     def test_aip_supplement_reference_stays_with_explicit_figshare_source(self):
         from supplements import aip_links
         raw=(ROOT/'tests/fixtures/aip-supplement-region.html').read_text('utf-8')

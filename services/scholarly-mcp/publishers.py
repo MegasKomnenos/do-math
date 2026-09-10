@@ -36,10 +36,10 @@ class Profile:
 
 PROFILES = [
     Profile("ams", ("www.ams.org", "ams.org", "pubs.ams.org"), "AMS"),
-    Profile("cambridge", ("www.cambridge.org", "resolve.cambridge.org"), "CUP", '.col.sec.summary, section.abstract, .abstract'),
+    Profile("cambridge", ("www.cambridge.org", "resolve.cambridge.org"), "CUP", '.col.sec.summary, section.abstract, .abstract', file_domains=('static.cambridge.org',)),
     Profile("de-gruyter", ("www.degruyter.com", "www.degruyterbrill.com"), "De Gruyter"),
     Profile("jstor", ("www.jstor.org", "jstor.org"), "JSTOR"),
-    Profile("oxford", ("academic.oup.com", "www.oxfordacademic.com"), "OUP", file_domains=("watermark02.silverchair.com",)),
+    Profile("oxford", ("academic.oup.com", "www.oxfordacademic.com"), "OUP", file_domains=("watermark02.silverchair.com","oup.silverchair-cdn.com")),
     Profile("science-direct", ("www.sciencedirect.com", "sciencedirect.com", "linkinghub.elsevier.com"), "ScienceDirect"),
     Profile("springer", ("link.springer.com", "link.springernature.com", "www.nature.com"), "Springer eJournal", file_domains=('citation-needed.springer.com','media.springernature.com')),
     Profile("taylor-francis", ("www.tandfonline.com", "tandfonline.com"), "Taylor"),
@@ -610,7 +610,7 @@ class Publisher:
                         components[part] = {"status": "available", "artifact": pdf}
                     except ServiceError as error:
                         components[part] = error.result
-                elif part=='supplementary' and self.source in ('springer','wiley','aip'):
+                elif part=='supplementary' and self.source in ('springer','wiley','aip','cambridge','oxford'):
                     from supplements import fetch_supplementary
                     components[part]=fetch_supplementary(self,page,identifier or (observed_dois[0] if observed_dois else None),source_page)
                 else:

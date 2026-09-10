@@ -76,6 +76,8 @@ Springer는 제목·저자·저널·날짜의 고급검색, 검색 결과 페이
 
 Oxford와 AIP는 원 검색 필드와 문헌별 인용문을 연결했다. Oxford 결과에는 저널·그림도 있으므로 `type`을 확인한다. 검색 HTML의 건수와 실제 행을 대조하지 못하면 근거 참조와 파싱 실패를 반환한다. AIP 초록은 현재 문헌의 native BibTeX `abstract` 필드로 확보하며 인용문 요청과 같은 파일을 재사용한다.
 
+Cambridge의 Supplementary materials 표와 Oxford의 Supplementary data 위젯은 개별 파일 회수를 지원한다. 같은 제목을 가진 파일도 각각 보존한다. 보충 PDF·ZIP은 `components.supplementary.files`의 artifact로 읽고, ZIP 구성 항목을 선택하면 내부 소스 파일도 줄 단위로 읽을 수 있다. 연구 코드를 실행하거나 직렬화된 실행 환경을 불러오지 않는다.
+
 Cambridge는 저자·연도·자료 유형·기관 이용 가능 여부의 검색 조건과 공개 RIS API를 사용한다. 주제·저널·출판사·학회 필터 ID는 검색 결과의 `facets.ref`를 `extract`로 읽어 선택한다. RIS의 `UR`에 있는 문헌 ID를 요청한 ID와 대조한다. 온라인 발행일과 인쇄 발행일을 원 검색 기록에 함께 보존한다.
 
 Taylor & Francis는 원 고급검색 필드와 연도·정렬, native BibTeX·RIS와 문헌 PDF를 연결했다. De Gruyter Brill은 title·familyName 등의 원 검색식, 가시성·정렬과 문헌 RIS를 연결했다. 자료원별 형식·조회 범위는 `describe_source`를 따른다.

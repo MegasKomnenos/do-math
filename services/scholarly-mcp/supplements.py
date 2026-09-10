@@ -50,8 +50,33 @@ def aip_links(raw,base):
     return rows
 
 
+def cambridge_links(raw,base):
+    soup=BeautifulSoup(raw,'html.parser'); rows=[]
+    for item in soup.select('#supplementary-materials-tab .materials-table__item'):
+        title=item.select_one('.materials-table__row__title')
+        description=item.select_one('.materials-table__row__description')
+        for anchor in item.select('a.materials-table__row__download-button[href]'):
+            url=urljoin(base,anchor['href']); path=unquote(urlsplit(url).path)
+            match=re.search(r'/urn:cambridge\.org:id:article:([^/]+)/resource/name/',path)
+            rows.append({'label':title.get_text(' ',strip=True) if title else anchor.get_text(' ',strip=True),
+                'description':description.get_text(' ',strip=True) if description else None,'url':url,
+                'linked_doi':None,'linked_pii':match[1] if match else None,'filename':PurePosixPath(path).name})
+    return rows
+
+
+def oxford_links(raw,base):
+    soup=BeautifulSoup(raw,'html.parser'); rows=[]
+    for anchor in soup.select('.widget-ArticleDataSupplements .dataSuppLink a[href]'):
+        url=urljoin(base,anchor['href']); path=unquote(urlsplit(url).path)
+        match=re.search(r'/(10\.\d{4,9}_[^/]+)/',path)
+        rows.append({'label':anchor.get_text(' ',strip=True),'description':anchor.parent.get_text(' ',strip=True),
+            'url':url,'linked_doi':None,'linked_doi_path':match[1] if match else None,'filename':PurePosixPath(path).name})
+    return rows
+
+
 def fetch_supplementary(adapter,page,identifier,source_page):
-    rows={'springer':springer_links,'wiley':wiley_links,'aip':aip_links}[adapter.source](page.content(),page.url)
+    raw=page.content()
+    rows={'springer':springer_links,'wiley':wiley_links,'aip':aip_links,'cambridge':cambridge_links,'oxford':oxford_links}[adapter.source](raw,page.url)
     if not rows:
         return {'status':'source_page','artifact':source_page,'reason':'No recognized document attachment controls; other supplementary layouts remain in development'}
     index=adapter.store.put(encoded(rows),'application/json',adapter.source,page.url,role='supplementary_index',doi=identifier,parent_ref=source_page['ref'])
@@ -59,12 +84,20 @@ def fetch_supplementary(adapter,page,identifier,source_page):
         return {'status':'selection_required','artifact':index,'references':rows,'discovered':len(rows),'received':0,
                 'reason':'External supplement references; files require an explicit Figshare call'}
     files=[]
+    expected_pii=set()
+    if adapter.source=='cambridge':
+        soup=BeautifulSoup(raw,'html.parser')
+        expected_pii={m[1] for tag in soup.select('meta[name="citation_pdf_url"][content]') if (m:=re.search(r'/(S\d+[A-Z]?)a\.pdf/',tag['content']))}
     for row in rows:
         try:
             if row.get('invalid_link'):
                 raise ServiceError('invalid_response','The supplementary control does not identify one document and file')
             if row['linked_doi'] and identifier and row['linked_doi'].casefold()!=identifier.casefold():
                 raise ServiceError('linked_publication_differs','The attachment path identifies another publication; select that publication explicitly',status='selection_required',linked_doi=row['linked_doi'])
+            if row.get('linked_doi_path') and identifier and row['linked_doi_path'].casefold()!=identifier.replace('/','_').casefold():
+                raise ServiceError('linked_publication_differs','The attachment path differs from the encoded document DOI',status='selection_required',linked_doi_path=row['linked_doi_path'])
+            if row.get('linked_pii') and expected_pii and row['linked_pii'] not in expected_pii:
+                raise ServiceError('linked_publication_differs','The attachment PII differs from the document PDF metadata',status='selection_required',linked_pii=row['linked_pii'])
             data,media,url=browser_download(adapter.gateway.context,row['url'],adapter.profile.download_hosts)
             if media in ('text/html','application/xhtml+xml') or data.lstrip().lower().startswith((b'<!doctype html',b'<html')):
                 raise ServiceError('unexpected_content','Attachment control returned an HTML page')
@@ -81,7 +114,7 @@ def fetch_supplementary(adapter,page,identifier,source_page):
                 with pymupdf.open(stream=data,filetype='pdf') as document:
                     metadata['pages']=len(document)
                 media='application/pdf'
-            artifact=adapter.store.put(data,media,adapter.source,url,role='supplementary_file',doi=identifier,label=row['label'],parent_ref=index['ref'],**metadata)
+            artifact=adapter.store.put(data,media,adapter.source,url,preserve_bytes=True,role='supplementary_file',doi=identifier,label=row['label'],parent_ref=index['ref'],**metadata)
             files.append({**row,'status':'available','artifact':artifact})
         except ServiceError as error:
             files.append({**row,**error.result})
