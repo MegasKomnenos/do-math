@@ -4,6 +4,16 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 
 class SupplementContract(unittest.TestCase):
+    def test_taylor_zip_and_table_csv_controls_keep_their_different_roles(self):
+        from supplements import taylor_links
+        raw=(ROOT/'tests/fixtures/taylor-supplement-region.html').read_text('utf-8')+(ROOT/'tests/fixtures/taylor-table-controls.html').read_text('utf-8')
+        rows=taylor_links(raw,'https://www.tandfonline.com/')
+        self.assertEqual(len(rows),3)
+        self.assertEqual(rows[0]['filename'],'ucgs_a_1349663_sm4648.zip')
+        self.assertEqual([row['role'] for row in rows],['supplementary_file','article_table','article_table'])
+        self.assertEqual([row['table_id'] for row in rows[1:]],['t0001','t0003'])
+        self.assertTrue(all(row['linked_doi']=='10.1080/10618600.2017.1349663' for row in rows))
+
     def test_cambridge_native_table_keeps_two_files_with_the_same_title(self):
         from supplements import cambridge_links
         raw=(ROOT/'tests/fixtures/cambridge-supplement-region.html').read_text('utf-8')

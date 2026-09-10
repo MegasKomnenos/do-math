@@ -74,9 +74,25 @@ def oxford_links(raw,base):
     return rows
 
 
+def taylor_links(raw,base):
+    soup=BeautifulSoup(raw,'html.parser'); rows=[]
+    for selector,role in [('#supplemental-material-section a[href*="/action/downloadSupplement"]','supplementary_file'),
+                          ('.tableDownloadOption a[href*="/action/downloadTable"]','article_table')]:
+        for anchor in soup.select(selector):
+            url=urljoin(base,anchor['href']); query=parse_qs(urlsplit(url).query)
+            identifiers=query.get('doi',[]); names=query.get('file' if role=='supplementary_file' else 'id',[])
+            valid=len(identifiers)==len(names)==1
+            if role=='article_table':valid=valid and query.get('downloadType')==['CSV']
+            rows.append({'role':role,'label':anchor.get_text(' ',strip=True),'description':None,'url':url,
+                         'linked_doi':identifiers[0] if len(identifiers)==1 else None,'invalid_link':not valid,
+                         'filename':names[0]+('.csv' if role=='article_table' else '') if len(names)==1 else None,
+                         **({'table_id':names[0]} if role=='article_table' and len(names)==1 else {})})
+    return rows
+
+
 def fetch_supplementary(adapter,page,identifier,source_page):
     raw=page.content()
-    rows={'springer':springer_links,'wiley':wiley_links,'aip':aip_links,'cambridge':cambridge_links,'oxford':oxford_links}[adapter.source](raw,page.url)
+    rows={'springer':springer_links,'wiley':wiley_links,'aip':aip_links,'cambridge':cambridge_links,'oxford':oxford_links,'taylor-francis':taylor_links}[adapter.source](raw,page.url)
     if not rows:
         return {'status':'source_page','artifact':source_page,'reason':'No recognized document attachment controls; other supplementary layouts remain in development'}
     index=adapter.store.put(encoded(rows),'application/json',adapter.source,page.url,role='supplementary_index',doi=identifier,parent_ref=source_page['ref'])
@@ -109,12 +125,14 @@ def fetch_supplementary(adapter,page,identifier,source_page):
                     raise ServiceError('invalid_document','The supplementary ZIP control returned no readable archive')
                 media='application/zip'
             metadata={}
+            if suffix=='.csv':
+                media='text/csv'
             if data.startswith(b'%PDF-'):
                 import pymupdf
                 with pymupdf.open(stream=data,filetype='pdf') as document:
                     metadata['pages']=len(document)
                 media='application/pdf'
-            artifact=adapter.store.put(data,media,adapter.source,url,preserve_bytes=True,role='supplementary_file',doi=identifier,label=row['label'],parent_ref=index['ref'],**metadata)
+            artifact=adapter.store.put(data,media,adapter.source,url,preserve_bytes=True,role=row.get('role','supplementary_file'),doi=identifier,label=row['label'],parent_ref=index['ref'],**metadata)
             files.append({**row,'status':'available','artifact':artifact})
         except ServiceError as error:
             files.append({**row,**error.result})

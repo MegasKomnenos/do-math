@@ -213,3 +213,9 @@ MP4 회수는 4MiB 단위 요청으로 바꿨다. 모든 응답의 Content-Range
 PQDT 문헌 2485541561의 원 Supplemental files 탭에는 TLTC_Teaching_Learning_Teaching_Continuum.PNG 하나가 있었다. KUDOS의 PQDT 바로가기로 기관에 접속한 뒤 해당 문헌 탭을 선택했다. Document includes N supplemental file(s) 건수와 .suppFiles의 개별 제어 수를 대조한다. 원 Terms of Use의 다운로드 동작은 현재 파일명을 경로 인자로 포함하므로 표시명과 대조한다. 서명된 내부 URL은 제어 수행에만 사용하며 반환 파일 목록에는 넣지 않는다.
 
 원 PNG는 529,775바이트로 확보됐다. 실제 MCP `data/validation/20260910T091220Z-pqdt-supplement-mcp.json`은 metadata·supplementary 회수와 extract의 구조화 이미지 결과 및 MCP ImageContent를 확인해 completed=true다. 파일 목록의 누락·건수 불일치·잘못된 파일명과 명시적 0건을 구별하는 검사를 추가했고 공통 검사 145개가 통과했다. 파일별 실패 때 성공 파일은 유지한다. Supplemental files 탭이 없는 문헌은 source_page로 남기며 다른 권한·레이아웃의 파일 부재를 추론하지 않는다.
+
+Taylor & Francis DOI 10.1080/10618600.2017.1349663, Goodness of Fit of Logistic Regression Models for Random Graphs의 첫 진단은 citation_title만 기다려 시간 초과였다. 보존 페이지를 확인하니 dc.Title·dc.Identifier·publication_doi를 제공하는 정상 문헌이었다. 진단 대기를 현재 메타데이터에 맞췄다. 공통 Publisher의 DOI 인식도 citation_doi 외 실제 Dublin Core·publication_doi를 받아들인다. 숫자 native ID 1349663과 DOI를 구별하고, URL 입력에서 관측한 DOI를 requested_doi로 잘못 표시하지 않도록 별도 보존하는 검사를 추가했다.
+
+원 #supplemental-material-section의 /action/downloadSupplement에는 ucgs_a_1349663_sm4648.zip이 있었다. 본문 .tableDownloadOption의 /action/downloadTable?downloadType=CSV 제어는 t0001·t0003 두 표였다. 문헌 DOI를 대조하며 보충 ZIP과 본문 표 CSV의 역할을 구별한다. 표의 반환 파일명은 table_id에 .csv를 붙인다. 원 CSV에는 각각 데이터 행 3개·열 4개가 있고 두 번째 표의 첫 열 헤더는 빈 문자열로 유지한다.
+
+실제 MCP `data/validation/20260910T092557Z-taylor-francis-supplements-mcp.json`은 metadata·native BibTeX·초록, ZIP 1,111,477바이트·항목 5개, CSV 195바이트·230바이트와 각 표의 행 추출을 통과했다. 그 뒤 입력 DOI와 관측 DOI의 구분은 오프라인 URL fetch 검사로 교정했다. ZIP에는 설명 텍스트, PDF 3개와 code.tar.gz가 있었다. 후속 실제 MCP `data/validation/20260910T092834Z-taylor-archive-mcp.json`은 내부 tar.gz의 항목 14개와 code/gof.R 90줄 중 앞 3줄을 읽어 completed=true로 통과했다. R·C++ 코드를 실행하거나 포함된 패키지를 설치하지 않았다. 공통 검사 148개가 통과했다.

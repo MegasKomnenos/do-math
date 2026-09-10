@@ -8,6 +8,29 @@ sys.path.insert(0, str(ROOT))
 
 
 class PublisherContract(unittest.TestCase):
+    def test_url_fetch_preserves_requested_and_observed_doi_distinction(self):
+        import json,tempfile
+        from types import SimpleNamespace
+        from unittest.mock import Mock,patch
+        from scholarly import ArtifactStore
+        raw=(ROOT/'tests/fixtures/taylor-dublin-core.html').read_text('utf-8')
+        url='https://www.tandfonline.com/doi/abs/10.1080/10618600.2017.1349663'
+        page=SimpleNamespace(url=url,content=Mock(return_value=raw),wait_for_function=Mock(),
+            locator=Mock(return_value=SimpleNamespace(inner_text=lambda:'Paper')),title=lambda:'Paper',close=Mock())
+        with tempfile.TemporaryDirectory() as temp:
+            store=ArtifactStore(temp)
+            adapter=self.mod.Publisher(store,None,next(p for p in self.mod.PROFILES if p.source=='taylor-francis'))
+            with patch.object(adapter,'document',return_value=page):result=adapter.fetch(url,parts=['metadata'])
+            self.assertIsNone(result['identity']['requested_doi'])
+            self.assertEqual(json.loads(store.read(result['records']['ref'])[1])[0]['doi'],'10.1080/10618600.2017.1349663')
+
+    def test_dublin_core_doi_is_distinct_from_the_native_numeric_identifier(self):
+        raw=(ROOT/'tests/fixtures/taylor-dublin-core.html').read_text('utf-8')
+        metadata=self.mod.publication_metadata(raw)
+        self.assertEqual(self.mod.publication_dois(metadata),['10.1080/10618600.2017.1349663'])
+        self.assertEqual(metadata['dc.identifier'],['1349663','10.1080/10618600.2017.1349663'])
+        self.assertIn('publication_doi',metadata)
+
     @classmethod
     def setUpClass(cls):
         if not (ROOT / "publishers.py").exists():

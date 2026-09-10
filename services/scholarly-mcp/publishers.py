@@ -58,7 +58,7 @@ def publication_metadata(raw):
     fields = {}
     for tag in soup.select("meta[name],meta[property]"):
         name = tag.get("name", tag.get("property", ""))
-        if name.lower().startswith(("citation_", "dc.", "dc:", "dcterms.", "prism.", "og:")) and tag.get("content") is not None:
+        if (name.lower().startswith(("citation_", "dc.", "dc:", "dcterms.", "prism.", "og:")) or name.lower()=='publication_doi') and tag.get("content") is not None:
             fields.setdefault(name.lower(), []).append(tag["content"])
     for script in soup.select('script[type="application/ld+json"]'):
         try:
@@ -66,6 +66,18 @@ def publication_metadata(raw):
         except (ValueError, TypeError):
             continue
     return fields
+
+
+def publication_dois(metadata):
+    for group in [('citation_doi',),('publication_doi','dc.identifier','dc:identifier','dcterms.identifier','prism.doi')]:
+        found={}
+        for key in group:
+            for value in metadata.get(key,[]):
+                try: identifier=doi(value)
+                except ServiceError: continue
+                found.setdefault(identifier.casefold(),identifier)
+        if found: return list(found.values())
+    return []
 
 
 def primary_pdf_links(raw, base, *, identifier=None):
@@ -475,6 +487,7 @@ class Publisher:
             return {**candidates, 'status': 'selection_required' if candidates.get('received') else candidates['status'],
                     'message': 'Select the exact publication DOI or URL from the preserved candidates'}
         url, identifier = self.resolve_target(target)
+        requested_identifier = identifier
         if urlsplit(url).path.lower().endswith('.pdf') or self.source=='siam' and urlsplit(url).path.startswith('/doi/pdf/'):
             return self.explicit_pdf(url,parts)
         page = self.document(url)
@@ -492,9 +505,11 @@ class Publisher:
             titles = metadata.get("citation_title", metadata.get("dc.title", metadata.get("dc:title", [])))
             if not titles:
                 raise ServiceError("metadata_not_identified", "Publisher page has no recognized publication title metadata", source=self.source)
-            observed_dois = metadata.get("citation_doi", [])
+            observed_dois = publication_dois(metadata)
             if identifier and observed_dois and identifier.lower() not in {x.lower().removeprefix("https://doi.org/") for x in observed_dois}:
                 raise ServiceError("identity_mismatch", "Publisher metadata contains a different DOI", source=self.source)
+            if not identifier and len(observed_dois)==1:
+                identifier=observed_dois[0]
             source_page = self.store.put(clean_html(raw, self.store.sanitizer), "text/html", self.source, page.url, role="source_page", requested_target=target)
             record = {"title": titles[0], "doi": identifier, "metadata": metadata, "url": self.store.sanitizer.url(page.url)}
             artifact = self.store.put(encoded([record]), "application/json", self.source, page.url, role="records", evidence_ref=source_page["ref"])
@@ -610,14 +625,14 @@ class Publisher:
                         components[part] = {"status": "available", "artifact": pdf}
                     except ServiceError as error:
                         components[part] = error.result
-                elif part=='supplementary' and self.source in ('springer','wiley','aip','cambridge','oxford'):
+                elif part=='supplementary' and self.source in ('springer','wiley','aip','cambridge','oxford','taylor-francis'):
                     from supplements import fetch_supplementary
                     components[part]=fetch_supplementary(self,page,identifier or (observed_dois[0] if observed_dois else None),source_page)
                 else:
                     components[part] = {"status": "source_page", "artifact": source_page, "reason": "Supplementary content is preserved in its source context; automatic attachment retrieval is pending"}
             return {"status": "ok" if all(item["status"] == "available" for item in components.values()) else "partial", "source": self.source,
                 "target": target, "records": artifact, "source_page": source_page, "components": components,
-                "identity": {"requested_doi": identifier, "observed_dois": observed_dois, "basis": "Exact publisher URL and available publisher metadata; file-level bibliography review is separate"}}
+                "identity": {"requested_doi": requested_identifier, "observed_dois": observed_dois, "basis": "Exact publisher URL and available publisher metadata; file-level bibliography review is separate"}}
         finally:
             page.close()
 

@@ -38,7 +38,7 @@
 | Oxford University Press | oxford | playwright | partial | source_guide, search, fetch, export | live_mcp_search_citation_metadata_abstract_pagination_and_supplement_pdf |
 | ScienceDirect | science-direct | playwright | partial | source_guide, fetch, export | live_mcp_institutional_ris_bibtex_plain_metadata_abstract_fetch |
 | Springer Nature | springer | playwright | partial | source_guide, search, fetch, export | live_mcp_advanced_search_citations_pdf_pagination_and_supplementary_files |
-| Taylor & Francis | taylor-francis | playwright | partial | source_guide, search, fetch, export | live_mcp_native_search_citation_abstract_pdf_fetch_pagination |
+| Taylor & Francis | taylor-francis | playwright | partial | source_guide, search, fetch, export | live_mcp_search_citation_pdf_dublin_doi_supplement_zip_tables_nested_source |
 | Wiley | wiley | playwright | partial | source_guide, search, fetch, export | live_mcp_advanced_search_citations_pdf_empty_repeat_and_supplementary_zip |
 | AIP | aip | playwright | partial | source_guide, search, fetch, export | live_mcp_advanced_search_citation_pdf_and_explicit_figshare_supplement_reference |
 | APS 공개 접근 | aps | api | partial | source_guide, search, fetch, export | live_mcp_open_access_feed_metadata_abstract_pdf_fetch |
