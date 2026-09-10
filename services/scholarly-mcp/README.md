@@ -90,4 +90,7 @@ OpenCitations는 인용 관계·건수와 OCI 단건 조회를 제공한다. CSV
 
 Crossref의 검색 export는 원 BibTeX·RIS·CSL JSON·plain·RDF·Turtle·UNIXREF·UNIXSD를 지원한다. 원 등록 JSON도 유지한다. WOS는 제목 후보와 full-record URL을 받아 accession을 선택·조회할 수 있다. arXiv의 html/src URL은 지정 형식과 판본을 유지하며 source archive의 TeX 파일도 extract로 읽는다.
 
-KNU FRIC는 경북대 센터의 공개 소장 목록 검색·ISSN 조회와 CSV를 제공한다. 직원에게 원문 복사를 신청하는 제출 동작은 포함하지 않는다. author-repository·society-journal은 알려진 공개 문서 URL의 회수 경로이며 단일 검색 색인은 아니다. 일반 웹 검색의 정상 동작 검증은 아직 남아 있다.
+KNU FRIC는 경북대 센터의 공개 소장 목록 검색·ISSN 조회와 CSV를 제공한다. 직원에게 원문 복사를 신청하는 제출 동작은 포함하지 않는다. author-repository·society-journal은 알려진 공개 문서 URL의 회수 경로이며 단일 검색 색인은 아니다. general-web은 Mwmbl의 별도 자격 없는 공개 검색 API를 사용하며, 반환된 후보 묶음 크기와 웹 전체 일치 건수를 구별한다.
+
+
+ScienceDirect는 KUDOS 기관 context의 원 citation endpoint로 서지·초록·RIS·BibTeX·plain을 회수한다. 문헌 화면·검색·PDF 준비 경로의 실패와 인용문 성공을 구별한다. AIP는 실제 PDF 전송 호스트를 파일 다운로드에 한해 허용한다. IOP의 서지·PDF 양성 관측과 이후 기관 접근 확인 때문에 미검증인 추가 내보내기는 지원표에 구분한다.

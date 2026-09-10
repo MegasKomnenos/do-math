@@ -252,6 +252,7 @@ class KudosGateway:
             return cached
         page = self.context.new_page()
         stage = 'portal_login'
+        target = None
         try:
             self.login(page)
             stage = 'academic_database_page'
@@ -278,7 +279,11 @@ class KudosGateway:
         except ServiceError:
             raise
         except Exception as error:
-            raise ServiceError("gateway_navigation_failed", "KUDOS academic-DB shortcut did not reach a ready source page", source=source, stage=stage, error_type=type(error).__name__, retryable=True) from None
+            observed_host = urlsplit(target.url).hostname if target is not None else None
+            challenge = observed_host in {'validate.perfdrive.com', 'challenges.cloudflare.com'}
+            raise ServiceError('publisher_access_challenge' if challenge else 'gateway_navigation_failed',
+                'Publisher redirected to an access challenge' if challenge else 'KUDOS academic-DB shortcut did not reach a ready source page',
+                status='restricted' if challenge else 'error', source=source, stage=stage, error_type=type(error).__name__, observed_host=observed_host, retryable=True) from None
         finally:
             page.close()
 

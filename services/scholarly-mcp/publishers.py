@@ -44,9 +44,9 @@ PROFILES = [
     Profile("springer", ("link.springer.com", "link.springernature.com", "www.nature.com"), "Springer eJournal", file_domains=('citation-needed.springer.com',)),
     Profile("taylor-francis", ("www.tandfonline.com", "tandfonline.com"), "Taylor"),
     Profile("wiley", ("onlinelibrary.wiley.com", "www.onlinelibrary.wiley.com"), "Wiley Online Library", '.article-section__abstract'),
-    Profile("aip", ("pubs.aip.org", "aip.scitation.org"), "AIP", 'section.abstract:not(.abstractBorder)'),
+    Profile("aip", ("pubs.aip.org", "aip.scitation.org"), "AIP", 'section.abstract:not(.abstractBorder)', file_domains=('watermark02.silverchair.com',)),
     Profile("aps", ("www.aps.org", "journals.aps.org", "link.aps.org", "physics.aps.org"), "APS"),
-    Profile("iop", ("iopscience.iop.org",), "IOP"),
+    Profile("iop", ("iopscience.iop.org",), "IOP", '.wd-jnl-art-abstract'),
     Profile("siam", ("epubs.siam.org", "www.siam.org"), None),
     Profile("project-euclid", ("projecteuclid.org", "www.projecteuclid.org"), None, 'text.ArticleContentText > h2:text-is("Abstract") + div'),
     Profile("theory-of-computing", ("theoryofcomputing.org", "www.theoryofcomputing.org"), None),
@@ -444,7 +444,18 @@ class Publisher:
                     native_citation = {'status':'error','code':'citation_export_failed','error_type':type(error).__name__}
             components = {}
             for part in parts:
-                if part == 'export' and self.source == 'springer':
+                if part == 'export' and self.source == 'iop':
+                    from iop import citation
+                    artifacts,errors=[],[]
+                    for format in ('bibtex','ris'):
+                        try:
+                            artifacts.append({'format':format,'artifact':citation(self,page,identifier or observed_dois[0],format)})
+                        except ServiceError as error:
+                            errors.append({'format':format,**error.result})
+                    components[part]={'status':'partial' if errors else 'available','artifacts':artifacts,'errors':errors}
+                    if artifacts:
+                        components[part]['artifact']=artifacts[0]['artifact']
+                elif part == 'export' and self.source == 'springer':
                     try:
                         components[part] = {'status': 'available', 'artifact': self.springer_citation(page, identifier or observed_dois[0]), 'format': 'bibtex'}
                     except ServiceError as error:

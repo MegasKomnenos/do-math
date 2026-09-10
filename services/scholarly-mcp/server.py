@@ -33,6 +33,8 @@ from jstor import JSTOR
 from numdam import Numdam
 from fric import KNUFric
 from web_documents import WebDocuments
+from sciencedirect import ScienceDirect
+from web_search import GeneralWeb
 
 ROOT = Path(__file__).resolve().parent
 STORE = ArtifactStore(ROOT / "data")
@@ -57,7 +59,7 @@ def run_call(function, *args, **kwargs):
         # Library exception messages may contain authenticated URLs or request values.
         logging.getLogger("scholarly").error("operation failed: %s", type(error).__name__)
         result = {"status": "error", "code": "execution_error", "message": "Server execution failed", "error_type": type(error).__name__}
-    return ToolResult.model_validate(result)
+    return ToolResult.model_validate(STORE.sanitizer.value(result))
 
 
 @mcp.tool()
@@ -129,6 +131,7 @@ def main():
     ADAPTERS["eudml"] = EuDML(STORE)
     ADAPTERS["aps"] = APS(STORE)
     ADAPTERS["jstor"] = JSTOR(STORE)
+    ADAPTERS['general-web'] = GeneralWeb(STORE)
     gateway = KudosGateway(ROOT.parents[1] / ".credentials", STORE.sanitizer)
     firefox_gateway = KudosGateway(ROOT.parents[1] / ".credentials", STORE.sanitizer, engine="firefox")
     ADAPTERS["numdam"] = Numdam(STORE, gateway)
@@ -145,7 +148,8 @@ def main():
     ADAPTERS["pqdt"] = PQDT(STORE, firefox_gateway)
     ADAPTERS["ieee-xplore"] = IEEE(STORE, firefox_gateway)
     ADAPTERS["springer"] = Publisher(STORE, firefox_gateway, next(p for p in PROFILES if p.source == "springer"))
-    for identifier in ("project-euclid", "cambridge", "oxford", "aip", "wiley", "taylor-francis", "de-gruyter"):
+    ADAPTERS['science-direct'] = ScienceDirect(STORE,firefox_gateway)
+    for identifier in ("project-euclid", "cambridge", "oxford", "aip", "wiley", "taylor-francis", "de-gruyter", "iop"):
         ADAPTERS[identifier] = Publisher(STORE, firefox_gateway, next(p for p in PROFILES if p.source == identifier))
     ADAPTERS["aps-institutional"] = Publisher(STORE, firefox_gateway, replace(next(p for p in PROFILES if p.source == "aps"), source="aps-institutional"))
     try:

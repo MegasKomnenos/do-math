@@ -16,6 +16,12 @@ from scholarly import ArtifactStore
 
 
 class MCPContract(unittest.IsolatedAsyncioTestCase):
+    def test_structured_results_pass_through_the_output_sanitizer(self):
+        import server
+        value=server.run_call(lambda:{'status':'ok','components':{'fulltext':{'url':'https://example.org/paper?_s=SYNTHETIC-SIGNATURE'}},'csrfmiddlewaretoken':'SYNTHETIC-CSRF'}).model_dump()
+        self.assertNotIn('SYNTHETIC-SIGNATURE',json.dumps(value))
+        self.assertNotIn('SYNTHETIC-CSRF',json.dumps(value))
+
     async def test_stdio_client_can_discover_and_extract_without_internal_knowledge(self):
         self.assertTrue((ROOT / "server.py").exists(), "The five-tool stdio MCP entry point has not been implemented")
         with tempfile.TemporaryDirectory() as tmp:

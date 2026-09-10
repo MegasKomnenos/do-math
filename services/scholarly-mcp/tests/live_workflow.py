@@ -77,6 +77,27 @@ async def main():
             fetched = await call("fetch", {"source": "acm-dl", "target": "10.1145/800157.805047", "parts": ["metadata", "abstract", "fulltext"]})
             assert fetched["status"] == "ok", fetched.get("code")
             assert fetched["components"]["fulltext"]["artifact"]["pages"] == 8
+        elif args.source == 'general-web':
+            found=await call('search',{'source':'general-web','query':'natural proofs','limit':2,'export':'csv'})
+            assert found['status']=='ok' and found['received']==2
+            assert found['total'] is None
+            rows=await call('extract',{'ref':found['records']['ref'],'count':2})
+            assert any('natural' in x['title'].lower() for x in rows['items'])
+            empty=await call('search',{'source':'general-web','query':'qzjxwv947231','limit':2})
+            assert empty['status']=='not_found' and empty['returned_set_size']==0
+        elif args.source == 'iop':
+            fetched = await call('fetch', {'source':'iop','target':'https://iopscience.iop.org/article/10.1088/0022-3727/34/10/311/meta','parts':['metadata','abstract','fulltext','export']})
+            assert fetched['status']=='ok'
+            assert fetched['components']['fulltext']['artifact']['pages']==16
+            native = await call('extract', {'ref':fetched['components']['export']['artifact']['ref'],'count':1})
+            assert native['items'][0]['doi']=='10.1088/0022-3727/34/10/311'
+        elif args.source == 'science-direct':
+            fetched = await call('fetch', {'source':args.source,'target':'10.1006/jcss.1997.1494','parts':['metadata','abstract','export']})
+            assert fetched['status'] == 'ok'
+            assert fetched['pii'] == 'S002200009791494X'
+            native = await call('extract', {'ref':fetched['components']['export']['artifact']['ref'],'count':1})
+            assert native['items'][0]['fields']['t1'] == ['Natural Proofs']
+            assert len(native['items'][0]['fields']['ab'][0]) > 900
         elif args.source == 'society-journal':
             fetched = await call('fetch', {'source':args.source,'target':'https://www.combinatorics.org/ojs/index.php/eljc/article/view/v1i1r1','parts':['metadata','abstract','fulltext','export']})
             assert fetched['status'] == 'ok' and fetched['components']['fulltext']['artifact']['pages'] == 10
@@ -321,6 +342,10 @@ async def main():
             following = await call('search', {'source':'aip','query':'quantum computation','options':{'field':'Title','exact':True},'start':19,'limit':2,'export':'csv'})
             assert following['status']=='ok', following.get('code')
             assert following['received']==2
+            oa = await call('fetch', {'source':'aip','target':'10.1063/5.0281142','parts':['metadata','abstract','fulltext','export']})
+            assert oa['status']=='ok' and oa['components']['fulltext']['artifact']['pages']==16
+            first_page = await call('extract', {'ref':oa['components']['fulltext']['artifact']['ref'],'count':1})
+            assert '10.1063/5.0281142' in first_page['items'][0]['text']
         elif args.source == 'oxford':
             search = await call('search', {'source':'oxford','query':'P versus NP','options':{'field':'Title','exact':True},'limit':2,'export':'bibtex'})
             assert search['status']=='ok', search.get('export')

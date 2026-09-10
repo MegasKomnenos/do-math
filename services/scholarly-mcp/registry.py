@@ -464,6 +464,41 @@ SOURCES['jstor'].usage={
 
 SOURCES['numdam'].transport = 'fixed: OAI/citation API; native search/DOI resolution Playwright'
 
+SOURCES['science-direct'].implementation = 'partial'
+SOURCES['science-direct'].capabilities = ('source_guide','fetch','export')
+SOURCES['science-direct'].usage = {
+    'fetch':'DOI·ScienceDirect PII·문헌 URL을 지정한다. KUDOS의 ScienceDirect 바로가기로 기관 접속한 뒤 원 RIS에서 서지·초록을 회수한다. RIS의 UR에 있는 PII와 DO의 DOI를 입력과 대조한다. PII와 DOI는 다른 식별자다.',
+    'exports':'export는 RIS·BibTeX·plain의 원 파일이다. 제목은 RIS의 T1이며 초록은 AB다. BibTeX·plain도 같은 DOI를 대조한다. 원 서지와 초록을 파일 그대로 보존한다.',
+    'limits':'검색·이름 후보와 첨부파일은 아직 연결하지 않았다. 문헌 HTML/abs 페이지의 접근 오류와 정상 기관 citation endpoint를 구별한다. fulltext가 실패해도 이미 받은 서지·초록·인용문을 보존하고 component별 실패를 반환한다. PDF 주소의 준비 HTML을 PDF로 표시하지 않는다. 별도 Elsevier API 키·웹 계정은 요구하지 않는다.',
+    'examples':[{'tool':'fetch','arguments':{'source':'science-direct','target':'10.1006/jcss.1997.1494','parts':['metadata','abstract','export']}}],
+    'official':['https://www.sciencedirect.com/'],
+}
+
+SOURCES['general-web'].implementation = 'partial'
+SOURCES['general-web'].transport = 'api (Mwmbl public search)'
+SOURCES['general-web'].home = 'https://mwmbl.org/'
+SOURCES['general-web'].capabilities = ('source_guide','search','export')
+SOURCES['general-web'].usage = {
+    'search':'Mwmbl 공개 웹 색인에 query를 검색어 문자열로 전달한다. 검증된 예: natural proofs. 이 경로에 별도 계정·API 키·연락 이메일을 제공하지 않는다. 다른 검색 엔진의 고급 연산자 의미를 이 API에 임의로 부여하지 않는다.',
+    'options':{},
+    'exports':'json은 URL·제목·snippet과 native 필드. native는 강조 표시 조각을 포함한 원 JSON 배열 전체다. csv는 요청 창의 기계적 CSV다. snippet은 후보 발견용이며 문헌의 원문 근거가 아니다.',
+    'limits':'start 0부터, limit 1..100. start/limit는 해당 응답의 결과 묶음 안에서 선택한다. returned_set_size는 원 배열 크기이며 웹 전체 검색 건수가 아니다. total=null이고 API의 추가 서버 페이지·cursor는 제공하지 않는다. 전체 원 배열은 evidence.ref를 extract로 읽을 수 있다. 다른 source로 자동 전환하지 않는다.',
+    'fetch':'검색 엔진의 후보 URL을 선택한 뒤 해당 출판사 또는 공개 문서 source를 지정해 fetch한다. 이 엔진 자체에서 논문 전문을 확보하지 않는다.',
+    'examples':[{'tool':'search','arguments':{'source':'general-web','query':'natural proofs','limit':2,'export':'csv'}}],
+    'official':['https://mwmbl.org/','https://github.com/mwmbl/mwmbl'],
+}
+
+SOURCES['iop'].implementation = 'partial'
+SOURCES['iop'].transport = 'playwright'
+SOURCES['iop'].capabilities = ('source_guide','fetch','export')
+SOURCES['iop'].usage = {
+    'fetch':'IOP DOI 또는 정확한 iopscience.iop.org 문헌 URL을 지정한다. KUDOS IOP 바로가기를 거쳐 기관 문헌의 서지 태그와 PDF를 회수한다. 초록은 원 wd-jnl-art-abstract 영역을 사용한다.',
+    'exports':'문헌에 표시된 BibTeX·RIS 링크의 DOI와 원 응답 DOI를 대조하는 코드를 연결했다. 이 추가 export의 실서비스 검증은 기관 진입 CAPTCHA 때문에 완료하지 못했다.',
+    'limits':'검색·이름 후보는 아직 연결하지 않았다. 서지·16쪽 PDF를 실제 어댑터에서 확보한 기록과, 이후 MCP에서 validate.perfdrive.com으로 이동한 제한을 구별한다. CAPTCHA 호스트를 문헌 호스트로 허용하지 않는다. XML·추가 첨부 형식은 연결하지 않았다.',
+    'examples':[{'tool':'fetch','arguments':{'source':'iop','target':'https://iopscience.iop.org/article/10.1088/0022-3727/34/10/311/meta','parts':['metadata','fulltext']}}],
+    'official':['https://iopscience.iop.org/'],
+}
+
 SOURCES['knu-fric'].implementation = 'partial'
 SOURCES['knu-fric'].transport = 'playwright'
 SOURCES['knu-fric'].home = 'https://fric.knu.ac.kr/'
@@ -500,6 +535,7 @@ for identifier, level in {
     "math-comp": "live_mcp_pinned_source_search_file_fetch_line_comparison",
     "opencitations": "live_mcp_native_csv_window_oci_fetch_reference_count",
     "knu-fric": "live_mcp_catalogue_pagination_issn_fetch_zero_result",
+    "general-web": "live_mcp_public_api_candidates_csv_extract_empty_result",
     "author-repository": "live_mcp_public_author_pdf_and_page_links",
     "society-journal": "live_mcp_public_journal_metadata_abstract_pdf_native_citations",
     "numdam": "live_mcp_native_search_citations_jats_pdf_djvu_fetch_pagination",
@@ -525,15 +561,15 @@ for identifier, level in {
     "project-euclid": "live_adapter_metadata_abstract_pdf_fetch",
     "cambridge": "live_mcp_filtered_search_native_ris_abstract_pdf_fetch_pagination",
     "oxford": "live_mcp_search_citation_metadata_abstract_fetch_and_mixed_pagination",
-    "aip": "live_mcp_advanced_search_native_citation_abstract_fetch_pagination",
+    "aip": "live_mcp_advanced_search_citation_abstract_pdf_fetch_pagination",
     "wiley": "live_mcp_advanced_search_native_bibtex_pdf_fetch_empty_repeat",
     "taylor-francis": "live_mcp_native_search_citation_abstract_pdf_fetch_pagination",
     "de-gruyter": "live_mcp_native_search_ris_abstract_pdf_fetch_pagination",
     "jstor": "live_mcp_public_ris_metadata_abstract_fetch; web_captcha_observed",
-    "iop": "institution_redirect_to_captcha_observed",
+    "iop": "live_adapter_metadata_pdf; citation_unverified_after_gateway_challenge",
     "siam": "browser_access_challenge_observed",
     "ams": "browse_shell_and_script_restriction_observed",
-    "science-direct": "native_advanced_form_and_search_cpe_observed",
+    "science-direct": "live_mcp_institutional_ris_bibtex_plain_metadata_abstract_fetch",
 }.items():
     SOURCES[identifier].verification = level
 

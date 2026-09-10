@@ -118,3 +118,16 @@ KNU FRIC는 등록 키가 필수인 OpenAPI를 제외하고 경북대 센터의 
 일반 웹 후보 검색은 추가 확인이 남았다. Bing HTML과 RSS는 입력 문자열을 유지했지만 무작위 문자열에 Apple·Anne Kennedy 등 무관한 결과를 반환했다. Google에서는 결과 목록이 없는 페이지, DuckDuckGo HTML에서는 HTTP 202와 결과 목록 부재를 관측했다. 이 관측을 정상적인 학술 후보 검색 검증으로 세지 않는다. FRIC 진단 중 형제 요소의 텍스트를 나열하다 공개 select 변경 JavaScript가 출력된 적이 있어 이후 출력 대상을 다시 제한했다. 그 출력에 비밀값은 확인되지 않았으며 원 JS를 일반 진단 출력으로 사용하지 않는다.
 
 공통 검사 96개가 통과했다. 실제 성공한 형식·대상만 지원표 실측 표지에 반영했다. 전체 자료원의 구현 완료를 선언하지 않으며 남은 기관 검색·첨부·일반 웹 및 추가 입력 범위를 계속 처리한다.
+
+
+2026-09-10 ScienceDirect의 기관 citation endpoint를 연결했다. KUDOS 바로가기에서 발급된 기관 context로 /sdfe/arp/cite를 요청하면 Natural Proofs, PII S002200009791494X, DOI 10.1006/jcss.1997.1494의 원 RIS와 994자 초록을 받았다. RIS는 제목 T1·DOI URL을 유지한다. 원 형식은 application/x-research-info-systems, text/x-bibtex, text/plain이며 Crossref의 MIME을 그대로 사용하면 provider_error였다. 실제 MCP에서 서지·초록·RIS·BibTeX·plain과 식별자 대조를 통과했다. 근거는 `data/validation/20260910T014021322060Z-science-direct-workflow.json`이다. fulltext 실패 시에도 이미 회수한 citation 구성요소는 보존한다.
+
+ScienceDirect 문헌과 abs 경로는 접근 오류였다. pdfft는 Preparing your download HTML을 반환했고, Firefox와 Chrome의 실제 준비 페이지에서 30초 동안 PDF 응답이나 download 이벤트를 확인하지 못했다. 기본 검색은 Enter와 실제 submit 모두에서 검색 URL로 바뀌었지만 45초 뒤에도 홈페이지 내용을 표시했고 결과 목록을 확인하지 못했다. 검색·PDF·첨부는 완료로 세지 않는다.
+
+AIP의 OA 문헌 10.1063/5.0281142에서는 PDF 요청이 watermark02.silverchair.com으로 이동해 기존 파일 호스트 검사에 막혔다. 이 호스트를 파일 다운로드에만 허용한 뒤 16쪽 PDF를 확보했다. 실제 MCP에서 기존 제목 검색·인용문·초록·페이지 경계와 새 문헌의 서지·초록·PDF·인용문, PDF 첫 쪽 DOI를 대조했다. `data/validation/20260910T015241129838Z-aip-workflow.json`이 성공 근거다. AAPT 문헌 10.1119/5.0328433의 PDF HTML 응답을 모든 AIP 문헌의 동일한 실패로 확대하지 않는다.
+
+IOP의 명시적 /article/10.1088/0022-3727/34/10/311/meta 주소에서는 기존 문헌 어댑터로 서지와 16쪽 PDF를 받았다(`data/validation/20260910T020131Z-iop-fetch.json`). 원 초록 영역과 BibTeX·RIS 제어도 확인해 코드를 연결했다. 이후 두 MCP 재검증과 정상 KUDOS 깊은 문헌 링크·native export 확인은 validate.perfdrive.com으로의 접근 확인 때문에 완료하지 못했다. 인용문 응답의 실측 통과를 주장하지 않는다. gateway 오류에는 호스트만 추가해 원 URL 없이 진입 실패를 구별하고, 알려진 접근 확인 호스트로의 이동은 restricted로 분류한다. CAPTCHA 호스트를 자료원 호스트에 추가하지 않았다.
+
+일반 웹 후보 발견은 별도 자격 없는 Mwmbl의 /search/?s= 공개 API로 연결했다. natural proofs의 관련 결과 25건, 그중 2건 CSV·원 강조 표시 조각의 보존과 추출, qzjxwv947231의 빈 결과를 실제 MCP에서 확인했다. `data/validation/20260910T023008496145Z-general-web-workflow.json`이 성공 근거다. returned_set_size는 API가 반환한 묶음의 크기이며 전체 웹 일치 건수가 아니므로 total=null이다. 앞선 다른 무작위 문자열의 20초 HTTP timeout도 있었으나 현재 어댑터는 공통 45초 제한과 typed timeout을 사용한다. API 실패 시 다른 검색 엔진으로 전환하지 않는다.
+
+MCP 구조화 반환에도 공통 Sanitizer를 적용했다. 중첩 component의 서명 URL과 CSRF 필드가 정제 없이 반환되던 합성 값 사례를 재현하고 수리했다. 원 공개 서명·cursor 보존 규칙은 기존 정제기를 그대로 따른다. 새 회귀 검사를 포함해 공통 검사 101개가 통과했다. JSTOR 기관 PDF 주소는 별도 확인에서 HTML을 반환했고 SIAM의 공개 citation GET·POST는 HTTP 403이었다. 이 관측을 문헌 부재로 표시하지 않는다. 전체 구현은 여전히 부분 완료다.

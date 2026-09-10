@@ -35,19 +35,19 @@
 | De Gruyter Brill | de-gruyter | playwright | partial | source_guide, search, fetch, export | live_mcp_native_search_ris_abstract_pdf_fetch_pagination |
 | JSTOR | jstor | api (native citation); browser search/document pending | partial | source_guide, fetch, export | live_mcp_public_ris_metadata_abstract_fetch; web_captcha_observed |
 | Oxford University Press | oxford | playwright | partial | source_guide, search, fetch, export | live_mcp_search_citation_metadata_abstract_fetch_and_mixed_pagination |
-| ScienceDirect | science-direct | playwright | pending | 미구현 | native_advanced_form_and_search_cpe_observed |
+| ScienceDirect | science-direct | playwright | partial | source_guide, fetch, export | live_mcp_institutional_ris_bibtex_plain_metadata_abstract_fetch |
 | Springer Nature | springer | playwright | partial | source_guide, search, fetch, export | live_mcp_advanced_search_native_citations_pdf_fetch_pagination |
 | Taylor & Francis | taylor-francis | playwright | partial | source_guide, search, fetch, export | live_mcp_native_search_citation_abstract_pdf_fetch_pagination |
 | Wiley | wiley | playwright | partial | source_guide, search, fetch, export | live_mcp_advanced_search_native_bibtex_pdf_fetch_empty_repeat |
-| AIP | aip | playwright | partial | source_guide, search, fetch, export | live_mcp_advanced_search_native_citation_abstract_fetch_pagination |
+| AIP | aip | playwright | partial | source_guide, search, fetch, export | live_mcp_advanced_search_citation_abstract_pdf_fetch_pagination |
 | APS 공개 접근 | aps | api | partial | source_guide, search, fetch, export | live_mcp_open_access_feed_metadata_abstract_pdf_fetch |
-| IOP | iop | under_investigation | pending | 미구현 | institution_redirect_to_captcha_observed |
+| IOP | iop | playwright | partial | source_guide, fetch, export | live_adapter_metadata_pdf; citation_unverified_after_gateway_challenge |
 | SIAM | siam | under_investigation | pending | 미구현 | browser_access_challenge_observed |
 | KNU FRIC | knu-fric | playwright | partial | source_guide, search, fetch, export | live_mcp_catalogue_pagination_issn_fetch_zero_result |
 | 개별 구독 자료원 | individual-subscription | target_dependent | pending | 미구현 | not_recorded |
 | 학회·저널 공식 사이트 | society-journal | fixed: public document Playwright; OJS native citation API | partial | source_guide, fetch, export | live_mcp_public_journal_metadata_abstract_pdf_native_citations |
 | 저자·기관 공개본 | author-repository | fixed: public document Playwright; OJS native citation API | partial | source_guide, fetch, export | live_mcp_public_author_pdf_and_page_links |
-| 일반 웹 후보 발견 | general-web | target_dependent | pending | 미구현 | not_recorded |
+| 일반 웹 후보 발견 | general-web | api (Mwmbl public search) | partial | source_guide, search, export | live_mcp_public_api_candidates_csv_extract_empty_result |
 | APS 기관 구독 접근 | aps-institutional | playwright | partial | source_guide, fetch, export | live_adapter_metadata_and_fulltext_restriction |
 
 개별 구독·학회 저널·저자 또는 기관 공개본·일반 웹은 구체 서비스가 정해지지 않은 범주다. 범위를 누락하지 않도록 목록에 유지한다. Unpaywall과 Scopus의 별도 웹 계정 내보내기는 보류하며 해당 자격 정보를 요청하지 않는다.
