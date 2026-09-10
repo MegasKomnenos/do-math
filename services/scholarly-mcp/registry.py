@@ -492,7 +492,7 @@ SOURCES['project-euclid'].usage={
     'options':'terms는 추가 조건 배열이며 각 항목의 query, field, operator(AND/OR/NOT)를 원 UI에 입력한다. 첫 조건과 합계 20개까지다. year_from/year_to는 발행연도 정수이며 publication_titles는 정확한 발행물 제목 배열이다. 검색 결과 facets.ref를 extract(selection=/publication_titles)로 읽어 가능한 제목을 선택한다. sort는 Relevance, PubDateDesc, PubDateAsc, TitleAsc, TitleDesc이며 page_size는 25(기본), 50, 75, 100이다.',
     'pagination':'start는 0부터, limit는 1..1000이다. 표시된 원 페이지의 범위를 대조한다. 원 사이트는 50쪽까지 노출하므로 start+limit는 50*page_size 이하로 지정하고 더 먼 결과는 검색 조건을 좁힌다. 다음 쪽의 미리 받기 응답을 현재 쪽으로 사용하지 않는다.',
     'exports':'json은 보존한 문헌 레코드, html은 검색 페이지, csv는 같은 레코드의 기계적 CSV다. ris·bibtex·endnote·citation-pdf는 선택된 각 문헌의 Citation & Abstract 원 다운로드다. citation-pdf는 서지와 초록의 인쇄용 PDF이며 논문 전문은 fetch fulltext로 받는다. 실패한 문헌과 이미 받은 export를 함께 표시한다.',
-    'fetch':'Project Euclid 문헌 URL·DOI로 서지·초록·PDF·원 인용문을 확보한다. 이름은 후보 검색이다. export는 BibTeX·RIS·EndNote·인용문 PDF를 반환한다. supplementary는 원 문헌 화면에 보존된 부가자료 문맥이며 첨부의 개별 다운로드는 추가 개발 중이다.',
+    'fetch':'Project Euclid 문헌 URL·DOI로 서지·초록·PDF·원 인용문을 확보한다. 이름은 후보 검색이다. export는 BibTeX·RIS·EndNote·인용문 PDF를 반환한다. supplementary는 Supplemental Content 탭의 문헌별 PDF·ZIP을 회수한다. 원 문헌 DOI와 supplement_doi를 구별하고 파일명·설명·파일별 상태를 보존한다. 설명 속 외부 저장소는 자동 방문하지 않는다. files의 artifact로 ZIP 항목을 선택하고 내부 텍스트를 줄 단위로 읽는다. 탭 제어 부재는 source_page이며 실제 파일 링크의 오류를 보충자료 전체의 부재로 해석하지 않는다.',
     'examples':[{'tool':'search','arguments':{'source':'project-euclid','query':'complexity','options':{'field':'TITLE'},'start':24,'limit':2,'export':'csv'}}],
     'official':['https://projecteuclid.org/'],
 }
@@ -603,7 +603,7 @@ for identifier, level in {
     "eudml": "live_mcp_cql_rss_extract_nlm_fetch",
     "aps": "live_mcp_open_access_feed_metadata_abstract_pdf_fetch",
     "aps-institutional": "live_adapter_metadata_and_fulltext_restriction",
-    "project-euclid": "live_mcp_advanced_filters_repeat_sorted_pagination_four_citations_pdf_fetch",
+    "project-euclid": "live_mcp_advanced_search_four_citations_pdf_and_supplement_zip_text_extract",
     "cambridge": "live_mcp_filtered_search_ris_pdf_and_supplement_pdf_zip_source_extract",
     "oxford": "live_mcp_search_citation_metadata_abstract_pagination_and_supplement_pdf",
     "aip": "live_mcp_advanced_search_citation_pdf_and_explicit_figshare_supplement_reference",

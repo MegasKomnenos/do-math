@@ -3,7 +3,7 @@ import re,io,zipfile
 from pathlib import PurePosixPath
 from urllib.parse import urljoin,urlsplit,unquote,parse_qs
 from bs4 import BeautifulSoup
-from browser_adapters import browser_download
+from browser_adapters import browser_download,clean_html
 from scholarly import ServiceError,encoded
 
 
@@ -113,9 +113,35 @@ def acm_links(raw,base):
     return rows
 
 
+def euclid_links(raw,base):
+    soup=BeautifulSoup(raw,'html.parser');rows=[]
+    for anchor in soup.select('#divARTICLECONTENTCITEDTop .ArticleContentAnchorRow a.ArticleContentAnchorText[href]'):
+        url=urljoin(base,anchor['href']);path=unquote(urlsplit(url).path)
+        match=re.fullmatch(r'/journals/supplementalcontent/(10\..+)/([^/]+)',path)
+        download_row=anchor.find_parent(class_='ArticleContentAnchorRow')
+        doi_row=download_row.find_previous_sibling('div',class_='ArticleContentRow')
+        content_row=doi_row.find_previous_sibling('div',class_='ArticleContentRow') if doi_row else None
+        title=content_row.select_one('b') if content_row else None
+        description=content_row.select_one('p') if content_row else None
+        supplement=re.search(r'Digital Object Identifier:\s*(10\.\S+)',doi_row.get_text(' ',strip=True)) if doi_row else None
+        rows.append({'label':title.get_text(' ',strip=True) if title else anchor.get_text(' ',strip=True),
+            'description':description.get_text(' ',strip=True) if description else None,'url':url,
+            'linked_doi':match[1] if match else None,'filename':match[2] if match else None,
+            'supplement_doi':supplement[1] if supplement else None,'invalid_link':match is None})
+    return rows
+
+
 def fetch_supplementary(adapter,page,identifier,source_page,*,download_hosts=None):
+    if adapter.source=='project-euclid' and page.locator('#sup').count():
+        try:
+            page.locator('#sup').click(timeout=20000)
+            page.locator('#divARTICLECONTENTCITEDTop .ArticleContentAnchorRow a.ArticleContentAnchorText').first.wait_for(state='attached',timeout=20000)
+        except Exception as error:
+            return {'status':'error','code':'supplementary_tab_not_ready','error_type':type(error).__name__,'artifact':source_page}
+        source_page=adapter.store.put(clean_html(page.content(),adapter.store.sanitizer),'text/html',adapter.source,page.url,
+            role='supplementary_source_page',doi=identifier,parent_ref=source_page['ref'])
     raw=page.content()
-    rows={'springer':springer_links,'wiley':wiley_links,'aip':aip_links,'cambridge':cambridge_links,'oxford':oxford_links,'taylor-francis':taylor_links,'de-gruyter':degruyter_links,'acm-dl':acm_links}[adapter.source](raw,page.url)
+    rows={'springer':springer_links,'wiley':wiley_links,'aip':aip_links,'cambridge':cambridge_links,'oxford':oxford_links,'taylor-francis':taylor_links,'de-gruyter':degruyter_links,'acm-dl':acm_links,'project-euclid':euclid_links}[adapter.source](raw,page.url)
     if not rows:
         return {'status':'source_page','artifact':source_page,'reason':'No recognized document attachment controls; other supplementary layouts remain in development'}
     index=adapter.store.put(encoded(rows),'application/json',adapter.source,page.url,role='supplementary_index',doi=identifier,parent_ref=source_page['ref'])

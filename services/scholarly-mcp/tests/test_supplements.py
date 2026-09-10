@@ -4,6 +4,17 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 
 class SupplementContract(unittest.TestCase):
+    def test_euclid_supplement_tab_keeps_parent_and_file_dois_separate(self):
+        from supplements import euclid_links
+        raw=(ROOT/'tests/fixtures/euclid-supplement-region.html').read_text('utf-8')
+        rows=euclid_links(raw,'https://projecteuclid.org/')
+        self.assertEqual([r['filename'] for r in rows],['aoas2099suppa.pdf','aoas2099suppb.zip'])
+        self.assertEqual([r['label'] for r in rows],['Supplementary PDF','R code'])
+        self.assertTrue(all(r['linked_doi']=='10.1214/25-AOAS2099' for r in rows))
+        self.assertEqual([r['supplement_doi'] for r in rows],['10.1214/25-AOAS2099SUPPA','10.1214/25-AOAS2099SUPPB'])
+        self.assertIn('github.com/ruitaolin/DEMO',rows[1]['description'])
+        self.assertEqual(len(rows),2)
+
     def test_acm_supplement_is_bound_to_its_own_doi(self):
         from supplements import acm_links
         raw=(ROOT/'tests/fixtures/acm-supplement-region.html').read_text('utf-8')
