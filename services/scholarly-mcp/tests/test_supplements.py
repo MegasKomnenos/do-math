@@ -4,6 +4,15 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 
 class SupplementContract(unittest.TestCase):
+    def test_degruyter_native_attachment_retains_its_document_doi(self):
+        from supplements import degruyter_links
+        raw=(ROOT/'tests/fixtures/degruyter-supplement-region.html').read_text('utf-8')
+        rows=degruyter_links(raw,'https://www.degruyterbrill.com/')
+        self.assertEqual(len(rows),1)
+        self.assertEqual(rows[0]['filename'],'snde1089_supplementary_2.zip')
+        self.assertEqual(rows[0]['linked_doi'],'10.2202/1558-3708.1089')
+        self.assertEqual(rows[0]['label'],'Data and code (zip file)')
+
     def test_taylor_zip_and_table_csv_controls_keep_their_different_roles(self):
         from supplements import taylor_links
         raw=(ROOT/'tests/fixtures/taylor-supplement-region.html').read_text('utf-8')+(ROOT/'tests/fixtures/taylor-table-controls.html').read_text('utf-8')

@@ -625,7 +625,7 @@ class Publisher:
                         components[part] = {"status": "available", "artifact": pdf}
                     except ServiceError as error:
                         components[part] = error.result
-                elif part=='supplementary' and self.source in ('springer','wiley','aip','cambridge','oxford','taylor-francis'):
+                elif part=='supplementary' and self.source in ('springer','wiley','aip','cambridge','oxford','taylor-francis','de-gruyter'):
                     from supplements import fetch_supplementary
                     components[part]=fetch_supplementary(self,page,identifier or (observed_dois[0] if observed_dois else None),source_page)
                 else:

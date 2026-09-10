@@ -33,7 +33,7 @@
 | Software Heritage | software-heritage | api | partial | source_guide, search, fetch, export | live_adapter_origin_search_fetch |
 | AMS publications | ams | playwright | partial | source_guide, search, fetch, export | live_mcp_explicit_pdf; native_browser_mixed_search; search_adapter_restricted |
 | Cambridge University Press | cambridge | fixed: citation API; institutional search/document Playwright | partial | source_guide, search, fetch, export | live_mcp_filtered_search_ris_pdf_and_supplement_pdf_zip_source_extract |
-| De Gruyter Brill | de-gruyter | playwright | partial | source_guide, search, fetch, export | live_mcp_native_search_ris_abstract_pdf_fetch_pagination |
+| De Gruyter Brill | de-gruyter | playwright | partial | source_guide, search, fetch, export | live_mcp_search_ris_pdf_and_supplement_zip_cif_lines; broken_link_observed |
 | JSTOR | jstor | api (native citation); browser search/document pending | partial | source_guide, fetch, export | live_mcp_public_ris_metadata_abstract_fetch; web_captcha_observed |
 | Oxford University Press | oxford | playwright | partial | source_guide, search, fetch, export | live_mcp_search_citation_metadata_abstract_pagination_and_supplement_pdf |
 | ScienceDirect | science-direct | playwright | partial | source_guide, fetch, export | live_mcp_institutional_ris_bibtex_plain_metadata_abstract_fetch |

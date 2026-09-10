@@ -90,9 +90,19 @@ def taylor_links(raw,base):
     return rows
 
 
+def degruyter_links(raw,base):
+    soup=BeautifulSoup(raw,'html.parser');rows=[]
+    for anchor in soup.select('.supplementary-material-list a.ga_download_supplementary[href]'):
+        url=urljoin(base,anchor['href']);path=unquote(urlsplit(url).path)
+        match=re.fullmatch(r'/document/doi/(10\..+?)/downloadAsset/(?:suppl/)?([^/]+)',path)
+        rows.append({'label':anchor.get_text(' ',strip=True),'description':None,'url':url,
+                     'linked_doi':match[1] if match else None,'filename':match[2] if match else None,'invalid_link':match is None})
+    return rows
+
+
 def fetch_supplementary(adapter,page,identifier,source_page):
     raw=page.content()
-    rows={'springer':springer_links,'wiley':wiley_links,'aip':aip_links,'cambridge':cambridge_links,'oxford':oxford_links,'taylor-francis':taylor_links}[adapter.source](raw,page.url)
+    rows={'springer':springer_links,'wiley':wiley_links,'aip':aip_links,'cambridge':cambridge_links,'oxford':oxford_links,'taylor-francis':taylor_links,'de-gruyter':degruyter_links}[adapter.source](raw,page.url)
     if not rows:
         return {'status':'source_page','artifact':source_page,'reason':'No recognized document attachment controls; other supplementary layouts remain in development'}
     index=adapter.store.put(encoded(rows),'application/json',adapter.source,page.url,role='supplementary_index',doi=identifier,parent_ref=source_page['ref'])

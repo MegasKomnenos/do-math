@@ -84,6 +84,8 @@ PQDT의 `supplementary`는 현재 문헌의 Supplemental files 탭에서 파일 
 
 Taylor & Francis는 원 보충 파일과 본문 표의 native CSV를 함께 회수하되 각각 `supplementary_file`·`article_table` 역할로 구별한다. 표의 id와 원 CSV 헤더를 유지한다. 문헌 DOI는 citation 메타데이터 외에 Dublin Core·publication_doi에서도 읽으며, 사용자가 입력한 DOI와 페이지에서 관측한 DOI를 별도로 표시한다.
 
+De Gruyter Brill도 원 Supplementary Material 목록의 개별 파일 회수를 지원한다. 문헌에 제어가 있어도 파일이 404이면 파일별 실패와 나머지 확보 자료를 함께 반환한다. ZIP 내부의 텍스트 파일은 기존 줄 추출로 읽는다.
+
 Cambridge는 저자·연도·자료 유형·기관 이용 가능 여부의 검색 조건과 공개 RIS API를 사용한다. 주제·저널·출판사·학회 필터 ID는 검색 결과의 `facets.ref`를 `extract`로 읽어 선택한다. RIS의 `UR`에 있는 문헌 ID를 요청한 ID와 대조한다. 온라인 발행일과 인쇄 발행일을 원 검색 기록에 함께 보존한다.
 
 Taylor & Francis는 원 고급검색 필드와 연도·정렬, native BibTeX·RIS와 문헌 PDF를 연결했다. De Gruyter Brill은 title·familyName 등의 원 검색식, 가시성·정렬과 문헌 RIS를 연결했다. 자료원별 형식·조회 범위는 `describe_source`를 따른다.

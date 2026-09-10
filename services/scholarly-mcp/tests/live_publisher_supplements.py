@@ -8,7 +8,8 @@ root=Path(__file__).resolve().parents[1]
 targets={
  'cambridge':'https://www.cambridge.org/core/journals/psychometrika/article/abs/exponentialfamily-random-graph-models-for-multilayer-networks/2BE58EAFDEB0C29909BE36E08FD83CE4',
  'oxford':'https://academic.oup.com/restud/advance-article/doi/10.1093/restud/rdag022/8528932',
- 'taylor-francis':'https://www.tandfonline.com/doi/abs/10.1080/10618600.2017.1349663'}
+ 'taylor-francis':'https://www.tandfonline.com/doi/abs/10.1080/10618600.2017.1349663',
+ 'de-gruyter':'https://www.degruyterbrill.com/document/doi/10.1524/zkri.2013.1610/html'}
 async def main():
     parser=argparse.ArgumentParser(); parser.add_argument('--source',choices=list(targets),required=True); args=parser.parse_args()
     report={'source':args.source,'calls':[],'completed':False}
@@ -22,7 +23,7 @@ async def main():
         print(json.dumps({'status':found['status'],'code':found.get('code'),'report':str(path)}),flush=True)
         assert found['status']=='ok',found.get('code')
         files=found['components']['supplementary']['files']
-        assert len(files)=={'cambridge':2,'oxford':1,'taylor-francis':3}[args.source]
+        assert len(files)=={'cambridge':2,'oxford':1,'taylor-francis':3,'de-gruyter':1}[args.source]
         for file in files:
             extracted=(await session.call_tool('extract',{'ref':file['artifact']['ref'],'count':1})).structuredContent
             report['calls'].append(extracted); preserve()
