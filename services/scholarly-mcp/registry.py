@@ -270,14 +270,6 @@ SOURCES["crossmark"].usage = {
 
 SOURCES["springer"].implementation = "partial"
 SOURCES["springer"].capabilities = ("source_guide", "fetch", "export")
-SOURCES["springer"].usage = {
-    "fetch": "Springer 문헌의 DOI 또는 정확한 link.springer.com·link.springernature.com 문헌 링크를 지정한다. KUDOS Springer eJournal 경로로 접속한 뒤 문헌 페이지의 서지·초록·문헌 PDF를 회수한다. metadata·abstract·fulltext·export·supplementary를 선택할 수 있다.",
-    "exports": "export는 페이지가 제공하는 서지 필드를 보존한 JSON이다. supplementary는 부록 링크가 포함된 정제 원 페이지이며 첨부파일 자동 회수는 구현 중이다.",
-    "search": "출판사의 검색·고급검색·native citation export 연결은 개발 중이다. 제목으로 fetch하는 기능도 개발 중이므로 정확한 DOI 또는 문헌 링크를 사용한다.",
-    "limits": "별도 자격 없는 API 경로가 아닌 기관 웹 경로로 고정한다. PDF와 HTML 전용 자료를 구별하며 인식하지 못한 형식은 not_implemented로 표시한다.",
-    "examples": [{"tool": "fetch", "arguments": {"source": "springer", "target": "10.1007/s00037-008-0249-x", "parts": ["metadata", "abstract", "fulltext"]}}],
-}
-
 SOURCES["pqdt"].implementation = "partial"
 SOURCES["pqdt"].transport = "playwright"
 SOURCES["pqdt"].usage = {
@@ -388,7 +380,8 @@ SOURCES['springer'].usage = {
     'search': 'query는 검색식이다. field=Anywhere(기본), Title, Author를 선택한다. 큰따옴표는 구문, AND·OR·NOT·괄호는 Springer 검색 문법을 따른다. 추가 제목·저자·저널·날짜 조건은 고급검색의 해당 필드로 제출한다.',
     'options': {'field': 'Anywhere, Title, Author', 'title': '제목 조건', 'author': '저자 조건', 'journal': '저널 제목', 'date_from': '시작 연도', 'date_to': '끝 연도', 'content_type': 'Article, Chapter, Conference Paper, Research 등 사이트의 표시 값', 'open_access': 'true이면 공개 접근으로 한정', 'language': 'En 등 사이트 언어 코드', 'subject': '사이트 주제 값', 'discipline': '사이트 학문 분야 값', 'subdiscipline': '사이트 세부 분야 값', 'sort': 'relevance, newest, oldest'},
     'exports': 'json·html은 원 결과를 보존한다. csv는 같은 레코드의 기계적 CSV다. 사이트 일괄 CSV 제어는 로그인 경로로 이동하며 사용하지 않는다. bibtex·ris·endnote는 각 선택 문헌의 native citation 다운로드이며 export.artifacts에 파일 참조를 반환한다.',
-    'fetch': 'DOI 또는 Springer 문헌 URL. metadata·abstract·fulltext·export·supplementary를 요청한다. export는 해당 문헌의 native BibTeX다. 제목은 검색 후보로 반환하므로 정확한 문헌을 선택한다.',
+    'fetch': 'DOI 또는 link.springer.com·link.springernature.com·www.nature.com의 문헌 URL. metadata·abstract·fulltext·export·supplementary를 요청한다. export는 해당 문헌의 native BibTeX다. 제목은 검색 후보로 반환하므로 정확한 문헌을 선택한다.',
+    'supplementary':'현재 문헌의 원 Supplementary Information·Peer Review File 등 첨부 제어를 읽는다. supplementary.files의 각 artifact를 extract로 읽고 index는 파일 목록이다. 파일 경로에 다른 DOI가 있으면 해당 문헌을 명시적으로 선택하도록 반환한다. 일부 파일 실패 때 받은 파일은 유지한다. 첨부 제어를 인식하지 못한 레이아웃은 source_page로 보존한다.',
     'limits': 'KUDOS 기관 바로가기를 사용한다. start 0부터, limit 1..1000, 원 페이지는 20건이다. 문헌별 전문 제공 여부는 기관 이용 범위에 따른다. 검색 snippet을 저자 초록으로 표시하지 않는다.',
     'examples': [{'tool':'search','arguments':{'source':'springer','query':'P versus NP','options':{'field':'Title'},'limit':2,'export':'bibtex'}}],
     'official':['https://link.springer.com/advanced-search'],
@@ -583,7 +576,7 @@ for identifier, level in {
     "acm-dl": "live_mcp_search_export_original_pdf_fetch",
     "scopus": "live_mcp_search_fetch_references_pagination_cited_by_extract",
     "drops": "live_mcp_native_exports_pdf_html_codemeta_and_supplementary_references",
-    "springer": "live_mcp_advanced_search_native_citations_pdf_fetch_pagination",
+    "springer": "live_mcp_advanced_search_citations_pdf_pagination_and_supplementary_files",
     "ieee-xplore": "live_mcp_search_citation_pdf_and_native_references_fetch_extract",
     "crossmark": "live_mcp_search_extract",
     "afp": "live_mcp_entry_search_pinned_metadata_and_proof_source_fetch_extract",

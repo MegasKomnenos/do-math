@@ -41,7 +41,7 @@ PROFILES = [
     Profile("jstor", ("www.jstor.org", "jstor.org"), "JSTOR"),
     Profile("oxford", ("academic.oup.com", "www.oxfordacademic.com"), "OUP", file_domains=("watermark02.silverchair.com",)),
     Profile("science-direct", ("www.sciencedirect.com", "sciencedirect.com", "linkinghub.elsevier.com"), "ScienceDirect"),
-    Profile("springer", ("link.springer.com", "link.springernature.com", "www.nature.com"), "Springer eJournal", file_domains=('citation-needed.springer.com',)),
+    Profile("springer", ("link.springer.com", "link.springernature.com", "www.nature.com"), "Springer eJournal", file_domains=('citation-needed.springer.com','media.springernature.com')),
     Profile("taylor-francis", ("www.tandfonline.com", "tandfonline.com"), "Taylor"),
     Profile("wiley", ("onlinelibrary.wiley.com", "www.onlinelibrary.wiley.com"), "Wiley Online Library", '.article-section__abstract'),
     Profile("aip", ("pubs.aip.org", "aip.scitation.org"), "AIP", 'section.abstract:not(.abstractBorder)', file_domains=('watermark02.silverchair.com',)),
@@ -610,6 +610,9 @@ class Publisher:
                         components[part] = {"status": "available", "artifact": pdf}
                     except ServiceError as error:
                         components[part] = error.result
+                elif part=='supplementary' and self.source=='springer':
+                    from supplements import fetch_springer
+                    components[part]=fetch_springer(self,page,identifier or (observed_dois[0] if observed_dois else None),source_page)
                 else:
                     components[part] = {"status": "source_page", "artifact": source_page, "reason": "Supplementary content is preserved in its source context; automatic attachment retrieval is pending"}
             return {"status": "ok" if all(item["status"] == "available" for item in components.values()) else "partial", "source": self.source,

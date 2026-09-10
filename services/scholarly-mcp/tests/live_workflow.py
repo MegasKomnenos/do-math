@@ -419,6 +419,13 @@ async def main():
             following = await call('search', {'source': 'springer', 'query': '"P versus NP"', 'start': 19, 'limit': 2, 'export': 'csv'})
             assert following['status'] == 'ok', following.get('code')
             assert following['received'] == 2
+            attached=await call('fetch',{'source':'springer','target':'https://www.nature.com/articles/s41467-023-41217-6','parts':['metadata','supplementary']})
+            files=attached['components']['supplementary']['files']
+            assert attached['status']=='ok' and len(files)==2
+            assert [file['artifact']['pages'] for file in files]==[42,19]
+            for file in files:
+                pages=await call('extract',{'ref':file['artifact']['ref'],'count':1})
+                assert pages['status']=='ok' and pages['returned']==1
         elif args.source == "wiley":
             search = await call("search", {"source": "wiley", "query": "random graphs", "options": {"field": "Title"}, "start": 19, "limit": 2, "export": "bibtex"})
             assert search["status"] == "ok", search.get("export")

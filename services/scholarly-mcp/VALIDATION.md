@@ -167,3 +167,7 @@ SIAM 공개 홈페이지는 정상이었지만 convex optimization 검색은 /ac
 IEEE 문헌 10488889의 supplementary 분기에는 단순 h1 대기가 있었다. 실제 문헌에는 문헌 제목·Alerts·References의 h1 세 개가 있어 strict-mode 오류였다. 문헌 제목 h1.document-title과 가시 References 탭으로 좁혔다. 그 뒤 화면은 References is not available for this document라고 표시했지만 원 /rest/document/10488889/references 응답의 articleNumber는 10488889이고 references 배열은 22건이었다. 첫 항목은 PRIMES is in P, DOI 10.4007/annals.2004.160.781이었다. 화면 안내로 원 응답까지 없다고 잘못 보고한 부분은 배열 확인 후 정정했다.
 
 IEEE 원 참고문헌의 문헌 번호와 배열 형식을 대조하고 order·id·title·text·context·links 등 각 항목의 원 필드를 유지했다. userInfo와 사용자 설정 상태를 빼고 문헌·참고문헌에 해당하는 응답을 보존한다. 외부 인용 링크는 자동 방문하지 않는다. 실제 MCP에서 22건을 회수·추출한 보고는 `data/validation/20260910T051301Z-ieee-references-mcp.json`이며 completed=true다. 개별 첨부는 아직 미구현이어서 fetch 전체와 supplementary는 partial, references는 available로 구별한다. 공통 검사 115개가 통과했다.
+
+Springer Nature의 원 부가자료 제어를 supplements.py에 연결했다. KUDOS Springer 경로로 연 Nature Communications의 DOI 10.1038/s41467-023-41217-6 문헌에 Supplementary Information과 Peer Review File 두 PDF가 있었다. 실제 파일 호스트는 media.springernature.com이었으며 파일 다운로드 허용 목록에만 추가했다. 문헌 전용 보충 자료 제어의 제목·설명·URL과 파일 경로에 표시된 DOI를 보존하고, 다른 문헌 DOI이면 명시적 선택을 요구한다. 페이지의 다른 PDF 링크를 첨부로 섞지 않는 검사도 통과했다.
+
+실제 MCP 보고 `data/validation/20260910T052618Z-springer-supplements-mcp.json`은 completed=true다. 두 파일의 native PDF를 보존하고 각각 42쪽·19쪽과 첫 쪽 추출을 확인했다. 파일 하나의 실패가 먼저 받은 파일을 없애지 않도록 전체 목록·파일별 상태·성공 파일을 함께 반환하는 대역 검사도 통과했다. 부가자료 제어가 없는 다른 레이아웃은 source_page로 남기며 파일 부재라고 단정하지 않는다. 원 제어 두 개만 기계적으로 선택한 HTML을 fixture로 보존했다. 뒤에서 덮어쓰던 오래된 Springer 사용 설명도 제거해 현행 설명 한 곳으로 정리했다. 공통 검사 117개가 통과했다.
