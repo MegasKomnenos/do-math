@@ -41,6 +41,7 @@ from sciencedirect import ScienceDirect
 from web_search import GeneralWeb
 from ams import AMS
 from figshare import Figshare
+from dblp_kg import DBLPKG
 
 ROOT = Path(__file__).resolve().parent
 STORE = ArtifactStore(ROOT / "data")
@@ -134,6 +135,7 @@ def main():
     STORE = ArtifactStore(args.data_dir)
     ADAPTERS.update(make_adapters(STORE))
     ADAPTERS['figshare'] = Figshare(STORE)
+    ADAPTERS['dblp-kg'] = DBLPKG(STORE)
     ADAPTERS["afp"] = AFP(STORE)
     ADAPTERS["eudml"] = EuDML(STORE)
     ADAPTERS["aps"] = APS(STORE)

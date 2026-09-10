@@ -135,6 +135,10 @@ Springer Nature의 인식된 Supplementary Information·Peer Review File 제어�
 
 Nature 문헌은 추가 parts 항목인 fulltext_html로 HTML 본문과 그림을 요청할 수 있다. 본문의 원 TeX 표현을 보존하고 PNG/JPEG 그림을 문헌 DOI와 대조해 회수한다. HTML은 CSS selection으로, figures의 artifact는 이미지 extract로 읽는다. HTML의 그림 src는 저장된 artifact ref이며 일반 웹 브라우저에서 열기 위한 독립 웹페이지는 아니다. 그림이 실패해도 본문과 개별 오류를 남긴다. 이 형식은 현재 관측된 Nature 문헌 레이아웃에서 지원한다.
 
+DBLP의 공개 지식 그래프는 dblp-kg로 명시적으로 선택한다. query에 SPARQL SELECT를 쓰고 start/limit로 최상위 결과 범위를 지정한다. 서지·저자·저널·인용 관계를 같은 그래프에서 질의하며 외부 SERVICE와 FROM은 구문 분석 단계에서 거부한다. RDFLib는 질의 문법을 읽는 데만 사용하고 로컬에서 질의를 실행하거나 외부 RDF를 불러오지 않는다. 기존 dblp 검색 API 실패 뒤 자동 전환하지 않는다.
+
+dblp-kg의 JSON은 RDF binding의 자료형·언어·미결합 변수를 보존한다. native JSON·CSV·TSV를 내보낼 수 있으며 TSV는 원 줄을 읽는다. 원 TSV가 gYear를 정수로 출력하는 경우에는 export_term_mismatch와 partial을 반환하고 source_export에 받은 원 파일을 남긴다. DOI는 대소문자를 구별하지 않고 조회하되 원 RDF DOI 표기를 유지한다. DBLP key·DOI 조회는 문헌의 statements를 전건 회수하며 연결된 다른 객체를 자동 확장하지 않는다. 사용 예와 원 속성 이름은 describe_source(dblp-kg)에 있다.
+
 zbMATH는 DOI·이름·Zbl 번호·기존 문헌 링크를 받아 조회하고, 검색의 임의 start 위치를 원 페이지에서 조합한다. 리뷰·요약은 원 editorial_contributions 유형을 유지한다. 라이선스 충돌 안내는 abstract available로 표시하지 않는다. supplementary의 selection을 extract에 전달하면 원 참고문헌 배열을 읽을 수 있다.
 
 Wiley의 Supporting Information 표에서도 원 파일을 회수한다. Models of Random Spanning Trees의 보충 ZIP을 실제 MCP로 받고, 내부 Python 파일 두 개를 선택해 줄 단위로 읽었다. 코드 실행은 포함하지 않는다. 파일명·설명·연결 DOI와 실제 ZIP 형식을 확인하며, Springer Nature와 파일별 실패 보존 처리를 공유한다.

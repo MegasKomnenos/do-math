@@ -32,6 +32,7 @@ ROWS = [
     ("zbmath", "zbMATH Open", "public_primary", "https://zbmath.org/", "api"),
     ("arxiv", "arXiv", "public_primary", "https://arxiv.org/", "api"),
     ("dblp", "DBLP", "public_primary", "https://dblp.org/", "api"),
+    ("dblp-kg", "DBLP Knowledge Graph", "public_primary", "https://sparql.dblp.org/", "api"),
     ("eccc", "ECCC", "public_primary", "https://eccc.weizmann.ac.il/", "under_investigation"),
     ("drops", "DROPS / LIPIcs", "public_primary", "https://drops.dagstuhl.de/", "under_investigation"),
     ("theory-of-computing", "Theory of Computing", "public_primary", "https://theoryofcomputing.org/", "under_investigation"),
@@ -76,6 +77,17 @@ SOURCES = {row[0]: Source(*row) for row in ROWS}
 SOURCES["aps-institutional"] = Source("aps-institutional", "APS 기관 구독 접근", "fulltext", "https://journals.aps.org/", "playwright")
 SOURCES["mathscinet"].implementation = "partial"
 SOURCES["wos"].implementation = "partial"
+SOURCES['dblp-kg'].implementation='partial'
+SOURCES['dblp-kg'].usage={
+    'search':'query는 SPARQL SELECT문이다. 기본 접두사는 PREFIX dblp: <https://dblp.org/rdf/schema#>로 선언한다. 원 질의를 보존하고 도구 start/limit를 가장 바깥의 OFFSET/LIMIT로 적용한다. 쿼리 최상위에 LIMIT/OFFSET을 직접 쓰지 않는다. 하위 SELECT의 범위는 허용한다. 연속 페이지에 재현 가능한 순서가 필요하면 문헌 ID 등의 ORDER BY를 지정한다.',
+    'fields':{'dblp:title':'문헌 제목','dblp:yearOfPublication':'발행연도','dblp:doi':'https://doi.org/DOI 형태의 IRI','dblp:authoredBy / dblp:editedBy':'저자·편집자 관계','dblp:hasSignature':'순서·역할이 있는 작성자 표지','dblp:publishedInStream':'저널·학회 시리즈','dblp:omid':'이 지식 그래프 안의 OpenCitations 식별자'},
+    'operators':'WHERE의 triple pattern과 FILTER, OPTIONAL, UNION, VALUES, GROUP BY, HAVING, ORDER BY를 사용한다. 예: FILTER(REGEX(?title, "natural proofs", "i")). yearOfPublication은 xsd:gYear다. 연도 수치 조건은 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>를 선언하고 FILTER(xsd:integer(STR(?year)) >= 2020)처럼 명시적으로 변환한다. 자료원 변경을 일으키는 SERVICE와 FROM은 거부한다. 현재 SELECT만 연결했으며 ASK·CONSTRUCT·UPDATE는 받지 않는다.',
+    'exports':'json은 변수별 RDF binding 배열이다. 값의 type/value/datatype/xml:lang과 미결합 변수의 부재를 그대로 유지한다. native는 SPARQL 결과 JSON, csv·tsv는 같은 범위의 원 다운로드이며 값과 행을 대조한다. CSV는 변수명 fields로 추출한다. TSV는 원 표기와 ?변수 헤더를 보존하며 extract로 줄 구간을 읽는다. 원 TSV가 gYear를 정수로 출력하는 경우처럼 RDF term이 달라지면 partial/export_term_mismatch와 source_export의 원 파일을 반환한다. 파일을 고쳐 쓰지 않는다. RDF 자료형은 JSON을 기준으로 읽고 CSV가 이를 유지한다고 가정하지 않는다.',
+    'fetch':'DBLP key·/rec/ URL·DOI는 일치하는 문헌의 RDF statement를 전건 회수한다. DOI 조회·대조는 대소문자를 구별하지 않으며 원 RDF DOI 표기는 유지한다. predicate/object의 RDF term을 유지한다. 이름은 제목의 대소문자 구별 없는 부분 문자열 후보로 반환한다. metadata·export·supplementary는 같은 문헌의 statements이며 연결된 저자·서명·인용 문헌을 재귀 회수하지 않는다. 여러 문헌이 같은 DOI에 연결되면 selection_required다. 초록·전문은 이 서지 지식 그래프의 제공 대상이 아니다.',
+    'limits':'options는 비운다. 별도 키·계정·이메일 없는 DBLP 운영기관의 공개 API다. start 0부터, 구현 limit 1..1000. 전체 일치 건수는 별도로 세지 않아 total=null이다. provider_result_size는 원 제한 질의의 보고값이며 전체 검색 건수로 해석하지 않는다. 꽉 찬 마지막 페이지 뒤 빈 페이지를 읽을 수 있다. DBLP DOI 매핑 부재는 모든 자료원에서의 부재가 아니다. 기존 dblp 검색 API 실패 뒤 자동 전환하지 않으며 호출자가 dblp-kg를 선택한다.',
+    'examples':[{'tool':'search','arguments':{'source':'dblp-kg','query':'PREFIX dblp: <https://dblp.org/rdf/schema#> SELECT ?publ ?title WHERE { ?publ dblp:title ?title . FILTER(REGEX(?title, "natural proofs", "i")) } ORDER BY ?publ','start':1,'limit':2,'export':'csv'}},{'tool':'fetch','arguments':{'source':'dblp-kg','target':'10.1006/jcss.1997.1494','parts':['metadata','supplementary']}}],
+    'official':['https://sparql.dblp.org/','https://github.com/dblp/kg/wiki/dblp-KG-Tutorial','https://www.dagstuhl.de/en/dblp/news/2024/introducing-our-public-sparql-query-service'],
+}
 
 SOURCES["scopus"].implementation = "partial"
 SOURCES["scopus"].usage = {
@@ -155,7 +167,7 @@ API_USAGE = {
     "dblp": {
         "search": "대소문자를 구별하지 않는 접두어 검색이다. 공백은 AND, |는 OR이며 단어 뒤 $는 정확한 단어를 지정한다. 제목·저자·venue·연도 등 DBLP 검색 색인의 텍스트를 대상으로 한다.",
         "options": {}, "fetch": "journals/… 또는 conf/… 형태의 DBLP key나 /rec/ 링크. 원 XML 서지를 보존한다. 초록과 논문 전문을 제공하는 색인이 아니다.",
-        "limits": "현재 limit 1..100. start로 순회. json/native 검색 export. API가 HTML 접근 확인 화면을 반환하면 restricted이며 브라우저로 전환하지 않는다.",
+        "limits": "현재 limit 1..100. start로 순회. json/native 검색 export. API가 HTML 접근 확인 화면을 반환하면 restricted이며 브라우저로 전환하지 않는다. 같은 운영기관의 공개 지식 그래프는 dblp-kg라는 별도 자료원으로 명시적으로 선택할 수 있다. 그 질의 문법은 SPARQL이며 이 검색식의 자동 대체가 아니다.",
         "examples": [{"tool": "search", "arguments": {"source": "dblp", "query": "P versus NP", "limit": 2}}],
         "official": ["https://dblp.org/faq/How+to+use+the+dblp+search+API.html", "https://dblp.org/db/"]},
     "zbmath": {
@@ -589,6 +601,7 @@ for identifier, level in {
     "core": "live_mcp_search_extract; fetch_rate_limit; fulltext_notice_regression",
     "semantic-scholar": "live_mcp_search_extract; new_workflow_rate_limited; schema_regressions",
     "dblp": "access_challenge_observed",
+    "dblp-kg": "live_mcp_sparql_window_native_csv_tsv_key_doi_name; native_tsv_year_type_mismatch",
     "zenodo": "live_mcp_search_file_checksum_fetch_extract",
     "figshare": "live_mcp_public_search_window_collection_versioned_file_md5_pdf_extract",
     "acm-dl": "live_mcp_search_citation_pdf_and_supplement_zip_inner_pdf_extract",

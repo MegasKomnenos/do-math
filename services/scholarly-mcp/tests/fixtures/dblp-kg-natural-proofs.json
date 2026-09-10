@@ -1,0 +1,463 @@
+{
+  "head": {
+    "vars": [
+      "publ",
+      "predicate",
+      "object"
+    ]
+  },
+  "results": {
+    "bindings": [
+      {
+        "object": {
+          "type": "bnode",
+          "value": "bn4187829"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://purl.org/spar/datacite/hasIdentifier"
+        },
+        "publ": {
+          "type": "uri",
+          "value": "https://dblp.org/rec/journals/jcss/RazborovR97"
+        }
+      },
+      {
+        "object": {
+          "type": "bnode",
+          "value": "bn34915939"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://purl.org/spar/datacite/hasIdentifier"
+        },
+        "publ": {
+          "type": "uri",
+          "value": "https://dblp.org/rec/journals/jcss/RazborovR97"
+        }
+      },
+      {
+        "object": {
+          "type": "bnode",
+          "value": "bn34915952"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://purl.org/spar/datacite/hasIdentifier"
+        },
+        "publ": {
+          "type": "uri",
+          "value": "https://dblp.org/rec/journals/jcss/RazborovR97"
+        }
+      },
+      {
+        "object": {
+          "type": "bnode",
+          "value": "bn34915963"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://purl.org/spar/datacite/hasIdentifier"
+        },
+        "publ": {
+          "type": "uri",
+          "value": "https://dblp.org/rec/journals/jcss/RazborovR97"
+        }
+      },
+      {
+        "object": {
+          "type": "uri",
+          "value": "https://dblp.org/rdf/schema#Article"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "publ": {
+          "type": "uri",
+          "value": "https://dblp.org/rec/journals/jcss/RazborovR97"
+        }
+      },
+      {
+        "object": {
+          "type": "uri",
+          "value": "https://dblp.org/rdf/schema#Publication"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "publ": {
+          "type": "uri",
+          "value": "https://dblp.org/rec/journals/jcss/RazborovR97"
+        }
+      },
+      {
+        "object": {
+          "type": "literal",
+          "value": "Alexander A. Razborov and Steven Rudich: Natural Proofs. (1997)"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        "publ": {
+          "type": "uri",
+          "value": "https://dblp.org/rec/journals/jcss/RazborovR97"
+        }
+      },
+      {
+        "object": {
+          "type": "uri",
+          "value": "http://dx.doi.org/10.1006/JCSS.1997.1494"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/2002/07/owl#sameAs"
+        },
+        "publ": {
+          "type": "uri",
+          "value": "https://dblp.org/rec/journals/jcss/RazborovR97"
+        }
+      },
+      {
+        "object": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q55878547"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/2002/07/owl#sameAs"
+        },
+        "publ": {
+          "type": "uri",
+          "value": "https://dblp.org/rec/journals/jcss/RazborovR97"
+        }
+      },
+      {
+        "object": {
+          "type": "uri",
+          "value": "https://doi.org/10.1006/JCSS.1997.1494"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "http://www.w3.org/2002/07/owl#sameAs"
+        },
+        "publ": {
+          "type": "uri",
+          "value": "https://dblp.org/rec/journals/jcss/RazborovR97"
+        }
+      },
+      {
+        "object": {
+          "type": "uri",
+          "value": "https://dblp.org/pid/r/AARazborov"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "https://dblp.org/rdf/schema#authoredBy"
+        },
+        "publ": {
+          "type": "uri",
+          "value": "https://dblp.org/rec/journals/jcss/RazborovR97"
+        }
+      },
+      {
+        "object": {
+          "type": "uri",
+          "value": "https://dblp.org/pid/r/SRudich"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "https://dblp.org/rdf/schema#authoredBy"
+        },
+        "publ": {
+          "type": "uri",
+          "value": "https://dblp.org/rec/journals/jcss/RazborovR97"
+        }
+      },
+      {
+        "object": {
+          "type": "uri",
+          "value": "http://purl.org/net/nknouf/ns/bibtex#Article"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "https://dblp.org/rdf/schema#bibtexType"
+        },
+        "publ": {
+          "type": "uri",
+          "value": "https://dblp.org/rec/journals/jcss/RazborovR97"
+        }
+      },
+      {
+        "object": {
+          "type": "uri",
+          "value": "https://dblp.org/pid/r/AARazborov"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "https://dblp.org/rdf/schema#createdBy"
+        },
+        "publ": {
+          "type": "uri",
+          "value": "https://dblp.org/rec/journals/jcss/RazborovR97"
+        }
+      },
+      {
+        "object": {
+          "type": "uri",
+          "value": "https://dblp.org/pid/r/SRudich"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "https://dblp.org/rdf/schema#createdBy"
+        },
+        "publ": {
+          "type": "uri",
+          "value": "https://dblp.org/rec/journals/jcss/RazborovR97"
+        }
+      },
+      {
+        "object": {
+          "type": "uri",
+          "value": "https://doi.org/10.1006/JCSS.1997.1494"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "https://dblp.org/rdf/schema#documentPage"
+        },
+        "publ": {
+          "type": "uri",
+          "value": "https://dblp.org/rec/journals/jcss/RazborovR97"
+        }
+      },
+      {
+        "object": {
+          "type": "uri",
+          "value": "https://doi.org/10.1006/JCSS.1997.1494"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "https://dblp.org/rdf/schema#doi"
+        },
+        "publ": {
+          "type": "uri",
+          "value": "https://dblp.org/rec/journals/jcss/RazborovR97"
+        }
+      },
+      {
+        "object": {
+          "type": "bnode",
+          "value": "bn34915974"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "https://dblp.org/rdf/schema"
+        },
+        "publ": {
+          "type": "uri",
+          "value": "https://dblp.org/rec/journals/jcss/RazborovR97"
+        }
+      },
+      {
+        "object": {
+          "type": "bnode",
+          "value": "bn34915985"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "https://dblp.org/rdf/schema"
+        },
+        "publ": {
+          "type": "uri",
+          "value": "https://dblp.org/rec/journals/jcss/RazborovR97"
+        }
+      },
+      {
+        "object": {
+          "type": "uri",
+          "value": "https://dblp.org/db/journals/jcss/jcss55"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "https://dblp.org/rdf/schema#listedOnTocPage"
+        },
+        "publ": {
+          "type": "uri",
+          "value": "https://dblp.org/rec/journals/jcss/RazborovR97"
+        }
+      },
+      {
+        "object": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#int",
+          "type": "literal",
+          "value": "2"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "https://dblp.org/rdf/schema#numberOfCreators"
+        },
+        "publ": {
+          "type": "uri",
+          "value": "https://dblp.org/rec/journals/jcss/RazborovR97"
+        }
+      },
+      {
+        "object": {
+          "type": "uri",
+          "value": "https://w3id.org/oc/meta/br/06503007843"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "https://dblp.org/rdf/schema#omid"
+        },
+        "publ": {
+          "type": "uri",
+          "value": "https://dblp.org/rec/journals/jcss/RazborovR97"
+        }
+      },
+      {
+        "object": {
+          "type": "literal",
+          "value": "24-35"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "https://dblp.org/rdf/schema#pagination"
+        },
+        "publ": {
+          "type": "uri",
+          "value": "https://dblp.org/rec/journals/jcss/RazborovR97"
+        }
+      },
+      {
+        "object": {
+          "type": "uri",
+          "value": "https://doi.org/10.1006/JCSS.1997.1494"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "https://dblp.org/rdf/schema#primaryDocumentPage"
+        },
+        "publ": {
+          "type": "uri",
+          "value": "https://dblp.org/rec/journals/jcss/RazborovR97"
+        }
+      },
+      {
+        "object": {
+          "type": "literal",
+          "value": "J. Comput. Syst. Sci."
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "https://dblp.org/rdf/schema#publishedIn"
+        },
+        "publ": {
+          "type": "uri",
+          "value": "https://dblp.org/rec/journals/jcss/RazborovR97"
+        }
+      },
+      {
+        "object": {
+          "type": "literal",
+          "value": "J. Comput. Syst. Sci."
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "https://dblp.org/rdf/schema#publishedInJournal"
+        },
+        "publ": {
+          "type": "uri",
+          "value": "https://dblp.org/rec/journals/jcss/RazborovR97"
+        }
+      },
+      {
+        "object": {
+          "type": "literal",
+          "value": "55"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "https://dblp.org/rdf/schema#publishedInJournalVolume"
+        },
+        "publ": {
+          "type": "uri",
+          "value": "https://dblp.org/rec/journals/jcss/RazborovR97"
+        }
+      },
+      {
+        "object": {
+          "type": "literal",
+          "value": "1"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "https://dblp.org/rdf/schema#publishedInJournalVolumeIssue"
+        },
+        "publ": {
+          "type": "uri",
+          "value": "https://dblp.org/rec/journals/jcss/RazborovR97"
+        }
+      },
+      {
+        "object": {
+          "type": "uri",
+          "value": "https://dblp.org/streams/journals/jcss"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "https://dblp.org/rdf/schema#publishedInStream"
+        },
+        "publ": {
+          "type": "uri",
+          "value": "https://dblp.org/rec/journals/jcss/RazborovR97"
+        }
+      },
+      {
+        "object": {
+          "type": "literal",
+          "value": "Natural Proofs."
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "https://dblp.org/rdf/schema#title"
+        },
+        "publ": {
+          "type": "uri",
+          "value": "https://dblp.org/rec/journals/jcss/RazborovR97"
+        }
+      },
+      {
+        "object": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q55878547"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "https://dblp.org/rdf/schema#wikidata"
+        },
+        "publ": {
+          "type": "uri",
+          "value": "https://dblp.org/rec/journals/jcss/RazborovR97"
+        }
+      },
+      {
+        "object": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#gYear",
+          "type": "literal",
+          "value": "1997"
+        },
+        "predicate": {
+          "type": "uri",
+          "value": "https://dblp.org/rdf/schema#yearOfPublication"
+        },
+        "publ": {
+          "type": "uri",
+          "value": "https://dblp.org/rec/journals/jcss/RazborovR97"
+        }
+      }
+    ]
+  }
+}

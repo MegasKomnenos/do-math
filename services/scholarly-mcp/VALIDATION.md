@@ -277,3 +277,12 @@ Nature의 명시적 fulltext_html 요청은 기존 실제 MCP에서 invalid_part
 새 SDK stdio data/validation/20260910T125713Z-nature-html-mcp.json은 completed=true다. The complexity of NISQ의 HTML 151275바이트·TeX 두 항목·PNG 그림 56058바이트(685×220)와 실제 ImageContent 한 개를 확인했다. 기계적 PNG 검사만 수행했고 이미지 의미 판독·MathJax 실행은 추가하지 않았다. 이 경로는 현재 관측된 Nature 레이아웃이며 다른 Springer 문헌 전체의 성공으로 확대하지 않는다. 원 fixture·초록 전용·그림 실패 검사와 공통 178개 검사가 통과했다.
 
 CORE와 Semantic Scholar의 후속 새 SDK stdio 재검증도 각각 data/validation/20260910T125019Z-core-public-mcp.json, data/validation/20260910T125018Z-semantic-scholar-mcp.json에 보존했다. 두 경로 모두 첫 실제 요청에서 rate_limited였고 completed=false다. 추가 API 자격을 사용하지 않았으며 반복 후속 요청을 하지 않았다.
+
+
+DBLP의 기본 검색 API와 Trier·Dagstuhl 미러는 익명 요청에서 모두 HTTP 200의 HTML 접근 확인을 반환했다. [운영기관의 공개 SPARQL 안내](https://www.dagstuhl.de/en/dblp/news/2024/introducing-our-public-sparql-query-service)와 [현행 KG 사용법](https://github.com/dblp/kg/wiki/dblp-KG-Tutorial)을 확인하고 sparql.dblp.org/sparql에서 실제 무자격 서지 응답을 받았다. 이 질의 문법은 기존 DBLP 검색과 다르므로 dblp-kg로 명시적으로 선택한다. 기존 경로의 자동 실패 대체는 하지 않는다. SPARQL SELECT를 RDFLib 구문 구조로 검증하며 SERVICE·FROM과 최상위 LIMIT/OFFSET을 거부한다. 하위 SELECT 범위와 문자열·주석은 보존한다. 서버에서 RDF 질의를 실행하거나 외부 RDF를 로딩하지 않는다.
+
+첫 실제 MCP data/validation/20260910T132325Z-dblp-kg-mcp.json은 검색·native JSON/CSV/TSV·key 조회 후 DOI not_found로 미완료였다. 원 문헌 statement의 DOI는 10.1006/JCSS.1997.1494였다. 대소문자를 구별하지 않는 DOI 조회·대조로 수리한 새 data/validation/20260910T132715Z-dblp-kg-mcp.json은 completed=true다. 앞 4건과 start1/limit2 대조, 원 세 형식, key·DOI의 32 statements, 이름 후보와 SERVICE 거절을 확인했다. 원 RDF 값의 대소문자·datatype·xml:lang·미결합 변수를 유지한다. 전체 검색 건수를 세지 않아 total=null이며 provider_result_size를 전역 수로 해석하지 않는다.
+
+직접 어댑터 data/validation/20260910T132945Z-dblp-kg-terms.json에서는 원 JSON의 xsd:gYear 1997이 TSV에서 정수 표기로 바뀌었다. 이 파일을 고쳐 쓰지 않고 partial과 source_export로 보존한다. 당시 오류 코드는 export_range_mismatch였으며 현재는 export_term_mismatch로 구별한다. 원 fixture로 같은 불일치를 검증했다. data/validation/20260910T133158Z-dblp-kg-extra-terms.json은 저자 수·언어 표지와 개행/따옴표·미결합 변수·빈 결과를 직접 검증해 completed=true다. 이 직접 어댑터 검사를 MCP 검증으로 확대하지 않는다. RDFLib 7.6.0·pyparsing 3.3.2를 고정했고 공통 186개 검사와 pip check를 통과했다.
+
+APS 원 인용문 조사에서 최초 직접 요청은 www.aps.org 바로가기 origin에 저널 경로를 붙여 잘못된 호스트에 요청했으므로 유효한 인용문 검증에서 제외했다. 이후 KUDOS를 통해 journals.aps.org로 진입한 뒤 이전 원 Download Citation 링크 /prl/export/10.1103/PhysRevLett.89.190402의 BibTeX를 요청했지만 HTTP 403이었다. 보호된 관측은 .credentials/scholarly-mcp/probes/20260910T130807Z-aps-citation-failure.html이다. 이 경로의 native citation 구현·실측 완료로 세지 않는다.
