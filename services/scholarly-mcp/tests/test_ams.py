@@ -4,6 +4,18 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 
 class AMSContract(unittest.TestCase):
+    def test_unavailable_search_page_is_not_an_input_timeout_or_no_results(self):
+        from ams import validate_search_page
+        from scholarly import ServiceError
+        raw=(ROOT/'tests/fixtures/ams-unavailable.html').read_text('utf-8')
+        with self.assertRaises(ServiceError) as cm:validate_search_page(raw)
+        self.assertEqual(cm.exception.result['code'],'provider_unavailable')
+        self.assertEqual(cm.exception.result['status'],'error')
+        self.assertTrue(cm.exception.result['retryable'])
+        with self.assertRaises(ServiceError) as cm:validate_search_page('<html><body>Denied</body></html>',403)
+        self.assertEqual(cm.exception.result['status'],'restricted')
+        validate_search_page('<html><head><title>Advanced Search</title></head><body>Search</body></html>',200)
+
     def test_product_code_url_does_not_require_a_slash_in_the_code(self):
         from ams import AMS
         from scholarly import ArtifactStore

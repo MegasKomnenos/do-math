@@ -141,6 +141,8 @@ def browser_download(context, url, hosts, *, headers=None, form=None, response_i
     from playwright.sync_api import TimeoutError as BrowserTimeout, Error as BrowserError
     for _ in range(6):
         parsed = urlsplit(url)
+        if parsed.hostname in {'validate.perfdrive.com','challenges.cloudflare.com'}:
+            raise ServiceError('publisher_access_challenge','Publisher redirected the file request to an access challenge',status='restricted',blocked_host=parsed.hostname)
         if parsed.scheme not in ("https", "http") or parsed.hostname not in hosts or parsed.username or parsed.password or parsed.port not in (None, 80, 443):
             raise ServiceError("source_boundary", "Observed document link left the selected source", blocked_host=parsed.hostname)
         try:

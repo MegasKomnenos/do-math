@@ -6,6 +6,19 @@ from publishers import Publisher,PROFILES
 from scholarly import ServiceError,encoded
 
 
+def validate_search_page(raw,http_status=None):
+    from bs4 import BeautifulSoup
+    soup=BeautifulSoup(raw,'html.parser')
+    title=soup.title.get_text(' ',strip=True) if soup.title else ''
+    body=soup.get_text(' ',strip=True)
+    if http_status in (401,403) or re.search(r'^(Just a moment|Access Denied|Attention Required)',title,re.I):
+        raise ServiceError('publisher_access_challenge','AMS did not provide an accessible search page',status='restricted',source='ams',stage='search_interface',http_status=http_status)
+    if body.strip()=='The service is unavailable.' or http_status is not None and http_status>=500:
+        raise ServiceError('provider_unavailable','AMS returned a service-unavailable page',source='ams',stage='search_interface',http_status=http_status,retryable=True)
+    if http_status is not None and http_status>=400:
+        raise ServiceError('search_interface_unavailable','AMS did not provide its search interface',source='ams',stage='search_interface',http_status=http_status)
+
+
 def product_records(payload):
     rows=payload.get('Products')
     total,page,capacity=(payload.get(key) for key in ('TotalRows','PageNumber','RowsPerPage'))
@@ -36,7 +49,13 @@ class AMS(Publisher):
         if content not in ('All','EBook','Journal','Abstracts'):
             raise ServiceError('invalid_options','content_type must be All, EBook, Journal or Abstracts')
         page=self.gateway.open('ams','AMS',self.profile.hosts,'body')
-        goto_source(page,'https://'+urlsplit(page.url).hostname+'/AdvancedSearch',self.profile.hosts,wait_until='domcontentloaded',timeout=45000)
+        response=goto_source(page,'https://'+urlsplit(page.url).hostname+'/AdvancedSearch',self.profile.hosts,wait_until='domcontentloaded',timeout=45000)
+        validate_search_page(page.content(),response.status if response else None)
+        try:
+            page.wait_for_function('(ids) => ids.every(id=>document.getElementById(id))',arg=[control for control,_ in self.fields.values()],timeout=20000)
+        except Exception as error:
+            validate_search_page(page.content())
+            raise ServiceError('search_interface_not_ready','AMS did not initialize the documented advanced-search controls',source=self.source,stage='search_interface',error_type=type(error).__name__) from None
         dismiss_cookies(page)
         for control,_ in self.fields.values():
             if page.locator('#'+control).input_value():
@@ -65,6 +84,7 @@ class AMS(Publisher):
         except ServiceError:
             raise
         except Exception as error:
+            validate_search_page(page.content())
             challenged=bool(re.search(r'^(Just a moment|Access Denied|Attention Required)',page.title(),re.I))
             raise ServiceError('publisher_access_challenge' if challenged else 'search_response_not_received','AMS did not provide a native search response',status='restricted' if challenged else 'error',error_type=type(error).__name__) from None
         response=pending.value

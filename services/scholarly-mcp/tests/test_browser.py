@@ -9,6 +9,20 @@ from scholarly import Sanitizer, ServiceError
 
 
 class BrowserContract(unittest.TestCase):
+    def test_download_challenge_redirect_is_restricted_and_not_requested(self):
+        from types import SimpleNamespace
+        calls=[]
+        def get(url,**kwargs):
+            calls.append(url)
+            return SimpleNamespace(status=302,headers={'location':'https://validate.perfdrive.com/?ssa=SYNTHETIC-PRIVATE'},url=url)
+        context=SimpleNamespace(request=SimpleNamespace(get=get))
+        with self.assertRaises(ServiceError) as caught:
+            self.mod.browser_download(context,'https://iopscience.iop.org/file',{'iopscience.iop.org'})
+        self.assertEqual(caught.exception.result['status'],'restricted')
+        self.assertEqual(caught.exception.result['code'],'publisher_access_challenge')
+        self.assertEqual(len(calls),1)
+        self.assertNotIn('SYNTHETIC-PRIVATE',str(caught.exception.result))
+
     def test_wos_document_url_and_title_are_usable_fetch_targets(self):
         from browser_adapters import WebOfScience
         adapter = WebOfScience(None, None)

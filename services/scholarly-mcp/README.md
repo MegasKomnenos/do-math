@@ -48,7 +48,7 @@ python -m venv services/scholarly-mcp/.venv
 
 Chromium 어댑터는 호스트에 설치된 Chrome을 사용한다. 자료원별로 검증한 브라우저를 서버가 선택하며 호출 AI가 지정하지 않는다. stdio의 stdout은 MCP 메시지 전용이고 진단은 stderr로 보낸다.
 
-Codex 프로젝트 설정의 scholarly 호출 제한은 1,800초다. 대용량 파일의 전체 회수를 허용하는 클라이언트 제한이며 개별 HTTP 요청 제한과 다르다. 이미 실행 중인 MCP 프로세스는 Python 파일 변경을 자동으로 읽지 않으므로 코드를 갱신한 뒤 클라이언트에서 scholarly 연결을 재시작한다. 실제 검증은 새 stdio 프로세스에서 수행했다.
+Codex 프로젝트 설정의 scholarly 호출 제한은 1,800초다. 대용량 파일의 전체 회수를 허용하는 클라이언트 제한이며 개별 HTTP 요청 제한과 다르다. 이미 실행 중인 MCP 프로세스는 Python 파일 변경을 자동으로 읽지 않으므로 코드를 갱신한 뒤 클라이언트에서 scholarly 연결을 재시작한다. 새 stdio 프로세스의 기능 검증과 현재 Codex 연결의 갱신 확인을 구별한다. 2026-09-10 사용자 재시작 뒤 등록된 연결에서도 최신 OpenAlex 안내가 반환됨을 확인했다.
 
 오프라인 계약 검사는 `python -m unittest discover -s services/scholarly-mcp/tests -p 'test_*.py'`를 전용 Python으로 실행한다. `test_mcp.py`는 실제 SDK 클라이언트와 별도 서버 프로세스로 stdio·도구 조회·파일 추출·자료 읽기를 확인한다. 실서비스 흐름은 `tests/live_workflow.py --source <자료원>`으로 실행하며 지원하는 검증 시나리오는 그 파일에 있다. 오프라인 응답 대역의 통과는 실서비스 통과로 세지 않는다.
 

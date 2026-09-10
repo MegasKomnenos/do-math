@@ -252,4 +252,9 @@ Semantic Scholar 문헌 URL·별칭 ID를 대조하고, 문헌 검색 100건·�
 
 현재 Codex에 등록된 scholarly의 describe_source(openalex)를 직접 호출하자 이전 public_endpoint_search_observed 설명이 반환됐다. 새 코드 검증은 매번 새 stdio 프로세스를 띄운 SDK 호출이며, 이 기존 연결을 갱신한 것으로 세지 않는다. 설치된 CLI의 mcp 관리 명령에는 재시작이 없었다. 생성한 app-server 명세에는 config/mcpServer/reload가 있었지만 이 Windows 환경의 기본 제어 소켓에 연결하지 못했고 daemon 관리도 Unix 전용이었다. 관련 없는 서버 프로세스를 종료하거나 원격 제어를 활성화하지 않았다. [공식 MCP 안내](https://developers.openai.com/codex/mcp/)의 클라이언트 재시작 절차를 사용해야 한다.
 
-프로젝트 scholarly 설정의 tool_timeout_sec는 HEAD와 작업 파일 모두 180이었다. 실제 성공한 대용량 회수 시간을 수용하도록 이 값만 1800으로 바꿨다. 나머지 작업 파일 바이트가 같음을 비교했고, HEAD 기준의 이 한 줄 변경만 index에 적용해 기존 사용자 설정 변경을 커밋에 섞지 않았다. TOML 파싱으로 설정값을 검증했다. 현재 연결에는 아직 재시작이 필요하다.
+프로젝트 scholarly 설정의 tool_timeout_sec는 HEAD와 작업 파일 모두 180이었다. 실제 성공한 대용량 회수 시간을 수용하도록 이 값만 1800으로 바꿨다. 나머지 작업 파일 바이트가 같음을 비교했고, HEAD 기준의 이 한 줄 변경만 index에 적용해 기존 사용자 설정 변경을 커밋에 섞지 않았다. TOML 파싱으로 설정값을 검증했다. 이 설정 변경 시점의 연결에는 재시작이 필요했다. 후속 갱신 확인은 아래 기록을 따른다.
+
+
+2026-09-10 사용자 재시작 뒤 등록된 Codex scholarly 연결의 describe_source(openalex)는 live_mcp_arbitrary_window_group_cursor_abstract_relationships_name_doi와 group_by 사용법을 반환했다. 새 코드가 실제 연결에 반영된 검증을 통과했다. 요약 보고는 data/validation/20260910T122338Z-registered-restart.json이다. 같은 연결의 AMS algebra 검색은 restricted/publisher_access_challenge, IOP 문헌 조회는 publisher_redirect 단계의 같은 제한으로 끝났다. 연결 갱신과 기관 워크플로 완료를 구별하며 보고의 completed는 false다.
+
+AMS의 원 66바이트 서비스 불가 HTML을 fixture로 보존했다. 이전 input_value TimeoutError를 provider_unavailable로 분류하고, HTTP 오류·접근 확인·미준비 제어를 구별한다. 실제 MCP 20260910T111551961664Z-ams-workflow.json은 앞선 gateway_navigation_failed에서 끝났으므로 새 분기 검증으로 세지 않는다. IOP의 20260910T112043832340Z-iop-workflow.json은 metadata·abstract만 available이며 fulltext·BibTeX·RIS는 validate.perfdrive.com 이동이었다. 공유 다운로드 함수는 이 접근 확인 목적지로 요청을 보내기 전에 restricted를 반환한다. 허용 호스트를 확대하지 않았다. 새 실제 재검증은 기관 진입에서 막혔고, 파일 리디렉션 분기는 합성 응답으로 후속 요청 부재·민감 값 비노출을 확인했다. 공통 검사 173개가 통과했다.

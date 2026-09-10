@@ -482,7 +482,7 @@ SOURCES['ams'].usage={
     'records':'Title와 Subtitle을 구별한다. ProductCode, DOI, PII, ContentType, RelatedCustomers, Abstract, ProductDescription 등 원 필드를 보존한다. target은 선택한 원 문헌 URL이다. 책(B)·논문(A)·학회 초록(ABS)이 섞이며 DOI가 없는 결과도 유지한다.',
     'exports':'json은 요청 창의 원 레코드, native는 해당 창을 회수하면서 읽은 원 JSON 페이지들, html은 방문한 검색 페이지들이다. csv는 같은 레코드를 기계적으로 직렬화한다. 사이트의 native 파일 내보내기는 HTTP 403 이후 미검증이며 구현 완료로 세지 않는다.',
     'fetch':'책 ProductCode 또는 /view?ProductCode= URL은 같은 원 고급검색으로 식별한다. 현재 서버에서 검색한 target·DOI는 원 메타데이터를 재사용한다. 다른 DOI·문헌 URL은 원 문헌 페이지를 조회하며 추가 접근 확인을 반환할 수 있다. 책의 ProductDescription은 출판사 책 소개이며 논문 초록과 구별한다. .pdf 링크는 정확히 지정한 파일과 PDF 내장 메타데이터를 회수한다. 발췌·부속 파일을 전체 책으로 확대하지 않는다.',
-    'verification_limit':'원 브라우저의 algebra 검색 6,587건 중 12건과 혼합 레코드는 관측했다. 신규 어댑터의 실제 연속 호출은 이후 Just a moment 접근 확인으로 아직 완료하지 못했다. 이 관측을 0건이나 영구적인 기능 부재로 표시하지 않는다.',
+    'verification_limit':'원 브라우저의 algebra 검색 6,587건 중 12건과 혼합 레코드는 관측했다. 신규 어댑터는 이후 접근 확인·서비스 불가 응답 때문에 연속 검증을 완료하지 못했다. 서비스 불가는 provider_unavailable, 접근 확인은 restricted이며 0건이나 영구적인 기능 부재로 표시하지 않는다.',
     'examples':[{'tool':'search','arguments':{'source':'ams','query':'algebra','start':11,'limit':2,'export':'csv'}},{'tool':'fetch','arguments':{'source':'ams','target':'https://www.ams.org/books/gsm/128/gsm128-endmatter.pdf','parts':['metadata','fulltext']}}],
     'official':['https://pubs.ams.org/AdvancedSearch'],
 }
@@ -538,7 +538,7 @@ SOURCES['iop'].capabilities = ('source_guide','fetch','export')
 SOURCES['iop'].usage = {
     'fetch':'IOP DOI 또는 정확한 iopscience.iop.org 문헌 URL을 지정한다. KUDOS IOP 바로가기를 거쳐 기관 문헌의 서지 태그와 PDF를 회수한다. 초록은 원 wd-jnl-art-abstract 영역을 사용한다.',
     'exports':'문헌에 표시된 BibTeX·RIS 링크의 DOI와 원 응답 DOI를 대조하는 코드를 연결했다. 이 추가 export의 실서비스 검증은 기관 진입 CAPTCHA 때문에 완료하지 못했다.',
-    'limits':'검색·이름 후보는 아직 연결하지 않았다. 서지·16쪽 PDF를 실제 어댑터에서 확보한 기록과, 이후 MCP에서 validate.perfdrive.com으로 이동한 제한을 구별한다. CAPTCHA 호스트를 문헌 호스트로 허용하지 않는다. XML·추가 첨부 형식은 연결하지 않았다.',
+    'limits':'검색·이름 후보는 아직 연결하지 않았다. 서지·16쪽 PDF를 실제 어댑터에서 확보한 기록, 이후 실제 MCP의 서지·초록 성공, 후속 기관 진입·파일 요청의 접근 제한을 구별한다. validate.perfdrive.com 등 접근 확인 목적지는 restricted로 반환하며 요청을 따라가지 않는다. XML·추가 첨부 형식은 연결하지 않았다.',
     'examples':[{'tool':'fetch','arguments':{'source':'iop','target':'https://iopscience.iop.org/article/10.1088/0022-3727/34/10/311/meta','parts':['metadata','fulltext']}}],
     'official':['https://iopscience.iop.org/'],
 }
@@ -611,7 +611,7 @@ for identifier, level in {
     "taylor-francis": "live_mcp_search_citation_pdf_dublin_doi_supplement_zip_tables_nested_source",
     "de-gruyter": "live_mcp_search_ris_pdf_and_supplement_zip_cif_lines; broken_link_observed",
     "jstor": "live_mcp_public_ris_metadata_abstract_fetch; web_captcha_observed",
-    "iop": "live_adapter_metadata_pdf; citation_unverified_after_gateway_challenge",
+    "iop": "live_mcp_metadata_abstract; earlier_adapter_pdf; file_and_gateway_challenge",
     "siam": "live_mcp_public_front_matter_pdf_fetch_extract; search_challenge_observed",
     "ams": "live_mcp_explicit_pdf; native_browser_mixed_search; search_adapter_restricted",
     "science-direct": "live_mcp_institutional_ris_bibtex_plain_metadata_abstract_fetch",

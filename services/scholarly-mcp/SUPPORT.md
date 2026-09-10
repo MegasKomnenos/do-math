@@ -42,7 +42,7 @@
 | Wiley | wiley | playwright | partial | source_guide, search, fetch, export | live_mcp_advanced_search_citations_pdf_empty_repeat_and_supplementary_zip |
 | AIP | aip | playwright | partial | source_guide, search, fetch, export | live_mcp_advanced_search_citation_pdf_and_explicit_figshare_supplement_reference |
 | APS 공개 접근 | aps | api | partial | source_guide, search, fetch, export | live_mcp_open_access_feed_metadata_abstract_pdf_fetch |
-| IOP | iop | playwright | partial | source_guide, fetch, export | live_adapter_metadata_pdf; citation_unverified_after_gateway_challenge |
+| IOP | iop | playwright | partial | source_guide, fetch, export | live_mcp_metadata_abstract; earlier_adapter_pdf; file_and_gateway_challenge |
 | SIAM | siam | playwright | partial | source_guide, fetch, export | live_mcp_public_front_matter_pdf_fetch_extract; search_challenge_observed |
 | KNU FRIC | knu-fric | playwright | partial | source_guide, search, fetch, export | live_mcp_catalogue_pagination_issn_fetch_zero_result |
 | 개별 구독 자료원 | individual-subscription | target_dependent | pending | 미구현 | not_recorded |
