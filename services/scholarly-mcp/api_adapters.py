@@ -965,26 +965,8 @@ class SoftwareHeritage(APIAdapter):
         return self.export_page(result, export)
 
     def fetch(self, target, *, parts):
-        match = re.fullmatch(r"swh:1:(cnt|dir|rev|rel|snp):([0-9a-f]{40})(?:;.*)?", target)
-        if match:
-            kind, key = match.groups()
-            endpoint = {"cnt": "content/sha1_git:", "dir": "directory/", "rev": "revision/", "rel": "release/", "snp": "snapshot/"}[kind]
-            url = "https://archive.softwareheritage.org/api/1/" + endpoint + key + "/"
-        elif target.startswith(("https://", "http://")):
-            kind = "origin"
-            url = "https://archive.softwareheritage.org/api/1/origin/" + quote(target, safe="") + "/get/"
-        else:
-            raise ServiceError("invalid_target", "Use an SWHID or an origin URL")
-        raw, evidence = self.request(url)
-        result = self.fetched(raw if isinstance(raw, list) else [raw], evidence, parts, ("metadata", "export"))
-        if kind == "cnt" and any(part in parts for part in ("fulltext", "supplementary")):
-            data, blob = self.request(url + "raw/", accept="binary")
-            for part in ("fulltext", "supplementary"):
-                if part in parts:
-                    result["components"][part] = {"status": "available", "artifact": blob}
-        result["target"] = target
-        result["status"] = "ok" if all(c["status"] == "available" for c in result["components"].values()) else "partial"
-        return result
+        from software_heritage import fetch
+        return fetch(self,target,parts)
 
 
 def make_adapters(store, client=None):

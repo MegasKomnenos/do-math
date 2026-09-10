@@ -301,3 +301,8 @@ MathSciNet의 mr:(2733384) 검색은 검색 API 한 건을 받은 뒤 문헌 화
 ECCC 이름 입력을 원 일반 검색 후보로 연결했다. data/validation/20260910T230446363549Z-eccc-workflow.json은 새 SDK stdio에서 completed=true다. natural proofs 후보 20건·검색 2건 추출·TR26-008r1의 서지·초록·PDF와 판본 번호를 확인했다. 이름을 정확한 제목·판본으로 자동 확정하지 않고 잘못된 보고서 번호도 이름으로 바꾸지 않는다. 공통 198개 검사가 통과했다. 없는 보고서의 HTTP 200/404 제목은 기존 처리 대상이며 새 결함으로 보고하지 않았다.
 
 JSTOR 배포 query-builder의 new-search 경로를 기관 프록시로 확인했으나 Client Challenge·capInput이 나타났다. 보호된 원 관측은 .credentials/scholarly-mcp/probes/20260910T225843Z-jstor-new-search.html이다. JSON 한 건의 path/resolutionTrace는 결과 목록이 아니어서 검색 성공으로 세지 않았다.
+
+
+Software Heritage의 [공식 SWHID 설명](https://docs.softwareheritage.org/devel/swh-model/persistent-identifiers.html)을 대조했다. 기존 fetch는 qualifiers를 받아 놓고 버렸으며 원 바이트의 고유 해시도 검사하지 않았다. 공식 content 예 4d99d2d18326621ccdd70f5ea66c2e2ac236ad8b의 metadata와 파일 527바이트·27줄을 익명 API로 확보했다. 전체 바이트의 길이·Git blob SHA-1과 제공된 체크섬을 검사하고 원 API MIME도 보존한다. origin 문맥은 해독·정제하고 path는 이스케이프된 표기를 유지하며 외부 원 저장소를 방문하지 않는다.
+
+처음 SDK data/validation/20260910T231934Z-swh-content-mcp.json은 조각 회수 뒤 전체 content의 octet-stream 추출에서 실패해 미완료다. UTF-8/NUL 없는 텍스트를 읽을 수 있게 한 뒤 data/validation/20260910T232052Z-swh-content-mcp.json은 completed=true다. 9~15행을 전체 파일과 대조했고 SWHID URL의 한 줄 선택·범위 초과·실제 0바이트 파일을 확인했다. 손상 바이트·metadata 불일치·403·잘못된/중복 qualifier·인코딩된 origin 정제와 범위 초과 회귀를 포함한 공통 204개 검사가 통과했다. integrity는 전체 content에 대한 것이며 조각이 부모 SWHID의 해시를 가진다고 표시하지 않는다. context_verified=false로 문맥의 미검증을 구별한다.

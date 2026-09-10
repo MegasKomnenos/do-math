@@ -151,3 +151,6 @@ MathSciNet 문헌 조회는 MR 번호·문헌 링크 외에 DOI와 이름을 받
 
 
 ECCC fetch에 이름을 주면 원 일반 검색 후보를 반환한다. 보고서 번호·링크를 선택해 다시 조회하면 기존 판본 선택 규칙을 적용한다. 이름만으로 최신 판본을 자동 선택하지 않는다.
+
+
+Software Heritage content는 metadata와 원 바이트의 길이·SWH sha1_git·제공된 체크섬을 대조한다. SWHID의 lines=9-15처럼 줄 범위를 지정하면 검증한 전체 파일의 해당 조각을 반환하고 complete_content에 전체 파일을 보존한다. 파일은 실행하지 않는다. origin/visit/anchor/path는 사용자가 제시한 문맥이며 사실관계까지 검증했다고 표시하지 않는다. 줄 범위는 UTF-8 텍스트에 적용하고 잘못된 범위를 조용히 줄이지 않는다.
