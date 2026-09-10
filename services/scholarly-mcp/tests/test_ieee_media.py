@@ -6,6 +6,16 @@ ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT))
 from scholarly import ArtifactStore,ServiceError
 
 class IEEEMediaContract(unittest.TestCase):
+    def test_native_media_tabs_keep_one_download_and_exclude_generic_help(self):
+        from ieee_media import media_links
+        raw=(ROOT/'tests/fixtures/ieee-media-tab.html').read_text('utf-8')
+        rows=media_links(raw,'https://ieeexplore.ieee.org/document/8626436/media','8626436')
+        self.assertEqual(len(rows),1)
+        self.assertEqual(rows[0]['filename'],'BioLSTM_RA-L_video.mp4')
+        self.assertIn('PedX dataset',rows[0]['description'])
+        self.assertEqual(rows[0]['role'],'supplementary_media')
+        with self.assertRaises(ServiceError):media_links(raw,'https://ieeexplore.ieee.org/','42')
+
     def test_ranges_assemble_only_matching_bytes_and_version(self):
         from ieee_media import range_download
         payload=b'abcdefghijkl'; calls=[]

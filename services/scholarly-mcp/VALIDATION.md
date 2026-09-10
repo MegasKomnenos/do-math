@@ -265,3 +265,8 @@ Project Euclid의 Supplemental Content는 기본 문헌 HTML에 없는 별도 �
 DOI 10.1214/24-AOAS1990의 새 MCP data/validation/20260910T124043Z-project-euclid-supplements-mcp.json은 completed=true다. aoas1990suppa.zip 18431바이트·8항목, aoas1990suppb.pdf 2174641바이트·26쪽을 회수·추출했다. 등록된 MCP의 data/validation/20260910T124410Z-euclid-archive-mcp.json에서도 ZIP 안의 Analysis 텍스트 449줄 중 앞 3줄을 읽었다. 연구 코드를 실행하지 않았다. 해당 변경 시점 공통 174개 검사가 통과했다.
 
 재시작 이후 기관 검색 재확인: JSTOR 홈페이지는 Shadow DOM 안에 Query 입력을 제공했다. 실제 algebra 입력 뒤 Client Challenge와 capInput이 나타났다(.credentials/scholarly-mcp/probes/20260910T122819Z-jstor-native-search.html). SIAM algebra는 Just a moment(20260910T122547Z-siam-native-search.html), APS 기관 quantum computation도 같은 접근 확인(20260910T123205Z-aps-native-search.html)이었다. ScienceDirect의 실제 Submit quick search로 random graphs를 제출한 결과는 CPE 안내(20260910T123815Z-science-direct-native-search.html)였다. 이 조사는 직접 브라우저 제어 관측이며 새 검색 어댑터의 MCP 성공으로 세지 않는다. CAPTCHA를 해결하거나 파일 허용 호스트를 확대하지 않았다.
+
+
+IEEE 문헌 8626436, Bio-LSTM: A Biomechanically Inspired Recurrent Neural Network for 3-D Pedestrian Pose and Gait Prediction은 metadata.sections.multimedia=true와 Media 탭의 원 MP4를 제공했다. 실제 등록 MCP의 기존 구현은 해당 첨부를 not_implemented로 반환했다. 원 화면은 media-tab 영역을 두 번 렌더했으며 두 다운로드 href가 같았다. .media-item의 문헌 번호가 포함된 파일만 파싱하고 URL로 중복을 제거한다. 옆의 /Xplorehelp/Help_Multimedia.html은 일반 도움말이라 제외한다. 원 설명과 파일명은 native_index에 보존한다.
+
+새 SDK stdio의 data/validation/20260910T124350Z-ieee-media-tab-mcp.json은 completed=true다. BioLSTM_RA-L_video.mp4 40381857바이트를 10개의 HTTP 구간으로 회수했고 Last-Modified 검증자·구간 위치·총 크기와 MP4 컨테이너를 대조했다. 같은 문헌의 참고문헌 30개도 확보됐다. 동영상 의미 판독은 수행하지 않았다. 새 Media 탭 파싱 검사와 기존 그래픽 초록·구간·실패 보존 회귀를 포함한 공통 175개 검사가 통과했다. 다른 Media 탭 파일 형식의 실제 성공으로 확대하지 않는다.
