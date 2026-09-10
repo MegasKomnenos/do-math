@@ -453,6 +453,19 @@ SOURCES['de-gruyter'].usage={
 }
 
 SOURCES['jstor'].implementation='partial'
+SOURCES['ams'].implementation='partial'
+SOURCES['ams'].transport='playwright'
+SOURCES['ams'].capabilities=('source_guide','search','fetch','export')
+SOURCES['ams'].usage={
+    'search':'KUDOS → 학술DB → AMS 바로가기의 원 고급검색을 사용한다. options.field는 Title(기본), Author, ProductCode, BookText, ISBN, MSC다. BookText는 책 본문 검색이며 일반 전 자료원 본문 검색으로 바꾸지 않는다. MSC는 두 자리 분류이며 쉼표로 복수를 입력할 수 있다.',
+    'options':'추가 title, author, product_code, book_text, isbn, msc를 결합할 수 있다. 주 field와 같은 추가 필드는 중복 지정하지 않는다. content_type은 All(기본), EBook, Journal, Abstracts다. start는 0부터, limit는 1..1000이며 원 페이지의 건수·위치를 대조한다.',
+    'records':'Title와 Subtitle을 구별한다. ProductCode, DOI, PII, ContentType, RelatedCustomers, Abstract, ProductDescription 등 원 필드를 보존한다. target은 선택한 원 문헌 URL이다. 책(B)·논문(A)·학회 초록(ABS)이 섞이며 DOI가 없는 결과도 유지한다.',
+    'exports':'json은 요청 창의 원 레코드, native는 해당 창을 회수하면서 읽은 원 JSON 페이지들, html은 방문한 검색 페이지들이다. csv는 같은 레코드를 기계적으로 직렬화한다. 사이트의 native 파일 내보내기는 HTTP 403 이후 미검증이며 구현 완료로 세지 않는다.',
+    'fetch':'책 ProductCode 또는 /view?ProductCode= URL은 같은 원 고급검색으로 식별한다. 현재 서버에서 검색한 target·DOI는 원 메타데이터를 재사용한다. 다른 DOI·문헌 URL은 원 문헌 페이지를 조회하며 추가 접근 확인을 반환할 수 있다. 책의 ProductDescription은 출판사 책 소개이며 논문 초록과 구별한다. .pdf 링크는 정확히 지정한 파일과 PDF 내장 메타데이터를 회수한다. 발췌·부속 파일을 전체 책으로 확대하지 않는다.',
+    'verification_limit':'원 브라우저의 algebra 검색 6,587건 중 12건과 혼합 레코드는 관측했다. 신규 어댑터의 실제 연속 호출은 이후 Just a moment 접근 확인으로 아직 완료하지 못했다. 이 관측을 0건이나 영구적인 기능 부재로 표시하지 않는다.',
+    'examples':[{'tool':'search','arguments':{'source':'ams','query':'algebra','start':11,'limit':2,'export':'csv'}},{'tool':'fetch','arguments':{'source':'ams','target':'https://www.ams.org/books/gsm/128/gsm128-endmatter.pdf','parts':['metadata','fulltext']}}],
+    'official':['https://pubs.ams.org/AdvancedSearch'],
+}
 SOURCES['project-euclid'].capabilities=('source_guide','search','fetch','export')
 SOURCES['project-euclid'].usage={
     'search':'공개 원 고급검색 UI를 사용한다. 기본 query는 All Fields 검색이며 사이트의 어근·구문 처리를 유지한다. options.field는 ALL, ABSTRACT, AUTHORNAME, AFFILIATION, DOI_ISSN_ISBN, FIGURETABLECAPTIONS, KEYWORDS, TITLE 중 하나다.',
@@ -579,7 +592,7 @@ for identifier, level in {
     "jstor": "live_mcp_public_ris_metadata_abstract_fetch; web_captcha_observed",
     "iop": "live_adapter_metadata_pdf; citation_unverified_after_gateway_challenge",
     "siam": "browser_access_challenge_observed",
-    "ams": "browse_shell_and_script_restriction_observed",
+    "ams": "live_mcp_explicit_pdf; native_browser_mixed_search; search_adapter_restricted",
     "science-direct": "live_mcp_institutional_ris_bibtex_plain_metadata_abstract_fetch",
 }.items():
     SOURCES[identifier].verification = level

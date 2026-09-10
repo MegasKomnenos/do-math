@@ -100,3 +100,7 @@ Scopus의 supplementary는 현재 문헌 References·Cited by 탭의 목록이�
 Excel 내보내기는 XLS와 XLSX를 구별해 보존하고 추출한다. extract의 selection은 시트명, fields는 A·B·AA 같은 열 문자다. start는 0부터이며 반환 row는 원 시트의 1부터 시작하는 행 번호다. 여러 시트가 있으면 먼저 selection_required와 시트 목록을 반환한다. XLSX 수식은 실행하지 않고 원 문자열로 반환한다. XLS는 저장된 값과 표시 형식을 읽으며 수식 정의·링크·삽입 개체는 원 파일에 남아 있다. WOS의 실제 Excel 표본은 XLS였으며 I·BE·BS 열에서 제목·DOI·accession을 확인했다.
 
 Project Euclid는 원 고급검색의 필드·AND/OR/NOT 추가 조건·발행연도·발행물 선택과 정렬·페이지 크기를 제공한다. 발행물 이름은 검색 결과 facets.ref에서 선택한다. 현재 페이지와 다음 페이지의 미리 받기를 구별하며 원 50쪽 제한을 표시한다. 문헌별 RIS·BibTeX·EndNote와 인용문 PDF를 내보낸다. 인용문 PDF에는 서지·초록이 있으며 논문 전문은 fetch의 fulltext로 받는다. EndNote의 원 %DOI 태그는 fields.DOI로 유지한다.
+
+AMS는 기관 고급검색의 원 상품 JSON을 연결했다. 책·논문·학회 초록의 ContentType과 제목·부제·DOI·제품 코드를 유지한다. 원 브라우저 검색의 양성 관측과 이후 어댑터의 접근 확인 실패는 지원표에서 구별한다. 원 파일 export는 추가 검증이 남아 있다.
+
+Publisher 어댑터에 .pdf 링크를 직접 주면 그 파일의 바이트와 PDF 내장 메타데이터를 회수한다. 브라우저의 Download is starting 이동 예외와 실제 파일 회수 성공을 구별한다. metadata.kind가 embedded_pdf_metadata이면 PDF 내부 정보다. 파일이 발췌·부속 자료인 경우 전체 책을 확보했다는 뜻으로 해석하지 않는다. 이 경로의 실제 MCP 검증은 AMS gsm128-endmatter.pdf 51쪽으로 수행했다.

@@ -177,6 +177,71 @@ class Publisher:
         goto_source(page, url, self.profile.hosts, wait_until="domcontentloaded", timeout=45000)
         return page
 
+    def explicit_pdf(self,url,parts):
+        """Read an explicitly named PDF, including native navigation downloads."""
+        from pathlib import Path
+        import pymupdf
+        self.gateway.start()
+        if self.profile.gateway_label:
+            self.gateway.open(self.source,self.profile.gateway_label,self.profile.hosts,'body')
+        context=self.gateway.context
+        expected=urlsplit(url)
+        downloads,pages=[],[]
+        def captured(download):
+            actual=urlsplit(download.url)
+            if actual.path==expected.path and actual.query==expected.query:
+                downloads.append(download)
+        def opened(page):
+            pages.append(page)
+            page.on('download',captured)
+        cached=self.gateway.pages.get(self.source)
+        if not self.profile.gateway_label and cached and not cached.is_closed():
+            opened(cached)
+        context.on('page',opened)
+        try:
+            try:
+                page=self.document(url)
+            except Exception as error:
+                if not downloads:
+                    if isinstance(error,ServiceError):
+                        raise
+                    raise ServiceError('pdf_navigation_failed','The requested PDF did not produce a document or download',error_type=type(error).__name__) from None
+            if downloads:
+                if len(downloads)!=1:
+                    raise ServiceError('ambiguous_download','The PDF navigation produced multiple matching downloads')
+                download=downloads[0]
+                require_source_url(download.url,self.profile.download_hosts)
+                data=Path(download.path()).read_bytes()
+                actual=download.url
+            else:
+                data,_,actual=browser_download(context,page.url,self.profile.download_hosts)
+            if not data.startswith(b'%PDF-'):
+                raise ServiceError('unexpected_content','The explicit PDF address returned no PDF')
+            try:
+                with pymupdf.open(stream=data,filetype='pdf') as document:
+                    metadata={**document.metadata,'pages':len(document),'page_labels':document.get_page_labels()}
+            except Exception:
+                raise ServiceError('invalid_document','The downloaded PDF cannot be read') from None
+            artifact=self.store.put(data,'application/pdf',self.source,actual,role='explicit_pdf_file',requested_url=url,pages=metadata['pages'])
+            record=self.store.put(encoded([metadata]),'application/json',self.source,actual,role='embedded_pdf_metadata',parent_ref=artifact['ref'])
+            components={}
+            for part in parts:
+                if part=='metadata':
+                    components[part]={'status':'available','artifact':record,'kind':'embedded_pdf_metadata'}
+                elif part in ('fulltext','export'):
+                    components[part]={'status':'available','artifact':artifact,'format':'pdf'}
+                else:
+                    components[part]={'status':'not_implemented','reason':'The explicit-file path provides PDF bytes and embedded metadata; separate abstract or attachment retrieval requires a document-page target'}
+            return {'status':'ok' if all(c['status']=='available' for c in components.values()) else 'partial','source':self.source,
+                    'target':url,'components':components,'records':record,
+                    'scope':'Exactly the requested PDF file; it may be an excerpt, supplement or complete work. Coverage of a larger work is not inferred.'}
+        finally:
+            context.remove_listener('page',opened)
+            for page in pages:
+                page.remove_listener('download',captured)
+                if not page.is_closed():
+                    page.close()
+
     def search(self, query, *, options, start=0, limit=20, cursor=None, export=None):
         if self.source == 'project-euclid':
             from euclid import search
@@ -410,6 +475,8 @@ class Publisher:
             return {**candidates, 'status': 'selection_required' if candidates.get('received') else candidates['status'],
                     'message': 'Select the exact publication DOI or URL from the preserved candidates'}
         url, identifier = self.resolve_target(target)
+        if urlsplit(url).path.lower().endswith('.pdf'):
+            return self.explicit_pdf(url,parts)
         page = self.document(url)
         try:
             try:

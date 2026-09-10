@@ -89,6 +89,17 @@ async def main():
             assert any('natural' in x['title'].lower() for x in rows['items'])
             empty=await call('search',{'source':'general-web','query':'qzjxwv947231','limit':2})
             assert empty['status']=='not_found' and empty['returned_set_size']==0
+        elif args.source == 'ams':
+            found=await call('search',{'source':args.source,'query':'algebra','start':11,'limit':2,'export':'csv'})
+            assert found['status']=='ok' and found['received']==2
+            rows=await call('extract',{'ref':found['records']['ref'],'count':2,'fields':['Title','ProductCode','ContentType','DOI','target']})
+            assert rows['returned']==2
+            book=await call('fetch',{'source':args.source,'target':'SURV/168','parts':['metadata','abstract','export']})
+            assert book['status']=='ok'
+            row=await call('extract',{'ref':book['records']['ref'],'count':1,'fields':['ProductCode','Title','Subtitle']})
+            assert row['items'][0]['ProductCode']=='SURV/168'
+            empty=await call('search',{'source':args.source,'query':'qzjxwv947231','limit':2})
+            assert empty['status']=='not_found' and empty['total']==0
         elif args.source == 'project-euclid':
             found=await call('search',{'source':args.source,'query':'Sure independence screening in generalized linear models','options':{'field':'TITLE','year_from':2010,'year_to':2010,'terms':[{'query':'Fan','field':'AUTHORNAME'},{'query':'Song','field':'AUTHORNAME'},{'query':'qzjxwv947231','field':'TITLE','operator':'NOT'}],'publication_titles':['The Annals of Statistics']},'limit':2,'export':'endnote'})
             assert found['status']=='ok' and found['received']==1

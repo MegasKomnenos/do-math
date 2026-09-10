@@ -30,7 +30,7 @@
 | GitHub | github | api | partial | source_guide, search, fetch, export | live_adapter_pinned_file_fetch |
 | Zenodo | zenodo | api | partial | source_guide, search, fetch, export | live_mcp_search_file_checksum_fetch_extract |
 | Software Heritage | software-heritage | api | partial | source_guide, search, fetch, export | live_adapter_origin_search_fetch |
-| AMS publications | ams | under_investigation | pending | 미구현 | browse_shell_and_script_restriction_observed |
+| AMS publications | ams | playwright | partial | source_guide, search, fetch, export | live_mcp_explicit_pdf; native_browser_mixed_search; search_adapter_restricted |
 | Cambridge University Press | cambridge | fixed: citation API; institutional search/document Playwright | partial | source_guide, search, fetch, export | live_mcp_filtered_search_native_ris_abstract_pdf_fetch_pagination |
 | De Gruyter Brill | de-gruyter | playwright | partial | source_guide, search, fetch, export | live_mcp_native_search_ris_abstract_pdf_fetch_pagination |
 | JSTOR | jstor | api (native citation); browser search/document pending | partial | source_guide, fetch, export | live_mcp_public_ris_metadata_abstract_fetch; web_captcha_observed |

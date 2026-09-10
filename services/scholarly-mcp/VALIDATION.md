@@ -42,7 +42,7 @@ PQDT는 지연 표시되는 쿠키 창과 별도 export 창을 처리한다. RIS
 
 진단 중 ProQuest 상대 링크의 CSRF 값과 PDF 전송 URL의 서명 매개변수 `_a`·`_s`가 각각 도구 출력에 포함되는 사고가 있었다. 사용자에게 즉시 알렸고 값을 재기재하지 않았다. 해당 조사 브라우저는 종료했으며 앞선 도구 출력 자체를 삭제한 것은 아니다. 상대 URL·서명 매개변수·중첩 URL의 정제를 수리하고 회귀 검사를 추가했다. 저장된 KUDOS 세션을 재사용해도 ID/PW가 정제기에 등록되도록 보완했다. 확인한 9개 값은 출력하지 않고 새 서버의 코드·문서·fixture·20MB 이하 로컬 산출에서 원 표현과 URL 디코딩 표현을 검사했으며 일치 파일은 없었다. 이 검사는 모든 비밀 형식이나 PDF 내부의 압축·이미지 표현에 대한 증명이 아니다. 인증 상태와 원 진단 자료는 Git에서 제외된 `.credentials/`에 유지한다.
 
-문헌 화면의 명시적 이동은 이동 전후의 자료원 호스트를 검사하고 외부 자료원의 결과를 거부한다. 다운로드는 외부 redirect 대상에 다음 요청을 보내기 전에 중단하며 이 동작을 대역 검사했다. 브라우저 다운로드의 시간 초과는 원 예외 URL을 노출하지 않는 typed error로 변환한다. 검색 응답도 지정 자료원 호스트와 원 검색식을 대조한다. 이 검사를 모든 브라우저 하위 리소스의 네트워크 격리로 표현하지 않는다.
+문헌 화면의 명시적 이동은 이동 전후의 자료원 호스트를 검사하고 외부 자료원의 결과를 거부한다. browser_download의 HTTP 파일 요청은 외부 redirect 대상에 다음 요청을 보내기 전에 중단하며 이 동작을 대역 검사했다. 명시적 PDF의 native 브라우저 download는 요청한 경로·쿼리와 대응시키고 파일을 읽기 전에 다운로드 URL의 자료원 호스트를 대조한다. 이 경우는 브라우저 문헌 이동과 같은 사후 호스트 검사 범위다. HTTP 다운로드의 시간 초과는 원 예외 URL을 노출하지 않는 typed error로 변환한다. 검색 응답도 지정 자료원 호스트와 원 검색식을 대조한다. 이 검사를 모든 브라우저 하위 리소스의 네트워크 격리로 표현하지 않는다.
 
 추가 수리에서는 XML 요청에 JSON Accept 헤더를 보내 EuDML이 HTTP 406을 반환하던 조건을 재현했다. 형식에 맞는 Accept를 보내도록 바꿨다. URL 정제가 XML의 `&amp;`를 깨뜨리던 오류는 네임스페이스를 보존하는 XML 처리로 수리했다. 엔터티 선언·참조의 확장을 거부하며 외부 파일을 읽지 않는 검사도 통과했다. 인증 정보가 없는 URL은 원 표현을 유지하여 공개 서명 payload의 URL이 달라지지 않도록 했다.
 
@@ -151,3 +151,13 @@ DOI 10.1214/10-AOS798의 원 RIS·BibTeX·EndNote·인용문 PDF를 확보했다
 최종 실제 MCP 보고는 `data/validation/20260910T040355588723Z-project-euclid-workflow.json`이며 completed=true다. 제목·두 저자·NOT 조건·발행물·2010년을 결합한 1건과 EndNote 추출, 다음 제목 검색의 최신순 100건 페이지 경계 2건, 문헌 서지·초록·38쪽 PDF·네 가지 원 인용문, PDF 첫 쪽 DOI와 후속 무작위 0건을 확인했다. 앞선 `20260910T040132369795Z-project-euclid-workflow.json`은 검색들은 통과했지만 문헌 서지 인식에서 실패한 부분 기록이다. 후속 직접·홈 경유 문헌 관측은 둘 다 정상이라 실패 원인을 경로 차이로 단정하지 않는다. 문헌 준비 대기가 일반 h1·og:title만으로 통과할 수 있던 조건은 실제 파서가 사용하는 citation/DC title 기준에 맞췄다.
 
 이번 공통 검사 109개가 통과했다. Project Euclid의 부가 첨부 개별 회수 등은 남아 있으며, 전체 자료원 구현의 완료로 확대하지 않는다.
+
+AMS는 algebra를 다시 검색해 원 브라우저에서 6,587건 중 첫 12건을 확보했다. /js/browse.js가 200으로 응답했고 /product/getbrowsefilters·/product/browseproducts의 원 응답도 받았다. 상품 응답은 Products·TotalRows·PageNumber·RowsPerPage 등을 포함한다. 책 SURV/168, 논문 DOI 10.1090/jams/1045와 학회 초록이 섞였다. Title·Subtitle은 별도 필드이며 DOI가 없는 자료도 유지한다. 원 응답 12건을 tests/fixtures/ams-products.json에 보존하고 행 수 불일치를 검사했다.
+
+신규 AMS 어댑터는 원 기본 고급검색 필드·내용 유형·원 JSON·CSV·HTML을 연결했다. 동적 조건 그룹 편집과 native 파일 export의 검증은 남아 있다. 이후 어댑터의 algebra·topology 요청은 /browse에서 Just a moment를 반환했고, 실제 MCP 보고 `data/validation/20260910T043446741740Z-ams-workflow.json`도 restricted로 끝났다. 초기 양성 원 브라우저 관측을 신규 어댑터의 전체 MCP 통과로 표현하지 않는다. 원 exportproducts는 일반 context 요청과 사이트의 exportResults 함수를 사용한 정상 브라우저 요청 모두 HTTP 403이었다. 이를 XLSX나 문헌 부재로 해석하지 않는다. 책·논문 페이지 표본도 접근 확인을 반환했다.
+
+별도로 AMS의 명시적 PDF 링크는 실제 다운로드에 성공했다. KUDOS 기관 경로의 gsm128-endmatter.pdf는 607,667바이트·51쪽이며, 파일 다운로드 시작 때문에 Playwright의 문헌 이동이 Download is starting 예외를 던졌다. 기존 MCP에서는 execution_error였고 `data/validation/20260910T044238Z-ams-pdf-mcp.json`에 재현을 남겼다. 단순 proxy URL 구성 뒤 context.request로 받는 시험은 403이라 그 방법으로 교체하지 않았다.
+
+Publisher의 명시적 .pdf 파일 경로는 실제 native download 이벤트를 회수한다. 경로·쿼리가 요청과 같은 다운로드를 고르고, 허용한 자료원 URL인지 확인한 뒤 바이트를 읽는다. PDF 서명과 파서를 확인하고 파일·내장 메타데이터를 구별해 보존한다. 이벤트 listener와 해당 작업에서 연 페이지를 정리한다. 외부 자료원 download는 파일을 읽거나 artifact로 보존하지 않는 대역 검사도 통과했다. 브라우저 이동의 사후 호스트 검사와 HTTP 다운로드의 redirect 사전 검사를 같은 보장으로 표현하지 않는다.
+
+수리 후 실제 MCP의 PDF fetch·메타데이터 구분·51쪽 파일 추출이 `data/validation/20260910T044529Z-ams-pdf-mcp.json`에서 completed=true로 통과했다. 재실행 도구는 tests/live_ams_pdf.py다. 이 파일은 별도 부속 PDF이며 전체 책 51쪽을 확보했다고 주장하지 않는다. 공통 검사 113개가 통과했고 AMS의 검색·원 파일 내보내기 전체 검증은 계속 남아 있다.
