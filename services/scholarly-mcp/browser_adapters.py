@@ -317,6 +317,42 @@ class MathSciNet:
     def page(self):
         return self.gateway.open(self.source, "MathSciNet", MSC_HOSTS, "#searchTextInput, main h1")
 
+    def citation_exports(self,identifiers,formats):
+        if any(not re.fullmatch(r'[0-9]+',str(value)) for value in identifiers):
+            raise ServiceError('invalid_export','Every selected citation must have an MR number')
+        identifiers=[str(int(value)) for value in identifiers]
+        if not identifiers or len(identifiers)!=len(set(identifiers)) or any(format not in self.EXPORTS for format in formats):
+            raise ServiceError('invalid_export','Select distinct MR numbers and documented citation formats')
+        page=self.page();host=urlsplit(page.url).hostname
+        url='https://'+host+'/mathscinet/api/publications/format?'+urlencode({'formats':'ams,bib,tex,end','ids':','.join(identifiers)})
+        data,_,actual=browser_download(self.gateway.context,url,MSC_HOSTS)
+        try:payload=json.loads(data)
+        except ValueError:raise ServiceError('invalid_response','MathSciNet returned no citation JSON') from None
+        evidence=self.store.put(encoded(payload),'application/json',self.source,actual,role='provider_citation_formats',requested_mr_order=identifiers)
+        order=[str(row.get('paperId')) for row in payload if isinstance(row,dict)] if isinstance(payload,list) else []
+        if not isinstance(payload,list) or len(order)!=len(payload) or len(order)!=len(set(order)) or set(order)!=set(identifiers):
+            raise ServiceError('citation_identity_mismatch','MathSciNet citation response identifies a different set of MR records',evidence=evidence)
+        media={'bibtex':'application/x-bibtex','endnote':'application/x-endnote-refer','amsref':'text/plain','tex':'application/x-tex'}
+        exports=[]
+        for format in formats:
+            values=[row.get(self.EXPORTS[format]) for row in payload]
+            if any(not isinstance(value,str) or not value.strip() for value in values):
+                raise ServiceError('citation_format_missing','MathSciNet omitted a requested formatted citation',format=format,evidence=evidence,partial_exports=exports)
+            text='\n\n'.join(values)
+            if format in ('bibtex','endnote'):
+                parsed=bibliography(text.encode('utf-8'),media[format])
+                observed=[]
+                for item in parsed:
+                    value=item.get('mrnumber',item.get('id','')) if format=='bibtex' else item.get('fields',{}).get('L',[''])[0]
+                    try:observed.append(str(int(mathscinet_target(str(value)))))
+                    except (ServiceError,ValueError):observed.append(None)
+                if observed!=order:
+                    raise ServiceError('citation_identity_mismatch','Formatted citations differ from their MR publication records',format=format,evidence=evidence,partial_exports=exports)
+            artifact=self.store.put(text,media[format],self.source,actual,preserve_bytes=True,role='citation_export',format=format,count=len(payload),
+                mr_order=order,requested_mr_order=identifiers,parent_ref=evidence['ref'],serialization='Provider-formatted strings joined by blank lines; provider array order retained')
+            exports.append({'format':format,'artifact':artifact})
+        return exports
+
     def search(self, query, *, options, start=0, limit=20, cursor=None, export=None):
         if type(start) is not int or start < 0 or type(limit) is not int or not 1 <= limit <= 100:
             raise ServiceError("invalid_range", "MathSciNet requires start >= 0 and limit 1..100")
@@ -332,7 +368,7 @@ class MathSciNet:
         size = next(n for n in (5, 10, 20, 50, 100) if n >= limit)
         first_page = start // size + 1
         last_page = (start + limit - 1) // size + 1
-        records, evidence, citations = [], [], []
+        records, evidence, citations, citation_artifacts, export_errors = [], [], [], [], []
         total = None
         from playwright.sync_api import TimeoutError as BrowserTimeout
         for page_number in range(first_page, last_page + 1):
@@ -358,25 +394,13 @@ class MathSciNet:
                 # Save the entire received response; the requested window is a separate artifact.
                 records.extend(payload["results"][i] for i in selected_indexes)
                 if export in self.EXPORTS and selected_indexes:
-                    page.locator("div.article").first.wait_for()
-                    page.get_by_role("button", name="Export", exact=True).click()
-                    checkboxes = page.locator('input[name="Select article checkbox"]')
-                    for i in selected_indexes:
-                        checkbox = checkboxes.nth(i)
-                        if not checkbox.is_checked():
-                            checkbox.focus()
-                            checkbox.press("Space")
-                        if not checkbox.is_checked():
-                            raise ServiceError("export_selection_failed", "MathSciNet record was not selected for citation export")
-                    page.locator('select[name="Citation format select"]').select_option(self.EXPORTS[export])
-                    page.get_by_role("button", name="Get Citations").click()
-                    textarea = page.get_by_role("dialog").locator("textarea")
-                    textarea.wait_for()
-                    value = textarea.input_value()
-                    if not value.strip():
-                        raise ServiceError("empty_export", "MathSciNet citation export was empty")
-                    citations.append(value)
-                    page.get_by_role("button", name="OK", exact=True).click()
+                    try:
+                        selected=[str(payload['results'][i]['mrnumber']) for i in selected_indexes]
+                        native=self.citation_exports(selected,[export])[0]['artifact']
+                        citations.append(self.store.read(native['ref'])[1].decode('utf-8'))
+                        citation_artifacts.append(native)
+                    except ServiceError as error:
+                        export_errors.append({'page':page_number,**error.result})
                 if offset + len(payload["results"]) >= total:
                     break
             except BrowserTimeout:
@@ -385,15 +409,36 @@ class MathSciNet:
         exported = artifact
         if citations:
             media = {"bibtex": "application/x-bibtex", "endnote": "application/x-endnote-refer", "amsref": "text/plain", "tex": "application/x-tex"}[export]
-            exported = self.store.put("\n\n".join(citations), media, self.source, query_url, role="citation_export", format=export, count=len(records))
+            exported = citation_artifacts[0] if len(citations)==1 else self.store.put("\n\n".join(citations), media, self.source, query_url, preserve_bytes=True,
+                role="citation_export", format=export, count=sum(a['count'] for a in citation_artifacts),parent_refs=[a['ref'] for a in citation_artifacts])
+        if export_errors:
+            exported={'status':'partial','artifacts':citation_artifacts,'errors':export_errors,**({'artifact':exported} if citations else {})}
         has_more = start + len(records) < total
-        return {"status": "ok" if records else "not_found", "source": self.source, "query": query, "options": options,
+        return {"status": "partial" if export_errors else "ok" if records else "not_found", "source": self.source, "query": query, "options": options,
             "start": start, "requested": limit, "received": len(records), "total": total, "has_more": has_more,
             "next": {"start": start + len(records)} if has_more else None, "records": artifact, "export": exported,
             "evidence": evidence, "preview": [{"id": "MR" + str(row["mrnumber"]), "titles": row["titles"]} for row in records[:3]],
             "scope": "KUDOS → academic DB → MathSciNet proxy; selected source only"}
 
     def fetch(self, target, *, parts):
+        if set(parts)-{'metadata','abstract','fulltext','supplementary','export'}:
+            raise ServiceError('invalid_parts','Unknown requested content')
+        is_doi=bool(re.match(r'^(?:10\.\d{4,9}/|doi:|https?://(?:dx\.)?doi\.org/)',target,re.I))
+        is_name=not re.fullmatch(r'(?:MR)?[0-9]+',target,re.I) and not target.startswith(('http://','https://'))
+        if is_doi or is_name:
+            if not target.strip():raise ServiceError('invalid_target','Supply an MR number, DOI, document URL or title')
+            from api_adapters import doi
+            identifier=doi(target) if is_doi else None
+            query=('doi:' if is_doi else 'ti:')+'('+json.dumps(identifier or target,ensure_ascii=False)+')'
+            found=self.search(query,options={},limit=20,export='bibtex' if is_doi else None)
+            if is_doi and found['status']=='ok' and found.get('total')==found.get('received')==1:
+                rows=json.loads(self.store.read(found['records']['ref'])[1])
+                citations=bibliography(self.store.read(found['export']['ref'])[1],'application/x-bibtex')
+                if len(citations)==1 and citations[0].get('doi','').casefold()==identifier.casefold():
+                    result=self.fetch('MR'+str(rows[0]['mrnumber']),parts=parts)
+                    return {**result,'requested_target':target,'lookup':{'query':query,'records':found['records'],'export':found['export']}}
+            return {**found,'requested_target':target,'status':'selection_required' if found.get('received') else found['status'],
+                'message':'Select an MR record from the preserved candidates; DOI input is followed only when the native citation confirms it'}
         mr = mathscinet_target(target)
         page = self.page()
         host = urlsplit(page.url).hostname
@@ -433,6 +478,11 @@ class MathSciNet:
                     components[part] = {"status": "not_found", "reason": "No Review PDF link on this record"}
             else:
                 raise ServiceError("invalid_parts", "Unknown requested content", part=part)
+        if 'export' in parts:
+            try:
+                exports=self.citation_exports([mr],list(self.EXPORTS))
+                components['export']={'status':'available','artifact':exports[0]['artifact'],'artifacts':exports}
+            except ServiceError as error:components['export']=error.result
         return {"status": "ok" if all(v["status"] == "available" for v in components.values()) else "partial", "source": self.source,
             "target": "MR" + mr, "components": components, "records": text_artifact, "source_page": html_artifact,
             "links": [{"label": a.get_text(" ", strip=True), "url": self.store.sanitizer.url(urljoin(url, a["href"]))} for a in BeautifulSoup(html, "html.parser").select("a[href]")],

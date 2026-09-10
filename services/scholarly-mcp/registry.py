@@ -108,6 +108,8 @@ SOURCES["mathscinet"].usage = {
     "examples": [{"tool": "search", "arguments": {"source": "mathscinet", "query": "P versus NP", "limit": 5}}, {"tool": "search", "arguments": {"source": "mathscinet", "query": "ti:(\"P versus NP\")", "limit": 5, "export": "bibtex"}}],
     "limits": "검색 결과의 Article은 다른 출판사 자료일 수 있다. fetch는 MathSciNet 서지·리뷰·제공 요약·리뷰 PDF를 회수하며 Article을 다른 자료원에서 자동 확보하지 않는다. 리뷰와 논문 전문은 구별한다.",
     "export_formats": ["bibtex", "endnote", "amsref", "tex"],
+    "fetch": "MR 번호·MathSciNet article 링크·DOI·이름을 지정한다. 이름은 제목 후보 목록이다. DOI는 원 검색이 유일한 MR 기록을 반환하고 그 원 BibTeX의 DOI가 일치할 때 해당 문헌을 조회한다. 확인되지 않으면 후보로 남긴다. metadata는 원 서지·리뷰 페이지이고 supplementary는 제공되는 Review PDF다. 논문 전문과 리뷰를 구별한다.",
+    "exports": "fetch의 export.artifacts는 BibTeX·EndNote·AMSRef·TeX이며 기본 artifact는 BibTeX다. 검색 export에는 요청한 형식을 반환한다. 자료원이 형식화한 문자열을 빈 줄로 연결하며 다시 작성하지 않는다. 원 응답 순서 mr_order와 요청 순서 requested_mr_order를 보존한다. BibTeX MRNUMBER와 EndNote label도 응답의 MR 번호와 대조한다. 내보내기 실패 때 검색 레코드와 확보한 인용문을 보존한다.",
     "evidence": "2026-09-09 KUDOS 프록시 검색 입력·고급 필드·export 제어 실측. 다섯 도구의 실사용 검증은 별도 보고에 기록한다.",
 }
 
@@ -581,7 +583,7 @@ for category in ('author-repository','society-journal'):
     }
 
 for identifier, level in {
-    "mathscinet": "live_mcp_search_export_fetch_extract",
+    "mathscinet": "live_mcp_search_exact_mr_four_citations_name_doi_review_pdf",
     "wos": "live_mcp_search_full_record_title_url_native_xls_extract",
     "eccc": "live_mcp_search_revision_fetch",
     "crossref": "live_mcp_search_native_citation_eight_formats_extract",

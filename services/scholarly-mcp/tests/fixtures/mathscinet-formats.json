@@ -1,0 +1,10 @@
+[
+  {
+    "paperId": 2733384,
+    "arxivId": null,
+    "ams": "\\bib{MR2733384}{article}{\n   author={Landsberg, J. M.},\n   title={$P$ versus $NP$ and geometry},\n   journal={J. Symbolic Comput.},\n   volume={45},\n   date={2010},\n   number={12},\n   pages={1369--1377},\n   issn={0747-7171},\n   review={\\MR{2733384}},\n   doi={10.1016/j.jsc.2010.06.015},\n}",
+    "bib": "@article {MR2733384,\n    AUTHOR = {Landsberg, J. M.},\n     TITLE = {{$P$} versus {$NP$} and geometry},\n   JOURNAL = {J. Symbolic Comput.},\n  FJOURNAL = {Journal of Symbolic Computation},\n    VOLUME = {45},\n      YEAR = {2010},\n    NUMBER = {12},\n     PAGES = {1369--1377},\n      ISSN = {0747-7171,1095-855X},\n   MRCLASS = {68Q15 (14Q20)},\n  MRNUMBER = {2733384},\n       DOI = {10.1016/j.jsc.2010.06.015},\n       URL = {https://doi-org.libproxy.knu.ac.kr/10.1016/j.jsc.2010.06.015},\n}",
+    "tex": "J.~M. Landsberg, $P$ versus $NP$ and geometry, J. Symbolic Comput. {\\bf 45} (2010), no.~12, 1369--1377; MR2733384",
+    "end": "%0 Journal Article\n%A Landsberg, J. M.\n%T $P$ versus $NP$ and geometry\n%J J. Symbolic Comput.\n%V 45\n%D 2010\n%N 12\n%P 1369--1377\n%@ 0747-7171\n%@ 1095-855X\n%L MR2733384\n%R doi:10.1016/j.jsc.2010.06.015\n%U https://doi-org.libproxy.knu.ac.kr/10.1016/j.jsc.2010.06.015"
+  }
+]

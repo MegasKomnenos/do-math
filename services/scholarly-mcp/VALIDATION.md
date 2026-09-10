@@ -291,3 +291,8 @@ APS 원 인용문 조사에서 최초 직접 요청은 www.aps.org 바로가기 
 JSTOR의 [공식 내보내기 안내](https://support.jstor.org/hc/en-us/articles/115004871747-Citation-Management-Exporting-Citations-from-JSTOR)와 실제 공개 응답을 대조했다. citation/text/345683은 text/plain 1308바이트의 BibTeX이며 citation/bibtex 경로는 404였다. 실제 작동하는 Text file 경로를 연결하고 원 바이트를 application/x-bibtex로 보존하며 원 MIME도 기록한다. DOI 필드는 없었으나 url이 요청 문헌의 stable ID를 식별했다. jj.8306294는 원 RIS가 BOOK을 반환하지만 기존 식별자 검증이 거부하던 현행 도서 ID였다.
 
 새 SDK stdio data/validation/20260910T223621032180Z-jstor-workflow.json은 completed=true다. 문헌 345683의 서지·초록·원 RIS·BibTeX, jj.8306294 도서의 서지·두 인용문을 회수·추출했다. 원 제공자 안내문과 도서 유형·필드를 유지한다. 추가 형식 실패·다른 문헌 반환을 검사해 먼저 받은 서지/RIS 및 잘못된 원 export의 source_export를 보존했다. JSTOR 신규 회귀 4개가 통과했다. 검색·전문 회수는 이 성공 범위에 포함하지 않는다.
+
+
+MathSciNet의 mr:(2733384) 검색은 검색 API 한 건을 받은 뒤 문헌 화면으로 자동 이동했다. 기존 결과 목록·checkbox 내보내기는 source_timeout이었다. 실패 보고 data/validation/20260910T224121Z-mathscinet-lookup-probe.json을 보존했다. 문헌 Cite의 원 publications/format 응답은 paperId별 ams/bib/tex/end 문자열 배열이었다. 같은 기관 Playwright context에서 이 원 형식 응답을 회수하고 요청 MR 집합·중복 및 BibTeX MRNUMBER·EndNote label을 대조한다. 문자열을 다시 작성하지 않고 빈 줄로 연결하며 제공자 배열 순서와 요청 순서를 따로 기록한다.
+
+새 SDK stdio data/validation/20260910T225607960428Z-mathscinet-workflow.json은 completed=true다. 제목 검색 5건, MR2733384 네 인용문 형식·3쪽 Review PDF, MR 단건 검색 내보내기, 이름 후보 14건, Natural Proofs DOI 10.1006/jcss.1997.1494를 통한 MR1473047 조회·내보내기를 확인했다. DOI는 원 BibTeX를 대조한 뒤 따라가며 이름과 미확인 DOI는 후보로 남긴다. 이 보고는 인용문 내부 MR 대조를 추가한 뒤의 검사다. 공통 196개 검사가 통과했다.

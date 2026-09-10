@@ -145,3 +145,6 @@ Wiley의 Supporting Information 표에서도 원 파일을 회수한다. Models 
 
 
 JSTOR의 export는 원 RIS와 Text file 주소에서 받은 BibTeX를 함께 반환한다. 기본 artifact는 RIS이고 추가 파일은 artifacts에서 선택한다. 숫자 ID와 j.…·jj.… 도서/장 ID 및 stable URL을 지원한다. 인용문 URL의 stable ID를 대조하며 DOI 필드가 없는 BibTeX도 원 URL로 식별한다. 추가 형식의 실패는 이미 받은 서지·인용문과 함께 보존한다.
+
+
+MathSciNet 문헌 조회는 MR 번호·문헌 링크 외에 DOI와 이름을 받는다. 이름은 후보 검색이고, DOI는 유일한 결과와 원 BibTeX DOI를 대조한 뒤 MR 문헌을 조회한다. fetch의 export는 BibTeX·EndNote·AMSRef·TeX를 반환한다. 원 형식 문자열과 배열 순서를 유지하고 문헌 식별자를 대조한다. 정확한 MR 검색이 단건 문헌 화면으로 이동해도 내보내기를 수행한다. 리뷰 PDF는 인용된 논문의 전문이 아니다.

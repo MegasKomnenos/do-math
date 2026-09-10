@@ -42,11 +42,21 @@ async def main():
             assert search["status"] == "ok", search.get("code")
             extracted = await call("extract", {"ref": search["records"]["ref"], "fields": ["mrnumber", "titles"], "count": 5})
             assert extracted["returned"] == 5
-            fetched = await call("fetch", {"source": args.source, "target": "MR2733384", "parts": ["metadata", "supplementary"]})
+            fetched = await call("fetch", {"source": args.source, "target": "MR2733384", "parts": ["metadata", "supplementary", "export"]})
             assert fetched["status"] == "ok", fetched.get("code")
             pdf = fetched["components"]["supplementary"]["artifact"]
             page = await call("extract", {"ref": pdf["ref"], "count": 1})
             assert "2733384" in page["items"][0]["text"]
+            assert {x['format'] for x in fetched['components']['export']['artifacts']}=={'bibtex','endnote','amsref','tex'}
+            for item in fetched['components']['export']['artifacts']:
+                exported=await call('extract',{'ref':item['artifact']['ref'],'count':1})
+                assert exported['status']=='ok' and exported['returned']==1
+            exact=await call('search',{'source':'mathscinet','query':'mr:(2733384)','limit':2,'export':'bibtex'})
+            assert exact['status']=='ok' and exact['received']==1
+            named=await call('fetch',{'source':'mathscinet','target':'P versus NP','parts':['metadata']})
+            assert named['status']=='selection_required'
+            identified=await call('fetch',{'source':'mathscinet','target':'10.1006/jcss.1997.1494','parts':['metadata','export']})
+            assert identified['status']=='ok' and identified['target']=='MR1473047'
         elif args.source == "wos":
             search = await call("search", {"source": "wos", "query": 'TI=("P versus NP")', "limit": 5, "export": "plain"})
             assert search["status"] == "ok", search.get("code")

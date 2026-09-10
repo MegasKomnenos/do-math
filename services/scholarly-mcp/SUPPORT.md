@@ -2,7 +2,7 @@
 
 | 자료원 | source | 경로 | 구현 | 기능 | 실측 표지 |
 |---|---|---|---|---|---|
-| MathSciNet | mathscinet | playwright | partial | source_guide, search, fetch, export | live_mcp_search_export_fetch_extract |
+| MathSciNet | mathscinet | playwright | partial | source_guide, search, fetch, export | live_mcp_search_exact_mr_four_citations_name_doi_review_pdf |
 | Web of Science Core Collection + CPCI | wos | playwright | partial | source_guide, search, fetch, export | live_mcp_search_full_record_title_url_native_xls_extract |
 | Scopus | scopus | playwright | partial | source_guide, search, fetch, export | live_mcp_search_fetch_references_pagination_cited_by_extract |
 | ACM Digital Library | acm-dl | playwright | partial | source_guide, search, fetch, export | live_mcp_search_citation_pdf_and_supplement_zip_inner_pdf_extract |
