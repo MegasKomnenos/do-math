@@ -171,3 +171,9 @@ IEEE 원 참고문헌의 문헌 번호와 배열 형식을 대조하고 order·i
 Springer Nature의 원 부가자료 제어를 supplements.py에 연결했다. KUDOS Springer 경로로 연 Nature Communications의 DOI 10.1038/s41467-023-41217-6 문헌에 Supplementary Information과 Peer Review File 두 PDF가 있었다. 실제 파일 호스트는 media.springernature.com이었으며 파일 다운로드 허용 목록에만 추가했다. 문헌 전용 보충 자료 제어의 제목·설명·URL과 파일 경로에 표시된 DOI를 보존하고, 다른 문헌 DOI이면 명시적 선택을 요구한다. 페이지의 다른 PDF 링크를 첨부로 섞지 않는 검사도 통과했다.
 
 실제 MCP 보고 `data/validation/20260910T052618Z-springer-supplements-mcp.json`은 completed=true다. 두 파일의 native PDF를 보존하고 각각 42쪽·19쪽과 첫 쪽 추출을 확인했다. 파일 하나의 실패가 먼저 받은 파일을 없애지 않도록 전체 목록·파일별 상태·성공 파일을 함께 반환하는 대역 검사도 통과했다. 부가자료 제어가 없는 다른 레이아웃은 source_page로 남기며 파일 부재라고 단정하지 않는다. 원 제어 두 개만 기계적으로 선택한 HTML을 fixture로 보존했다. 뒤에서 덮어쓰던 오래된 Springer 사용 설명도 제거해 현행 설명 한 곳으로 정리했다. 공통 검사 117개가 통과했다.
+
+zbMATH 문헌 1079979, Zbl 0884.68055, DOI 10.1006/jcss.1997.1494의 원 editorial_contributions는 summary 한 개였지만 텍스트는 라이선스 충돌로 내용을 제공하지 않는다는 75자 안내문이었다. 기존 fetch가 이를 abstract available로 반환하던 결함을 재현해 restricted/content_license_restriction으로 수리했다. 실제 텍스트가 있는 review·summary는 원 유형과 source_page 상태를 유지하고 저자 초록으로 추론하지 않는다. 정상 빈 배열·다른 문헌 ID 응답·라이선스 제한을 별도로 검사했다. 원 참고문헌 40건은 supplementary로 회수한다.
+
+zbMATH의 start를 limit 배수로 제한하던 구현도 바꿨다. 필요한 원 페이지를 조합하고, 전체 건수·원 행 수를 대조한 뒤 요청 창만 반환한다. 원 페이지들을 evidence와 native export로 보존하고 문헌 artifact에 모든 근거 참조를 기록한다. 실제 MCP에서 start=1, limit=2의 두 문헌을 start=0, limit=4 결과의 같은 구간과 대조했다. DOI, 제목 후보, ?q=an:0884.68055 링크와 참조 40건도 통과했다. 성공 보고는 `data/validation/20260910T055908908091Z-zbmath-workflow.json`이다.
+
+DOI는 현재 문헌 links의 doi 항목과 대조하며 참고문헌 DOI로 식별하지 않는다. ID와 Zbl 번호도 원 record.id·identifier와 각각 대조한다. 10.으로 시작하는 점 구분 번호를 DOI로 잘못 해석하지 않도록 DOI의 슬래시 형태를 구별했다. /v1/openapi.json은 별도 자격 없이 받았으며 두 웹 BibTeX 후보 URL 시험은 403이었다. 이 후보 경로의 존재나 native BibTeX 회수 성공을 주장하지 않는다. 공통 검사 122개가 통과했다.

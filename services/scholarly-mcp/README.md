@@ -108,3 +108,5 @@ Publisher 어댑터에 .pdf 링크를 직접 주면 그 파일의 바이트와 P
 SIAM의 /doi/pdf/DOI 주소도 명시적 PDF 파일로 처리한다. First-Order Methods in Optimization의 Front Matter 10쪽은 실제 MCP에서 회수·추출했다. 검색과 native 인용문 연결은 남아 있다. IEEE supplementary.references에는 문헌 번호를 대조한 원 참고문헌 배열이 있으며 extract로 order·title·text·links 등을 읽는다. IEEE 개별 첨부 회수는 남아 있으므로 supplementary 전체는 partial로 표시한다.
 
 Springer Nature의 인식된 Supplementary Information·Peer Review File 제어는 실제 파일을 회수한다. supplementary.index는 원 파일 목록이고 files의 각 artifact를 extract로 읽는다. 파일별 실패와 이미 회수한 파일을 함께 반환한다. Nature Communications의 The complexity of NISQ에서 보충 설명 42쪽과 심사 기록 19쪽을 실제 MCP로 확인했다. 다른 레이아웃에서 제어를 찾지 못하면 원 페이지와 source_page 상태를 유지한다.
+
+zbMATH는 DOI·이름·Zbl 번호·기존 문헌 링크를 받아 조회하고, 검색의 임의 start 위치를 원 페이지에서 조합한다. 리뷰·요약은 원 editorial_contributions 유형을 유지한다. 라이선스 충돌 안내는 abstract available로 표시하지 않는다. supplementary의 selection을 extract에 전달하면 원 참고문헌 배열을 읽을 수 있다.

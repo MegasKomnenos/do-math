@@ -1,0 +1,818 @@
+{
+  "biographic_references": [],
+  "contributors": {
+    "author_references": [],
+    "authors": [
+      {
+        "aliases": [],
+        "checked": "1",
+        "codes": [
+          "razborov.alexander-a"
+        ],
+        "name": "Razborov, Alexander A."
+      },
+      {
+        "aliases": [],
+        "checked": "0",
+        "codes": [
+          "rudich.steven"
+        ],
+        "name": "Rudich, Steven"
+      }
+    ],
+    "editors": []
+  },
+  "database": "Zbl",
+  "datestamp": "0001-01-01T00:00:00Z",
+  "document_type": {
+    "code": "j",
+    "description": "journal article"
+  },
+  "editorial_contributions": [
+    {
+      "contribution_type": "summary",
+      "language": "English",
+      "reviewer": {
+        "author_code": null,
+        "name": null,
+        "reviewer_id": null,
+        "sign": null
+      },
+      "text": "zbMATH Open Web Interface contents unavailable due to conflicting licenses."
+    }
+  ],
+  "id": 1079979,
+  "identifier": "0884.68055",
+  "keywords": [],
+  "language": {
+    "addition": [
+      null
+    ],
+    "languages": [
+      "English"
+    ]
+  },
+  "license": [],
+  "links": [
+    {
+      "identifier": "10.1006/jcss.1997.1494",
+      "type": "doi",
+      "url": "https://doi.org/10.1006/jcss.1997.1494"
+    }
+  ],
+  "msc": [
+    {
+      "code": "68Q15",
+      "scheme": "msc2020",
+      "text": "Complexity classes (hierarchies, relations among complexity classes, etc.)"
+    }
+  ],
+  "references": [
+    {
+      "doi": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "position": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "text": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "zbmath": {
+        "author_codes": [
+          "ajtai.miklos"
+        ],
+        "document_id": 3821701,
+        "msc": [
+          "03C07",
+          "03C40",
+          "03H15"
+        ],
+        "prefix": "Zbl",
+        "series_id": 968,
+        "year": "1983"
+      }
+    },
+    {
+      "doi": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "position": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "text": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "zbmath": {
+        "author_codes": [
+          "alon.noga",
+          "boppana.ravi-b"
+        ],
+        "document_id": 4026827,
+        "msc": [
+          "68Q25",
+          "68R10",
+          "94C10"
+        ],
+        "prefix": "Zbl",
+        "series_id": 919,
+        "year": "1987"
+      }
+    },
+    {
+      "doi": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "position": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "text": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "zbmath": {
+        "author_codes": [
+          "andreev.alexander-e"
+        ],
+        "document_id": 3999837,
+        "msc": [
+          "94C10",
+          "68Q25"
+        ],
+        "prefix": "Zbl",
+        "series_id": 717,
+        "year": "1985"
+      }
+    },
+    {
+      "doi": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "position": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "text": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "zbmath": {
+        "author_codes": [
+          "andreev.alexander-e"
+        ],
+        "document_id": 4049557,
+        "msc": [
+          "94C10",
+          "68Q25"
+        ],
+        "prefix": "Zbl",
+        "series_id": 296,
+        "year": "1987"
+      }
+    },
+    {
+      "doi": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "position": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "text": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "zbmath": {
+        "author_codes": [
+          "andreev.alexander-e"
+        ],
+        "document_id": 4053524,
+        "msc": [
+          "94C10"
+        ],
+        "prefix": "Zbl",
+        "series_id": 170,
+        "year": "1987"
+      }
+    },
+    {
+      "doi": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "position": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "text": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "zbmath": {
+        "author_codes": [
+          "furst.merrick-l",
+          "rudich.steven",
+          "aspnes.james",
+          "beigel.richard"
+        ],
+        "document_id": 617046,
+        "msc": [
+          "68Q15",
+          "05E35",
+          "94C10",
+          "42C15"
+        ],
+        "prefix": "Zbl",
+        "series_id": 919,
+        "year": "1994"
+      }
+    },
+    {
+      "doi": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "position": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "text": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "zbmath": {
+        "author_codes": [
+          "baker.theodore-p",
+          "solovay.robert-m",
+          "gill.john-t-iii"
+        ],
+        "document_id": 3506177,
+        "msc": [
+          "68Q15",
+          "68Q25",
+          "68Q45"
+        ],
+        "prefix": "Zbl",
+        "series_id": 706,
+        "year": "1975"
+      }
+    },
+    {
+      "doi": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "position": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "text": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "zbmath": {
+        "author_codes": [],
+        "document_id": null,
+        "msc": [],
+        "prefix": null,
+        "series_id": 0,
+        "year": null
+      }
+    },
+    {
+      "doi": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "position": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "text": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "zbmath": {
+        "author_codes": [
+          "blum.manuel",
+          "micali.silvio"
+        ],
+        "document_id": 3872681,
+        "msc": [
+          "68P25",
+          "94A60",
+          "65C10"
+        ],
+        "prefix": "Zbl",
+        "series_id": 706,
+        "year": "1984"
+      }
+    },
+    {
+      "doi": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "position": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "text": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "zbmath": {
+        "author_codes": [
+          "pitassi.toniann",
+          "raz.ran",
+          "bonet.maria-luisa"
+        ],
+        "document_id": 1263234,
+        "msc": [
+          "03F20"
+        ],
+        "prefix": "Zbl",
+        "series_id": 0,
+        "year": "1995"
+      }
+    },
+    {
+      "doi": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "position": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "text": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "zbmath": {
+        "author_codes": [
+          "furst.merrick-l",
+          "sipser.michael",
+          "saxe.james-b"
+        ],
+        "document_id": 3849129,
+        "msc": [
+          "94C10",
+          "68Q25",
+          "03D15"
+        ],
+        "prefix": "Zbl",
+        "series_id": 577,
+        "year": "1984"
+      }
+    },
+    {
+      "doi": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "position": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "text": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "zbmath": {
+        "author_codes": [],
+        "document_id": null,
+        "msc": [],
+        "prefix": null,
+        "series_id": 0,
+        "year": null
+      }
+    },
+    {
+      "doi": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "position": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "text": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "zbmath": {
+        "author_codes": [],
+        "document_id": null,
+        "msc": [],
+        "prefix": null,
+        "series_id": 0,
+        "year": null
+      }
+    },
+    {
+      "doi": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "position": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "text": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "zbmath": {
+        "author_codes": [],
+        "document_id": null,
+        "msc": [],
+        "prefix": null,
+        "series_id": 0,
+        "year": null
+      }
+    },
+    {
+      "doi": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "position": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "text": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "zbmath": {
+        "author_codes": [],
+        "document_id": null,
+        "msc": [],
+        "prefix": null,
+        "series_id": 0,
+        "year": null
+      }
+    },
+    {
+      "doi": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "position": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "text": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "zbmath": {
+        "author_codes": [],
+        "document_id": null,
+        "msc": [],
+        "prefix": null,
+        "series_id": 0,
+        "year": null
+      }
+    },
+    {
+      "doi": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "position": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "text": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "zbmath": {
+        "author_codes": [
+          "wigderson.avi",
+          "karchmer.mauricio"
+        ],
+        "document_id": 4139682,
+        "msc": [
+          "94C10",
+          "06E30",
+          "05C40"
+        ],
+        "prefix": "Zbl",
+        "series_id": 1220,
+        "year": "1990"
+      }
+    },
+    {
+      "doi": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "position": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "text": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "zbmath": {
+        "author_codes": [],
+        "document_id": null,
+        "msc": [],
+        "prefix": null,
+        "series_id": 0,
+        "year": null
+      }
+    },
+    {
+      "doi": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "position": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "text": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "zbmath": {
+        "author_codes": [
+          "krajicek.jan"
+        ],
+        "document_id": 1067264,
+        "msc": [
+          "03F20",
+          "03F30",
+          "03B05",
+          "03D15",
+          "68Q15"
+        ],
+        "prefix": "Zbl",
+        "series_id": 524,
+        "year": "1997"
+      }
+    },
+    {
+      "doi": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "position": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "text": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "zbmath": {
+        "author_codes": [],
+        "document_id": null,
+        "msc": [],
+        "prefix": null,
+        "series_id": 0,
+        "year": null
+      }
+    },
+    {
+      "doi": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "position": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "text": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "zbmath": {
+        "author_codes": [
+          "muroga.saburo"
+        ],
+        "document_id": 3385535,
+        "msc": [
+          "94C10",
+          "94-02",
+          "68-02",
+          "68Q45",
+          "90C05",
+          "90C10"
+        ],
+        "prefix": "Zbl",
+        "series_id": 0,
+        "year": "1971"
+      }
+    },
+    {
+      "doi": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "position": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "text": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "zbmath": {
+        "author_codes": [
+          "nisan.noam"
+        ],
+        "document_id": 4211508,
+        "msc": [
+          "68Q25"
+        ],
+        "prefix": "Zbl",
+        "series_id": 919,
+        "year": "1991"
+      }
+    },
+    {
+      "doi": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "position": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "text": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "zbmath": {
+        "author_codes": [
+          "nisan.noam",
+          "impagliazzo.russell"
+        ],
+        "document_id": 220481,
+        "msc": [
+          "68Q25",
+          "06E30",
+          "94C10"
+        ],
+        "prefix": "Zbl",
+        "series_id": 1331,
+        "year": "1993"
+      }
+    },
+    {
+      "doi": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "position": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "text": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "zbmath": {
+        "author_codes": [
+          "zwick.uri",
+          "paterson.mike-s"
+        ],
+        "document_id": 220482,
+        "msc": [
+          "68Q25",
+          "94C10",
+          "06E30"
+        ],
+        "prefix": "Zbl",
+        "series_id": 1331,
+        "year": "1993"
+      }
+    },
+    {
+      "doi": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "position": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "text": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "zbmath": {
+        "author_codes": [
+          "pudlak.pavel"
+        ],
+        "document_id": 1097744,
+        "msc": [
+          "03F20",
+          "68Q17",
+          "03B35",
+          "94C10"
+        ],
+        "prefix": "Zbl",
+        "series_id": 524,
+        "year": "1997"
+      }
+    },
+    {
+      "doi": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "position": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "text": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "zbmath": {
+        "author_codes": [
+          "raz.ran",
+          "wigderson.avi"
+        ],
+        "document_id": 622292,
+        "msc": [
+          "68Q05",
+          "68Q25",
+          "94C10"
+        ],
+        "prefix": "Zbl",
+        "series_id": 477,
+        "year": "1992"
+      }
+    },
+    {
+      "doi": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "position": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "text": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "zbmath": {
+        "author_codes": [
+          "razborov.alexander-a"
+        ],
+        "document_id": 4008289,
+        "msc": [
+          "94C10",
+          "68Q25",
+          "03B05"
+        ],
+        "prefix": "Zbl",
+        "series_id": 717,
+        "year": "1985"
+      }
+    },
+    {
+      "doi": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "position": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "text": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "zbmath": {
+        "author_codes": [
+          "razborov.alexander-a"
+        ],
+        "document_id": 3937110,
+        "msc": [
+          "94C10"
+        ],
+        "prefix": "Zbl",
+        "series_id": 157,
+        "year": "1985"
+      }
+    },
+    {
+      "doi": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "position": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "text": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "zbmath": {
+        "author_codes": [
+          "razborov.alexander-a"
+        ],
+        "document_id": 4029460,
+        "msc": [
+          "94C10",
+          "68Q25"
+        ],
+        "prefix": "Zbl",
+        "series_id": 157,
+        "year": "1987"
+      }
+    },
+    {
+      "doi": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "position": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "text": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "zbmath": {
+        "author_codes": [],
+        "document_id": null,
+        "msc": [],
+        "prefix": null,
+        "series_id": 0,
+        "year": null
+      }
+    },
+    {
+      "doi": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "position": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "text": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "zbmath": {
+        "author_codes": [
+          "razborov.alexander-a"
+        ],
+        "document_id": 176870,
+        "msc": [
+          "68Q25",
+          "94C10"
+        ],
+        "prefix": "Zbl",
+        "series_id": 0,
+        "year": "1992"
+      }
+    },
+    {
+      "doi": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "position": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "text": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "zbmath": {
+        "author_codes": [
+          "razborov.alexander-a"
+        ],
+        "document_id": 981681,
+        "msc": [
+          "68Q25",
+          "94C10"
+        ],
+        "prefix": "Zbl",
+        "series_id": 0,
+        "year": "1997"
+      }
+    },
+    {
+      "doi": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "position": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "text": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "zbmath": {
+        "author_codes": [],
+        "document_id": null,
+        "msc": [],
+        "prefix": null,
+        "series_id": 0,
+        "year": null
+      }
+    },
+    {
+      "doi": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "position": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "text": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "zbmath": {
+        "author_codes": [],
+        "document_id": 1270533,
+        "msc": [
+          "00B25"
+        ],
+        "prefix": "Zbl",
+        "series_id": 0,
+        "year": "1994"
+      }
+    },
+    {
+      "doi": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "position": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "text": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "zbmath": {
+        "author_codes": [
+          "razborov.alexander-a"
+        ],
+        "document_id": 2102736,
+        "msc": [
+          "03F20",
+          "68Q17",
+          "03F30"
+        ],
+        "prefix": "Zbl",
+        "series_id": 0,
+        "year": "1996"
+      }
+    },
+    {
+      "doi": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "position": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "text": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "zbmath": {
+        "author_codes": [],
+        "document_id": null,
+        "msc": [],
+        "prefix": null,
+        "series_id": 0,
+        "year": null
+      }
+    },
+    {
+      "doi": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "position": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "text": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "zbmath": {
+        "author_codes": [
+          "tardos.eva"
+        ],
+        "document_id": 2501,
+        "msc": [
+          "94C15",
+          "68Q25"
+        ],
+        "prefix": "Zbl",
+        "series_id": 919,
+        "year": "1988"
+      }
+    },
+    {
+      "doi": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "position": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "text": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "zbmath": {
+        "author_codes": [
+          "wegener.ingo"
+        ],
+        "document_id": 4012495,
+        "msc": [
+          "94C10",
+          "68Q25",
+          "68Q05",
+          "06E30",
+          "03D15"
+        ],
+        "prefix": "Zbl",
+        "series_id": 0,
+        "year": "1987"
+      }
+    },
+    {
+      "doi": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "position": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "text": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "zbmath": {
+        "author_codes": [
+          "wigderson.avi"
+        ],
+        "document_id": 524142,
+        "msc": [
+          "68Q15",
+          "94C10",
+          "03D15"
+        ],
+        "prefix": "Zbl",
+        "series_id": 0,
+        "year": "1993"
+      }
+    },
+    {
+      "doi": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "position": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "text": "zbMATH Open Web Interface contents unavailable due to conflicting licenses.",
+      "zbmath": {
+        "author_codes": [],
+        "document_id": null,
+        "msc": [],
+        "prefix": null,
+        "series_id": 0,
+        "year": null
+      }
+    }
+  ],
+  "source": {
+    "book": [],
+    "pages": "24-35",
+    "series": [
+      {
+        "acronym": null,
+        "issn": [
+          {
+            "number": "0022-0000",
+            "type": "print"
+          },
+          {
+            "number": "1090-2724",
+            "type": "electronic"
+          }
+        ],
+        "issue": "1",
+        "issue_id": 41753,
+        "parallel_title": null,
+        "part": null,
+        "publisher": "Elsevier (Academic Press), San Diego, CA",
+        "series_id": 483,
+        "short_title": "J. Comput. Syst. Sci.",
+        "title": "Journal of Computer and System Sciences",
+        "volume": "55",
+        "year": "1997"
+      }
+    ],
+    "source": "J. Comput. Syst. Sci. 55, No. 1, 24-35 (1997)."
+  },
+  "states": [
+    [
+      "o",
+      "has open version"
+    ],
+    [
+      "r",
+      "item has references"
+    ],
+    [
+      "c",
+      "is cited"
+    ]
+  ],
+  "title": {
+    "addition": null,
+    "original": null,
+    "subtitle": null,
+    "title": "Natural proofs"
+  },
+  "year": "1997",
+  "zbmath_url": "https://zbmath.org/1079979"
+}

@@ -159,8 +159,8 @@ API_USAGE = {
     "zbmath": {
         "search": "query는 zbMATH 문법이다. ti:제목,au:저자,cc:MSC,py:연도 등의 필드 태그와 & (AND), | (OR), 괄호를 사용한다. 구조화 검색에서는 query를 비우고 options에 Title, Author name, MSC, Year, DOI 등 표시 필드 이름과 값을 준다.",
         "options": {"Title": "문헌 제목", "Author name": "저자명", "MSC": "분류코드. * 접두사는 주분류로 한정", "Year": "연도 또는 2000-2020", "DOI": "DOI", "Document type": "j 저널논문,a 수록논문,b 책,p 프리프린트", "Database": "Zbl,JFM,eram,arxiv"},
-        "fetch": "zbMATH 문헌 ID 또는 zbmath.org/ID. 리뷰·요약은 원래 필드와 제공 상태를 보존한다.",
-        "limits": "limit 1..100. start는 limit의 배수. 검색식과 구조화 필드는 한 요청에서 혼용하지 않는다. 추가 구조화 필드는 source_options 전체 목록에 있다.",
+        "fetch": "zbMATH ID·Zbl 번호·zbmath.org/ID·?q=an:번호·DOI를 지정한다. 제목은 후보 검색으로 반환한다. 문헌 ID와 DOI를 원 기록에서 대조한다. abstract는 원 editorial_contributions를 가리키며 review·summary 구분을 유지한다. 라이선스 충돌 안내문이면 restricted이며 저자 초록으로 표시하지 않는다. supplementary는 원 references 배열이며 반환한 selection으로 extract한다.",
+        "limits": "limit 1..100, start는 0부터 임의 위치다. 경계를 넘으면 원 페이지를 더 읽고 요청 창만 반환한다. native export는 읽은 원 페이지들을 보존한다. 검색식과 구조화 필드는 한 요청에서 혼용하지 않는다. 추가 구조화 필드는 source_options 전체 목록에 있다.",
         "examples": [{"tool": "search", "arguments": {"source": "zbmath", "query": "", "options": {"Title": "P versus NP"}, "limit": 2}}],
         "official": ["https://api.zbmath.org/v1/openapi.json", "https://api.zbmath.org/"]},
     "openalex": {
@@ -557,7 +557,7 @@ for identifier, level in {
     "eccc": "live_mcp_search_revision_fetch",
     "crossref": "live_mcp_search_native_citation_eight_formats_extract",
     "arxiv": "live_mcp_search_pinned_html_source_archive_tex_extract",
-    "zbmath": "live_mcp_search_extract",
+    "zbmath": "live_mcp_arbitrary_window_doi_legacy_link_license_state_references",
     "github": "live_adapter_pinned_file_fetch",
     "mathlib": "live_mcp_pinned_source_search_file_fetch_line_comparison",
     "math-comp": "live_mcp_pinned_source_search_file_fetch_line_comparison",

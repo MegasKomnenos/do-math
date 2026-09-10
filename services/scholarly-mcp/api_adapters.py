@@ -381,31 +381,105 @@ class ZBMath(APIAdapter):
 
     def search(self, query, *, options, start=0, limit=20, cursor=None, export=None):
         self.validate(options, start, limit)
-        if start % limit:
-            raise ServiceError("invalid_range", "zbMATH start must be a multiple of limit")
+        if cursor:
+            raise ServiceError('invalid_cursor','zbMATH uses start and limit, not a cursor')
         if options and query:
             raise ServiceError("invalid_options", "Use either a native query or structured fields; their combination is not defined")
         endpoint = "_structured_search" if options else "_search"
-        params = {"page": start // limit, "results_per_page": limit, **(options or {"search_string": query})}
-        raw, evidence = self.request("https://api.zbmath.org/v1/document/" + endpoint, params=params)
-        rows = raw.get("result")
-        if not isinstance(rows, list):
-            raise ServiceError("invalid_response", "zbMATH did not return its document array", evidence=evidence)
-        total = raw.get("status", {}).get("nr_total_results")
-        if total is not None: total = int(total)
-        return self.export_page(self.page(rows, total, evidence, query, options, start, limit, more=len(rows) == limit if total is None else None), export)
+        page_number=start//limit
+        rows,evidence=[],[]
+        total=None
+        while True:
+            params={"page":page_number,"results_per_page":limit,**(options or {"search_string":query})}
+            raw,proof=self.request('https://api.zbmath.org/v1/document/'+endpoint,params=params)
+            evidence.append(proof)
+            native=raw.get('result')
+            reported=raw.get('status',{}).get('nr_total_results')
+            reported=int(reported) if reported is not None else None
+            if not isinstance(native,list) or any(not isinstance(row,dict) or not row.get('id') for row in native):
+                raise ServiceError('invalid_response','zbMATH returned no native document array',evidence=proof)
+            if len(evidence)>1 and reported!=total:
+                raise ServiceError('range_mismatch','zbMATH result total changed between pages',evidence=evidence)
+            total=reported
+            first=page_number*limit
+            if total is not None and len(native)!=min(limit,max(0,total-first)):
+                raise ServiceError('range_mismatch','zbMATH page does not match its result count',evidence=proof)
+            rows.extend(row for index,row in enumerate(native,first) if start<=index<start+limit)
+            if len(rows)==limit or len(native)<limit or total is not None and first+len(native)>=total:
+                break
+            page_number+=1
+        artifact=self.store.put(encoded(rows),'application/json',self.source,evidence[0]['url'],role='records',
+                                request={'query':query,'options':options,'start':start,'limit':limit},evidence_refs=[proof['ref'] for proof in evidence])
+        more=start+len(rows)<total if total is not None else len(native)==limit
+        result={'status':'ok' if rows else 'not_found','source':self.source,'query':query,'options':options,'start':start,'requested':limit,
+                'received':len(rows),'total':total,'has_more':more,'next':{'start':start+len(rows)} if more else None,
+                'records':artifact,'export':artifact,'evidence':evidence[0] if len(evidence)==1 else {'artifacts':evidence},'preview':[brief(row) for row in rows[:3]]}
+        return self.export_page(result,export)
 
     def fetch(self, target, *, parts):
         value = target
-        if value.startswith("https://zbmath.org/"):
-            value = value.removeprefix("https://zbmath.org/")
+        requested_doi=None
+        if re.match(r'^(?:10\.\d{4,9}/|doi:|https?://(?:dx\.)?doi\.org/)',value,re.I):
+            requested_doi=doi(value)
+            found=self.search('',options={'DOI':requested_doi},limit=2)
+            if found['total']!=1:
+                return {**found,'status':'selection_required' if found['received'] else 'not_found'}
+            value=str(json.loads(self.store.read(found['records']['ref'])[1])[0]['id'])
+        elif value.startswith(('https://','http://')):
+            parsed=urlsplit(value)
+            if parsed.hostname not in self.hosts:
+                raise ServiceError('source_boundary','Use a zbMATH record URL or DOI')
+            query=parse_qs(parsed.query).get('q',[])
+            if query:
+                matched=re.fullmatch(r'an:\s*([0-9]+(?:\.[0-9]+)?)',query[0],re.I)
+                value=matched[1] if matched and len(query)==1 else ''
+            else:
+                value=parsed.path.removeprefix('/v1/document/').strip('/')
+            if not re.fullmatch(r'[0-9]+(?:\.[0-9]+)?',value):
+                raise ServiceError('invalid_target','This zbMATH URL identifies no single document')
         if not re.fullmatch(r"[0-9]+(?:\.[0-9]+)?", value):
-            raise ServiceError("invalid_target", "Use a zbMATH document number")
+            found=self.search('',options={'Title':target},limit=20)
+            return {**found,'status':'selection_required' if found['received'] else 'not_found'}
         raw, evidence = self.request("https://api.zbmath.org/v1/document/" + value)
         record = raw.get("result")
         if not isinstance(record, dict):
             raise ServiceError("invalid_response", "zbMATH document result is missing", evidence=evidence)
-        return self.fetched([record], evidence, parts, ("metadata", "abstract", "export"))
+        actual=str(record.get('identifier') if '.' in value else record.get('id'))
+        normalize=lambda number:'.'.join(str(int(part)) for part in number.split('.')) if re.fullmatch(r'\d+(?:\.\d+)?',number) else number
+        if normalize(actual)!=normalize(value):
+            raise ServiceError('identity_mismatch','zbMATH record does not match the requested identifier',evidence=evidence)
+        if requested_doi:
+            linked=[]
+            for link in record.get('links') or []:
+                if link.get('type')=='doi':
+                    try:
+                        linked.append(doi(link.get('identifier') or link.get('url') or '').casefold())
+                    except ServiceError:
+                        continue
+            if requested_doi.casefold() not in linked:
+                raise ServiceError('identity_mismatch','zbMATH document links contain no matching DOI',evidence=evidence)
+        result=self.fetched([record],evidence,parts,('metadata','export'))
+        result.update(target=target,identity={'zbmath_id':record.get('id'),'identifier':record.get('identifier'),'requested_doi':requested_doi})
+        if 'abstract' in parts:
+            entries=[]
+            notice='zbMATH Open Web Interface contents unavailable due to conflicting licenses.'
+            for index,entry in enumerate(record.get('editorial_contributions') or []):
+                content=' '.join((entry.get('text') or '').split())
+                state='restricted' if content==notice else 'source_page' if content else 'not_found'
+                entries.append({'index':index,'type':entry.get('contribution_type'),'status':state})
+            states={entry['status'] for entry in entries}
+            status='source_page' if 'source_page' in states else 'restricted' if 'restricted' in states else 'not_found'
+            result['components']['abstract']={'status':status,'artifact':result['records'],'selection':'/0/editorial_contributions','entries':entries,
+                                              'scope':'Native reviews and summaries keep their labels; an author abstract is not inferred'}
+            if status=='restricted':
+                result['components']['abstract']['code']='content_license_restriction'
+        if 'supplementary' in parts:
+            references=record.get('references') or []
+            result['components']['supplementary']={'status':'available' if references else 'not_found','artifact':result['records'],
+                                                  'selection':'/0/references','reference_count':len(references),'scope':'Native indexed references; external links are not followed'}
+        statuses={component['status'] for component in result['components'].values()}
+        result['status']='ok' if statuses=={'available'} else 'restricted' if statuses=={'restricted'} else 'not_found' if statuses=={'not_found'} else 'partial'
+        return result
 
 
 class OpenAlex(APIAdapter):

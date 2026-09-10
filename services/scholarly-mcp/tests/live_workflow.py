@@ -209,6 +209,23 @@ async def main():
             source = await call('extract', {'ref': fetched['components']['supplementary']['artifact']['ref'], 'selection': 'main.tex', 'count': 1})
             lines = await call('extract', {'ref': source['items'][0]['artifact']['ref'], 'count': 3})
             assert lines['status'] == 'ok' and lines['returned'] == 3
+        elif args.source=='zbmath':
+            window=await call('search',{'source':'zbmath','query':'','options':{'Title':'Natural proofs'},'start':1,'limit':2,'export':'native'})
+            assert window['status']=='ok' and window['received']==2
+            chosen=await call('extract',{'ref':window['records']['ref'],'count':2,'fields':['id','title']})
+            baseline=await call('search',{'source':'zbmath','query':'','options':{'Title':'Natural proofs'},'limit':4})
+            first=await call('extract',{'ref':baseline['records']['ref'],'count':4,'fields':['id']})
+            assert [row['id'] for row in chosen['items']]==[row['id'] for row in first['items'][1:3]]
+            found=await call('fetch',{'source':'zbmath','target':'10.1006/jcss.1997.1494','parts':['metadata','abstract','supplementary','export']})
+            assert found['status']=='partial' and found['identity']['zbmath_id']==1079979
+            assert found['components']['abstract']['status']=='restricted'
+            references=found['components']['supplementary']
+            rows=await call('extract',{'ref':references['artifact']['ref'],'selection':references['selection'],'count':40})
+            assert rows['returned']==40
+            linked=await call('fetch',{'source':'zbmath','target':'https://zbmath.org/?q=an:0884.68055','parts':['metadata']})
+            assert linked['status']=='ok' and linked['identity']['zbmath_id']==1079979
+            candidates=await call('fetch',{'source':'zbmath','target':'Natural proofs','parts':['metadata']})
+            assert candidates['status']=='selection_required'
         elif args.source in ('crossref', 'crossmark'):
             found = await call('search', {'source': args.source, 'query': '', 'options': {'filter': 'doi:10.1145/321250.321251'}, 'limit': 1, 'export': 'bibtex'})
             assert found['status'] == 'ok' and found['received'] == 1
