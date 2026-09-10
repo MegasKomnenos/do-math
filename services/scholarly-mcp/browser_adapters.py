@@ -654,6 +654,8 @@ class ECCC:
             "scope": "All rows supplied on this ECCC search page are preserved, including duplicate hits. Snippets are not abstracts. The page provides no independent corpus-wide total."}
 
     def fetch(self, target, *, parts):
+        if set(parts)-{'metadata','abstract','fulltext','supplementary','export'}:
+            raise ServiceError('invalid_parts','Unknown requested content')
         revision = None
         if target.startswith(("https://", "http://")):
             parsed = urlsplit(target)
@@ -667,7 +669,11 @@ class ECCC:
         else:
             match = re.fullmatch(r"TR([0-9]{2})-([0-9]{3})(?:r([0-9]+))?", target, re.I)
             if not match:
-                raise ServiceError("invalid_target", "Use TRyy-nnn, TRyy-nnnrN or an ECCC report URL")
+                if not target.strip() or re.match(r'TR[0-9]{2}-',target,re.I):
+                    raise ServiceError("invalid_target", "Use TRyy-nnn, TRyy-nnnrN, an ECCC report URL or a title")
+                candidates=self.search(target,options={},limit=20)
+                return {**candidates,'requested_target':target,'status':'selection_required' if candidates.get('received') else candidates['status'],
+                    'message':'Select an ECCC report and revision from the native search candidates'}
             year = int(match.group(1)) + (1900 if int(match.group(1)) >= 94 else 2000)
             number = int(match.group(2))
             revision = int(match.group(3)) if match.group(3) else None

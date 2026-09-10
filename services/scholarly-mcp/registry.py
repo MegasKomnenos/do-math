@@ -129,7 +129,7 @@ SOURCES["eccc"].transport = "playwright"
 SOURCES["eccc"].implementation = "partial"
 SOURCES["eccc"].usage = {
     "search": "query를 ECCC의 검색창에 그대로 제출한다. 현재 UI는 하나의 검색어 입력을 제공한다. options는 비운다. 원 검색의 중복 행과 snippet을 보존하며 자동으로 문헌을 합치지 않는다.",
-    "fetch": "TRyy-nnn 또는 보고서 링크. TRyy-nnnrN 또는 revision/N/download 링크로 판본을 고정한다. 판본 생략 시 실제 페이지의 가장 높은 revision을 선택하고 정확한 번호와 다른 판본 목록을 반환한다. r0은 최초 보고서다.",
+    "fetch": "TRyy-nnn 또는 보고서 링크. TRyy-nnnrN 또는 revision/N/download 링크로 판본을 고정한다. 판본 생략 시 실제 페이지의 가장 높은 revision을 선택하고 정확한 번호와 다른 판본 목록을 반환한다. r0은 최초 보고서다. 이름은 원 일반 검색의 후보와 selection_required로 반환하며 결과를 제목 일치나 특정 판본으로 자동 확정하지 않는다. 형식이 잘못된 TRyy- 식별자는 이름으로 바꾸지 않는다.",
     "exports": "json은 기계 추출 레코드, html은 실제 검색 페이지다. 저자 초록과 원문 PDF는 fetch에서 지정 판본별로 확보한다.",
     "limits": "start 0부터, limit 1..1000. 전체 원 검색 페이지와 수신 레코드는 all_records로 보존한다. 서비스가 전체 색인의 검색 건수를 별도로 주지 않아 total은 null이고 stored_total은 보존한 행 수다. query 결과의 snippet은 abstract로 표시하지 않는다.",
     "examples": [{"tool": "search", "arguments": {"source": "eccc", "query": "natural proofs", "limit": 2}}, {"tool": "fetch", "arguments": {"source": "eccc", "target": "TR26-008r1", "parts": ["metadata", "abstract", "fulltext"]}}],
@@ -585,7 +585,7 @@ for category in ('author-repository','society-journal'):
 for identifier, level in {
     "mathscinet": "live_mcp_search_exact_mr_four_citations_name_doi_review_pdf",
     "wos": "live_mcp_search_full_record_title_url_native_xls_extract",
-    "eccc": "live_mcp_search_revision_fetch",
+    "eccc": "live_mcp_name_candidates_search_and_pinned_revision_fetch",
     "crossref": "live_mcp_search_native_citation_eight_formats_extract",
     "arxiv": "live_mcp_search_pinned_html_source_archive_tex_extract",
     "zbmath": "live_mcp_arbitrary_window_doi_legacy_link_license_state_references",

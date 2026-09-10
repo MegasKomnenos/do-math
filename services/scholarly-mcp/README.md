@@ -148,3 +148,6 @@ JSTOR의 export는 원 RIS와 Text file 주소에서 받은 BibTeX를 함께 반
 
 
 MathSciNet 문헌 조회는 MR 번호·문헌 링크 외에 DOI와 이름을 받는다. 이름은 후보 검색이고, DOI는 유일한 결과와 원 BibTeX DOI를 대조한 뒤 MR 문헌을 조회한다. fetch의 export는 BibTeX·EndNote·AMSRef·TeX를 반환한다. 원 형식 문자열과 배열 순서를 유지하고 문헌 식별자를 대조한다. 정확한 MR 검색이 단건 문헌 화면으로 이동해도 내보내기를 수행한다. 리뷰 PDF는 인용된 논문의 전문이 아니다.
+
+
+ECCC fetch에 이름을 주면 원 일반 검색 후보를 반환한다. 보고서 번호·링크를 선택해 다시 조회하면 기존 판본 선택 규칙을 적용한다. 이름만으로 최신 판본을 자동 선택하지 않는다.

@@ -76,6 +76,8 @@ async def main():
             sheet = await call('extract', {'ref':excel['export']['ref'],'count':2})
             assert sheet['status']=='ok' and sheet['returned']==2
         elif args.source == "eccc":
+            named=await call('fetch',{'source':'eccc','target':'natural proofs','parts':['metadata']})
+            assert named['status']=='selection_required' and named['received']>0
             search = await call("search", {"source": "eccc", "query": "natural proofs", "limit": 2})
             assert search["status"] == "ok", search.get("code")
             records = await call("extract", {"ref": search["records"]["ref"], "count": 2})

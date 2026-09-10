@@ -9,6 +9,22 @@ from scholarly import Sanitizer, ServiceError
 
 
 class BrowserContract(unittest.TestCase):
+    def test_eccc_title_fetch_returns_native_search_candidates(self):
+        from unittest.mock import Mock
+        from browser_adapters import ECCC
+        adapter=ECCC(None,None)
+        adapter.search=Mock(return_value={'status':'ok','received':2,'records':{'ref':'candidate'}})
+        result=adapter.fetch('Natural Proofs',parts=['metadata'])
+        self.assertEqual(result['status'],'selection_required')
+        self.assertEqual(adapter.search.call_args.args[0],'Natural Proofs')
+
+    def test_eccc_malformed_report_id_is_not_reinterpreted_as_a_title(self):
+        from unittest.mock import Mock
+        from browser_adapters import ECCC
+        adapter=ECCC(None,None);adapter.search=Mock()
+        with self.assertRaises(ServiceError):adapter.fetch('TR26-0008',parts=['metadata'])
+        adapter.search.assert_not_called()
+
     def test_download_challenge_redirect_is_restricted_and_not_requested(self):
         from types import SimpleNamespace
         calls=[]

@@ -12,7 +12,7 @@
 | arXiv | arxiv | api | partial | source_guide, search, fetch, export | live_mcp_search_pinned_html_source_archive_tex_extract |
 | DBLP | dblp | api | partial | source_guide, search, fetch, export | access_challenge_observed |
 | DBLP Knowledge Graph | dblp-kg | api | partial | source_guide, search, fetch, export | live_mcp_sparql_window_native_csv_tsv_key_doi_name; native_tsv_year_type_mismatch |
-| ECCC | eccc | playwright | partial | source_guide, search, fetch, export | live_mcp_search_revision_fetch |
+| ECCC | eccc | playwright | partial | source_guide, search, fetch, export | live_mcp_name_candidates_search_and_pinned_revision_fetch |
 | DROPS / LIPIcs | drops | fixed: metadata API; search/document links Playwright | partial | source_guide, search, fetch, export | live_mcp_native_exports_pdf_html_codemeta_and_supplementary_references |
 | Theory of Computing | theory-of-computing | playwright | partial | source_guide, search, fetch, export | live_mcp_indexes_citation_pdf_source_ps_references_fetch_and_text_pagination |
 | Crossref | crossref | api | partial | source_guide, search, fetch, export | live_mcp_search_native_citation_eight_formats_extract |

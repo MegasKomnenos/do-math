@@ -296,3 +296,8 @@ JSTOR의 [공식 내보내기 안내](https://support.jstor.org/hc/en-us/article
 MathSciNet의 mr:(2733384) 검색은 검색 API 한 건을 받은 뒤 문헌 화면으로 자동 이동했다. 기존 결과 목록·checkbox 내보내기는 source_timeout이었다. 실패 보고 data/validation/20260910T224121Z-mathscinet-lookup-probe.json을 보존했다. 문헌 Cite의 원 publications/format 응답은 paperId별 ams/bib/tex/end 문자열 배열이었다. 같은 기관 Playwright context에서 이 원 형식 응답을 회수하고 요청 MR 집합·중복 및 BibTeX MRNUMBER·EndNote label을 대조한다. 문자열을 다시 작성하지 않고 빈 줄로 연결하며 제공자 배열 순서와 요청 순서를 따로 기록한다.
 
 새 SDK stdio data/validation/20260910T225607960428Z-mathscinet-workflow.json은 completed=true다. 제목 검색 5건, MR2733384 네 인용문 형식·3쪽 Review PDF, MR 단건 검색 내보내기, 이름 후보 14건, Natural Proofs DOI 10.1006/jcss.1997.1494를 통한 MR1473047 조회·내보내기를 확인했다. DOI는 원 BibTeX를 대조한 뒤 따라가며 이름과 미확인 DOI는 후보로 남긴다. 이 보고는 인용문 내부 MR 대조를 추가한 뒤의 검사다. 공통 196개 검사가 통과했다.
+
+
+ECCC 이름 입력을 원 일반 검색 후보로 연결했다. data/validation/20260910T230446363549Z-eccc-workflow.json은 새 SDK stdio에서 completed=true다. natural proofs 후보 20건·검색 2건 추출·TR26-008r1의 서지·초록·PDF와 판본 번호를 확인했다. 이름을 정확한 제목·판본으로 자동 확정하지 않고 잘못된 보고서 번호도 이름으로 바꾸지 않는다. 공통 198개 검사가 통과했다. 없는 보고서의 HTTP 200/404 제목은 기존 처리 대상이며 새 결함으로 보고하지 않았다.
+
+JSTOR 배포 query-builder의 new-search 경로를 기관 프록시로 확인했으나 Client Challenge·capInput이 나타났다. 보호된 원 관측은 .credentials/scholarly-mcp/probes/20260910T225843Z-jstor-new-search.html이다. JSON 한 건의 path/resolutionTrace는 결과 목록이 아니어서 검색 성공으로 세지 않았다.
