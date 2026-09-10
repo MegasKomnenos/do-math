@@ -227,3 +227,9 @@ De Gruyter Brill DOI 10.2202/1558-3708.1089는 첫 기관 이동 실패 뒤 재�
 ACM DOI 10.1145/3425501, Greed Is Good: Exploration and Exploitation Trade-offs in Bayesian Optimisation의 원 문헌에는 .core-supplementary-materials 아래 george.zip이 있었다. 최초 진단은 HTML 정제 과정에서 잘못된 포트를 가진 URL 한 개 때문에 ValueError로 끝났다. 값이나 원 예외 메시지를 출력하지 않고 스택의 파일·행·함수만 확인했다. Sanitizer는 잘못된 포트·IPv6 등 파싱할 수 없는 URL을 표시용 표지로 바꾸고 주변 문헌은 유지하도록 수리했다. 인증 정보가 포함된 합성 잘못된 URL과 주변 텍스트 보존을 회귀 검사했다. 이 관측에서는 새 인증값 노출을 확인한 것이 아니다.
 
 ACM 보충 제어의 /doi/suppl/DOI/suppl_file/파일명 경로를 현재 DOI와 대조하며 원 설명을 유지한다. 공유 보충 회수 함수에 ACM의 파일 호스트 집합을 전달하도록 연결했다. 실제 MCP `data/validation/20260910T094619Z-acm-supplement-mcp.json`은 metadata·초록·원 BibTeX·ZIP 9,708,127바이트와 구성 항목 2개를 확인해 completed=true다. 후속 `data/validation/20260910T094946Z-acm-archive-mcp.json`은 george/3425501.suppl.pdf 10,527,022바이트를 추출하고 27쪽 중 첫 쪽을 읽었다. 원 참고문헌 문맥은 기존 source_page에 유지하며 다른 미인식 첨부 레이아웃은 source_page로 남긴다. 공통 검사 151개가 통과했다.
+
+공개 API 재검증 `data/validation/20260910T094831Z-public-followup-mcp.json`에서 Semantic Scholar·OpenAlex·CORE의 natural proofs 검색 2건과 추출이 성공했다. DBLP는 access_challenge였다. 후속 `data/validation/20260910T095105Z-public-fetch-followup-mcp.json`에서 Semantic Scholar·CORE의 ID fetch는 rate_limited였고 OpenAlex는 서지 메타데이터를 확보했다. 검색의 양성 결과를 전체 fetch 성공으로 확대하지 않는다.
+
+CORE의 실제 검색 기록 340524929에는 fullText가 35자 안내문 Not available for public API users.였다. 기존 fetch가 같은 레코드를 받으면 이 비어 있지 않은 문자열을 fulltext available로 표시하는 결함을 원 응답 fixture로 재현했다. 접근 안내문은 restricted/public_fulltext_restricted, 빈 필드는 not_found, 실제 색인 본문은 별도 text/plain artifact로 구별했다. 문헌 ID를 대조하고 이름은 원 검색 후보로 반환한다. 이 교정과 실제 텍스트 보존·빈 초록·잘못된 ID의 오프라인 검사가 통과했다.
+
+신규 CORE 전체 실서비스 흐름 `data/validation/20260910T100059Z-core-public-mcp.json`은 이름 후보 요청부터 rate_limited여서 completed=false다. 새 입력·fulltext 상태 처리 전체를 실제 MCP 성공으로 기록하지 않는다. 별도 API 자격을 요청하거나 다른 자료원으로 자동 이동하지 않았다. 공통 검사 154개가 통과했다.

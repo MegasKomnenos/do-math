@@ -1,0 +1,255 @@
+{
+  "abstract": "Formal proofs provide detailed justification for the validity of claims and are widely used in formal software development methods. However, they are often complex and difficult to understand, because the formalism in which they are constructed and encoded is usually machine-oriented, and they may also be based on assumptions that are not justified. This causes concerns about the trustworthiness of using formal proofs as arguments in safety-critical applications. Here, we present an approach to develop safety cases that correspond to formal proofs found by automated theorem provers and reveal the underlying argumentation structure and top-level assumptions. We concentrate on natural deduction style proofs, which are closer to human reasoning than resolution proofs, and show how to construct the safety cases by covering the natural deduction proof tree with corresponding safety case fragments. We also abstract away logical book-keeping steps, which reduces the size of the constructed safety cases. We show how the approach can be applied to the proofs found by the Muscadet prover",
+  "acceptedDate": "2009-01-01T00:00:00+00:00",
+  "arxivId": null,
+  "authors": [
+    {
+      "name": "Fischer, Bernd"
+    },
+    {
+      "name": "Basir, Nurlida"
+    },
+    {
+      "name": "Denney, Ewen"
+    }
+  ],
+  "citationCount": 0,
+  "contributors": [
+    "Fischer, Bernd",
+    "Basir, Nurlida",
+    "Denney, Ewen"
+  ],
+  "createdDate": "2012-04-05T20:31:51+01:00",
+  "dataProviders": [
+    {
+      "id": 34,
+      "logo": "https://api.core.ac.uk/data-providers/34/logo",
+      "name": "Southampton (e-Prints Soton)",
+      "url": "https://api.core.ac.uk/v3/data-providers/34"
+    }
+  ],
+  "depositedDate": "2017-07-18T01:00:00+01:00",
+  "documentType": null,
+  "doi": null,
+  "downloadUrl": "",
+  "fieldOfStudy": null,
+  "fullText": "Not available for public API users.",
+  "id": 340524929,
+  "identifiers": [
+    {
+      "identifier": "1511018",
+      "type": "core_id"
+    },
+    {
+      "identifier": "oai:eprints.soton.ac.uk:271266",
+      "type": "oai_id"
+    },
+    {
+      "identifier": "oai:eprints.soton.ac.uk:271266",
+      "type": "oai"
+    }
+  ],
+  "journals": [],
+  "language": {
+    "code": "en",
+    "name": "English"
+  },
+  "links": [
+    {
+      "type": "display",
+      "url": "https://core.ac.uk/works/340524929"
+    }
+  ],
+  "magId": null,
+  "oaiIds": [
+    "oai:eprints.soton.ac.uk:271266"
+  ],
+  "outputs": [
+    "https://api.core.ac.uk/v3/outputs/1511018"
+  ],
+  "publishedDate": "2009-10-26T00:00:00+00:00",
+  "publisher": "",
+  "pubmedId": null,
+  "references": [
+    {
+      "authors": [],
+      "date": "2008",
+      "doi": "10.1109/aero.2008.4526576",
+      "id": "50212505",
+      "raw": "E. Denney, S. Trac, &quot;A Software Safety Certification Tool for Automatically Generated Guidance, Navigation and Control Code&quot;, in: Proc. IEEE Aerospace Conference Big Sky, MT, (2008).",
+      "title": "A Software Safety Certification Tool for Automatically Generated Guidance, Navigation and Control Code&quot;, in:"
+    },
+    {
+      "authors": [],
+      "date": "2009",
+      "doi": "10.1109/ase.2009.71",
+      "id": "50212506",
+      "raw": "E. Denney, B. Fischer. “A verification-driven approach to traceability and documentation for  auto-generated mathe matical software.” in: Proc. ASE '09, (to appear 2009).",
+      "title": "A verification-driven approach to traceability and documentation for auto-generated mathe matical software.” in:"
+    },
+    {
+      "authors": [],
+      "date": "2007",
+      "doi": null,
+      "id": "50212507",
+      "raw": "Adelard ASCE home page, http://www.adelard.com (2007).",
+      "title": "Adelard ASCE home page,"
+    },
+    {
+      "authors": [],
+      "date": "2007",
+      "doi": "10.1016/j.entcs.2006.09.025",
+      "id": "50212508",
+      "raw": "S. Trac, Y. Puzis, G. Sutcliffe. “An interactive derivation viewer”, in: Proc. Intl. Workshop User Interfaces for Theorem Provers, ENTCS 174, Elsevier, pp.109-123 (2007).",
+      "title": "An interactive derivation viewer”, in:"
+    },
+    {
+      "authors": [],
+      "date": "1998",
+      "doi": null,
+      "id": "50212509",
+      "raw": "T. P. Kelly. “Arguing safety a systematic approach to managing safety cases”, PhD Thesis, University of York (1998).",
+      "title": "Arguing safety a systematic approach to managing safety cases”, PhD Thesis,"
+    },
+    {
+      "authors": [],
+      "date": "2008",
+      "doi": "10.1007/978-3-540-87698-4_22",
+      "id": "50212510",
+      "raw": "N. Basir, E. Denney, B. Fischer. “Constructing a Safety Case for Automatically Generated Code from Formal Program Verification Information”, in: Proc. SAFECOMP 08, LNCS 5219, pp. 249-262 (2008).",
+      "title": "Constructing a Safety Case for Automatically Generated Code from Formal Program Verification Information”, in:"
+    },
+    {
+      "authors": [],
+      "date": "2008",
+      "doi": "10.1016/j.entcs.2009.09.005",
+      "id": "50212511",
+      "raw": "M. Garnacho, M. Prin. “Convincing Proofs for Program Certification”, in: Proc. Intl. Workshop SafeCert, ENTCS 17693, pp. 41-56 (2008).",
+      "title": "Convincing Proofs for Program Certification”, in:"
+    },
+    {
+      "authors": [],
+      "date": "2003",
+      "doi": "10.1007/978-3-540-45236-2_48",
+      "id": "50212512",
+      "raw": "E. Denney, B. Fischer. “Correctness of source-level safety policies”, in: Proc. FM 2003: Formal Methods, LNCS 2805, pp. 894–913 (2003).",
+      "title": "Correctness of source-level safety policies”, in:"
+    },
+    {
+      "authors": [],
+      "date": "1975",
+      "doi": "10.2307/2219366",
+      "id": "50212513",
+      "raw": "A. R. Anderson, N. Belnap. “Entailment: the logic of relevance and necessity”, Princeton University Press (1975).",
+      "title": "Entailment: the logic of relevance and necessity”,"
+    },
+    {
+      "authors": [],
+      "date": "1996",
+      "doi": "10.1145/242223.242257",
+      "id": "50212514",
+      "raw": "E.M. Clarke, J.M. Wing. “Formal methods: state of the art and future directions”, ACM Computing Surveys 28(4), pp. 626-643 (1996).",
+      "title": "Formal methods: state of the art and future directions”,"
+    },
+    {
+      "authors": [],
+      "date": "2003",
+      "doi": null,
+      "id": "50212515",
+      "raw": "J. Barnes. “High Integrity Software: The SPARK Approach to Safety and Security”, Addison-Wesley (2003).",
+      "title": "High Integrity Software: The SPARK Approach to Safety and Security”,"
+    },
+    {
+      "authors": [],
+      "date": "2006",
+      "doi": "10.1016/j.entcs.2005.11.063",
+      "id": "50212516",
+      "raw": "E. Denney, J. Power, K. Tourlas. “Hiproofs: A hierarchical notion of proof tree”, ENTCS, 155, pp.341-359 (2006).",
+      "title": "Hiproofs: A hierarchical notion of proof tree”,"
+    },
+    {
+      "authors": [],
+      "date": "1969",
+      "doi": "10.1016/s0049-237x(08)70822-x",
+      "id": "50212517",
+      "raw": "G. Gentzen. “Investigations into Logical Deductions”, The Collected Papers of Gerhard Gentzen, M.E.Szabo (ed), North-Holland, Amsterdam. pp. 68-131 (1969).",
+      "title": "Investigations into Logical Deductions”, The Collected Papers of Gerhard Gentzen,"
+    },
+    {
+      "authors": [],
+      "date": "2000",
+      "doi": "10.1007/978-1-4757-3188-0_16",
+      "id": "50212518",
+      "raw": "W. McCune, O. Shumsky-Matlin. “Ivy: A Preprocessor and Proof Checker for First-Order Logic”, Computer-Aided Reasoning: ACL2 Case Studies, Advances in Formal Methods (4), Kluwer Academic Publishers, pp. 265–282 (2000).",
+      "title": "Ivy: A Preprocessor and Proof Checker for First-Order Logic”, Computer-Aided Reasoning:"
+    },
+    {
+      "authors": [],
+      "date": "2001",
+      "doi": "10.1007/3-540-45744-5_56",
+      "id": "50212519",
+      "raw": "D. Pastre. “MUSCADET 2.3: A Knowledge-Based Theorem Prover Based on Natural Deduction”, in: Proc Intl. Joint Conference on Automated Reasoning, LNCS 2083, pp. 685-689 (2001).",
+      "title": "MUSCADET 2.3: A Knowledge-Based Theorem Prover Based on Natural Deduction”, in:"
+    },
+    {
+      "authors": [],
+      "date": "1993",
+      "doi": "10.1007/978-1-4471-2033-9",
+      "id": "50212520",
+      "raw": "J.C. Bicarregui, J.S. Fitzgerald, P.A. Lindsay, R. Moore, B. Ritchie. “Proof in VDM: A Practitioner’s Guide”, Springer (1993).",
+      "title": "Proof in VDM: A Practitioner’s Guide”,"
+    },
+    {
+      "authors": [],
+      "date": "1997",
+      "doi": null,
+      "id": "50212521",
+      "raw": "X. Huang, A. Fiedler. “Proof verbalization as an application of NLG”, in: Proc 15th Intl. Joint Conference on Artificial Intelligence, Morgan Kaufmann, pp. 965–970 (1997).",
+      "title": "Proof verbalization as an application of NLG”, in:"
+    },
+    {
+      "authors": [],
+      "date": "2005",
+      "doi": null,
+      "id": "50212522",
+      "raw": "G. Sutcliffe, D. Belfiore. “Semantic Derivation Verification”, in: Proc. 18th Florida Artificial Intelligence Research Symposium, pp.641–646 (2005).",
+      "title": "Semantic Derivation Verification”, in:"
+    },
+    {
+      "authors": [],
+      "date": "2005",
+      "doi": "10.1145/1101908.1102003",
+      "id": "50212523",
+      "raw": "E. Denney, B. Fischer. “Software certification and software certificate management systems (Position paper)”, in: Proc. ASE Workshop on Software Certificate Management Systems, ACM, pp.1-5 (2005).",
+      "title": "Software certification and software certificate management systems (Position paper)”, in:"
+    },
+    {
+      "authors": [],
+      "date": "1976",
+      "doi": "10.1016/0004-3702(76)90007-2",
+      "id": "50212524",
+      "raw": "D. Chester. “The Translation of Formal Proofs into English”, Artificial Intelligence 7(3), pp. 261-278 (1976).",
+      "title": "The Translation of Formal Proofs into English”,"
+    },
+    {
+      "authors": [],
+      "date": "2007",
+      "doi": "10.1109/tse.2007.1002",
+      "id": "50212525",
+      "raw": "B. Littlewood, D. Wright. “The Use of Multilegged Argu ments to Increase Confidence in Safety Claims for SoftwareBased Systems: A Study Based on a BBN Analysis of an Ide alized Example”, IEEE Trans. Software Eng. 33(5), pp. 347-365 (2007).",
+      "title": "The Use of Multilegged Argu ments to Increase Confidence in Safety Claims for SoftwareBased Systems: A Study Based on a BBN Analysis of an Ide alized Example”,"
+    },
+    {
+      "authors": [],
+      "date": "1996",
+      "doi": "10.1007/3-540-61532-6_34",
+      "id": "50212526",
+      "raw": "X. Huang. “Translating Machine-Generated Resolution Proofs into ND-Proofs at the Assertion Level”, in: Proc. 4th Pacific Rim Intl. Conference on Artificial Intelligence, LNCS 1114, pp. 399-410 (1996).",
+      "title": "Translating Machine-Generated Resolution Proofs into ND-Proofs at the Assertion Level”, in:"
+    }
+  ],
+  "sourceFulltextUrls": [],
+  "title": "Deriving Safety Cases from Automatically Constructed Proofs",
+  "updatedDate": "2026-07-29T23:24:58+01:00",
+  "yearPublished": 2009
+}

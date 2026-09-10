@@ -203,7 +203,7 @@ MORE_API_USAGE = {
     "core": {
         "search": "query는 CORE 검색식이다. title:\"P versus NP\"처럼 필드를 지정할 수 있다. 원 검색 결과의 모든 필드를 보존한다.",
         "options": {"sort": "CORE 정렬 조건. 제공자가 거절한 조건은 오류로 반환한다."},
-        "fetch": "CORE works 번호 또는 core.ac.uk/works/번호. 해당 레코드의 서지·초록·fullText를 회수한다. 다른 저장소의 링크는 자동 방문하지 않는다.",
+        "fetch": "CORE works 번호·CORE works URL을 지정하며 이름은 원 검색 후보와 selection_required를 반환한다. 응답의 works ID를 대조한다. abstract가 비어 있으면 not_found다. fullText가 실제 문자열 본문이면 별도 텍스트 artifact로 보존한다. 공개 API 접근 제한 안내문이면 restricted이며 본문으로 표시하지 않는다. 다른 저장소의 링크는 자동 방문하지 않는다.",
         "limits": "별도 자격 없는 공개 접근만 사용한다. limit 1..100, start는 0부터. 호출 간격 최소 2.1초. json/native export.",
         "examples": [{"tool": "search", "arguments": {"source": "core", "query": "title:\"P versus NP\"", "limit": 2}}],
         "official": ["https://core.ac.uk/services/api", "https://api.core.ac.uk/docs/v3"]},
@@ -584,7 +584,7 @@ for identifier, level in {
     "numdam": "live_mcp_native_search_citations_jats_pdf_djvu_fetch_pagination",
     "software-heritage": "live_adapter_origin_search_fetch",
     "openalex": "public_endpoint_search_observed",
-    "core": "public_endpoint_success_and_rate_limit_observed",
+    "core": "live_mcp_search_extract; fetch_rate_limit; fulltext_notice_regression",
     "semantic-scholar": "rate_limit_observed",
     "dblp": "access_challenge_observed",
     "zenodo": "live_mcp_search_file_checksum_fetch_extract",

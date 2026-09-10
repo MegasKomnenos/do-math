@@ -88,6 +88,8 @@ De Gruyter Brill도 원 Supplementary Material 목록의 개별 파일 회수를
 
 ACM은 문헌 보충자료 목록의 파일명·설명·DOI를 보존하고 ZIP 등의 원 파일을 회수한다. 참고문헌이 포함된 원 페이지도 유지한다. 페이지에 문법이 잘못된 URL이 있으면 그 URL은 표시용 표지로 바꾸고 나머지 문헌의 보존을 계속한다.
 
+CORE의 `fullText`에 공개 API 접근 제한 안내문이 들어 있으면 `restricted`로 반환한다. 실제 색인 본문은 별도 텍스트 artifact로 제공하며 원 메타데이터도 보존한다. 이름은 검색 후보로 반환하고 CORE works 번호를 선택한 뒤에는 응답의 ID를 대조한다.
+
 Cambridge는 저자·연도·자료 유형·기관 이용 가능 여부의 검색 조건과 공개 RIS API를 사용한다. 주제·저널·출판사·학회 필터 ID는 검색 결과의 `facets.ref`를 `extract`로 읽어 선택한다. RIS의 `UR`에 있는 문헌 ID를 요청한 ID와 대조한다. 온라인 발행일과 인쇄 발행일을 원 검색 기록에 함께 보존한다.
 
 Taylor & Francis는 원 고급검색 필드와 연도·정렬, native BibTeX·RIS와 문헌 PDF를 연결했다. De Gruyter Brill은 title·familyName 등의 원 검색식, 가시성·정렬과 문헌 RIS를 연결했다. 자료원별 형식·조회 범위는 `describe_source`를 따른다.

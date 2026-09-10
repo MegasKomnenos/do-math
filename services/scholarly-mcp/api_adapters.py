@@ -702,12 +702,39 @@ class CORE(APIAdapter):
         return self.export_page(self.page(raw["results"], raw["totalHits"], evidence, query, options, start, limit), export)
 
     def fetch(self, target, *, parts):
-        value = target.removeprefix("https://core.ac.uk/works/")
+        value = target.strip()
+        if value.startswith(('http://','https://')):
+            parsed=urlsplit(value)
+            if parsed.hostname not in ('core.ac.uk','www.core.ac.uk','api.core.ac.uk') or parsed.username or parsed.password:
+                raise ServiceError('source_boundary','Use a CORE work URL')
+            match=re.fullmatch(r'/(?:v3/)?works/(\d+)/?',parsed.path)
+            if not match:raise ServiceError('invalid_target','Use a CORE work URL with its numeric ID')
+            value=match[1]
         if not re.fullmatch(r"[0-9]+", value):
-            raise ServiceError("invalid_target", "Use a CORE works identifier")
+            result=self.search(value,options={},limit=5)
+            result['status']='selection_required' if result['received'] else 'not_found'
+            return result
         raw, evidence = self.request("https://api.core.ac.uk/v3/works/" + value)
-        available = ("metadata", "export") + (("abstract",) if raw.get("abstract") else ()) + (("fulltext",) if raw.get("fullText") else ())
-        return self.fetched([raw], evidence, parts, available)
+        if not isinstance(raw,dict) or str(raw.get('id'))!=str(int(value)):
+            raise ServiceError('identity_mismatch','CORE returned a different work ID',evidence=evidence)
+        result=self.fetched([raw],evidence,parts,('metadata','export')+(('abstract',) if raw.get('abstract') else ()))
+        if 'abstract' in parts and not raw.get('abstract'):
+            result['components']['abstract']={'status':'not_found','reason':'This CORE record has no abstract'}
+        if 'fulltext' in parts:
+            content=raw.get('fullText')
+            if content is None or content=='':
+                component={'status':'not_found','reason':'This CORE record contains no indexed full text'}
+            elif not isinstance(content,str):
+                component={'status':'error','code':'invalid_response','reason':'CORE fullText was not text'}
+            elif ' '.join(content.split())=='Not available for public API users.':
+                component={'status':'restricted','code':'public_fulltext_restricted','reason':'CORE provides an access notice instead of full text for public API users'}
+            else:
+                artifact=self.store.put(content,'text/plain',self.source,evidence['url'],role='indexed_fulltext',work_id=raw['id'],metadata_ref=result['records']['ref'])
+                component={'status':'available','artifact':artifact,'content_kind':'core_indexed_fulltext'}
+            result['components']['fulltext']=component
+        states={c['status'] for c in result['components'].values()}
+        result['status']='ok' if not states or states=={'available'} else 'restricted' if states=={'restricted'} else 'not_found' if states=={'not_found'} else 'partial'
+        return result
 
 
 class Zenodo(APIAdapter):
