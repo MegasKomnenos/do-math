@@ -177,3 +177,7 @@ zbMATH 문헌 1079979, Zbl 0884.68055, DOI 10.1006/jcss.1997.1494의 원 editori
 zbMATH의 start를 limit 배수로 제한하던 구현도 바꿨다. 필요한 원 페이지를 조합하고, 전체 건수·원 행 수를 대조한 뒤 요청 창만 반환한다. 원 페이지들을 evidence와 native export로 보존하고 문헌 artifact에 모든 근거 참조를 기록한다. 실제 MCP에서 start=1, limit=2의 두 문헌을 start=0, limit=4 결과의 같은 구간과 대조했다. DOI, 제목 후보, ?q=an:0884.68055 링크와 참조 40건도 통과했다. 성공 보고는 `data/validation/20260910T055908908091Z-zbmath-workflow.json`이다.
 
 DOI는 현재 문헌 links의 doi 항목과 대조하며 참고문헌 DOI로 식별하지 않는다. ID와 Zbl 번호도 원 record.id·identifier와 각각 대조한다. 10.으로 시작하는 점 구분 번호를 DOI로 잘못 해석하지 않도록 DOI의 슬래시 형태를 구별했다. /v1/openapi.json은 별도 자격 없이 받았으며 두 웹 BibTeX 후보 URL 시험은 403이었다. 이 후보 경로의 존재나 native BibTeX 회수 성공을 주장하지 않는다. 공통 검사 122개가 통과했다.
+
+Wiley DOI 10.1002/rsa.70063, Models of Random Spanning Trees의 Supporting Information 표는 rsa70063-sup-0001-Supinfo.zip과 Data S1. 설명을 제공했다. 원 제어는 /action/downloadSupplement의 doi·file 매개변수였다. 이 표의 파일만 선택하고 DOI·파일명·설명을 보존하도록 연결했다. 원 ZIP을 검사해 application/zip으로 보존하며 HTML 응답을 자료로 저장하지 않는다. 파일별 상태와 성공 파일을 유지하는 처리는 기존 Springer Nature와 공유한다.
+
+실제 MCP 회수와 ZIP 구성 항목 조회는 `data/validation/20260910T062556Z-wiley-supplements-mcp.json`에서 completed=true로 통과했다. 디렉터리 anc/와 anc/dimension_bounds.py·anc/internal_external.py를 확인했다. 이어 `data/validation/20260910T063011Z-wiley-archive-extract-mcp.json`에서 두 파일을 각각 선택·추출하고 260줄·303줄 중 앞 3줄을 실제 MCP로 읽었다. 원 코드를 실행하지 않았다. 회귀 fixture에는 Supporting Information 표만 보존했으며 Python 원문을 추가하지 않았다. 공통 검사 123개가 통과했다.

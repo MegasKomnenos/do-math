@@ -458,6 +458,15 @@ async def main():
             assert 'Weakly saturated random graphs' in ' '.join(pdf_page['items'][0]['text'].split())
             empty = await call("search", {"source": "wiley", "query": "zzzzscholarlyabsent998314", "options": {"field": "Title"}, "limit": 2})
             assert empty["status"] == "not_found"
+            attached=await call('fetch',{'source':'wiley','target':'10.1002/rsa.70063','parts':['metadata','supplementary']})
+            files=attached['components']['supplementary']['files']
+            assert attached['status']=='ok' and len(files)==1
+            archive=await call('extract',{'ref':files[0]['artifact']['ref'],'count':20})
+            assert {item['path'] for item in archive['items']}=={'anc/','anc/dimension_bounds.py','anc/internal_external.py'}
+            for member in ('anc/dimension_bounds.py','anc/internal_external.py'):
+                selected=await call('extract',{'ref':files[0]['artifact']['ref'],'selection':member})
+                text=await call('extract',{'ref':selected['items'][0]['artifact']['ref'],'count':3})
+                assert text['status']=='ok' and text['unit']=='lines' and text['returned']==3
         else:
             query = 'ti:"P versus NP"' if args.source == "arxiv" else "P versus NP"
             options = {"Title": "P versus NP"} if args.source == "zbmath" else {}

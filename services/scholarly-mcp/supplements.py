@@ -1,6 +1,7 @@
 """Document-bound attachment controls; no cross-provider discovery."""
-import re
-from urllib.parse import urljoin,urlsplit,unquote
+import re,io,zipfile
+from pathlib import PurePosixPath
+from urllib.parse import urljoin,urlsplit,unquote,parse_qs
 from bs4 import BeautifulSoup
 from browser_adapters import browser_download
 from scholarly import ServiceError,encoded
@@ -15,25 +16,48 @@ def springer_links(raw,base):
         item=anchor.find_parent(class_='c-article-supplementary__item')
         description=item.select_one('.c-article-supplementary__description') if item else None
         rows.append({'label':anchor.get_text(' ',strip=True),'description':description.get_text(' ',strip=True) if description else None,
-                     'url':url,'linked_doi':match[1] if match else None})
+                     'url':url,'linked_doi':match[1] if match else None,'filename':PurePosixPath(urlsplit(url).path).name})
     return rows
 
 
-def fetch_springer(adapter,page,identifier,source_page):
-    rows=springer_links(page.content(),page.url)
+def wiley_links(raw,base):
+    soup=BeautifulSoup(raw,'html.parser')
+    rows=[]
+    for anchor in soup.select('.support-info__table a[href*="/action/downloadSupplement"]'):
+        url=urljoin(base,anchor['href'])
+        query=parse_qs(urlsplit(url).query)
+        identifiers,names=query.get('doi',[]),query.get('file',[])
+        cells=anchor.find_parent('tr').find_all('td',recursive=False)
+        item={'label':anchor.get_text(' ',strip=True),'description':cells[1].get_text(' ',strip=True) if len(cells)>1 else None,
+              'url':url,'linked_doi':identifiers[0] if len(identifiers)==1 else None,'filename':names[0] if len(names)==1 else None}
+        if len(identifiers)!=1 or len(names)!=1:
+            item['invalid_link']=True
+        rows.append(item)
+    return rows
+
+
+def fetch_supplementary(adapter,page,identifier,source_page):
+    rows={'springer':springer_links,'wiley':wiley_links}[adapter.source](page.content(),page.url)
     if not rows:
         return {'status':'source_page','artifact':source_page,'reason':'No recognized document attachment controls; other supplementary layouts remain in development'}
     index=adapter.store.put(encoded(rows),'application/json',adapter.source,page.url,role='supplementary_index',doi=identifier,parent_ref=source_page['ref'])
     files=[]
     for row in rows:
         try:
+            if row.get('invalid_link'):
+                raise ServiceError('invalid_response','The supplementary control does not identify one document and file')
             if row['linked_doi'] and identifier and row['linked_doi'].casefold()!=identifier.casefold():
                 raise ServiceError('linked_publication_differs','The attachment path identifies another publication; select that publication explicitly',status='selection_required',linked_doi=row['linked_doi'])
             data,media,url=browser_download(adapter.gateway.context,row['url'],adapter.profile.download_hosts)
             if media in ('text/html','application/xhtml+xml') or data.lstrip().lower().startswith((b'<!doctype html',b'<html')):
                 raise ServiceError('unexpected_content','Attachment control returned an HTML page')
-            if (media=='application/pdf' or urlsplit(row['url']).path.lower().endswith('.pdf')) and not data.startswith(b'%PDF-'):
+            suffix=PurePosixPath(row.get('filename') or urlsplit(row['url']).path).suffix.lower()
+            if (media=='application/pdf' or suffix=='.pdf') and not data.startswith(b'%PDF-'):
                 raise ServiceError('invalid_document','The supplementary PDF control returned no PDF')
+            if suffix=='.zip':
+                if not zipfile.is_zipfile(io.BytesIO(data)):
+                    raise ServiceError('invalid_document','The supplementary ZIP control returned no readable archive')
+                media='application/zip'
             metadata={}
             if data.startswith(b'%PDF-'):
                 import pymupdf

@@ -38,7 +38,7 @@
 | ScienceDirect | science-direct | playwright | partial | source_guide, fetch, export | live_mcp_institutional_ris_bibtex_plain_metadata_abstract_fetch |
 | Springer Nature | springer | playwright | partial | source_guide, search, fetch, export | live_mcp_advanced_search_citations_pdf_pagination_and_supplementary_files |
 | Taylor & Francis | taylor-francis | playwright | partial | source_guide, search, fetch, export | live_mcp_native_search_citation_abstract_pdf_fetch_pagination |
-| Wiley | wiley | playwright | partial | source_guide, search, fetch, export | live_mcp_advanced_search_native_bibtex_pdf_fetch_empty_repeat |
+| Wiley | wiley | playwright | partial | source_guide, search, fetch, export | live_mcp_advanced_search_citations_pdf_empty_repeat_and_supplementary_zip |
 | AIP | aip | playwright | partial | source_guide, search, fetch, export | live_mcp_advanced_search_citation_abstract_pdf_fetch_pagination |
 | APS 공개 접근 | aps | api | partial | source_guide, search, fetch, export | live_mcp_open_access_feed_metadata_abstract_pdf_fetch |
 | IOP | iop | playwright | partial | source_guide, fetch, export | live_adapter_metadata_pdf; citation_unverified_after_gateway_challenge |
