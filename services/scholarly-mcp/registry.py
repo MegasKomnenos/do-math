@@ -283,8 +283,9 @@ SOURCES["pqdt"].transport = "playwright"
 SOURCES["pqdt"].usage = {
     "search": "KUDOS → 학술DB → PQDT Global에서 query를 자료원 검색창에 그대로 제출한다. 예: TI(\"P versus NP\"). 필드 괄호와 AND·OR·NOT·큰따옴표 구문을 결합한다. TI는 제목, AU는 저자, AB는 초록, SU는 주제다. 화면의 개별 필터 제어는 개발 중이다.",
     "exports": "json은 검색 행과 native RIS의 원 필드를 함께 보존한다. ris는 Citation, abstract, indexing 옵션의 실제 원파일이다. html은 보존 검색 페이지의 참조다. 다른 native 형식 연결은 개발 중이다.",
-    "fetch": "docview 문서 번호 또는 ProQuest docview 링크를 지정한다. publication number와 docview 번호는 다르다. metadata·abstract·export·fulltext를 요청할 수 있다. 제목은 TI 후보 검색으로 반환한다. PDF는 같은 ProQuest의 실제 Download PDF 링크에서 회수한다.",
-    "limits": "options는 비운다. start는 0부터, limit는 1..1000. 선택한 문서 ID와 RIS의 AN 필드를 대조한다. 별도 첨부파일과 일부 페이지 이동 제어는 검증 중이다.",
+    "fetch": "docview 문서 번호 또는 ProQuest docview 링크를 지정한다. publication number와 docview 번호는 다르다. metadata·abstract·export·fulltext·supplementary를 요청할 수 있다. 제목은 TI 후보 검색으로 반환한다. PDF는 같은 ProQuest의 실제 Download PDF 링크에서 회수한다.",
+    "supplementary":"현재 docview의 Supplemental files 탭에서 원 건수·파일명·다운로드 제어를 대조하고 개별 파일을 회수한다. files의 artifact를 extract로 읽는다. 내부 다운로드 서명은 반환하지 않는다. 해당 탭이 노출되지 않은 문헌은 source_page로 보존하며 파일 부재로 단정하지 않는다.",
+    "limits": "options는 비운다. start는 0부터, limit는 1..1000. 선택한 문서 ID와 RIS의 AN 필드를 대조한다. 일부 페이지 이동 제어는 검증 중이다. 첨부는 파일별 상태와 성공 자료를 유지하며 연구 코드를 실행하지 않는다.",
     "examples": [{"tool": "search", "arguments": {"source": "pqdt", "query": "TI(\"P versus NP\")", "limit": 1, "export": "ris"}}, {"tool": "fetch", "arguments": {"source": "pqdt", "target": "2618193239", "parts": ["metadata", "abstract", "fulltext"]}}],
 }
 
@@ -594,7 +595,7 @@ for identifier, level in {
     "afp": "live_mcp_entry_search_pinned_metadata_and_proof_source_fetch_extract",
     "unpaywall": "public_endpoint_contact_requirement_observed",
     "theory-of-computing": "live_mcp_indexes_citation_pdf_source_ps_references_fetch_and_text_pagination",
-    "pqdt": "live_mcp_repeat_search_pagination_ris_pdf_fetch",
+    "pqdt": "live_mcp_repeat_search_ris_pdf_and_supplemental_png_fetch_extract",
     "eudml": "live_mcp_cql_rss_extract_nlm_fetch",
     "aps": "live_mcp_open_access_feed_metadata_abstract_pdf_fetch",
     "aps-institutional": "live_adapter_metadata_and_fulltext_restriction",

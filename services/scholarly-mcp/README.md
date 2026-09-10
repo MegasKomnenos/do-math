@@ -80,6 +80,8 @@ Cambridge의 Supplementary materials 표와 Oxford의 Supplementary data 위젯�
 
 IEEE의 `supplementary`에는 참고문헌과 그래픽 초록의 미디어 파일·표지가 각각 들어간다. MP4는 서버의 byte range 응답을 파일 버전·위치·길이와 대조해 조립한다. 일부 자료 회수가 실패해도 먼저 받은 자료는 남긴다. 이미지 참조는 extract로 읽을 수 있으며 동영상 자체는 원 파일로 보존한다. 별도 Media 탭의 다른 첨부는 아직 개발 중이다.
 
+PQDT의 `supplementary`는 현재 문헌의 Supplemental files 탭에서 파일 목록과 원 다운로드 제어를 읽는다. 원 건수와 파일명을 대조하고 파일별 artifact를 반환한다. 해당 탭이 표시되지 않은 문헌은 원 페이지를 보존하며 파일이 없다고 단정하지 않는다. 인증된 다운로드 URL은 내부 처리에만 사용한다.
+
 Cambridge는 저자·연도·자료 유형·기관 이용 가능 여부의 검색 조건과 공개 RIS API를 사용한다. 주제·저널·출판사·학회 필터 ID는 검색 결과의 `facets.ref`를 `extract`로 읽어 선택한다. RIS의 `UR`에 있는 문헌 ID를 요청한 ID와 대조한다. 온라인 발행일과 인쇄 발행일을 원 검색 기록에 함께 보존한다.
 
 Taylor & Francis는 원 고급검색 필드와 연도·정렬, native BibTeX·RIS와 문헌 PDF를 연결했다. De Gruyter Brill은 title·familyName 등의 원 검색식, 가시성·정렬과 문헌 RIS를 연결했다. 자료원별 형식·조회 범위는 `describe_source`를 따른다.

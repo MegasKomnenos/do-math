@@ -209,3 +209,7 @@ IEEE 문헌 10488889와 7780459의 실제 화면에는 Media 탭이 없었다. [
 MP4 회수는 4MiB 단위 요청으로 바꿨다. 모든 응답의 Content-Range 시작·끝·전체 크기·실제 바이트 길이와 같은 URL을 검사한다. 강한 ETag를 우선 사용하며 없으면 충분히 분리된 Date/Last-Modified를 사용한다. [RFC 9110의 validator·If-Range 규칙](https://www.rfc-editor.org/rfc/rfc9110.html#section-13.1.5)을 따르고 날짜 비교에는 60초의 보수적 간격을 둔다. weak ETag나 검증자 부재는 조립 실패이며, 원 45초 요청 제한을 유지한다. 일반 browser_download에는 필요한 상태·range·validator 헤더만 선별해 전달하는 내부 옵션을 추가했다.
 
 최종 실제 MCP `data/validation/20260910T085604Z-ieee-media-mcp.json`은 completed=true다. 문헌 11259066의 참고문헌 30건, 표지 JPEG, 25개 구간의 MP4 104,143,825바이트와 이미지 추출을 확인했다. 원 MP4 컨테이너 서명과 저장 해시를 확인했으며 동영상 내용을 판독하지 않았다. 이어 문헌 10488889는 참고문헌 22건·첨부 not_found로 구별했다. 참고문헌과 첨부는 독립적으로 처리해 한쪽 실패가 다른 쪽의 자료를 버리지 않는다. 별도 multimedia=true 레코드의 Media 탭 회수는 미구현으로 남는다. 중첩 다운로드 URL 정제를 포함한 공통 검사 142개가 통과했다.
+
+PQDT 문헌 2485541561의 원 Supplemental files 탭에는 TLTC_Teaching_Learning_Teaching_Continuum.PNG 하나가 있었다. KUDOS의 PQDT 바로가기로 기관에 접속한 뒤 해당 문헌 탭을 선택했다. Document includes N supplemental file(s) 건수와 .suppFiles의 개별 제어 수를 대조한다. 원 Terms of Use의 다운로드 동작은 현재 파일명을 경로 인자로 포함하므로 표시명과 대조한다. 서명된 내부 URL은 제어 수행에만 사용하며 반환 파일 목록에는 넣지 않는다.
+
+원 PNG는 529,775바이트로 확보됐다. 실제 MCP `data/validation/20260910T091220Z-pqdt-supplement-mcp.json`은 metadata·supplementary 회수와 extract의 구조화 이미지 결과 및 MCP ImageContent를 확인해 completed=true다. 파일 목록의 누락·건수 불일치·잘못된 파일명과 명시적 0건을 구별하는 검사를 추가했고 공통 검사 145개가 통과했다. 파일별 실패 때 성공 파일은 유지한다. Supplemental files 탭이 없는 문헌은 source_page로 남기며 다른 권한·레이아웃의 파일 부재를 추론하지 않는다.

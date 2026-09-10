@@ -7,7 +7,7 @@
 | Scopus | scopus | playwright | partial | source_guide, search, fetch, export | live_mcp_search_fetch_references_pagination_cited_by_extract |
 | ACM Digital Library | acm-dl | playwright | partial | source_guide, search, fetch, export | live_mcp_search_export_original_pdf_fetch |
 | IEEE Xplore / IEL | ieee-xplore | playwright | partial | source_guide, search, fetch, export | live_mcp_search_citation_pdf_references_and_graphical_video_ranges_cover |
-| PQDT Global | pqdt | playwright | partial | source_guide, search, fetch, export | live_mcp_repeat_search_pagination_ris_pdf_fetch |
+| PQDT Global | pqdt | playwright | partial | source_guide, search, fetch, export | live_mcp_repeat_search_ris_pdf_and_supplemental_png_fetch_extract |
 | zbMATH Open | zbmath | api | partial | source_guide, search, fetch, export | live_mcp_arbitrary_window_doi_legacy_link_license_state_references |
 | arXiv | arxiv | api | partial | source_guide, search, fetch, export | live_mcp_search_pinned_html_source_archive_tex_extract |
 | DBLP | dblp | api | partial | source_guide, search, fetch, export | access_challenge_observed |
