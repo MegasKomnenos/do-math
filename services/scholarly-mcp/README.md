@@ -66,7 +66,7 @@ Theory of Computing은 공식 저자·주제 색인과 저널이 지정한 검�
 
 EuDML은 CQL/OpenSearch와 NLM 메타데이터 API를 사용한다. 참고문헌의 ID를 현재 문헌의 ID로 쓰지 않으며, 외부 원문 링크를 자동 방문하지 않는다. Zenodo는 레코드나 특정 파일 URL로 파일을 받아 제공된 크기·checksum과 대조한다. 파일 URL을 지정하면 해당 파일을 선택하고, 레코드에 fulltext·supplementary를 요청하면 그 레코드의 파일들을 회수한다.
 
-`aps`는 별도 자격 없는 공개 Harvest API의 OA 자료 범위다. `aps-institutional`은 KUDOS를 거치는 기관 구독 접근으로 별도 등록했다. 호출자가 자료원을 선택하며 한 호출 안에서 접근 경로를 바꾸지 않는다. 기관 경로와 Project Euclid의 추가 검색 기능은 개발 중이다.
+`aps`는 별도 자격 없는 공개 Harvest API의 OA 자료 범위다. `aps-institutional`은 KUDOS를 거치는 기관 구독 접근으로 별도 등록했다. 호출자가 자료원을 선택하며 한 호출 안에서 접근 경로를 바꾸지 않는다. APS 기관 경로의 추가 검색 기능은 개발 중이다.
 
 연락 이메일을 요구하는 Unpaywall은 사용자 지시에 따라 사용을 보류한다. `describe_source`에는 보류 상태를 표시하며, 검색·확보 호출은 네트워크 요청 없이 `source_deferred`를 반환한다. 별도 웹 계정이나 연락 이메일은 요청하지 않는다.
 
@@ -98,3 +98,5 @@ ScienceDirect는 KUDOS 기관 context의 원 citation endpoint로 서지·초록
 Scopus의 supplementary는 현재 문헌 References·Cited by 탭의 목록이다. references와 citations 각각의 artifact를 extract로 읽는다. 검색 요약의 건수와 문헌 탭의 건수가 다르면 둘을 별도 필드로 보존한다. 색인 EID가 없는 참고문헌도 유지하며 원 RIS·BibTeX의 별도 계정 요구는 계속 보류한다.
 
 Excel 내보내기는 XLS와 XLSX를 구별해 보존하고 추출한다. extract의 selection은 시트명, fields는 A·B·AA 같은 열 문자다. start는 0부터이며 반환 row는 원 시트의 1부터 시작하는 행 번호다. 여러 시트가 있으면 먼저 selection_required와 시트 목록을 반환한다. XLSX 수식은 실행하지 않고 원 문자열로 반환한다. XLS는 저장된 값과 표시 형식을 읽으며 수식 정의·링크·삽입 개체는 원 파일에 남아 있다. WOS의 실제 Excel 표본은 XLS였으며 I·BE·BS 열에서 제목·DOI·accession을 확인했다.
+
+Project Euclid는 원 고급검색의 필드·AND/OR/NOT 추가 조건·발행연도·발행물 선택과 정렬·페이지 크기를 제공한다. 발행물 이름은 검색 결과 facets.ref에서 선택한다. 현재 페이지와 다음 페이지의 미리 받기를 구별하며 원 50쪽 제한을 표시한다. 문헌별 RIS·BibTeX·EndNote와 인용문 PDF를 내보낸다. 인용문 PDF에는 서지·초록이 있으며 논문 전문은 fetch의 fulltext로 받는다. EndNote의 원 %DOI 태그는 fields.DOI로 유지한다.

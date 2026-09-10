@@ -1,0 +1,3 @@
+# Keep source fixtures byte-for-byte when checked out on Windows.
+* -text
+.gitattributes text eol=lf

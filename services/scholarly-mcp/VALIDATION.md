@@ -139,3 +139,15 @@ KUDOS가 공개 제공한 ACM Open TitleList(2026).xlsx 원본 1,708,542바이�
 WOS 실제 Excel 응답은 XLS OLE 파일이어서 기존 고정 XLSX MIME으로는 추출이 실패했다. 파일 서명에 따라 MIME을 결정한 뒤 UT=(WOS:000269418800023)의 검색·native Excel·I/BE/BS 열 추출이 실제 MCP에서 통과했다. DOI 10.1145/1562164.1562186과 accession을 대조했으며 성공 보고는 `data/validation/20260910T033101Z-wos-excel-mcp.json`이다. 앞선 전체 WOS 흐름의 검색 TimeoutError와 Excel 파일 형식 결함을 구별한다.
 
 로컬 Excel 검사는 통과했지만 MCP 호출 중 처음 openpyxl을 import하면 NumPy의 Windows native module 초기화에서 정지했다. 진단 스택으로 위치를 확인하고 stdio 스레드 시작 전에 openpyxl을 준비해 해결했다. `20260910T032427Z-wos-excel-mcp.json`은 검색 후 추출에서 멈춘 미완료 기록이며 성공으로 변경하지 않았다. 실제 stdio 회귀 검사는 XLSX 시트 선택과 XLS 필드 추출을 포함한다.
+
+Project Euclid는 이전 Incapsula 관측 이후 원 공개 검색에서 양성 결과를 확인해 고급검색과 문헌별 내보내기를 연결했다. All Fields complexity는 7,662건, TITLE 검색은 2,806건이었다. 초기 Loading 화면을 0건으로 세지 않는다. 화면은 첫 페이지 25건을 표시하면서 /searchajax/Search/results의 page=2 응답을 미리 받았다. 이 JSON의 Query.Page와 화면 페이지는 달랐으므로 현재 표시된 페이지와 행 수를 기준으로 회수한다. 별도 HTTP 클라이언트의 같은 Ajax 주소는 HTTP 200 HTML을 반환했고 공개 API 동작으로 검증하지 못했다. 구현은 원 브라우저 경로로 고정했다.
+
+고급검색은 필드·AND/OR/NOT 추가 조건·연도·발행물 선택을, 결과 조회는 정렬·25/50/75/100건 페이지를 지원한다. 원 50쪽 제한을 range_limit로 표시한다. 실제 고급검색 링크는 href 없는 a였고 첫 가시 제어가 다른 요소에 가려지는 경우가 있었다. 홈페이지의 마지막 가시 Advanced Search 제어와 발행물 목록을 여는 titleButton을 사용한다. 가능한 발행물은 search.facets.ref의 publication_titles에 보존한다.
+
+연속 검색에서는 이전 저자·발행물 조건이 복원되어 TITLE complexity가 잘못 0건이 됐다. 검색식을 대조해 요청하지 않은 PubTitle을 탐지했다. 개별 입력과 체크박스를 해제해도 이 값이 남았으므로 공개 검색마다 빈 브라우저 컨텍스트를 만들고 원 홈페이지에서 시작하도록 바꿨다. 복잡한 UI 초기화 코드는 제거했다. `data/validation/20260910T035647Z-euclid-extended.json`은 잘못된 0건 재현이고, `20260910T035836Z-euclid-extended.json`·`20260910T035945Z-euclid-extended.json`은 남은 필터를 오류로 탐지한 기록이다.
+
+DOI 10.1214/10-AOS798의 원 RIS·BibTeX·EndNote·인용문 PDF를 확보했다. EndNote는 %R 대신 %DOI 태그를 사용해 기존 파서가 실패했으며, 이 원 태그를 fields.DOI로 유지하도록 수리했다. 인용문 PDF는 서지·초록을 담은 1쪽이고 논문 전문은 38쪽이다. 두 PDF를 같은 자료로 표시하지 않는다. 원 세 텍스트 형식과 양성·0건 검색 HTML을 회귀 fixture로 보존했다.
+
+최종 실제 MCP 보고는 `data/validation/20260910T040355588723Z-project-euclid-workflow.json`이며 completed=true다. 제목·두 저자·NOT 조건·발행물·2010년을 결합한 1건과 EndNote 추출, 다음 제목 검색의 최신순 100건 페이지 경계 2건, 문헌 서지·초록·38쪽 PDF·네 가지 원 인용문, PDF 첫 쪽 DOI와 후속 무작위 0건을 확인했다. 앞선 `20260910T040132369795Z-project-euclid-workflow.json`은 검색들은 통과했지만 문헌 서지 인식에서 실패한 부분 기록이다. 후속 직접·홈 경유 문헌 관측은 둘 다 정상이라 실패 원인을 경로 차이로 단정하지 않는다. 문헌 준비 대기가 일반 h1·og:title만으로 통과할 수 있던 조건은 실제 파서가 사용하는 citation/DC title 기준에 맞췄다.
+
+이번 공통 검사 109개가 통과했다. Project Euclid의 부가 첨부 개별 회수 등은 남아 있으며, 전체 자료원 구현의 완료로 확대하지 않는다.

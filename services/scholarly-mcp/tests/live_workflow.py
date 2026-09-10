@@ -89,6 +89,22 @@ async def main():
             assert any('natural' in x['title'].lower() for x in rows['items'])
             empty=await call('search',{'source':'general-web','query':'qzjxwv947231','limit':2})
             assert empty['status']=='not_found' and empty['returned_set_size']==0
+        elif args.source == 'project-euclid':
+            found=await call('search',{'source':args.source,'query':'Sure independence screening in generalized linear models','options':{'field':'TITLE','year_from':2010,'year_to':2010,'terms':[{'query':'Fan','field':'AUTHORNAME'},{'query':'Song','field':'AUTHORNAME'},{'query':'qzjxwv947231','field':'TITLE','operator':'NOT'}],'publication_titles':['The Annals of Statistics']},'limit':2,'export':'endnote'})
+            assert found['status']=='ok' and found['received']==1
+            native=await call('extract',{'ref':found['export']['artifacts'][0]['artifact']['ref'],'count':1})
+            assert native['items'][0]['fields']['DOI']==['10.1214/10-AOS798']
+            found=await call('search',{'source':args.source,'query':'complexity','options':{'field':'TITLE','sort':'PubDateDesc','page_size':100},'start':99,'limit':2,'export':'csv'})
+            assert found['status']=='ok' and found['received']==2
+            chosen=await call('extract',{'ref':found['records']['ref'],'count':2})
+            assert chosen['returned']==2
+            fetched=await call('fetch',{'source':args.source,'target':'10.1214/10-AOS798','parts':['metadata','abstract','fulltext','export']})
+            assert fetched['status']=='ok'
+            assert {x['format'] for x in fetched['components']['export']['artifacts']}=={'bibtex','ris','endnote','citation-pdf'}
+            first=await call('extract',{'ref':fetched['components']['fulltext']['artifact']['ref'],'count':1})
+            assert '10.1214/10-AOS798'.casefold() in first['items'][0]['text'].casefold()
+            empty=await call('search',{'source':args.source,'query':'qzjxwv947231','limit':2})
+            assert empty['status']=='not_found' and empty['total']==0
         elif args.source == 'iop':
             fetched = await call('fetch', {'source':'iop','target':'https://iopscience.iop.org/article/10.1088/0022-3727/34/10/311/meta','parts':['metadata','abstract','fulltext','export']})
             assert fetched['status']=='ok'

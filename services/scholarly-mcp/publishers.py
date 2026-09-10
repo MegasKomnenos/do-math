@@ -178,6 +178,9 @@ class Publisher:
         return page
 
     def search(self, query, *, options, start=0, limit=20, cursor=None, export=None):
+        if self.source == 'project-euclid':
+            from euclid import search
+            return search(self,query,options=options,start=start,limit=limit,cursor=cursor,export=export)
         if self.source == 'wiley':
             return self.wiley_search(query, options=options, start=start, limit=limit, cursor=cursor, export=export)
         if self.source == 'springer':
@@ -410,7 +413,7 @@ class Publisher:
         page = self.document(url)
         try:
             try:
-                page.wait_for_function("() => [...document.querySelectorAll('meta[name],meta[property]')].some(m=>/citation_title|dc[.:]title|og:title/i.test(m.name||m.getAttribute('property')||'')) || [...document.querySelectorAll('h1')].some(h=>h.textContent.trim())", timeout=20000)
+                page.wait_for_function("() => [...document.querySelectorAll('meta[name],meta[property]')].some(m=>/^(citation_title|dc[.:]title)$/i.test(m.name||m.getAttribute('property')||'') && m.content?.trim()) || /^(Access Denied|Just a moment|Attention Required|403 Forbidden)/i.test(document.title)", timeout=20000)
             except Exception:
                 raise ServiceError("document_not_ready", "Publisher did not initialize a document page", source=self.source) from None
             body = page.locator("body").inner_text()
@@ -444,14 +447,21 @@ class Publisher:
                     native_citation = {'status':'error','code':'citation_export_failed','error_type':type(error).__name__}
             components = {}
             for part in parts:
-                if part == 'export' and self.source == 'iop':
-                    from iop import citation
+                if part == 'export' and self.source in ('iop','project-euclid'):
+                    if self.source=='iop':
+                        from iop import citation
+                        formats=('bibtex','ris')
+                    else:
+                        from euclid import citation
+                        formats=('bibtex','ris','endnote','citation-pdf')
                     artifacts,errors=[],[]
-                    for format in ('bibtex','ris'):
+                    for format in formats:
                         try:
                             artifacts.append({'format':format,'artifact':citation(self,page,identifier or observed_dois[0],format)})
                         except ServiceError as error:
                             errors.append({'format':format,**error.result})
+                        except Exception as error:
+                            errors.append({'format':format,'status':'error','code':'citation_export_failed','error_type':type(error).__name__})
                     components[part]={'status':'partial' if errors else 'available','artifacts':artifacts,'errors':errors}
                     if artifacts:
                         components[part]['artifact']=artifacts[0]['artifact']

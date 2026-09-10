@@ -211,7 +211,7 @@ def bibliography(data, media):
                     raise ServiceError('bibliography_parse_error', 'EndNote record must begin with %0')
                 continue
             raw_lines.append(line)
-            match = re.match(r'^%(\S)(?: (.*))?$', line)
+            match = re.match(r'^%(DOI|\S)(?: (.*))?$', line)
             if match:
                 last = match[1]
                 fields.setdefault(last, []).append(match[2] or '')

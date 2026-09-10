@@ -453,6 +453,16 @@ SOURCES['de-gruyter'].usage={
 }
 
 SOURCES['jstor'].implementation='partial'
+SOURCES['project-euclid'].capabilities=('source_guide','search','fetch','export')
+SOURCES['project-euclid'].usage={
+    'search':'공개 원 고급검색 UI를 사용한다. 기본 query는 All Fields 검색이며 사이트의 어근·구문 처리를 유지한다. options.field는 ALL, ABSTRACT, AUTHORNAME, AFFILIATION, DOI_ISSN_ISBN, FIGURETABLECAPTIONS, KEYWORDS, TITLE 중 하나다.',
+    'options':'terms는 추가 조건 배열이며 각 항목의 query, field, operator(AND/OR/NOT)를 원 UI에 입력한다. 첫 조건과 합계 20개까지다. year_from/year_to는 발행연도 정수이며 publication_titles는 정확한 발행물 제목 배열이다. 검색 결과 facets.ref를 extract(selection=/publication_titles)로 읽어 가능한 제목을 선택한다. sort는 Relevance, PubDateDesc, PubDateAsc, TitleAsc, TitleDesc이며 page_size는 25(기본), 50, 75, 100이다.',
+    'pagination':'start는 0부터, limit는 1..1000이다. 표시된 원 페이지의 범위를 대조한다. 원 사이트는 50쪽까지 노출하므로 start+limit는 50*page_size 이하로 지정하고 더 먼 결과는 검색 조건을 좁힌다. 다음 쪽의 미리 받기 응답을 현재 쪽으로 사용하지 않는다.',
+    'exports':'json은 보존한 문헌 레코드, html은 검색 페이지, csv는 같은 레코드의 기계적 CSV다. ris·bibtex·endnote·citation-pdf는 선택된 각 문헌의 Citation & Abstract 원 다운로드다. citation-pdf는 서지와 초록의 인쇄용 PDF이며 논문 전문은 fetch fulltext로 받는다. 실패한 문헌과 이미 받은 export를 함께 표시한다.',
+    'fetch':'Project Euclid 문헌 URL·DOI로 서지·초록·PDF·원 인용문을 확보한다. 이름은 후보 검색이다. export는 BibTeX·RIS·EndNote·인용문 PDF를 반환한다. supplementary는 원 문헌 화면에 보존된 부가자료 문맥이며 첨부의 개별 다운로드는 추가 개발 중이다.',
+    'examples':[{'tool':'search','arguments':{'source':'project-euclid','query':'complexity','options':{'field':'TITLE'},'start':24,'limit':2,'export':'csv'}}],
+    'official':['https://projecteuclid.org/'],
+}
 SOURCES['jstor'].transport='api (native citation); browser search/document pending'
 SOURCES['jstor'].capabilities=('source_guide','fetch','export')
 SOURCES['jstor'].usage={
@@ -559,7 +569,7 @@ for identifier, level in {
     "eudml": "live_mcp_cql_rss_extract_nlm_fetch",
     "aps": "live_mcp_open_access_feed_metadata_abstract_pdf_fetch",
     "aps-institutional": "live_adapter_metadata_and_fulltext_restriction",
-    "project-euclid": "live_adapter_metadata_abstract_pdf_fetch",
+    "project-euclid": "live_mcp_advanced_filters_repeat_sorted_pagination_four_citations_pdf_fetch",
     "cambridge": "live_mcp_filtered_search_native_ris_abstract_pdf_fetch_pagination",
     "oxford": "live_mcp_search_citation_metadata_abstract_fetch_and_mixed_pagination",
     "aip": "live_mcp_advanced_search_citation_abstract_pdf_fetch_pagination",
