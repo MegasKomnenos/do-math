@@ -249,3 +249,7 @@ Semantic Scholar의 [공식 Swagger](https://api.semanticscholar.org/graph/v1/sw
 Semantic Scholar 문헌 URL·별칭 ID를 대조하고, 문헌 검색 100건·관계 검색 1000건 상한과 원 offset/next를 구별했다. relation record의 paperId=null도 버리지 않는다. supplementary는 나가는 참조 페이지를 회수하며 뒤에서 제한되면 이미 받은 참조와 원 reported count를 유지한다. 피인용은 search kind=citations로 필요한 범위를 지정한다. 기본 metadata 요청에 references/citations 전체 배열을 포함하지 않는다. 원 citationStyles.bibtex는 파싱 가능한 한 건인지와 제공되는 DOI를 대조하며, 잘못된 원 파일은 고쳐 쓰지 않고 오류와 source_export로 보존한다.
 
 이 신규 Semantic Scholar 범위의 검증은 원 검색 record fixture와 공식 응답 구조에 근거한 대역 검사다. 새 실제 MCP `data/validation/20260910T103916Z-semantic-scholar-mcp.json`은 첫 검색에서 rate_limited라 completed=false다. 앞선 공개 검색 양성 기록과 이 미완료 기록을 구별하며, 관계·BibTeX가 실제 API에서 통과했다고 주장하지 않는다. 429 뒤 후속 원격 요청을 계속하지 않았다. 공통 검사 171개가 통과했다.
+
+현재 Codex에 등록된 scholarly의 describe_source(openalex)를 직접 호출하자 이전 public_endpoint_search_observed 설명이 반환됐다. 새 코드 검증은 매번 새 stdio 프로세스를 띄운 SDK 호출이며, 이 기존 연결을 갱신한 것으로 세지 않는다. 설치된 CLI의 mcp 관리 명령에는 재시작이 없었다. 생성한 app-server 명세에는 config/mcpServer/reload가 있었지만 이 Windows 환경의 기본 제어 소켓에 연결하지 못했고 daemon 관리도 Unix 전용이었다. 관련 없는 서버 프로세스를 종료하거나 원격 제어를 활성화하지 않았다. [공식 MCP 안내](https://developers.openai.com/codex/mcp/)의 클라이언트 재시작 절차를 사용해야 한다.
+
+프로젝트 scholarly 설정의 tool_timeout_sec는 HEAD와 작업 파일 모두 180이었다. 실제 성공한 대용량 회수 시간을 수용하도록 이 값만 1800으로 바꿨다. 나머지 작업 파일 바이트가 같음을 비교했고, HEAD 기준의 이 한 줄 변경만 index에 적용해 기존 사용자 설정 변경을 커밋에 섞지 않았다. TOML 파싱으로 설정값을 검증했다. 현재 연결에는 아직 재시작이 필요하다.
