@@ -38,26 +38,32 @@ class APIAdapter:
             headers={"User-Agent": "scholarly-mcp/0.1 (local scholarly research)", "Accept": "application/json"})
         self.last_request = 0.0
 
-    def request(self, url, *, params=None, headers=None, accept="json"):
+    def allowed_url(self, url):
+        parts = urlsplit(url)
+        return parts.scheme == "https" and not parts.username and not parts.password and parts.hostname in self.hosts and parts.port in (None, 443)
+
+    def request(self, url, *, params=None, headers=None, accept="json", json_body=None):
         request_headers = httpx.Headers(headers or {})
         if "Accept" not in request_headers:
             request_headers["Accept"] = {"json": "application/json", "xml": "application/xml, application/atom+xml, application/rss+xml, text/xml;q=0.9, */*;q=0.1",
                 "html": "text/html, application/xhtml+xml;q=0.9, */*;q=0.1"}.get(accept, "*/*")
         for hop in range(6):
-            parts = urlsplit(url)
-            if parts.scheme != "https" or parts.username or parts.password or parts.hostname not in self.hosts or parts.port not in (None, 443):
+            if not self.allowed_url(url):
                 raise ServiceError("source_boundary", "Requested URL or redirect is outside this source", source=self.source)
             wait = self.min_interval - (time.monotonic() - self.last_request)
             if wait > 0:
                 time.sleep(wait)
             self.last_request = time.monotonic()
             try:
-                response = self.client.get(url, params=params, headers=request_headers, follow_redirects=False)
+                response = (self.client.get(url, params=params, headers=request_headers, follow_redirects=False) if json_body is None else
+                    self.client.post(url, params=params, json=json_body, headers=request_headers, follow_redirects=False))
             except httpx.TimeoutException:
                 raise ServiceError("timeout", "Source did not respond within the request timeout", source=self.source, retryable=True) from None
             except httpx.HTTPError:
                 raise ServiceError("connection_error", "Source connection failed", source=self.source, retryable=True) from None
             if response.is_redirect:
+                if response.status_code in (301, 302, 303):
+                    json_body = None
                 url = urljoin(str(response.url), response.headers.get("location", ""))
                 params = None
                 continue

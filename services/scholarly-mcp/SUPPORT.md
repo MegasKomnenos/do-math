@@ -29,6 +29,7 @@
 | Mathematical Components | math-comp | api | partial | source_guide, search, fetch, export | live_mcp_pinned_source_search_file_fetch_line_comparison |
 | GitHub | github | api | partial | source_guide, search, fetch, export | live_adapter_pinned_file_fetch |
 | Zenodo | zenodo | api | partial | source_guide, search, fetch, export | live_mcp_search_file_checksum_fetch_extract |
+| Figshare | figshare | api | partial | source_guide, search, fetch, export | live_mcp_public_search_window_collection_versioned_file_md5_pdf_extract |
 | Software Heritage | software-heritage | api | partial | source_guide, search, fetch, export | live_adapter_origin_search_fetch |
 | AMS publications | ams | playwright | partial | source_guide, search, fetch, export | live_mcp_explicit_pdf; native_browser_mixed_search; search_adapter_restricted |
 | Cambridge University Press | cambridge | fixed: citation API; institutional search/document Playwright | partial | source_guide, search, fetch, export | live_mcp_filtered_search_native_ris_abstract_pdf_fetch_pagination |
@@ -39,7 +40,7 @@
 | Springer Nature | springer | playwright | partial | source_guide, search, fetch, export | live_mcp_advanced_search_citations_pdf_pagination_and_supplementary_files |
 | Taylor & Francis | taylor-francis | playwright | partial | source_guide, search, fetch, export | live_mcp_native_search_citation_abstract_pdf_fetch_pagination |
 | Wiley | wiley | playwright | partial | source_guide, search, fetch, export | live_mcp_advanced_search_citations_pdf_empty_repeat_and_supplementary_zip |
-| AIP | aip | playwright | partial | source_guide, search, fetch, export | live_mcp_advanced_search_citation_abstract_pdf_fetch_pagination |
+| AIP | aip | playwright | partial | source_guide, search, fetch, export | live_mcp_advanced_search_citation_pdf_and_explicit_figshare_supplement_reference |
 | APS 공개 접근 | aps | api | partial | source_guide, search, fetch, export | live_mcp_open_access_feed_metadata_abstract_pdf_fetch |
 | IOP | iop | playwright | partial | source_guide, fetch, export | live_adapter_metadata_pdf; citation_unverified_after_gateway_challenge |
 | SIAM | siam | playwright | partial | source_guide, fetch, export | live_mcp_public_front_matter_pdf_fetch_extract; search_challenge_observed |

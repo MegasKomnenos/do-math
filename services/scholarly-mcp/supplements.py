@@ -36,11 +36,28 @@ def wiley_links(raw,base):
     return rows
 
 
+def aip_links(raw,base):
+    soup=BeautifulSoup(raw,'html.parser'); rows=[]; seen=set()
+    for anchor in soup.select('.article-section-wrapper a[href]'):
+        if not re.search(r'supplement(?:ary|al)\s+material',anchor.get_text(' ',strip=True),re.I): continue
+        url=urljoin(base,anchor['href']); parsed=urlsplit(url)
+        if parsed.hostname not in ('doi.org','doi-org.libproxy.knu.ac.kr'): continue
+        target=unquote(parsed.path).lstrip('/')
+        if not re.fullmatch(r'10\.60893/figshare\.aip\.(?:c\.)?\d+(?:\.v\d+)?',target,re.I) or target in seen: continue
+        seen.add(target)
+        rows.append({'label':anchor.get_text(' ',strip=True),'url':url,'source':'figshare','target':target,'status':'selection_required',
+            'reason':'Supplementary material is hosted by Figshare; select that source explicitly'})
+    return rows
+
+
 def fetch_supplementary(adapter,page,identifier,source_page):
-    rows={'springer':springer_links,'wiley':wiley_links}[adapter.source](page.content(),page.url)
+    rows={'springer':springer_links,'wiley':wiley_links,'aip':aip_links}[adapter.source](page.content(),page.url)
     if not rows:
         return {'status':'source_page','artifact':source_page,'reason':'No recognized document attachment controls; other supplementary layouts remain in development'}
     index=adapter.store.put(encoded(rows),'application/json',adapter.source,page.url,role='supplementary_index',doi=identifier,parent_ref=source_page['ref'])
+    if adapter.source=='aip':
+        return {'status':'selection_required','artifact':index,'references':rows,'discovered':len(rows),'received':0,
+                'reason':'External supplement references; files require an explicit Figshare call'}
     files=[]
     for row in rows:
         try:

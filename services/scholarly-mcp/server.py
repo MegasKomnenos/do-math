@@ -40,6 +40,7 @@ from web_documents import WebDocuments
 from sciencedirect import ScienceDirect
 from web_search import GeneralWeb
 from ams import AMS
+from figshare import Figshare
 
 ROOT = Path(__file__).resolve().parent
 STORE = ArtifactStore(ROOT / "data")
@@ -132,6 +133,7 @@ def main():
     args = parser.parse_args()
     STORE = ArtifactStore(args.data_dir)
     ADAPTERS.update(make_adapters(STORE))
+    ADAPTERS['figshare'] = Figshare(STORE)
     ADAPTERS["afp"] = AFP(STORE)
     ADAPTERS["eudml"] = EuDML(STORE)
     ADAPTERS["aps"] = APS(STORE)

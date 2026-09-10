@@ -81,6 +81,23 @@ async def main():
             fetched = await call("fetch", {"source": "acm-dl", "target": "10.1145/800157.805047", "parts": ["metadata", "abstract", "fulltext"]})
             assert fetched["status"] == "ok", fetched.get("code")
             assert fetched["components"]["fulltext"]["artifact"]["pages"] == 8
+        elif args.source == 'figshare':
+            found=await call('search',{'source':'figshare','query':'quantum','limit':3,'export':'native'})
+            assert found['status']=='ok' and found['received']==3 and found['total'] is None
+            first=await call('extract',{'ref':found['records']['ref'],'count':3,'fields':['id']})
+            window=await call('search',{'source':'figshare','query':'quantum','start':1,'limit':2})
+            second=await call('extract',{'ref':window['records']['ref'],'count':2,'fields':['id']})
+            assert second['items']==first['items'][1:]
+            collection=await call('fetch',{'source':'figshare','target':'10.60893/figshare.aip.c.7956296','parts':['metadata','supplementary']})
+            assert collection['status']=='ok'
+            members=await call('extract',{'ref':collection['components']['supplementary']['artifact']['ref'],'count':2})
+            assert members['returned']==1
+            item=await call('fetch',{'source':'figshare','target':members['items'][0]['doi'],'parts':['metadata','supplementary']})
+            assert item['status']=='ok' and item['version']==1
+            file=item['components']['supplementary']['files'][0]['artifact']
+            assert file['checksum_verified'] and file['provider_md5']=='bdfa565f42075d264cf31684d21d7635'
+            extracted=await call('extract',{'ref':file['ref'],'count':1})
+            assert extracted['status']=='ok' and extracted['returned']==1
         elif args.source == 'general-web':
             found=await call('search',{'source':'general-web','query':'natural proofs','limit':2,'export':'csv'})
             assert found['status']=='ok' and found['received']==2

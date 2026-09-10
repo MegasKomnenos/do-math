@@ -4,6 +4,15 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 
 class SupplementContract(unittest.TestCase):
+    def test_aip_supplement_reference_stays_with_explicit_figshare_source(self):
+        from supplements import aip_links
+        raw=(ROOT/'tests/fixtures/aip-supplement-region.html').read_text('utf-8')
+        rows=aip_links(raw,'https://pubs-aip-org.libproxy.knu.ac.kr/')
+        self.assertEqual(len(rows),1)
+        self.assertEqual(rows[0]['source'],'figshare')
+        self.assertEqual(rows[0]['target'],'10.60893/figshare.aip.c.7956296')
+        self.assertEqual(rows[0]['status'],'selection_required')
+
     def test_wiley_table_preserves_native_filename_description_and_doi(self):
         from supplements import wiley_links
         raw=(ROOT/'tests/fixtures/wiley-supplement-table.html').read_text('utf-8')
