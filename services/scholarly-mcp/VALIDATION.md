@@ -80,4 +80,13 @@ JSTOR의 공개 `/citation/ris/345683`은 별도 자격 없이 원 RIS를 반환
 
 이번 진단에서도 보안 규칙 위반이 두 번 발생했다. 압축 HTML의 첫 줄을 직접 출력하면서 Cloudflare 접근 확인 토큰이 포함됐고, Numdam 폼의 숨은 입력값 출력에 CSRF 토큰이 포함됐다. 사용자에게 즉시 알렸으며 값을 재기재하지 않았다. 해당 브라우저는 종료됐지만 기존 도구 출력은 삭제하지 않았고 토큰 폐기를 주장하지 않는다. 원 Numdam HTML은 보호된 probes로 이동했다. URL의 Cloudflare 토큰은 기존 정제 대상이었으며, 이번에는 구조화된 challenge 객체와 csrfmiddlewaretoken의 정제를 추가 검사했다. 이 수리가 원자료 직접 출력의 절차 위반 자체를 자동 방지한다고 주장하지 않는다. 이후 진단에는 원 HTML·숨은 입력값을 직접 출력하지 않는 경계가 필요하다.
 
-전체 구현은 부분 완료다. 나머지 자료원 검색·내보내기, 일부 문헌·첨부 형식과 Numdam 추가 검색 등은 남아 있다. 별도 웹 계정 또는 연락 이메일을 요구하는 기능은 사용자 지시에 따라 보류하고 입력을 요청하지 않는다. 위 성공 기록은 해당 시점·입력의 검증이며 모든 옵션의 검증으로 확대하지 않는다.
+전체 구현은 부분 완료다. 나머지 자료원 검색·내보내기, 일부 문헌·첨부 형식 등은 남아 있다. 별도 웹 계정 또는 연락 이메일을 요구하는 기능은 사용자 지시에 따라 보류하고 입력을 요청하지 않는다. 위 성공 기록은 해당 시점·입력의 검증이며 모든 옵션의 검증으로 확대하지 않는다.
+
+
+2026-09-10 Numdam 확장에서는 실제 웹 폼의 키워드·제목 필드와 추가 발행연도 조건, 20건 페이지를 연결했다. `complexity`의 4,804건 중 19·20번째 위치와 원 RIS 두 건, DOI 10.1051/ita/2011126의 내부 ID ITA_2012__46_1_67_0, JATS·초록·10쪽 PDF·DJVU·BibTeX·RIS·EndNote를 실제 MCP에서 회수했다. PDF 첫 쪽의 제목을 추출해 대조했다. 제목 구문과 2012년 조건의 1건, 무작위 문자열의 0건, 이후 native ID AIF_1956__6__1_0의 43쪽 PDF 조회도 통과했다. 전체 성공 근거는 `data/validation/20260910T001118529519Z-numdam-workflow.json`이다.
+
+앞선 `20260910T000809975203Z-numdam-workflow.json`은 새 기능 검증을 통과한 뒤 기존 native ID의 OAI 요청에서 connection_error를 반환했다. 독립 재호출과 후속 전체 흐름은 성공했으며, 실패 기록은 completed=false로 유지한다. 이 관측만으로 원인을 특정하거나 서비스의 영구 제한이라고 판단하지 않았다.
+
+Numdam이 제공한 실제 EndNote 파일에 extract를 호출하여 format_not_supported를 재현한 뒤 공통 추출기를 확장했다. 원 태그의 대소문자, 반복 저자, 이어지는 줄과 원 레코드 텍스트를 보존한다. 실제 공개 파일은 `tests/fixtures/numdam.enw`, 정제한 검색 응답은 `tests/fixtures/numdam-search.html`이다. 새 회귀 검사를 포함해 공통 검사 81개가 통과했다. 검색 문법은 [Numdam 도움말](https://www.numdam.org/help/), OAI의 역할은 [메타데이터 안내](https://www.numdam.org/metadata/)와 대조했다. OAI 갱신일과 웹 검색의 발행연도를 같은 필터로 취급하지 않는다.
+
+같은 날 ScienceDirect의 공개 citation endpoint는 HTTP 403의 HTML을 반환했고, KUDOS 기관 경로에서 Natural Proofs의 정확한 PII 문헌 조회는 publisher_access_restricted였다. AMS의 DOI 10.1090/jams/1019 기관 문헌 조회도 publisher_access_restricted였다. 이 확인을 검색·전문 구현 완료나 자료 부재의 근거로 사용하지 않는다. 원 HTML·숨은 입력값·인증 URL을 출력하지 않고 허용한 상태·제어 이름·공개 문헌 식별자만 진단에 사용했다.

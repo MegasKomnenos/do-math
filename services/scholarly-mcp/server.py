@@ -30,6 +30,7 @@ from aps import APS
 from dataclasses import replace
 from publishers import PROFILES, Publisher
 from jstor import JSTOR
+from numdam import Numdam
 
 ROOT = Path(__file__).resolve().parent
 STORE = ArtifactStore(ROOT / "data")
@@ -128,6 +129,7 @@ def main():
     ADAPTERS["jstor"] = JSTOR(STORE)
     gateway = KudosGateway(ROOT.parents[1] / ".credentials", STORE.sanitizer)
     firefox_gateway = KudosGateway(ROOT.parents[1] / ".credentials", STORE.sanitizer, engine="firefox")
+    ADAPTERS["numdam"] = Numdam(STORE, gateway)
     ADAPTERS["mathscinet"] = MathSciNet(STORE, gateway)
     ADAPTERS["wos"] = WebOfScience(STORE, gateway)
     ADAPTERS["eccc"] = ECCC(STORE, gateway)

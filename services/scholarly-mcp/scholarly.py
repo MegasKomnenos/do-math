@@ -195,6 +195,29 @@ def pointer(value, path):
 
 def bibliography(data, media):
     """Reuse the repository's preserving parsers without invoking their catalog builders."""
+    if media == 'application/x-endnote-refer':
+        rows, fields, raw_lines, last = [], None, [], None
+        for line in data.decode('utf-8-sig').splitlines():
+            if line.startswith('%0 '):
+                if fields is not None:
+                    rows.append({'fields': fields, 'raw_text': '\n'.join(raw_lines).rstrip()})
+                fields, raw_lines, last = {}, [], None
+            if fields is None:
+                if line.strip():
+                    raise ServiceError('bibliography_parse_error', 'EndNote record must begin with %0')
+                continue
+            raw_lines.append(line)
+            match = re.match(r'^%(\S)(?: (.*))?$', line)
+            if match:
+                last = match[1]
+                fields.setdefault(last, []).append(match[2] or '')
+            elif line.startswith('%'):
+                raise ServiceError('bibliography_parse_error', 'Malformed EndNote field')
+            elif line.strip() and last:
+                fields[last][-1] += '\n' + line
+        if fields is not None:
+            rows.append({'fields': fields, 'raw_text': '\n'.join(raw_lines).rstrip()})
+        return rows
     if media == "application/x-wos":
         rows, fields, raw_lines, last = [], None, [], None
         for line in data.decode("utf-8-sig").splitlines():
@@ -312,7 +335,7 @@ def extract_artifact(store, ref, *, fields=None, start=0, count=20, selection=""
                 child = store.put(content, mime, meta["source"], meta["url"], preserve_bytes=True, parent_ref=ref, archive_member=selection)
                 rows = [{**row, "artifact": child}]
         unit = "archive_members"
-    elif media in {"text/csv", "application/x-research-info-systems", "application/x-bibtex", "application/x-wos"}:
+    elif media in {"text/csv", "application/x-research-info-systems", "application/x-bibtex", "application/x-wos", "application/x-endnote-refer"}:
         if selection == "raw":
             rows = data.decode("utf-8-sig").splitlines()
             unit = "lines"

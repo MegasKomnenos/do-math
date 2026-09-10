@@ -70,6 +70,20 @@ async def main():
             assert fetched["status"] == "ok", fetched.get("code")
             assert fetched["components"]["fulltext"]["artifact"]["pages"] == 8
         elif args.source == "numdam":
+            search = await call("search", {"source": "numdam", "query": "complexity", "start": 19, "limit": 2, "export": "ris"})
+            assert search['status'] == 'ok', search.get('code')
+            assert search['received'] == 2 and search['total'] > 20
+            citations = await call('extract', {'ref': search['export']['ref'], 'count': 2})
+            assert citations['returned'] == 2
+            fetched = await call('fetch', {'source': 'numdam', 'target': '10.1051/ita/2011126', 'parts': ['metadata', 'abstract', 'fulltext', 'export', 'supplementary']})
+            assert fetched['status'] == 'ok', fetched.get('code')
+            assert fetched['native_id'] == 'ITA_2012__46_1_67_0'
+            page = await call('extract', {'ref': fetched['components']['fulltext']['artifact']['ref'], 'count': 1})
+            assert 'THREE COMPLEXITY FUNCTIONS' in page['items'][0]['text'].upper()
+            filtered = await call('search', {'source': 'numdam', 'query': '"Three complexity functions"', 'options': {'field': 'title', 'terms': [{'field': 'date', 'from': '2012', 'until': '2012'}]}, 'limit': 2, 'export': 'bibtex'})
+            assert filtered['status'] == 'ok' and filtered['received'] == 1
+            empty = await call('search', {'source': 'numdam', 'query': 'codexnomatchxqz947231', 'limit': 2})
+            assert empty['status'] == 'not_found' and empty['total'] == 0
             fetched = await call("fetch", {"source": "numdam", "target": "AIF_1956__6__1_0", "parts": ["metadata", "fulltext"]})
             assert fetched["status"] == "ok", fetched.get("code")
             page = await call("extract", {"ref": fetched["components"]["fulltext"]["artifact"]["ref"], "count": 1})

@@ -23,7 +23,7 @@
 | CORE | core | api | partial | source_guide, search, fetch, export | public_endpoint_success_and_rate_limit_observed |
 | Project Euclid | project-euclid | playwright | partial | source_guide, fetch, export | live_adapter_metadata_abstract_pdf_fetch |
 | EuDML | eudml | api | partial | source_guide, search, fetch, export | live_mcp_cql_rss_extract_nlm_fetch |
-| Numdam | numdam | api | partial | source_guide, search, fetch, export | live_adapter_jats_pdf_fetch |
+| Numdam | numdam | fixed: OAI/citation API; native search/DOI resolution Playwright | partial | source_guide, search, fetch, export | live_mcp_native_search_citations_jats_pdf_djvu_fetch_pagination |
 | Mathlib | mathlib | api | partial | source_guide, search, fetch, export | not_recorded |
 | Archive of Formal Proofs | afp | api | partial | source_guide, search, fetch, export | live_mcp_entry_search_pinned_metadata_and_proof_source_fetch_extract |
 | Mathematical Components | math-comp | api | partial | source_guide, search, fetch, export | not_recorded |
