@@ -59,6 +59,15 @@ class MCPContract(unittest.IsolatedAsyncioTestCase):
                 guide = (await session.call_tool("describe_source", {"source": "unpaywall"})).structuredContent
                 self.assertEqual(guide["implementation"], "deferred")
                 self.assertEqual(guide["capabilities"], ["source_guide"])
+                workbook=ArtifactStore(tmp).put((ROOT/'tests/fixtures/kudos-acm-titles.xlsx').read_bytes(),'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','kudos-title-list','https://kudos.knu.ac.kr/')
+                choices=(await session.call_tool('extract',{'ref':workbook['ref'],'count':2})).structuredContent
+                self.assertEqual(choices['status'],'selection_required')
+                sheet=(await session.call_tool('extract',{'ref':workbook['ref'],'selection':'Journal','fields':['A','B'],'count':2})).structuredContent
+                self.assertEqual(sheet['returned'],2)
+                self.assertEqual(sheet['unit'],'spreadsheet_rows')
+                legacy=ArtifactStore(tmp).put((ROOT/'tests/fixtures/wos-excel.xls').read_bytes(),'application/vnd.ms-excel','wos','https://www.webofscience.com/')
+                values=(await session.call_tool('extract',{'ref':legacy['ref'],'start':1,'count':1,'fields':['I','BE','BS']})).structuredContent
+                self.assertEqual(values['items'][0]['values']['BS'],'WOS:000269418800023')
 
 
 if __name__ == "__main__":

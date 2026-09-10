@@ -29,6 +29,10 @@ def xml_tree(data):
     return tree
 
 
+def xml_media(media):
+    return media in ('application/xml','text/xml') or media.endswith('+xml')
+
+
 class Sanitizer:
     sensitive = re.compile(r"(?:api[-_]?key|password|passwd\d*|authorization|cookie|secret|token|ticket|csrf|signature|session(?:id)?|__cf_chl|^sid$|^_[as]$)", re.I)
     secret_fields = {"apikey", "password", "passwd", "passwd2", "authorization", "cookie", "setcookie", "secret", "clientsecret", "secretkey", "token", "accesstoken", "refreshtoken", "authtoken", "ticket", "csrf", "csrftoken", "xcsrftoken", "xsrftoken", "signature", "sid", "session", "sessionid", "jsessionid", "xapikey", "xelsapikey", "xelsinsttoken", "xamzcredential", "xamzsignature", "xamzsecuritytoken"}
@@ -137,7 +141,7 @@ class ArtifactStore:
             data = data.encode("utf-8")
         if not preserve_bytes and media_type == "application/json":
             data = encoded(self.sanitizer.value(json.loads(data)))
-        elif not preserve_bytes and "xml" in media_type and "html" not in media_type:
+        elif not preserve_bytes and xml_media(media_type) and 'html' not in media_type:
             data = self.sanitizer.xml(data)
             context["xml_normalized"] = True
         elif not preserve_bytes and (media_type.startswith("text/") or media_type in {"application/x-wos", "application/x-bibtex", "application/x-research-info-systems", "application/x-endnote-refer", "application/x-tex"}):
@@ -293,6 +297,134 @@ def bibliography(data, media):
         raise ServiceError("bibliography_parse_error", "Bibliographic input is malformed or uses syntax not supported by the preserving parser; original bytes remain in the artifact") from None
 
 
+def legacy_spreadsheet_rows(data,ref,sheet_name,start,count,fields):
+    import xlrd
+    from openpyxl.utils import get_column_letter,column_index_from_string
+    try:
+        workbook=xlrd.open_workbook(file_contents=data,on_demand=True,formatting_info=True)
+    except Exception:
+        raise ServiceError('invalid_document','The XLS workbook cannot be read') from None
+    try:
+        sheets=[{'name':sheet.name,'declared_rows':sheet.nrows,'declared_columns':sheet.ncols} for sheet in workbook.sheets()]
+        if not sheet_name and len(sheets)>1:
+            return {'status':'selection_required','artifact':ref,'sheets':sheets,'message':'Set selection to an exact worksheet name'}
+        if sheet_name and sheet_name not in workbook.sheet_names():
+            raise ServiceError('selection_not_found','Worksheet name is not present',status='not_found',sheets=sheets)
+        if not sheets:
+            raise ServiceError('no_tabular_worksheets','This workbook contains no tabular worksheet',status='unsupported')
+        if fields and any(not isinstance(name,str) or not re.fullmatch(r'[A-Z]{1,3}',name) or column_index_from_string(name)>16384 for name in fields):
+            raise ServiceError('invalid_selection','Spreadsheet fields are column letters such as A, B or AA')
+        sheet=workbook.sheet_by_name(sheet_name) if sheet_name else workbook.sheet_by_index(0)
+        items=[]
+        for index in range(start,min(start+count,sheet.nrows)):
+            values,formats,types={},{},{}
+            for col in range(sheet.ncols):
+                letter=get_column_letter(col+1)
+                if fields and letter not in fields:
+                    continue
+                cell=sheet.cell(index,col)
+                value=cell.value
+                if cell.ctype==xlrd.XL_CELL_DATE:
+                    value=xlrd.xldate_as_datetime(value,workbook.datemode).isoformat()
+                    types[letter]='d'
+                elif cell.ctype==xlrd.XL_CELL_BOOLEAN:
+                    value=bool(value)
+                elif cell.ctype in (xlrd.XL_CELL_EMPTY,xlrd.XL_CELL_BLANK):
+                    value=None
+                elif cell.ctype==xlrd.XL_CELL_ERROR:
+                    value=xlrd.error_text_from_code.get(value,str(value))
+                    types[letter]='e'
+                values[letter]=value
+                xf=workbook.xf_list[sheet.cell_xf_index(index,col)]
+                format=workbook.format_map[xf.format_key].format_str
+                if format!='General':
+                    formats[letter]=format
+            item={'row':index+1,'values':values}
+            if fields and any(name not in values for name in fields):
+                item['missing_columns']=[name for name in fields if name not in values]
+            if formats:
+                item['number_formats']=formats
+            if types:
+                item['cell_types']=types
+            items.append(item)
+        return {'status':'ok','artifact':ref,'unit':'spreadsheet_rows','sheet':sheet.name,'sheets':sheets,'start':start,
+                'total':sheet.nrows,'returned':len(items),'next_start':start+len(items) if start+len(items)<sheet.nrows else None,
+                'items':items,'interpretation':'Stored XLS values and number formats; formula definitions, embedded objects and hyperlinks remain in the original file; nothing is executed'}
+    finally:
+        workbook.release_resources()
+
+
+def spreadsheet_rows(data,ref,sheet_name,start,count,fields):
+    import io,zipfile
+    from datetime import date,time
+    from openpyxl import load_workbook
+    from openpyxl.utils import get_column_letter,column_index_from_string
+    try:
+        with zipfile.ZipFile(io.BytesIO(data)) as archive:
+            if sum(item.file_size for item in archive.infolist())>256*1024*1024:
+                raise ServiceError('resource_limit','Uncompressed workbook exceeds the 256 MiB extraction limit')
+        workbook=load_workbook(io.BytesIO(data),read_only=True,data_only=False,keep_links=False)
+    except ServiceError:
+        raise
+    except Exception:
+        raise ServiceError('invalid_document','The XLSX workbook cannot be read') from None
+    try:
+        sheets=[{'name':sheet.title,'declared_rows':sheet.max_row,'declared_columns':sheet.max_column,'state':sheet.sheet_state} for sheet in workbook.worksheets]
+        if not sheets:
+            raise ServiceError('no_tabular_worksheets','This workbook contains no tabular worksheet',status='unsupported')
+        if not sheet_name and len(sheets)>1:
+            return {'status':'selection_required','artifact':ref,'sheets':sheets,'message':'Set selection to an exact worksheet name'}
+        if sheet_name and sheet_name not in workbook.sheetnames:
+            raise ServiceError('selection_not_found','Worksheet name is not present',status='not_found',sheets=sheets)
+        sheet=workbook[sheet_name] if sheet_name else workbook.worksheets[0]
+        if fields:
+            try:
+                if any(not isinstance(name,str) or not re.fullmatch(r'[A-Z]{1,3}',name) or column_index_from_string(name)>16384 for name in fields):
+                    raise ValueError
+            except ValueError:
+                raise ServiceError('invalid_selection','Spreadsheet fields are column letters such as A, B or AA') from None
+        # Source worksheet dimensions can be stale; stream the actual rows to establish the range.
+        sheet.reset_dimensions()
+        items=[]
+        total=0
+        for number,row in enumerate(sheet.iter_rows(),1):
+            total=number
+            if not start<number<=start+count:
+                continue
+            values,formats,formulas,types={},{},[],{}
+            for index,cell in enumerate(row,1):
+                column=get_column_letter(index)
+                if fields and column not in fields:
+                    continue
+                value=cell.value
+                if isinstance(value,(datetime,date,time)):
+                    value=value.isoformat()
+                elif value is not None and not isinstance(value,(str,int,float,bool)):
+                    raise ServiceError('cell_type_not_supported','This workbook cell type requires a separate reader',cell=f'{sheet.title}!{column}{number}')
+                values[column]=value
+                if cell.number_format!='General':
+                    formats[column]=cell.number_format
+                if cell.data_type=='f':
+                    formulas.append(column)
+                if cell.data_type in ('f','e','d'):
+                    types[column]=cell.data_type
+            item={'row':number,'values':values}
+            if fields and any(name not in values for name in fields):
+                item['missing_columns']=[name for name in fields if name not in values]
+            if formats:
+                item['number_formats']=formats
+            if formulas:
+                item['formula_columns']=formulas
+            if types:
+                item['cell_types']=types
+            items.append(item)
+        return {'status':'ok','artifact':ref,'unit':'spreadsheet_rows','sheet':sheet.title,'sheets':sheets,'start':start,
+                'total':total,'returned':len(items),'next_start':start+len(items) if start+len(items)<total else None,
+                'items':items,'interpretation':'Stored cell values and number formats; formulas are returned as text and are not executed'}
+    finally:
+        workbook.close()
+
+
 def extract_artifact(store, ref, *, fields=None, start=0, count=20, selection="", render=False):
     if type(start) is not int or start < 0 or type(count) is not int or count < 1:
         raise ServiceError("invalid_range", "start must be nonnegative and count must be positive")
@@ -355,7 +487,11 @@ def extract_artifact(store, ref, *, fields=None, start=0, count=20, selection=""
         else:
             rows = data.decode("utf-8").splitlines()
             unit = "lines"
-    elif "xml" in media:
+    elif media == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
+        return spreadsheet_rows(data,ref,selection,start,count,fields)
+    elif media == 'application/vnd.ms-excel':
+        return legacy_spreadsheet_rows(data,ref,selection,start,count,fields)
+    elif xml_media(media):
         from lxml import etree
         try:
             tree = xml_tree(data)

@@ -468,6 +468,13 @@ class WebOfScience:
         data = Path(download.path()).read_bytes()
         if not data:
             raise ServiceError("empty_export", "WOS native export was empty")
+        if format=='excel':
+            if data.startswith(bytes.fromhex('d0cf11e0a1b11ae1')):
+                media='application/vnd.ms-excel'
+            elif data.startswith(b'PK'):
+                media='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            else:
+                raise ServiceError('invalid_export','WOS returned no recognized Excel workbook')
         return self.store.put(data, media, self.source, page.url, role="citation_export", format=format,
             record_content=content, start=start, end=end, original_name=download.suggested_filename)
 

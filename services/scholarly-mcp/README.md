@@ -94,3 +94,7 @@ KNU FRIC는 경북대 센터의 공개 소장 목록 검색·ISSN 조회와 CSV�
 
 
 ScienceDirect는 KUDOS 기관 context의 원 citation endpoint로 서지·초록·RIS·BibTeX·plain을 회수한다. 문헌 화면·검색·PDF 준비 경로의 실패와 인용문 성공을 구별한다. AIP는 실제 PDF 전송 호스트를 파일 다운로드에 한해 허용한다. IOP의 서지·PDF 양성 관측과 이후 기관 접근 확인 때문에 미검증인 추가 내보내기는 지원표에 구분한다.
+
+Scopus의 supplementary는 현재 문헌 References·Cited by 탭의 목록이다. references와 citations 각각의 artifact를 extract로 읽는다. 검색 요약의 건수와 문헌 탭의 건수가 다르면 둘을 별도 필드로 보존한다. 색인 EID가 없는 참고문헌도 유지하며 원 RIS·BibTeX의 별도 계정 요구는 계속 보류한다.
+
+Excel 내보내기는 XLS와 XLSX를 구별해 보존하고 추출한다. extract의 selection은 시트명, fields는 A·B·AA 같은 열 문자다. start는 0부터이며 반환 row는 원 시트의 1부터 시작하는 행 번호다. 여러 시트가 있으면 먼저 selection_required와 시트 목록을 반환한다. XLSX 수식은 실행하지 않고 원 문자열로 반환한다. XLS는 저장된 값과 표시 형식을 읽으며 수식 정의·링크·삽입 개체는 원 파일에 남아 있다. WOS의 실제 Excel 표본은 XLS였으며 I·BE·BS 열에서 제목·DOI·accession을 확인했다.

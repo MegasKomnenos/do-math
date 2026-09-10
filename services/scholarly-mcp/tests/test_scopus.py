@@ -9,6 +9,27 @@ sys.path.insert(0, str(ROOT))
 
 
 class ScopusContract(unittest.TestCase):
+    def test_current_publication_url_resolves_its_eid(self):
+        from scopus import Scopus
+        from unittest.mock import patch
+        adapter=Scopus(None,None)
+        with patch.object(adapter,'search',return_value={'total':0,'received':0}) as search:
+            result=adapter.fetch('https://www.scopus.com/pages/publications/77957268169',parts=['metadata'])
+        self.assertEqual(result['status'],'not_found')
+        self.assertEqual(search.call_args.args[0],'EID(2-s2.0-77957268169)')
+
+    def test_reference_range_keeps_unindexed_records(self):
+        from scopus import reference_records
+        from scholarly import ServiceError
+        payload=json.loads((ROOT/'tests/fixtures/scopus-references.json').read_bytes())
+        payload['items'][0].pop('eid',None)
+        rows,total,offset=reference_records(payload)
+        self.assertEqual((len(rows),total,offset),(10,47,0))
+        self.assertEqual(rows[0],payload['items'][0])
+        payload['items'].pop()
+        with self.assertRaises(ServiceError):
+            reference_records(payload)
+
     def test_primary_documents_are_not_confused_with_preprint_counts(self):
         self.assertTrue((ROOT / "scopus.py").exists(), "Scopus adapter is absent")
         mod = importlib.import_module("scopus")

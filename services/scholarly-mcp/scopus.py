@@ -24,6 +24,16 @@ def scopus_records(payload):
     return rows, total, offset
 
 
+def reference_records(payload):
+    meta,rows=payload.get('metadata',{}),payload.get('items')
+    total,offset,capacity=meta.get('totalCount'),meta.get('offset'),meta.get('itemCount')
+    if not isinstance(rows,list) or any(not isinstance(row,dict) for row in rows) or any(type(v) is not int for v in (total,offset,capacity)):
+        raise ServiceError('invalid_response','Scopus returned no reference result range')
+    if min(total,offset)<0 or capacity<1 or len(rows)!=min(capacity,max(0,total-offset)):
+        raise ServiceError('range_mismatch','Scopus reference rows do not match their declared range')
+    return rows,total,offset
+
+
 class Scopus:
     source = "scopus"
     hosts = ("www-scopus-com.libproxy.knu.ac.kr", "www.scopus.com")
@@ -33,6 +43,67 @@ class Scopus:
 
     def page(self):
         return self.gateway.open(self.source, "Scopus", self.hosts, "main")
+
+    def relationships(self,record):
+        eid=record['eid']
+        if not re.fullmatch(r'2-s2\.0-\d+',eid):
+            raise ServiceError('invalid_target','The Scopus record has no canonical EID')
+        page=self.page()
+        goto_source(page,'https://'+urlsplit(page.url).hostname+'/pages/publications/'+eid.removeprefix('2-s2.0-'),self.hosts,wait_until='domcontentloaded',timeout=45000)
+        page.locator('#references').wait_for(timeout=45000)
+        dismiss_cookies(page)
+        components={}
+        for kind,tab,path in [('references','references','/gateway/doc-details/documents/'+eid+'/references'),('citations','citedBy','/gateway/citation-overview/documents/'+eid.removeprefix('2-s2.0-')+'/cited')]:
+            records,evidence=[],[]
+            total=None
+            try:
+                label=page.locator('#'+tab).inner_text()
+                count=re.search(r'\(([\d,]+)\)',label)
+                if not count:
+                    raise ServiceError('relation_count_missing','Scopus did not display the relationship count')
+                total=int(count[1].replace(',',''))
+                if total:
+                    def matches(response):
+                        return urlsplit(response.url).hostname in self.hosts and urlsplit(response.url).path==path
+                    with page.expect_response(matches,timeout=45000) as event:
+                        page.locator('#'+tab).click()
+                    response=event.value
+                    while True:
+                        if response.status in (401,403):
+                            raise ServiceError('access_restricted','Scopus restricted this relationship list',status='restricted')
+                        if response.status!=200:
+                            raise ServiceError('provider_error','Scopus relationship request failed',http_status=response.status)
+                        payload=response.json()
+                        evidence.append(self.store.put(encoded(payload),'application/json',self.source,response.url,role='relationship_response',eid=eid,relationship=kind))
+                        if kind=='references':
+                            rows,reported,offset=reference_records(payload)
+                            if reported!=total or offset!=len(records):
+                                raise ServiceError('range_mismatch','Scopus reference page or count changed',evidence=evidence[-1])
+                        else:
+                            rows=payload.get('documents')
+                            if not isinstance(rows,list) or any(not isinstance(row,dict) or not row.get('eid') for row in rows):
+                                raise ServiceError('invalid_response','Scopus returned no citing-document array')
+                        records.extend(rows)
+                        if len(records)==total:
+                            break
+                        if len(records)>total or not rows or kind=='citations':
+                            raise ServiceError('incomplete_response','The relationship array does not match the document tab count')
+                        next_button=page.locator('#references-panel').get_by_role('button',name='Next',exact=True)
+                        if next_button.is_disabled():
+                            raise ServiceError('incomplete_response','Scopus disabled Next before the reference list was complete')
+                        with page.expect_response(matches,timeout=45000) as event:
+                            next_button.click()
+                        response=event.value
+                status={'status':'available'}
+            except ServiceError as error:
+                status=error.result
+            except Exception as error:
+                status={'status':'error','code':'relationship_retrieval_failed','error_type':type(error).__name__}
+            artifact=self.store.put(encoded(records),'application/json',self.source,page.url,role='relationship_records',eid=eid,relationship=kind,total=total,received=len(records))
+            components[kind]={**status,'artifact':artifact,'received':len(records),'total':total,'evidence':evidence,
+                'search_metadata_count':record.get(kind,{}).get('count')}
+        return {'status':'available' if all(c['status']=='available' for c in components.values()) else 'partial',**components,
+                'scope':'Actual document reference/cited-by tabs; search-summary counts are preserved separately'}
 
     def search(self, query, *, options, start=0, limit=20, cursor=None, export=None):
         if type(start) is not int or start < 0 or type(limit) is not int or not 1 <= limit <= 1000:
@@ -107,7 +178,8 @@ class Scopus:
             if parsed.hostname in self.hosts:
                 identifiers = parse_qs(parsed.query).get("eid", [])
                 matched = re.search(r"/(2-s2\.0-\d+)(?:/|$)", parsed.path)
-                target = identifiers[0] if len(identifiers) == 1 else matched[1] if matched else ""
+                publication = re.fullmatch(r"/pages/publications/(\d+)/?", parsed.path)
+                target = identifiers[0] if len(identifiers) == 1 else matched[1] if matched else '2-s2.0-'+publication[1] if publication else ""
                 if not re.fullmatch(r"2-s2\.0-\d+", target):
                     raise ServiceError("invalid_target", "This Scopus URL contains no document EID")
             elif parsed.hostname not in ("doi.org", "dx.doi.org"):
@@ -135,7 +207,10 @@ class Scopus:
             elif part == "fulltext":
                 components[part] = {"status": "unsupported", "reason": "Scopus indexes documents; select the publisher separately for its full text"}
             elif part == "supplementary":
-                components[part] = {"status": "not_implemented", "reason": "Separate reference and citation record retrieval is pending"}
+                try:
+                    components[part] = self.relationships(record)
+                except ServiceError as error:
+                    components[part] = error.result
             else:
                 raise ServiceError("invalid_parts", "Unknown requested content", part=part)
         return {"status": "ok" if all(v["status"] == "available" for v in components.values()) else "partial",

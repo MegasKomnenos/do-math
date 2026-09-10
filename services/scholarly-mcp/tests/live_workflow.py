@@ -61,6 +61,10 @@ async def main():
             assert linked['components']['metadata']['status'] == 'available'
             assert linked['components']['supplementary']['status'] == 'available'
             assert linked['components']['abstract']['status'] in ('available', 'not_found')
+            excel = await call('search', {'source':'wos','query':'UT=('+identifier+')','limit':1,'export':'excel'})
+            assert excel['status']=='ok'
+            sheet = await call('extract', {'ref':excel['export']['ref'],'count':2})
+            assert sheet['status']=='ok' and sheet['returned']==2
         elif args.source == "eccc":
             search = await call("search", {"source": "eccc", "query": "natural proofs", "limit": 2})
             assert search["status"] == "ok", search.get("code")
@@ -269,6 +273,11 @@ async def main():
             assert records["items"][0]["eid"] != records["items"][1]["eid"]
             fetched = await call("fetch", {"source": "scopus", "target": records["items"][0]["eid"], "parts": ["metadata", "abstract"]})
             assert fetched["status"] == "ok", fetched.get("code")
+            related=await call('fetch',{'source':'scopus','target':'2-s2.0-77957268169','parts':['metadata','supplementary']})
+            assert related['status']=='ok'
+            relation=related['components']['supplementary']
+            assert relation['references']['received']==relation['references']['total']
+            assert relation['citations']['received']==relation['citations']['total']
         elif args.source == "drops":
             search = await call("search", {"source": "drops", "query": "P versus NP", "limit": 2, "export": "bibtex"})
             assert search["status"] == "ok", search.get("code")

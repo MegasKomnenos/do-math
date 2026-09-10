@@ -82,7 +82,8 @@ SOURCES["scopus"].usage = {
     "fields": {"TITLE": "제목", "ABS": "초록", "KEY": "키워드", "TITLE-ABS-KEY": "제목·초록·키워드", "AUTHLASTNAME": "저자 성", "AFFIL": "소속", "PUBYEAR": "발행연도", "DOI": "DOI", "EID": "Scopus 문서 ID"},
     "options": "options는 비운다. start는 0부터, limit는 1..1000. 기본 UI 정렬을 사용하며 primary 문서의 totalCount와 페이지를 대조한다. preprint 별도 집계는 섞지 않는다.",
     "exports": "json은 UI가 받은 전체 원 필드, csv는 같은 필드를 기계적으로 직렬화하며 중첩값은 JSON 셀이다. native RIS·BibTeX는 별도 웹 계정을 요구하므로 사용자 지시에 따라 보류한다. 요청 시 export_deferred와 검색 원자료를 반환하며 계정 입력을 요청하지 않는다.",
-    "fetch": "EID(2-s2.0-숫자) 또는 DOI로 색인의 서지·초록을 확보한다. 제목은 TITLE 후보 검색으로 돌려준다. 출판사 원문·인용 관계의 별도 조회는 이 구현의 확보 범위에 포함되지 않는다.",
+    "fetch": "EID(2-s2.0-숫자)·Scopus 문헌 URL·DOI로 색인의 서지·초록을 확보한다. 제목은 TITLE 후보 검색이다. supplementary는 현재 문헌의 References·Cited by 탭 목록이며 각 references/citations.artifact를 extract로 읽는다. 참고문헌은 text, 피인용 문헌은 itemTitle 등 원 필드를 보존한다. 출판사 원문은 별도 source로 선택한다.",
+    "relationships": "참고문헌의 원 10건 페이지를 순회하고 시작 위치·전체 건수·실제 수신분을 대조한다. EID가 없는 참고문헌도 버리지 않는다. 피인용 응답은 탭 건수와 배열을 대조한다. 검색 요약의 search_metadata_count와 문헌 탭의 total이 다를 수 있어 별도로 보존한다. 일부 실패는 이미 회수한 관계 목록과 함께 표시한다.",
     "examples": [{"tool": "search", "arguments": {"source": "scopus", "query": "TITLE(\"P versus NP\")", "limit": 2, "export": "csv"}}],
     "official": ["https://www.elsevier.com/products/scopus/search"],
 }
@@ -525,7 +526,7 @@ for category in ('author-repository','society-journal'):
 
 for identifier, level in {
     "mathscinet": "live_mcp_search_export_fetch_extract",
-    "wos": "live_mcp_search_full_record_title_candidates_url_fetch_extract",
+    "wos": "live_mcp_search_full_record_title_url_native_xls_extract",
     "eccc": "live_mcp_search_revision_fetch",
     "crossref": "live_mcp_search_native_citation_eight_formats_extract",
     "arxiv": "live_mcp_search_pinned_html_source_archive_tex_extract",
@@ -546,7 +547,7 @@ for identifier, level in {
     "dblp": "access_challenge_observed",
     "zenodo": "live_mcp_search_file_checksum_fetch_extract",
     "acm-dl": "live_mcp_search_export_original_pdf_fetch",
-    "scopus": "live_mcp_pagination_extract_metadata_abstract_fetch",
+    "scopus": "live_mcp_search_fetch_references_pagination_cited_by_extract",
     "drops": "live_mcp_native_exports_pdf_html_codemeta_and_supplementary_references",
     "springer": "live_mcp_advanced_search_native_citations_pdf_fetch_pagination",
     "ieee-xplore": "live_mcp_search_bibtex_extract_metadata_abstract_pdf_fetch",

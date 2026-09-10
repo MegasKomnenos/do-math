@@ -131,3 +131,11 @@ IOP의 명시적 /article/10.1088/0022-3727/34/10/311/meta 주소에서는 기�
 일반 웹 후보 발견은 별도 자격 없는 Mwmbl의 /search/?s= 공개 API로 연결했다. natural proofs의 관련 결과 25건, 그중 2건 CSV·원 강조 표시 조각의 보존과 추출, qzjxwv947231의 빈 결과를 실제 MCP에서 확인했다. `data/validation/20260910T023008496145Z-general-web-workflow.json`이 성공 근거다. returned_set_size는 API가 반환한 묶음의 크기이며 전체 웹 일치 건수가 아니므로 total=null이다. 앞선 다른 무작위 문자열의 20초 HTTP timeout도 있었으나 현재 어댑터는 공통 45초 제한과 typed timeout을 사용한다. API 실패 시 다른 검색 엔진으로 전환하지 않는다.
 
 MCP 구조화 반환에도 공통 Sanitizer를 적용했다. 중첩 component의 서명 URL과 CSRF 필드가 정제 없이 반환되던 합성 값 사례를 재현하고 수리했다. 원 공개 서명·cursor 보존 규칙은 기존 정제기를 그대로 따른다. 새 회귀 검사를 포함해 공통 검사 101개가 통과했다. JSTOR 기관 PDF 주소는 별도 확인에서 HTML을 반환했고 SIAM의 공개 citation GET·POST는 HTTP 403이었다. 이 관측을 문헌 부재로 표시하지 않는다. 전체 구현은 여전히 부분 완료다.
+
+Scopus 문헌 2-s2.0-77957268169의 References·Cited by 탭을 연결했다. 실제 MCP에서 참고문헌 47건을 다섯 페이지로 회수하고 피인용 문헌 3건을 추출했다. 검색 요약의 참고문헌 수는 48이고 문헌 탭·응답은 47이므로 search_metadata_count와 total을 구별한다. EID가 없는 참고문헌도 버리지 않는다. 성공 보고는 `data/validation/20260910T030610Z-scopus-relations.json`, 기존 미구현 재현은 `20260910T030257Z-scopus-relations.json`이다. 현재 /pages/publications/숫자 URL의 EID 해석도 회귀 검사했다.
+
+KUDOS가 공개 제공한 ACM Open TitleList(2026).xlsx 원본 1,708,542바이트와 WOS savedrecs.xls 7,680바이트를 fixture로 보존했다. XLSX MIME의 openxml 문자열 때문에 ZIP을 XML로 파싱하던 결함을 재현하고 XML MIME 판정을 수정했다. XLSX의 세 시트 선택, Journal 178행, 수식 문자열·숫자 표시 형식·날짜 추출을 검사했다. XLS는 저장된 값·표시 형식을 읽으며 수식 정의나 매크로를 실행하지 않는다.
+
+WOS 실제 Excel 응답은 XLS OLE 파일이어서 기존 고정 XLSX MIME으로는 추출이 실패했다. 파일 서명에 따라 MIME을 결정한 뒤 UT=(WOS:000269418800023)의 검색·native Excel·I/BE/BS 열 추출이 실제 MCP에서 통과했다. DOI 10.1145/1562164.1562186과 accession을 대조했으며 성공 보고는 `data/validation/20260910T033101Z-wos-excel-mcp.json`이다. 앞선 전체 WOS 흐름의 검색 TimeoutError와 Excel 파일 형식 결함을 구별한다.
+
+로컬 Excel 검사는 통과했지만 MCP 호출 중 처음 openpyxl을 import하면 NumPy의 Windows native module 초기화에서 정지했다. 진단 스택으로 위치를 확인하고 stdio 스레드 시작 전에 openpyxl을 준비해 해결했다. `20260910T032427Z-wos-excel-mcp.json`은 검색 후 추출에서 멈춘 미완료 기록이며 성공으로 변경하지 않았다. 실제 stdio 회귀 검사는 XLSX 시트 선택과 XLS 필드 추출을 포함한다.
