@@ -6,7 +6,7 @@
 | Web of Science Core Collection + CPCI | wos | playwright | partial | source_guide, search, fetch, export | live_mcp_search_full_record_title_url_native_xls_extract |
 | Scopus | scopus | playwright | partial | source_guide, search, fetch, export | live_mcp_search_fetch_references_pagination_cited_by_extract |
 | ACM Digital Library | acm-dl | playwright | partial | source_guide, search, fetch, export | live_mcp_search_export_original_pdf_fetch |
-| IEEE Xplore / IEL | ieee-xplore | playwright | partial | source_guide, search, fetch, export | live_mcp_search_bibtex_extract_metadata_abstract_pdf_fetch |
+| IEEE Xplore / IEL | ieee-xplore | playwright | partial | source_guide, search, fetch, export | live_mcp_search_citation_pdf_and_native_references_fetch_extract |
 | PQDT Global | pqdt | playwright | partial | source_guide, search, fetch, export | live_mcp_repeat_search_pagination_ris_pdf_fetch |
 | zbMATH Open | zbmath | api | partial | source_guide, search, fetch, export | live_mcp_search_extract |
 | arXiv | arxiv | api | partial | source_guide, search, fetch, export | live_mcp_search_pinned_html_source_archive_tex_extract |
@@ -42,7 +42,7 @@
 | AIP | aip | playwright | partial | source_guide, search, fetch, export | live_mcp_advanced_search_citation_abstract_pdf_fetch_pagination |
 | APS 공개 접근 | aps | api | partial | source_guide, search, fetch, export | live_mcp_open_access_feed_metadata_abstract_pdf_fetch |
 | IOP | iop | playwright | partial | source_guide, fetch, export | live_adapter_metadata_pdf; citation_unverified_after_gateway_challenge |
-| SIAM | siam | under_investigation | pending | 미구현 | browser_access_challenge_observed |
+| SIAM | siam | playwright | partial | source_guide, fetch, export | live_mcp_public_front_matter_pdf_fetch_extract; search_challenge_observed |
 | KNU FRIC | knu-fric | playwright | partial | source_guide, search, fetch, export | live_mcp_catalogue_pagination_issn_fetch_zero_result |
 | 개별 구독 자료원 | individual-subscription | target_dependent | pending | 미구현 | not_recorded |
 | 학회·저널 공식 사이트 | society-journal | fixed: public document Playwright; OJS native citation API | partial | source_guide, fetch, export | live_mcp_public_journal_metadata_abstract_pdf_native_citations |

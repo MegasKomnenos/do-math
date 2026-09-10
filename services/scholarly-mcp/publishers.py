@@ -475,7 +475,7 @@ class Publisher:
             return {**candidates, 'status': 'selection_required' if candidates.get('received') else candidates['status'],
                     'message': 'Select the exact publication DOI or URL from the preserved candidates'}
         url, identifier = self.resolve_target(target)
-        if urlsplit(url).path.lower().endswith('.pdf'):
+        if urlsplit(url).path.lower().endswith('.pdf') or self.source=='siam' and urlsplit(url).path.startswith('/doi/pdf/'):
             return self.explicit_pdf(url,parts)
         page = self.document(url)
         try:

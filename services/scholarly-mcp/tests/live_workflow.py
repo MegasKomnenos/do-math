@@ -89,6 +89,12 @@ async def main():
             assert any('natural' in x['title'].lower() for x in rows['items'])
             empty=await call('search',{'source':'general-web','query':'qzjxwv947231','limit':2})
             assert empty['status']=='not_found' and empty['returned_set_size']==0
+        elif args.source == 'siam':
+            found=await call('fetch',{'source':args.source,'target':'https://epubs.siam.org/doi/pdf/10.1137/1.9781611974997.fm','parts':['metadata','fulltext','export']})
+            assert found['status']=='ok'
+            assert found['components']['metadata']['kind']=='embedded_pdf_metadata'
+            pages=await call('extract',{'ref':found['components']['fulltext']['artifact']['ref'],'count':1})
+            assert pages['total']==10 and 'First-Order' in pages['items'][0]['text']
         elif args.source == 'ams':
             found=await call('search',{'source':args.source,'query':'algebra','start':11,'limit':2,'export':'csv'})
             assert found['status']=='ok' and found['received']==2
@@ -280,6 +286,11 @@ async def main():
             fetched = await call("fetch", {"source": "ieee-xplore", "target": "10488889", "parts": ["metadata", "abstract", "fulltext"]})
             assert fetched["status"] == "ok", fetched.get("code")
             assert fetched["components"]["fulltext"]["artifact"]["pages"] >= 2
+            details=await call('fetch',{'source':'ieee-xplore','target':'10488889','parts':['metadata','supplementary']})
+            references=details['components']['supplementary']['references']
+            assert references['status']=='available' and references['count']==22
+            rows=await call('extract',{'ref':references['artifact']['ref'],'count':22,'fields':['id','order','title','text','links']})
+            assert rows['returned']==22 and rows['items'][0]['title']=='PRIMES is in P'
         elif args.source == "pqdt":
             search = await call("search", {"source": "pqdt", "query": 'TI("P versus NP")', "limit": 1, "export": "ris"})
             assert search["status"] == "ok", search.get("code")

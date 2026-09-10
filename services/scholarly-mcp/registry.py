@@ -293,7 +293,7 @@ SOURCES["ieee-xplore"].usage = {
     "search": "KUDOS → 학술DB → IEEE → Command Search에서 query를 그대로 입력한다. 필드 이름을 큰따옴표로 감싸고 콜론 뒤에 조건을 쓴다. 예: \"Document Title\":\"P versus NP\". AND·OR·NOT·괄호, 구문 따옴표, * 와일드카드 등을 IEEE 문법대로 사용한다.",
     "fields": ["All Metadata", "Full Text & Metadata", "Full Text Only", "Document Title", "Authors", "Publication Title", "Abstract", "Index Terms", "Article Number", "Author Affiliations", "Author Keywords", "DOI", "Funding Agency", "IEEE Terms", "ISBN", "ISSN", "Publisher", "Standard Number"],
     "exports": "json은 UI의 원 문헌 필드·초록이다. bibtex·ris·plain은 native Citations의 Citation and Abstract, csv는 native Results export다. 여러 페이지의 파일은 export.artifacts로 나누어 보존한다.",
-    "fetch": "IEEE 문헌 번호, /document/번호 링크 또는 DOI를 지정한다. 서지·초록·원문 PDF를 해당 IEEE에서 회수한다. 제목은 후보 검색으로 반환한다. supplementary는 원 문헌 페이지이며 개별 부록 다운로드는 개발 중이다.",
+    "fetch": "IEEE 문헌 번호, /document/번호 링크 또는 DOI를 지정한다. 서지·초록·원문 PDF를 해당 IEEE에서 회수한다. 제목은 후보 검색으로 반환한다. supplementary.references는 문헌 번호를 대조한 원 참고문헌 배열이며 artifact를 extract로 읽는다. order·id·title·text·links 등 원 필드를 보존하고 외부 인용 링크는 따라가지 않는다. 개별 첨부 회수는 개발 중이므로 supplementary 전체 상태는 partial이다.",
     "limits": "options는 비운다. start 0부터, limit 1..1000. 자료원의 25건 페이지를 순회한다. 추가 UI facet과 일부 페이지 이동 제어는 검증 중이다. 요청한 원 검색식과 실제 UI 요청을 대조한다.",
     "examples": [{"tool": "search", "arguments": {"source": "ieee-xplore", "query": "\"Document Title\":\"P versus NP\"", "limit": 1, "export": "bibtex"}}, {"tool": "fetch", "arguments": {"source": "ieee-xplore", "target": "10488889", "parts": ["metadata", "abstract", "fulltext"]}}],
 }
@@ -453,6 +453,17 @@ SOURCES['de-gruyter'].usage={
 }
 
 SOURCES['jstor'].implementation='partial'
+SOURCES['siam'].implementation='partial'
+SOURCES['siam'].transport='playwright'
+SOURCES['siam'].capabilities=('source_guide','fetch','export')
+SOURCES['siam'].usage={
+    'search':'원 SIAM 검색 화면은 존재하지만 현재 고급검색 연결과 실서비스 검증이 남아 있다. 검색은 publisher_search_not_implemented를 반환한다. 공개 홈페이지 뒤 convex optimization 검색은 접근 확인 화면이었다.',
+    'fetch':'SIAM DOI·문헌 URL은 원 문헌 페이지에서 서지·초록·PDF를 조회한다. .pdf 주소와 epubs.siam.org/doi/pdf/DOI는 정확히 지정한 파일을 회수한다. 이 파일 경로의 metadata는 PDF 내장 정보이며 출판사 문헌 페이지의 서지와 구별한다.',
+    'exports':'명시적 PDF 파일의 export는 그 원 PDF다. 문헌별 RIS·BibTeX 등 native 인용문 내보내기는 아직 연결하지 않았다. 기본 문헌 페이지 export의 source_metadata_json과 구별한다.',
+    'limits':'기관 구독이나 추가 웹 계정 없이 제공되는 자료를 회수한다. 접근 제한은 그 문헌·경로의 결과이며 자료원 전체의 부재를 뜻하지 않는다. 책의 Front Matter·Back Matter는 별도 파일이다. 전체 책으로 확대하지 않는다.',
+    'examples':[{'tool':'fetch','arguments':{'source':'siam','target':'https://epubs.siam.org/doi/pdf/10.1137/1.9781611974997.fm','parts':['metadata','fulltext']}}],
+    'official':['https://epubs.siam.org/faq'],
+}
 SOURCES['ams'].implementation='partial'
 SOURCES['ams'].transport='playwright'
 SOURCES['ams'].capabilities=('source_guide','search','fetch','export')
@@ -573,7 +584,7 @@ for identifier, level in {
     "scopus": "live_mcp_search_fetch_references_pagination_cited_by_extract",
     "drops": "live_mcp_native_exports_pdf_html_codemeta_and_supplementary_references",
     "springer": "live_mcp_advanced_search_native_citations_pdf_fetch_pagination",
-    "ieee-xplore": "live_mcp_search_bibtex_extract_metadata_abstract_pdf_fetch",
+    "ieee-xplore": "live_mcp_search_citation_pdf_and_native_references_fetch_extract",
     "crossmark": "live_mcp_search_extract",
     "afp": "live_mcp_entry_search_pinned_metadata_and_proof_source_fetch_extract",
     "unpaywall": "public_endpoint_contact_requirement_observed",
@@ -591,7 +602,7 @@ for identifier, level in {
     "de-gruyter": "live_mcp_native_search_ris_abstract_pdf_fetch_pagination",
     "jstor": "live_mcp_public_ris_metadata_abstract_fetch; web_captcha_observed",
     "iop": "live_adapter_metadata_pdf; citation_unverified_after_gateway_challenge",
-    "siam": "browser_access_challenge_observed",
+    "siam": "live_mcp_public_front_matter_pdf_fetch_extract; search_challenge_observed",
     "ams": "live_mcp_explicit_pdf; native_browser_mixed_search; search_adapter_restricted",
     "science-direct": "live_mcp_institutional_ris_bibtex_plain_metadata_abstract_fetch",
 }.items():

@@ -155,7 +155,7 @@ def main():
     ADAPTERS["springer"] = Publisher(STORE, firefox_gateway, next(p for p in PROFILES if p.source == "springer"))
     ADAPTERS['science-direct'] = ScienceDirect(STORE,firefox_gateway)
     ADAPTERS['ams'] = AMS(STORE,firefox_gateway)
-    for identifier in ("project-euclid", "cambridge", "oxford", "aip", "wiley", "taylor-francis", "de-gruyter", "iop"):
+    for identifier in ("project-euclid", "cambridge", "oxford", "aip", "wiley", "taylor-francis", "de-gruyter", "iop", "siam"):
         ADAPTERS[identifier] = Publisher(STORE, firefox_gateway, next(p for p in PROFILES if p.source == identifier))
     ADAPTERS["aps-institutional"] = Publisher(STORE, firefox_gateway, replace(next(p for p in PROFILES if p.source == "aps"), source="aps-institutional"))
     try:

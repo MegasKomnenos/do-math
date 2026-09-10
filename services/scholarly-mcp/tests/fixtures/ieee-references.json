@@ -1,0 +1,500 @@
+{
+  "articleNumber": "10488889",
+  "title": "From P Versus NP to Probabilistic and Zero Knowledge Proof Systems",
+  "publicationNumber": "2",
+  "publisher": "IEEE",
+  "contentType": "periodicals",
+  "references": [
+    {
+      "order": "1",
+      "text": "M. Agrawal, N. Kayal, and N. Saxena, “PRIMES is in P,” <em>Ann. Math.</em>, vol. 160, no. 2, pp. 781–793, 2004, doi: 10.4007/annals.2004.160.781.",
+      "title": "PRIMES is in P",
+      "context": [
+        {
+          "sec": "sec5",
+          "text": "1.",
+          "part": "1"
+        }
+      ],
+      "links": {
+        "crossRefLink": "https://doi.org/10.4007/annals.2004.160.781",
+        "openUrlLink": "http://fp3kg2be7r.search.serialssolutions.com?url_ver=Z39.88-2004&rfr_id=info:sid/IEEE.org:XPLORE&rft_id=info:doi/10.4007/annals.2004.160.781&url_ctx_fmt=info:ofi/fmt:kev:mtx:ctx&rft_val_fmt=info:ofi/fmt:kev:mtx:journal&rft.atitle=PRIMES is in P&rft.jtitle=Ann. Math.&rft.date=2004&rft.volume=160&rft.issue=2&rft.spage=781&rft.epage=793&rft.au=M.Agrawal&rft.aulast=M.Agrawal",
+        "doi": "10.4007/annals.2004.160.781",
+        "openUrlImgLoc": "https://ieeexplore.ieee.org/Xplorehelp/img/openurl/nctun.gif"
+      },
+      "googleScholarStructredQuery": "title=PRIMES is in P&doi=10.4007/annals.2004.160.781",
+      "googleScholarLink": "https://scholar.google.com/scholar_lookup?hl=en&title=PRIMES is in P&doi=10.4007/annals.2004.160.781",
+      "refType": "biblio",
+      "id": "ref1",
+      "errorMsg": ""
+    },
+    {
+      "order": "2",
+      "text": "L. Babai, “Graph isomorphism in quasipolynomial time [Extended Abstract],” in <em>Proc. 48th Annu. ACM SIGACT Symp. Theory Comput. (STOC)</em>, Cambridge, MA, USA. New York, NY, USA : ACM, Jun. 18–21, 2016, pp. 684–697, doi: 10.1145/2897518.2897542.",
+      "title": "Graph isomorphism in quasipolynomial time [Extended Abstract]",
+      "context": [
+        {
+          "sec": "sec6",
+          "text": "2.",
+          "part": "1"
+        }
+      ],
+      "links": {
+        "crossRefLink": "https://doi.org/10.1145/2897518.2897542",
+        "openUrlLink": "http://fp3kg2be7r.search.serialssolutions.com?url_ver=Z39.88-2004&rfr_id=info:sid/IEEE.org:XPLORE&rft_id=info:doi/10.1145/2897518.2897542&url_ctx_fmt=info:ofi/fmt:kev:mtx:ctx&rft_val_fmt=info:ofi/fmt:kev:mtx:journal&rft.jtitle=Proc. 48th Annu. ACM SIGACT Symp. Theory Comput. (STOC)&rft.date=18–21, 2016&rft.spage=684&rft.epage=697&rft.au=L.Babai&rft.aulast=L.Babai",
+        "doi": "10.1145/2897518.2897542",
+        "openUrlImgLoc": "https://ieeexplore.ieee.org/Xplorehelp/img/openurl/nctun.gif"
+      },
+      "googleScholarStructredQuery": "title=Graph isomorphism in quasipolynomial time [Extended Abstract]&doi=10.1145/2897518.2897542",
+      "googleScholarLink": "https://scholar.google.com/scholar_lookup?hl=en&title=Graph isomorphism in quasipolynomial time [Extended Abstract]&doi=10.1145/2897518.2897542",
+      "refType": "biblio",
+      "id": "ref2",
+      "errorMsg": ""
+    },
+    {
+      "order": "3",
+      "text": "M. Banković, I. Drecun, and F. Marić, “A proof system for graph (non)-isomorphism verification,” <em>Logical Methods Comput. Sci.</em>, vol. 19, no. 1, pp. 9:1–9:40, Feb. 1, 2023, doi: 10.46298/lmcs-19(1:9)2023.",
+      "title": "A proof system for graph (non)-isomorphism verification",
+      "context": [
+        {
+          "sec": "sec7",
+          "text": " V∗ can “play” the prover to gain that knowledge, which it couldn’t gain on its own (there is no known PPT for GNI3), by setting H = H′; if the verifier returns b′ = 1 then V∗ learns that H′ ≃ G1.",
+          "part": "1"
+        }
+      ],
+      "links": {
+        "crossRefLink": "https://doi.org/10.46298/lmcs-19(1:9)2023",
+        "openUrlLink": "http://fp3kg2be7r.search.serialssolutions.com?url_ver=Z39.88-2004&rfr_id=info:sid/IEEE.org:XPLORE&rft_id=info:doi/10.46298/lmcs-19(1:9)2023&url_ctx_fmt=info:ofi/fmt:kev:mtx:ctx&rft_val_fmt=info:ofi/fmt:kev:mtx:journal&rft.atitle=A proof system for graph (non)-isomorphism verification&rft.jtitle=Logical Methods Comput. Sci.&rft.date=2023&rft.volume=19&rft.issue=1&rft.spage=9:1&rft.epage=9:40&rft.au=M.Banković&rft.aulast=M.Banković",
+        "doi": "10.46298/lmcs-19(1:9)2023",
+        "openUrlImgLoc": "https://ieeexplore.ieee.org/Xplorehelp/img/openurl/nctun.gif"
+      },
+      "googleScholarStructredQuery": "title=A proof system for graph (non)-isomorphism verification&doi=10.46298/lmcs-19(1:9)2023",
+      "googleScholarLink": "https://scholar.google.com/scholar_lookup?hl=en&title=A proof system for graph (non)-isomorphism verification&doi=10.46298/lmcs-19(1:9)2023",
+      "refType": "biblio",
+      "id": "ref3",
+      "errorMsg": ""
+    },
+    {
+      "order": "4",
+      "text": "M. Blum, “How to prove a theorem so no one else can claim it,” in <em>Proc. Int. Congr. Math.</em>, 1986, pp. 1444–1451.",
+      "title": "How to prove a theorem so no one else can claim it",
+      "context": [
+        {
+          "sec": "sec9",
+          "text": "4 It qualifies as CZK if a statistically binding commitment exists.",
+          "part": "1"
+        }
+      ],
+      "links": {
+        "openUrlLink": "http://fp3kg2be7r.search.serialssolutions.com?url_ver=Z39.88-2004&rfr_id=info:sid/IEEE.org:XPLORE&url_ctx_fmt=info:ofi/fmt:kev:mtx:ctx&rft_val_fmt=info:ofi/fmt:kev:mtx:journal&rft.atitle=How to prove a theorem so no one else can claim it&rft.jtitle=Proc. Int. Congr. Math.&rft.date=1986&rft.spage=1444&rft.epage=1451&rft.au=M.Blum&rft.aulast=M.Blum",
+        "openUrlImgLoc": "https://ieeexplore.ieee.org/Xplorehelp/img/openurl/nctun.gif"
+      },
+      "googleScholarStructredQuery": "title=How to prove a theorem so no one else can claim it",
+      "googleScholarLink": "https://scholar.google.com/scholar_lookup?hl=en&title=How to prove a theorem so no one else can claim it",
+      "refType": "biblio",
+      "id": "ref4",
+      "errorMsg": ""
+    },
+    {
+      "order": "5",
+      "text": "R. Canetti, J. Kilian, E. Petrank, and A. Rosen, “Black-box concurrent zero-knowledge requires ˜ (log n) rounds,” in <em>Proc. 33rd Annu. ACM Symp. Theory Comput.</em>, 2001, pp. 570–579, doi: 10.1145/380752.380852.",
+      "title": "Black-box concurrent zero-knowledge requires ˜ (log n) rounds",
+      "context": [
+        {
+          "sec": "sec10b",
+          "text": "5.",
+          "part": "1"
+        }
+      ],
+      "links": {
+        "crossRefLink": "https://doi.org/10.1145/380752.380852",
+        "openUrlLink": "http://fp3kg2be7r.search.serialssolutions.com?url_ver=Z39.88-2004&rfr_id=info:sid/IEEE.org:XPLORE&rft_id=info:doi/10.1145/380752.380852&url_ctx_fmt=info:ofi/fmt:kev:mtx:ctx&rft_val_fmt=info:ofi/fmt:kev:mtx:journal&rft.atitle=Black-box concurrent zero-knowledge requires ˜ (log n) rounds&rft.jtitle=Proc. 33rd Annu. ACM Symp. Theory Comput.&rft.date=2001&rft.spage=570&rft.epage=579&rft.au=R.Canetti&rft.aulast=R.Canetti",
+        "doi": "10.1145/380752.380852",
+        "openUrlImgLoc": "https://ieeexplore.ieee.org/Xplorehelp/img/openurl/nctun.gif"
+      },
+      "googleScholarStructredQuery": "title=Black-box concurrent zero-knowledge requires ˜ (log n) rounds&doi=10.1145/380752.380852",
+      "googleScholarLink": "https://scholar.google.com/scholar_lookup?hl=en&title=Black-box concurrent zero-knowledge requires ˜ (log n) rounds&doi=10.1145/380752.380852",
+      "refType": "biblio",
+      "id": "ref5",
+      "errorMsg": ""
+    },
+    {
+      "order": "6",
+      "text": "S. A. Cook, “The complexity of theorem-proving procedures,” in <em>Proc. 3rd Annu. ACM Symp. Theory Comput.</em>, 1971, pp. 151–158, doi: 10.7551/mitpress/12274.003.0036.",
+      "title": "The complexity of theorem-proving procedures",
+      "context": [
+        {
+          "sec": "sec2",
+          "text": "6,13.",
+          "part": "1"
+        }
+      ],
+      "links": {
+        "crossRefLink": "https://doi.org/10.1145/800157.805047",
+        "openUrlLink": "http://fp3kg2be7r.search.serialssolutions.com?url_ver=Z39.88-2004&rfr_id=info:sid/IEEE.org:XPLORE&rft_id=info:doi/10.1145/800157.805047&url_ctx_fmt=info:ofi/fmt:kev:mtx:ctx&rft_val_fmt=info:ofi/fmt:kev:mtx:journal&rft.atitle=The complexity of theorem-proving procedures&rft.jtitle=Proc. 3rd Annu. ACM Symp. Theory Comput.&rft.date=1971&rft.spage=151&rft.epage=158&rft.au=S. A.Cook&rft.aulast=S. A.Cook",
+        "doi": "10.1145/800157.805047",
+        "openUrlImgLoc": "https://ieeexplore.ieee.org/Xplorehelp/img/openurl/nctun.gif"
+      },
+      "googleScholarStructredQuery": "title=The complexity of theorem-proving procedures&doi=10.1145/800157.805047",
+      "googleScholarLink": "https://scholar.google.com/scholar_lookup?hl=en&title=The complexity of theorem-proving procedures&doi=10.1145/800157.805047",
+      "refType": "biblio",
+      "id": "ref6",
+      "errorMsg": ""
+    },
+    {
+      "order": "7",
+      "text": "T. H. Cormen, L. E. Leiserson, R. L. Rivest, and C. Stein, <em>Introduction to Algorithms</em>, 3rd ed. Cambridge, MA, USA : MIT Press, 2009.",
+      "title": "Introduction to Algorithms",
+      "context": [
+        {
+          "sec": "sec2",
+          "text": " This problem, denoted Sort(mylist) is in P given the existence of algorithms, such as Merge-Sort,7 whose running time is proportional to n ∗ lg(n).",
+          "part": "1"
+        }
+      ],
+      "links": {
+        "openUrlLink": "http://fp3kg2be7r.search.serialssolutions.com?url_ver=Z39.88-2004&rfr_id=info:sid/IEEE.org:XPLORE&url_ctx_fmt=info:ofi/fmt:kev:mtx:ctx&rft_val_fmt=info:ofi/fmt:kev:mtx:journal&rft.jtitle=Introduction to Algorithms&rft.date=2009&rft.au=T. H.Cormen&rft.aulast=T. H.Cormen",
+        "openUrlImgLoc": "https://ieeexplore.ieee.org/Xplorehelp/img/openurl/nctun.gif"
+      },
+      "googleScholarStructredQuery": "title=Introduction to Algorithms",
+      "googleScholarLink": "https://scholar.google.com/scholar_lookup?hl=en&title=Introduction to Algorithms",
+      "refType": "biblio",
+      "id": "ref7",
+      "errorMsg": ""
+    },
+    {
+      "order": "8",
+      "text": "A. Fiat and A. Shamir, “How to prove yourself: practical solutions to identification and signature problems,” in <em>Proc. Adv. Cryptol. Lecture Notes Comput. Sci. (CRYPTO)</em>, Berlin, Germany : Springer-Verlag, 1987, vol. 263, pp. 186–194, doi: 10.1007/3-540-47721-7_12.",
+      "title": "How to prove yourself: practical solutions to identification and signature problems",
+      "context": [
+        {
+          "sec": "sec10d",
+          "text": "The fiat Shamir heuristic8 enables a non-iteractive version of parallel-repetitions protocol as follows.",
+          "part": "1"
+        }
+      ],
+      "links": {
+        "crossRefLink": "https://doi.org/10.1007/3-540-47721-7_12",
+        "openUrlLink": "http://fp3kg2be7r.search.serialssolutions.com?url_ver=Z39.88-2004&rfr_id=info:sid/IEEE.org:XPLORE&rft_id=info:doi/10.1007/3-540-47721-7_12&url_ctx_fmt=info:ofi/fmt:kev:mtx:ctx&rft_val_fmt=info:ofi/fmt:kev:mtx:journal&rft.atitle=How to prove yourself: practical solutions to identification and signature problems&rft.jtitle=Proc. Adv. Cryptol. Lecture Notes Comput. Sci. (CRYPTO)&rft.date=1987&rft.volume=263&rft.spage=186&rft.epage=194&rft.au=A.Fiat&rft.aulast=A.Fiat",
+        "doi": "10.1007/3-540-47721-7_12",
+        "openUrlImgLoc": "https://ieeexplore.ieee.org/Xplorehelp/img/openurl/nctun.gif"
+      },
+      "googleScholarStructredQuery": "title=How to prove yourself: practical solutions to identification and signature problems&doi=10.1007/3-540-47721-7_12",
+      "googleScholarLink": "https://scholar.google.com/scholar_lookup?hl=en&title=How to prove yourself: practical solutions to identification and signature problems&doi=10.1007/3-540-47721-7_12",
+      "refType": "biblio",
+      "id": "ref8",
+      "errorMsg": ""
+    },
+    {
+      "order": "9",
+      "text": "O. Goldreich, <em>Foundations of Cryptography</em>, vol. 1. Cambridge, U.K. : Cambridge Univ. Press, 2001.",
+      "title": "Foundations of Cryptography",
+      "context": [
+        {
+          "sec": "sec9",
+          "text": "This result is one of the most important results in the theory of complexity and ZK.10,15,9 We will show a CZK IP for the NP-complete problem HamD; being NP-complete, any other problem in NP can be reduced to HamD using a deterministic polynomial time reduction, thereby extending the CZK result to the entire NP complexity class.",
+          "part": "1"
+        }
+      ],
+      "links": {
+        "crossRefLink": "https://doi.org/10.1017/cbo9780511546891",
+        "openUrlLink": "http://fp3kg2be7r.search.serialssolutions.com?url_ver=Z39.88-2004&rfr_id=info:sid/IEEE.org:XPLORE&rft_id=info:doi/10.1017/cbo9780511546891&url_ctx_fmt=info:ofi/fmt:kev:mtx:ctx&rft_val_fmt=info:ofi/fmt:kev:mtx:journal&rft.jtitle=Foundations of Cryptography&rft.date=2001&rft.volume=1&rft.au=O.Goldreich&rft.aulast=O.Goldreich",
+        "doi": "10.1017/cbo9780511546891",
+        "openUrlImgLoc": "https://ieeexplore.ieee.org/Xplorehelp/img/openurl/nctun.gif"
+      },
+      "googleScholarStructredQuery": "title=Foundations of Cryptography&doi=10.1017/cbo9780511546891",
+      "googleScholarLink": "https://scholar.google.com/scholar_lookup?hl=en&title=Foundations of Cryptography&doi=10.1017/cbo9780511546891",
+      "refType": "biblio",
+      "id": "ref9",
+      "errorMsg": ""
+    },
+    {
+      "order": "10",
+      "text": "O. Goldreich, S. Micali, and A. Wigderson, “Proofs that yield nothing but their validity or all languages in NP have zero-knowledge proof systems,” <em>J. ACM</em>, vol. 38, no. 3, pp. 691–729, 1991, doi: 10.1145/116825.116852.",
+      "title": "Proofs that yield nothing but their validity or all languages in NP have zero-knowledge proof systems",
+      "context": [
+        {
+          "sec": "sec9",
+          "text": "10,15,9 We will show a CZK IP for the NP-complete problem HamD; being NP-complete, any other problem in NP can be reduced to HamD using a deterministic polynomial time reduction, thereby extending the CZK result to the entire NP complexity class.",
+          "part": "1"
+        }
+      ],
+      "links": {
+        "crossRefLink": "https://doi.org/10.1145/116825.116852",
+        "openUrlLink": "http://fp3kg2be7r.search.serialssolutions.com?url_ver=Z39.88-2004&rfr_id=info:sid/IEEE.org:XPLORE&rft_id=info:doi/10.1145/116825.116852&url_ctx_fmt=info:ofi/fmt:kev:mtx:ctx&rft_val_fmt=info:ofi/fmt:kev:mtx:journal&rft.atitle=Proofs that yield nothing but their validity or all languages in NP have zero-knowledge proof systems&rft.jtitle=J. ACM&rft.date=1991&rft.volume=38&rft.issue=3&rft.spage=691&rft.epage=729&rft.au=O.Goldreich&rft.aulast=O.Goldreich",
+        "doi": "10.1145/116825.116852",
+        "openUrlImgLoc": "https://ieeexplore.ieee.org/Xplorehelp/img/openurl/nctun.gif"
+      },
+      "googleScholarStructredQuery": "title=Proofs that yield nothing but their validity or all languages in NP have zero-knowledge proof systems&doi=10.1145/116825.116852",
+      "googleScholarLink": "https://scholar.google.com/scholar_lookup?hl=en&title=Proofs that yield nothing but their validity or all languages in NP have zero-knowledge proof systems&doi=10.1145/116825.116852",
+      "refType": "biblio",
+      "id": "ref10",
+      "errorMsg": ""
+    },
+    {
+      "order": "11",
+      "text": "S. Goldwasser and M. Sipser, “Private coins versus public coins in interactive proof systems,” in <em>Proc. 18th Symp. Theory Comput.</em>, 1986, pp. 59–68, doi: 10.1145/12130.12137.",
+      "title": "Private coins versus public coins in interactive proof systems",
+      "links": {
+        "crossRefLink": "https://doi.org/10.1145/12130.12137",
+        "openUrlLink": "http://fp3kg2be7r.search.serialssolutions.com?url_ver=Z39.88-2004&rfr_id=info:sid/IEEE.org:XPLORE&rft_id=info:doi/10.1145/12130.12137&url_ctx_fmt=info:ofi/fmt:kev:mtx:ctx&rft_val_fmt=info:ofi/fmt:kev:mtx:journal&rft.atitle=Private coins versus public coins in interactive proof systems&rft.jtitle=Proc. 18th Symp. Theory Comput.&rft.date=1986&rft.spage=59&rft.epage=68&rft.au=S.Goldwasser&rft.aulast=S.Goldwasser",
+        "doi": "10.1145/12130.12137",
+        "openUrlImgLoc": "https://ieeexplore.ieee.org/Xplorehelp/img/openurl/nctun.gif"
+      },
+      "googleScholarStructredQuery": "title=Private coins versus public coins in interactive proof systems&doi=10.1145/12130.12137",
+      "googleScholarLink": "https://scholar.google.com/scholar_lookup?hl=en&title=Private coins versus public coins in interactive proof systems&doi=10.1145/12130.12137",
+      "refType": "biblio",
+      "id": "ref11",
+      "errorMsg": ""
+    },
+    {
+      "order": "12",
+      "text": "J. Kobler, U. Schoning, S. Toda, and J. Toran, <em>The Graph Isomorphism Problem: Its Structural Complexity</em>. Cambridge, MA, USA : Birkhauser, 1993.",
+      "title": "The Graph Isomorphism Problem: Its Structural Complexity",
+      "context": [
+        {
+          "sec": "sec6",
+          "text": "The GI problem12: Are two given graphs, G1 = (V2, E2) and G2 = (V2, E2), isomorphic (G1 ≃ G2)? In other words, is there a renaming or permutation π of V1 such that after renaming G1 and G2 become equal (have same sets of vertices and edges).",
+          "part": "1"
+        }
+      ],
+      "links": {
+        "crossRefLink": "https://doi.org/10.1007/978-1-4612-0333-9",
+        "openUrlLink": "http://fp3kg2be7r.search.serialssolutions.com?url_ver=Z39.88-2004&rfr_id=info:sid/IEEE.org:XPLORE&rft_id=info:doi/10.1007/978-1-4612-0333-9&url_ctx_fmt=info:ofi/fmt:kev:mtx:ctx&rft_val_fmt=info:ofi/fmt:kev:mtx:journal&rft.jtitle=The Graph Isomorphism Problem: Its Structural Complexity&rft.date=1993&rft.au=J.Kobler&rft.aulast=J.Kobler",
+        "doi": "10.1007/978-1-4612-0333-9",
+        "openUrlImgLoc": "https://ieeexplore.ieee.org/Xplorehelp/img/openurl/nctun.gif"
+      },
+      "googleScholarStructredQuery": "title=The Graph Isomorphism Problem: Its Structural Complexity&doi=10.1007/978-1-4612-0333-9",
+      "googleScholarLink": "https://scholar.google.com/scholar_lookup?hl=en&title=The Graph Isomorphism Problem: Its Structural Complexity&doi=10.1007/978-1-4612-0333-9",
+      "refType": "biblio",
+      "id": "ref12",
+      "errorMsg": ""
+    },
+    {
+      "order": "13",
+      "text": "L. Levin, “Universal search problems,” <em>Problems Inf. Transmiss.</em>, vol. 9, no. 3, pp. 115–116, 1973.",
+      "title": "Universal search problems",
+      "context": [
+        {
+          "sec": "sec2",
+          "text": "NP-complete problems are the hardest to solve problems in the NP class, in the sense that solving any such problem (for example, Ham) in polynomial time implies that every other problem in NP is also solvable in polynomial time.6,13.",
+          "part": "1"
+        }
+      ],
+      "links": {
+        "openUrlLink": "http://fp3kg2be7r.search.serialssolutions.com?url_ver=Z39.88-2004&rfr_id=info:sid/IEEE.org:XPLORE&url_ctx_fmt=info:ofi/fmt:kev:mtx:ctx&rft_val_fmt=info:ofi/fmt:kev:mtx:journal&rft.atitle=Universal search problems&rft.jtitle=Problems Inf. Transmiss.&rft.date=1973&rft.volume=9&rft.issue=3&rft.spage=115&rft.epage=116&rft.au=L.Levin&rft.aulast=L.Levin",
+        "openUrlImgLoc": "https://ieeexplore.ieee.org/Xplorehelp/img/openurl/nctun.gif"
+      },
+      "googleScholarStructredQuery": "title=Universal search problems",
+      "googleScholarLink": "https://scholar.google.com/scholar_lookup?hl=en&title=Universal search problems",
+      "refType": "biblio",
+      "id": "ref13",
+      "errorMsg": ""
+    },
+    {
+      "order": "14",
+      "text": "C. Lund, L. Fortnow, H. Karloff, and N. Nisan, “Algebraic methods for interactive proofs,” <em>J. ACM</em>, vol. 39, no. 4, pp. 859–868, 1992, doi: 10.1145/146585.146605.",
+      "title": "Algebraic methods for interactive proofs",
+      "context": [
+        {
+          "sec": "sec6",
+          "text": "14 In addition, one of the most impactful results in the IP space is the proof by Shamir,16 stating that IP = PSPACE, where PSPACE is the class of problems solvable on a deterministic device using a polynomial amount of space.",
+          "part": "1"
+        }
+      ],
+      "links": {
+        "crossRefLink": "https://doi.org/10.1145/146585.146605",
+        "openUrlLink": "http://fp3kg2be7r.search.serialssolutions.com?url_ver=Z39.88-2004&rfr_id=info:sid/IEEE.org:XPLORE&rft_id=info:doi/10.1145/146585.146605&url_ctx_fmt=info:ofi/fmt:kev:mtx:ctx&rft_val_fmt=info:ofi/fmt:kev:mtx:journal&rft.atitle=Algebraic methods for interactive proofs&rft.jtitle=J. ACM&rft.date=1992&rft.volume=39&rft.issue=4&rft.spage=859&rft.epage=868&rft.au=C.Lund&rft.aulast=C.Lund",
+        "doi": "10.1145/146585.146605",
+        "openUrlImgLoc": "https://ieeexplore.ieee.org/Xplorehelp/img/openurl/nctun.gif"
+      },
+      "googleScholarStructredQuery": "title=Algebraic methods for interactive proofs&doi=10.1145/146585.146605",
+      "googleScholarLink": "https://scholar.google.com/scholar_lookup?hl=en&title=Algebraic methods for interactive proofs&doi=10.1145/146585.146605",
+      "refType": "biblio",
+      "id": "ref14",
+      "errorMsg": ""
+    },
+    {
+      "order": "15",
+      "text": "A. Rosen, “A note on constant-round zero-knowledge proofs for NP,” in <em>Proc. 1st Theory Cryptogr. Conf.</em>, Berlin, Germany : Springer-Verlag, 2004, pp. 191–202.",
+      "title": "A note on constant-round zero-knowledge proofs for NP",
+      "context": [
+        {
+          "sec": "sec9",
+          "text": "This result is one of the most important results in the theory of complexity and ZK.10,15,9 We will show a CZK IP for the NP-complete problem HamD; being NP-complete, any other problem in NP can be reduced to HamD using a deterministic polynomial time reduction, thereby extending the CZK result to the entire NP complexity class.",
+          "part": "1"
+        }
+      ],
+      "links": {
+        "crossRefLink": "https://doi.org/10.1007/978-3-540-24638-1_11",
+        "openUrlLink": "http://fp3kg2be7r.search.serialssolutions.com?url_ver=Z39.88-2004&rfr_id=info:sid/IEEE.org:XPLORE&rft_id=info:doi/10.1007/978-3-540-24638-1_11&url_ctx_fmt=info:ofi/fmt:kev:mtx:ctx&rft_val_fmt=info:ofi/fmt:kev:mtx:journal&rft.atitle=A note on constant-round zero-knowledge proofs for NP&rft.jtitle=Proc. 1st Theory Cryptogr. Conf.&rft.date=2004&rft.spage=191&rft.epage=202&rft.au=A.Rosen&rft.aulast=A.Rosen",
+        "doi": "10.1007/978-3-540-24638-1_11",
+        "openUrlImgLoc": "https://ieeexplore.ieee.org/Xplorehelp/img/openurl/nctun.gif"
+      },
+      "googleScholarStructredQuery": "title=A note on constant-round zero-knowledge proofs for NP&doi=10.1007/978-3-540-24638-1_11",
+      "googleScholarLink": "https://scholar.google.com/scholar_lookup?hl=en&title=A note on constant-round zero-knowledge proofs for NP&doi=10.1007/978-3-540-24638-1_11",
+      "refType": "biblio",
+      "id": "ref15",
+      "errorMsg": ""
+    },
+    {
+      "order": "16",
+      "text": "A. Shamir, “IP=PSPACE (Interactive Proof=Polynomial Space),” in <em>Proc. IEEE 31st Annu. Symp. Found. Comput. Sci.</em>, 1990, pp. 11–15, doi: 10.1109/FSCS.1990.89519.",
+      "title": "IP=PSPACE (Interactive Proof=Polynomial Space)",
+      "context": [
+        {
+          "sec": "sec6",
+          "text": " It is known that PH ⊆ IP.14 In addition, one of the most impactful results in the IP space is the proof by Shamir,16 stating that IP = PSPACE, where PSPACE is the class of problems solvable on a deterministic device using a polynomial amount of space.",
+          "part": "1"
+        }
+      ],
+      "links": {
+        "documentLink": "/document/89519",
+        "pdfLink": "/stamp/stamp.jsp?tp=&arnumber=89519",
+        "accessType": {
+          "type": "subscribed",
+          "message": "Included in Your Digital Subscription"
+        },
+        "accessToolTip": "Included in Your Digital Subscription",
+        "accessIcon": "icon.access.subscribed.png",
+        "articleNumber": "89519",
+        "doi": "10.1109/fscs.1990.89519",
+        "pdfSize": "423",
+        "openUrlImgLoc": "https://ieeexplore.ieee.org/Xplorehelp/img/openurl/nctun.gif"
+      },
+      "googleScholarStructredQuery": "title=IP=PSPACE (Interactive Proof=Polynomial Space)&doi=10.1109/fscs.1990.89519",
+      "googleScholarLink": "https://scholar.google.com/scholar_lookup?hl=en&title=IP=PSPACE (Interactive Proof=Polynomial Space)&doi=10.1109/fscs.1990.89519",
+      "refType": "biblio",
+      "id": "ref16",
+      "errorMsg": ""
+    },
+    {
+      "order": "17",
+      "text": "C. P. Schnorr, “Efficient signature generation by smart cards,” <em>J. Cryptol.</em>, vol. 4, no. 3, pp. 161–174, 1991, doi: 10.1007/BF00196725.",
+      "title": "Efficient signature generation by smart cards",
+      "context": [
+        {
+          "sec": "sec10c",
+          "text": " The Schnor algorithm, for example,17 proves that the prover knows a secret number x that matches h = gx the verifier sees.",
+          "part": "1"
+        }
+      ],
+      "links": {
+        "crossRefLink": "https://doi.org/10.1007/bf00196725",
+        "openUrlLink": "http://fp3kg2be7r.search.serialssolutions.com?url_ver=Z39.88-2004&rfr_id=info:sid/IEEE.org:XPLORE&rft_id=info:doi/10.1007/bf00196725&url_ctx_fmt=info:ofi/fmt:kev:mtx:ctx&rft_val_fmt=info:ofi/fmt:kev:mtx:journal&rft.atitle=Efficient signature generation by smart cards&rft.jtitle=J. Cryptol.&rft.date=1991&rft.volume=4&rft.issue=3&rft.spage=161&rft.epage=174&rft.au=C. P.Schnorr&rft.aulast=C. P.Schnorr",
+        "doi": "10.1007/bf00196725",
+        "openUrlImgLoc": "https://ieeexplore.ieee.org/Xplorehelp/img/openurl/nctun.gif"
+      },
+      "googleScholarStructredQuery": "title=Efficient signature generation by smart cards&doi=10.1007/bf00196725",
+      "googleScholarLink": "https://scholar.google.com/scholar_lookup?hl=en&title=Efficient signature generation by smart cards&doi=10.1007/bf00196725",
+      "refType": "biblio",
+      "id": "ref17",
+      "errorMsg": ""
+    },
+    {
+      "order": "18",
+      "text": "“<em>Random Oracle</em>.” Wikipedia. [Online]. Available: https://en.wikipedia.org/wiki/Random_oracle",
+      "title": "Random Oracle",
+      "context": [
+        {
+          "sec": "sec10d",
+          "text": " Instead of the verifier sending the prover a vector b of randomly chosen bits b both the prover and verifier share a random Oracle18 (such as a cryptographic Hash function) Ha(); both use b = Ha(G, c, cπ).",
+          "part": "1"
+        }
+      ],
+      "links": {
+        "openUrlLink": "http://fp3kg2be7r.search.serialssolutions.com?url_ver=Z39.88-2004&rfr_id=info:sid/IEEE.org:XPLORE&url_ctx_fmt=info:ofi/fmt:kev:mtx:ctx&rft_val_fmt=info:ofi/fmt:kev:mtx:journal&rft.jtitle=Random Oracle&rft.au=&rft.aulast=",
+        "openUrlImgLoc": "https://ieeexplore.ieee.org/Xplorehelp/img/openurl/nctun.gif"
+      },
+      "googleScholarStructredQuery": "title=Random Oracle",
+      "googleScholarLink": "https://scholar.google.com/scholar_lookup?hl=en&title=Random Oracle",
+      "refType": "biblio",
+      "id": "ref18",
+      "errorMsg": ""
+    },
+    {
+      "order": "19",
+      "text": "“<em>Probabilistically checkable proof</em>.” Wikipedia. [Online]. Available: https://en.wikipedia.org/wiki/Probabilistically_checkable_proof",
+      "title": "Probabilistically checkable proof",
+      "context": [
+        {
+          "sec": "sec10e",
+          "text": "Some known PCP properties are provided in Wikipedia’s “Probabilistically Checkable Proof” page,19 such as PCP[0, 0] = P stemming from the fact that a polynomial-time deterministic verifier can decide on its own, without accessing the tape and without using random draws.",
+          "part": "1"
+        }
+      ],
+      "links": {
+        "openUrlLink": "http://fp3kg2be7r.search.serialssolutions.com?url_ver=Z39.88-2004&rfr_id=info:sid/IEEE.org:XPLORE&url_ctx_fmt=info:ofi/fmt:kev:mtx:ctx&rft_val_fmt=info:ofi/fmt:kev:mtx:journal&rft.jtitle=Probabilistically checkable proof&rft.au=&rft.aulast=",
+        "openUrlImgLoc": "https://ieeexplore.ieee.org/Xplorehelp/img/openurl/nctun.gif"
+      },
+      "googleScholarStructredQuery": "title=Probabilistically checkable proof",
+      "googleScholarLink": "https://scholar.google.com/scholar_lookup?hl=en&title=Probabilistically checkable proof",
+      "refType": "biblio",
+      "id": "ref19",
+      "errorMsg": ""
+    },
+    {
+      "order": "20",
+      "text": "“<em>Primality test</em>.” Wikipedia. [Online]. Available: https://en.wikipedia.org/wiki/Primality_test",
+      "title": "Primality test",
+      "context": [
+        {
+          "sec": "sec5",
+          "text": " A primality test problem for determining whether an input number is prime20 is an example of a problem with a BPP algorithm that was later discovered to also have an algorithm in P.1.",
+          "part": "1"
+        }
+      ],
+      "links": {
+        "openUrlLink": "http://fp3kg2be7r.search.serialssolutions.com?url_ver=Z39.88-2004&rfr_id=info:sid/IEEE.org:XPLORE&url_ctx_fmt=info:ofi/fmt:kev:mtx:ctx&rft_val_fmt=info:ofi/fmt:kev:mtx:journal&rft.jtitle=Primality test&rft.au=&rft.aulast=",
+        "openUrlImgLoc": "https://ieeexplore.ieee.org/Xplorehelp/img/openurl/nctun.gif"
+      },
+      "googleScholarStructredQuery": "title=Primality test",
+      "googleScholarLink": "https://scholar.google.com/scholar_lookup?hl=en&title=Primality test",
+      "refType": "biblio",
+      "id": "ref20",
+      "errorMsg": ""
+    },
+    {
+      "order": "21",
+      "text": "“<em>Computational indistinguishability</em>.” Wikipedia. [Online]. Available: https://en.wikipedia.org/wiki/Computational_indistinguishability",
+      "title": "Computational indistinguishability",
+      "context": [
+        {
+          "sec": "sec8",
+          "text": " More specifically21:\n\n•(S) ≅ p(Prover, V∗erifier) if (S) looks exactly like (Prover, V∗erifier): that is, δ of the two distributions is 0.\n•(S) ≅ s(Prover, V∗erifier) if δ of the two distributions is statistically negligible: that is, it is in o(2−n) (n being the size of the input).\n•(S) ≅ c(Prover, V∗erifier) if no PPT can discover, with non-negligible probability, [i.e., Ω(2−n)], an element that is in only one of the sample spaces of the two respective distributions; rephrased in lay language: \"if no PPT can find Waldo with non-negligible probability, i.e., in Ω(2−n)\".",
+          "part": "1"
+        }
+      ],
+      "links": {
+        "openUrlLink": "http://fp3kg2be7r.search.serialssolutions.com?url_ver=Z39.88-2004&rfr_id=info:sid/IEEE.org:XPLORE&url_ctx_fmt=info:ofi/fmt:kev:mtx:ctx&rft_val_fmt=info:ofi/fmt:kev:mtx:journal&rft.jtitle=Computational indistinguishability&rft.au=&rft.aulast=",
+        "openUrlImgLoc": "https://ieeexplore.ieee.org/Xplorehelp/img/openurl/nctun.gif"
+      },
+      "googleScholarStructredQuery": "title=Computational indistinguishability",
+      "googleScholarLink": "https://scholar.google.com/scholar_lookup?hl=en&title=Computational indistinguishability",
+      "refType": "biblio",
+      "id": "ref21",
+      "errorMsg": ""
+    },
+    {
+      "order": "22",
+      "text": "“<em>Halting problem</em>.” Wikipedia. [Online]. Available: https://en.wikipedia.org/wiki/Halting_problem",
+      "title": "Halting problem",
+      "context": [
+        {
+          "sec": "sec6",
+          "text": " It cannot however solve a problem like the Halting problem,22 that is not computable.",
+          "part": "1"
+        }
+      ],
+      "links": {
+        "openUrlLink": "http://fp3kg2be7r.search.serialssolutions.com?url_ver=Z39.88-2004&rfr_id=info:sid/IEEE.org:XPLORE&url_ctx_fmt=info:ofi/fmt:kev:mtx:ctx&rft_val_fmt=info:ofi/fmt:kev:mtx:journal&rft.jtitle=Halting problem&rft.au=&rft.aulast=",
+        "openUrlImgLoc": "https://ieeexplore.ieee.org/Xplorehelp/img/openurl/nctun.gif"
+      },
+      "googleScholarStructredQuery": "title=Halting problem",
+      "googleScholarLink": "https://scholar.google.com/scholar_lookup?hl=en&title=Halting problem",
+      "refType": "biblio",
+      "id": "ref22",
+      "errorMsg": ""
+    }
+  ]
+}

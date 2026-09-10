@@ -161,3 +161,9 @@ AMS는 algebra를 다시 검색해 원 브라우저에서 6,587건 중 첫 12건
 Publisher의 명시적 .pdf 파일 경로는 실제 native download 이벤트를 회수한다. 경로·쿼리가 요청과 같은 다운로드를 고르고, 허용한 자료원 URL인지 확인한 뒤 바이트를 읽는다. PDF 서명과 파서를 확인하고 파일·내장 메타데이터를 구별해 보존한다. 이벤트 listener와 해당 작업에서 연 페이지를 정리한다. 외부 자료원 download는 파일을 읽거나 artifact로 보존하지 않는 대역 검사도 통과했다. 브라우저 이동의 사후 호스트 검사와 HTTP 다운로드의 redirect 사전 검사를 같은 보장으로 표현하지 않는다.
 
 수리 후 실제 MCP의 PDF fetch·메타데이터 구분·51쪽 파일 추출이 `data/validation/20260910T044529Z-ams-pdf-mcp.json`에서 completed=true로 통과했다. 재실행 도구는 tests/live_ams_pdf.py다. 이 파일은 별도 부속 PDF이며 전체 책 51쪽을 확보했다고 주장하지 않는다. 공통 검사 113개가 통과했고 AMS의 검색·원 파일 내보내기 전체 검증은 계속 남아 있다.
+
+SIAM 공개 홈페이지는 정상이었지만 convex optimization 검색은 /action/doSearch의 접근 확인 화면이었다. 문헌 앞부분의 실제 PDF 주소 /doi/pdf/10.1137/1.9781611974997.fm은 별도 계정 없이 10쪽 파일을 반환했다. 이 URL 형식을 명시적 파일 경로로 연결하고 SIAM 어댑터를 등록했다. 실제 MCP fetch·PDF 내장 메타데이터 구분·첫 쪽 제목·10쪽 추출이 `data/validation/20260910T050425088629Z-siam-workflow.json`에서 통과했다. 별도 직접 어댑터 관측에서는 SIAM News June 2025 PDF 12쪽도 회수했다. 책 Front Matter의 /doi/abs 페이지는 PDF 회수 후에도 document_not_ready였으므로 웹 서지·검색·인용문 전체를 검증한 것으로 확대하지 않는다.
+
+IEEE 문헌 10488889의 supplementary 분기에는 단순 h1 대기가 있었다. 실제 문헌에는 문헌 제목·Alerts·References의 h1 세 개가 있어 strict-mode 오류였다. 문헌 제목 h1.document-title과 가시 References 탭으로 좁혔다. 그 뒤 화면은 References is not available for this document라고 표시했지만 원 /rest/document/10488889/references 응답의 articleNumber는 10488889이고 references 배열은 22건이었다. 첫 항목은 PRIMES is in P, DOI 10.4007/annals.2004.160.781이었다. 화면 안내로 원 응답까지 없다고 잘못 보고한 부분은 배열 확인 후 정정했다.
+
+IEEE 원 참고문헌의 문헌 번호와 배열 형식을 대조하고 order·id·title·text·context·links 등 각 항목의 원 필드를 유지했다. userInfo와 사용자 설정 상태를 빼고 문헌·참고문헌에 해당하는 응답을 보존한다. 외부 인용 링크는 자동 방문하지 않는다. 실제 MCP에서 22건을 회수·추출한 보고는 `data/validation/20260910T051301Z-ieee-references-mcp.json`이며 completed=true다. 개별 첨부는 아직 미구현이어서 fetch 전체와 supplementary는 partial, references는 available로 구별한다. 공통 검사 115개가 통과했다.

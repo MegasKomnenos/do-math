@@ -5,7 +5,7 @@ from urllib.parse import urljoin, urlsplit
 
 from bs4 import BeautifulSoup
 
-from browser_adapters import browser_download, clean_html, dismiss_cookies, goto_source
+from browser_adapters import browser_download, dismiss_cookies, goto_source
 from scholarly import ServiceError, encoded
 
 
@@ -16,6 +16,15 @@ def ieee_records(raw):
     if not all(isinstance(row, dict) and row.get("articleNumber") for row in rows) or raw.get("endRecord") != offset + len(rows):
         raise ServiceError("invalid_response", "IEEE document identities or range do not match the response")
     return rows, total, offset
+
+
+def reference_records(payload,identifier):
+    rows=payload.get('references')
+    if str(payload.get('articleNumber'))!=identifier:
+        raise ServiceError('identity_mismatch','IEEE reference response belongs to a different document')
+    if not isinstance(rows,list) or any(not isinstance(row,dict) for row in rows):
+        raise ServiceError('invalid_response','IEEE returned no native reference array')
+    return rows
 
 
 class IEEE:
@@ -29,6 +38,27 @@ class IEEE:
 
     def page(self):
         return self.gateway.open(self.source, "IEEE", self.hosts, "body")
+
+    def references(self,identifier,base):
+        page=self.page()
+        goto_source(page,urljoin(base,'/document/'+identifier+'/'),self.hosts,wait_until='domcontentloaded',timeout=45000)
+        page.locator('h1.document-title').wait_for(timeout=30000)
+        dismiss_cookies(page)
+        path='/rest/document/'+identifier+'/references'
+        with page.expect_response(lambda r:urlsplit(r.url).hostname in self.hosts and urlsplit(r.url).path==path,timeout=45000) as pending:
+            page.locator('a.document-tab-link').filter(has_text=re.compile(r'^References$')).filter(visible=True).first.click()
+        response=pending.value
+        if response.status in (401,403):
+            raise ServiceError('access_restricted','IEEE restricted the reference request',status='restricted')
+        if response.status!=200:
+            raise ServiceError('provider_error','IEEE reference request failed',http_status=response.status)
+        payload=response.json()
+        rows=reference_records(payload,identifier)
+        document={key:payload[key] for key in ('articleNumber','title','publicationNumber','publisher','contentType','references') if key in payload}
+        proof=self.store.put(encoded(document),'application/json',self.source,response.url,role='native_reference_response',article_number=identifier)
+        artifact=self.store.put(encoded(rows),'application/json',self.source,response.url,role='reference_records',article_number=identifier,evidence_ref=proof['ref'])
+        return {'status':'available' if rows else 'not_found','artifact':artifact,'count':len(rows),'evidence':proof,
+                'scope':'Native reference array for this article; citation links are preserved and not followed'}
 
     def citation(self, page, indices, format):
         controls = page.get_by_role("checkbox", name="Select search result", exact=True)
@@ -168,10 +198,13 @@ class IEEE:
                 except ServiceError as error:
                     components[part] = error.result
             else:
-                page = self.page()
-                goto_source(page, urljoin(base, row["documentLink"]), self.hosts, wait_until="domcontentloaded", timeout=45000)
-                page.locator("h1").wait_for(timeout=30000)
-                source_page = self.store.put(clean_html(page.content(), self.store.sanitizer), "text/html", self.source, page.url, role="source_page", target=identifier)
-                components[part] = {"status": "source_page", "artifact": source_page, "reason": "References and source links are preserved; individual attachment retrieval is pending"}
+                try:
+                    references=self.references(identifier,base)
+                    components[part]={'status':'partial','artifact':references['artifact'],'references':references,
+                                      'attachments':{'status':'not_implemented','reason':'Individual supplementary attachment retrieval remains in development'}}
+                except ServiceError as error:
+                    components[part]=error.result
+                except Exception as error:
+                    components[part]={'status':'error','code':'reference_retrieval_failed','error_type':type(error).__name__}
         return {"status": "ok" if all(v["status"] == "available" for v in components.values()) else "partial", "source": self.source,
             "target": identifier, "records": artifact, "components": components}
