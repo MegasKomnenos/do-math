@@ -68,6 +68,14 @@ class Sanitizer:
         original = url
         url = url.replace("&amp;", "&")
         parts = urlsplit(url)
+        path = parts.path
+        # Some download actions embed a signed URL as a Tapestry/percent-encoded path argument.
+        for match in re.finditer(r'https?(?::|\$3a|%3a)(?:/|\$2f|%2f){2}', path, re.I):
+            nested = re.sub(r'\$([0-9a-f]{2})', lambda m: chr(int(m[1], 16)), path[match.start():], flags=re.I)
+            nested = urlsplit(unquote(nested))
+            if nested.username or nested.password or any(self.sensitive.search(k) for k, _ in parse_qsl(nested.query, keep_blank_values=True)):
+                path = path[:match.start()] + '[REDACTED_DOWNLOAD_URL]'
+                break
         # Credentials in userinfo, fragments and authentication query fields are never evidence.
         host = parts.hostname or ""
         if parts.port:
@@ -78,9 +86,9 @@ class Sanitizer:
         fragment = parts.fragment
         if any(self.sensitive.search(k) for k, _ in parse_qsl(fragment, keep_blank_values=True)):
             fragment = ""
-        if not parts.username and not parts.password and query == pairs and fragment == parts.fragment:
+        if not parts.username and not parts.password and path == parts.path and query == pairs and fragment == parts.fragment:
             return original
-        return urlunsplit((parts.scheme, host, parts.path, urlencode(query), fragment))
+        return urlunsplit((parts.scheme, host, path, urlencode(query), fragment))
 
     def value(self, value):
         if isinstance(value, dict):

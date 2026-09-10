@@ -197,3 +197,7 @@ Figshare 단위의 공통 검사 130개가 통과했다. 이어 Cambridge·Oxfor
 Cambridge 실제 MCP `data/validation/20260910T083607Z-cambridge-supplements-mcp.json`은 S0033312300006608sup001.pdf 6쪽과 S0033312300006608sup002.zip의 구성 항목 3개를 확인해 completed=true다. 후속 `data/validation/20260910T083826Z-cambridge-archive-extract-mcp.json`은 code_to_reproduce/·PMET.RData·PMET.R 목록과 R 소스 154줄 중 앞 3줄 추출을 실제 MCP로 검증했다. R 코드를 실행하거나 RData 실행 환경을 불러오지 않았다.
 
 Oxford DOI 10.1093/restud/rdag022에는 본문에 같은 보충 PDF를 가리키는 링크가 반복됐다. 파일 목록은 본문 링크 전체 대신 .widget-ArticleDataSupplements .dataSuppLink a에서 읽는다. 실제 파일 호스트 oup.silverchair-cdn.com을 파일 회수에만 허용하고 경로의 10.1093_restud_rdag022를 현재 DOI의 부호화 결과와 대조했다. 밑줄을 일괄 슬래시로 복호화해 원 DOI를 추측하지 않는다. 실제 MCP `data/validation/20260910T083741Z-oxford-supplements-mcp.json`은 rdag022_supplementary_data.pdf 32쪽과 첫 쪽 추출이 completed=true로 통과했다. 두 출판사의 회귀 fixture는 보충자료 제어 영역만 보존하며 원 연구 파일은 커밋에 넣지 않았다.
+
+PQDT 문헌 2485541561의 보충 파일 조사에서 다운로드 동작 URL은 Tapestry 형식의 경로 인자로 서명된 미디어 URL을 포함했다. 진단이 호스트·경로를 안전한 정보로 취급해 이 경로를 출력한 누락이 있었다. 사용자에게 즉시 알렸으며 서명 값을 이 기록에 반복하지 않는다. 기존 정제기는 일반 쿼리의 인증 필드를 제거했지만 $2f·$3f·$3d로 인코딩된 경로 내부 URL을 처리하지 못했다.
+
+Sanitizer는 Tapestry 또는 percent 인코딩된 경로 내부 URL에서 인증 쿼리·userinfo가 발견되면 그 내부 URL 인자를 제거하고 원 다운로드 동작·파일명은 유지한다. 합성 값으로 URL·문자열·구조화 필드와 일반 공개 DOI 참조 보존을 검사했다. 진단 자체는 이제 다운로드 경로를 출력하지 않고 이름·호스트·제어 구조만 읽는다. 로컬 pqdt-supplements-clean.html도 다시 정제해 해당 인자를 제거했다. 보호된 원 응답은 .credentials 아래에 남겼다. 이미 표시된 도구 출력 삭제나 서명 무효화는 확인하지 않았으며 전체 과거 로그를 감사했다고 주장하지 않는다. 이 정제 단위의 새 검사 2개가 통과했다.
