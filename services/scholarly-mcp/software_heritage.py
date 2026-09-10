@@ -1,10 +1,83 @@
 """Software Heritage object identity and explicit content fragments."""
-import hashlib,re
-from urllib.parse import quote,unquote,unquote_to_bytes,urlsplit
+import hashlib,re,io,tarfile
+from pathlib import PurePosixPath
+from collections import defaultdict
+from urllib.parse import quote,unquote,unquote_to_bytes,urlsplit,urljoin
 from scholarly import ServiceError
 
 BASE='https://archive.softwareheritage.org/api/1/'
 CORE=re.compile(r'swh:1:(cnt|dir|rev|rel|snp):([0-9a-f]{40})')
+
+
+def verify_flat_archive(data,directory):
+    expected=CORE.fullmatch(directory)
+    if not expected or expected[1]!='dir':raise ServiceError('invalid_target','A flat archive needs a directory SWHID')
+    children=defaultdict(dict);directories={()};seen=set();files=set();symlinks=0
+    def text_bytes(value):return value.encode('utf-8',errors='surrogateescape')
+    try:
+        with tarfile.open(fileobj=io.BytesIO(data),mode='r|*') as archive:
+            for member in archive:
+                path=PurePosixPath(member.name)
+                if path.is_absolute() or '..' in path.parts or not path.parts or path.parts[0]!=directory:
+                    raise ServiceError('archive_path_mismatch','Archive entries do not belong to the selected directory root')
+                relative=path.parts[1:]
+                if relative in seen:raise ServiceError('archive_path_mismatch','Archive contains duplicate paths')
+                seen.add(relative)
+                for index in range(len(relative)):directories.add(relative[:index])
+                if member.isdir():directories.add(relative);continue
+                if not relative:raise ServiceError('archive_path_mismatch','Archive root is not a directory')
+                if member.isfile():
+                    digest=hashlib.sha1(b'blob '+str(member.size).encode()+b'\0');received=0
+                    stream=archive.extractfile(member)
+                    while chunk:=stream.read(1024*1024):digest.update(chunk);received+=len(chunk)
+                    if received!=member.size:raise ServiceError('invalid_archive','Truncated archive member')
+                    mode=0o100755 if member.mode&0o111 else 0o100644
+                    digest=digest.hexdigest()
+                elif member.issym():
+                    link=text_bytes(member.linkname);digest=hashlib.sha1(b'blob '+str(len(link)).encode()+b'\0'+link).hexdigest()
+                    mode=0o120000;symlinks+=1
+                else:raise ServiceError('archive_entry_not_supported','Archive tree verification supports regular files, directories and symbolic links',status='unsupported')
+                files.add(relative);children[relative[:-1]][text_bytes(relative[-1])]=(mode,digest)
+    except ServiceError:raise
+    except Exception:raise ServiceError('invalid_archive','The returned archive cannot be read as a complete tar stream') from None
+    if files&directories:raise ServiceError('archive_path_mismatch','Archive uses a path as both file and directory')
+    computed=None
+    for directory_path in sorted(directories,key=len,reverse=True):
+        entries=children[directory_path]
+        ordered=sorted(entries,key=lambda name:name+(b'/' if entries[name][0]==0o40000 else b''))
+        body=b''.join(f'{entries[name][0]:o}'.encode()+b' '+name+b'\0'+bytes.fromhex(entries[name][1]) for name in ordered)
+        digest=hashlib.sha1(b'tree '+str(len(body)).encode()+b'\0'+body).hexdigest()
+        if directory_path:children[directory_path[:-1]][text_bytes(directory_path[-1])]=(0o40000,digest)
+        else:computed=digest
+    if computed!=expected[2]:raise ServiceError('archive_tree_mismatch','Archive file contents, names or modes differ from the requested directory SWHID',computed_directory_id=computed)
+    return {'verified':True,'algorithm':'git_tree_sha1','scope':'directory_tree','digest':computed,'files':len(files)-symlinks,'symlinks':symlinks,'directories':len(directories)}
+
+
+def vault_archive(adapter,directory):
+    match=CORE.fullmatch(directory)
+    if not match or match[1]!='dir':raise ServiceError('invalid_response','The selected object has no valid directory identifier')
+    url=BASE+'vault/flat/'+directory+'/'
+    try:job,evidence=adapter.request(url)
+    except ServiceError as error:
+        if error.result['code']!='not_found_at_source':raise
+        job,evidence=adapter.request(url,json_body={})
+    if not isinstance(job,dict) or job.get('swhid')!=directory or job.get('status') not in ('new','pending','done','failed'):
+        raise ServiceError('archive_identity_mismatch','Vault response does not identify the selected directory task',evidence=evidence)
+    if job['status'] in ('new','pending'):
+        return {'status':'pending','job':evidence,'retry_after_seconds':5,'retry':{'source':adapter.source,'target':directory,'parts':['fulltext']}}
+    if job['status']=='failed':return {'status':'error','code':'archive_preparation_failed','job':evidence}
+    if not isinstance(job.get('fetch_url'),str):raise ServiceError('invalid_response','Vault returned no archive URL',evidence=evidence)
+    target=urljoin(url,job['fetch_url']);parts=urlsplit(target)
+    if parts.scheme!='https' or parts.hostname!='archive.softwareheritage.org' or parts.username or parts.password or parts.port not in (None,443) or parts.query or parts.fragment or unquote(parts.path).rstrip('/')!='/api/1/vault/flat/'+directory+'/raw':
+        raise ServiceError('archive_identity_mismatch','Vault download URL differs from the requested directory',evidence=evidence)
+    data,response=adapter.request(target,accept='binary')
+    media='application/gzip' if data.startswith(b'\x1f\x8b') else 'application/x-tar'
+    try:integrity=verify_flat_archive(data,directory)
+    except ServiceError as error:
+        source=adapter.store.put(data,media,adapter.source,response['url'],preserve_bytes=True,role='unverified_vault_archive',requested_directory=directory,job_ref=evidence['ref'])
+        return {**error.result,'source_archive':source,'job':evidence}
+    artifact=adapter.store.put(data,media,adapter.source,response['url'],preserve_bytes=True,role='vault_archive',directory_swhid=directory,integrity=integrity,job_ref=evidence['ref'],source_media_type=response['media_type'])
+    return {'status':'available','artifact':artifact,'directory_swhid':directory,'integrity':integrity,'job':evidence}
 
 
 def parse_swhid(value):
@@ -112,6 +185,14 @@ def fetch(adapter,target,parts):
         for part in wanted:result['components'][part]=component
     elif 'lines' in qualifiers and wanted:
         for part in wanted:result['components'][part]={'status':'unsupported','code':'unsupported_fragment','reason':'Line selection is implemented for content objects only'}
+    elif kind in ('dir','rev') and wanted:
+        directory=core if kind=='dir' else 'swh:1:dir:'+str(raw.get('directory',''))
+        try:component=vault_archive(adapter,directory)
+        except ServiceError as error:component=error.result
+        for part in wanted:result['components'][part]=component
+        result['archive_selection']={'requested_swhid':core,'directory_swhid':directory,'basis':'selected_directory' if kind=='dir' else 'revision_directory_field'}
+    elif kind in ('rel','snp') and wanted:
+        for part in wanted:result['components'][part]={'status':'not_implemented','reason':'Archive retrieval for this object kind is not connected; select a directory or revision SWHID'}
     states={part['status'] for part in result['components'].values()}
     result['status']='ok' if not states or states=={'available'} else next(iter(states)) if states in ({'restricted'},{'not_found'},{'unsupported'}) else 'partial'
     return result

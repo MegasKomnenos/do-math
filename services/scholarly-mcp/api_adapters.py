@@ -952,6 +952,11 @@ class SoftwareHeritage(APIAdapter):
     hosts = ("archive.softwareheritage.org",)
     options = ("with_visit",)
 
+    def allowed_url(self,url):
+        if super().allowed_url(url):return True
+        parts=urlsplit(url);path=unquote(parts.path)
+        return parts.scheme=='https' and parts.hostname=='swhvaultstorage.blob.core.windows.net' and not parts.username and not parts.password and parts.port in (None,443) and path.startswith('/contents-uncompressed/') and not set(path.split('/'))&{'.','..'} and '\\' not in path
+
     def search(self, query, *, options, start=0, limit=20, cursor=None, export=None):
         self.validate(options, start, limit)
         if start:

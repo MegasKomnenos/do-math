@@ -4,6 +4,18 @@ ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT))
 from scholarly import Sanitizer
 
 class EncodedDownloadURLContract(unittest.TestCase):
+    def test_azure_blob_signature_is_redacted_without_changing_rdf_sig_fields(self):
+        value='https://swhvaultstorage.blob.core.windows.net/contents-uncompressed/example?sv=2025-05-05&sp=r&sig=SYNTHETIC_AZURE_SIGNATURE'
+        sanitizer=Sanitizer()
+        for cleaned in (sanitizer.url(value),sanitizer.text('download '+value),str(sanitizer.value({'url':value}))):
+            self.assertNotIn('SYNTHETIC_AZURE_SIGNATURE',cleaned)
+        from urllib.parse import quote
+        nested='https://example.org/download/'+quote(value,safe='')
+        self.assertNotIn('SYNTHETIC_AZURE_SIGNATURE',sanitizer.url(nested))
+        public={'sig':{'type':'uri','value':'https://dblp.org/signature/1'}}
+        self.assertEqual(sanitizer.value(public),public)
+        self.assertEqual(sanitizer.url('https://example.org/search?sig=SIGACT'),'https://example.org/search?sig=SIGACT')
+
     def test_malformed_port_and_ipv6_do_not_break_the_source_page_or_expose_auth(self):
         for value in ['https://example.org:invalid/path?token=SYNTHETIC','https://[broken/path?token=SYNTHETIC']:
             result=Sanitizer().text('Reference '+value+' ends here')

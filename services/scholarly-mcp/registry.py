@@ -268,7 +268,8 @@ SOURCES["software-heritage"].usage = {
     "options": {"with_visit": "방문 기록을 가진 origin으로 한정하는 서비스 조건"},
     "fetch": "swh:1:cnt|dir|rev|rel|snp:40자리해시, archive.softwareheritage.org/swh:… 또는 n2t.net/swh:… 링크, 원 저장소 URL. 일반 URL은 Software Heritage 안의 origin 식별자이며 외부 사이트를 방문하지 않는다. cnt는 metadata의 SWHID·길이·체크섬과 실제 전체 파일의 sha1_git를 대조한다. 오류 때 이미 받은 metadata를 보존한다.",
     "qualifiers": "origin·visit·anchor·path·lines를 보존하며 중복·잘못된 값을 거부한다. origin은 해독·정제하고 path는 URI 이스케이프 표기를 유지한다. 이 문맥의 사실관계는 검증하지 않아 context_verified=false다. path를 다른 파일의 선택 경로로 해석하지 않는다. cnt의 lines=9-15는 1부터 시작하는 포함 범위이며 lines=9는 한 줄이다. fulltext/supplementary의 기본 artifact는 선택한 조각, complete_content는 검증된 전체 파일이다. integrity는 전체 파일에 대한 검사다. 범위가 없으면 기본 artifact가 전체 파일이다. 범위 초과는 not_found와 전체 파일 참조를 남기며 잘라 맞추지 않는다.",
-    "limits": "별도 자격 없는 공개 API. start는 0으로 두고 다음 페이지에는 반환된 next.cursor를 그대로 준다. limit 1..100. 전체 origin 검색 건수는 서비스가 주지 않아 total=null. 파일 바이트를 실행하지 않는다. octet-stream으로 받은 UTF-8/NUL 없는 내용은 text/plain으로 읽고 원 MIME도 남긴다. 줄 선택은 이런 UTF-8 content에 한정한다. directory·revision의 재귀 아카이브 생성은 아직 연결하지 않았다.",
+    "archives": "dir의 fulltext/supplementary는 원 tar.gz 압축본이다. rev는 원 metadata의 directory에 해당하는 압축본을 반환하고 archive_selection에 그 관계를 남긴다. 준비된 압축본이 없으면 이메일 없이 생성을 요청한다. pending이면 retry_after_seconds 뒤 retry 입력으로 다시 조회한다. 전체 파일 내용·이름·권한·심볼릭 링크를 Git 트리 방식으로 해시해 디렉터리 SWHID와 대조한다. 불일치 또는 미지원 항목은 오류와 source_archive에 원 파일을 보존한다. extract로 목록을 읽고 selection에 정확한 경로를 주면 내부 파일 참조를 받는다. 그 참조를 다시 extract해 내용을 읽는다.",
+    "limits": "별도 자격 없는 공개 API. start는 0으로 두고 다음 페이지에는 반환된 next.cursor를 그대로 준다. limit 1..100. 전체 origin 검색 건수는 서비스가 주지 않아 total=null. 파일 바이트를 실행하지 않는다. octet-stream으로 받은 UTF-8/NUL 없는 내용은 text/plain으로 읽고 원 MIME도 남긴다. 줄 선택은 이런 UTF-8 content에 한정한다. Vault는 flat 디렉터리 형식이며 Git 전체 이력, release·snapshot 아카이브는 아직 연결하지 않았다. 트리 검증은 일반 파일·디렉터리·심볼릭 링크를 지원한다. 하드 링크 등 다른 항목은 원 압축본과 미지원 상태를 반환한다.",
     "examples": [{"tool": "search", "arguments": {"source": "software-heritage", "query": "mathlib", "limit": 2}}, {"tool": "fetch", "arguments": {"source": "software-heritage", "target": "https://github.com/leanprover-community/mathlib4", "parts": ["metadata"]}}],
     "official": ["https://archive.softwareheritage.org/api/"],
 }
@@ -599,7 +600,7 @@ for identifier, level in {
     "author-repository": "live_mcp_public_author_pdf_and_page_links",
     "society-journal": "live_mcp_public_journal_metadata_abstract_pdf_native_citations",
     "numdam": "live_mcp_native_search_citations_jats_pdf_djvu_fetch_pagination",
-    "software-heritage": "live_mcp_verified_content_qualified_lines_resolver_empty_file; origin_adapter_observed",
+    "software-heritage": "live_mcp_verified_content_fragments_directory_revision_vault_extract; origin_adapter_observed",
     "openalex": "live_mcp_arbitrary_window_group_cursor_abstract_relationships_name_doi",
     "core": "live_mcp_search_extract; fetch_rate_limit; fulltext_notice_regression",
     "semantic-scholar": "live_mcp_search_extract; new_workflow_rate_limited; schema_regressions",

@@ -64,6 +64,9 @@ class Sanitizer:
                         setattr(node, field, cleaned)
         return etree.tostring(tree, encoding="utf-8", xml_declaration=True)
 
+    def _authentication_parameter(self,name,parts):
+        return bool(self.sensitive.search(name)) or (name.lower()=='sig' and (parts.hostname or '').lower().endswith('.blob.core.windows.net'))
+
     def _url(self, url):
         original = url
         url = url.replace("&amp;", "&")
@@ -82,7 +85,7 @@ class Sanitizer:
             except ValueError:
                 path = path[:match.start()] + '[REDACTED_INVALID_URL]'
                 break
-            if nested.username or nested.password or any(self.sensitive.search(k) for k, _ in parse_qsl(nested.query, keep_blank_values=True)):
+            if nested.username or nested.password or any(self._authentication_parameter(k,nested) for k, _ in parse_qsl(nested.query, keep_blank_values=True)):
                 path = path[:match.start()] + '[REDACTED_DOWNLOAD_URL]'
                 break
         # Credentials in userinfo, fragments and authentication query fields are never evidence.
@@ -91,9 +94,9 @@ class Sanitizer:
             host += ":" + str(port)
         pairs = parse_qsl(parts.query, keep_blank_values=True)
         query = [(k, self._url(v) if v.startswith(("http://", "https://")) else v)
-            for k, v in pairs if not self.sensitive.search(k)]
+            for k, v in pairs if not self._authentication_parameter(k,parts)]
         fragment = parts.fragment
-        if any(self.sensitive.search(k) for k, _ in parse_qsl(fragment, keep_blank_values=True)):
+        if any(self._authentication_parameter(k,parts) for k, _ in parse_qsl(fragment, keep_blank_values=True)):
             fragment = ""
         if not parts.username and not parts.password and path == parts.path and query == pairs and fragment == parts.fragment:
             return original
