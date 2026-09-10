@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<doi_records>
+  <doi_record owner="10.1145" timestamp="2025-06-18 18:54:16">
+    <crossref>
+      <journal>
+        <journal_metadata language="en">
+          <full_title>Journal of the ACM</full_title>
+          <abbrev_title>J. ACM</abbrev_title>
+          <issn media_type="print">0004-5411</issn>
+          <issn media_type="electronic">1557-735X</issn>
+        </journal_metadata>
+        <journal_issue>
+          <publication_date media_type="print">
+            <month>01</month>
+            <year>1965</year>
+          </publication_date>
+          <journal_volume>
+            <volume>12</volume>
+          </journal_volume>
+          <issue>1</issue>
+        </journal_issue>
+        <journal_article publication_type="full_text">
+          <titles>
+            <title>A Turing Machine Simulator</title>
+          </titles>
+          <contributors>
+            <person_name contributor_role="author" sequence="first">
+              <given_name>M. W.</given_name>
+              <surname>Curtis</surname>
+              <affiliation>Wesleyan University, Middletown, Connecticut</affiliation>
+            </person_name>
+          </contributors>
+          <publication_date media_type="online">
+            <month>01</month>
+            <year>1965</year>
+          </publication_date>
+          <publication_date media_type="print">
+            <month>01</month>
+            <year>1965</year>
+          </publication_date>
+          <pages>
+            <first_page>1</first_page>
+            <last_page>13</last_page>
+          </pages>
+          <publisher_item>
+            <identifier id_type="doi">10.1145/321250.321251</identifier>
+          </publisher_item>
+          <crossmark>
+            <crossmark_version>2</crossmark_version>
+            <crossmark_policy>10.1145/crossmark-policy</crossmark_policy>
+            <crossmark_domains>
+              <crossmark_domain>
+                <domain>dl.acm.org</domain>
+              </crossmark_domain>
+            </crossmark_domains>
+            <crossmark_domain_exclusive>true</crossmark_domain_exclusive>
+            <custom_metadata>
+              <assertion group_label="Publication History" group_name="publication_history" label="Published" name="published" order="2">1965-01-01</assertion>
+              <program name="AccessIndicators">
+                <license_ref applies_to="vor">https://www.acm.org/publications/policies/copyright_policy#Background</license_ref>
+              </program>
+            </custom_metadata>
+          </crossmark>
+          <doi_data>
+            <doi>10.1145/321250.321251</doi>
+            <resource>https://dl.acm.org/doi/10.1145/321250.321251</resource>
+            <collection property="text-mining">
+              <item>
+                <resource content_version="vor">https://dl.acm.org/doi/10.1145/321250.321251</resource>
+              </item>
+            </collection>
+            <collection property="crawler-based">
+              <item crawler="iParadigms">
+                <resource>https://dl.acm.org/doi/pdf/10.1145/321250.321251</resource>
+              </item>
+            </collection>
+          </doi_data>
+          <citation_list>
+            <citation key="e_1_2_1_1_2">
+              <doi>10.1145/320856.320867</doi>
+            </citation>
+            <citation key="e_1_2_1_2_2">
+              <doi>10.1145/321075.321082</doi>
+            </citation>
+            <citation key="e_1_2_1_3_2">
+              <journal_title>BSTI</journal_title>
+              <author>Categorizing</author>
+              <first_page>5</first_page>
+              <volume>99</volume>
+              <cYear>1960</cYear>
+            </citation>
+            <citation key="e_1_2_1_4_2">
+              <journal_title>J. Malh.</journal_title>
+              <author>Reeursive</author>
+              <first_page>3</first_page>
+              <volume>775</volume>
+              <cYear>1961</cYear>
+            </citation>
+            <citation key="e_1_2_1_5_2">
+              <unstructured_citation>KLEENE s. Introductin to Megamathematics Van Nostrand New York 1952.  KLEENE s. Introductin to Megamathematics Van Nostrand New York 1952.</unstructured_citation>
+            </citation>
+            <citation key="e_1_2_1_6_2">
+              <journal_title>Entseheidungsproblem. Proc. Lond. Math See</journal_title>
+              <author>Turnig A. M.</author>
+              <first_page>43</first_page>
+              <volume>2</volume>
+              <cYear>1936</cYear>
+            </citation>
+            <citation key="e_1_2_1_7_2">
+              <volume_title>Aulomata Studies</volume_title>
+              <cYear>1956</cYear>
+            </citation>
+            <citation key="e_1_2_1_8_2">
+              <journal_title>IBM J Res. Develop.</journal_title>
+              <author>Finite</author>
+              <first_page>114</first_page>
+              <volume>3</volume>
+              <cYear>1959</cYear>
+              <doi provider="crossref">10.1147/rd.32.0114</doi>
+            </citation>
+            <citation key="e_1_2_1_9_2">
+              <doi>10.1145/321088.321090</doi>
+            </citation>
+          </citation_list>
+        </journal_article>
+      </journal>
+    </crossref>
+  </doi_record>
+</doi_records>

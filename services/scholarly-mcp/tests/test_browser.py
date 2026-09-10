@@ -9,6 +9,22 @@ from scholarly import Sanitizer, ServiceError
 
 
 class BrowserContract(unittest.TestCase):
+    def test_wos_document_url_and_title_are_usable_fetch_targets(self):
+        from browser_adapters import WebOfScience
+        adapter = WebOfScience(None, None)
+        calls = []
+        def search(query, **kwargs):
+            calls.append(query)
+            return {'status': 'not_found', 'received': 0, 'total': 0}
+        adapter.search = search
+        adapter.fetch('https://www.webofscience.com/wos/woscc/full-record/WOS:000271552800013', parts=['metadata'])
+        self.assertEqual(calls[-1], 'UT=(WOS:000271552800013)')
+        adapter.fetch('The status of the P versus NP problem', parts=['metadata'])
+        self.assertEqual(calls[-1], 'TI=("The status of the P versus NP problem")')
+        with self.assertRaises(ServiceError) as error:
+            adapter.fetch('https://example.org/wos/woscc/full-record/WOS:000271552800013', parts=['metadata'])
+        self.assertEqual(error.exception.result['code'], 'source_boundary')
+
     @classmethod
     def setUpClass(cls):
         if not (ROOT / "browser_adapters.py").exists():

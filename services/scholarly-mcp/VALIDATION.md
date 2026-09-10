@@ -103,3 +103,18 @@ Mathlib는 고정 커밋의 Mathlib/Computability/에서 theorem 문자열 1,014
 OpenCitations에서는 DOI 10.1186/1756-8722-6-59의 참고문헌 72건 원 CSV와 start=1, limit=2 창, 해당 OCI의 단건 조회, reference-count의 72건 대조를 실제 MCP에서 통과했다. 근거는 `data/validation/20260910T003511813034Z-opencitations-workflow.json`이다. 첫 MCP CSV 요청은 Accept: text/csv에도 JSON을 받아 실패했으므로 제공자가 문서화한 format=csv를 명시했고, JSON에도 format=json을 사용한다. 선택 CSV의 원 필드와 순서는 보존하되 파일 재직렬화와 전체 native CSV를 구별한다. 원인으로 캐시를 단정하지 않는다.
 
 새 회귀 검사를 포함해 공통 검사 89개가 통과했다. 별도 자격 없는 OpenAlex·CORE 검색도 실제 응답했으며 CORE는 다른 검색식과 무작위 문자열의 0건을 대조했다. DBLP는 두 공식 호스트의 검색 API와 단건 XML·BibTeX에서 접근 확인 화면, Semantic Scholar는 rate_limited를 반환했다. 이러한 접근 상태를 전체 문헌 부재나 어댑터 기능의 검증 완료로 표시하지 않는다.
+
+
+2026-09-10 Crossref의 공개 transform API 여덟 형식을 연결했다. DOI 10.1145/321250.321251의 BibTeX·RIS·CSL JSON·plain·RDF·Turtle·UNIXREF·UNIXSD를 실제로 회수했고, MCP에서 DOI filter 검색의 BibTeX와 여덟 export 및 CSL DOI를 대조했다. `data/validation/20260910T005047117230Z-crossref-workflow.json`이 전체 성공 기록이다. 이 DOI의 문헌은 A Turing Machine Simulator이며 P versus NP의 연구상 관련성을 판정한 사례가 아니다. 원 등록 JSON과 변환된 형식을 함께 보존한다. Crossmark는 같은 구현을 상속하지만 새 여덟 형식의 별도 Crossmark MCP 재검증을 한 것으로 세지 않는다.
+
+WOS는 제목 후보 조회와 full-record URL의 accession 해석을 추가했다. 실제 The status of the P versus NP problem의 제목 후보 1건을 받고 그 accession의 URL로 서지·참고문헌을 회수했다. 해당 원 Full Record에는 AB 필드가 없어 abstract가 not_found이고 전체 fetch는 partial이다. 처음에는 모든 component가 available이어야 한다고 잘못 단언했으나 원 응답의 초록 부재를 확인하고 검증 기준을 교정했다. 전체 성공 보고 `data/validation/20260910T005047054448Z-wos-workflow.json`은 이런 부분 결과의 정확한 구분도 검사한다.
+
+arXiv는 HTML URL을 입력해도 PDF를 반환하던 결함과 TeX 파일의 format_not_supported를 실제 2408.02321v1로 재현했다. HTML/src URL의 요청 형식을 유지하고 application/x-tex·application/x-latex를 줄 단위로 읽도록 수리했다. 실제 MCP에서 제목 검색·지정 판본 HTML·제목 추출·원 제출물 11개 파일·main.tex 564줄 중 앞 3줄 추출을 통과했다. 근거는 `data/validation/20260910T005450318569Z-arxiv-workflow.json`이다. 수식의 의미 판독이나 TeX 컴파일은 하지 않았다.
+
+KNU FRIC는 등록 키가 필수인 OpenAPI를 제외하고 경북대 센터의 공개 웹 소장 목록을 연결했다. computer 1,121건의 9·10번째 위치, 기계적 CSV, ISSN 2263-8733의 단일 소장 기록, 무작위 문자열의 0건을 실제 MCP에서 확인했다. 0건 화면의 안내 li를 문헌으로 세지 않는다. `data/validation/20260910T010727692014Z-knu-fric-workflow.json`이 성공 근거다. 원 기록의 RISS 링크는 참조로 보존하며 자동 방문하지 않는다. 이 목록 endpoint에서 즉시 제공하지 않는 논문 원문·초록은 구별하고 복사 신청 안내 경로를 반환한다. 신청서를 제출하거나 직원에게 메시지를 보내지 않았다.
+
+저자·기관 공개본과 학회·저널 범주는 알려진 공개 문서 URL 회수를 연결했다. 기관 인증 상태와 분리한 context에서 URL과 같은 호스트의 리디렉션·citation PDF만 처리하고, 사설망·로컬 주소를 거부한다. 저자 홈페이지의 Bellantoni–Cook 논문 14쪽 PDF와 홈페이지 링크 128개를 실제 MCP에서 회수했다(`data/validation/20260910T011434892309Z-author-repository-workflow.json`). Electronic Journal of Combinatorics DOI 10.37236/1181의 서지·초록·10쪽 PDF·공개 OJS RIS/BibTeX와 DOI 대조도 통과했다(`20260910T011745037521Z-society-journal-workflow.json`). 임의 플랫폼의 고급검색이 구현된 것으로 확대하지 않는다.
+
+일반 웹 후보 검색은 추가 확인이 남았다. Bing HTML과 RSS는 입력 문자열을 유지했지만 무작위 문자열에 Apple·Anne Kennedy 등 무관한 결과를 반환했다. Google에서는 결과 목록이 없는 페이지, DuckDuckGo HTML에서는 HTTP 202와 결과 목록 부재를 관측했다. 이 관측을 정상적인 학술 후보 검색 검증으로 세지 않는다. FRIC 진단 중 형제 요소의 텍스트를 나열하다 공개 select 변경 JavaScript가 출력된 적이 있어 이후 출력 대상을 다시 제한했다. 그 출력에 비밀값은 확인되지 않았으며 원 JS를 일반 진단 출력으로 사용하지 않는다.
+
+공통 검사 96개가 통과했다. 실제 성공한 형식·대상만 지원표 실측 표지에 반영했다. 전체 자료원의 구현 완료를 선언하지 않으며 남은 기관 검색·첨부·일반 웹 및 추가 입력 범위를 계속 처리한다.

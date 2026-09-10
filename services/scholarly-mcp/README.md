@@ -86,3 +86,8 @@ Numdam은 공개 웹의 검색 필드·추가 조건·발행연도 검색과 OAI
 DROPS는 문헌별 원 XML·BibTeX 등 내보내기, PDF·HTML 전문과 소프트웨어 artifact의 CodeMeta를 지원한다. 직접 파일 URL은 문헌의 Files 목록과 대조한다. 부가자료의 외부 저장소 링크는 설명과 함께 반환하며 다른 자료원으로 자동 이동하지 않는다.
 
 OpenCitations는 인용 관계·건수와 OCI 단건 조회를 제공한다. CSV 검색의 export는 요청 창, native_export는 전체 원 CSV다. Mathlib·Mathematical Components의 검색 결과는 정확한 커밋·파일·줄 좌표를 포함하며, 이를 같은 판본의 fetch·extract에 사용할 수 있다.
+
+
+Crossref의 검색 export는 원 BibTeX·RIS·CSL JSON·plain·RDF·Turtle·UNIXREF·UNIXSD를 지원한다. 원 등록 JSON도 유지한다. WOS는 제목 후보와 full-record URL을 받아 accession을 선택·조회할 수 있다. arXiv의 html/src URL은 지정 형식과 판본을 유지하며 source archive의 TeX 파일도 extract로 읽는다.
+
+KNU FRIC는 경북대 센터의 공개 소장 목록 검색·ISSN 조회와 CSV를 제공한다. 직원에게 원문 복사를 신청하는 제출 동작은 포함하지 않는다. author-repository·society-journal은 알려진 공개 문서 URL의 회수 경로이며 단일 검색 색인은 아니다. 일반 웹 검색의 정상 동작 검증은 아직 남아 있다.

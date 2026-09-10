@@ -102,7 +102,7 @@ SOURCES["wos"].usage = {
     "fields": {"TS": "주제", "TI": "제목", "AB": "초록", "AU": "저자", "AI": "저자 식별자", "AK": "저자 키워드", "GP": "단체 저자", "ED": "편집자", "KP": "Keywords Plus", "SO": "발행물명", "DO": "DOI", "PY": "발행연도", "CF": "학회", "AD": "주소", "OG": "소속", "OO": "기관", "SU": "연구 영역", "WC": "WoS 분류", "IS": "ISSN/ISBN", "UT": "접근번호", "DOP": "발행일", "LD": "색인일", "ALL": "전체 필드"},
     "operators": "FIELD=(조건), AND·OR·NOT, 괄호와 큰따옴표 구문. * 등 와일드카드와 날짜 범위는 WoS 문법을 따른다. 예: TS=(\"circuit lower bounds\") AND PY=(2020-2025). 세션 #번호 결합은 다른 호출에서 같은 세션을 보장하지 않으므로 독립 검색식으로 전달한다.",
     "options": "현재 options는 비운다. 검색식 안의 필드·연도 조건을 지원하며 UI의 추가 facet·정렬·edition 지정은 구현 중이다.",
-    "fetch": "WOS:접근번호 또는 DOI. 전체 서지·초록·인용문헌을 해당 색인에서 회수한다. 논문 전문은 해당 출판사를 별도 source로 지정한다.",
+    "fetch": "WOS:접근번호·DOI·Web of Science full-record URL을 지정한다. 제목은 TI 구문 검색 후보와 selection_required를 반환하며 선택한 accession/DOI로 다시 요청한다. 전체 서지·제공되는 초록·인용문헌을 해당 색인에서 회수한다. 원 Full Record에 AB가 없으면 abstract는 not_found다. 논문 전문은 해당 출판사를 별도 source로 지정한다.",
     "exports": "기본 JSON 레코드는 Full Record and Cited References 텍스트 export를 손실 없이 파싱한다. plain은 같은 원파일. ris·bibtex·excel·tsv·html은 해당 native export의 Full Record이며 실제 제공 필드가 다를 수 있다.",
     "limits": "start는 0부터, limit는 1..1000. 큰 결과를 화면 카드 개수로 세지 않고 자료원의 count와 요청 범위의 export를 대조한다. 원 tags는 records의 fields 아래 소문자 키·원 줄 배열로 보존한다. cr은 인용문헌, ab는 초록, ut는 접근번호다.",
     "examples": [{"tool": "search", "arguments": {"source": "wos", "query": "TI=(\"P versus NP\")", "limit": 5, "export": "plain"}}],
@@ -137,15 +137,16 @@ API_USAGE = {
     "crossref": {
         "search": "query는 관련도 검색어다. Boolean 필드 검색식으로 해석하지 않는다. 제목·저자 등은 options의 query.title, query.author, query.bibliographic, query.container-title, query.affiliation으로 지정한다.",
         "options": {"filter": "쉼표로 조건 결합. from-pub-date:YYYY-MM-DD,until-pub-date:YYYY-MM-DD,type:journal-article,has-abstract:true,has-full-text:true,doi:DOI,issn:ISSN 등", "sort": "relevance,published,created,updated,is-referenced-by-count 등", "order": "asc 또는 desc", "select": "호출자가 원하는 원 필드 이름의 쉼표 목록", "facet": "자료원이 지원하는 집계 필드:건수"},
-        "fetch": "DOI 또는 https://doi.org/DOI. 서지·등록 초록·참고문헌·relation·정정 정보를 원 필드로 보존한다. 전문 링크는 남기되 해당 출판사를 자동 방문하지 않는다.",
-        "limits": "limit 1..1000. 깊은 페이지는 cursor='*'로 시작하고 next.cursor를 사용한다. 결과와 원응답 export는 json/native. 다른 서지 export 형식의 개발 상태는 호출 결과로 구별한다.",
+        "fetch": "DOI 또는 https://doi.org/DOI. 이름은 query.title 후보 검색과 selection_required를 반환한다. 서지·등록 초록·참고문헌·relation·정정 정보를 원 필드로 보존한다. export를 요청하면 여덟 원 변환 형식을 artifacts에 보존한다. 전문 링크는 남기되 해당 출판사를 자동 방문하지 않는다.",
+        "exports": "검색 export는 json/native, bibtex, ris, csl-json, plain, rdf, turtle, unixref, unixsd. 각 문헌의 Crossref transform 응답을 보존한다. plain에만 options.citation_style(예: apa), options.locale(예: en-US)을 적용한다. select로 검색 필드를 좁히면 원 인용문 export에 필요한 DOI를 포함한다. 변환 형식은 Crossref 원 등록 메타데이터의 모든 구별을 보존하지 않을 수 있으므로 원 JSON도 유지한다.",
+        "limits": "limit 1..1000. 깊은 페이지는 cursor='*'로 시작하고 next.cursor를 사용한다. native 인용문은 문헌마다 별도 요청하므로 큰 검색 창은 그만큼 요청 수가 늘어난다. XML·RDF·CSL은 문헌별 artifacts, BibTeX·RIS·plain·Turtle은 결합 ref도 반환한다. 일부 실패는 원 검색 결과와 함께 표시한다.",
         "examples": [{"tool": "search", "arguments": {"source": "crossref", "query": "P versus NP", "options": {"filter": "from-pub-date:1970-01-01"}, "limit": 2}}, {"tool": "fetch", "arguments": {"source": "crossref", "target": "10.1145/321250.321251", "parts": ["metadata"]}}],
         "official": ["https://www.crossref.org/documentation/retrieve-metadata/rest-api/", "https://api.crossref.org/swagger-ui/index.html"]},
     "arxiv": {
         "search": "필드 태그 ti(제목),au(저자),abs(초록),cat(분류),co(주석),jr(저널),rn(보고번호),id(식별자),all(전체)을 쓴다. AND,OR,ANDNOT와 괄호로 결합하며 구문은 큰따옴표로 묶는다. 예: cat:cs.CC AND ti:\"circuit lower bounds\".",
         "options": {"sort_by": "relevance,lastUpdatedDate,submittedDate", "sort_order": "ascending,descending"},
-        "fetch": "arXiv ID 또는 abs/pdf/src 링크. vN을 주면 그 판본을 요구한다. 생략하면 응답의 정확한 vN을 결박한다. fulltext는 PDF, supplementary는 arXiv가 제공한 TeX/source 묶음이며 소스 파일의 존재는 자료마다 다르다.",
-        "limits": "limit 1..2000, start는 0부터. 호출 간 최소 3초. 검색 native export는 Atom, json은 추출 레코드. PDF 텍스트와 이미지 읽기는 extract.",
+        "fetch": "arXiv ID 또는 abs/pdf/html/src 링크. 이름은 제목 구문 검색 후보다. vN을 주면 그 판본, 생략하면 응답의 정확한 vN을 사용한다. fulltext는 기본 PDF이며 html·src 파일 URL을 지정하면 지정한 형식을 회수한다. supplementary는 같은 판본의 원 제출물이다. HTML을 PDF로 대체하지 않는다.",
+        "limits": "limit 1..2000, start는 0부터. 호출 간 최소 3초. 검색 native export는 Atom, json은 추출 레코드. PDF 쪽, HTML CSS, source archive의 파일 목록·개별 파일·TeX 줄을 extract로 읽는다. 소스나 HTML 제공 여부는 판본마다 다르며 미제공과 접근 오류를 구별한다.",
         "examples": [{"tool": "search", "arguments": {"source": "arxiv", "query": "ti:\"P versus NP\"", "limit": 2}}],
         "official": ["https://info.arxiv.org/help/api/user-manual.html"]},
     "dblp": {
@@ -463,17 +464,44 @@ SOURCES['jstor'].usage={
 
 SOURCES['numdam'].transport = 'fixed: OAI/citation API; native search/DOI resolution Playwright'
 
+SOURCES['knu-fric'].implementation = 'partial'
+SOURCES['knu-fric'].transport = 'playwright'
+SOURCES['knu-fric'].home = 'https://fric.knu.ac.kr/'
+SOURCES['knu-fric'].usage = {
+    'search': '경북대 FRIC 공개 소장 목록에서 query를 원 검색창에 그대로 입력한다. 학술지와 수록 논문을 구별하며 RISS의 링크는 참조로 보존한다.',
+    'options': {'field':'journal(기본)은 학술지명/ISSN, article은 수록 논문명. 별도 Boolean 문법을 추정해 변환하지 않는다.'},
+    'fetch': 'issn:2263-8733처럼 ISSN을 지정한다. 유일하게 일치하는 소장 기록이면 metadata·export를 반환한다. 제목은 후보 검색과 selection_required다. 검색 결과의 target 필드를 사용할 수 있다. RISS URL의 자동 열람은 이 경로에 포함하지 않는다.',
+    'exports':'json은 원 제목·ISSN·소장처·표시 필드·공개 기록 링크. csv는 선택 창의 기계적 CSV, html은 원 검색 페이지다.',
+    'limits':'start 0부터, limit 1..100, 원 페이지 10건. 등록 키가 필요한 FRIC OpenAPI는 사용하지 않는다. 이 소장 목록 endpoint에는 논문 전문·초록의 즉시 다운로드가 없다. 원문 복사 신청 안내 URL을 제공하며 신청서는 자동 제출하지 않는다.',
+    'examples':[{'tool':'search','arguments':{'source':'knu-fric','query':'computer','start':9,'limit':2,'export':'csv'}},{'tool':'fetch','arguments':{'source':'knu-fric','target':'issn:2263-8733','parts':['metadata','export']}}],
+    'official':['https://fric.knu.ac.kr/','https://www.fric.kr/user/openspace/openApi/openApiS.do'],
+}
+
+for category in ('author-repository','society-journal'):
+    SOURCES[category].implementation = 'partial'
+    SOURCES[category].transport = 'fixed: public document Playwright; OJS native citation API'
+    SOURCES[category].capabilities = ('source_guide','fetch','export')
+    SOURCES[category].usage = {
+        'fetch':'알려진 공개 문서의 절대 HTTP(S) URL을 target으로 지정한다. 인증 상태를 공유하지 않는 공개 context로 PDF·HTML·기타 파일을 직접 회수한다. 등록된 플랫폼의 주소면 사용할 source를 반환한다. 임의 URL의 제목·DOI를 외부 서비스에서 추정하지 않는다.',
+        'parts':'metadata는 PDF 내장 정보 또는 HTML의 공개 서지 태그 JSON. export는 OJS의 실제 citation_formats 제어가 있으면 공개 RIS·BibTeX API의 원 파일이며 DOI를 대조한다. 해당 제어가 없으면 서지 JSON이다. fulltext는 지정 URL의 내용이며 HTML에 같은 호스트의 citation_pdf_url이 있으면 그 PDF도 회수한다. abstract는 HTML에 표시된 abstract 영역. supplementary는 해당 페이지의 링크 목록이며 연결 파일 자체의 확보를 뜻하지 않는다.',
+        'limits':'이 범주는 단일 검색 색인을 갖지 않는다. 이름·검색식·플랫폼 고급검색에는 구체 자료원을 먼저 선택한다. 직접 URL과 같은 호스트의 리디렉션만 허용하며 로컬·사설망 주소는 거부한다. 스크립트만 있는 초기 화면은 문서로 성공 처리하지 않는다. 별도 로그인은 수행하지 않는다.',
+        'examples':[{'tool':'fetch','arguments':{'source':category,'target':'https://www.cs.toronto.edu/~sacook/homepage/ptime.pdf','parts':['metadata','fulltext']}}] if category=='author-repository' else [{'tool':'fetch','arguments':{'source':category,'target':'https://www.combinatorics.org/ojs/index.php/eljc/article/view/v1i1r1','parts':['metadata','abstract','fulltext','export']}}],
+    }
+
 for identifier, level in {
     "mathscinet": "live_mcp_search_export_fetch_extract",
-    "wos": "live_mcp_search_full_record_export_extract",
+    "wos": "live_mcp_search_full_record_title_candidates_url_fetch_extract",
     "eccc": "live_mcp_search_revision_fetch",
-    "crossref": "live_mcp_search_extract",
-    "arxiv": "live_mcp_search_extract",
+    "crossref": "live_mcp_search_native_citation_eight_formats_extract",
+    "arxiv": "live_mcp_search_pinned_html_source_archive_tex_extract",
     "zbmath": "live_mcp_search_extract",
     "github": "live_adapter_pinned_file_fetch",
     "mathlib": "live_mcp_pinned_source_search_file_fetch_line_comparison",
     "math-comp": "live_mcp_pinned_source_search_file_fetch_line_comparison",
     "opencitations": "live_mcp_native_csv_window_oci_fetch_reference_count",
+    "knu-fric": "live_mcp_catalogue_pagination_issn_fetch_zero_result",
+    "author-repository": "live_mcp_public_author_pdf_and_page_links",
+    "society-journal": "live_mcp_public_journal_metadata_abstract_pdf_native_citations",
     "numdam": "live_mcp_native_search_citations_jats_pdf_djvu_fetch_pagination",
     "software-heritage": "live_adapter_origin_search_fetch",
     "openalex": "public_endpoint_search_observed",

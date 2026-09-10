@@ -139,12 +139,72 @@ class APIAdapter:
 class Crossref(APIAdapter):
     source = "crossref"
     hosts = ("api.crossref.org",)
-    options = ("filter", "sort", "order", "query.bibliographic", "query.author", "query.title", "query.container-title", "query.affiliation", "select", "facet")
+    options = ("filter", "sort", "order", "query.bibliographic", "query.author", "query.title", "query.container-title", "query.affiliation", "select", "facet", "citation_style", "locale")
     max_limit = 1000
+    export_types = {'bibtex': 'application/x-bibtex', 'ris': 'application/x-research-info-systems',
+        'csl-json': 'application/vnd.citationstyles.csl+json', 'plain': 'text/x-bibliography',
+        'rdf': 'application/rdf+xml', 'turtle': 'text/turtle',
+        'unixref': 'application/vnd.crossref.unixref+xml', 'unixsd': 'application/vnd.crossref.unixsd+xml'}
+
+    def native_export(self, identifier, format, *, style=None, locale=None):
+        from scholarly import bibliography
+        media = self.export_types[format]
+        accept = media
+        if format == 'plain':
+            for key, value in [('style', style), ('locale', locale)]:
+                if value is not None:
+                    if not re.fullmatch(r'[A-Za-z0-9_-]+', value):
+                        raise ServiceError('invalid_options', 'Citation style and locale must be service identifiers')
+                    accept += '; ' + key + '=' + value
+        raw, evidence = self.request('https://api.crossref.org/v1/works/' + quote(identifier, safe='') + '/transform',
+            headers={'Accept': accept}, accept='xml' if 'xml' in media else 'json' if format == 'csl-json' else 'binary')
+        if format in ('bibtex', 'ris'):
+            records = bibliography(raw, media)
+            observed = records[0].get('doi') if format == 'bibtex' and records else records[0].get('fields', {}).get('do', [None])[0] if records else None
+            if len(records) != 1 or not observed or doi(observed).casefold() != identifier.casefold():
+                raise ServiceError('identity_mismatch', 'Crossref citation identifies a different DOI', evidence=evidence)
+        elif format == 'csl-json':
+            if not isinstance(raw, dict) or str(raw.get('DOI', '')).casefold() != identifier.casefold():
+                raise ServiceError('identity_mismatch', 'Crossref CSL identifies a different DOI', evidence=evidence)
+            raw = encoded(raw)
+        elif format in ('unixref', 'unixsd'):
+            root = ElementTree.fromstring(raw)
+            headers = root.findall('.//{*}doi_data/{*}doi')
+            if not any((h.text or '').casefold() == identifier.casefold() for h in headers):
+                raise ServiceError('identity_mismatch', 'Crossref XML has no matching deposited DOI', evidence=evidence)
+        elif not raw.strip() or identifier.casefold() not in raw.decode('utf-8').casefold():
+            raise ServiceError('identity_mismatch', 'Crossref transformed citation does not identify the DOI', evidence=evidence)
+        canonical = 'application/json' if format == 'csl-json' else 'text/plain' if format == 'plain' else media
+        return self.store.put(raw, canonical, self.source, evidence['url'], role='native_citation', format=format,
+                              doi=identifier, source_media_type=media, evidence_ref=evidence['ref'])
+
+    def export_page(self, result, export):
+        if export not in self.export_types:
+            return super().export_page(result, export)
+        rows = json.loads(self.store.read(result['records']['ref'])[1])
+        artifacts, errors = [], []
+        for row in rows:
+            if not row.get('DOI'):
+                errors.append({'code': 'missing_doi', 'message': 'Native citation export requires DOI in selected fields'})
+                continue
+            try:
+                artifacts.append(self.native_export(row['DOI'], export, style=result['options'].get('citation_style'), locale=result['options'].get('locale')))
+            except ServiceError as error:
+                errors.append({'doi': row['DOI'], **error.result})
+        result['export'] = {'status': 'partial' if errors else 'available', 'artifacts': artifacts, 'errors': errors}
+        if export in ('bibtex', 'ris', 'plain', 'turtle'):
+            content = b'\n\n'.join(self.store.read(a['ref'])[1] for a in artifacts)
+            media = 'text/plain' if export == 'plain' else self.export_types[export]
+            result['export'].update(self.store.put(content, media, self.source, result['evidence']['url'], role='native_citations', parent_refs=[a['ref'] for a in artifacts]))
+        if errors:
+            result['status'] = 'partial'
+        return result
 
     def search(self, query, *, options, start=0, limit=20, cursor=None, export=None):
         self.validate(options, start, limit)
-        params = {"query": query, "rows": limit, **options}
+        if any(k in options for k in ('citation_style', 'locale')) and export != 'plain':
+            raise ServiceError('invalid_options', 'citation_style/locale apply only to plain citation export')
+        params = {"query": query, "rows": limit, **{k:v for k,v in options.items() if k not in ('citation_style', 'locale')}}
         params.update({"cursor": cursor} if cursor else {"offset": start})
         raw, evidence = self.request("https://api.crossref.org/works", params=params)
         try:
@@ -155,6 +215,10 @@ class Crossref(APIAdapter):
         return self.export_page(result, export)
 
     def fetch(self, target, *, parts):
+        if not target.startswith(('http://', 'https://', '10.', 'doi:')):
+            candidates = self.search('', options={'query.title': target}, limit=5)
+            candidates['status'] = 'selection_required' if candidates['received'] else 'not_found'
+            return candidates
         identifier = doi(target)
         raw, evidence = self.request("https://api.crossref.org/works/" + quote(identifier, safe=""))
         row = raw.get("message")
@@ -163,6 +227,18 @@ class Crossref(APIAdapter):
         result = self.fetched([row], evidence, parts, ("metadata", "export") + (("abstract",) if row.get("abstract") else ()))
         if "abstract" in parts and not row.get("abstract"):
             result["components"]["abstract"] = {"status": "not_found", "reason": "This Crossref record contains no abstract field"}
+        if 'export' in parts:
+            artifacts, errors = [], []
+            for format in self.export_types:
+                try:
+                    artifacts.append({'format': format, 'artifact': self.native_export(identifier, format)})
+                except ServiceError as error:
+                    errors.append({'format': format, **error.result})
+            result['components']['export'] = {'status': 'partial' if errors else 'available', 'artifacts': artifacts, 'errors': errors}
+            if artifacts:
+                result['components']['export']['artifact'] = artifacts[0]['artifact']
+            if errors:
+                result['status'] = 'partial'
         return result
 
 
@@ -207,12 +283,21 @@ class Arxiv(APIAdapter):
 
     def fetch(self, target, *, parts):
         value = re.sub(r"^arxiv:", "", target.strip(), flags=re.I)
+        requested_format = 'pdf'
         if value.startswith(("http://", "https://")):
             parsed = urlsplit(value)
             if parsed.hostname not in self.hosts:
                 raise ServiceError("source_boundary", "Target is outside arXiv")
-            value = re.sub(r"^/(?:abs|pdf|src|html)/", "", parsed.path).removesuffix(".pdf")
+            matched = re.fullmatch(r'/(abs|pdf|src|html)/(.+)', parsed.path)
+            if not matched:
+                raise ServiceError('invalid_target', 'Use an arXiv document URL')
+            requested_format = matched[1] if matched[1] in ('html', 'src') else 'pdf'
+            value = matched[2].removesuffix('.pdf')
         if not re.fullmatch(r"(?:[0-9]{4}\.[0-9]{4,5}|[a-zA-Z.-]+/[0-9]{7})(?:v[0-9]+)?", value):
+            if not target.startswith(('http://', 'https://', 'arxiv:', 'arXiv:', '10.')) and any(c.isalpha() for c in target):
+                result = self.search('ti:"' + target.replace('"', '\\"') + '"', options={}, limit=5)
+                result['status'] = 'selection_required' if result['received'] else 'not_found'
+                return result
             raise ServiceError("invalid_target", "Use an arXiv identifier or arXiv document URL")
         raw, evidence = self.request("https://export.arxiv.org/api/query", params={"id_list": value}, accept="xml")
         rows, _ = self.parse(raw)
@@ -222,12 +307,16 @@ class Arxiv(APIAdapter):
         if value.rsplit("v", 1)[-1].isdigit() and "v" in value and version != value:
             raise ServiceError("identity_mismatch", "arXiv returned a different requested version", evidence=evidence)
         result = self.fetched(rows, evidence, parts, ("metadata", "abstract", "export"))
-        for part, endpoint, kind in [("fulltext", "pdf", "application/pdf"), ("supplementary", "src", "application/octet-stream")]:
+        downloads = {}
+        for part, endpoint in [('fulltext', requested_format), ('supplementary', 'src')]:
             if part not in parts:
                 continue
             try:
-                data, artifact = self.request(f"https://arxiv.org/{endpoint}/{quote(version, safe='/')}", accept="binary")
-                if part == "fulltext":
+                if endpoint in downloads:
+                    result['components'][part] = downloads[endpoint]
+                    continue
+                data, artifact = self.request(f"https://arxiv.org/{endpoint}/{quote(version, safe='/')}", accept='html' if endpoint == 'html' else 'binary')
+                if endpoint == 'pdf':
                     import pymupdf
                     if not data.startswith(b"%PDF-"):
                         raise ServiceError("unexpected_content", "arXiv did not return a PDF")
@@ -235,8 +324,18 @@ class Arxiv(APIAdapter):
                         if not len(document):
                             raise ServiceError("invalid_document", "PDF has no pages")
                         pages = len(document)
-                    artifact = self.store.put(data, kind, self.source, artifact["url"], version=version, pages=pages)
+                    artifact = self.store.put(data, 'application/pdf', self.source, artifact["url"], version=version, pages=pages)
+                elif endpoint == 'html':
+                    from bs4 import BeautifulSoup
+                    from browser_adapters import clean_html
+                    soup = BeautifulSoup(data, 'html.parser')
+                    if not soup.select_one('article.ltx_document') or not soup.select_one('h1.ltx_title_document'):
+                        raise ServiceError('unexpected_content', 'arXiv did not return a rendered article for this version')
+                    artifact = self.store.put(clean_html(data, self.store.sanitizer), 'text/html', self.source, artifact['url'], version=version, role='fulltext', format='html')
+                elif endpoint == 'src' and data.startswith(b'\x1f\x8b'):
+                    artifact = self.store.put(data, 'application/gzip', self.source, artifact['url'], version=version, role='submission_source', source_media_type=artifact['media_type'])
                 result["components"][part] = {"status": "available", "artifact": artifact, "version": version}
+                downloads[endpoint] = result['components'][part]
             except ServiceError as error:
                 result["components"][part] = error.result
         result["status"] = "ok" if all(v["status"] == "available" for v in result["components"].values()) else "partial"

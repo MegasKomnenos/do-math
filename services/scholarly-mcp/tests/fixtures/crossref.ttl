@@ -1,0 +1,51 @@
+<http://dx.doi.org/10.1145/321250.321251>
+        <http://prismstandard.org/namespaces/basic/2.1/doi>
+                "10.1145/321250.321251" ;
+        <http://prismstandard.org/namespaces/basic/2.1/endingPage>
+                "13" ;
+        <http://prismstandard.org/namespaces/basic/2.1/startingPage>
+                "1" ;
+        <http://prismstandard.org/namespaces/basic/2.1/volume>
+                "12" ;
+        <http://purl.org/dc/terms/creator>
+                <https://id.crossref.org/contributor/m-w-curtis-39r49n8u8vpv4> ;
+        <http://purl.org/dc/terms/date>
+                "1965-01"^^<http://www.w3.org/2001/XMLSchema#gYearMonth> ;
+        <http://purl.org/dc/terms/identifier>
+                "10.1145/321250.321251" ;
+        <http://purl.org/dc/terms/isPartOf>
+                <https://id.crossref.org/issn/0004-5411> ;
+        <http://purl.org/dc/terms/publisher>
+                "Association for Computing Machinery (ACM)" ;
+        <http://purl.org/dc/terms/title>
+                "A Turing Machine Simulator" ;
+        <http://purl.org/ontology/bibo/doi>
+                "10.1145/321250.321251" ;
+        <http://purl.org/ontology/bibo/pageEnd>
+                "13" ;
+        <http://purl.org/ontology/bibo/pageStart>
+                "1" ;
+        <http://purl.org/ontology/bibo/volume>
+                "12" ;
+        <http://www.w3.org/2002/07/owl#sameAs>
+                <doi:10.1145/321250.321251> , <info:doi/10.1145/321250.321251> .
+
+<https://id.crossref.org/contributor/m-w-curtis-39r49n8u8vpv4>
+        a       <http://xmlns.com/foaf/0.1/Person> ;
+        <http://xmlns.com/foaf/0.1/familyName>
+                "Curtis" ;
+        <http://xmlns.com/foaf/0.1/givenName>
+                "M. W." ;
+        <http://xmlns.com/foaf/0.1/name>
+                "M. W. Curtis" .
+
+<https://id.crossref.org/issn/0004-5411>
+        a       <http://purl.org/ontology/bibo/Journal> ;
+        <http://prismstandard.org/namespaces/basic/2.1/issn>
+                "1557-735X" , "0004-5411" ;
+        <http://purl.org/dc/terms/title>
+                "Journal of the ACM" ;
+        <http://purl.org/ontology/bibo/issn>
+                "1557-735X" , "0004-5411" ;
+        <http://www.w3.org/2002/07/owl#sameAs>
+                "urn:issn:1557-735X" , "urn:issn:0004-5411" .

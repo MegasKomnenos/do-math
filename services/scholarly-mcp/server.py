@@ -31,6 +31,8 @@ from dataclasses import replace
 from publishers import PROFILES, Publisher
 from jstor import JSTOR
 from numdam import Numdam
+from fric import KNUFric
+from web_documents import WebDocuments
 
 ROOT = Path(__file__).resolve().parent
 STORE = ArtifactStore(ROOT / "data")
@@ -130,6 +132,9 @@ def main():
     gateway = KudosGateway(ROOT.parents[1] / ".credentials", STORE.sanitizer)
     firefox_gateway = KudosGateway(ROOT.parents[1] / ".credentials", STORE.sanitizer, engine="firefox")
     ADAPTERS["numdam"] = Numdam(STORE, gateway)
+    ADAPTERS["knu-fric"] = KNUFric(STORE, gateway)
+    for category in ('author-repository', 'society-journal'):
+        ADAPTERS[category] = WebDocuments(STORE, gateway, category)
     ADAPTERS["mathscinet"] = MathSciNet(STORE, gateway)
     ADAPTERS["wos"] = WebOfScience(STORE, gateway)
     ADAPTERS["eccc"] = ECCC(STORE, gateway)

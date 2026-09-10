@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 import re
-from urllib.parse import parse_qs, urlencode, urljoin, urlsplit, urlunsplit, quote
+from urllib.parse import parse_qs, urlencode, urljoin, urlsplit, urlunsplit, quote, unquote
 
 from bs4 import BeautifulSoup
 
@@ -512,15 +512,26 @@ class WebOfScience:
 
     def fetch(self, target, *, parts):
         from api_adapters import doi
+        is_title = False
+        if target.startswith(('http://', 'https://')) and urlsplit(target).hostname not in ('doi.org', 'dx.doi.org'):
+            require_source_url(target, self.hosts)
+            match = re.search(r'/full-record/(WOS:[0-9A-Z]+)(?:/|$)', unquote(urlsplit(target).path))
+            if not match:
+                raise ServiceError('invalid_target', 'Use a WOS full-record URL, accession number, DOI or title')
+            target = match[1]
         if re.fullmatch(r"(?:WOS:)?[0-9A-Z]+", target):
             value = target if target.startswith("WOS:") else "WOS:" + target
             query = "UT=(" + value + ")"
         elif target.startswith(("10.", "doi:", "https://doi.org/")):
             query = 'DO=("' + doi(target).replace('"', '\\"') + '")'
         else:
-            raise ServiceError("invalid_target", "Use a WOS accession number or DOI; title selection and record URLs are pending")
-        result = self.search(query, options={}, limit=1, export="plain")
+            is_title = True
+            query = 'TI=("' + target.replace('"', '\\"') + '")'
+        result = self.search(query, options={}, limit=20 if is_title else 1, export="plain")
         if result["status"] != "ok":
+            return result
+        if is_title:
+            result.update(status='selection_required', message='Select the accession number or DOI from these title candidates')
             return result
         if result["total"] != 1:
             result["status"] = "selection_required"

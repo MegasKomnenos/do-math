@@ -3,18 +3,18 @@
 | 자료원 | source | 경로 | 구현 | 기능 | 실측 표지 |
 |---|---|---|---|---|---|
 | MathSciNet | mathscinet | playwright | partial | source_guide, search, fetch, export | live_mcp_search_export_fetch_extract |
-| Web of Science Core Collection + CPCI | wos | playwright | partial | source_guide, search, fetch, export | live_mcp_search_full_record_export_extract |
+| Web of Science Core Collection + CPCI | wos | playwright | partial | source_guide, search, fetch, export | live_mcp_search_full_record_title_candidates_url_fetch_extract |
 | Scopus | scopus | playwright | partial | source_guide, search, fetch, export | live_mcp_pagination_extract_metadata_abstract_fetch |
 | ACM Digital Library | acm-dl | playwright | partial | source_guide, search, fetch, export | live_mcp_search_export_original_pdf_fetch |
 | IEEE Xplore / IEL | ieee-xplore | playwright | partial | source_guide, search, fetch, export | live_mcp_search_bibtex_extract_metadata_abstract_pdf_fetch |
 | PQDT Global | pqdt | playwright | partial | source_guide, search, fetch, export | live_mcp_repeat_search_pagination_ris_pdf_fetch |
 | zbMATH Open | zbmath | api | partial | source_guide, search, fetch, export | live_mcp_search_extract |
-| arXiv | arxiv | api | partial | source_guide, search, fetch, export | live_mcp_search_extract |
+| arXiv | arxiv | api | partial | source_guide, search, fetch, export | live_mcp_search_pinned_html_source_archive_tex_extract |
 | DBLP | dblp | api | partial | source_guide, search, fetch, export | access_challenge_observed |
 | ECCC | eccc | playwright | partial | source_guide, search, fetch, export | live_mcp_search_revision_fetch |
 | DROPS / LIPIcs | drops | fixed: metadata API; search/document links Playwright | partial | source_guide, search, fetch, export | live_mcp_native_exports_pdf_html_codemeta_and_supplementary_references |
 | Theory of Computing | theory-of-computing | playwright | partial | source_guide, search, fetch, export | live_mcp_indexes_citation_pdf_source_ps_references_fetch_and_text_pagination |
-| Crossref | crossref | api | partial | source_guide, search, fetch, export | live_mcp_search_extract |
+| Crossref | crossref | api | partial | source_guide, search, fetch, export | live_mcp_search_native_citation_eight_formats_extract |
 | Crossmark | crossmark | api | partial | source_guide, search, fetch, export | live_mcp_search_extract |
 | OpenAlex | openalex | api | partial | source_guide, search, fetch, export | public_endpoint_search_observed |
 | Semantic Scholar | semantic-scholar | api | partial | source_guide, search, fetch, export | rate_limit_observed |
@@ -43,10 +43,10 @@
 | APS 공개 접근 | aps | api | partial | source_guide, search, fetch, export | live_mcp_open_access_feed_metadata_abstract_pdf_fetch |
 | IOP | iop | under_investigation | pending | 미구현 | institution_redirect_to_captcha_observed |
 | SIAM | siam | under_investigation | pending | 미구현 | browser_access_challenge_observed |
-| KNU FRIC | knu-fric | under_investigation | pending | 미구현 | not_recorded |
+| KNU FRIC | knu-fric | playwright | partial | source_guide, search, fetch, export | live_mcp_catalogue_pagination_issn_fetch_zero_result |
 | 개별 구독 자료원 | individual-subscription | target_dependent | pending | 미구현 | not_recorded |
-| 학회·저널 공식 사이트 | society-journal | target_dependent | pending | 미구현 | not_recorded |
-| 저자·기관 공개본 | author-repository | target_dependent | pending | 미구현 | not_recorded |
+| 학회·저널 공식 사이트 | society-journal | fixed: public document Playwright; OJS native citation API | partial | source_guide, fetch, export | live_mcp_public_journal_metadata_abstract_pdf_native_citations |
+| 저자·기관 공개본 | author-repository | fixed: public document Playwright; OJS native citation API | partial | source_guide, fetch, export | live_mcp_public_author_pdf_and_page_links |
 | 일반 웹 후보 발견 | general-web | target_dependent | pending | 미구현 | not_recorded |
 | APS 기관 구독 접근 | aps-institutional | playwright | partial | source_guide, fetch, export | live_adapter_metadata_and_fulltext_restriction |
 

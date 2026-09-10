@@ -1,0 +1,1 @@
+Curtis, M. W. (1965). A Turing Machine Simulator. Journal of the ACM, 12(1), 1–13. https://doi.org/10.1145/321250.321251

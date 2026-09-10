@@ -53,6 +53,14 @@ async def main():
             records = await call("extract", {"ref": search["records"]["ref"], "count": 5})
             assert records["returned"] == 5
             assert len(records["items"][0]["fields"]["cr"]) == 47
+            candidates = await call('fetch', {'source': 'wos', 'target': 'The status of the P versus NP problem', 'parts': ['metadata']})
+            assert candidates['status'] == 'selection_required'
+            chosen = await call('extract', {'ref': candidates['records']['ref'], 'count': 1})
+            identifier = chosen['items'][0]['id']
+            linked = await call('fetch', {'source': 'wos', 'target': 'https://www.webofscience.com/wos/woscc/full-record/' + identifier, 'parts': ['metadata', 'abstract', 'supplementary']})
+            assert linked['components']['metadata']['status'] == 'available'
+            assert linked['components']['supplementary']['status'] == 'available'
+            assert linked['components']['abstract']['status'] in ('available', 'not_found')
         elif args.source == "eccc":
             search = await call("search", {"source": "eccc", "query": "natural proofs", "limit": 2})
             assert search["status"] == "ok", search.get("code")
@@ -69,6 +77,30 @@ async def main():
             fetched = await call("fetch", {"source": "acm-dl", "target": "10.1145/800157.805047", "parts": ["metadata", "abstract", "fulltext"]})
             assert fetched["status"] == "ok", fetched.get("code")
             assert fetched["components"]["fulltext"]["artifact"]["pages"] == 8
+        elif args.source == 'society-journal':
+            fetched = await call('fetch', {'source':args.source,'target':'https://www.combinatorics.org/ojs/index.php/eljc/article/view/v1i1r1','parts':['metadata','abstract','fulltext','export']})
+            assert fetched['status'] == 'ok' and fetched['components']['fulltext']['artifact']['pages'] == 10
+            assert {x['format'] for x in fetched['components']['export']['artifacts']} == {'ris','bibtex'}
+            native = await call('extract', {'ref':next(a['artifact']['ref'] for a in fetched['components']['export']['artifacts'] if a['format']=='ris'),'count':1})
+            assert native['items'][0]['fields']['do'] == ['10.37236/1181']
+        elif args.source == 'author-repository':
+            fetched = await call('fetch', {'source':args.source,'target':'https://www.cs.toronto.edu/~sacook/homepage/ptime.pdf','parts':['metadata','fulltext']})
+            assert fetched['status'] == 'ok' and fetched['components']['fulltext']['artifact']['pages'] == 14
+            page = await call('extract', {'ref':fetched['components']['fulltext']['artifact']['ref'],'count':1})
+            assert 'RECURSION' in page['items'][0]['text']
+            site = await call('fetch', {'source':args.source,'target':'https://www.cs.toronto.edu/~sacook/','parts':['metadata','fulltext','supplementary']})
+            assert site['status'] == 'ok'
+            links = await call('extract', {'ref':site['components']['supplementary']['artifact']['ref'],'count':200})
+            assert any(x['url'].endswith('/ptime.pdf') for x in links['items'])
+        elif args.source == 'knu-fric':
+            found = await call('search', {'source':'knu-fric','query':'computer','start':9,'limit':2,'export':'csv'})
+            assert found['status'] == 'ok' and found['received'] == 2 and found['total'] > 10
+            records = await call('extract', {'ref':found['records']['ref'],'count':2})
+            assert records['returned'] == 2
+            fetched = await call('fetch', {'source':'knu-fric','target':'issn:2263-8733','parts':['metadata','export']})
+            assert fetched['status'] == 'ok'
+            zero = await call('search', {'source':'knu-fric','query':'codexnomatchxqz947231','limit':2})
+            assert zero['status'] == 'not_found' and zero['total'] == 0
         elif args.source == "numdam":
             search = await call("search", {"source": "numdam", "query": "complexity", "start": 19, "limit": 2, "export": "ris"})
             assert search['status'] == 'ok', search.get('code')
@@ -106,6 +138,30 @@ async def main():
             assert fetched["status"] == "ok", fetched.get("code")
             native = await call("extract", {"ref": fetched["components"]["metadata"]["artifact"]["ref"], "selection": "./front/article-meta/article-id", "count": 10})
             assert any("urn:eudml:doc:196516" in item for item in native["items"])
+        elif args.source == 'arxiv':
+            found = await call('search', {'source': 'arxiv', 'query': 'ti:"The OpenCitations Index"', 'limit': 2, 'export': 'native'})
+            assert found['status'] == 'ok' and found['received'] >= 1
+            fetched = await call('fetch', {'source': 'arxiv', 'target': 'https://arxiv.org/html/2408.02321v1', 'parts': ['metadata', 'fulltext', 'supplementary']})
+            assert fetched['status'] == 'ok' and fetched['version'] == '2408.02321v1'
+            assert fetched['components']['fulltext']['artifact']['media_type'] == 'text/html'
+            heading = await call('extract', {'ref': fetched['components']['fulltext']['artifact']['ref'], 'selection': 'h1.ltx_title_document', 'count':1})
+            assert 'OpenCitations' in str(heading['items'][0])
+            archive = await call('extract', {'ref': fetched['components']['supplementary']['artifact']['ref'], 'count': 20})
+            assert archive['total'] == 11
+            source = await call('extract', {'ref': fetched['components']['supplementary']['artifact']['ref'], 'selection': 'main.tex', 'count': 1})
+            lines = await call('extract', {'ref': source['items'][0]['artifact']['ref'], 'count': 3})
+            assert lines['status'] == 'ok' and lines['returned'] == 3
+        elif args.source in ('crossref', 'crossmark'):
+            found = await call('search', {'source': args.source, 'query': '', 'options': {'filter': 'doi:10.1145/321250.321251'}, 'limit': 1, 'export': 'bibtex'})
+            assert found['status'] == 'ok' and found['received'] == 1
+            native = await call('extract', {'ref': found['export']['ref'], 'count': 1})
+            assert native['items'][0]['doi'] == '10.1145/321250.321251'
+            fetched = await call('fetch', {'source': args.source, 'target': '10.1145/321250.321251', 'parts': ['metadata','export']})
+            assert fetched['status'] == 'ok'
+            assert len(fetched['components']['export']['artifacts']) == 8
+            csl = next(a['artifact'] for a in fetched['components']['export']['artifacts'] if a['format']=='csl-json')
+            parsed = await call('extract', {'ref': csl['ref'], 'fields': ['DOI', 'title'], 'count':1})
+            assert parsed['items'][0]['DOI'] == '10.1145/321250.321251'
         elif args.source == 'opencitations':
             found = await call('search', {'source': args.source, 'query': 'doi:10.1186/1756-8722-6-59', 'start': 1, 'limit': 2, 'export': 'csv'})
             assert found['status'] == 'ok' and found['received'] == 2

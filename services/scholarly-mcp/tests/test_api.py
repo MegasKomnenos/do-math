@@ -14,6 +14,31 @@ from scholarly import ArtifactStore, ServiceError
 
 
 class APIContract(unittest.TestCase):
+    def test_crossref_native_export_is_for_the_selected_doi(self):
+        record = {'message': {'items': [{'DOI':'10.1145/321250.321251', 'title':['A Turing Machine Simulator']}], 'total-results':1}}
+        native = (ROOT / 'tests/fixtures/crossref.bib').read_bytes()
+        def respond(request):
+            if '/transform' in request.url.path:
+                return httpx.Response(200, content=native, headers={'Content-Type':'application/x-bibtex'})
+            return httpx.Response(200, json=record)
+        adapter = self.adapter('crossref', respond)
+        result = adapter.search('P versus NP', options={}, limit=1, export='bibtex')
+        self.assertIn('artifacts', result['export'])
+        self.assertEqual(result['status'], 'ok')
+        self.assertEqual(len(result['export']['artifacts']), 1)
+        self.assertEqual(self.calls[1].headers['Accept'], 'application/x-bibtex')
+
+    def test_crossref_all_native_formats_retain_the_requested_identity(self):
+        formats={'bibtex':'bib','ris':'ris','csl-json':'csl.json','plain':'citation.txt','rdf':'rdf.xml','turtle':'ttl','unixref':'unixref.xml','unixsd':'unixsd.xml'}
+        for kind,suffix in formats.items():
+            data=(ROOT/'tests/fixtures'/('crossref.'+suffix)).read_bytes()
+            with self.subTest(kind=kind):
+                adapter=self.adapter('crossref',lambda req:httpx.Response(200,content=data,headers={'Content-Type':self.mod.Crossref.export_types[kind]}))
+                artifact=adapter.native_export('10.1145/321250.321251',kind)
+                self.assertEqual(artifact['doi'],'10.1145/321250.321251')
+                self.assertEqual(artifact['format'],kind)
+                self.assertIn(b'10.1145/321250.321251',self.store.read(artifact['ref'])[1])
+
     @classmethod
     def setUpClass(cls):
         if not (ROOT / "api_adapters.py").exists():
@@ -104,6 +129,30 @@ class APIContract(unittest.TestCase):
         self.assertRegex(rows[0]["id"], r"v[0-9]+$")
         self.assertTrue(rows[0]["abstract"])
         self.assertTrue(rows[0]["links"])
+
+    def test_arxiv_html_target_keeps_html_and_its_version(self):
+        from xml.etree import ElementTree as ET
+        root = ET.fromstring((ROOT / 'tests/fixtures/arxiv.xml').read_bytes())
+        ns = '{http://www.w3.org/2005/Atom}'
+        entries = root.findall(ns+'entry')
+        for entry in entries[1:]:
+            root.remove(entry)
+        version = entries[0].findtext(ns+'id').split('/abs/')[-1]
+        atom = ET.tostring(root)
+        html = '<html><article class="ltx_document"><h1 class="ltx_title_document">Paper</h1><math><mi>x</mi></math></article><input name="token" value="SYNTHETIC"></html>'
+        def respond(request):
+            if request.url.path == '/api/query':
+                return httpx.Response(200, content=atom, headers={'Content-Type':'application/atom+xml'})
+            self.assertEqual(request.url.path, '/html/' + version)
+            return httpx.Response(200, text=html, headers={'Content-Type':'text/html'})
+        adapter = self.adapter('arxiv', respond)
+        adapter.min_interval = 0
+        result = adapter.fetch('https://arxiv.org/html/'+version, parts=['fulltext'])
+        artifact = result['components']['fulltext']['artifact']
+        self.assertEqual(artifact['media_type'], 'text/html')
+        self.assertEqual(artifact['version'], version)
+        self.assertIn(b'<math>', self.store.read(artifact['ref'])[1])
+        self.assertNotIn(b'SYNTHETIC', self.store.read(artifact['ref'])[1])
 
     def test_public_api_implementation_has_no_separate_api_credential_input(self):
         self.assertNotIn("secrets", inspect.signature(self.mod.make_adapters).parameters)
