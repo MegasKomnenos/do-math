@@ -1,0 +1,602 @@
+{
+  "abstract_inverted_index": null,
+  "apc_list": {
+    "currency": "USD",
+    "value": 2610,
+    "value_usd": 2610
+  },
+  "apc_paid": null,
+  "authorships": [
+    {
+      "affiliations": [
+        {
+          "institution_ids": [
+            "https://openalex.org/I40036882"
+          ],
+          "raw_affiliation_string": "School of Mathematics, Institute for Advanced Study, Princeton, New Jersey, 08540"
+        },
+        {
+          "institution_ids": [
+            "https://openalex.org/I2801160905"
+          ],
+          "raw_affiliation_string": "Steklov Mathematical Institute, Vavilova 42, 117966, GSP-1, Moscow, Russia"
+        }
+      ],
+      "author": {
+        "display_name": "Alexander Razborov",
+        "id": "https://openalex.org/A5008113826",
+        "orcid": null
+      },
+      "author_position": "first",
+      "countries": [
+        "RU",
+        "US"
+      ],
+      "institutions": [
+        {
+          "country_code": "RU",
+          "display_name": "Steklov Mathematical Institute",
+          "id": "https://openalex.org/I2801160905",
+          "lineage": [
+            "https://openalex.org/I1313323035",
+            "https://openalex.org/I2801160905",
+            "https://openalex.org/I4210124601"
+          ],
+          "ror": "https://ror.org/03zeg8w71",
+          "type": "facility"
+        },
+        {
+          "country_code": "US",
+          "display_name": "Institute for Advanced Study",
+          "id": "https://openalex.org/I40036882",
+          "lineage": [
+            "https://openalex.org/I40036882"
+          ],
+          "ror": "https://ror.org/00f809463",
+          "type": "facility"
+        }
+      ],
+      "is_corresponding": false,
+      "raw_affiliation_strings": [
+        "School of Mathematics, Institute for Advanced Study, Princeton, New Jersey, 08540",
+        "Steklov Mathematical Institute, Vavilova 42, 117966, GSP-1, Moscow, Russia"
+      ],
+      "raw_author_name": "Alexander A Razborov",
+      "raw_orcid": null
+    },
+    {
+      "affiliations": [
+        {
+          "institution_ids": [
+            "https://openalex.org/I74973139"
+          ],
+          "raw_affiliation_string": "Computer Science Department, Carnegie Mellon University, Pittsburgh, Pennsylvania, 15212"
+        }
+      ],
+      "author": {
+        "display_name": "Steven Rudich",
+        "id": "https://openalex.org/A5065272741",
+        "orcid": null
+      },
+      "author_position": "last",
+      "countries": [
+        "US"
+      ],
+      "institutions": [
+        {
+          "country_code": "US",
+          "display_name": "Carnegie Mellon University",
+          "id": "https://openalex.org/I74973139",
+          "lineage": [
+            "https://openalex.org/I74973139"
+          ],
+          "ror": "https://ror.org/05x2bcf33",
+          "type": "education"
+        }
+      ],
+      "is_corresponding": false,
+      "raw_affiliation_strings": [
+        "Computer Science Department, Carnegie Mellon University, Pittsburgh, Pennsylvania, 15212"
+      ],
+      "raw_author_name": "Steven Rudich",
+      "raw_orcid": null
+    }
+  ],
+  "awards": [],
+  "best_oa_location": null,
+  "biblio": {
+    "first_page": "24",
+    "issue": "1",
+    "last_page": "35",
+    "volume": "55"
+  },
+  "citation_normalized_percentile": {
+    "is_in_top_10_percent": true,
+    "is_in_top_1_percent": false,
+    "value": 0.98342095
+  },
+  "cited_by_count": 484,
+  "cited_by_percentile_year": {
+    "max": 100,
+    "min": 99
+  },
+  "concepts": [
+    {
+      "display_name": "Mathematical proof",
+      "id": "https://openalex.org/C108710211",
+      "level": 2,
+      "score": 0.9423283338546753,
+      "wikidata": "https://www.wikidata.org/wiki/Q11538"
+    },
+    {
+      "display_name": "Mathematics",
+      "id": "https://openalex.org/C33923547",
+      "level": 0,
+      "score": 0.6921341419219971,
+      "wikidata": "https://www.wikidata.org/wiki/Q395"
+    },
+    {
+      "display_name": "Discrete mathematics",
+      "id": "https://openalex.org/C118615104",
+      "level": 1,
+      "score": 0.5507400035858154,
+      "wikidata": "https://www.wikidata.org/wiki/Q121416"
+    },
+    {
+      "display_name": "Logarithm",
+      "id": "https://openalex.org/C39927690",
+      "level": 2,
+      "score": 0.5383930802345276,
+      "wikidata": "https://www.wikidata.org/wiki/Q11197"
+    },
+    {
+      "display_name": "Natural number",
+      "id": "https://openalex.org/C184264201",
+      "level": 2,
+      "score": 0.4808269739151001,
+      "wikidata": "https://www.wikidata.org/wiki/Q21199"
+    },
+    {
+      "display_name": "Class (philosophy)",
+      "id": "https://openalex.org/C2777212361",
+      "level": 2,
+      "score": 0.47672930359840393,
+      "wikidata": "https://www.wikidata.org/wiki/Q5127848"
+    },
+    {
+      "display_name": "Upper and lower bounds",
+      "id": "https://openalex.org/C77553402",
+      "level": 2,
+      "score": 0.4408084452152252,
+      "wikidata": "https://www.wikidata.org/wiki/Q13222579"
+    },
+    {
+      "display_name": "Function (biology)",
+      "id": "https://openalex.org/C14036430",
+      "level": 2,
+      "score": 0.4361932873725891,
+      "wikidata": "https://www.wikidata.org/wiki/Q3736076"
+    },
+    {
+      "display_name": "Combinatorics",
+      "id": "https://openalex.org/C114614502",
+      "level": 1,
+      "score": 0.41666752099990845,
+      "wikidata": "https://www.wikidata.org/wiki/Q76592"
+    },
+    {
+      "display_name": "Complexity class",
+      "id": "https://openalex.org/C39637292",
+      "level": 3,
+      "score": 0.4137727618217468,
+      "wikidata": "https://www.wikidata.org/wiki/Q908207"
+    },
+    {
+      "display_name": "Computer science",
+      "id": "https://openalex.org/C41008148",
+      "level": 0,
+      "score": 0.22040751576423645,
+      "wikidata": "https://www.wikidata.org/wiki/Q21198"
+    },
+    {
+      "display_name": "Time complexity",
+      "id": "https://openalex.org/C311688",
+      "level": 2,
+      "score": 0.20371246337890625,
+      "wikidata": "https://www.wikidata.org/wiki/Q2393193"
+    },
+    {
+      "display_name": "Evolutionary biology",
+      "id": "https://openalex.org/C78458016",
+      "level": 1,
+      "score": 0.0,
+      "wikidata": "https://www.wikidata.org/wiki/Q840400"
+    },
+    {
+      "display_name": "Mathematical analysis",
+      "id": "https://openalex.org/C134306372",
+      "level": 1,
+      "score": 0.0,
+      "wikidata": "https://www.wikidata.org/wiki/Q7754"
+    },
+    {
+      "display_name": "Biology",
+      "id": "https://openalex.org/C86803240",
+      "level": 0,
+      "score": 0.0,
+      "wikidata": "https://www.wikidata.org/wiki/Q420"
+    },
+    {
+      "display_name": "Geometry",
+      "id": "https://openalex.org/C2524010",
+      "level": 1,
+      "score": 0.0,
+      "wikidata": "https://www.wikidata.org/wiki/Q8087"
+    },
+    {
+      "display_name": "Artificial intelligence",
+      "id": "https://openalex.org/C154945302",
+      "level": 1,
+      "score": 0.0,
+      "wikidata": "https://www.wikidata.org/wiki/Q11660"
+    }
+  ],
+  "content_urls": null,
+  "corresponding_author_ids": [],
+  "corresponding_institution_ids": [],
+  "countries_distinct_count": 2,
+  "counts_by_year": [
+    {
+      "cited_by_count": 4,
+      "year": 2026
+    },
+    {
+      "cited_by_count": 15,
+      "year": 2025
+    },
+    {
+      "cited_by_count": 21,
+      "year": 2024
+    },
+    {
+      "cited_by_count": 8,
+      "year": 2023
+    },
+    {
+      "cited_by_count": 15,
+      "year": 2022
+    },
+    {
+      "cited_by_count": 10,
+      "year": 2021
+    },
+    {
+      "cited_by_count": 19,
+      "year": 2020
+    },
+    {
+      "cited_by_count": 46,
+      "year": 2019
+    },
+    {
+      "cited_by_count": 17,
+      "year": 2018
+    },
+    {
+      "cited_by_count": 16,
+      "year": 2017
+    },
+    {
+      "cited_by_count": 22,
+      "year": 2016
+    },
+    {
+      "cited_by_count": 14,
+      "year": 2015
+    },
+    {
+      "cited_by_count": 28,
+      "year": 2014
+    },
+    {
+      "cited_by_count": 22,
+      "year": 2013
+    },
+    {
+      "cited_by_count": 17,
+      "year": 2012
+    }
+  ],
+  "created_date": "2019-02-21T00:00:00",
+  "display_name": "Natural Proofs",
+  "doi": "https://doi.org/10.1006/jcss.1997.1494",
+  "funders": [],
+  "fwci": 8.6817,
+  "has_content": {
+    "grobid_xml": false,
+    "pdf": false
+  },
+  "has_fulltext": false,
+  "id": "https://openalex.org/W2912080987",
+  "ids": {
+    "doi": "https://doi.org/10.1006/jcss.1997.1494",
+    "mag": "2912080987",
+    "openalex": "https://openalex.org/W2912080987"
+  },
+  "indexed_in": [
+    "crossref"
+  ],
+  "institutions": [],
+  "institutions_distinct_count": 3,
+  "is_paratext": false,
+  "is_retracted": false,
+  "is_xpac": false,
+  "keywords": [
+    {
+      "display_name": "Mathematical proof",
+      "id": "https://openalex.org/keywords/mathematical-proof",
+      "score": 0.9423283338546753
+    },
+    {
+      "display_name": "Mathematics",
+      "id": "https://openalex.org/keywords/mathematics",
+      "score": 0.6921341419219971
+    },
+    {
+      "display_name": "Discrete mathematics",
+      "id": "https://openalex.org/keywords/discrete-mathematics",
+      "score": 0.5507400035858154
+    },
+    {
+      "display_name": "Logarithm",
+      "id": "https://openalex.org/keywords/logarithm",
+      "score": 0.5383930802345276
+    },
+    {
+      "display_name": "Natural number",
+      "id": "https://openalex.org/keywords/natural-number",
+      "score": 0.4808269739151001
+    },
+    {
+      "display_name": "Class (philosophy)",
+      "id": "https://openalex.org/keywords/class",
+      "score": 0.47672930359840393
+    },
+    {
+      "display_name": "Upper and lower bounds",
+      "id": "https://openalex.org/keywords/upper-and-lower-bounds",
+      "score": 0.4408084452152252
+    },
+    {
+      "display_name": "Function (biology)",
+      "id": "https://openalex.org/keywords/function",
+      "score": 0.4361932873725891
+    },
+    {
+      "display_name": "Combinatorics",
+      "id": "https://openalex.org/keywords/combinatorics",
+      "score": 0.41666752099990845
+    },
+    {
+      "display_name": "Complexity class",
+      "id": "https://openalex.org/keywords/complexity-class",
+      "score": 0.4137727618217468
+    },
+    {
+      "display_name": "Computer science",
+      "id": "https://openalex.org/keywords/computer-science",
+      "score": 0.22040751576423645
+    },
+    {
+      "display_name": "Time complexity",
+      "id": "https://openalex.org/keywords/time-complexity",
+      "score": 0.20371246337890625
+    }
+  ],
+  "language": "en",
+  "locations": [
+    {
+      "id": "doi:10.1006/jcss.1997.1494",
+      "is_accepted": true,
+      "is_oa": false,
+      "is_published": true,
+      "landing_page_url": "https://doi.org/10.1006/jcss.1997.1494",
+      "license": null,
+      "license_id": null,
+      "pdf_url": null,
+      "raw_source_name": "Journal of Computer and System Sciences",
+      "raw_type": "journal-article",
+      "source": {
+        "display_name": "Journal of Computer and System Sciences",
+        "host_organization": "https://openalex.org/P4310320990",
+        "host_organization_lineage": [
+          "https://openalex.org/P4310320990"
+        ],
+        "host_organization_lineage_names": [
+          "Elsevier BV"
+        ],
+        "host_organization_name": "Elsevier BV",
+        "id": "https://openalex.org/S141020589",
+        "is_core": true,
+        "is_in_doaj": false,
+        "is_oa": false,
+        "issn": [
+          "0022-0000",
+          "1090-2724"
+        ],
+        "issn_l": "0022-0000",
+        "type": "journal"
+      },
+      "version": "publishedVersion"
+    }
+  ],
+  "locations_count": 1,
+  "mesh": [],
+  "open_access": {
+    "any_repository_has_fulltext": false,
+    "is_oa": false,
+    "oa_status": "closed",
+    "oa_url": null
+  },
+  "primary_location": {
+    "id": "doi:10.1006/jcss.1997.1494",
+    "is_accepted": true,
+    "is_oa": false,
+    "is_published": true,
+    "landing_page_url": "https://doi.org/10.1006/jcss.1997.1494",
+    "license": null,
+    "license_id": null,
+    "pdf_url": null,
+    "raw_source_name": "Journal of Computer and System Sciences",
+    "raw_type": "journal-article",
+    "source": {
+      "display_name": "Journal of Computer and System Sciences",
+      "host_organization": "https://openalex.org/P4310320990",
+      "host_organization_lineage": [
+        "https://openalex.org/P4310320990"
+      ],
+      "host_organization_lineage_names": [
+        "Elsevier BV"
+      ],
+      "host_organization_name": "Elsevier BV",
+      "id": "https://openalex.org/S141020589",
+      "is_core": true,
+      "is_in_doaj": false,
+      "is_oa": false,
+      "issn": [
+        "0022-0000",
+        "1090-2724"
+      ],
+      "issn_l": "0022-0000",
+      "type": "journal"
+    },
+    "version": "publishedVersion"
+  },
+  "primary_topic": {
+    "display_name": "Complexity and Algorithms in Graphs",
+    "domain": {
+      "display_name": "Physical Sciences",
+      "id": "https://openalex.org/domains/3"
+    },
+    "field": {
+      "display_name": "Computer Science",
+      "id": "https://openalex.org/fields/17"
+    },
+    "id": "https://openalex.org/T10720",
+    "score": 1.0,
+    "subfield": {
+      "display_name": "Computational Theory and Mathematics",
+      "id": "https://openalex.org/subfields/1703"
+    }
+  },
+  "publication_date": "1997-08-01",
+  "publication_year": 1997,
+  "referenced_works": [
+    "https://openalex.org/W641694900",
+    "https://openalex.org/W1526313893",
+    "https://openalex.org/W1557604257",
+    "https://openalex.org/W1662824729",
+    "https://openalex.org/W1966278576",
+    "https://openalex.org/W1974411071",
+    "https://openalex.org/W1980756688",
+    "https://openalex.org/W1991702990",
+    "https://openalex.org/W1993138363",
+    "https://openalex.org/W1995240561",
+    "https://openalex.org/W2009994177",
+    "https://openalex.org/W2012476164",
+    "https://openalex.org/W2014588328",
+    "https://openalex.org/W2014593388",
+    "https://openalex.org/W2016477241",
+    "https://openalex.org/W2023915883",
+    "https://openalex.org/W2036656440",
+    "https://openalex.org/W2044095368",
+    "https://openalex.org/W2044632231",
+    "https://openalex.org/W2045260280",
+    "https://openalex.org/W2045924252",
+    "https://openalex.org/W2049016755",
+    "https://openalex.org/W2054013713",
+    "https://openalex.org/W2060270693",
+    "https://openalex.org/W2070678975",
+    "https://openalex.org/W2117362057",
+    "https://openalex.org/W2120551550",
+    "https://openalex.org/W2123459960",
+    "https://openalex.org/W2129059686",
+    "https://openalex.org/W2152772468",
+    "https://openalex.org/W2164284862",
+    "https://openalex.org/W2611287588",
+    "https://openalex.org/W4206794571",
+    "https://openalex.org/W6602611483",
+    "https://openalex.org/W6607156081",
+    "https://openalex.org/W6663619260"
+  ],
+  "referenced_works_count": 36,
+  "related_works": [
+    "https://openalex.org/W2808944898",
+    "https://openalex.org/W3196207352",
+    "https://openalex.org/W2951724202",
+    "https://openalex.org/W3084261076",
+    "https://openalex.org/W4387820098",
+    "https://openalex.org/W1996614773",
+    "https://openalex.org/W2576399385",
+    "https://openalex.org/W2963408011",
+    "https://openalex.org/W4236324517",
+    "https://openalex.org/W1586813864"
+  ],
+  "sustainable_development_goals": [],
+  "title": "Natural Proofs",
+  "topics": [
+    {
+      "display_name": "Complexity and Algorithms in Graphs",
+      "domain": {
+        "display_name": "Physical Sciences",
+        "id": "https://openalex.org/domains/3"
+      },
+      "field": {
+        "display_name": "Computer Science",
+        "id": "https://openalex.org/fields/17"
+      },
+      "id": "https://openalex.org/T10720",
+      "score": 1.0,
+      "subfield": {
+        "display_name": "Computational Theory and Mathematics",
+        "id": "https://openalex.org/subfields/1703"
+      }
+    },
+    {
+      "display_name": "Machine Learning and Algorithms",
+      "domain": {
+        "display_name": "Physical Sciences",
+        "id": "https://openalex.org/domains/3"
+      },
+      "field": {
+        "display_name": "Computer Science",
+        "id": "https://openalex.org/fields/17"
+      },
+      "id": "https://openalex.org/T12072",
+      "score": 0.9991000294685364,
+      "subfield": {
+        "display_name": "Artificial Intelligence",
+        "id": "https://openalex.org/subfields/1702"
+      }
+    },
+    {
+      "display_name": "Cryptography and Data Security",
+      "domain": {
+        "display_name": "Physical Sciences",
+        "id": "https://openalex.org/domains/3"
+      },
+      "field": {
+        "display_name": "Computer Science",
+        "id": "https://openalex.org/fields/17"
+      },
+      "id": "https://openalex.org/T10237",
+      "score": 0.9986000061035156,
+      "subfield": {
+        "display_name": "Artificial Intelligence",
+        "id": "https://openalex.org/subfields/1702"
+      }
+    }
+  ],
+  "type": "article",
+  "updated_date": "2026-08-21T09:56:20.448147"
+}

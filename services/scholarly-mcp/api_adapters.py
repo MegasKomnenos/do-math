@@ -109,14 +109,15 @@ class APIAdapter:
         if unknown:
             raise ServiceError("invalid_options", "Unsupported search options; see describe_source", fields=sorted(unknown))
 
-    def page(self, rows, total, evidence, query, options, start, limit, cursor=None, more=None):
+    def page(self, rows, total, evidence, query, options, start, limit, cursor=None, more=None, evidence_refs=None):
         if not isinstance(rows, list) or any(not isinstance(r, dict) for r in rows):
             raise ServiceError("invalid_response", "Provider records do not have the expected structure", source=self.source)
         has_more = more if more is not None else (start + len(rows) < total if total is not None else bool(cursor))
         if not rows and has_more:
             raise ServiceError("incomplete_response", "Source reports more results but returned no records", source=self.source, evidence=evidence)
         artifact = self.store.put(encoded(rows), "application/json", self.source, evidence["url"], role="records",
-            request={"query": query, "options": options, "start": start, "limit": limit}, evidence_ref=evidence["ref"])
+            request={"query": query, "options": options, "start": start, "limit": limit}, evidence_ref=evidence["ref"],
+            **({'evidence_refs':evidence_refs} if evidence_refs else {}))
         return {"status": "ok" if rows else "not_found", "source": self.source, "query": query, "options": options,
             "start": start, "requested": limit, "received": len(rows), "total": total, "has_more": has_more,
             "next": ({"cursor": cursor} if cursor else {"start": start + len(rows)}) if has_more else None,
@@ -492,25 +493,15 @@ class OpenAlex(APIAdapter):
     source = "openalex"
     hosts = ("api.openalex.org",)
     max_limit = 200
-    options = ("filter", "sort", "select", "group_by")
+    options = ("filter", "sort", "select", "group_by", "corpus")
 
     def search(self, query, *, options, start=0, limit=20, cursor=None, export=None):
-        self.validate(options, start, limit)
-        if not cursor and start % limit:
-            raise ServiceError("invalid_range", "OpenAlex start must be a multiple of limit")
-        params = {"search": query, "per-page": limit, **options}
-        params.update({"cursor": cursor} if cursor else {"page": start // limit + 1})
-        raw, evidence = self.request("https://api.openalex.org/works", params=params)
-        return self.export_page(self.page(raw["results"], raw["meta"]["count"], evidence, query, options, start, limit, raw["meta"].get("next_cursor")), export)
+        from openalex import search
+        return search(self,query,options=options,start=start,limit=limit,cursor=cursor,export=export)
 
     def fetch(self, target, *, parts):
-        value = target.removeprefix("https://openalex.org/")
-        if value.startswith(("10.", "doi:", "https://doi.org/")):
-            value = "https://doi.org/" + doi(value)
-        elif not re.fullmatch(r"W[0-9]+", value):
-            raise ServiceError("invalid_target", "Use an OpenAlex W identifier or DOI")
-        raw, evidence = self.request("https://api.openalex.org/works/" + quote(value, safe=""))
-        return self.fetched([raw], evidence, parts, ("metadata", "export") + (("abstract",) if raw.get("abstract_inverted_index") else ()))
+        from openalex import fetch
+        return fetch(self,target,parts=parts)
 
 
 class SemanticScholar(APIAdapter):

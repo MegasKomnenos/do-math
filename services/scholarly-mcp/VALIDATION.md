@@ -233,3 +233,13 @@ ACM 보충 제어의 /doi/suppl/DOI/suppl_file/파일명 경로를 현재 DOI와
 CORE의 실제 검색 기록 340524929에는 fullText가 35자 안내문 Not available for public API users.였다. 기존 fetch가 같은 레코드를 받으면 이 비어 있지 않은 문자열을 fulltext available로 표시하는 결함을 원 응답 fixture로 재현했다. 접근 안내문은 restricted/public_fulltext_restricted, 빈 필드는 not_found, 실제 색인 본문은 별도 text/plain artifact로 구별했다. 문헌 ID를 대조하고 이름은 원 검색 후보로 반환한다. 이 교정과 실제 텍스트 보존·빈 초록·잘못된 ID의 오프라인 검사가 통과했다.
 
 신규 CORE 전체 실서비스 흐름 `data/validation/20260910T100059Z-core-public-mcp.json`은 이름 후보 요청부터 rate_limited여서 completed=false다. 새 입력·fulltext 상태 처리 전체를 실제 MCP 성공으로 기록하지 않는다. 별도 API 자격을 요청하거나 다른 자료원으로 자동 이동하지 않았다. 공통 검사 154개가 통과했다.
+
+OpenAlex의 현행 공식 문서는 [help.openalex.org](https://help.openalex.org/api/)로 이동했다. 기본 계정·키 없는 API 사용을 명시하며 실제 익명 검색·단건·그룹 요청도 성공했다. 일반 개요의 최대 100건 설명과 달리 실제 per_page=200 요청은 200건과 meta.per_page=200을 반환했다. 기존 200 상한을 유지하고 이 실측을 문서 한 줄만으로 축소하지 않았다.
+
+기존 OpenAlex group_by는 원 group_by 배열을 results로 읽어 실패했다. 원 응답과 [집계 명세](https://help.openalex.org/api/grouping/)에 맞춰 그룹을 별도로 반환한다. meta.count는 집계 대상 문헌 수, groups_count는 현재 페이지의 그룹 수이며 전체 그룹 수가 아니다. group_by는 처음부터 원 커서의 key 순서를 사용하며 문헌 sort/select와 함께 요청하면 명시적 오류다. 일반 커서의 끝을 전체 count와 잘못 비교해 빈 마지막 페이지를 오류로 만들던 처리도 수정했다.
+
+일반 검색은 필요한 원 페이지를 결합해 임의 start/limit 창을 회수하고 모든 근거 참조를 기록한다. 뒷 페이지 요청 실패 때 앞서 받은 창을 partial로 남긴다. 이름은 원 검색 후보, OpenAlex의 짧은 ID·works/ID·URL·DOI는 단건 조회다. 문헌 ID를 대조하되 공식 canonical redirect는 기록하며 허용한다. DOI가 다른 canonical DOI로 해석되면 후보 선택을 요구한다. 원 HTTP redirect와 후속 페이지 실패는 대역 검사로 확인했다.
+
+OpenAlex abstract_inverted_index는 단어와 위치의 원 대응을 검증해 한 칸 공백으로 복원한다. 중복·음수·잘못된 위치·빈 구간을 추측해 채우지 않는다. 원 색인은 metadata에 남는다. [공식 속성 설명](https://help.openalex.org/data/works/attributes/)처럼 이 색인상 초록은 출처가 다양하고 원 저자 초록과 다른 텍스트를 포함할 수 있으므로 출판사 원문과의 동일성을 주장하지 않는다. supplementary에는 나가는 referenced_works와 related_works를 별도 배열로 보존하며 연결 문헌을 자동 확보하지 않는다.
+
+실제 MCP `data/validation/20260910T101414398637Z-openalex-workflow.json`은 completed=true다. 구문 검색의 앞 4건과 start=1/limit=2를 대조하고, 그룹 두 페이지, works/W2741809807 URL·1,630바이트 복원 초록·참고 54개·관련 10개, 이름 후보, DOI 10.1006/jcss.1997.1494의 초록 not_found·참고 36개를 확인했다. 공통 검사 162개가 통과했다.

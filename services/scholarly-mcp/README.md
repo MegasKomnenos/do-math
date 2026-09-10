@@ -90,6 +90,8 @@ ACM은 문헌 보충자료 목록의 파일명·설명·DOI를 보존하고 ZIP 
 
 CORE의 `fullText`에 공개 API 접근 제한 안내문이 들어 있으면 `restricted`로 반환한다. 실제 색인 본문은 별도 텍스트 artifact로 제공하며 원 메타데이터도 보존한다. 이름은 검색 후보로 반환하고 CORE works 번호를 선택한 뒤에는 응답의 ID를 대조한다.
 
+OpenAlex는 임의 검색 창과 원 그룹 집계의 커서 페이지를 지원한다. 그룹의 문헌 수와 이번 페이지 그룹 수를 구별하며 전체 그룹 수는 추정하지 않는다. 위치 색인의 단어 순서로 초록 텍스트를 복원하고, 원 색인과 참고·관련 문헌 ID 배열도 보존한다. 이 초록은 OpenAlex의 색인상 초록이며 출판사 원문과의 대조는 별도다.
+
 Cambridge는 저자·연도·자료 유형·기관 이용 가능 여부의 검색 조건과 공개 RIS API를 사용한다. 주제·저널·출판사·학회 필터 ID는 검색 결과의 `facets.ref`를 `extract`로 읽어 선택한다. RIS의 `UR`에 있는 문헌 ID를 요청한 ID와 대조한다. 온라인 발행일과 인쇄 발행일을 원 검색 기록에 함께 보존한다.
 
 Taylor & Francis는 원 고급검색 필드와 연도·정렬, native BibTeX·RIS와 문헌 PDF를 연결했다. De Gruyter Brill은 title·familyName 등의 원 검색식, 가시성·정렬과 문헌 RIS를 연결했다. 자료원별 형식·조회 범위는 `describe_source`를 따른다.

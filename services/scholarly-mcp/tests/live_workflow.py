@@ -81,6 +81,28 @@ async def main():
             fetched = await call("fetch", {"source": "acm-dl", "target": "10.1145/800157.805047", "parts": ["metadata", "abstract", "fulltext"]})
             assert fetched["status"] == "ok", fetched.get("code")
             assert fetched["components"]["fulltext"]["artifact"]["pages"] == 8
+        elif args.source == 'openalex':
+            wide=await call('search',{'source':'openalex','query':'"natural proofs"','limit':4,'options':{'select':'id,title'}})
+            assert wide['status']=='ok'
+            rows=await call('extract',{'ref':wide['records']['ref'],'count':4})
+            small=await call('search',{'source':'openalex','query':'"natural proofs"','start':1,'limit':2,'options':{'select':'id,title'}})
+            portion=await call('extract',{'ref':small['records']['ref'],'count':2})
+            assert portion['items']==rows['items'][1:3]
+            groups=await call('search',{'source':'openalex','query':'natural proofs','options':{'group_by':'publication_year'},'limit':2})
+            assert groups['status']=='ok' and groups['records_kind']=='groups' and groups['total'] is None
+            following=await call('search',{'source':'openalex','query':'natural proofs','options':{'group_by':'publication_year'},'limit':2,**groups['next']})
+            assert following['status']=='ok'
+            one=await call('fetch',{'source':'openalex','target':'https://openalex.org/works/W2741809807','parts':['metadata','abstract','supplementary']})
+            assert one['status']=='ok'
+            abstract=await call('extract',{'ref':one['components']['abstract']['artifact']['ref'],'count':1})
+            assert abstract['unit']=='lines' and len(abstract['items'][0])>500
+            relations=await call('extract',{'ref':one['components']['supplementary']['artifact']['ref'],'count':1})
+            assert len(relations['items'][0]['referenced_works'])==one['components']['supplementary']['reference_count']
+            named=await call('fetch',{'source':'openalex','target':'The state of OA: a large-scale analysis of the prevalence and impact of Open Access articles','parts':['metadata']})
+            assert named['status']=='selection_required'
+            empty=await call('fetch',{'source':'openalex','target':'10.1006/jcss.1997.1494','parts':['metadata','abstract','supplementary']})
+            assert empty['components']['abstract']['status']=='not_found'
+            assert empty['components']['supplementary']['reference_count']==36
         elif args.source == 'figshare':
             found=await call('search',{'source':'figshare','query':'quantum','limit':3,'export':'native'})
             assert found['status']=='ok' and found['received']==3 and found['total'] is None
