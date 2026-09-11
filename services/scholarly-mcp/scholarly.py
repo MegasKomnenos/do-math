@@ -283,7 +283,8 @@ def bibliography(data, media):
     try:
         if media == "application/x-bibtex":
             rows = []
-            scanner = module._BibScanner(text, source_name="artifact")
+            # Native exports can have spaced citation keys; extract them with a warning, without rewriting.
+            scanner = module._BibScanner(text, source_name="artifact", allow_key_whitespace=True)
             entries = []
             while scanner.position < len(text):
                 scanner.skip_space_and_comments()

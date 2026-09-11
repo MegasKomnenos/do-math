@@ -77,10 +77,11 @@ def _sha256_file(path: Path) -> str:
 
 
 class _BibScanner:
-    def __init__(self, text: str, source_name: str) -> None:
+    def __init__(self, text: str, source_name: str, *, allow_key_whitespace: bool = False) -> None:
         self.text = text
         self.source_name = source_name
         self.position = 0
+        self.allow_key_whitespace = allow_key_whitespace
 
     def error(self, message: str) -> BibTeXError:
         line = self.text.count("\n", 0, self.position) + 1
@@ -199,8 +200,12 @@ class _BibScanner:
         if self.position >= len(self.text):
             raise self.error("unclosed entry header")
         key = self.text[key_start : self.position].strip()
-        if not key or any(character.isspace() for character in key):
+        if not key:
             raise self.error("invalid BibTeX key")
+        if any(character.isspace() for character in key):
+            if not self.allow_key_whitespace:
+                raise self.error("invalid BibTeX key")
+            warnings.append("citation_key_contains_whitespace")
         self.position += 1
 
         field_items: list[tuple[str, str]] = []

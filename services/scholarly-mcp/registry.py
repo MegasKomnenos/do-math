@@ -571,8 +571,8 @@ SOURCES['iop'].transport = 'playwright'
 SOURCES['iop'].capabilities = ('source_guide','fetch','export')
 SOURCES['iop'].usage = {
     'fetch':'IOP DOI 또는 정확한 iopscience.iop.org 문헌 URL을 지정한다. KUDOS IOP 바로가기를 거쳐 기관 문헌의 서지 태그와 PDF를 회수한다. 초록은 원 wd-jnl-art-abstract 영역을 사용한다.',
-    'exports':'문헌에 표시된 BibTeX·RIS 링크의 DOI와 원 응답 DOI를 대조하는 코드를 연결했다. 이 추가 export의 실서비스 검증은 기관 진입 CAPTCHA 때문에 완료하지 못했다.',
-    'limits':'검색·이름 후보는 아직 연결하지 않았다. 서지·16쪽 PDF를 실제 어댑터에서 확보한 기록, 이후 실제 MCP의 서지·초록 성공, 후속 기관 진입·파일 요청의 접근 제한을 구별한다. validate.perfdrive.com 등 접근 확인 목적지는 restricted로 반환하며 요청을 따라가지 않는다. XML·추가 첨부 형식은 연결하지 않았다.',
+    'exports':'문헌의 BibTeX·RIS 링크와 원 파일의 DOI를 대조한다. 두 형식의 실제 MCP 회수를 검증했다. 원 BibTeX 키에 공백이 있으면 원 키와 바이트를 유지하고 citation_key_contains_whitespace 경고와 함께 필드를 추출한다. 파일을 정상 키로 고쳐 쓰지 않는다. 파싱·식별자 검사 실패 때 source_export에 받은 파일을 보존한다.',
+    'limits':'현재 확인된 기관 세션에서 서지·초록·16쪽 PDF·BibTeX·RIS를 실제 MCP로 회수했다. 접근 확인이 다시 필요하면 restricted를 반환한다. 검색·이름 후보는 아직 연결하지 않았다. XML·추가 첨부 형식도 미연결이다.',
     'examples':[{'tool':'fetch','arguments':{'source':'iop','target':'https://iopscience.iop.org/article/10.1088/0022-3727/34/10/311/meta','parts':['metadata','fulltext']}}],
     'official':['https://iopscience.iop.org/'],
 }
@@ -646,7 +646,7 @@ for identifier, level in {
     "taylor-francis": "live_mcp_search_citation_pdf_dublin_doi_supplement_zip_tables_nested_source",
     "de-gruyter": "live_mcp_search_ris_pdf_and_supplement_zip_cif_lines; broken_link_observed",
     "jstor": "live_mcp_public_ris_bibtex_article_and_jj_book; web_search_pending",
-    "iop": "live_mcp_metadata_abstract; earlier_adapter_pdf; file_and_gateway_challenge",
+    "iop": "live_mcp_verified_session_metadata_abstract_pdf_bibtex_ris_key_warning",
     "siam": "live_mcp_public_front_matter_pdf_fetch_extract; search_challenge_observed",
     "ams": "live_mcp_explicit_pdf; native_browser_mixed_search; dynamic_expression_offline_verified; live_search_restricted",
     "science-direct": "live_mcp_institutional_ris_bibtex_plain_metadata_abstract_fetch",

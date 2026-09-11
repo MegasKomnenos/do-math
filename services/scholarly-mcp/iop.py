@@ -16,8 +16,12 @@ def citation(adapter,page,identifier,format='bibtex'):
     if len(selected)!=1 or doi(selected[0]).casefold()!=identifier.casefold():
         raise ServiceError('identity_mismatch','IOP citation control identifies another DOI')
     data,source_media,actual=browser_download(adapter.gateway.context,url,adapter.profile.download_hosts)
-    rows=bibliography(data,media)
-    observed=rows[0].get('doi') if format=='bibtex' and rows else rows[0].get('fields',{}).get('do',[None])[0] if rows else None
-    if len(rows)!=1 or not observed or doi(observed).casefold()!=identifier.casefold():
-        raise ServiceError('identity_mismatch','IOP citation identifies another DOI')
-    return adapter.store.put(data,media,adapter.source,actual,role='native_citation',format=format,doi=identifier,source_media_type=source_media)
+    try:
+        rows=bibliography(data,media)
+        observed=rows[0].get('doi') if format=='bibtex' and rows else rows[0].get('fields',{}).get('do',[None])[0] if rows else None
+        if len(rows)!=1 or not observed or doi(observed).casefold()!=identifier.casefold():
+            raise ServiceError('identity_mismatch','IOP citation identifies another DOI')
+    except ServiceError as error:
+        error.result['source_export']=adapter.store.put(data,media,adapter.source,actual,role='unparsed_native_citation',format=format,requested_doi=identifier,source_media_type=source_media)
+        raise
+    return adapter.store.put(data,media,adapter.source,actual,role='native_citation',format=format,doi=identifier,source_media_type=source_media,parse_warnings=rows[0].get('parse_warnings',[]))

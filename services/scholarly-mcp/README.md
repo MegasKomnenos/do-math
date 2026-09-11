@@ -115,7 +115,7 @@ Crossref의 검색 export는 원 BibTeX·RIS·CSL JSON·plain·RDF·Turtle·UNIX
 KNU FRIC는 경북대 센터의 공개 소장 목록 검색·ISSN 조회와 CSV를 제공한다. 직원에게 원문 복사를 신청하는 제출 동작은 포함하지 않는다. author-repository·society-journal은 알려진 공개 문서 URL의 회수 경로이며 단일 검색 색인은 아니다. general-web은 Mwmbl의 별도 자격 없는 공개 검색 API를 사용하며, 반환된 후보 묶음 크기와 웹 전체 일치 건수를 구별한다.
 
 
-ScienceDirect는 KUDOS 기관 context의 원 citation endpoint로 서지·초록·RIS·BibTeX·plain을 회수한다. 문헌 화면·검색·PDF 준비 경로의 실패와 인용문 성공을 구별한다. AIP는 실제 PDF 전송 호스트를 파일 다운로드에 한해 허용한다. IOP의 서지·PDF 양성 관측과 이후 기관 접근 확인 때문에 미검증인 추가 내보내기는 지원표에 구분한다.
+ScienceDirect는 KUDOS 기관 context의 원 citation endpoint로 서지·초록·RIS·BibTeX·plain을 회수한다. 문헌 화면·검색·PDF 준비 경로의 실패와 인용문 성공을 구별한다. AIP는 실제 PDF 전송 호스트를 파일 다운로드에 한해 허용한다. IOP는 확인된 기관 세션에서 서지·초록·16쪽 PDF·BibTeX·RIS를 실제 MCP로 회수했다.
 
 Scopus의 supplementary는 현재 문헌 References·Cited by 탭의 목록이다. references와 citations 각각의 artifact를 extract로 읽는다. 검색 요약의 건수와 문헌 탭의 건수가 다르면 둘을 별도 필드로 보존한다. 색인 EID가 없는 참고문헌도 유지하며 원 RIS·BibTeX의 별도 계정 요구는 계속 보류한다.
 
@@ -162,3 +162,5 @@ Software Heritage dir의 fulltext/supplementary는 Vault의 원 tar.gz를 반환
 IEEE 검색은 BibTeX·RIS·Plain Text·CSV의 연속 내보내기와 CSV의 선택 범위를 실제 MCP로 검증했다. BibTeX·RIS·CSV의 형식·선택 건수를 대조하며, 내보내기 오류가 나도 이미 확보한 검색 레코드를 보존한다. 잘못 받은 파일은 source_export로 남긴다. AMS와 공통 출판사 문헌 조회는 확인 화면의 구조도 검사하여 한국어로 표시된 접근 확인을 일반 시간 초과와 구별한다.
 
 APS 기관 검색은 원 조건·정렬·건수·현재 페이지를 대조하여 제목·DOI·표시 서지·초록과 원 HTML을 보존한다. 렌더링 전 HTTP 응답의 MathML을 유지하며 정확한 요청 창을 JSON·CSV로 읽을 수 있다. 동일 검색의 후속 범위에서는 이미 받은 원 페이지와 수신 시점을 재사용한다. 후속 페이지가 실패하면 확보한 요청 범위의 일부를 partial로 남긴다. 첫 페이지 검색·CSV·수식 보존은 실제 MCP로 확인했으며, 연속 페이지·추가 조건·선택 문헌 조회는 아직 실서비스 검증이 완료되지 않았다.
+
+원 BibTeX의 키에 공백이 있으면 MCP의 기계적 추출은 원 키·본문과 citation_key_contains_whitespace 경고를 반환한다. 원 파일을 수정하거나 경고를 숨기지 않는다. 공유 연구 자료 파서는 별도 옵션을 켜지 않는 한 기존의 엄격한 동작을 유지한다. IOP에서 파싱 또는 DOI 대조가 실패하면 source_export에 받은 파일을 남긴다.

@@ -63,6 +63,16 @@ def make_occurrence(entry, field_code, rank):
 
 
 class BibTeXParserTests(unittest.TestCase):
+    def test_key_whitespace_recovery_is_opt_in_and_preserves_original(self):
+        raw='@article{J Batina_2001, title={Original title}, year={2001}}'
+        with self.assertRaises(build_b002_catalog.BibTeXError):
+            build_b002_catalog.parse_bibtex(raw,source_name='strict.bib')
+        scanner=build_b002_catalog._BibScanner(raw,'source.bib',allow_key_whitespace=True)
+        entry=scanner.read_entry()
+        self.assertEqual(entry.key,'J Batina_2001')
+        self.assertEqual(entry.raw_text,raw)
+        self.assertIn('citation_key_contains_whitespace',entry.parse_warnings)
+
     def test_nested_braces_multiline_fields_and_trailing_comma_parse(self):
         entries = build_b002_catalog.parse_bibtex(
             NESTED_BIB, source_name="nested.bib"
