@@ -1,0 +1,34 @@
+{
+  "condition": "AND",
+  "queryElements": [
+    {
+      "condition": "",
+      "queryElements": null,
+      "field": "ProductTitle",
+      "operator": "contains",
+      "value": "algebra"
+    },
+    {
+      "condition": "OR",
+      "queryElements": [
+        {
+          "condition": "",
+          "queryElements": null,
+          "field": "PublicationYear",
+          "operator": "equals",
+          "value": "2000"
+        },
+        {
+          "condition": "",
+          "queryElements": null,
+          "field": "PublicationYear",
+          "operator": "equals",
+          "value": "2001"
+        }
+      ],
+      "field": "",
+      "operator": "",
+      "value": ""
+    }
+  ]
+}

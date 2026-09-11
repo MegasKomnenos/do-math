@@ -1,9 +1,50 @@
 """AMS Digital Library native institutional browse records."""
 import csv,io,json,re
-from urllib.parse import urlsplit,urljoin,parse_qs,urlencode,urlunsplit
+from urllib.parse import urlsplit,urljoin,parse_qs,urlencode,urlunsplit,unquote
 from browser_adapters import goto_source,clean_html,dismiss_cookies
 from publishers import Publisher,PROFILES
 from scholarly import ServiceError,encoded
+
+
+def advanced_expression(expression,_nested=False):
+    """Translate only documented controls; preserve groups, values and operators."""
+    if not isinstance(expression,dict):raise ServiceError('invalid_options','An AMS expression must be an object')
+    if set(expression)=={'condition','terms'}:
+        if expression['condition'] not in ('AND','OR') or not isinstance(expression['terms'],list) or not expression['terms']:
+            raise ServiceError('invalid_options','Expression groups need AND or OR and a nonempty terms list')
+        return {'condition':expression['condition'],'queryElements':[advanced_expression(term,True) for term in expression['terms']],
+                **({'field':'','operator':'','value':''} if _nested else {})}
+    fields={'Title':'ProductTitle','Author':'Author','ProductCode':'ProductCode','BookText':'Anywhere',
+            'PublicationYear':'PublicationYear','ISBN':'ISBN','MSC':'MSC','Series':'BookSeries','Subject':'Subject'}
+    if set(expression)!={'field','operator','value'} or not isinstance(expression['field'],str) or expression['field'] not in fields:
+        raise ServiceError('invalid_options','Use an AMS expression group or a documented field/operator/value term')
+    operators=('equals','contains') if expression['field'] in ('Title','Author','ProductCode','BookText') else ('equals',)
+    if expression['operator'] not in operators or not isinstance(expression['value'],str) or not expression['value'].strip():
+        raise ServiceError('invalid_options','The term needs a supported field operator and a nonempty string value')
+    return {'condition':'','queryElements':None,**expression,'field':fields[expression['field']]}
+
+
+def check_expression_request(body,expected):
+    request=parse_qs(body or '');values=request.get('advancedSearchJson',[])+request.get('dynamicAdvancedSearch',[])
+    if len(values)==1 and not request.get('advancedSearch'):
+        value=values[0]
+        for _ in range(3):
+            try:observed=json.loads(value)
+            except ValueError:value=unquote(value);continue
+            if observed==expected:return
+            break
+    raise ServiceError('query_mismatch','AMS did not retain the submitted expression and groups')
+
+
+def prepare_expression(page,expression):
+    page.wait_for_function("() => typeof showDynamic==='function' && typeof loadDynamicSearch==='function' && typeof getQueryElements==='function'",timeout=20000)
+    observed=page.evaluate('''expression => {
+        showDynamic(); loadDynamicSearch(JSON.stringify(expression));
+        return {condition: document.querySelector('.advancedSearchGroupHeader[data-group-id="1"][data-group-parent-id="0"] button.selected')?.dataset.conditionValue,
+                queryElements: getQueryElements(0,1)};
+    }''',expression)
+    if observed!=expression:
+        raise ServiceError('query_not_supported','The current AMS controls cannot represent the requested field values or groups',status='unsupported')
 
 
 def validate_search_page(raw,http_status=None):
@@ -41,8 +82,14 @@ class AMS(Publisher):
     def search(self,query,*,options,start=0,limit=20,cursor=None,export=None):
         if type(start) is not int or start<0 or type(limit) is not int or not 1<=limit<=1000:
             raise ServiceError('invalid_range','Use start >= 0 and limit 1..1000')
-        if cursor or set(options)-{'field','title','author','product_code','book_text','isbn','msc','content_type'} or options.get('field','Title') not in self.fields:
+        if cursor or set(options)-{'field','title','author','product_code','book_text','isbn','msc','content_type','expression'} or options.get('field','Title') not in self.fields:
             raise ServiceError('invalid_options','Use the documented AMS advanced-search fields')
+        expression=None
+        if 'expression' in options:
+            if query or set(options)!={'expression'}:
+                raise ServiceError('invalid_options','For expression search set query to an empty string and use expression as the only option')
+            expression=advanced_expression(options['expression'])
+            if not isinstance(expression.get('queryElements'),list):raise ServiceError('invalid_options','The outer expression must be an AND/OR group')
         if export not in (None,'json','native','csv','html'):
             raise ServiceError('export_not_implemented','AMS native file export remains unverified after access restrictions; use json, native, csv or html',status='not_implemented')
         content=options.get('content_type','All')
@@ -68,17 +115,20 @@ class AMS(Publisher):
                 if name in values:
                     raise ServiceError('invalid_options','The primary field and an additional field must not overlap',field=name)
                 values[name]=str(options[key])
-        for name,value in values.items():
-            page.locator('#'+self.fields[name][0]).fill(value)
-        if not page.locator('#advancedSearchContentTypeInput'+content).is_checked():
-            page.locator('label[for="advancedSearchContentTypeInput'+content+'"]').click()
+        if expression:
+            prepare_expression(page,expression)
+        else:
+            for name,value in values.items():
+                page.locator('#'+self.fields[name][0]).fill(value)
+            if not page.locator('#advancedSearchContentTypeInput'+content).is_checked():
+                page.locator('label[for="advancedSearchContentTypeInput'+content+'"]').click()
 
         def matches(response):
             return urlsplit(response.url).hostname in self.profile.hosts and urlsplit(response.url).path=='/product/browseproducts' and response.request.method=='POST'
 
         try:
             with page.expect_response(matches,timeout=60000) as pending:
-                page.locator('#advancedSearchGo').filter(visible=True).first.click()
+                page.locator('#advancedSearchGo').filter(visible=True).filter(has_text=re.compile(r'^Search$')).first.click()
                 if re.search(r'^(Just a moment|Access Denied|Attention Required)',page.title(),re.I):
                     raise ServiceError('publisher_access_challenge','AMS displayed an access verification page',status='restricted')
         except ServiceError:
@@ -99,7 +149,9 @@ class AMS(Publisher):
                 raise ServiceError('provider_error','AMS search failed',http_status=response.status)
             request=parse_qs(response.request.post_data or '')
             advanced=parse_qs(request.get('advancedSearch',[''])[0])
-            if any(advanced.get(self.fields[name][1])!=[value] for name,value in values.items()):
+            if expression:
+                check_expression_request(response.request.post_data,expression)
+            elif any(advanced.get(self.fields[name][1])!=[value] for name,value in values.items()):
                 raise ServiceError('query_mismatch','AMS native request does not retain the submitted fields')
             payload=response.json()
             native,reported,first=product_records(payload)
@@ -134,7 +186,10 @@ class AMS(Publisher):
             params=parse_qs(parsed.query)
             params['PageNumber']=[str(page_number)]
             with page.expect_response(matches,timeout=60000) as pending:
-                goto_source(page,urlunsplit((parsed.scheme,parsed.netloc,parsed.path,urlencode(params,doseq=True),'')),self.profile.hosts,wait_until='domcontentloaded',timeout=45000)
+                if expression:
+                    page.evaluate("number => clickPageBtn(number, '')",page_number)
+                else:
+                    goto_source(page,urlunsplit((parsed.scheme,parsed.netloc,parsed.path,urlencode(params,doseq=True),'')),self.profile.hosts,wait_until='domcontentloaded',timeout=45000)
             response=pending.value
         artifact=self.store.put(encoded(selected),'application/json',self.source,search_url,role='records',query=query,options=options,start=start,total=total)
         exported=artifact

@@ -496,11 +496,14 @@ SOURCES['ams'].capabilities=('source_guide','search','fetch','export')
 SOURCES['ams'].usage={
     'search':'KUDOS → 학술DB → AMS 바로가기의 원 고급검색을 사용한다. options.field는 Title(기본), Author, ProductCode, BookText, ISBN, MSC다. BookText는 책 본문 검색이며 일반 전 자료원 본문 검색으로 바꾸지 않는다. MSC는 두 자리 분류이며 쉼표로 복수를 입력할 수 있다.',
     'options':'추가 title, author, product_code, book_text, isbn, msc를 결합할 수 있다. 주 field와 같은 추가 필드는 중복 지정하지 않는다. content_type은 All(기본), EBook, Journal, Abstracts다. start는 0부터, limit는 1..1000이며 원 페이지의 건수·위치를 대조한다.',
+    'expression':'중첩 조건은 query=""로 두고 options.expression만 지정한다. 그룹은 {condition:"AND" 또는 "OR", terms:[조건 또는 하위 그룹]}이다. 조건은 {field, operator, value}이며 value는 비어 있지 않은 문자열이다. Title·Author·ProductCode·BookText의 operator는 equals 또는 contains, PublicationYear·ISBN·MSC·Series·Subject는 equals다. 연도 범위 비교를 임의로 추가하지 않는다. Series·Subject는 원 선택 제어가 받는 값만 사용할 수 있으며 현재 실서비스 값 목록은 미검증이다. 현재 제어에서 값이나 그룹이 유지되지 않으면 query_not_supported로 반환한다. 기본 검색 옵션과 expression을 함께 주면 거부한다.',
     'records':'Title와 Subtitle을 구별한다. ProductCode, DOI, PII, ContentType, RelatedCustomers, Abstract, ProductDescription 등 원 필드를 보존한다. target은 선택한 원 문헌 URL이다. 책(B)·논문(A)·학회 초록(ABS)이 섞이며 DOI가 없는 결과도 유지한다.',
     'exports':'json은 요청 창의 원 레코드, native는 해당 창을 회수하면서 읽은 원 JSON 페이지들, html은 방문한 검색 페이지들이다. csv는 같은 레코드를 기계적으로 직렬화한다. 사이트의 native 파일 내보내기는 HTTP 403 이후 미검증이며 구현 완료로 세지 않는다.',
     'fetch':'책 ProductCode 또는 /view?ProductCode= URL은 같은 원 고급검색으로 식별한다. 현재 서버에서 검색한 target·DOI는 원 메타데이터를 재사용한다. 다른 DOI·문헌 URL은 원 문헌 페이지를 조회하며 추가 접근 확인을 반환할 수 있다. 책의 ProductDescription은 출판사 책 소개이며 논문 초록과 구별한다. .pdf 링크는 정확히 지정한 파일과 PDF 내장 메타데이터를 회수한다. 발췌·부속 파일을 전체 책으로 확대하지 않는다.',
-    'verification_limit':'원 브라우저의 algebra 검색 6,587건 중 12건과 혼합 레코드는 관측했다. 신규 어댑터는 이후 접근 확인·서비스 불가 응답 때문에 연속 검증을 완료하지 못했다. 서비스 불가는 provider_unavailable, 접근 확인은 restricted이며 0건이나 영구적인 기능 부재로 표시하지 않는다.',
-    'examples':[{'tool':'search','arguments':{'source':'ams','query':'algebra','start':11,'limit':2,'export':'csv'}},{'tool':'fetch','arguments':{'source':'ams','target':'https://www.ams.org/books/gsm/128/gsm128-endmatter.pdf','parts':['metadata','fulltext']}}],
+    'verification_limit':'원 브라우저의 algebra 검색 6,587건 중 12건과 혼합 레코드는 관측했다. 신규 어댑터는 이후 접근 확인·서비스 불가 응답 때문에 연속 검증을 완료하지 못했다. 중첩 조건의 원 UI 복원·POST 제출은 외부 통신 없는 보존 화면 재현으로 검증했다. 실제 조건 검색·페이지 순회는 아직 미검증이다. 서비스 불가는 provider_unavailable, 접근 확인은 restricted이며 0건이나 영구적인 기능 부재로 표시하지 않는다.',
+    'examples':[{'tool':'search','arguments':{'source':'ams','query':'algebra','start':11,'limit':2,'export':'csv'}},
+                {'tool':'search','arguments':{'source':'ams','query':'','options':{'expression':{'condition':'AND','terms':[{'field':'Title','operator':'contains','value':'algebra'},{'field':'PublicationYear','operator':'equals','value':'2000'}]}},'limit':2}},
+                {'tool':'fetch','arguments':{'source':'ams','target':'https://www.ams.org/books/gsm/128/gsm128-endmatter.pdf','parts':['metadata','fulltext']}}],
     'official':['https://pubs.ams.org/AdvancedSearch'],
 }
 SOURCES['project-euclid'].capabilities=('source_guide','search','fetch','export')
@@ -631,7 +634,7 @@ for identifier, level in {
     "jstor": "live_mcp_public_ris_bibtex_article_and_jj_book; web_search_pending",
     "iop": "live_mcp_metadata_abstract; earlier_adapter_pdf; file_and_gateway_challenge",
     "siam": "live_mcp_public_front_matter_pdf_fetch_extract; search_challenge_observed",
-    "ams": "live_mcp_explicit_pdf; native_browser_mixed_search; search_adapter_restricted",
+    "ams": "live_mcp_explicit_pdf; native_browser_mixed_search; dynamic_expression_offline_verified; live_search_restricted",
     "science-direct": "live_mcp_institutional_ris_bibtex_plain_metadata_abstract_fetch",
 }.items():
     SOURCES[identifier].verification = level

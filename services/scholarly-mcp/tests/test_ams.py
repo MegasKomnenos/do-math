@@ -4,6 +4,40 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 
 class AMSContract(unittest.TestCase):
+    def test_nested_expression_preserves_native_field_and_operator_meanings(self):
+        from ams import advanced_expression,check_expression_request
+        from urllib.parse import urlencode,quote
+        expression={'condition':'AND','terms':[{'field':'Title','operator':'contains','value':'algebra'},
+            {'condition':'OR','terms':[{'field':'PublicationYear','operator':'equals','value':'2000'},
+                                     {'field':'PublicationYear','operator':'equals','value':'2001'}]}]}
+        native=advanced_expression(expression)
+        self.assertEqual(native,json.loads((ROOT/'tests/fixtures/ams-dynamic-query.json').read_text('utf-8')))
+        for key in ('advancedSearchJson','dynamicAdvancedSearch'):
+            for value in (json.dumps(native),quote(json.dumps(native))):
+                check_expression_request(urlencode({key:value}),native)
+
+    def test_invalid_and_changed_expression_are_rejected_before_search(self):
+        from ams import advanced_expression,check_expression_request,AMS
+        from scholarly import ArtifactStore,ServiceError
+        from urllib.parse import urlencode
+        leaf={'field':'PublicationYear','operator':'equals','value':'2000'}
+        invalid=[{'condition':'NOT','terms':[leaf]}, {'condition':'AND','terms':[]},
+                 {'field':'PublicationYear','operator':'contains','value':'2000'},
+                 {'field':'Title','operator':'equals','value':''}, {**leaf,'unknown':True}]
+        for value in invalid:
+            with self.assertRaises(ServiceError):advanced_expression(value)
+        native=advanced_expression({'condition':'AND','terms':[leaf]})
+        changed={'condition':'AND','queryElements':[{**native['queryElements'][0],'value':'2001'}]}
+        for body in (urlencode({'advancedSearchJson':json.dumps(changed)}), 'advancedSearch=ProductTitle%3Dalgebra'):
+            with self.assertRaises(ServiceError) as error:check_expression_request(body,native)
+            self.assertEqual(error.exception.result['code'],'query_mismatch')
+        with tempfile.TemporaryDirectory() as temp:
+            adapter=AMS(ArtifactStore(temp),None)
+            for query,options in [('algebra',{'expression':{'condition':'AND','terms':[leaf]}}),
+                                  ('',{'expression':{'condition':'AND','terms':[leaf]},'author':'Knuth'})]:
+                with self.assertRaises(ServiceError) as error:adapter.search(query,options=options)
+                self.assertEqual(error.exception.result['code'],'invalid_options')
+
     def test_unavailable_search_page_is_not_an_input_timeout_or_no_results(self):
         from ams import validate_search_page
         from scholarly import ServiceError

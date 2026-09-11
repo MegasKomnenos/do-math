@@ -311,3 +311,8 @@ Software Heritage의 [공식 SWHID 설명](https://docs.softwareheritage.org/dev
 2026-09-11 Software Heritage의 [Vault flat API](https://docs.softwareheritage.org/devel/swh-web/uri-scheme-api-vault.html)를 연결했다. 실제 SDK stdio `data/validation/20260910T234218Z-swh-vault-mcp.json`은 빈 디렉터리 155바이트, 디렉터리 01d2169c88d0783182b1b7facffa522ba09b5957의 압축본 218076바이트·69파일·16디렉터리와 revision 2db189928c94d62a3b4757b3eec68f0a4d4113f0의 선택 관계를 확인했다. 내부 simplefarm.ml 27줄은 별도 content SWHID 회수와 같았다. 파일 내용·이름·권한·링크를 Git 트리 방식으로 다시 해시했으며 파일을 실행하지 않았다. 앞선 20260910T234131Z 보고는 검사 코드가 압축 선택 뒤 반환된 파일 참조를 다시 extract하지 않아 실패한 기록이다.
 
 Tools 디렉터리 93ea4d40f1ace5b45af5a4a65993a87ad6e900d1의 준비 전 GET은 404였고, `data/validation/20260910T234346Z-swh-prepare-mcp.json`은 익명 생성 요청 뒤 pending 세 번과 네 번째 available·트리 해시 일치로 completed=true다. 이메일이나 별도 API 자격을 사용하지 않았다. 새 실제 다운로드 호스트는 SWH Vault의 Azure 컨테이너로 한정했다. Azure URL의 sig와 경로 안 중첩 URL을 정제하고 동명 공개 RDF 변수를 보존하는 회귀를 추가했다. 공통 검사 212개가 통과했다. Git 전체 이력·release·snapshot 아카이브는 미연결로 남는다.
+
+
+2026-09-11 AMS의 AND/OR 중첩 그룹과 필드별 조건을 연결했다. 원 AdvancedSearch HTML·advancedSearch.js와 공식 jQuery 3.7.1로 외부 통신 없는 재현을 수행했다. 이것은 실제 검색·현재 서비스 환경과 다르다. `data/validation/20260910T235329Z-ams-dynamic-offline.json`은 원 제출 키 dynamicAdvancedSearch와 예상 키가 달라 실패했고, `20260910T235527Z-ams-dynamic-offline.json`은 원 조건 복원과 이중 인코딩 POST가 입력과 같았다. 같은 ID의 Delete/Search 중 정확한 Search를 선택하도록 고쳤다. 동적 페이지 전환은 원 함수로 연결했으나 실제 순회는 미검증이다.
+
+실제 SDK `data/validation/20260910T234814714383Z-ams-workflow.json`과 `20260910T235700Z-ams-expression-mcp.json`은 모두 restricted/publisher_access_challenge이며 completed=false다. www.ams.org/AdvancedSearch의 별도 404는 현재 pubs.ams.org 고급검색 결과가 아니다. ScienceDirect의 원 홈페이지 폼은 결과 요청이 관측되지 않았고 /search 심층 링크는 CPE00001이었다. 공통 검사 214개가 통과했으며 AMS 원 파일 export와 실제 동적 검색은 완료로 세지 않는다.

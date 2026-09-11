@@ -127,6 +127,8 @@ Project Euclid의 supplementary는 Supplemental Content 탭의 개별 PDF·ZIP�
 
 AMS는 기관 고급검색의 원 상품 JSON을 연결했다. 책·논문·학회 초록의 ContentType과 제목·부제·DOI·제품 코드를 유지한다. 원 브라우저 검색의 양성 관측과 이후 어댑터의 접근 확인 실패는 지원표에서 구별한다. 원 파일 export는 추가 검증이 남아 있다.
 
+AMS의 options.expression은 AND/OR 중첩 그룹과 필드별 equals/contains 조건을 받는다. 이때 query는 빈 문자열이고 다른 options는 함께 주지 않는다. 원 제어에서 표현식이 그대로 복원되는지와 각 검색 요청의 조건이 같은지 대조한다. 원 화면의 재현·POST 제출은 오프라인 검증을 통과했으며 실제 조건 검색·페이지 순회는 접근 확인 때문에 아직 미검증이다. 자세한 입력 예와 값 제약은 describe_source(ams)에 있다.
+
 Publisher 어댑터에 .pdf 링크를 직접 주면 그 파일의 바이트와 PDF 내장 메타데이터를 회수한다. 브라우저의 Download is starting 이동 예외와 실제 파일 회수 성공을 구별한다. metadata.kind가 embedded_pdf_metadata이면 PDF 내부 정보다. 파일이 발췌·부속 자료인 경우 전체 책을 확보했다는 뜻으로 해석하지 않는다. 이 경로의 실제 MCP 검증은 AMS gsm128-endmatter.pdf 51쪽으로 수행했다.
 
 SIAM의 /doi/pdf/DOI 주소도 명시적 PDF 파일로 처리한다. First-Order Methods in Optimization의 Front Matter 10쪽은 실제 MCP에서 회수·추출했다. 검색과 native 인용문 연결은 남아 있다. IEEE supplementary.references에는 문헌 번호를 대조한 원 참고문헌 배열이 있으며 extract로 order·title·text·links 등을 읽는다. 참고문헌과 첨부의 상태는 독립적으로 표시하며 일부 회수 실패 때 supplementary는 partial이다.
