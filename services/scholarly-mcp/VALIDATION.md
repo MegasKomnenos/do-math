@@ -316,3 +316,12 @@ Tools 디렉터리 93ea4d40f1ace5b45af5a4a65993a87ad6e900d1의 준비 전 GET은
 2026-09-11 AMS의 AND/OR 중첩 그룹과 필드별 조건을 연결했다. 원 AdvancedSearch HTML·advancedSearch.js와 공식 jQuery 3.7.1로 외부 통신 없는 재현을 수행했다. 이것은 실제 검색·현재 서비스 환경과 다르다. `data/validation/20260910T235329Z-ams-dynamic-offline.json`은 원 제출 키 dynamicAdvancedSearch와 예상 키가 달라 실패했고, `20260910T235527Z-ams-dynamic-offline.json`은 원 조건 복원과 이중 인코딩 POST가 입력과 같았다. 같은 ID의 Delete/Search 중 정확한 Search를 선택하도록 고쳤다. 동적 페이지 전환은 원 함수로 연결했으나 실제 순회는 미검증이다.
 
 실제 SDK `data/validation/20260910T234814714383Z-ams-workflow.json`과 `20260910T235700Z-ams-expression-mcp.json`은 모두 restricted/publisher_access_challenge이며 completed=false다. www.ams.org/AdvancedSearch의 별도 404는 현재 pubs.ams.org 고급검색 결과가 아니다. ScienceDirect의 원 홈페이지 폼은 결과 요청이 관측되지 않았고 /search 심층 링크는 CPE00001이었다. 공통 검사 214개가 통과했으며 AMS 원 파일 export와 실제 동적 검색은 완료로 세지 않는다.
+
+
+2026-09-11 일곱 자료원을 직접 재검증했다. IEEE는 프록시 진입 실패 뒤 다시 정상 진입했고 실제 내보내기 결함 둘을 찾았다. Citations 모달이 다운로드 후 남아 다음 호출을 막았으며, CSV 요청은 이전 Plain Text 선택을 이어받았다. 남은 모달만 닫고 CSV의 Results 탭을 지정했다. 20260911T011646Z·012006Z-ieee-native-export-probe.json은 이 실패를, 013009Z 보고는 네 형식의 실제 성공을 보존한다. 새 형식·건수 검사와 실패 시 검색 레코드 보존도 추가했다.
+
+`data/validation/20260911T015517Z-ieee-exports-mcp.json`은 completed=true다. 문헌 10488889의 네 형식과 DOI를 대조하고, complexity 검색의 첫 1건·두 번째부터 2건의 CSV를 원 검색 레코드 DOI 배열과 비교했다. 앞선 013544Z 보고는 시간 초과, 014608Z는 프록시 진입 실패였다. 015139Z는 총 1건인 P versus NP 제목 검색에서 start=1을 요청해 올바른 빈 결과를 받았으므로 다건 범위의 양성 시험으로 세지 않았다. 직접 어댑터의 다섯 연속 검색은 014306Z-ieee-repeat-search.json에서 통과했다.
+
+AMS 한국어 확인 화면의 실제 DOM 일부로 기존 분류 실패를 재현하고 AMS 및 공통 Publisher 조회에서 restricted로 구별하도록 고쳤다. `20260911T013103Z-ams-challenge-lifecycle.json`과 `012311Z-siam-challenge-lifecycle.json`은 90초까지 결과 화면으로 전환되지 않았다. SIAM 홈페이지 검색도 같은 상태였다. IOP의 `011850Z-iop-firefox-recovery.json`은 정상 문헌 화면, `013757Z-iop-chromium-recovery.json`은 Radware/hCaptcha 진입 제한이다. ScienceDirect의 `012543Z-science-direct-chromium-recovery.json`은 CPE00001이다. JSTOR 문자 확인은 입력 후에도 통과하지 못했다. 이 관측은 접근 실패를 서비스 기능 부재로 해석하는 근거가 아니다.
+
+APS는 문헌에서 모달을 열고 중복 쿠키 조작을 제거한 뒤에도 원 파일 GET이 403이었다. `20260911T013858Z-aps-native-download.json`의 실제 다운로드 클릭도 403이다. 반면 `014507Z-aps-firefox-recovery.json`의 기관 algebra 검색은 37987건 중 20건을 반환했다. 새 검색 구현은 후속 작업이며 이 관측만으로 어댑터 완료를 주장하지 않는다. 공통 검사 218개가 통과했다.

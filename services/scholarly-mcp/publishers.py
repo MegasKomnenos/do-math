@@ -13,7 +13,7 @@ import httpx
 from bs4 import BeautifulSoup
 
 from api_adapters import doi
-from browser_adapters import browser_download, clean_html, goto_source, require_source_url, dismiss_cookies
+from browser_adapters import browser_download, clean_html, goto_source, require_source_url, dismiss_cookies, is_access_challenge
 from scholarly import ServiceError, encoded, bibliography
 
 
@@ -495,11 +495,13 @@ class Publisher:
         page = self.document(url)
         try:
             try:
-                page.wait_for_function("() => [...document.querySelectorAll('meta[name],meta[property]')].some(m=>/^(citation_title|dc[.:]title)$/i.test(m.name||m.getAttribute('property')||'') && m.content?.trim()) || /^(Access Denied|Just a moment|Attention Required|403 Forbidden)/i.test(document.title)", timeout=20000)
+                page.wait_for_function("() => [...document.querySelectorAll('meta[name],meta[property]')].some(m=>/^(citation_title|dc[.:]title)$/i.test(m.name||m.getAttribute('property')||'') && m.content?.trim()) || document.querySelector('#challenge-error-text,#capInput') || /^(Access Denied|Just a moment|Attention Required|403 Forbidden)/i.test(document.title)", timeout=20000)
             except Exception:
+                if is_access_challenge(page.content()):
+                    raise ServiceError('publisher_access_restricted','Publisher returned an access verification page',status='restricted',source=self.source) from None
                 raise ServiceError("document_not_ready", "Publisher did not initialize a document page", source=self.source) from None
             body = page.locator("body").inner_text()
-            if re.search(r"^(?:Access Denied|Just a moment|Attention Required|403 Forbidden)|CPE00001|Verify you are human", page.title() + "\n" + body[:1000], re.I):
+            if is_access_challenge(page.content()) or re.search(r"CPE00001|Verify you are human", body[:1000], re.I):
                 raise ServiceError("publisher_access_restricted", "Publisher returned an access/error page", status="restricted", source=self.source)
             require_source_url(page.url, self.profile.hosts)
             raw = page.content()

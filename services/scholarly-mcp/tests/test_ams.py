@@ -4,6 +4,14 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 
 class AMSContract(unittest.TestCase):
+    def test_translated_challenge_is_not_treated_as_a_ready_search_page(self):
+        from ams import validate_search_page
+        from scholarly import ServiceError
+        raw=(ROOT/'tests/fixtures/ams-challenge-ko.html').read_text('utf-8')
+        with self.assertRaises(ServiceError) as error:validate_search_page(raw,200)
+        self.assertEqual(error.exception.result['status'],'restricted')
+        self.assertEqual(error.exception.result['code'],'publisher_access_challenge')
+
     def test_nested_expression_preserves_native_field_and_operator_meanings(self):
         from ams import advanced_expression,check_expression_request
         from urllib.parse import urlencode,quote

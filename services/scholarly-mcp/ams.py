@@ -1,7 +1,7 @@
 """AMS Digital Library native institutional browse records."""
 import csv,io,json,re
 from urllib.parse import urlsplit,urljoin,parse_qs,urlencode,urlunsplit,unquote
-from browser_adapters import goto_source,clean_html,dismiss_cookies
+from browser_adapters import goto_source,clean_html,dismiss_cookies,is_access_challenge
 from publishers import Publisher,PROFILES
 from scholarly import ServiceError,encoded
 
@@ -52,7 +52,7 @@ def validate_search_page(raw,http_status=None):
     soup=BeautifulSoup(raw,'html.parser')
     title=soup.title.get_text(' ',strip=True) if soup.title else ''
     body=soup.get_text(' ',strip=True)
-    if http_status in (401,403) or re.search(r'^(Just a moment|Access Denied|Attention Required)',title,re.I):
+    if http_status in (401,403) or is_access_challenge(raw):
         raise ServiceError('publisher_access_challenge','AMS did not provide an accessible search page',status='restricted',source='ams',stage='search_interface',http_status=http_status)
     if body.strip()=='The service is unavailable.' or http_status is not None and http_status>=500:
         raise ServiceError('provider_unavailable','AMS returned a service-unavailable page',source='ams',stage='search_interface',http_status=http_status,retryable=True)

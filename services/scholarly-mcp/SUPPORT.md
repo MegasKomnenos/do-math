@@ -6,7 +6,7 @@
 | Web of Science Core Collection + CPCI | wos | playwright | partial | source_guide, search, fetch, export | live_mcp_search_full_record_title_url_native_xls_extract |
 | Scopus | scopus | playwright | partial | source_guide, search, fetch, export | live_mcp_search_fetch_references_pagination_cited_by_extract |
 | ACM Digital Library | acm-dl | playwright | partial | source_guide, search, fetch, export | live_mcp_search_citation_pdf_and_supplement_zip_inner_pdf_extract |
-| IEEE Xplore / IEL | ieee-xplore | playwright | partial | source_guide, search, fetch, export | live_mcp_search_citation_pdf_references_graphical_and_native_media_tab |
+| IEEE Xplore / IEL | ieee-xplore | playwright | partial | source_guide, search, fetch, export | live_mcp_four_native_exports_selected_windows; pdf_references_graphical_and_native_media_tab_verified |
 | PQDT Global | pqdt | playwright | partial | source_guide, search, fetch, export | live_mcp_repeat_search_ris_pdf_and_supplemental_png_fetch_extract |
 | zbMATH Open | zbmath | api | partial | source_guide, search, fetch, export | live_mcp_arbitrary_window_doi_legacy_link_license_state_references |
 | arXiv | arxiv | api | partial | source_guide, search, fetch, export | live_mcp_search_pinned_html_source_archive_tex_extract |

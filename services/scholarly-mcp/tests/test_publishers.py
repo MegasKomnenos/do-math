@@ -8,6 +8,20 @@ sys.path.insert(0, str(ROOT))
 
 
 class PublisherContract(unittest.TestCase):
+    def test_translated_challenge_has_restricted_status_in_document_fetch(self):
+        import tempfile
+        from types import SimpleNamespace
+        from unittest.mock import Mock,patch
+        from scholarly import ArtifactStore,ServiceError
+        raw=(ROOT/'tests/fixtures/ams-challenge-ko.html').read_text('utf-8')
+        page=SimpleNamespace(wait_for_function=Mock(side_effect=TimeoutError),content=lambda:raw,close=Mock())
+        with tempfile.TemporaryDirectory() as temp:
+            adapter=self.mod.Publisher(ArtifactStore(temp),None,next(p for p in self.mod.PROFILES if p.source=='ams'))
+            with patch.object(adapter,'document',return_value=page),self.assertRaises(ServiceError) as error:
+                adapter.fetch('https://pubs.ams.org/view?ProductCode=MPRIZE',parts=['metadata'])
+            self.assertEqual(error.exception.result['status'],'restricted')
+            self.assertEqual(error.exception.result['code'],'publisher_access_restricted')
+
     def test_url_fetch_preserves_requested_and_observed_doi_distinction(self):
         import json,tempfile
         from types import SimpleNamespace

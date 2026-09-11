@@ -6,7 +6,7 @@ from urllib.parse import urljoin, urlsplit
 from bs4 import BeautifulSoup
 
 from browser_adapters import browser_download, dismiss_cookies, goto_source
-from scholarly import ServiceError, encoded
+from scholarly import ServiceError, encoded, bibliography
 
 
 def ieee_records(raw):
@@ -25,6 +25,20 @@ def reference_records(payload,identifier):
     if not isinstance(rows,list) or any(not isinstance(row,dict) for row in rows):
         raise ServiceError('invalid_response','IEEE returned no native reference array')
     return rows
+
+
+def validate_citation_file(data,format,count):
+    if format=='plain':return
+    if format=='csv':
+        import csv,io
+        reader=csv.DictReader(io.StringIO(data.decode('utf-8-sig')))
+        if not reader.fieldnames or not {'Document Title','DOI','PDF Link'}<=set(reader.fieldnames):
+            raise ServiceError('export_format_mismatch','IEEE did not return its native CSV result fields')
+        rows=list(reader)
+    else:
+        rows=bibliography(data,'application/x-bibtex' if format=='bibtex' else 'application/x-research-info-systems')
+    if len(rows)!=count:
+        raise ServiceError('export_range_mismatch','IEEE citation count differs from the selected document count',requested=count,received=len(rows))
 
 
 class IEEE:
@@ -70,14 +84,25 @@ class IEEE:
             page.get_by_role("tab", name="Citations", exact=True).click()
             page.locator('label[for="download-' + native + '"] input').check()
             page.locator('label[for="citation-abstract"] input').check()
+        else:
+            page.get_by_role("tab", name="Results", exact=True).click()
         with page.expect_download(timeout=45000) as pending:
             page.get_by_role("button", name="Download", exact=True).click()
         download = pending.value
         from pathlib import Path
         data = Path(download.path()).read_bytes()
+        # The provider keeps its export modal open after a successful download.
+        cancel = page.locator('button.stats-download-citations-button-cancel')
+        if cancel.is_visible():
+            cancel.click()
         if not data or data.lstrip().lower().startswith((b"<!doctype", b"<html")):
             raise ServiceError("unexpected_content", "IEEE native citation export returned no bibliographic file")
-        return self.store.put(data, media, self.source, page.url, role="native_citation_export", format=format, count=len(indices))
+        artifact=self.store.put(data, media, self.source, page.url, role="native_citation_export", format=format, count=len(indices),original_name=download.suggested_filename)
+        try:validate_citation_file(data,format,len(indices))
+        except ServiceError as error:
+            error.result['source_export']=artifact
+            raise
+        return artifact
 
     def search(self, query, *, options, start=0, limit=20, cursor=None, export=None):
         if type(start) is not int or start < 0 or type(limit) is not int or not 1 <= limit <= 1000:
@@ -102,7 +127,7 @@ class IEEE:
         with page.expect_response(matches, timeout=60000) as pending:
             page.locator(".stats-Adv_Command_search").click()
         response = pending.value
-        rows, evidence, exports, total, offset = [], [], [], None, 0
+        rows, evidence, exports, errors, total, offset = [], [], [], [], None, 0
         while True:
             if response.status in (401, 403):
                 raise ServiceError("access_restricted", "IEEE restricted this institutional search", status="restricted")
@@ -121,8 +146,13 @@ class IEEE:
             rows.extend(selected)
             self.known.update({row["articleNumber"]: (row, page.url) for row in selected})
             if indices and export in self.formats:
-                page.get_by_role("checkbox", name="Select search result", exact=True).first.wait_for(timeout=30000)
-                exports.append(self.citation(page, indices, export))
+                try:
+                    page.get_by_role("checkbox", name="Select search result", exact=True).first.wait_for(timeout=30000)
+                    exports.append(self.citation(page, indices, export))
+                except ServiceError as error:
+                    errors.append({'page_start':offset,**error.result})
+                except Exception as error:
+                    errors.append({'page_start':offset,'status':'error','code':'citation_export_failed','error_type':type(error).__name__})
             offset += len(native)
             if offset >= min(total, start + limit) or not native:
                 break
@@ -134,10 +164,10 @@ class IEEE:
             response = pending.value
         artifact = self.store.put(encoded(rows), "application/json", self.source, page.url, role="records", query=query, start=start, requested=limit, total=total)
         more = start + len(rows) < total
-        return {"status": "ok" if rows else "not_found", "source": self.source, "query": query, "start": start,
+        return {"status": "partial" if errors else "ok" if rows else "not_found", "source": self.source, "query": query, "start": start,
             "requested": limit, "received": len(rows), "total": total, "has_more": more,
             "next": {"start": start + len(rows)} if more else None, "records": artifact,
-            "export": exports[0] if len(exports) == 1 else {"artifacts": exports} if exports else artifact,
+            "export": {'status':'partial','artifacts':exports,'errors':errors} if errors else exports[0] if len(exports) == 1 else {"artifacts": exports} if exports else artifact,
             "evidence": evidence, "preview": [{k: row.get(k) for k in ("articleNumber", "articleTitle", "publicationYear", "doi")} for row in rows[:3]]}
 
     def fetch(self, target, *, parts):

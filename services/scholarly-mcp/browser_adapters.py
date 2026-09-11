@@ -13,6 +13,13 @@ from scholarly import ServiceError, encoded, bibliography
 MSC_HOSTS = {"mathscinet.ams.org", "mathscinet-ams-org.libproxy.knu.ac.kr"}
 
 
+def is_access_challenge(raw):
+    soup=BeautifulSoup(raw,'html.parser')
+    title=soup.title.get_text(' ',strip=True) if soup.title else ''
+    return bool(soup.select_one('#challenge-error-text,#capInput') or
+                re.search(r'^(?:Access Denied|Just a moment|Attention Required|403 Forbidden|Client Challenge|Radware Bot Manager Captcha)',title,re.I))
+
+
 def require_source_url(url, hosts):
     parsed = urlsplit(url)
     if parsed.scheme not in ("https", "http") or parsed.hostname not in hosts or parsed.username or parsed.password or parsed.port not in (None, 80, 443):

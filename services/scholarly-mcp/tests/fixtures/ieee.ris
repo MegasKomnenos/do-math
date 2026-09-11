@@ -1,0 +1,25 @@
+TY  - JOUR
+TI  - From P Versus NP to Probabilistic and Zero Knowledge Proof Systems
+T2  - Computer
+SP  - 119
+EP  - 130
+AU  - D. Drusinsky
+PY  - 2024
+KW  - Privacy
+KW  - Authentication
+KW  - Probabilistic logic
+KW  - Distance measurement
+KW  - Cryptocurrency
+KW  - Zero knowledge proof
+DO  - 10.1109/MC.2024.3358928
+JO  - Computer
+IS  - 4
+SN  - 1558-0814
+VO  - 57
+VL  - 57
+JA  - Computer
+Y1  - April 2024
+AB  - I present an overview of the field of zero knowledge proof systems, which has evolved considerably over the last four decades, with applications ranging from secure authentication, secure communications, crypto-currency, and online privacy.
+ER  - 
+
+
