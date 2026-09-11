@@ -9,6 +9,42 @@ from scholarly import Sanitizer, ServiceError
 
 
 class BrowserContract(unittest.TestCase):
+    def test_start_uses_matching_engine_state_and_legacy_only_as_fallback(self):
+        import tempfile
+        from types import SimpleNamespace
+        from unittest.mock import Mock,patch
+        from browser_adapters import KudosGateway
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);folder=root/'scholarly-mcp';folder.mkdir()
+            legacy=folder/'kudos.json';legacy.write_text('{}',encoding='utf-8')
+            current=folder/'kudos-chromium.json';current.write_text('{}',encoding='utf-8')
+            (folder/'kudos-firefox.json').write_text('{}',encoding='utf-8')
+            for expected in (current,legacy):
+                context=SimpleNamespace(set_default_timeout=Mock())
+                browser=SimpleNamespace(new_context=Mock(return_value=context))
+                driver=SimpleNamespace(chromium=SimpleNamespace(launch=Mock(return_value=browser)))
+                with patch('playwright.sync_api.sync_playwright',return_value=SimpleNamespace(start=lambda:driver)):
+                    gateway=KudosGateway(root,Sanitizer(),engine='chromium');gateway.start()
+                self.assertEqual(browser.new_context.call_args.kwargs['storage_state'],str(expected))
+                if current.exists():current.unlink()
+
+    def test_closing_browser_saves_refreshed_state_without_overwriting_another_engine(self):
+        import json,tempfile
+        from types import SimpleNamespace
+        from unittest.mock import Mock
+        from browser_adapters import KudosGateway
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);folder=root/'scholarly-mcp';folder.mkdir()
+            other=folder/'kudos-firefox.json';other.write_text('{"other_engine":true}',encoding='utf-8')
+            state={'cookies':[{'name':'synthetic','value':'SYNTHETIC_REFRESHED'}],'origins':[]}
+            gateway=KudosGateway(root,Sanitizer(),engine='chromium')
+            gateway.context=SimpleNamespace(storage_state=lambda:state)
+            gateway.browser=SimpleNamespace(close=Mock());gateway.playwright=SimpleNamespace(stop=Mock())
+            gateway.close()
+            self.assertEqual(json.loads((folder/'kudos-chromium.json').read_text('utf-8')),state)
+            self.assertEqual(other.read_text('utf-8'),'{"other_engine":true}')
+            gateway.browser.close.assert_called_once()
+
     def test_eccc_title_fetch_returns_native_search_candidates(self):
         from unittest.mock import Mock
         from browser_adapters import ECCC

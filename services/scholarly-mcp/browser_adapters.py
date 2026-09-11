@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
 import re
+from uuid import uuid4
 from urllib.parse import parse_qs, urlencode, urljoin, urlsplit, urlunsplit, quote, unquote
 
 from bs4 import BeautifulSoup
@@ -208,6 +210,21 @@ class KudosGateway:
         self.pages = {}
         self.credentials(required=False)
 
+    def state_path(self):
+        if self.engine not in ('chromium','firefox','webkit'):
+            raise ServiceError('invalid_browser_engine','Use a supported browser engine')
+        return self.root/'scholarly-mcp'/('kudos-'+self.engine+'.json')
+
+    def save_state(self):
+        if self.context is None:return
+        state=self.state_path();state.parent.mkdir(parents=True,exist_ok=True)
+        temporary=state.with_name('.'+uuid4().hex+'.tmp')
+        try:
+            temporary.write_text(json.dumps(self.context.storage_state(),ensure_ascii=False),encoding='utf-8')
+            temporary.replace(state)
+        finally:
+            if temporary.exists():temporary.unlink()
+
     def credentials(self, required=True):
         path = self.root / "kudos.md"
         if not path.exists():
@@ -232,7 +249,8 @@ class KudosGateway:
         from playwright.sync_api import sync_playwright
         self.playwright = sync_playwright().start()
         self.browser = getattr(self.playwright, self.engine).launch(headless=True, **({"channel": "chrome"} if self.engine == "chromium" else {}))
-        state = self.root / "scholarly-mcp" / "kudos.json"
+        state = self.state_path()
+        if not state.exists():state = self.root / "scholarly-mcp" / "kudos.json"
         self.context = self.browser.new_context(storage_state=str(state) if state.exists() else None, accept_downloads=True)
         self.context.set_default_timeout(25000)
 
@@ -253,9 +271,7 @@ class KudosGateway:
             page.get_by_role("link", name="로그아웃", exact=True).first.wait_for(timeout=30000)
         except Exception:
             raise ServiceError("authentication_failed", "KUDOS login did not reach an authenticated page", status="restricted", provider="kudos") from None
-        state = self.root / "scholarly-mcp" / "kudos.json"
-        state.parent.mkdir(parents=True, exist_ok=True)
-        self.context.storage_state(path=str(state))
+        self.save_state()
 
     def open(self, source, label, hosts, ready):
         self.start()
@@ -301,6 +317,9 @@ class KudosGateway:
 
     def close(self):
         if self.browser:
+            try:self.save_state()
+            except Exception as error:
+                logging.getLogger('scholarly').warning('browser state was not saved: %s',type(error).__name__)
             self.browser.close()
         if self.playwright:
             self.playwright.stop()

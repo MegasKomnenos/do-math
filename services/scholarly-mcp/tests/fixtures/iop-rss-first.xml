@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns="http://purl.org/rss/1.0/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:iop="http://iopscience.iop.org" xmlns:prism="http://prismstandard.org/namespaces/basic/1.2/">
+  <channel rdf:about="https://iopscience.iop.org/nsearch/rss?searchDatePeriod=anytime&amp;terms=complexity&amp;orderBy=relevance">
+    <title>IOPscience Full Text Search</title>
+    <link>https://iopscience.iop.org/nsearch/rss?searchDatePeriod=anytime&amp;terms=complexity&amp;orderBy=relevance</link>
+    <description>terms=complexity AND searchDatePeriod=anytime</description>
+    <items>
+      <rdf:Seq>
+        <rdf:li />
+        <rdf:li />
+        <rdf:li />
+        <rdf:li />
+        <rdf:li />
+        <rdf:li />
+        <rdf:li />
+        <rdf:li />
+        <rdf:li />
+        <rdf:li />
+      </rdf:Seq>
+    </items>
+  </channel>
+  <image rdf:about="">
+    <title>IOPscience</title>
+    <url>https://iopscience.iop.org/image/iopscience-rss.gif</url>
+    <link>https://iopscience.iop.org/nsearch/rss?searchDatePeriod=anytime&amp;terms=complexity&amp;orderBy=relevance</link>
+  </image>
+  <item rdf:about="https://iopscience.iop.org/article/10.1088/1361-6528/ae9557">
+    <title>Geometry controlled transition between tip and root growth in Au catalyzed SnO2 nanowires</title>
+    <link>https://iopscience.iop.org/article/10.1088/1361-6528/ae9557</link>
+    <description>Understanding the growth mechanism of metal oxide nanowires remains challenging due to the complex interplay among catalyst phase behavior, interfacial energetics, and mass transport. Here, we propose a framework for understanding SnO nanowire growth by elucidating the coexistence of, and transition between tip-growth- and root-growth-dominated vapor–liquid–solid (VLS) mechanisms. By engineering catalyst configurations using Au nanoparticles, Au thin films, and hybrid structures, we establish a direct correlation between catalyst geometry and nanowire morphology. The nanowires exhibit a highly crystalline rutile SnO phase with lattice parameters of , . High-resolution TEM confirms their single-crystalline structure, with an interplanar spacing of corresponding to the (-1-10) planes. The morphology strongly depends on the catalyst configuration, with diameters ranging from 20 nm to and lengths ranging from to over . XPS analysis reveals that the Sn fraction increases from to , suggesting an increasingly oxygen-deficient surface chemical environment associated with catalyst-driven growth kinetics. COMSOL simulations are used to estimate Sn vapor transport and provide order-of-magnitude agreement with the experimentally observed nanowire length of ( ). This work demonstrates the importance of regulating the transition between tip- and root-growth regimes and provides a conceptual framework in which interfacial effects and catalyst geometry are considered additional factors beyond conventional supersaturation.</description>
+    <dc:creator>Nguyen Hoang Hai, Nguyen Ba Dung and Nguyen Minh Hieu</dc:creator>
+    <dc:source>Nanotechnology</dc:source>
+    <iop:authors>Nguyen Hoang Hai &lt;em&gt;et al&lt;/em&gt;</iop:authors>
+    <iop:citation>Nguyen Hoang Hai &lt;em&gt;et al&lt;/em&gt; 2,026 &lt;em&gt;Nanotechnology&lt;/em&gt; &lt;b&gt;37&lt;/b&gt; 365704</iop:citation>
+    <iop:pdf>https://iopscience.iop.org/article/10.1088/1361-6528/ae9557/pdf</iop:pdf>
+    <prism:number>36</prism:number>
+    <prism:volume>37</prism:volume>
+    <prism:publicationName>Nanotechnology</prism:publicationName>
+    <prism:startingPage>365704</prism:startingPage>
+    <prism:doi>10.1088/1361-6528/ae9557</prism:doi>
+  </item>
+  <item rdf:about="https://iopscience.iop.org/article/10.1088/1361-6544/ae9dd9">
+    <title>Topological entropy of Turing complete dynamics</title>
+    <link>https://iopscience.iop.org/article/10.1088/1361-6544/ae9dd9</link>
+    <description>We explore the relationship between Turing completeness and topological entropy of dynamical systems. We first prove that a natural class of Turing machines that we call ‘branching Turing machines’ (which includes most of the known examples of universal Turing machines (UTMs)) has positive topological entropy. Motivated by the recent construction of Turing complete Euler flows, we deduce that any Turing complete dynamics with a continuous encoding that simulates a universal branching machine is chaotic. On the other hand, we show that, unexpectedly, UTMs with zero topological entropy (and even zero speed) can be constructed, unveiling the independence of chaos and universality at the symbolic level.</description>
+    <dc:creator>Renzo Bruera, Robert Cardona, Eva Miranda, Daniel Peralta-Salas and Ville Salo</dc:creator>
+    <dc:source>Nonlinearity</dc:source>
+    <iop:authors>Renzo Bruera &lt;em&gt;et al&lt;/em&gt;</iop:authors>
+    <iop:citation>Renzo Bruera &lt;em&gt;et al&lt;/em&gt; 2,026 &lt;em&gt;Nonlinearity&lt;/em&gt; &lt;b&gt;39&lt;/b&gt; 095017</iop:citation>
+    <iop:pdf>https://iopscience.iop.org/article/10.1088/1361-6544/ae9dd9/pdf</iop:pdf>
+    <prism:number>9</prism:number>
+    <prism:volume>39</prism:volume>
+    <prism:publicationName>Nonlinearity</prism:publicationName>
+    <prism:startingPage>095017</prism:startingPage>
+    <prism:doi>10.1088/1361-6544/ae9dd9</prism:doi>
+  </item>
+  <item rdf:about="https://iopscience.iop.org/article/10.1088/1361-6560/ae98de">
+    <title>Effects of varying lateral spot size and beam energy spread in proton therapy: a phantom and patient case study</title>
+    <link>https://iopscience.iop.org/article/10.1088/1361-6560/ae98de</link>
+    <description>Objective. The dielectric wall accelerator (DWA) is proposed as a low-cost, compact system for proton therapy. It offers additional degrees of freedom over conventional accelerators for controlling beam parameters. This study seeks to determine clinically desirable proton beam characteristics by evaluating their implications for treatment plan quality; particularly, the influence of variations in lateral spot size and beam energy spread were investigated. Approach. A linear optics model of the DWA, developed in TRANSOPTR, was used to define realistic beam parameters at the accelerator exit, from which an analytical method selected those yielding the desired spot sizes and energy spreads at isocenter. These parameters were subsequently passed through a generic nozzle model in TOPAS. Lateral spot size was varied from 1 to 10 mm. Beam energy spread was varied from 0.00005 and 15 . Robustly optimized treatment plans were generated in RayStation for a homogeneous water phantom and a sample pediatric central nervous system cancer case. Results were validated against conventional proton beam data. Main results. In the water phantom study, lower energy spreads decreased the normalized surface dose and increased the depth of maximum dose. In both phantom and patient cases, reducing the lateral spot size yielded greater organs-at-risk (OAR) sparing while maintaining comparable target coverage, which is in agreement with the literature. A similar trend of improved OAR sparing was observed with reduced beam energy spread for all cases; albeit, the effect was less pronounced. For realistic optimization of the DWA system, the beam parameters identified as most favorable were a lateral spot size of approximately 1 mm and an energy spread on the order of 0.05 to 0.5% for 20 to 226 MeV. Significance. These results should prove useful to both hardware and numerical efforts, and form the basis for future studies of the clinical characteristics of prospective DWA machines.</description>
+    <dc:creator>Chau Giang Bui, Christopher M Lund, Jamiel Nasser, Morgan Maher, Julien Bancheri, Jason Yuan, Verdi Vanreusel, Amy Parent, Monica Serban and Jan Seuntjens</dc:creator>
+    <dc:source>Phys. Med. Biol.</dc:source>
+    <iop:authors>Chau Giang Bui &lt;em&gt;et al&lt;/em&gt;</iop:authors>
+    <iop:citation>Chau Giang Bui &lt;em&gt;et al&lt;/em&gt; 2,026 &lt;em&gt;Phys. Med. Biol.&lt;/em&gt; &lt;b&gt;71&lt;/b&gt; 175030</iop:citation>
+    <iop:pdf>https://iopscience.iop.org/article/10.1088/1361-6560/ae98de/pdf</iop:pdf>
+    <prism:number>17</prism:number>
+    <prism:volume>71</prism:volume>
+    <prism:publicationName>Phys. Med. Biol.</prism:publicationName>
+    <prism:startingPage>175030</prism:startingPage>
+    <prism:doi>10.1088/1361-6560/ae98de</prism:doi>
+  </item>
+  <item rdf:about="https://iopscience.iop.org/article/10.1088/1361-665X/aea1c8">
+    <title>Direct ink writing of flexible strain gauges for IoT-enabled structural health and usage monitoring of aerospace composites</title>
+    <link>https://iopscience.iop.org/article/10.1088/1361-665X/aea1c8</link>
+    <description>Structural health and usage monitoring of aerospace structures requires scalable, lightweight, and minimally intrusive sensing solutions capable of supporting real-time digital twin frameworks for individual aircraft life management. This work presents the development and characterization of flexible printed strain gauges as a core sensing component of the IoT sensing skin developed within the H2020 AVATAR project, dedicated to developing a digital twin framework for real-time health and usage monitoring of transformative air vehicles. Silver-based and carbon-based strain gauges were manufactured using direct ink writing (DIW) and benchmarked against commercial metal foil gauges on carbon fiber reinforced polymer (CFRP) composite plates under tension, compression, bending, and fatigue loading. Silver-based gauges achieved a gauge factor of approximately 2.75 with good linearity, comparable to commercial gauges, making them well-suited for quantitative fatigue usage monitoring. Carbon-based gauges achieved gauge factors of 10–12 under tension with good repeatability over 2000 fatigue cycles, demonstrating high sensitivity for in-service monitoring. Substrate-free solution, rosette multiaxial configurations, and embedding within CFRP laminates were successfully demonstrated. Temperature sensitivity and long-term drift are identified as the primary remaining challenges. The results establish DIW-printed strain gauges as a scalable and low-cost pathway toward the flexible IoT sensing skins required for digital twin-based aerospace structural health monitoring, supporting the transition from fleet-level to individualized, condition-based structural life assessment.</description>
+    <dc:creator>Marilyne Philibert, Yuhang Pan, Ferri M H Aliabadi and Zahra Sharif Khodaei</dc:creator>
+    <dc:source>Smart Mater. Struct.</dc:source>
+    <iop:authors>Marilyne Philibert &lt;em&gt;et al&lt;/em&gt;</iop:authors>
+    <iop:citation>Marilyne Philibert &lt;em&gt;et al&lt;/em&gt; 2,026 &lt;em&gt;Smart Mater. Struct.&lt;/em&gt; &lt;b&gt;35&lt;/b&gt; 095011</iop:citation>
+    <iop:pdf>https://iopscience.iop.org/article/10.1088/1361-665X/aea1c8/pdf</iop:pdf>
+    <prism:number>9</prism:number>
+    <prism:volume>35</prism:volume>
+    <prism:publicationName>Smart Mater. Struct.</prism:publicationName>
+    <prism:startingPage>095011</prism:startingPage>
+    <prism:doi>10.1088/1361-665X/aea1c8</prism:doi>
+  </item>
+  <item rdf:about="https://iopscience.iop.org/article/10.1088/1402-4896/aea19b">
+    <title>A cross-planar color image encryption method based on plaintext feature perturbation of a 3D-SCH hyperchaotic discrete system</title>
+    <link>https://iopscience.iop.org/article/10.1088/1402-4896/aea19b</link>
+    <description>A new 3D-sine-cosine-Hénon (3D-SCH) discrete hyperchaotic system is proposed in the present investigation and the hyperchaotic characteristics are verified through Lyapunov exponents and bifurcation properties. The complexity and initial value sensitivity of the system are analyzed, and high complexity and extreme sensitivity to initial values are confirmed. In the encryption process of color images, initial conditions are perturbed by plaintext eigenvalues, two rounds of global cross-plane permutation and two rounds of forward and backward diffusion dependent on sequence indices are adopted, channel limitations are broken, and excellent permutation and diffusion effects are acquired. It is demonstrated that outstanding security and robustness are provided by the proposed 3D-SCH system for encrypting color images of different sizes, various key attacks and noise attacks can be resisted, and high practical significance is owned by the designed encryption scheme.</description>
+    <dc:creator>Shaohui Yan, Fanfan Li, Jiandong Zhang, Xuan Lu and Guangqin You</dc:creator>
+    <dc:source>Phys. Scr.</dc:source>
+    <iop:authors>Shaohui Yan &lt;em&gt;et al&lt;/em&gt;</iop:authors>
+    <iop:citation>Shaohui Yan &lt;em&gt;et al&lt;/em&gt; 2,026 &lt;em&gt;Phys. Scr.&lt;/em&gt; &lt;b&gt;101&lt;/b&gt; 365220</iop:citation>
+    <iop:pdf>https://iopscience.iop.org/article/10.1088/1402-4896/aea19b/pdf</iop:pdf>
+    <prism:number>36</prism:number>
+    <prism:volume>101</prism:volume>
+    <prism:publicationName>Phys. Scr.</prism:publicationName>
+    <prism:startingPage>365220</prism:startingPage>
+    <prism:doi>10.1088/1402-4896/aea19b</prism:doi>
+  </item>
+  <item rdf:about="https://iopscience.iop.org/article/10.1088/1402-4896/aea1a3">
+    <title>Mathematical modeling and parametric solution of the flute geometry for solid end mills</title>
+    <link>https://iopscience.iop.org/article/10.1088/1402-4896/aea1a3</link>
+    <description>The flute of a solid end mill directly determines parameters such as the rake angle, core diameter, and flute opening angle, thereby affecting the cutting performance of the tool. To address the complexity of spatial analytical models and the possibility that direct radial projection may neglect helical phase compensation, the grinding-wheel–blank process system was investigated. Grinding-wheel and blank models were established in a local normal plane, the normal-plane section was obtained according to the envelope principle, and the radial-section curve was then obtained through inverse coordinate transformation. A model for solving the flute parameters was subsequently established, and UG secondary-development technology was used to develop flute-grinding software for solid end mills. To verify the effectiveness of the proposed method, grinding experiments were conducted under identical operating conditions using a 1A1 grinding wheel and a GU25UF carbide blank. A radial-projection baseline (RP), in which only the helical phase compensation was removed, was compared with the proposed normal-plane envelope–inverse helical transformation method (NP) through a controlled geometric ablation comparison based on the same source geometry. The results showed that the core diameter, rake angle, and flute opening angle obtained by the NP method were 4.038 mm, −11.24°, and 89.68°, respectively, with errors of 2.70%, 5.55%, and 3.05% relative to the physical measurements. Compared with the RP method, the NP method reduced the rake-angle and flute-opening-angle errors by 74.90% and 81.18%, respectively, and the geometric offset at the flute-opening endpoint was 1.27 mm. The helix-angle sensitivity analysis further showed that the RP projection error increased markedly with increasing helix angle. The proposed method reduces the geometric error caused by flute-section projection; the maximum relative error among the three parameters was 5.55%, demonstrating good engineering applicability.</description>
+    <dc:creator>Minli Zheng, Jianlin Guan, Baojuan Dong and Wenkai Shang</dc:creator>
+    <dc:source>Phys. Scr.</dc:source>
+    <iop:authors>Minli Zheng &lt;em&gt;et al&lt;/em&gt;</iop:authors>
+    <iop:citation>Minli Zheng &lt;em&gt;et al&lt;/em&gt; 2,026 &lt;em&gt;Phys. Scr.&lt;/em&gt; &lt;b&gt;101&lt;/b&gt; 365221</iop:citation>
+    <iop:pdf>https://iopscience.iop.org/article/10.1088/1402-4896/aea1a3/pdf</iop:pdf>
+    <prism:number>36</prism:number>
+    <prism:volume>101</prism:volume>
+    <prism:publicationName>Phys. Scr.</prism:publicationName>
+    <prism:startingPage>365221</prism:startingPage>
+    <prism:doi>10.1088/1402-4896/aea1a3</prism:doi>
+  </item>
+  <item rdf:about="https://iopscience.iop.org/article/10.1088/1402-4896/aea2dd">
+    <title>Spectral redistribution and dispersion anomalies in plasma-dressed</title>
+    <link>https://iopscience.iop.org/article/10.1088/1402-4896/aea2dd</link>
+    <description>In this work, the oscillator strengths and dynamic dipole polarizability of a helium atom, , confined within a fullerene cage and simultaneously subjected to an impenetrable spherical confinement and a quantum plasma environment, are investigated. Although the intrinsic optical response of helium is highly limited due to its closed-shell electronic configuration, it is observed that the simultaneous presence of spherical confinement boundary conditions, fullerene cage parameters, and quantum plasma screening profoundly modifies the spatial localization of the wavefunctions and the energy spectrum, leading to a substantial redistribution of oscillator strengths among selected transitions and a pronounced transformation in the resonance structure of the dynamic polarizability. The quantum plasma environment is modeled using the exponential cosine screened Coulomb potential, while the fullerene cage is represented by a Woods–Saxon potential. The electronic structure is obtained using numerical methods within the Hartree–Fock approach under impenetrable spherical confinement boundary conditions. By systematically varying the confinement radius, fullerene parameters, and the plasma screening function, the oscillator strengths for selected dipole transitions are investigated, and the observed spectral redistributions are interpreted in physical terms. In addition, the frequency-dependent contribution of the electric dipole transitions to the dynamic dipole polarizability is analyzed in detail, and the systematic evolution of the resonance frequencies under these parameters is discussed.</description>
+    <dc:creator>Mustafa Kemal Bahar</dc:creator>
+    <dc:source>Phys. Scr.</dc:source>
+    <iop:authors>Mustafa Kemal Bahar</iop:authors>
+    <iop:citation>Mustafa Kemal Bahar 2,026 &lt;em&gt;Phys. Scr.&lt;/em&gt; &lt;b&gt;101&lt;/b&gt; 365404</iop:citation>
+    <iop:pdf>https://iopscience.iop.org/article/10.1088/1402-4896/aea2dd/pdf</iop:pdf>
+    <prism:number>36</prism:number>
+    <prism:volume>101</prism:volume>
+    <prism:publicationName>Phys. Scr.</prism:publicationName>
+    <prism:startingPage>365404</prism:startingPage>
+    <prism:doi>10.1088/1402-4896/aea2dd</prism:doi>
+  </item>
+  <item rdf:about="https://iopscience.iop.org/article/10.1088/1402-4896/aea5a8">
+    <title>SomniTrack: A Multimodal Attention Framework with Neuro-Topographic Sleep Staging and Disorder Classification</title>
+    <link>https://iopscience.iop.org/article/10.1088/1402-4896/aea5a8</link>
+    <description>Sleep staging and obstructive sleep apnea (OSA) detection are central to sleep medicine, yet remain con-strained by the complexity of full polysomnography (PSG) and the subjectivity of manual scoring. We present SomniTrack, a multimodal framework that integrates EEG and ECG to automate sleep assessment without relying on respiratory channels. The framework comprises two complementary pipelines. CORTEX-EEG extracts oscillatory and temporal descriptors via denoising and band decomposition, then applies spatio–temporal attention to highlight informative channels and time windows, enabling neuro-topographic im-portance analysis that identifies spatially and temporally significant EEG regions associated with sleep stage transitions. CARDIA-ECG employs R-centered sub-epochs to align features to cardiac dynamics, applies variational mode decomposition on cardiorespiratory signals to separate morphology and rhythm compo-nents, uses adaptive feature weighting for adjusting contributions of handcrafted descriptors, and introduces temporal attention for giving the most weight to those sub-epochs that bear greatest entropy of apnea-related irregularities and stage transitions. The two pipelines generate features grounded in physiology, which are processed by light neural modules (a multi-layer perceptron for EEG; a recurrent neural network for ECG), followed by fusion for joint decision-making. DOD-H/O, ISRUC, and MASS show strong performance with thorough evaluations. The accuracies for sleep staging are respectively 94.3%, 91.2% and 93.9% with stable training–validation dynamics and good class separability in ROC analyses. The framework achieves an accuracy of 94.2%, 95.3%, and 96.2% for OSA risk assessment, respectively, across all datasets. The combi-nation of EEG and ECG is a scalable and interpretable solution for the multimodal analysis of sleep.</description>
+    <dc:creator>Aleena Kamal, Yanfeng Wu, Dr. Shaheryar Najam, Hadeel Alsolai, Bayan Alabdullah, Fatimah Alhayan, Ahmad Jalal and Hui Liu</dc:creator>
+    <dc:source>Phys. Scr.</dc:source>
+    <iop:authors>Aleena Kamal &lt;em&gt;et al&lt;/em&gt;</iop:authors>
+    <iop:citation>Aleena Kamal &lt;em&gt;et al&lt;/em&gt; 2,026 &lt;em&gt;Phys. Scr.&lt;/em&gt; &lt;b&gt;&lt;/b&gt;</iop:citation>
+    <iop:pdf>https://iopscience.iop.org/article/10.1088/1402-4896/aea5a8/pdf</iop:pdf>
+    <prism:publicationName>Phys. Scr.</prism:publicationName>
+    <prism:doi>10.1088/1402-4896/aea5a8</prism:doi>
+  </item>
+  <item rdf:about="https://iopscience.iop.org/article/10.1088/1741-2552/aea0ba">
+    <title>SEDAT: a hybrid tokenizer for large EEG models</title>
+    <link>https://iopscience.iop.org/article/10.1088/1741-2552/aea0ba</link>
+    <description>Objective. The fidelity of neural representations learned by large EEG foundation models depends on how raw brain signals are tokenized. Existing methods suffer from arbitrary temporal boundaries misaligned with neural state transitions, neglecting inter-channel spatial information, and fixed segmentation criteria that fail to generalize across heterogeneous EEG paradigms. Approach. This study proposes the squeeze-and-excitation (SE)-data-adaptive Gaussian average filtering (DAGAF) adaptive tokenizer (SEDAT), a hybrid framework integrating SE-based spatial aggregation, DAGAF-based signal decomposition, instantaneous-frequency-guided adaptive segmentation, and Fourier-domain resampling into a single computationally efficient pipeline. SEDAT is evaluated across 10 heterogeneous EEG datasets spanning motor imagery, mental imagery, P300, slow cortical potentials, sleep staging, epilepsy, emotions recognition and Alzheimer diagnosis paradigms, using four large foundation models: LaBraM, EEGFormer, EEGPT, and NeuroGPT. It is benchmarked against five competitive baselines: fixed-length windowing (FLW), context segmentation, linear predictive coding-based tokenization, TFM-Tokenizer, and source informed segmentation. Main results. SEDAT achieves classification improvements of up to 15.3% over FLW and 1.2%–4.6% over the second-best method, with all comparisons reaching after Benjamini–Hochberg correction. Token quality analysis confirms substantially improved feature separability, with Silhouette scores of 0.81–0.85 versus 0.33–0.48 for rigid baselines. Significance. With complexity, SEDAT explores new applications for SE and DAGAF as tokenizers and provides a physiologically grounded and computationally practical tokenization solution for large-scale EEG foundation models.</description>
+    <dc:creator>Muhammad Zulkifal Aziz, Zhuo Yue, Huang Binwen and Yu Xiaojun</dc:creator>
+    <dc:source>J. Neural Eng.</dc:source>
+    <iop:authors>Muhammad Zulkifal Aziz &lt;em&gt;et al&lt;/em&gt;</iop:authors>
+    <iop:citation>Muhammad Zulkifal Aziz &lt;em&gt;et al&lt;/em&gt; 2,026 &lt;em&gt;J. Neural Eng.&lt;/em&gt; &lt;b&gt;23&lt;/b&gt; 056017</iop:citation>
+    <iop:pdf>https://iopscience.iop.org/article/10.1088/1741-2552/aea0ba/pdf</iop:pdf>
+    <prism:number>5</prism:number>
+    <prism:volume>23</prism:volume>
+    <prism:publicationName>J. Neural Eng.</prism:publicationName>
+    <prism:startingPage>056017</prism:startingPage>
+    <prism:doi>10.1088/1741-2552/aea0ba</prism:doi>
+  </item>
+  <item rdf:about="https://iopscience.iop.org/article/10.1088/1748-605X/ae96f0">
+    <title>A bi-layered coating of nanofluorapatite/nanochitosan to improve antimicrobial and biological properties of zirconia-based dental implants</title>
+    <link>https://iopscience.iop.org/article/10.1088/1748-605X/ae96f0</link>
+    <description>Yttria-stabilized zirconia has mechanical properties akin to titanium dental implants but lacks osseointegration properties. A bi-layered nano-fluorapatite/nano-chitosan (nFA/nCS) coating was synthesized to improve the osseointegration potential and antimicrobial properties of zirconia. Zirconia discs were coated with bi-layered nFA/nCS using the sol–gel route. The integrity of the coating was tested by x-ray diffraction, atomic force microscopy and field emission scanning electron microscopy–energy-dispersive spectroscopy. Adhesion of the coating to zirconia was evaluated by the adhesive tape test and ultrasonic vibration. By measuring the optical contact angle, differences in the wettability of the coated and non-coated samples were assessed. Antimicrobial activity was investigated against Staphylococcus aureus and Eschericiha coli and cytotoxicity examined using osteoblast-like cells. The bi-layered nFA/nCS coating was 9.26 μm thick and exhibited acceptable adhesion strength (0.50 ± 1.1 N mm−1) to zirconia and greater resistance to ultrasonic-induced delamination than a single layer of nFA coating; the water contact angle decreased to 5° and the surface roughness increased to 121.3 nm. The coating decreased the count of both bacterial strains and was not cytotoxic to mammalian cells. We conclude that the nFA/nCS coating exhibited acceptable adhesion and enhanced bioactivity and antimicrobial activity, rendering it a potential material for replacing titanium dental implants. Functionalizing zirconia with nFA/nCS is a cost-effective alternative to titanium implants. While still at an early stage of research, nFA/nCS-coated zirconia implants have the potential to widen public availability and increase access to implant treatment.</description>
+    <dc:creator>Ahmed Al-Noaman and Simon Charles Fielding Rawlinson</dc:creator>
+    <dc:source>Biomed. Mater.</dc:source>
+    <iop:authors>Ahmed Al-Noaman and Simon Charles Fielding Rawlinson</iop:authors>
+    <iop:citation>Ahmed Al-Noaman and Simon Charles Fielding Rawlinson 2,026 &lt;em&gt;Biomed. Mater.&lt;/em&gt; &lt;b&gt;21&lt;/b&gt; 055005</iop:citation>
+    <iop:pdf>https://iopscience.iop.org/article/10.1088/1748-605X/ae96f0/pdf</iop:pdf>
+    <prism:number>5</prism:number>
+    <prism:volume>21</prism:volume>
+    <prism:publicationName>Biomed. Mater.</prism:publicationName>
+    <prism:startingPage>055005</prism:startingPage>
+    <prism:doi>10.1088/1748-605X/ae96f0</prism:doi>
+  </item>
+</rdf:RDF>

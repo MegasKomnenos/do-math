@@ -567,13 +567,20 @@ SOURCES['general-web'].usage = {
 }
 
 SOURCES['iop'].implementation = 'partial'
-SOURCES['iop'].transport = 'playwright'
-SOURCES['iop'].capabilities = ('source_guide','fetch','export')
+SOURCES['iop'].transport = 'fixed: newest RSS API; other sorts/extra filters/document Playwright'
+SOURCES['iop'].capabilities = ('source_guide','search','fetch','export')
 SOURCES['iop'].usage = {
-    'fetch':'IOP DOI 또는 정확한 iopscience.iop.org 문헌 URL을 지정한다. KUDOS IOP 바로가기를 거쳐 기관 문헌의 서지 태그와 PDF를 회수한다. 초록은 원 wd-jnl-art-abstract 영역을 사용한다.',
+    'search':'query는 IOP terms 검색어다. 기본 sort=newest는 별도 API 자격이 없는 RSS API를 KUDOS 기관 프록시 세션에서 호출한다. sort=relevance/oldest 또는 pub_type/open_access 조건은 해당 기능이 있는 기관 원 검색 경로로 고정한다. API 실패 때문에 브라우저로 자동 전환하지 않는다.',
+    'search_options':'sort는 newest/relevance/oldest, period는 anytime/lastThirtyDays/lastTwelveMonths/lastFiveYears다. journals는 ISSN 배열, page_size는 10/20/50이다. pub_type은 article/chapter/book 배열, open_access는 boolean이며 이 조건은 원 검색 경로로 처리한다. 검색어 문법을 임의로 변환하지 않는다.',
+    'search_range':'start는0부터다. 최신순 API limit는1..1000이며 start500뒤 자료도 실제로 확인했다. API는 전역 일치 건수를 주지 않아 total=null이다. 원 검색 경로는 start+limit<=500이며 accessible_total은 노출된 상위 결과 수이고 전체 일치 건수가 아니다. 요청 범위를 조용히 잘라 맞추지 않는다.',
+    'search_exports':'json/csv는 정확한 요청 창이다. 최신순 API의 rss/xml/native는 원 XML 페이지이며 그 밖의 검색에서 html/native는 원 HTML 페이지다. 원 RSS의 순서 참조가 빈 항목이면 item 등장 순서를 유지하고 empty_rdf_sequence_used_item_order 경고를 남긴다. 원문 XML은 evidence에 보존한다.',
+
+    'fetch':'IOP DOI 또는 정확한 iopscience.iop.org 문헌 URL을 지정한다. 이름은 관련도 순의 원 검색 후보로 반환한다. KUDOS IOP 바로가기를 거쳐 기관 문헌의 서지 태그와 PDF를 회수한다. 초록은 원 wd-jnl-art-abstract 영역을 사용한다.',
     'exports':'문헌의 BibTeX·RIS 링크와 원 파일의 DOI를 대조한다. 두 형식의 실제 MCP 회수를 검증했다. 원 BibTeX 키에 공백이 있으면 원 키와 바이트를 유지하고 citation_key_contains_whitespace 경고와 함께 필드를 추출한다. 파일을 정상 키로 고쳐 쓰지 않는다. 파싱·식별자 검사 실패 때 source_export에 받은 파일을 보존한다.',
-    'limits':'현재 확인된 기관 세션에서 서지·초록·16쪽 PDF·BibTeX·RIS를 실제 MCP로 회수했다. 접근 확인이 다시 필요하면 restricted를 반환한다. 검색·이름 후보는 아직 연결하지 않았다. XML·추가 첨부 형식도 미연결이다.',
-    'examples':[{'tool':'fetch','arguments':{'source':'iop','target':'https://iopscience.iop.org/article/10.1088/0022-3727/34/10/311/meta','parts':['metadata','fulltext']}}],
+    'limits':'현재 확인된 기관 세션에서 서지·초록·16쪽 PDF·BibTeX·RIS를 실제 MCP로 회수했다. API의 페이지 경계·start500 이후, 관련도 순의 경계·CSV·원 저널/문헌 유형/공개 접근 조건과 0건을 실제 MCP로 검증했다. 기간 기본값 anytime, page_size10/20과 명시된 예제가 실측 범위이며 모든 조건 조합의 검증으로 확대하지 않는다. 접근 확인이 다시 필요하면 restricted를 반환한다. 문헌 본문의 추가 XML·첨부 형식은 미연결이다.',
+    'examples':[{'tool':'search','arguments':{'source':'iop','query':'complexity','start':500,'limit':2,'options':{'page_size':10},'export':'rss'}},
+                {'tool':'search','arguments':{'source':'iop','query':'complexity','start':9,'limit':2,'options':{'sort':'relevance','page_size':10},'export':'csv'}},
+                {'tool':'fetch','arguments':{'source':'iop','target':'https://iopscience.iop.org/article/10.1088/0022-3727/34/10/311/meta','parts':['metadata','fulltext','export']}}],
     'official':['https://iopscience.iop.org/'],
 }
 
@@ -646,7 +653,7 @@ for identifier, level in {
     "taylor-francis": "live_mcp_search_citation_pdf_dublin_doi_supplement_zip_tables_nested_source",
     "de-gruyter": "live_mcp_search_ris_pdf_and_supplement_zip_cif_lines; broken_link_observed",
     "jstor": "live_mcp_public_ris_bibtex_article_and_jj_book; web_search_pending",
-    "iop": "live_mcp_verified_session_metadata_abstract_pdf_bibtex_ris_key_warning",
+    "iop": "live_mcp_rss_beyond_500_ranked_filters_csv_zero; metadata_abstract_pdf_bibtex_ris_verified",
     "siam": "live_mcp_public_front_matter_pdf_fetch_extract; search_challenge_observed",
     "ams": "live_mcp_explicit_pdf; native_browser_mixed_search; dynamic_expression_offline_verified; live_search_restricted",
     "science-direct": "live_mcp_institutional_ris_bibtex_plain_metadata_abstract_fetch",

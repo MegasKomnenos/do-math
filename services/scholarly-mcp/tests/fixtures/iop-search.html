@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en" xml:lang="en"><head><title>complexity - Search - Page 1 - IOPscience</title><meta charset="utf-8"/><meta content="IE=edge" http-equiv="x-ua-compatible"/><meta content="width=device-width, initial-scale=1.0, minimum-scale=1.0" name="viewport"/><link href="https://iopscience-iop-org.libproxy.knu.ac.kr/nsearch" rel="canonical"/><!--  start  metadata--><!--  end  metadata--><meta content="noarchive" name="robots"/><meta content="Search scientific research journals on the IOPscience journals publishing platform" name="description"/><link href="https://static.iopscience.com/4.38.0/css/criticalStyles.min.css" rel="stylesheet" type="text/css"/><link href="https://static.iopscience.com/4.38.0/css/mainStyles.min.css" media="all" rel="stylesheet"/><!--start common.gs.head--><!--end common.gs.head--><!--start common.ga.head--><!-- Google Tag Manager --><!-- End Google Tag Manager --><!--end common.ga.head--><link href="/favicon.ico" rel="icon" type="image/x-icon"/> <style type="text/css">.CtxtMenu_InfoClose {  top:.2em; right:.2em;}
+.CtxtMenu_InfoContent {  overflow:auto; text-align:left; font-size:80%;  padding:.4em .6em; border:1px inset; margin:1em 0px;  max-height:20em; max-width:30em; background-color:#EEEEEE;  white-space:normal;}
+.CtxtMenu_Info.CtxtMenu_MousePost {outline:none;}
+.CtxtMenu_Info {  position:fixed; left:50%; width:auto; text-align:center;  border:3px outset; padding:1em 2em; background-color:#DDDDDD;  color:black;  cursor:default; font-family:message-box; font-size:120%;  font-style:normal; text-indent:0; text-transform:none;  line-height:normal; letter-spacing:normal; word-spacing:normal;  word-wrap:normal; white-space:nowrap; float:none; z-index:201;  border-radius: 15px;                     /* Opera 10.5 and IE9 */  -webkit-border-radius:15px;               /* Safari and Chrome */  -moz-border-radius:15px;                  /* Firefox */  -khtml-border-radius:15px;                /* Konqueror */  box-shadow:0px 10px 20px #808080;         /* Opera 10.5 and IE9 */  -webkit-box-shadow:0px 10px 20px #808080; /* Safari 3 & Chrome */  -moz-box-shadow:0px 10px 20px #808080;    /* Forefox 3.5 */  -khtml-box-shadow:0px 10px 20px #808080;  /* Konqueror */  filter:progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color="gray", Positive="true"); /* IE */}
+</style><style type="text/css">.CtxtMenu_MenuClose {  position:absolute;  cursor:pointer;  display:inline-block;  border:2px solid #AAA;  border-radius:18px;  -webkit-border-radius: 18px;             /* Safari and Chrome */  -moz-border-radius: 18px;                /* Firefox */  -khtml-border-radius: 18px;              /* Konqueror */  font-family: "Courier New", Courier;  font-size:24px;  color:#F0F0F0}
+.CtxtMenu_MenuClose span {  display:block; background-color:#AAA; border:1.5px solid;  border-radius:18px;  -webkit-border-radius: 18px;             /* Safari and Chrome */  -moz-border-radius: 18px;                /* Firefox */  -khtml-border-radius: 18px;              /* Konqueror */  line-height:0;  padding:8px 0 6px     /* may need to be browser-specific */}
+.CtxtMenu_MenuClose:hover {  color:white!important;  border:2px solid #CCC!important}
+.CtxtMenu_MenuClose:hover span {  background-color:#CCC!important}
+.CtxtMenu_MenuClose:hover:focus {  outline:none}
+</style><style type="text/css">.CtxtMenu_Menu {  position:absolute;  background-color:white;  color:black;  width:auto; padding:5px 0px;  border:1px solid #CCCCCC; margin:0; cursor:default;  font: menu; text-align:left; text-indent:0; text-transform:none;  line-height:normal; letter-spacing:normal; word-spacing:normal;  word-wrap:normal; white-space:nowrap; float:none; z-index:201;  border-radius: 5px;                     /* Opera 10.5 and IE9 */  -webkit-border-radius: 5px;             /* Safari and Chrome */  -moz-border-radius: 5px;                /* Firefox */  -khtml-border-radius: 5px;              /* Konqueror */  box-shadow:0px 10px 20px #808080;         /* Opera 10.5 and IE9 */  -webkit-box-shadow:0px 10px 20px #808080; /* Safari 3 & Chrome */  -moz-box-shadow:0px 10px 20px #808080;    /* Forefox 3.5 */  -khtml-box-shadow:0px 10px 20px #808080;  /* Konqueror */}
+.CtxtMenu_MenuItem {  padding: 1px 2em;  background:transparent;}
+.CtxtMenu_MenuArrow {  position:absolute; right:.5em; padding-top:.25em; color:#666666;  font-family: null; font-size: .75em}
+.CtxtMenu_MenuActive .CtxtMenu_MenuArrow {color:white}
+.CtxtMenu_MenuArrow.CtxtMenu_RTL {left:.5em; right:auto}
+.CtxtMenu_MenuCheck {  position:absolute; left:.7em;  font-family: null}
+.CtxtMenu_MenuCheck.CtxtMenu_RTL { right:.7em; left:auto }
+.CtxtMenu_MenuRadioCheck {  position:absolute; left: .7em;}
+.CtxtMenu_MenuRadioCheck.CtxtMenu_RTL {  right: .7em; left:auto}
+.CtxtMenu_MenuInputBox {  padding-left: 1em; right:.5em; color:#666666;  font-family: null;}
+.CtxtMenu_MenuInputBox.CtxtMenu_RTL {  left: .1em;}
+.CtxtMenu_MenuComboBox {  left:.1em; padding-bottom:.5em;}
+.CtxtMenu_MenuSlider {  left: .1em;}
+.CtxtMenu_SliderValue {  position:absolute; right:.1em; padding-top:.25em; color:#333333;  font-size: .75em}
+.CtxtMenu_SliderBar {  outline: none; background: #d3d3d3}
+.CtxtMenu_MenuLabel {  padding: 1px 2em 3px 1.33em;  font-style:italic}
+.CtxtMenu_MenuRule {  border-top: 1px solid #DDDDDD;  margin: 4px 3px;}
+.CtxtMenu_MenuDisabled {  color:GrayText}
+.CtxtMenu_MenuActive {  background-color: #606872;  color: white;}
+.CtxtMenu_MenuDisabled:focus {  background-color: #E8E8E8}
+.CtxtMenu_MenuLabel:focus {  background-color: #E8E8E8}
+.CtxtMenu_ContextMenu:focus {  outline:none}
+.CtxtMenu_ContextMenu .CtxtMenu_MenuItem:focus {  outline:none}
+.CtxtMenu_SelectionMenu {  position:relative; float:left;  border-bottom: none; -webkit-box-shadow:none; -webkit-border-radius:0px; }
+.CtxtMenu_SelectionItem {  padding-right: 1em;}
+.CtxtMenu_Selection {  right: 40%; width:50%; }
+.CtxtMenu_SelectionBox {  padding: 0em; max-height:20em; max-width: none;  background-color:#FFFFFF;}
+.CtxtMenu_SelectionDivider {  clear: both; border-top: 2px solid #000000;}
+.CtxtMenu_Menu .CtxtMenu_MenuClose {  top:-10px; left:-10px}
+</style></head><body class="js-on" itemscope="" itemtype="http://schema.org/Organization"><a id="back-to-top-target" tabindex="-1"></a><!-- Google Tag Manager (noscript) --><noscript></noscript><!-- End Google Tag Manager (noscript) --><div class="content-grid"><nav aria-label="Skip links" class="header__skip"><a class="sr-skip sr-skip--static" href="#skip-to-content-link-target"><span class="sr-skip__text">Skip to content</span></a></nav><!-- Header starts --><header class="content-grid__full-width" role="banner"><div class="dgh-showgrid tgh-showgrid cf" name="contentCol"><nav aria-label="Site" class="wd-main-nav"><a aria-label="Menu" class="nav-top-link" href="#sidr-main" id="simple-menu"><svg aria-hidden="true" class="fa-icon fa-icon--xlrg" focusable="false" role="img" viewbox="0 0 448 512" xmlns="http://www.w3.org/2000/svg"><!--bars--><!--!Font Awesome Free 6.5.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"></path></svg></a><a class="header-logo wd-header-graphic" href="/" itemprop="url"><meta content="IOPscience" itemprop="name"/><img alt="" height="15" src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPCEtLSBHZW5lcmF0b3I6IEFkb2JlIElsbHVzdHJhdG9yIDE4LjAuMCwgU1ZHIEV4cG9ydCBQbHVnLUluIC4gU1ZHIFZlcnNpb246IDYuMDAgQnVpbGQgMCkgIC0tPgo8IURPQ1RZUEUgc3ZnIFBVQkxJQyAiLS8vVzNDLy9EVEQgU1ZHIDEuMS8vRU4iICJodHRwOi8vd3d3LnczLm9yZy9HcmFwaGljcy9TVkcvMS4xL0RURC9zdmcxMS5kdGQiPgo8c3ZnIHZlcnNpb249IjEuMSIgaWQ9IkxheWVyXzEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4IgoJIHZpZXdCb3g9IjAgMCAyMDYuNSAzMS44IiBlbmFibGUtYmFja2dyb3VuZD0ibmV3IDAgMCAyMDYuNSAzMS44IiB4bWw6c3BhY2U9InByZXNlcnZlIj4KPGc+Cgk8Zz4KCQk8Zz4KCQkJPHBhdGggZmlsbD0iI0NDMDAwMCIgZD0iTTAsMzAuOVY0LjJoOC4ydjI2LjdIMHoiLz4KCQkJPHBhdGggZmlsbD0iI0NDMDAwMCIgZD0iTTI0LjQsMzEuM2MtOCwwLTEyLjctNi0xMi43LTEzLjdjMC03LjgsNC42LTEzLjgsMTIuOC0xMy44YzgsMCwxMi42LDUuOCwxMi42LDEzLjUKCQkJCUMzNy4xLDI1LDMyLjYsMzEuMywyNC40LDMxLjN6IE0yNC41LDkuOGMtMy43LDAtNCw1LjMtNCw3LjljMCwyLjYsMC4zLDcuNCwzLjksNy40YzMuOCwwLDMuOS00LjksMy45LTcuNnYtMC4zCgkJCQlDMjguMywxNC43LDI4LjIsOS44LDI0LjUsOS44eiIvPgoJCTwvZz4KCQk8Zz4KCQkJPHBhdGggZmlsbD0iI0NDMDAwMCIgZD0iTTUzLjUsMjEuMmgtNC42djkuN2gtOC4zVjQuMmgxMS40YzIuOSwwLDYsMC4yLDguMywyLjFjMiwxLjYsMywzLjksMyw2LjRDNjMuMiwxOC4zLDU4LjcsMjEuMiw1My41LDIxLjIKCQkJCXogTTUxLjcsMTAuM2gtM3Y1LjJoMi44YzEuOSwwLDMuNi0wLjQsMy42LTIuNkM1NS4xLDEwLjgsNTMuNSwxMC4zLDUxLjcsMTAuM3oiLz4KCQk8L2c+CgkJPGc+CgkJCTxwYXRoIGZpbGw9IiMwMDZFQjIiIGQ9Ik03NC43LDMxLjZjLTUuMSwwLTguMi0yLjMtOS4yLTcuM2wzLjUtMC44YzAuNywzLjMsMi41LDQuOSw1LjksNC45YzIuNSwwLDUuMS0xLjQsNS4xLTQuMgoJCQkJYzAtNC42LTguMi00LjMtMTEuNS03LjJjLTEuNC0xLjItMi4yLTMtMi4yLTQuOGMwLTQuNiw0LTcuNyw4LjQtNy43YzIuMywwLDQuNiwwLjgsNi4yLDIuNWMxLjEsMS4yLDEuNSwyLjQsMS45LDRsLTMuMywwLjgKCQkJCWMtMC44LTIuNC0yLjItNC4yLTUtNC4yYy0yLjMsMC00LjQsMS40LTQuNCwzLjljMCwyLjEsMS41LDMuMSwzLjMsMy42YzQuNCwxLjQsMTAuNSwyLjUsMTAuNSw4LjRDODQsMjguOSw3OS41LDMxLjYsNzQuNywzMS42eiIKCQkJCS8+CgkJCTxwYXRoIGZpbGw9IiMwMDZFQjIiIGQ9Ik0xMDMsMjguOWMtMS42LDItNC4yLDIuNy02LjYsMi43Yy03LjYsMC05LjMtNy4yLTkuMy0xMy40YzAtNi40LDEuOC0xMy43LDkuNi0xMy43YzIuMywwLDQuNCwwLjcsNiwyLjQKCQkJCWMxLjYsMS44LDIsNCwyLjUsNi4ybC0zLjgsMC44Yy0wLjUtMy4xLTAuOS02LjItNC44LTYuMmMtMy42LDAtNC41LDMtNC45LDZjLTAuMywxLjctMC4zLDMuNC0wLjMsNS4xYzAsMy43LDAuNCw5LjUsNS40LDkuNQoJCQkJYzMuNywwLDQuMy0zLjIsNC42LTYuMmwzLjgsMC41QzEwNC44LDI1LDEwNC41LDI3LDEwMywyOC45eiIvPgoJCQk8cGF0aCBmaWxsPSIjMDA2RUIyIiBkPSJNMTA5LjcsMzAuOVY1LjJoMy44djI1LjZIMTA5Ljd6Ii8+CgkJCTxwYXRoIGZpbGw9IiMwMDZFQjIiIGQ9Ik0xMjMsMTguNXYwLjJjMCw0LjEsMC43LDkuNyw1LjksOS43YzMuMywwLDQuNC0yLjMsNS4zLTUuMWwzLjUsMC44Yy0xLjIsNC42LTQsNy41LTguOSw3LjUKCQkJCWMtNy41LDAtOS44LTYuNy05LjgtMTMuMmMwLTYuMywyLjQtMTMuOSwxMC0xMy45YzMuMiwwLDUuOCwxLjUsNy4zLDQuM2MxLjgsMy4zLDEuOCw2LDEuOSw5LjdIMTIzeiBNMTI4LjUsNy43CgkJCQljLTQsMC01LDQuNC01LjQsNy42aDEwLjdDMTMzLjgsMTEuOSwxMzIuOCw3LjcsMTI4LjUsNy43eiIvPgoJCQk8cGF0aCBmaWxsPSIjMDA2RUIyIiBkPSJNMTU2LjYsMzAuOVYxNS4xYzAtMy4yLDAuNC03LjMtNC03LjNjLTUsMC01LjUsNS42LTUuNSw5LjN2MTMuOGgtMy44VjUuMmgzLjV2NGMxLjQtMy4xLDMuMS00LjcsNi42LTQuNwoJCQkJYzIsMCw0LjEsMC43LDUuNCwyLjJjMS43LDIuMSwxLjYsNS4zLDEuNiw3Ljh2MTYuM0gxNTYuNnoiLz4KCQkJPHBhdGggZmlsbD0iIzAwNkVCMiIgZD0iTTE4MS44LDI4LjljLTEuNiwyLTQuMiwyLjctNi42LDIuN2MtNy42LDAtOS4zLTcuMi05LjMtMTMuNGMwLTYuNCwxLjgtMTMuNyw5LjYtMTMuNwoJCQkJYzIuMywwLDQuNCwwLjcsNiwyLjRjMS42LDEuOCwyLDQsMi41LDYuMmwtMy44LDAuOGMtMC41LTMuMS0wLjktNi4yLTQuOC02LjJjLTMuNiwwLTQuNSwzLTQuOSw2Yy0wLjMsMS43LTAuMywzLjQtMC4zLDUuMQoJCQkJYzAsMy43LDAuNCw5LjUsNS40LDkuNWMzLjcsMCw0LjMtMy4yLDQuNi02LjJsMy44LDAuNUMxODMuNywyNSwxODMuMywyNywxODEuOCwyOC45eiIvPgoJCQk8cGF0aCBmaWxsPSIjMDA2RUIyIiBkPSJNMTkxLjMsMTguNXYwLjJjMCw0LjEsMC43LDkuNyw1LjksOS43YzMuMywwLDQuNC0yLjMsNS4zLTUuMWwzLjUsMC44Yy0xLjIsNC42LTQsNy41LTguOSw3LjUKCQkJCWMtNy41LDAtOS44LTYuNy05LjgtMTMuMmMwLTYuMywyLjQtMTMuOSwxMC0xMy45YzMuMiwwLDUuOCwxLjUsNy4zLDQuM2MxLjgsMy4zLDEuOCw2LDEuOSw5LjdIMTkxLjN6IE0xOTYuOCw3LjcKCQkJCWMtNCwwLTUsNC40LTUuNCw3LjZoMTAuN0MyMDIuMSwxMS45LDIwMSw3LjcsMTk2LjgsNy43eiIvPgoJCTwvZz4KCTwvZz4KCTxyZWN0IHg9IjEwOS43IiB5PSIwLjIiIGZpbGw9IiMwMDZFQjIiIHdpZHRoPSIzLjgiIGhlaWdodD0iMy40Ii8+CjwvZz4KPC9zdmc+Cg==" width="100"/><span class="offscreen-hidden">IOP Science home</span></a><ul class="nav__list" id="sidr"><li><a class="btn btn-default" href="/page/accessibility" id="accessibility-help">Accessibility Help</a></li><li class="nav-search nav-item"><svg class="fa-icon fa-icon--lrg" focusable="false" role="img" viewbox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><!--!Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><title>Search</title><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z"></path></svg><div class="nav-drop-down nav-drop-down--full-width" id="nav-dropdown-articlelookup"><div class="wrapper--search cf"><div class="wd-header-search art-lookup__search" id="search"><div aria-atomic="true" class="main-search-error-container ui-message-container" role="alert"></div><div class="art-lookup__fields-wrapper"><label for="quickSearch">Search all IOPscience content</label>Search</div></div><a class="search__lookup-link" href="/findcontent" role="menuitem">Article Lookup</a></div></div></li><li class="nav-journals nav-item wd-nav-journal">Journals<svg aria-hidden="true" class="fa-icon fa-icon--right fa-icon--flip" focusable="false" role="img" viewbox="0 0 320 512" xmlns="http://www.w3.org/2000/svg"><!--caret-down--><!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path d="M137.4 374.6c12.5 12.5 32.8 12.5 45.3 0l128-128c9.2-9.2 11.9-22.9 6.9-34.9s-16.6-19.8-29.6-19.8L32 192c-12.9 0-24.6 7.8-29.6 19.8s-2.2 25.7 6.9 34.9l128 128z"></path></svg><ul class="nav-drop-down wd-nav-journal-dd" id="nav-dropdown-journals"><li class="nav-drop-down__item"><a class="nav-drop-down__item-title" href="/journalList">Journals list</a><span class="nav-drop-down__item-info m-hide">Browse more than 100 science journal titles</span></li><li class="nav-drop-down__item"><a class="nav-drop-down__item-title" href="/page/subjects">Subject collections</a><span class="nav-drop-down__item-info m-hide">Read the very best research published in IOP journals</span></li><li class="nav-drop-down__item"><a class="nav-drop-down__item-title" href="/journalList?type=partner#js-tab-pubpart">Publishing partners</a><span class="nav-drop-down__item-info m-hide">Partner organisations and publications</span></li><li class="nav-drop-down__item"><a class="nav-drop-down__item-title" href="https://publishingsupport-iopscience-iop-org.libproxy.knu.ac.kr/open_access/">Open access</a><span class="nav-drop-down__item-info m-hide">IOP Publishing open access policy guide</span></li><li class="nav-drop-down__item"><a class="nav-drop-down__item-title" href="/conference-series">IOP Conference Series</a><span class="nav-drop-down__item-info m-hide">Read open access proceedings from science conferences worldwide</span></li></ul></li><li class="nav-books nav-item wd-nav-books"><a class="nav-top-link" href="/booklistinfo/home">Books</a></li><li class="nav-publishing-support nav-item wd-publishing-support"><a class="nav-top-link" href="https://publishingsupport-iopscience-iop-org.libproxy.knu.ac.kr">Publishing Support</a></li><!-- Header Login starts here --><li class="nav-login nav-item wd-nav-login"><svg aria-hidden="true" class="fa-icon fa-icon--left" focusable="false" role="img" viewbox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><!--circle-user--><!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path d="M399 384.2C376.9 345.8 335.4 320 288 320H224c-47.4 0-88.9 25.8-111 64.2c35.2 39.2 86.2 63.8 143 63.8s107.8-24.7 143-63.8zM0 256a256 256 0 1 1 512 0A256 256 0 1 1 0 256zm256 16a72 72 0 1 0 0-144 72 72 0 1 0 0 144z"></path></svg>Login<svg aria-hidden="true" class="fa-icon fa-icon--right fa-icon--flip" focusable="false" role="img" viewbox="0 0 320 512" xmlns="http://www.w3.org/2000/svg"><!--caret-down--><!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path d="M137.4 374.6c12.5 12.5 32.8 12.5 45.3 0l128-128c9.2-9.2 11.9-22.9 6.9-34.9s-16.6-19.8-29.6-19.8L32 192c-12.9 0-24.6 7.8-29.6 19.8s-2.2 25.7 6.9 34.9l128 128z"></path></svg><ul class="nav-drop-down wd-nav-login-dd" id="nav-dropdown-login"><li><a href="https://myiopscience-iop-org.libproxy.knu.ac.kr/signin?origin=a0&amp;idhub=true&amp;return=https%3A%2F%2Fiopscience-iop-org.libproxy.knu.ac.kr%2Fnsearch%3Fterms%3Dcomplexity" id="wd-login-link">IOPscience login / Sign Up</a></li></ul></li><!-- Header Login ends here --></ul></nav></div></header><div class="page-body"><div class="grid-2-col cf"><div class="search-results-columns"><main id="skip-to-content-link-target"><h1 class="mb-125" id="results-title">
+      The top 500 results for "complexity" are:
+    </h1><a aria-controls="search-filter-main" aria-expanded="false" class="btn btn-primary-2" href="#search-filter-main" id="search-filter-menu" role="button">Filters</a><div class="search-results-left mobile-visibility m-hide" id="search-filter"><a class="btn btn-default skip-to-results" href="#skip-to-results-link-target">Skip to results</a><h2 class="mt-0 mb-075 mobile-mt-2 replica-h3" id="search-facets-title">
+            Refine your search
+        </h2><fieldset class="facet"><legend class="facet__name">Date published</legend><label class="facet__option" for="anytime"><span>Anytime</span></label><label class="facet__option" for="lastThirtyDays"><span>The last month</span></label><label class="facet__option" for="lastTwelveMonths"><span>The last 12 months</span></label><label class="facet__option" for="lastFiveYears"><span>The last 5 years</span></label></fieldset><fieldset class="facet"><legend class="facet__name">Journals</legend><label class="offscreen-hidden" for="facetFilter">Search for Journal</label><label class="facet__option" for="2053-1583">
+      2D Materials
+    </label><label class="facet__option" for="3050-287X">
+      AI for Science
+    </label><label class="facet__option" for="1004-423X">
+      Acta Physica Sinica (Overseas Edition)
+    </label><label class="facet__option" for="2043-6262">
+      Advances in Natural Sciences: Nanoscience and Nanotechnology
+    </label><label class="facet__option" for="1882-0786">
+      Applied Physics Express
+    </label><div class="reveal-container reveal-closed reveal-enabled"><div class="reveal-content reveal-content--facet" id="facet-journals-content" style="display: none;"><label class="facet__option" for="1538-3881">
+      The Astronomical Journal
+    </label><label class="facet__option" for="0004-637X">
+      The Astrophysical Journal
+    </label><label class="facet__option" for="2041-8205">
+      The Astrophysical Journal Letters
+    </label><label class="facet__option" for="0067-0049">
+      The Astrophysical Journal Supplement Series
+    </label><label class="facet__option" for="1758-5090">
+      Biofabrication
+    </label><label class="facet__option" for="1748-3190">
+      Bioinspiration &amp; Biomimetics
+    </label><label class="facet__option" for="1748-605X">
+      Biomedical Materials
+    </label><label class="facet__option" for="2057-1976">
+      Biomedical Physics &amp; Engineering Express
+    </label><label class="facet__option" for="0508-3443">
+      British Journal of Applied Physics
+    </label><label class="facet__option" for="1009-9271">
+      Chinese Journal of Astronomy and Astrophysics 
+    </label><label class="facet__option" for="1674-0068">
+      Chinese Journal of Chemical Physics
+    </label><label class="facet__option" for="1009-1963">
+      Chinese Physics
+    </label><label class="facet__option" for="1674-1056">
+      Chinese Physics B
+    </label><label class="facet__option" for="1674-1137">
+      Chinese Physics C
+    </label><label class="facet__option" for="0256-307X">
+      Chinese Physics Letters
+    </label><label class="facet__option" for="0264-9381">
+      Classical and Quantum Gravity
+    </label><label class="facet__option" for="0143-0815">
+      Clinical Physics and Physiological Measurement
+    </label><label class="facet__option" for="1364-7830">
+      Combustion Theory and Modelling
+    </label><label class="facet__option" for="0253-6102">
+      Communications in Theoretical Physics
+    </label><label class="facet__option" for="1749-4699">
+      Computational Science &amp; Discovery
+    </label><label class="facet__option" for="2057-1739">
+      Convergent Science Physical Oncology
+    </label><label class="facet__option" for="0967-1846">
+      Distributed Systems Engineering
+    </label><label class="facet__option" for="2754-2734">
+      ECS Advances
+    </label><label class="facet__option" for="2162-8734">
+      ECS Electrochemistry Letters
+    </label><label class="facet__option" for="2162-8777">
+      ECS Journal of Solid State Science and Technology
+    </label><label class="facet__option" for="2151-2043">
+      ECS Meeting Abstracts
+    </label><label class="facet__option" for="2576-1579">
+      ECS Proceedings Volumes
+    </label><label class="facet__option" for="2754-2726">
+      ECS Sensors Plus
+    </label><label class="facet__option" for="2162-8750">
+      ECS Solid State Letters
+    </label><label class="facet__option" for="1938-5862">
+      ECS Transactions
+    </label><label class="facet__option" for="1944-8783">
+      The Electrochemical Society Interface
+    </label><label class="facet__option" for="1944-8775">
+      Electrochemical and Solid-State Letters
+    </label><label class="facet__option" for="2516-1075">
+      Electronic Structure
+    </label><label class="facet__option" for="2631-8695">
+      Engineering Research Express
+    </label><label class="facet__option" for="2515-7620">
+      Environmental Research Communications
+    </label><label class="facet__option" for="1748-9326">
+      Environmental Research Letters
+    </label><label class="facet__option" for="2752-5295">
+      Environmental Research: Climate
+    </label><label class="facet__option" for="2752-664X">
+      Environmental Research: Ecology
+    </label><label class="facet__option" for="2753-3751">
+      Environmental Research: Energy
+    </label><label class="facet__option" for="2976-601X">
+      Environmental Research: Food Systems
+    </label><label class="facet__option" for="2752-5309">
+      Environmental Research: Health
+    </label><label class="facet__option" for="2634-4505">
+      Environmental Research: Infrastructure and Sustainability
+    </label><label class="facet__option" for="3033-4942">
+      Environmental Research: Water
+    </label><label class="facet__option" for="0143-0807">
+      European Journal of Physics
+    </label><label class="facet__option" for="0295-5075">
+      Europhysics Letters
+    </label><label class="facet__option" for="2058-8585">
+      Flexible and Printed Electronics
+    </label><label class="facet__option" for="1873-7005">
+      Fluid Dynamics Research
+    </label><label class="facet__option" for="2631-6331">
+      Functional Composites and Structures
+    </label><label class="facet__option" for="1755-1315">
+      IOP Conference Series: Earth and Environmental Science
+    </label><label class="facet__option" for="1757-899X">
+      IOP Conference Series: Materials Science and Engineering
+    </label><label class="facet__option" for="2633-1357">
+      IOP SciNotes
+    </label><label class="facet__option" for="2631-7990">
+      International Journal of Extreme Manufacturing
+    </label><label class="facet__option" for="0266-5611">
+      Inverse Problems
+    </label><label class="facet__option" for="1064-5632">
+      Izvestiya: Mathematics
+    </label><label class="facet__option" for="1347-4065">
+      Japanese Journal of Applied Physics
+    </label><label class="facet__option" for="0141-5425">
+      Journal of Biomedical Engineering
+    </label><label class="facet__option" for="1752-7163">
+      Journal of Breath Research
+    </label><label class="facet__option" for="1475-7516">
+      Journal of Cosmology and Astroparticle Physics
+    </label><label class="facet__option" for="1742-2140">
+      Journal of Geophysics and Engineering
+    </label><label class="facet__option" for="1126-6708">
+      Journal of High Energy Physics
+    </label><label class="facet__option" for="1748-0221">
+      Journal of Instrumentation
+    </label><label class="facet__option" for="0960-1317">
+      Journal of Micromechanics and Microengineering
+    </label><label class="facet__option" for="1741-2552">
+      Journal of Neural Engineering
+    </label><label class="facet__option" for="0368-3281">
+      Journal of Nuclear Energy. Part C, Plasma Physics, Accelerators, Thermonuclear Research
+    </label><label class="facet__option" for="2040-8986">
+      Journal of Optics
+    </label><label class="facet__option" for="0150-536X">
+      Journal of Optics
+    </label><label class="facet__option" for="1464-4258">
+      Journal of Optics A: Pure and Applied Optics
+    </label><label class="facet__option" for="1464-4266">
+      Journal of Optics B: Quantum and Semiclassical Optics
+    </label><label class="facet__option" for="0305-4470">
+      Journal of Physics A: Mathematical and General
+    </label><label class="facet__option" for="1751-8121">
+      Journal of Physics A: Mathematical and Theoretical
+    </label><label class="facet__option" for="0301-0015">
+      Journal of Physics A: Mathematical, Nuclear and General
+    </label><label class="facet__option" for="0022-3700">
+      Journal of Physics B: Atomic and Molecular Physics
+    </label><label class="facet__option" for="0953-4075">
+      Journal of Physics B: Atomic, Molecular and Optical Physics
+    </label><label class="facet__option" for="0022-3719">
+      Journal of Physics C: Solid State Physics
+    </label><label class="facet__option" for="2399-6528">
+      Journal of Physics Communications
+    </label><label class="facet__option" for="0022-3727">
+      Journal of Physics D: Applied Physics
+    </label><label class="facet__option" for="0022-3735">
+      Journal of Physics E: Scientific Instruments
+    </label><label class="facet__option" for="0305-4608">
+      Journal of Physics F: Metal Physics
+    </label><label class="facet__option" for="0305-4616">
+      Journal of Physics G: Nuclear Physics
+    </label><label class="facet__option" for="0954-3899">
+      Journal of Physics G: Nuclear and Particle Physics
+    </label><label class="facet__option" for="2632-072X">
+      Journal of Physics: Complexity
+    </label><label class="facet__option" for="0953-8984">
+      Journal of Physics: Condensed Matter
+    </label><label class="facet__option" for="1742-6596">
+      Journal of Physics: Conference Series
+    </label><label class="facet__option" for="2515-7655">
+      Journal of Physics: Energy
+    </label><label class="facet__option" for="2515-7639">
+      Journal of Physics: Materials
+    </label><label class="facet__option" for="2515-7647">
+      Journal of Physics: Photonics
+    </label><label class="facet__option" for="0952-4746">
+      Journal of Radiological Protection
+    </label><label class="facet__option" for="3050-2454">
+      Journal of Reliability Science and Engineering
+    </label><label class="facet__option" for="0950-7671">
+      Journal of Scientific Instruments
+    </label><label class="facet__option" for="1674-4926">
+      Journal of Semiconductors
+    </label><label class="facet__option" for="1742-5468">
+      Journal of Statistical Mechanics: Theory and Experiment
+    </label><label class="facet__option" for="1945-7111">
+      Journal of The Electrochemical Society
+    </label><label class="facet__option" for="1468-5248">
+      Journal of Turbulence
+    </label><label class="facet__option" for="1555-6611">
+      Laser Physics
+    </label><label class="facet__option" for="1612-202X">
+      Laser Physics Letters
+    </label><label class="facet__option" for="3049-4753">
+      Machine Learning: Earth
+    </label><label class="facet__option" for="3049-4761">
+      Machine Learning: Engineering
+    </label><label class="facet__option" for="3049-477X">
+      Machine Learning: Health
+    </label><label class="facet__option" for="2632-2153">
+      Machine Learning: Science and Technology
+    </label><label class="facet__option" for="2752-5724">
+      Materials Futures
+    </label><label class="facet__option" for="2053-1591">
+      Materials Research Express
+    </label><label class="facet__option" for="2633-4356">
+      Materials for Quantum Technology
+    </label><label class="facet__option" for="0025-5726">
+      Mathematics of the USSR-Izvestiya
+    </label><label class="facet__option" for="0025-5734">
+      Mathematics of the USSR-Sbornik
+    </label><label class="facet__option" for="0957-0233">
+      Measurement Science and Technology
+    </label><label class="facet__option" for="1873-4030">
+      Medical Engineering &amp; Physics
+    </label><label class="facet__option" for="2050-6120">
+      Methods and Applications in Fluorescence
+    </label><label class="facet__option" for="0026-1394">
+      Metrologia
+    </label><label class="facet__option" for="0965-0393">
+      Modelling and Simulation in Materials Science and Engineering
+    </label><label class="facet__option" for="2399-7532">
+      Multifunctional Materials
+    </label><label class="facet__option" for="2632-959X">
+      Nano Express
+    </label><label class="facet__option" for="2399-1984">
+      Nano Futures
+    </label><label class="facet__option" for="0957-4484">
+      Nanotechnology
+    </label><label class="facet__option" for="0954-898X">
+      Network: Computation in Neural Systems
+    </label><label class="facet__option" for="2634-4386">
+      Neuromorphic Computing and Engineering
+    </label><label class="facet__option" for="1367-2630">
+      New Journal of Physics
+    </label><label class="facet__option" for="0951-7715">
+      Nonlinearity
+    </label><label class="facet__option" for="0029-5515">
+      Nuclear Fusion
+    </label><label class="facet__option" for="1402-4896">
+      Physica Scripta
+    </label><label class="facet__option" for="1478-3975">
+      Physical Biology
+    </label><label class="facet__option" for="0031-9112">
+      Physics Bulletin
+    </label><label class="facet__option" for="0031-9120">
+      Physics Education
+    </label><label class="facet__option" for="2058-7058">
+      Physics World
+    </label><label class="facet__option" for="0031-9155">
+      Physics in Medicine &amp; Biology
+    </label><label class="facet__option" for="0305-4624">
+      Physics in Technology
+    </label><label class="facet__option" for="1063-7869">
+      Physics-Uspekhi
+    </label><label class="facet__option" for="0967-3334">
+      Physiological Measurement
+    </label><label class="facet__option" for="2632-3338">
+      The Planetary Science Journal
+    </label><label class="facet__option" for="0741-3335">
+      Plasma Physics and Controlled Fusion
+    </label><label class="facet__option" for="2516-1067">
+      Plasma Research Express
+    </label><label class="facet__option" for="1009-0630">
+      Plasma Science and Technology
+    </label><label class="facet__option" for="0963-0252">
+      Plasma Sources Science and Technology
+    </label><label class="facet__option" for="0370-1328">
+      Proceedings of the Physical Society
+    </label><label class="facet__option" for="0959-5309">
+      Proceedings of the Physical Society
+    </label><label class="facet__option" for="1478-7814">
+      Proceedings of the Physical Society of London
+    </label><label class="facet__option" for="0370-1301">
+      Proceedings of the Physical Society. Section B
+    </label><label class="facet__option" for="2516-1091">
+      Progress in Biomedical Engineering
+    </label><label class="facet__option" for="2516-1083">
+      Progress in Energy
+    </label><label class="facet__option" for="0963-6625">
+      Public Understanding of Science
+    </label><label class="facet__option" for="1538-3873">
+      Publications of the Astronomical Society of the Pacific
+    </label><label class="facet__option" for="0963-9659">
+      Pure and Applied Optics: Journal of the European Optical Society Part A
+    </label><label class="facet__option" for="1469-7688">
+      Quantitative Finance
+    </label><label class="facet__option" for="1063-7818">
+      Quantum Electronics
+    </label><label class="facet__option" for="0954-8998">
+      Quantum Optics: Journal of the European Optical Society Part B
+    </label><label class="facet__option" for="2058-9565">
+      Quantum Science and Technology
+    </label><label class="facet__option" for="1355-5111">
+      Quantum and Semiclassical Optics: Journal of the European Optical Society Part B
+    </label><label class="facet__option" for="0034-4885">
+      Reports on Progress in Physics
+    </label><label class="facet__option" for="2515-5172">
+      Research Notes of the AAS
+    </label><label class="facet__option" for="1674-4527">
+      Research in Astronomy and Astrophysics
+    </label><label class="facet__option" for="0036-021X">
+      Russian Chemical Reviews
+    </label><label class="facet__option" for="0036-0279">
+      Russian Mathematical Surveys
+    </label><label class="facet__option" for="1064-5616">
+      Sbornik: Mathematics
+    </label><label class="facet__option" for="1468-6996">
+      Science and Technology of Advanced Materials
+    </label><label class="facet__option" for="0268-1242">
+      Semiconductor Science and Technology
+    </label><label class="facet__option" for="0964-1726">
+      Smart Materials and Structures
+    </label><label class="facet__option" for="0049-1748">
+      Soviet Journal of Quantum Electronics
+    </label><label class="facet__option" for="0038-5670">
+      Soviet Physics Uspekhi
+    </label><label class="facet__option" for="0953-2048">
+      Superconductor Science and Technology
+    </label><label class="facet__option" for="2051-672X">
+      Surface Topography: Metrology and Properties
+    </label><label class="facet__option" for="2977-3504">
+      Sustainability Science and Technology
+    </label><label class="facet__option" for="1945-6859">
+      Transactions of The Electrochemical Society
+    </label><label class="facet__option" for="2053-1613">
+      Translational Materials Research
+    </label><label class="facet__option" for="0959-7174">
+      Waves in Random Media
+    </label></div><svg aria-hidden="true" class="fa-icon fa-icon--left fa-icon--flip" focusable="false" role="img" viewbox="0 0 320 512" xmlns="http://www.w3.org/2000/svg"><!--caret-down--><!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path d="M137.4 374.6c12.5 12.5 32.8 12.5 45.3 0l128-128c9.2-9.2 11.9-22.9 6.9-34.9s-16.6-19.8-29.6-19.8L32 192c-12.9 0-24.6 7.8-29.6 19.8s-2.2 25.7 6.9 34.9l128 128z"></path></svg><span class="reveal-trigger-label">Show more</span></div></fieldset><fieldset class="facet"><legend class="facet__name">Publication type</legend><label class="facet__option" for="article">
+      Article (91548)
+    </label><label class="facet__option" for="chapter">
+      Chapter (2867)
+    </label><label class="facet__option" for="book">
+      Book (796)
+    </label></fieldset><fieldset class="facet"><legend class="facet__name">Open access</legend><label class="facet__option" for="open-access">
+      Open access only (34531)
+    </label></fieldset><div class="facets__buttons">ApplyReset</div></div><div class="search-results-right" id="skip-to-results-link-target" tabindex="-1"><ul class="selected-filter-list cf"><li class="small"><b>Within:</b></li><li class="small">Anytime</li></ul><div class="cf float-switch fs-srch-res-tools" id="wd-iop-col-2nd-controls"><span class="init-left"><small class="d-b mt-05"><b>Showing 1-10 of 500</b></small></span><div class="init-right"><a class="small mr-1 nowrap" href="/saveSearch?&amp;searchDatePeriod=anytime&amp;terms=complexity&amp;resultCount=500"><svg aria-hidden="true" class="fa-icon fa-icon--left" focusable="false" role="img" viewbox="0 0 448 512" xmlns="http://www.w3.org/2000/svg"><!--bell--><!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path d="M224 0c-17.7 0-32 14.3-32 32V51.2C119 66 64 130.6 64 208v18.8c0 47-17.3 92.4-48.5 127.6l-7.4 8.3c-8.4 9.4-10.4 22.9-5.3 34.4S19.4 416 32 416H416c12.6 0 24-7.4 29.2-18.9s3.1-25-5.3-34.4l-7.4-8.3C401.3 319.2 384 273.9 384 226.8V208c0-77.4-55-142-128-156.8V32c0-17.7-14.3-32-32-32zm45.3 493.3c12-12 18.7-28.3 18.7-45.3H224 160c0 17 6.7 33.3 18.7 45.3s28.3 18.7 45.3 18.7s33.3-6.7 45.3-18.7z"></path></svg>Email alert
+                    </a><a class="small mr-1 nowrap" href="/nsearch/rss?&amp;searchDatePeriod=anytime&amp;terms=complexity"><svg aria-hidden="true" class="fa-icon fa-icon--left" focusable="false" role="img" viewbox="0 0 448 512" xmlns="http://www.w3.org/2000/svg"><!--rss--><!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path d="M0 64C0 46.3 14.3 32 32 32c229.8 0 416 186.2 416 416c0 17.7-14.3 32-32 32s-32-14.3-32-32C384 253.6 226.4 96 32 96C14.3 96 0 81.7 0 64zM0 416a64 64 0 1 1 128 0A64 64 0 1 1 0 416zM32 160c159.1 0 288 128.9 288 288c0 17.7-14.3 32-32 32s-32-14.3-32-32c0-123.7-100.3-224-224-224c-17.7 0-32-14.3-32-32s14.3-32 32-32z"></path></svg>RSS search
+                    </a><span class="sortby-wrapper"><label class="mr-05 small" for="sortBy">Sort by: </label><select id="sortBy" name="orderBy"><option value="newest">Most recent</option><option value="oldest">Oldest</option><option selected="selected" value="relevance">Relevance</option></select>Update</span></div></div><ul class="art-list" id="wd-iop-col-art-list"><li class="art-list-item"><div class="eyebrow d-ib"><span>Journal article</span><span class="pipe">|</span><span class="offscreen-hidden">The following article is </span><span class="red">Open access</span></div><h2 class="art-list-item-title"><a href="/article/10.1088/1742-6596/1980/1/012017">Entropy-based economic complexity of China trade flows</a></h2><p class="small art-list-item-meta"><span><span itemprop="author" itemtype="http://schema.org/Person">Wenli Du</span>
+                and
+            <span itemprop="author" itemtype="http://schema.org/Person">Zhuoming Ren</span></span></p><p class="small art-list-item-meta">
+            2021<em> J. Phys.: Conf. Ser.</em><b> 1980</b> 012017
+             
+            <a class="mr-2" href="https://doi-org.libproxy.knu.ac.kr/10.1088/1742-6596/1980/1/012017">https://doi-org.libproxy.knu.ac.kr/10.1088/1742-6596/1980/1/012017</a></p><div class="reveal-container reveal-closed reveal-enabled"><div class="art-list-item-tools small"><a class="mr-2" href="article/10.1088/1742-6596/1980/1/012017/meta"><span class="icon-article"></span>View article<span class="offscreen-hidden">, Entropy-based economic complexity of China trade flows</span></a><a class="mr-2 nowrap" href="/article/10.1088/1742-6596/1980/1/012017/pdf" rel="noopener" target="_blank"><span class="icon-file-pdf"></span>PDF<span class="offscreen-hidden">, Entropy-based economic complexity of China trade flows</span></a><svg aria-hidden="true" class="fa-icon fa-icon--left fa-icon--flip" focusable="false" role="img" viewbox="0 0 320 512" xmlns="http://www.w3.org/2000/svg"><!--caret-down--><!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path d="M137.4 374.6c12.5 12.5 32.8 12.5 45.3 0l128-128c9.2-9.2 11.9-22.9 6.9-34.9s-16.6-19.8-29.6-19.8L32 192c-12.9 0-24.6 7.8-29.6 19.8s-2.2 25.7 6.9 34.9l128 128z"></path></svg><span class="reveal-trigger-label">Open abstract<span class="offscreen-hidden">, Entropy-based economic complexity of China trade flows</span></span></div><div class="reveal-content" id="revealContent-0" style="display: none;"><div class="article-text view-text-small"><p>The growing interest in the study of economic complexity has been motivated by the intrinsic features of statistical physics. Entropy is one of essential concepts in statistical physics and a particularly active concept for characterizing the complexity of a system. Motived by this, we propose a new method based on a function of the entropy to quantify economic complexity of China trade flows. We focus on regional economy activities, and collect China trade flows according to the database of national export and import items. Compared with classic economic complexity measurements including diversity and ubiquity, eigenvector-based complexity index, fitness and complexity index, Hirschman-Herfindahl index, the proposed method based on entropy can generate a proper ranking list when we take USA as a benchmark. Furthermore, the comparison of the main economic complexity statics also exposes that several of which performance moderate correlations. The stability of the ranking positions from the static evolution of the economic complexity over 8 years discloses that the index of economic complexity performs extremely sensitive depending on the eigenvector of the product network space. The results reveal that we should pay attention to the relationships between economic complexity methods when analysing the structural characteristics of economic entity activities.</p></div></div></div></li><li class="art-list-item"><div class="eyebrow d-ib"><span>Journal article</span><span class="pipe">|</span><span class="offscreen-hidden">The following article is </span><span class="red">Open access</span></div><h2 class="art-list-item-title"><a href="/article/10.1088/1755-1315/638/1/012036">Air traffic complexity evaluation with novel complexity features and mRMR-XGBoost</a></h2><p class="small art-list-item-meta"><span><span itemprop="author" itemtype="http://schema.org/Person">Minghua Zhang</span>,
+            <span itemprop="author" itemtype="http://schema.org/Person">Hua xie</span>,
+            <span itemprop="author" itemtype="http://schema.org/Person">Jiaming Ge</span>
+                and
+            <span itemprop="author" itemtype="http://schema.org/Person">Dongfang Zhang</span></span></p><p class="small art-list-item-meta">
+            2021<em> IOP Conf. Ser.: Earth Environ. Sci.</em><b> 638</b> 012036
+             
+            <a class="mr-2" href="https://doi-org.libproxy.knu.ac.kr/10.1088/1755-1315/638/1/012036">https://doi-org.libproxy.knu.ac.kr/10.1088/1755-1315/638/1/012036</a></p><div class="reveal-container reveal-closed reveal-enabled"><div class="art-list-item-tools small"><a class="mr-2" href="article/10.1088/1755-1315/638/1/012036/meta"><span class="icon-article"></span>View article<span class="offscreen-hidden">, Air traffic complexity evaluation with novel complexity features and mRMR-XGBoost</span></a><a class="mr-2 nowrap" href="/article/10.1088/1755-1315/638/1/012036/pdf" rel="noopener" target="_blank"><span class="icon-file-pdf"></span>PDF<span class="offscreen-hidden">, Air traffic complexity evaluation with novel complexity features and mRMR-XGBoost</span></a><svg aria-hidden="true" class="fa-icon fa-icon--left fa-icon--flip" focusable="false" role="img" viewbox="0 0 320 512" xmlns="http://www.w3.org/2000/svg"><!--caret-down--><!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path d="M137.4 374.6c12.5 12.5 32.8 12.5 45.3 0l128-128c9.2-9.2 11.9-22.9 6.9-34.9s-16.6-19.8-29.6-19.8L32 192c-12.9 0-24.6 7.8-29.6 19.8s-2.2 25.7 6.9 34.9l128 128z"></path></svg><span class="reveal-trigger-label">Open abstract<span class="offscreen-hidden">, Air traffic complexity evaluation with novel complexity features and mRMR-XGBoost</span></span></div><div class="reveal-content" id="revealContent-1" style="display: none;"><div class="article-text view-text-small"><p>Air traffic complexity evaluation is a critical problem in air traffic system operation, especially for air traffic safety and air traffic controller deployment. Many researches focus on using mathematical modeling or machine learning methods to evaluate air traffic complexity. However, there are still challenges in accurate evaluation, which is affected by lack of effective complexity related features and complicated feature-complexity relationship. Based on the existing complexity features, this paper proposes additional domain features, time-dependent features and data distribution features to construct a novel air traffic complexity feature set. A mRMR method for feature selection is then applied to filter out redundant features. Finally, the filtered feature set and corresponding air traffic complexity level are input into XGBoost model for learning the relationship, so as to achieve high-performance evaluation of air traffic complexity in the face of new air traffic data. The experimental results show that the proposed features are beneficial to the evaluation of air traffic complexity, and the XGBoost model with mRMR method can effectively select the important features and mine the relationships within air traffic complexity data, resulting in an improvement in overall evaluation performance by at least 5% while using less than half of the original number of features.</p></div></div></div></li><li class="art-list-item"><div class="eyebrow d-ib"><span>Journal article</span></div><h2 class="art-list-item-title"><a href="/article/10.1088/0305-4470/36/43/018">The role of the Becchi–Rouet–Stora–Tyutin supersymmetry in the calculation of the complexity for the Sherrington–Kirkpatrick model</a></h2><p class="small art-list-item-meta"><span><span itemprop="author" itemtype="http://schema.org/Person">Alessia Annibale</span>,
+            <span itemprop="author" itemtype="http://schema.org/Person">Andrea Cavagna</span>,
+            <span itemprop="author" itemtype="http://schema.org/Person">Irene Giardina</span>,
+            <span itemprop="author" itemtype="http://schema.org/Person">Giorgio Parisi</span>
+                and
+            <span itemprop="author" itemtype="http://schema.org/Person">Elisa Trevigne</span></span></p><p class="small art-list-item-meta">
+            2003<em> J. Phys. A: Math. Gen.</em><b> 36</b> 10937
+             
+            <a class="mr-2" href="https://doi-org.libproxy.knu.ac.kr/10.1088/0305-4470/36/43/018">https://doi-org.libproxy.knu.ac.kr/10.1088/0305-4470/36/43/018</a></p><div class="reveal-container reveal-closed reveal-enabled"><div class="art-list-item-tools small"><a class="mr-2" href="article/10.1088/0305-4470/36/43/018/meta"><span class="icon-article"></span>View article<span class="offscreen-hidden">, The role of the Becchi–Rouet–Stora–Tyutin supersymmetry in the calculation of the complexity for the Sherrington–Kirkpatrick model</span></a><a class="mr-2 nowrap" href="/article/10.1088/0305-4470/36/43/018/pdf" rel="noopener" target="_blank"><span class="icon-file-pdf"></span>PDF<span class="offscreen-hidden">, The role of the Becchi–Rouet–Stora–Tyutin supersymmetry in the calculation of the complexity for the Sherrington–Kirkpatrick model</span></a><svg aria-hidden="true" class="fa-icon fa-icon--left fa-icon--flip" focusable="false" role="img" viewbox="0 0 320 512" xmlns="http://www.w3.org/2000/svg"><!--caret-down--><!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path d="M137.4 374.6c12.5 12.5 32.8 12.5 45.3 0l128-128c9.2-9.2 11.9-22.9 6.9-34.9s-16.6-19.8-29.6-19.8L32 192c-12.9 0-24.6 7.8-29.6 19.8s-2.2 25.7 6.9 34.9l128 128z"></path></svg><span class="reveal-trigger-label">Open abstract<span class="offscreen-hidden">, The role of the Becchi–Rouet–Stora–Tyutin supersymmetry in the calculation of the complexity for the Sherrington–Kirkpatrick model</span></span></div><div class="reveal-content" id="revealContent-2" style="display: none;"><div class="article-text view-text-small"><p>The Becchi–Rouet–Stora–Tyutin (BRST) supersymmetry is a powerful tool for the calculation of the complexity of metastable states in glassy systems, and it is particularly useful to uncover the relationships between complexity and standard thermodynamics. In this work we compute the Thouless–Anderson–Palmer (TAP) complexity of the Sherrington–Kirkpatrick model at the quenched level, by using the BRST supersymmetry. We show that the complexity calculated at <i>K</i> steps of replica symmetry breaking is strictly related to the static free energy at <i>K</i> + 1 steps of replica symmetry breaking. The supersymmetry therefore provides a prescription to obtain the complexity of the TAP states from the standard static free energy, even in models which are solved by more than one step of replica symmetry breaking. This recipe states that the complexity is given by the Legendre transform of the static free energy, where the Legendre parameter is the largest replica symmetry breaking point of the overlap matrix.</p></div></div></div></li><li class="art-list-item"><div class="eyebrow d-ib"><span>Journal article</span></div><h2 class="art-list-item-title"><a href="/article/10.1088/1361-6579/ac13ce">Using complexity–entropy planes to detect Parkinson’s disease from short segments of haemodynamic signals</a></h2><p class="small art-list-item-meta"><span><span itemprop="author" itemtype="http://schema.org/Person">J L Jara</span>,
+            <span itemprop="author" itemtype="http://schema.org/Person">Catalina Morales-Rojas</span>,
+            <span itemprop="author" itemtype="http://schema.org/Person">Juan Fernández-Muñoz</span>,
+            <span itemprop="author" itemtype="http://schema.org/Person">Victoria J Haunton</span>
+                and
+            <span itemprop="author" itemtype="http://schema.org/Person">Max Chacón</span></span></p><p class="small art-list-item-meta">
+            2021<em> Physiol. Meas.</em><b> 42</b> 084002
+             
+            <a class="mr-2" href="https://doi-org.libproxy.knu.ac.kr/10.1088/1361-6579/ac13ce">https://doi-org.libproxy.knu.ac.kr/10.1088/1361-6579/ac13ce</a></p><div class="reveal-container reveal-closed reveal-enabled"><div class="art-list-item-tools small"><a class="mr-2" href="article/10.1088/1361-6579/ac13ce/meta"><span class="icon-article"></span>View article<span class="offscreen-hidden">, Using complexity–entropy planes to detect Parkinson’s disease from short segments of haemodynamic signals</span></a><a class="mr-2 nowrap" href="/article/10.1088/1361-6579/ac13ce/pdf" rel="noopener" target="_blank"><span class="icon-file-pdf"></span>PDF<span class="offscreen-hidden">, Using complexity–entropy planes to detect Parkinson’s disease from short segments of haemodynamic signals</span></a><svg aria-hidden="true" class="fa-icon fa-icon--left fa-icon--flip" focusable="false" role="img" viewbox="0 0 320 512" xmlns="http://www.w3.org/2000/svg"><!--caret-down--><!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path d="M137.4 374.6c12.5 12.5 32.8 12.5 45.3 0l128-128c9.2-9.2 11.9-22.9 6.9-34.9s-16.6-19.8-29.6-19.8L32 192c-12.9 0-24.6 7.8-29.6 19.8s-2.2 25.7 6.9 34.9l128 128z"></path></svg><span class="reveal-trigger-label">Open abstract<span class="offscreen-hidden">, Using complexity–entropy planes to detect Parkinson’s disease from short segments of haemodynamic signals</span></span></div><div class="reveal-content" id="revealContent-3" style="display: none;"><div class="article-text view-text-small"><p><i>Objective</i>. There is emerging evidence that analysing the entropy and complexity of biomedical signals can detect underlying changes in physiology which may be reflective of disease pathology. This approach can be used even when only short recordings of biomedical signals are available. This study aimed to determine whether entropy and complexity measures can detect differences between subjects with Parkinsons disease and healthy controls (HCs). <i>Approach</i>. A method based on a diagram of entropy versus complexity, named complexity–entropy plane, was used to re-analyse a dataset of cerebral haemodynamic signals from subjects with Parkinsons disease and HCs obtained under poikilocapnic conditions. A probability distribution for a set of ordinal patterns, designed to capture regularities in a time series, was computed from each signal under analysis. Four types of entropy and ten types of complexity measures were estimated from these distributions. Mean values of entropy and complexity were compared and their classification power was assessed by evaluating the best linear separator on the corresponding complexity–entropy planes. <i>Main results</i>. Few linear separators obtained significantly better classification, evaluated as the area under the receiver operating characteristic curve, than signal mean values. However, significant differences in both entropy and complexity were detected between the groups of participants. <i>Significance</i>. Measures of entropy and complexity were able to detect differences between healthy volunteers and subjects with Parkinson's disease, in poikilocapnic conditions, even though only short recordings were available for analysis. Further work is needed to refine this promising approach, and to help understand the findings in the context of specific pathophysiological changes.</p></div></div></div></li><li class="art-list-item"><div class="eyebrow d-ib"><span>Journal article</span></div><h2 class="art-list-item-title"><a href="/article/10.1088/1674-1056/adaccd">Multiscale structural complexity analysis of neuronal activity in suprachiasmatic nucleus: Insights from tetrodotoxin-induced disruptions</a></h2><p class="small art-list-item-meta"><span><span itemprop="author" itemtype="http://schema.org/Person">Ping Wang</span>,
+            <span itemprop="author" itemtype="http://schema.org/Person">萍 王</span>,
+            <span itemprop="author" itemtype="http://schema.org/Person">Changgui Gu</span>,
+            <span itemprop="author" itemtype="http://schema.org/Person">长贵 顾</span>,
+            <span itemprop="author" itemtype="http://schema.org/Person">Huijie Yang</span>
+                and
+            <span itemprop="author" itemtype="http://schema.org/Person">会杰 杨</span></span></p><p class="small art-list-item-meta">
+            2025<em> Chinese Phys. B</em><b> 34</b> 048701
+             
+            <a class="mr-2" href="https://doi-org.libproxy.knu.ac.kr/10.1088/1674-1056/adaccd">https://doi-org.libproxy.knu.ac.kr/10.1088/1674-1056/adaccd</a></p><div class="reveal-container reveal-closed reveal-enabled"><div class="art-list-item-tools small"><a class="mr-2" href="article/10.1088/1674-1056/adaccd/meta"><span class="icon-article"></span>View article<span class="offscreen-hidden">, Multiscale structural complexity analysis of neuronal activity in suprachiasmatic nucleus: Insights from tetrodotoxin-induced disruptions</span></a><a class="mr-2 nowrap" href="/article/10.1088/1674-1056/adaccd/pdf" rel="noopener" target="_blank"><span class="icon-file-pdf"></span>PDF<span class="offscreen-hidden">, Multiscale structural complexity analysis of neuronal activity in suprachiasmatic nucleus: Insights from tetrodotoxin-induced disruptions</span></a><svg aria-hidden="true" class="fa-icon fa-icon--left fa-icon--flip" focusable="false" role="img" viewbox="0 0 320 512" xmlns="http://www.w3.org/2000/svg"><!--caret-down--><!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path d="M137.4 374.6c12.5 12.5 32.8 12.5 45.3 0l128-128c9.2-9.2 11.9-22.9 6.9-34.9s-16.6-19.8-29.6-19.8L32 192c-12.9 0-24.6 7.8-29.6 19.8s-2.2 25.7 6.9 34.9l128 128z"></path></svg><span class="reveal-trigger-label">Open abstract<span class="offscreen-hidden">, Multiscale structural complexity analysis of neuronal activity in suprachiasmatic nucleus: Insights from tetrodotoxin-induced disruptions</span></span></div><div class="reveal-content" id="revealContent-4" style="display: none;"><div class="article-text view-text-small"><p>The suprachiasmatic nucleus in the hypothalamus is the master circadian clock in mammals, coordinating physiological processes with the 24-hour day–night cycle. Comprising various cell types, the suprachiasmatic nucleus (SCN) integrates environmental signals to maintain complex and robust circadian rhythms. Understanding the complexity and synchrony within SCN neurons is essential for effective circadian clock function. Synchrony involves coordinated neuronal firing for robust rhythms, while complexity reflects diverse activity patterns and interactions, indicating adaptability. Interestingly, the SCN retains circadian rhythms in vitro, demonstrating intrinsic rhythmicity. This study introduces the multiscale structural complexity method to analyze changes in SCN neuronal activity and complexity at macro and micro levels, based on Bagrov <i>et al</i>.’s approach. By examining structural complexity and local complexities across scales, we aim to understand how tetrodotoxin, a neurotoxin that inhibits action potentials, affects SCN neurons. Our method captures critical scales in neuronal interactions that traditional methods may overlook. Validation with the Goodwin model confirms the reliability of our observations. By integrating experimental data with theoretical models, this study provides new insights into the effects of tetrodotoxin (TTX) on neuronal complexities, contributing to the understanding of circadian rhythms.</p></div></div></div></li><li class="art-list-item"><div class="eyebrow d-ib"><span>Journal article</span></div><h2 class="art-list-item-title"><a href="/article/10.1088/1674-1137/ae9923">Astrophysical Aspects of Complexity Factor in Charged Compact Fluid Configuration in $f(R, G)$ Gravity</a></h2><p class="small art-list-item-meta"><span><span itemprop="author" itemtype="http://schema.org/Person">A. Rehman</span>,
+            <span itemprop="author" itemtype="http://schema.org/Person">Muhammad Yousaf</span>,
+            <span itemprop="author" itemtype="http://schema.org/Person">Mohammed Zakarya</span>,
+            <span itemprop="author" itemtype="http://schema.org/Person">Nadiah Zafer Al-Shehri</span>
+                and
+            <span itemprop="author" itemtype="http://schema.org/Person">Yakup Yildirim</span></span></p><p class="small art-list-item-meta">
+            2026<em> Chinese Phys. C</em><b></b> 
+             
+            <a class="mr-2" href="https://doi-org.libproxy.knu.ac.kr/10.1088/1674-1137/ae9923">https://doi-org.libproxy.knu.ac.kr/10.1088/1674-1137/ae9923</a></p><div class="reveal-container reveal-closed reveal-enabled"><div class="art-list-item-tools small"><a class="mr-2" href="article/10.1088/1674-1137/ae9923/meta"><span class="icon-article"></span>View article<span class="offscreen-hidden">, Astrophysical Aspects of Complexity Factor in Charged Compact Fluid Configuration in $f(R, G)$ Gravity</span></a><a class="mr-2 nowrap" href="/article/10.1088/1674-1137/ae9923/pdf" rel="noopener" target="_blank"><span class="icon-file-pdf"></span>PDF<span class="offscreen-hidden">, Astrophysical Aspects of Complexity Factor in Charged Compact Fluid Configuration in $f(R, G)$ Gravity</span></a><svg aria-hidden="true" class="fa-icon fa-icon--left fa-icon--flip" focusable="false" role="img" viewbox="0 0 320 512" xmlns="http://www.w3.org/2000/svg"><!--caret-down--><!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path d="M137.4 374.6c12.5 12.5 32.8 12.5 45.3 0l128-128c9.2-9.2 11.9-22.9 6.9-34.9s-16.6-19.8-29.6-19.8L32 192c-12.9 0-24.6 7.8-29.6 19.8s-2.2 25.7 6.9 34.9l128 128z"></path></svg><span class="reveal-trigger-label">Open abstract<span class="offscreen-hidden">, Astrophysical Aspects of Complexity Factor in Charged Compact Fluid Configuration in $f(R, G)$ Gravity</span></span></div><div class="reveal-content" id="revealContent-5" style="display: none;"><div class="article-text view-text-small"><p>{\color{blue} We are intended to evaluate the complexity of self-gravitational matter composition having anisotropic pressure and the electric field.} The modified field equations associated with the $f(R, G)$ gravity having the effect of electric charge and the expressions for the mass function are derived, where {\color{blue} $R$ is Ricci scalar and $G$ represents the Gauss-Bonnet invariant.} The concept of complexity suggested by Herrera and his collaborators in 2018 which is further elaborated within the context of a charged cylindrically symmetric system after considering the framework of $f(R, G)$ theory and carrying out a comprehensive evaluation on the orthogonal splitting of the Riemann curvature tensor. Among the derived scalars $Y_{TF}$ is referred as the complexity factor, that includes the impacts of specific intrinsic features of the fluid, such as variations in energy density, anisotropic pressure, and the electric charge. Furthermore, the results obtained in the presence of additional curvature terms corresponding to $f(R, G)$ gravity are studied through the establishment of a relationship between Tolman mass, Weyl scalar, and the complexity factor.&amp;#xD;This analysis is relevant from a astrophysical perspective, since compact stellar interiors are expected to involve dense matter, pressure anisotropy, electromagnetic effects and strong-field relativistic corrections, while in this context, the complexity factor \(Y_{TF}\) provides a geometric diagnostic for measuring how density inhomogeneity, local anisotropy, charge distribution and modified Gauss-Bonnet corrections influence the internal organization and stability of neutron-star-like compact configurations. The consideration of polytropic equation of state further connects the proposed scenario with effective modeling of dense compact-star matter.</p></div></div></div></li><li class="art-list-item"><div class="eyebrow d-ib"><span>Journal article</span><span class="pipe">|</span><span class="offscreen-hidden">The following article is </span><span class="red">Open access</span></div><h2 class="art-list-item-title"><a href="/article/10.1088/1742-6596/1624/3/032027">Variation Characteristics and Complexity Measurement of Urban Precipitation Based on Multi-scale Permutation Entropy</a></h2><p class="small art-list-item-meta"><span><span itemprop="author" itemtype="http://schema.org/Person">Dong Liu</span>,
+            <span itemprop="author" itemtype="http://schema.org/Person">Tingqi Yan</span>,
+            <span itemprop="author" itemtype="http://schema.org/Person">Sicheng Liu</span>
+                and
+            <span itemprop="author" itemtype="http://schema.org/Person">Ge Yan</span></span></p><p class="small art-list-item-meta">
+            2020<em> J. Phys.: Conf. Ser.</em><b> 1624</b> 032027
+             
+            <a class="mr-2" href="https://doi-org.libproxy.knu.ac.kr/10.1088/1742-6596/1624/3/032027">https://doi-org.libproxy.knu.ac.kr/10.1088/1742-6596/1624/3/032027</a></p><div class="reveal-container reveal-closed reveal-enabled"><div class="art-list-item-tools small"><a class="mr-2" href="article/10.1088/1742-6596/1624/3/032027/meta"><span class="icon-article"></span>View article<span class="offscreen-hidden">, Variation Characteristics and Complexity Measurement of Urban Precipitation Based on Multi-scale Permutation Entropy</span></a><a class="mr-2 nowrap" href="/article/10.1088/1742-6596/1624/3/032027/pdf" rel="noopener" target="_blank"><span class="icon-file-pdf"></span>PDF<span class="offscreen-hidden">, Variation Characteristics and Complexity Measurement of Urban Precipitation Based on Multi-scale Permutation Entropy</span></a><svg aria-hidden="true" class="fa-icon fa-icon--left fa-icon--flip" focusable="false" role="img" viewbox="0 0 320 512" xmlns="http://www.w3.org/2000/svg"><!--caret-down--><!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path d="M137.4 374.6c12.5 12.5 32.8 12.5 45.3 0l128-128c9.2-9.2 11.9-22.9 6.9-34.9s-16.6-19.8-29.6-19.8L32 192c-12.9 0-24.6 7.8-29.6 19.8s-2.2 25.7 6.9 34.9l128 128z"></path></svg><span class="reveal-trigger-label">Open abstract<span class="offscreen-hidden">, Variation Characteristics and Complexity Measurement of Urban Precipitation Based on Multi-scale Permutation Entropy</span></span></div><div class="reveal-content" id="revealContent-6" style="display: none;"><div class="article-text view-text-small"><p>In order to better judge the complexity of precipitation, this paper took some major cities of Heilongjiang Province as the research object, and used the Mann-Kendall test and multi-scale permutation entropy theory to study the complexity of precipitation. The results show that there are many sudden change points of precipitation in cities in Heilongjiang Province, which have a strong complexity, which can provide a basis for the study of precipitation complexity. Among urban precipitation, the complexity of precipitation in Hegang City is the strongest, and the complexity of precipitation in Daxinganling is the weakest. Among them, water resources and living area have a significant impact on the precipitation complexity. This study can provide a new method for studying hydrological changes and complexity intensity in the future.</p></div></div></div></li><li class="art-list-item"><div class="eyebrow d-ib"><span>Journal article</span><span class="pipe">|</span><span class="offscreen-hidden">The following article is </span><span class="red">Open access</span></div><h2 class="art-list-item-title"><a href="/article/10.1088/1742-6596/2333/1/012006">Complexity of the Operation Graphs on Cycle and Complete Graph</a></h2><p class="small art-list-item-meta"><span><span itemprop="author" itemtype="http://schema.org/Person">Yalong Wu</span>
+                and
+            <span itemprop="author" itemtype="http://schema.org/Person">Haizhen Ren</span></span></p><p class="small art-list-item-meta">
+            2022<em> J. Phys.: Conf. Ser.</em><b> 2333</b> 012006
+             
+            <a class="mr-2" href="https://doi-org.libproxy.knu.ac.kr/10.1088/1742-6596/2333/1/012006">https://doi-org.libproxy.knu.ac.kr/10.1088/1742-6596/2333/1/012006</a></p><div class="reveal-container reveal-closed reveal-enabled"><div class="art-list-item-tools small"><a class="mr-2" href="article/10.1088/1742-6596/2333/1/012006/meta"><span class="icon-article"></span>View article<span class="offscreen-hidden">, Complexity of the Operation Graphs on Cycle and Complete Graph</span></a><a class="mr-2 nowrap" href="/article/10.1088/1742-6596/2333/1/012006/pdf" rel="noopener" target="_blank"><span class="icon-file-pdf"></span>PDF<span class="offscreen-hidden">, Complexity of the Operation Graphs on Cycle and Complete Graph</span></a><svg aria-hidden="true" class="fa-icon fa-icon--left fa-icon--flip" focusable="false" role="img" viewbox="0 0 320 512" xmlns="http://www.w3.org/2000/svg"><!--caret-down--><!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path d="M137.4 374.6c12.5 12.5 32.8 12.5 45.3 0l128-128c9.2-9.2 11.9-22.9 6.9-34.9s-16.6-19.8-29.6-19.8L32 192c-12.9 0-24.6 7.8-29.6 19.8s-2.2 25.7 6.9 34.9l128 128z"></path></svg><span class="reveal-trigger-label">Open abstract<span class="offscreen-hidden">, Complexity of the Operation Graphs on Cycle and Complete Graph</span></span></div><div class="reveal-content" id="revealContent-7" style="display: none;"><div class="article-text view-text-small"><p>The number of spanning trees (or complexity) of a graph can be used to measure the reliabilities of network and circuit design. Although many NP hard problems are related to the complexity of graphs, there are explicit formulas for the complexity of some specific graph classes. This paper mainly studies the explicit expression of the complexity of graphs obtained by graph operations. Through classical graph operations, we obtain some operation graphs generated by cycle and complete graph, and get the closed formulas for the complexity in these operation graphs. Compared with Daoud’s results, we obtain some interesting algebraic properties about the complexity of operation graphs.</p></div></div></div></li><li class="art-list-item"><div class="eyebrow d-ib"><span>Journal article</span></div><h2 class="art-list-item-title"><a href="/article/10.1088/1751-8121/aa95f4">Biparametric complexities and generalized Planck radiation law</a></h2><p class="small art-list-item-meta"><span><span itemprop="author" itemtype="http://schema.org/Person">David Puertas-Centeno</span>,
+            <span itemprop="author" itemtype="http://schema.org/Person">I V Toranzo</span>
+                and
+            <span itemprop="author" itemtype="http://schema.org/Person">J S Dehesa</span></span></p><p class="small art-list-item-meta">
+            2017<em> J. Phys. A: Math. Theor.</em><b> 50</b> 505001
+             
+            <a class="mr-2" href="https://doi-org.libproxy.knu.ac.kr/10.1088/1751-8121/aa95f4">https://doi-org.libproxy.knu.ac.kr/10.1088/1751-8121/aa95f4</a></p><div class="reveal-container reveal-closed reveal-enabled"><div class="art-list-item-tools small"><a class="mr-2" href="article/10.1088/1751-8121/aa95f4/meta"><span class="icon-article"></span>View article<span class="offscreen-hidden">, Biparametric complexities and generalized Planck radiation law</span></a><a class="mr-2 nowrap" href="/article/10.1088/1751-8121/aa95f4/pdf" rel="noopener" target="_blank"><span class="icon-file-pdf"></span>PDF<span class="offscreen-hidden">, Biparametric complexities and generalized Planck radiation law</span></a><svg aria-hidden="true" class="fa-icon fa-icon--left fa-icon--flip" focusable="false" role="img" viewbox="0 0 320 512" xmlns="http://www.w3.org/2000/svg"><!--caret-down--><!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path d="M137.4 374.6c12.5 12.5 32.8 12.5 45.3 0l128-128c9.2-9.2 11.9-22.9 6.9-34.9s-16.6-19.8-29.6-19.8L32 192c-12.9 0-24.6 7.8-29.6 19.8s-2.2 25.7 6.9 34.9l128 128z"></path></svg><span class="reveal-trigger-label">Open abstract<span class="offscreen-hidden">, Biparametric complexities and generalized Planck radiation law</span></span></div><div class="reveal-content" id="revealContent-8" style="display: none;"><div class="article-text view-text-small"><p>Complexity theory embodies some of the hardest, most fundamental and most challenging open problems in modern science. The very term <i>complexity</i> is very elusive, so the main goal of this theory is to find meaningful quantifiers for it. In fact, we need various measures to take into account the multiple facets of this term. Here, some biparametric Crámer–Rao and Heisenberg–Rényi measures of complexity of continuous probability distributions are defined and discussed. Then, they are applied to blackbody radiation at temperature <i>T</i> in a <i>d</i>-dimensional universe. It is found that these dimensionless quantities do not depend on <i>T</i> nor on any physical constants. So, they have a universal character in the sense that they only depend on spatial dimensionality. To determine these complexity quantifiers, we have calculated their dispersion (typical deviations) and entropy (Rényi entropies and the generalized Fisher information) constituents. They are found to have a temperature-dependent behavior similar to the celebrated Wien’s displacement law of the dominant frequency <span class="inline-eqn" xmlns:xlink="http://www.w3.org/1999/xlink"><span class="tex"><span class="texImage" style="display: none;"><img align="top" alt="$\nu_{\rm max}$ " role="math" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=" style="max-width: 100%;"/></span><script type="math/tex">\nu_{\rm max}</script></span></span> at which the spectrum reaches its maximum. Moreover, they allow us to gain insights into new aspects of the <i>d</i>-dimensional blackbody spectrum and the quantification of quantum effects associated with space dimensionality.</p></div></div></div></li><li class="art-list-item"><div class="eyebrow d-ib"><span>Journal article</span></div><h2 class="art-list-item-title"><a href="/article/10.1088/1751-8121/ab8e66">Aspects of the first law of complexity</a></h2><p class="small art-list-item-meta"><span><span itemprop="author" itemtype="http://schema.org/Person">Alice Bernamonti</span>,
+            <span itemprop="author" itemtype="http://schema.org/Person">Federico Galli</span>,
+            <span itemprop="author" itemtype="http://schema.org/Person">Juan Hernandez</span>,
+            <span itemprop="author" itemtype="http://schema.org/Person">Robert C Myers</span>,
+            <span itemprop="author" itemtype="http://schema.org/Person">Shan-Ming Ruan</span>
+                and
+            <span itemprop="author" itemtype="http://schema.org/Person">Joan Simón</span></span></p><p class="small art-list-item-meta">
+            2020<em> J. Phys. A: Math. Theor.</em><b> 53</b> 294002
+             
+            <a class="mr-2" href="https://doi-org.libproxy.knu.ac.kr/10.1088/1751-8121/ab8e66">https://doi-org.libproxy.knu.ac.kr/10.1088/1751-8121/ab8e66</a></p><div class="reveal-container reveal-closed reveal-enabled"><div class="art-list-item-tools small"><a class="mr-2" href="article/10.1088/1751-8121/ab8e66/meta"><span class="icon-article"></span>View article<span class="offscreen-hidden">, Aspects of the first law of complexity</span></a><a class="mr-2 nowrap" href="/article/10.1088/1751-8121/ab8e66/pdf" rel="noopener" target="_blank"><span class="icon-file-pdf"></span>PDF<span class="offscreen-hidden">, Aspects of the first law of complexity</span></a><svg aria-hidden="true" class="fa-icon fa-icon--left fa-icon--flip" focusable="false" role="img" viewbox="0 0 320 512" xmlns="http://www.w3.org/2000/svg"><!--caret-down--><!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path d="M137.4 374.6c12.5 12.5 32.8 12.5 45.3 0l128-128c9.2-9.2 11.9-22.9 6.9-34.9s-16.6-19.8-29.6-19.8L32 192c-12.9 0-24.6 7.8-29.6 19.8s-2.2 25.7 6.9 34.9l128 128z"></path></svg><span class="reveal-trigger-label">Open abstract<span class="offscreen-hidden">, Aspects of the first law of complexity</span></span></div><div class="reveal-content" id="revealContent-9" style="display: none;"><div class="article-text view-text-small"><p>We investigate the first law of complexity proposed in Bernamonti <i>et al</i> (2019 <i>Phys. Rev. Lett.</i><b>123</b> 081601), i.e., the variation of complexity when the target state is perturbed, in more detail. Based on Nielsen’s geometric approach to quantum circuit complexity, we find the variation only depends on the end of the optimal circuit. We apply the first law to gain new insights into the quantum circuits and complexity models underlying holographic complexity. In particular, we examine the variation of the holographic complexity for both the complexity = action and complexity = volume conjectures in perturbing the AdS vacuum with coherent state excitations of a free scalar field. We also examine the variations of circuit complexity produced by the same excitations for the free scalar field theory in a fixed AdS background. In this case, our work extends the existing treatment of Gaussian coherent states to properly include the time dependence of the complexity variation. We comment on the similarities and differences of the holographic and QFT results.</p></div></div></div></li></ul><div class="pagination" id="wd-lst-bottom-controls"><div class="pagination__page-length"><label class="mr-025" for="pageLength">Results per page</label><select id="pageLength" name="pageLength"><option selected="selected" value="10">10</option><option value="20">20</option><option value="50">50</option></select>Update</div><div class="pagination__nav"><div class="pagination__sub-grid"><div class="srchPgCounter"><span class="pagination__pages small">Page: 1 of 50</span><svg class="fa-icon fa-icon--right" focusable="false" role="img" viewbox="0 0 448 512" xmlns="http://www.w3.org/2000/svg"><!--arrow-right--><!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><title>Next 10 results</title><path d="M438.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-160-160c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L338.8 224 32 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l306.7 0L233.4 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l160-160z"></path></svg></div><div class="pagination-numbers"><div class="pagination__results-numbers"><span class="small">1-10 of 500 results</span></div></div></div></div></div></div></main></div></div></div><div class="data-header-anchor" id="exp"></div><footer class="footer content-grid__full-width" role="contentinfo"><nav aria-label="Further resources" class="footer__grid"><div><h2 class="footer__heading">IOPscience</h2><ul class="footer__list"><li class="footer__item"><a class="link--colour--white" href="/journalList">Journals</a></li><li class="footer__item"><a class="link--colour--white" href="/booklistinfo/home">Books</a></li><li class="footer__item"><a class="link--colour--white" href="/conference-series">IOP Conference Series</a></li><li class="footer__item"><a class="link--colour--white" href="/page/aboutiopscience">About IOPscience</a></li><li class="footer__item"><a class="link--colour--white" href="https://ioppublishing-org.libproxy.knu.ac.kr/about-us/contact-us/">Contact Us</a></li><li class="footer__item"><a class="link--colour--white" href="/info/page/developing-countries-access">Developing countries access</a></li><li class="footer__item"><a class="link--colour--white" href="https://publishingsupport-iopscience-iop-org.libproxy.knu.ac.kr/open_access/">IOP Publishing open access policy</a></li><li class="footer__item"><a class="link--colour--white" href="/page/accessibility">Accessibility</a></li></ul></div><div><h2 class="footer__heading">IOP Publishing</h2><ul class="footer__list"><li class="footer__item"><a class="link--colour--white" href="https://ioppublishing-org.libproxy.knu.ac.kr/legal/copyright/">Copyright 2024 IOP Publishing</a></li><li class="footer__item"><a class="link--colour--white" href="/page/terms">Terms and Conditions</a></li><li class="footer__item"><a class="link--colour--white" href="/page/disclaimer">Disclaimer</a></li><li class="footer__item"><a class="link--colour--white" href="https://ioppublishing-org.libproxy.knu.ac.kr/legal/privacy-cookies-policy/">Privacy and Cookie Policy</a></li><li class="footer__item"><a class="link--colour--white" href="https://ioppublishing-org.libproxy.knu.ac.kr/legal/textanddataminingpolicy/">Text and Data mining policy</a></li></ul><h2 class="footer__heading">Publishing Support</h2><ul class="footer__list"><li class="footer__item"><a class="link--colour--white" href="https://publishingsupport-iopscience-iop-org.libproxy.knu.ac.kr/">Authors</a></li><li class="footer__item"><a class="link--colour--white" href="https://publishingsupport-iopscience-iop-org.libproxy.knu.ac.kr/publishing-support/reviewers/">Reviewers</a></li><li class="footer__item"><a class="link--colour--white" href="https://publishingsupport-iopscience-iop-org.libproxy.knu.ac.kr/publishing-support/organisers/">Conference Organisers</a></li></ul></div><div><h2 class="footer__heading">About IOP Publishing</h2><span>
+                    IOP Publishing, the publishing arm of the Institute of Physics, is a purpose-led, not-for-profit, society-owned scientific publisher. We publish high-quality, trusted, peer-reviewed research in over 100 scientific journals on our IOPscience platform, providing visibility, recognition, and impact for work across the physical sciences.
+                </span></div></nav><div class="footer__notice"><div class="footer__notice-inner"><div class="footer__socials"><a href="https://ioppublishing-org.libproxy.knu.ac.kr/"><img alt="IOP Publishing" class="footer__social-logo" src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPCEtLSBHZW5lcmF0b3I6IEFkb2JlIElsbHVzdHJhdG9yIDE4LjEuMCwgU1ZHIEV4cG9ydCBQbHVnLUluIC4gU1ZHIFZlcnNpb246IDYuMDAgQnVpbGQgMCkgIC0tPgo8c3ZnIHZlcnNpb249IjEuMSIgaWQ9IkxheWVyXzEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4IgoJIHZpZXdCb3g9IjAgMCAxOTAuNyAyOS44IiBlbmFibGUtYmFja2dyb3VuZD0ibmV3IDAgMCAxOTAuNyAyOS44IiB4bWw6c3BhY2U9InByZXNlcnZlIj4KPHBhdGggZmlsbD0iI2ViMWIyNCIgZD0iTTAsMjMuM1YwLjNoNy4xdjIyLjlIMHoiLz4KPHBhdGggZmlsbD0iI2ViMWIyNCIgZD0iTTIwLjUsMjMuNmMtNi45LDAtMTAuOS01LjItMTAuOS0xMS44YzAtNi43LDQtMTEuOCwxMS0xMS44YzYuOSwwLDEwLjgsNSwxMC44LDExLjYKCUMzMS40LDE4LjIsMjcuNSwyMy42LDIwLjUsMjMuNnogTTIwLjYsNS4yYy0zLjIsMC0zLjUsNC41LTMuNSw2LjhjMCwyLjMsMC4yLDYuNCwzLjQsNi40YzMuMywwLDMuMy00LjIsMy4zLTYuNXYtMC4yCglDMjMuOCw5LjQsMjMuOCw1LjIsMjAuNiw1LjJ6Ii8+CjxwYXRoIGZpbGw9IiNlYjFiMjQiIGQ9Ik00NSwxNWgtNHY4LjNoLTcuMVYwLjNoOS44YzIuNSwwLDUuMiwwLjIsNy4yLDEuOGMxLjcsMS40LDIuNSwzLjMsMi41LDUuNUM1My40LDEyLjUsNDkuNSwxNSw0NSwxNXoKCSBNNDMuNSw1LjZoLTIuNlYxMGgyLjRjMS42LDAsMy4xLTAuMywzLjEtMi4zQzQ2LjMsNiw0NSw1LjYsNDMuNSw1LjZ6Ii8+CjxnPgoJPHBhdGggZmlsbD0iI0ZGRkZGRiIgZD0iTTcyLjUsMTMuNGMtMiwwLjctNC4zLDAuNS02LjQsMC41djkuM2gtMi44VjAuM2g0LjljMi40LDAsNC44LDAuMiw2LjYsMmMxLjIsMS4zLDEuOCwzLjEsMS44LDQuOAoJCUM3Ni42LDEwLjEsNzUuMywxMi41LDcyLjUsMTMuNHogTTY5LjcsMi42aC0zLjZ2OWgyLjFjMy4zLDAsNS40LTAuNiw1LjQtNC40QzczLjcsNC43LDcyLjQsMi42LDY5LjcsMi42eiIvPgoJPHBhdGggZmlsbD0iI0ZGRkZGRiIgZD0iTTg4LjUsMjMuM3YtMi41Yy0xLDItMi4xLDMtNC40LDNjLTEuMiwwLTIuNS0wLjMtMy4zLTEuM2MtMS4zLTEuNC0xLjItMy43LTEuMi01LjVWNi4zaDIuNXYxMS4zCgkJYzAsMiwwLDQsMi42LDRjMS44LDAsMi44LTEuMywzLjMtMi45YzAuNS0xLjUsMC40LTMuMSwwLjQtNC43VjYuM2gyLjV2MTYuOUg4OC41eiIvPgoJPHBhdGggZmlsbD0iI0ZGRkZGRiIgZD0iTTEwMS43LDIzLjZjLTIuMywwLTMuMy0wLjctNC4zLTIuN2MtMC4yLDAuOC0wLjQsMS42LTAuNywyLjRoLTEuM1YwLjNoMi41djguMkM5OSw2LjksMTAwLjIsNiwxMDIuMiw2CgkJYzQuNywwLDUuOSw0LjksNS45LDguN0MxMDguMSwxOSwxMDYuNywyMy42LDEwMS43LDIzLjZ6IE0xMDEuNyw4LjFjLTIuOCwwLTMuOCwzLTMuOCw1LjRWMTZjMCwyLjYsMC42LDUuNSwzLjcsNS41CgkJYzMuNSwwLDMuNy00LjMsMy43LTYuOUMxMDUuMywxMiwxMDUuMiw4LjEsMTAxLjcsOC4xeiIvPgoJPHBhdGggZmlsbD0iI0ZGRkZGRiIgZD0iTTExMS44LDIzLjNWMC4zaDIuNXYyMi45SDExMS44eiIvPgoJPHBhdGggZmlsbD0iI0ZGRkZGRiIgZD0iTTExOC43LDMuM3YtM2gyLjh2M0gxMTguN3ogTTExOC44LDIzLjNWNi4zaDIuNXYxNi45SDExOC44eiIvPgoJPHBhdGggZmlsbD0iI0ZGRkZGRiIgZD0iTTEzMC4yLDIzLjdjLTMuNCwwLTUuNC0xLjUtNi4xLTQuOGwyLjMtMC41YzAuNCwyLjIsMS43LDMuMiwzLjksMy4yYzEuNywwLDMuNC0wLjksMy40LTIuOAoJCWMwLTMuMS01LjQtMi44LTcuNi00LjdjLTAuOS0wLjgtMS40LTItMS40LTMuMmMwLTMuMSwyLjYtNS4xLDUuNS01LjFjMS41LDAsMywwLjUsNC4xLDEuN2MwLjcsMC44LDEsMS42LDEuMywyLjZsLTIuMiwwLjYKCQlDMTMyLjksOS4xLDEzMiw4LDEzMC4yLDhjLTEuNSwwLTIuOSwwLjktMi45LDIuNmMwLDEuNCwxLDIsMi4yLDIuNGMyLjksMC45LDYuOSwxLjcsNi45LDUuNkMxMzYuNCwyMS45LDEzMy40LDIzLjcsMTMwLjIsMjMuN3oiLz4KCTxwYXRoIGZpbGw9IiNGRkZGRkYiIGQ9Ik0xNDguMSwyMy4zVjEyLjdjMC0yLDAuMS00LjgtMi43LTQuOGMtMy4yLDAtMy41LDQuMi0zLjUsNi41djguOGgtMi41VjAuM2gyLjV2OC42YzAuOC0yLDIuMS0zLjEsNC4yLTMuMQoJCWMxLjIsMCwyLjUsMC40LDMuNCwxLjNjMS4zLDEuNCwxLjIsMy43LDEuMiw1LjZ2MTAuNUgxNDguMXoiLz4KCTxwYXRoIGZpbGw9IiNGRkZGRkYiIGQ9Ik0xNTUsMy4zdi0zaDIuOHYzSDE1NXogTTE1NS4xLDIzLjNWNi4zaDIuNXYxNi45SDE1NS4xeiIvPgoJPHBhdGggZmlsbD0iI0ZGRkZGRiIgZD0iTTE3MC45LDIzLjNWMTIuOGMwLTIuMSwwLjItNC44LTIuNi00LjhjLTMuMywwLTMuNiwzLjctMy42LDYuMnY5LjFoLTIuNVY2LjNoMi4zVjkKCQljMC45LTIuMSwyLjEtMy4xLDQuNC0zLjFjMS4zLDAsMi43LDAuNCwzLjUsMS41YzEuMSwxLjQsMSwzLjUsMSw1LjJ2MTAuOEgxNzAuOXoiLz4KCTxwYXRoIGZpbGw9IiNGRkZGRkYiIGQ9Ik0xODMuNSwyOS44Yy0yLjksMC02LjgtMC44LTYuOC00LjVjMC0xLjcsMC43LTIuOCwyLjMtMy40Yy0xLTAuNy0xLjYtMS4zLTEuNi0yLjZjMC0xLjUsMC44LTIuNSwyLjItMy4xCgkJYy0xLjMtMS4zLTEuOS0yLjUtMS45LTQuNWMwLTMuMiwyLjQtNS45LDUuNy01LjljMS4yLDAsMS44LDAuMiwyLjgsMC44YzAuNC0yLjMsMS4zLTIuOSwzLjYtMi45aDAuNHYyLjJjLTAuMiwwLTAuNC0wLjEtMC43LTAuMQoJCWMtMS4zLDAtMS43LDEtMS44LDIuMWMwLjksMS4yLDEuMywyLjMsMS4zLDMuOGMwLDMuMy0yLjQsNS44LTUuNyw1LjhjLTAuNywwLTEuNC0wLjEtMi4xLTAuM2MtMC44LDAuMy0xLjQsMC42LTEuNCwxLjUKCQljMCwxLjUsMS41LDEuNiwyLjYsMS43YzAuNiwwLDEuMiwwLDEuOCwwLjFjMy4yLDAuMiw2LjUsMC4zLDYuNSw0LjNDMTkwLjcsMjguOCwxODYuNywyOS44LDE4My41LDI5Ljh6IE0xODQuMiwyMi42CgkJYy0xLjIsMC0yLjMsMC0zLjUtMC4xYy0wLjksMC41LTEuNCwxLjItMS40LDIuM2MwLDIuNSwyLjMsMi45LDQuNCwyLjljMS45LDAsNC40LTAuNCw0LjQtMi44QzE4OC4xLDIyLjcsMTg1LjgsMjIuNywxODQuMiwyMi42egoJCSBNMTgzLjIsOGMtMi4yLDAtMywxLjktMywzLjhjMCwxLjksMC45LDMuNywzLDMuN2MyLjEsMCwzLjEtMS45LDMuMS0zLjdDMTg2LjQsOS43LDE4NS41LDgsMTgzLjIsOHoiLz4KPC9nPgo8L3N2Zz4K"/></a><ul class="footer__social-icons"><li><a class="link--colour--white replicate-hover" href="https://www.facebook.com/ioppublishing/"><span class="sr-only">IOP Publishing Facebook page</span><svg aria-hidden="true" class="fa-icon fa-icon--xlrg" focusable="false" viewbox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M512 256C512 114.6 397.4 0 256 0S0 114.6 0 256C0 376 82.7 476.8 194.2 504.5V334.2H141.4V256h52.8V222.3c0-87.1 39.4-127.5 125-127.5c16.2 0 44.2 3.2 55.7 6.4V172c-6-.6-16.5-1-29.6-1c-42 0-58.2 15.9-58.2 57.2V256h83.6l-14.4 78.2H287V510.1C413.8 494.8 512 386.9 512 256h0z"></path></svg></a></li><li><a class="link--colour--white replicate-hover" href="https://www.linkedin.com/company/iop-publishing/"><span class="sr-only">IOP Publishing LinkedIn page</span><svg aria-hidden="true" class="fa-icon fa-icon--xlrg" focusable="false" viewbox="0 0 448 512" xmlns="http://www.w3.org/2000/svg"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M100.3 448H7.4V148.9h92.9zM53.8 108.1C24.1 108.1 0 83.5 0 53.8a53.8 53.8 0 0 1 107.6 0c0 29.7-24.1 54.3-53.8 54.3zM447.9 448h-92.7V302.4c0-34.7-.7-79.2-48.3-79.2-48.3 0-55.7 37.7-55.7 76.7V448h-92.8V148.9h89.1v40.8h1.3c12.4-23.5 42.7-48.3 87.9-48.3 94 0 111.3 61.9 111.3 142.3V448z"></path></svg></a></li><li><a class="link--colour--white replicate-hover" href="https://www.youtube.com/channel/UC6sGrQTcmY8NpmfGEfRqRrg"><span class="sr-only">IOP Publishing Youtube page</span><svg aria-hidden="true" class="fa-icon fa-icon--xlrg" focusable="false" viewbox="0 0 576 512" xmlns="http://www.w3.org/2000/svg"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M549.7 124.1c-6.3-23.7-24.8-42.3-48.3-48.6C458.8 64 288 64 288 64S117.2 64 74.6 75.5c-23.5 6.3-42 24.9-48.3 48.6-11.4 42.9-11.4 132.3-11.4 132.3s0 89.4 11.4 132.3c6.3 23.7 24.8 41.5 48.3 47.8C117.2 448 288 448 288 448s170.8 0 213.4-11.5c23.5-6.3 42-24.2 48.3-47.8 11.4-42.9 11.4-132.3 11.4-132.3s0-89.4-11.4-132.3zm-317.5 213.5V175.2l142.7 81.2-142.7 81.2z"></path></svg></a></li><li><a class="link--colour--white replicate-hover" href="https://ioppublishing-org.libproxy.knu.ac.kr/wp-content/uploads/2020/11/WeChat-QR-Code.png"><span class="sr-only">IOP Publishing WeChat QR code</span><svg aria-hidden="true" class="fa-icon fa-icon--xlrg" focusable="false" viewbox="0 0 576 512" xmlns="http://www.w3.org/2000/svg"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M385.2 167.6c6.4 0 12.6 .3 18.8 1.1C387.4 90.3 303.3 32 207.7 32 100.5 32 13 104.8 13 197.4c0 53.4 29.3 97.5 77.9 131.6l-19.3 58.6 68-34.1c24.4 4.8 43.8 9.7 68.2 9.7 6.2 0 12.1-.3 18.3-.8-4-12.9-6.2-26.6-6.2-40.8-.1-84.9 72.9-154 165.3-154zm-104.5-52.9c14.5 0 24.2 9.7 24.2 24.4 0 14.5-9.7 24.2-24.2 24.2-14.8 0-29.3-9.7-29.3-24.2 .1-14.7 14.6-24.4 29.3-24.4zm-136.4 48.6c-14.5 0-29.3-9.7-29.3-24.2 0-14.8 14.8-24.4 29.3-24.4 14.8 0 24.4 9.7 24.4 24.4 0 14.6-9.6 24.2-24.4 24.2zM563 319.4c0-77.9-77.9-141.3-165.4-141.3-92.7 0-165.4 63.4-165.4 141.3S305 460.7 397.6 460.7c19.3 0 38.9-5.1 58.6-9.9l53.4 29.3-14.8-48.6C534 402.1 563 363.2 563 319.4zm-219.1-24.5c-9.7 0-19.3-9.7-19.3-19.6 0-9.7 9.7-19.3 19.3-19.3 14.8 0 24.4 9.7 24.4 19.3 0 10-9.7 19.6-24.4 19.6zm107.1 0c-9.7 0-19.3-9.7-19.3-19.6 0-9.7 9.7-19.3 19.3-19.3 14.5 0 24.4 9.7 24.4 19.3 .1 10-9.9 19.6-24.4 19.6z"></path></svg></a></li><li><a class="link--colour--white replicate-hover" href="https://www.weibo.com/u/2931886367"><span class="sr-only">IOP Publishing Weibo page</span><svg aria-hidden="true" class="fa-icon fa-icon--xlrg" focusable="false" viewbox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M407 177.6c7.6-24-13.4-46.8-37.4-41.7-22 4.8-28.8-28.1-7.1-32.8 50.1-10.9 92.3 37.1 76.5 84.8-6.8 21.2-38.8 10.8-32-10.3zM214.8 446.7C108.5 446.7 0 395.3 0 310.4c0-44.3 28-95.4 76.3-143.7C176 67 279.5 65.8 249.9 161c-4 13.1 12.3 5.7 12.3 6 79.5-33.6 140.5-16.8 114 51.4-3.7 9.4 1.1 10.9 8.3 13.1 135.7 42.3 34.8 215.2-169.7 215.2zm143.7-146.3c-5.4-55.7-78.5-94-163.4-85.7-84.8 8.6-148.8 60.3-143.4 116s78.5 94 163.4 85.7c84.8-8.6 148.8-60.3 143.4-116zM347.9 35.1c-25.9 5.6-16.8 43.7 8.3 38.3 72.3-15.2 134.8 52.8 111.7 124-7.4 24.2 29.1 37 37.4 12 31.9-99.8-55.1-195.9-157.4-174.3zm-78.5 311c-17.1 38.8-66.8 60-109.1 46.3-40.8-13.1-58-53.4-40.3-89.7 17.7-35.4 63.1-55.4 103.4-45.1 42 10.8 63.1 50.2 46 88.5zm-86.3-30c-12.9-5.4-30 .3-38 12.9-8.3 12.9-4.3 28 8.6 34 13.1 6 30.8 .3 39.1-12.9 8-13.1 3.7-28.3-9.7-34zm32.6-13.4c-5.1-1.7-11.4 .6-14.3 5.4-2.9 5.1-1.4 10.6 3.7 12.9 5.1 2 11.7-.3 14.6-5.4 2.8-5.2 1.1-10.9-4-12.9z"></path></svg></a></li><li><a class="link--colour--white replicate-hover" href="https://bsky.app/profile/ioppublishing.bsky.social"><span class="sr-only">IOP Publishing Bluesky page</span><svg aria-hidden="true" class="fa-icon fa-icon--xlrg" focusable="false" viewbox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M111.8 62.2C170.2 105.9 233 194.7 256 242.4c23-47.6 85.8-136.4 144.2-180.2c42.1-31.6 110.3-56 110.3 21.8c0 15.5-8.9 130.5-14.1 149.2C478.2 298 412 314.6 353.1 304.5c102.9 17.5 129.1 75.5 72.5 133.5c-107.4 110.2-154.3-27.6-166.3-62.9l0 0c-1.7-4.9-2.6-7.8-3.3-7.8s-1.6 3-3.3 7.8l0 0c-12 35.3-59 173.1-166.3 62.9c-56.5-58-30.4-116 72.5-133.5C100 314.6 33.8 298 15.7 233.1C10.4 214.4 1.5 99.4 1.5 83.9c0-77.8 68.2-53.4 110.3-21.8z"></path></svg></a></li><li><a class="link--colour--white replicate-hover" href="https://www.threads.com/@iop.publishing"><span class="sr-only">IOP Publishing Threads page</span><svg aria-hidden="true" class="fa-icon fa-icon--xlrg" focusable="false" viewbox="0 0 448 512" xmlns="http://www.w3.org/2000/svg"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M331.5 235.7c2.2 .9 4.2 1.9 6.3 2.8c29.2 14.1 50.6 35.2 61.8 61.4c15.7 36.5 17.2 95.8-30.3 143.2c-36.2 36.2-80.3 52.5-142.6 53h-.3c-70.2-.5-124.1-24.1-160.4-70.2c-32.3-41-48.9-98.1-49.5-169.6V256v-.2C17 184.3 33.6 127.2 65.9 86.2C102.2 40.1 156.2 16.5 226.4 16h.3c70.3 .5 124.9 24 162.3 69.9c18.4 22.7 32 50 40.6 81.7l-40.4 10.8c-7.1-25.8-17.8-47.8-32.2-65.4c-29.2-35.8-73-54.2-130.5-54.6c-57 .5-100.1 18.8-128.2 54.4C72.1 146.1 58.5 194.3 58 256c.5 61.7 14.1 109.9 40.3 143.3c28 35.6 71.2 53.9 128.2 54.4c51.4-.4 85.4-12.6 113.7-40.9c32.3-32.2 31.7-71.8 21.4-95.9c-6.1-14.2-17.1-26-31.9-34.9c-3.7 26.9-11.8 48.3-24.7 64.8c-17.1 21.8-41.4 33.6-72.7 35.3c-23.6 1.3-46.3-4.4-63.9-16c-20.8-13.8-33-34.8-34.3-59.3c-2.5-48.3 35.7-83 95.2-86.4c21.1-1.2 40.9-.3 59.2 2.8c-2.4-14.8-7.3-26.6-14.6-35.2c-10-11.7-25.6-17.7-46.2-17.8H227c-16.6 0-39 4.6-53.3 26.3l-34.4-23.6c19.2-29.1 50.3-45.1 87.8-45.1h.8c62.6 .4 99.9 39.5 103.7 107.7l-.2 .2zm-156 68.8c1.3 25.1 28.4 36.8 54.6 35.3c25.6-1.4 54.6-11.4 59.5-73.2c-13.2-2.9-27.8-4.4-43.4-4.4c-4.8 0-9.6 .1-14.4 .4c-42.9 2.4-57.2 23.2-56.2 41.8l-.1 .1z"></path></svg></a></li></ul></div></div></div></footer></div><div class="sidr left" id="sidr-main"><div class="sidr-inner"><svg class="fa-icon fa-icon--xlrg" focusable="false" role="img" viewbox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><!--circle-xmark--><!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><title>Close menu</title><path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM175 175c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z"></path></svg></div><div class="sidr-inner"><div class="wd-header-search" id="search-mobile"><div aria-atomic="true" class="main-search-error-container ui-message-container" role="alert"></div><div class="art-lookup__fields-wrapper"><label for="quickSearch-mobile">Search all IOPscience content</label>Search</div></div></div>
+<div class="sidr-inner">
+<div class="search__lookup-link__mobile-container">
+<a class="search__lookup-link" href="/findcontent" role="menuitem">Article Lookup</a>
+</div>
+</div>
+<div class="sidr-inner">
+<nav aria-label="Site">
+<ul>
+<li class="nav-journals nav-item wd-nav-journal">Journals<svg aria-hidden="true" class="fa-icon fa-icon--right fa-icon--flip" focusable="false" role="img" viewbox="0 0 320 512" xmlns="http://www.w3.org/2000/svg"><!--caret-down--><!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path d="M137.4 374.6c12.5 12.5 32.8 12.5 45.3 0l128-128c9.2-9.2 11.9-22.9 6.9-34.9s-16.6-19.8-29.6-19.8L32 192c-12.9 0-24.6 7.8-29.6 19.8s-2.2 25.7 6.9 34.9l128 128z"></path></svg><ul class="nav-drop-down wd-nav-journal-dd" id="nav-dropdown-journals-mobile"><li class="nav-drop-down__item"><a class="nav-drop-down__item-title" href="/journalList">Journals list</a><span class="nav-drop-down__item-info m-hide">Browse more than 100 science journal titles</span></li><li class="nav-drop-down__item"><a class="nav-drop-down__item-title" href="/page/subjects">Subject collections</a><span class="nav-drop-down__item-info m-hide">Read the very best research published in IOP journals</span></li><li class="nav-drop-down__item"><a class="nav-drop-down__item-title" href="/journalList?type=partner#js-tab-pubpart">Publishing partners</a><span class="nav-drop-down__item-info m-hide">Partner organisations and publications</span></li><li class="nav-drop-down__item"><a class="nav-drop-down__item-title" href="https://publishingsupport-iopscience-iop-org.libproxy.knu.ac.kr/open_access/">Open access</a><span class="nav-drop-down__item-info m-hide">IOP Publishing open access policy guide</span></li><li class="nav-drop-down__item"><a class="nav-drop-down__item-title" href="/conference-series">IOP Conference Series</a><span class="nav-drop-down__item-info m-hide">Read open access proceedings from science conferences worldwide</span></li></ul></li>
+<li class="nav-books nav-item wd-nav-books"><a class="nav-top-link" href="/booklistinfo/home">Books</a></li>
+<li class="nav-publishing-support nav-item wd-publishing-support"><a class="nav-top-link" href="https://publishingsupport-iopscience-iop-org.libproxy.knu.ac.kr">Publishing Support</a></li>
+<li class="nav-login nav-item wd-nav-login"><svg aria-hidden="true" class="fa-icon fa-icon--left" focusable="false" role="img" viewbox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><!--circle-user--><!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path d="M399 384.2C376.9 345.8 335.4 320 288 320H224c-47.4 0-88.9 25.8-111 64.2c35.2 39.2 86.2 63.8 143 63.8s107.8-24.7 143-63.8zM0 256a256 256 0 1 1 512 0A256 256 0 1 1 0 256zm256 16a72 72 0 1 0 0-144 72 72 0 1 0 0 144z"></path></svg>Login<svg aria-hidden="true" class="fa-icon fa-icon--right fa-icon--flip" focusable="false" role="img" viewbox="0 0 320 512" xmlns="http://www.w3.org/2000/svg"><!--caret-down--><!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path d="M137.4 374.6c12.5 12.5 32.8 12.5 45.3 0l128-128c9.2-9.2 11.9-22.9 6.9-34.9s-16.6-19.8-29.6-19.8L32 192c-12.9 0-24.6 7.8-29.6 19.8s-2.2 25.7 6.9 34.9l128 128z"></path></svg><ul class="nav-drop-down wd-nav-login-dd" id="nav-dropdown-login-mobile"><li><a href="https://myiopscience-iop-org.libproxy.knu.ac.kr/signin?origin=a0&amp;idhub=true&amp;return=https%3A%2F%2Fiopscience-iop-org.libproxy.knu.ac.kr%2Fnsearch%3Fterms%3Dcomplexity" id="wd-login-link-mobile">IOPscience login / Sign Up</a></li></ul></li>
+</ul>
+</nav>
+</div></div><div class="sidr right" id="search-filter-main"><svg class="fa-icon fa-icon--xlrg" focusable="false" role="img" viewbox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><!--circle-xmark--><!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><title>Close filters</title><path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM175 175c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z"></path></svg><div class="sidr-inner">
+<section aria-label="Search Filters">
+<a class="btn btn-default skip-to-results" href="#skip-to-results-link-target">Skip to results</a><h2 class="mt-0 mb-075 mobile-mt-2 replica-h3" id="search-facets-title-mobile">
+            Refine your search
+        </h2><fieldset class="facet"><legend class="facet__name">Date published</legend><label class="facet__option" for="anytime-mobile"><span>Anytime</span></label><label class="facet__option" for="lastThirtyDays-mobile"><span>The last month</span></label><label class="facet__option" for="lastTwelveMonths-mobile"><span>The last 12 months</span></label><label class="facet__option" for="lastFiveYears-mobile"><span>The last 5 years</span></label></fieldset><fieldset class="facet"><legend class="facet__name">Journals</legend><label class="offscreen-hidden" for="facetFilter-mobile">Search for Journal</label><label class="facet__option" for="2053-1583-mobile">
+      2D Materials
+    </label><label class="facet__option" for="3050-287X-mobile">
+      AI for Science
+    </label><label class="facet__option" for="1004-423X-mobile">
+      Acta Physica Sinica (Overseas Edition)
+    </label><label class="facet__option" for="2043-6262-mobile">
+      Advances in Natural Sciences: Nanoscience and Nanotechnology
+    </label><label class="facet__option" for="1882-0786-mobile">
+      Applied Physics Express
+    </label><div class="reveal-container reveal-closed reveal-enabled"><div class="reveal-content reveal-content--facet" id="facet-journals-content-mobile" style="display: none;"><label class="facet__option" for="1538-3881-mobile">
+      The Astronomical Journal
+    </label><label class="facet__option" for="0004-637X-mobile">
+      The Astrophysical Journal
+    </label><label class="facet__option" for="2041-8205-mobile">
+      The Astrophysical Journal Letters
+    </label><label class="facet__option" for="0067-0049-mobile">
+      The Astrophysical Journal Supplement Series
+    </label><label class="facet__option" for="1758-5090-mobile">
+      Biofabrication
+    </label><label class="facet__option" for="1748-3190-mobile">
+      Bioinspiration &amp; Biomimetics
+    </label><label class="facet__option" for="1748-605X-mobile">
+      Biomedical Materials
+    </label><label class="facet__option" for="2057-1976-mobile">
+      Biomedical Physics &amp; Engineering Express
+    </label><label class="facet__option" for="0508-3443-mobile">
+      British Journal of Applied Physics
+    </label><label class="facet__option" for="1009-9271-mobile">
+      Chinese Journal of Astronomy and Astrophysics 
+    </label><label class="facet__option" for="1674-0068-mobile">
+      Chinese Journal of Chemical Physics
+    </label><label class="facet__option" for="1009-1963-mobile">
+      Chinese Physics
+    </label><label class="facet__option" for="1674-1056-mobile">
+      Chinese Physics B
+    </label><label class="facet__option" for="1674-1137-mobile">
+      Chinese Physics C
+    </label><label class="facet__option" for="0256-307X-mobile">
+      Chinese Physics Letters
+    </label><label class="facet__option" for="0264-9381-mobile">
+      Classical and Quantum Gravity
+    </label><label class="facet__option" for="0143-0815-mobile">
+      Clinical Physics and Physiological Measurement
+    </label><label class="facet__option" for="1364-7830-mobile">
+      Combustion Theory and Modelling
+    </label><label class="facet__option" for="0253-6102-mobile">
+      Communications in Theoretical Physics
+    </label><label class="facet__option" for="1749-4699-mobile">
+      Computational Science &amp; Discovery
+    </label><label class="facet__option" for="2057-1739-mobile">
+      Convergent Science Physical Oncology
+    </label><label class="facet__option" for="0967-1846-mobile">
+      Distributed Systems Engineering
+    </label><label class="facet__option" for="2754-2734-mobile">
+      ECS Advances
+    </label><label class="facet__option" for="2162-8734-mobile">
+      ECS Electrochemistry Letters
+    </label><label class="facet__option" for="2162-8777-mobile">
+      ECS Journal of Solid State Science and Technology
+    </label><label class="facet__option" for="2151-2043-mobile">
+      ECS Meeting Abstracts
+    </label><label class="facet__option" for="2576-1579-mobile">
+      ECS Proceedings Volumes
+    </label><label class="facet__option" for="2754-2726-mobile">
+      ECS Sensors Plus
+    </label><label class="facet__option" for="2162-8750-mobile">
+      ECS Solid State Letters
+    </label><label class="facet__option" for="1938-5862-mobile">
+      ECS Transactions
+    </label><label class="facet__option" for="1944-8783-mobile">
+      The Electrochemical Society Interface
+    </label><label class="facet__option" for="1944-8775-mobile">
+      Electrochemical and Solid-State Letters
+    </label><label class="facet__option" for="2516-1075-mobile">
+      Electronic Structure
+    </label><label class="facet__option" for="2631-8695-mobile">
+      Engineering Research Express
+    </label><label class="facet__option" for="2515-7620-mobile">
+      Environmental Research Communications
+    </label><label class="facet__option" for="1748-9326-mobile">
+      Environmental Research Letters
+    </label><label class="facet__option" for="2752-5295-mobile">
+      Environmental Research: Climate
+    </label><label class="facet__option" for="2752-664X-mobile">
+      Environmental Research: Ecology
+    </label><label class="facet__option" for="2753-3751-mobile">
+      Environmental Research: Energy
+    </label><label class="facet__option" for="2976-601X-mobile">
+      Environmental Research: Food Systems
+    </label><label class="facet__option" for="2752-5309-mobile">
+      Environmental Research: Health
+    </label><label class="facet__option" for="2634-4505-mobile">
+      Environmental Research: Infrastructure and Sustainability
+    </label><label class="facet__option" for="3033-4942-mobile">
+      Environmental Research: Water
+    </label><label class="facet__option" for="0143-0807-mobile">
+      European Journal of Physics
+    </label><label class="facet__option" for="0295-5075-mobile">
+      Europhysics Letters
+    </label><label class="facet__option" for="2058-8585-mobile">
+      Flexible and Printed Electronics
+    </label><label class="facet__option" for="1873-7005-mobile">
+      Fluid Dynamics Research
+    </label><label class="facet__option" for="2631-6331-mobile">
+      Functional Composites and Structures
+    </label><label class="facet__option" for="1755-1315-mobile">
+      IOP Conference Series: Earth and Environmental Science
+    </label><label class="facet__option" for="1757-899X-mobile">
+      IOP Conference Series: Materials Science and Engineering
+    </label><label class="facet__option" for="2633-1357-mobile">
+      IOP SciNotes
+    </label><label class="facet__option" for="2631-7990-mobile">
+      International Journal of Extreme Manufacturing
+    </label><label class="facet__option" for="0266-5611-mobile">
+      Inverse Problems
+    </label><label class="facet__option" for="1064-5632-mobile">
+      Izvestiya: Mathematics
+    </label><label class="facet__option" for="1347-4065-mobile">
+      Japanese Journal of Applied Physics
+    </label><label class="facet__option" for="0141-5425-mobile">
+      Journal of Biomedical Engineering
+    </label><label class="facet__option" for="1752-7163-mobile">
+      Journal of Breath Research
+    </label><label class="facet__option" for="1475-7516-mobile">
+      Journal of Cosmology and Astroparticle Physics
+    </label><label class="facet__option" for="1742-2140-mobile">
+      Journal of Geophysics and Engineering
+    </label><label class="facet__option" for="1126-6708-mobile">
+      Journal of High Energy Physics
+    </label><label class="facet__option" for="1748-0221-mobile">
+      Journal of Instrumentation
+    </label><label class="facet__option" for="0960-1317-mobile">
+      Journal of Micromechanics and Microengineering
+    </label><label class="facet__option" for="1741-2552-mobile">
+      Journal of Neural Engineering
+    </label><label class="facet__option" for="0368-3281-mobile">
+      Journal of Nuclear Energy. Part C, Plasma Physics, Accelerators, Thermonuclear Research
+    </label><label class="facet__option" for="2040-8986-mobile">
+      Journal of Optics
+    </label><label class="facet__option" for="0150-536X-mobile">
+      Journal of Optics
+    </label><label class="facet__option" for="1464-4258-mobile">
+      Journal of Optics A: Pure and Applied Optics
+    </label><label class="facet__option" for="1464-4266-mobile">
+      Journal of Optics B: Quantum and Semiclassical Optics
+    </label><label class="facet__option" for="0305-4470-mobile">
+      Journal of Physics A: Mathematical and General
+    </label><label class="facet__option" for="1751-8121-mobile">
+      Journal of Physics A: Mathematical and Theoretical
+    </label><label class="facet__option" for="0301-0015-mobile">
+      Journal of Physics A: Mathematical, Nuclear and General
+    </label><label class="facet__option" for="0022-3700-mobile">
+      Journal of Physics B: Atomic and Molecular Physics
+    </label><label class="facet__option" for="0953-4075-mobile">
+      Journal of Physics B: Atomic, Molecular and Optical Physics
+    </label><label class="facet__option" for="0022-3719-mobile">
+      Journal of Physics C: Solid State Physics
+    </label><label class="facet__option" for="2399-6528-mobile">
+      Journal of Physics Communications
+    </label><label class="facet__option" for="0022-3727-mobile">
+      Journal of Physics D: Applied Physics
+    </label><label class="facet__option" for="0022-3735-mobile">
+      Journal of Physics E: Scientific Instruments
+    </label><label class="facet__option" for="0305-4608-mobile">
+      Journal of Physics F: Metal Physics
+    </label><label class="facet__option" for="0305-4616-mobile">
+      Journal of Physics G: Nuclear Physics
+    </label><label class="facet__option" for="0954-3899-mobile">
+      Journal of Physics G: Nuclear and Particle Physics
+    </label><label class="facet__option" for="2632-072X-mobile">
+      Journal of Physics: Complexity
+    </label><label class="facet__option" for="0953-8984-mobile">
+      Journal of Physics: Condensed Matter
+    </label><label class="facet__option" for="1742-6596-mobile">
+      Journal of Physics: Conference Series
+    </label><label class="facet__option" for="2515-7655-mobile">
+      Journal of Physics: Energy
+    </label><label class="facet__option" for="2515-7639-mobile">
+      Journal of Physics: Materials
+    </label><label class="facet__option" for="2515-7647-mobile">
+      Journal of Physics: Photonics
+    </label><label class="facet__option" for="0952-4746-mobile">
+      Journal of Radiological Protection
+    </label><label class="facet__option" for="3050-2454-mobile">
+      Journal of Reliability Science and Engineering
+    </label><label class="facet__option" for="0950-7671-mobile">
+      Journal of Scientific Instruments
+    </label><label class="facet__option" for="1674-4926-mobile">
+      Journal of Semiconductors
+    </label><label class="facet__option" for="1742-5468-mobile">
+      Journal of Statistical Mechanics: Theory and Experiment
+    </label><label class="facet__option" for="1945-7111-mobile">
+      Journal of The Electrochemical Society
+    </label><label class="facet__option" for="1468-5248-mobile">
+      Journal of Turbulence
+    </label><label class="facet__option" for="1555-6611-mobile">
+      Laser Physics
+    </label><label class="facet__option" for="1612-202X-mobile">
+      Laser Physics Letters
+    </label><label class="facet__option" for="3049-4753-mobile">
+      Machine Learning: Earth
+    </label><label class="facet__option" for="3049-4761-mobile">
+      Machine Learning: Engineering
+    </label><label class="facet__option" for="3049-477X-mobile">
+      Machine Learning: Health
+    </label><label class="facet__option" for="2632-2153-mobile">
+      Machine Learning: Science and Technology
+    </label><label class="facet__option" for="2752-5724-mobile">
+      Materials Futures
+    </label><label class="facet__option" for="2053-1591-mobile">
+      Materials Research Express
+    </label><label class="facet__option" for="2633-4356-mobile">
+      Materials for Quantum Technology
+    </label><label class="facet__option" for="0025-5726-mobile">
+      Mathematics of the USSR-Izvestiya
+    </label><label class="facet__option" for="0025-5734-mobile">
+      Mathematics of the USSR-Sbornik
+    </label><label class="facet__option" for="0957-0233-mobile">
+      Measurement Science and Technology
+    </label><label class="facet__option" for="1873-4030-mobile">
+      Medical Engineering &amp; Physics
+    </label><label class="facet__option" for="2050-6120-mobile">
+      Methods and Applications in Fluorescence
+    </label><label class="facet__option" for="0026-1394-mobile">
+      Metrologia
+    </label><label class="facet__option" for="0965-0393-mobile">
+      Modelling and Simulation in Materials Science and Engineering
+    </label><label class="facet__option" for="2399-7532-mobile">
+      Multifunctional Materials
+    </label><label class="facet__option" for="2632-959X-mobile">
+      Nano Express
+    </label><label class="facet__option" for="2399-1984-mobile">
+      Nano Futures
+    </label><label class="facet__option" for="0957-4484-mobile">
+      Nanotechnology
+    </label><label class="facet__option" for="0954-898X-mobile">
+      Network: Computation in Neural Systems
+    </label><label class="facet__option" for="2634-4386-mobile">
+      Neuromorphic Computing and Engineering
+    </label><label class="facet__option" for="1367-2630-mobile">
+      New Journal of Physics
+    </label><label class="facet__option" for="0951-7715-mobile">
+      Nonlinearity
+    </label><label class="facet__option" for="0029-5515-mobile">
+      Nuclear Fusion
+    </label><label class="facet__option" for="1402-4896-mobile">
+      Physica Scripta
+    </label><label class="facet__option" for="1478-3975-mobile">
+      Physical Biology
+    </label><label class="facet__option" for="0031-9112-mobile">
+      Physics Bulletin
+    </label><label class="facet__option" for="0031-9120-mobile">
+      Physics Education
+    </label><label class="facet__option" for="2058-7058-mobile">
+      Physics World
+    </label><label class="facet__option" for="0031-9155-mobile">
+      Physics in Medicine &amp; Biology
+    </label><label class="facet__option" for="0305-4624-mobile">
+      Physics in Technology
+    </label><label class="facet__option" for="1063-7869-mobile">
+      Physics-Uspekhi
+    </label><label class="facet__option" for="0967-3334-mobile">
+      Physiological Measurement
+    </label><label class="facet__option" for="2632-3338-mobile">
+      The Planetary Science Journal
+    </label><label class="facet__option" for="0741-3335-mobile">
+      Plasma Physics and Controlled Fusion
+    </label><label class="facet__option" for="2516-1067-mobile">
+      Plasma Research Express
+    </label><label class="facet__option" for="1009-0630-mobile">
+      Plasma Science and Technology
+    </label><label class="facet__option" for="0963-0252-mobile">
+      Plasma Sources Science and Technology
+    </label><label class="facet__option" for="0370-1328-mobile">
+      Proceedings of the Physical Society
+    </label><label class="facet__option" for="0959-5309-mobile">
+      Proceedings of the Physical Society
+    </label><label class="facet__option" for="1478-7814-mobile">
+      Proceedings of the Physical Society of London
+    </label><label class="facet__option" for="0370-1301-mobile">
+      Proceedings of the Physical Society. Section B
+    </label><label class="facet__option" for="2516-1091-mobile">
+      Progress in Biomedical Engineering
+    </label><label class="facet__option" for="2516-1083-mobile">
+      Progress in Energy
+    </label><label class="facet__option" for="0963-6625-mobile">
+      Public Understanding of Science
+    </label><label class="facet__option" for="1538-3873-mobile">
+      Publications of the Astronomical Society of the Pacific
+    </label><label class="facet__option" for="0963-9659-mobile">
+      Pure and Applied Optics: Journal of the European Optical Society Part A
+    </label><label class="facet__option" for="1469-7688-mobile">
+      Quantitative Finance
+    </label><label class="facet__option" for="1063-7818-mobile">
+      Quantum Electronics
+    </label><label class="facet__option" for="0954-8998-mobile">
+      Quantum Optics: Journal of the European Optical Society Part B
+    </label><label class="facet__option" for="2058-9565-mobile">
+      Quantum Science and Technology
+    </label><label class="facet__option" for="1355-5111-mobile">
+      Quantum and Semiclassical Optics: Journal of the European Optical Society Part B
+    </label><label class="facet__option" for="0034-4885-mobile">
+      Reports on Progress in Physics
+    </label><label class="facet__option" for="2515-5172-mobile">
+      Research Notes of the AAS
+    </label><label class="facet__option" for="1674-4527-mobile">
+      Research in Astronomy and Astrophysics
+    </label><label class="facet__option" for="0036-021X-mobile">
+      Russian Chemical Reviews
+    </label><label class="facet__option" for="0036-0279-mobile">
+      Russian Mathematical Surveys
+    </label><label class="facet__option" for="1064-5616-mobile">
+      Sbornik: Mathematics
+    </label><label class="facet__option" for="1468-6996-mobile">
+      Science and Technology of Advanced Materials
+    </label><label class="facet__option" for="0268-1242-mobile">
+      Semiconductor Science and Technology
+    </label><label class="facet__option" for="0964-1726-mobile">
+      Smart Materials and Structures
+    </label><label class="facet__option" for="0049-1748-mobile">
+      Soviet Journal of Quantum Electronics
+    </label><label class="facet__option" for="0038-5670-mobile">
+      Soviet Physics Uspekhi
+    </label><label class="facet__option" for="0953-2048-mobile">
+      Superconductor Science and Technology
+    </label><label class="facet__option" for="2051-672X-mobile">
+      Surface Topography: Metrology and Properties
+    </label><label class="facet__option" for="2977-3504-mobile">
+      Sustainability Science and Technology
+    </label><label class="facet__option" for="1945-6859-mobile">
+      Transactions of The Electrochemical Society
+    </label><label class="facet__option" for="2053-1613-mobile">
+      Translational Materials Research
+    </label><label class="facet__option" for="0959-7174-mobile">
+      Waves in Random Media
+    </label></div><svg aria-hidden="true" class="fa-icon fa-icon--left fa-icon--flip" focusable="false" role="img" viewbox="0 0 320 512" xmlns="http://www.w3.org/2000/svg"><!--caret-down--><!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path d="M137.4 374.6c12.5 12.5 32.8 12.5 45.3 0l128-128c9.2-9.2 11.9-22.9 6.9-34.9s-16.6-19.8-29.6-19.8L32 192c-12.9 0-24.6 7.8-29.6 19.8s-2.2 25.7 6.9 34.9l128 128z"></path></svg><span class="reveal-trigger-label">Show more</span></div></fieldset><fieldset class="facet"><legend class="facet__name">Publication type</legend><label class="facet__option" for="article-mobile">
+      Article (91548)
+    </label><label class="facet__option" for="chapter-mobile">
+      Chapter (2867)
+    </label><label class="facet__option" for="book-mobile">
+      Book (796)
+    </label></fieldset><fieldset class="facet"><legend class="facet__name">Open access</legend><label class="facet__option" for="open-access-mobile">
+      Open access only (34531)
+    </label></fieldset><div class="facets__buttons">ApplyReset</div>
+</section>
+</div></div></body></html>

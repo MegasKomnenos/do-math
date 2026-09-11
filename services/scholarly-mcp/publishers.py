@@ -255,6 +255,9 @@ class Publisher:
                     page.close()
 
     def search(self, query, *, options, start=0, limit=20, cursor=None, export=None):
+        if self.source=='iop':
+            from iop_search import search
+            return search(self,query,options=options,start=start,limit=limit,cursor=cursor,export=export)
         if self.source=='aps-institutional':
             from aps_institutional import search
             return search(self,query,options=options,start=start,limit=limit,cursor=cursor,export=export)
@@ -488,7 +491,7 @@ class Publisher:
         if unknown:
             raise ServiceError("invalid_parts", "Unknown requested content", parts=sorted(unknown))
         if not target.startswith(('http://', 'https://', '10.', 'doi:')):
-            candidates = self.search(target, options={'field':'Title'} if self.source in ('wiley','springer','oxford','aip','taylor-francis') else {}, limit=20)
+            candidates = self.search(target, options={'sort':'relevance'} if self.source=='iop' else {'field':'Title'} if self.source in ('wiley','springer','oxford','aip','taylor-francis') else {}, limit=20)
             return {**candidates, 'status': 'selection_required' if candidates.get('received') else candidates['status'],
                     'message': 'Select the exact publication DOI or URL from the preserved candidates'}
         url, identifier = self.resolve_target(target)
