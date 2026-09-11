@@ -350,3 +350,6 @@ IOP 홈페이지의 Search 버튼으로 메뉴를 열고 complexity를 검색하
 `data/validation/20260911T050214Z-iop-search-mcp.json`은 completed=true다. API 페이지 경계와 start500 이후2건, 관련도 페이지 경계·CSV·저널1742-6596/문헌 유형article/공개 접근/oldest 조건, 원 웹 상한 초과와 실제0건을 확인했다. `045825Z`의0건 필터 대조 실패는 원 화면이 체크박스 대신 숨은 기간 값을 제공한 사례이며 수정 후 통과했다. 이름은 관련도5후보 중 대상 DOI가 첫 결과였고 `iop-name-relevance.json`에 직접 어댑터 관측을 남겼다.
 
 갱신된 브라우저 상태를 엔진별 보호 파일로 저장하고 최초에만 기존 kudos.json으로 시작한다. 엔진 간 비혼입·갱신 상태 저장·읽기 경로 검사를 추가했다. 재확인 성공은 `20260911T041819Z-iop-verification-control.json`에 있다. 공통234검사가 통과했다. 이 관측은 향후 인증 조건이나 모든 검색 조건 조합의 성공 보장이 아니다.
+
+
+JSTOR는 Chrome의 원 음성 확인 파일도 회수했다. `data/validation/20260911-jstor-audio-diagnostic.json`은 WAV106312바이트·13.2835초, 현재 모델의 audio 입력 미지원, 로컬 PocketSphinx 인식에서 신뢰할 정답을 확인하지 못한 상태를 기록한다. 실제 키보드 입력 뒤에도 Client Challenge였다. 음성 회수를 웹 접근 통과로 세지 않으며, 별도 진단 환경의 인식기를 MCP 본체에 추가하지 않았다.
