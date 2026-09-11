@@ -50,6 +50,6 @@
 | 학회·저널 공식 사이트 | society-journal | fixed: public document Playwright; OJS native citation API | partial | source_guide, fetch, export | live_mcp_public_journal_metadata_abstract_pdf_native_citations |
 | 저자·기관 공개본 | author-repository | fixed: public document Playwright; OJS native citation API | partial | source_guide, fetch, export | live_mcp_public_author_pdf_and_page_links |
 | 일반 웹 후보 발견 | general-web | api (Mwmbl public search) | partial | source_guide, search, export | live_mcp_public_api_candidates_csv_extract_empty_result |
-| APS 기관 구독 접근 | aps-institutional | playwright | partial | source_guide, fetch, export | live_adapter_metadata_and_fulltext_restriction |
+| APS 기관 구독 접근 | aps-institutional | playwright | partial | source_guide, search, fetch, export | live_mcp_first_page_search_csv_mathml; followup_partial_and_document_restricted |
 
 개별 구독·학회 저널·저자 또는 기관 공개본·일반 웹은 구체 서비스가 정해지지 않은 범주다. 범위를 누락하지 않도록 목록에 유지한다. Unpaywall과 Scopus의 별도 웹 계정 내보내기는 보류하며 해당 자격 정보를 요청하지 않는다.

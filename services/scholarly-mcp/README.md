@@ -160,3 +160,5 @@ Software Heritage content는 metadata와 원 바이트의 길이·SWH sha1_git·
 Software Heritage dir의 fulltext/supplementary는 Vault의 원 tar.gz를 반환한다. rev는 원 metadata가 가리키는 디렉터리를 선택한다. 준비된 파일이 없으면 이메일 없이 생성을 요청하고 pending과 재조회 입력을 반환한다. 파일 내용·이름·권한·심볼릭 링크를 Git 트리 해시로 대조한 뒤 압축본의 무결성을 표시한다. extract로 압축 목록을 읽고 정확한 selection 경로의 파일 참조를 받은 뒤, 그 참조를 다시 extract하면 내부 내용을 읽을 수 있다. Git 전체 이력·release·snapshot 압축은 아직 연결하지 않았다.
 
 IEEE 검색은 BibTeX·RIS·Plain Text·CSV의 연속 내보내기와 CSV의 선택 범위를 실제 MCP로 검증했다. BibTeX·RIS·CSV의 형식·선택 건수를 대조하며, 내보내기 오류가 나도 이미 확보한 검색 레코드를 보존한다. 잘못 받은 파일은 source_export로 남긴다. AMS와 공통 출판사 문헌 조회는 확인 화면의 구조도 검사하여 한국어로 표시된 접근 확인을 일반 시간 초과와 구별한다.
+
+APS 기관 검색은 원 조건·정렬·건수·현재 페이지를 대조하여 제목·DOI·표시 서지·초록과 원 HTML을 보존한다. 렌더링 전 HTTP 응답의 MathML을 유지하며 정확한 요청 창을 JSON·CSV로 읽을 수 있다. 동일 검색의 후속 범위에서는 이미 받은 원 페이지와 수신 시점을 재사용한다. 후속 페이지가 실패하면 확보한 요청 범위의 일부를 partial로 남긴다. 첫 페이지 검색·CSV·수식 보존은 실제 MCP로 확인했으며, 연속 페이지·추가 조건·선택 문헌 조회는 아직 실서비스 검증이 완료되지 않았다.

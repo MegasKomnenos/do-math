@@ -255,6 +255,9 @@ class Publisher:
                     page.close()
 
     def search(self, query, *, options, start=0, limit=20, cursor=None, export=None):
+        if self.source=='aps-institutional':
+            from aps_institutional import search
+            return search(self,query,options=options,start=start,limit=limit,cursor=cursor,export=export)
         if self.source == 'project-euclid':
             from euclid import search
             return search(self,query,options=options,start=start,limit=limit,cursor=cursor,export=export)

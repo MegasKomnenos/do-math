@@ -325,3 +325,12 @@ Tools 디렉터리 93ea4d40f1ace5b45af5a4a65993a87ad6e900d1의 준비 전 GET은
 AMS 한국어 확인 화면의 실제 DOM 일부로 기존 분류 실패를 재현하고 AMS 및 공통 Publisher 조회에서 restricted로 구별하도록 고쳤다. `20260911T013103Z-ams-challenge-lifecycle.json`과 `012311Z-siam-challenge-lifecycle.json`은 90초까지 결과 화면으로 전환되지 않았다. SIAM 홈페이지 검색도 같은 상태였다. IOP의 `011850Z-iop-firefox-recovery.json`은 정상 문헌 화면, `013757Z-iop-chromium-recovery.json`은 Radware/hCaptcha 진입 제한이다. ScienceDirect의 `012543Z-science-direct-chromium-recovery.json`은 CPE00001이다. JSTOR 문자 확인은 입력 후에도 통과하지 못했다. 이 관측은 접근 실패를 서비스 기능 부재로 해석하는 근거가 아니다.
 
 APS는 문헌에서 모달을 열고 중복 쿠키 조작을 제거한 뒤에도 원 파일 GET이 403이었다. `20260911T013858Z-aps-native-download.json`의 실제 다운로드 클릭도 403이다. 반면 `014507Z-aps-firefox-recovery.json`의 기관 algebra 검색은 37987건 중 20건을 반환했다. 새 검색 구현은 후속 작업이며 이 관측만으로 어댑터 완료를 주장하지 않는다. 공통 검사 218개가 통과했다.
+
+
+2026-09-11 APS 기관 검색을 연결했다. `data/validation/20260911T021223Z-aps-search-mcp.json`은 algebra 37987건 중 요청한 첫2건과 CSV의 DOI 배열 일치를 확인했다. 원 HTTP HTML에는 MathML22개와 lazy0개가 있었으며, 늦은 DOM에는 숨은 초록 수식이 빈 자리로 바뀌었다. 원 응답을 파싱하고 원 카드·MathML fixture로 회귀 검사했다. 표시 저자·서지·발행일을 별도 문자열 필드로 제공한다.
+
+같은 조건의 후속 범위는 최근 원 페이지와 evidence 수신 시점을 재사용한다. `20260911T021913Z-aps-search-mcp.json`은 start19/limit2에서 1건을 보존한 partial이다. 원 Next의 화면 내부 요청은 HTTP403이었고, `023237Z`·`024034Z` 보고에서도 연속 페이지·추가 조건·선택 문헌 조회는 미완료다. 전체 completed를 true로 바꾸지 않았다.
+
+별도 기관 진입으로 원 Next 주소를 열면 페이지2의20건·start20·total37987을 확인했다. 보호된 `20260911T023101Z-aps-exact-next-deep.html`이 정확한 원 쿼리를 사용한 기록이다. 문서 탐색으로 연결한 뒤에도 같은 세션의 연속 호출은 제한되어, 이 독립 성공을 워크플로 성공으로 확대하지 않는다. `20260911T023616Z-aps-same-context-deep.json`은 선택 문헌의 공개 주소와 후속 페이지의 같은 세션 실패를 보존한다. 공통 검사222개가 통과했다.
+
+SIAM은 최소화한 일반 표시 모드 Chrome에서도 접근 확인이었다. `20260911T022325Z-siam-chromium-recovery.json`을 보존했다. IOP 진단에서는 한국어 iframe 제목 때문에 영어 제목 선택자가 실패했음을 확인하고 실제 위젯 속성으로 교정했다. 이 관측은 원문이나 인용문 회수 성공이 아니다.

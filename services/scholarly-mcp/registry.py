@@ -506,6 +506,20 @@ SOURCES['ams'].usage={
                 {'tool':'fetch','arguments':{'source':'ams','target':'https://www.ams.org/books/gsm/128/gsm128-endmatter.pdf','parts':['metadata','fulltext']}}],
     'official':['https://pubs.ams.org/AdvancedSearch'],
 }
+SOURCES['aps-institutional'].capabilities=('source_guide','search','fetch','export')
+SOURCES['aps-institutional'].usage={
+    'search':'KUDOS → 학술DB → APS 바로가기를 거쳐 APS 원 검색을 사용한다. query는 첫 조건의 값이며 options.field의 기본값은 all이다. 검색 결과의 원 조건·정렬·페이지·건수를 대조한다.',
+    'fields':['all','author','abstract','abstitle','title','refauth','affiliation','collaboration'],
+    'options':'terms는 추가 {field, query, operator} 배열이며 operator는 AND/OR/NOT이다. 원 조건 순서를 유지한다. sort는 relevance/recent/oldest/most_cited다. date는 week/month/year를 받는다. journal/article_type/category/physh_concept/physh_discipline은 각 한 개의 원 값을 받으며 검색 응답 facets 참조에서 값·이름·건수를 읽을 수 있다. 커스텀 날짜 범위와 한 facet의 복수 값은 아직 연결하지 않았다.',
+    'results':'title·doi·url·authors_display·citation_display·publication_date_display·listing·html·abstract·abstract_html을 보존한다. display 필드는 출판사의 표시 문자열이며 저자 목록이나 날짜를 새로 해석한 값이 아니다. 원 응답 HTML을 사용하여 MathJax가 숨은 수식을 빈 자리로 바꾸기 전의 MathML을 유지한다. 원 페이지는 evidence, 정확한 요청 창은 records다.',
+    'exports':'json은 정확한 요청 창의 레코드이고 csv는 같은 필드를 기계적으로 직렬화한다. html/native는 읽은 원 HTML 페이지들의 배열이다. 검색 결과의 BibTeX/RIS 파일 export는 아직 연결하지 않았다. 현재 문헌의 원 인용문 파일 경로는 HTTP403을 관측했다.',
+    'fetch':'DOI·문헌 URL은 기존 기관 문헌 조회로 서지·초록·PDF를 요청한다. 이름은 후보 검색이다. fetch의 export는 현재 정제된 원 페이지 HTML이며 BibTeX/RIS로 표현하지 않는다. 별도 계정이나 API 키를 요구하지 않는다.',
+    'limits':'start는 0부터, limit는 1..1000이다. 20건짜리 원 페이지에서 요청한 창을 회수하고 건수와 현재 페이지를 대조한다. 동일 조건의 start>0 후속 요청은 최근에 받은 해당 페이지를 재사용할 수 있으며 evidence의 원 수신 시점을 유지한다. start=0은 새 검색이다. 후속 페이지 실패 때 이미 받은 요청 창의 일부는 partial로 보존한다. 접근 제한을 문헌 부재로 해석하지 않는다.',
+    'verification':'algebra 첫 페이지 검색·CSV의 DOI 대조와 원 MathML 회수는 실제 MCP로 확인했다. 연속 페이지는 현재 부분 결과 뒤 접근 제한이며, 추가 필드·날짜·facet과 선택 문헌 조회의 실서비스 검증은 미완료다. 별도 기관 진입의 페이지2 성공을 연속 호출 성공으로 확대하지 않는다.',
+    'examples':[{'tool':'search','arguments':{'source':'aps-institutional','query':'algebra','limit':2,'export':'csv'}},{'tool':'search','arguments':{'source':'aps-institutional','query':'algebra','start':1,'limit':1,'export':'html'}}],
+    'official':['https://journals.aps.org/search'],
+}
+
 SOURCES['project-euclid'].capabilities=('source_guide','search','fetch','export')
 SOURCES['project-euclid'].usage={
     'search':'공개 원 고급검색 UI를 사용한다. 기본 query는 All Fields 검색이며 사이트의 어근·구문 처리를 유지한다. options.field는 ALL, ABSTRACT, AUTHORNAME, AFFILIATION, DOI_ISSN_ISBN, FIGURETABLECAPTIONS, KEYWORDS, TITLE 중 하나다.',
@@ -623,7 +637,7 @@ for identifier, level in {
     "pqdt": "live_mcp_repeat_search_ris_pdf_and_supplemental_png_fetch_extract",
     "eudml": "live_mcp_cql_rss_extract_nlm_fetch",
     "aps": "live_mcp_open_access_feed_metadata_abstract_pdf_fetch",
-    "aps-institutional": "live_adapter_metadata_and_fulltext_restriction",
+    "aps-institutional": "live_mcp_first_page_search_csv_mathml; followup_partial_and_document_restricted",
     "project-euclid": "live_mcp_advanced_search_four_citations_pdf_and_supplement_zip_text_extract",
     "cambridge": "live_mcp_filtered_search_ris_pdf_and_supplement_pdf_zip_source_extract",
     "oxford": "live_mcp_search_citation_metadata_abstract_pagination_and_supplement_pdf",
