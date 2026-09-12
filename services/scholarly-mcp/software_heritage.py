@@ -183,7 +183,7 @@ def content(adapter,url,raw,core,key,qualifiers,metadata):
 
 
 def fetch(adapter,target,parts):
-    if set(parts)-{'metadata','abstract','fulltext','supplementary','export'}:
+    if set(parts)-{'metadata','abstract','fulltext','supplementary','export','history'}:
         raise ServiceError('invalid_parts','Use the documented content parts')
     value=target;qualifiers={};core=key=None
     if value.startswith(('https://','http://')):
@@ -203,7 +203,7 @@ def fetch(adapter,target,parts):
     if kind=='cnt':check_content_metadata(raw,core,key,evidence)
     elif key and isinstance(raw,dict) and raw.get('id') and str(raw['id']).lower()!=key:
         raise ServiceError('identity_mismatch','Software Heritage returned a different object',evidence=evidence)
-    result=adapter.fetched(raw if isinstance(raw,list) else [raw],evidence,parts,('metadata','export'))
+    result=adapter.fetched(raw if isinstance(raw,list) else [raw],evidence,[p for p in parts if p!='history'],('metadata','export'))
     safe=dict(qualifiers)
     if 'origin' in safe:safe['origin']=adapter.store.sanitizer.url(safe['origin'])
     result.update(target=core or adapter.store.sanitizer.url(target),qualifiers=safe,
@@ -228,7 +228,19 @@ def fetch(adapter,target,parts):
         except ServiceError as error:component=error.result
         for part in wanted:result['components'][part]=component
     elif kind=='snp' and wanted:
-        for part in wanted:result['components'][part]={'status':'not_implemented','reason':'Archive retrieval for this object kind is not connected; select a directory or revision SWHID'}
+        from swh_git import git_archive
+        try:component=git_archive(adapter,core,raw,evidence)
+        except ServiceError as error:component=error.result
+        for part in wanted:result['components'][part]=component
+    if 'history' in parts:
+        if kind not in ('dir','rev','rel','snp') or 'lines' in qualifiers:
+            component={'status':'unsupported','reason':'Git history requires a directory, revision, release or snapshot without line selection'}
+        elif kind=='snp' and wanted and 'lines' not in qualifiers:component=result['components'][next(iter(wanted))]
+        else:
+            from swh_git import git_archive
+            try:component=git_archive(adapter,core,raw,evidence)
+            except ServiceError as error:component=error.result
+        result['components']['history']=component
     states={part['status'] for part in result['components'].values()}
     result['status']='ok' if not states or states=={'available'} else next(iter(states)) if states in ({'restricted'},{'not_found'},{'unsupported'}) else 'partial'
     return result

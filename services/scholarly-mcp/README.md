@@ -156,7 +156,7 @@ ECCC fetch에 이름을 주면 원 일반 검색 후보를 반환한다. 보고�
 
 Software Heritage content는 metadata와 원 바이트의 길이·SWH sha1_git·제공된 체크섬을 대조한다. SWHID의 lines=9-15처럼 줄 범위를 지정하면 검증한 전체 파일의 해당 조각을 반환하고 complete_content에 전체 파일을 보존한다. 파일은 실행하지 않는다. origin/visit/anchor/path는 사용자가 제시한 문맥이며 사실관계까지 검증했다고 표시하지 않는다. 줄 범위는 UTF-8 텍스트에 적용하고 잘못된 범위를 조용히 줄이지 않는다.
 
-Software Heritage dir의 fulltext/supplementary는 Vault의 원 tar.gz를 반환한다. rev는 원 metadata가 가리키는 디렉터리를 선택한다. 준비된 파일이 없으면 이메일 없이 생성을 요청하고 pending과 재조회 입력을 반환한다. 파일 내용·이름·권한·심볼릭 링크를 Git 트리 해시로 대조한 뒤 압축본의 무결성을 표시한다. extract로 압축 목록을 읽고 정확한 selection 경로의 파일 참조를 받은 뒤, 그 참조를 다시 extract하면 내부 내용을 읽을 수 있다. rel은 원 대상 연쇄를 따라 디렉터리·리비전의 트리 또는 content 파일을 회수하고 archive_selection에 관계와 근거를 남긴다. Git 전체 이력·snapshot 압축은 아직 연결하지 않았다.
+Software Heritage dir의 fulltext/supplementary는 Vault의 원 tar.gz를 반환한다. rev는 원 metadata가 가리키는 디렉터리를 선택한다. 준비된 파일이 없으면 이메일 없이 생성을 요청하고 pending과 재조회 입력을 반환한다. 파일 내용·이름·권한·심볼릭 링크를 Git 트리 해시로 대조한 뒤 압축본의 무결성을 표시한다. extract로 압축 목록을 읽고 정확한 selection 경로의 파일 참조를 받은 뒤, 그 참조를 다시 extract하면 내부 내용을 읽을 수 있다. rel은 원 대상 연쇄를 따라 디렉터리·리비전의 트리 또는 content 파일을 회수하고 archive_selection에 관계와 근거를 남긴다. history는 dir·rev·rel·snp의 원 Git 압축본이며 snapshot의 fulltext/supplementary도 같은 형식이다. Git 객체 해시·연결 관계를 확인하고 snapshot의 전체 브랜치 metadata 해시와 refs를 대조한다. dir에는 디렉터리를 표현하는 합성 커밋이 하나 있다. Git 실행 파일이 필요하며 보존 소스 코드·설정·훅은 실행하지 않는다. 원 tag의 이메일 부재는 missingEmail 형식 경고로 보존한다.
 
 IEEE 검색은 BibTeX·RIS·Plain Text·CSV의 연속 내보내기와 CSV의 선택 범위를 실제 MCP로 검증했다. BibTeX·RIS·CSV의 형식·선택 건수를 대조하며, 내보내기 오류가 나도 이미 확보한 검색 레코드를 보존한다. 잘못 받은 파일은 source_export로 남긴다. AMS와 공통 출판사 문헌 조회는 확인 화면의 구조도 검사하여 한국어로 표시된 접근 확인을 일반 시간 초과와 구별한다.
 
