@@ -3,6 +3,29 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT))
 
 class IOPSearchContract(unittest.TestCase):
+    def test_search_citation_export_keeps_its_window_when_one_document_fails(self):
+        import json,tempfile,httpx
+        from unittest.mock import Mock,patch
+        from scholarly import ArtifactStore,ServiceError
+        from publishers import Publisher,PROFILES
+        from iop_rss import IOPRSS
+        from iop_search import search
+        def response(request):
+            name='iop-rss-first.xml' if request.url.params['currentPage']=='1' else 'iop-rss-second.xml'
+            return httpx.Response(200,content=(ROOT/'tests/fixtures'/name).read_bytes(),headers={'Content-Type':'application/rdf+xml'})
+        with tempfile.TemporaryDirectory() as temp:
+            store=ArtifactStore(temp);adapter=Publisher(store,None,next(p for p in PROFILES if p.source=='iop'))
+            adapter._rss_api=IOPRSS(store,httpx.Client(transport=httpx.MockTransport(response)))
+            page=Mock();page.content.return_value='<html><title>Article</title></html>';adapter.document=Mock(return_value=page)
+            artifact=store.put((ROOT/'tests/fixtures/iop.bib').read_bytes(),'application/x-bibtex','iop','https://iopscience.iop.org/citation')
+            with patch('iop.citation',side_effect=[artifact,ServiceError('access_restricted','Restricted',status='restricted')]) as cite:
+                result=search(adapter,'complexity',options={'page_size':10},start=9,limit=2,export='bibtex')
+            self.assertEqual((result['status'],result['received']),('partial',2))
+            self.assertEqual(len(result['export']['artifacts']),1)
+            self.assertEqual(len(result['export']['errors']),1)
+            rows=json.loads(store.read(result['records']['ref'])[1]);self.assertEqual(cite.call_args_list[0].args[2],rows[0]['doi'])
+            self.assertEqual(page.close.call_count,2)
+
     def test_reported_zero_results_are_distinct_from_an_unreadable_page(self):
         from iop_search import search_records,applied_filters
         from bs4 import BeautifulSoup

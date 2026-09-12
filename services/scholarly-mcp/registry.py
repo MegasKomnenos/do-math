@@ -585,7 +585,7 @@ SOURCES['iop'].usage = {
     'search_exports':'json/csv는 정확한 요청 창이다. 최신순 API의 rss/xml/native는 원 XML 페이지이며 그 밖의 검색에서 html/native는 원 HTML 페이지다. 원 RSS의 순서 참조가 빈 항목이면 item 등장 순서를 유지하고 empty_rdf_sequence_used_item_order 경고를 남긴다. 원문 XML은 evidence에 보존한다.',
 
     'fetch':'IOP DOI 또는 정확한 iopscience.iop.org 문헌 URL을 지정한다. 이름은 관련도 순의 원 검색 후보로 반환한다. KUDOS IOP 바로가기를 거쳐 기관 문헌의 서지 태그와 PDF를 회수한다. 초록은 원 wd-jnl-art-abstract 영역을 사용한다. fulltext_html은 본문 HTML·원 TeX·그림 파일을, supplementary는 해당 DOI의 원 보충자료 탭과 파일을 회수한다. 그림은 figures의 artifact를 extract하며 수식은 HTML의 script[type^="math/tex"]를 선택한다. 수식 그림의 원 URL도 보존하지만 수식 그림 파일 자체는 별도로 내려받지 않는다.',
-    'exports':'문헌의 BibTeX·RIS 링크와 원 파일의 DOI를 대조한다. 두 형식의 실제 MCP 회수를 검증했다. 원 BibTeX 키에 공백이 있으면 원 키와 바이트를 유지하고 citation_key_contains_whitespace 경고와 함께 필드를 추출한다. 파일을 정상 키로 고쳐 쓰지 않는다. 파싱·식별자 검사 실패 때 source_export에 받은 파일을 보존한다.',
+    'exports':'검색에서도 export=bibtex/ris로 선택한 창의 각 문헌 원 파일을 받는다. 최신순 RSS와 관련도/필터 검색의 경로는 유지하며 인용문 회수 오류가 검색 레코드를 지우지 않는다. 문헌의 BibTeX·RIS 링크와 원 파일의 DOI를 대조한다. 두 형식의 실제 MCP 회수를 검증했다. 원 BibTeX 키에 공백이 있으면 원 키와 바이트를 유지하고 citation_key_contains_whitespace 경고와 함께 필드를 추출한다. 파일을 정상 키로 고쳐 쓰지 않는다. 파싱·식별자 검사 실패 때 source_export에 받은 파일을 보존한다.',
     'limits':'현재 확인된 기관 세션에서 서지·초록·16쪽 PDF·BibTeX·RIS를 실제 MCP로 회수했다. API의 페이지 경계·start500 이후, 관련도 순의 경계·CSV·원 저널/문헌 유형/공개 접근 조건과 0건을 실제 MCP로 검증했다. 별도 문헌에서 본문 TeX154개·그림5개·보충 PDF2쪽을 검증했다. 기간 기본값 anytime, page_size10/20과 명시된 예제가 실측 범위이며 모든 조건 조합의 검증으로 확대하지 않는다. 접근 확인이 다시 필요하면 restricted를 반환한다. 본문 XML 다운로드 제어는 이 표본에서 발견하지 못했다. 현재 공식 XML 공급 경로는 별도 연락·검토를 요구하므로 추가 자격·연락 경로를 사용하지 않는 범위에 따라 제외한다.',
     'examples':[{'tool':'search','arguments':{'source':'iop','query':'complexity','start':500,'limit':2,'options':{'page_size':10},'export':'rss'}},
                 {'tool':'search','arguments':{'source':'iop','query':'complexity','start':9,'limit':2,'options':{'sort':'relevance','page_size':10},'export':'csv'}},
@@ -663,7 +663,7 @@ for identifier, level in {
     "taylor-francis": "live_mcp_search_citation_pdf_dublin_doi_supplement_zip_tables_nested_source",
     "de-gruyter": "live_mcp_search_ris_pdf_and_supplement_zip_cif_lines; broken_link_observed",
     "jstor": "live_mcp_search_image_sorts_facets_citations_pdf_mp3_transcripts_supplement; native_video_download_disabled",
-    "iop": "live_mcp_rss_ranked_filters_csv_zero; citations_pdf_html_tex_figures_supplement_pdf_verified",
+    "iop": "live_mcp_rss_ranked_filters_native_search_citations; pdf_html_tex_figures_supplement_pdf_verified",
     "siam": "live_mcp_public_front_matter_pdf_fetch_extract; search_challenge_observed",
     "ams": "live_mcp_explicit_pdf; native_browser_mixed_search; dynamic_expression_offline_verified; live_search_restricted",
     "science-direct": "live_mcp_institutional_ris_bibtex_plain_metadata_abstract_fetch",

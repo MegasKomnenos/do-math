@@ -419,3 +419,8 @@ JSTOR 문헌24931626의 첫 Download는 이용 조건 모달 때문에 대기했
 2026-09-12 JSTOR 이미지 화면의5개 추가 정렬과 원 조건을 확인했다. `data/validation/20260912T082405Z-jstor-image-controls.json`은 제목·제작자 양방향과 해상도의 sort/sortOrder,10MP 초과 조건47건을 보존한다. 추가 facets는 원 field와 label을 받고 선택 상태를 대조한다. 제공기관은 label만 전송하면 조건이 무시돼242건 그대로였으며083058Z MCP는 이를 filter_mismatch로 거부했다.084340Z의 원 요청은 내부적으로 cc_portal_id#식별자를 사용했다. 하위 컬렉션은085108Z에서 접두사 없는 label로22건을 반환했다.
 
 `data/validation/20260912T085459Z-jstor-image-search-mcp.json`은 이미지 정렬5개, 해상도47·Europe5·Northern State University26·하위 NSU Pasque Collection22건과 필요한 facet 추출을 completed=true로 통과했다. 제작자 표시는 creators에 보존한다. 표시 이름은 선택용이며 label의 내부 구성을 호출자가 만들지 않는다. 공통269검사가 통과했다.
+
+
+2026-09-12 IOP의 문헌별 원 인용문을 검색 export에 연결했다. 첫090332Z-iop-search-citations-mcp.json은 접근 확인으로 제한됐다.090654Z-iop-verification-control.json은 현재 표시된 나무 제품 과제를 판독·선택해 확인 응답을 얻었지만 제출 후 동일 페이지의 URL 대기는 timeout이었다. 그 보고를 성공으로 고치지 않았다. 이후 `data/validation/20260912T091136Z-iop-search-citations-mcp.json`은 새 SDK에서 최신순 RSS의 BibTeX와 관련도 검색의 RIS, 각각 선택한1건과 실제 추출의 DOI add557을 completed=true로 통과했다. 원 파일 회수 성공은 이 별도 보고가 입증한다.
+
+RSS의 페이지 경계에서 선택한2건 중 두 번째 인용문이 제한되는 재현으로 검색 레코드·첫 파일·오류가 함께 유지됨을 확인했다. 자료원이나 검색 방식을 바꾸지 않고 형식에 따라 원 문헌 내보내기를 연결한다. 공통270검사가 통과했다. IOP XML의 별도 연락·검토 공급 경로는 계속 제외한다.

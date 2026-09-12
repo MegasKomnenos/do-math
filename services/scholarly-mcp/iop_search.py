@@ -44,16 +44,40 @@ def search_records(raw,base):
 
 def search(adapter,query,*,options,start=0,limit=20,cursor=None,export=None):
     options=dict(options);options.setdefault('sort','newest')
+    citation_format=export if export in ('bibtex','ris') else None
+    search_export=None if citation_format else export
     types=options.get('pub_type',[]);opened=options.get('open_access',False)
     if not isinstance(types,list) or any(x not in ('article','chapter','book') for x in types) or type(opened) is not bool:
         raise ServiceError('invalid_options','Use an article/chapter/book list and boolean open_access')
     if options['sort']=='newest' and not types and not opened:
         from iop_rss import IOPRSS
         if not hasattr(adapter,'_rss_api'):adapter._rss_api=IOPRSS(adapter.store,gateway=adapter.gateway,hosts=adapter.profile.hosts)
-        result=adapter._rss_api.search(query,options={k:v for k,v in options.items() if k not in ('pub_type','open_access')},start=start,limit=limit,cursor=cursor,export=export)
+        result=adapter._rss_api.search(query,options={k:v for k,v in options.items() if k not in ('pub_type','open_access')},start=start,limit=limit,cursor=cursor,export=search_export)
         result['options']=options
-        return result
-    return web_search(adapter,query,options=options,start=start,limit=limit,cursor=cursor,export=export)
+    else:result=web_search(adapter,query,options=options,start=start,limit=limit,cursor=cursor,export=search_export)
+    if citation_format:
+        from iop import citation
+        from publishers import publication_metadata,publication_dois
+        rows=json.loads(adapter.store.read(result['records']['ref'])[1]);files=[];failures=[]
+        for row in rows:
+            page=None
+            try:
+                page=adapter.document(row['url']);raw=page.content()
+                if is_access_challenge(raw):raise ServiceError('publisher_access_challenge','IOP requires access verification for this citation',status='restricted')
+                identifier=row.get('doi')
+                if not identifier:
+                    candidates=publication_dois(publication_metadata(raw))
+                    if len(candidates)!=1:raise ServiceError('identity_mismatch','IOP result has no unique native document DOI')
+                    identifier=candidates[0]
+                artifact=citation(adapter,page,identifier,citation_format)
+                files.append({'id':row['id'],'doi':identifier,'format':citation_format,'artifact':artifact})
+            except ServiceError as error:failures.append({'id':row['id'],**error.result})
+            except Exception as error:failures.append({'id':row['id'],'status':'error','code':'citation_export_failed','error_type':type(error).__name__})
+            finally:
+                if page is not None:page.close()
+        result['export']={'status':'partial' if failures else 'available','format':citation_format,'artifacts':files,'errors':failures}
+        if failures:result['status']='partial'
+    return result
 
 
 def web_search(adapter,query,*,options,start=0,limit=20,cursor=None,export=None):
