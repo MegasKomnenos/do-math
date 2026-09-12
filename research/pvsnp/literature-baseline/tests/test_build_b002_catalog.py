@@ -63,6 +63,27 @@ def make_occurrence(entry, field_code, rank):
 
 
 class BibTeXParserTests(unittest.TestCase):
+    def test_missing_key_recovery_is_opt_in_and_does_not_invent_a_key(self):
+        for raw in ('@phdthesis{\n title={A {Nested}, title}, year={2026}}',
+                    '@phdthesis{, title={An explicit empty key}}'):
+            with self.subTest(raw=raw):
+                with self.assertRaises(build_b002_catalog.BibTeXError):
+                    build_b002_catalog.parse_bibtex(raw,source_name='strict.bib')
+                scanner=build_b002_catalog._BibScanner(raw,'native.bib',allow_missing_key=True)
+                entry=scanner.read_entry()
+                self.assertEqual(entry.key,'')
+                self.assertEqual(entry.raw_text,raw)
+                self.assertIn('citation_key_missing',entry.parse_warnings)
+                self.assertEqual(len(entry.field_values('title')),1)
+        raw='@article{title=identifier, title={A normal key with equals}}'
+        entry=build_b002_catalog._BibScanner(raw,'key.bib',allow_missing_key=True).read_entry()
+        self.assertEqual(entry.key,'title=identifier')
+        self.assertNotIn('citation_key_missing',entry.parse_warnings)
+        raw='@article{title="identifier", title={The actual title}}'
+        entry=build_b002_catalog._BibScanner(raw,'quoted-key.bib',allow_missing_key=True).read_entry()
+        self.assertEqual(entry.key,'title="identifier"')
+        self.assertEqual(entry.field_values('title'),('The actual title',))
+
     def test_key_whitespace_recovery_is_opt_in_and_preserves_original(self):
         raw='@article{J Batina_2001, title={Original title}, year={2001}}'
         with self.assertRaises(build_b002_catalog.BibTeXError):

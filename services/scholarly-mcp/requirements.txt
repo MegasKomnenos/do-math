@@ -10,3 +10,4 @@ et-xmlfile==2.0.0
 xlrd==2.0.2
 rdflib==7.6.0
 pyparsing==3.3.2
+striprtf==0.0.33

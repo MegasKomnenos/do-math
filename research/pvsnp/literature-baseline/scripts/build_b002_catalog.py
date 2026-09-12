@@ -77,11 +77,13 @@ def _sha256_file(path: Path) -> str:
 
 
 class _BibScanner:
-    def __init__(self, text: str, source_name: str, *, allow_key_whitespace: bool = False) -> None:
+    def __init__(self, text: str, source_name: str, *, allow_key_whitespace: bool = False,
+                 allow_missing_key: bool = False) -> None:
         self.text = text
         self.source_name = source_name
         self.position = 0
         self.allow_key_whitespace = allow_key_whitespace
+        self.allow_missing_key = allow_missing_key
 
     def error(self, message: str) -> BibTeXError:
         line = self.text.count("\n", 0, self.position) + 1
@@ -192,21 +194,29 @@ class _BibScanner:
         self.position += 1
         self.skip_space_and_comments()
 
-        key_start = self.position
-        while self.position < len(self.text) and self.text[self.position] != ",":
-            if self.text[self.position] == closing:
-                raise self.error("entry has no fields")
+        field_first = self.allow_missing_key and re.match(
+            r'[A-Za-z][A-Za-z0-9_-]*\s*=\s*\{', self.text[self.position:])
+        if field_first:
+            key = ""
+            warnings.append("citation_key_missing")
+        else:
+            key_start = self.position
+            while self.position < len(self.text) and self.text[self.position] != ",":
+                if self.text[self.position] == closing:
+                    raise self.error("entry has no fields")
+                self.position += 1
+            if self.position >= len(self.text):
+                raise self.error("unclosed entry header")
+            key = self.text[key_start : self.position].strip()
+            if not key:
+                if not self.allow_missing_key:
+                    raise self.error("invalid BibTeX key")
+                warnings.append("citation_key_missing")
+            if any(character.isspace() for character in key):
+                if not self.allow_key_whitespace:
+                    raise self.error("invalid BibTeX key")
+                warnings.append("citation_key_contains_whitespace")
             self.position += 1
-        if self.position >= len(self.text):
-            raise self.error("unclosed entry header")
-        key = self.text[key_start : self.position].strip()
-        if not key:
-            raise self.error("invalid BibTeX key")
-        if any(character.isspace() for character in key):
-            if not self.allow_key_whitespace:
-                raise self.error("invalid BibTeX key")
-            warnings.append("citation_key_contains_whitespace")
-        self.position += 1
 
         field_items: list[tuple[str, str]] = []
         while True:

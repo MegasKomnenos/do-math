@@ -285,7 +285,7 @@ def bibliography(data, media):
         if media == "application/x-bibtex":
             rows = []
             # Native exports can have spaced citation keys; extract them with a warning, without rewriting.
-            scanner = module._BibScanner(text, source_name="artifact", allow_key_whitespace=True)
+            scanner = module._BibScanner(text, source_name="artifact", allow_key_whitespace=True, allow_missing_key=True)
             entries = []
             while scanner.position < len(text):
                 scanner.skip_space_and_comments()
@@ -543,6 +543,12 @@ def extract_artifact(store, ref, *, fields=None, start=0, count=20, selection=""
         return {"status": "ok", "artifact": ref, "unit": "pages", "start": start, "total": total,
             "returned": len(rows), "next_start": start + len(rows) if start + len(rows) < total else None,
             "items": rows, "interpretation": "Mechanical text and rendering; image meaning and text accuracy are assessed by the caller"}
+    elif media in ('application/rtf','text/rtf','application/x-rtf'):
+        from richtext import rtf_text
+        if selection:
+            raise ServiceError('invalid_selection','RTF extraction uses text lines and start/count; read the resource for original bytes')
+        rows=rtf_text(data).splitlines()
+        unit='lines'
     elif media.startswith("text/") or media in ('application/x-tex', 'application/x-latex','application/n-triples'):
         rows = data.decode("utf-8").splitlines()
         unit = "lines"
