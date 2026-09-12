@@ -35,7 +35,7 @@
 | AMS publications | ams | playwright | partial | source_guide, search, fetch, export | live_mcp_explicit_pdf; native_browser_mixed_search; dynamic_expression_offline_verified; live_search_restricted |
 | Cambridge University Press | cambridge | fixed: citation API; institutional search/document Playwright | partial | source_guide, search, fetch, export | live_mcp_filtered_search_ris_pdf_and_supplement_pdf_zip_source_extract |
 | De Gruyter Brill | de-gruyter | playwright | partial | source_guide, search, fetch, export | live_mcp_search_ris_pdf_and_supplement_zip_cif_lines; broken_link_observed |
-| JSTOR | jstor | fixed: citation/search API; institutional document Playwright | partial | source_guide, search, fetch, export | live_mcp_search_citations_pdf_image_mp3_transcripts_and_supplement_pdf; native_video_download_disabled |
+| JSTOR | jstor | fixed: citation/search API; institutional document Playwright | partial | source_guide, search, fetch, export | live_mcp_search_image_sorts_facets_citations_pdf_mp3_transcripts_supplement; native_video_download_disabled |
 | Oxford University Press | oxford | playwright | partial | source_guide, search, fetch, export | live_mcp_search_citation_metadata_abstract_pagination_and_supplement_pdf |
 | ScienceDirect | science-direct | playwright | partial | source_guide, fetch, export | live_mcp_institutional_ris_bibtex_plain_metadata_abstract_fetch |
 | Springer Nature | springer | playwright | partial | source_guide, search, fetch, export | live_mcp_advanced_search_citations_pdf_supplements_and_nature_html_tex_figure |

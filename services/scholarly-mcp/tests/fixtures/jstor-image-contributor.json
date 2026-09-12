@@ -1,0 +1,3164 @@
+{
+  "ab_segment": "[REDACTED]",
+  "acc": "on",
+  "searchQuery": "algebra",
+  "errors": [],
+  "facets": [
+    {
+      "comp_label": "search-within-filter"
+    },
+    {
+      "comp_label": "content-type",
+      "h_values": [
+        {
+          "field": "cty",
+          "values": [
+            {
+              "label": "contributed_serials",
+              "efq": "Y29udHJpYnV0ZWRfc2VyaWFscw==",
+              "display": "Serials",
+              "count": 222,
+              "selected": false
+            },
+            {
+              "label": "contributed_documents",
+              "efq": "Y29udHJpYnV0ZWRfZG9jdW1lbnRz",
+              "display": "Documents",
+              "count": 55,
+              "selected": false
+            },
+            {
+              "label": "contributed_images",
+              "efq": "Y29udHJpYnV0ZWRfaW1hZ2Vz",
+              "display": "Images",
+              "count": 26,
+              "selected": true
+            },
+            {
+              "label": "contributed_audio",
+              "efq": "Y29udHJpYnV0ZWRfYXVkaW8=",
+              "display": "Audio",
+              "count": 1,
+              "selected": false
+            }
+          ],
+          "comp_label": "primary-source-content"
+        }
+      ]
+    },
+    {
+      "field": "cc_media_resolution",
+      "values": [
+        {
+          "label": "cc_media_resolution:[9980929 TO *]",
+          "efq": "Y2NfbWVkaWFfcmVzb2x1dGlvbjpbOTk4MDkyOSBUTyAqXQ==",
+          "display": ">10 megapixels",
+          "count": 1,
+          "selected": false
+        },
+        {
+          "label": "cc_media_resolution:[7077889 TO 9980928]",
+          "efq": "Y2NfbWVkaWFfcmVzb2x1dGlvbjpbNzA3Nzg4OSBUTyA5OTgwOTI4XQ==",
+          "display": "7-10 megapixels",
+          "count": 1,
+          "selected": false
+        },
+        {
+          "label": "cc_media_resolution:[3686400 TO 7077888]",
+          "efq": "Y2NfbWVkaWFfcmVzb2x1dGlvbjpbMzY4NjQwMCBUTyA3MDc3ODg4XQ==",
+          "display": "4-7 megapixels",
+          "count": 3,
+          "selected": false
+        },
+        {
+          "label": "cc_media_resolution:[2073600 TO 3686399]",
+          "efq": "Y2NfbWVkaWFfcmVzb2x1dGlvbjpbMjA3MzYwMCBUTyAzNjg2Mzk5XQ==",
+          "display": "2-4 megapixels",
+          "count": 1,
+          "selected": false
+        },
+        {
+          "label": "cc_media_resolution:[* TO 2073599]",
+          "efq": "Y2NfbWVkaWFfcmVzb2x1dGlvbjpbKiBUTyAyMDczNTk5XQ==",
+          "display": "<2 megapixels",
+          "count": 24,
+          "selected": false
+        }
+      ],
+      "comp_label": "image-resolution"
+    },
+    {
+      "comp_label": "publication-date-filter"
+    },
+    {
+      "field": "cc_portal_id",
+      "values": [
+        {
+          "label": "100637739",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDYzNzczOQ==",
+          "display": "LaGuardia Community College, CUNY  Institutional Archives",
+          "count": 29,
+          "selected": false,
+          "children": [
+            {
+              "label": "100644179",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDYzNzczOSNjb2xsZWN0aW9uX2lkcyMxMDA2NDQxNzk=",
+              "display": "College Newsletters",
+              "count": 12,
+              "selected": false
+            },
+            {
+              "label": "100644199",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDYzNzczOSNjb2xsZWN0aW9uX2lkcyMxMDA2NDQxOTk=",
+              "display": "Creating LaGuardia Community College",
+              "count": 7,
+              "selected": false
+            },
+            {
+              "label": "100657799",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDYzNzczOSNjb2xsZWN0aW9uX2lkcyMxMDA2NTc3OTk=",
+              "display": "In Transit",
+              "count": 7,
+              "selected": false
+            },
+            {
+              "label": "100644219",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDYzNzczOSNjb2xsZWN0aW9uX2lkcyMxMDA2NDQyMTk=",
+              "display": "Literary Journals",
+              "count": 1,
+              "selected": false
+            },
+            {
+              "label": "100644239",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDYzNzczOSNjb2xsZWN0aW9uX2lkcyMxMDA2NDQyMzk=",
+              "display": "Student Newpapers",
+              "count": 1,
+              "selected": false
+            },
+            {
+              "label": "100673259",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDYzNzczOSNjb2xsZWN0aW9uX2lkcyMxMDA2NzMyNTk=",
+              "display": "College Senate",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100689779",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDY4OTc3OQ==",
+          "display": "Northern State University",
+          "count": 26,
+          "selected": true,
+          "children": [
+            {
+              "label": "100689799",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDY4OTc3OSNjb2xsZWN0aW9uX2lkcyMxMDA2ODk3OTk=",
+              "display": "Northern State University History",
+              "count": 25,
+              "selected": true
+            },
+            {
+              "label": "100692379",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDY4OTc3OSNjb2xsZWN0aW9uX2lkcyMxMDA2OTIzNzk=",
+              "display": "Germans from Russia",
+              "count": 1,
+              "selected": true
+            }
+          ]
+        },
+        {
+          "label": "100319187",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDMxOTE4Nw==",
+          "display": "Park University",
+          "count": 24,
+          "selected": false,
+          "children": [
+            {
+              "label": "100335167",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDMxOTE4NyNjb2xsZWN0aW9uX2lkcyMxMDAzMzUxNjc=",
+              "display": "Frances Fishburn Archives & Special Collections",
+              "count": 17,
+              "selected": false
+            },
+            {
+              "label": "100481263",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDMxOTE4NyNjb2xsZWN0aW9uX2lkcyMxMDA0ODEyNjM=",
+              "display": "Narva Yearbooks",
+              "count": 7,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100479083",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDQ3OTA4Mw==",
+          "display": "Hong Kong University of Science and Technology",
+          "count": 24,
+          "selected": false,
+          "children": [
+            {
+              "label": "100669459",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDQ3OTA4MyNjb2xsZWN0aW9uX2lkcyMxMDA2Njk0NTk=",
+              "display": "Rare books on history of Science",
+              "count": 24,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100146467",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDE0NjQ2Nw==",
+          "display": "Artstor",
+          "count": 20,
+          "selected": false,
+          "children": [
+            {
+              "label": "100181127",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDE0NjQ2NyNjb2xsZWN0aW9uX2lkcyMxMDAxODExMjc=",
+              "display": "Open: Science Museum Group",
+              "count": 10,
+              "selected": false
+            },
+            {
+              "label": "100181167",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDE0NjQ2NyNjb2xsZWN0aW9uX2lkcyMxMDAxODExNjc=",
+              "display": "Open: The Cleveland Museum of Art",
+              "count": 3,
+              "selected": false
+            },
+            {
+              "label": "100141788",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDE0NjQ2NyNjb2xsZWN0aW9uX2lkcyMxMDAxNDE3ODg=",
+              "display": "Manuscripts and Early Printed Books (Bodleian Library, Oxford University)",
+              "count": 2,
+              "selected": false
+            },
+            {
+              "label": "100181187",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDE0NjQ2NyNjb2xsZWN0aW9uX2lkcyMxMDAxODExODc=",
+              "display": "Open: Wellcome Collection",
+              "count": 2,
+              "selected": false
+            },
+            {
+              "label": "100141287",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDE0NjQ2NyNjb2xsZWN0aW9uX2lkcyMxMDAxNDEyODc=",
+              "display": "Visual Arts Legacy Collection",
+              "count": 1,
+              "selected": false
+            },
+            {
+              "label": "100142307",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDE0NjQ2NyNjb2xsZWN0aW9uX2lkcyMxMDAxNDIzMDc=",
+              "display": "Historic Campus Architecture Project (HCAP) (Council of Independent Colleges)",
+              "count": 1,
+              "selected": false
+            },
+            {
+              "label": "100144567",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDE0NjQ2NyNjb2xsZWN0aW9uX2lkcyMxMDAxNDQ1Njc=",
+              "display": "Rijksmuseum",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100586839",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDU4NjgzOQ==",
+          "display": "HPU Libraries Digital Archives & Collections",
+          "count": 11,
+          "selected": false,
+          "children": [
+            {
+              "label": "100632839",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDU4NjgzOSNjb2xsZWN0aW9uX2lkcyMxMDA2MzI4Mzk=",
+              "display": "Archives at High Point University",
+              "count": 11,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100085767",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDA4NTc2Nw==",
+          "display": "Roanoke College Digital Collections",
+          "count": 9,
+          "selected": false,
+          "children": [
+            {
+              "label": "100150727",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDA4NTc2NyNjb2xsZWN0aW9uX2lkcyMxMDAxNTA3Mjc=",
+              "display": "Roanoke College Roanoke Collegian",
+              "count": 8,
+              "selected": false
+            },
+            {
+              "label": "100432991",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDA4NTc2NyNjb2xsZWN0aW9uX2lkcyMxMDA0MzI5OTE=",
+              "display": "Roanoke College Virginia Corpus of Spanish Variation",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100093207",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDA5MzIwNw==",
+          "display": "Brooklyn College",
+          "count": 7,
+          "selected": false,
+          "children": [
+            {
+              "label": "100536295",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDA5MzIwNyNjb2xsZWN0aW9uX2lkcyMxMDA1MzYyOTU=",
+              "display": "Brooklyn College Yearbooks",
+              "count": 7,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100175687",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDE3NTY4Nw==",
+          "display": "University of Tennessee Southern Digital Collections and Archives",
+          "count": 7,
+          "selected": false,
+          "children": [
+            {
+              "label": "100175747",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDE3NTY4NyNjb2xsZWN0aW9uX2lkcyMxMDAxNzU3NDc=",
+              "display": "University of Tennessee Southern Yearbooks",
+              "count": 7,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100666859",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDY2Njg1OQ==",
+          "display": "California Baptist University",
+          "count": 7,
+          "selected": false,
+          "children": [
+            {
+              "label": "100671159",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDY2Njg1OSNjb2xsZWN0aW9uX2lkcyMxMDA2NzExNTk=",
+              "display": "The Banner",
+              "count": 7,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100548715",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDU0ODcxNQ==",
+          "display": "Baruch College\nArchives and \nSpecial Collections",
+          "count": 6,
+          "selected": false,
+          "children": [
+            {
+              "label": "100612859",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDU0ODcxNSNjb2xsZWN0aW9uX2lkcyMxMDA2MTI4NTk=",
+              "display": "Municipal Assistance Corporation Collection",
+              "count": 3,
+              "selected": false
+            },
+            {
+              "label": "100612819",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDU0ODcxNSNjb2xsZWN0aW9uX2lkcyMxMDA2MTI4MTk=",
+              "display": "The Luther Halsey Gulick III Papers",
+              "count": 2,
+              "selected": false
+            },
+            {
+              "label": "100600159",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDU0ODcxNSNjb2xsZWN0aW9uX2lkcyMxMDA2MDAxNTk=",
+              "display": "Institute of Public Administration Collection",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100458071",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDQ1ODA3MQ==",
+          "display": "Colby College",
+          "count": 5,
+          "selected": false,
+          "children": [
+            {
+              "label": "100568899",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDQ1ODA3MSNjb2xsZWN0aW9uX2lkcyMxMDA1Njg4OTk=",
+              "display": "Colby Special Collections",
+              "count": 4,
+              "selected": false
+            },
+            {
+              "label": "100485163",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDQ1ODA3MSNjb2xsZWN0aW9uX2lkcyMxMDA0ODUxNjM=",
+              "display": "Colby College Archives (Open Access)",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100551855",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDU1MTg1NQ==",
+          "display": "ONU Digital Collections",
+          "count": 5,
+          "selected": false,
+          "children": [
+            {
+              "label": "100554795",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDU1MTg1NSNjb2xsZWN0aW9uX2lkcyMxMDA1NTQ3OTU=",
+              "display": "University Publications",
+              "count": 3,
+              "selected": false
+            },
+            {
+              "label": "100556075",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDU1MTg1NSNjb2xsZWN0aW9uX2lkcyMxMDA1NTYwNzU=",
+              "display": "Olivet Scholarship",
+              "count": 2,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100077907",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDA3NzkwNw==",
+          "display": "Trinity College Digital Repository",
+          "count": 4,
+          "selected": false,
+          "children": [
+            {
+              "label": "100452511",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDA3NzkwNyNjb2xsZWN0aW9uX2lkcyMxMDA0NTI1MTE=",
+              "display": "College Archives",
+              "count": 3,
+              "selected": false
+            },
+            {
+              "label": "100574719",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDA3NzkwNyNjb2xsZWN0aW9uX2lkcyMxMDA1NzQ3MTk=",
+              "display": "Trinity College Faculty Scholarship",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100079227",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDA3OTIyNw==",
+          "display": "Lawrence University",
+          "count": 4,
+          "selected": false,
+          "children": [
+            {
+              "label": "100477203",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDA3OTIyNyNjb2xsZWN0aW9uX2lkcyMxMDA0NzcyMDM=",
+              "display": "Lawrence University Archives",
+              "count": 4,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100086627",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDA4NjYyNw==",
+          "display": "Wheaton College (MA)",
+          "count": 4,
+          "selected": false,
+          "children": [
+            {
+              "label": "100663159",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDA4NjYyNyNjb2xsZWN0aW9uX2lkcyMxMDA2NjMxNTk=",
+              "display": "Honors Theses",
+              "count": 4,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100140167",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDE0MDE2Nw==",
+          "display": "University of Puget Sound",
+          "count": 4,
+          "selected": false,
+          "children": [
+            {
+              "label": "100544835",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDE0MDE2NyNjb2xsZWN0aW9uX2lkcyMxMDA1NDQ4MzU=",
+              "display": "Student Research and Creative Works",
+              "count": 4,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100427671",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDQyNzY3MQ==",
+          "display": "Goucher College",
+          "count": 4,
+          "selected": false,
+          "children": [
+            {
+              "label": "100427811",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDQyNzY3MSNjb2xsZWN0aW9uX2lkcyMxMDA0Mjc4MTE=",
+              "display": "Goucher College Historical Documents and Ephemera Collection",
+              "count": 3,
+              "selected": false
+            },
+            {
+              "label": "100631699",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDQyNzY3MSNjb2xsZWN0aW9uX2lkcyMxMDA2MzE2OTk=",
+              "display": "Notable Goucher College People Collection",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100636659",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDYzNjY1OQ==",
+          "display": "Middle Tennessee State University",
+          "count": 4,
+          "selected": false,
+          "children": [
+            {
+              "label": "100679159",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDYzNjY1OSNjb2xsZWN0aW9uX2lkcyMxMDA2NzkxNTk=",
+              "display": "Walker Library Collaborative Collections",
+              "count": 2,
+              "selected": false
+            },
+            {
+              "label": "100683339",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDYzNjY1OSNjb2xsZWN0aW9uX2lkcyMxMDA2ODMzMzk=",
+              "display": "University Archives",
+              "count": 2,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100071867",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDA3MTg2Nw==",
+          "display": "Chatham University Archives & Special Collections",
+          "count": 3,
+          "selected": false,
+          "children": [
+            {
+              "label": "100613739",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDA3MTg2NyNjb2xsZWN0aW9uX2lkcyMxMDA2MTM3Mzk=",
+              "display": "The_Dilworthian",
+              "count": 3,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100313787",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDMxMzc4Nw==",
+          "display": "California Institute of Technology",
+          "count": 3,
+          "selected": false,
+          "children": [
+            {
+              "label": "100315087",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDMxMzc4NyNjb2xsZWN0aW9uX2lkcyMxMDAzMTUwODc=",
+              "display": "Image Archive",
+              "count": 3,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100442871",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDQ0Mjg3MQ==",
+          "display": "Illinois College - Khalaf Al Habtoor Archives \n",
+          "count": 3,
+          "selected": false,
+          "children": [
+            {
+              "label": "100443271",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDQ0Mjg3MSNjb2xsZWN0aW9uX2lkcyMxMDA0NDMyNzE=",
+              "display": "Jacksonville, Illinois, Oral History Collection",
+              "count": 1,
+              "selected": false
+            },
+            {
+              "label": "100443291",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDQ0Mjg3MSNjb2xsZWN0aW9uX2lkcyMxMDA0NDMyOTE=",
+              "display": "Illinois College Poetry Magazine",
+              "count": 1,
+              "selected": false
+            },
+            {
+              "label": "100443391",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDQ0Mjg3MSNjb2xsZWN0aW9uX2lkcyMxMDA0NDMzOTE=",
+              "display": "Illinois College Yearbooks",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100444631",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDQ0NDYzMQ==",
+          "display": "Athens State University",
+          "count": 3,
+          "selected": false,
+          "children": [
+            {
+              "label": "100447551",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDQ0NDYzMSNjb2xsZWN0aW9uX2lkcyMxMDA0NDc1NTE=",
+              "display": "Student Newspapers",
+              "count": 3,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100578799",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDU3ODc5OQ==",
+          "display": "Southern California Institute of Architecture (SCI-Arc)",
+          "count": 3,
+          "selected": false,
+          "children": [
+            {
+              "label": "100690979",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDU3ODc5OSNjb2xsZWN0aW9uX2lkcyMxMDA2OTA5Nzk=",
+              "display": "SCI-Arc Course Catalogs",
+              "count": 3,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100105387",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDEwNTM4Nw==",
+          "display": "University College London Special Collections",
+          "count": 2,
+          "selected": false,
+          "children": [
+            {
+              "label": "100596299",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDEwNTM4NyNjb2xsZWN0aW9uX2lkcyMxMDA1OTYyOTk=",
+              "display": "University College Magazine",
+              "count": 1,
+              "selected": false
+            },
+            {
+              "label": "100596419",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDEwNTM4NyNjb2xsZWN0aW9uX2lkcyMxMDA1OTY0MTk=",
+              "display": "University College Union Magazine",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100148707",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDE0ODcwNw==",
+          "display": "Washington University in St. Louis",
+          "count": 2,
+          "selected": false,
+          "children": [
+            {
+              "label": "100148947",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDE0ODcwNyNjb2xsZWN0aW9uX2lkcyMxMDAxNDg5NDc=",
+              "display": "Walt Reed Illustration Archive Tear Sheet Collection",
+              "count": 2,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100325007",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDMyNTAwNw==",
+          "display": "Brigham Young University",
+          "count": 2,
+          "selected": false,
+          "children": [
+            {
+              "label": "100347927",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDMyNTAwNyNjb2xsZWN0aW9uX2lkcyMxMDAzNDc5Mjc=",
+              "display": "Miscellaneous 3",
+              "count": 1,
+              "selected": false
+            },
+            {
+              "label": "100500075",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDMyNTAwNyNjb2xsZWN0aW9uX2lkcyMxMDA1MDAwNzU=",
+              "display": "Special Collections - TMA Slides (UA1346)",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100432291",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDQzMjI5MQ==",
+          "display": "University of Delaware",
+          "count": 2,
+          "selected": false,
+          "children": [
+            {
+              "label": "100432311",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDQzMjI5MSNjb2xsZWN0aW9uX2lkcyMxMDA0MzIzMTE=",
+              "display": "Torbert-Ellegood collection",
+              "count": 1,
+              "selected": false
+            },
+            {
+              "label": "100578299",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDQzMjI5MSNjb2xsZWN0aW9uX2lkcyMxMDA1NzgyOTk=",
+              "display": "UD Library:  Robert H. Richards, Jr., Delaware Oral History Collection",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100455331",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDQ1NTMzMQ==",
+          "display": "Centenary University",
+          "count": 2,
+          "selected": false,
+          "children": [
+            {
+              "label": "100596179",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDQ1NTMzMSNjb2xsZWN0aW9uX2lkcyMxMDA1OTYxNzk=",
+              "display": "Centenary Collegiate Institute Funding, Finances, and Promotion History",
+              "count": 1,
+              "selected": false
+            },
+            {
+              "label": "100605459",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDQ1NTMzMSNjb2xsZWN0aW9uX2lkcyMxMDA2MDU0NTk=",
+              "display": "Event Programs",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100626779",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDYyNjc3OQ==",
+          "display": "Ferris State University",
+          "count": 2,
+          "selected": false,
+          "children": [
+            {
+              "label": "100685499",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDYyNjc3OSNjb2xsZWN0aW9uX2lkcyMxMDA2ODU0OTk=",
+              "display": "University Archives Photo Collection",
+              "count": 2,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100687839",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDY4NzgzOQ==",
+          "display": "Huntington Library",
+          "count": 2,
+          "selected": false,
+          "children": [
+            {
+              "label": "100687899",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDY4NzgzOSNjb2xsZWN0aW9uX2lkcyMxMDA2ODc4OTk=",
+              "display": "Edwin Powell Hubble papers",
+              "count": 2,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100086847",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDA4Njg0Nw==",
+          "display": "Emerson College Special Collections",
+          "count": 1,
+          "selected": false,
+          "children": [
+            {
+              "label": "100522235",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDA4Njg0NyNjb2xsZWN0aW9uX2lkcyMxMDA1MjIyMzU=",
+              "display": "Emerson College Sarah Moore Field Collection",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100098207",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDA5ODIwNw==",
+          "display": "University of Glasgow",
+          "count": 1,
+          "selected": false,
+          "children": [
+            {
+              "label": "100663759",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDA5ODIwNyNjb2xsZWN0aW9uX2lkcyMxMDA2NjM3NTk=",
+              "display": "Student Notebook of Colin MacLaurin, 1712-1714",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100109247",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDEwOTI0Nw==",
+          "display": "Fleet Library at RISD",
+          "count": 1,
+          "selected": false,
+          "children": [
+            {
+              "label": "100519215",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDEwOTI0NyNjb2xsZWN0aW9uX2lkcyMxMDA1MTkyMTU=",
+              "display": "Arden Phair Cartoon Collection",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100115127",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDExNTEyNw==",
+          "display": "Vanderbilt University",
+          "count": 1,
+          "selected": false,
+          "children": [
+            {
+              "label": "100605699",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDExNTEyNyNjb2xsZWN0aW9uX2lkcyMxMDA2MDU2OTk=",
+              "display": "Vanderbilt Magazine",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100137247",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDEzNzI0Nw==",
+          "display": "Santa Rosa \nJunior College",
+          "count": 1,
+          "selected": false,
+          "children": [
+            {
+              "label": "100175867",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDEzNzI0NyNjb2xsZWN0aW9uX2lkcyMxMDAxNzU4Njc=",
+              "display": "Santa Rosa Junior College Digital Archives Collection",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100150747",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDE1MDc0Nw==",
+          "display": "Skidmore College\n",
+          "count": 1,
+          "selected": false,
+          "children": [
+            {
+              "label": "100558455",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDE1MDc0NyNjb2xsZWN0aW9uX2lkcyMxMDA1NTg0NTU=",
+              "display": "George Cruikshank (from the Norman M. Fox Collection of Illustrated Books)",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100169927",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDE2OTkyNw==",
+          "display": "Ottawa University",
+          "count": 1,
+          "selected": false,
+          "children": [
+            {
+              "label": "100171087",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDE2OTkyNyNjb2xsZWN0aW9uX2lkcyMxMDAxNzEwODc=",
+              "display": "Indigenous People in the Contemporary World",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100339087",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDMzOTA4Nw==",
+          "display": "The Community Education System Digital Library",
+          "count": 1,
+          "selected": false,
+          "children": [
+            {
+              "label": "100341567",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDMzOTA4NyNjb2xsZWN0aW9uX2lkcyMxMDAzNDE1Njc=",
+              "display": "Elizabeth (Betty) Jones Archive – Pacific Oaks College",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100477703",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDQ3NzcwMw==",
+          "display": "King's College London",
+          "count": 1,
+          "selected": false,
+          "children": [
+            {
+              "label": "100485983",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDQ3NzcwMyNjb2xsZWN0aW9uX2lkcyMxMDA0ODU5ODM=",
+              "display": "King’s College London Calendars",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        }
+      ],
+      "comp_label": "collection"
+    },
+    {
+      "field": "cc_compilation_ids",
+      "values": [
+        {
+          "label": "43056383",
+          "efq": "NDMwNTYzODM=",
+          "display": "NSU Pasque Collection",
+          "count": 22,
+          "selected": false
+        },
+        {
+          "label": "43056378",
+          "efq": "NDMwNTYzNzg=",
+          "display": "NSU History Collection",
+          "count": 3,
+          "selected": false
+        },
+        {
+          "label": "43196826",
+          "efq": "NDMxOTY4MjY=",
+          "display": "South Dakota Germans From Russia Collection",
+          "count": 1,
+          "selected": false
+        }
+      ],
+      "comp_label": "subcollection"
+    },
+    {
+      "comp_label": "access-filter"
+    }
+  ],
+  "groupedResults": {
+    "column1": {
+      "comp_label": "component_set",
+      "results": [
+        {
+          "comp_label": "image-results-matrix",
+          "group_efq": "WyJjb250cmlidXRlZF9wYW5vcmFtYXMiLCJjb250cmlidXRlZF9pbWFnZXMiXQ==",
+          "image_assets_path": "//www-jstor-org.libproxy.knu.ac.kr/assets/global_20251201T215504/build/images/",
+          "register_and_read_entitlement_id": "[REDACTED]",
+          "results": [
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [],
+              "date": {
+                "CC Dates": [
+                  "December 29, 1924"
+                ],
+                "Year": [
+                  "1924"
+                ],
+                "Display Date": [
+                  "December 29, 1924"
+                ]
+              },
+              "doi": "10.2307/community.43064407",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "ef9fa6e7-8616-3fcd-a5c0-6feb979fe8d4",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Report Card"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "December 29, 1924"
+              ],
+              "display_date": [
+                "December 29, 1924"
+              ],
+              "year": 1924,
+              "pubdate": "",
+              "stable_url": "/stable/community.43064407",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Report Card",
+              "result_date_string": "December 29, 1924",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [
+                "43056378"
+              ],
+              "cc_compilation_titles": [
+                "NSU History Collection"
+              ],
+              "cc_work_type": [
+                "Text"
+              ],
+              "collection_ids": [
+                "100689799"
+              ],
+              "collection_titles": [
+                "Northern State University History"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/ef9fa6e7-8616-3fcd-a5c0-6feb979fe8d4/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [
+                "NSU History Collection"
+              ],
+              "alt_text": "",
+              "cc_compilation_urls": [
+                "/site/northern-state-university/nsu-history/nsuhistorycollection-43056378/"
+              ],
+              "collection_url": "/site/northern-state-university/nsu-history/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [],
+              "date": {
+                "CC Dates": [
+                  "March 16, 1925"
+                ],
+                "Year": [
+                  "1925"
+                ],
+                "Display Date": [
+                  "March 16, 1925"
+                ]
+              },
+              "doi": "10.2307/community.43064415",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "f9457a2c-4e1c-313f-b8f9-ffe15c16224f",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Report Card"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "March 16, 1925"
+              ],
+              "display_date": [
+                "March 16, 1925"
+              ],
+              "year": 1925,
+              "pubdate": "",
+              "stable_url": "/stable/community.43064415",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Report Card",
+              "result_date_string": "March 16, 1925",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [
+                "43056378"
+              ],
+              "cc_compilation_titles": [
+                "NSU History Collection"
+              ],
+              "cc_work_type": [
+                "Text"
+              ],
+              "collection_ids": [
+                "100689799"
+              ],
+              "collection_titles": [
+                "Northern State University History"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/f9457a2c-4e1c-313f-b8f9-ffe15c16224f/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [
+                "NSU History Collection"
+              ],
+              "alt_text": "",
+              "cc_compilation_urls": [
+                "/site/northern-state-university/nsu-history/nsuhistorycollection-43056378/"
+              ],
+              "collection_url": "/site/northern-state-university/nsu-history/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Duane Stabler"
+              ],
+              "date": {
+                "CC Dates": [
+                  "2018-01-31"
+                ],
+                "Year": [
+                  "2018"
+                ],
+                "Display Date": [
+                  "2018-01-31"
+                ]
+              },
+              "doi": "10.2307/community.43201786",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "396915c1-52ef-3769-a844-5f6c7417f96d",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Looking Back"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "2018-01-31"
+              ],
+              "display_date": [
+                "2018-01-31"
+              ],
+              "year": 2018,
+              "pubdate": "",
+              "stable_url": "/stable/community.43201786",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Looking Back",
+              "result_date_string": "2018-01-31",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [
+                "43196826"
+              ],
+              "cc_compilation_titles": [
+                "South Dakota Germans From Russia Collection"
+              ],
+              "cc_work_type": [
+                "Text"
+              ],
+              "collection_ids": [
+                "100692379"
+              ],
+              "collection_titles": [
+                "Germans from Russia"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/396915c1-52ef-3769-a844-5f6c7417f96d/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [
+                "South Dakota Germans From Russia Collection"
+              ],
+              "alt_text": "",
+              "cc_compilation_urls": [
+                "/site/northern-state-university/germans-from-russia/southdakotagermansfromrussiacollection-43196826/"
+              ],
+              "collection_url": "/site/northern-state-university/germans-from-russia/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "J. Howard Kramer"
+              ],
+              "date": {
+                "CC Dates": [
+                  "Fall 1967",
+                  "07/13/2007"
+                ],
+                "Year": [
+                  "1967"
+                ],
+                "Display Date": [
+                  "Fall 1967",
+                  "07/13/2007"
+                ]
+              },
+              "doi": "10.2307/community.43063668",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "d41b36d1-f251-3cdd-a143-02561f2119d2",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "\"The Barn\", Mewaldt-Jensen Hall"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "Fall 1967",
+                "07/13/2007"
+              ],
+              "display_date": [
+                "Fall 1967",
+                "07/13/2007"
+              ],
+              "year": 1967,
+              "pubdate": "",
+              "stable_url": "/stable/community.43063668",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "\"The Barn\", Mewaldt-Jensen Hall",
+              "result_date_string": "Fall 1967",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [
+                "43056378"
+              ],
+              "cc_compilation_titles": [
+                "NSU History Collection"
+              ],
+              "cc_work_type": [
+                "Still image"
+              ],
+              "collection_ids": [
+                "100689799"
+              ],
+              "collection_titles": [
+                "Northern State University History"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/d41b36d1-f251-3cdd-a143-02561f2119d2/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [
+                "NSU History Collection"
+              ],
+              "alt_text": "",
+              "cc_compilation_urls": [
+                "/site/northern-state-university/nsu-history/nsuhistorycollection-43056378/"
+              ],
+              "collection_url": "/site/northern-state-university/nsu-history/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Northern Normal and Industrial School/Northern State University"
+              ],
+              "date": {
+                "CC Dates": [
+                  "2010-02-01"
+                ],
+                "Year": [
+                  "2010"
+                ],
+                "Display Date": [
+                  "2010-02-01"
+                ]
+              },
+              "doi": "10.2307/community.43069526",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "e0b3d279-6d6a-3f70-b177-6f08f01d0fff",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "1914 Pasque"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "2010-02-01"
+              ],
+              "display_date": [
+                "2010-02-01"
+              ],
+              "year": 2010,
+              "pubdate": "",
+              "stable_url": "/stable/community.43069526",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "1914 Pasque",
+              "result_date_string": "2010-02-01",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [
+                "43056383"
+              ],
+              "cc_compilation_titles": [
+                "NSU Pasque Collection"
+              ],
+              "cc_work_type": [
+                "Text",
+                "Still image"
+              ],
+              "collection_ids": [
+                "100689799"
+              ],
+              "collection_titles": [
+                "Northern State University History"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/e0b3d279-6d6a-3f70-b177-6f08f01d0fff/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [
+                "NSU Pasque Collection"
+              ],
+              "alt_text": "",
+              "cc_compilation_urls": [
+                "/site/northern-state-university/nsu-history/nsupasquecollection-43056383/"
+              ],
+              "collection_url": "/site/northern-state-university/nsu-history/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Northern State University"
+              ],
+              "date": {
+                "CC Dates": [
+                  "1984",
+                  "03/01/2013"
+                ],
+                "Year": [
+                  "1984"
+                ],
+                "Display Date": [
+                  "1984",
+                  "03/01/2013"
+                ]
+              },
+              "doi": "10.2307/community.43069392",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "4ff79f4e-06a4-3244-b9c7-6bd3ab56d166",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "1984 Pasque"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "1984",
+                "03/01/2013"
+              ],
+              "display_date": [
+                "1984",
+                "03/01/2013"
+              ],
+              "year": 1984,
+              "pubdate": "",
+              "stable_url": "/stable/community.43069392",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "1984 Pasque",
+              "result_date_string": "1984",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [
+                "43056383"
+              ],
+              "cc_compilation_titles": [
+                "NSU Pasque Collection"
+              ],
+              "cc_work_type": [
+                "Text",
+                "Still image"
+              ],
+              "collection_ids": [
+                "100689799"
+              ],
+              "collection_titles": [
+                "Northern State University History"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/4ff79f4e-06a4-3244-b9c7-6bd3ab56d166/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [
+                "NSU Pasque Collection"
+              ],
+              "alt_text": "",
+              "cc_compilation_urls": [
+                "/site/northern-state-university/nsu-history/nsupasquecollection-43056383/"
+              ],
+              "collection_url": "/site/northern-state-university/nsu-history/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Northern Normal and Industrial School/Northern State University"
+              ],
+              "date": {
+                "CC Dates": [
+                  "19",
+                  "02/01/2010"
+                ],
+                "Year": [
+                  "19"
+                ],
+                "Display Date": [
+                  "19",
+                  "02/01/2010"
+                ]
+              },
+              "doi": "10.2307/community.43069464",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "4d70850d-6828-32cc-98ff-826b738e2978",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "1984 Pasque"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "19",
+                "02/01/2010"
+              ],
+              "display_date": [
+                "19",
+                "02/01/2010"
+              ],
+              "year": 19,
+              "pubdate": "",
+              "stable_url": "/stable/community.43069464",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "1984 Pasque",
+              "result_date_string": "19",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [
+                "43056383"
+              ],
+              "cc_compilation_titles": [
+                "NSU Pasque Collection"
+              ],
+              "cc_work_type": [
+                "Text",
+                "Still image"
+              ],
+              "collection_ids": [
+                "100689799"
+              ],
+              "collection_titles": [
+                "Northern State University History"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/4d70850d-6828-32cc-98ff-826b738e2978/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [
+                "NSU Pasque Collection"
+              ],
+              "alt_text": "",
+              "cc_compilation_urls": [
+                "/site/northern-state-university/nsu-history/nsupasquecollection-43056383/"
+              ],
+              "collection_url": "/site/northern-state-university/nsu-history/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Northern Normal and Industrial School/Northern State University"
+              ],
+              "date": {
+                "CC Dates": [
+                  "1912",
+                  "02/01/2010"
+                ],
+                "Year": [
+                  "1912"
+                ],
+                "Display Date": [
+                  "1912",
+                  "02/01/2010"
+                ]
+              },
+              "doi": "10.2307/community.43069444",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "8ccd4f9d-1c11-30c6-ae3a-28d522f4654a",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "1912 Pasque"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "1912",
+                "02/01/2010"
+              ],
+              "display_date": [
+                "1912",
+                "02/01/2010"
+              ],
+              "year": 1912,
+              "pubdate": "",
+              "stable_url": "/stable/community.43069444",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "1912 Pasque",
+              "result_date_string": "1912",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [
+                "43056383"
+              ],
+              "cc_compilation_titles": [
+                "NSU Pasque Collection"
+              ],
+              "cc_work_type": [
+                "Text",
+                "Still image"
+              ],
+              "collection_ids": [
+                "100689799"
+              ],
+              "collection_titles": [
+                "Northern State University History"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/8ccd4f9d-1c11-30c6-ae3a-28d522f4654a/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [
+                "NSU Pasque Collection"
+              ],
+              "alt_text": "",
+              "cc_compilation_urls": [
+                "/site/northern-state-university/nsu-history/nsupasquecollection-43056383/"
+              ],
+              "collection_url": "/site/northern-state-university/nsu-history/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Northern Normal and Industrial School/Northern State University"
+              ],
+              "date": {
+                "CC Dates": [
+                  "1933",
+                  "02/01/2010"
+                ],
+                "Year": [
+                  "1933"
+                ],
+                "Display Date": [
+                  "1933",
+                  "02/01/2010"
+                ]
+              },
+              "doi": "10.2307/community.43069448",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "5d06a326-2fe9-3e14-a0f1-9bff1943d682",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "1933 Pasque"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "1933",
+                "02/01/2010"
+              ],
+              "display_date": [
+                "1933",
+                "02/01/2010"
+              ],
+              "year": 1933,
+              "pubdate": "",
+              "stable_url": "/stable/community.43069448",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "1933 Pasque",
+              "result_date_string": "1933",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [
+                "43056383"
+              ],
+              "cc_compilation_titles": [
+                "NSU Pasque Collection"
+              ],
+              "cc_work_type": [
+                "Text",
+                "Still image"
+              ],
+              "collection_ids": [
+                "100689799"
+              ],
+              "collection_titles": [
+                "Northern State University History"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/5d06a326-2fe9-3e14-a0f1-9bff1943d682/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [
+                "NSU Pasque Collection"
+              ],
+              "alt_text": "",
+              "cc_compilation_urls": [
+                "/site/northern-state-university/nsu-history/nsupasquecollection-43056383/"
+              ],
+              "collection_url": "/site/northern-state-university/nsu-history/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Northern Normal and Industrial School/Northern State University"
+              ],
+              "date": {
+                "CC Dates": [
+                  "2010-02-01"
+                ],
+                "Year": [
+                  "2010"
+                ],
+                "Display Date": [
+                  "2010-02-01"
+                ]
+              },
+              "doi": "10.2307/community.43069566",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "465f05ea-48ad-38a8-a030-658508c4d668",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "1918 Pasque"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "2010-02-01"
+              ],
+              "display_date": [
+                "2010-02-01"
+              ],
+              "year": 2010,
+              "pubdate": "",
+              "stable_url": "/stable/community.43069566",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "1918 Pasque",
+              "result_date_string": "2010-02-01",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [
+                "43056383"
+              ],
+              "cc_compilation_titles": [
+                "NSU Pasque Collection"
+              ],
+              "cc_work_type": [
+                "Text",
+                "Still image"
+              ],
+              "collection_ids": [
+                "100689799"
+              ],
+              "collection_titles": [
+                "Northern State University History"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/465f05ea-48ad-38a8-a030-658508c4d668/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [
+                "NSU Pasque Collection"
+              ],
+              "alt_text": "",
+              "cc_compilation_urls": [
+                "/site/northern-state-university/nsu-history/nsupasquecollection-43056383/"
+              ],
+              "collection_url": "/site/northern-state-university/nsu-history/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Northern State University"
+              ],
+              "date": {
+                "CC Dates": [
+                  "1990",
+                  "04/05/2013"
+                ],
+                "Year": [
+                  "1990"
+                ],
+                "Display Date": [
+                  "1990",
+                  "04/05/2013"
+                ]
+              },
+              "doi": "10.2307/community.43069657",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "97dc17ac-15e2-338b-b496-174c9f712d06",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "1990 Pasque"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "1990",
+                "04/05/2013"
+              ],
+              "display_date": [
+                "1990",
+                "04/05/2013"
+              ],
+              "year": 1990,
+              "pubdate": "",
+              "stable_url": "/stable/community.43069657",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "1990 Pasque",
+              "result_date_string": "1990",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [
+                "43056383"
+              ],
+              "cc_compilation_titles": [
+                "NSU Pasque Collection"
+              ],
+              "cc_work_type": [
+                "Text",
+                "Still image"
+              ],
+              "collection_ids": [
+                "100689799"
+              ],
+              "collection_titles": [
+                "Northern State University History"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/97dc17ac-15e2-338b-b496-174c9f712d06/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [
+                "NSU Pasque Collection"
+              ],
+              "alt_text": "",
+              "cc_compilation_urls": [
+                "/site/northern-state-university/nsu-history/nsupasquecollection-43056383/"
+              ],
+              "collection_url": "/site/northern-state-university/nsu-history/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Northern Normal and Industrial School/Northern State University"
+              ],
+              "date": {
+                "CC Dates": [
+                  "19",
+                  "02/01/2010"
+                ],
+                "Year": [
+                  "19"
+                ],
+                "Display Date": [
+                  "19",
+                  "02/01/2010"
+                ]
+              },
+              "doi": "10.2307/community.43069555",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "344fa7b8-77d8-36c0-a490-10bdb1ca4dae",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "1990 Pasque"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "19",
+                "02/01/2010"
+              ],
+              "display_date": [
+                "19",
+                "02/01/2010"
+              ],
+              "year": 19,
+              "pubdate": "",
+              "stable_url": "/stable/community.43069555",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "1990 Pasque",
+              "result_date_string": "19",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [
+                "43056383"
+              ],
+              "cc_compilation_titles": [
+                "NSU Pasque Collection"
+              ],
+              "cc_work_type": [
+                "Text",
+                "Still image"
+              ],
+              "collection_ids": [
+                "100689799"
+              ],
+              "collection_titles": [
+                "Northern State University History"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/344fa7b8-77d8-36c0-a490-10bdb1ca4dae/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [
+                "NSU Pasque Collection"
+              ],
+              "alt_text": "",
+              "cc_compilation_urls": [
+                "/site/northern-state-university/nsu-history/nsupasquecollection-43056383/"
+              ],
+              "collection_url": "/site/northern-state-university/nsu-history/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Northern Normal and Industrial School/Northern State University"
+              ],
+              "date": {
+                "CC Dates": [
+                  "1923",
+                  "04/22/2014"
+                ],
+                "Year": [
+                  "1923"
+                ],
+                "Display Date": [
+                  "1923",
+                  "04/22/2014"
+                ]
+              },
+              "doi": "10.2307/community.43069436",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "f0e44c04-e3e6-33f9-88c1-d65f91793866",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "1923 Pasque"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "1923",
+                "04/22/2014"
+              ],
+              "display_date": [
+                "1923",
+                "04/22/2014"
+              ],
+              "year": 1923,
+              "pubdate": "",
+              "stable_url": "/stable/community.43069436",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "1923 Pasque",
+              "result_date_string": "1923",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [
+                "43056383"
+              ],
+              "cc_compilation_titles": [
+                "NSU Pasque Collection"
+              ],
+              "cc_work_type": [
+                "Text",
+                "Still image"
+              ],
+              "collection_ids": [
+                "100689799"
+              ],
+              "collection_titles": [
+                "Northern State University History"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/f0e44c04-e3e6-33f9-88c1-d65f91793866/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [
+                "NSU Pasque Collection"
+              ],
+              "alt_text": "",
+              "cc_compilation_urls": [
+                "/site/northern-state-university/nsu-history/nsupasquecollection-43056383/"
+              ],
+              "collection_url": "/site/northern-state-university/nsu-history/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Northern Normal and Industrial School/Northern State University"
+              ],
+              "date": {
+                "CC Dates": [
+                  "19",
+                  "02/01/2010"
+                ],
+                "Year": [
+                  "19"
+                ],
+                "Display Date": [
+                  "19",
+                  "02/01/2010"
+                ]
+              },
+              "doi": "10.2307/community.43069621",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "90b65174-d32d-312d-a27f-4076cfcf5bb6",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "1923 Pasque"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "19",
+                "02/01/2010"
+              ],
+              "display_date": [
+                "19",
+                "02/01/2010"
+              ],
+              "year": 19,
+              "pubdate": "",
+              "stable_url": "/stable/community.43069621",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "1923 Pasque",
+              "result_date_string": "19",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [
+                "43056383"
+              ],
+              "cc_compilation_titles": [
+                "NSU Pasque Collection"
+              ],
+              "cc_work_type": [
+                "Text",
+                "Still image"
+              ],
+              "collection_ids": [
+                "100689799"
+              ],
+              "collection_titles": [
+                "Northern State University History"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/90b65174-d32d-312d-a27f-4076cfcf5bb6/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [
+                "NSU Pasque Collection"
+              ],
+              "alt_text": "",
+              "cc_compilation_urls": [
+                "/site/northern-state-university/nsu-history/nsupasquecollection-43056383/"
+              ],
+              "collection_url": "/site/northern-state-university/nsu-history/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Northern Normal and Industrial School/Northern State University"
+              ],
+              "date": {
+                "CC Dates": [
+                  "19",
+                  "02/01/2010"
+                ],
+                "Year": [
+                  "19"
+                ],
+                "Display Date": [
+                  "19",
+                  "02/01/2010"
+                ]
+              },
+              "doi": "10.2307/community.43069560",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "5a185898-d28a-30a7-bdb1-df1bac05b3a4",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "1995 Pasque"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "19",
+                "02/01/2010"
+              ],
+              "display_date": [
+                "19",
+                "02/01/2010"
+              ],
+              "year": 19,
+              "pubdate": "",
+              "stable_url": "/stable/community.43069560",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "1995 Pasque",
+              "result_date_string": "19",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [
+                "43056383"
+              ],
+              "cc_compilation_titles": [
+                "NSU Pasque Collection"
+              ],
+              "cc_work_type": [
+                "Text",
+                "Still image"
+              ],
+              "collection_ids": [
+                "100689799"
+              ],
+              "collection_titles": [
+                "Northern State University History"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/5a185898-d28a-30a7-bdb1-df1bac05b3a4/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [
+                "NSU Pasque Collection"
+              ],
+              "alt_text": "",
+              "cc_compilation_urls": [
+                "/site/northern-state-university/nsu-history/nsupasquecollection-43056383/"
+              ],
+              "collection_url": "/site/northern-state-university/nsu-history/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Northern Normal and Industrial School/Northern State University"
+              ],
+              "date": {
+                "CC Dates": [
+                  "19",
+                  "02/01/2010"
+                ],
+                "Year": [
+                  "19"
+                ],
+                "Display Date": [
+                  "19",
+                  "02/01/2010"
+                ]
+              },
+              "doi": "10.2307/community.43069478",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "013689ca-f524-3a4c-8114-ef7fe742baf4",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "1967 Pasque"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "19",
+                "02/01/2010"
+              ],
+              "display_date": [
+                "19",
+                "02/01/2010"
+              ],
+              "year": 19,
+              "pubdate": "",
+              "stable_url": "/stable/community.43069478",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "1967 Pasque",
+              "result_date_string": "19",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [
+                "43056383"
+              ],
+              "cc_compilation_titles": [
+                "NSU Pasque Collection"
+              ],
+              "cc_work_type": [
+                "Text",
+                "Still image"
+              ],
+              "collection_ids": [
+                "100689799"
+              ],
+              "collection_titles": [
+                "Northern State University History"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/013689ca-f524-3a4c-8114-ef7fe742baf4/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [
+                "NSU Pasque Collection"
+              ],
+              "alt_text": "",
+              "cc_compilation_urls": [
+                "/site/northern-state-university/nsu-history/nsupasquecollection-43056383/"
+              ],
+              "collection_url": "/site/northern-state-university/nsu-history/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Northern State College/Northern State University"
+              ],
+              "date": {
+                "CC Dates": [
+                  "1967",
+                  "11/13/2012"
+                ],
+                "Year": [
+                  "1967"
+                ],
+                "Display Date": [
+                  "1967",
+                  "11/13/2012"
+                ]
+              },
+              "doi": "10.2307/community.43069435",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "376f3867-de9f-317e-9a22-fd22f4825339",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "1967 Pasque"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "1967",
+                "11/13/2012"
+              ],
+              "display_date": [
+                "1967",
+                "11/13/2012"
+              ],
+              "year": 1967,
+              "pubdate": "",
+              "stable_url": "/stable/community.43069435",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "1967 Pasque",
+              "result_date_string": "1967",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [
+                "43056383"
+              ],
+              "cc_compilation_titles": [
+                "NSU Pasque Collection"
+              ],
+              "cc_work_type": [
+                "Text",
+                "Still image"
+              ],
+              "collection_ids": [
+                "100689799"
+              ],
+              "collection_titles": [
+                "Northern State University History"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/376f3867-de9f-317e-9a22-fd22f4825339/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [
+                "NSU Pasque Collection"
+              ],
+              "alt_text": "",
+              "cc_compilation_urls": [
+                "/site/northern-state-university/nsu-history/nsupasquecollection-43056383/"
+              ],
+              "collection_url": "/site/northern-state-university/nsu-history/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Northern State University"
+              ],
+              "date": {
+                "CC Dates": [
+                  "1995",
+                  "04/23/2013"
+                ],
+                "Year": [
+                  "1995"
+                ],
+                "Display Date": [
+                  "1995",
+                  "04/23/2013"
+                ]
+              },
+              "doi": "10.2307/community.43069648",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "6a7f9229-01c1-3b75-8810-1dc5bdfd25f9",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "1995 Pasque"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "1995",
+                "04/23/2013"
+              ],
+              "display_date": [
+                "1995",
+                "04/23/2013"
+              ],
+              "year": 1995,
+              "pubdate": "",
+              "stable_url": "/stable/community.43069648",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "1995 Pasque",
+              "result_date_string": "1995",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [
+                "43056383"
+              ],
+              "cc_compilation_titles": [
+                "NSU Pasque Collection"
+              ],
+              "cc_work_type": [
+                "Text",
+                "Still image"
+              ],
+              "collection_ids": [
+                "100689799"
+              ],
+              "collection_titles": [
+                "Northern State University History"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/6a7f9229-01c1-3b75-8810-1dc5bdfd25f9/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [
+                "NSU Pasque Collection"
+              ],
+              "alt_text": "",
+              "cc_compilation_urls": [
+                "/site/northern-state-university/nsu-history/nsupasquecollection-43056383/"
+              ],
+              "collection_url": "/site/northern-state-university/nsu-history/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Northern Normal and Industrial School/Northern State University"
+              ],
+              "date": {
+                "CC Dates": [
+                  "19",
+                  "02/01/2010"
+                ],
+                "Year": [
+                  "19"
+                ],
+                "Display Date": [
+                  "19",
+                  "02/01/2010"
+                ]
+              },
+              "doi": "10.2307/community.43069529",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "08524b1e-5991-322f-aac5-839fb9255a60",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "1959 Pasque"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "19",
+                "02/01/2010"
+              ],
+              "display_date": [
+                "19",
+                "02/01/2010"
+              ],
+              "year": 19,
+              "pubdate": "",
+              "stable_url": "/stable/community.43069529",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "1959 Pasque",
+              "result_date_string": "19",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [
+                "43056383"
+              ],
+              "cc_compilation_titles": [
+                "NSU Pasque Collection"
+              ],
+              "cc_work_type": [
+                "Text",
+                "Still image"
+              ],
+              "collection_ids": [
+                "100689799"
+              ],
+              "collection_titles": [
+                "Northern State University History"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/08524b1e-5991-322f-aac5-839fb9255a60/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [
+                "NSU Pasque Collection"
+              ],
+              "alt_text": "",
+              "cc_compilation_urls": [
+                "/site/northern-state-university/nsu-history/nsupasquecollection-43056383/"
+              ],
+              "collection_url": "/site/northern-state-university/nsu-history/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Northern State Teachers College/Northern State University"
+              ],
+              "date": {
+                "CC Dates": [
+                  "1961",
+                  "12/29/2010"
+                ],
+                "Year": [
+                  "1961"
+                ],
+                "Display Date": [
+                  "1961",
+                  "12/29/2010"
+                ]
+              },
+              "doi": "10.2307/community.43069681",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "18dda838-9161-3510-8e30-da0e151b243c",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "1961 Pasque"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "1961",
+                "12/29/2010"
+              ],
+              "display_date": [
+                "1961",
+                "12/29/2010"
+              ],
+              "year": 1961,
+              "pubdate": "",
+              "stable_url": "/stable/community.43069681",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "1961 Pasque",
+              "result_date_string": "1961",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [
+                "43056383"
+              ],
+              "cc_compilation_titles": [
+                "NSU Pasque Collection"
+              ],
+              "cc_work_type": [
+                "Text",
+                "Still image"
+              ],
+              "collection_ids": [
+                "100689799"
+              ],
+              "collection_titles": [
+                "Northern State University History"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/18dda838-9161-3510-8e30-da0e151b243c/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [
+                "NSU Pasque Collection"
+              ],
+              "alt_text": "",
+              "cc_compilation_urls": [
+                "/site/northern-state-university/nsu-history/nsupasquecollection-43056383/"
+              ],
+              "collection_url": "/site/northern-state-university/nsu-history/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Northern State University"
+              ],
+              "date": {
+                "CC Dates": [
+                  "1959",
+                  "12/29/2010"
+                ],
+                "Year": [
+                  "1959"
+                ],
+                "Display Date": [
+                  "1959",
+                  "12/29/2010"
+                ]
+              },
+              "doi": "10.2307/community.43069676",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "cc9c2400-a59e-32d0-ba76-9b44a995adcc",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "1959 Pasque"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "1959",
+                "12/29/2010"
+              ],
+              "display_date": [
+                "1959",
+                "12/29/2010"
+              ],
+              "year": 1959,
+              "pubdate": "",
+              "stable_url": "/stable/community.43069676",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "1959 Pasque",
+              "result_date_string": "1959",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [
+                "43056383"
+              ],
+              "cc_compilation_titles": [
+                "NSU Pasque Collection"
+              ],
+              "cc_work_type": [
+                "Text",
+                "Still image"
+              ],
+              "collection_ids": [
+                "100689799"
+              ],
+              "collection_titles": [
+                "Northern State University History"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/cc9c2400-a59e-32d0-ba76-9b44a995adcc/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [
+                "NSU Pasque Collection"
+              ],
+              "alt_text": "",
+              "cc_compilation_urls": [
+                "/site/northern-state-university/nsu-history/nsupasquecollection-43056383/"
+              ],
+              "collection_url": "/site/northern-state-university/nsu-history/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Northern Normal and Industrial School/Northern State University"
+              ],
+              "date": {
+                "CC Dates": [
+                  "19",
+                  "02/01/2010"
+                ],
+                "Year": [
+                  "19"
+                ],
+                "Display Date": [
+                  "19",
+                  "02/01/2010"
+                ]
+              },
+              "doi": "10.2307/community.43069631",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "89366b31-b6b2-3ff6-b63a-9217ea4bf6fb",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "1961 Pasque"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "19",
+                "02/01/2010"
+              ],
+              "display_date": [
+                "19",
+                "02/01/2010"
+              ],
+              "year": 19,
+              "pubdate": "",
+              "stable_url": "/stable/community.43069631",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "1961 Pasque",
+              "result_date_string": "19",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [
+                "43056383"
+              ],
+              "cc_compilation_titles": [
+                "NSU Pasque Collection"
+              ],
+              "cc_work_type": [
+                "Text",
+                "Still image"
+              ],
+              "collection_ids": [
+                "100689799"
+              ],
+              "collection_titles": [
+                "Northern State University History"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/89366b31-b6b2-3ff6-b63a-9217ea4bf6fb/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [
+                "NSU Pasque Collection"
+              ],
+              "alt_text": "",
+              "cc_compilation_urls": [
+                "/site/northern-state-university/nsu-history/nsupasquecollection-43056383/"
+              ],
+              "collection_url": "/site/northern-state-university/nsu-history/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Northern Normal and Industrial School/Northern State University"
+              ],
+              "date": {
+                "CC Dates": [
+                  "19",
+                  "02/01/2010"
+                ],
+                "Year": [
+                  "19"
+                ],
+                "Display Date": [
+                  "19",
+                  "02/01/2010"
+                ]
+              },
+              "doi": "10.2307/community.43069626",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "5bf2d721-fa4c-3116-aa49-5ba0c19c14d7",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "1926 Pasque"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "19",
+                "02/01/2010"
+              ],
+              "display_date": [
+                "19",
+                "02/01/2010"
+              ],
+              "year": 19,
+              "pubdate": "",
+              "stable_url": "/stable/community.43069626",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "1926 Pasque",
+              "result_date_string": "19",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [
+                "43056383"
+              ],
+              "cc_compilation_titles": [
+                "NSU Pasque Collection"
+              ],
+              "cc_work_type": [
+                "Text",
+                "Still image"
+              ],
+              "collection_ids": [
+                "100689799"
+              ],
+              "collection_titles": [
+                "Northern State University History"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/5bf2d721-fa4c-3116-aa49-5ba0c19c14d7/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [
+                "NSU Pasque Collection"
+              ],
+              "alt_text": "",
+              "cc_compilation_urls": [
+                "/site/northern-state-university/nsu-history/nsupasquecollection-43056383/"
+              ],
+              "collection_url": "/site/northern-state-university/nsu-history/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Northern Normal and Industrial School/Northern State University"
+              ],
+              "date": {
+                "CC Dates": [
+                  "1926",
+                  "04/20/2010"
+                ],
+                "Year": [
+                  "1926"
+                ],
+                "Display Date": [
+                  "1926",
+                  "04/20/2010"
+                ]
+              },
+              "doi": "10.2307/community.43069437",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "24d74093-9010-3425-8124-a272ff6b7fcf",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "1926 Pasque"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "1926",
+                "04/20/2010"
+              ],
+              "display_date": [
+                "1926",
+                "04/20/2010"
+              ],
+              "year": 1926,
+              "pubdate": "",
+              "stable_url": "/stable/community.43069437",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "1926 Pasque",
+              "result_date_string": "1926",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [
+                "43056383"
+              ],
+              "cc_compilation_titles": [
+                "NSU Pasque Collection"
+              ],
+              "cc_work_type": [
+                "Text",
+                "Still image"
+              ],
+              "collection_ids": [
+                "100689799"
+              ],
+              "collection_titles": [
+                "Northern State University History"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/24d74093-9010-3425-8124-a272ff6b7fcf/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [
+                "NSU Pasque Collection"
+              ],
+              "alt_text": "",
+              "cc_compilation_urls": [
+                "/site/northern-state-university/nsu-history/nsupasquecollection-43056383/"
+              ],
+              "collection_url": "/site/northern-state-university/nsu-history/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Northern Normal and Industrial School/Northern State University"
+              ],
+              "date": {
+                "CC Dates": [
+                  "1929",
+                  "02/01/2010"
+                ],
+                "Year": [
+                  "1929"
+                ],
+                "Display Date": [
+                  "1929",
+                  "02/01/2010"
+                ]
+              },
+              "doi": "10.2307/community.43069453",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "6d5c3af4-4290-3452-8a06-90cdfdc9f32a",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "1929 Pasque"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "1929",
+                "02/01/2010"
+              ],
+              "display_date": [
+                "1929",
+                "02/01/2010"
+              ],
+              "year": 1929,
+              "pubdate": "",
+              "stable_url": "/stable/community.43069453",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "1929 Pasque",
+              "result_date_string": "1929",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [
+                "43056383"
+              ],
+              "cc_compilation_titles": [
+                "NSU Pasque Collection"
+              ],
+              "cc_work_type": [
+                "Text",
+                "Still image"
+              ],
+              "collection_ids": [
+                "100689799"
+              ],
+              "collection_titles": [
+                "Northern State University History"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/6d5c3af4-4290-3452-8a06-90cdfdc9f32a/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [
+                "NSU Pasque Collection"
+              ],
+              "alt_text": "",
+              "cc_compilation_urls": [
+                "/site/northern-state-university/nsu-history/nsupasquecollection-43056383/"
+              ],
+              "collection_url": "/site/northern-state-university/nsu-history/"
+            }
+          ],
+          "paging": {
+            "next": "eyJwYWdlIjoyLCJzdGFydCI6MjUsInRvdGFsIjoyNn0=",
+            "page_start_index": 1,
+            "page_end_index": 25,
+            "total_results": 26,
+            "page_index": 1,
+            "total_pages": 2,
+            "group_efq": "WyJjb250cmlidXRlZF9wYW5vcmFtYXMiLCJjb250cmlidXRlZF9pbWFnZXMiXQ=="
+          }
+        }
+      ]
+    }
+  },
+  "tabs": [],
+  "notices": [],
+  "requestId": "[REDACTED]",
+  "spelling_suggestions": {},
+  "totalResultCount": 26,
+  "requestedFlags": {
+    "genai_beta_search_results": true,
+    "jstor_discovery_platform": false
+  }
+}

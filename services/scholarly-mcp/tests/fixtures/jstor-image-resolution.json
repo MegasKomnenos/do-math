@@ -1,0 +1,2268 @@
+{
+  "ab_segment": "[REDACTED]",
+  "acc": "on",
+  "searchQuery": "algebra",
+  "errors": [],
+  "facets": [
+    {
+      "comp_label": "search-within-filter"
+    },
+    {
+      "comp_label": "content-type",
+      "h_values": [
+        {
+          "field": "cty",
+          "values": [
+            {
+              "label": "contributed_serials",
+              "efq": "Y29udHJpYnV0ZWRfc2VyaWFscw==",
+              "display": "Serials",
+              "count": 2015,
+              "selected": false
+            },
+            {
+              "label": "contributed_documents",
+              "efq": "Y29udHJpYnV0ZWRfZG9jdW1lbnRz",
+              "display": "Documents",
+              "count": 460,
+              "selected": false
+            },
+            {
+              "label": "contributed_books",
+              "efq": "Y29udHJpYnV0ZWRfYm9va3M=",
+              "display": "Books",
+              "count": 187,
+              "selected": false
+            },
+            {
+              "label": "contributed_images",
+              "efq": "Y29udHJpYnV0ZWRfaW1hZ2Vz",
+              "display": "Images",
+              "count": 47,
+              "selected": true
+            }
+          ],
+          "comp_label": "primary-source-content"
+        }
+      ]
+    },
+    {
+      "field": "cc_media_resolution",
+      "values": [
+        {
+          "label": "cc_media_resolution:[9980929 TO *]",
+          "efq": "Y2NfbWVkaWFfcmVzb2x1dGlvbjpbOTk4MDkyOSBUTyAqXQ==",
+          "display": ">10 megapixels",
+          "count": 47,
+          "selected": true
+        },
+        {
+          "label": "cc_media_resolution:[7077889 TO 9980928]",
+          "efq": "Y2NfbWVkaWFfcmVzb2x1dGlvbjpbNzA3Nzg4OSBUTyA5OTgwOTI4XQ==",
+          "display": "7-10 megapixels",
+          "count": 19,
+          "selected": false
+        },
+        {
+          "label": "cc_media_resolution:[3686400 TO 7077888]",
+          "efq": "Y2NfbWVkaWFfcmVzb2x1dGlvbjpbMzY4NjQwMCBUTyA3MDc3ODg4XQ==",
+          "display": "4-7 megapixels",
+          "count": 35,
+          "selected": false
+        },
+        {
+          "label": "cc_media_resolution:[2073600 TO 3686399]",
+          "efq": "Y2NfbWVkaWFfcmVzb2x1dGlvbjpbMjA3MzYwMCBUTyAzNjg2Mzk5XQ==",
+          "display": "2-4 megapixels",
+          "count": 16,
+          "selected": false
+        },
+        {
+          "label": "cc_media_resolution:[* TO 2073599]",
+          "efq": "Y2NfbWVkaWFfcmVzb2x1dGlvbjpbKiBUTyAyMDczNTk5XQ==",
+          "display": "<2 megapixels",
+          "count": 167,
+          "selected": false
+        }
+      ],
+      "comp_label": "image-resolution"
+    },
+    {
+      "comp_label": "publication-date-filter"
+    },
+    {
+      "field": "classification",
+      "values": [
+        {
+          "label": "contributor1ClassificationManuscripts and Manuscript Illuminations",
+          "efq": "Y29udHJpYnV0b3Lvo7gx76O4Q2xhc3NpZmljYXRpb27vo7hNYW51c2NyaXB0cyBhbmQgTWFudXNjcmlwdCBJbGx1bWluYXRpb25z76O4",
+          "display": "Manuscripts and Manuscript Illuminations",
+          "count": 2,
+          "selected": false
+        },
+        {
+          "label": "contributor1ClassificationPrints",
+          "efq": "Y29udHJpYnV0b3Lvo7gx76O4Q2xhc3NpZmljYXRpb27vo7hQcmludHPvo7g=",
+          "display": "Prints",
+          "count": 1,
+          "selected": false
+        }
+      ],
+      "comp_label": "classification"
+    },
+    {
+      "field": "geography",
+      "values": [
+        {
+          "label": "contributor1geography-regionEurope",
+          "efq": "Y29udHJpYnV0b3Lvo7gx76O4Z2VvZ3JhcGh5LXJlZ2lvbu+juEV1cm9wZe+juA==",
+          "display": "Europe",
+          "count": 2,
+          "selected": false,
+          "children": [
+            {
+              "label": "contributor2geography-regionEuropeGreece",
+              "efq": "Y29udHJpYnV0b3Lvo7gy76O4Z2VvZ3JhcGh5LXJlZ2lvbu+juEV1cm9wZe+juEdyZWVjZe+juA==",
+              "display": "Greece",
+              "count": 1,
+              "selected": false
+            },
+            {
+              "label": "contributor2geography-regionEuropeNetherlands",
+              "efq": "Y29udHJpYnV0b3Lvo7gy76O4Z2VvZ3JhcGh5LXJlZ2lvbu+juEV1cm9wZe+juE5ldGhlcmxhbmRz76O4",
+              "display": "Netherlands",
+              "count": 1,
+              "selected": false
+            },
+            {
+              "label": "contributor2geography-regionEuropeTurkey",
+              "efq": "Y29udHJpYnV0b3Lvo7gy76O4Z2VvZ3JhcGh5LXJlZ2lvbu+juEV1cm9wZe+juFR1cmtlee+juA==",
+              "display": "Turkey",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "contributor1geography-regionWestern Asia",
+          "efq": "Y29udHJpYnV0b3Lvo7gx76O4Z2VvZ3JhcGh5LXJlZ2lvbu+juFdlc3Rlcm4gQXNpYe+juA==",
+          "display": "Western Asia",
+          "count": 1,
+          "selected": false,
+          "children": [
+            {
+              "label": "contributor2geography-regionWestern AsiaTurkey",
+              "efq": "Y29udHJpYnV0b3Lvo7gy76O4Z2VvZ3JhcGh5LXJlZ2lvbu+juFdlc3Rlcm4gQXNpYe+juFR1cmtlee+juA==",
+              "display": "Turkey",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        }
+      ],
+      "comp_label": "geography"
+    },
+    {
+      "field": "cc_portal_id",
+      "values": [
+        {
+          "label": "100479083",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDQ3OTA4Mw==",
+          "display": "Hong Kong University of Science and Technology",
+          "count": 24,
+          "selected": false,
+          "children": [
+            {
+              "label": "100669459",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDQ3OTA4MyNjb2xsZWN0aW9uX2lkcyMxMDA2Njk0NTk=",
+              "display": "Rare books on history of Science",
+              "count": 24,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100146467",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDE0NjQ2Nw==",
+          "display": "Artstor",
+          "count": 5,
+          "selected": false,
+          "children": [
+            {
+              "label": "100141788",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDE0NjQ2NyNjb2xsZWN0aW9uX2lkcyMxMDAxNDE3ODg=",
+              "display": "Manuscripts and Early Printed Books (Bodleian Library, Oxford University)",
+              "count": 2,
+              "selected": false
+            },
+            {
+              "label": "100181187",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDE0NjQ2NyNjb2xsZWN0aW9uX2lkcyMxMDAxODExODc=",
+              "display": "Open: Wellcome Collection",
+              "count": 2,
+              "selected": false
+            },
+            {
+              "label": "100144567",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDE0NjQ2NyNjb2xsZWN0aW9uX2lkcyMxMDAxNDQ1Njc=",
+              "display": "Rijksmuseum",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100319187",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDMxOTE4Nw==",
+          "display": "Park University",
+          "count": 5,
+          "selected": false,
+          "children": [
+            {
+              "label": "100335167",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDMxOTE4NyNjb2xsZWN0aW9uX2lkcyMxMDAzMzUxNjc=",
+              "display": "Frances Fishburn Archives & Special Collections",
+              "count": 5,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100666859",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDY2Njg1OQ==",
+          "display": "California Baptist University",
+          "count": 3,
+          "selected": false,
+          "children": [
+            {
+              "label": "100671159",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDY2Njg1OSNjb2xsZWN0aW9uX2lkcyMxMDA2NzExNTk=",
+              "display": "The Banner",
+              "count": 3,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100148707",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDE0ODcwNw==",
+          "display": "Washington University in St. Louis",
+          "count": 2,
+          "selected": false,
+          "children": [
+            {
+              "label": "100148947",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDE0ODcwNyNjb2xsZWN0aW9uX2lkcyMxMDAxNDg5NDc=",
+              "display": "Walt Reed Illustration Archive Tear Sheet Collection",
+              "count": 2,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100578799",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDU3ODc5OQ==",
+          "display": "Southern California Institute of Architecture (SCI-Arc)",
+          "count": 2,
+          "selected": false,
+          "children": [
+            {
+              "label": "100690979",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDU3ODc5OSNjb2xsZWN0aW9uX2lkcyMxMDA2OTA5Nzk=",
+              "display": "SCI-Arc Course Catalogs",
+              "count": 2,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100626779",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDYyNjc3OQ==",
+          "display": "Ferris State University",
+          "count": 2,
+          "selected": false,
+          "children": [
+            {
+              "label": "100685499",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDYyNjc3OSNjb2xsZWN0aW9uX2lkcyMxMDA2ODU0OTk=",
+              "display": "University Archives Photo Collection",
+              "count": 2,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100098207",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDA5ODIwNw==",
+          "display": "University of Glasgow",
+          "count": 1,
+          "selected": false,
+          "children": [
+            {
+              "label": "100663759",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDA5ODIwNyNjb2xsZWN0aW9uX2lkcyMxMDA2NjM3NTk=",
+              "display": "Student Notebook of Colin MacLaurin, 1712-1714",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100109247",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDEwOTI0Nw==",
+          "display": "Fleet Library at RISD",
+          "count": 1,
+          "selected": false,
+          "children": [
+            {
+              "label": "100519215",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDEwOTI0NyNjb2xsZWN0aW9uX2lkcyMxMDA1MTkyMTU=",
+              "display": "Arden Phair Cartoon Collection",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100150747",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDE1MDc0Nw==",
+          "display": "Skidmore College\n",
+          "count": 1,
+          "selected": false,
+          "children": [
+            {
+              "label": "100558455",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDE1MDc0NyNjb2xsZWN0aW9uX2lkcyMxMDA1NTg0NTU=",
+              "display": "George Cruikshank (from the Norman M. Fox Collection of Illustrated Books)",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100689779",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDY4OTc3OQ==",
+          "display": "Northern State University",
+          "count": 1,
+          "selected": false,
+          "children": [
+            {
+              "label": "100689799",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDY4OTc3OSNjb2xsZWN0aW9uX2lkcyMxMDA2ODk3OTk=",
+              "display": "Northern State University History",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        }
+      ],
+      "comp_label": "collection"
+    },
+    {
+      "comp_label": "access-filter"
+    }
+  ],
+  "groupedResults": {
+    "column1": {
+      "comp_label": "component_set",
+      "results": [
+        {
+          "comp_label": "image-results-matrix",
+          "group_efq": "WyJjb250cmlidXRlZF9wYW5vcmFtYXMiLCJjb250cmlidXRlZF9pbWFnZXMiXQ==",
+          "image_assets_path": "//www-jstor-org.libproxy.knu.ac.kr/assets/global_20251201T215504/build/images/",
+          "register_and_read_entitlement_id": "[REDACTED]",
+          "results": [
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "MacLaurin, Colin, 1698-1746"
+              ],
+              "date": {
+                "CC Dates": [
+                  "1712-1714"
+                ],
+                "Year": [
+                  "1712"
+                ],
+                "Display Date": [
+                  "1712-1714"
+                ]
+              },
+              "doi": "10.2307/community.41249145",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "c6759ef7-6bcf-3981-a15b-9f76d5ac9ba0",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Student notebook of Colin MacLaurin"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "1712-1714"
+              ],
+              "display_date": [
+                "1712-1714"
+              ],
+              "year": 1712,
+              "pubdate": "",
+              "stable_url": "/stable/community.41249145",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Student notebook of Colin MacLaurin",
+              "result_date_string": "1712-1714",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [],
+              "cc_compilation_titles": [],
+              "cc_work_type": [],
+              "collection_ids": [
+                "100663759"
+              ],
+              "collection_titles": [
+                "Student Notebook of Colin MacLaurin, 1712-1714"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/c6759ef7-6bcf-3981-a15b-9f76d5ac9ba0/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [],
+              "alt_text": "",
+              "cc_compilation_urls": [],
+              "collection_url": "/site/university-of-glasgow/student-notebook-of-colin-maclaurin-1712-1714/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "J. Howard Kramer"
+              ],
+              "date": {
+                "CC Dates": [
+                  "Fall 1967",
+                  "07/13/2007"
+                ],
+                "Year": [
+                  "1967"
+                ],
+                "Display Date": [
+                  "Fall 1967",
+                  "07/13/2007"
+                ]
+              },
+              "doi": "10.2307/community.43063668",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "d41b36d1-f251-3cdd-a143-02561f2119d2",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "\"The Barn\", Mewaldt-Jensen Hall"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "Fall 1967",
+                "07/13/2007"
+              ],
+              "display_date": [
+                "Fall 1967",
+                "07/13/2007"
+              ],
+              "year": 1967,
+              "pubdate": "",
+              "stable_url": "/stable/community.43063668",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "\"The Barn\", Mewaldt-Jensen Hall",
+              "result_date_string": "Fall 1967",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [
+                "43056378"
+              ],
+              "cc_compilation_titles": [
+                "NSU History Collection"
+              ],
+              "cc_work_type": [
+                "Still image"
+              ],
+              "collection_ids": [
+                "100689799"
+              ],
+              "collection_titles": [
+                "Northern State University History"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/d41b36d1-f251-3cdd-a143-02561f2119d2/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [
+                "NSU History Collection"
+              ],
+              "alt_text": "",
+              "cc_compilation_urls": [
+                "/site/northern-state-university/nsu-history/nsuhistorycollection-43056378/"
+              ],
+              "collection_url": "/site/northern-state-university/nsu-history/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Gauss, Carl Friedrich, 1777-1855",
+                "Akademie der Wissenschaften in Göttingen",
+                "Schering, Ernst Christian Julius, 1833-1897",
+                "Brendel, Martin, 1862-",
+                "Schlesinger, L"
+              ],
+              "date": {
+                "CC Dates": [
+                  "1870-1933"
+                ],
+                "Year": [
+                  "1870"
+                ],
+                "Display Date": [
+                  "1870-1933"
+                ]
+              },
+              "doi": "10.2307/community.41639403",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "7ba5381f-6fc1-38cd-ac36-7a5d18d4e53a",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Carl Friedrich Gauss Werke"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "1870-1933"
+              ],
+              "display_date": [
+                "1870-1933"
+              ],
+              "year": 1870,
+              "pubdate": "",
+              "stable_url": "/stable/community.41639403",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Carl Friedrich Gauss Werke",
+              "result_date_string": "1870-1933",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [],
+              "cc_compilation_titles": [],
+              "cc_work_type": [],
+              "collection_ids": [
+                "100669459"
+              ],
+              "collection_titles": [
+                "Rare books on history of Science"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/7ba5381f-6fc1-38cd-ac36-7a5d18d4e53a/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [],
+              "alt_text": "",
+              "cc_compilation_urls": [],
+              "collection_url": "/site/hkust/rare-books-on-history-of-science/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Conner, McCauley \"Mac\""
+              ],
+              "date": {
+                "CC Dates": [
+                  "no date"
+                ],
+                "Display Date": [
+                  "no date"
+                ]
+              },
+              "doi": "10.2307/community.16021692",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "da66a53f-c197-31c5-9703-fb8913fdce21",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Pattern"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "no date"
+              ],
+              "display_date": [
+                "no date"
+              ],
+              "year": 0,
+              "pubdate": "",
+              "stable_url": "/stable/community.16021692",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Pattern",
+              "result_date_string": "no date",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [],
+              "cc_compilation_titles": [],
+              "cc_work_type": [
+                "Magazine tearsheet"
+              ],
+              "collection_ids": [
+                "100148947"
+              ],
+              "collection_titles": [
+                "Walt Reed Illustration Archive"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/da66a53f-c197-31c5-9703-fb8913fdce21/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [],
+              "alt_text": "",
+              "cc_compilation_urls": [],
+              "collection_url": "/site/washu-stl/waltreedia/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Turnor, Edmund, 1755?-1829"
+              ],
+              "date": {
+                "CC Dates": [
+                  "1806"
+                ],
+                "Year": [
+                  "1806"
+                ],
+                "Display Date": [
+                  "1806"
+                ]
+              },
+              "doi": "10.2307/community.41639351",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "8868cfc6-1ece-36ac-94fc-9d04121eccf5",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Collections for the history of the town and soke of Grantham : containing authentic memoirs of Sir Isaac Newton, now first published from the original mss. in the possession of the Earl of Portsmouth"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "1806"
+              ],
+              "display_date": [
+                "1806"
+              ],
+              "year": 1806,
+              "pubdate": "",
+              "stable_url": "/stable/community.41639351",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Collections for the history of the town and soke of Grantham : containing authentic memoirs of Sir Isaac Newton, now first published from the original mss. in the possession of the Earl of Portsmouth",
+              "result_date_string": "1806",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [],
+              "cc_compilation_titles": [],
+              "cc_work_type": [],
+              "collection_ids": [
+                "100669459"
+              ],
+              "collection_titles": [
+                "Rare books on history of Science"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/8868cfc6-1ece-36ac-94fc-9d04121eccf5/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [],
+              "alt_text": "",
+              "cc_compilation_urls": [],
+              "collection_url": "/site/hkust/rare-books-on-history-of-science/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Cruikshank, George, 1792-1878, illustrator",
+                "Mayhew, Horace, 1816-1872, editor",
+                "Mayhew, Henry, 1812-1887, editor",
+                "Brough, Robert B. (Robert Barnabas), 1828-1860, editor"
+              ],
+              "date": {
+                "CC Dates": [
+                  "1835-1853"
+                ],
+                "Year": [
+                  "1835"
+                ],
+                "Display Date": [
+                  "1835-1853"
+                ]
+              },
+              "doi": "10.2307/community.36677429",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "f8c4bedb-5508-3528-96cb-38de24796d41",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Comic almanack : an ephemeris in jest and earnest, containing \"all things fitting for such a work.\""
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "1835-1853"
+              ],
+              "display_date": [
+                "1835-1853"
+              ],
+              "year": 1835,
+              "pubdate": "",
+              "stable_url": "/stable/community.36677429",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Comic almanack : an ephemeris in jest and earnest, containing \"all things fitting for such a work.\"",
+              "result_date_string": "1835-1853",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [],
+              "cc_compilation_titles": [],
+              "cc_work_type": [],
+              "collection_ids": [
+                "100558455"
+              ],
+              "collection_titles": [
+                "George Cruikshank (from the Norman M. Fox Collection of Illustrated Books)"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/f8c4bedb-5508-3528-96cb-38de24796d41/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [],
+              "alt_text": "",
+              "cc_compilation_urls": [],
+              "collection_url": "/site/skidmore/cruikshank/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Maxwell, James Clerk, 1831-1879",
+                "Niven, W. D. (William Davidson), Sir, 1842-1917"
+              ],
+              "date": {
+                "CC Dates": [
+                  "1890"
+                ],
+                "Year": [
+                  "1890"
+                ],
+                "Display Date": [
+                  "1890"
+                ]
+              },
+              "doi": "10.2307/community.41639343",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "ddd54ad7-45c3-3a5b-b8ac-a35a30211ac5",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "The scientific papers of James Clerk Maxwell"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "1890"
+              ],
+              "display_date": [
+                "1890"
+              ],
+              "year": 1890,
+              "pubdate": "",
+              "stable_url": "/stable/community.41639343",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "The scientific papers of James Clerk Maxwell",
+              "result_date_string": "1890",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [],
+              "cc_compilation_titles": [],
+              "cc_work_type": [],
+              "collection_ids": [
+                "100669459"
+              ],
+              "collection_titles": [
+                "Rare books on history of Science"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/ddd54ad7-45c3-3a5b-b8ac-a35a30211ac5/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [],
+              "alt_text": "",
+              "cc_compilation_urls": [],
+              "collection_url": "/site/hkust/rare-books-on-history-of-science/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Newton, Isaac, Sir, 1642-1727",
+                "Horsley, Samuel, 1733-1806"
+              ],
+              "date": {
+                "CC Dates": [
+                  "1779-85"
+                ],
+                "Year": [
+                  "1779"
+                ],
+                "Display Date": [
+                  "1779-85"
+                ]
+              },
+              "doi": "10.2307/community.41639389",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "6d6a4536-a813-31aa-83c8-d71e845d71d7",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Isaaci Newtoni opera quæ exstant omnia"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "1779-85"
+              ],
+              "display_date": [
+                "1779-85"
+              ],
+              "year": 1779,
+              "pubdate": "",
+              "stable_url": "/stable/community.41639389",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Isaaci Newtoni opera quæ exstant omnia",
+              "result_date_string": "1779-85",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [],
+              "cc_compilation_titles": [],
+              "cc_work_type": [],
+              "collection_ids": [
+                "100669459"
+              ],
+              "collection_titles": [
+                "Rare books on history of Science"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/6d6a4536-a813-31aa-83c8-d71e845d71d7/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [],
+              "alt_text": "",
+              "cc_compilation_urls": [],
+              "collection_url": "/site/hkust/rare-books-on-history-of-science/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Laplace, Pierre Simon, marquis de, 1749-1827",
+                "Bowditch, Nathaniel, 1773-1838",
+                "Bowditch, N. I. (Nathaniel Ingersoll), 1805-1861"
+              ],
+              "date": {
+                "CC Dates": [
+                  "1829-1839"
+                ],
+                "Year": [
+                  "1829"
+                ],
+                "Display Date": [
+                  "1829-1839"
+                ]
+              },
+              "doi": "10.2307/community.41639415",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "50fbfe94-df92-333c-bbde-5fabf2b92b16",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Mécanique céleste"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "1829-1839"
+              ],
+              "display_date": [
+                "1829-1839"
+              ],
+              "year": 1829,
+              "pubdate": "",
+              "stable_url": "/stable/community.41639415",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Mécanique céleste",
+              "result_date_string": "1829-1839",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [],
+              "cc_compilation_titles": [],
+              "cc_work_type": [],
+              "collection_ids": [
+                "100669459"
+              ],
+              "collection_titles": [
+                "Rare books on history of Science"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/50fbfe94-df92-333c-bbde-5fabf2b92b16/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [],
+              "alt_text": "",
+              "cc_compilation_urls": [],
+              "collection_url": "/site/hkust/rare-books-on-history-of-science/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Viète, François, 1540-1603",
+                "Schooten, Frans van, 1615-1660"
+              ],
+              "date": {
+                "CC Dates": [
+                  "1646"
+                ],
+                "Year": [
+                  "1646"
+                ],
+                "Display Date": [
+                  "1646"
+                ]
+              },
+              "doi": "10.2307/community.41639404",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "8714e132-8262-30a9-bff3-a67127b54bc9",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Francisci Vietæ Opera mathematica : in unum volumen congesta, ac recognita"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "1646"
+              ],
+              "display_date": [
+                "1646"
+              ],
+              "year": 1646,
+              "pubdate": "",
+              "stable_url": "/stable/community.41639404",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Francisci Vietæ Opera mathematica : in unum volumen congesta, ac recognita",
+              "result_date_string": "1646",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [],
+              "cc_compilation_titles": [],
+              "cc_work_type": [],
+              "collection_ids": [
+                "100669459"
+              ],
+              "collection_titles": [
+                "Rare books on history of Science"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/8714e132-8262-30a9-bff3-a67127b54bc9/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [],
+              "alt_text": "",
+              "cc_compilation_urls": [],
+              "collection_url": "/site/hkust/rare-books-on-history-of-science/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Maclaurin, Colin, 1698-1746"
+              ],
+              "date": {
+                "CC Dates": [
+                  "1748"
+                ],
+                "Year": [
+                  "1748"
+                ],
+                "Display Date": [
+                  "1748"
+                ]
+              },
+              "doi": "10.2307/community.41639335",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "c5c6294e-52c7-3668-878f-f0a7d4859579",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "An account of Sir Isaac Newton's philosophical discoveries : in four books"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "1748"
+              ],
+              "display_date": [
+                "1748"
+              ],
+              "year": 1748,
+              "pubdate": "",
+              "stable_url": "/stable/community.41639335",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "An account of Sir Isaac Newton's philosophical discoveries : in four books",
+              "result_date_string": "1748",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [],
+              "cc_compilation_titles": [],
+              "cc_work_type": [],
+              "collection_ids": [
+                "100669459"
+              ],
+              "collection_titles": [
+                "Rare books on history of Science"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/c5c6294e-52c7-3668-878f-f0a7d4859579/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [],
+              "alt_text": "",
+              "cc_compilation_urls": [],
+              "collection_url": "/site/hkust/rare-books-on-history-of-science/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Cooke, John"
+              ],
+              "date": {
+                "CC Dates": [
+                  "[between1845 and 1875?]",
+                  "[between1845 and 1875?]"
+                ],
+                "Year": [
+                  "1845"
+                ],
+                "Display Date": [
+                  "[between1845 and 1875?]",
+                  "[between1845 and 1875?]"
+                ]
+              },
+              "doi": "10.2307/community.36631503",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free",
+                "openAccess"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "3eeefbdd-8506-31ee-9b7e-7f58667412d8",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Coombe's synopsis of phrenology : for the use of practical phrenologists."
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "[between1845 and 1875?]",
+                "[between1845 and 1875?]"
+              ],
+              "display_date": [
+                "[between1845 and 1875?]",
+                "[between1845 and 1875?]"
+              ],
+              "year": 1845,
+              "pubdate": "",
+              "stable_url": "/stable/community.36631503",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Coombe's synopsis of phrenology : for the use of practical phrenologists.",
+              "result_date_string": "[between1845 and 1875?]",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [],
+              "cc_compilation_titles": [],
+              "cc_work_type": [
+                "Ephemera",
+                "Charts",
+                "Broadsides"
+              ],
+              "collection_ids": [
+                "100181187"
+              ],
+              "collection_titles": [
+                "Open: Wellcome Collection"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/3eeefbdd-8506-31ee-9b7e-7f58667412d8/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [],
+              "alt_text": "",
+              "cc_compilation_urls": [],
+              "collection_url": "/site/artstor/open-wellcome-collection/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Harris, John, 1667?-1719"
+              ],
+              "date": {
+                "CC Dates": [
+                  "1704-1710"
+                ],
+                "Year": [
+                  "1704"
+                ],
+                "Display Date": [
+                  "1704-1710"
+                ]
+              },
+              "doi": "10.2307/community.41639395",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "2976ccea-5588-39b3-8656-25869f6b4b19",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Lexicon technicum, or, An universal English dictionary of arts and sciences : explaining not only the terms of art but the arts themselves"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "1704-1710"
+              ],
+              "display_date": [
+                "1704-1710"
+              ],
+              "year": 1704,
+              "pubdate": "",
+              "stable_url": "/stable/community.41639395",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Lexicon technicum, or, An universal English dictionary of arts and sciences : explaining not only the terms of art but the arts themselves",
+              "result_date_string": "1704-1710",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [],
+              "cc_compilation_titles": [],
+              "cc_work_type": [],
+              "collection_ids": [
+                "100669459"
+              ],
+              "collection_titles": [
+                "Rare books on history of Science"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/2976ccea-5588-39b3-8656-25869f6b4b19/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [],
+              "alt_text": "",
+              "cc_compilation_urls": [],
+              "collection_url": "/site/hkust/rare-books-on-history-of-science/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Young, Thomas, 1773-1829"
+              ],
+              "date": {
+                "CC Dates": [
+                  "1807"
+                ],
+                "Year": [
+                  "1807"
+                ],
+                "Display Date": [
+                  "1807"
+                ]
+              },
+              "doi": "10.2307/community.41639397",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "1a9af96a-ab84-331f-a11b-2b0660679417",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "A course of lectures on natural philosophy and the mechanical arts"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "1807"
+              ],
+              "display_date": [
+                "1807"
+              ],
+              "year": 1807,
+              "pubdate": "",
+              "stable_url": "/stable/community.41639397",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "A course of lectures on natural philosophy and the mechanical arts",
+              "result_date_string": "1807",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [],
+              "cc_compilation_titles": [],
+              "cc_work_type": [],
+              "collection_ids": [
+                "100669459"
+              ],
+              "collection_titles": [
+                "Rare books on history of Science"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/1a9af96a-ab84-331f-a11b-2b0660679417/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [],
+              "alt_text": "",
+              "cc_compilation_urls": [],
+              "collection_url": "/site/hkust/rare-books-on-history-of-science/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Costard, George, 1710-1782"
+              ],
+              "date": {
+                "CC Dates": [
+                  "1767"
+                ],
+                "Year": [
+                  "1767"
+                ],
+                "Display Date": [
+                  "1767"
+                ]
+              },
+              "doi": "10.2307/community.41639400",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "d4d0fc67-a7e5-359b-8e68-b6012d3976e2",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "The history of astronomy : with its application to geography, history, and chronology; occasionally exemplified by the globes"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "1767"
+              ],
+              "display_date": [
+                "1767"
+              ],
+              "year": 1767,
+              "pubdate": "",
+              "stable_url": "/stable/community.41639400",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "The history of astronomy : with its application to geography, history, and chronology; occasionally exemplified by the globes",
+              "result_date_string": "1767",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [],
+              "cc_compilation_titles": [],
+              "cc_work_type": [],
+              "collection_ids": [
+                "100669459"
+              ],
+              "collection_titles": [
+                "Rare books on history of Science"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/d4d0fc67-a7e5-359b-8e68-b6012d3976e2/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [],
+              "alt_text": "",
+              "cc_compilation_urls": [],
+              "collection_url": "/site/hkust/rare-books-on-history-of-science/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Dallas C. McLoren, Principal of Poston High School"
+              ],
+              "date": {
+                "CC Dates": [
+                  "1943-07-30"
+                ],
+                "Display Date": [
+                  "1943-07-30"
+                ]
+              },
+              "doi": "10.2307/community.33293519",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "3512e442-8f08-3ea2-aa16-d4c3902045c2",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Secondary School Record for Paul Kamitsuka."
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "1943-07-30"
+              ],
+              "display_date": [
+                "1943-07-30"
+              ],
+              "year": 0,
+              "pubdate": "",
+              "stable_url": "/stable/community.33293519",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Secondary School Record for Paul Kamitsuka.",
+              "result_date_string": "1943-07-30",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [
+                "33293307"
+              ],
+              "cc_compilation_titles": [
+                "Park University Nisei Collection"
+              ],
+              "cc_work_type": [
+                "Text"
+              ],
+              "collection_ids": [
+                "100335167"
+              ],
+              "collection_titles": [
+                "Frances Fishburn Archives & Special Collections"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/3512e442-8f08-3ea2-aa16-d4c3902045c2/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [
+                "Park University Nisei Collection"
+              ],
+              "alt_text": "",
+              "cc_compilation_urls": [
+                "/site/park/archives/parkuniversityniseicollection-33293307/"
+              ],
+              "collection_url": "/site/park/archives/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Euler, Leonhard, 1707-1783"
+              ],
+              "date": {
+                "CC Dates": [
+                  "1736"
+                ],
+                "Year": [
+                  "1736"
+                ],
+                "Display Date": [
+                  "1736"
+                ]
+              },
+              "doi": "10.2307/community.41639384",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "b1d755a0-4ad8-3cd3-8970-14ff53fe5370",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Mechanica, siue, Motus scientia analytice exposita"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "1736"
+              ],
+              "display_date": [
+                "1736"
+              ],
+              "year": 1736,
+              "pubdate": "",
+              "stable_url": "/stable/community.41639384",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Mechanica, siue, Motus scientia analytice exposita",
+              "result_date_string": "1736",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [],
+              "cc_compilation_titles": [],
+              "cc_work_type": [],
+              "collection_ids": [
+                "100669459"
+              ],
+              "collection_titles": [
+                "Rare books on history of Science"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/b1d755a0-4ad8-3cd3-8970-14ff53fe5370/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [],
+              "alt_text": "",
+              "cc_compilation_urls": [],
+              "collection_url": "/site/hkust/rare-books-on-history-of-science/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Moyer, Harry Beamer (Canadian cartoonist, animator and illustrator, 1882-1950)"
+              ],
+              "date": {
+                "CC Dates": [
+                  "1923-06-20"
+                ],
+                "Year": [
+                  "1923"
+                ],
+                "Display Date": [
+                  "1923-06-20"
+                ]
+              },
+              "doi": "10.2307/community.36123886",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "aff030ff-5fef-3815-bfb9-f4b5fbc3b76f",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "\"Dibs and Dabs\" in Toronto Daily Star, June 20, 1923 (p. 7)"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "1923-06-20"
+              ],
+              "display_date": [
+                "1923-06-20"
+              ],
+              "year": 1923,
+              "pubdate": "",
+              "stable_url": "/stable/community.36123886",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "\"Dibs and Dabs\" in Toronto Daily Star, June 20, 1923 (p. 7)",
+              "result_date_string": "1923-06-20",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [
+                "41161337"
+              ],
+              "cc_compilation_titles": [
+                "Moyer, Harry Beamer"
+              ],
+              "cc_work_type": [
+                "cartoons (humorous images)",
+                "cartoons (working drawings)",
+                "comics (documents)",
+                "satire (artistic device)"
+              ],
+              "collection_ids": [
+                "100519215"
+              ],
+              "collection_titles": [
+                "Arden Phair Cartoon Collection"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/aff030ff-5fef-3815-bfb9-f4b5fbc3b76f/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [
+                "Moyer, Harry Beamer"
+              ],
+              "alt_text": "",
+              "cc_compilation_urls": [
+                "/site/risd/ardenphaircartooncollection/moyerharrybeamer-41161337/"
+              ],
+              "collection_url": "/site/risd/ardenphaircartooncollection/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [],
+              "date": {},
+              "doi": "10.2307/community.42612328",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "86d57d42-2610-3ffb-8c18-4af5ba76b6be",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Woodbridge N. Ferris Obituary page 3."
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [],
+              "display_date": [],
+              "year": 0,
+              "pubdate": "",
+              "stable_url": "/stable/community.42612328",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Woodbridge N. Ferris Obituary page 3.",
+              "result_date_string": "",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [
+                "42611348"
+              ],
+              "cc_compilation_titles": [
+                "University Archives photo collection"
+              ],
+              "cc_work_type": [
+                "Image"
+              ],
+              "collection_ids": [
+                "100685499"
+              ],
+              "collection_titles": [
+                "University Archives Photo Collection"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/86d57d42-2610-3ffb-8c18-4af5ba76b6be/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [
+                "University Archives photo collection"
+              ],
+              "alt_text": "",
+              "cc_compilation_urls": [
+                "/site/ferrisdigitalcollections/university-archives-photo-collection/universityarchivesphotocollection-42611348/"
+              ],
+              "collection_url": "/site/ferrisdigitalcollections/university-archives-photo-collection/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Bernoulli, Jean, 1667-1748",
+                "Cramer, Gabriel, 1704-1752"
+              ],
+              "date": {
+                "CC Dates": [
+                  "1742"
+                ],
+                "Year": [
+                  "1742"
+                ],
+                "Display Date": [
+                  "1742"
+                ]
+              },
+              "doi": "10.2307/community.41639381",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "aa58b99d-ce7a-31b2-9666-bb4a0b353627",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Johannis Bernoulli ... Opera omnia : tam antea sparsim edita, quam hactenus inedita .."
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "1742"
+              ],
+              "display_date": [
+                "1742"
+              ],
+              "year": 1742,
+              "pubdate": "",
+              "stable_url": "/stable/community.41639381",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Johannis Bernoulli ... Opera omnia : tam antea sparsim edita, quam hactenus inedita ..",
+              "result_date_string": "1742",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [],
+              "cc_compilation_titles": [],
+              "cc_work_type": [],
+              "collection_ids": [
+                "100669459"
+              ],
+              "collection_titles": [
+                "Rare books on history of Science"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/aa58b99d-ce7a-31b2-9666-bb4a0b353627/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [],
+              "alt_text": "",
+              "cc_compilation_urls": [],
+              "collection_url": "/site/hkust/rare-books-on-history-of-science/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [],
+              "date": {},
+              "doi": "10.2307/community.42615475",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "70650096-32bf-3998-b9b9-424710f1dfab",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "What School. Christmas edition. 1920.  Page 2."
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [],
+              "display_date": [],
+              "year": 0,
+              "pubdate": "",
+              "stable_url": "/stable/community.42615475",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "What School. Christmas edition. 1920.  Page 2.",
+              "result_date_string": "",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [
+                "42611348"
+              ],
+              "cc_compilation_titles": [
+                "University Archives photo collection"
+              ],
+              "cc_work_type": [
+                "Image"
+              ],
+              "collection_ids": [
+                "100685499"
+              ],
+              "collection_titles": [
+                "University Archives Photo Collection"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/70650096-32bf-3998-b9b9-424710f1dfab/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [
+                "University Archives photo collection"
+              ],
+              "alt_text": "",
+              "cc_compilation_urls": [
+                "/site/ferrisdigitalcollections/university-archives-photo-collection/universityarchivesphotocollection-42611348/"
+              ],
+              "collection_url": "/site/ferrisdigitalcollections/university-archives-photo-collection/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Chladni, Ernst Florens Friedrich, 1756-1827"
+              ],
+              "date": {
+                "CC Dates": [
+                  "1802"
+                ],
+                "Year": [
+                  "1802"
+                ],
+                "Display Date": [
+                  "1802"
+                ]
+              },
+              "doi": "10.2307/community.41639379",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "912f47e0-6941-3a4d-a274-cb72267833c6",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Die Akustik"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "1802"
+              ],
+              "display_date": [
+                "1802"
+              ],
+              "year": 1802,
+              "pubdate": "",
+              "stable_url": "/stable/community.41639379",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Die Akustik",
+              "result_date_string": "1802",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [],
+              "cc_compilation_titles": [],
+              "cc_work_type": [],
+              "collection_ids": [
+                "100669459"
+              ],
+              "collection_titles": [
+                "Rare books on history of Science"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/912f47e0-6941-3a4d-a274-cb72267833c6/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [],
+              "alt_text": "",
+              "cc_compilation_urls": [],
+              "collection_url": "/site/hkust/rare-books-on-history-of-science/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Boyle, Robert, 1627-1691",
+                "Shaw, Peter, 1694-1763"
+              ],
+              "date": {
+                "CC Dates": [
+                  "1725"
+                ],
+                "Year": [
+                  "1725"
+                ],
+                "Display Date": [
+                  "1725"
+                ]
+              },
+              "doi": "10.2307/community.41639349",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "58da8b4f-27dd-3e98-834e-baf76cfa6b5d",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "The philosophical works of the Honourable Robert Boyle Esq. : abridged, methodized, and disposed under the general heads of physics, statics, pneumatics, natural history, chymistry, and medicine : the whole illustrated with notes, containing the improvements made in the several parts of natural and experimental knowledge since his time"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "1725"
+              ],
+              "display_date": [
+                "1725"
+              ],
+              "year": 1725,
+              "pubdate": "",
+              "stable_url": "/stable/community.41639349",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "The philosophical works of the Honourable Robert Boyle Esq. : abridged, methodized, and disposed under the general heads of physics, statics, pneumatics, natural history, chymistry, and medicine : the whole illustrated with notes, containing the improvements made in the several parts of natural and experimental knowledge since his time",
+              "result_date_string": "1725",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [],
+              "cc_compilation_titles": [],
+              "cc_work_type": [],
+              "collection_ids": [
+                "100669459"
+              ],
+              "collection_titles": [
+                "Rare books on history of Science"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/58da8b4f-27dd-3e98-834e-baf76cfa6b5d/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [],
+              "alt_text": "",
+              "cc_compilation_urls": [],
+              "collection_url": "/site/hkust/rare-books-on-history-of-science/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Leibniz, Gottfried Wilhelm, Freiherr von, 1646-1716"
+              ],
+              "date": {
+                "CC Dates": [
+                  "1684"
+                ],
+                "Year": [
+                  "1684"
+                ],
+                "Display Date": [
+                  "1684"
+                ]
+              },
+              "doi": "10.2307/community.41639334",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "d401189a-b22b-30be-a35f-9f770848fb53",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Nova methodus pro maximis & minimis : itemque tangentibus, qua nec fractas, nec irrationales quantitates moratur, & singulare pro illis calculi genus"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "1684"
+              ],
+              "display_date": [
+                "1684"
+              ],
+              "year": 1684,
+              "pubdate": "",
+              "stable_url": "/stable/community.41639334",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Nova methodus pro maximis & minimis : itemque tangentibus, qua nec fractas, nec irrationales quantitates moratur, & singulare pro illis calculi genus",
+              "result_date_string": "1684",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [],
+              "cc_compilation_titles": [],
+              "cc_work_type": [],
+              "collection_ids": [
+                "100669459"
+              ],
+              "collection_titles": [
+                "Rare books on history of Science"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/d401189a-b22b-30be-a35f-9f770848fb53/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [],
+              "alt_text": "",
+              "cc_compilation_urls": [],
+              "collection_url": "/site/hkust/rare-books-on-history-of-science/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Playfair, John, 1748-1819",
+                "Playfair, James George, 1786?-1857"
+              ],
+              "date": {
+                "CC Dates": [
+                  "1822"
+                ],
+                "Year": [
+                  "1822"
+                ],
+                "Display Date": [
+                  "1822"
+                ]
+              },
+              "doi": "10.2307/community.41639340",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "31ec211d-293e-341f-ad48-811a37f23d4c",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "The works of John Playfair : with a memoir of the author"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "1822"
+              ],
+              "display_date": [
+                "1822"
+              ],
+              "year": 1822,
+              "pubdate": "",
+              "stable_url": "/stable/community.41639340",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "The works of John Playfair : with a memoir of the author",
+              "result_date_string": "1822",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [],
+              "cc_compilation_titles": [],
+              "cc_work_type": [],
+              "collection_ids": [
+                "100669459"
+              ],
+              "collection_titles": [
+                "Rare books on history of Science"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/31ec211d-293e-341f-ad48-811a37f23d4c/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [],
+              "alt_text": "",
+              "cc_compilation_urls": [],
+              "collection_url": "/site/hkust/rare-books-on-history-of-science/"
+            }
+          ],
+          "paging": {
+            "next": "eyJwYWdlIjoyLCJzdGFydCI6MjUsInRvdGFsIjo0N30=",
+            "page_start_index": 1,
+            "page_end_index": 25,
+            "total_results": 47,
+            "page_index": 1,
+            "total_pages": 2,
+            "group_efq": "WyJjb250cmlidXRlZF9wYW5vcmFtYXMiLCJjb250cmlidXRlZF9pbWFnZXMiXQ=="
+          }
+        }
+      ]
+    }
+  },
+  "tabs": [],
+  "notices": [],
+  "requestId": "[REDACTED]",
+  "spelling_suggestions": {},
+  "totalResultCount": 47,
+  "requestedFlags": {
+    "genai_beta_search_results": true,
+    "jstor_discovery_platform": false
+  }
+}

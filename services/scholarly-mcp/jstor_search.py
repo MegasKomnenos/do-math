@@ -6,6 +6,9 @@ from scholarly import ServiceError,encoded
 from browser_adapters import is_access_challenge,clean_html
 
 FACETS={'content_types':'cty','subjects':'disc','languages':'la_str'}
+SORTS={'relevance':('rel',None),'newest':('new',None),'oldest':('old',None),
+    'title_asc':('item_title_str','asc'),'title_desc':('item_title_str','desc'),
+    'creator_asc':('primary_agents_str','asc'),'creator_desc':('primary_agents_str','desc'),'resolution':('cc_media_resolution','desc')}
 
 
 def group_key(value):
@@ -63,6 +66,7 @@ def parse_group(group,source_total,number,expected_start):
             'citation_html':citation,'citation_text':BeautifulSoup(citation,'html.parser').get_text(' ',strip=True),
             'publication_date_display':item.get('result_date_string'),'year':item.get('year'),
             'has_access':item.get('userHasAccess',item.get('has_access')),'flags':item.get('flags',[])})
+        if 'primary_agents' in item:rows[-1]['creators']=item['primary_agents']
     return {'rows':rows,'start':first,'total':total,'source_total':source_total,'paging':paging,'group':group.get('comp_label')}
 
 
@@ -95,7 +99,7 @@ def native_request(adapter,payload,endpoint,role,request):
 
 def request_page(adapter,payload):
     return native_request(adapter,payload,'grouped-search','native_search_response',
-        {key:payload[key] for key in ('searchTerm','pageNumber','pageParams','sort','acc','startDate','endDate','msFacetFields')})
+        {key:payload[key] for key in ('searchTerm','pageNumber','pageParams','sort','sortOrder','acc','startDate','endDate','msFacetFields') if key in payload})
 
 
 def apply_snippets(rows,raw,query,sanitizer=None):
@@ -128,14 +132,14 @@ def request_snippets(adapter,rows,query):
 def search(adapter,query,*,options,start=0,limit=20,cursor=None,export=None):
     if type(start) is not int or start<0 or type(limit) is not int or not 1<=limit<=1000:
         raise ServiceError('invalid_range','Use start >= 0 and limit 1..1000')
-    if cursor or set(options)-({'sort','access','start_date','end_date','snippets'}|set(FACETS)):
+    if cursor or set(options)-({'sort','access','start_date','end_date','snippets','facets'}|set(FACETS)):
         raise ServiceError('invalid_options','Use documented JSTOR sort, access, dates and facets; paginate with start')
     if not isinstance(query,str) or not query.strip():raise ServiceError('invalid_query','Provide a nonempty native JSTOR query')
     if export not in (None,'json','csv','native','bibtex','ris'):raise ServiceError('invalid_export','Use json, csv, native, bibtex or ris')
     if type(options.get('snippets',False)) is not bool:raise ServiceError('invalid_options','snippets must be boolean')
     sort=options.get('sort','relevance');access=options.get('access','available')
-    if sort not in ('relevance','newest','oldest') or access not in ('available','all'):
-        raise ServiceError('invalid_options','sort is relevance/newest/oldest; access is available/all')
+    if sort not in SORTS or access not in ('available','all'):
+        raise ServiceError('invalid_options','Use a documented sort and access=available/all')
     dates={};bounds={}
     for key in ('start_date','end_date'):
         value=options.get(key,'')
@@ -158,16 +162,25 @@ def search(adapter,query,*,options,start=0,limit=20,cursor=None,export=None):
     if dates['start_date'] and dates['end_date'] and bounds['start_date']>bounds['end_date']:
         raise ServiceError('invalid_options','start_date must not follow end_date')
     acc='on' if access=='available' else 'off';applied={'access':acc};fields=[]
-    for option,field in FACETS.items():
-        values=options.get(option,[])
+    requested_facets={field:options.get(option,[]) for option,field in FACETS.items()}
+    additional=options.get('facets',{})
+    if not isinstance(additional,dict):raise ServiceError('invalid_options','facets maps a returned field to a list of native label values')
+    for field,values in additional.items():
+        if not isinstance(field,str) or not field or requested_facets.get(field):raise ServiceError('invalid_options','A native facet field must be named once')
+        requested_facets[field]=values
+    for field,values in requested_facets.items():
         if not isinstance(values,list) or any(not isinstance(x,str) or not x.strip() for x in values) or len(values)!=len(set(values)):
-            raise ServiceError('invalid_options','Facet values must be a list of distinct nonempty native labels',field=option)
+            raise ServiceError('invalid_options','Facet values must be a list of distinct nonempty native labels',field=field)
         if values:
-            fields.append({'field':field,'efq':[base64.b64encode(x.encode()).decode() for x in values]});applied[field]=values
+            wire_values=[field+'#'+value for value in values] if field=='cc_portal_id' else values
+            fields.append({'field':field,'efq':[base64.b64encode(x.encode()).decode() for x in wire_values]});applied[field]=wire_values
+    if SORTS[sort][1] and (not requested_facets['cty'] or not set(requested_facets['cty'])<={'contributed_images','contributed_panoramas'}):
+        raise ServiceError('invalid_options','Image-specific sorts require image or panorama content_types')
     payload={'acc':acc,'allowEmptyQuery':False,'endDate':dates['end_date'],'startDate':dates['start_date'],
         'forwardedAdvancedSearchParams':{'Query':query},'isAdvancedSearch':False,'msFacetFields':fields,'pageParams':{},'pageNumber':1,
-        'pageType':'basic_search_page','searchTerm':query,'theme':'','filterQueries':[],'sort':{'relevance':'rel','newest':'new','oldest':'old'}[sort],
+        'pageType':'basic_search_page','searchTerm':query,'theme':'','filterQueries':[],'sort':SORTS[sort][0],
         'tabType':'keyword','content_set_flags':[],'appliedFacets':applied}
+    if SORTS[sort][1]:payload['sortOrder']=SORTS[sort][1]
     for key in ('startDate','endDate'):
         if payload[key]:applied[key]=payload[key]
     selected=[];proofs=[];errors=[];seen=set();groups=[];page_errors=[]
@@ -183,9 +196,9 @@ def search(adapter,query,*,options,start=0,limit=20,cursor=None,export=None):
                 queue.extend(facet.get('h_values',[]))
                 if facet.get('field'):
                     selected_facets.setdefault(facet['field'],set()).update(facet_key(facet['field'],v.get('label')) for v in facet.get('values',[]) if v.get('selected'))
-            for option,field in FACETS.items():
-                if {facet_key(field,value) for value in options.get(option,[])}-selected_facets.get(field,set()):
-                    raise ServiceError('filter_mismatch','JSTOR did not retain a requested facet',field=option)
+            for field,values in requested_facets.items():
+                if {facet_key(field,value) for value in values}-selected_facets.get(field,set()):
+                    raise ServiceError('filter_mismatch','JSTOR did not retain a requested facet',field=field)
     except ServiceError as error:
         error.result['evidence']=proofs;raise
     source_total=raw['totalResultCount'];facets=raw.get('facets',[])

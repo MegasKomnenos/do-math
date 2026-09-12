@@ -179,3 +179,6 @@ DBLP의 공개 API는 원 metarefresh 확인을 HTTP 클라이언트에서 처�
 
 
 DBLP는 publication key·문헌 URL·이름을 받는다. 이름은 후보이며 원 XML의 key를 대조해 문헌을 조회한다. 검색과 문헌 조회에서 XML·BibTeX·RIS·N-Triples·Turtle·RDF/XML·plain 원 파일을 제공한다. 형식별 오류가 다른 파일과 metadata를 지우지 않는다. XML 형식은 요소, BibTeX/RIS는 필드, N-Triples·Turtle·plain은 줄 단위로 추출한다.
+
+
+JSTOR 이미지 검색은 제목·제작자의 양방향 정렬과 해상도 정렬을 지원한다. 추가 facets는 반환된 field와 label로 지정하며 display가 선택할 항목의 이름이다. 해상도·지역·분류·제공기관·컬렉션 등 원 검색 조건을 유지한다. 제공기관 식별자의 전송 변환은 서버가 처리하므로 label을 수정하지 않는다.

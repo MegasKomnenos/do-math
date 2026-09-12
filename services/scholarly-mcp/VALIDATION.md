@@ -414,3 +414,8 @@ JSTOR 문헌24931626의 첫 Download는 이용 조건 모달 때문에 대기했
 2026-09-12 DBLP의 conf/stoc/Cook71 원 문헌 페이지에서 내보내기 링크를 확인하고7개 형식을 회수했다. XML472·BibTeX778·RIS532·N-Triples6162·Turtle3287·RDF/XML4551·plain81바이트다. source key를 XML·BibTeX·RIS·RDF에서, 제목을 plain에서 대조한다. 이름은 후보 검색으로 반환하고 XML의 다른 key를 거부한다.
 
 `data/validation/20260912T072659Z-dblp-documents-mcp.json`은 문헌 key 조회와7개 형식의 실제 extract, 이름 후보4건, P versus NP의start1/limit2와 원 RIS2개를 completed=true로 통과했다. Native N-Triples는 원 텍스트 줄로 추출하며 그래프 질의 기능을 추가한 것은 아니다. 손상된 BibTeX 식별자·XML 식별자 불일치·다른 export 보존 검사를 포함한 공통267검사가 통과했다. 별도 DOI 질의를 시도한 기록의0건을 해당 문헌의 DBLP 부재로 해석하지 않는다. Native key·문헌 URL·이름이 이 fetch의 입력 범위다.
+
+
+2026-09-12 JSTOR 이미지 화면의5개 추가 정렬과 원 조건을 확인했다. `data/validation/20260912T082405Z-jstor-image-controls.json`은 제목·제작자 양방향과 해상도의 sort/sortOrder,10MP 초과 조건47건을 보존한다. 추가 facets는 원 field와 label을 받고 선택 상태를 대조한다. 제공기관은 label만 전송하면 조건이 무시돼242건 그대로였으며083058Z MCP는 이를 filter_mismatch로 거부했다.084340Z의 원 요청은 내부적으로 cc_portal_id#식별자를 사용했다. 하위 컬렉션은085108Z에서 접두사 없는 label로22건을 반환했다.
+
+`data/validation/20260912T085459Z-jstor-image-search-mcp.json`은 이미지 정렬5개, 해상도47·Europe5·Northern State University26·하위 NSU Pasque Collection22건과 필요한 facet 추출을 completed=true로 통과했다. 제작자 표시는 creators에 보존한다. 표시 이름은 선택용이며 label의 내부 구성을 호출자가 만들지 않는다. 공통269검사가 통과했다.

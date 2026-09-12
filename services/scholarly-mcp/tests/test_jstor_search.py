@@ -3,6 +3,41 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT))
 
 class JSTORSearchContract(unittest.TestCase):
+    def test_contributor_facet_uses_the_native_field_and_identifier_prefix(self):
+        from jstor_search import search
+        from scholarly import ArtifactStore
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        import tempfile,base64
+        raw=json.loads((ROOT/'tests/fixtures/jstor-image-contributor.json').read_text('utf-8'))
+        with tempfile.TemporaryDirectory() as temp:
+            store=ArtifactStore(temp);proof=store.put(json.dumps(raw),'application/json','jstor','https://www.jstor.org/search-results/grouped-search/')
+            with patch('jstor_search.request_page',return_value=(raw,proof)) as request:
+                result=search(SimpleNamespace(store=store,source='jstor'),'algebra',options={'content_types':['contributed_images'],'facets':{'cc_portal_id':['100689779']}},limit=2)
+            self.assertEqual(result['total'],26)
+            payload=request.call_args.args[1];field=next(f for f in payload['msFacetFields'] if f['field']=='cc_portal_id')
+            self.assertEqual(base64.b64decode(field['efq'][0]).decode(),'cc_portal_id#100689779')
+
+    def test_image_sort_and_native_resolution_filter_preserve_ui_request_meaning(self):
+        from jstor_search import search
+        from scholarly import ArtifactStore
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        import tempfile,base64
+        for filename,options,sort,order,total in [
+            ('jstor-image-resolution.json',{'content_types':['contributed_images'],'sort':'resolution','facets':{'cc_media_resolution':['cc_media_resolution:[9980929 TO *]']}},'cc_media_resolution','desc',47),
+            ('jstor-image-title-desc.json',{'content_types':['contributed_images'],'sort':'title_desc'},'item_title_str','desc',242)]:
+            raw=json.loads((ROOT/'tests/fixtures'/filename).read_text('utf-8'))
+            with tempfile.TemporaryDirectory() as temp:
+                store=ArtifactStore(temp);proof=store.put(json.dumps(raw),'application/json','jstor','https://www.jstor.org/search-results/grouped-search/')
+                with patch('jstor_search.request_page',return_value=(raw,proof)) as request:
+                    result=search(SimpleNamespace(store=store,source='jstor'),'algebra',options=options,limit=2)
+                self.assertEqual((result['status'],result['total']),('ok',total))
+                payload=request.call_args.args[1];self.assertEqual((payload['sort'],payload['sortOrder']),(sort,order))
+                if 'facets' in options:
+                    field=next(x for x in payload['msFacetFields'] if x['field']=='cc_media_resolution')
+                    self.assertEqual(base64.b64decode(field['efq'][0]).decode(),options['facets']['cc_media_resolution'][0])
+
     def test_mixed_groups_expand_carousel_before_selecting_separate_windows(self):
         from jstor_search import search
         from scholarly import ArtifactStore
