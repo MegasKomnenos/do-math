@@ -1,0 +1,1 @@
+Stephen A. Cook: The Complexity of Theorem-Proving Procedures. STOC 1971: 151-158

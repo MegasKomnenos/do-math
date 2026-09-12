@@ -168,8 +168,9 @@ API_USAGE = {
         "official": ["https://info.arxiv.org/help/api/user-manual.html"]},
     "dblp": {
         "search": "대소문자를 구별하지 않는 접두어 검색이다. 공백은 AND, |는 OR이며 단어 뒤 $는 정확한 단어를 지정한다. 제목·저자·venue·연도 등 DBLP 검색 색인의 텍스트를 대상으로 한다.",
-        "options": {}, "fetch": "journals/… 또는 conf/… 형태의 DBLP key나 /rec/ 링크. 원 XML 서지를 보존한다. 초록과 논문 전문을 제공하는 색인이 아니다.",
-        "limits": "현재 limit 1..100. start로 순회. json/native 검색 export. Anubis의 metarefresh 확인은 원 Refresh 헤더 또는 meta 태그의 대기 시간을 지켜 같은 API 클라이언트에서 처리한다. 확인 주소·원 검색 URL·일회성 값의 대응을 검사하며 쿠키와 확인 값은 내부에서만 사용한다. 다른 확인 방식이나 실패는 restricted다. 같은 운영기관의 공개 지식 그래프는 dblp-kg라는 별도 자료원으로 명시적으로 선택할 수 있다. 그 질의 문법은 SPARQL이며 이 검색식의 자동 대체가 아니다.",
+        "options": {}, "fetch": "journals/…·conf/…·books/… 등의 DBLP key나 /rec/ 링크는 원 XML의 key를 대조해 조회한다. 이름은 원 검색의 후보를 selection_required로 반환하므로 호출자가 고른다. metadata는 원 필드·속성을 구조화하고 native_metadata는 원 XML이다. 초록·논문 전문은 이 서지 색인의 제공 대상이 아니다.",
+        "exports": "search의 export는 json/native 외에 bibtex·ris·xml·ntriples·turtle·rdf·plain을 받는다. 선택된 각 레코드의 원 파일을 export.artifacts로 제공한다. fetch parts=export는 7개 원 형식을 반환한다. XML·BibTeX·RIS·RDF의 문헌 식별자와 plain의 제목을 대조하고 일부 형식 실패 때 받은 파일과 metadata를 유지한다. BibTeX/RIS는 서지 필드, XML/RDF-XML은 XML 요소, Turtle/N-Triples/plain은 원 텍스트 줄을 extract한다.",
+        "limits": "현재 limit 1..100. start로 순회하고 원 @first·@sent를 대조한다. Anubis의 metarefresh 확인은 원 Refresh 헤더 또는 meta 태그의 대기 시간을 지켜 같은 API 클라이언트에서 처리한다. 확인 주소·원 검색 URL·일회성 값의 대응을 검사하며 쿠키와 확인 값은 내부에서만 사용한다. 다른 확인 방식이나 실패는 restricted다. 같은 운영기관의 공개 지식 그래프는 dblp-kg라는 별도 자료원으로 명시적으로 선택할 수 있다. 그 질의 문법은 SPARQL이며 이 검색식의 자동 대체가 아니다.",
         "examples": [{"tool": "search", "arguments": {"source": "dblp", "query": "P versus NP", "limit": 2}}],
         "official": ["https://dblp.org/faq/How+to+use+the+dblp+search+API.html", "https://dblp.org/db/"]},
     "zbmath": {
@@ -637,7 +638,7 @@ for identifier, level in {
     "openalex": "live_mcp_arbitrary_window_group_cursor_abstract_relationships_name_doi",
     "core": "live_mcp_name_metadata_abstract_and_restricted_fulltext_notice",
     "semantic-scholar": "live_mcp_search_extract; new_workflow_rate_limited; schema_regressions",
-    "dblp": "live_mcp_search_extract_after_native_timed_refresh",
+    "dblp": "live_mcp_native_timed_refresh_search_seven_exports_name_and_record_identity",
     "dblp-kg": "live_mcp_sparql_window_native_csv_tsv_key_doi_name; native_tsv_year_type_mismatch",
     "zenodo": "live_mcp_search_file_checksum_fetch_extract",
     "figshare": "live_mcp_public_search_window_collection_versioned_file_md5_pdf_extract",

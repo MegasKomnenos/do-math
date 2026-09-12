@@ -1,0 +1,68 @@
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix bf: <http://id.loc.gov/ontologies/bibframe/> .
+@prefix bibo: <http://purl.org/ontology/bibo/> .
+@prefix bibtex: <http://purl.org/net/nknouf/ns/bibtex#> .
+@prefix cito: <http://purl.org/spar/cito/> .
+@prefix datacite: <http://purl.org/spar/datacite/> .
+@prefix dbo: <http://dbpedia.org/ontology/> .
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix litre: <http://purl.org/spar/literal/> .
+@prefix locid: <http://id.loc.gov/vocabulary/identifiers/> .
+@prefix locrel: <http://id.loc.gov/vocabulary/relators/> .
+@prefix schema: <https://schema.org/> .
+@prefix wd: <http://www.wikidata.org/entity/> .
+@prefix wdt: <http://www.wikidata.org/prop/direct/> .
+@prefix dblp: <https://dblp.org/rdf/schema#> .
+
+<https://dblp.org/rec/conf/stoc/Cook71>
+	owl:sameAs <https://doi.org/10.1145/800157.805047>, <http://dx.doi.org/10.1145/800157.805047>, <http://www.wikidata.org/entity/Q55867257> ;
+	rdfs:label "Stephen A. Cook: The Complexity of Theorem-Proving Procedures (1971)" ;
+	dblp:doi <https://doi.org/10.1145/800157.805047> ;
+	dblp:wikidata <http://www.wikidata.org/entity/Q55867257> ;
+	datacite:hasIdentifier [
+		datacite:usesIdentifierScheme datacite:dblp-record ;
+		litre:hasLiteralValue "conf/stoc/Cook71" ;
+		a datacite:ResourceIdentifier, datacite:Identifier
+	], [
+		datacite:usesIdentifierScheme datacite:doi ;
+		litre:hasLiteralValue "10.1145/800157.805047" ;
+		a datacite:ResourceIdentifier, datacite:Identifier
+	], [
+		datacite:usesIdentifierScheme datacite:wikidata ;
+		litre:hasLiteralValue "Q55867257" ;
+		a datacite:Identifier
+	] ;
+	dblp:title "The Complexity of Theorem-Proving Procedures" ;
+	dblp:bibtexType bibtex:Inproceedings ;
+	dblp:authoredBy <https://dblp.org/pid/c/StephenACook> ;
+	dblp:createdBy <https://dblp.org/pid/c/StephenACook> ;
+	dblp:numberOfCreators 1 ;
+	dblp:hasSignature [
+		dblp:signatureDblpName "Stephen A. Cook" ;
+		dblp:signatureCreator <https://dblp.org/pid/c/StephenACook> ;
+		dblp:signatureOrdinal 1 ;
+		dblp:signaturePublication <https://dblp.org/rec/conf/stoc/Cook71> ;
+		a dblp:AuthorSignature, dblp:Signature
+	] ;
+	dblp:primaryDocumentPage <https://doi.org/10.1145/800157.805047> ;
+	dblp:documentPage <https://doi.org/10.1145/800157.805047> ;
+	dblp:listedOnTocPage <https://dblp.org/db/conf/stoc/stoc71> ;
+	dblp:publishedInStream <https://dblp.org/streams/conf/stoc> ;
+	dblp:pagination "151-158" ;
+	dblp:publishedIn "STOC" ;
+	dblp:publishedInBook "STOC" ;
+	dblp:yearOfEvent "1971"^^<http://www.w3.org/2001/XMLSchema#gYear> ;
+	dblp:yearOfPublication "1971"^^<http://www.w3.org/2001/XMLSchema#gYear> ;
+	dblp:publishedAsPartOf <https://dblp.org/rec/conf/stoc/STOC3> ;
+	a dblp:Publication, dblp:Inproceedings .
+<https://dblp.org/rec/conf/stoc/Cook71.ttl>
+	rdfs:label "provenance information for RDF data of dblp record 'conf/stoc/Cook71'" ;
+	dct:creator <https://dblp.org> ;
+	dct:isPartOf <https://dblp.org/rdf/dblp.ttl> ;
+	dct:modified "2018-11-26T15:05:57+0100" ;
+	dct:license <https://creativecommons.org/publicdomain/zero/1.0/> .

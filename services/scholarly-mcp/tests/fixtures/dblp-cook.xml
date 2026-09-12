@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+<dblp>
+<inproceedings key="conf/stoc/Cook71" mdate="2018-11-26">
+<title>The Complexity of Theorem-Proving Procedures</title>
+<author>Stephen A. Cook</author>
+<pages>151-158</pages>
+<crossref>conf/stoc/STOC3</crossref>
+<year>1971</year>
+<booktitle>STOC</booktitle>
+<url>db/conf/stoc/stoc71.html#Cook71</url>
+<ee>https://doi.org/10.1145/800157.805047</ee>
+<ee>https://www.wikidata.org/entity/Q55867257</ee>
+</inproceedings>
+</dblp>

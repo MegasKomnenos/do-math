@@ -10,7 +10,7 @@
 | PQDT Global | pqdt | playwright | partial | source_guide, search, fetch, export | live_mcp_repeat_search_ris_pdf_and_supplemental_png_fetch_extract |
 | zbMATH Open | zbmath | api | partial | source_guide, search, fetch, export | live_mcp_arbitrary_window_doi_legacy_link_license_state_references |
 | arXiv | arxiv | api | partial | source_guide, search, fetch, export | live_mcp_search_pinned_html_source_archive_tex_extract |
-| DBLP | dblp | api | partial | source_guide, search, fetch, export | live_mcp_search_extract_after_native_timed_refresh |
+| DBLP | dblp | api | partial | source_guide, search, fetch, export | live_mcp_native_timed_refresh_search_seven_exports_name_and_record_identity |
 | DBLP Knowledge Graph | dblp-kg | api | partial | source_guide, search, fetch, export | live_mcp_sparql_window_native_csv_tsv_key_doi_name; native_tsv_year_type_mismatch |
 | ECCC | eccc | playwright | partial | source_guide, search, fetch, export | live_mcp_name_candidates_search_and_pinned_revision_fetch |
 | DROPS / LIPIcs | drops | fixed: metadata API; search/document links Playwright | partial | source_guide, search, fetch, export | live_mcp_native_exports_pdf_html_codemeta_and_supplementary_references |

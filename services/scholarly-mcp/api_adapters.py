@@ -365,22 +365,20 @@ class DBLP(APIAdapter):
         hits = raw["result"]["hits"]
         rows = hits.get("hit", [])
         if isinstance(rows, dict): rows = [rows]
-        return self.export_page(self.page([r["info"] for r in rows], int(hits["@total"]), evidence, query, options, start, limit), export)
+        if int(hits['@first'])!=start or int(hits['@sent'])!=len(rows) or len(rows)>limit:
+            raise ServiceError('range_mismatch','DBLP returned a different publication window',evidence=evidence)
+        records=[r['info'] for r in rows]
+        result=self.page(records,int(hits['@total']),evidence,query,options,start,limit)
+        from dblp import FORMATS,export_rows
+        if export in FORMATS:
+            result['export']=export_rows(self,records,export)
+            if result['export']['errors']:result['status']='partial'
+            return result
+        return self.export_page(result,export)
 
     def fetch(self, target, *, parts):
-        value = target
-        if value.startswith("https://"):
-            parsed = urlsplit(value)
-            if parsed.hostname not in self.hosts or not parsed.path.startswith("/rec/"):
-                raise ServiceError("source_boundary", "Use a DBLP record URL")
-            value = parsed.path[5:]
-        value = re.sub(r"\.(?:html|xml|bib)$", "", value)
-        if not re.fullmatch(r"(?:journals|conf|books|reference|phd|tr)/[\w/.-]+", value) or ".." in value:
-            raise ServiceError("invalid_target", "Use a DBLP publication key or record URL")
-        raw, evidence = self.request("https://dblp.org/rec/" + value + ".xml", accept="xml")
-        root = ElementTree.fromstring(raw)
-        records = [{"kind": child.tag, "attributes": child.attrib, "fields": [{"name": f.tag, "value": "".join(f.itertext()), "attributes": f.attrib} for f in child]} for child in root]
-        return self.fetched(records, evidence, parts, ("metadata", "export"))
+        from dblp import fetch
+        return fetch(self,target,parts)
 
 
 class ZBMath(APIAdapter):

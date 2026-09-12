@@ -1,0 +1,17 @@
+Provider: Schloss Dagstuhl - Leibniz Center for Informatics
+Database: dblp computer science bibliography
+Content:text/plain; charset="utf-8"
+
+TY  - CPAPER
+ID  - DBLP:conf/stoc/Cook71
+AU  - Cook, Stephen A.
+TI  - The Complexity of Theorem-Proving Procedures
+BT  - Proceedings of the 3rd Annual ACM Symposium on Theory of Computing, May 3-5, 1971, Shaker Heights, Ohio, USA
+SP  - 151
+EP  - 158
+PY  - 1971//
+DO  - 10.1145/800157.805047
+UR  - https://doi.org/10.1145/800157.805047
+UR  - https://www.wikidata.org/entity/Q55867257
+ER  -
+

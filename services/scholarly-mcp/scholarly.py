@@ -543,7 +543,7 @@ def extract_artifact(store, ref, *, fields=None, start=0, count=20, selection=""
         return {"status": "ok", "artifact": ref, "unit": "pages", "start": start, "total": total,
             "returned": len(rows), "next_start": start + len(rows) if start + len(rows) < total else None,
             "items": rows, "interpretation": "Mechanical text and rendering; image meaning and text accuracy are assessed by the caller"}
-    elif media.startswith("text/") or media in ('application/x-tex', 'application/x-latex'):
+    elif media.startswith("text/") or media in ('application/x-tex', 'application/x-latex','application/n-triples'):
         rows = data.decode("utf-8").splitlines()
         unit = "lines"
     else:

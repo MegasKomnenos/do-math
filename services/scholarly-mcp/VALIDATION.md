@@ -409,3 +409,8 @@ JSTOR 문헌24931626의 첫 Download는 이용 조건 모달 때문에 대기했
 `063423Z-jstor-extra-inventory.json`은 오디오와 동영상의 원 상태,26581894의 원 보충 링크를 찾았다. 오디오 원 요청은 /audio/download/UUID에서 허용된 Artstor 저장소로 이동했다.071522Z는 MP3·VTT·보충 PDF를 모두 회수했으나 보충 첫 쪽에 주 문헌 제목이 있을 것이라는 시험 전제가 틀렸다. 실제 보충본은34번 쪽에서 시작하며 ATHEY, TIBSHIRANI AND WAGER를 표시하는21쪽의 후속 부분이다. 초기 직접 파일 요청070854Z의45초 대기도 기록했다. 생산 경로는 원 Download로 고정하고 오디오는 선택된 UUID endpoint에서의 실제 redirect 연쇄를 대조한다.
 
 `data/validation/20260912T074059Z-jstor-extras-mcp.json`은 MP3의24416379바이트, 자동 생성 WebVTT33159바이트의 줄 추출, 보충 PDF863887바이트·21쪽과 첫 쪽 저자 표시, 동영상 표본community.39197180의 원 disabled 구별과 전사문 회수를 completed=true로 통과했다. 문헌 파일과 첨부는 같은 원 페이지를 사용하며 원 byte·부모 문헌·파일 크기·transcript_type을 보존한다. 별도 공급자의 인식기를 실행하지 않는다. 이 작업트리의 공통267검사는 진행 중인 DBLP 원 문헌 검사3개도 포함한 수치다.
+
+
+2026-09-12 DBLP의 conf/stoc/Cook71 원 문헌 페이지에서 내보내기 링크를 확인하고7개 형식을 회수했다. XML472·BibTeX778·RIS532·N-Triples6162·Turtle3287·RDF/XML4551·plain81바이트다. source key를 XML·BibTeX·RIS·RDF에서, 제목을 plain에서 대조한다. 이름은 후보 검색으로 반환하고 XML의 다른 key를 거부한다.
+
+`data/validation/20260912T072659Z-dblp-documents-mcp.json`은 문헌 key 조회와7개 형식의 실제 extract, 이름 후보4건, P versus NP의start1/limit2와 원 RIS2개를 completed=true로 통과했다. Native N-Triples는 원 텍스트 줄로 추출하며 그래프 질의 기능을 추가한 것은 아니다. 손상된 BibTeX 식별자·XML 식별자 불일치·다른 export 보존 검사를 포함한 공통267검사가 통과했다. 별도 DOI 질의를 시도한 기록의0건을 해당 문헌의 DBLP 부재로 해석하지 않는다. Native key·문헌 URL·이름이 이 fetch의 입력 범위다.
