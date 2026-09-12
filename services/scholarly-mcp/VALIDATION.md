@@ -402,3 +402,10 @@ JSTOR 문헌24931626의 첫 Download는 이용 조건 모달 때문에 대기했
 2026-09-12 DBLP의 확인 응답은 [Anubis metarefresh](https://github.com/TecharoHQ/anubis/blob/main/docs/docs/admin/configuration/challenges/metarefresh.mdx)였다. Chromium의060822Z-dblp-verification.json은Access Denied였지만 HTTP 클라이언트에 제공된 원 확인은 JavaScript가 필요하지 않았다. `data/validation/20260912T063810Z-dblp-refresh.json`은 실제 Refresh 헤더가 지정한2초 대기, 확인302, 원 API JSON2건을 확인했다. 최초 별도 관측에서는 같은 지시가 meta 태그에 있었다. 두 형식을 같은 원 요청으로 처리한다.
 
 `data/validation/20260912T064842387254Z-dblp-workflow.json`은 describe_source→P versus NP 검색49건 중2건→extract를 실제 MCP로 completed=true 통과했다. 확인 주소가 다른 호스트로 나가거나 검색식이 바뀌는 경우를 요청 전에 거부하고 일회성 확인 값이 artifact에 남지 않는 검사를 추가했다. 다른 Anubis 방식은 처리했다고 주장하지 않는다. 공통261검사가 통과했다. 원 서지 형식·이름 후보의 추가 구현과 검증은 이어서 수행한다.
+
+
+2026-09-12 JSTOR의 [원 이미지 다운로드](https://support.jstor.org/hc/en-us/articles/4410046169751-Images-on-JSTOR-Getting-Started)를 확인했다. `data/validation/20260912T062834Z-jstor-image-mcp.json`은 community.13581670의 JPEG168854바이트·1024×821, 실제 ImageContent, community.39607963의 원 restricted 구별을 completed=true로 통과했다. `063140Z-jstor-document-mcp.json`은 기존 문헌24931626의11쪽 PDF 회귀도 통과했다. 구조용 #cdt는 비어 있는 div이므로 visible을 기다린060317Z 시험은 완료되지 않았고 attached로 읽도록 고쳤다.
+
+`063423Z-jstor-extra-inventory.json`은 오디오와 동영상의 원 상태,26581894의 원 보충 링크를 찾았다. 오디오 원 요청은 /audio/download/UUID에서 허용된 Artstor 저장소로 이동했다.071522Z는 MP3·VTT·보충 PDF를 모두 회수했으나 보충 첫 쪽에 주 문헌 제목이 있을 것이라는 시험 전제가 틀렸다. 실제 보충본은34번 쪽에서 시작하며 ATHEY, TIBSHIRANI AND WAGER를 표시하는21쪽의 후속 부분이다. 초기 직접 파일 요청070854Z의45초 대기도 기록했다. 생산 경로는 원 Download로 고정하고 오디오는 선택된 UUID endpoint에서의 실제 redirect 연쇄를 대조한다.
+
+`data/validation/20260912T074059Z-jstor-extras-mcp.json`은 MP3의24416379바이트, 자동 생성 WebVTT33159바이트의 줄 추출, 보충 PDF863887바이트·21쪽과 첫 쪽 저자 표시, 동영상 표본community.39197180의 원 disabled 구별과 전사문 회수를 completed=true로 통과했다. 문헌 파일과 첨부는 같은 원 페이지를 사용하며 원 byte·부모 문헌·파일 크기·transcript_type을 보존한다. 별도 공급자의 인식기를 실행하지 않는다. 이 작업트리의 공통267검사는 진행 중인 DBLP 원 문헌 검사3개도 포함한 수치다.

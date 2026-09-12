@@ -147,7 +147,7 @@ def iop_links(raw,base):
     return rows
 
 
-def fetch_supplementary(adapter,page,identifier,source_page,*,download_hosts=None):
+def fetch_supplementary(adapter,page,identifier,source_page,*,download_hosts=None,native_rows=None):
     if adapter.source=='project-euclid' and page.locator('#sup').count():
         try:
             page.locator('#sup').click(timeout=20000)
@@ -156,8 +156,8 @@ def fetch_supplementary(adapter,page,identifier,source_page,*,download_hosts=Non
             return {'status':'error','code':'supplementary_tab_not_ready','error_type':type(error).__name__,'artifact':source_page}
         source_page=adapter.store.put(clean_html(page.content(),adapter.store.sanitizer),'text/html',adapter.source,page.url,
             role='supplementary_source_page',doi=identifier,parent_ref=source_page['ref'])
-    raw=page.content()
-    rows={'springer':springer_links,'wiley':wiley_links,'aip':aip_links,'cambridge':cambridge_links,'oxford':oxford_links,'taylor-francis':taylor_links,'de-gruyter':degruyter_links,'acm-dl':acm_links,'project-euclid':euclid_links,'iop':iop_links}[adapter.source](raw,page.url)
+    raw=page.content() if native_rows is None else ''
+    rows=native_rows if native_rows is not None else {'springer':springer_links,'wiley':wiley_links,'aip':aip_links,'cambridge':cambridge_links,'oxford':oxford_links,'taylor-francis':taylor_links,'de-gruyter':degruyter_links,'acm-dl':acm_links,'project-euclid':euclid_links,'iop':iop_links}[adapter.source](raw,page.url)
     if not rows:
         return {'status':'source_page','artifact':source_page,'reason':'No recognized document attachment controls; other supplementary layouts remain in development'}
     index=adapter.store.put(encoded(rows),'application/json',adapter.source,page.url,role='supplementary_index',doi=identifier,parent_ref=source_page['ref'])
@@ -180,6 +180,9 @@ def fetch_supplementary(adapter,page,identifier,source_page,*,download_hosts=Non
             if row.get('linked_pii') and expected_pii and row['linked_pii'] not in expected_pii:
                 raise ServiceError('linked_publication_differs','The attachment PII differs from the document PDF metadata',status='selection_required',linked_pii=row['linked_pii'])
             data,media,url=browser_download(adapter.gateway.context,row['url'],adapter.profile.download_hosts if download_hosts is None else download_hosts)
+            if adapter.source=='jstor' and type(row.get('size')) is int and len(data)!=row['size']:
+                unverified=adapter.store.put(data,media,adapter.source,url,preserve_bytes=True,role='unverified_supplement',parent_ref=index['ref'])
+                raise ServiceError('attachment_size_mismatch','JSTOR attachment size differs from its document metadata',expected_bytes=row['size'],received_bytes=len(data),source_file=unverified)
             if media in ('text/html','application/xhtml+xml') or data.lstrip().lower().startswith((b'<!doctype html',b'<html')):
                 raise ServiceError('unexpected_content','Attachment control returned an HTML page')
             suffix=PurePosixPath(row.get('filename') or urlsplit(row['url']).path).suffix.lower()
@@ -192,6 +195,9 @@ def fetch_supplementary(adapter,page,identifier,source_page,*,download_hosts=Non
             metadata={}
             if suffix=='.csv':
                 media='text/csv'
+            if suffix=='.vtt':
+                if not data.removeprefix(b'\xef\xbb\xbf').startswith(b'WEBVTT'):raise ServiceError('invalid_document','Transcript endpoint returned no WebVTT')
+                media='text/vtt'
             if data.startswith(b'%PDF-'):
                 import pymupdf
                 with pymupdf.open(stream=data,filetype='pdf') as document:

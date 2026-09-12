@@ -1,0 +1,59 @@
+{
+  "content": {
+    "id": "52d54e7a-5382-381c-aee7-c4e50b60a25b",
+    "doi": "10.2307/26581894",
+    "identityBlock": {
+      "issue_doi": [
+        "10.2307/e26581874"
+      ],
+      "lccn": [
+        "sn98-23313"
+      ],
+      "jcode": [
+        "annalsstatistics"
+      ],
+      "issn": [
+        "00905364"
+      ],
+      "journal_iid": [
+        "2dcd8b18-57ca-3f9e-9d6d-12c3614cf302"
+      ],
+      "iid": [
+        "52d54e7a-5382-381c-aee7-c4e50b60a25b"
+      ],
+      "issue_iid": [
+        "a9a4a3af-3ae7-3491-83a5-55dbdcf4d0b7"
+      ],
+      "oclc": [
+        "40280841"
+      ],
+      "eissn": [
+        "21688966"
+      ],
+      "journal_doi": [
+        "10.2307/j100477"
+      ],
+      "doi": [
+        "10.2307/26581894"
+      ]
+    },
+    "supplements": [
+      {
+        "href": "euclid.aos.1547197251_supp1.pdf",
+        "link": "/stable/get_asset/10.2307/26581894?supp_index=0",
+        "mime_type": "application/octet-stream",
+        "text": "euclid.aos.1547197251_supp1.pdf",
+        "filename": "euclid.aos.1547197251_supp1.pdf",
+        "target": null,
+        "size": "863887",
+        "simple_type": null,
+        "unresolved": null,
+        "disposition": "attachment",
+        "file_info": [
+          "843.6\u00a0KB"
+        ],
+        "doi": "10.2307/26581894"
+      }
+    ]
+  }
+}
