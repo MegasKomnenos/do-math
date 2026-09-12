@@ -14,6 +14,7 @@ SERVICE=Path(__file__).resolve().parent
 UPSTREAM='https://git.code.sf.net/p/djvu/djvulibre-git'
 COMMIT='4847901fa2d81cdf8db89cc22f63ae5de85f963a'
 TOOLS=('djvutxt','djvused','ddjvu')
+LICENSE='GPL-2.0-or-later'
 
 
 def run(args,*,env=None,log=None):
@@ -52,7 +53,7 @@ def main():
     run([compiler,*flags,'/c',*files,'/Fo'+str(build)+'\\'],env=env,log=root/'compile.log')
     objects=[build/(path.stem+'.obj') for path in files]
     run([compiler.with_name('lib.exe'),'/nologo','/OUT:'+str(build/'djvu.lib'),*objects],env=env,log=root/'library.log')
-    manifest={'upstream':UPSTREAM,'commit':COMMIT,'license':'GPL-2.0-or-later','tools':{},
+    manifest={'upstream':UPSTREAM,'commit':COMMIT,'license':LICENSE,'tools':{},
         'build':'MSVC static runtime; DjVu text and PPM rendering; TIFF/PDF encoding not included'}
     for tool in TOOLS:
         executable=runtime/(tool+'.exe')

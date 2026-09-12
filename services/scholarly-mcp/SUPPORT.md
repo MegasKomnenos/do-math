@@ -43,7 +43,7 @@
 | Wiley | wiley | playwright | partial | source_guide, search, fetch, export | live_mcp_dynamic_advanced_rows_citations_pdf_zero_and_supplementary_zip |
 | AIP | aip | playwright | partial | source_guide, search, fetch, export | live_mcp_advanced_search_citation_pdf_and_explicit_figshare_supplement_reference |
 | APS 공개 접근 | aps | api | partial | source_guide, search, fetch, export | live_mcp_arbitrary_feed_window_native_pages_metadata_abstract_pdf |
-| IOP | iop | fixed: newest RSS API; other sorts/extra filters/document Playwright | partial | source_guide, search, fetch, export | live_mcp_rss_ranked_filters_native_search_citations; pdf_html_tex_figures_supplement_pdf_verified |
+| IOP | iop | fixed: newest RSS API; other sorts/extra filters/document Playwright | partial | source_guide, search, fetch, export | live_mcp_rss_ranked_filters_native_search_citations; pdf_html_tex_154_equations_manifest_images_supplement |
 | SIAM | siam | playwright (전용 Chrome 창/CDP) | partial | source_guide, search, fetch, export | live_mcp_52_fields_advanced_search_citations_book_zero; institution_auth_path_unavailable |
 | KNU FRIC | knu-fric | playwright | partial | source_guide, search, fetch, export | live_mcp_catalogue_pagination_issn_fetch_zero_result |
 | KNU 개별 구독 저널 목록 | individual-subscription | playwright | partial | source_guide, search, fetch, export | live_mcp_two_catalogues_95_holdings_six_siam_csv_range_year_fetch_zero |

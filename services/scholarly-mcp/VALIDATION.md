@@ -552,3 +552,14 @@ APS 공개 Harvest의 start가limit의 배수여야 한다는 구현 제약을 �
 생산 경로에는 현재 공식 upstream의4847901fa2d81cdf8db89cc22f63ae5de85f963a를 고정하고 기존MSVC로 세 도구를 빌드했다. setup_djvu.py는 전용 data/tools/djvulibre에 소스·로그·실행 파일·라이선스·SHA-256을 보존한다. 세 standalone 도구의 합계는2,613,760바이트다. 각 실행 전에 저장 해시를 대조하며 원 DjVu는 임시 파일에 그대로 전달한다. 현재 코드의 BUNDLED·OLD_BUNDLED 분기는 참조 파일을 같은 원 묶음 안에서만 해석한다. Indirect DIRM, 단일 문서의INCL·NDIR은 외부 파일을 읽기 전에 구별해 중단한다. 원 텍스트 레이어를 읽고 새 OCR은 하지 않는다.
 
 limitations-audit/djvu-sdk.json은20:07:12.110452Z~20:07:20.899846Z의 fresh SDK다. basis는 previously_retrieved_native_djvu로 실제 기회수 원파일의 새로운 디코딩·MCP 전달을 검증하며 새 원격 다운로드로 표시하지 않는다. 전체10쪽·첫 쪽 제목/DOI·349,564바이트 PNG·MCP ImageContent1개, start1/count2의2·3쪽/next3, start9/count2의마지막10쪽/next없음이 completed=true였다. 잘못된 컨테이너·외부 component·잘못된selection·시간초과·원 stderr 비노출·후속 쪽 실패의앞부분/next_start 보존·디코더 해시 변조 거부를 포함한7검사와 공통core23검사가 통과했다. 공식 도구 기능은 https://djvu.sourceforge.net/doc/man/djvutxt.html 과 https://djvu.sourceforge.net/doc/man/ddjvu.html 에서 확인했다.
+
+
+2026-09-13 KST, IOP 수식 이미지를 alt/class 단어로 세었던41개 판정을 교정했다. 원 span.texImage > img[src]는 고유154개이며 TeX도154개다. 원 제어의 호스트·문헌 asset 경로·최종 파일 경로와 실제 이미지 바이트를 대조해 GIF/PNG/JPEG를 보존한다. DOI 일부가 들어간 특정 파일명 패턴이나 h2 존재를 필수로 요구하던 조건도 제거했다. 본문 식별 영역과 의미 있는 문단은 계속 대조한다.
+
+처음 production SDK는 IOP 진입의 PerfDrive 확인 화면에서 막혔다. Root가 직접 판독한 후속 화면에는 자동집계0과 달리 iframe의 hCaptcha 체크박스와 Submit이 있었다. 체크박스 뒤에는 이미지 선택 과제가 Submit을 덮고 있었으며, 그 상태에서 뒤쪽 Submit을 누르려던 동작이 timeout이었다. 별도 소유 세션에서 현재 과제를 직접 판독하고 확인·Submit을 마치자 정상 프록시 홈페이지와 같은 수식 파일의200 image/gif·577바이트를 확인했다. 앞264바이트 HTML의 원본문은 미보존이므로 정확한 내용은 특정하지 않는다. 같은 파일의 후속 양성은 파일 부재를 반증한다.
+
+data/validation/20260912T201746Z-iop-content-mcp.json은 이 전용 상태로 실행한 production Chromium headless의 새 SDK다. 전체 fetch가ok이며 수식154/154·그림5개·원TeX·보충PDF2쪽과 수식/그림 ImageContent를 completed=true로 검증했다. 사용자 브라우저나 등록 MCP를 재시작하지 않았고, 서버에 인식 AI·외부 solver를 추가하지 않았다. 고유 실행의 화면과 정제 timeline은 data/access-research/iop-challenge-interact.json 및 root-image-review.md에서 참조한다.
+
+마지막 응답 검토에서 수식154개의 파일·artifact·ref 배열을 중복 반환하던 문제를 발견했다. 전체 파일별 상태를 JSON manifest로 옮기고 HTML metadata도 그 manifest 하나를 참조한다. math_images에는 건수·상태·manifest와 첫 이미지 artifact가 남는다. 20260912T202658Z-iop-equation-manifest-mcp.json은 이미 검증한 원 파일을 재사용해 새 직렬화와 fresh SDK 추출을 검사했다. component JSON은267,279바이트에서10,734바이트로 줄었고 manifest154행의 첫1번·마지막154번과 ImageContent가 일치했다. 이 검증은 새 원격 다운로드로 표시하지 않는다. 최종 root의 publisher HTML8검사와 앞선 browser 결합검사가 통과했다.
+
+DjVu 독립 검토에서 실행 파일과 같은 폴더의 manifest 해시만 비교하면 다른 upstream/commit을 가진 도구도 수용되는 반례를 재현했다. 생성기와 추출기가 같은 고정 UPSTREAM/COMMIT/LICENSE/TOOLS를 사용하고 정확한 출처 필드·세 도구 이름·실제 파일 해시를 대조하도록 보강했다. 잘못된 upstream·commit·license 각각의 RED→GREEN, 실제 세 도구 수용과 독립 재검토가 통과했다. 로컬 빌드의 일관성 검사이며 별도의 서명된 바이너리 인증으로 확대하지 않는다.

@@ -94,12 +94,20 @@ class DjVuExtraction(unittest.TestCase):
 
     def test_decoder_bytes_must_match_the_local_build_manifest(self):
         from djvu_extract import decoder_path
+        from setup_djvu import UPSTREAM,COMMIT,LICENSE,TOOLS
         import os
         name='djvutxt'+('.exe' if os.name=='nt' else '')
         with tempfile.TemporaryDirectory() as temp,patch('djvu_extract.RUNTIME',Path(temp)):
             root=Path(temp);tool=root/name;tool.write_bytes(b'verified build')
-            (root/'provenance.json').write_text(json.dumps({'tools':{name:{'sha256':hashlib.sha256(tool.read_bytes()).hexdigest()}}}),encoding='utf-8')
+            manifest={'upstream':UPSTREAM,'commit':COMMIT,'license':LICENSE,'tools':{
+                t+('.exe' if os.name=='nt' else ''):{'sha256':hashlib.sha256(tool.read_bytes()).hexdigest()} for t in TOOLS}}
+            (root/'provenance.json').write_text(json.dumps(manifest),encoding='utf-8')
             self.assertEqual(decoder_path('djvutxt'),tool)
+            for field in ('upstream','commit','license'):
+                changed={**manifest,field:'unrelated'}
+                (root/'provenance.json').write_text(json.dumps(changed),encoding='utf-8')
+                with self.subTest(field=field),self.assertRaises(ServiceError):decoder_path('djvutxt')
+            (root/'provenance.json').write_text(json.dumps(manifest),encoding='utf-8')
             tool.write_bytes(b'changed')
             with self.assertRaises(ServiceError) as error:decoder_path('djvutxt')
             self.assertEqual(error.exception.result['code'],'decoder_not_available')

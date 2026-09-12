@@ -8,6 +8,7 @@ import subprocess
 import tempfile
 
 from scholarly import ServiceError
+from setup_djvu import UPSTREAM,COMMIT,LICENSE,TOOLS
 
 RUNTIME=Path(__file__).resolve().parent/'data/tools/djvulibre/runtime'
 
@@ -38,11 +39,15 @@ def validate_document(data):
 
 
 def decoder_path(tool):
-    if tool not in ('djvutxt','djvused','ddjvu'):
+    if tool not in TOOLS:
         raise ServiceError('invalid_decoder','Unknown DjVu operation')
     name=tool+('.exe' if os.name=='nt' else '')
     try:
         path=RUNTIME/name;manifest=json.loads((RUNTIME/'provenance.json').read_text(encoding='utf-8'))
+        expected_names={item+('.exe' if os.name=='nt' else '') for item in TOOLS}
+        if (manifest.get('upstream'),manifest.get('commit'),manifest.get('license'))!=(UPSTREAM,COMMIT,LICENSE) \
+                or set(manifest.get('tools',{}))!=expected_names:
+            raise ValueError
         if hashlib.sha256(path.read_bytes()).hexdigest()!=manifest['tools'][name]['sha256']:
             raise ValueError
     except (OSError,ValueError,KeyError):

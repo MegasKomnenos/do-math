@@ -18,14 +18,66 @@ class PublisherHTMLContract(unittest.TestCase):
             page=SimpleNamespace(url='https://iopscience.iop.org/article/10.1088/1367-2630/add557',content=lambda:raw)
             source=store.put(raw,'text/html','iop',page.url)
             adapter=SimpleNamespace(store=store,source='iop',profile=SimpleNamespace(download_hosts={'content-cld-iop-org.libproxy.knu.ac.kr'}),gateway=SimpleNamespace(context=None))
-            with patch('publisher_html.browser_download',return_value=(png,'image/png','https://content-cld-iop-org.libproxy.knu.ac.kr/figure.png')) as download:
+            gif=b'GIF89a\x01\x00\x01\x00\x00\x00\x00;'
+            def downloaded(context,url,hosts,headers=None):
+                return (gif,'image/gif',url) if url.endswith('.gif') else (png,'image/png',url)
+            with patch('publisher_html.browser_download',side_effect=downloaded) as download:
                 result=fetch_html(adapter,page,'10.1088/1367-2630/add557',source)
             self.assertEqual(result['status'],'available');self.assertEqual(len(result['figures']),1)
-            self.assertTrue(download.call_args.args[1].endswith('/njpadd557f1_lr.jpg'))
+            self.assertEqual(result['math_images']['status'],'available')
+            self.assertEqual(result['math_images']['requested'],5);self.assertEqual(result['math_images']['received'],5)
+            self.assertEqual(result['math_images']['artifact']['media_type'],'image/gif')
+            self.assertEqual(store.read(result['math_images']['artifact']['ref'])[1],gif)
+            manifest=__import__('json').loads(store.read(result['math_images']['manifest']['ref'])[1])
+            self.assertEqual(len(manifest),5);self.assertEqual([manifest[0]['number'],manifest[-1]['number']],[1,5])
+            self.assertEqual(store.read(result['artifact']['ref'])[0]['equation_image_manifest_ref'],result['math_images']['manifest']['ref'])
+            self.assertNotIn('equation_image_refs',store.read(result['artifact']['ref'])[0])
+            self.assertEqual(download.call_count,6)
             html=store.read(result['artifact']['ref'])[1].decode()
             self.assertIn('math/tex',html);self.assertIn('\\textbf{s}',html)
             self.assertIn(result['figures'][0]['artifact']['ref'],html)
+            self.assertIn(result['math_images']['artifact']['ref'],html)
             self.assertNotIn('data:image/png;base64',html)
+
+    def test_iop_equation_failure_keeps_html_tex_and_other_images(self):
+        import pymupdf
+        from publisher_html import fetch_html
+        raw=(ROOT/'tests/fixtures/iop-body-region.html').read_text('utf-8')
+        with pymupdf.open() as document:
+            document.new_page(width=20,height=10);png=document[0].get_pixmap().tobytes('png')
+        gif=b'GIF89a\x01\x00\x01\x00\x00\x00\x00;';failed=[False]
+        def downloaded(context,url,hosts,headers=None):
+            if url.endswith('.jpg'):return png,'image/png',url
+            if not failed[0]:failed[0]=True;raise ServiceError('timeout','Equation image timed out')
+            return gif,'image/gif',url
+        with tempfile.TemporaryDirectory() as temp:
+            store=ArtifactStore(temp);page=SimpleNamespace(url='https://iopscience.iop.org/article/10.1088/1367-2630/add557',content=lambda:raw)
+            source=store.put(raw,'text/html','iop',page.url)
+            adapter=SimpleNamespace(store=store,source='iop',profile=SimpleNamespace(download_hosts={'content-cld-iop-org.libproxy.knu.ac.kr'}),gateway=SimpleNamespace(context=None))
+            with patch('publisher_html.browser_download',side_effect=downloaded):result=fetch_html(adapter,page,'10.1088/1367-2630/add557',source)
+            html=store.read(result['artifact']['ref'])[1].decode()
+            manifest=__import__('json').loads(store.read(result['math_images']['manifest']['ref'])[1])
+        self.assertEqual(result['status'],'partial');self.assertEqual(result['figures'][0]['status'],'available')
+        self.assertEqual(result['math_images']['status'],'partial');self.assertEqual(result['math_images']['received'],4)
+        self.assertEqual(manifest[0]['code'],'timeout')
+        self.assertIn('math/tex',html);self.assertIn(result['figures'][0]['artifact']['ref'],html)
+
+    def test_iop_equation_path_must_match_the_selected_article_assets(self):
+        import pymupdf
+        from publisher_html import fetch_html
+        raw=(ROOT/'tests/fixtures/iop-body-region.html').read_text('utf-8').replace('/revision2/njpadd557ieqn1.gif','/other-revision/njpadd557ieqn1.gif')
+        with pymupdf.open() as document:
+            document.new_page(width=20,height=10);png=document[0].get_pixmap().tobytes('png')
+        gif=b'GIF89a\x01\x00\x01\x00\x00\x00\x00;'
+        def downloaded(context,url,hosts,headers=None):return (gif,'image/gif',url) if url.endswith('.gif') else (png,'image/png',url)
+        with tempfile.TemporaryDirectory() as temp:
+            store=ArtifactStore(temp);page=SimpleNamespace(url='https://iopscience.iop.org/article/10.1088/1367-2630/add557',content=lambda:raw)
+            source=store.put(raw,'text/html','iop',page.url)
+            adapter=SimpleNamespace(store=store,source='iop',profile=SimpleNamespace(download_hosts={'content-cld-iop-org.libproxy.knu.ac.kr'}),gateway=SimpleNamespace(context=None))
+            with patch('publisher_html.browser_download',side_effect=downloaded) as download:result=fetch_html(adapter,page,'10.1088/1367-2630/add557',source)
+            manifest=__import__('json').loads(store.read(result['math_images']['manifest']['ref'])[1])
+        self.assertEqual(result['status'],'partial');self.assertEqual(manifest[0]['code'],'source_boundary')
+        self.assertEqual(result['math_images']['received'],4);self.assertEqual(download.call_count,5)
 
     def test_nature_body_preserves_tex_and_downloads_its_figure(self):
         import pymupdf
@@ -54,6 +106,11 @@ class PublisherHTMLContract(unittest.TestCase):
         with self.assertRaises(ServiceError):nature_body('<div class="c-article-body"><section>Abstract</section></div>')
         with self.assertRaises(ServiceError):iop_body('<div class="wd-jnl-art-abstract"><p>Abstract</p></div>')
         with self.assertRaises(ServiceError):springer_body('<div class="c-article-body"><div id="Abs1-section"><p>Abstract</p></div></div>')
+
+    def test_iop_short_native_body_does_not_require_a_heading(self):
+        from publisher_html import iop_body
+        raw='<div class="wd-jnl-art-full-text"><div class="article-text"><p>Short native article body.</p></div></div>'
+        self.assertEqual(iop_body(raw).get_text(' ',strip=True),'Short native article body.')
 
     def test_non_nature_springer_body_requires_substantive_native_sections(self):
         from publisher_html import springer_body

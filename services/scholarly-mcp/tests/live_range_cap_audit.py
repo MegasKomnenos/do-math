@@ -1,13 +1,13 @@
 """Disprove observed UI counts that were encoded as client input or page ceilings."""
-import asyncio,json,sys
+import argparse,asyncio,json,sys
 from pathlib import Path
 from mcp import ClientSession,StdioServerParameters
 from mcp.client.stdio import stdio_client
 ROOT=Path(__file__).resolve().parents[1]
-async def main():
+async def main(credential_root,data_dir):
  report={'completed':False,'calls':[]};path=ROOT/'data/access-research/range-cap-audit-live.json'
  try:
-  async with stdio_client(StdioServerParameters(command=sys.executable,args=[str(ROOT/'server.py')])) as (read,write),ClientSession(read,write) as session:
+  async with stdio_client(StdioServerParameters(command=sys.executable,args=[str(ROOT/'server.py'),'--credential-root',str(credential_root),'--data-dir',str(data_dir)])) as (read,write),ClientSession(read,write) as session:
    await session.initialize()
    async def call(source,query,options,start=0,limit=1):
     result=(await session.call_tool('search',{'source':source,'query':query,'options':options,'start':start,'limit':limit})).structuredContent
@@ -34,4 +34,7 @@ async def main():
                         and semantic['status']=='ok' and semantic['total']>0 and report['calls'][-2].get('preserved_terms')==21 and report['calls'][-2].get('last_title_preserved')
                         and ranged['status']=='ok' and report['calls'][-1].get('native_conditions_ok') and report['calls'][-1].get('range_ok'))
  finally:path.write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8');print(json.dumps({'completed':report['completed']}),flush=True)
-asyncio.run(main())
+if __name__=='__main__':
+ parser=argparse.ArgumentParser();parser.add_argument('--credential-root',type=Path,required=True)
+ parser.add_argument('--data-dir',type=Path,required=True);args=parser.parse_args()
+ asyncio.run(main(args.credential_root,args.data_dir))
