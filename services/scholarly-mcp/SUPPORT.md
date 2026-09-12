@@ -21,7 +21,7 @@
 | Semantic Scholar | semantic-scholar | api | partial | source_guide, search, fetch, export | live_mcp_search_extract; new_workflow_rate_limited; schema_regressions |
 | OpenCitations | opencitations | api | partial | source_guide, search, fetch, export | live_mcp_native_csv_window_oci_fetch_reference_count |
 | Unpaywall | unpaywall | api | deferred | source_guide | public_endpoint_contact_requirement_observed |
-| CORE | core | api | partial | source_guide, search, fetch, export | live_mcp_search_extract; fetch_rate_limit; fulltext_notice_regression |
+| CORE | core | api | partial | source_guide, search, fetch, export | live_mcp_name_metadata_abstract_and_restricted_fulltext_notice |
 | Project Euclid | project-euclid | playwright | partial | source_guide, search, fetch, export | live_mcp_advanced_search_four_citations_pdf_and_supplement_zip_text_extract |
 | EuDML | eudml | api | partial | source_guide, search, fetch, export | live_mcp_cql_rss_extract_nlm_fetch |
 | Numdam | numdam | fixed: OAI/citation API; native search/DOI resolution Playwright | partial | source_guide, search, fetch, export | live_mcp_native_search_citations_jats_pdf_djvu_fetch_pagination |

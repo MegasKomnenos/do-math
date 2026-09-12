@@ -633,7 +633,7 @@ for identifier, level in {
     "numdam": "live_mcp_native_search_citations_jats_pdf_djvu_fetch_pagination",
     "software-heritage": "live_mcp_verified_content_directory_revision_release_tree_extract; direct_release_directory_pending",
     "openalex": "live_mcp_arbitrary_window_group_cursor_abstract_relationships_name_doi",
-    "core": "live_mcp_search_extract; fetch_rate_limit; fulltext_notice_regression",
+    "core": "live_mcp_name_metadata_abstract_and_restricted_fulltext_notice",
     "semantic-scholar": "live_mcp_search_extract; new_workflow_rate_limited; schema_regressions",
     "dblp": "access_challenge_observed",
     "dblp-kg": "live_mcp_sparql_window_native_csv_tsv_key_doi_name; native_tsv_year_type_mismatch",

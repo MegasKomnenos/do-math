@@ -377,3 +377,8 @@ JSTOR는 Chrome의 원 음성 확인 파일도 회수했다. `data/validation/20
 `data/validation/20260912T041802Z-jstor-search-mcp.json`은 completed=true다. 문헌과 이미지의 페이지 경계·CSV 배열·기간/저널·필드 검색9건과 RIS·전체 접근 범위·실제0건·oldest/수학/영어 조건95971건·이름 후보·비2307 DOI 내보내기를 실제 MCP로 확인했다. 앞선 `041512Z`는 영어 언어 코드 eng OR en OR EN이 원 선택 표시에서 eng OR en으로 줄어 false mismatch였고 미완료로 보존한다. 언어 코드 대소문자 중복을 비교할 때만 정규화하고 원 데이터와 연구 검색식은 유지한다.
 
 JSTOR 문헌24931626의 첫 Download는 이용 조건 모달 때문에 대기했다. 원 Accept and download 후 `040328Z-jstor-download-probe.json`은 PDF2651715바이트·11쪽을 확보했다. production의 다운로드 이벤트 등록에 내장 list.append를 넘기면 Playwright가 AttributeError를 내는 것을 로컬 브라우저에서도 재현하고 함수로 감쌌다. `data/validation/20260912T041112Z-jstor-document-mcp.json`은 metadata·RIS/BibTeX·11쪽 PDF와 첫 쪽 stable ID·두 번째 쪽 제목을 completed=true로 통과했다. 문헌 화면의 본문10쪽과 내려받은 전체11쪽을 혼동하지 않는다. 첫 `040543Z`의 미구현과 `040627Z`의 부분 결과도 보존한다. 공통248검사가 통과했다. PDF 외 원 파일·추가 첨부·복수 결과군·BCE 날짜와 모든 조건 조합의 검증은 미완료다.
+
+
+2026-09-12 후속 재검증에서 `data/validation/20260912-jstor-guide-workflow.json`은 describe_source가 반환한 첫 예제를 그대로 호출해2건·ok로 completed=true였다. AMS의 `20260912T042311Z-ams-api-recheck.json`은 원 /product/browseproducts 요청을 기관·공개 주소에서 각각403으로 확인했다. APS의 `042406Z-aps-firefox-recovery.json`은 /search?q=algebra&page=2도 확인 화면이었다. 기존 성공 범위와 후속 실패를 구별한다.
+
+`data/validation/20260912T043004Z-core-public-mcp.json`은 이름 후보, works340524929의 metadata·abstract, 원 fullText 접근 안내문의 restricted 구별을 실제 MCP에서 completed=true로 통과했다. 본문 자체를 회수했다는 뜻은 아니다. 같은 시각의 semantic-scholar-mcp.json은 rate_limited로 completed=false였다. `043051828874Z-dblp-workflow.json`은 access_challenge이며, `043051Z-dblp-alternate-hosts.json`의 dblp.uni-trier.de와 www.dblp.org도200의 HTML 확인 응답으로 JSON 검색을 제공하지 않았다. 전체 구현은 계속 부분 완료다.
