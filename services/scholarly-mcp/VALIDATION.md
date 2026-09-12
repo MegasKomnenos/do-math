@@ -518,3 +518,11 @@ WOS의 최종 교정은 `data/validation/20260912T170140Z-wos-advanced-mcp.json`
 Figshare의 공개 record3625458/file5714205는 native downloader에서 AIP와 다른 S3 저장소로 전달되는데 기존 고정 bucket 검사에 막혔다. figshare-default-file.json의 source_boundary를 재현한 뒤, 선택 파일의 exact downloader 요청이 제공한 현재 S3 redirect에 한해 허용했다. 전역 bucket 권한을 넓히지 않으며 제공된 크기·MD5를 대조한다. Figshare10검사에 허용 전달·무관한 호스트 거부·전역 URL 비허용이 포함된다. 해당39,316바이트 CIF는 MIME이 octet-stream이어서 첫 SDK의 파일 회수·checksum은 성공했지만 extract가 unsupported였다. 실패 기록은 figshare-file-sdk-before-text-extract.json에 보존한다.
 
 공통 extract에서 NUL 없는 유효 UTF-8 octet-stream을 줄로 읽도록 교정했다. 알려지지 않은 바이너리에 문자 인코딩을 발명하지 않으며 원 MIME·바이트는 유지한다. Core23검사가 통과했고 figshare-file-sdk.json은 같은파일39,316바이트·MD5·1,045줄 중2줄 추출을 completed=true로 검증했다. 이를 CIF 의미 해석이나 모든 바이너리 형식 파싱으로 확대하지 않는다.
+
+2026-09-13 KST, Wiley 원 UI가3행 뒤에도 Add로 최소9행을 생성하는 것을 확인해 추가2행 상한을 제거했다. data/access-research/limitations-audit/independent-wiley-sdk.json은 Title algebra와 AllField matrix·methods·analysis·polynomial의 서로 다른5행을 정확한순서로 유지하고667건·문헌1건을 회수했다. 기존3행·Date의 원 Earliest 정렬도 통과했다. 더 적은 조건으로 조용히 검색하지 않고 요청한 각 행의 생성·원 요청·페이지 변경 뒤 보존을 확인한다.
+
+IEEE의 ieee-html-sdk.json은10488889의 원 HTML44,364자·heading18개·heading extract20개와 기존12쪽 PDF를 completed=true로 검증했다. 검색 showHtml=false인7780459도 HTML을 제공했다.1000자·heading2·paragraph2 같은 임의 하한은 제거하고 native 구조가 있는 짧은 문단의 회귀를 추가했다. HTML 제어가 있는데 본문이 준비되지 않은 경우는 html_document_not_ready 오류이며, 제어와 본문이 모두 없었던825845의 관측과 구별한다. 원 자료 없는 메타데이터 flag를 문헌 형식의 절대 부재로 해석하지 않는다.
+
+비Nature Springer의 independent-springer-sdk.json은 DOI10.1016/S1018-3639(18)30727-X의 본문7개·HTML86,902바이트·TeX13개·그림8개를 completed=true로 확인했다. Negative10.1007/s00037-008-0249-x의 도착·안정화·초록·PDF 영역·서지 이미지는 root가 직접 열어 판독했다. 기관 접근 표시와 PDF 제어가 있으므로 초기 paywall 설명을 철회했다. 이 관측에서 PDF 바이트는 검증하지 않았고 HTML 본문 SecN은0이었다. 초록·서지·PDF 제어와 HTML 전문을 구별하며 구체 근거는 independent-springer-negative.json과 root-image-review.md에 있다.
+
+공개 문서 WebDocuments는 script-only 응답을 격리된 공개 브라우저에서 렌더한다. 전역 unique h1과100자 하한을 제거하고 짧은 페이지·복수 heading·무제목 visible 페이지를 허용한다. 빈 로딩 상태·로그인·보안 확인은 성공하지 않으며 정제 source_page를 보존한다. OSF preprint의 main h1은 이 레이아웃에서 확인한 준비 신호다. 초기 중간 실행은 navigation shell의 제목 OSF를 너무 일찍 읽어 검증에 실패했으며 그 조건을 수리했다. independent-webdocuments-osf-sdk.json은 실제9apsq_v1의 정확한 제목·HTML168,088바이트·extract를 completed=true로 확인했다. IEEE·Wiley·publisher HTML·공개 문서의 결합52검사가 통과했다.

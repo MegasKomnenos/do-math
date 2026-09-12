@@ -50,9 +50,16 @@ class PublisherHTMLContract(unittest.TestCase):
             self.assertEqual(result['figures'][0]['artifact']['media_type'],'image/png')
 
     def test_abstract_only_page_is_not_fulltext_html(self):
-        from publisher_html import nature_body,iop_body
+        from publisher_html import nature_body,iop_body,springer_body
         with self.assertRaises(ServiceError):nature_body('<div class="c-article-body"><section>Abstract</section></div>')
         with self.assertRaises(ServiceError):iop_body('<div class="wd-jnl-art-abstract"><p>Abstract</p></div>')
+        with self.assertRaises(ServiceError):springer_body('<div class="c-article-body"><div id="Abs1-section"><p>Abstract</p></div></div>')
+
+    def test_non_nature_springer_body_requires_substantive_native_sections(self):
+        from publisher_html import springer_body
+        raw=(ROOT/'tests/fixtures/springer-fulltext.html').read_text('utf-8')
+        body=springer_body(raw)
+        self.assertEqual([node.get('id') for node in body.select('[id^="Sec"][id$="-section"]')],['Sec1-section','Sec2-section'])
 
     def test_figure_failure_preserves_the_html_and_its_error(self):
         from publisher_html import fetch_html

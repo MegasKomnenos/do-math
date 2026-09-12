@@ -26,11 +26,25 @@ def iop_body(raw):
     return body
 
 
+def springer_body(raw):
+    soup=BeautifulSoup(raw,'html.parser');bodies=soup.select('.c-article-body')
+    if len(bodies)!=1:
+        raise ServiceError('html_fulltext_not_identified','The page has no unique Springer article body',status='not_implemented')
+    body=bodies[0];sections=[node for node in body.select('[id^="Sec"][id$="-section"]')
+                            if node.select_one('.c-article-section__content') and node.select_one('.c-article-section__content').get_text(' ',strip=True)]
+    if not sections:
+        raise ServiceError('html_fulltext_not_identified','The Springer page exposes no substantive native article section',status='not_implemented')
+    for node in body.select('.c-article-recommendations,.app-explore-related-subjects'):node.decompose()
+    return body
+
+
 def fetch_html(adapter,page,identifier,source_page):
     host=urlsplit(page.url).hostname;iop=adapter.source=='iop' and host in ('iopscience.iop.org','iopscience-iop-org.libproxy.knu.ac.kr')
-    if not iop and host not in ('www.nature.com','www-nature-com.libproxy.knu.ac.kr'):
-        raise ServiceError('html_layout_not_implemented','Explicit fulltext_html supports the observed Nature and IOP article layouts',status='not_implemented')
-    body=iop_body(page.content()) if iop else nature_body(page.content());figures=[]
+    springer=adapter.source=='springer' and host in ('link.springer.com','link-springer-com.libproxy.knu.ac.kr','link.springernature.com')
+    nature=host in ('www.nature.com','www-nature-com.libproxy.knu.ac.kr')
+    if not iop and not springer and not nature:
+        raise ServiceError('html_layout_not_implemented','Explicit fulltext_html supports the observed Nature, Springer and IOP article layouts',status='not_implemented')
+    body=iop_body(page.content()) if iop else springer_body(page.content()) if springer else nature_body(page.content());figures=[]
     for number,img in enumerate(body.select('figure img.panzoom' if iop else 'figure img'),1):
         url=urljoin(page.url,img.get('src',''));figure=img.find_parent('figure',id=True) or img.find_parent('figure')
         caption=figure.select_one('figcaption')

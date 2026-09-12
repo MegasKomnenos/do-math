@@ -5,8 +5,9 @@ import socket
 from urllib.parse import urljoin, urlsplit
 
 from bs4 import BeautifulSoup
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
-from browser_adapters import browser_download, clean_html
+from browser_adapters import browser_download, clean_html, require_source_url
 from publishers import publication_metadata
 from scholarly import ServiceError, encoded, bibliography
 
@@ -22,6 +23,48 @@ def public_document_hosts(target):
     if not addresses or any(not ipaddress.ip_address(item[4][0]).is_global for item in addresses):
         raise ServiceError('source_boundary', 'Public document categories cannot access private or local network addresses')
     return {parts.hostname}
+
+
+ACCESS_STATE=re.compile(r'^(?:Access Denied|Just a moment|Attention Required|403 Forbidden|Sign in|Log ?in|로그인)(?:\b|\s|[.:!-])',re.I)
+LOADING_STATE=re.compile(r'^(?:Loading|Please wait|Working)(?:\s*(?:\.{3}|…))?$',re.I)
+
+
+def _text(value):
+    return ' '.join(value.split()) if isinstance(value,str) else ''
+
+
+def _access_state(soup,title,visible_text):
+    title=_text(title);visible=_text(visible_text)
+    if ACCESS_STATE.search(title):return True
+    password=soup.select_one('form input[type="password"]')
+    challenge=next((node for node in soup.find_all(('form','iframe','input','button')) if any(
+        re.search(r'(?:captcha|challenge)',str(node.get(name,'')),re.I) for name in ('id','class'))),None)
+    return bool(challenge or password and ACCESS_STATE.search(visible))
+
+
+def rendered_document_identity(raw,headings,visible_text):
+    """Confirm a rendered public page state without imposing a document layout or length."""
+    soup=BeautifulSoup(raw,'html.parser');visible=_text(visible_text)
+    metadata=publication_metadata(raw)
+    candidates=[]
+    for key in ('citation_title','dc.title','dc:title','dcterms.title','og:title'):
+        values=metadata.get(key,[])
+        if isinstance(values,str):values=[values]
+        if isinstance(values,list):candidates.extend(_text(value) for value in values)
+    candidates.extend(_text(value) for value in headings if isinstance(value,str))
+    if soup.title:candidates.append(_text(soup.title.get_text(' ',strip=True)))
+    candidates=[value for value in candidates if value]
+    title=candidates[0] if candidates else ''
+    if _access_state(soup,title,visible):
+        raise ServiceError('access_restricted','Rendered page is an access or verification screen',status='restricted')
+    if not visible or LOADING_STATE.fullmatch(visible):
+        raise ServiceError('dynamic_document_not_ready','Rendered public page has no settled visible document content',status='not_implemented')
+    return title
+
+
+def _rendered_layout_heading(url):
+    parts=urlsplit(url)
+    return 'main h1:visible' if parts.hostname in ('osf.io','www.osf.io') and parts.path.startswith('/preprints/') else None
 
 
 class WebDocuments:
@@ -60,14 +103,47 @@ class WebDocuments:
             raw = data
             soup = BeautifulSoup(raw,'html.parser')
             title = soup.title.get_text(' ',strip=True) if soup.title else ''
-            if re.search(r'^(?:Access Denied|Just a moment|Attention Required|403 Forbidden|Sign in|Login|로그인)', title, re.I):
+            body = soup.body or soup
+            if _access_state(soup,title,body.get_text(' ',strip=True)):
                 raise ServiceError('access_restricted', 'This document requires access not available in the public category', status='restricted')
             metadata = publication_metadata(raw)
-            body = soup.body or soup
-            if not body.get_text(' ',strip=True):
-                raise ServiceError('dynamic_document_not_ready','This URL returned a script-only shell; select a document file or a platform adapter',status='not_implemented')
-            document = self.store.put(clean_html(raw,self.store.sanitizer),'text/html',self.source,actual,role='requested_web_page',requested_target=target)
-            titles = metadata.get('citation_title',metadata.get('dc.title',[title]))
+            rendered_title=None;rendered=False
+            if not body.get_text(' ',strip=True) or LOADING_STATE.fullmatch(_text(body.get_text(' ',strip=True))):
+                page=self.context.new_page()
+                try:
+                    page.goto(target,wait_until='domcontentloaded',timeout=45000);require_source_url(page.url,hosts)
+                    layout_heading=_rendered_layout_heading(page.url)
+                    try:
+                        if layout_heading:page.locator(layout_heading).first.wait_for(timeout=30000)
+                        else:page.wait_for_load_state('networkidle',timeout=30000)
+                    except PlaywrightTimeoutError:
+                        pass
+                    try:
+                        page.wait_for_function("() => { const text=document.body?.innerText.trim() || ''; return text && !/^(Loading|Please wait|Working)(?:\\s*(?:\\.{3}|…))?$/i.test(text); }",timeout=5000)
+                    except PlaywrightTimeoutError:
+                        pass
+                    raw=page.content().encode('utf-8');actual=page.url;soup=BeautifulSoup(raw,'html.parser');body=soup.body or soup
+                    try:visible=page.locator('body:visible').first.inner_text(timeout=5000)
+                    except PlaywrightTimeoutError:visible=''
+                    headings=page.locator(layout_heading or 'h1:visible,h2:visible').all_inner_texts()
+                    try:
+                        if layout_heading and not any(_text(value) for value in headings):
+                            raise ServiceError('dynamic_document_not_ready','Rendered source layout has not produced its document heading',status='not_implemented')
+                        title=rendered_document_identity(raw,headings,visible);rendered_title=title
+                    except ServiceError as error:
+                        source_page=self.store.put(clean_html(raw,self.store.sanitizer),'text/html',self.source,actual,
+                            role='unready_requested_web_page',requested_target=target,rendered_public_browser=True)
+                        error.result['source_page']=source_page
+                        raise
+                    metadata=publication_metadata(raw)
+                    rendered=True
+                except ServiceError:raise
+                except Exception as error:
+                    raise ServiceError('dynamic_document_not_ready','Public browser rendering did not produce a verified document',status='not_implemented',error_type=type(error).__name__) from None
+                finally:page.close()
+            document = self.store.put(clean_html(raw,self.store.sanitizer),'text/html',self.source,actual,role='requested_web_page',requested_target=target,
+                rendered_public_browser=rendered)
+            titles=[rendered_title] if rendered_title else metadata.get('citation_title',metadata.get('dc.title',[title]))
             record = {'url':self.store.sanitizer.url(actual),'type':'web_document','title':titles[0] if titles else title,'metadata':metadata}
             if 'export' in parts:
                 citation_links = soup.select('.citation_formats a[href*="/citationstylelanguage/download/"]')

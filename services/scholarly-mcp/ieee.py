@@ -1,11 +1,12 @@
 """IEEE Xplore Command Search and native exports through KUDOS."""
 import json
 import re
+import time
 from urllib.parse import urljoin, urlsplit
 
 from bs4 import BeautifulSoup
 
-from browser_adapters import browser_download, dismiss_cookies, goto_source
+from browser_adapters import browser_download, clean_html, dismiss_cookies, goto_source
 from scholarly import ServiceError, encoded, bibliography
 
 SORTS={
@@ -235,6 +236,27 @@ def reference_records(payload,identifier):
     return rows
 
 
+def html_fulltext_region(raw,url,row):
+    identifier=str(row.get('articleNumber') or '');expected_title=str(row.get('articleTitle') or '');expected_doi=str(row.get('doi') or '')
+    if not identifier or urlsplit(url).path.rstrip('/')!='/document/'+identifier:
+        raise ServiceError('identity_mismatch','IEEE HTML page path differs from the selected document')
+    from ieee_media import document_metadata
+    metadata=document_metadata(raw,identifier);soup=BeautifulSoup(raw,'html.parser')
+    title=soup.select('h1.document-title');roots=soup.select('xpl-document-full-text');wrappers=soup.select('#BodyWrapper');sections=soup.select('#full-text-section')
+    normalize=lambda value:re.sub(r'[^\w]+','',value.casefold())
+    if len(title)!=1 or normalize(title[0].get_text(' ',strip=True))!=normalize(expected_title) or normalize(str(metadata.get('title') or ''))!=normalize(expected_title):
+        raise ServiceError('identity_mismatch','IEEE HTML page title differs from the selected document')
+    if expected_doi and normalize(str(metadata.get('doi') or ''))!=normalize(expected_doi):
+        raise ServiceError('identity_mismatch','IEEE HTML page DOI differs from the selected document')
+    if len(roots)!=1 or len(wrappers)!=1 or len(sections)!=1 or wrappers[0] not in sections[0].descendants or sections[0] not in roots[0].descendants:
+        raise ServiceError('html_fulltext_not_offered','IEEE page has no recognized native HTML full-text structure',status='not_offered')
+    body=wrappers[0];text=body.get_text(' ',strip=True);headings=[node for node in body.select('h2,h3,h4') if node.get_text(' ',strip=True)];paragraphs=body.select('p')
+    if not text.strip():
+        raise ServiceError('html_fulltext_not_offered','IEEE native HTML full-text structure has no body content',status='not_offered')
+    return {'html':str(sections[0]),'body_text_chars':len(text),'heading_count':len(headings),'paragraph_count':len(paragraphs),
+            'article_number':identifier,'doi':expected_doi or metadata.get('doi'),'title':expected_title}
+
+
 def validate_citation_file(data,format,selected):
     count=len(selected)
     if format=='plain':
@@ -317,6 +339,41 @@ class IEEE:
         artifact=self.store.put(encoded(rows),'application/json',self.source,response.url,role='reference_records',article_number=identifier,evidence_ref=proof['ref'])
         return {'status':'available' if rows else 'not_found','artifact':artifact,'count':len(rows),'evidence':proof,
                 'scope':'Native reference array for this article; citation links are preserved and not followed'}
+
+    def html_fulltext(self,page,row,base,records):
+        identifier=str(row.get('articleNumber') or '');link=row.get('htmlLink')
+        if not isinstance(link,str):
+            return {'status':'not_offered','reason':'This IEEE record exposes no native HTML document control'}
+        target=urljoin(base,link)
+        if urlsplit(target).hostname not in self.hosts or urlsplit(target).path.rstrip('/')!='/document/'+identifier:
+            raise ServiceError('identity_mismatch','IEEE HTML control identifies another document')
+        control=page.locator(f'div.List-results-items[id="{identifier}"] a.stats_HTML_{identifier}[href="/document/{identifier}/"]').filter(visible=True)
+        try:control.wait_for(state='visible',timeout=15000)
+        except Exception:pass
+        control_seen=control.count()==1
+        if control_seen:
+            with page.expect_navigation(wait_until='domcontentloaded',timeout=45000):control.click()
+        else:goto_source(page,target,self.hosts,wait_until='domcontentloaded',timeout=45000)
+        page.locator('h1.document-title').wait_for(timeout=30000)
+        deadline=time.monotonic()+45
+        while time.monotonic()<deadline:
+            try:
+                body=page.locator('xpl-document-full-text #full-text-section #BodyWrapper')
+                if body.count()==1 and body.inner_text().strip():break
+            except Exception:pass
+            try:page.wait_for_timeout(2500)
+            except Exception:pass
+        raw=page.content();source=self.store.put(clean_html(raw,self.store.sanitizer),'text/html',self.source,page.url,
+            role='html_document_page',article_number=identifier,parent_ref=records['ref'],source_control_seen=control_seen)
+        try:parsed=html_fulltext_region(raw,page.url,row)
+        except ServiceError as error:
+            if control_seen and error.result.get('code')=='html_fulltext_not_offered':
+                raise ServiceError('html_document_not_ready','IEEE exposed the selected HTML control but did not render its native body',artifact=source) from None
+            error.result['artifact']=source;raise
+        artifact=self.store.put(clean_html(parsed.pop('html'),self.store.sanitizer),'text/html',self.source,page.url,
+            role='fulltext_html',parent_ref=source['ref'],source_control_path=urlsplit(target).path,**parsed)
+        return {'status':'available','artifact':artifact,'source_page':source,'scope':'Native IEEE HTML body for the selected article',
+                **{key:parsed[key] for key in ('article_number','doi','title','body_text_chars','heading_count','paragraph_count')}}
 
     def citation(self, page, indices, format, selected):
         controls = page.get_by_role("checkbox", name="Select search result", exact=True)
@@ -426,7 +483,7 @@ class IEEE:
 
     def fetch(self, target, *, parts):
         from api_adapters import doi
-        if set(parts) - {"metadata", "abstract", "fulltext", "supplementary", "export"}:
+        if set(parts) - {"metadata", "abstract", "fulltext", "fulltext_html", "supplementary", "export"}:
             raise ServiceError("invalid_parts", "Unknown requested content")
         value = target;requested_doi=None
         if target.startswith(("http://", "https://")) and urlsplit(target).hostname not in (*self.hosts, "doi.org", "dx.doi.org"):
@@ -467,7 +524,7 @@ class IEEE:
                 components[part] = {"status": "available", "artifact": artifact} if row.get("abstract") else {"status": "not_found", "reason": "IEEE record has no abstract"}
             elif part == "fulltext":
                 if not row.get("pdfLink"):
-                    components[part] = {"status": "not_implemented", "reason": "This record has no PDF link; HTML-only retrieval is pending"}
+                    components[part] = {"status": "not_offered", "reason": "This record exposes no PDF control; request fulltext_html separately when a native HTML body is offered"}
                     continue
                 try:
                     data, media, url = browser_download(self.gateway.context, urljoin(base, row["pdfLink"]), self.hosts)
@@ -486,6 +543,10 @@ class IEEE:
                     components[part] = {"status": "available", "artifact": fulltext}
                 except ServiceError as error:
                     components[part] = error.result
+            elif part=='fulltext_html':
+                try:components[part]=self.html_fulltext(self.page(),row,base,artifact)
+                except ServiceError as error:components[part]=error.result
+                except Exception as error:components[part]={'status':'error','code':'html_fulltext_retrieval_failed','error_type':type(error).__name__}
             else:
                 from ieee_media import fetch_media
                 details={}

@@ -150,7 +150,9 @@ IEEE supplementary.references에는 문헌 번호를 대조한 원 참고문헌 
 
 Springer Nature의 인식된 Supplementary Information·Peer Review File 제어는 실제 파일을 회수한다. supplementary.index는 원 파일 목록이고 files의 각 artifact를 extract로 읽는다. 파일별 실패와 이미 회수한 파일을 함께 반환한다. Nature Communications의 The complexity of NISQ에서 보충 설명 42쪽과 심사 기록 19쪽을 실제 MCP로 확인했다. 다른 레이아웃에서 제어를 찾지 못하면 원 페이지와 source_page 상태를 유지한다.
 
-Nature 문헌은 추가 parts 항목인 fulltext_html로 HTML 본문과 그림을 요청할 수 있다. 본문의 원 TeX 표현을 보존하고 PNG/JPEG 그림을 문헌 DOI와 대조해 회수한다. HTML은 CSS selection으로, figures의 artifact는 이미지 extract로 읽는다. HTML의 그림 src는 저장된 artifact ref이며 일반 웹 브라우저에서 열기 위한 독립 웹페이지는 아니다. 그림이 실패해도 본문과 개별 오류를 남긴다. 이 형식은 현재 관측된 Nature 문헌 레이아웃에서 지원한다.
+Nature와 Springer 문헌은 fulltext_html로 HTML 본문과 그림을 요청할 수 있다. 원 TeX를 보존하고 PNG/JPEG 그림을 문헌 DOI와 대조한다. HTML은 CSS selection으로, figures의 artifact는 이미지 extract로 읽는다. HTML의 그림 src는 저장된 artifact ref다. 그림이 실패해도 본문과 개별 오류를 남긴다. 기관 접근 표시·PDF 다운로드 제어·HTML 본문 제공은 각각 확인하며, 초록만 있는 페이지를 HTML 전문으로 표시하지 않는다.
+
+IEEE도 fulltext_html로 원 HTML 전문을 회수한다. 현재 문헌의 번호·DOI·제목과 실제 본문을 확인하며 검색 metadata의 showHtml flag만으로 배제하지 않는다. fulltext는 PDF 요청이다. 공개 문서 범주의 초기 응답이 스크립트뿐이면 격리된 공개 브라우저로 실제 페이지를 렌더한다. 짧은 문서와 여러 heading을 임의로 배제하지 않고, 준비 실패 때 정제된 source_page를 보존한다.
 
 DBLP의 공개 지식 그래프는 dblp-kg로 명시적으로 선택한다. query에 SPARQL SELECT를 쓰고 start/limit로 최상위 결과 범위를 지정한다. 서지·저자·저널·인용 관계를 같은 그래프에서 질의하며 외부 SERVICE와 FROM은 구문 분석 단계에서 거부한다. RDFLib는 질의 문법을 읽는 데만 사용하고 로컬에서 질의를 실행하거나 외부 RDF를 불러오지 않는다. 기존 dblp 검색 API 실패 뒤 자동 전환하지 않는다.
 

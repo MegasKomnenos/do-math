@@ -342,6 +342,7 @@ SOURCES["pqdt"].usage = {
 
 SOURCES["ieee-xplore"].implementation = "partial"
 SOURCES["ieee-xplore"].usage = {
+    "fulltext_html": "parts에 fulltext_html을 지정하면 현재 문헌의 원 HTML 전문을 회수한다. 문헌 번호·DOI·제목과 실제 본문 영역을 대조하며 showHtml flag나 임의 글자 수 하한으로 배제하지 않는다. fulltext는 PDF 요청이다. HTML 제어가 있는데 본문이 준비되지 않으면 오류와 source_page를 보존하고, 현재 제어와 본문이 모두 없으면 그 문헌에서 확인하지 못한 상태를 반환한다.",
     "search": "KUDOS → 학술DB → IEEE → Command Search에서 query를 그대로 입력한다. 필드 이름을 큰따옴표로 감싸고 콜론 뒤에 조건을 쓴다. 예: \"Document Title\":\"P versus NP\". AND·OR·NOT·괄호, 구문 따옴표, * 와일드카드 등을 IEEE 문법대로 사용한다.",
     "fields": ["All Metadata", "Full Text & Metadata", "Full Text Only", "Document Title", "Authors", "Publication Title", "Abstract", "Index Terms", "Article Number", "Author Affiliations", "Author Keywords", "DOI", "Funding Agency", "IEEE Terms", "ISBN", "ISSN", "Publisher", "Standard Number"],
     "exports": "json은 UI의 원 문헌 필드·초록이다. bibtex·ris·plain은 native Citations의 Citation and Abstract, csv는 native Results export다. 여러 페이지의 파일은 export.artifacts로 나누어 보존한다. BibTeX·RIS·CSV는 형식과 선택 건수를 대조한다. 다른 형식 또는 건수를 받으면 source_export에 원 파일을 남긴다. 내보내기 실패 때 검색 레코드는 유지하고 export.errors와 partial을 반환한다. 네 형식의 연속 호출과 CSV의 선택 범위를 실제 MCP로 검증했다.",
@@ -353,7 +354,7 @@ SOURCES["ieee-xplore"].usage = {
     "limits": "start 0부터, limit 1..1000. 자료원의 25건 페이지를 순회하며 전체 건수·페이지 수·시작/끝·고유 문헌 번호를 대조한다. 원 검색식·정렬·접근 범위·연도·facet을 실제 요청과 응답에서 확인하고 이전 검색 조건이 남으면 거부한다. 기존 Firefox 경로를 유지한다.",
     "examples": [{"tool":"search","arguments":{"source":"ieee-xplore","query":"\"Document Title\":complexity","options":{"sort":"newest","content_types":["Journals"],"publication_titles":["IEEE Access"],"year":"2020-2024"},"start":24,"limit":2,"export":"csv"}},
                  {"tool":"search","arguments":{"source":"ieee-xplore","query":"\"Document Title\":complexity","options":{"publication_titles":["Artificial Life"]},"limit":1}},
-                 {"tool":"fetch","arguments":{"source":"ieee-xplore","target":"10488889","parts":["metadata","abstract","fulltext"]}}],
+                 {"tool":"fetch","arguments":{"source":"ieee-xplore","target":"10488889","parts":["metadata","abstract","fulltext","fulltext_html"]}}],
 }
 
 SOURCES["afp"].implementation = "partial"
@@ -433,7 +434,7 @@ SOURCES['wiley'].transport = 'playwright'
 SOURCES['wiley'].usage = {
     'search': 'query를 선택 필드의 Wiley 고급검색식으로 제출한다. 큰따옴표 구문과 AND·OR·NOT·괄호는 자료원의 검색 문법을 따른다. 검색 결과의 문헌별 DOI와 페이지 범위를 보존한다.',
     'fields': ['Anywhere', 'Title', 'Author', 'Keywords', 'Abstract', 'Author Affiliation', 'Funding Agency'],
-    'options': {'field': '기본 Anywhere, fields 중 하나', 'terms': '추가 고급검색 행 최대 두 개: [{field: Title, query: 검색식}]. 원 사이트의 행 결합을 사용한다.', 'publication': '저널·책·참고서 제목', 'after_year': '시작 연도 정수', 'after_month': '시작 월 1..12', 'before_year': '끝 연도 정수', 'before_month': '끝 월 1..12', 'sort': 'relevance(기본) 또는 date; 사이트의 Relevance/Date 제어'},
+    'options': {'field': '기본 Anywhere, fields 중 하나', 'terms': '순서 있는 추가 고급검색 행 배열: [{field: Title, query: 검색식}]. 필요한 원 행을 추가하고 모든 field/query의 보존을 확인한다. 추가 제어가 없으면 일부 조건만으로 검색하지 않고 오류를 반환한다.', 'publication': '저널·책·참고서 제목', 'after_year': '시작 연도 정수', 'after_month': '시작 월 1..12', 'before_year': '끝 연도 정수', 'before_month': '끝 월 1..12', 'sort': 'relevance(기본) 또는 date; 현재 Date 제어는 Earliest를 제출한다.'},
     'exports': 'json·html은 실제 검색 결과다. bibtex·ris·plain·endnote·medlars는 선택 문헌의 native 인용문 다운로드다. BibTeX·RIS의 DOI를 선택 문헌과 대조한다. export.artifact.ref로 인용문 파일을 추출한다.',
     'fetch': 'DOI 또는 Wiley 문헌 URL로 metadata·abstract·fulltext·export·supplementary를 요청한다. 제목은 Title 검색 후보를 반환하므로 정확한 DOI를 선택한다.',
     'supplementary':'Supporting Information 표의 원 파일명·설명·DOI를 보존하고 파일을 회수한다. supplementary.files의 artifact를 extract로 읽는다. ZIP은 구성 항목을 먼저 읽고 selection에 경로를 주어 꺼낸 뒤 해당 artifact의 내용을 읽는다. 내려받은 코드를 실행하지 않는다.',
@@ -448,7 +449,7 @@ SOURCES['springer'].usage = {
     'options': {'field': 'Anywhere, Title, Author', 'title': '제목 조건', 'author': '저자 조건', 'journal': '저널 제목', 'date_from': '시작 연도', 'date_to': '끝 연도', 'content_type': 'Article, Chapter, Conference Paper, Research 등 사이트의 표시 값', 'open_access': 'true이면 공개 접근으로 한정', 'language': 'En 등 사이트 언어 코드', 'subject': '사이트 주제 값', 'discipline': '사이트 학문 분야 값', 'subdiscipline': '사이트 세부 분야 값', 'sort': 'relevance, newest, oldest'},
     'exports': 'json·html은 원 결과를 보존한다. csv는 같은 레코드의 기계적 CSV다. 사이트 일괄 CSV 제어는 로그인 경로로 이동하며 사용하지 않는다. bibtex·ris·endnote는 각 선택 문헌의 native citation 다운로드이며 export.artifacts에 파일 참조를 반환한다.',
     'fetch': 'DOI 또는 link.springer.com·link.springernature.com·www.nature.com의 문헌 URL. metadata·abstract·fulltext·export·supplementary를 요청한다. export는 해당 문헌의 native BibTeX다. 제목은 검색 후보로 반환하므로 정확한 문헌을 선택한다.',
-    'fulltext_html':'Nature 문헌 URL에서는 parts에 fulltext_html을 지정해 원 HTML 본문·TeX 수식·PNG/JPEG 그림을 별도로 회수한다. artifact의 HTML은 CSS selection으로 읽고 figures의 각 artifact는 extract로 이미지를 읽는다. HTML의 그림 src는 보존된 artifact ref다. 추천 문헌 위젯은 제외하며 초록만 있는 화면을 전문으로 표시하지 않는다. 그림 실패 때 본문과 파일별 오류를 partial로 보존한다. 이 추가 항목은 관측된 Nature 레이아웃에 한정하며 다른 Springer 레이아웃은 not_implemented다. MathJax 실행이나 이미지 의미 판독은 하지 않는다.',
+    'fulltext_html':'Nature와 Springer의 문헌 URL에서 parts에 fulltext_html을 지정해 원 HTML 본문·TeX 수식·PNG/JPEG 그림을 회수한다. artifact의 HTML은 CSS selection으로, figures의 각 artifact는 extract로 읽는다. HTML의 그림 src는 보존된 artifact ref다. Nature 본문 영역과 Springer의 원 SecN 본문 영역을 각각 판정하며 초록·서지·PDF 제어만 있는 페이지를 HTML 전문으로 표시하지 않는다. 기관 접근 표시·PDF 제어·HTML 본문 제공은 별개다. 그림 실패 때 본문과 파일별 오류를 partial로 보존한다. MathJax 실행이나 이미지 의미 판독은 하지 않는다.',
     'supplementary':'현재 문헌의 원 Supplementary Information·Peer Review File 등 첨부 제어를 읽는다. supplementary.files의 각 artifact를 extract로 읽고 index는 파일 목록이다. 파일 경로에 다른 DOI가 있으면 해당 문헌을 명시적으로 선택하도록 반환한다. 일부 파일 실패 때 받은 파일은 유지한다. 첨부 제어를 인식하지 못한 레이아웃은 source_page로 보존한다.',
     'limits': 'KUDOS 기관 바로가기를 사용한다. start 0부터, limit 1..1000, 원 페이지는 20건이다. 문헌별 전문 제공 여부는 기관 이용 범위에 따른다. 검색 snippet을 저자 초록으로 표시하지 않는다.',
     'examples': [{'tool':'search','arguments':{'source':'springer','query':'P versus NP','options':{'field':'Title'},'limit':2,'export':'bibtex'}}],
@@ -702,7 +703,7 @@ for category in ('author-repository','society-journal'):
     SOURCES[category].usage = {
         'fetch':'알려진 공개 문서의 절대 HTTP(S) URL을 target으로 지정한다. 인증 상태를 공유하지 않는 공개 context로 PDF·HTML·기타 파일을 직접 회수한다. 등록된 플랫폼의 주소면 사용할 source를 반환한다. 임의 URL의 제목·DOI를 외부 서비스에서 추정하지 않는다.',
         'parts':'metadata는 PDF 내장 정보 또는 HTML의 공개 서지 태그 JSON. export는 OJS의 실제 citation_formats 제어가 있으면 공개 RIS·BibTeX API의 원 파일이며 DOI를 대조한다. 해당 제어가 없으면 서지 JSON이다. fulltext는 지정 URL의 내용이며 HTML에 같은 호스트의 citation_pdf_url이 있으면 그 PDF도 회수한다. abstract는 HTML에 표시된 abstract 영역. supplementary는 해당 페이지의 링크 목록이며 연결 파일 자체의 확보를 뜻하지 않는다.',
-        'limits':'이 범주는 단일 검색 색인을 갖지 않는다. 이름·검색식·플랫폼 고급검색에는 구체 자료원을 먼저 선택한다. 직접 URL과 같은 호스트의 리디렉션만 허용하며 로컬·사설망 주소는 거부한다. 스크립트만 있는 초기 화면은 문서로 성공 처리하지 않는다. 별도 로그인은 수행하지 않는다.',
+        'limits':'이 범주는 단일 검색 색인을 갖지 않는다. 이름·검색식·플랫폼 고급검색에는 구체 자료원을 먼저 선택한다. 직접 URL과 같은 호스트의 리디렉션만 허용하며 로컬·사설망 주소는 거부한다. 스크립트만 있는 초기 화면은 격리된 공개 브라우저로 렌더하고 실제 visible 내용·문서 제목과 알려진 준비 신호를 확인한다. 짧은 문서나 복수 heading을 임의로 배제하지 않는다. 빈 로딩 화면·로그인·보안 확인은 성공한 문헌으로 표시하지 않고 준비 실패의 source_page를 보존한다. 별도 로그인은 수행하지 않는다.',
         'examples':[{'tool':'fetch','arguments':{'source':category,'target':'https://www.cs.toronto.edu/~sacook/homepage/ptime.pdf','parts':['metadata','fulltext']}}] if category=='author-repository' else [{'tool':'fetch','arguments':{'source':category,'target':'https://www.combinatorics.org/ojs/index.php/eljc/article/view/v1i1r1','parts':['metadata','abstract','fulltext','export']}}],
     }
 
@@ -719,8 +720,8 @@ for identifier, level in {
     "opencitations": "live_mcp_native_csv_window_oci_fetch_reference_count",
     "knu-fric": "live_mcp_catalogue_pagination_issn_fetch_zero_result",
     "general-web": "live_mcp_public_api_candidates_csv_extract_empty_result",
-    "author-repository": "live_mcp_public_author_pdf_and_page_links",
-    "society-journal": "live_mcp_public_journal_metadata_abstract_pdf_native_citations",
+    "author-repository": "live_mcp_public_author_pdf_dynamic_document_and_page_links",
+    "society-journal": "live_mcp_public_journal_metadata_abstract_pdf_native_citations; shared_dynamic_renderer_verified",
     "numdam": "live_mcp_native_search_citations_jats_pdf_djvu_fetch_pagination",
     "software-heritage": "live_mcp_verified_content_trees_git_history_snapshot_and_release; direct_release_flat_pending",
     "openalex": "live_mcp_arbitrary_window_group_cursor_abstract_relationships_name_doi",
@@ -733,8 +734,8 @@ for identifier, level in {
     "acm-dl": "live_mcp_edit_query_boolean_combined_filters_native_exports_html_tex_pdf_supplement_and_identity",
     "scopus": "live_mcp_search_fetch_references_pagination_cited_by_extract",
     "drops": "live_mcp_native_exports_pdf_html_codemeta_and_supplementary_references",
-    "springer": "live_mcp_advanced_search_citations_pdf_supplements_and_nature_html_tex_figure",
-    "ieee-xplore": "live_mcp_native_exports_filtered_windows_typeahead_pdf_references_media",
+    "springer": "live_mcp_advanced_search_citations_pdf_supplements_nature_springer_html_tex_figures",
+    "ieee-xplore": "live_mcp_native_exports_filtered_windows_typeahead_pdf_html_identity_references_media",
     "crossmark": "live_mcp_search_extract",
     "afp": "live_mcp_entry_search_pinned_metadata_and_proof_source_fetch_extract",
     "unpaywall": "public_endpoint_contact_requirement_observed",
@@ -747,7 +748,7 @@ for identifier, level in {
     "cambridge": "live_mcp_filtered_search_ris_pdf_and_supplement_pdf_zip_source_extract",
     "oxford": "live_mcp_search_citation_metadata_abstract_pagination_and_supplement_pdf",
     "aip": "live_mcp_advanced_search_citation_pdf_and_explicit_figshare_supplement_reference",
-    "wiley": "live_mcp_advanced_search_citations_pdf_empty_repeat_and_supplementary_zip",
+    "wiley": "live_mcp_dynamic_advanced_rows_citations_pdf_zero_and_supplementary_zip",
     "taylor-francis": "live_mcp_search_citation_pdf_dublin_doi_supplement_zip_tables_nested_source",
     "de-gruyter": "live_mcp_search_ris_pdf_and_supplement_zip_cif_lines; broken_link_observed",
     "jstor": "live_mcp_search_image_sorts_facets_citations_pdf_mp3_transcripts_supplement; native_video_download_disabled",

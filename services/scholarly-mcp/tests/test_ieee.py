@@ -9,6 +9,39 @@ sys.path.insert(0, str(ROOT))
 
 
 class IEEEContract(unittest.TestCase):
+    def test_native_html_fulltext_requires_same_document_identity_and_body_structure(self):
+        from ieee import html_fulltext_region
+        from scholarly import ServiceError
+        row={'articleNumber':'10488889','articleTitle':'From P Versus NP to Probabilistic and Zero Knowledge Proof Systems','doi':'10.1109/MC.2024.3358928'}
+        metadata=json.dumps({'articleNumber':'10488889','title':row['articleTitle'],'doi':row['doi'],'sections':{}})
+        body='<h2>First section</h2>'+('<p>Substantive body text.</p>'*100)+'<h2>Second section</h2>'
+        raw=f'''<h1 class="document-title">{row['articleTitle']}</h1><script>xplGlobal.document.metadata = {metadata};</script>
+        <xpl-document-full-text><div id="full-text-section"><div id="BodyWrapper">{body}</div></div></xpl-document-full-text>'''
+        found=html_fulltext_region(raw,'https://ieeexplore.ieee.org/document/10488889/',row)
+        self.assertGreater(found['body_text_chars'],1000);self.assertEqual(found['heading_count'],2)
+        with self.assertRaises(ServiceError):html_fulltext_region(raw.replace('10488889','99999999'),'https://ieeexplore.ieee.org/document/10488889/',row)
+        short=raw.replace(body,'<p>Short correction.</p>')
+        self.assertEqual(html_fulltext_region(short,'https://ieeexplore.ieee.org/document/10488889/',row)['paragraph_count'],1)
+        abstract=raw.replace(body,'')
+        with self.assertRaises(ServiceError) as error:html_fulltext_region(abstract,'https://ieeexplore.ieee.org/document/10488889/',row)
+        self.assertEqual(error.exception.result['status'],'not_offered')
+
+    def test_fetch_keeps_pdf_default_and_exposes_html_as_an_explicit_component(self):
+        from ieee import IEEE
+        from scholarly import ArtifactStore
+        from unittest.mock import Mock,patch
+        import tempfile
+        row={'articleNumber':'10488889','articleTitle':'From P Versus NP to Probabilistic and Zero Knowledge Proof Systems',
+             'doi':'10.1109/MC.2024.3358928','documentLink':'/document/10488889/','htmlLink':'/document/10488889/','pdfLink':None,'abstract':'a'}
+        with tempfile.TemporaryDirectory() as temp:
+            adapter=IEEE(ArtifactStore(temp),Mock());adapter.known[row['articleNumber']]=(row,'https://ieeexplore.ieee.org/search/searchresult.jsp')
+            pdf=adapter.fetch(row['articleNumber'],parts=['metadata','fulltext'])
+            available={'status':'available','artifact':{'ref':'html'}}
+            with patch.object(adapter,'page',return_value=Mock()),patch.object(adapter,'html_fulltext',return_value=available) as html:
+                result=adapter.fetch(row['articleNumber'],parts=['metadata','fulltext_html'])
+        self.assertEqual(pdf['status'],'partial');self.assertEqual(pdf['components']['fulltext']['status'],'not_offered')
+        self.assertEqual(result['status'],'ok');self.assertEqual(result['components']['fulltext_html'],available);html.assert_called_once()
+
     def test_current_facets_preserve_native_labels_values_counts_and_selection(self):
         from ieee import ieee_facets,remember_facet_candidate
         raw=json.loads((ROOT/'tests/fixtures/ieee-search.json').read_text('utf-8'))

@@ -150,6 +150,39 @@ class Publisher:
         self.store, self.gateway, self.profile = store, gateway, profile
         self.source = profile.source
 
+    @staticmethod
+    def wiley_terms(query,options,fields):
+        additional=options.get('terms',[])
+        if not isinstance(additional,list):
+            raise ServiceError('invalid_options','Wiley terms must be an ordered list of advanced-search rows')
+        terms=[{'field':options.get('field','Anywhere'),'query':query},*additional]
+        if any(not isinstance(term,dict) or set(term)!={'field','query'} or term.get('field') not in fields or not isinstance(term.get('query'),str) for term in terms):
+            raise ServiceError('invalid_options','Each Wiley row requires a documented field and query')
+        return terms
+
+    @staticmethod
+    def submit_wiley_terms(page,terms,fields):
+        for index,term in enumerate(terms,1):
+            area=page.locator('#searchArea'+str(index));entry=page.locator('#text'+str(index))
+            if not area.count():
+                add=page.locator('.advanced-search__search-in__add').filter(visible=True)
+                if not add.count():
+                    raise ServiceError('advanced_row_not_offered','Wiley did not offer another advanced-search row',status='unsupported',requested_row=index)
+                add.first.click()
+                try:area.wait_for(state='attached',timeout=10000);entry.wait_for(state='attached',timeout=10000)
+                except Exception:raise ServiceError('advanced_row_not_created','Wiley did not create the requested advanced-search row',requested_row=index) from None
+            if area.count()!=1 or entry.count()!=1:
+                raise ServiceError('advanced_row_ambiguous','Wiley advanced-search row is not unique',requested_row=index)
+            area.select_option(fields[term['field']]);entry.fill(term['query']);entry.press('Tab')
+            if term['query']:
+                page.wait_for_function("i => document.getElementById('text'+i).name === 'text'+i && document.getElementById('searchArea'+i).name === 'field'+i",arg=index)
+        with page.expect_navigation(wait_until='domcontentloaded',timeout=45000):page.locator('#advanced-search-btn').click()
+        parsed=urlsplit(page.url);params=parse_qs(parsed.query,keep_blank_values=True)
+        for index,term in enumerate(terms,1):
+            if params.get('field'+str(index))!=[fields[term['field']]] or params.get('text'+str(index))!=[term['query']]:
+                raise ServiceError('query_mismatch','Wiley did not retain every ordered advanced-search row',requested_row=index)
+        return parsed,params
+
     def resolve_target(self, target):
         if target.startswith(("10.", "doi:", "https://doi.org/", "http://doi.org/")):
             identifier = doi(target)
@@ -394,37 +427,34 @@ class Publisher:
             raise ServiceError('invalid_options', 'Use the documented Wiley fields, date/publication filters and start/limit')
         if export not in (None, 'json', 'html', *formats):
             raise ServiceError('invalid_export', 'Use json, html, bibtex, ris, plain, endnote or medlars')
-        params = {'field1': fields[options.get('field', 'Anywhere')], 'text1': query, 'Ppub': '', 'pageSize': 20}
-        terms = options.get('terms', [])
-        if not isinstance(terms, list) or len(terms) > 2:
-            raise ServiceError('invalid_options', 'Wiley supports at most two additional advanced-search rows')
-        for i, term in enumerate(terms, 2):
-            if not isinstance(term, dict) or set(term) != {'field', 'query'} or term['field'] not in fields or not isinstance(term['query'], str):
-                raise ServiceError('invalid_options', 'Each additional row requires a documented field and query')
-            params.update({f'field{i}': fields[term['field']], f'text{i}': term['query']})
-        if options.get('publication'):
-            params['publication'] = options['publication']
-        for key, native in [('after_year', 'AfterYear'), ('before_year', 'BeforeYear'), ('after_month', 'AfterMonth'), ('before_month', 'BeforeMonth')]:
+        terms=self.wiley_terms(query,options,fields)
+        for key in ('after_year','before_year','after_month','before_month'):
             if key in options:
                 value = options[key]
                 if type(value) is not int or not (1 <= value <= (12 if 'month' in key else 9999)):
                     raise ServiceError('invalid_options', 'Year and month filters require valid integers')
-                params[native] = value
         sort = options.get('sort', 'relevance')
-        if sort == 'date':
-            params['sortBy'] = 'Earliest'
-        elif sort != 'relevance':
+        if sort not in ('relevance','date'):
             raise ServiceError('invalid_options', 'Use sort relevance or date, as labeled by Wiley')
         page = self.gateway.open(self.source, self.profile.gateway_label, self.profile.hosts, '#searchField1')
         base = 'https://' + urlsplit(page.url).hostname
+        goto_source(page,base+'/search/advanced',self.profile.hosts,wait_until='domcontentloaded',timeout=45000)
+        page.locator('#searchArea1').wait_for(timeout=30000);dismiss_cookies(page)
+        parsed,params=self.submit_wiley_terms(page,terms,fields)
+        params['Ppub']='';params['pageSize']=20
+        if options.get('publication'):params['publication']=options['publication']
+        for key,native in [('after_year','AfterYear'),('before_year','BeforeYear'),('after_month','AfterMonth'),('before_month','BeforeMonth')]:
+            if key in options:params[native]=options[key]
+        if sort=='date':params['sortBy']='Earliest'
         rows, evidence, citations, failures, total = [], [], [], [], None
         for number in range(start // 20, (start + limit - 1) // 20 + 1):
             params['startPage'] = number
-            goto_source(page, base + '/action/doSearch?' + urlencode(params), self.profile.hosts, wait_until='domcontentloaded', timeout=45000)
+            goto_source(page, urlunsplit((parsed.scheme,parsed.netloc,parsed.path,urlencode(params,doseq=True),'')), self.profile.hosts, wait_until='domcontentloaded', timeout=45000)
             page.locator('.result__count, .search-result__no-result').first.wait_for(timeout=30000)
             dismiss_cookies(page)
             actual = parse_qs(urlsplit(page.url).query)
-            if actual.get('text1') != [query] or actual.get('field1') != [params['field1']] or actual.get('startPage') != [str(number)]:
+            if actual.get('startPage') != [str(number)] or any(actual.get('field'+str(index))!=[fields[term['field']]] or
+                    actual.get('text'+str(index))!=[term['query']] for index,term in enumerate(terms,1)):
                 raise ServiceError('query_mismatch', 'Wiley returned a different search or page')
             raw = clean_html(page.content(), self.store.sanitizer)
             native, found = wiley_records(raw, base)
