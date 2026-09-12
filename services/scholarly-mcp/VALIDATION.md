@@ -363,3 +363,8 @@ JSTOR는 Chrome의 원 음성 확인 파일도 회수했다. `data/validation/20
 `20260912T032900Z-iop-content-mcp.json`의 첫 실제 호출은 본문과 그림 성공, 보충 파일 connection_error로 partial이었다. `033040Z-iop-attachment-probe.json`은 원 프록시 호스트의 최대 DNS 레이블65자·연결 실패와 같은 서명·경로의 원 IOP 저장소 호스트에서 PDF250714바이트·2쪽 성공을 대조했다. 확인한 저장소 하나에 한해 원 호스트로 복원한다. API 실패에 따른 브라우저 전환이나 다른 자료원 탐색은 없다.
 
 `033208Z-iop-content-mcp.json`은 모든 회수·추출에 성공했으나 검사자가 추정한 Supplementary 문자열이 실제 제목의 Supplements와 달라 completed=false였다. PDF 첫 페이지의 실제 제목으로 대조한 `data/validation/20260912T033324Z-iop-content-mcp.json`은 completed=true다. 원 TeX 선택·그림 ImageContent·보충 PDF 첫 페이지 제목과2쪽을 확인했다. 다른 DOI의 보충 페이지를 거부하고 초록만 있는 페이지를 본문으로 세지 않는 검사까지 공통238검사를 통과했다. 이 표본에서 본문 XML 다운로드 제어는 발견하지 못했으며 XML 회수는 미연결이다.
+
+
+2026-09-12 Software Heritage의 릴리스 대상 회수를 연결했다. [공식 보존 자료 구조](https://docs.softwareheritage.org/devel/swh-deposit/specs/spec-loading.html)와 [Vault](https://docs.softwareheritage.org/devel/swh-web/uri-scheme-api-vault.html)를 대조하고, 실제 directory/revision 대상 metadata를 확보했다. `data/validation/20260912T035041Z-swh-release-mcp.json`은 release22ece559cc7cc2364edc5e5593d63ae8bd229f9f에서 revision e9c6243371087d04848b7686888f6dd29dfaef0e를 거쳐 directory a8eded6a2d062c998ba2dcc3dcb0ce68a4e15a58의 원 압축본86943878바이트·파일1666개·디렉터리139개를 실제 MCP로 회수하고 트리 해시와 압축 항목 추출을 completed=true로 통과했다.
+
+직접 directory를 가리키는 release fc8e44c5bb3fabe81e5ebe46ac013a2510271616은 실제 대상 관계와 Vault 준비 요청을 확인했지만 `034324Z`·`034916Z-swh-release-mcp.json`에서 각20회 조회 동안 pending이었다. 이 표본의 회수 완료는 주장하지 않는다. 순환 릴리스·다른 revision ID·원 metadata 보존 검사를 포함한 공통240검사가 통과했다. 연쇄 release와 content 대상은 코드·검사 범위와 실제 회수 범위를 구별하며, Git 전체 이력·snapshot 압축은 미연결이다.

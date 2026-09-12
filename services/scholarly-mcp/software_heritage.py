@@ -109,6 +109,36 @@ def parse_swhid(value):
     return base,match[1],match[2],qualifiers
 
 
+def release_content(adapter,core,raw,evidence):
+    requested=core;seen=set();proofs=[];chain=[]
+    # ponytail: bound malformed or pathological release chains; return an explicit limit error.
+    for _ in range(32):
+        if core in seen:raise ServiceError('release_cycle','Release targets contain a cycle',evidence=proofs)
+        seen.add(core);proofs.append(evidence)
+        if not isinstance(raw,dict) or raw.get('id')!=core.rsplit(':',1)[-1]:
+            raise ServiceError('identity_mismatch','Release target metadata identifies a different object',evidence=proofs)
+        kind=raw.get('target_type');key=raw.get('target')
+        types={'release':'rel','revision':'rev','directory':'dir','content':'cnt'}
+        if kind not in types or not isinstance(key,str) or not re.fullmatch('[0-9a-f]{40}',key):
+            raise ServiceError('invalid_response','Release has no recognized target type and object ID',evidence=proofs)
+        target='swh:1:'+types[kind]+':'+key;chain.append({'release_swhid':core,'target_swhid':target})
+        if kind=='directory':break
+        url=BASE+('content/sha1_git:' if kind=='content' else kind+'/')+key+'/'
+        raw,evidence=adapter.request(url)
+        if kind!='release':
+            proofs.append(evidence)
+            if kind=='content':
+                check_content_metadata(raw,target,key,evidence)
+                component=content(adapter,url,raw,target,key,{},evidence)
+                return component,{'requested_swhid':requested,'content_swhid':target,'basis':'release_target_chain','chain':chain,'evidence':proofs}
+            if not isinstance(raw,dict) or raw.get('id')!=key or not isinstance(raw.get('directory'),str) or not re.fullmatch('[0-9a-f]{40}',raw['directory']):
+                raise ServiceError('identity_mismatch','Release revision has no matching identity and directory',evidence=proofs)
+            target='swh:1:dir:'+raw['directory'];break
+        core=target
+    else:raise ServiceError('release_depth_limit','Release target chain exceeds 32 entries',evidence=proofs)
+    return vault_archive(adapter,target),{'requested_swhid':requested,'directory_swhid':target,'basis':'release_target_chain','chain':chain,'evidence':proofs}
+
+
 def check_content_metadata(raw,core,key,evidence):
     if not isinstance(raw,dict) or not isinstance(raw.get('checksums'),dict) or type(raw.get('length')) is not int or raw['length']<0:
         raise ServiceError('invalid_response','Software Heritage returned no content identity and length',evidence=evidence)
@@ -191,7 +221,13 @@ def fetch(adapter,target,parts):
         except ServiceError as error:component=error.result
         for part in wanted:result['components'][part]=component
         result['archive_selection']={'requested_swhid':core,'directory_swhid':directory,'basis':'selected_directory' if kind=='dir' else 'revision_directory_field'}
-    elif kind in ('rel','snp') and wanted:
+    elif kind=='rel' and wanted:
+        try:
+            component,selection=release_content(adapter,core,raw,evidence)
+            result['archive_selection']=selection
+        except ServiceError as error:component=error.result
+        for part in wanted:result['components'][part]=component
+    elif kind=='snp' and wanted:
         for part in wanted:result['components'][part]={'status':'not_implemented','reason':'Archive retrieval for this object kind is not connected; select a directory or revision SWHID'}
     states={part['status'] for part in result['components'].values()}
     result['status']='ok' if not states or states=={'available'} else next(iter(states)) if states in ({'restricted'},{'not_found'},{'unsupported'}) else 'partial'

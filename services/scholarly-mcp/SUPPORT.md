@@ -31,7 +31,7 @@
 | GitHub | github | api | partial | source_guide, search, fetch, export | live_adapter_pinned_file_fetch |
 | Zenodo | zenodo | api | partial | source_guide, search, fetch, export | live_mcp_search_file_checksum_fetch_extract |
 | Figshare | figshare | api | partial | source_guide, search, fetch, export | live_mcp_public_search_window_collection_versioned_file_md5_pdf_extract |
-| Software Heritage | software-heritage | api | partial | source_guide, search, fetch, export | live_mcp_verified_content_fragments_directory_revision_vault_extract; origin_adapter_observed |
+| Software Heritage | software-heritage | api | partial | source_guide, search, fetch, export | live_mcp_verified_content_directory_revision_release_tree_extract; direct_release_directory_pending |
 | AMS publications | ams | playwright | partial | source_guide, search, fetch, export | live_mcp_explicit_pdf; native_browser_mixed_search; dynamic_expression_offline_verified; live_search_restricted |
 | Cambridge University Press | cambridge | fixed: citation API; institutional search/document Playwright | partial | source_guide, search, fetch, export | live_mcp_filtered_search_ris_pdf_and_supplement_pdf_zip_source_extract |
 | De Gruyter Brill | de-gruyter | playwright | partial | source_guide, search, fetch, export | live_mcp_search_ris_pdf_and_supplement_zip_cif_lines; broken_link_observed |

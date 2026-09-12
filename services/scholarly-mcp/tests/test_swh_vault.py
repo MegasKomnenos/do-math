@@ -6,6 +6,42 @@ from scholarly import ServiceError,ArtifactStore
 from api_adapters import SoftwareHeritage
 
 class SoftwareHeritageVault(unittest.TestCase):
+    def test_release_cycles_and_wrong_revision_identity_keep_the_original_metadata(self):
+        original=json.loads((ROOT/'tests/fixtures/swh-release-revision.json').read_text('utf-8'))
+        revision=json.loads((ROOT/'tests/fixtures/swh-release-revision-target.json').read_text('utf-8'))
+        for bad_release,bad_revision,code in [({**original,'target_type':'release','target':original['id']},revision,'release_cycle'),
+                (original,{**revision,'id':'0'*40},'identity_mismatch')]:
+            calls=[]
+            def response(request):
+                calls.append(request)
+                return httpx.Response(200,json=bad_release if '/release/' in request.url.path else bad_revision)
+            with tempfile.TemporaryDirectory() as temp:
+                adapter=SoftwareHeritage(ArtifactStore(temp),httpx.Client(transport=httpx.MockTransport(response)))
+                result=adapter.fetch('swh:1:rel:'+original['id'],parts=['metadata','fulltext'])
+                self.assertEqual(result['components']['metadata']['status'],'available')
+                self.assertEqual(result['components']['fulltext']['code'],code)
+                self.assertFalse(any('/vault/' in str(request.url) for request in calls))
+
+    def test_native_releases_select_their_directory_or_revision_tree(self):
+        for kind in ('directory','revision'):
+            release=json.loads((ROOT/f'tests/fixtures/swh-release-{kind}.json').read_text('utf-8'))
+            revision=json.loads((ROOT/'tests/fixtures/swh-release-revision-target.json').read_text('utf-8'))
+            directory=release['target'] if kind=='directory' else revision['directory'];core='swh:1:rel:'+release['id'];calls=[]
+            def response(request):
+                calls.append(request)
+                if request.url.path=='/api/1/release/'+release['id']+'/':return httpx.Response(200,json=release)
+                if request.url.path=='/api/1/revision/'+revision['id']+'/':return httpx.Response(200,json=revision)
+                if request.url.path=='/api/1/vault/flat/swh:1:dir:'+directory+'/':return httpx.Response(200,json={'swhid':'swh:1:dir:'+directory,'status':'pending'})
+                raise AssertionError('Unexpected request')
+            with tempfile.TemporaryDirectory() as temp:
+                adapter=SoftwareHeritage(ArtifactStore(temp),httpx.Client(transport=httpx.MockTransport(response)))
+                result=adapter.fetch(core,parts=['metadata','fulltext'])
+                self.assertEqual(result['components']['fulltext']['status'],'pending')
+                self.assertEqual(result['archive_selection']['requested_swhid'],core)
+                self.assertEqual(result['archive_selection']['directory_swhid'],'swh:1:dir:'+directory)
+                self.assertEqual(len(result['archive_selection']['evidence']),1 if kind=='directory' else 2)
+                self.assertEqual(result['components']['metadata']['status'],'available')
+
     def test_uncached_archive_is_prepared_without_email_and_keeps_metadata(self):
         core='swh:1:dir:4b825dc642cb6eb9a060e54bf8d69288fbee4904';calls=[]
         def response(request):
