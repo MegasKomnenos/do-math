@@ -28,9 +28,9 @@
 | Mathlib | mathlib | api | partial | source_guide, search, fetch, export | live_mcp_pinned_source_search_file_fetch_line_comparison |
 | Archive of Formal Proofs | afp | api | partial | source_guide, search, fetch, export | live_mcp_entry_search_pinned_metadata_and_proof_source_fetch_extract |
 | Mathematical Components | math-comp | api | partial | source_guide, search, fetch, export | live_mcp_pinned_source_search_file_fetch_line_comparison |
-| GitHub | github | api | partial | source_guide, search, fetch, export | live_mcp_repository_search_native_json_pinned_zip_file_same_bytes |
-| Zenodo | zenodo | api | partial | source_guide, search, fetch, export | live_mcp_search_file_checksum_fetch_extract |
-| Figshare | figshare | api | partial | source_guide, search, fetch, export | live_mcp_public_search_window_collection_versioned_file_md5_pdf_extract |
+| GitHub | github | api | partial | source_guide, search, fetch, export | live_mcp_arbitrary_search_window_native_pages_pinned_zip_file_same_bytes |
+| Zenodo | zenodo | api | partial | source_guide, search, fetch, export | live_mcp_arbitrary_search_window_native_pages_file_checksum_fetch_extract |
+| Figshare | figshare | api | partial | source_guide, search, fetch, export | live_mcp_beyond_offset_window_collection_native_file_redirect_md5_and_text_extract |
 | Software Heritage | software-heritage | api | partial | source_guide, search, fetch, export | live_mcp_verified_content_trees_git_history_snapshot_and_release; direct_release_flat_pending |
 | AMS publications | ams | playwright (전용 Chrome 창/CDP) | partial | source_guide, search, fetch, export | live_mcp_native_search_window_zero_xlsx_product_fetch_pdf; dynamic_ui_provider_error |
 | Cambridge University Press | cambridge | fixed: citation API; institutional search/document Playwright | partial | source_guide, search, fetch, export | live_mcp_filtered_search_ris_pdf_and_supplement_pdf_zip_source_extract |

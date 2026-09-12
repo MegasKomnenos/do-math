@@ -552,6 +552,13 @@ def extract_artifact(store, ref, *, fields=None, start=0, count=20, selection=""
     elif media.startswith("text/") or media in ('application/x-tex', 'application/x-latex','application/n-triples'):
         rows = data.decode("utf-8").splitlines()
         unit = "lines"
+    elif media=='application/octet-stream':
+        try:
+            if b'\x00' in data:raise UnicodeError
+            rows=data.decode('utf-8-sig').splitlines()
+        except UnicodeError:
+            raise ServiceError('format_not_supported','The generic binary artifact is not NUL-free UTF-8 text; original bytes remain available',status='unsupported',artifact=ref) from None
+        unit='lines'
     else:
         raise ServiceError("format_not_supported", "Use the preserved binary artifact; this format has no mechanical extractor", status="unsupported", artifact=ref)
     total = len(rows)

@@ -32,30 +32,55 @@ class Figshare(APIAdapter):
 
     def search(self,query,*,options,start=0,limit=20,cursor=None,export=None):
         self.validate(options,start,limit)
-        if cursor or start>5000:
-            raise ServiceError('invalid_range','Figshare uses offset start <= 5000; cursor pagination is not implemented')
+        if cursor or start+limit>5000000:
+            raise ServiceError('invalid_range','Use start/limit within the documented 5000 pages of at most 1000 records; no cursor is provided')
         kind=options.get('kind','articles')
         if kind not in ('articles','collections'):
             raise ServiceError('invalid_options','kind must be articles or collections')
         if kind=='collections' and any(k in options for k in ('item_type','project_id','collection_id')):
             raise ServiceError('invalid_options','These filters apply to articles only')
         collection=options.get('collection_id')
-        if collection is not None:
-            if query or set(options)-{'collection_id','kind'} or type(collection) is not int or collection<1:
-                raise ServiceError('invalid_options','collection_id lists current members with an empty query and no other filters')
-            raw,evidence=self.request(f'https://api.figshare.com/v2/collections/{collection}/articles',params={'offset':start,'limit':limit})
-        else:
-            body={k:v for k,v in options.items() if k!='kind'}
-            if query: body['search_for']=query
-            body.update(offset=start,limit=limit)
-            raw,evidence=self.request('https://api.figshare.com/v2/'+kind+'/search',json_body=body)
-        if not isinstance(raw,list) or len(raw)>limit:
-            raise ServiceError('invalid_response','Figshare did not return the requested result window',evidence=evidence)
-        result=self.page(public_row(raw),None,evidence,query,options,start,limit,more=len(raw)==limit)
+        if collection is not None and (query or set(options)-{'collection_id','kind'} or type(collection) is not int or collection<1):
+            raise ServiceError('invalid_options','collection_id lists current members with an empty query and no other filters')
+        body={k:v for k,v in options.items() if k!='kind'}
+        if query:body['search_for']=query
+        rows=[];native_pages=[];errors=[]
+        page_size=max(limit,(start+limit+4999)//5000)
+        offset=start if start<=5000 else start//page_size*page_size
+        while len(rows)<limit:
+            pagination={'offset':offset,'limit':limit} if start<=5000 else {'page':offset//page_size+1,'page_size':page_size}
+            requested_size=pagination.get('limit',page_size)
+            try:
+                if collection is not None:
+                    raw,evidence=self.request(f'https://api.figshare.com/v2/collections/{collection}/articles',params=pagination)
+                else:
+                    raw,evidence=self.request('https://api.figshare.com/v2/'+kind+'/search',json_body={**body,**pagination})
+                if not isinstance(raw,list) or len(raw)>requested_size or any(not isinstance(r,dict) or type(r.get('id')) is not int for r in raw):
+                    raise ServiceError('invalid_response','Figshare did not return the requested result window',evidence=evidence)
+                selected=raw[max(0,start-offset):start+limit-offset]
+                ids=[r['id'] for r in rows+selected]
+                if len(ids)!=len(set(ids)):
+                    raise ServiceError('inconsistent_pagination','Figshare repeated a record in the selected window',evidence=evidence)
+            except ServiceError as error:
+                if not rows:raise
+                errors.append(error.result);break
+            rows.extend(selected)
+            native_pages.append({'artifact':evidence,'native_start':offset,'received':len(raw),'selected':len(selected)})
+            if len(raw)<requested_size or start<=5000:break
+            offset+=page_size
+        evidence=native_pages[0]['artifact']
+        result=self.page(public_row(rows),None,evidence,query,options,start,limit,more=bool(errors) or len(rows)==limit,
+            evidence_refs=[p['artifact']['ref'] for p in native_pages])
+        result['native_pages']=native_pages
+        if errors:result.update(status='partial',errors=errors)
         result['pagination_basis']='No global total is provided; a full page may have a following page'
-        if result['has_more'] and start+len(raw)>5000:
+        if result['has_more'] and start+len(rows)>=5000000:
             result.update(next=None,continuation_limited=True)
-        return self.export_page(result,export)
+        result=self.export_page(result,export)
+        if export=='native' and (len(native_pages)>1 or native_pages[0]['received']!=len(rows)):
+            result['export']={'artifacts':[p['artifact'] for p in native_pages],
+                'scope':'Original provider pages; records contains the exact requested window'}
+        return result
 
     def resolve(self,target):
         value=target.strip(); requested_doi=None; file_id=None
@@ -99,8 +124,8 @@ class Figshare(APIAdapter):
             return {'status':'not_implemented','reason':'The public API exposes current membership only; a historical collection version is not replaced with that list'}
         rows=[]; refs=[]; expected=row.get('articles_count'); error=None
         while True:
-            if len(rows)>5000:
-                error={'code':'continuation_limited','message':'Public offset limit reached; the collection member list is incomplete'}; break
+            if len(rows)>=5000000:
+                error={'code':'continuation_limited','message':'Documented page-number limit reached; the collection member list is incomplete'}; break
             try:
                 page=self.search('',options={'collection_id':row['id']},start=len(rows),limit=100)
             except ServiceError as exc:
@@ -135,7 +160,12 @@ class Figshare(APIAdapter):
                 link=file.get('download_url','')
                 if urlsplit(link).hostname!='ndownloader.figshare.com' or urlsplit(link).path!='/files/'+str(file.get('id')):
                     raise ServiceError('source_boundary','Hosted file metadata did not identify the expected Figshare download route')
-                data,downloaded=self.request(link,accept='binary')
+                def native_file_redirect(origin,destination):
+                    parsed=urlsplit(destination)
+                    return origin==link and parsed.scheme=='https' and not parsed.username and not parsed.password \
+                        and parsed.port in (None,443) and parsed.hostname=='s3-eu-west-1.amazonaws.com' \
+                        and '..' not in unquote(parsed.path).split('/')
+                data,downloaded=self.request(link,accept='binary',allow_redirect=native_file_redirect)
                 checksum=file.get('computed_md5') or file.get('supplied_md5')
                 if (file.get('size') is not None and len(data)!=file['size']) or (checksum and hashlib.md5(data).hexdigest().lower()!=checksum.lower()):
                     raise ServiceError('file_integrity_mismatch','Downloaded file differs from Figshare size or MD5 metadata',evidence=downloaded)

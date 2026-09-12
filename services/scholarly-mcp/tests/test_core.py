@@ -30,6 +30,20 @@ class CoreContract(unittest.TestCase):
         self.assertEqual(self.store.read(left["ref"])[0]["source"], "arxiv")
         self.assertEqual(self.store.read(right["ref"])[0]["source"], "eccc")
 
+    def test_generic_mime_utf8_file_can_be_read_as_lines_without_rewriting_bytes(self):
+        data='data_example\r\n_cell_length_a 10.2\r\n# 한글\r\n'.encode('utf-8')
+        artifact=self.store.put(data,'application/octet-stream','figshare','https://ndownloader.figshare.com/files/12',preserve_bytes=True)
+        result=self.lib.extract_artifact(self.store,artifact['ref'],start=1,count=2)
+        self.assertEqual(result['items'],['_cell_length_a 10.2','# 한글'])
+        self.assertEqual(self.store.read(artifact['ref'])[1],data)
+
+    def test_generic_mime_binary_is_not_guessed_to_be_text(self):
+        for data in (b'abc\x00def',b'\xff\xfeinvalid'):
+            artifact=self.store.put(data,'application/octet-stream','figshare','https://ndownloader.figshare.com/files/12',preserve_bytes=True)
+            with self.assertRaises(self.lib.ServiceError) as error:
+                self.lib.extract_artifact(self.store,artifact['ref'])
+            self.assertEqual(error.exception.result['code'],'format_not_supported')
+
     def test_saved_artifact_survives_new_server_instance(self):
         a = self.store.put("수식 α²".encode(), "text/plain", "eccc", "https://eccc.weizmann.ac.il/")
         reopened = self.lib.ArtifactStore(Path(self.tmp.name))

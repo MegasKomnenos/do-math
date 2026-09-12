@@ -42,13 +42,14 @@ class APIAdapter:
         parts = urlsplit(url)
         return parts.scheme == "https" and not parts.username and not parts.password and parts.hostname in self.hosts and parts.port in (None, 443)
 
-    def request(self, url, *, params=None, headers=None, accept="json", json_body=None):
+    def request(self, url, *, params=None, headers=None, accept="json", json_body=None, allow_redirect=None):
         request_headers = httpx.Headers(headers or {})
         if "Accept" not in request_headers:
             request_headers["Accept"] = {"json": "application/json", "xml": "application/xml, application/atom+xml, application/rss+xml, text/xml;q=0.9, */*;q=0.1",
                 "html": "text/html, application/xhtml+xml;q=0.9, */*;q=0.1"}.get(accept, "*/*")
+        redirected_from=None
         for hop in range(6):
-            if not self.allowed_url(url):
+            if not self.allowed_url(url) and not (redirected_from is not None and allow_redirect is not None and allow_redirect(redirected_from,url)):
                 raise ServiceError("source_boundary", "Requested URL or redirect is outside this source", source=self.source)
             wait = self.min_interval - (time.monotonic() - self.last_request)
             if wait > 0:
@@ -67,6 +68,7 @@ class APIAdapter:
             if response.is_redirect:
                 if response.status_code in (301, 302, 303):
                     json_body = None
+                redirected_from=url
                 url = urljoin(str(response.url), response.headers.get("location", ""))
                 params = None
                 continue
@@ -132,6 +134,44 @@ class APIAdapter:
             raise ServiceError("export_not_implemented", "Requested export format is not implemented", status="not_implemented", source=self.source, requested_format=export, partial_result=result)
         if export == "native":
             result["export"] = result["evidence"]
+        return result
+
+    def numbered_window(self, query, options, start, limit, load_page, *, ceiling=None, page_size=None):
+        """Select an exact window while retaining the provider's original pages."""
+        size=page_size or limit;number=start//size+1;rows=[];proofs=[];pages=[];errors=[];total=None;incomplete=False
+        while len(rows)<limit:
+            offset=(number-1)*size
+            try:
+                native,reported,proof,partial=load_page(number,size)
+                if not isinstance(native,list) or len(native)>size or type(reported) is not int or reported<0 \
+                        or any(not isinstance(row,dict) or row.get('id',row.get('sha')) is None for row in native):
+                    raise ServiceError('invalid_response','The source returned an invalid numbered result page',evidence=proof)
+                if total is not None and reported!=total:
+                    raise ServiceError('result_set_changed','The source total changed between result pages',evidence=proof)
+                selected=native[max(0,start-offset):start+limit-offset]
+                identifiers=[row.get('id',row.get('sha')) for row in rows+selected]
+                if len(identifiers)!=len(set(identifiers)):
+                    raise ServiceError('inconsistent_pagination','The source repeated a selected record across pages',evidence=proof)
+                if not selected and start<reported and not partial:
+                    raise ServiceError('incomplete_response','The source omitted records within its reported result range',evidence=proof)
+            except ServiceError as error:
+                if not rows:raise
+                errors.append(error.result);break
+            total=reported;incomplete=incomplete or partial;proofs.append(proof)
+            pages.append({'artifact':proof,'native_start':offset,'received':len(native),'selected':len(selected)})
+            rows.extend(selected)
+            if not selected or len(native)<size or offset+len(native)>=total or ceiling is not None and offset+len(native)>=ceiling:break
+            number+=1
+        result=self.page(rows,total,proofs[0],query,options,start,limit,
+            more=bool(errors) or start+len(rows)<total or incomplete,evidence_refs=[p['ref'] for p in proofs])
+        result['native_pages']=pages
+        result['native_export_scope']='Original provider pages; records contains the exact requested window'
+        if len(proofs)>1:result['evidence']={'artifacts':proofs}
+        if errors:result.update(status='partial',errors=errors)
+        if incomplete:result.update(status='partial',incomplete_results=True)
+        if ceiling is not None:
+            result['source_result_limit']=ceiling
+            if start+len(rows)>=ceiling and result['has_more']:result.update(next=None,continuation_limited=True)
         return result
 
     def fetched(self, rows, evidence, parts, available=("metadata", "abstract")):
@@ -730,13 +770,14 @@ class Zenodo(APIAdapter):
 
     def search(self, query, *, options, start=0, limit=20, cursor=None, export=None):
         self.validate(options, start, limit)
-        if cursor or start % limit:
-            raise ServiceError("invalid_range", "Zenodo uses start as a multiple of limit")
-        raw, evidence = self.request("https://zenodo.org/api/records", params={"q": query, "page": start // limit + 1, "size": limit, **options})
-        total = raw["hits"]["total"]
-        if isinstance(total, dict): total = total["value"]
-        rows = [{**row, "title": row.get("metadata", {}).get("title"), "DOI": row.get("doi")} for row in raw["hits"]["hits"]]
-        return self.export_page(self.page(rows, total, evidence, query, options, start, limit), export)
+        if cursor:raise ServiceError('invalid_cursor','Zenodo uses start rather than a cursor')
+        def load_page(number,size):
+            raw,evidence=self.request('https://zenodo.org/api/records',params={'q':query,'page':number,'size':size,**options})
+            total=raw['hits']['total']
+            if isinstance(total,dict):total=total['value']
+            rows=[{**row,'title':row.get('metadata',{}).get('title'),'DOI':row.get('doi')} for row in raw['hits']['hits']]
+            return rows,total,evidence,False
+        return self.export_page(self.numbered_window(query,options,start,limit,load_page),export)
 
     def fetch(self, target, *, parts):
         filename = None
@@ -820,19 +861,17 @@ class GitHub(APIAdapter):
 
     def search(self, query, *, options, start=0, limit=20, cursor=None, export=None):
         self.validate(options, start, limit)
-        if cursor or start % limit:
-            raise ServiceError("invalid_range", "GitHub search start must be a multiple of limit")
+        if cursor or start>=1000:
+            raise ServiceError('invalid_range','Use start below the GitHub search ceiling of 1000; no cursor is provided')
         kind = options.get("kind", "repositories")
         if kind not in ("repositories", "commits", "issues"):
             raise ServiceError("public_feature_unavailable", "Use repositories, commits or issues. Code search requiring a separate GitHub credential is excluded.", status="unsupported")
-        raw, evidence = self.request("https://api.github.com/search/" + kind,
-            params={"q": query, "page": start // limit + 1, "per_page": limit, **{k: v for k, v in options.items() if k != "kind"}})
-        result = self.page(raw["items"], raw["total_count"], evidence, query, options, start, limit)
-        if raw.get("incomplete_results"):
-            result.update(status="partial", incomplete_results=True)
-        result["source_result_limit"] = 1000
-        if start + len(raw["items"]) >= 1000 and result["has_more"]:
-            result.update(next=None, continuation_limited=True)
+        def load_page(number,size):
+            raw,evidence=self.request('https://api.github.com/search/'+kind,
+                params={'q':query,'page':number,'per_page':size,**{k:v for k,v in options.items() if k!='kind'}})
+            return raw['items'],raw['total_count'],evidence,bool(raw.get('incomplete_results'))
+        result=self.numbered_window(query,options,start,limit,load_page,ceiling=1000,
+            page_size=100 if start+limit>=1000 else limit)
         return self.export_page(result, export)
 
     def resolve(self, target):

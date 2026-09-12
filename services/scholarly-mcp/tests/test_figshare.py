@@ -36,6 +36,47 @@ class FigshareContract(unittest.TestCase):
         with self.assertRaises(ServiceError) as cm: adapter.search('quantum',options={})
         self.assertEqual(cm.exception.result['code'],'source_boundary'); self.assertEqual(len(self.calls),1)
 
+    def test_page_number_recovers_window_beyond_offset_limit(self):
+        def handler(req):
+            body=json.loads(req.content)
+            self.assertEqual(body['search_for'],'data')
+            self.assertEqual(body['order'],'published_date')
+            if 'offset' in body:return httpx.Response(400,json={'message':'offset limit'})
+            offset=(body['page']-1)*body['page_size']
+            return httpx.Response(200,json=[{'id':i} for i in range(offset,offset+body['page_size'])])
+        adapter=self.adapter(handler)
+        result=adapter.search('data',options={'order':'published_date'},start=5001,limit=2,export='native')
+        self.assertEqual([r['id'] for r in json.loads(self.store.read(result['records']['ref'])[1])],[5001,5002])
+        self.assertEqual(result['next'],{'start':5003})
+        self.assertEqual(len(result['export']['artifacts']),2)
+        self.assertEqual([r['native_start'] for r in result['native_pages']],[5000,5002])
+
+    def test_later_page_failure_preserves_selected_records(self):
+        def handler(req):
+            body=json.loads(req.content)
+            return httpx.Response(200,json=[{'id':5000},{'id':5001}]) if body['page']==2501 else httpx.Response(503)
+        adapter=self.adapter(handler)
+        result=adapter.search('data',options={},start=5001,limit=2)
+        self.assertEqual(result['status'],'partial')
+        self.assertEqual(result['received'],1)
+        self.assertEqual(result['next'],{'start':5002})
+        self.assertEqual(result['errors'][0]['http_status'],503)
+
+    def test_collection_members_cross_old_offset_ceiling(self):
+        def handler(req):
+            if req.url.path.endswith('/articles'):
+                params=req.url.params
+                size=int(params.get('limit',params.get('page_size',100)))
+                offset=int(params['offset']) if 'offset' in params else (int(params['page'])-1)*size
+                return httpx.Response(200,json=[{'id':i} for i in range(offset,min(offset+size,5102))])
+            return httpx.Response(200,json={'id':42,'version':1,'articles_count':5102})
+        adapter=self.adapter(handler)
+        result=adapter.fetch('collection:42',parts=['supplementary'])
+        component=result['components']['supplementary']
+        self.assertEqual(component['status'],'available')
+        self.assertEqual(component['received'],5102)
+        self.assertIn('page',self.calls[-1].url.params)
+
     def test_versioned_file_integrity_and_external_links(self):
         content=b'original file bytes\n'
         row={'id':42,'version':2,'doi':'10.6084/m9.figshare.42.v2','files':[
@@ -78,6 +119,22 @@ class FigshareContract(unittest.TestCase):
         adapter=self.adapter(lambda r:httpx.Response(200,json={'id':43,'version':1}))
         with self.assertRaises(ServiceError) as cm: adapter.fetch('42',parts=['metadata'])
         self.assertEqual(cm.exception.result['code'],'identity_mismatch')
+
+    def test_native_downloader_redirect_is_bound_to_the_selected_file(self):
+        content=b'selected public file'
+        row={'id':42,'version':1,'files':[{'id':12,'name':'file.txt','size':len(content),
+            'computed_md5':hashlib.md5(content).hexdigest(),'download_url':'https://ndownloader.figshare.com/files/12'}]}
+        for destination,expected in [('https://s3-eu-west-1.amazonaws.com/pstorage-acs-6854636/file','available'),
+                                     ('https://unrelated.example/file','error')]:
+            def handler(req):
+                if req.url.host=='api.figshare.com':return httpx.Response(200,json=row)
+                if req.url.host=='ndownloader.figshare.com':return httpx.Response(302,headers={'Location':destination})
+                return httpx.Response(200,content=content)
+            adapter=self.adapter(handler)
+            result=adapter.fetch('42#file:12',parts=['fulltext'])
+            self.assertEqual(result['components']['fulltext']['files'][0]['status'],expected)
+            self.assertFalse(adapter.allowed_url(destination))
+            if expected=='error':self.assertEqual(len(self.calls),2)
 
     def test_public_urls_preserve_record_kind_and_version(self):
         adapter=self.adapter(lambda r:httpx.Response(500))
