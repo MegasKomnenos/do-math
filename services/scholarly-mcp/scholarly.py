@@ -523,6 +523,11 @@ def extract_artifact(store, ref, *, fields=None, start=0, count=20, selection=""
         except Exception:
             raise ServiceError("invalid_selection", "XML could not be parsed or the XPath subset is invalid") from None
         unit = "elements"
+    elif media in ('image/vnd.djvu','image/x-djvu','application/x-djvu'):
+        if selection or fields:
+            raise ServiceError('invalid_selection','DjVu extraction uses start/count page ranges and optional render')
+        from djvu_extract import pages
+        return pages(store,{**meta,'ref':ref},data,start=start,count=count,render=render)
     elif media == "application/pdf":
         import pymupdf
         try:

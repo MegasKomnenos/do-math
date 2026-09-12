@@ -24,7 +24,7 @@
 
 자료 참조는 manifest와 파일의 SHA-256으로 검사한다. 같은 바이트를 서로 다른 자료원에서 얻어도 출처 manifest는 분리된다. 저장된 자료는 서버 재시작 뒤에도 회수할 수 있다. API JSON의 표현 정규화와 인증 정보 정제, 화면 HTML의 실행 코드 제거는 보존 사본에 적용된다. API XML은 네임스페이스를 유지하며 읽고 정제한 뒤 UTF-8로 직렬화하고 `xml_normalized`를 표시한다. 외부 XML 엔터티를 읽거나 확장하지 않는다. PDF·이미지·압축 파일과 저장소 원 파일은 원 바이트로 보존한다.
 
-추출에서 JSON `selection`은 JSON Pointer다. 예를 들어 `/0/fields/cr`은 첫 Web of Science 레코드의 인용문헌 필드다. HTML은 CSS 선택자, XML은 ElementTree가 지원하는 XPath 부분집합을 사용한다. PDF는 원 텍스트 레이어를 추출하고, `render=true`이면 해당 쪽의 이미지도 보존한다. 이미지 ref를 다시 `extract`에 주면 MCP 이미지 내용으로 전달한다. 이미지 의미 판독과 OCR 교정은 서버가 수행하지 않는다. ZIP·tar 계열은 파일 목록을 반환하며 `selection`에 목록의 정확한 파일 이름을 주면 해당 바이트를 별도 자료로 보존한다. 압축 파일의 경로를 작업 디렉터리에 풀지 않는다. 원 저장소 파일과 압축 파일에서 꺼낸 파일은 원 바이트를 유지한다.
+추출에서 JSON `selection`은 JSON Pointer다. 예를 들어 `/0/fields/cr`은 첫 Web of Science 레코드의 인용문헌 필드다. HTML은 CSS 선택자, XML은 ElementTree가 지원하는 XPath 부분집합을 사용한다. PDF·DjVu는 원 텍스트 레이어를 추출하고, `render=true`이면 해당 쪽의 이미지도 보존한다. 이미지 ref를 다시 `extract`에 주면 MCP 이미지 내용으로 전달한다. 이미지 의미 판독과 OCR 교정은 서버가 수행하지 않는다. ZIP·tar 계열은 파일 목록을 반환하며 `selection`에 목록의 정확한 파일 이름을 주면 해당 바이트를 별도 자료로 보존한다. 압축 파일의 경로를 작업 디렉터리에 풀지 않는다. 원 저장소 파일과 압축 파일에서 꺼낸 파일은 원 바이트를 유지한다.
 
 RTF는 선언된 문자 인코딩과 Unicode 제어를 해석한 텍스트 줄로 추출한다. `start`·`count`로 줄 범위를 선택하며 원 파일 바이트는 유지한다. 포함된 그림·객체 바이너리를 텍스트 제어로 읽거나 실행하지 않는다. 서지 내보내기로 생성한 RTF·PDF와 논문 전문은 각 artifact의 역할로 구별한다.
 
@@ -47,8 +47,11 @@ RTF는 선언된 문자 인코딩과 Unicode 제어를 해석한 텍스트 줄�
 python -m venv services/scholarly-mcp/.venv
 & services/scholarly-mcp/.venv/Scripts/python.exe -m pip install -r services/scholarly-mcp/requirements.txt
 & services/scholarly-mcp/.venv/Scripts/python.exe -m playwright install firefox
+& services/scholarly-mcp/.venv/Scripts/python.exe services/scholarly-mcp/setup_djvu.py
 & services/scholarly-mcp/.venv/Scripts/python.exe services/scholarly-mcp/server.py
 ```
+
+DjVu 설정은 현재 호스트의 MSVC C++ 컴파일러·Windows SDK·Git으로 고정한 공식 DjVuLibre 소스를 빌드한다. 생성된 도구·라이선스·출처와 해시는 전용 data/tools/djvulibre/runtime에 보존하며 전역 설치나 PATH 변경은 하지 않는다. 현재 호스트에서 설정과 실제10쪽 문헌의 MCP 텍스트·이미지 추출을 완료했다. 원 파일·기존 OCR 텍스트를 보존하며 새로운 OCR은 하지 않는다. 외부 component 파일을 요구하는 indirect 문서는 자동 확장하지 않는다.
 
 Chromium 어댑터는 호스트에 설치된 Chrome을 사용한다. 자료원별로 검증한 브라우저를 서버가 선택하며 호출 AI가 지정하지 않는다. stdio의 stdout은 MCP 메시지 전용이고 진단은 stderr로 보낸다.
 

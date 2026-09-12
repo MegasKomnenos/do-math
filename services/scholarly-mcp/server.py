@@ -114,7 +114,7 @@ async def fetch(source: str, target: str, parts: list[str] | None = None) -> Too
 
 @mcp.tool()
 def extract(ref: str, fields: list[str] | None = None, start: int = 0, count: int = 20, selection: str = "", render: bool = False) -> ToolResult:
-    """보존 자료를 기계적으로 읽는다. start는 0부터, count는 레코드·줄·쪽의 수다. JSON selection은 /경로, HTML은 CSS, XML은 ElementTree XPath 부분집합이다. XLS/XLSX selection은 시트명이고 fields는 A·B·AA 같은 열 문자다. 여러 시트는 먼저 선택 목록을 반환한다. BibTeX·RIS·EndNote·WOS·CSV의 selection=raw는 원 줄을 읽는다. JSON fields는 원 필드 이름이다. PDF는 쪽별 텍스트와 선택적 이미지 ref를 반환한다. 이미지 ref를 extract에 주면 이미지를 그대로 전달하며 판독은 호출 AI가 한다."""
+    """보존 자료를 기계적으로 읽는다. start는 0부터, count는 레코드·줄·쪽의 수다. JSON selection은 /경로, HTML은 CSS, XML은 ElementTree XPath 부분집합이다. XLS/XLSX selection은 시트명이고 fields는 A·B·AA 같은 열 문자다. 여러 시트는 먼저 선택 목록을 반환한다. BibTeX·RIS·EndNote·WOS·CSV의 selection=raw는 원 줄을 읽는다. JSON fields는 원 필드 이름이다. PDF·DjVu는 쪽별 텍스트와 선택적 이미지 ref를 반환한다. 이미지 ref를 extract에 주면 이미지를 그대로 전달하며 판독은 호출 AI가 한다."""
     result = run_call(extract_artifact, STORE, ref, fields=fields, start=start, count=count, selection=selection, render=render)
     payload = result.model_dump(mode="json")
     if payload.get("image_ref"):

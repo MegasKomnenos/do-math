@@ -238,7 +238,7 @@ MORE_API_USAGE = {
         "options": {"field": "all(기본), author, title, references, fulltext", "terms": "추가 조건 배열. 각 원 검색 필드는 AND로 결합된다. {field,query,not:false} 형식이며 field에는 keywords도 허용한다. 날짜 조건은 {field:'date',from:'2012',until:'2012'}처럼 쓴다. not:true는 그 조건을 제외한다. 요청한 조건마다 원 행을 생성하고 입력을 대조한다.", "set": "OAI 전용 collection 식별자", "from": "OAI 전용 메타데이터 갱신 시작일 YYYY-MM-DD", "until": "OAI 전용 갱신 종료일", "metadata_format": "OAI 전용 eudml-article2 또는 oai_dc"},
         "fetch": "Numdam native ID·oai:numdam.org:ID·DOI·Numdam 문헌/파일 URL을 사용한다. 이름은 제목 검색 후보와 selection_required를 반환한다. metadata는 원 JATS를 포함하며 abstract는 그 원 초록이다. fulltext는 PDF, supplementary는 같은 레코드의 대체 전문 DJVU다. export는 원 BibTeX·RIS·EndNote 세 파일이다.",
         "exports": "웹 검색은 json(기본), html/native(원 페이지), bibtex, ris, endnote. 선택한 창의 문헌별 원 인용문과 결합 파일을 보존하며 일부 실패는 문헌별 표시한다. OAI 검색은 json/native(XML). BibTeX·RIS·EndNote는 extract로 필드를 읽거나 selection=raw로 원 줄을 읽는다. EndNote fields는 원 태그 T·A·R 등을 유지한다.",
-        "limits": "웹 start는 0부터, limit 1..100, 원 페이지 20건이며 페이지 경계도 조회한다. OAI 페이지 크기는 자료원이 정하며 모든 수신분을 보존한다. OAI 다음 페이지는 next.cursor. 검색 날짜와 OAI 갱신 날짜를 구별한다. DJVU는 바이너리로 보존하며 현재 extract의 문서 판독 대상은 PDF다.",
+        "limits": "웹 start는 0부터, limit 1..100, 원 페이지 20건이며 페이지 경계도 조회한다. OAI 페이지 크기는 자료원이 정하며 모든 수신분을 보존한다. OAI 다음 페이지는 next.cursor. 검색 날짜와 OAI 갱신 날짜를 구별한다. DJVU 원 바이트도 보존한다. extract의 start/count로0부터 쪽을 선택해 원 텍스트 레이어를 읽고 render=true로 페이지 이미지도 얻는다. 텍스트가 비면 이미지를 반환한다. 별도 파일을 참조하는 indirect DJVU는 외부 파일을 자동으로 읽지 않고 해당 상태를 반환한다. 뒤쪽 판독 실패는 앞쪽 성공분과 next_start를 partial로 유지한다.",
         "examples": [{"tool": "search", "arguments": {"source": "numdam", "query": "complexity", "start": 19, "limit": 2, "export": "ris"}}, {"tool": "search", "arguments": {"source": "numdam", "query": "\"Three complexity functions\"", "options": {"field": "title", "terms": [{"field": "date", "from": "2012", "until": "2012"}]}, "limit": 2, "export": "bibtex"}}, {"tool": "fetch", "arguments": {"source": "numdam", "target": "10.1051/ita/2011126", "parts": ["metadata", "abstract", "fulltext", "export", "supplementary"]}}],
         "official": ["https://www.numdam.org/help/", "https://www.numdam.org/metadata/"]},
     "core": {
@@ -724,7 +724,7 @@ for identifier, level in {
     "general-web": "live_mcp_public_api_candidates_csv_extract_empty_result",
     "author-repository": "live_mcp_public_author_pdf_dynamic_document_and_page_links",
     "society-journal": "live_mcp_public_journal_metadata_abstract_pdf_native_citations; shared_dynamic_renderer_verified",
-    "numdam": "live_mcp_11_conditions_native_search_citations_jats_pdf_djvu_pagination",
+    "numdam": "live_mcp_11_conditions_native_search_citations_jats_pdf_djvu_page_text_image_windows",
     "software-heritage": "live_mcp_verified_tree_files_cache_resume_and_native_git_archives; selected_flat_job_unprepared",
     "openalex": "live_mcp_arbitrary_window_group_cursor_abstract_relationships_name_doi",
     "core": "live_mcp_name_metadata_abstract_and_restricted_fulltext_notice",

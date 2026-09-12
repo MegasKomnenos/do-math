@@ -545,3 +545,10 @@ Project Euclid의 원 폼은10행 뒤 Add 제어가 사라지지만 같은 검�
 Euclid의 페이지 제한은 별도로 확인했다. 재구성 URL의 실패 화면에는 hCaptcha가 있었으므로 그0행을 페이지 상한의 증거로 사용하지 않는다. 정상 headed 세션에서는50쪽의 AJAX가200·전체7,662·100행을 반환했다. 같은 원 AJAX 요청의 page만51로 바꾸면200·전체0·0행·빈 HTML이었다. 현재 원 검색 코드에도50쪽 제한이 명시되어 있어 이 경로의 range_limit=50*page_size는 유지한다. 정제 근거는 euclid-ajax-boundary/terms 관련 보고와 limitations-audit/root-image-review.md에 보존한다.
 
 APS 공개 Harvest의 start가limit의 배수여야 한다는 구현 제약을 제거했다. data/validation/20260912T185844Z-aps-public-window-mcp.json은 처음4건과start1/limit2의 정확한 ID 겹침, 원 페이지2개·내보내기2개·다음start3을 completed=true로 확인했다. 원 total은 제공되지 않아null이고 마지막 원 페이지 안에 아직 선택하지 않은 행도 has_more에 반영한다. 후속 페이지 실패·중복 ID는 정확한 창으로 성공하지 않고 확보분을partial로 보존한다. 중복 반례는 수정 전 실패·수정 후 통과했다. APS5·PQDT9·Euclid4·SIAM27검사가 통과했다.
+
+
+2026-09-13 KST, Numdam의 대체 DjVu를 현재 디코더가 없다는 이유로 기계 추출 미지원에 남겼던 판단을 다시 열었다. 기존139,763바이트 원파일에는 TXTz10개가 있었고 PyMuPDF 직접 열기는 FileDataError였다. 공식 DjVuLibre의 Windows 패키지를 기존7-Zip으로 전용 폴더에 풀자10쪽·첫 쪽 텍스트2,084바이트·39줄과 페이지 이미지가 생성됐다. 설치 프로그램이나 시스템 등록은 실행하지 않았다. Root가 이미지를 직접 열어 THREE COMPLEXITY FUNCTIONS와 DOI10.1051/ita/2011126을 판독했다.
+
+생산 경로에는 현재 공식 upstream의4847901fa2d81cdf8db89cc22f63ae5de85f963a를 고정하고 기존MSVC로 세 도구를 빌드했다. setup_djvu.py는 전용 data/tools/djvulibre에 소스·로그·실행 파일·라이선스·SHA-256을 보존한다. 세 standalone 도구의 합계는2,613,760바이트다. 각 실행 전에 저장 해시를 대조하며 원 DjVu는 임시 파일에 그대로 전달한다. 현재 코드의 BUNDLED·OLD_BUNDLED 분기는 참조 파일을 같은 원 묶음 안에서만 해석한다. Indirect DIRM, 단일 문서의INCL·NDIR은 외부 파일을 읽기 전에 구별해 중단한다. 원 텍스트 레이어를 읽고 새 OCR은 하지 않는다.
+
+limitations-audit/djvu-sdk.json은20:07:12.110452Z~20:07:20.899846Z의 fresh SDK다. basis는 previously_retrieved_native_djvu로 실제 기회수 원파일의 새로운 디코딩·MCP 전달을 검증하며 새 원격 다운로드로 표시하지 않는다. 전체10쪽·첫 쪽 제목/DOI·349,564바이트 PNG·MCP ImageContent1개, start1/count2의2·3쪽/next3, start9/count2의마지막10쪽/next없음이 completed=true였다. 잘못된 컨테이너·외부 component·잘못된selection·시간초과·원 stderr 비노출·후속 쪽 실패의앞부분/next_start 보존·디코더 해시 변조 거부를 포함한7검사와 공통core23검사가 통과했다. 공식 도구 기능은 https://djvu.sourceforge.net/doc/man/djvutxt.html 과 https://djvu.sourceforge.net/doc/man/ddjvu.html 에서 확인했다.

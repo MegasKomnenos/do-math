@@ -24,7 +24,7 @@
 | CORE | core | api | partial | source_guide, search, fetch, export | live_mcp_name_metadata_abstract_and_restricted_fulltext_notice |
 | Project Euclid | project-euclid | playwright | partial | source_guide, search, fetch, export | live_mcp_21_condition_semantics_window_50_page_bound_citations_pdf_supplement |
 | EuDML | eudml | api | partial | source_guide, search, fetch, export | live_mcp_cql_rss_extract_nlm_fetch |
-| Numdam | numdam | fixed: OAI/citation API; native search/DOI resolution Playwright | partial | source_guide, search, fetch, export | live_mcp_11_conditions_native_search_citations_jats_pdf_djvu_pagination |
+| Numdam | numdam | fixed: OAI/citation API; native search/DOI resolution Playwright | partial | source_guide, search, fetch, export | live_mcp_11_conditions_native_search_citations_jats_pdf_djvu_page_text_image_windows |
 | Mathlib | mathlib | api | partial | source_guide, search, fetch, export | live_mcp_pinned_source_search_file_fetch_line_comparison |
 | Archive of Formal Proofs | afp | api | partial | source_guide, search, fetch, export | live_mcp_entry_search_pinned_metadata_and_proof_source_fetch_extract |
 | Mathematical Components | math-comp | api | partial | source_guide, search, fetch, export | live_mcp_pinned_source_search_file_fetch_line_comparison |
