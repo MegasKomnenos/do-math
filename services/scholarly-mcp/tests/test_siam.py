@@ -61,6 +61,8 @@ class SIAMContract(unittest.TestCase):
             'field1':'Title','text1':'algebra','ConceptID':['',''],'publication':'','Ppub':'','PubType':'103','sortBy':'EpubDate','pageSize':50,
         })
         self.assertEqual(search_params('algebra',{}),{'AllField':'algebra','pageSize':20})
+        many=search_params('algebra',{'field':'Title','terms':[{'field':'Author','query':'Stetter'}]*51})
+        self.assertEqual(many['field52'],'Contrib');self.assertEqual(many['text52'],'Stetter')
 
     def test_unconfirmed_boolean_rows_and_invalid_native_options_are_rejected(self):
         from siam import search_params
@@ -68,7 +70,6 @@ class SIAMContract(unittest.TestCase):
         invalid=[
             {'operator':'AND'}, {'sort':'newest'}, {'sort':'oldest'},
             {'field':'Funder'}, {'content_type':'proceeding'}, {'page_size':10},
-            {'terms':[{'field':'Author','query':'Stetter'}]*51},
             {'terms':[{'field':'Funder','query':'NSF'}]}, {'topic':''}, {'publication':''},
             {'published_within':'decade'},
             {'published_within':'year','published_after':{'year':2024,'month':1},'published_before':{'year':2026,'month':9}},

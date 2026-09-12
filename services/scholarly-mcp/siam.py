@@ -36,8 +36,8 @@ def search_params(query,options):
     else:
         params={'AllField':query,'pageSize':size}
     terms=options.get('terms',[])
-    if not isinstance(terms,list) or len(terms)>50:
-        raise ServiceError('invalid_options','This adapter supports up to 51 ordered SIAM search fields')
+    if not isinstance(terms,list):
+        raise ServiceError('invalid_options','Additional SIAM search fields must be an array')
     for index,term in enumerate(terms,2):
         if not isinstance(term,dict) or set(term)!={'field','query'} or term['field'] not in FIELDS or not isinstance(term['query'],str) or not term['query'].strip():
             raise ServiceError('invalid_options','Each additional SIAM term requires a documented field and non-empty query')
@@ -321,12 +321,14 @@ def search(publisher,query,*,options,start=0,limit=20,cursor=None,export=None):
         params['startPage']=number
         requested=following or base+'/action/doSearch?'+urlencode(params,doseq=True)
         response=goto_source(page,requested,profile.hosts,wait_until='domcontentloaded',timeout=45000)
+        if response is not None and response.status>=400:
+            raise ServiceError('provider_error','SIAM rejected the requested native search expression',http_status=response.status)
         try:
             page.wait_for_function("() => document.querySelector('li.search-item,.search-result__no-result') || /Results:\\s*0\\b|No results/i.test(document.body.innerText)",timeout=SEARCH_READY_TIMEOUT)
         except Exception as error:
             if is_access_challenge(page.content()):
                 raise ServiceError('publisher_access_challenge','SIAM displayed an access verification page',status='restricted') from None
-            raise ServiceError('search_response_not_received','SIAM did not provide a native search response',error_type=type(error).__name__) from None
+            raise ServiceError('search_response_not_received','SIAM did not provide a native search response',error_type=type(error).__name__,http_status=response.status if response else None) from None
         actual=page.url
         observed=parse_qs(urlsplit(actual).query,keep_blank_values=True)
         expected={key:[str(item) for item in value] if isinstance(value,list) else [str(value)] for key,value in params.items()}

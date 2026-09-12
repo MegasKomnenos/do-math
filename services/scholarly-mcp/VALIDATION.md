@@ -536,3 +536,12 @@ swh-files-cache-sdk.json은18:35:06.561279Z~18:35:15.107626Z의 fresh SDK다. va
 호출 제한 시간이 지난 뒤 swh-files-sdk.json의19:07:12.765400Z~19:09:48.638738Z는 source_and_verified_cache 모드로 실제 재개했다. 이전directory1개·file5개를 재사용하고 나머지를 원 API에서 회수해 총20directory·92file·112manifest·2,763,387바이트와 추출을 completed=true로 검증했다. 기존 new 상태의 Vault 압축본과 개별 객체의 완료를 구별한다. 재조회 권고는 client_poll_interval_for_anonymous_api_budget으로 출처를 명시하고60초로 조정했다. 자료원이 완료시각을 제시한 것으로 해석하지 않는다.
 
 SWH manifest의 중첩 directory mode 누락과 비UTF-8 Git 파일명의 JSON 직렬화 오류는 독립 검토에서 재현해 수리했다. 원 mode와 root의null을 보존하고, 비UTF-8 경로는 escaped 표시·path_bytes_hex로 왕복한다. 원 JSON의 surrogate escape를 유효한 UTF-8 JSON으로 보존하며 정상 Unicode는 변하지 않는다. 디렉터리·파일·캐시·Vault/Git의28검사와 공통core23검사가 통과했고 root-api-review.json/md의 최종 판정도 PASS다. 심볼릭 링크나 보존 코드를 실행하지 않는다.
+
+
+2026-09-13 KST, 검색 조건 수를 자료원 한계로 오인한 네 곳을 교정했다. PQDT는 그룹당20값, Numdam은 전체10행, SIAM은 전체51필드의 구현 상한을 제거했다. 실제 PQDT의21개 주제 include는3,335건, Numdam11조건은4,804건, SIAM52필드는17건을 반환했다. PQDT의 실패 화면을 root가 직접 판독했을 때 이미21개 OR 조건과 정상 결과가 있었으므로 원 검색의 거절이 아니었다. 원 applied chip의 방향 표시 문자·공백·복수 조건의 바깥 괄호 차이를 검증기가 잘못 거부한 것이다. 후속 독립 반례에서 이름 자체의 OR·NOT·괄호를 연산자로 잘못 분해하는 문제도 발견해 이름을 그대로 비교하도록 수리했다. 같은 그룹의 include/exclude와 여러 그룹의 중복 occurrence는 보존한다. 저장된 실제21조건 HTML도 새 검사를 통과했다.
+
+Project Euclid의 원 폼은10행 뒤 Add 제어가 사라지지만 같은 검색 endpoint는 더 긴 원 검색식을 처리했다. 처음10개 또는20개를 모두 불일치 OR 조건으로 두고 마지막11번째·21번째 조건만 complexity 또는 TITLE:(complexity)로 바꾸어 각각7,662건·2,806건을 확인했다. 마지막 AND 불일치·NOT 자기조건의0건도 대조해 단순히 같은 말을 반복한 요청을 성공 증거로 삼지 않았다. 첫10행은 원 폼으로 직렬화하고 추가 조건은 그 FIELD:(query)·AND/OR/NOT 문법으로 연결하며 필드·연산자·값의 보존을 대조한다. data/access-research/range-cap-audit-live.json의 새 SDK는21조건7,662건, 마지막 TITLE만 양성인2,806건, 같은식에2020–2025년·PubDateDesc·start24/limit2를 결합한239건을 completed=true로 검증했다.
+
+Euclid의 페이지 제한은 별도로 확인했다. 재구성 URL의 실패 화면에는 hCaptcha가 있었으므로 그0행을 페이지 상한의 증거로 사용하지 않는다. 정상 headed 세션에서는50쪽의 AJAX가200·전체7,662·100행을 반환했다. 같은 원 AJAX 요청의 page만51로 바꾸면200·전체0·0행·빈 HTML이었다. 현재 원 검색 코드에도50쪽 제한이 명시되어 있어 이 경로의 range_limit=50*page_size는 유지한다. 정제 근거는 euclid-ajax-boundary/terms 관련 보고와 limitations-audit/root-image-review.md에 보존한다.
+
+APS 공개 Harvest의 start가limit의 배수여야 한다는 구현 제약을 제거했다. data/validation/20260912T185844Z-aps-public-window-mcp.json은 처음4건과start1/limit2의 정확한 ID 겹침, 원 페이지2개·내보내기2개·다음start3을 completed=true로 확인했다. 원 total은 제공되지 않아null이고 마지막 원 페이지 안에 아직 선택하지 않은 행도 has_more에 반영한다. 후속 페이지 실패·중복 ID는 정확한 창으로 성공하지 않고 확보분을partial로 보존한다. 중복 반례는 수정 전 실패·수정 후 통과했다. APS5·PQDT9·Euclid4·SIAM27검사가 통과했다.

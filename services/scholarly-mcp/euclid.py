@@ -3,7 +3,7 @@ import csv,io,json,re
 from urllib.parse import urljoin,urlsplit,parse_qs,urlencode,urlunsplit,unquote
 from bs4 import BeautifulSoup
 from scholarly import ServiceError,encoded,bibliography
-from browser_adapters import clean_html,goto_source,dismiss_cookies,require_source_url
+from browser_adapters import clean_html,goto_source,dismiss_cookies,require_source_url,is_access_challenge
 
 
 def records(raw,base):
@@ -38,6 +38,32 @@ def records(raw,base):
 
 
 FIELDS=('ALL','ABSTRACT','AUTHORNAME','AFFILIATION','DOI_ISSN_ISBN','FIGURETABLECAPTIONS','KEYWORDS','TITLE')
+
+
+def native_clause(term):
+    """Serialize one advanced row using the syntax emitted by Euclid's form."""
+    clause='('+term['query']+')'
+    field=term.get('field','ALL')
+    return clause if field=='ALL' else field+':'+clause
+
+
+def extend_native_query(prefix,terms):
+    expression=prefix
+    for term in terms:
+        expression+=' '+term.get('operator','AND')+' '+native_clause(term)
+    return expression
+
+
+def retains_native_terms(expression,terms):
+    offset=0
+    for index,term in enumerate(terms):
+        clause=native_clause(term);position=expression.find(clause,offset)
+        if position<0:return False
+        between=re.sub(r'[()\s]','',expression[offset:position])
+        expected='' if index==0 else term.get('operator','AND')
+        if between!=expected:return False
+        offset=position+len(clause)
+    return not re.sub(r'[()\s]','',expression[offset:])
 
 
 def citation(adapter,page,identifier,format='bibtex'):
@@ -98,8 +124,8 @@ def search(adapter,query,*,options,start=0,limit=20,cursor=None,export=None):
     if not isinstance(options.get('terms',[]),list) or not isinstance(options.get('publication_titles',[]),list) or any(not isinstance(title,str) for title in options.get('publication_titles',[])):
         raise ServiceError('invalid_options','terms and publication_titles must be lists')
     terms=[{'query':query,'field':options.get('field','ALL')}]+options.get('terms',[])
-    if len(terms)>20 or any(not isinstance(t,dict) or set(t)-{'query','field','operator'} or not isinstance(t.get('query'),str) or t.get('field','ALL') not in FIELDS or t.get('operator','AND') not in ('AND','OR','NOT') for t in terms):
-        raise ServiceError('invalid_options','Use up to 20 terms with query, field and AND/OR/NOT operator')
+    if any(not isinstance(t,dict) or set(t)-{'query','field','operator'} or not isinstance(t.get('query'),str) or t.get('field','ALL') not in FIELDS or t.get('operator','AND') not in ('AND','OR','NOT') for t in terms):
+        raise ServiceError('invalid_options','Each term needs query, field and AND/OR/NOT operator')
     for key in ('year_from','year_to'):
         if key in options and (type(options[key]) is not int or not 1000<=options[key]<=9999):
             raise ServiceError('invalid_options','Publication years must be four-digit integers')
@@ -117,9 +143,9 @@ def search(adapter,query,*,options,start=0,limit=20,cursor=None,export=None):
         dismiss_cookies(page)
         if set(options)-{'sort','page_size'}:
             page.locator('a').filter(has_text=re.compile(r'^Advanced Search$')).filter(visible=True).last.click(timeout=15000)
-            for i,term in enumerate(terms):
+            for i,term in enumerate(terms[:10]):
                 if not page.locator('#advSearchText'+str(i)).count():
-                    page.locator('#advSearchAddField').click()
+                    page.locator('#advSearchAddField:visible').last.click()
                 page.locator('#advSearchText'+str(i)).fill(term['query'])
                 page.locator('#advSearchField'+str(i)).select_option(term.get('field','ALL'))
                 if i:
@@ -144,8 +170,17 @@ def search(adapter,query,*,options,start=0,limit=20,cursor=None,export=None):
         request_params=parse_qs(urlsplit(search_url).query)
         if not request_params.get('term'):
             raise ServiceError('query_mismatch','Project Euclid did not retain the submitted search expression')
-        if any(term['query'].strip() not in request_params['term'][0] for term in terms):
+        if not retains_native_terms(request_params['term'][0],terms[:10]):
             raise ServiceError('query_mismatch','Project Euclid search expression does not retain every submitted term')
+        expanded_native_query=False
+        if len(terms)>10:
+            expression=extend_native_query(request_params['term'][0],terms[10:])
+            request_params['term']=[expression]
+            if not retains_native_terms(expression,terms):
+                raise ServiceError('query_mismatch','Project Euclid extended search expression does not retain every submitted term')
+            parsed=urlsplit(search_url)
+            search_url=urlunsplit((parsed.scheme,parsed.netloc,parsed.path,urlencode(request_params,doseq=True),''))
+            expanded_native_query=True
         if not options.get('publication_titles') and request_params.get('PubTitle'):
             raise ServiceError('query_mismatch','Project Euclid retained an unrequested publication filter')
         for key,native in (('year_from','startYear'),('year_to','endYear')):
@@ -160,12 +195,18 @@ def search(adapter,query,*,options,start=0,limit=20,cursor=None,export=None):
         selected=[]
         total=None
         while True:
-            if wanted_page!=1 or set(options)&{'sort','page_size'}:
+            if wanted_page!=1 or set(options)&{'sort','page_size'} or expanded_native_query:
                 parsed=urlsplit(search_url)
                 params={**request_params,'page':[str(wanted_page)],'getFacetCountOverride':['true']}
                 goto_source(page,urlunsplit((parsed.scheme,parsed.netloc,parsed.path,urlencode(params,doseq=True),'')),adapter.profile.hosts,wait_until='domcontentloaded',timeout=45000)
-            page.wait_for_function("() => /[\\d,]+ results found/.test(document.querySelector('#searchHeaderTotalResults')?.textContent || '')",timeout=60000)
-            page.wait_for_function("() => !document.querySelector('#SearchLoadMoreWait') || getComputedStyle(document.querySelector('#SearchLoadMoreWait')).display === 'none'",timeout=60000)
+            try:
+                page.wait_for_function("() => /[\\d,]+ results found/.test(document.querySelector('#searchHeaderTotalResults')?.textContent || '')",timeout=60000)
+                page.wait_for_function("() => !document.querySelector('#SearchLoadMoreWait') || getComputedStyle(document.querySelector('#SearchLoadMoreWait')).display === 'none'",timeout=60000)
+            except Exception as error:
+                raw=page.content()
+                if is_access_challenge(raw) or 'Additional security check is required' in page.locator('body').inner_text():
+                    raise ServiceError('publisher_access_challenge','Project Euclid returned an access verification page',status='restricted',page=wanted_page) from None
+                raise ServiceError('search_page_not_ready','Project Euclid requested result page did not render',page=wanted_page,error_type=type(error).__name__) from None
             raw=clean_html(page.content(),adapter.store.sanitizer)
             proof=adapter.store.put(raw,'text/html',adapter.source,page.url,role='search_page',query=query,options=options)
             evidence.append(proof)
@@ -206,5 +247,8 @@ def search(adapter,query,*,options,start=0,limit=20,cursor=None,export=None):
                 'native_query':request_params,'start':start,'requested':limit,'received':len(selected),'total':total,
                 'has_more':more,'next':{'start':start+len(selected)} if more and start+len(selected)<range_limit else None,'range_limit':range_limit,
                 'records':artifact,'export':exported,'evidence':evidence,'facets':filters,'preview':[{k:r[k] for k in ('id','title')} for r in selected[:3]]}
+    except ServiceError:raise
+    except Exception as error:
+        raise ServiceError('search_interaction_failed','Project Euclid search controls did not complete the requested interaction',error_type=type(error).__name__) from None
     finally:
         context.close()

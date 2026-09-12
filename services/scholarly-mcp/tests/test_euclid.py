@@ -30,5 +30,26 @@ class EuclidContract(unittest.TestCase):
         self.assertEqual(rows[0]['title'],'TWO COMPLEX COMBINATIONS AND COMPLEX INTERSECTION BODIES')
         self.assertIn('dual Brunn-Minkowski',rows[0]['abstract_html'])
 
+    def test_extended_native_expression_uses_observed_field_and_operator_syntax(self):
+        from euclid import native_clause,extend_native_query,retains_native_terms
+        self.assertEqual(native_clause({'query':'complexity','field':'ALL'}),'(complexity)')
+        self.assertEqual(native_clause({'query':'complexity','field':'TITLE'}),'TITLE:(complexity)')
+        self.assertEqual(
+            extend_native_query('(first)',[
+                {'query':'second','field':'ABSTRACT','operator':'OR'},
+                {'query':'third','field':'KEYWORDS','operator':'NOT'}]),
+            '(first) OR ABSTRACT:(second) NOT KEYWORDS:(third)')
+        terms=[{'query':'complexity','field':'ALL'},{'query':'complexity','field':'TITLE','operator':'OR'}]
+        self.assertTrue(retains_native_terms('(complexity) OR TITLE:(complexity)',terms))
+        self.assertFalse(retains_native_terms('(complexity)',terms))
+        nested=[{'query':'(complexity)','field':'ALL'},{'query':'complexity','field':'ALL','operator':'AND'}]
+        self.assertTrue(retains_native_terms('((complexity)) AND (complexity)',nested))
+        wrong_operator=[{'query':'first','field':'ALL'},{'query':'complexity','field':'TITLE','operator':'AND'}]
+        self.assertFalse(retains_native_terms('(first) OR TITLE:(complexity)',wrong_operator))
+        mixed='((((((marker0) OR ABSTRACT:(marker1))  NOT AUTHORNAME:(marker2) AND AFFILIATION:(marker3))  OR DOI_ISSN_ISBN:(marker4))  NOT FIGURETABLECAPTIONS:(marker5) AND KEYWORDS:(marker6))  OR TITLE:(marker7) OR TITLE:(marker8))  NOT ABSTRACT:(marker9)'
+        fields=('ALL','ABSTRACT','AUTHORNAME','AFFILIATION','DOI_ISSN_ISBN','FIGURETABLECAPTIONS','KEYWORDS','TITLE','TITLE','ABSTRACT')
+        operators=('AND','OR','NOT','AND','OR','NOT','AND','OR','OR','NOT')
+        self.assertTrue(retains_native_terms(mixed,[{'query':f'marker{i}','field':field,'operator':operators[i]} for i,field in enumerate(fields)]))
+
 if __name__=='__main__':
     unittest.main()

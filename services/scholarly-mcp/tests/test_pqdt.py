@@ -28,6 +28,8 @@ class PQDTContract(unittest.TestCase):
                     {'facets':{'subject':['x']}},{'facets':{'subjects':{'include':'x'}}},
                     {'facets':{'subjects':{'include':['x'],'exclude':['x']}}},{'export_content':'all'}):
             with self.assertRaises(Exception):search_options(bad)
+        many=[str(index) for index in range(21)]
+        self.assertEqual(len(search_options({'facets':{'subjects':{'include':many}}})['facets']['subjects']['include']),21)
 
     def test_native_text_and_rtf_exports_match_the_selected_document(self):
         from pqdt import validate_native_export
@@ -84,6 +86,15 @@ class PQDTContract(unittest.TestCase):
         request={'include':['mathematics'],'exclude':[]}
         validate_facet_transition([],['mathematics'],request,'subjects')
         with self.assertRaises(Exception):validate_facet_transition([],['logic'],request,'subjects')
+        validate_facet_transition([],['binary OR operation'],{'include':['binary OR operation'],'exclude':[]},'index_terms')
+        validate_facet_transition([],['(mathematics)'],{'include':['(mathematics)'],'exclude':[]},'index_terms')
+        opaque='''<div id="sortType-combo">Relevance</div><span class="applied">binary OR operation</span><span class="applied">(mathematics)</span>'''
+        validate_filter_page(opaque,{'sort':'relevance','export_content':'citation_abstract_indexing','facets':{
+            'subjects':{'include':['binary OR operation'],'exclude':[]},'index_terms':{'include':['(mathematics)'],'exclude':[]}}})
+        validate_facet_transition([],['mathematics OR computer science'],{'include':['mathematics','computer science'],'exclude':[]},'subjects')
+        unwrapped='''<div id="sortType-combo">Relevance</div><span class="applied">mathematics OR computer science</span>'''
+        validate_filter_page(unwrapped,{'sort':'relevance','export_content':'citation_abstract_indexing','facets':{
+            'subjects':{'include':['mathematics','computer science'],'exclude':[]}}})
 
     def test_external_account_exports_stop_before_opening_the_browser(self):
         from pqdt import PQDT

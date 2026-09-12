@@ -54,8 +54,6 @@ def search_options(options):
                 item[mode]=cleaned
             if set(item['include'])&set(item['exclude']):
                 raise ServiceError('invalid_options','The same PQDT facet label cannot be included and excluded')
-            if len(item['include'])+len(item['exclude'])>20:
-                raise ServiceError('invalid_options','Use at most 20 include and exclude values in one PQDT facet')
             if item['include'] or item['exclude']:normalized[field]=item
         if normalized:result['facets']=normalized
     return result
@@ -176,8 +174,39 @@ def _facet_expression(value):
     return ' '.join(parts)
 
 
+def _facet_expression_variants(value):
+    def clauses(items):
+        if not items:return ['']
+        joined=' OR '.join(items)
+        return [items[0]] if len(items)==1 else [joined,'('+joined+')']
+    return {_normalized_filter_expression(' '.join(part for part in (include,('NOT '+exclude if exclude else '')) if part))
+            for include in clauses(value.get('include',[])) for exclude in clauses(value.get('exclude',[]))}
+
+
+def _facet_multiset_matches(observed,requested):
+    remaining=Counter(observed)
+    choices=sorted((_facet_expression_variants(value) for value in requested),key=len)
+    def assign(index):
+        if index==len(choices):return not remaining
+        for expression in choices[index]:
+            if remaining[expression]:
+                remaining[expression]-=1
+                if not remaining[expression]:del remaining[expression]
+                if assign(index+1):return True
+                remaining[expression]+=1
+        return False
+    return assign(0)
+
+
+def _normalized_filter_expression(value):
+    return ' '.join(re.sub(r'[\u200e\u200f]','',value).split()).replace('( ','(').replace(' )',')')
+
+
 def validate_facet_transition(before,after,requested,field):
-    if Counter(after)!=Counter(before)+Counter([_facet_expression(requested)]):
+    before=Counter(_normalized_filter_expression(value) for value in Counter(before).elements())
+    after=Counter(_normalized_filter_expression(value) for value in Counter(after).elements())
+    added=after-before
+    if any(after[key]<count for key,count in before.items()) or sum(after.values())!=sum(before.values())+1 or sum(added.values())!=1 or next(iter(added)) not in _facet_expression_variants(requested):
         raise ServiceError('filter_mismatch','PQDT facet application did not add exactly the selected group expression',field=field)
 
 
@@ -191,9 +220,12 @@ def validate_filter_page(raw,options):
         starts=soup.select_one('#startingDate');ends=soup.select_one('#endingDate')
         if starts is None or ends is None or starts.get('value')!=first or ends.get('value')!=last:
             raise ServiceError('filter_mismatch','PQDT did not retain the publication date range')
-    for value in options.get('facets',{}).values():expected.append(_facet_expression(value))
-    applied=[' '.join(node.get_text(' ',strip=True).split()) for node in soup.select('span.applied')]
-    if Counter(applied)!=Counter(expected):raise ServiceError('filter_mismatch','PQDT did not retain every include and exclude filter occurrence')
+    requested_facets=list(options.get('facets',{}).values())
+    applied=[_normalized_filter_expression(node.get_text(' ',strip=True)) for node in soup.select('span.applied')]
+    observed_dates=Counter(value for value in applied if re.fullmatch(r'\d{4}-\d{2}-\d{2} - \d{4}-\d{2}-\d{2}',value))
+    observed_facets=Counter(value for value in applied if value not in observed_dates)
+    if observed_dates!=Counter(map(_normalized_filter_expression,expected)) or not _facet_multiset_matches(observed_facets,requested_facets):
+        raise ServiceError('filter_mismatch','PQDT did not retain every include and exclude filter occurrence')
 
 
 def apply_search_options(page,options,facets):
@@ -251,14 +283,16 @@ def apply_search_options(page,options,facets):
 
 
 def clear_result_filters(page):
-    for _ in range(20):
+    while True:
         applied=page.locator('span.applied').filter(visible=True)
         if not applied.count():return
         clear=applied.first.locator('a[title^="Clear "]').filter(visible=True).first
         if not clear.count():raise ServiceError('filter_reset_failed','PQDT retained a result filter without its clear control')
+        before=page.locator('span.applied a[title^="Clear "]').count()
         with page.expect_navigation(wait_until='load',timeout=60000):clear.click()
         page.locator('#pqResultsCount').wait_for(timeout=60000);page.wait_for_timeout(500)
-    raise ServiceError('filter_reset_failed','PQDT retained too many result filters to reset safely')
+        if page.locator('span.applied a[title^="Clear "]').count()>=before:
+            raise ServiceError('filter_reset_failed','PQDT filter clear action made no progress')
 
 
 def load_visible_facets(page):

@@ -7,7 +7,7 @@
 | Scopus | scopus | playwright | partial | source_guide, search, fetch, export | live_mcp_search_fetch_references_pagination_cited_by_extract |
 | ACM Digital Library | acm-dl | playwright | partial | source_guide, search, fetch, export | live_mcp_edit_query_boolean_combined_filters_native_exports_html_tex_pdf_supplement_and_identity |
 | IEEE Xplore / IEL | ieee-xplore | playwright | partial | source_guide, search, fetch, export | live_mcp_native_exports_filtered_windows_typeahead_pdf_html_identity_references_media |
-| PQDT Global | pqdt | playwright | partial | source_guide, search, fetch, export | live_mcp_filtered_windows_zero_seven_exports_extract_fulltext_pdf_supplement_png |
+| PQDT Global | pqdt | playwright | partial | source_guide, search, fetch, export | live_mcp_21_facet_values_filtered_windows_zero_seven_exports_fulltext_supplement |
 | zbMATH Open | zbmath | api | partial | source_guide, search, fetch, export | live_mcp_arbitrary_window_doi_legacy_link_license_state_references |
 | arXiv | arxiv | api | partial | source_guide, search, fetch, export | live_mcp_search_pinned_html_source_archive_tex_extract |
 | DBLP | dblp | api | partial | source_guide, search, fetch, export | live_mcp_native_timed_refresh_search_seven_exports_name_and_record_identity |
@@ -22,9 +22,9 @@
 | OpenCitations | opencitations | api | partial | source_guide, search, fetch, export | live_mcp_native_csv_window_oci_fetch_reference_count |
 | Unpaywall | unpaywall | api | deferred | source_guide | public_endpoint_contact_requirement_observed |
 | CORE | core | api | partial | source_guide, search, fetch, export | live_mcp_name_metadata_abstract_and_restricted_fulltext_notice |
-| Project Euclid | project-euclid | playwright | partial | source_guide, search, fetch, export | live_mcp_advanced_search_four_citations_pdf_and_supplement_zip_text_extract |
+| Project Euclid | project-euclid | playwright | partial | source_guide, search, fetch, export | live_mcp_21_condition_semantics_window_50_page_bound_citations_pdf_supplement |
 | EuDML | eudml | api | partial | source_guide, search, fetch, export | live_mcp_cql_rss_extract_nlm_fetch |
-| Numdam | numdam | fixed: OAI/citation API; native search/DOI resolution Playwright | partial | source_guide, search, fetch, export | live_mcp_native_search_citations_jats_pdf_djvu_fetch_pagination |
+| Numdam | numdam | fixed: OAI/citation API; native search/DOI resolution Playwright | partial | source_guide, search, fetch, export | live_mcp_11_conditions_native_search_citations_jats_pdf_djvu_pagination |
 | Mathlib | mathlib | api | partial | source_guide, search, fetch, export | live_mcp_pinned_source_search_file_fetch_line_comparison |
 | Archive of Formal Proofs | afp | api | partial | source_guide, search, fetch, export | live_mcp_entry_search_pinned_metadata_and_proof_source_fetch_extract |
 | Mathematical Components | math-comp | api | partial | source_guide, search, fetch, export | live_mcp_pinned_source_search_file_fetch_line_comparison |
@@ -42,9 +42,9 @@
 | Taylor & Francis | taylor-francis | playwright | partial | source_guide, search, fetch, export | live_mcp_search_citation_pdf_dublin_doi_supplement_zip_tables_nested_source |
 | Wiley | wiley | playwright | partial | source_guide, search, fetch, export | live_mcp_dynamic_advanced_rows_citations_pdf_zero_and_supplementary_zip |
 | AIP | aip | playwright | partial | source_guide, search, fetch, export | live_mcp_advanced_search_citation_pdf_and_explicit_figshare_supplement_reference |
-| APS 공개 접근 | aps | api | partial | source_guide, search, fetch, export | live_mcp_open_access_feed_metadata_abstract_pdf_fetch |
+| APS 공개 접근 | aps | api | partial | source_guide, search, fetch, export | live_mcp_arbitrary_feed_window_native_pages_metadata_abstract_pdf |
 | IOP | iop | fixed: newest RSS API; other sorts/extra filters/document Playwright | partial | source_guide, search, fetch, export | live_mcp_rss_ranked_filters_native_search_citations; pdf_html_tex_figures_supplement_pdf_verified |
-| SIAM | siam | playwright (전용 Chrome 창/CDP) | partial | source_guide, search, fetch, export | live_mcp_advanced_terms_topic_publication_dates_five_citations_cross_page_book_fetch_zero |
+| SIAM | siam | playwright (전용 Chrome 창/CDP) | partial | source_guide, search, fetch, export | live_mcp_52_fields_advanced_search_citations_book_zero; institution_auth_path_unavailable |
 | KNU FRIC | knu-fric | playwright | partial | source_guide, search, fetch, export | live_mcp_catalogue_pagination_issn_fetch_zero_result |
 | KNU 개별 구독 저널 목록 | individual-subscription | playwright | partial | source_guide, search, fetch, export | live_mcp_two_catalogues_95_holdings_six_siam_csv_range_year_fetch_zero |
 | 학회·저널 공식 사이트 | society-journal | fixed: public document Playwright; OJS native citation API | partial | source_guide, fetch, export | live_mcp_public_journal_metadata_abstract_pdf_native_citations; shared_dynamic_renderer_verified |

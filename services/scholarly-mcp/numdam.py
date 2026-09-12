@@ -105,8 +105,6 @@ class Numdam(NumdamOAI):
         if not isinstance(options.get('terms', []), list):
             raise ServiceError('invalid_options', 'terms must be an array of search conditions')
         terms = [{'field': options.get('field', 'all'), 'query': query}] + options.get('terms', [])
-        if len(terms) > 10:
-            raise ServiceError('invalid_options', 'Use at most ten search fields')
         for index, term in enumerate(terms):
             if not isinstance(term, dict) or set(term) - {'field', 'query', 'not', 'from', 'until'} or term.get('field') not in FIELDS:
                 raise ServiceError('invalid_options', 'Each term needs a supported field and query; date uses from/until')
@@ -119,7 +117,7 @@ class Numdam(NumdamOAI):
         page = self.gateway.public_page(self.source)
         goto_source(page, 'https://www.numdam.org/', self.hosts, wait_until='domcontentloaded', timeout=45000)
         for index, term in enumerate(terms):
-            if index:
+            if index and not page.locator(f'input[name="q{index}"]').count():
                 page.locator('#add-search-field').click()
             group = page.locator('.search-group').filter(has=page.locator(f'input[name="q{index}"]'))
             group.locator('button.dropdown-toggle').click()
