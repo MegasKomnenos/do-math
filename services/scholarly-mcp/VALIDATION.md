@@ -526,3 +526,13 @@ IEEE의 ieee-html-sdk.json은10488889의 원 HTML44,364자·heading18개·headin
 비Nature Springer의 independent-springer-sdk.json은 DOI10.1016/S1018-3639(18)30727-X의 본문7개·HTML86,902바이트·TeX13개·그림8개를 completed=true로 확인했다. Negative10.1007/s00037-008-0249-x의 도착·안정화·초록·PDF 영역·서지 이미지는 root가 직접 열어 판독했다. 기관 접근 표시와 PDF 제어가 있으므로 초기 paywall 설명을 철회했다. 이 관측에서 PDF 바이트는 검증하지 않았고 HTML 본문 SecN은0이었다. 초록·서지·PDF 제어와 HTML 전문을 구별하며 구체 근거는 independent-springer-negative.json과 root-image-review.md에 있다.
 
 공개 문서 WebDocuments는 script-only 응답을 격리된 공개 브라우저에서 렌더한다. 전역 unique h1과100자 하한을 제거하고 짧은 페이지·복수 heading·무제목 visible 페이지를 허용한다. 빈 로딩 상태·로그인·보안 확인은 성공하지 않으며 정제 source_page를 보존한다. OSF preprint의 main h1은 이 레이아웃에서 확인한 준비 신호다. 초기 중간 실행은 navigation shell의 제목 OSF를 너무 일찍 읽어 검증에 실패했으며 그 조건을 수리했다. independent-webdocuments-osf-sdk.json은 실제9apsq_v1의 정확한 제목·HTML168,088바이트·extract를 completed=true로 확인했다. IEEE·Wiley·publisher HTML·공개 문서의 결합52검사가 통과했다.
+
+2026-09-13 KST, Software Heritage의 특정 Vault 준비 대기를 개별 파일 회수 불가로 확대했던 범위를 다시 열었다. limitations-audit/swh-vault-timeline.json은18:02:01.952454Z 요청 뒤 약1.672초의HTTP200 JSON, 동일directory/status new/progress_message null을 기록한다. source directory/content API의 별도 실측은20개 directory의Git tree ID와92개 고유 blob·2,763,387바이트를 모두 대조했다. 이 단계의 자료는 swh-direct-tree-probe.json, swh-directory-integrity.json, swh-direct-files-probe.json에 보존한다.
+
+새 files part의 첫 SDK는5개 파일 뒤429여서 partial이었다. swh-files-sdk-rate-limited.json은 Retry-After가 없었던 이 실패를 보존한다. 공식 SWH FAQ의 익명 한도는 시간당120회다. 같은작업을 처음부터 반복해 이미 받은 객체를 다시 요청하지 않도록 ArtifactStore의검증된directory/content를 재사용한다. Source·role·exact HTTPS/native URI·저장 SHA-256·Git tree/blob 해시·원 길이/체크섬을 다시 대조한다. 조작된 manifest, 다른SWHID, 잘못된 provenance URI의 캐시는 받아들이지 않는다. 부분1파일+429 뒤 새adapter가 남은1파일만 요청하는 독립 반례 검증도 통과했다.
+
+swh-files-cache-sdk.json은18:35:06.561279Z~18:35:15.107626Z의 fresh SDK다. validation_mode=previously_retrieved_live_objects로 명시하고 실제 기회수20directory·92blob 전부를 재검증해112개 manifest 항목·2,763,387바이트와17줄 중2줄 추출을 completed=true로 확인했다. 이것을 신규 원격 호출 성공으로 표시하지 않는다.
+
+호출 제한 시간이 지난 뒤 swh-files-sdk.json의19:07:12.765400Z~19:09:48.638738Z는 source_and_verified_cache 모드로 실제 재개했다. 이전directory1개·file5개를 재사용하고 나머지를 원 API에서 회수해 총20directory·92file·112manifest·2,763,387바이트와 추출을 completed=true로 검증했다. 기존 new 상태의 Vault 압축본과 개별 객체의 완료를 구별한다. 재조회 권고는 client_poll_interval_for_anonymous_api_budget으로 출처를 명시하고60초로 조정했다. 자료원이 완료시각을 제시한 것으로 해석하지 않는다.
+
+SWH manifest의 중첩 directory mode 누락과 비UTF-8 Git 파일명의 JSON 직렬화 오류는 독립 검토에서 재현해 수리했다. 원 mode와 root의null을 보존하고, 비UTF-8 경로는 escaped 표시·path_bytes_hex로 왕복한다. 원 JSON의 surrogate escape를 유효한 UTF-8 JSON으로 보존하며 정상 Unicode는 변하지 않는다. 디렉터리·파일·캐시·Vault/Git의28검사와 공통core23검사가 통과했고 root-api-review.json/md의 최종 판정도 PASS다. 심볼릭 링크나 보존 코드를 실행하지 않는다.

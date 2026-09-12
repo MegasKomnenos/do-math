@@ -126,7 +126,7 @@ class Sanitizer:
 
 
 def encoded(value):
-    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8",errors="backslashreplace")
 
 
 def digest(data):

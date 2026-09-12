@@ -291,14 +291,16 @@ for identifier, repository in [("mathlib", "leanprover-community/mathlib4"), ("m
 
 SOURCES["software-heritage"].implementation = "partial"
 SOURCES["software-heritage"].usage = {
+    "files": "parts에 files를 지정하면 Vault 준비를 기다리지 않고 directory/content API의 원 객체를 회수한다. dir·rev와 그 트리를 가리키는 rel은 경로별 manifest를 반환한다. 각 file/symlink 행의 artifact를 extract로 읽는다. 디렉터리의 이름·원 mode·자식 ID를 Git tree 해시로, 파일은 길이·sha1_git·제공된 체크섬으로 검증한다. 심볼릭 링크는 대상 문자열 바이트를 보존하며 따라가지 않고, revision_reference는 별도 참조다. root mode는 부모 항목이 없어 null이다. 비 UTF-8 경로는 escaped 표시와 path_bytes_hex를 함께 보존한다. cnt 또는 content를 가리키는 rel은 그 원 파일을 반환한다. snapshot·origin에서 한 working tree가 필요하면 명확한 directory/revision을 먼저 선택한다.",
+    "verified_cache": "files 회수는 같은 ArtifactStore의 기존 객체를 재사용한다. source·역할·정확한 원 API URI를 대조하고 저장 SHA-256 및 Git tree/blob 해시와 원 체크섬을 다시 검사한다. cached_directories/cached_files는 재사용 수이며 원 retrieved_at을 유지한다. 새 자료와 기존 자료를 합쳐도 같은 content-addressed 대상임을 확인한다. 중간 오류는 확보한 manifest·파일과 함께 partial로 남기고 첫 429에서 추가 원격 요청을 중단한다. 같은 data-dir로 다시 요청하면 확보한 객체를 재사용하고 남은 객체를 요청한다.",
     "search": "query는 보존된 origin URL을 찾는 문자열이다. 결과는 원 저장소 주소와 Software Heritage의 보존 기록 링크다.",
     "options": {"with_visit": "방문 기록을 가진 origin으로 한정하는 서비스 조건"},
     "fetch": "swh:1:cnt|dir|rev|rel|snp:40자리해시, archive.softwareheritage.org/swh:… 또는 n2t.net/swh:… 링크, 원 저장소 URL. 일반 URL은 Software Heritage 안의 origin 식별자이며 외부 사이트를 방문하지 않는다. cnt는 metadata의 SWHID·길이·체크섬과 실제 전체 파일의 sha1_git를 대조한다. 오류 때 이미 받은 metadata를 보존한다.",
     "qualifiers": "origin·visit·anchor·path·lines를 보존하며 중복·잘못된 값을 거부한다. origin은 해독·정제하고 path는 URI 이스케이프 표기를 유지한다. 이 문맥의 사실관계는 검증하지 않아 context_verified=false다. path를 다른 파일의 선택 경로로 해석하지 않는다. cnt의 lines=9-15는 1부터 시작하는 포함 범위이며 lines=9는 한 줄이다. fulltext/supplementary의 기본 artifact는 선택한 조각, complete_content는 검증된 전체 파일이다. integrity는 전체 파일에 대한 검사다. 범위가 없으면 기본 artifact가 전체 파일이다. 범위 초과는 not_found와 전체 파일 참조를 남기며 잘라 맞추지 않는다.",
-    "archives": "dir의 fulltext/supplementary는 원 tar.gz 압축본이다. rev는 원 metadata의 directory에 해당하는 압축본을 반환하고 archive_selection에 그 관계를 남긴다. 준비된 압축본이 없으면 이메일 없이 생성을 요청한다. pending이면 retry_after_seconds 뒤 retry 입력으로 다시 조회한다. 전체 파일 내용·이름·권한·심볼릭 링크를 Git 트리 방식으로 해시해 디렉터리 SWHID와 대조한다. 불일치 또는 미지원 항목은 오류와 source_archive에 원 파일을 보존한다. extract로 목록을 읽고 selection에 정확한 경로를 주면 내부 파일 참조를 받는다. 그 참조를 다시 extract해 내용을 읽는다.",
+    "archives": "dir의 fulltext/supplementary는 원 tar.gz 압축본이다. rev는 원 metadata의 directory에 해당하는 압축본을 반환하고 archive_selection에 그 관계를 남긴다. 준비된 압축본이 없으면 이메일 없이 생성을 요청한다. pending은 준비 중 상태이며 retry 입력을 보존한다. retry_after_seconds=60은 이 서버의 재조회 간격 권고로 retry_basis에 구별하며 자료원의 완료 예정 시각이 아니다. 익명 API의 시간당120회 범위를 다른 호출과 함께 고려한다. 원 파일은 files 경로로도 회수할 수 있다. 전체 파일 내용·이름·권한·심볼릭 링크를 Git 트리 방식으로 해시해 디렉터리 SWHID와 대조한다. 불일치 또는 미지원 항목은 오류와 source_archive에 원 파일을 보존한다. extract로 목록을 읽고 selection에 정확한 경로를 주면 내부 파일 참조를 받는다.",
     "limits": "별도 자격 없는 공개 API. start는 0으로 두고 다음 페이지에는 반환된 next.cursor를 그대로 준다. limit 1..100. 전체 origin 검색 건수는 서비스가 주지 않아 total=null. 파일 바이트를 실행하지 않는다. octet-stream으로 받은 UTF-8/NUL 없는 내용은 text/plain으로 읽고 원 MIME도 남긴다. 줄 선택은 이런 UTF-8 content에 한정한다. rel은 원 target_type/target을 따라 디렉터리 또는 리비전의 트리를 회수하고 content 대상은 파일을 회수한다. archive_selection에 관계와 원 metadata 근거를 남긴다. 릴리스 연쇄는32개까지이며 순환·식별자 불일치를 거부한다. history는 dir·rev·rel·snp의 원 Git 압축본이다. snp의 fulltext/supplementary도 이 압축본을 반환한다. Git 객체 해시·연결 관계와 요청 객체를 대조하고 snapshot은 전체 브랜치 metadata의 해시와 압축본 refs도 대조한다. dir의 Git 형식에는 디렉터리를 가리키는 합성 커밋이 하나 있다. 검사에 Git 실행 파일이 필요하지만 보존 소스·설정·훅을 실행하지 않는다. 원 저자의 이메일이 없는 tag는 missingEmail 형식 경고를 보존하며 객체 무결성 검사와 구별한다. 트리 검증은 일반 파일·디렉터리·심볼릭 링크를 지원한다. 하드 링크 등 다른 항목은 원 압축본과 미지원 상태를 반환한다.",
-    "examples": [{"tool": "search", "arguments": {"source": "software-heritage", "query": "mathlib", "limit": 2}}, {"tool": "fetch", "arguments": {"source": "software-heritage", "target": "https://github.com/leanprover-community/mathlib4", "parts": ["metadata"]}}],
-    "official": ["https://archive.softwareheritage.org/api/"],
+    "examples": [{"tool": "fetch", "arguments": {"source": "software-heritage", "target": "swh:1:rel:fc8e44c5bb3fabe81e5ebe46ac013a2510271616", "parts": ["metadata","files"]}}, {"tool": "search", "arguments": {"source": "software-heritage", "query": "mathlib", "limit": 2}}],
+    "official": ["https://archive.softwareheritage.org/api/", "https://docs.softwareheritage.org/devel/faq/index.html#what-are-the-usage-limits-for-swh-apis"],
 }
 
 SOURCES["drops"].implementation = "partial"
@@ -723,7 +725,7 @@ for identifier, level in {
     "author-repository": "live_mcp_public_author_pdf_dynamic_document_and_page_links",
     "society-journal": "live_mcp_public_journal_metadata_abstract_pdf_native_citations; shared_dynamic_renderer_verified",
     "numdam": "live_mcp_native_search_citations_jats_pdf_djvu_fetch_pagination",
-    "software-heritage": "live_mcp_verified_content_trees_git_history_snapshot_and_release; direct_release_flat_pending",
+    "software-heritage": "live_mcp_verified_tree_files_cache_resume_and_native_git_archives; selected_flat_job_unprepared",
     "openalex": "live_mcp_arbitrary_window_group_cursor_abstract_relationships_name_doi",
     "core": "live_mcp_name_metadata_abstract_and_restricted_fulltext_notice",
     "semantic-scholar": "live_mcp_search_extract; new_workflow_rate_limited; schema_regressions",

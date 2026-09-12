@@ -142,7 +142,8 @@ def git_archive(adapter,core,raw,evidence):
         job,proof=adapter.request(url,json_body={})
     if not isinstance(job,dict) or job.get('swhid')!=core or job.get('status') not in ('new','pending','done','failed'):
         raise ServiceError('archive_identity_mismatch','Vault response identifies a different Git archive task',evidence=proof)
-    if job['status'] in ('new','pending'):return {'status':'pending','job':proof,'retry_after_seconds':5,'retry':{'source':adapter.source,'target':core,'parts':['history']}}
+    if job['status'] in ('new','pending'):return {'status':'pending','job':proof,'retry_after_seconds':60,
+        'retry_basis':'client_poll_interval_for_anonymous_api_budget','retry':{'source':adapter.source,'target':core,'parts':['history']}}
     if job['status']=='failed':return {'status':'error','code':'archive_preparation_failed','job':proof}
     target=urljoin(url,job.get('fetch_url',''));parts=urlsplit(target)
     if parts.scheme!='https' or parts.hostname!='archive.softwareheritage.org' or parts.username or parts.password or parts.port not in (None,443) or parts.query or parts.fragment or unquote(parts.path).rstrip('/')!='/api/1/vault/git-bare/'+core+'/raw':

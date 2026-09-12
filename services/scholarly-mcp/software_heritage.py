@@ -64,7 +64,8 @@ def vault_archive(adapter,directory):
     if not isinstance(job,dict) or job.get('swhid')!=directory or job.get('status') not in ('new','pending','done','failed'):
         raise ServiceError('archive_identity_mismatch','Vault response does not identify the selected directory task',evidence=evidence)
     if job['status'] in ('new','pending'):
-        return {'status':'pending','job':evidence,'retry_after_seconds':5,'retry':{'source':adapter.source,'target':directory,'parts':['fulltext']}}
+        return {'status':'pending','job':evidence,'retry_after_seconds':60,'retry_basis':'client_poll_interval_for_anonymous_api_budget',
+            'retry':{'source':adapter.source,'target':directory,'parts':['fulltext']}}
     if job['status']=='failed':return {'status':'error','code':'archive_preparation_failed','job':evidence}
     if not isinstance(job.get('fetch_url'),str):raise ServiceError('invalid_response','Vault returned no archive URL',evidence=evidence)
     target=urljoin(url,job['fetch_url']);parts=urlsplit(target)
@@ -109,7 +110,7 @@ def parse_swhid(value):
     return base,match[1],match[2],qualifiers
 
 
-def release_content(adapter,core,raw,evidence):
+def release_content(adapter,core,raw,evidence,*,directory_loader=None):
     requested=core;seen=set();proofs=[];chain=[]
     # ponytail: bound malformed or pathological release chains; return an explicit limit error.
     for _ in range(32):
@@ -136,7 +137,7 @@ def release_content(adapter,core,raw,evidence):
             target='swh:1:dir:'+raw['directory'];break
         core=target
     else:raise ServiceError('release_depth_limit','Release target chain exceeds 32 entries',evidence=proofs)
-    return vault_archive(adapter,target),{'requested_swhid':requested,'directory_swhid':target,'basis':'release_target_chain','chain':chain,'evidence':proofs}
+    return (directory_loader or vault_archive)(adapter,target),{'requested_swhid':requested,'directory_swhid':target,'basis':'release_target_chain','chain':chain,'evidence':proofs}
 
 
 def check_content_metadata(raw,core,key,evidence):
@@ -183,7 +184,7 @@ def content(adapter,url,raw,core,key,qualifiers,metadata):
 
 
 def fetch(adapter,target,parts):
-    if set(parts)-{'metadata','abstract','fulltext','supplementary','export','history'}:
+    if set(parts)-{'metadata','abstract','fulltext','supplementary','export','history','files'}:
         raise ServiceError('invalid_parts','Use the documented content parts')
     value=target;qualifiers={};core=key=None
     if value.startswith(('https://','http://')):
@@ -199,18 +200,35 @@ def fetch(adapter,target,parts):
     elif value.startswith(('https://','http://')):
         kind='origin';url=BASE+'origin/'+quote(value,safe='')+'/get/'
     else:raise ServiceError('invalid_target','Use an SWHID, its resolver URL or an origin URL')
-    raw,evidence=adapter.request(url)
+    if kind=='dir' and 'files' in parts:
+        from swh_directory import load_directory
+        raw,evidence=load_directory(adapter,key)
+    else:raw,evidence=adapter.request(url)
     if kind=='cnt':check_content_metadata(raw,core,key,evidence)
     elif key and isinstance(raw,dict) and raw.get('id') and str(raw['id']).lower()!=key:
         raise ServiceError('identity_mismatch','Software Heritage returned a different object',evidence=evidence)
-    result=adapter.fetched(raw if isinstance(raw,list) else [raw],evidence,[p for p in parts if p!='history'],('metadata','export'))
+    result=adapter.fetched(raw if isinstance(raw,list) else [raw],evidence,[p for p in parts if p not in ('history','files')],('metadata','export'))
     safe=dict(qualifiers)
     if 'origin' in safe:safe['origin']=adapter.store.sanitizer.url(safe['origin'])
     result.update(target=core or adapter.store.sanitizer.url(target),qualifiers=safe,
         context_verified=False,scope='Object data from Software Heritage. Qualifier context is retained as supplied and is not followed or verified against external origins.')
+    if 'files' in parts:
+        from swh_directory import directory_files
+        try:
+            if 'lines' in qualifiers and kind!='cnt':
+                component={'status':'unsupported','code':'unsupported_fragment','reason':'Line fragments select content objects, not directory trees'}
+            elif kind=='cnt':component=content(adapter,url,raw,core,key,qualifiers,evidence)
+            elif kind=='dir':component=directory_files(adapter,core,initial=raw,evidence=evidence)
+            elif kind=='rev':component=directory_files(adapter,'swh:1:dir:'+str(raw.get('directory','')))
+            elif kind=='rel':
+                component,selection=release_content(adapter,core,raw,evidence,directory_loader=directory_files)
+                result['file_selection']=selection
+            else:component={'status':'selection_required','reason':'Select a content, directory, revision or release object for a file/tree view; snapshot branches and origins do not define one working tree'}
+        except ServiceError as error:component=error.result
+        result['components']['files']=component
     wanted=set(parts)&{'fulltext','supplementary'}
     if kind=='cnt' and wanted:
-        try:component=content(adapter,url,raw,core,key,qualifiers,evidence)
+        try:component=result['components'].get('files') or content(adapter,url,raw,core,key,qualifiers,evidence)
         except ServiceError as error:component=error.result
         for part in wanted:result['components'][part]=component
     elif 'lines' in qualifiers and wanted:
