@@ -563,3 +563,10 @@ data/validation/20260912T201746Z-iop-content-mcp.json은 이 전용 상태로 �
 마지막 응답 검토에서 수식154개의 파일·artifact·ref 배열을 중복 반환하던 문제를 발견했다. 전체 파일별 상태를 JSON manifest로 옮기고 HTML metadata도 그 manifest 하나를 참조한다. math_images에는 건수·상태·manifest와 첫 이미지 artifact가 남는다. 20260912T202658Z-iop-equation-manifest-mcp.json은 이미 검증한 원 파일을 재사용해 새 직렬화와 fresh SDK 추출을 검사했다. component JSON은267,279바이트에서10,734바이트로 줄었고 manifest154행의 첫1번·마지막154번과 ImageContent가 일치했다. 이 검증은 새 원격 다운로드로 표시하지 않는다. 최종 root의 publisher HTML8검사와 앞선 browser 결합검사가 통과했다.
 
 DjVu 독립 검토에서 실행 파일과 같은 폴더의 manifest 해시만 비교하면 다른 upstream/commit을 가진 도구도 수용되는 반례를 재현했다. 생성기와 추출기가 같은 고정 UPSTREAM/COMMIT/LICENSE/TOOLS를 사용하고 정확한 출처 필드·세 도구 이름·실제 파일 해시를 대조하도록 보강했다. 잘못된 upstream·commit·license 각각의 RED→GREEN, 실제 세 도구 수용과 독립 재검토가 통과했다. 로컬 빌드의 일관성 검사이며 별도의 서명된 바이너리 인증으로 확대하지 않는다.
+
+
+2026-09-13 KST, 검색 행을 받아들였다는 관측과 마지막 행의 조건이 실제 결과를 바꾼다는 검증을 구별해 Numdam·SIAM의 추가 대조를 수행했다. Numdam의 새 algebra 양성 대조는 정상20개 제목을 표시했지만 기존 직접 자식 row 선택자가 마지막19·20번을 감싼 i 요소 때문에18개만 읽었다. Root가 전후 이미지를 직접 열고 원 HTML의 제목20개·직접 row18개를 대조했다. 제목의 가장 가까운 결과 row를 중복 없이 선택하도록 수리했으며 저장된 실제20개·고유문헌20개·전체26,761건을 다시 확인했다. test_numdam6개가 통과했다.
+
+전용 credential-root/data-dir의 semantic-cap-final.json은11개 algebra 조건의26,761건과 같은 앞10조건에11번째 불일치 조건을 넣은0건을 대조했다. 마지막 조건이 실제로 적용됨을 확인한 것이다. 기존4,804건은 complexity의 다른 표본이며 이 대조의 기준으로 사용하지 않는다. 재현 스크립트도 특정 과거 총건수에 묶지 않고 동일 실행의 양성·음성과 입력 보존을 검사한다.
+
+SIAM의 추가 대조는 조건 의미를 확인하기 전에 접근 단계에서 멈췄다. Root가 연203956Z의 후속 화면은 Cloudflare 보안 확인이고,204451Z는 Chrome ERR_CONNECTION_TIMED_OUT이다. 초기HTTP403만으로 provider_error를 내던 부분은 현재 HTML이 확인 화면이면 기존의 제한된 준비 대기를 따르도록 수정했다. 확인이 풀리면 정상 결과를 읽고 남아 있으면restricted이며 일반HTTP 오류는provider_error다. 이 세 경우를 포함한 SIAM28검사가 통과했다.52개 원 입력 보존·17건 양성은 기존 근거로 유지하지만 마지막52번째 조건만의 효과는 현재 실접속 실패로 미확정이다.51개 구현 상한을 다시 만들지 않는다.

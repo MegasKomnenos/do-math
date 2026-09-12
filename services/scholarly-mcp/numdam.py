@@ -26,7 +26,11 @@ def search_records(raw, base):
         raise ServiceError('search_parse_failed', 'Numdam did not display a result count')
     total = int(re.sub(r'\D', '', match[1]))
     rows = []
-    cards = soup.select('.search-results > .row')
+    cards=[];seen=set()
+    for heading in soup.select('.search-results .common-title'):
+        card=heading.find_parent(class_=lambda value:value and 'row' in value.split())
+        if card is not None and id(card) not in seen:
+            cards.append(card);seen.add(id(card))
     for card in cards:
         title = card.select_one('.common-title')
         link = title.find_parent('a') if title else None

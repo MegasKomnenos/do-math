@@ -160,6 +160,34 @@ class SIAMContract(unittest.TestCase):
         self.assertIn('startPage=0',request)
         self.assertIn('pageSize=20',request)
 
+    def test_challenge_status_waits_for_results_or_returns_restricted(self):
+        import tempfile
+        from types import SimpleNamespace
+        from unittest.mock import Mock,patch
+        from scholarly import ArtifactStore,ServiceError
+        from publishers import PROFILES
+        from siam import SIAM
+        raw=(ROOT/'tests/fixtures/siam-search.html').read_text('utf-8');challenge='<html><head><title>Just a moment</title></head><body></body></html>'
+        page=Mock();page.url='https://epubs.siam.org/';page.content.side_effect=[challenge,raw]
+        gateway=SimpleNamespace(public_page=Mock(return_value=page),context=Mock())
+        def navigate(page,url,*args,**kwargs):page.url=url;return SimpleNamespace(status=403)
+        with tempfile.TemporaryDirectory() as temp,patch('siam.goto_source',side_effect=navigate):
+            result=SIAM(ArtifactStore(temp),gateway,next(p for p in PROFILES if p.source=='siam')).search('algebra',options={'field':'Title'},limit=1)
+        self.assertEqual((result['status'],result['total'],result['received']),('ok',1320,1))
+        page.wait_for_function.assert_called_once()
+
+        page=Mock();page.url='https://epubs.siam.org/';page.content.return_value=challenge;page.wait_for_function.side_effect=TimeoutError
+        gateway=SimpleNamespace(public_page=Mock(return_value=page),context=Mock())
+        with tempfile.TemporaryDirectory() as temp,patch('siam.goto_source',side_effect=navigate),self.assertRaises(ServiceError) as error:
+            SIAM(ArtifactStore(temp),gateway,next(p for p in PROFILES if p.source=='siam')).search('algebra',options={'field':'Title'},limit=1)
+        self.assertEqual((error.exception.result['status'],error.exception.result['code']),('restricted','publisher_access_challenge'))
+
+        page=Mock();page.url='https://epubs.siam.org/';page.content.return_value='<html><title>Server error</title></html>'
+        gateway=SimpleNamespace(public_page=Mock(return_value=page),context=Mock())
+        with tempfile.TemporaryDirectory() as temp,patch('siam.goto_source',side_effect=navigate),self.assertRaises(ServiceError) as error:
+            SIAM(ArtifactStore(temp),gateway,next(p for p in PROFILES if p.source=='siam')).search('algebra',options={'field':'Title'},limit=1)
+        self.assertEqual(error.exception.result['code'],'provider_error')
+
     def test_native_bibtex_selects_exact_doi_and_validates_the_file(self):
         import tempfile
         from types import SimpleNamespace

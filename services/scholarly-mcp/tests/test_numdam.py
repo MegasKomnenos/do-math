@@ -33,6 +33,14 @@ class NumdamContract(unittest.TestCase):
         self.assertEqual({x['format'] for x in rows[0]['links']}, {'pdf', 'djvu'})
         self.assertEqual(len({r['url'] for r in rows}), 20)
 
+    def test_result_rows_wrapped_by_source_formatting_are_not_dropped_or_duplicated(self):
+        from bs4 import BeautifulSoup
+        soup=BeautifulSoup((ROOT/'tests/fixtures/numdam-search.html').read_text('utf-8'),'html.parser')
+        container=soup.select_one('.search-results');cards=container.select(':scope > .row');wrapper=soup.new_tag('i')
+        cards[-2].insert_before(wrapper);wrapper.append(cards[-2].extract());wrapper.append(cards[-1].extract())
+        rows,total=search_records(str(soup),'https://www.numdam.org/search?complexity-q')
+        self.assertEqual(total,4804);self.assertEqual(len(rows),20);self.assertEqual(len({row['url'] for row in rows}),20)
+
     def test_zero_results_and_missing_results_are_distinct(self):
         self.assertEqual(search_records('<main>No results</main>', 'https://www.numdam.org/'), ([], 0))
         for html in ('<div class="results-header">20 results</div>', '<main>Loading</main>'):

@@ -321,7 +321,7 @@ def search(publisher,query,*,options,start=0,limit=20,cursor=None,export=None):
         params['startPage']=number
         requested=following or base+'/action/doSearch?'+urlencode(params,doseq=True)
         response=goto_source(page,requested,profile.hosts,wait_until='domcontentloaded',timeout=45000)
-        if response is not None and response.status>=400:
+        if response is not None and response.status>=400 and not is_access_challenge(page.content()):
             raise ServiceError('provider_error','SIAM rejected the requested native search expression',http_status=response.status)
         try:
             page.wait_for_function("() => document.querySelector('li.search-item,.search-result__no-result') || /Results:\\s*0\\b|No results/i.test(document.body.innerText)",timeout=SEARCH_READY_TIMEOUT)
