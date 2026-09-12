@@ -47,3 +47,18 @@ SIAM의 기관 경로는 보유 목록을 읽는 것에서 끝내지 않고 실�
 이 기록은 접근 조건의 실측이며 전체 기능 구현 완료를 뜻하지 않는다. 현재 코드에 연결한 범위와 실제 MCP 검증은 `VALIDATION.md`와 `SUPPORT.md`를 따른다.
 
 후속 IEEE 검색 진단에서 별도 출력 사고가 있었다. 확인 가능한 시각은2026-09-12 14:37:48.093341 UTC 이후부터14:43:30.771842 UTC 이전이다. 한 PowerShell 진단이 원 응답7개의 검색 상태를 제외 목록으로 선별하면서 userInfo를 빼지 못해18종 필드가 출력됐다. 기관 정보·이용 상태·제공자 식별자·IP였으며 암호·쿠키·토큰·인증 URL은 없었다. 값은 이 문서에 반복하지 않는다. 비공개 검사에서 같은 userInfo field/value 쌍의 생산 코드·공개 근거·fixture 복제는 각각0건이었다. 기존 대화 출력은 삭제하지 못했고 이후 진단은 허용 필드 목록을 사용한다. 근거는 `data/access-research/ieee-search/incident.json`과 같은 이름의 Markdown이다.
+
+
+2026-09-13 KST의 후속 제한 감사는 [실패 지점 대조](LIMITATIONS-AUDIT.md)에 정리했다. 원 화면 판독과 HTTP·native 파일의 단계가 다른 사례를 분리했다. AMS 동적식은 제출 뒤 원 오류 응답, PQDT는 정상 검색 뒤 검증기, Scopus는 정상 CSV 뒤 parser/identity 검사, IOP는 확인 과제와 제어 선택 단계의 실패였다. 원 구조나 실제 대체 경로를 확인해 수리한 뒤 fresh SDK로 검증했다.
+
+IOP의 후속 화면은 root가 직접 판독했다. 자동 집계가0이던 iframe checkbox와 Submit이 실제로 있었고, checkbox 뒤 나타난 이미지 과제가 Submit을 덮고 있었다. 소유 세션의 과제를 호출 AI가 직접 판독해 확인·Submit을 마치자 정상 홈페이지와 같은 수식 파일의200 GIF를 받았다. 그 전용 상태의 production Chromium headless SDK에서154개 수식 파일과 그림·TeX·보충PDF·ImageContent를 통과했다. 서버에 인식 AI나 외부 solver를 넣지 않았다. 초기264바이트 HTML은 원본문을 보존하지 못했으므로 정확한 내용을 특정하지 않는다. 초기 정상 화면 파일이 후속 실행으로 덮어써진 이력도 남기고 이후 실행별 고유 경로로 보존했다.
+
+SIAM 기관 경로를 다시 대조한 결과, 실제 KNU2026 목록·바로가기·libproxy를 거쳐도 현재 비공개 표본은 기관 표시 없이 Get Access였고 PDF는 같은 DOI 초록으로 복귀했다. Institution chooser의 실제 Kyungpook 입력은200·0후보, University 양성 대조는200·184후보였다. 처음의 미입력 화면을 검색0건으로 세지 않았고 원184개 응답 전체에서 KNU 도메인·이름 변형을 대조했다. 현재 경로에서의 인증 미성립이며 행정적 구독권 부재를 증명하지 않는다. 별도52번째 검색 조건 대조의 Cloudflare·연결 시간초과도 이 문헌 권한 문제와 구별한다.
+
+후속 HTTP 대조에서21:13:24Z의 KUDOS 공개 root는200·0.588초, SIAM은403·0.638초였고 Numdam은 ConnectTimeout·15.561초였다. 전면적인 인터넷 단절로 해석하지 않는다. MathSciNet의 이전 portal_login 실패는 세부 예외를 당시 보고가 저장하지 않아 소급 확정하지 못했다.21:17:36Z~21:17:56Z의 단일 KUDOS→실제 MathSciNet 프록시 진단은 정상 통과했고 최종 같은 세션의 두 기능도 재검증했다. 이 결과는 서로 다른 시점·요청의 관측이다.
+
+이번 후속 조사 중 비공개 MathSciNet HTML을 넓게 검색해 기관 접근 표시명 등이 불필요하게 도구 출력에 포함된 범위 위반이 있었다. 확인 가능한 시각 범위는19:29:00.116040Z 이후~19:58:20.3391345Z 이전이다. 이어20:15:08.580914Z~20:15:40.2260145Z에는 Cloudflare 확인용 불투명 경로 두 개가 출력·정제 보고에 포함됐다. 암호·쿠키·토큰의 노출은 관측되지 않았으며 해당 경로의 자격정보 해당 여부도 확정하지 않는다. 관련 보고는 경로를 가리고 code/fixture/공개 보고의 값 비출력 검사를 통과했다. 기존 도구 출력의 삭제는 확인하지 못했다. 반면 정상 검색 facet의 공개 기관명·저널명은 사용자가 요청한 학술 메타데이터이며 사고나 비밀값으로 분류하지 않는다. 근거는 limitations-audit/mathscinet-review-incident.json과 mathscinet-network-incident.json이다.
+
+공유 상태의 파일 불변 검사는 후속 조사에서 실패했다. 이전 live_range_cap_audit.py가 전용 credential-root를 지정하지 않아19:13:06Z에 공유 kudos-firefox.json을 저장한 실행을 확인했다. 현재 스크립트는 credential-root/data-dir를 명시해야 한다. 원본과 같은 비공개 사본15개를 대조한 결과 제거된 쿠키5개는 모두 저장 시점에 이미 만료됐고, 유효 쿠키 값과 localStorage의 name/value Map은 같았다. 배열 순서와 원 파일 해시는 달랐으므로 원시 파일 불변을 통과로 쓰지 않는다. 공유 Chromium 파일도18:18:00Z에 달라졌지만 원본과 같은 사본을 확보하지 못해 작성자·원인·실제 값 차이는 미확정이다. 기존 파일이나 baseline을 임의로 덮어써 통과를 만들지 않았다. 근거는 limitations-audit/shared-state-drift.json과 shared-state-drift-detail.json이다.
+
+CORE의 후속 확인도 화면 판독으로 결론이 바뀌었다.60초 대기 중이던 화면에는 실제 사람 확인 체크박스가 있었다. Root가 새 소유 세션의 현재 화면을 읽고 한 번 누르자22:10:28Z에 정상 문헌으로 진입했다. 연결 output1511018은 제목/OAI가 일치하며 저자 요청으로 전문이 제거됐다고 명시했다. 다른 공개 output213561553의 실제 Download PDF는 core.ac.uk→fileserver-az.core.ac.uk→pdf.core.ac.uk의 원 연쇄로8쪽 PDF를 제공했다. 별도 output287883844의 관측된 fileserver-az URL도 공개 HTTP와 새 SDK에서26쪽 PDF를 반환했다. 초기 접근 확인, 삭제된 문헌, files01의522, API의429를 한 원인으로 묶지 않았다. 원 signed URL은 비공개에만 보존하고 새 파일 분기의 SAS sig 정제를 검증했다. 추가 키·계정·연락 이메일과 API 실패 후 브라우저 전환은 사용하지 않았다. 자세한 UTC·원 응답·직접 이미지 판독은 core-public-reader/ 보고와 [실패 지점 분석](LIMITATIONS-AUDIT.md)에 있다.

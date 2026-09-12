@@ -66,7 +66,8 @@ class Sanitizer:
 
     def _authentication_parameter(self,name,parts):
         normalized=re.sub(r'[^a-z0-9]','',name.lower())
-        return normalized in self.secret_fields or bool(self.sensitive.search(name)) or (name.lower()=='sig' and (parts.hostname or '').lower().endswith('.blob.core.windows.net'))
+        host = (parts.hostname or '').lower()
+        return normalized in self.secret_fields or bool(self.sensitive.search(name)) or (name.lower()=='sig' and (host.endswith('.blob.core.windows.net') or host == 'pdf.core.ac.uk'))
 
     def _url(self, url):
         original = url

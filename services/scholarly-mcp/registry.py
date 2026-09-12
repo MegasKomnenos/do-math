@@ -254,9 +254,9 @@ MORE_API_USAGE = {
     "core": {
         "search": "query는 CORE 검색식이다. title:\"P versus NP\"처럼 필드를 지정할 수 있다. 원 검색 결과의 모든 필드를 보존한다.",
         "options": {"sort": "CORE 정렬 조건. 제공자가 거절한 조건은 오류로 반환한다."},
-        "fetch": "CORE works 번호·CORE works URL을 지정하며 이름은 원 검색 후보와 selection_required를 반환한다. 응답의 works ID를 대조한다. abstract가 비어 있으면 not_found다. fullText가 실제 문자열 본문이면 별도 텍스트 artifact로 보존한다. 공개 API 접근 제한 안내문이면 restricted이며 본문으로 표시하지 않는다. 다른 저장소의 링크는 자동 방문하지 않는다.",
+        "fetch": "CORE works 번호·CORE works URL을 지정하며 이름은 원 검색 후보와 selection_required를 반환한다. 응답의 works ID를 대조한다. abstract가 비어 있으면 not_found다. fullText가 실제 문자열 본문이면 별도 텍스트 artifact로 보존한다. 공개 API 접근 제한 안내문이면 restricted이며 본문으로 표시하지 않는다. 명시한 공개 파일 URL core.ac.uk/download/OUTPUT_ID.pdf, fileserver-az.core.ac.uk/download/OUTPUT_ID.pdf 또는 files01.core.ac.uk/download/pdf/OUTPUT_ID.pdf는 원 PDF를 회수한다. 원 파일 응답이 지정한 같은 output의 CORE 파일 서버와 pdf.core.ac.uk 연결만 따르고 형식·쪽수를 검사한다. 이 파일의 metadata/export는 PDF 내장 정보이며 works 서지를 대신 조회하지 않는다. 다른 저장소의 링크는 자동 방문하지 않는다.",
         "limits": "별도 자격 없는 공개 접근만 사용한다. limit 1..100, start는 0부터. 호출 간격 최소 2.1초. json/native export.",
-        "examples": [{"tool": "search", "arguments": {"source": "core", "query": "title:\"P versus NP\"", "limit": 2}}],
+        "examples": [{"tool": "search", "arguments": {"source": "core", "query": "title:\"P versus NP\"", "limit": 2}}, {"tool": "fetch", "arguments": {"source": "core", "target": "https://fileserver-az.core.ac.uk/download/287883844.pdf", "parts": ["metadata", "fulltext"]}}],
         "official": ["https://core.ac.uk/services/api", "https://api.core.ac.uk/docs/v3"]},
     "figshare": {
         "search": "query는 공개 Figshare search_for에 그대로 전달한다. articles(기본) 또는 collections를 검색한다. 이름 fetch는 후보 선택을 반환한다.",
@@ -737,7 +737,7 @@ for identifier, level in {
     "numdam": "live_mcp_11_conditions_native_search_citations_jats_pdf_djvu_page_text_image_windows",
     "software-heritage": "live_mcp_verified_tree_files_cache_resume_and_native_git_archives; selected_flat_job_unprepared",
     "openalex": "live_mcp_arbitrary_window_group_cursor_abstract_relationships_name_doi",
-    "core": "live_mcp_name_metadata_abstract_and_restricted_fulltext_notice",
+    "core": "live_mcp_name_metadata_abstract_restricted_notice_and_explicit_public_pdf",
     "semantic-scholar": "live_mcp_search_extract; new_workflow_rate_limited; schema_regressions",
     "dblp": "live_mcp_native_timed_refresh_search_seven_exports_name_and_record_identity",
     "dblp-kg": "live_mcp_sparql_window_native_csv_tsv_key_doi_name; native_tsv_year_type_mismatch",

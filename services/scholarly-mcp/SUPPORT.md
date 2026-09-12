@@ -21,7 +21,7 @@
 | Semantic Scholar | semantic-scholar | api | partial | source_guide, search, fetch, export | live_mcp_search_extract; new_workflow_rate_limited; schema_regressions |
 | OpenCitations | opencitations | api | partial | source_guide, search, fetch, export | live_mcp_native_csv_window_oci_fetch_reference_count |
 | Unpaywall | unpaywall | api | deferred | source_guide | public_endpoint_contact_requirement_observed |
-| CORE | core | api | partial | source_guide, search, fetch, export | live_mcp_name_metadata_abstract_and_restricted_fulltext_notice |
+| CORE | core | api | partial | source_guide, search, fetch, export | live_mcp_name_metadata_abstract_restricted_notice_and_explicit_public_pdf |
 | Project Euclid | project-euclid | playwright | partial | source_guide, search, fetch, export | live_mcp_21_condition_semantics_window_50_page_bound_citations_pdf_supplement |
 | EuDML | eudml | api | partial | source_guide, search, fetch, export | live_mcp_cql_rss_extract_nlm_fetch |
 | Numdam | numdam | fixed: OAI/citation API; native search/DOI resolution Playwright | partial | source_guide, search, fetch, export | live_mcp_11_conditions_native_search_citations_jats_pdf_djvu_page_text_image_windows |
@@ -53,3 +53,6 @@
 | APS 기관 구독 접근 | aps-institutional | playwright (전용 Chrome 창/CDP) | partial | source_guide, search, fetch, export | live_mcp_search_window_custom_multi_facets_bibtex_ris_abstract_pdf_supplement |
 
 개별 구독은 KUDOS의 KNU 개별전자저널·KNU P+O Journal 보유 목록으로 구체화했다. 목록 기재와 실제 원문 권한은 구별한다. 학회 저널·저자 또는 기관 공개본은 지정 URL을, 일반 웹은 공개 후보 검색을 제공한다. Unpaywall과 Scopus의 별도 웹 계정 내보내기는 보류하며 해당 자격 정보를 요청하지 않는다. [접근 조건 조사](ACCESS-RESEARCH.md)는 창 모드·실행 방식·기관 경로의 비교 근거를 담는다.
+
+
+2026-09-13 KST의 제한 판단 전수조사는 [49개 자료원 재검토표](AUDIT-MATRIX.md)와 [실패 지점 분석](LIMITATIONS-AUDIT.md)에 정리했다. 현재 확인된 구현 결함은 교정했고 전체514검사를 통과했다. 자료원별 접근 상태·추가 자격 보류·미확정 검증은 같은 표에서 구별한다.

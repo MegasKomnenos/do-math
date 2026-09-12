@@ -42,14 +42,16 @@ class APIAdapter:
         parts = urlsplit(url)
         return parts.scheme == "https" and not parts.username and not parts.password and parts.hostname in self.hosts and parts.port in (None, 443)
 
-    def request(self, url, *, params=None, headers=None, accept="json", json_body=None, allow_redirect=None):
+    def request(self, url, *, params=None, headers=None, accept="json", json_body=None, allow_redirect=None, url_guard=None):
         request_headers = httpx.Headers(headers or {})
         if "Accept" not in request_headers:
             request_headers["Accept"] = {"json": "application/json", "xml": "application/xml, application/atom+xml, application/rss+xml, text/xml;q=0.9, */*;q=0.1",
                 "html": "text/html, application/xhtml+xml;q=0.9, */*;q=0.1"}.get(accept, "*/*")
         redirected_from=None
         for hop in range(6):
-            if not self.allowed_url(url) and not (redirected_from is not None and allow_redirect is not None and allow_redirect(redirected_from,url)):
+            permitted = (url_guard(url, redirected_from) if url_guard is not None else
+                self.allowed_url(url) or redirected_from is not None and allow_redirect is not None and allow_redirect(redirected_from,url))
+            if not permitted:
                 raise ServiceError("source_boundary", "Requested URL or redirect is outside this source", source=self.source)
             wait = self.min_interval - (time.monotonic() - self.last_request)
             if wait > 0:
@@ -720,6 +722,66 @@ class CORE(APIAdapter):
     options = ("sort",)
     min_interval = 2.1
 
+    @staticmethod
+    def file_id(url):
+        try:
+            parsed = urlsplit(url)
+            if parsed.scheme != 'https' or parsed.username or parsed.password or parsed.port not in (None, 443) or parsed.query or parsed.fragment:
+                return None
+        except ValueError:
+            return None
+        patterns = {'core.ac.uk': r'/download/([0-9]+)\.pdf',
+                    'fileserver-az.core.ac.uk': r'/download/([0-9]+)\.pdf',
+                    'files01.core.ac.uk': r'/download/pdf/([0-9]+)\.pdf'}
+        pattern = patterns.get(parsed.hostname)
+        match = re.fullmatch(pattern, parsed.path) if pattern else None
+        return match[1] if match else None
+
+    def fetch_file(self, target, identifier, parts):
+        unknown = set(parts) - {'metadata', 'abstract', 'fulltext', 'supplementary', 'export'}
+        if unknown:
+            raise ServiceError('invalid_parts', 'Unknown requested content', parts=sorted(unknown))
+
+        def file_route(url, previous):
+            if previous is None:
+                return url == target
+            # Only a native file response can introduce the PDF-host redirect.
+            if self.file_id(previous) != identifier:
+                return False
+            if self.file_id(url) == identifier:
+                return True
+            try:
+                parsed = urlsplit(url)
+                return (parsed.scheme == 'https' and parsed.hostname == 'pdf.core.ac.uk'
+                    and not parsed.username and not parsed.password and parsed.port in (None, 443)
+                    and not parsed.fragment
+                    and re.fullmatch(r'(?:/[A-Za-z0-9_-]+)+/' + re.escape(identifier) + r'\.pdf', parsed.path) is not None)
+            except ValueError:
+                return False
+
+        data, evidence = self.request(target, accept='binary', url_guard=file_route)
+        if not data.startswith(b'%PDF-'):
+            raise ServiceError('invalid_pdf', 'CORE did not return a PDF file', evidence=evidence)
+        import pymupdf
+        try:
+            with pymupdf.open(stream=data, filetype='pdf') as document:
+                if document.needs_pass or len(document) == 0:
+                    raise ValueError('Unreadable PDF')
+                pages, metadata = len(document), document.metadata
+        except Exception as error:
+            raise ServiceError('invalid_pdf', 'CORE did not return a readable PDF file',
+                error_type=type(error).__name__, evidence=evidence) from None
+        record = {'id': target, 'url': target, 'core_output_id': int(identifier), 'type': 'pdf_document',
+                  'title': metadata.get('title') or '', 'metadata': metadata, 'pages': pages,
+                  'identity_basis': 'Exact requested CORE file/output ID and source redirect; bibliographic fields are embedded PDF metadata'}
+        result = self.fetched([record], evidence, parts, ('metadata', 'export'))
+        if 'fulltext' in parts:
+            artifact = self.store.put(data, 'application/pdf', self.source, target, preserve_bytes=True,
+                role='fulltext', pages=pages, core_output_id=int(identifier), response_ref=evidence['ref'])
+            result['components']['fulltext'] = {'status': 'available', 'artifact': artifact, 'content_kind': 'core_pdf'}
+        result['status'] = 'ok' if all(component['status'] == 'available' for component in result['components'].values()) else 'partial'
+        return result
+
     def search(self, query, *, options, start=0, limit=20, cursor=None, export=None):
         self.validate(options, start, limit)
         if cursor:
@@ -729,10 +791,17 @@ class CORE(APIAdapter):
 
     def fetch(self, target, *, parts):
         value = target.strip()
+        identifier = self.file_id(value)
+        if identifier is not None:
+            return self.fetch_file(value, identifier, parts)
         if value.startswith(('http://','https://')):
-            parsed=urlsplit(value)
+            try:
+                parsed=urlsplit(value)
+                parsed.port
+            except ValueError:
+                raise ServiceError('invalid_target','Use a valid CORE work or public file URL') from None
             if parsed.hostname not in ('core.ac.uk','www.core.ac.uk','api.core.ac.uk') or parsed.username or parsed.password:
-                raise ServiceError('source_boundary','Use a CORE work URL')
+                raise ServiceError('source_boundary','Use a CORE work URL or a documented public CORE file URL')
             match=re.fullmatch(r'/(?:v3/)?works/(\d+)/?',parsed.path)
             if not match:raise ServiceError('invalid_target','Use a CORE work URL with its numeric ID')
             value=match[1]

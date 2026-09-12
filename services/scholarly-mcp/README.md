@@ -109,6 +109,8 @@ ACM은 문헌 보충자료 목록의 파일명·설명·DOI를 보존하고 ZIP 
 
 CORE의 `fullText`에 공개 API 접근 제한 안내문이 들어 있으면 `restricted`로 반환한다. 실제 색인 본문은 별도 텍스트 artifact로 제공하며 원 메타데이터도 보존한다. 이름은 검색 후보로 반환하고 CORE works 번호를 선택한 뒤에는 응답의 ID를 대조한다.
 
+CORE의 공개 PDF 파일 URL도 명시해서 요청할 수 있다. `https://fileserver-az.core.ac.uk/download/287883844.pdf`와 같은 파일 URL을 `target`으로 주고 `fulltext`를 요청하면 원 PDF와 쪽별 추출을 제공한다. `core.ac.uk/download/OUTPUT_ID.pdf`와 `files01.core.ac.uk/download/pdf/OUTPUT_ID.pdf` 형식도 받으며, 실제 파일 응답이 지정한 같은 output의 CORE 파일 서버와 PDF 호스트 연결만 따른다. 이 입력의 `metadata`와 `export`는 PDF 내장 정보다. 숫자만 지정하면 기존대로 works 번호이며, works API의 제한 응답을 브라우저 검색이나 다른 저장소 조회로 바꾸지 않는다.
+
 OpenAlex는 임의 검색 창과 원 그룹 집계의 커서 페이지를 지원한다. 그룹의 문헌 수와 이번 페이지 그룹 수를 구별하며 전체 그룹 수는 추정하지 않는다. 위치 색인의 단어 순서로 초록 텍스트를 복원하고, 원 색인과 참고·관련 문헌 ID 배열도 보존한다. 이 초록은 OpenAlex의 색인상 초록이며 출판사 원문과의 대조는 별도다.
 
 Semantic Scholar는 문헌 검색과 참고·피인용 관계 검색을 `options.kind`로 구별한다. `openAccessPdf=false`는 공개 PDF 필터를 해제한다. 이름·문헌 링크를 받아 후보 또는 대조한 문헌을 반환하며, 기본 서지 조회에 전체 인용 배열을 붙이지 않는다. 원 BibTeX와 관계 페이지는 연결했으나 신규 실서비스 흐름은 호출 제한으로 아직 검증하지 못했다.
@@ -208,3 +210,6 @@ JSTOR 이미지 검색은 제목·제작자의 양방향 정렬과 해상도 정
 IOP 검색도 export=bibtex/ris를 받는다. 선택한 검색 창의 문헌마다 원 인용문을 회수하고 검색 방식·순서·레코드는 유지한다. 각 원 링크와 파일의 DOI를 대조하며 일부 내보내기 실패는 파일별 오류와 partial로 표시한다.
 
 Software Heritage의 files 항목은 Vault 준비 중에도 원 directory/content 객체를 회수한다. 경로별 manifest의 artifact로 원 파일을 추출하며, 디렉터리 Git tree와 파일 해시·길이를 검증한다. 같은 data-dir의 검증된 객체를 재사용하므로 호출 제한 뒤 재개할 때 이미 받은 파일을 다시 받지 않는다. 심볼릭 링크는 따라가지 않고 원 바이트를 보존하며 하위 revision은 참조로 남긴다. 캐시 재사용 수와 원 수신 시점을 표시한다. 익명 API는 시간당120회이며 첫429에서 중단한 부분 결과도 보존한다.
+
+
+2026-09-13 KST의 전수조사 결과와 입력 전후 화면·요청·응답 대조는 [49개 재검토표](AUDIT-MATRIX.md)와 [실패 지점 분석](LIMITATIONS-AUDIT.md)에 있다. 확인된 구현 결함을 수리하고 전체514검사를 통과했으며, 현재 외부 접근 상태와 미확정 표본은 별도로 명시했다.
