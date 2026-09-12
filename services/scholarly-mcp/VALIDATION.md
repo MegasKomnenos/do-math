@@ -474,3 +474,39 @@ MathSciNet의 실제 SDK 기록은 `data/access-research/mathscinet-citations/li
 2026-09-12 위 구현을 공통 서버에 연결한 전체 오프라인·SDK 계약 검사378개가 통과했다. 첫 전체 실행에서 기존 explicit PDF 시험의 범용 MagicMock이 실제 KudosGateway에 없는 native_download까지 만들어 새로운 분기를 잘못 탔다. 대역을 실제 KudosGateway 인터페이스로 제한하고, 다른 자료원의 Playwright 다운로드를 읽거나 보존하지 않는 원 검증을 유지했다. 이 교정 뒤378개를 다시 통과했다. 새 실서비스 성공 범위와 오프라인 통과를 구별하며 WOS·ACM·IEEE·PQDT의 남은 고급검색 구현을 계속한다.
 
 2026-09-13 KST, `data/validation/20260912T152024Z-rtf-mcp.json`은 실제 PQDT에서 회수한 RTF 내보내기6,680바이트를 새 SDK의 extract로 검증했다. 원 문헌2618193239의 제목,19개 텍스트 줄 중 처음3개와 다음16개, 원 바이트 보존을 대조해 completed=true였다. 이 기록은 기회수 파일의 기계적 추출이며 새 PQDT fetch/export 연결의 완료 증거로 확대하지 않는다. [striprtf](https://pypi.org/project/striprtf/)0.0.33을 고정하고 코드페이지·Unicode·바이너리 그림의 길이 경계를 처리했다. 한글·서로게이트 쌍·8비트 문자·줄 범위·잘린 바이너리의 회귀4개가 통과했다. 바이너리 그림이나 포함 객체는 실행하지 않는다.
+
+그 뒤 독립 검토에서 RTF 그룹의 닫힘·초과 구분자·Unicode 인자 검증을 보강했다. u는 signed16 code unit, uc는 숫자 존재와 비음수를 확인하며 근거 없는 uc 상한은 두지 않는다. `data/validation/20260912T162049Z-rtf-mcp.json`은 원 HYPERLINK의 문헌 번호까지 독립 대조하고 같은19줄과 원 바이트를 다시 통과했다. RTF6검사와 실제 파일 검토가 통과했다.
+
+PQDT Cite가 제공한 BibTeX2,098바이트에는 인용 키가 없었다. 원11개 필드와 raw_text를 유지하면서 명시적 빈 key 또는 brace-delimited 첫 field에 한해 id 빈 문자열과 citation_key_missing을 반환한다. quote-first는 정상 key와 모호해 복구하지 않는다. 기존 공용 catalog parser는 strict 기본값을 유지하고 MCP만 opt-in한다. native BibTeX2검사·기존catalog16검사, RTF와 두 원 파일을 대조한 `data/access-research/native-format-review.json`의 독립 검토가 PASS였다.
+
+IEEE의 `data/access-research/ieee-search/sdk-live.json`은 생산과 같은 headless Firefox의 새 SDK 검증이다. newest·Journals·IEEE Access·2020–2024년을 결합한217건에서 start24/limit2의 두 페이지와 고유 문헌2건, 페이지별 CSV2개·DOI 순서를 대조했다. 뒤의 기본 문헌 번호 검색은 전체1건과 relevance/all 조건 초기화를 확인했고 OA 검색은767건과 open-access 행을 확인해 completed=true였다. 여덟 정렬은 별도 NativeChrome 함수 실측으로 원 상태값을 대조했으며 전체를 새 MCP 사례로 확대하지 않는다. 생산 transport와 기존 네 export·PDF·references·media 회수 코드는 유지했다.
+
+`data/access-research/ieee-search/sdk-extended-facet.json`은 초기25개 발행물 후보에 없던 Artificial Life의 추가 검증이다. 원 후보 검색의 exact label로24건·문헌1건·발행물 일치와 native_typeahead 후보 추가를 생산 Firefox SDK에서 통과했다. 검사·보고 저장 뒤 출력문 오타로 최초 wrapper가 exit1이었으며 출력문을 교정했다. 실제 SDK 호출·검사 완료와 wrapper 오류를 구별한다. IEEE 관련20검사가 통과했다. 진단의 userInfo 출력 사고와 알려진 field/value 쌍 복제0건의 검사 범위는 `ACCESS-RESEARCH.md`와 `ieee-search/incident.json`에 보존한다.
+
+Semantic Scholar의 `data/validation/20260912T153332Z-semantic-scholar-fetch-mcp.json`은 검색을 거치지 않은 별도 fetch-first 검증이다. 기존 공개 paperId9a350a6787a5a79805ddb474feb256a5adfdbefb에 metadata·abstract·export를 요청했으나 첫 원격 요청부터 rate_limited, retry_after=null이었다. 뒤의 search·references·citations는 호출하지 않았다. 현재 공개 요청 제한을 재현했으며 새로운 생산 코드 결함은 확인하지 못했다.
+
+ACM의 `data/access-research/acm-advanced/live-sdk-multiselect.json`은 제목 algebra와 JACM·CACM의 Match Any 범주 조건93건, CACM의 원1,781건에서 Research Article을 더한220건·원 BibTeX를 실제 SDK로 검증했다. Match Any는 범주 값 사이의 OR이며 제목 조건과는 AND다. 두 번째 범주 행은 현재 UI에서 생성되지 않아 지원한다고 쓰지 않는다. 여러 facet은 순서대로 해당 패널을 열고 이전 조건을 보존하는 원 링크를 대조한다. ConceptID가 여러 의미 패널에 쓰이는 구별도 후보에 보존한다.
+
+`acm-advanced/live-sdk-html.json`은 문헌10.1145/3831699의 원 HTML·bodymatter·backmatter와 TeX30개를 대조했다. 같은 문헌의31쪽 PDF도 앞 실제 SDK에서 회수했다. 동적 HTML 사본의 크기와 구조 단위가 달라도 DOI·제목·본문 영역·TeX 조건은 같았다. Source HTML에 없는 MathML을 만들지 않고 span.core-tex를 별도 기계 자료로 보존한다.
+
+`acm-advanced/live-sdk-boundaries.json`은 양성만으로 닫지 않고 실제 오류 표본을 수리한 검증이다. SIGPLAN은 선택 DOI10.1145/2499370.2462176 외에10.1145/2491956.2462176을 원 CSL에 포함했다. 요청1·포함2·추가1을 명시하고 검색 record와 원 source_export를 partial로 보존하며 관계명을 추정하지 않는다. JMLR key10.5555/3814246.3814390은 BibTeX DOI가 없어도 exact CSL key·레코드 URL·세 제목을 대조해 metadata/export를 회수했다. PDF·HTML 실패는 성공한 구성요소를 지우지 않도록 교정했다. 관련44검사가 통과했다.
+
+PQDT의 `data/access-research/pqdt-final/sdk-live.json`은 생산 Firefox의 새 SDK에서 recent·2020-01-01부터2024-12-31·Subject 두 include/한 exclude·English를 결합한148건의 start19/limit2 두 페이지와 Text4,012바이트를 대조했다. 이전 조건을 값별로 해제한 다음 검색·0건도 통과했다. 문헌2618193239의 RIS2,707·Text2,726·RTF6,680·XLS9,216·서지 PDF51,994바이트, RIS와 같은 EndNote alias, 키 없는 BibTeX2,098바이트의 일곱 형식과 각 extract가 completed=true였다. 내용 선택은 원 제어에서 명시적으로 적용한다. 서지 PDF1쪽과 논문 전문40쪽은 별도 역할이다.
+
+`pqdt-final/sdk-supplement.json`은 기존 Supplemental PNG529,775바이트와 실제 MCP ImageContent를 재검증했다. 새 export 경로에서 예비204·빈 응답을 파일로 세지 않고 HTTP200·형식·문헌 ID·제목·범위를 검사한다. RTF와 서지 PDF의 ID는 원 hyperlink·URI annotation에서도 대조한다. 외부 reference-manager import는 제출하지 않으며 새 계정·연락 이메일을 사용하지 않는다. PQDT·supplement10검사와 RTF6검사가 통과했다.
+
+WOS의 `data/validation/20260912T163503Z-wos-advanced-mcp.json`은21개 현재 정렬 메뉴·여섯 edition·22개 실제 필터 분야의 연결을 검증한 최신 대표 흐름이다. CPCI-S 단독의 원 WOS.ISTP·1건·WE 필드, OA/Article·인용 수 정렬·마지막 창, 처음5개 밖의2013년 후보, 발행물 후보 검색, COMPUTATIONAL COMPLEXITY와 English를 결합한1건·원 SO/LA 필드·DOI fetch 동일성이 completed=true였다. 모든 정렬·분야 조합을 전수 실측했다는 뜻은 아니다.
+
+초기 analyze만으로 닫지 않고 각 collapsed section의 원 analyze 요청·입력 name/value/표시 count를 대조했다. See all의 별도 제어와 후보 검색을 연결하고, 같은 이름·건수가 다른 분야와 섞이지 않게 section 안에서 선택한다. 분야별 OR와 분야 간 순차 AND는 각 요청이 앞 결과 QID를 계승하는 원 동작을 대조한다. `facet_filters`와 `facet_group/facet_query`는 호출자에게 내부 index나 DOM 지식을 요구하지 않는다. `163654Z-wos-citations-mcp.json`도125건 citing·DOI 경계·양방향 fetch를 다시 통과했다.
+
+독립 검토에서 IEEE DOI fetch가 잘못된 단일 DOI를 거절하지 못하는 반례, 원 citation의 count만 검사하는 반례, 초기 비JSON403을 잘못 분류하는 반례를 재현해 수리했다. 요청·반환 DOI, BibTeX/RIS/CSV/plain의 선택 문헌·제목·순서, JSON 파싱 전 HTTP 상태를 검사한다. 이미 보존한 실제 export6개가 새 검사를 통과했고 실패 파일은 source_export로 남긴다. WOS 일반 fetch에도 DOI·UT 동일성 검사를 추가했다. IEEE·WOS·browser 관련54검사가 통과했으며 `data/access-research/ieee-rtf-review.json`에 검토와 수리 범위를 기록했다.
+
+PQDT의 독립 검토 네 반례는 `data/access-research/pqdt-final/review.json`에서 교정 후 PASS로 확인됐다. 선택1건에 중복된 RIS/BibTeX2건을 반환하면 count·순서 검사가 거부하고 실패 원파일을 보존한다. fulltext timeout도 metadata를 유지한 partial이다. 같은 label이 다른 그룹에 등장하는 경우에는 그룹별 More 제어의 include/exclude 상태와 한 번의 적용 전후 occurrence 변화를 결속하고 이전 그룹을 유지한다. 최종 Counter만으로 그룹을 추정하지 않는다. BibTeX는 fixed_cite_bibtex이며 export_content와 함께 지정하면 브라우저 전에 거부한다. None/JSON/HTML에도 명시 export_content를 묵살하지 않는다. `sdk-recheck.json`과 PQDT12·RTF6검사가 교정 뒤 통과했다.
+
+WOS의 최종 교정은 `data/validation/20260912T170140Z-wos-advanced-mcp.json`과 `170340Z-wos-citations-mcp.json`에서 completed=true였다. Friendly 조건으로18건을1건으로 좁힌 뒤 반환 facet도 원 DT16에서 최종 DT1로 갱신한다. Refine과 후보 요청은 현재 QID에 결속하고 후보 조회의 결과 건수·선택 상태 불변을 확인한다. 검증 결과에는 원 QID 대신 일치 여부를 남긴다. 같은 분야의 두 label이 한 value 배열로 전달되는9건 조합도 확인했다. 추가 export 실패는 기본 plain·records·evidence를 보존한 partial이다. `data/access-research/wos-final-review.json`에서 원 세 반례를 재실행한 독립 재검토가 PASS였다.
+
+2026-09-13 KST 최종 통합 상태의 전체 서비스 검사422개와 기존 문헌 catalog parser16개가 통과했다. 의존성 검사도 정상이며 공유 kudos-chromium.json·kudos-firefox.json은 접근 조사 시작 때의 SHA-256과 같았다. 구현·실측의 성공 범위를 향후 모든 문헌·모든 UI 조합의 보증으로 확대하지 않는다. 별도 자격 없는 Semantic Scholar의 현재429, 특정 Software Heritage flat 작업 대기, AMS의 동적식 제공자 오류와 SIAM의 확인된 비공개 문헌 권한 실패는 외부 조건으로 남긴다.
+
+2026-09-13 KST, ACM의 일반 검색 행 AND 기본값을 Boolean 지원의 한계로 단정했던 판단을 교정했다. 사용자가 제공한 현재 Search Tips에는 Edit Query에서 다른 연산자를 지정할 수 있다고 명시되어 있다. 실제 View Query Syntax 아래 editableQuery에서 Title:(algebra) 2,327건, Abstract:(complexity) 93,527건, 교차 field AND 320건·OR 95,534건·NOT 2,007건을 대조했다. 괄호를 둔 OR도 같은95,534건이며 소문자 or/not는320건으로 대문자 Boolean과 다르게 작동했다. 원식의 대소문자·따옴표·이스케이프를 서버가 바꾸지 않는다. 공식 ACM 사용자 안내13쪽의 대문자 권고와 현 Search Tips의 편집 예외가 이 실측과 일치한다. 공식 안내: https://libraries.acm.org/binaries/content/assets/libraries/acm-digital-library-user-guide.pdf .
+
+새 계약은 빈 query와 options.expression이다. field/fields 병용은 거부하고 다른 날짜·범주·facet·sort 제어는 함께 적용한다. 입력값·결과 AllField 검색식·collection 보존을 대조하며 원 검색식을 반환한다. data/access-research/acm-boolean-recheck/live-sdk.json의 새 SDK는 교차 field OR 95,534건과 Title 내부 OR에2024–2026년·JACM/CACM·Research Article·cited를 결합한13건, 각각 원 BibTeX를 completed=true로 확인했다. 관련46검사와 root의 전용13검사가 통과했다. Guide collection 전체 조합의 새 실측으로 확대하지 않는다. 이전의422검사는 이 Boolean 교정 전 통합 관측이다. 사용자의 후속 지시에 따라49개 자료원에서 과거 불가·보류·제한 판단을 별도로 전수조사하며 이 커밋을 전체 작업 완료로 세지 않는다.

@@ -97,6 +97,53 @@ def wos_events(raw):
         "records": [records[k] for k in sorted(records, key=int)], "events": events}
 
 
+def wos_facet_candidates(events):
+    analyze=next((event.get('payload') for event in events if event.get('key')=='analyze'),None)
+    if analyze is None:return []
+    if not isinstance(analyze,dict):raise ServiceError('invalid_response','WOS analyze event is not an object')
+    controls={'DT':('DT',None),'PY':('PY',None),'DX2NG':('DX2NG',None),
+              'OA':('FB',{'OPEN ACCESS':'Open Access'}),'ECR':('FB',{'Y':'Enriched Cited References'})}
+    candidates=[]
+    for group in analyze.values():
+        if not isinstance(group,dict) or not isinstance(group.get('Name'),str) or not isinstance(group.get('Values'),list):
+            raise ServiceError('invalid_response','WOS analyze group has an unexpected shape')
+        index=group['Name']
+        for item in group['Values']:
+            if not isinstance(item,dict) or not isinstance(item.get('Key'),str) or type(item.get('Value')) is not int or not item['Key'].startswith(index+'.'):
+                raise ServiceError('invalid_response','WOS facet candidate has an unexpected shape')
+            if index not in controls:continue
+            value=item['Key'][len(index)+1:];section,labels=controls[index]
+            if labels is not None and value not in labels:continue
+            candidates.append({'group':index,'value':item['Key'],'label':labels[value] if labels else value,
+                               'count':item['Value'],'control_section':section})
+    return candidates
+
+
+WOS_FACET_GROUPS={
+    'publication_years':('PY','Publication Years'),'document_types':('DT','Document Types'),
+    'researcher_profiles':('DX2NG','Researcher Profiles'),'wos_categories':('TASCA','Web of Science Categories'),
+    'citation_topics_meso':('TMSO','Citation Topics Meso'),'citation_topics_micro':('TMIC','Citation Topics Micro'),
+    'sustainable_development_goals':('SDG','Sustainable Development Goals'),'wos_indexes':('EDN','Web of Science Index'),
+    'affiliations':('OG','Affiliations'),'affiliation_departments':('DLM','Affiliation with Department'),
+    'publication_titles':('SO','Publication Titles'),'languages':('LA','Languages'),'countries_regions':('CU','Countries/Regions'),
+    'publishers':('PUBL','Publishers'),'research_areas':('SJ','Research Areas'),'open_access_types':('OAJ','Open Access'),
+    'funding_agencies':('FO','Funding Agencies'),'conference_titles':('CF','Conference Titles'),'group_authors':('GP','Group Authors'),
+    'book_series_titles':('SE','Book Series Titles'),'editors':('ED','Editors'),'editorial_notices':('EN','Editorial Notices')}
+
+
+def wos_control_candidates(raw,field,group):
+    soup=BeautifulSoup(raw,'html.parser');result=[];seen=set()
+    for node in soup.select('input[type="checkbox"][name]'):
+        if node.get('name')!=group:continue
+        value=node.get('value');aria=node.get('aria-label','');match=re.fullmatch(r'(.+),\s*([\d,]+)',aria)
+        if not isinstance(value,str) or not value.startswith(group+'.') or not match:
+            raise ServiceError('invalid_response','WOS facet control has an unexpected identity or count')
+        if value in seen:continue
+        seen.add(value);result.append({'field':field,'label':match[1],'count':int(match[2].replace(',','')),
+                                       'native_group':group,'native_value':value})
+    return result
+
+
 def eccc_records(raw):
     soup = BeautifulSoup(raw, "html.parser")
     records = []
@@ -698,12 +745,293 @@ class WebOfScience:
         "ris": ("RIS (other reference software)", "application/x-research-info-systems"),
         "bibtex": ("BibTeX", "application/x-bibtex"), "excel": ("Excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
         "tsv": ("Tab delimited file", "text/tab-separated-values"), "html": ("Printable HTML file", "text/html")}
+    sorts={'relevance':('Relevance','relevance'),'date-newest':('Date: newest first','date-descending'),
+           'date-oldest':('Date: oldest first','date-ascending'),'citations-highest':('Citations: highest first','times-cited-descending'),
+           'citations-lowest':('Citations: lowest first','times-cited-ascending'),'recently-added':('Recently added','recently-added'),
+           'usage-all-time':('Usage (all time): most first',None),'usage-180-days':('Usage (last 180 days): most first',None),
+           'conference-title-asc':('Conference title: A to Z',None),'conference-title-desc':('Conference title: Z to A',None),
+           'first-author-asc':('First author name: A to Z',None),'first-author-desc':('First author name: Z to A',None),
+           'publication-title-asc':('Publication title: A to Z',None),'publication-title-desc':('Publication title: Z to A',None),
+           'document-title-asc':('Document title: A to Z',None),'document-title-desc':('Document title: Z to A',None),
+           'background-highest':('Background: Highest first',None),'basis-highest':('Basis: Highest first',None),
+           'support-highest':('Support: Highest first',None),'differ-highest':('Differ: Highest first',None),
+           'discuss-highest':('Discuss: Highest first',None)}
+    edition_values={'SCI-EXPANDED':'WOS.SCI','SSCI':'WOS.SSCI','AHCI':'WOS.AHCI','CPCI-S':'WOS.ISTP','CPCI-SSH':'WOS.ISSHP','ESCI':'WOS.ESCI'}
 
     def __init__(self, store, gateway):
         self.store, self.gateway = store, gateway
 
     def cookies(self, page):
         dismiss_cookies(page)
+
+    def advanced_options(self,options):
+        if set(options)-{'sort','editions','facets','facet_filters','facet_group','facet_query'}:
+            raise ServiceError('invalid_options','Use documented WOS sort, editions and result facet fields')
+        sort=options.get('sort','relevance')
+        if sort not in self.sorts:raise ServiceError('invalid_options','Use a current WOS result sort listed by describe_source')
+        requested=options.get('editions')
+        if requested is not None and (not isinstance(requested,list) or not requested or any(not isinstance(value,str) or value not in self.edition_values for value in requested) or len(set(requested))!=len(requested)):
+            raise ServiceError('invalid_options','editions must be a non-empty distinct list of current WOS edition names')
+        editions=None if requested is None else [(label,native) for label,native in self.edition_values.items() if label in requested]
+        raw_facets=options.get('facets',[])
+        if not isinstance(raw_facets,list) or any(not isinstance(value,str) or not re.fullmatch(r'[A-Z0-9]+\..+',value) for value in raw_facets) or len(set(raw_facets))!=len(raw_facets):
+            raise ServiceError('invalid_options','facets must be distinct values copied from the current WOS facet candidates')
+        facets=[(value.split('.',1)[0],value.split('.',1)[1],value) for value in raw_facets]
+        raw_filters=options.get('facet_filters',{})
+        if not isinstance(raw_filters,dict):raise ServiceError('invalid_options','facet_filters must map current WOS field names to exact label arrays')
+        filters=[]
+        for field,values in raw_filters.items():
+            if field not in WOS_FACET_GROUPS or not isinstance(values,list) or not values or any(not isinstance(value,str) or not value or value!=value.strip() for value in values) or len(set(values))!=len(values):
+                raise ServiceError('invalid_options','Each WOS facet field needs distinct nonempty exact labels')
+            group,heading=WOS_FACET_GROUPS[field];filters.append((field,group,heading,values))
+        if {index for index,_,_ in facets}&{group for _,group,_,_ in filters}:
+            raise ServiceError('invalid_options','Do not request one WOS facet through both native-value and friendly-label inputs')
+        preview=options.get('facet_group');query=options.get('facet_query')
+        if preview is not None and preview not in WOS_FACET_GROUPS:raise ServiceError('invalid_options','facet_group must be a current WOS result field')
+        if query is not None and (preview is None or not isinstance(query,str) or not query.strip() or query!=query.strip()):
+            raise ServiceError('invalid_options','facet_query needs facet_group and a nonempty exact search string')
+        facet_preview=(preview,*WOS_FACET_GROUPS[preview],query) if preview else None
+        return {'sort':self.sorts[sort],'sort_name':sort,'editions':editions,'facets':facets,
+                'facet_filters':filters,'facet_preview':facet_preview}
+
+    def validate_advanced_request(self,request,editions,sort):
+        search=request.get('search',{});retrieve=request.get('retrieve',{})
+        actual=search.get('editions')
+        if actual!=editions and not (actual is None and editions==list(self.edition_values.values())):
+            raise ServiceError('query_mismatch','WOS search did not retain the requested editions')
+        actual_sort=retrieve.get('sort')
+        if (sort is not None and actual_sort!=sort) or (sort is None and (not isinstance(actual_sort,str) or not actual_sort)):
+            raise ServiceError('query_mismatch','WOS search did not retain the requested sort')
+        return actual_sort
+
+    def result_qid(self,url):
+        match=re.search(r'/wos/woscc/summary/([A-Za-z0-9-]+)/',urlsplit(url).path)
+        if not match:raise ServiceError('query_mismatch','WOS result page has no current query identity')
+        return match[1]
+
+    def final_facets(self,result):
+        return wos_facet_candidates(result['events'])
+
+    def validate_refine_request(self,request,facets,sort,qid):
+        grouped=[]
+        for index,value,_ in facets:
+            current=next((item for item in grouped if item['index']==index),None)
+            if current is None:current={'index':index,'value':[]};grouped.append(current)
+            current['value'].append(value)
+        if request.get('qid')!=qid or request.get('refines')!=grouped or request.get('retrieve',{}).get('sort')!=sort:
+            raise ServiceError('query_mismatch','WOS refine request did not retain the requested facets and sort')
+
+    def requested_export(self,page,start,end,format,records,full_export):
+        if format in (None,'json'):return records,None
+        if format=='plain':return full_export,None
+        try:return self.export_records(page,start,end,format),None
+        except ServiceError as error:return error.result,error.result
+        except Exception as error:
+            failure={'status':'error','code':'export_failed','error_type':type(error).__name__}
+            return failure,failure
+
+    def select_editions(self,page,requested):
+        combo=page.get_by_role('combobox',name=re.compile(r'^selectEdition,',re.I));combo.wait_for(state='visible',timeout=30000);page.wait_for_timeout(1200);combo.click(force=True);page.wait_for_timeout(400)
+        choices=page.get_by_role('option').filter(visible=True);choices.first.wait_for(state='visible',timeout=30000);available=[]
+        for index in range(choices.count()):
+            text=' '.join(choices.nth(index).inner_text().split())
+            match=next(((label,native) for label,native in self.edition_values.items() if '('+label+')' in text),None)
+            if match:available.append((*match,index))
+        desired={label for label,_,_ in available} if requested is None else {label for label,_ in requested}
+        if desired-{label for label,_,_ in available}:
+            page.keyboard.press('Escape')
+            raise ServiceError('selection_required','Select editions available in the current institutional WOS session',status='selection_required',
+                               candidates=[{'label':label,'value':native} for label,native,_ in available])
+        if requested is None and any(choices.nth(index).get_attribute('aria-selected')!='true' for _,_,index in available):
+            page.get_by_role('option',name='Select All',exact=True).click(force=True);page.wait_for_timeout(200)
+        else:
+            for label,_,index in available:
+                option=choices.nth(index)
+                if (option.get_attribute('aria-selected')=='true')!=(label in desired):
+                    option.click(force=True);page.wait_for_timeout(100)
+        actual={label for label,_,index in available if choices.nth(index).get_attribute('aria-selected')=='true'}
+        if actual!=desired:
+            page.keyboard.press('Escape')
+            raise ServiceError('query_mismatch','WOS edition controls did not retain the requested selection')
+        page.keyboard.press('Escape')
+        return [(label,native) for label,native,_ in available if label in desired]
+
+    def apply_facets(self,page,result,requested,sort):
+        candidates=wos_facet_candidates(result['events'])
+        if not requested:return result,candidates,None
+        indexed={item['value']:item for item in candidates}
+        if any(value not in indexed for _,_,value in requested):
+            raise ServiceError('selection_required','Copy facet values from the current WOS result candidates',status='selection_required',candidates=candidates)
+        groups=[]
+        for item in requested:
+            group=next((values for index,values in groups if index==item[0]),None)
+            if group is None:group=[];groups.append((item[0],group))
+            group.append(item)
+        applied=[];evidence=[];current=result
+        for index,group in groups:
+            qid=self.result_qid(page.url)
+            current_candidates={item['value']:item for item in wos_facet_candidates(current['events'])}
+            if any(value not in current_candidates for _,_,value in group):
+                raise ServiceError('selection_required','A requested WOS facet is not available after the preceding refinements',status='selection_required',candidates=list(current_candidates.values()))
+            values=[current_candidates[value] for _,_,value in group]
+            section=page.locator('[data-ta="filter-section-'+values[0]['control_section']+'"]')
+            if section.count()!=1:
+                raise ServiceError('selection_required','The current WOS result has no unique control section for this facet',status='selection_required',candidate=values[0])
+            heading=section.locator('button.filter-heading').first
+            if heading.count() and heading.get_attribute('aria-expanded')=='false':heading.click();page.wait_for_timeout(200)
+            scope=section
+            def matching_boxes(candidate):
+                matches=[];boxes=section.locator('mat-checkbox input[type="checkbox"]')
+                if scope is not section:boxes=scope.locator('mat-checkbox input[type="checkbox"]')
+                for i in range(boxes.count()):
+                    box=boxes.nth(i);aria=box.get_attribute('aria-label') or '';match=re.fullmatch(r'(.+),\s*([\d,]+)',aria)
+                    if match and box.is_visible() and match[1].casefold()==candidate['label'].casefold() and int(match[2].replace(',',''))==candidate['count']:matches.append(box)
+                return matches
+            if any(not matching_boxes(candidate) for candidate in values):
+                more=section.get_by_role('button',name=re.compile(r'^(?:See all|Show more)',re.I)).filter(visible=True)
+                if more.count():
+                    more.first.click();page.wait_for_timeout(400)
+                    expanded=page.locator('app-refine-see-all-shared').filter(visible=True)
+                    if expanded.count():scope=expanded.first
+            selected=[]
+            for candidate in values:
+                matches=matching_boxes(candidate)
+                if not matches:
+                    search=scope.locator('input[type="search"],input[placeholder*="Search" i]').filter(visible=True)
+                    if search.count():search.first.fill(candidate['label']);page.wait_for_timeout(500);matches=matching_boxes(candidate)
+                if len(matches)!=1:
+                    raise ServiceError('selection_required','A current WOS facet could not be matched inside its native control section',status='selection_required',candidate=candidate)
+                box=matches[0]
+                if not box.is_checked():box.locator('xpath=ancestor::mat-checkbox[1]').locator('label').click()
+                selected.append(box)
+            refine=scope.get_by_role('button',name='Refine',exact=True).filter(visible=True).first if scope is not section else selected[0].locator('xpath=ancestor::div[contains(@class,"width-wrapper")][1]').get_by_role('button',name='Refine',exact=True)
+            with page.expect_response(lambda response:urlsplit(response.url).hostname in self.hosts and urlsplit(response.url).path=='/api/wosnx/core/runQueryRefine',timeout=60000) as event:
+                refine.click()
+            response=event.value
+            if response.status!=200:raise ServiceError('provider_error','WOS result refinement failed',http_status=response.status)
+            applied.extend(group);request=response.request.post_data_json;self.validate_refine_request(request,group,sort,qid)
+            current=wos_events(response.text())
+            evidence.append(self.store.put(encoded(current['events']),'application/json',self.source,response.url,role='refine_response',
+                                           facets=[value for _,_,value in applied],sort=sort))
+        return current,wos_facet_candidates(current['events']),evidence[0] if len(evidence)==1 else evidence
+
+    def load_facet_group(self,page,field,group,heading,query=None,current_qid=None,current_total=None):
+        current_qid=current_qid or self.result_qid(page.url)
+        before_selection=page.locator('#snRefine input[type="checkbox"]:checked').evaluate_all("nodes=>nodes.map(n=>(n.name||'')+'\u0000'+(n.value||'')).sort()")
+        section=page.locator('[data-ta="filter-section-'+group+'"]')
+        if section.count()!=1:raise ServiceError('facet_not_offered','The current WOS result has no '+heading+' facet',status='not_offered',field=field)
+        control=section.locator('button.filter-heading')
+        evidence=None;observed_analysis=None
+        if control.get_attribute('aria-expanded')!='true':
+            def matching(response):
+                if urlsplit(response.url).hostname not in self.hosts or urlsplit(response.url).path!='/api/wosnx/core/runQueryGetRecordsStream':return False
+                try:
+                    analyzes=response.request.post_data_json.get('retrieve',{}).get('analyzes')
+                    return isinstance(analyzes,list) and len(analyzes)==1 and analyzes[0].startswith(group+'.')
+                except Exception:return False
+            with page.expect_response(matching,timeout=60000) as event:control.click()
+            response=event.value
+            if response.status!=200:raise ServiceError('provider_error','WOS facet candidate request failed',http_status=response.status,field=field)
+            if response.request.post_data_json.get('qid')!=current_qid:
+                raise ServiceError('query_mismatch','WOS facet candidate request is not bound to the current result',field=field)
+            native=wos_events(response.text());analyze=next((event.get('payload') for event in native['events'] if event.get('key')=='analyze'),{})
+            if current_total is not None and native['total']!=current_total:
+                raise ServiceError('result_set_mismatch','WOS facet candidate lookup changed the current result total')
+            if not any(isinstance(value,dict) and value.get('Name')==group for value in analyze.values()):
+                raise ServiceError('query_mismatch','WOS facet candidate response identifies another field',field=field)
+            observed_analysis=(native['events'],response.url,native['total'])
+        page.wait_for_timeout(200);scope=section;expanded=False
+        if query is not None:
+            more=section.get_by_role('button',name=re.compile(r'^(?:See all|Show more)',re.I)).filter(visible=True)
+            if more.count():
+                more.first.click();page.wait_for_timeout(400)
+                overlay=page.locator('app-refine-see-all-shared').filter(visible=True)
+                if overlay.count():scope=overlay.first;expanded=True
+            search=scope.locator('input[type="search"],input[placeholder*="Search" i]').filter(visible=True)
+            if search.count():search.first.fill(query);page.wait_for_timeout(600)
+        after_selection=page.locator('#snRefine input[type="checkbox"]:checked').evaluate_all("nodes=>nodes.map(n=>(n.name||'')+'\u0000'+(n.value||'')).sort()")
+        if self.result_qid(page.url)!=current_qid or after_selection!=before_selection:
+            raise ServiceError('result_set_mismatch','WOS facet candidate lookup changed the current result or active filters')
+        if observed_analysis:
+            events,url,total=observed_analysis
+            evidence=self.store.put(encoded(events),'application/json',self.source,url,role='facet_analysis',field=field,native_group=group,
+                                    qid_matched=True,result_total=total,selection_unchanged=True)
+        return wos_control_candidates(scope.inner_html(),field,group),scope,evidence,expanded
+
+    def apply_named_facets(self,page,result,filters,sort):
+        if not filters:return result,[],[]
+        current=result;evidence=[];artifacts=[]
+        for field,group,heading,labels in filters:
+            qid=self.result_qid(page.url)
+            candidates,scope,analysis,expanded=self.load_facet_group(page,field,group,heading,current_qid=qid,current_total=current['total'])
+            if analysis:evidence.append(analysis)
+            if any(sum(item['label'].casefold()==label.casefold() for item in candidates)!=1 for label in labels):
+                candidates,scope,extra,expanded=self.load_facet_group(page,field,group,heading,labels[0],current_qid=qid,current_total=current['total'])
+                if extra:evidence.append(extra)
+            selected=[]
+            for label in labels:
+                if expanded:
+                    search=scope.locator('input[type="search"],input[placeholder*="Search" i]').filter(visible=True)
+                    if search.count():search.first.fill(label);page.wait_for_timeout(500);candidates=wos_control_candidates(scope.inner_html(),field,group)
+                matches=[item for item in candidates if item['label'].casefold()==label.casefold()]
+                if len(matches)!=1:
+                    raise ServiceError('selection_required','Select one exact label from the current WOS facet field',status='selection_required',
+                                       field=field,candidates=candidates)
+                candidate=matches[0];boxes=scope.locator('input[type="checkbox"]');controls=[]
+                for index in range(boxes.count()):
+                    box=boxes.nth(index)
+                    if box.is_visible() and box.get_attribute('name')==group and box.get_attribute('value')==candidate['native_value']:controls.append(box)
+                if len(controls)!=1:raise ServiceError('selection_required','The selected WOS facet label has no unique native control',status='selection_required',field=field,candidate=candidate)
+                box=controls[0]
+                if not box.is_checked():box.locator('xpath=ancestor::mat-checkbox[1]').locator('label').click()
+                selected.append(candidate)
+            artifact=self.store.put(encoded(selected),'application/json',self.source,page.url,role='facet_candidates',field=field,
+                                    native_group=group,query=labels,scope='Exact visible labels resolved in one current WOS facet field')
+            artifacts.append(artifact)
+            refine=scope.get_by_role('button',name='Refine',exact=True).filter(visible=True).first if expanded else controls[0].locator('xpath=ancestor::div[contains(@class,"width-wrapper")][1]').get_by_role('button',name='Refine',exact=True)
+            with page.expect_response(lambda response:urlsplit(response.url).hostname in self.hosts and urlsplit(response.url).path=='/api/wosnx/core/runQueryRefine',timeout=60000) as event:
+                refine.click()
+            response=event.value
+            if response.status!=200:raise ServiceError('provider_error','WOS result refinement failed',http_status=response.status,field=field)
+            requested=[(group,item['native_value'][len(group)+1:],item['native_value']) for item in selected]
+            self.validate_refine_request(response.request.post_data_json,requested,sort,qid)
+            current=wos_events(response.text());evidence.append(self.store.put(encoded(current['events']),'application/json',self.source,response.url,
+                role='refine_response',field=field,labels=labels,native_values=[item['native_value'] for item in selected],sort=sort))
+        return current,evidence,artifacts
+
+    def preview_facet_group(self,page,preview,result):
+        if preview is None:return None,None
+        field,group,heading,query=preview;qid=self.result_qid(page.url)
+        candidates,scope,evidence,expanded=self.load_facet_group(page,field,group,heading,query,current_qid=qid,current_total=result['total'])
+        artifact=self.store.put(encoded(candidates),'application/json',self.source,page.url,role='facet_candidates',field=field,
+                                native_group=group,query=query,scope='Current visible candidates; use facet_query to search the native expanded list')
+        if expanded:
+            cancel=scope.get_by_role('button',name='Cancel',exact=True).filter(visible=True)
+            if cancel.count():cancel.first.click()
+        return artifact,evidence
+
+    def apply_sort(self,page,result,sort):
+        label,expected_native=sort;control=page.locator('#selectSortOption').filter(visible=True).first;control.wait_for(timeout=30000)
+        evidence=None
+        if control.get_attribute('aria-label')!='Sort by '+label:
+            control.click();choice=page.get_by_role('menuitem',name=label,exact=True)
+            with page.expect_response(lambda response:urlsplit(response.url).hostname in self.hosts and urlsplit(response.url).path=='/api/wosnx/core/runQueryGetRecordsStream',timeout=60000) as event:
+                choice.click()
+            response=event.value
+            if response.status!=200:raise ServiceError('provider_error','WOS result sorting failed',http_status=response.status)
+            request=response.request.post_data_json;native=request.get('retrieve',{}).get('sort')
+            if not isinstance(native,str) or not native or expected_native is not None and native!=expected_native:
+                raise ServiceError('query_mismatch','WOS did not retain the requested sort')
+            sorted_result=wos_events(response.text())
+            if sorted_result['total']!=result['total']:raise ServiceError('result_set_mismatch','WOS sorting changed the result set size')
+            result=sorted_result
+            evidence=self.store.put(encoded(result['events']),'application/json',self.source,response.url,role='sort_response',sort=native,total=result['total'])
+        else:
+            native=urlsplit(page.url).path.rstrip('/').split('/')[-2]
+            if expected_native is not None and native!=expected_native:raise ServiceError('query_mismatch','WOS result route did not retain the requested sort')
+        if control.get_attribute('aria-label')!='Sort by '+label or '/'+native+'/' not in urlsplit(page.url).path:
+            raise ServiceError('query_mismatch','WOS result page did not retain the requested sort')
+        return result,evidence,native
 
     def citing_target(self, target):
         from api_adapters import doi
@@ -786,11 +1114,11 @@ class WebOfScience:
             raise ServiceError('export_range_mismatch','WOS citing export count differs from the requested record window',expected=end-start,received=len(records),evidence=full_export)
         artifact=self.store.put(encoded(records),'application/json',self.source,page.url,role='citing_records',target=accession,
                                 start=start,requested=limit,total=total,export_ref=full_export['ref'])
-        exported=artifact if export in (None,'json') else full_export if export=='plain' else self.export_records(page,start,end,export)
-        return {'status':'ok','source':self.source,'query':target,'options':{'kind':'citations','sort':sort},'kind':'citations',
+        exported,export_error=self.requested_export(page,start,end,export,artifact,full_export)
+        return {'status':'partial' if export_error else 'ok','source':self.source,'query':target,'options':{'kind':'citations','sort':sort},'kind':'citations',
                 'target':accession,'start':start,'requested':limit,'received':len(records),'total':total,'records':artifact,
                 'export':exported,'full_record_export':full_export,'evidence':evidence,'parent':parent['records'],
-                'relation':{'direction':'incoming','control_total':control_total,'result_total':total},
+                'relation':{'direction':'incoming','control_total':control_total,'result_total':total},'export_error':export_error,
                 'has_more':end<total,'next':{'start':end} if end<total else None,
                 'preview':[{'id':row['id'],'title':' '.join(row['fields'].get('ti',[]))} for row in records[:3]],
                 'scope':'Incoming WOS Core Collection records for the selected accession'}
@@ -821,25 +1149,30 @@ class WebOfScience:
             elif data.startswith(b'PK'):
                 media='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
             else:
-                raise ServiceError('invalid_export','WOS returned no recognized Excel workbook')
+                source_export=self.store.put(data,'application/octet-stream',self.source,page.url,preserve_bytes=True,role='source_export',
+                                             format=format,start=start,end=end,original_name=download.suggested_filename)
+                raise ServiceError('invalid_export','WOS returned no recognized Excel workbook',source_export=source_export)
         return self.store.put(data, media, self.source, page.url, role="citation_export", format=format,
             record_content=content, start=start, end=end, original_name=download.suggested_filename)
 
     def search(self, query, *, options, start=0, limit=20, cursor=None, export=None):
         if type(start) is not int or start < 0 or type(limit) is not int or not 1 <= limit <= 1000:
             raise ServiceError("invalid_range", "WOS requires start >= 0 and limit 1..1000")
-        if cursor or set(options)-{'kind','sort'}:
-            raise ServiceError("invalid_options", "Use native WOS field/date constraints in query and start for the requested window; additional UI filters are still being implemented")
+        if cursor or set(options)-{'kind','sort','editions','facets','facet_filters','facet_group','facet_query'}:
+            raise ServiceError("invalid_options", "Use native WOS field/date constraints in query, documented sort and editions, and current facet values")
         if export not in (None, "json", *self.formats):
             raise ServiceError("invalid_export", "Use json, plain, ris, bibtex, excel, tsv or html")
         kind=options.get('kind','publications');sort=options.get('sort','date-descending' if kind=='citations' else None)
-        if kind=='citations':return self.search_citations(query,start=start,limit=limit,export=export,sort=sort)
-        if kind!='publications' or sort is not None:
-            raise ServiceError('invalid_options','Use kind publications or citations; publication sort options are still being verified')
+        if kind=='citations':
+            if set(options)-{'kind','sort'}:raise ServiceError('invalid_options','Citing works accept kind and their verified date-descending sort')
+            return self.search_citations(query,start=start,limit=limit,export=export,sort=sort)
+        if kind!='publications':raise ServiceError('invalid_options','Use kind publications or citations')
+        settings=self.advanced_options({key:value for key,value in options.items() if key!='kind'})
         page = self.gateway.open(self.source, "Web of Science CPCI", self.hosts, '#composeQuerySmartSearch,input[name="search-main-box"]')
         self.cookies(page)
         page.get_by_role("link", name="Advanced Search", exact=True).first.click()
         page.get_by_text("QUERY BUILDER", exact=True).click()
+        selected_editions=self.select_editions(page,settings['editions'])
         area = page.locator("#advancedSearchInputArea")
         area.fill(query)
         with page.expect_response(lambda r: urlsplit(r.url).hostname in self.hosts and urlsplit(r.url).path == "/api/wosnx/core/runQuerySearch", timeout=60000) as event:
@@ -850,15 +1183,35 @@ class WebOfScience:
         request = response.request.post_data_json
         if request.get("search", {}).get("query") != [{"rowText": query}] or request["search"].get("database") != "WOSCC":
             raise ServiceError("query_mismatch", "WOS did not submit the requested query and collection")
+        initial_sort=self.validate_advanced_request(request,[native for _,native in selected_editions],None)
         result = wos_events(response.text())
         evidence = self.store.put(encoded(result["events"]), "application/json", self.source, response.url,
-            role="provider_response", query=query, collection="WOSCC", search_options=request["search"].get("options", {}))
+            role="provider_response", query=query, collection="WOSCC", editions=[label for label,_ in selected_editions],
+            search_options=request["search"].get("options", {}))
+        if result['total']==0:
+            artifact=self.store.put(b'[]','application/json',self.source,page.url,role='records',query=query,start=start,total=0)
+            return {'status':'not_found','source':self.source,'query':query,'options':options,'collection':'WOSCC',
+                    'editions':[label for label,_ in selected_editions],'sort':settings['sort_name'],'start':start,'requested':limit,
+                    'received':0,'total':0,'records':artifact,'export':artifact,'evidence':evidence,'filter_evidence':None,
+                    'sort_evidence':None,'facets':wos_facet_candidates(result['events']),
+                    'facet_scope':'Current native analyze candidates matched to current result controls','has_more':False,'next':None,
+                    'scope':'Requested WOS result window is empty'}
+        page.locator("#export-trigger-btn").wait_for(timeout=30000)
+        result,facets,filter_evidence=self.apply_facets(page,result,settings['facets'],initial_sort)
+        result,named_filter_evidence,applied_facet_candidates=self.apply_named_facets(page,result,settings['facet_filters'],initial_sort)
+        facets=self.final_facets(result)
+        preview_candidates,preview_evidence=self.preview_facet_group(page,settings['facet_preview'],result)
+        result,sort_evidence,native_sort=self.apply_sort(page,result,settings['sort'])
+        facet_groups=[{'field':field,'label':label} for field,(_,label) in WOS_FACET_GROUPS.items()]
+        candidate_artifacts=[*applied_facet_candidates,*([preview_candidates] if preview_candidates else [])]
         total = result["total"]
         if start >= total:
             artifact = self.store.put(b"[]", "application/json", self.source, page.url, role="records", query=query, start=start)
-            return {"status": "not_found", "source": self.source, "query": query, "total": total, "received": 0, "records": artifact, "evidence": evidence,
-                "has_more": False, "scope": "Requested WOS result window is empty"}
-        page.locator("#export-trigger-btn").wait_for(timeout=30000)
+            return {"status": "not_found", "source": self.source, "query": query,"options":options,"total": total, "received": 0, "records": artifact,
+                "export":artifact,"evidence": evidence,"filter_evidence":filter_evidence,"sort_evidence":sort_evidence,
+                "facets":facets,"facet_scope":"Current native analyze candidates matched to current result controls",
+                "facet_groups":facet_groups,"facet_candidates":candidate_artifacts,"named_filter_evidence":named_filter_evidence,
+                "facet_preview_evidence":preview_evidence,"editions":[label for label,_ in selected_editions],"sort":settings['sort_name'],"native_sort":native_sort,"has_more": False, "scope": "Requested WOS result window is empty"}
         end = min(start + limit, total)
         full_export = self.export_records(page, start, end, "plain")
         records = bibliography(self.store.read(full_export["ref"])[1], "application/x-wos")
@@ -866,16 +1219,19 @@ class WebOfScience:
             raise ServiceError("export_range_mismatch", "WOS export count differs from the requested record window", expected=end - start, received=len(records), evidence=full_export)
         artifact = self.store.put(encoded(records), "application/json", self.source, page.url,
             role="records", query=query, start=start, requested=limit, total=total, export_ref=full_export["ref"])
-        exported = artifact if export in (None, "json") else full_export if export == "plain" else self.export_records(page, start, end, export)
-        return {"status": "ok", "source": self.source, "query": query, "options": options, "collection": "WOSCC", "editions": "All within institutional access",
+        exported,export_error=self.requested_export(page,start,end,export,artifact,full_export)
+        return {"status": "partial" if export_error else "ok", "source": self.source, "query": query, "options": options, "collection": "WOSCC", "editions": [label for label,_ in selected_editions],"sort":settings['sort_name'],"native_sort":native_sort,
             "start": start, "requested": limit, "received": len(records), "total": total, "records": artifact, "export": exported,
-            "full_record_export": full_export, "evidence": evidence, "has_more": end < total, "next": {"start": end} if end < total else None,
+            "full_record_export": full_export, "evidence": evidence,"filter_evidence":filter_evidence,"sort_evidence":sort_evidence,
+            "facets":facets,"facet_scope":"Current native analyze candidates matched to current result controls",
+            "facet_groups":facet_groups,"facet_candidates":candidate_artifacts,"named_filter_evidence":named_filter_evidence,
+            "facet_preview_evidence":preview_evidence,"export_error":export_error,"has_more": end < total, "next": {"start": end} if end < total else None,
             "preview": [{"id": r["id"], "title": " ".join(r["fields"].get("ti", []))} for r in records[:3]],
             "scope": "KUDOS academic DB → Web of Science Core Collection, including licensed CPCI editions"}
 
     def fetch(self, target, *, parts):
         from api_adapters import doi
-        is_title = False
+        is_title = False;expected_accession=expected_doi=None
         if target.startswith(('http://', 'https://')) and urlsplit(target).hostname not in ('doi.org', 'dx.doi.org'):
             require_source_url(target, self.hosts)
             match = re.search(r'/full-record/(WOS:[0-9A-Z]+)(?:/|$)', unquote(urlsplit(target).path))
@@ -884,9 +1240,10 @@ class WebOfScience:
             target = match[1]
         if re.fullmatch(r"(?:WOS:)?[0-9A-Z]+", target):
             value = target if target.startswith("WOS:") else "WOS:" + target
+            expected_accession=value
             query = "UT=(" + value + ")"
         elif target.startswith(("10.", "doi:", "https://doi.org/")):
-            query = 'DO=("' + doi(target).replace('"', '\\"') + '")'
+            expected_doi=doi(target);query = 'DO=("' + expected_doi.replace('"', '\\"') + '")'
         else:
             is_title = True
             query = 'TI=("' + target.replace('"', '\\"') + '")'
@@ -900,6 +1257,16 @@ class WebOfScience:
             result["status"] = "selection_required"
             return result
         rows = json.loads(self.store.read(result["records"]["ref"])[1])
+        row=rows[0]
+        if expected_accession and row.get('id')!=expected_accession:
+            raise ServiceError('identity_mismatch','WOS search returned another accession',evidence=result['records'])
+        if expected_doi:
+            observed=[]
+            for value in row.get('fields',{}).get('di',[]):
+                try:observed.append(doi(value).casefold())
+                except ServiceError:continue
+            if expected_doi.casefold() not in observed:
+                raise ServiceError('identity_mismatch','WOS search returned another DOI',evidence=result['records'])
         components = {}
         for part in parts:
             if part in ("metadata", "export") or (part == "abstract" and rows[0]["fields"].get("ab")):
@@ -1024,6 +1391,11 @@ class ACM:
     hosts = {"dl-acm-org.libproxy.knu.ac.kr", "portal-acm-org.libproxy.knu.ac.kr", "dl.acm.org"}
     fields = {"AllField", "Title", "ContentGroupTitle", "ContribAuthor", "Abstract", "Fulltext", "Affiliation", "Keyword", "ConferenceLocation", "ConferenceSponsor", "Contrib", "PubIdSortField", "DOI"}
     formats = {"bibtex": ("bibtex", "application/x-bibtex"), "endnote": ("endNote", "application/x-endnote-refer"), "acmref": ("acm", "text/plain")}
+    category_fields = {'SeriesKey','Artifact','Funding','CCS','PrimaryCCS','PublisherRaw'}
+    category_operators = {'And','Or','Nor'}
+    facet_fields = {'SeriesKey','ConceptID','ContentItemType','SpecifiedLevelConceptID','SponsorAcronymRaw','content'}
+    facet_groups = {'SeriesKey':'publication','ConceptID':'concept','ContentItemType':'content_item_type',
+        'SpecifiedLevelConceptID':'venue','SponsorAcronymRaw':'sponsor','content':'result_category'}
 
     def __init__(self, store, gateway):
         self.store, self.gateway = store, gateway
@@ -1032,12 +1404,159 @@ class ACM:
     def page(self):
         return self.gateway.open(self.source, "ACM", self.hosts, 'input[name="AllField"]')
 
+    @staticmethod
+    def boolean_expression(query,options):
+        expression=options.get('expression')
+        if expression is None:return None
+        if not isinstance(expression,str) or not expression.strip() or query!='' or 'field' in options or 'fields' in options:
+            raise ServiceError('invalid_options','ACM expression requires query="" and cannot be combined with field or fields')
+        return expression
+
+    @staticmethod
+    def edit_boolean_query(page,expression):
+        edit=page.locator('#search__edit');edit.wait_for(state='visible',timeout=30000)
+        with page.expect_navigation(wait_until='domcontentloaded'):edit.click()
+        syntax=page.get_by_text('View Query Syntax',exact=True)
+        if syntax.count() and syntax.is_visible():syntax.click()
+        area=page.locator('#editableQuery');area.wait_for(state='visible',timeout=30000);area.fill(expression)
+        if area.input_value()!=expression:
+            raise ServiceError('query_mismatch','ACM Edit Query did not preserve the requested expression')
+        with page.expect_navigation(wait_until='domcontentloaded'):
+            page.locator('#advanced-search-btn').click()
+
+    @classmethod
+    def category_constraint(cls,value):
+        if not isinstance(value,dict) or set(value) not in ({'field','operator','value'},{'field','operator','values'}) \
+                or value.get('field') not in cls.category_fields or value.get('operator') not in cls.category_operators:
+            raise ServiceError('invalid_options','ACM category constraint requires an observed field, And/Or/Nor and exact labels')
+        values=[value['value']] if 'value' in value else value['values']
+        if not isinstance(values,list) or not values or len(values)!=len(set(values)) or any(not isinstance(item,str) or not item.strip() for item in values):
+            raise ServiceError('invalid_options','ACM category constraint values must be distinct nonempty exact labels')
+        return {'field':value['field'],'operator':value['operator'],'values':values}
+
+    @classmethod
+    def facet_candidates(cls,raw,base):
+        candidates=[];seen=set();host=urlsplit(base).hostname;base_params=parse_qs(urlsplit(base).query);soup=BeautifulSoup(raw,'html.parser')
+        controls={node.get('aria-controls'):node.get_text(' ',strip=True) for node in soup.select('a.facet__ctrl[aria-controls]')}
+        for link in soup.select('a[href]'):
+            url=urljoin(base,link['href']);parts=urlsplit(url)
+            if parts.hostname!=host or parts.path!='/action/doSearch':continue
+            params=parse_qs(parts.query)
+            changed=[field for field in cls.facet_fields if params.get(field)!=base_params.get(field)]
+            if len(changed)!=1:continue
+            field=changed[0];new_values=params.get(field,[]);old_values=base_params.get(field,[])
+            added=[value for value in new_values if value not in old_values]
+            if len(added)!=1 or any(params.get(existing)!=base_params.get(existing) for existing in cls.facet_fields if existing!=field):continue
+            value=added[0];text=link.get_text(' ',strip=True)
+            match=re.fullmatch(r'(.+?)\s*\(([0-9,]+)\)',text)
+            if not value or (not match and field!='content'):continue
+            panel=next((ancestor.get('id') for ancestor in link.parents if ancestor.get('id') in controls),None)
+            key=(field,value)
+            if key in seen:continue
+            seen.add(key);candidates.append({'field':field,'value':value,'label':match[1].strip() if match else text,
+                'count':int(match[2].replace(',','')) if match else None,'group':cls.facet_groups[field],
+                'panel':panel,'panel_label':controls.get(panel),'url':url})
+        return candidates
+
+    @classmethod
+    def select_facet(cls,candidates,request):
+        if not isinstance(request,dict) or set(request) not in ({'field','value'},{'field','value','panel'}) or request.get('field') not in cls.facet_fields \
+                or not isinstance(request.get('value'),str) or not request['value']:
+            raise ServiceError('invalid_options','ACM facet requires an observed field and native value')
+        matches=[candidate for candidate in candidates if candidate['field']==request['field'] and candidate['value']==request['value']
+                 and ('panel' not in request or candidate['panel']==request['panel'])]
+        if len(matches)!=1:
+            offered=[{key:item[key] for key in ('field','value','label','count','panel','panel_label')} for item in candidates if item['field']==request['field']]
+            raise ServiceError('facet_selection_required','Select one facet offered by the current ACM result page',status='selection_required',candidates=offered)
+        return matches[0]
+
+    @staticmethod
+    def fulltext_document(raw,base,identifier):
+        parts=urlsplit(base)
+        if parts.path!='/doi/full/'+identifier:
+            raise ServiceError('identity_mismatch','ACM HTML full text URL identifies another DOI')
+        soup=BeautifulSoup(raw,'html.parser')
+        dois=[node.get('content','').strip() for node in soup.select('meta[name="publication_doi" i],meta[name="dc.Identifier" i]')]
+        if not any(value.casefold()==identifier.casefold() for value in dois):
+            raise ServiceError('identity_mismatch','ACM HTML full text metadata identifies another DOI')
+        articles=soup.select('article');body=soup.select('article section#bodymatter');headings=soup.select('article h1')
+        if len(articles)!=1 or len(body)!=1 or len(headings)!=1 or not body[0].get_text(' ',strip=True):
+            raise ServiceError('document_not_ready','ACM page has no unique article body')
+        tex=[node.get_text('',strip=True) for node in articles[0].select('span.core-tex')]
+        if any(not value for value in tex):
+            raise ServiceError('invalid_response','ACM article contains an empty TeX expression')
+        return {'document_doi':identifier,'parent_doi':None,'title':headings[0].get_text(' ',strip=True),
+            'body_scope':'article including bodymatter and labeled backmatter','html':str(articles[0]),'tex':tex,
+            'body_text_chars':len(body[0].get_text(' ',strip=True)),'sections':len(body[0].select('section')),
+            'has_backmatter':bool(articles[0].select('section#backmatter'))}
+
+    @staticmethod
+    def citation_selection(checked,requested):
+        current={value.casefold():value for value in checked};wanted={value.casefold():value for value in requested}
+        return {'uncheck':[current[key] for key in current if key not in wanted],
+                'check':[wanted[key] for key in wanted if key not in current]}
+
+    @staticmethod
+    def match_citation_records(selected,bibliographic,payload):
+        items={}
+        if not isinstance(payload,dict) or not isinstance(payload.get('items'),list):
+            raise ServiceError('invalid_response','ACM citation response has an unexpected schema')
+        for entry in payload['items']:
+            if not isinstance(entry,dict):raise ServiceError('invalid_response','ACM citation item wrapper is invalid')
+            for key,value in entry.items():
+                folded=key.casefold()
+                if folded in items or not isinstance(value,dict):raise ServiceError('invalid_response','ACM citation identities are duplicated or invalid')
+                if value.get('id') and str(value['id']).casefold()!=folded:
+                    raise ServiceError('export_identity_mismatch','ACM citation item key and id differ')
+                if value.get('DOI') and str(value['DOI']).casefold()!=folded:
+                    raise ServiceError('export_identity_mismatch','ACM citation item key and DOI differ')
+                items[folded]=(key,value)
+        if payload.get('exportedDoiLength')!=len(items):
+            raise ServiceError('invalid_response','ACM citation response count differs from its item wrappers')
+        requested=[row['id'].casefold() for row in selected]
+        if len(requested)!=len(set(requested)) or any(value not in items for value in requested):
+            raise ServiceError('export_identity_mismatch','ACM citation response omitted a selected record')
+        used=set();matched=[]
+        def title(value):return re.sub(r'\s+',' ',str(value or '')).strip().casefold()
+        for row,identifier in zip(selected,requested):
+            exact=[index for index,item in enumerate(bibliographic) if identifier in {str(item.get('id','')).casefold(),str(item.get('doi','')).casefold()}]
+            if len(exact)==1:index=exact[0]
+            elif not exact and identifier.startswith('10.5555/'):
+                key,item=items[identifier];record_path=urlsplit(row.get('url','')).path
+                if record_path!='/doi/'+row['id'] or title(row.get('title'))!=title(item.get('title')):
+                    raise ServiceError('export_identity_mismatch','ACM Guide key, record URL and CSL title do not identify the same record')
+                candidates=[i for i,value in enumerate(bibliographic) if title(value.get('title'))==title(item.get('title'))]
+                if len(candidates)!=1:raise ServiceError('export_identity_mismatch','ACM Guide citation title is not unique in the source export')
+                index=candidates[0]
+            else:raise ServiceError('export_identity_mismatch','ACM formatted citation does not identify the selected record')
+            if index in used:raise ServiceError('export_identity_mismatch','ACM formatted citation was matched to more than one selected record')
+            used.add(index);matched.append(bibliographic[index])
+        additional=[key for folded,(key,_) in items.items() if folded not in set(requested)]
+        return {'selected':matched,'included_identifiers':[key for key,_ in items.values()],
+            'additional_identifiers':additional,'selection_status':'partial' if additional else 'exact'}
+
+    @staticmethod
+    def component_failure(error,source_page,code):
+        if isinstance(error,ServiceError):
+            return {**error.result,'artifact':error.result.get('artifact',source_page)}
+        return {'status':'error','code':code,'error_type':type(error).__name__,'artifact':source_page}
+
     def render_citations(self, page, payload, identifiers, format):
         items = {}
-        for entry in payload.get("items", []):
+        if not isinstance(payload,dict) or not isinstance(payload.get('items'),list):
+            raise ServiceError('invalid_response','ACM citation response has an unexpected schema')
+        for entry in payload['items']:
+            if not isinstance(entry,dict) or any(key.casefold() in {item.casefold() for item in items} for key in entry):
+                raise ServiceError('invalid_response','ACM citation item wrapper is invalid or duplicated')
             items.update(entry)
-        if {key.lower() for key in items} != {key.lower() for key in identifiers} or payload.get("exportedDoiLength") != len(identifiers):
-            raise ServiceError("export_identity_mismatch", "ACM citation response differs from the selected records")
+        source_data = self.store.put(encoded(payload), "application/json", self.source, page.url, role="native_citation_data", identifiers=identifiers, format=format)
+        requested={key.casefold() for key in identifiers};included={key.casefold() for key in items}
+        if not requested.issubset(included):
+            raise ServiceError("export_identity_mismatch", "ACM citation response omitted a selected record",evidence=source_data,
+                requested_count=len(identifiers),item_count=len(items),exported_doi_length=payload.get('exportedDoiLength'))
+        if payload.get('exportedDoiLength')!=len(items):
+            raise ServiceError('invalid_response','ACM citation response count differs from its item wrappers',evidence=source_data)
+        additional=[key for key in items if key.casefold() not in requested]
         script_ref = getattr(self, "processor_ref", None)
         if script_ref is None:
             script_url = "https://" + urlsplit(page.url).hostname + "/templates/jsp/_ux3/_acm/citeproc.min.js"
@@ -1047,7 +1566,6 @@ class ACM:
             script_ref = self.store.put(script, "text/javascript", self.source, obtained, preserve_bytes=True, role="citation_processor")
             self.processor_ref = script_ref
         script = self.store.read(script_ref["ref"])[1].decode("utf-8")
-        source_data = self.store.put(encoded(payload), "application/json", self.source, page.url, role="native_citation_data", identifiers=identifiers, format=format)
         # The publisher's processor and supplied CSL style run without its unrelated page bundles.
         renderer = self.gateway.context.new_page()
         try:
@@ -1062,21 +1580,29 @@ class ACM:
                 processor.updateItems(Object.keys(items));
                 return processor.makeBibliography();
             }""", payload)
-            if not rendered or len(rendered[1]) != len(identifiers):
-                raise ServiceError("export_count_mismatch", "Citation processor did not render every selected record")
+            if not rendered or not isinstance(rendered[1],list) or not rendered[1]:
+                raise ServiceError("export_count_mismatch", "Citation processor returned no formatted citation",evidence=source_data)
             text = "\n".join(rendered[1])
         finally:
             renderer.close()
         return self.store.put(text, self.formats[format][1], self.source, page.url, role="citation_export", format=format,
-            identifiers=identifiers, source_data_ref=source_data["ref"], processor_ref=script_ref["ref"])
+            identifiers=identifiers,included_identifiers=list(items),additional_identifiers=additional,
+            selection_status='partial' if additional else 'exact',rendered_count=len(rendered[1]),
+            source_data_ref=source_data["ref"], processor_ref=script_ref["ref"])
 
     def citation(self, page, identifiers, format="bibtex", *, record_page=False):
         if not record_page:
-            for identifier in identifiers:
+            boxes=page.locator('li.search__item.issue-item-container input[type="checkbox"][name]:checked')
+            checked=[box.get_attribute('name') for box in boxes.all() if box.get_attribute('name')]
+            changes=self.citation_selection(checked,identifiers)
+            for identifier in changes['uncheck']:
+                checkbox=page.locator('input[type="checkbox"][name="'+identifier+'"]');checkbox.focus();checkbox.press('Space')
+            for identifier in changes['check']:
                 checkbox = page.locator('input[type="checkbox"][name="' + identifier + '"]')
-                if not checkbox.is_checked():
-                    checkbox.focus()
-                    checkbox.press("Space")
+                checkbox.focus();checkbox.press("Space")
+            selected=[box.get_attribute('name').casefold() for box in page.locator('li.search__item.issue-item-container input[type="checkbox"][name]:checked').all() if box.get_attribute('name')]
+            if set(selected)!={value.casefold() for value in identifiers}:
+                raise ServiceError('export_identity_mismatch','ACM selected checkboxes differ from the requested records')
         with page.expect_response(lambda r: urlsplit(r.url).path == "/action/exportCiteProcCitation", timeout=45000) as exported:
             if record_page:
                 page.get_by_role("button", name="Export Citation", exact=True).first.click()
@@ -1096,19 +1622,45 @@ class ACM:
         return artifact
 
     def search(self, query, *, options, start=0, limit=20, cursor=None, export=None):
-        allowed = {"field", "fields", "collection", "from_year", "to_year", "from_month", "to_month", "sort"}
+        allowed = {"field", "fields", "expression", "collection", "from_year", "to_year", "from_month", "to_month", "sort", "constraint", "facet", "facets"}
         if set(options) - allowed or cursor:
             raise ServiceError("invalid_options", "Use ACM field/fields, collection, date range and sort; pagination uses start")
         if type(start) is not int or start < 0 or type(limit) is not int or not 1 <= limit <= 1000:
             raise ServiceError("invalid_range", "ACM requires start >= 0 and limit 1..1000")
         if export not in (None, "json", *self.formats):
             raise ServiceError("invalid_export", "Use json, bibtex, endnote or acmref")
-        terms = [{"field": options.get("field", "AllField"), "value": query}, *options.get("fields", [])]
+        expression=self.boolean_expression(query,options)
+        additional=options.get('fields',[])
+        if not isinstance(additional,list):
+            raise ServiceError('invalid_options','ACM fields must be an ordered list of field/value terms')
+        terms = [{"field": options.get("field", "AllField"), "value": expression if expression is not None else query}, *additional]
         if any(set(term) != {"field", "value"} or term["field"] not in self.fields or not isinstance(term["value"], str) for term in terms):
             raise ServiceError("invalid_options", "Each additional field has field and value; fields are combined by native AND")
         collection = {"fulltext": "dl", "guide": "all"}.get(options.get("collection", "fulltext"))
         if not collection:
             raise ServiceError("invalid_options", "collection must be fulltext or guide")
+        constraint=self.category_constraint(options['constraint']) if 'constraint' in options else None
+        if 'facet' in options and 'facets' in options:
+            raise ServiceError('invalid_options','Use facet or facets, not both')
+        facets=[options['facet']] if 'facet' in options else options.get('facets',[])
+        valid_keys=({'field','value'},{'field','value','panel'})
+        if not isinstance(facets,list) or any(not isinstance(item,dict) or set(item) not in valid_keys or item.get('field') not in self.facet_fields
+                or not isinstance(item.get('value'),str) or not item['value'] or ('panel' in item and (not isinstance(item['panel'],str)
+                or not re.fullmatch(r'[A-Za-z0-9/_-]+',item['panel']))) for item in facets):
+            raise ServiceError('invalid_options','ACM facet requires field and native value')
+        if len(facets)!=len({(item['field'],item['value'],item.get('panel')) for item in facets}):
+            raise ServiceError('invalid_options','ACM facets must be distinct')
+        sort=options.get('sort')
+        if sort is not None and sort not in ('EpubDate_asc','EpubDate_desc','downloaded','cited'):
+            raise ServiceError('invalid_options','Validated ACM sort values are EpubDate_asc, EpubDate_desc, downloaded and cited')
+        dates={key:options.get(key) for key in ('from_year','to_year','from_month','to_month')}
+        if any(value is not None and (type(value) is not int or (key.endswith('month') and not 1<=value<=12)) for key,value in dates.items()):
+            raise ServiceError('invalid_options','ACM date values use integer years and months 1..12')
+        if (dates['from_month'] is not None and dates['from_year'] is None) or (dates['to_month'] is not None and dates['to_year'] is None):
+            raise ServiceError('invalid_options','ACM month bounds require the corresponding year')
+        if dates['from_year'] is not None and dates['to_year'] is not None:
+            lower=(dates['from_year'],dates['from_month'] or 1);upper=(dates['to_year'],dates['to_month'] or 12)
+            if lower>upper:raise ServiceError('invalid_options','ACM from date must not be after its to date')
         page = self.page()
         host = urlsplit(page.url).hostname
         goto_source(page, "https://" + host + "/search/advanced", self.hosts, wait_until="domcontentloaded", timeout=45000)
@@ -1122,66 +1674,136 @@ class ACM:
             entry.press("Tab")
             if term["value"]:
                 page.wait_for_function("i => document.getElementById('text'+i).name === 'text'+i && document.getElementById('searchArea'+i).name === 'field'+i", arg=index)
-        if options.get("from_year") or options.get("to_year"):
+        if constraint:
+            page.locator('[name="searchArea[0]"]').select_option(constraint['field'])
+            page.locator('[name="operator[0]"]').select_option(constraint['operator'])
+            entry=page.locator('[name="text[0]"]')
+            for value in constraint['values']:
+                entry.fill(value);page.wait_for_timeout(500)
+                labels=page.locator('li:visible').evaluate_all("nodes => nodes.map(n => n.textContent.trim()).filter(Boolean)")
+                exact=page.get_by_text(value,exact=True).filter(visible=True)
+                if exact.count()!=1:
+                    raise ServiceError('constraint_selection_required','Select one exact category label offered by ACM',status='selection_required',candidates=labels[:20])
+                exact.click()
+        if any(value is not None for value in dates.values()):
             page.locator("#customRange").focus()
             page.locator("#customRange").press("Space")
             for option, control in {"from_year": "fromYear", "to_year": "toYear", "from_month": "fromMonth", "to_month": "toMonth"}.items():
-                if options.get(option):
-                    page.locator("#" + control).select_option(str(options[option]))
+                if options.get(option) is not None:
+                    selector=page.locator('#'+control)
+                    if not selector.locator('option[value="'+str(options[option])+'"]').count():
+                        raise ServiceError('invalid_options','ACM date value is not offered by the current control',control=option)
+                    selector.select_option(str(options[option]))
         with page.expect_navigation(wait_until="domcontentloaded"):
             page.locator("#advanced-search-btn").click()
         parsed = urlsplit(page.url)
         params = parse_qs(parsed.query, keep_blank_values=True)
-        if params.get("field1") != [terms[0]["field"]] or params.get("text1") != [query] or params.get("expand") != [collection]:
+        if params.get("expand") != [collection] or any(params.get('field'+str(index))!=[term['field']] or params.get('text'+str(index))!=[term['value']]
+                                                      for index,term in enumerate(terms,1)):
             raise ServiceError("query_mismatch", "ACM did not submit the requested field and collection")
-        sort = options.get("sort")
+        if expression is not None:
+            self.edit_boolean_query(page,expression)
+            parsed=urlsplit(page.url);params=parse_qs(parsed.query,keep_blank_values=True)
+            if params.get('expand')!=[collection] or params.get('AllField')!=[expression]:
+                raise ServiceError('query_mismatch','ACM result did not preserve the exact Edit Query expression and collection')
+        native_constraint=None
+        if constraint:
+            key=constraint['field']+constraint['operator'];values=params.get(key)
+            if not values or len(values)!=len(constraint['values']) or any(not value for value in values):
+                raise ServiceError('query_mismatch','ACM did not submit the selected category constraint')
+            native_constraint={**constraint,'native_key':key,'native_values':values,**({'native_value':values[0]} if len(values)==1 else {})}
+        facet_artifacts=[];selected_facets=[]
+        for step,facet in enumerate(facets,1):
+            if facet.get('panel'):
+                control=page.locator('a.facet__ctrl[aria-controls="'+facet['panel']+'"]')
+                if control.count()!=1:
+                    raise ServiceError('facet_selection_required','The requested ACM facet panel is not offered',status='selection_required',panel=facet['panel'])
+                if control.get_attribute('aria-expanded')!='true':control.click();page.wait_for_timeout(1200)
+            current_raw=page.locator('main').inner_html();candidates=self.facet_candidates(current_raw,page.url)
+            facet_artifacts.append(self.store.put(encoded([{key:item[key] for key in ('field','value','label','count','group','panel','panel_label')} for item in candidates]),
+                'application/json',self.source,page.url,role='facet_candidates',query=query,step=step))
+            selected=self.select_facet(candidates,facet);selected_facets.append(selected)
+            params=parse_qs(urlsplit(selected['url']).query,keep_blank_values=True)
+            retained=params.get('AllField')==[expression] if expression is not None else all(
+                params.get('field'+str(index))==[term['field']] and params.get('text'+str(index))==[term['value']]
+                for index,term in enumerate(terms,1))
+            if params.get('expand')!=[collection] or not retained:
+                raise ServiceError('query_mismatch','ACM facet link did not retain the submitted search')
+            if step<len(facets):
+                goto_source(page,selected['url'],self.hosts,wait_until='domcontentloaded',timeout=45000);page.locator('main').wait_for()
         if sort:
-            if sort not in ("EpubDate_asc", "EpubDate_desc"):
-                raise ServiceError("invalid_options", "Validated ACM sort values are EpubDate_asc and EpubDate_desc")
             params["sortBy"] = [sort]
         size = 50
         params["pageSize"] = [str(size)]
-        rows, evidence, exports = [], [], []
-        total = None
+        rows, evidence, exports, source_exports, export_scopes = [], [], [], [], []
+        total = None;base_params={key:list(value) for key,value in params.items() if key not in ('startPage','pageSize')}
         for page_index in range(start // size, (start + limit - 1) // size + 1):
             params["startPage"] = [str(page_index)]
             url = urlunsplit((parsed.scheme, parsed.netloc, parsed.path, urlencode(params, doseq=True), ""))
             goto_source(page, url, self.hosts, wait_until="domcontentloaded", timeout=45000)
+            observed=parse_qs(urlsplit(page.url).query,keep_blank_values=True)
+            if any(observed.get(key)!=value for key,value in base_params.items()):
+                raise ServiceError('query_mismatch','ACM pagination did not retain the submitted search and filters',page=page_index)
             main = page.locator("main")
             main.wait_for()
             text = main.inner_text()
             match = re.search(r"([0-9,]+)\s+Results? for:", text, re.I)
             if not match:
                 raise ServiceError("invalid_response", "ACM result count is missing")
-            total = int(match.group(1).replace(",", ""))
+            observed_total=int(match.group(1).replace(",", ""))
+            if total is not None and observed_total!=total:
+                raise ServiceError('search_range_changed','ACM result total changed while reading the requested range',previous_total=total,current_total=observed_total,page=page_index)
+            total=observed_total
             raw = main.inner_html()
             records = acm_records(raw, page.url)
-            evidence.append(self.store.put(clean_html(raw, self.store.sanitizer), "text/html", self.source, page.url, role="search_page", query=query, options=options))
+            expected=min(size,max(0,total-page_index*size))
+            if len(records)!=expected or len({row['id'].casefold() for row in records})!=len(records):
+                raise ServiceError('invalid_response','ACM result page does not match its reported range',page=page_index,expected=expected,received=len(records))
+            evidence.append(self.store.put(clean_html(raw, self.store.sanitizer), "text/html", self.source, page.url, role="search_page", query=query,
+                options=options,native_constraint=native_constraint,
+                selected_facets=[{key:item[key] for key in ('field','value','label','count','group','panel','panel_label')} for item in selected_facets]))
             selected = [row for i, row in enumerate(records, page_index * size) if start <= i < start + limit]
             if selected:
                 native = self.citation(page, [row["id"] for row in selected])
                 bibliographic = bibliography(self.store.read(native["ref"])[1], "application/x-bibtex")
-                from collections import Counter
-                if Counter(r["id"].lower() for r in bibliographic) != Counter(r["id"].lower() for r in selected):
-                    raise ServiceError("export_identity_mismatch", "ACM citations do not correspond to the selected result records", evidence=native)
-                by_id = {r["id"].lower(): r for r in bibliographic}
-                for row in selected:
-                    bib = by_id[row["id"].lower()]
+                payload=json.loads(self.store.read(native['source_data_ref'])[1]);matched=self.match_citation_records(selected,bibliographic,payload)
+                source_manifest=self.store.read(native['source_data_ref'])[0];provider_source={'ref':native['source_data_ref'],**source_manifest}
+                scope={'page':page_index,'requested_identifiers':[row['id'] for row in selected],
+                    'included_identifiers':matched['included_identifiers'],'additional_identifiers':matched['additional_identifiers'],
+                    'selection_status':matched['selection_status'],'rendered_count':native['rendered_count'],
+                    'source_export':provider_source,'rendered_export':native}
+                export_scopes.append(scope);source_exports.append(provider_source)
+                for row,bib in zip(selected,matched['selected']):
                     row.update(bibliography=bib, year=bib.get("year"), abstract=bib.get("abstract"))
-                    self.known_records[row["id"].lower()] = (bib, native)
+                    self.known_records[row["id"].lower()] = (bib, native, scope)
                 rows.extend(selected)
-                exports.append(native if export in (None, "json", "bibtex") else self.citation(page, [row["id"] for row in selected], export))
+                output=native if export in (None,"json","bibtex") else self.citation(page,[row['id'] for row in selected],export)
+                if output is not native:
+                    source_manifest=self.store.read(output['source_data_ref'])[0]
+                    source_exports.append({'ref':output['source_data_ref'],**source_manifest})
+                exports.append(output)
             if (page_index + 1) * size >= total:
                 break
         artifact = self.store.put(encoded(rows), "application/json", self.source, page.url, role="records", query=query, options=options, start=start, requested=limit, total=total)
         exported = artifact
         if export not in (None, "json") and exports:
-            content = b"\n\n".join(self.store.read(a["ref"])[1] for a in exports)
-            exported = self.store.put(content, self.formats[export][1], self.source, page.url, role="citation_export", format=export, count=len(rows))
-        return {"status": "ok" if rows else "not_found", "source": self.source, "query": query, "options": options,
+            if len(exports)==1:exported=exports[0]
+            else:
+                content = b"\n\n".join(self.store.read(a["ref"])[1] for a in exports)
+                exported = self.store.put(content, self.formats[export][1], self.source, page.url, role="citation_export", format=export, count=len(rows),
+                    parent_refs=[item['ref'] for item in exports])
+        partial=any(scope['selection_status']=='partial' for scope in export_scopes)
+        if partial:exported={'status':'partial','artifact':exported,'source_exports':source_exports,'scopes':export_scopes}
+        return {"status": "partial" if partial else "ok" if rows else "not_found", "source": self.source, "query": query, "options": options,
             "start": start, "requested": limit, "received": len(rows), "total": total, "has_more": start + len(rows) < total,
             "next": {"start": start + len(rows)} if start + len(rows) < total else None, "records": artifact, "export": exported,
-            "native_citations": exports, "evidence": evidence, "preview": [{k: row.get(k) for k in ("id", "title", "year")} for row in rows[:3]]}
+            "native_citations": exports,"source_export":source_exports[0] if source_exports else None,"source_exports":source_exports,
+            "export_scopes":export_scopes,"evidence": evidence, "native_constraint":native_constraint,
+            "facet":{key:selected_facets[0][key] for key in ('field','value','label','count','group','panel','panel_label')} if len(selected_facets)==1 else None,
+            "facets":[{key:item[key] for key in ('field','value','label','count','group','panel','panel_label')} for item in selected_facets],
+            "facet_candidates":None if not facet_artifacts else facet_artifacts[0] if len(facet_artifacts)==1 else facet_artifacts,
+            "native_expression":expression,
+            "preview": [{k: row.get(k) for k in ("id", "title", "year")} for row in rows[:3]]}
 
     def fetch(self, target, *, parts):
         from api_adapters import doi
@@ -1198,12 +1820,12 @@ class ACM:
             return result
         if identifier.lower() not in self.known_records:
             result = self.search(identifier, options={"field": "DOI", "collection": "guide"}, limit=2, export="bibtex")
-            if result["status"] != "ok":
+            if result["status"] not in ('ok','partial'):
                 return result
             if result["total"] != 1 or identifier.lower() not in self.known_records:
                 result["status"] = "selection_required"
                 return result
-        record, citation_source = self.known_records[identifier.lower()]
+        record, citation_source, citation_scope = self.known_records[identifier.lower()]
         page = self.page()
         url = "https://" + urlsplit(page.url).hostname + "/doi/" + quote(identifier, safe="/")
         goto_source(page, url, self.hosts, wait_until="domcontentloaded", timeout=45000)
@@ -1219,12 +1841,38 @@ class ACM:
                 components[part] = {"status": "available", "artifact": native if part == "export" else artifact}
             elif part == "abstract":
                 components[part] = {"status": "available", "artifact": artifact} if records[0].get("abstract") else {"status": "not_found", "reason": "This native citation has no abstract field"}
+            elif part == 'fulltext_html':
+                try:
+                    links=[urljoin(page.url,node.get_attribute('href')) for node in page.locator('a[href*="/doi/full/"]').all()]
+                    candidates=list(dict.fromkeys(candidate for candidate in links if urlsplit(candidate).path=='/doi/full/'+identifier))
+                    if not candidates:
+                        components[part]={"status":"not_found","reason":"No selected-document HTML full-text control","artifact":source_page}
+                        continue
+                    if len(candidates)!=1:
+                        raise ServiceError('identity_mismatch','ACM record has multiple HTML full-text controls for the selected DOI')
+                    full_page=self.gateway.context.new_page()
+                    try:
+                        goto_source(full_page,candidates[0],self.hosts,wait_until='commit',timeout=45000)
+                        full_page.locator('article section#bodymatter').wait_for(timeout=90000)
+                        parsed=self.fulltext_document(full_page.content(),full_page.url,identifier)
+                    finally:full_page.close()
+                    expected=' '.join(str(record.get('title','')).split()).casefold();observed=' '.join(parsed['title'].split()).casefold()
+                    if expected and observed!=expected:
+                        raise ServiceError('identity_mismatch','ACM HTML full text title differs from its native citation')
+                    html=self.store.put(clean_html(parsed['html'],self.store.sanitizer),'text/html',self.source,candidates[0],role='fulltext_html',
+                        target=identifier,document_doi=identifier,parent_doi=parsed['parent_doi'],body_scope=parsed['body_scope'],
+                        body_text_chars=parsed['body_text_chars'],sections=parsed['sections'],has_backmatter=parsed['has_backmatter'])
+                    equations=self.store.put(encoded(parsed['tex']),'application/json',self.source,candidates[0],role='math_expressions',
+                        target=identifier,notation='TeX from span.core-tex',count=len(parsed['tex']),parent_ref=html['ref'])
+                    components[part]={"status":"available","artifact":html,"math":{"status":"available","artifact":equations,
+                        "notation":"TeX","count":len(parsed['tex'])},"scope":parsed['body_scope']}
+                except Exception as error:components[part]=self.component_failure(error,source_page,'html_retrieval_failed')
             elif part == "fulltext":
                 link = page.locator('a[href*="/doi/pdf/"]').filter(visible=True)
                 candidates = [urljoin(page.url, a.get_attribute("href")) for a in link.all()]
                 candidates = [u for u in candidates if urlsplit(u).path == "/doi/pdf/" + identifier]
                 if not candidates:
-                    components[part] = {"status": "not_implemented", "reason": "No selected-document PDF control; HTML-only full text handling is pending", "artifact": source_page}
+                    components[part] = {"status": "not_found", "reason": "No selected-document PDF control; HTML full text is a separate requested part", "artifact": source_page}
                     continue
                 try:
                     data, media, obtained_url = browser_download(self.gateway.context, candidates[0], self.hosts)
@@ -1236,7 +1884,9 @@ class ACM:
                     pdf = self.store.put(data, "application/pdf", self.source, obtained_url, role="fulltext", target=identifier, pages=pages)
                     components[part] = {"status": "available", "artifact": pdf}
                 except ServiceError as error:
-                    components[part] = error.result
+                    components[part] = self.component_failure(error,source_page,'pdf_retrieval_failed')
+                except Exception as error:
+                    components[part] = self.component_failure(error,source_page,'pdf_retrieval_failed')
             elif part == "supplementary":
                 try:
                     from supplements import fetch_supplementary
@@ -1247,4 +1897,5 @@ class ACM:
             else:
                 raise ServiceError("invalid_parts", "Unknown requested content", part=part)
         return {"status": "ok" if all(v["status"] == "available" for v in components.values()) else "partial", "source": self.source,
-            "target": identifier, "components": components, "records": artifact, "source_page": source_page, "native_citation": native}
+            "target": identifier, "components": components, "records": artifact, "source_page": source_page, "native_citation": native,
+            "source_export":citation_scope['source_export'],"rendered_source_export":citation_source,"export_scope":citation_scope}

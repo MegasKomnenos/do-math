@@ -3,11 +3,11 @@
 | 자료원 | source | 경로 | 구현 | 기능 | 실측 표지 |
 |---|---|---|---|---|---|
 | MathSciNet | mathscinet | playwright | partial | source_guide, search, fetch, export | live_mcp_search_four_exports_review_pdf_mr_doi_incoming_reviews_outgoing_subset_windows |
-| Web of Science Core Collection + CPCI | wos | playwright | partial | source_guide, search, fetch, export | live_mcp_full_record_native_xls_ut_doi_citing_window_and_bidirectional_fetch |
+| Web of Science Core Collection + CPCI | wos | playwright | partial | source_guide, search, fetch, export | live_mcp_editions_sorts_friendly_facets_discovery_windows_exports_citing_and_identity |
 | Scopus | scopus | playwright | partial | source_guide, search, fetch, export | live_mcp_search_fetch_references_pagination_cited_by_extract |
-| ACM Digital Library | acm-dl | playwright | partial | source_guide, search, fetch, export | live_mcp_search_citation_pdf_and_supplement_zip_inner_pdf_extract |
-| IEEE Xplore / IEL | ieee-xplore | playwright | partial | source_guide, search, fetch, export | live_mcp_four_native_exports_selected_windows; pdf_references_graphical_and_native_media_tab_verified |
-| PQDT Global | pqdt | playwright | partial | source_guide, search, fetch, export | live_mcp_repeat_search_ris_pdf_and_supplemental_png_fetch_extract |
+| ACM Digital Library | acm-dl | playwright | partial | source_guide, search, fetch, export | live_mcp_edit_query_boolean_combined_filters_native_exports_html_tex_pdf_supplement_and_identity |
+| IEEE Xplore / IEL | ieee-xplore | playwright | partial | source_guide, search, fetch, export | live_mcp_native_exports_filtered_windows_typeahead_pdf_references_media |
+| PQDT Global | pqdt | playwright | partial | source_guide, search, fetch, export | live_mcp_filtered_windows_zero_seven_exports_extract_fulltext_pdf_supplement_png |
 | zbMATH Open | zbmath | api | partial | source_guide, search, fetch, export | live_mcp_arbitrary_window_doi_legacy_link_license_state_references |
 | arXiv | arxiv | api | partial | source_guide, search, fetch, export | live_mcp_search_pinned_html_source_archive_tex_extract |
 | DBLP | dblp | api | partial | source_guide, search, fetch, export | live_mcp_native_timed_refresh_search_seven_exports_name_and_record_identity |

@@ -45,3 +45,5 @@ ScienceDirect 공식 설명은 CPE 화면을 비정상 활동에 따른 접근 I
 SIAM의 기관 경로는 보유 목록을 읽는 것에서 끝내지 않고 실제로 검증했다. KUDOS 로그인·학술DB에서 KNU2026.xlsx의 SJDM 링크에 원 popup_gourl을 적용하자 KUDOS proxyGo, libproxy 로그인과 제공된 프록시 경로를 거쳐 공개 epubs.siam.org의 저널 화면으로 도착했다. 확인 화면은 없었지만 기관명·access-provided 표지도 없었다. 최신 비공개 논문10.1137/24M1711108은 문헌 식별이 일치해도 구매 안내를 표시했고 PDF 제어는 같은 DOI의 초록 페이지로302 복귀했다. PDF embed와 Playwright·CDP download는 모두0이었다. 목록의1997–current 기재, 정상 기관 진입, 이 문헌의 원문 권한 미확보를 구별한다. 공개 SIAM 경로를 기관 구독 성공으로 바꾸지 않는다. 근거는 `data/access-research/siam-institutional.json`과 같은 이름의 Markdown이다.
 
 이 기록은 접근 조건의 실측이며 전체 기능 구현 완료를 뜻하지 않는다. 현재 코드에 연결한 범위와 실제 MCP 검증은 `VALIDATION.md`와 `SUPPORT.md`를 따른다.
+
+후속 IEEE 검색 진단에서 별도 출력 사고가 있었다. 확인 가능한 시각은2026-09-12 14:37:48.093341 UTC 이후부터14:43:30.771842 UTC 이전이다. 한 PowerShell 진단이 원 응답7개의 검색 상태를 제외 목록으로 선별하면서 userInfo를 빼지 못해18종 필드가 출력됐다. 기관 정보·이용 상태·제공자 식별자·IP였으며 암호·쿠키·토큰·인증 URL은 없었다. 값은 이 문서에 반복하지 않는다. 비공개 검사에서 같은 userInfo field/value 쌍의 생산 코드·공개 근거·fixture 복제는 각각0건이었다. 기존 대화 출력은 삭제하지 못했고 이후 진단은 허용 필드 목록을 사용한다. 근거는 `data/access-research/ieee-search/incident.json`과 같은 이름의 Markdown이다.

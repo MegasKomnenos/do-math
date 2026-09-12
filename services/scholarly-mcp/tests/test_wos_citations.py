@@ -65,6 +65,17 @@ class WOSCitingWorksContract(unittest.TestCase):
         self.assertEqual(component["citations"]["total"], 125)
         self.assertEqual(adapter.search.call_args_list[1].kwargs["options"], {"kind": "citations"})
 
+    def test_fetch_rejects_a_unique_result_for_another_requested_identifier(self):
+        with tempfile.TemporaryDirectory() as temp:
+            store=ArtifactStore(temp)
+            records=store.put(json.dumps([{"id":"WOS:OTHER","fields":{"di":["10.9999/wrong"]}}]),
+                              "application/json","wos","https://www.webofscience.com/")
+            adapter=WebOfScience(store,None);adapter.search=Mock(return_value={"status":"ok","total":1,"received":1,"records":records})
+            for target in ("WOS:000269418800023","10.1145/1562164.1562186"):
+                with self.subTest(target=target):
+                    with self.assertRaises(ServiceError) as raised:adapter.fetch(target,parts=["metadata"])
+                    self.assertEqual(raised.exception.result["code"],"identity_mismatch")
+
 
 if __name__ == "__main__":
     unittest.main()
