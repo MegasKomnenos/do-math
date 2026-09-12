@@ -100,7 +100,6 @@ Cambridge는 저자·연도·자료 유형·기관 이용 가능 여부의 검�
 
 Taylor & Francis는 원 고급검색 필드와 연도·정렬, native BibTeX·RIS와 문헌 PDF를 연결했다. De Gruyter Brill은 title·familyName 등의 원 검색식, 가시성·정렬과 문헌 RIS를 연결했다. 자료원별 형식·조회 범위는 `describe_source`를 따른다.
 
-JSTOR는 별도 자격 없는 RIS 조회로 metadata·abstract·export를 제공한다. stable 번호나 URL, 10.2307 DOI를 사용한다. 웹 검색과 전문 회수는 아직 연결하지 않았다. `source_preamble`은 RIS 앞의 원 제공자 안내문이며, 인용문 레코드와 구별한다.
 
 Numdam은 공개 웹의 검색 필드·추가 조건·발행연도 검색과 OAI 갱신일 열거를 구별해 제공한다. DOI 페이지의 내부 식별자를 OAI 메타데이터와 연결하고 원 BibTeX·RIS·EndNote, PDF와 DJVU를 회수한다. EndNote의 `fields`는 원 태그 대소문자와 반복 필드를 유지하며 `selection="raw"`로 원 줄도 읽을 수 있다.
 
@@ -146,7 +145,7 @@ zbMATH는 DOI·이름·Zbl 번호·기존 문헌 링크를 받아 조회하고, 
 Wiley의 Supporting Information 표에서도 원 파일을 회수한다. Models of Random Spanning Trees의 보충 ZIP을 실제 MCP로 받고, 내부 Python 파일 두 개를 선택해 줄 단위로 읽었다. 코드 실행은 포함하지 않는다. 파일명·설명·연결 DOI와 실제 ZIP 형식을 확인하며, Springer Nature와 파일별 실패 보존 처리를 공유한다.
 
 
-JSTOR의 export는 원 RIS와 Text file 주소에서 받은 BibTeX를 함께 반환한다. 기본 artifact는 RIS이고 추가 파일은 artifacts에서 선택한다. 숫자 ID와 j.…·jj.… 도서/장 ID 및 stable URL을 지원한다. 인용문 URL의 stable ID를 대조하며 DOI 필드가 없는 BibTeX도 원 URL로 식별한다. 추가 형식의 실패는 이미 받은 서지·인용문과 함께 보존한다.
+JSTOR의 export는 원 RIS와 Text file 주소에서 받은 BibTeX를 함께 반환한다. 기본 artifact는 RIS이고 추가 파일은 artifacts에서 선택한다. 숫자 ID와 j.…·jj.… 도서/장 ID, community.… ID, stable URL과 JSTOR에 수록된 DOI를 지원한다. 인용문 URL의 stable ID를 대조하며 DOI 필드가 없는 BibTeX도 원 URL로 식별한다. 추가 형식의 실패는 이미 받은 서지·인용문과 함께 보존한다. source_preamble은 RIS 앞의 원 제공자 안내문이며 인용문 레코드와 구별한다.
 
 
 MathSciNet 문헌 조회는 MR 번호·문헌 링크 외에 DOI와 이름을 받는다. 이름은 후보 검색이고, DOI는 유일한 결과와 원 BibTeX DOI를 대조한 뒤 MR 문헌을 조회한다. fetch의 export는 BibTeX·EndNote·AMSRef·TeX를 반환한다. 원 형식 문자열과 배열 순서를 유지하고 문헌 식별자를 대조한다. 정확한 MR 검색이 단건 문헌 화면으로 이동해도 내보내기를 수행한다. 리뷰 PDF는 인용된 논문의 전문이 아니다.
@@ -171,3 +170,6 @@ IOP 검색의 기본 최신순은 별도 API 자격이 없는 RSS API를 기관 
 
 
 IOP도 fulltext_html로 원 본문·TeX·그림을 제공한다. supplementary는 선택한 DOI의 보충자료 탭에서 파일을 회수한다. 실제 MCP에서 10.1088/1367-2630/add557의 TeX154개·그림5개·보충 PDF2쪽을 확인했다. 원 수식 이미지 URL과 TeX를 보존하며 수식 이미지 파일의 별도 다운로드는 수행하지 않는다. 원 HTML의 지연 로딩 그림 주소를 처리하므로 1픽셀 자리표시를 문헌 그림으로 저장하지 않는다. CSS 선택 script[type^="math/tex"]로 수식을 추출하고 figures의 artifact를 이미지로 읽을 수 있다.
+
+
+JSTOR는 확인된 KUDOS 기관 세션에서 원 검색 API를 사용한다. 필드 검색·정렬·접근 범위·기간·자료 유형·주제·언어 조건은 describe_source를 따른다. 원25건 페이지의 표식으로 임의 창을 회수하며 total은 현재 결과군, source_total은 최초 전체 건수다. 이미지 자료도 별도 content_types 조건으로 검색할 수 있다. JSON/CSV와 선택 문헌별 RIS/BibTeX를 제공하고 이름은 제목 후보로 반환한다. fulltext는 선택한 문헌의 원 Download로 PDF를 회수하며 표지·서지 쪽을 포함한다. 이미지·음성·동영상 파일 자체, 추가 첨부와 여러 결과군 동시 회수는 아직 미연결이다.

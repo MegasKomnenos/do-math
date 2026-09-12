@@ -6,6 +6,15 @@ from scholarly import ArtifactStore,bibliography
 from jstor import JSTOR,stable_id
 
 class JSTORContract(unittest.TestCase):
+    def test_name_fetch_returns_candidates_without_selecting_a_document(self):
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as temp:
+            adapter=self.adapter(temp,lambda request:(_ for _ in ()).throw(AssertionError('Citation must not be selected')))
+            with patch.object(adapter,'search',return_value={'status':'ok','received':2,'records':{'ref':'candidates'}}) as search:
+                result=adapter.fetch('The Fundamental Theorem of Algebra',parts=['metadata'])
+            self.assertEqual(result['status'],'selection_required');self.assertEqual(result['received'],2)
+            search.assert_called_once()
+
     def adapter(self,temp,handler):
         adapter=JSTOR(ArtifactStore(temp),httpx.Client(transport=httpx.MockTransport(handler)))
         adapter.min_interval=0

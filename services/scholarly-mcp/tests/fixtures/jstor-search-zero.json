@@ -1,0 +1,17 @@
+{
+  "ab_segment": "[REDACTED]",
+  "acc": "on",
+  "searchQuery": "\"zzzxqvnevermatching987654321\"",
+  "errors": [],
+  "facets": [
+    {
+      "comp_label": "content-type"
+    }
+  ],
+  "groupedResults": {},
+  "tabs": [],
+  "notices": [],
+  "requestId": "[REDACTED]",
+  "spelling_suggestions": {},
+  "totalResultCount": 0
+}

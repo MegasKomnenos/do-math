@@ -530,14 +530,20 @@ SOURCES['project-euclid'].usage={
     'examples':[{'tool':'search','arguments':{'source':'project-euclid','query':'complexity','options':{'field':'TITLE'},'start':24,'limit':2,'export':'csv'}}],
     'official':['https://projecteuclid.org/'],
 }
-SOURCES['jstor'].transport='api (native citation); browser search/document pending'
-SOURCES['jstor'].capabilities=('source_guide','fetch','export')
+SOURCES['jstor'].transport='fixed: citation/search API; institutional document Playwright'
+SOURCES['jstor'].capabilities=('source_guide','search','fetch','export')
 SOURCES['jstor'].usage={
-    'fetch':'JSTOR stable 번호, j.…·jj.… 도서/장 ID, stable URL 또는 10.2307 DOI로 metadata·abstract·export를 요청한다. 별도 자격 없는 native citation API를 사용한다. 도서와 논문의 원 RIS 유형·필드를 유지한다.',
+    'search':'query는 원 JSTOR 검색식이다. 따옴표로 구절을 묶고 AND/OR/NOT와 괄호를 사용한다. 필드는 au: 저자, ti: 제목, ab: 초록, ca: 캡션, jo: 저널 이름, jcode: 저널 코드, la: 언어다. cty:journal AND ty:fla는 전문 논문, ty:brv는 서평, cty:chapter는 장, cty:research_report는 연구 보고서 조건이다. 검색식을 다시 작성하지 않고, 별도 API 자격 없는 원 검색 JSON API를 KUDOS 기관 세션에서 호출한다.',
+    'options':'sort는 relevance/newest/oldest, access는 available/all이며 기본은 relevance와 available이다. available은 현재 기관에서 접근할 수 있는 자료, all은 접근할 수 없는 자료도 포함한다. start_date/end_date는 CE의 YYYY, YYYY/MM, YYYY/MM/DD다. content_types·subjects·languages는 원 facet label의 배열이다. 반환된 facets를 extract하면 field별 label·display·count·selected를 읽을 수 있다. content_types 예는 journal, chapter, research_report, contributed_documents, contributed_books, contributed_serials, contributed_images, contributed_audio, contributed_video다. subjects 예는 mathematics-discipline·compsci-discipline, English의 languages 값은 eng OR en OR EN이다.',
+    'range':'start는0부터, limit는1..1000이다. 원25건 페이지의 표식을 따라 정확한 요청 창을 회수한다. total은 선택된 결과군의 건수이고 source_total은 최초 응답의 전체 건수다. 기본 문헌 결과군 밖의 이미지 등이 source_total에 포함될 수 있다. 이미지 자료는 content_types=[contributed_images]로 별도 검색한다. 여러 결과군을 동시에 반환하는 조합은 아직 미연결이며 조용히 합치거나 버리지 않는다. 후속 페이지 실패 때 확보한 요청 범위를 partial로 보존한다.',
+    'search_exports':'json/csv는 요청 창이며 native는 사용한 원 JSON 페이지다. 원 응답의 세션 관련 필드는 정제된다. bibtex/ris는 선택된 각 문헌의 원 파일을 export.artifacts에 제공한다. 일부 인용문 실패가 검색 결과를 버리지 않으며 파일별 오류를 남긴다. 연구용 연도는 원 표시 서지도 대조한다. 일부 원 year가0이거나 비정상적인 연도일 수 있으며 어댑터가 새 연도를 만들어 넣지 않는다.',
+    'fetch':'JSTOR stable 번호, j.…·jj.… 도서/장 ID, community.… ID, stable URL 또는 JSTOR에 수록된 DOI를 사용한다. 이름은 제목 검색 후보를 반환한다. metadata·abstract·export는 원 citation API를 사용하며 도서와 논문의 RIS 유형·필드를 유지한다. fulltext는 KUDOS로 선택 문헌을 열고 원 Download와 필요한 이용 조건 확인을 거쳐 PDF를 회수한다. 원 PDF의 표지·서지 쪽도 포함한다.',
     'exports':'export.artifacts에 원 RIS와 BibTeX를 반환한다. 기본 artifact는 RIS이며 제공자 안내문은 source_preamble로 유지한다. JSTOR의 Text file은 실제 BibTeX이고 source_media_type은 text/plain이다. RIS의 UR·BibTeX의 url에 있는 stable ID를 요청 대상과 대조하며 BibTeX DOI 필드가 없다고 실패시키지 않는다. 형식별 오류와 먼저 받은 인용문을 함께 보존하고 잘못된 문헌의 원 파일도 오류의 source_export로 읽을 수 있다.',
-    'limits':'검색과 전문·첨부 회수는 아직 연결하지 않았다. 기관 검색은 실제 CAPTCHA를 반환했으며 자료원 자체의 문헌 부재로 해석하지 않는다. 초록이 없는 RIS에는 not_offered를 표시한다.',
-    'examples':[{'tool':'fetch','arguments':{'source':'jstor','target':'345683','parts':['metadata','abstract','export']}}],
-    'official':['https://www.jstor.org/'],
+    'limits':'문자 확인을 통과한 기관 세션에서 검색·페이지 경계·CSV·RIS·원 기간/유형/주제/언어 조건·이미지 검색·이름 후보·비2307 DOI·11쪽 PDF를 실제 MCP로 검증했다. 다시 접근 확인이 필요하면 restricted를 반환한다. 서버가 확인 과제를 인식하지 않는다. 초록이 없는 RIS에는 not_offered를 표시한다. PDF 외의 이미지·음성·동영상 원 파일과 추가 첨부 회수, 여러 결과군 동시 회수, BCE 날짜는 미연결이다. 모든 조건 조합의 검증으로 확대하지 않는다.',
+    'examples':[{'tool':'search','arguments':{'source':'jstor','query':'ti:algebra AND au:Sawyer','limit':2,'export':'ris'}},
+                {'tool':'search','arguments':{'source':'jstor','query':'algebra','start':24,'limit':2,'options':{'content_types':['contributed_images']}}},
+                {'tool':'fetch','arguments':{'source':'jstor','target':'24931626','parts':['metadata','export','fulltext']}}],
+    'official':['https://support.jstor.org/hc/en-us/articles/115004732567-Searching-Using-Fields-and-Advanced-Search','https://support.jstor.org/hc/en-us/articles/4405598751255-Searching-Using-Filters-and-Facets'],
 }
 
 SOURCES['numdam'].transport = 'fixed: OAI/citation API; native search/DOI resolution Playwright'
@@ -653,7 +659,7 @@ for identifier, level in {
     "wiley": "live_mcp_advanced_search_citations_pdf_empty_repeat_and_supplementary_zip",
     "taylor-francis": "live_mcp_search_citation_pdf_dublin_doi_supplement_zip_tables_nested_source",
     "de-gruyter": "live_mcp_search_ris_pdf_and_supplement_zip_cif_lines; broken_link_observed",
-    "jstor": "live_mcp_public_ris_bibtex_article_and_jj_book; web_search_pending",
+    "jstor": "live_mcp_native_search_windows_facets_images_citations_name_doi_and_11_page_pdf",
     "iop": "live_mcp_rss_ranked_filters_csv_zero; citations_pdf_html_tex_figures_supplement_pdf_verified",
     "siam": "live_mcp_public_front_matter_pdf_fetch_extract; search_challenge_observed",
     "ams": "live_mcp_explicit_pdf; native_browser_mixed_search; dynamic_expression_offline_verified; live_search_restricted",

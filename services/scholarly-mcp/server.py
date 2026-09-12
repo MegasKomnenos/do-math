@@ -139,10 +139,10 @@ def main():
     ADAPTERS["afp"] = AFP(STORE)
     ADAPTERS["eudml"] = EuDML(STORE)
     ADAPTERS["aps"] = APS(STORE)
-    ADAPTERS["jstor"] = JSTOR(STORE)
     ADAPTERS['general-web'] = GeneralWeb(STORE)
     gateway = KudosGateway(ROOT.parents[1] / ".credentials", STORE.sanitizer)
     firefox_gateway = KudosGateway(ROOT.parents[1] / ".credentials", STORE.sanitizer, engine="firefox")
+    ADAPTERS["jstor"] = JSTOR(STORE,gateway=firefox_gateway)
     ADAPTERS["numdam"] = Numdam(STORE, gateway)
     ADAPTERS["knu-fric"] = KNUFric(STORE, gateway)
     for category in ('author-repository', 'society-journal'):

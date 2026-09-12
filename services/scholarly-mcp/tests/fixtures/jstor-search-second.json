@@ -1,0 +1,2002 @@
+{
+  "ab_segment": "[REDACTED]",
+  "acc": "on",
+  "searchQuery": "algebra",
+  "errors": [],
+  "facets": [
+    {
+      "comp_label": "search-within-filter"
+    },
+    {
+      "comp_label": "content-type",
+      "h_values": [
+        {
+          "field": "cty",
+          "values": [
+            {
+              "label": "journal",
+              "efq": "am91cm5hbA==",
+              "display": "Journals",
+              "count": 178720,
+              "selected": false
+            },
+            {
+              "label": "chapter",
+              "efq": "Y2hhcHRlcg==",
+              "display": "Book Chapters",
+              "count": 1050,
+              "selected": false
+            },
+            {
+              "label": "research_report",
+              "efq": "cmVzZWFyY2hfcmVwb3J0",
+              "display": "Research Reports",
+              "count": 461,
+              "selected": false
+            }
+          ],
+          "comp_label": "academic-content"
+        },
+        {
+          "field": "cty",
+          "values": [
+            {
+              "label": "contributed_serials",
+              "efq": "Y29udHJpYnV0ZWRfc2VyaWFscw==",
+              "display": "Serials",
+              "count": 10087,
+              "selected": false
+            },
+            {
+              "label": "contributed_documents",
+              "efq": "Y29udHJpYnV0ZWRfZG9jdW1lbnRz",
+              "display": "Documents",
+              "count": 5361,
+              "selected": false
+            },
+            {
+              "label": "contributed_books",
+              "efq": "Y29udHJpYnV0ZWRfYm9va3M=",
+              "display": "Books",
+              "count": 1945,
+              "selected": false
+            },
+            {
+              "label": "contributed_images",
+              "efq": "Y29udHJpYnV0ZWRfaW1hZ2Vz",
+              "display": "Images",
+              "count": 242,
+              "selected": false
+            },
+            {
+              "label": "contributed_audio",
+              "efq": "Y29udHJpYnV0ZWRfYXVkaW8=",
+              "display": "Audio",
+              "count": 117,
+              "selected": false
+            },
+            {
+              "label": "contributed_video",
+              "efq": "Y29udHJpYnV0ZWRfdmlkZW8=",
+              "display": "Video",
+              "count": 38,
+              "selected": false
+            }
+          ],
+          "comp_label": "primary-source-content"
+        }
+      ]
+    },
+    {
+      "comp_label": "publication-date-filter"
+    },
+    {
+      "field": "disc",
+      "values": [
+        {
+          "label": "africanamericanstudies-discipline",
+          "efq": "YWZyaWNhbmFtZXJpY2Fuc3R1ZGllcy1kaXNjaXBsaW5l",
+          "display": "African American Studies",
+          "count": 373,
+          "selected": false
+        },
+        {
+          "label": "africanstudies-discipline",
+          "efq": "YWZyaWNhbnN0dWRpZXMtZGlzY2lwbGluZQ==",
+          "display": "African Studies",
+          "count": 151,
+          "selected": false
+        },
+        {
+          "label": "agriculture-discipline",
+          "efq": "YWdyaWN1bHR1cmUtZGlzY2lwbGluZQ==",
+          "display": "Agriculture",
+          "count": 266,
+          "selected": false
+        },
+        {
+          "label": "americanindianstudies-discipline",
+          "efq": "YW1lcmljYW5pbmRpYW5zdHVkaWVzLWRpc2NpcGxpbmU=",
+          "display": "American Indian Studies",
+          "count": 77,
+          "selected": false
+        },
+        {
+          "label": "americanstudies-discipline",
+          "efq": "YW1lcmljYW5zdHVkaWVzLWRpc2NpcGxpbmU=",
+          "display": "American Studies",
+          "count": 1009,
+          "selected": false
+        },
+        {
+          "label": "anthropology-discipline",
+          "efq": "YW50aHJvcG9sb2d5LWRpc2NpcGxpbmU=",
+          "display": "Anthropology",
+          "count": 618,
+          "selected": false
+        },
+        {
+          "label": "aquaticsciences-discipline",
+          "efq": "YXF1YXRpY3NjaWVuY2VzLWRpc2NpcGxpbmU=",
+          "display": "Aquatic Sciences",
+          "count": 250,
+          "selected": false
+        },
+        {
+          "label": "archeology-discipline",
+          "efq": "YXJjaGVvbG9neS1kaXNjaXBsaW5l",
+          "display": "Archaeology",
+          "count": 258,
+          "selected": false
+        },
+        {
+          "label": "architecture-discipline",
+          "efq": "YXJjaGl0ZWN0dXJlLWRpc2NpcGxpbmU=",
+          "display": "Architecture & Architectural History",
+          "count": 168,
+          "selected": false
+        },
+        {
+          "label": "arthistory-discipline",
+          "efq": "YXJ0aGlzdG9yeS1kaXNjaXBsaW5l",
+          "display": "Art & Art History",
+          "count": 856,
+          "selected": false
+        },
+        {
+          "label": "asianstudies-discipline",
+          "efq": "YXNpYW5zdHVkaWVzLWRpc2NpcGxpbmU=",
+          "display": "Asian Studies",
+          "count": 936,
+          "selected": false
+        },
+        {
+          "label": "astronomy-discipline",
+          "efq": "YXN0cm9ub215LWRpc2NpcGxpbmU=",
+          "display": "Astronomy",
+          "count": 111,
+          "selected": false
+        },
+        {
+          "label": "bibliog-discipline",
+          "efq": "YmlibGlvZy1kaXNjaXBsaW5l",
+          "display": "Bibliography",
+          "count": 180,
+          "selected": false
+        },
+        {
+          "label": "biologicalsciences-discipline",
+          "efq": "YmlvbG9naWNhbHNjaWVuY2VzLWRpc2NpcGxpbmU=",
+          "display": "Biological Sciences",
+          "count": 7354,
+          "selected": false
+        },
+        {
+          "label": "botany-discipline",
+          "efq": "Ym90YW55LWRpc2NpcGxpbmU=",
+          "display": "Botany & Plant Sciences",
+          "count": 330,
+          "selected": false
+        },
+        {
+          "label": "britstud-discipline",
+          "efq": "YnJpdHN0dWQtZGlzY2lwbGluZQ==",
+          "display": "British Studies",
+          "count": 121,
+          "selected": false
+        },
+        {
+          "label": "business-discipline",
+          "efq": "YnVzaW5lc3MtZGlzY2lwbGluZQ==",
+          "display": "Business",
+          "count": 15141,
+          "selected": false
+        },
+        {
+          "label": "classicalstudies-discipline",
+          "efq": "Y2xhc3NpY2Fsc3R1ZGllcy1kaXNjaXBsaW5l",
+          "display": "Classical Studies",
+          "count": 493,
+          "selected": false
+        },
+        {
+          "label": "communicationstudies-discipline",
+          "efq": "Y29tbXVuaWNhdGlvbnN0dWRpZXMtZGlzY2lwbGluZQ==",
+          "display": "Communication Studies",
+          "count": 62,
+          "selected": false
+        },
+        {
+          "label": "compsci-discipline",
+          "efq": "Y29tcHNjaS1kaXNjaXBsaW5l",
+          "display": "Computer Science",
+          "count": 2902,
+          "selected": false
+        },
+        {
+          "label": "criminologycriminaljustice-discipline",
+          "efq": "Y3JpbWlub2xvZ3ljcmltaW5hbGp1c3RpY2UtZGlzY2lwbGluZQ==",
+          "display": "Criminology & Criminal Justice",
+          "count": 108,
+          "selected": false
+        },
+        {
+          "label": "culturalstudies-discipline",
+          "efq": "Y3VsdHVyYWxzdHVkaWVzLWRpc2NpcGxpbmU=",
+          "display": "Cultural Studies",
+          "count": 97,
+          "selected": false
+        },
+        {
+          "label": "developmentstudies-discipline",
+          "efq": "ZGV2ZWxvcG1lbnRzdHVkaWVzLWRpc2NpcGxpbmU=",
+          "display": "Development Studies",
+          "count": 165,
+          "selected": false
+        },
+        {
+          "label": "developmentalcellbiology-discipline",
+          "efq": "ZGV2ZWxvcG1lbnRhbGNlbGxiaW9sb2d5LWRpc2NpcGxpbmU=",
+          "display": "Developmental & Cell Biology",
+          "count": 2,
+          "selected": false
+        },
+        {
+          "label": "ecology-discipline",
+          "efq": "ZWNvbG9neS1kaXNjaXBsaW5l",
+          "display": "Ecology & Evolutionary Biology",
+          "count": 1594,
+          "selected": false
+        },
+        {
+          "label": "economics-discipline",
+          "efq": "ZWNvbm9taWNzLWRpc2NpcGxpbmU=",
+          "display": "Economics",
+          "count": 11359,
+          "selected": false
+        },
+        {
+          "label": "education-discipline",
+          "efq": "ZWR1Y2F0aW9uLWRpc2NpcGxpbmU=",
+          "display": "Education",
+          "count": 33243,
+          "selected": false
+        },
+        {
+          "label": "engineering-discipline",
+          "efq": "ZW5naW5lZXJpbmctZGlzY2lwbGluZQ==",
+          "display": "Engineering",
+          "count": 602,
+          "selected": false
+        },
+        {
+          "label": "environmentalscience-discipline",
+          "efq": "ZW52aXJvbm1lbnRhbHNjaWVuY2UtZGlzY2lwbGluZQ==",
+          "display": "Environmental Science",
+          "count": 383,
+          "selected": false
+        },
+        {
+          "label": "enviro-discipline",
+          "efq": "ZW52aXJvLWRpc2NpcGxpbmU=",
+          "display": "Environmental Studies",
+          "count": 84,
+          "selected": false
+        },
+        {
+          "label": "europeanstudies-discipline",
+          "efq": "ZXVyb3BlYW5zdHVkaWVzLWRpc2NpcGxpbmU=",
+          "display": "European Studies",
+          "count": 272,
+          "selected": false
+        },
+        {
+          "label": "womensstudies-discipline",
+          "efq": "d29tZW5zc3R1ZGllcy1kaXNjaXBsaW5l",
+          "display": "Feminist & Women's Studies",
+          "count": 141,
+          "selected": false
+        },
+        {
+          "label": "film-discipline",
+          "efq": "ZmlsbS1kaXNjaXBsaW5l",
+          "display": "Film Studies",
+          "count": 69,
+          "selected": false
+        },
+        {
+          "label": "finance-discipline",
+          "efq": "ZmluYW5jZS1kaXNjaXBsaW5l",
+          "display": "Finance",
+          "count": 1683,
+          "selected": false
+        },
+        {
+          "label": "folklore-discipline",
+          "efq": "Zm9sa2xvcmUtZGlzY2lwbGluZQ==",
+          "display": "Folklore",
+          "count": 22,
+          "selected": false
+        },
+        {
+          "label": "foodstudies-discipline",
+          "efq": "Zm9vZHN0dWRpZXMtZGlzY2lwbGluZQ==",
+          "display": "Food Studies",
+          "count": 1,
+          "selected": false
+        },
+        {
+          "label": "gardland-discipline",
+          "efq": "Z2FyZGxhbmQtZGlzY2lwbGluZQ==",
+          "display": "Garden & Landscape",
+          "count": 7,
+          "selected": false
+        },
+        {
+          "label": "genderstudies-discipline",
+          "efq": "Z2VuZGVyc3R1ZGllcy1kaXNjaXBsaW5l",
+          "display": "Gender Studies",
+          "count": 57,
+          "selected": false
+        },
+        {
+          "label": "generalscience-discipline",
+          "efq": "Z2VuZXJhbHNjaWVuY2UtZGlzY2lwbGluZQ==",
+          "display": "General Science",
+          "count": 12675,
+          "selected": false
+        },
+        {
+          "label": "geography-discipline",
+          "efq": "Z2VvZ3JhcGh5LWRpc2NpcGxpbmU=",
+          "display": "Geography",
+          "count": 480,
+          "selected": false
+        },
+        {
+          "label": "geology-discipline",
+          "efq": "Z2VvbG9neS1kaXNjaXBsaW5l",
+          "display": "Geology",
+          "count": 51,
+          "selected": false
+        },
+        {
+          "label": "health-discipline",
+          "efq": "aGVhbHRoLWRpc2NpcGxpbmU=",
+          "display": "Health Policy",
+          "count": 119,
+          "selected": false
+        },
+        {
+          "label": "healthsciences-discipline",
+          "efq": "aGVhbHRoc2NpZW5jZXMtZGlzY2lwbGluZQ==",
+          "display": "Health Sciences",
+          "count": 763,
+          "selected": false
+        },
+        {
+          "label": "history-discipline",
+          "efq": "aGlzdG9yeS1kaXNjaXBsaW5l",
+          "display": "History",
+          "count": 3705,
+          "selected": false
+        },
+        {
+          "label": "historyofscience-discipline",
+          "efq": "aGlzdG9yeW9mc2NpZW5jZS1kaXNjaXBsaW5l",
+          "display": "History of Science & Technology",
+          "count": 4009,
+          "selected": false
+        },
+        {
+          "label": "horticulture-discipline",
+          "efq": "aG9ydGljdWx0dXJlLWRpc2NpcGxpbmU=",
+          "display": "Horticulture",
+          "count": 1,
+          "selected": false
+        },
+        {
+          "label": "interrela-discipline",
+          "efq": "aW50ZXJyZWxhLWRpc2NpcGxpbmU=",
+          "display": "International Relations",
+          "count": 404,
+          "selected": false
+        },
+        {
+          "label": "irishstudies-discipline",
+          "efq": "aXJpc2hzdHVkaWVzLWRpc2NpcGxpbmU=",
+          "display": "Irish Studies",
+          "count": 830,
+          "selected": false
+        },
+        {
+          "label": "jewishstudies-discipline",
+          "efq": "amV3aXNoc3R1ZGllcy1kaXNjaXBsaW5l",
+          "display": "Jewish Studies",
+          "count": 168,
+          "selected": false
+        },
+        {
+          "label": "laboremploymentrelations-discipline",
+          "efq": "bGFib3JlbXBsb3ltZW50cmVsYXRpb25zLWRpc2NpcGxpbmU=",
+          "display": "Labor & Employment Relations",
+          "count": 204,
+          "selected": false
+        },
+        {
+          "label": "literature-discipline",
+          "efq": "bGl0ZXJhdHVyZS1kaXNjaXBsaW5l",
+          "display": "Language & Literature",
+          "count": 5165,
+          "selected": false
+        },
+        {
+          "label": "latinamericanstudies-discipline",
+          "efq": "bGF0aW5hbWVyaWNhbnN0dWRpZXMtZGlzY2lwbGluZQ==",
+          "display": "Latin American Studies",
+          "count": 443,
+          "selected": false
+        },
+        {
+          "label": "law-discipline",
+          "efq": "bGF3LWRpc2NpcGxpbmU=",
+          "display": "Law",
+          "count": 792,
+          "selected": false
+        },
+        {
+          "label": "libraryscience-discipline",
+          "efq": "bGlicmFyeXNjaWVuY2UtZGlzY2lwbGluZQ==",
+          "display": "Library Science",
+          "count": 157,
+          "selected": false
+        },
+        {
+          "label": "linguistics-discipline",
+          "efq": "bGluZ3Vpc3RpY3MtZGlzY2lwbGluZQ==",
+          "display": "Linguistics",
+          "count": 991,
+          "selected": false
+        },
+        {
+          "label": "manorgbeha-discipline",
+          "efq": "bWFub3JnYmVoYS1kaXNjaXBsaW5l",
+          "display": "Management & Organizational Behavior",
+          "count": 1508,
+          "selected": false
+        },
+        {
+          "label": "markadvert-discipline",
+          "efq": "bWFya2FkdmVydC1kaXNjaXBsaW5l",
+          "display": "Marketing & Advertising",
+          "count": 541,
+          "selected": false
+        },
+        {
+          "label": "mathematics-discipline",
+          "efq": "bWF0aGVtYXRpY3MtZGlzY2lwbGluZQ==",
+          "display": "Mathematics",
+          "count": 97394,
+          "selected": false
+        },
+        {
+          "label": "middleeaststudies-discipline",
+          "efq": "bWlkZGxlZWFzdHN0dWRpZXMtZGlzY2lwbGluZQ==",
+          "display": "Middle East Studies",
+          "count": 378,
+          "selected": false
+        },
+        {
+          "label": "militarystudies-discipline",
+          "efq": "bWlsaXRhcnlzdHVkaWVzLWRpc2NpcGxpbmU=",
+          "display": "Military Studies",
+          "count": 252,
+          "selected": false
+        },
+        {
+          "label": "musestud-discipline",
+          "efq": "bXVzZXN0dWQtZGlzY2lwbGluZQ==",
+          "display": "Museum Studies",
+          "count": 17,
+          "selected": false
+        },
+        {
+          "label": "music-discipline",
+          "efq": "bXVzaWMtZGlzY2lwbGluZQ==",
+          "display": "Music",
+          "count": 586,
+          "selected": false
+        },
+        {
+          "label": "paleontology-discipline",
+          "efq": "cGFsZW9udG9sb2d5LWRpc2NpcGxpbmU=",
+          "display": "Paleontology",
+          "count": 63,
+          "selected": false
+        },
+        {
+          "label": "peaceconflictstudies-discipline",
+          "efq": "cGVhY2Vjb25mbGljdHN0dWRpZXMtZGlzY2lwbGluZQ==",
+          "display": "Peace & Conflict Studies",
+          "count": 445,
+          "selected": false
+        },
+        {
+          "label": "performingarts-discipline",
+          "efq": "cGVyZm9ybWluZ2FydHMtZGlzY2lwbGluZQ==",
+          "display": "Performing Arts",
+          "count": 77,
+          "selected": false
+        },
+        {
+          "label": "philosophy-discipline",
+          "efq": "cGhpbG9zb3BoeS1kaXNjaXBsaW5l",
+          "display": "Philosophy",
+          "count": 12302,
+          "selected": false
+        },
+        {
+          "label": "physics-discipline",
+          "efq": "cGh5c2ljcy1kaXNjaXBsaW5l",
+          "display": "Physics",
+          "count": 37,
+          "selected": false
+        },
+        {
+          "label": "politicalscience-discipline",
+          "efq": "cG9saXRpY2Fsc2NpZW5jZS1kaXNjaXBsaW5l",
+          "display": "Political Science",
+          "count": 2204,
+          "selected": false
+        },
+        {
+          "label": "populationstudies-discipline",
+          "efq": "cG9wdWxhdGlvbnN0dWRpZXMtZGlzY2lwbGluZQ==",
+          "display": "Population Studies",
+          "count": 322,
+          "selected": false
+        },
+        {
+          "label": "psychology-discipline",
+          "efq": "cHN5Y2hvbG9neS1kaXNjaXBsaW5l",
+          "display": "Psychology",
+          "count": 895,
+          "selected": false
+        },
+        {
+          "label": "publichealth-discipline",
+          "efq": "cHVibGljaGVhbHRoLWRpc2NpcGxpbmU=",
+          "display": "Public Health",
+          "count": 252,
+          "selected": false
+        },
+        {
+          "label": "publicpolicy-discipline",
+          "efq": "cHVibGljcG9saWN5LWRpc2NpcGxpbmU=",
+          "display": "Public Policy & Administration",
+          "count": 499,
+          "selected": false
+        },
+        {
+          "label": "religion-discipline",
+          "efq": "cmVsaWdpb24tZGlzY2lwbGluZQ==",
+          "display": "Religion",
+          "count": 763,
+          "selected": false
+        },
+        {
+          "label": "sciencetechstudies-discipline",
+          "efq": "c2NpZW5jZXRlY2hzdHVkaWVzLWRpc2NpcGxpbmU=",
+          "display": "Science & Technology Studies",
+          "count": 2947,
+          "selected": false
+        },
+        {
+          "label": "security-studies-discipline",
+          "efq": "c2VjdXJpdHktc3R1ZGllcy1kaXNjaXBsaW5l",
+          "display": "Security Studies",
+          "count": 137,
+          "selected": false
+        },
+        {
+          "label": "slavicstudies-discipline",
+          "efq": "c2xhdmljc3R1ZGllcy1kaXNjaXBsaW5l",
+          "display": "Slavic Studies",
+          "count": 186,
+          "selected": false
+        },
+        {
+          "label": "socialwork-discipline",
+          "efq": "c29jaWFsd29yay1kaXNjaXBsaW5l",
+          "display": "Social Work",
+          "count": 78,
+          "selected": false
+        },
+        {
+          "label": "sociology-discipline",
+          "efq": "c29jaW9sb2d5LWRpc2NpcGxpbmU=",
+          "display": "Sociology",
+          "count": 2651,
+          "selected": false
+        },
+        {
+          "label": "statistics-discipline",
+          "efq": "c3RhdGlzdGljcy1kaXNjaXBsaW5l",
+          "display": "Statistics",
+          "count": 17121,
+          "selected": false
+        },
+        {
+          "label": "sustainability-discipline",
+          "efq": "c3VzdGFpbmFiaWxpdHktZGlzY2lwbGluZQ==",
+          "display": "Sustainability",
+          "count": 220,
+          "selected": false
+        },
+        {
+          "label": "technology-discipline",
+          "efq": "dGVjaG5vbG9neS1kaXNjaXBsaW5l",
+          "display": "Technology",
+          "count": 275,
+          "selected": false
+        },
+        {
+          "label": "transportationstudies-discipline",
+          "efq": "dHJhbnNwb3J0YXRpb25zdHVkaWVzLWRpc2NpcGxpbmU=",
+          "display": "Transportation Studies",
+          "count": 193,
+          "selected": false
+        },
+        {
+          "label": "urbanstudies-discipline",
+          "efq": "dXJiYW5zdHVkaWVzLWRpc2NpcGxpbmU=",
+          "display": "Urban Studies",
+          "count": 101,
+          "selected": false
+        },
+        {
+          "label": "zoology-discipline",
+          "efq": "em9vbG9neS1kaXNjaXBsaW5l",
+          "display": "Zoology",
+          "count": 277,
+          "selected": false
+        }
+      ],
+      "comp_label": "subject"
+    },
+    {
+      "field": "la_str",
+      "values": [
+        {
+          "label": "eng OR en OR EN",
+          "efq": "ZW5nIE9SIGVuIE9SIEVO",
+          "display": "English",
+          "count": 187477,
+          "selected": false
+        },
+        {
+          "label": "ger",
+          "efq": "Z2Vy",
+          "display": "German",
+          "count": 1384,
+          "selected": false
+        },
+        {
+          "label": "fre OR fr",
+          "efq": "ZnJlIE9SIGZy",
+          "display": "French",
+          "count": 1145,
+          "selected": false
+        },
+        {
+          "label": "spa OR es",
+          "efq": "c3BhIE9SIGVz",
+          "display": "Spanish; Castilian",
+          "count": 1074,
+          "selected": false
+        },
+        {
+          "label": "dan",
+          "efq": "ZGFu",
+          "display": "Danish",
+          "count": 584,
+          "selected": false
+        },
+        {
+          "label": "ita",
+          "efq": "aXRh",
+          "display": "Italian",
+          "count": 544,
+          "selected": false
+        },
+        {
+          "label": "por",
+          "efq": "cG9y",
+          "display": "Portuguese",
+          "count": 280,
+          "selected": false
+        },
+        {
+          "label": "pol OR pl",
+          "efq": "cG9sIE9SIHBs",
+          "display": "Polish",
+          "count": 105,
+          "selected": false
+        },
+        {
+          "label": "dut",
+          "efq": "ZHV0",
+          "display": "Dutch; Flemish",
+          "count": 87,
+          "selected": false
+        },
+        {
+          "label": "ben",
+          "efq": "YmVu",
+          "display": "Bengali",
+          "count": 55,
+          "selected": false
+        },
+        {
+          "label": "nor",
+          "efq": "bm9y",
+          "display": "Norwegian",
+          "count": 52,
+          "selected": false
+        },
+        {
+          "label": "cat",
+          "efq": "Y2F0",
+          "display": "Catalan; Valencian",
+          "count": 49,
+          "selected": false
+        },
+        {
+          "label": "heb",
+          "efq": "aGVi",
+          "display": "Hebrew",
+          "count": 36,
+          "selected": false
+        },
+        {
+          "label": "rum",
+          "efq": "cnVt",
+          "display": "Romanian; Moldavian; Moldovan",
+          "count": 28,
+          "selected": false
+        },
+        {
+          "label": "swe",
+          "efq": "c3dl",
+          "display": "Swedish",
+          "count": 26,
+          "selected": false
+        },
+        {
+          "label": "tam",
+          "efq": "dGFt",
+          "display": "Tamil",
+          "count": 25,
+          "selected": false
+        },
+        {
+          "label": "rus",
+          "efq": "cnVz",
+          "display": "Russian",
+          "count": 24,
+          "selected": false
+        },
+        {
+          "label": "cze",
+          "efq": "Y3pl",
+          "display": "Czech",
+          "count": 22,
+          "selected": false
+        },
+        {
+          "label": "lat",
+          "efq": "bGF0",
+          "display": "Latin",
+          "count": 20,
+          "selected": false
+        },
+        {
+          "label": "mar",
+          "efq": "bWFy",
+          "display": "Marathi",
+          "count": 16,
+          "selected": false
+        },
+        {
+          "label": "gre",
+          "efq": "Z3Jl",
+          "display": "Greek, Modern (1453-)",
+          "count": 12,
+          "selected": false
+        },
+        {
+          "label": "urd",
+          "efq": "dXJk",
+          "display": "Urdu",
+          "count": 11,
+          "selected": false
+        },
+        {
+          "label": "mal",
+          "efq": "bWFs",
+          "display": "Malayalam",
+          "count": 8,
+          "selected": false
+        },
+        {
+          "label": "bos",
+          "efq": "Ym9z",
+          "display": "Bosnian",
+          "count": 5,
+          "selected": false
+        },
+        {
+          "label": "hrv",
+          "efq": "aHJ2",
+          "display": "Croatian",
+          "count": 5,
+          "selected": false
+        },
+        {
+          "label": "gle",
+          "efq": "Z2xl",
+          "display": "Irish",
+          "count": 4,
+          "selected": false
+        },
+        {
+          "label": "syr",
+          "efq": "c3ly",
+          "display": "Syriac",
+          "count": 3,
+          "selected": false
+        },
+        {
+          "label": "hun",
+          "efq": "aHVu",
+          "display": "Hungarian",
+          "count": 3,
+          "selected": false
+        },
+        {
+          "label": "jpn",
+          "efq": "anBu",
+          "display": "Japanese",
+          "count": 2,
+          "selected": false
+        },
+        {
+          "label": "glg",
+          "efq": "Z2xn",
+          "display": "Galician",
+          "count": 2,
+          "selected": false
+        },
+        {
+          "label": "afr",
+          "efq": "YWZy",
+          "display": "Afrikaans",
+          "count": 1,
+          "selected": false
+        },
+        {
+          "label": "ara",
+          "efq": "YXJh",
+          "display": "Arabic",
+          "count": 1,
+          "selected": false
+        },
+        {
+          "label": "nep",
+          "efq": "bmVw",
+          "display": "Nepali",
+          "count": 1,
+          "selected": false
+        },
+        {
+          "label": "cro",
+          "efq": "Y3Jv",
+          "display": "cro",
+          "count": 1,
+          "selected": false
+        },
+        {
+          "label": "jav",
+          "efq": "amF2",
+          "display": "Javanese",
+          "count": 1,
+          "selected": false
+        },
+        {
+          "label": "chi",
+          "efq": "Y2hp",
+          "display": "Chinese",
+          "count": 1,
+          "selected": false
+        },
+        {
+          "label": "san",
+          "efq": "c2Fu",
+          "display": "Sanskrit",
+          "count": 1,
+          "selected": false
+        }
+      ],
+      "comp_label": "language"
+    },
+    {
+      "comp_label": "access-filter"
+    }
+  ],
+  "groupedResults": {
+    "column1": {
+      "comp_label": "component_set",
+      "results": [
+        {
+          "comp_label": "search-results-list",
+          "group_efq": "WyJyZXZpZXciLCJjb250cmlidXRlZF92aWRlbyIsImNvbnRyaWJ1dGVkX3RleHQiLCJjb250cmlidXRlZF9hdWRpbyIsInNlYXJjaF9jaGFwdGVyIiwicmVzZWFyY2hfcmVwb3J0Iiwic2VhcmNoX2FydGljbGUiLCJtcF9yZXNlYXJjaF9yZXBvcnRfcGFydCJd",
+          "image_assets_path": "//www-jstor-org.libproxy.knu.ac.kr/assets/global_20251201T215504/build/images/",
+          "register_and_read_entitlement_id": "[REDACTED]",
+          "results": [
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "LAWRENCE P. BELLUCE",
+                "ANTONIO DI NOLA",
+                "GIACOMO LENZI"
+              ],
+              "date": {},
+              "doi": "10.2307/43303777",
+              "flags": [
+                "pdf",
+                "page_scan"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Journal Article",
+              "id": "0a6125bf-dd97-38cb-affa-700aed88aca5",
+              "is_review": false,
+              "resource_type": "journal",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "ALGEBRAIC GEOMETRY FOR MV-ALGEBRAS"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "journal",
+              "cc_dates": [],
+              "display_date": [],
+              "year": 0,
+              "pubdate": "",
+              "stable_url": "/stable/43303777",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "ALGEBRAIC GEOMETRY FOR MV-ALGEBRAS",
+              "result_date_string": "",
+              "citation_line": "<cite>The Journal of Symbolic Logic</cite>, Vol. 79, No. 4 (DECEMBER 2014), pp. 1061-1091",
+              "reviewed_works": [],
+              "topics": []
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Victoria Miles"
+              ],
+              "date": {},
+              "doi": "10.5951/mathteacher.107.9.0720",
+              "flags": [
+                "pdf",
+                "supplements"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Journal Article",
+              "id": "85463e82-5146-39cc-b041-4518ad29d70b",
+              "is_review": false,
+              "resource_type": "journal",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Algebra about Me"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "journal",
+              "cc_dates": [],
+              "display_date": [],
+              "year": 0,
+              "pubdate": "",
+              "stable_url": "/stable/10.5951/mathteacher.107.9.0720",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Algebra about Me",
+              "result_date_string": "",
+              "citation_line": "<cite>The Mathematics Teacher</cite>, Vol. 107, No. 9 (May 2014), p. 720",
+              "reviewed_works": [],
+              "topics": []
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "James R. Choike"
+              ],
+              "date": {},
+              "doi": "10.2307/27971500",
+              "flags": [
+                "pdf",
+                "page_scan"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Journal Article",
+              "id": "054212d1-9376-3f69-b02f-6542cfd29be1",
+              "is_review": false,
+              "resource_type": "journal",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Teaching Strategies for \"Algebra for All\""
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "journal",
+              "cc_dates": [],
+              "display_date": [],
+              "year": 0,
+              "pubdate": "",
+              "stable_url": "/stable/27971500",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Teaching Strategies for \"Algebra for All\"",
+              "result_date_string": "",
+              "citation_line": "<cite>The Mathematics Teacher</cite>, Vol. 93, No. 7 (October 2000), pp. 556-560",
+              "reviewed_works": [],
+              "topics": []
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Richard O. Hill"
+              ],
+              "date": {},
+              "doi": "10.2307/20871098",
+              "flags": [
+                "pdf",
+                "page_scan"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Journal Article",
+              "id": "67f6750f-f50f-3991-ab37-5e8bcfe81f73",
+              "is_review": false,
+              "resource_type": "journal",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Electricians Need Algebra, Too"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "journal",
+              "cc_dates": [],
+              "display_date": [],
+              "year": 0,
+              "pubdate": "",
+              "stable_url": "/stable/20871098",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Electricians Need Algebra, Too",
+              "result_date_string": "",
+              "citation_line": "<cite>The Mathematics Teacher</cite>, Vol. 95, No. 6 (SEPTEMBER 2002), pp. 450-455",
+              "reviewed_works": [],
+              "topics": []
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Jennifer Taylor-Cox"
+              ],
+              "date": {},
+              "doi": "10.2307/42729713",
+              "flags": [
+                "pdf",
+                "page_scan"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Journal Article",
+              "id": "da7f714a-c20b-3500-8036-bec7599921b6",
+              "is_review": false,
+              "resource_type": "journal",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "ALGEBRA in the Early Years? Yes!"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "journal",
+              "cc_dates": [],
+              "display_date": [],
+              "year": 0,
+              "pubdate": "",
+              "stable_url": "/stable/42729713",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "ALGEBRA in the Early Years? Yes!",
+              "result_date_string": "",
+              "citation_line": "<cite>YC Young Children</cite>, Vol. 58, No. 1 (January 2003), pp. 14-21",
+              "reviewed_works": [],
+              "topics": []
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Keith M. Kendig"
+              ],
+              "date": {},
+              "doi": "10.2307/2975543",
+              "flags": [
+                "pdf",
+                "page_scan"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Journal Article",
+              "id": "f7a4f7c6-b2d1-325c-bf9e-e062943528f4",
+              "is_review": false,
+              "resource_type": "journal",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Algebra, Geometry, and Algebraic Geometry: Some Interconnections"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "journal",
+              "cc_dates": [],
+              "display_date": [],
+              "year": 0,
+              "pubdate": "",
+              "stable_url": "/stable/2975543",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Algebra, Geometry, and Algebraic Geometry: Some Interconnections",
+              "result_date_string": "",
+              "citation_line": "<cite>The American Mathematical Monthly</cite>, Vol. 90, No. 3 (Mar., 1983), pp. 161-174",
+              "reviewed_works": [],
+              "topics": []
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Martin Lofthouse"
+              ],
+              "date": {},
+              "doi": "10.2307/30215657",
+              "flags": [
+                "pdf",
+                "page_scan"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Journal Article",
+              "id": "92b05416-89d8-33d2-9425-72e13745ea15",
+              "is_review": false,
+              "resource_type": "journal",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Confident with Algebra: True or False?"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "journal",
+              "cc_dates": [],
+              "display_date": [],
+              "year": 0,
+              "pubdate": "",
+              "stable_url": "/stable/30215657",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Confident with Algebra: True or False?",
+              "result_date_string": "",
+              "citation_line": "<cite>Mathematics in School</cite>, Vol. 33, No. 1 (Jan., 2004), pp. 36-40",
+              "reviewed_works": [],
+              "topics": []
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "AMIR H. ASGHARI"
+              ],
+              "date": {},
+              "doi": "10.2307/23391972",
+              "flags": [
+                "pdf",
+                "page_scan"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Journal Article",
+              "id": "e9042112-9b0d-3b87-92f0-7a5dc38206c0",
+              "is_review": false,
+              "resource_type": "journal",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "SPECULARITY IN ALGEBRA"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "journal",
+              "cc_dates": [],
+              "display_date": [],
+              "year": 0,
+              "pubdate": "",
+              "stable_url": "/stable/23391972",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "SPECULARITY IN ALGEBRA",
+              "result_date_string": "",
+              "citation_line": "<cite>For the Learning of Mathematics</cite>, Vol. 32, No. 3 (November 2012), pp. 34-38",
+              "reviewed_works": [],
+              "topics": []
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Amy L. Accardo",
+                "S. Jay Kuder"
+              ],
+              "date": {},
+              "doi": "10.5951/mathteacmiddscho.22.6.0352",
+              "flags": [
+                "pdf",
+                "page_scan"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Journal Article",
+              "id": "d029803b-7927-38b0-ae0b-5b6dbd45017b",
+              "is_review": false,
+              "resource_type": "journal",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Monitoring Student Learning in Algebra"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "journal",
+              "cc_dates": [],
+              "display_date": [],
+              "year": 0,
+              "pubdate": "",
+              "stable_url": "/stable/10.5951/mathteacmiddscho.22.6.0352",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Monitoring Student Learning in Algebra",
+              "result_date_string": "",
+              "citation_line": "<cite>Mathematics Teaching in the Middle School</cite>, Vol. 22, No. 6 (February 2017), pp. 352-359",
+              "reviewed_works": [],
+              "topics": []
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Sándor Jenei"
+              ],
+              "date": {},
+              "doi": "10.2307/23324832",
+              "flags": [
+                "pdf",
+                "page_scan"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Journal Article",
+              "id": "fed2d576-a86f-380b-a619-204590c38cd1",
+              "is_review": false,
+              "resource_type": "journal",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Equality Algebras"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "journal",
+              "cc_dates": [],
+              "display_date": [],
+              "year": 0,
+              "pubdate": "",
+              "stable_url": "/stable/23324832",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Equality Algebras",
+              "result_date_string": "",
+              "citation_line": "<cite>Studia Logica: An International Journal for Symbolic Logic</cite>, Vol. 100, No. 6, Recent Developments related to Residuated Lattices and Substructural Logics (December 2012), pp. 1201-1209",
+              "reviewed_works": [],
+              "topics": []
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Zalman Usiskin"
+              ],
+              "date": {},
+              "doi": "10.2307/41196752",
+              "flags": [
+                "pdf",
+                "page_scan"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Journal Article",
+              "id": "613b989a-6682-3fc8-b5c0-cd705f7c3756",
+              "is_review": false,
+              "resource_type": "journal",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Doing Algebra in Grades K-4"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "journal",
+              "cc_dates": [],
+              "display_date": [],
+              "year": 0,
+              "pubdate": "",
+              "stable_url": "/stable/41196752",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Doing Algebra in Grades K-4",
+              "result_date_string": "",
+              "citation_line": "<cite>Teaching Children Mathematics</cite>, Vol. 3, No. 6, FOCUS ISSUE: Algebraic THINKING (February 1997), pp. 346-356",
+              "reviewed_works": [],
+              "topics": []
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "JACQUES RICHE"
+              ],
+              "date": {},
+              "doi": "10.2307/44085001",
+              "flags": [
+                "pdf",
+                "page_scan"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Journal Article",
+              "id": "399a9f59-172e-3ffa-b7a2-cb8990dac21a",
+              "is_review": false,
+              "resource_type": "journal",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "LOGIC IN WHITEHEAD'S UNIVERSAL ALGEBRA"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "journal",
+              "cc_dates": [],
+              "display_date": [],
+              "year": 0,
+              "pubdate": "",
+              "stable_url": "/stable/44085001",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "LOGIC IN WHITEHEAD'S UNIVERSAL ALGEBRA",
+              "result_date_string": "",
+              "citation_line": "<cite>Logique et Analyse</cite>, NOUVELLE SÉRIE, Vol. 54, No. 214, Special Issue on Whitehead's Early Work (Avril, mai, juin 2011), pp. 135-159",
+              "reviewed_works": [],
+              "topics": []
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Karin E. Lange",
+                "Julie L. Booth",
+                "Kristie J. Newton"
+              ],
+              "date": {},
+              "doi": "10.5951/mathteacher.107.7.0534",
+              "flags": [
+                "pdf"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Journal Article",
+              "id": "e02a7332-fa67-3f53-a02f-061125778c1a",
+              "is_review": false,
+              "resource_type": "journal",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Learning Algebra from Worked Examples"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "journal",
+              "cc_dates": [],
+              "display_date": [],
+              "year": 0,
+              "pubdate": "",
+              "stable_url": "/stable/10.5951/mathteacher.107.7.0534",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Learning Algebra from Worked Examples",
+              "result_date_string": "",
+              "citation_line": "<cite>The Mathematics Teacher</cite>, Vol. 107, No. 7 (March 2014), pp. 534-540",
+              "reviewed_works": [],
+              "topics": []
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Uygun U. Jamilov",
+                "Manuel Ladra"
+              ],
+              "date": {},
+              "doi": "10.2307/24899278",
+              "flags": [
+                "pdf",
+                "page_scan"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Journal Article",
+              "id": "fabbaa65-6cb6-3b30-96ff-69115ce3a15a",
+              "is_review": false,
+              "resource_type": "journal",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "𝐹-Evolution Algebra"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "journal",
+              "cc_dates": [],
+              "display_date": [],
+              "year": 0,
+              "pubdate": "",
+              "stable_url": "/stable/24899278",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "𝐹-Evolution Algebra",
+              "result_date_string": "",
+              "citation_line": "<cite>Filomat</cite>, Vol. 30, No. 10 (2016), pp. 2637-2652",
+              "reviewed_works": [],
+              "topics": []
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Joanna B. Stegall",
+                "Jacquelynn A. Malloy"
+              ],
+              "date": {},
+              "doi": "10.5951/mathteacher.112.6.0450",
+              "flags": [
+                "pdf",
+                "page_scan"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Journal Article",
+              "id": "c786556d-0ab7-3686-9a35-7fc1c5c2c4da",
+              "is_review": false,
+              "resource_type": "journal",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Addressing Misconceptions in Algebra 1"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "journal",
+              "cc_dates": [],
+              "display_date": [],
+              "year": 0,
+              "pubdate": "",
+              "stable_url": "/stable/10.5951/mathteacher.112.6.0450",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Addressing Misconceptions in Algebra 1",
+              "result_date_string": "",
+              "citation_line": "<cite>The Mathematics Teacher</cite>, Vol. 112, No. 6 (April 2019), pp. 450-454",
+              "reviewed_works": [],
+              "topics": []
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "JORDAN H. RICKLES"
+              ],
+              "date": {},
+              "doi": "10.2307/43824094",
+              "flags": [
+                "pdf",
+                "page_scan"
+              ],
+              "genai_opt_out": true,
+              "has_access": true,
+              "human_readable_type": "Journal Article",
+              "id": "14d1a55b-f297-33b0-b9e7-9eac1584006b",
+              "is_review": false,
+              "resource_type": "journal",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Examining Heterogeneity in the Effect of Taking Algebra in Eighth Grade"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "journal",
+              "cc_dates": [],
+              "display_date": [],
+              "year": 0,
+              "pubdate": "",
+              "stable_url": "/stable/43824094",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Examining Heterogeneity in the Effect of Taking Algebra in Eighth Grade",
+              "result_date_string": "",
+              "citation_line": "<cite>The Journal of Educational Research</cite>, Vol. 106, No. 4 (2013), pp. 251-268",
+              "reviewed_works": [],
+              "topics": []
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Ian Doust",
+                "Michael D. Hirschhorn",
+                "Jocelyn Ho"
+              ],
+              "date": {},
+              "doi": "10.2307/30037413",
+              "flags": [
+                "pdf",
+                "page_scan"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Journal Article",
+              "id": "905a1a25-0178-3c1e-bd6a-acce925f2a2d",
+              "is_review": false,
+              "resource_type": "journal",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Trigonometric Identities, Linear Algebra, and Computer Algebra"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "journal",
+              "cc_dates": [],
+              "display_date": [],
+              "year": 0,
+              "pubdate": "",
+              "stable_url": "/stable/30037413",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Trigonometric Identities, Linear Algebra, and Computer Algebra",
+              "result_date_string": "",
+              "citation_line": "<cite>The American Mathematical Monthly</cite>, Vol. 112, No. 2 (Feb., 2005), pp. 155-164",
+              "reviewed_works": [],
+              "topics": []
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Marcio Diniz"
+              ],
+              "date": {},
+              "doi": "10.4169/college.math.j.44.1.002",
+              "flags": [
+                "pdf",
+                "page_scan"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Journal Article",
+              "id": "057508a7-52ae-3862-8ebc-6e6426afb085",
+              "is_review": false,
+              "resource_type": "journal",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Asset Pricing, Financial Markets, and Linear Algebra"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "journal",
+              "cc_dates": [],
+              "display_date": [],
+              "year": 0,
+              "pubdate": "",
+              "stable_url": "/stable/10.4169/college.math.j.44.1.002",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Asset Pricing, Financial Markets, and Linear Algebra",
+              "result_date_string": "",
+              "citation_line": "<cite>The College Mathematics Journal</cite>, Vol. 44, No. 1 (January 2013), pp. 2-8",
+              "reviewed_works": [],
+              "topics": []
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Spencer Bloch"
+              ],
+              "date": {},
+              "doi": "10.2307/2939288",
+              "flags": [
+                "pdf",
+                "page_scan"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Journal Article",
+              "id": "d4a8f147-4e96-3adb-a991-9c97a8f3b3cb",
+              "is_review": false,
+              "resource_type": "journal",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Algebraic Cycles and the Lie Algebra of Mixed Tate Motives"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "journal",
+              "cc_dates": [],
+              "display_date": [],
+              "year": 0,
+              "pubdate": "",
+              "stable_url": "/stable/2939288",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Algebraic Cycles and the Lie Algebra of Mixed Tate Motives",
+              "result_date_string": "",
+              "citation_line": "<cite>Journal of the American Mathematical Society</cite>, Vol. 4, No. 4 (Oct., 1991), pp. 771-791",
+              "reviewed_works": [],
+              "topics": []
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Neal J. Fowler",
+                "Iain Raeburn"
+              ],
+              "date": {},
+              "doi": "10.2307/24900141",
+              "flags": [
+                "pdf",
+                "page_scan"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Journal Article",
+              "id": "658202a0-c309-3eca-b91d-5926ac4f42a3",
+              "is_review": false,
+              "resource_type": "journal",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "The Toeplitz Algebra of a Hilbert Bimodule"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "journal",
+              "cc_dates": [],
+              "display_date": [],
+              "year": 0,
+              "pubdate": "",
+              "stable_url": "/stable/24900141",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "The Toeplitz Algebra of a Hilbert Bimodule",
+              "result_date_string": "",
+              "citation_line": "<cite>Indiana University Mathematics Journal</cite>, Vol. 48, No. 1 (Spring, 1999), pp. 155-181",
+              "reviewed_works": [],
+              "topics": []
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "C. J. SANGWIN"
+              ],
+              "date": {},
+              "doi": "10.2307/24496957",
+              "flags": [
+                "pdf",
+                "page_scan"
+              ],
+              "genai_opt_out": true,
+              "has_access": true,
+              "human_readable_type": "Journal Article",
+              "id": "6745d60f-0828-3b6a-aee3-440fc838a3c1",
+              "is_review": false,
+              "resource_type": "journal",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "An audited elementary algebra"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "journal",
+              "cc_dates": [],
+              "display_date": [],
+              "year": 0,
+              "pubdate": "",
+              "stable_url": "/stable/24496957",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "An audited elementary algebra",
+              "result_date_string": "",
+              "citation_line": "<cite>The Mathematical Gazette</cite>, Vol. 99, No. 545 (July 2015), pp. 298-316",
+              "reviewed_works": [],
+              "topics": []
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Annette Ricks Leitze",
+                "Nancy A. Kitt"
+              ],
+              "date": {},
+              "doi": "10.2307/27971450",
+              "flags": [
+                "pdf",
+                "page_scan"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Journal Article",
+              "id": "73234cb0-5da7-3e97-a289-077a536431d4",
+              "is_review": false,
+              "resource_type": "journal",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Using Homemade Algebra Tiles to Develop Algebra and Prealgebra Concepts"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "journal",
+              "cc_dates": [],
+              "display_date": [],
+              "year": 0,
+              "pubdate": "",
+              "stable_url": "/stable/27971450",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Using Homemade Algebra Tiles to Develop Algebra and Prealgebra Concepts",
+              "result_date_string": "",
+              "citation_line": "<cite>The Mathematics Teacher</cite>, Vol. 93, No. 6 (September 2000), pp. 462-466, 520",
+              "reviewed_works": [],
+              "topics": []
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "UMA N. IYER",
+                "CHRISTIAN KASSEL"
+              ],
+              "date": {},
+              "doi": "10.2307/24899092",
+              "flags": [
+                "pdf",
+                "page_scan"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Journal Article",
+              "id": "a782f002-8c49-31fa-856a-9c2ced18ca2f",
+              "is_review": false,
+              "resource_type": "journal",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "GENERIC BASE ALGEBRAS AND UNIVERSAL COMODULE ALGEBRAS FOR SOME FINITE-DIMENSIONAL HOPF ALGEBRAS"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "journal",
+              "cc_dates": [],
+              "display_date": [],
+              "year": 0,
+              "pubdate": "",
+              "stable_url": "/stable/24899092",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "GENERIC BASE ALGEBRAS AND UNIVERSAL COMODULE ALGEBRAS FOR SOME FINITE-DIMENSIONAL HOPF ALGEBRAS",
+              "result_date_string": "",
+              "citation_line": "<cite>Transactions of the American Mathematical Society</cite>, Vol. 367, No. 12 (DECEMBER 2015), pp. 8465-8486",
+              "reviewed_works": [],
+              "topics": []
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Stanislaw Goldstein",
+                "Adam Paszkiewicz"
+              ],
+              "date": {},
+              "doi": "10.2307/2159311",
+              "flags": [
+                "pdf",
+                "page_scan"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Journal Article",
+              "id": "2090d2dd-4f1a-3c85-bdbb-d4d74185ded6",
+              "is_review": false,
+              "resource_type": "journal",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Linear Combinations of Projections in von Neumann Algebras"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "journal",
+              "cc_dates": [],
+              "display_date": [],
+              "year": 0,
+              "pubdate": "",
+              "stable_url": "/stable/2159311",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Linear Combinations of Projections in von Neumann Algebras",
+              "result_date_string": "",
+              "citation_line": "<cite>Proceedings of the American Mathematical Society</cite>, Vol. 116, No. 1 (Sep., 1992), pp. 175-183",
+              "reviewed_works": [],
+              "topics": []
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "William R. Wade"
+              ],
+              "date": {},
+              "doi": "10.2307/27972002",
+              "flags": [
+                "pdf",
+                "page_scan"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Journal Article",
+              "id": "e2fac216-48c4-3e8e-87eb-89c76d080348",
+              "is_review": false,
+              "resource_type": "journal",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "A Dialogue between Calculator and Algebra"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "journal",
+              "cc_dates": [],
+              "display_date": [],
+              "year": 0,
+              "pubdate": "",
+              "stable_url": "/stable/27972002",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "A Dialogue between Calculator and Algebra",
+              "result_date_string": "",
+              "citation_line": "<cite>The Mathematics Teacher</cite>, Vol. 99, No. 6 (FEBRUARY 2006), pp. 391-393",
+              "reviewed_works": [],
+              "topics": []
+            }
+          ],
+          "paging": {
+            "prev": "eyJwYWdlIjoxLCJzdGFydCI6MCwidG90YWwiOjE5Nzc3OX0=",
+            "next": "eyJwYWdlIjozLCJzdGFydCI6NTAsInRvdGFsIjoxOTc3Nzl9",
+            "page_start_index": 26,
+            "page_end_index": 50,
+            "total_results": 197779,
+            "page_index": 2,
+            "total_pages": 7912,
+            "group_efq": "WyJyZXZpZXciLCJjb250cmlidXRlZF92aWRlbyIsImNvbnRyaWJ1dGVkX3RleHQiLCJjb250cmlidXRlZF9hdWRpbyIsInNlYXJjaF9jaGFwdGVyIiwicmVzZWFyY2hfcmVwb3J0Iiwic2VhcmNoX2FydGljbGUiLCJtcF9yZXNlYXJjaF9yZXBvcnRfcGFydCJd"
+          }
+        }
+      ]
+    }
+  },
+  "tabs": [],
+  "notices": [],
+  "requestId": "[REDACTED]",
+  "spelling_suggestions": {},
+  "totalResultCount": 197779,
+  "requestedFlags": {
+    "genai_beta_search_results": true,
+    "jstor_discovery_platform": false
+  }
+}
