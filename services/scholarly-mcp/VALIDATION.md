@@ -424,3 +424,51 @@ JSTOR 문헌24931626의 첫 Download는 이용 조건 모달 때문에 대기했
 2026-09-12 IOP의 문헌별 원 인용문을 검색 export에 연결했다. 첫090332Z-iop-search-citations-mcp.json은 접근 확인으로 제한됐다.090654Z-iop-verification-control.json은 현재 표시된 나무 제품 과제를 판독·선택해 확인 응답을 얻었지만 제출 후 동일 페이지의 URL 대기는 timeout이었다. 그 보고를 성공으로 고치지 않았다. 이후 `data/validation/20260912T091136Z-iop-search-citations-mcp.json`은 새 SDK에서 최신순 RSS의 BibTeX와 관련도 검색의 RIS, 각각 선택한1건과 실제 추출의 DOI add557을 completed=true로 통과했다. 원 파일 회수 성공은 이 별도 보고가 입증한다.
 
 RSS의 페이지 경계에서 선택한2건 중 두 번째 인용문이 제한되는 재현으로 검색 레코드·첫 파일·오류가 함께 유지됨을 확인했다. 자료원이나 검색 방식을 바꾸지 않고 형식에 따라 원 문헌 내보내기를 연결한다. 공통270검사가 통과했다. IOP XML의 별도 연락·검토 공급 경로는 계속 제외한다.
+
+2026-09-12 자료원별 창 모드와 접근 조건을 별도 조사했다. [접근 조건 기록](ACCESS-RESEARCH.md)에 통제 변수·기관 경로·후속 양성 근거와 비밀값 노출 사고·자동 삭제 거부의 처리 범위를 보존했다. 초기 `data/validation/access-research-20260912/mcp-before-integration.json`은 SIAM 검색과 individual-subscription 검색이 실제 SDK에서 각각 publisher_search_not_implemented와 adapter_not_implemented였음을 기록한다.
+
+`data/validation/access-research-20260912/individual-subscription-mcp.json`은 새로운 SDK 서버에서 KNU 두 보유 목록95행을 검증했다. SIAM6건의 JSON·CSV 식별자, 행 fetch·extract, 개별전자저널36행 metadata와 fulltext not_offered, 2026년 조건1건, start35/limit3의 두 목록 경계, 0건과 외부 URL 거부가 completed=true다. 원 XLSX는 artifact에 저장하지 않는다. 실제 목록에 포함된 별도 ID/PW는 모든 workbook의 셀·하이퍼링크·주석을 내부에서 먼저 확인한 뒤 정제한다. 알려진 workbook 값2개를 실제 SDK 파일23개와 스테이징 파일에서 대조해 일치0건이었다. 이 검사는 임의의 모든 비밀 형식이나 과거 출력 삭제를 검증한 것이 아니다.
+
+`data/validation/20260912T114646Z-siam-mcp.json`은 전용 Chrome 실행부를 연결한 실제 SDK에서 제목 algebra 검색1,320건 중2건과 CSV·extract를 대조했다. start19/limit2의 페이지 경계를 BibTeX·RIS·EndNote·Medlars·RefWorks 각각으로 조회해 페이지별 원 artifact2개와 실제 extract를 통과했다. 정확한 책 URL의 metadata·다섯 인용 형식과 DOI 대조, 0건 결과까지 completed=true다. RefWorks는 외부 폼을 제출하지 않고 SIAM 응답의 textarea RIS를 읽는다. 문헌 화면과 인용문의 쉼표 앞 공백 차이는 제한된 제목 비교 정규화로 처리하며 원 파일은 고치지 않는다.
+
+SIAM 정상 책 페이지는 citation/DC title 없이 publication_doi·og:title·본문 h1을 제공했다. 공통 준비 검사가 이 페이지를 거절하는 실패를 재현한 뒤 해당 문헌 신호와 실제 본문 제목을 연결했다. OG title만 있는 페이지는 여전히 문헌으로 인정하지 않는다. 같은 페이지의 요청하지 않은 선택 DOI 해제, Article Medlars의 TI와 저널명 TA 분리, 빈 책 TI의 TA 제목 보완도 실물·회귀로 대조했다. 추가 Topic·발행물·날짜·다중 행의 연결은 별도 검증 단위로 진행한다.
+
+`data/validation/20260912T121025Z-siam-advanced-mcp.json`은 추가 검색 조건의 실제 SDK 검증을 completed=true로 통과했다. Title algebra와 Author Stetter는17건, Anywhere polynomial을 더한 세 행은16건이었다. optimization·SIAM Journal on Optimization·현재 원 Year 조건은89건이며 start19/limit2에서 두 페이지의 Article 행과 발행물명을 대조했다. linear algebra·Linear Algebra and Matrix Theory·2024년1월부터2026년9월 조건은11건이며 결과 연도를 대조했다. 각 JSON·CSV의 DOI가 일치하고 모호한 publication=SIAM은 후보와 selection_required를 반환했다. 자동완성은 현재 선택 제어의 ID를 제출 URL과 대조하고 요청하지 않은 조건이 남으면 거부한다.
+
+`data/validation/20260912T115954Z-aps-search-mcp.json`은 새 실행부에서 기관 검색37,997건 중2건·CSV와 원 레코드 추출·start19/limit2·제목 검색814건·선택 문헌 metadata와 abstract를 completed=true로 통과했다. 직전115721Z는 초록 selector가 원 #abstract-section-content를 찾지 못해 partial이었고 이 결함을 수정했다. 원 인용문과 추가 facet·날짜의 검증은 별도 단위다.
+
+`data/validation/20260912T120447Z-ams-export-mcp.json`은 algebra 전체6,589건·선택1건·next1을 유지한 원 XLSX 회수와 실제 Products 시트 추출, 선택 ProductCode의 metadata·책 소개 회수를 completed=true로 통과했다. XLSX는 한 논리 상품·세 ISBN 변형 행과 제목 행을 포함해 extract total4였다. 기존 native는 원 JSON 페이지 의미를 유지하고 xlsx를 별도로 추가했다. 중첩 검색식120154Z는 원 서버 오류가 JSON 문자열 안에 반환돼 일반 AttributeError였으며 non-object 오류 분류를 수정한 뒤 원 제출 계약을 추가 조사하고 있다.
+
+`data/validation/20260912T125646Z-ams-search-mcp.json`은 기본검색의13건 회수와 추출, start11/limit2의 원 페이지 경계와 앞 결과의 동일성, 실제0건을 completed=true로 통과했다. 직전124315Z의0건은 TotalRows=0, Products=null, PageNumber=1, RowsPerPage=12의 원 응답을 거절했다. 이 구조만 빈 결과로 읽고 원 JSON은 보존하도록 수정했으며, TotalRows>0인데 Products=null인 응답은 여전히 오류다. AMS 전용15검사가 통과했다.
+
+동적식은 `data/access-research/ams-expression-summary.json`의 실제 수동 UI 단일조건과 같은 세션의 정상 기본검색으로 구별했다. scalar·sortBy는 같고 원 dynamic POST 자체가 product 객체 대신 내부 message 문자열을 반환했다. dynamicAdvancedSearch만 한 단계 덜 인코딩한 대조도 같았다. 복원 함수나 인코딩 깊이 하나의 오류로 판단하지 않고 현재 제공자의 동적 실행 오류로 기록한다. 다항·중첩식 수동 실행은 완료하지 못했으므로 그 범위까지 직접 검증했다고 쓰지 않는다.
+
+전용 실행부의 추가 교차 검토에서 빈 환경 경로의 상대 Chrome 선택, KNU styled blank 행의 허위 레코드, 정확한 목록 fetch의 무관 목록 장애 의존, header-only workbook의 역전 좌표를 재현해 수정했다. 현재 원 목록에는 빈 행이 없어 실측95건은 변하지 않았다. `data/access-research/integration-review.md`가 재현·수리 후 검토 범위를 소유한다.
+
+APS PDF의 HTTP 200 application/pdf 응답이 실제로는 Chrome 내장 viewer의536바이트 HTML이고 후속13,573바이트 HTML도 viewer embed인 것을 확인했다. 새로 만든 전용 프로필에 plugins.always_open_pdf_externally=true를 적용하자 원 제어에서2,382,611바이트·29쪽 PDF를 받았다. 같은 설정을 NativeChromeGateway에 반영했다. 기존 사용자 프로필이나 시스템 정책은 수정하지 않았다.
+
+`data/access-research/siam-institutional.json`은 실제 KUDOS 로그인·학술DB·개별전자저널 목록에 기재된 SJDM의 원 popup_gourl과 libproxy 경로를 검증했다. 최종 공개 SIAM 저널 화면은 정상200이고 확인 화면이 없었다. 최신 비공개 논문10.1137/24M1711108은 제목·DOI가 일치했으나 기관 권한 표지가 없고 구매 안내를 표시했다. 원 PDF 제어는 같은 DOI 초록 화면으로302 복귀했으며 PDF embed·Playwright/CDP download가 모두0이었다. 이 관측은 기관 경로의 정상 연결과 해당 문헌 권한의 미확보를 구별하며 SIAM 전체 원문 부재로 확대하지 않는다.
+
+새 PDF 설정으로 SIAM 명시 PDF의 Playwright 이벤트가 없고 CDP 이벤트만 시작되는 회귀도 재현했다. navigation 전에 CDP 이벤트를 관찰하고, navigation BrowserError 뒤에도 같은 host/path/query의 새 이벤트가 있을 때만 완료를 기다리도록 공통 explicit_pdf를 연결했다. 다음 event-loop tick의 callback도 최대10회·100ms로 관찰하며 끝내 일치 이벤트가 없으면 원 오류를 유지한다. `data/access-research/pdf-regression.json`은 최신 SIAM Front Matter284,966바이트·10쪽·첫 쪽 제목/추출을 통과했다. `data/validation/20260912T131217Z-ams-pdf-mcp.json`은 기존 AMS51쪽 명시 PDF·내장 metadata·extract 회귀를 completed=true로 통과했다.
+
+`data/validation/20260912T130617Z-aps-extended-mcp.json`은 실제 SDK에서 algebra·journal=[prd,prl]·1960-01-01~1980-12-31 조건847건 중1건, 원 RIS·BibTeX, metadata·abstract와PDF14쪽·1,148,858바이트 및 각 extract를 completed=true로 통과했다. 복수 facet의 원 query는 journal[] 반복 필드이며 HTML 응답의 MathML과 실제 checked 상태를 구별해 대조한다. 사용자 입력 날짜는 YYYY-MM-DD를 엄격히 검사한다.
+
+`data/validation/20260912T131701Z-aps-extended-mcp.json`은 supplement-only 범위다. 문헌10.1103/PhysRevLett.115.250402의 같은 DOI direct 제어에서 LHFSupplementary.pdf 1,884,893바이트·16쪽을 회수·extract하고 completed=true였다. 늦게 나타나는 제어는 supplementary 요청에 한해 최대10초 기다린다. 중복된 같은 URL을 제거하고 다른 DOI/host·landing 링크로 자동 이동하지 않는다. 제어가 없는 다른 표본은 source_page이며 사이트 전체의 부재로 표시하지 않는다.
+
+`data/validation/20260912T134143Z-semantic-scholar-public-final.json`은 별도 새 SDK에서 initialize·describe를 통과했으나 첫 원격 검색이 rate_limited였다. 뒤의 원격 요청은0회이며 새 문헌·관계·인용문 흐름을 완료로 바꾸지 않는다. 별도의 `134214Z-software-heritage-public-final.json`은 직접 directory 대상 release의 metadata를 확보했지만 fulltext가 여전히 pending이었다. 준비 중인 파일을 반복 요청하거나 미확보 압축본의 무결성을 검증했다고 쓰지 않는다.
+
+`data/validation/20260912T134822Z-github-mcp.json`은 일반 github 자료원에서 검색·원 JSON export·레코드 추출, 저장소 ZIP·내부 파일 추출, 같은 커밋의 개별 파일 회수를 completed=true로 통과했다. 작은 공개 검증 표본 octocat/Hello-World의 commit7fd1a60b01f91b314f59955a4e4d4e80d8edf11d에 고정한 ZIP387바이트와 README13바이트를 대조했고 압축 안 파일과 단건 파일의 추출 내용이 같았다. 소스 코드는 실행하지 않았다. 앞선134555Z는 검증 스크립트가 이 어댑터의 미지원 CSV를 요청했고134633Z는 압축 항목의 path를 name으로 읽어 실패했다. 스크립트를 실제 JSON·압축 반환 계약에 맞추고 사용 설명에 원 export 형식을 명시했다.
+
+ScienceDirect의 `data/validation/20260912T141311Z-science-direct-extended-mcp.json`은 content 범위의 새 SDK다. 긴 제목으로 PII S156042922600065X 한 건을 검색해 RIS·BibTeX·plain의 각 원 파일과 추출을 대조했다. 같은 PII의 metadata·abstract·세 원 인용문과 PDF1,031,171바이트·31쪽을 회수하고 첫 두 쪽 DOI를 확인해 completed=true였다. 이전135804Z의 검색 준비 대기,140813Z의 단건 Export 제어 부재 판정은 실패 기록으로 남긴다. 원 화면의 `1 result found`를 파서가 거절하던 문제와 Export 버튼 자체·클릭 후 메뉴가 각각 늦게 나타나는 문제를 분리해 교정했다.
+
+`data/validation/20260912T141127Z-science-direct-extended-mcp.json`은 facets 범위다. algebra·Research/Review·Mathematics·구독 저널·2020–2025년 조건33,229건 중2건의 JSON·CSV를 대조했고, Journal of Algebra의 현재 자동완성 cid272332·21,628건 중2건과 발행물명이 일치해 completed=true였다. 자동완성은 저널을 먼저 확정한 뒤 본 검색과 결합해 입력 갱신 충돌을 피한다. 별도 함수 실측에서 Show more로 펼친 후보는 논문 유형23·발행물25·주제10·언어9·공개접근1개였으며 처음 보이는 일부를 전체로 표시하지 않는다.
+
+`data/validation/20260912T141704Z-science-direct-extended-mcp.json`은 supplementary 범위다. 원 문헌 S0167278924001155의 Appendix D·Video S1에 결속된 mmc1.mp4를 회수했다. MCP resources/read의1,315,119바이트와 MP4 ftyp를 대조해 completed=true였으며 동영상 의미를 분석하지 않았다. 원 제어에서 확인한 ars.els-cdn.com과 PDF 전송 호스트는 해당 자료원의 파일 다운로드에만 허용한다.
+
+`data/validation/20260912T142839Z-science-direct-search-mcp.json`은 최신 코드에서 제목 Natural Proofs의2건·CSV, algebra start24/limit2의 두 원 페이지·각 RIS와 PII 추출,0건을 completed=true로 통과했다. 직전141842Z는 수식의 text node 경계가 만든 공백 차이를 원 제어의 문헌 불일치로 판단했다. 실제 같은 PII의 제목이 `W- algebras`와 `W-algebras`로 나타나는 것을 대조한 뒤 비교에서만 공백을 제외했다. 문자·기호·대소문자와 원 레코드·인용문 바이트는 보존하고 PII 제어·문헌 경로 검사를 유지한다. 비문자 field가 일반 TypeError로 끝나는 반례도 invalid_options로 교정했다. ScienceDirect 전용21검사가 통과했다.
+
+MathSciNet의 실제 SDK 기록은 `data/access-research/mathscinet-citations/live-sdk.json`이다. MR2733384의 incoming3건에서 start1/limit2·BibTeX, 원 참고문헌48개 중44MR occurrence·42고유MR의 outgoing 검색에서 start4/limit2 두 페이지·EndNote와 추출, DOI 동일성 확인을 통과했다. 추가 MR0463157은 원 서지가 Algebraic geometry임을 확인하고 From Reviews 제어76과 실제 검색72를 각각 보존했다. 원 리뷰 검색식으로1건과 BibTeX를 회수·추출했으며 MR2733384의 리뷰0건은 검색식을 발명하지 않고 반환했다. 관련39검사가 통과했고 원 MR 없는 참고문헌은 별도 source_page에 남긴다.
+
+`data/validation/20260912T141742Z-wos-citations-mcp.json`은 WOS:000269418800023·DOI10.1145/1562164.1562186의 실제 Citing Articles 원 요청과 부모 UT를 대조했다. 첫2건·plain/JSON 추출, DOI 기반 start124/limit2의 마지막1건, fetch의 outgoing CR·incoming 문헌 분리를 completed=true로 통과했다. 문헌 화면의136회와 기관 결과125건을 함께 보존한다. 직전141617Z는 늦은 Citations 제어의 준비 대기를 수리하기 전 실패 기록이다. 관련26검사가 통과했으며 WOS 정렬·facet·개별 edition은 별도로 계속 구현 중이다.
+
+2026-09-12 위 구현을 공통 서버에 연결한 전체 오프라인·SDK 계약 검사378개가 통과했다. 첫 전체 실행에서 기존 explicit PDF 시험의 범용 MagicMock이 실제 KudosGateway에 없는 native_download까지 만들어 새로운 분기를 잘못 탔다. 대역을 실제 KudosGateway 인터페이스로 제한하고, 다른 자료원의 Playwright 다운로드를 읽거나 보존하지 않는 원 검증을 유지했다. 이 교정 뒤378개를 다시 통과했다. 새 실서비스 성공 범위와 오프라인 통과를 구별하며 WOS·ACM·IEEE·PQDT의 남은 고급검색 구현을 계속한다.

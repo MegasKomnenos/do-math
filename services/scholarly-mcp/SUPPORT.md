@@ -2,8 +2,8 @@
 
 | 자료원 | source | 경로 | 구현 | 기능 | 실측 표지 |
 |---|---|---|---|---|---|
-| MathSciNet | mathscinet | playwright | partial | source_guide, search, fetch, export | live_mcp_search_exact_mr_four_citations_name_doi_review_pdf |
-| Web of Science Core Collection + CPCI | wos | playwright | partial | source_guide, search, fetch, export | live_mcp_search_full_record_title_url_native_xls_extract |
+| MathSciNet | mathscinet | playwright | partial | source_guide, search, fetch, export | live_mcp_search_four_exports_review_pdf_mr_doi_incoming_reviews_outgoing_subset_windows |
+| Web of Science Core Collection + CPCI | wos | playwright | partial | source_guide, search, fetch, export | live_mcp_full_record_native_xls_ut_doi_citing_window_and_bidirectional_fetch |
 | Scopus | scopus | playwright | partial | source_guide, search, fetch, export | live_mcp_search_fetch_references_pagination_cited_by_extract |
 | ACM Digital Library | acm-dl | playwright | partial | source_guide, search, fetch, export | live_mcp_search_citation_pdf_and_supplement_zip_inner_pdf_extract |
 | IEEE Xplore / IEL | ieee-xplore | playwright | partial | source_guide, search, fetch, export | live_mcp_four_native_exports_selected_windows; pdf_references_graphical_and_native_media_tab_verified |
@@ -28,28 +28,28 @@
 | Mathlib | mathlib | api | partial | source_guide, search, fetch, export | live_mcp_pinned_source_search_file_fetch_line_comparison |
 | Archive of Formal Proofs | afp | api | partial | source_guide, search, fetch, export | live_mcp_entry_search_pinned_metadata_and_proof_source_fetch_extract |
 | Mathematical Components | math-comp | api | partial | source_guide, search, fetch, export | live_mcp_pinned_source_search_file_fetch_line_comparison |
-| GitHub | github | api | partial | source_guide, search, fetch, export | live_adapter_pinned_file_fetch |
+| GitHub | github | api | partial | source_guide, search, fetch, export | live_mcp_repository_search_native_json_pinned_zip_file_same_bytes |
 | Zenodo | zenodo | api | partial | source_guide, search, fetch, export | live_mcp_search_file_checksum_fetch_extract |
 | Figshare | figshare | api | partial | source_guide, search, fetch, export | live_mcp_public_search_window_collection_versioned_file_md5_pdf_extract |
 | Software Heritage | software-heritage | api | partial | source_guide, search, fetch, export | live_mcp_verified_content_trees_git_history_snapshot_and_release; direct_release_flat_pending |
-| AMS publications | ams | playwright | partial | source_guide, search, fetch, export | live_mcp_explicit_pdf; native_browser_mixed_search; dynamic_expression_offline_verified; live_search_restricted |
+| AMS publications | ams | playwright (전용 Chrome 창/CDP) | partial | source_guide, search, fetch, export | live_mcp_native_search_window_zero_xlsx_product_fetch_pdf; dynamic_ui_provider_error |
 | Cambridge University Press | cambridge | fixed: citation API; institutional search/document Playwright | partial | source_guide, search, fetch, export | live_mcp_filtered_search_ris_pdf_and_supplement_pdf_zip_source_extract |
 | De Gruyter Brill | de-gruyter | playwright | partial | source_guide, search, fetch, export | live_mcp_search_ris_pdf_and_supplement_zip_cif_lines; broken_link_observed |
 | JSTOR | jstor | fixed: citation/search API; institutional document Playwright | partial | source_guide, search, fetch, export | live_mcp_search_image_sorts_facets_citations_pdf_mp3_transcripts_supplement; native_video_download_disabled |
 | Oxford University Press | oxford | playwright | partial | source_guide, search, fetch, export | live_mcp_search_citation_metadata_abstract_pagination_and_supplement_pdf |
-| ScienceDirect | science-direct | playwright | partial | source_guide, fetch, export | live_mcp_institutional_ris_bibtex_plain_metadata_abstract_fetch |
+| ScienceDirect | science-direct | playwright (전용 Chrome 창/CDP) | partial | source_guide, search, fetch, export | live_mcp_search_cross_page_ris_zero_facets_exact_publication_three_citations_pdf_supplement_video |
 | Springer Nature | springer | playwright | partial | source_guide, search, fetch, export | live_mcp_advanced_search_citations_pdf_supplements_and_nature_html_tex_figure |
 | Taylor & Francis | taylor-francis | playwright | partial | source_guide, search, fetch, export | live_mcp_search_citation_pdf_dublin_doi_supplement_zip_tables_nested_source |
 | Wiley | wiley | playwright | partial | source_guide, search, fetch, export | live_mcp_advanced_search_citations_pdf_empty_repeat_and_supplementary_zip |
 | AIP | aip | playwright | partial | source_guide, search, fetch, export | live_mcp_advanced_search_citation_pdf_and_explicit_figshare_supplement_reference |
 | APS 공개 접근 | aps | api | partial | source_guide, search, fetch, export | live_mcp_open_access_feed_metadata_abstract_pdf_fetch |
 | IOP | iop | fixed: newest RSS API; other sorts/extra filters/document Playwright | partial | source_guide, search, fetch, export | live_mcp_rss_ranked_filters_native_search_citations; pdf_html_tex_figures_supplement_pdf_verified |
-| SIAM | siam | playwright | partial | source_guide, fetch, export | live_mcp_public_front_matter_pdf_fetch_extract; search_challenge_observed |
+| SIAM | siam | playwright (전용 Chrome 창/CDP) | partial | source_guide, search, fetch, export | live_mcp_advanced_terms_topic_publication_dates_five_citations_cross_page_book_fetch_zero |
 | KNU FRIC | knu-fric | playwright | partial | source_guide, search, fetch, export | live_mcp_catalogue_pagination_issn_fetch_zero_result |
-| 개별 구독 자료원 | individual-subscription | target_dependent | pending | 미구현 | not_recorded |
+| KNU 개별 구독 저널 목록 | individual-subscription | playwright | partial | source_guide, search, fetch, export | live_mcp_two_catalogues_95_holdings_six_siam_csv_range_year_fetch_zero |
 | 학회·저널 공식 사이트 | society-journal | fixed: public document Playwright; OJS native citation API | partial | source_guide, fetch, export | live_mcp_public_journal_metadata_abstract_pdf_native_citations |
 | 저자·기관 공개본 | author-repository | fixed: public document Playwright; OJS native citation API | partial | source_guide, fetch, export | live_mcp_public_author_pdf_and_page_links |
 | 일반 웹 후보 발견 | general-web | api (Mwmbl public search) | partial | source_guide, search, export | live_mcp_public_api_candidates_csv_extract_empty_result |
-| APS 기관 구독 접근 | aps-institutional | playwright | partial | source_guide, search, fetch, export | live_mcp_first_page_search_csv_mathml; followup_partial_and_document_restricted |
+| APS 기관 구독 접근 | aps-institutional | playwright (전용 Chrome 창/CDP) | partial | source_guide, search, fetch, export | live_mcp_search_window_custom_multi_facets_bibtex_ris_abstract_pdf_supplement |
 
-개별 구독·학회 저널·저자 또는 기관 공개본·일반 웹은 구체 서비스가 정해지지 않은 범주다. 범위를 누락하지 않도록 목록에 유지한다. Unpaywall과 Scopus의 별도 웹 계정 내보내기는 보류하며 해당 자격 정보를 요청하지 않는다.
+개별 구독은 KUDOS의 KNU 개별전자저널·KNU P+O Journal 보유 목록으로 구체화했다. 목록 기재와 실제 원문 권한은 구별한다. 학회 저널·저자 또는 기관 공개본은 지정 URL을, 일반 웹은 공개 후보 검색을 제공한다. Unpaywall과 Scopus의 별도 웹 계정 내보내기는 보류하며 해당 자격 정보를 요청하지 않는다. [접근 조건 조사](ACCESS-RESEARCH.md)는 창 모드·실행 방식·기관 경로의 비교 근거를 담는다.

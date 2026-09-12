@@ -42,6 +42,10 @@ from web_search import GeneralWeb
 from ams import AMS
 from figshare import Figshare
 from dblp_kg import DBLPKG
+from native_browser import NativeChromeGateway
+from siam import SIAM
+from individual_subscription import IndividualSubscription
+from aps_institutional import APSInstitutional
 
 ROOT = Path(__file__).resolve().parent
 STORE = ArtifactStore(ROOT / "data")
@@ -131,6 +135,7 @@ def main():
     global STORE
     parser = argparse.ArgumentParser()
     parser.add_argument("--data-dir", type=Path, default=ROOT / "data")
+    parser.add_argument("--credential-root", type=Path, default=ROOT.parents[1] / ".credentials")
     args = parser.parse_args()
     STORE = ArtifactStore(args.data_dir)
     ADAPTERS.update(make_adapters(STORE))
@@ -140,11 +145,14 @@ def main():
     ADAPTERS["eudml"] = EuDML(STORE)
     ADAPTERS["aps"] = APS(STORE)
     ADAPTERS['general-web'] = GeneralWeb(STORE)
-    gateway = KudosGateway(ROOT.parents[1] / ".credentials", STORE.sanitizer)
-    firefox_gateway = KudosGateway(ROOT.parents[1] / ".credentials", STORE.sanitizer, engine="firefox")
+    gateway = KudosGateway(args.credential_root, STORE.sanitizer)
+    firefox_gateway = KudosGateway(args.credential_root, STORE.sanitizer, engine="firefox")
+    native_gateway = NativeChromeGateway(args.credential_root, STORE.sanitizer)
     ADAPTERS["jstor"] = JSTOR(STORE,gateway=firefox_gateway)
     ADAPTERS["numdam"] = Numdam(STORE, gateway)
     ADAPTERS["knu-fric"] = KNUFric(STORE, gateway)
+    ADAPTERS['individual-subscription'] = IndividualSubscription(STORE, gateway)
+    ADAPTERS['siam'] = SIAM(STORE, native_gateway, next(p for p in PROFILES if p.source == 'siam'))
     for category in ('author-repository', 'society-journal'):
         ADAPTERS[category] = WebDocuments(STORE, gateway, category)
     ADAPTERS["mathscinet"] = MathSciNet(STORE, gateway)
@@ -157,17 +165,18 @@ def main():
     ADAPTERS["pqdt"] = PQDT(STORE, firefox_gateway)
     ADAPTERS["ieee-xplore"] = IEEE(STORE, firefox_gateway)
     ADAPTERS["springer"] = Publisher(STORE, firefox_gateway, next(p for p in PROFILES if p.source == "springer"))
-    ADAPTERS['science-direct'] = ScienceDirect(STORE,firefox_gateway)
-    ADAPTERS['ams'] = AMS(STORE,firefox_gateway)
+    ADAPTERS['science-direct'] = ScienceDirect(STORE,native_gateway)
+    ADAPTERS['ams'] = AMS(STORE,native_gateway)
     ADAPTERS['iop'] = Publisher(STORE, gateway, next(p for p in PROFILES if p.source=='iop'))
-    for identifier in ("project-euclid", "cambridge", "oxford", "aip", "wiley", "taylor-francis", "de-gruyter", "siam"):
+    for identifier in ("project-euclid", "cambridge", "oxford", "aip", "wiley", "taylor-francis", "de-gruyter"):
         ADAPTERS[identifier] = Publisher(STORE, firefox_gateway, next(p for p in PROFILES if p.source == identifier))
-    ADAPTERS["aps-institutional"] = Publisher(STORE, firefox_gateway, replace(next(p for p in PROFILES if p.source == "aps"), source="aps-institutional"))
+    ADAPTERS["aps-institutional"] = APSInstitutional(STORE, native_gateway, replace(next(p for p in PROFILES if p.source == "aps"), source="aps-institutional"))
     try:
         mcp.run(transport="stdio")
     finally:
         WORKER.submit(gateway.close).result()
         WORKER.submit(firefox_gateway.close).result()
+        WORKER.submit(native_gateway.close).result()
         WORKER.shutdown(wait=True, cancel_futures=True)
 
 

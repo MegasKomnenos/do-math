@@ -5,10 +5,12 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 from scholarly import ArtifactStore,ServiceError
 from publishers import Publisher,PROFILES
+from browser_adapters import KudosGateway
 
 class ExplicitPDFContract(unittest.TestCase):
     def test_native_download_from_another_source_is_not_read_or_preserved(self):
-        gateway=MagicMock()
+        gateway=MagicMock(spec=KudosGateway)
+        gateway.context=MagicMock()
         gateway.pages={}
         context=gateway.context
         page=MagicMock()

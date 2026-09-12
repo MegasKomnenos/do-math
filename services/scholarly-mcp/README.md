@@ -48,7 +48,11 @@ python -m venv services/scholarly-mcp/.venv
 
 Chromium 어댑터는 호스트에 설치된 Chrome을 사용한다. 자료원별로 검증한 브라우저를 서버가 선택하며 호출 AI가 지정하지 않는다. stdio의 stdout은 MCP 메시지 전용이고 진단은 stderr로 보낸다.
 
-Codex 프로젝트 설정의 scholarly 호출 제한은 1,800초다. 대용량 파일의 전체 회수를 허용하는 클라이언트 제한이며 개별 HTTP 요청 제한과 다르다. 이미 실행 중인 MCP 프로세스는 Python 파일 변경을 자동으로 읽지 않으므로 코드를 갱신한 뒤 클라이언트에서 scholarly 연결을 재시작한다. 새 stdio 프로세스의 기능 검증과 현재 Codex 연결의 갱신 확인을 구별한다. 2026-09-10 사용자 재시작 뒤 등록된 연결에서도 최신 OpenAlex 안내가 반환됨을 확인했다.
+SIAM·AMS·APS 기관·ScienceDirect는 검증된 전용 Chrome 창을 사용한다. 서버가 별도 임시 프로필·프로세스를 만들고 자신이 연 로컬 디버깅 포트인지 확인한 뒤 제어한다. 창이 가려져 입력 대기가 멈추는 문제를 해결한 실행 조건을 사용하며, 기존 사용자의 Chrome에 연결하지 않는다. 종료 시 자체 Chrome과 임시 프로필을 정리하며 파일 잠금으로 정리하지 못하면 정제된 경고를 남긴다. 인증 상태는 `.credentials/scholarly-mcp/kudos-native-chromium.json`에 따로 보존한다. 브라우저 경로 선택은 API 실패에 따른 실행 중 전환이 아니다.
+
+별도 실행의 상태 격리가 필요하면 서버 시작 인자 `--credential-root <보호된 디렉터리>`를 사용할 수 있다. 해당 디렉터리의 `kudos.md`와 `scholarly-mcp/` 상태 파일을 사용한다. 검증용 사본도 비공개 저장소에 두며 도구 호출의 입력으로 자격값을 전달하지 않는다.
+
+Codex 프로젝트 설정의 scholarly 호출 제한은 1,800초다. 대용량 파일의 전체 회수를 허용하는 클라이언트 제한이며 개별 HTTP 요청 제한과 다르다. 이미 실행 중인 MCP 프로세스는 Python 파일 변경을 자동으로 읽지 않는다. 현재 기능 검증은 독립된 새 SDK stdio 프로세스로 수행하며, 이를 실행 중인 Codex·MCP 연결을 조작할 권한으로 해석하지 않는다.
 
 오프라인 계약 검사는 `python -m unittest discover -s services/scholarly-mcp/tests -p 'test_*.py'`를 전용 Python으로 실행한다. `test_mcp.py`는 실제 SDK 클라이언트와 별도 서버 프로세스로 stdio·도구 조회·파일 추출·자료 읽기를 확인한다. 실서비스 흐름은 `tests/live_workflow.py --source <자료원>`으로 실행하며 지원하는 검증 시나리오는 그 파일에 있다. 오프라인 응답 대역의 통과는 실서비스 통과로 세지 않는다.
 
@@ -64,13 +68,17 @@ ACM 인용문 생성은 실제 검색 UI가 수신한 원 서지·CSL 스타일�
 
 `.venv/`와 `data/`는 Git에서 제외한다. 재현에 쓰는 작은 공개 응답은 `tests/fixtures/`에 보존한다. 실행 자료를 다른 환경으로 옮길 때는 `data/` 전체와 해시 검사를 함께 보존한다. 인증 상태는 `.credentials/scholarly-mcp/`에 따로 두며 자료·로그·커밋에 포함하지 않는다. 전체 선정 범위와 아직 조사·개발 중인 자료원은 [지원표](SUPPORT.md), `registry.py`, `list_sources`에 남아 있다.
 
+`individual-subscription`은 KUDOS의 개별전자저널·인쇄+전자 저널 보유 목록이다. `query="SIAM"`처럼 문자열로 조회하고 `coverage_year`로 목록에 기재된 기간을 선택한다. JSON·CSV의 정확한 창과 행·목록 metadata를 회수하며, 링크는 출판사 후보로만 보존한다. 실제 원문 권한은 해당 출판사에서 별도로 확인해야 한다. 원 XLSX의 별도 서비스 자격 정보는 제공하지 않고, 정제된 좌표와 URL·ISSN의 오류 또는 충돌을 보존한다.
+
+SIAM은 기본·고급 필드 검색과 선택 문헌의 BibTeX·RIS·EndNote·Medlars·RefWorks 인용문을 연결했다. 여러 페이지를 요청하면 각 페이지의 원 파일을 따로 보존한다. RefWorks는 SIAM이 반환한 HTML 안의 RIS 문자열이며 외부 서비스로 제출하지 않는다. Medlars는 원 태그가 있는 텍스트 줄로 추출한다. 문헌의 DOI·URL·이름 후보와 명시 PDF를 구별하며, 목차·Front Matter 파일을 책 전체로 표시하지 않는다.
+
 Theory of Computing은 공식 저자·주제 색인과 저널이 지정한 검색 엔진을 사용한다. PDF·초록 텍스트·BibTeX 외에 제공되는 PostScript·LaTeX 소스 ZIP·HTML 참고문헌·저자 안내를 회수한다. 본문 검색은 웹페이지 단위이며 같은 문헌의 여러 페이지가 결과에 포함될 수 있다. 압축에서 꺼낸 `.bib`·`.ris`도 서지 형식으로 추출하며, BibTeX·RIS·WOS·CSV의 `selection="raw"`는 원 줄을 읽는다.
 
 EuDML은 CQL/OpenSearch와 NLM 메타데이터 API를 사용한다. 참고문헌의 ID를 현재 문헌의 ID로 쓰지 않으며, 외부 원문 링크를 자동 방문하지 않는다. Zenodo는 레코드나 특정 파일 URL로 파일을 받아 제공된 크기·checksum과 대조한다. 파일 URL을 지정하면 해당 파일을 선택하고, 레코드에 fulltext·supplementary를 요청하면 그 레코드의 파일들을 회수한다.
 
 AIP의 Figshare 보충자료는 AIP 호출의 `source`·`target` 참조를 읽고 `figshare`를 명시적으로 선택한다. Figshare 공개 API의 검색·현재 컬렉션 구성원·버전별 문헌 파일을 연결했으며 별도 계정이나 토큰을 사용하지 않는다. 다운로드한 파일은 제공된 크기와 MD5를 대조한다. 과거 컬렉션 구성원 조회는 현재 목록으로 대체하지 않으며 외부 저장소 링크도 자동 방문하지 않는다. 공개 repository description은 저자 초록으로 단정하지 않는다.
 
-`aps`는 별도 자격 없는 공개 Harvest API의 OA 자료 범위다. `aps-institutional`은 KUDOS를 거치는 기관 구독 접근으로 별도 등록했다. 호출자가 자료원을 선택하며 한 호출 안에서 접근 경로를 바꾸지 않는다. APS 기관 경로의 추가 검색 기능은 개발 중이다.
+`aps`는 별도 자격 없는 공개 Harvest API의 OA 자료 범위다. `aps-institutional`은 KUDOS를 거치는 기관 구독 접근이다. 호출자가 자료원을 선택하며 한 호출 안에서 접근 경로를 바꾸지 않는다. 기관 검색은 조건식·정렬·원 facet·날짜를 다루며 현재 지원 값과 실제 검증 범위는 `describe_source`와 검증 기록에서 확인한다.
 
 연락 이메일을 요구하는 Unpaywall은 사용자 지시에 따라 사용을 보류한다. `describe_source`에는 보류 상태를 표시하며, 검색·확보 호출은 네트워크 요청 없이 `source_deferred`를 반환한다. 별도 웹 계정이나 연락 이메일은 요청하지 않는다.
 
@@ -114,7 +122,7 @@ Crossref의 검색 export는 원 BibTeX·RIS·CSL JSON·plain·RDF·Turtle·UNIX
 KNU FRIC는 경북대 센터의 공개 소장 목록 검색·ISSN 조회와 CSV를 제공한다. 직원에게 원문 복사를 신청하는 제출 동작은 포함하지 않는다. author-repository·society-journal은 알려진 공개 문서 URL의 회수 경로이며 단일 검색 색인은 아니다. general-web은 Mwmbl의 별도 자격 없는 공개 검색 API를 사용하며, 반환된 후보 묶음 크기와 웹 전체 일치 건수를 구별한다.
 
 
-ScienceDirect는 KUDOS 기관 context의 원 citation endpoint로 서지·초록·RIS·BibTeX·plain을 회수한다. 문헌 화면·검색·PDF 준비 경로의 실패와 인용문 성공을 구별한다. AIP는 실제 PDF 전송 호스트를 파일 다운로드에 한해 허용한다. IOP는 확인된 기관 세션에서 서지·초록·16쪽 PDF·BibTeX·RIS를 실제 MCP로 회수했다.
+ScienceDirect는 KUDOS 기관 검색의 PII 행·정확한 범위, 원 검색 필드·필터·저널 자동완성과 선택 문헌의 RIS·BibTeX·plain을 회수한다. 서지·초록·31쪽 PDF와 별도 문헌의 보충 동영상을 실제 MCP로 검증했다. 수식 제목의 표시 공백 차이는 비교에서만 처리하고 원 바이트를 유지한다. 문헌의 PII와 원 파일 제어를 대조하며 실패한 구성요소가 이미 받은 자료를 지우지 않는다. AIP는 실제 PDF 전송 호스트를 파일 다운로드에 한해 허용한다. IOP는 확인된 기관 세션에서 서지·초록·16쪽 PDF·BibTeX·RIS를 실제 MCP로 회수했다.
 
 Scopus의 supplementary는 현재 문헌 References·Cited by 탭의 목록이다. references와 citations 각각의 artifact를 extract로 읽는다. 검색 요약의 건수와 문헌 탭의 건수가 다르면 둘을 별도 필드로 보존한다. 색인 EID가 없는 참고문헌도 유지하며 원 RIS·BibTeX의 별도 계정 요구는 계속 보류한다.
 
@@ -124,13 +132,15 @@ Project Euclid는 원 고급검색의 필드·AND/OR/NOT 추가 조건·발행�
 
 Project Euclid의 supplementary는 Supplemental Content 탭의 개별 PDF·ZIP을 회수한다. 파일 경로의 원 문헌 DOI와 별도로 표시되는 보충자료 DOI를 유지한다. ZIP은 구성 항목을 선택한 뒤 내부 텍스트를 줄 단위로 읽을 수 있다. 파일 링크가 문헌 HTML을 반환하면 오류로 남기고 다른 문헌의 다운로드 성공과 구별한다.
 
-AMS는 기관 고급검색의 원 상품 JSON을 연결했다. 책·논문·학회 초록의 ContentType과 제목·부제·DOI·제품 코드를 유지한다. 원 브라우저 검색의 양성 관측과 이후 어댑터의 접근 확인 실패는 지원표에서 구별한다. 원 파일 export는 추가 검증이 남아 있다.
+AMS는 기관 기본 고급검색의 원 상품 JSON을 회수한다. 책·논문·학회 초록의 ContentType과 제목·부제·DOI·제품 코드를 유지한다. xlsx는 선택 상품마다 원 workbook을 반환한다. 하나의 논리 상품이 여러 ISBN 변형 행으로 확장될 수 있으며 빈 Product Code 셀을 보충하지 않는다. 검색 결과·전체 건수는 원 요청 범위를 유지한다.
 
-AMS의 options.expression은 AND/OR 중첩 그룹과 필드별 equals/contains 조건을 받는다. 이때 query는 빈 문자열이고 다른 options는 함께 주지 않는다. 원 제어에서 표현식이 그대로 복원되는지와 각 검색 요청의 조건이 같은지 대조한다. 원 화면의 재현·POST 제출은 오프라인 검증을 통과했으며 실제 조건 검색·페이지 순회는 접근 확인 때문에 아직 미검증이다. 자세한 입력 예와 값 제약은 describe_source(ams)에 있다.
+AMS의 options.expression은 AND/OR 중첩 그룹과 필드별 equals/contains 조건을 받는다. query는 빈 문자열이고 다른 options는 함께 주지 않는다. 원 제어 복원·POST 대조는 오프라인으로 검증했으나, 현재 원 UI에서 직접 만든 단일 동적 조건도 서버 오류를 반환한다. 원 서버 오류를 0건으로 처리하지 않으며 정상 기본 검색·XLSX 성공과 구별한다. 입력 예와 제약은 describe_source(ams)에 있다.
 
 Publisher 어댑터에 .pdf 링크를 직접 주면 그 파일의 바이트와 PDF 내장 메타데이터를 회수한다. 브라우저의 Download is starting 이동 예외와 실제 파일 회수 성공을 구별한다. metadata.kind가 embedded_pdf_metadata이면 PDF 내부 정보다. 파일이 발췌·부속 자료인 경우 전체 책을 확보했다는 뜻으로 해석하지 않는다. 이 경로의 실제 MCP 검증은 AMS gsm128-endmatter.pdf 51쪽으로 수행했다.
 
-SIAM의 /doi/pdf/DOI 주소도 명시적 PDF 파일로 처리한다. First-Order Methods in Optimization의 Front Matter 10쪽은 실제 MCP에서 회수·추출했다. 검색과 native 인용문 연결은 남아 있다. IEEE supplementary.references에는 문헌 번호를 대조한 원 참고문헌 배열이 있으며 extract로 order·title·text·links 등을 읽는다. 참고문헌과 첨부의 상태는 독립적으로 표시하며 일부 회수 실패 때 supplementary는 partial이다.
+SIAM의 /doi/pdf/DOI 주소도 명시적 PDF 파일로 처리한다. First-Order Methods in Optimization의 Front Matter 10쪽은 실제 MCP에서 회수·추출했다. 고급검색과 원 인용문은 문헌·파일 경로를 구별해 제공한다.
+
+IEEE supplementary.references에는 문헌 번호를 대조한 원 참고문헌 배열이 있으며 extract로 order·title·text·links 등을 읽는다. 참고문헌과 첨부의 상태는 독립적으로 표시하며 일부 회수 실패 때 supplementary는 partial이다.
 
 Springer Nature의 인식된 Supplementary Information·Peer Review File 제어는 실제 파일을 회수한다. supplementary.index는 원 파일 목록이고 files의 각 artifact를 extract로 읽는다. 파일별 실패와 이미 회수한 파일을 함께 반환한다. Nature Communications의 The complexity of NISQ에서 보충 설명 42쪽과 심사 기록 19쪽을 실제 MCP로 확인했다. 다른 레이아웃에서 제어를 찾지 못하면 원 페이지와 source_page 상태를 유지한다.
 
@@ -160,7 +170,7 @@ Software Heritage dir의 fulltext/supplementary는 Vault의 원 tar.gz를 반환
 
 IEEE 검색은 BibTeX·RIS·Plain Text·CSV의 연속 내보내기와 CSV의 선택 범위를 실제 MCP로 검증했다. BibTeX·RIS·CSV의 형식·선택 건수를 대조하며, 내보내기 오류가 나도 이미 확보한 검색 레코드를 보존한다. 잘못 받은 파일은 source_export로 남긴다. AMS와 공통 출판사 문헌 조회는 확인 화면의 구조도 검사하여 한국어로 표시된 접근 확인을 일반 시간 초과와 구별한다.
 
-APS 기관 검색은 원 조건·정렬·건수·현재 페이지를 대조하여 제목·DOI·표시 서지·초록과 원 HTML을 보존한다. 렌더링 전 HTTP 응답의 MathML을 유지하며 정확한 요청 창을 JSON·CSV로 읽을 수 있다. 동일 검색의 후속 범위에서는 이미 받은 원 페이지와 수신 시점을 재사용한다. 후속 페이지가 실패하면 확보한 요청 범위의 일부를 partial로 남긴다. 첫 페이지 검색·CSV·수식 보존은 실제 MCP로 확인했으며, 연속 페이지·추가 조건·선택 문헌 조회는 아직 실서비스 검증이 완료되지 않았다.
+APS 기관 검색은 원 조건·정렬·건수·현재 페이지를 대조하여 제목·DOI·표시 서지·초록과 원 HTML을 보존한다. 렌더링 전 HTTP 응답의 MathML을 유지하며 정확한 요청 창을 JSON·CSV로 읽을 수 있다. 동일 검색의 후속 범위에서는 원 페이지와 수신 시점을 재사용한다. 후속 페이지가 실패하면 확보한 일부를 partial로 남긴다. 첫 페이지·CSV·수식·연속 페이지 경계·제목 검색과 선택 문헌의 서지·초록을 실제 MCP로 검증했다. 원 인용문·복수 facet·절대 날짜와 파일 회수의 추가 검증 범위는 검증 기록을 따른다.
 
 원 BibTeX의 키에 공백이 있으면 MCP의 기계적 추출은 원 키·본문과 citation_key_contains_whitespace 경고를 반환한다. 원 파일을 수정하거나 경고를 숨기지 않는다. 공유 연구 자료 파서는 별도 옵션을 켜지 않는 한 기존의 엄격한 동작을 유지한다. IOP에서 파싱 또는 DOI 대조가 실패하면 source_export에 받은 파일을 남긴다.
 

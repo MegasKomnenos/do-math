@@ -67,7 +67,7 @@ ROWS = [
     ("iop", "IOP", "fulltext", "https://iopscience.iop.org/", "under_investigation"),
     ("siam", "SIAM", "fulltext", "https://epubs.siam.org/", "under_investigation"),
     ("knu-fric", "KNU FRIC", "fulltext", "https://kudos.knu.ac.kr/", "under_investigation"),
-    ("individual-subscription", "개별 구독 자료원", "open_category", "", "target_dependent"),
+    ("individual-subscription", "KNU 개별 구독 저널 목록", "holdings_catalogue", "https://kudos.knu.ac.kr/", "playwright"),
     ("society-journal", "학회·저널 공식 사이트", "open_category", "", "target_dependent"),
     ("author-repository", "저자·기관 공개본", "open_category", "", "target_dependent"),
     ("general-web", "일반 웹 후보 발견", "discovery", "", "target_dependent"),
@@ -105,6 +105,8 @@ SOURCES["mathscinet"].usage = {
     "search": "query는 MathSciNet 검색창의 검색식이다. 고급 필드 태그를 query 안에 쓴다. 기관 인증은 서버가 KUDOS 로그인 → 검색 → 학술DB → MathSciNet 바로가기로 처리한다.",
     "fields": {"au": "저자", "aur": "저자 또는 관련 인물", "ti": "제목", "r": "리뷰 텍스트", "j": "저널", "se": "총서", "pc": "주 MSC", "sc": "부 MSC", "mr": "MR 번호", "doi": "DOI", "rn": "리뷰어", "any": "전체 필드"},
     "operators": "고급 필드 행 사이는 AND, OR, NOT. 문자열·구문은 자료원의 의미대로 입력한다. 따옴표 없는 공백 질의는 정확한 제목 일치를 보장하지 않는다.",
+    "options": {"kind":"publications(기본), citations(들어오는 인용), references(나가는 참고문헌)", "sort":"newest(기본), oldest, relevance", "citation_basis":"kind=citations에서만 references(기본) 또는 reviews. 원 From References와 From Reviews를 구별한다."},
+    "relationships":"kind=citations/references의 query는 MR 번호 또는 DOI다. DOI는 유일한 MR 후보와 원 BibTeX의 DOI를 대조한다. citations는 선택 문헌을 인용하는 원 검색 결과이며 basis=reviews의 화면 집계 control_total과 실제 결과 result_total이 다르면 둘 다 보존한다. references는 원 참고문헌 중 MR로 검색 가능한 고유 부분집합이다. 원 항목 수·MR occurrence·고유 MR·중복을 relation에 따로 두고 MR 없는 원 항목은 relation.source_page로 보존한다. start는0부터, limit는1..1000이며 원 페이지와 요청 창을 대조한다. 네 원 인용 형식은 관계 결과에도 사용할 수 있다.",
     "examples": [{"tool": "search", "arguments": {"source": "mathscinet", "query": "P versus NP", "limit": 5}}, {"tool": "search", "arguments": {"source": "mathscinet", "query": "ti:(\"P versus NP\")", "limit": 5, "export": "bibtex"}}],
     "limits": "검색 결과의 Article은 다른 출판사 자료일 수 있다. fetch는 MathSciNet 서지·리뷰·제공 요약·리뷰 PDF를 회수하며 Article을 다른 자료원에서 자동 확보하지 않는다. 리뷰와 논문 전문은 구별한다.",
     "export_formats": ["bibtex", "endnote", "amsref", "tex"],
@@ -117,7 +119,8 @@ SOURCES["wos"].usage = {
     "search": "query는 Web of Science Core Collection의 Query Builder 검색식이다. KUDOS의 Web of Science CPCI 바로가기로 같은 Core Collection에 기관 접속한다. Editions=All의 기관 이용 범위를 사용한다.",
     "fields": {"TS": "주제", "TI": "제목", "AB": "초록", "AU": "저자", "AI": "저자 식별자", "AK": "저자 키워드", "GP": "단체 저자", "ED": "편집자", "KP": "Keywords Plus", "SO": "발행물명", "DO": "DOI", "PY": "발행연도", "CF": "학회", "AD": "주소", "OG": "소속", "OO": "기관", "SU": "연구 영역", "WC": "WoS 분류", "IS": "ISSN/ISBN", "UT": "접근번호", "DOP": "발행일", "LD": "색인일", "ALL": "전체 필드"},
     "operators": "FIELD=(조건), AND·OR·NOT, 괄호와 큰따옴표 구문. * 등 와일드카드와 날짜 범위는 WoS 문법을 따른다. 예: TS=(\"circuit lower bounds\") AND PY=(2020-2025). 세션 #번호 결합은 다른 호출에서 같은 세션을 보장하지 않으므로 독립 검색식으로 전달한다.",
-    "options": "현재 options는 비운다. 검색식 안의 필드·연도 조건을 지원하며 UI의 추가 facet·정렬·edition 지정은 구현 중이다.",
+    "options": "kind는 publications(기본) 또는 citations다. 일반 검색은 검색식 안의 필드·연도 조건을 지원하며 UI의 추가 facet·정렬·edition 지정은 구현 중이다. citations의 sort는 현재 date-descending이며 기본값이다.",
+    "relationships":"kind=citations의 query에는 WOS 접근번호·DOI·Full Record URL을 지정한다. 원 Citing Articles 요청의 부모 UT를 대조하고 start/limit·원 export로 들어오는 문헌을 회수한다. relation의 control_total은 문헌 인용 표지, result_total은 해당 기관 범위의 결과 수다. 둘은 다를 수 있다. fetch supplementary의 references는 원 CR과 outgoing 방향이고 citations는 incoming 첫20건·전체 건수·다음 start다. 나머지는 같은 UT의 kind=citations 검색으로 요청한다.",
     "fetch": "WOS:접근번호·DOI·Web of Science full-record URL을 지정한다. 제목은 TI 구문 검색 후보와 selection_required를 반환하며 선택한 accession/DOI로 다시 요청한다. 전체 서지·제공되는 초록·인용문헌을 해당 색인에서 회수한다. 원 Full Record에 AB가 없으면 abstract는 not_found다. 논문 전문은 해당 출판사를 별도 source로 지정한다.",
     "exports": "기본 JSON 레코드는 Full Record and Cited References 텍스트 export를 손실 없이 파싱한다. plain은 같은 원파일. ris·bibtex·excel·tsv·html은 해당 native export의 Full Record이며 실제 제공 필드가 다를 수 있다.",
     "limits": "start는 0부터, limit는 1..1000. 큰 결과를 화면 카드 개수로 세지 않고 자료원의 count와 요청 범위의 export를 대조한다. 원 tags는 records의 fields 아래 소문자 키·원 줄 배열로 보존한다. cr은 인용문헌, ab는 초록, ut는 접근번호다.",
@@ -248,6 +251,7 @@ SOURCES["github"].usage = {
     "search": "query는 GitHub 검색 문법이다. repo:소유자/저장소, user:소유자, language:언어, in:name,description,readme 등의 한정자를 사용할 수 있다.",
     "options": {"kind": "repositories(기본),commits,issues", "sort": "해당 GitHub 검색 종류의 정렬값", "order": "asc 또는 desc"},
     "fetch": "owner/repo@revision:path 또는 GitHub blob/tree URL. revision 생략 시 실제 기본 브랜치를 조회한다. 파일을 받기 전에 revision을 commit SHA로 고정한다. 경로 없는 저장소의 fulltext·supplementary 요청은 그 commit의 ZIP 원본이다.",
+    "exports": "검색 export=json은 요청 창의 레코드 배열이고 native는 전체 건수·불완전 응답 표지를 포함한 해당 원 API JSON 페이지다. native의 결과 배열은 extract selection=/items로 읽는다. 별도의 CSV·서지 파일은 이 어댑터에서 제공하지 않는다. fetch의 export는 metadata JSON이고 소스 파일·저장소 ZIP은 fulltext로 요청한다.",
     "limits": "별도 자격 없는 API만 사용한다. 검색 limit 1..100, start는 limit의 배수, 서비스는 한 검색에서 최대 1000건을 노출한다. 별도 인증이 필요한 전역 코드 검색은 사용하지 않는다. 파일 ref는 40자리 SHA 또는 태그·브랜치이며 /를 포함하는 ref는 owner/repo@ref:path 형식을 쓴다.",
     "examples": [{"tool": "fetch", "arguments": {"source": "github", "target": "leanprover-community/mathlib4@v4.22.0:lean-toolchain", "parts": ["metadata", "fulltext"]}}],
     "official": ["https://docs.github.com/en/rest/search/search", "https://docs.github.com/en/rest/repos/contents"],
@@ -482,14 +486,28 @@ SOURCES['de-gruyter'].usage={
 SOURCES['jstor'].implementation='partial'
 SOURCES['siam'].implementation='partial'
 SOURCES['siam'].transport='playwright'
-SOURCES['siam'].capabilities=('source_guide','fetch','export')
+SOURCES['siam'].capabilities=('source_guide','search','fetch','export')
 SOURCES['siam'].usage={
-    'search':'원 SIAM 검색 화면은 존재하지만 현재 고급검색 연결과 실서비스 검증이 남아 있다. 검색은 publisher_search_not_implemented를 반환한다. 공개 홈페이지 뒤 convex optimization 검색은 접근 확인 화면이었다.',
-    'fetch':'SIAM DOI·문헌 URL은 원 문헌 페이지에서 서지·초록·PDF를 조회한다. .pdf 주소와 epubs.siam.org/doi/pdf/DOI는 정확히 지정한 파일을 회수한다. 이 파일 경로의 metadata는 PDF 내장 정보이며 출판사 문헌 페이지의 서지와 구별한다.',
-    'exports':'명시적 PDF 파일의 export는 그 원 PDF다. 문헌별 RIS·BibTeX 등 native 인용문 내보내기는 아직 연결하지 않았다. 기본 문헌 페이지 export의 source_metadata_json과 구별한다.',
-    'limits':'기관 구독이나 추가 웹 계정 없이 제공되는 자료를 회수한다. 접근 제한은 그 문헌·경로의 결과이며 자료원 전체의 부재를 뜻하지 않는다. 책의 Front Matter·Back Matter는 별도 파일이다. 전체 책으로 확대하지 않는다.',
-    'examples':[{'tool':'fetch','arguments':{'source':'siam','target':'https://epubs.siam.org/doi/pdf/10.1137/1.9781611974997.fm','parts':['metadata','fulltext']}}],
-    'official':['https://epubs.siam.org/faq'],
+    'search':'query를 SIAM 기본검색에 그대로 전달한다. options.field가 있으면 고급검색의 해당 필드에 전달한다. 원 페이지의 전체 건수·행 범위·문헌 DOI와 다음 페이지의 검색 조건을 대조한다.',
+    'options':{'field':'Anywhere, Title, Author, Keywords, Abstract, Affiliation',
+               'terms':'추가 검색 행의 순서 있는 {field, query} 배열. 첫 행을 포함해 구현상 최대51개다. 원 UI에는 행별 AND/OR/NOT 선택 제어가 없어 operator를 받지 않는다.',
+               'topic':'현재 자동완성에 나오는 정확한 주제명. 후보가 유일하지 않으면 selection_required와 후보를 반환한다.',
+               'publication':'현재 자동완성에 나오는 정확한 발행물명. 예: SIAM Journal on Optimization. 사용자가 내부 ID를 만들지 않는다.',
+               'published_within':'month, six_months, year. 현재 원 제어의 상대 기간을 선택하며 절대 범위와 함께 사용하지 않는다.',
+               'published_after / published_before':'두 경계를 함께 {year, month}로 지정한다. 현재 원 제어에 없는 연도·월과 역전된 범위는 거부한다.',
+               'content_type':'article, chapter, book',
+               'sort':'relevance(기본), date, most_read, most_cited, title. date는 원 Date 정렬이며 별도 방향을 지정하지 않는다.',
+               'page_size':'20(기본), 50, 100'},
+    'range':'start는0부터, limit는1..1000. 다음 페이지는 원 링크를 따른다. JSON/CSV는 정확한 요청 창, html은 정제된 원 페이지 목록이다. 추가 조건은 매번 새 고급검색 폼에서 설정해 이전 검색의 필터가 섞이지 않게 한다.',
+    'fetch':'SIAM DOI·문헌 URL은 원 문헌 페이지에서 서지·초록·PDF를 조회한다. 이름은 원 검색 후보와 selection_required를 반환한다. 책의 publication_doi와 실제 본문 제목을 대조하며 사이트 이름을 문헌 제목으로 사용하지 않는다. .pdf 주소와 epubs.siam.org/doi/pdf/DOI는 정확히 지정한 파일을 회수하며 metadata는 PDF 내장 정보다.',
+    'exports':'검색은 json/html/csv/bibtex/ris/endnote/medlars/refworks. 원 인용문은 선택 DOI·제목·순서를 대조하고 페이지별 원 파일을 export.artifacts로 반환한다. BibTeX/RIS/EndNote는 서지 항목, Medlars는 원 태그가 있는 줄로 extract한다. RefWorks는 SIAM의 import HTML에 포함된 RIS 문자열을 보존한 decoded_textarea이며 외부 RefWorks로 제출하지 않는다. 문헌 export는 같은 DOI의 다섯 형식이다. 명시 PDF 파일의 export는 그 원 PDF다.',
+    'limits':'별도 계정 없이 제공되는 SIAM 경로다. 서버가 전용 Chrome 창을 표시해 처리한다. 기관 구독 목록의 기재는 individual-subscription에서 조회하며 실제 비공개 원문 권한을 뜻하지 않는다. 접근 제한은 문헌·경로별 결과다. 책의 Front Matter·Back Matter는 별도 파일이며 전체 책으로 확대하지 않는다.',
+    'examples':[{'tool':'search','arguments':{'source':'siam','query':'algebra','options':{'field':'Title'},'start':19,'limit':2,'export':'ris'}},
+                {'tool':'search','arguments':{'source':'siam','query':'optimization','options':{'publication':'SIAM Journal on Optimization','published_within':'year'},'limit':2,'export':'csv'}},
+                {'tool':'search','arguments':{'source':'siam','query':'linear algebra','options':{'topic':'Linear Algebra and Matrix Theory','published_after':{'year':2024,'month':1},'published_before':{'year':2026,'month':9}},'limit':2}},
+                {'tool':'fetch','arguments':{'source':'siam','target':'https://epubs.siam.org/doi/book/10.1137/1.9780898717976','parts':['metadata','export']}},
+                {'tool':'fetch','arguments':{'source':'siam','target':'https://epubs.siam.org/doi/pdf/10.1137/1.9781611974997.fm','parts':['metadata','fulltext']}}],
+    'official':['https://epubs.siam.org/search/advanced','https://epubs.siam.org/faq'],
 }
 SOURCES['ams'].implementation='partial'
 SOURCES['ams'].transport='playwright'
@@ -499,10 +517,11 @@ SOURCES['ams'].usage={
     'options':'추가 title, author, product_code, book_text, isbn, msc를 결합할 수 있다. 주 field와 같은 추가 필드는 중복 지정하지 않는다. content_type은 All(기본), EBook, Journal, Abstracts다. start는 0부터, limit는 1..1000이며 원 페이지의 건수·위치를 대조한다.',
     'expression':'중첩 조건은 query=""로 두고 options.expression만 지정한다. 그룹은 {condition:"AND" 또는 "OR", terms:[조건 또는 하위 그룹]}이다. 조건은 {field, operator, value}이며 value는 비어 있지 않은 문자열이다. Title·Author·ProductCode·BookText의 operator는 equals 또는 contains, PublicationYear·ISBN·MSC·Series·Subject는 equals다. 연도 범위 비교를 임의로 추가하지 않는다. Series·Subject는 원 선택 제어가 받는 값만 사용할 수 있으며 현재 실서비스 값 목록은 미검증이다. 현재 제어에서 값이나 그룹이 유지되지 않으면 query_not_supported로 반환한다. 기본 검색 옵션과 expression을 함께 주면 거부한다.',
     'records':'Title와 Subtitle을 구별한다. ProductCode, DOI, PII, ContentType, RelatedCustomers, Abstract, ProductDescription 등 원 필드를 보존한다. target은 선택한 원 문헌 URL이다. 책(B)·논문(A)·학회 초록(ABS)이 섞이며 DOI가 없는 결과도 유지한다.',
-    'exports':'json은 요청 창의 원 레코드, native는 해당 창을 회수하면서 읽은 원 JSON 페이지들, html은 방문한 검색 페이지들이다. csv는 같은 레코드를 기계적으로 직렬화한다. 사이트의 native 파일 내보내기는 HTTP 403 이후 미검증이며 구현 완료로 세지 않는다.',
+    'exports':'json은 요청 창의 원 레코드, native는 해당 창을 회수하면서 읽은 원 JSON 페이지들, html은 방문한 검색 페이지들이다. csv는 같은 레코드의 기계적 직렬화다. xlsx는 선택한 각 논리 상품의 원 workbook을 export.artifacts[].artifact에 반환한다. 한 상품의 ISBN 변형이 여러 물리 행으로 나올 수 있으며 integrity.logical_products와 physical_rows를 구별한다. 빈 Product Code 셀을 채우지 않는다. 일부 파일이 실패해도 원 검색 결과와 상품별 오류를 함께 보존한다.',
     'fetch':'책 ProductCode 또는 /view?ProductCode= URL은 같은 원 고급검색으로 식별한다. 현재 서버에서 검색한 target·DOI는 원 메타데이터를 재사용한다. 다른 DOI·문헌 URL은 원 문헌 페이지를 조회하며 추가 접근 확인을 반환할 수 있다. 책의 ProductDescription은 출판사 책 소개이며 논문 초록과 구별한다. .pdf 링크는 정확히 지정한 파일과 PDF 내장 메타데이터를 회수한다. 발췌·부속 파일을 전체 책으로 확대하지 않는다.',
-    'verification_limit':'원 브라우저의 algebra 검색 6,587건 중 12건과 혼합 레코드는 관측했다. 신규 어댑터는 이후 접근 확인·서비스 불가 응답 때문에 연속 검증을 완료하지 못했다. 중첩 조건의 원 UI 복원·POST 제출은 외부 통신 없는 보존 화면 재현으로 검증했다. 실제 조건 검색·페이지 순회는 아직 미검증이다. 서비스 불가는 provider_unavailable, 접근 확인은 restricted이며 0건이나 영구적인 기능 부재로 표시하지 않는다.',
+    'verification_limit':'전용 Chrome의 실제 MCP에서 기본 algebra 검색6,589건·13건 범위·페이지 경계11/2·0건·원 XLSX의3개 ISBN 변형 행·상품조회/추출을 통과했다. 원 TotalRows=0의 Products=null은 빈 결과로 읽되 원 JSON을 고치지 않는다. 동적 expression의 원 UI 복원은 오프라인으로 검증했으나 현행 원 UI에서 직접 만든 단일 조건도 서버 오류를 반환했다. 동일 기본값과 인코딩 대조에서도 Products가 없어 invalid_response로 구별한다. 기본 검색 성공을 동적식 성공으로 확대하지 않는다. 서비스 불가는 provider_unavailable, 접근 확인은 restricted이며 0건이나 영구적 기능 부재로 표시하지 않는다.',
     'examples':[{'tool':'search','arguments':{'source':'ams','query':'algebra','start':11,'limit':2,'export':'csv'}},
+                {'tool':'search','arguments':{'source':'ams','query':'algebra','limit':1,'export':'xlsx'}},
                 {'tool':'search','arguments':{'source':'ams','query':'','options':{'expression':{'condition':'AND','terms':[{'field':'Title','operator':'contains','value':'algebra'},{'field':'PublicationYear','operator':'equals','value':'2000'}]}},'limit':2}},
                 {'tool':'fetch','arguments':{'source':'ams','target':'https://www.ams.org/books/gsm/128/gsm128-endmatter.pdf','parts':['metadata','fulltext']}}],
     'official':['https://pubs.ams.org/AdvancedSearch'],
@@ -511,13 +530,15 @@ SOURCES['aps-institutional'].capabilities=('source_guide','search','fetch','expo
 SOURCES['aps-institutional'].usage={
     'search':'KUDOS → 학술DB → APS 바로가기를 거쳐 APS 원 검색을 사용한다. query는 첫 조건의 값이며 options.field의 기본값은 all이다. 검색 결과의 원 조건·정렬·페이지·건수를 대조한다.',
     'fields':['all','author','abstract','abstitle','title','refauth','affiliation','collaboration'],
-    'options':'terms는 추가 {field, query, operator} 배열이며 operator는 AND/OR/NOT이다. 원 조건 순서를 유지한다. sort는 relevance/recent/oldest/most_cited다. date는 week/month/year를 받는다. journal/article_type/category/physh_concept/physh_discipline은 각 한 개의 원 값을 받으며 검색 응답 facets 참조에서 값·이름·건수를 읽을 수 있다. 커스텀 날짜 범위와 한 facet의 복수 값은 아직 연결하지 않았다.',
+    'options':'terms는 추가 {field, query, operator} 배열이며 operator는 AND/OR/NOT이다. 원 조건 순서를 유지한다. sort는 relevance/recent/oldest/most_cited다. date는 week/month/year다. 절대 범위는 start_date와 end_date를 YYYY-MM-DD로 함께 지정하며 상대 기간과 섞지 않는다. journal/article_type/category/physh_concept/physh_discipline은 원 값 하나 또는 중복 없는 배열이다. 검색 응답 facets 참조에서 현재 값·이름·건수를 읽어 사용한다.',
     'results':'title·doi·url·authors_display·citation_display·publication_date_display·listing·html·abstract·abstract_html을 보존한다. display 필드는 출판사의 표시 문자열이며 저자 목록이나 날짜를 새로 해석한 값이 아니다. 원 응답 HTML을 사용하여 MathJax가 숨은 수식을 빈 자리로 바꾸기 전의 MathML을 유지한다. 원 페이지는 evidence, 정확한 요청 창은 records다.',
-    'exports':'json은 정확한 요청 창의 레코드이고 csv는 같은 필드를 기계적으로 직렬화한다. html/native는 읽은 원 HTML 페이지들의 배열이다. 검색 결과의 BibTeX/RIS 파일 export는 아직 연결하지 않았다. 현재 문헌의 원 인용문 파일 경로는 HTTP403을 관측했다.',
-    'fetch':'DOI·문헌 URL은 기존 기관 문헌 조회로 서지·초록·PDF를 요청한다. 이름은 후보 검색이다. fetch의 export는 현재 정제된 원 페이지 HTML이며 BibTeX/RIS로 표현하지 않는다. 별도 계정이나 API 키를 요구하지 않는다.',
+    'exports':'json은 정확한 요청 창의 레코드이고 csv는 같은 필드의 기계적 직렬화다. html/native는 읽은 원 HTML 페이지 배열이다. bibtex/ris는 선택한 각 문헌의 원 인용 파일을 받아 DOI를 대조한다. export.artifacts의 format/artifact를 읽는다. 인용문 실패는 해당 DOI별 오류와 검색 레코드를 함께 보존한다.',
+    'fetch':'DOI·문헌 URL은 기관 문헌의 서지·초록·PDF를 요청한다. 이름은 후보 검색이다. export는 문헌의 원 BibTeX·RIS다. supplementary는 현재 DOI에 결속된 원 파일 제어에서만 회수한다. 별도 계정이나 API 키를 요구하지 않는다.',
     'limits':'start는 0부터, limit는 1..1000이다. 20건짜리 원 페이지에서 요청한 창을 회수하고 건수와 현재 페이지를 대조한다. 동일 조건의 start>0 후속 요청은 최근에 받은 해당 페이지를 재사용할 수 있으며 evidence의 원 수신 시점을 유지한다. start=0은 새 검색이다. 후속 페이지 실패 때 이미 받은 요청 창의 일부는 partial로 보존한다. 접근 제한을 문헌 부재로 해석하지 않는다.',
-    'verification':'algebra 첫 페이지 검색·CSV의 DOI 대조와 원 MathML 회수는 실제 MCP로 확인했다. 연속 페이지는 현재 부분 결과 뒤 접근 제한이며, 추가 필드·날짜·facet과 선택 문헌 조회의 실서비스 검증은 미완료다. 별도 기관 진입의 페이지2 성공을 연속 호출 성공으로 확대하지 않는다.',
-    'examples':[{'tool':'search','arguments':{'source':'aps-institutional','query':'algebra','limit':2,'export':'csv'}},{'tool':'search','arguments':{'source':'aps-institutional','query':'algebra','start':1,'limit':1,'export':'html'}}],
+    'verification':'전용 Chrome의 실제 MCP에서 첫 페이지·CSV·원 MathML·페이지 경계·제목 필드·선택 문헌 서지와 초록을 통과했다. journal=[prd,prl]와1960-01-01~1980-12-31 조건847건·선택1건의RIS/BibTeX·14쪽PDF·추출, 별도문헌의16쪽보충PDF도 검증했다. 모든조건조합이나모든보충파일형식의검증으로확대하지않는다.',
+    'examples':[{'tool':'search','arguments':{'source':'aps-institutional','query':'algebra','limit':2,'export':'csv'}},
+                {'tool':'search','arguments':{'source':'aps-institutional','query':'algebra','options':{'journal':['prd','prl'],'start_date':'1960-01-01','end_date':'1980-12-31'},'limit':1,'export':'ris'}},
+                {'tool':'fetch','arguments':{'source':'aps-institutional','target':'https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.115.250402','parts':['supplementary']}}],
     'official':['https://journals.aps.org/search'],
 }
 
@@ -552,13 +573,30 @@ SOURCES['jstor'].usage={
 SOURCES['numdam'].transport = 'fixed: OAI/citation API; native search/DOI resolution Playwright'
 
 SOURCES['science-direct'].implementation = 'partial'
-SOURCES['science-direct'].capabilities = ('source_guide','fetch','export')
+SOURCES['science-direct'].capabilities = ('source_guide','search','fetch','export')
 SOURCES['science-direct'].usage = {
-    'fetch':'DOI·ScienceDirect PII·문헌 URL을 지정한다. KUDOS의 ScienceDirect 바로가기로 기관 접속한 뒤 원 RIS에서 서지·초록을 회수한다. RIS의 UR에 있는 PII와 DO의 DOI를 입력과 대조한다. PII와 DOI는 다른 식별자다.',
-    'exports':'export는 RIS·BibTeX·plain의 원 파일이다. 제목은 RIS의 T1이며 초록은 AB다. BibTeX·plain도 같은 DOI를 대조한다. 원 서지와 초록을 파일 그대로 보존한다.',
-    'limits':'검색·이름 후보와 첨부파일은 아직 연결하지 않았다. 문헌 HTML/abs 페이지의 접근 오류와 정상 기관 citation endpoint를 구별한다. fulltext가 실패해도 이미 받은 서지·초록·인용문을 보존하고 component별 실패를 반환한다. PDF 주소의 준비 HTML을 PDF로 표시하지 않는다. 별도 Elsevier API 키·웹 계정은 요구하지 않는다.',
-    'examples':[{'tool':'fetch','arguments':{'source':'science-direct','target':'10.1006/jcss.1997.1494','parts':['metadata','abstract','export']}}],
-    'official':['https://www.sciencedirect.com/'],
+    'search':'KUDOS의 실제 ScienceDirect 바로가기를 거친 기관 웹 검색이다. query는 options.field가 선택한 원 필드에 그대로 전달한다. 기본 Anywhere는 참고문헌을 제외한 문헌 전체를 검색한다.',
+    'fields':['Anywhere','Title','TitleAbstractKeywords','Author','Affiliation','Publication','References','ISSNISBN'],
+    'syntax':'현재 웹 검색의 Boolean은 대문자 AND/OR/NOT와 제외 하이픈이다. 우선순위는 NOT, AND, OR이며 괄호로 결합한다. 큰따옴표는 이웃한 단어의 구문 검색이지만 구두점·복수형·철자 변형까지 정확히 고정하지 않는다. W/n·PRE/n 근접 연산자는 지원하지 않는다. 오래된 별도 API 문법으로 바꾸지 않는다.',
+    'options':{'field':'위 fields 중 하나. 기본 Anywhere. 같은 필드를 추가 옵션으로 중복 지정하지 않는다.',
+               'publication / authors / affiliations / title / references / doc_id':'추가 필드의 문자열. publication은 발행물 제목 검색어, doc_id는 ISSN/ISBN이며 PII가 아니다. 다른 조건이 있으면 query를 비울 수 있다.',
+               'publication_exact':'현재 자동완성에서 선택할 정확한 저널명. 예: Journal of Algebra. 서버가 후보와 고유 식별자를 대조하며 유일하지 않으면 selection_required와 후보를 반환한다. publication 문자열·field=Publication·publication_titles와 함께 지정하지 않는다.',
+               'date':'YYYY 또는 순서가 맞는 YYYY-YYYY. 결과 화면의 연도 범위와 같은 조건이다.',
+               'volume / issue / page':'숫자 또는 숫자 범위 문자열. page에는 숫자로 된 article number도 지정할 수 있다.',
+               'article_types / publication_titles / subject_areas / languages / access_types':'현재 검색 응답 facets의 해당 그룹 value를 복사한 문자열 배열. 같은 그룹의 값은 OR, 다른 그룹은 AND로 결합한다. 예: article_types=["FLA","REV"], subject_areas=["2600"].',
+               'subscribed_only':'true이면 기관이 구독한 저널로 제한한다. 기본 false.',
+               'sort':'relevance(기본) 또는 date'},
+    'search_exports':'json은 정확한 결과 창, csv는 같은 필드의 기계적 직렬화, html/native는 회수한 원 결과 페이지 목록이다. ris/bibtex/plain은 선택한 각 PII의 원 검색 인용 제어에서 받은 파일이며 export.artifacts의 순서로 읽는다. 일부 내보내기가 실패해도 검색 레코드와 파일별 오류를 보존한다. 원 검색 행에 DOI가 없으면 null로 유지한다.',
+    'facets':'현재 결과의 추가 후보를 펼친 뒤 group/value/label/count/selected를 반환한다. facet_groups.complete와 visible_candidates는 이번 화면에서 확인한 범위다. 발행물 자동완성과 발행물 facet은 별도 제어다.',
+    'fetch':'DOI·ScienceDirect PII·문헌 URL을 지정한다. 원 문헌 페이지의 서지·초록을 회수하고 PII·제목·DOI를 같은 문헌의 검색 행과 대조한다. 이름은 Title 검색 후보와 selection_required를 반환한다. 서지와 초록을 인용문 파일의 접근 상태와 따로 보존한다.',
+    'exports':'fetch의 export는 같은 PII·제목·제공 DOI를 대조한 RIS·BibTeX·plain 원 파일 목록이다. 기본 artifact는 RIS다. 현재 검색 행의 원 인용 제어를 사용하며 파일을 다른 서지 서비스로 재작성하지 않는다.',
+    'fulltext':'정확한 PII의 View PDF 제어에서 PDF를 회수한다. 최종 파일 경로, PDF 형식, 첫 두 쪽 DOI와 제목을 대조한다. supplementary는 같은 PII의 mmc 원 파일과 설명이다. 파일 artifact는 resources/read 또는 해당 형식의 extract로 읽는다. 보충 제어가 없는 표본은 원 source_page와 관측 범위를 반환한다.',
+    'limits':'start는0부터, limit는1..1000이며 원 페이지25행을 순회한다. 원 페이지 번호·전체 건수·PII·요청하지 않은 조건의 부재를 검사한다. fulltext가 실패해도 확보한 서지·초록·인용문과 component별 오류를 보존한다. PDF 준비 HTML이나 Chrome viewer를 원 PDF로 표시하지 않는다. 별도 Elsevier API 키·웹 계정은 요구하지 않는다.',
+    'examples':[{'tool':'search','arguments':{'source':'science-direct','query':'algebra','options':{'article_types':['FLA','REV'],'subject_areas':['2600'],'date':'2020-2025','subscribed_only':True},'limit':2,'export':'csv'}},
+                {'tool':'search','arguments':{'source':'science-direct','query':'algebra','options':{'publication_exact':'Journal of Algebra'},'limit':2}},
+                {'tool':'fetch','arguments':{'source':'science-direct','target':'S156042922600065X','parts':['metadata','abstract','export','fulltext']}},
+                {'tool':'fetch','arguments':{'source':'science-direct','target':'S0167278924001155','parts':['metadata','supplementary']}}],
+    'official':['https://www.sciencedirect.com/','https://www.elsevier.support/sciencedirect/answer/how-do-i-use-the-advanced-search'],
 }
 
 SOURCES['general-web'].implementation = 'partial'
@@ -607,6 +645,22 @@ SOURCES['knu-fric'].usage = {
     'official':['https://fric.knu.ac.kr/','https://www.fric.kr/user/openspace/openApi/openApiS.do'],
 }
 
+SOURCES['individual-subscription'].implementation = 'partial'
+SOURCES['individual-subscription'].capabilities = ('source_guide', 'search', 'fetch', 'export')
+SOURCES['individual-subscription'].usage = {
+    'search': 'KUDOS 로그인 후 학술DB의 KNU 개별전자저널·KNU P+O Journal 제공 목록을 회수해 조회한다. query는 정제된 저널명·출판사·ISSN·URL의 대소문자를 구별하지 않는 부분 문자열이다. 빈 문자열은 목록 전체다. 내려받은 목록의 기계적 조회이며 출판사 논문 검색식이나 정규식으로 해석하지 않는다.',
+    'options': {'catalogue': 'all(기본), knu-individual-electronic-journals, knu-print-online-journals',
+                'field': 'all(기본), title, publisher, issn, url',
+                'coverage_year': '네 자리 정수. 목록의 시작·종료 범위를 조회한다. current는 해당 목록의 기준연도까지만 포함하며 현재 개별전자저널은2026년, P+O는2025년이다. 원문 이용권의 실측을 뜻하지 않는다.'},
+    'range': 'start는 0부터, limit는 1..1000이다. 필터 뒤 원 목록 순서의 정확한 창을 반환한다. cursor는 사용하지 않는다.',
+    'fetch': 'search 레코드의 id 또는 catalogue 식별자를 target으로 사용한다. id는 catalogue·원 workbook hash 접두어·sheet·row를 포함한다. 원 파일이 바뀌면 이전 행 id는 not_found이며 새 검색에서 다시 선택한다. metadata·export는 정제된 보유 정보다. abstract·fulltext·supplementary는 이 목록의 제공 대상이 아니다. 외부 출판사 URL은 방문하지 않는다.',
+    'exports': 'json 또는 csv. CSV는 같은 결과 창의 기계적 직렬화다. 원 XLSX에는 별도 서비스의 자격 정보가 포함될 수 있어 그대로 제공하지 않는다. 정제된 위치는 redactions의 좌표·표지로 남긴다.',
+    'records': '원 ISSN·E-ISSN과 검증 상태, 표시 URL·hyperlink target의 충돌, 시작·종료 원문과 해석을 구별한다. 자격 정보와 안전하게 파싱할 수 없는 URL은 정제한다. 보유 목록의 기재와 실제 출판사 문헌 접근 권한은 별개다.',
+    'examples': [{'tool': 'search', 'arguments': {'source': 'individual-subscription', 'query': 'SIAM', 'limit': 10, 'export': 'csv'}},
+                 {'tool': 'fetch', 'arguments': {'source': 'individual-subscription', 'target': 'knu-individual-electronic-journals', 'parts': ['metadata', 'export']}}],
+    'official': ['https://kudos.knu.ac.kr/eng/sub.htm?nav_code=eng1643175350'],
+}
+
 for category in ('author-repository','society-journal'):
     SOURCES[category].implementation = 'partial'
     SOURCES[category].transport = 'fixed: public document Playwright; OJS native citation API'
@@ -619,13 +673,13 @@ for category in ('author-repository','society-journal'):
     }
 
 for identifier, level in {
-    "mathscinet": "live_mcp_search_exact_mr_four_citations_name_doi_review_pdf",
-    "wos": "live_mcp_search_full_record_title_url_native_xls_extract",
+    "mathscinet": "live_mcp_search_four_exports_review_pdf_mr_doi_incoming_reviews_outgoing_subset_windows",
+    "wos": "live_mcp_full_record_native_xls_ut_doi_citing_window_and_bidirectional_fetch",
     "eccc": "live_mcp_name_candidates_search_and_pinned_revision_fetch",
     "crossref": "live_mcp_search_native_citation_eight_formats_extract",
     "arxiv": "live_mcp_search_pinned_html_source_archive_tex_extract",
     "zbmath": "live_mcp_arbitrary_window_doi_legacy_link_license_state_references",
-    "github": "live_adapter_pinned_file_fetch",
+    "github": "live_mcp_repository_search_native_json_pinned_zip_file_same_bytes",
     "mathlib": "live_mcp_pinned_source_search_file_fetch_line_comparison",
     "math-comp": "live_mcp_pinned_source_search_file_fetch_line_comparison",
     "opencitations": "live_mcp_native_csv_window_oci_fetch_reference_count",
@@ -654,7 +708,7 @@ for identifier, level in {
     "pqdt": "live_mcp_repeat_search_ris_pdf_and_supplemental_png_fetch_extract",
     "eudml": "live_mcp_cql_rss_extract_nlm_fetch",
     "aps": "live_mcp_open_access_feed_metadata_abstract_pdf_fetch",
-    "aps-institutional": "live_mcp_first_page_search_csv_mathml; followup_partial_and_document_restricted",
+    "aps-institutional": "live_mcp_search_window_custom_multi_facets_bibtex_ris_abstract_pdf_supplement",
     "project-euclid": "live_mcp_advanced_search_four_citations_pdf_and_supplement_zip_text_extract",
     "cambridge": "live_mcp_filtered_search_ris_pdf_and_supplement_pdf_zip_source_extract",
     "oxford": "live_mcp_search_citation_metadata_abstract_pagination_and_supplement_pdf",
@@ -664,9 +718,10 @@ for identifier, level in {
     "de-gruyter": "live_mcp_search_ris_pdf_and_supplement_zip_cif_lines; broken_link_observed",
     "jstor": "live_mcp_search_image_sorts_facets_citations_pdf_mp3_transcripts_supplement; native_video_download_disabled",
     "iop": "live_mcp_rss_ranked_filters_native_search_citations; pdf_html_tex_figures_supplement_pdf_verified",
-    "siam": "live_mcp_public_front_matter_pdf_fetch_extract; search_challenge_observed",
-    "ams": "live_mcp_explicit_pdf; native_browser_mixed_search; dynamic_expression_offline_verified; live_search_restricted",
-    "science-direct": "live_mcp_institutional_ris_bibtex_plain_metadata_abstract_fetch",
+    "siam": "live_mcp_advanced_terms_topic_publication_dates_five_citations_cross_page_book_fetch_zero",
+    "individual-subscription": "live_mcp_two_catalogues_95_holdings_six_siam_csv_range_year_fetch_zero",
+    "ams": "live_mcp_native_search_window_zero_xlsx_product_fetch_pdf; dynamic_ui_provider_error",
+    "science-direct": "live_mcp_search_cross_page_ris_zero_facets_exact_publication_three_citations_pdf_supplement_video",
 }.items():
     SOURCES[identifier].verification = level
 
