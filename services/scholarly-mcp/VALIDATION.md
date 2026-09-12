@@ -387,3 +387,10 @@ JSTOR 문헌24931626의 첫 Download는 이용 조건 모달 때문에 대기했
 2026-09-12 Software Heritage의 [원 Git 보관 형식](https://docs.softwareheritage.org/devel/swh-web/uri-scheme-api-vault.html)과 [snapshot 해시 규격](https://docs.softwareheritage.org/devel/apidoc/swh.model.git_objects.html)을 대조했다. history 항목과 snapshot의 원 압축 회수를 연결했다. `data/validation/20260912T053018Z-swh-git-mcp.json`은 revision2db189928c94d62a3b4757b3eec68f0a4d4113f0의337920바이트·349객체·55커밋과 snapshot2611ba3c6ee63b2078ac02e597ee0e40df930a66의870400바이트·1084객체·296커밋·175브랜치(HEAD 포함)를 실제 MCP로 검증했다. 객체 해시·연결 관계·snapshot manifest 해시·refs 대응과 압축 항목 추출이 completed=true다.
 
 `053213Z-swh-git-mcp.json`은 빈 directory의 Git 형식을 회수했지만 release의 원 tag에 missingEmail이 있어 Git 형식 검사에서 실패했다. 원 바이트를 보존하고 해당 형식 경고만 낮춘 뒤 `053701Z-swh-git-mcp.json`에서 releasefc8e44c5bb3fabe81e5ebe46ac013a2510271616의 Git 압축 회수가 completed=true였다. 해시·객체 연결 검사는 유지한다. 앞선 대기는 MCP 자체가 아니라 Git 검증 하위 프로세스의 파이프 종료 대기였으며, 표준입력과 창 생성을 분리한 새 SDK 호출로 해소했다. 기존 클라이언트·등록 MCP는 재시작하지 않았다. 원 Git config·hooks·외부 objects 참조를 적재하지 않고 소스 코드를 실행하지 않는다. 경로 이탈·pack 손상·누락 snapshot·원 형식 경고 검사를 포함해 공통257검사가 통과했다. 직접 directory 대상 release의 flat 작업 대기와 Git 형식 성공은 구별한다.
+
+
+2026-09-12 JSTOR의 갱신된 접근 확인에서 두 번의 입력 실패 뒤 현재 표시된 다른 과제를 판독·입력해 정상 검색25건에 도달했다. 보호된 원 관측은 `20260912T051530Z-jstor-after-challenge.html`이며 엔진별 상태를 저장했다. 원 발췌문 API·BCE 입력·혼합 결과군을 조사한 정제 보고는 `data/validation/20260912T051726Z-jstor-remaining-probe.json`과 `052118Z-jstor-bce-mixed.json`이다. 원 화면의 BCE 0500~0100은 -500~-100으로 제출돼14936건을 반환했다. 발췌문은 검색 결과와 다른 순서로 오며 숫자 stable ID를10.2307 DOI로 반환하므로 식별자를 대조해 연결한다.
+
+혼합 검색의 carousel5건 다음 표식을 그대로 사용하면 전체 이미지 결과와 중복이 생겼다. `053615Z-jstor-group-order.json`은 원 이미지 결과군을 처음부터 펼친25건과 다음25건의 중복0건을 확인했다. 그 경로로 각 결과군의 start/limit를 적용하며 처음의 미리보기 원 응답도 evidence로 유지한다. group_efq의 유형 배열 순서는 바뀔 수 있어 집합으로 비교하되 요청에는 원 표식을 그대로 사용한다.
+
+`data/validation/20260912T053806Z-jstor-extended-mcp.json`은 원 발췌문2건·BCE14936건 중2건·journal과image 혼합178962건의각 start24/limit2·합계4건과 CSV ID 대조가 completed=true다. 앞선053213Z는 원 날짜 표기 B.C와BCE를 하나의 철자로 단언한 시험이 실패했으며 원 표기를 대조해 시험을 고쳤다. 공통257검사가 통과했다. 후속 이미지·음성·동영상 파일과 첨부 회수는 별도 작업으로 남긴다.

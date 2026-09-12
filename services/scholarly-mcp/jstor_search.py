@@ -3,9 +3,17 @@ import base64,csv,io,json,re
 from urllib.parse import urljoin,urlsplit
 from bs4 import BeautifulSoup
 from scholarly import ServiceError,encoded
-from browser_adapters import is_access_challenge
+from browser_adapters import is_access_challenge,clean_html
 
 FACETS={'content_types':'cty','subjects':'disc','languages':'la_str'}
+
+
+def group_key(value):
+    try:types=json.loads(base64.b64decode(value,validate=True))
+    except (ValueError,TypeError):raise ServiceError('invalid_response','JSTOR group filter is not a native type array') from None
+    if not isinstance(types,list) or any(not isinstance(t,str) for t in types):
+        raise ServiceError('invalid_response','JSTOR group filter has invalid type labels')
+    return frozenset(types)
 
 
 def facet_key(field,value):
@@ -13,7 +21,7 @@ def facet_key(field,value):
     return frozenset(part.strip().casefold() for part in value.split(' OR ')) if field=='la_str' and isinstance(value,str) else value
 
 
-def search_page(raw,query,number):
+def search_pages(raw,query,number,expected_start=None):
     from jstor import stable_id
     if not isinstance(raw,dict) or type(raw.get('totalResultCount')) is not int or raw['totalResultCount']<0:
         raise ServiceError('invalid_response','JSTOR returned no valid search total')
@@ -22,13 +30,26 @@ def search_page(raw,query,number):
     source_total=raw['totalResultCount'];columns=raw.get('groupedResults')
     if not isinstance(columns,dict):raise ServiceError('invalid_response','JSTOR returned no grouped results')
     groups=[group for column in columns.values() if isinstance(column,dict) for group in column.get('results',[]) if isinstance(group,dict) and 'results' in group]
-    if not groups and source_total==0:return {'rows':[],'start':0,'total':0,'source_total':0,'paging':{},'group':None}
-    if len(groups)!=1:raise ServiceError('result_groups_not_implemented','Select a content type yielding one native result group',status='not_implemented',groups=len(groups))
-    group=groups[0];paging=group.get('paging',{});items=group.get('results')
+    if not groups and source_total==0:return [{'rows':[],'start':0,'total':0,'source_total':0,'paging':{},'group':None}]
+    if not groups:raise ServiceError('invalid_response','JSTOR omitted its nonempty result groups')
+    return [parse_group(group,source_total,number,expected_start) for group in groups]
+
+
+def search_page(raw,query,number,expected_start=None):
+    pages=search_pages(raw,query,number,expected_start)
+    if len(pages)!=1:raise ServiceError('range_mismatch','JSTOR returned more than the requested continuation group')
+    return pages[0]
+
+
+def parse_group(group,source_total,number,expected_start):
+    from jstor import stable_id
+    paging=group.get('paging',{});items=group.get('results')
     if not isinstance(items,list) or any(type(paging.get(k)) is not int for k in ('page_start_index','page_end_index','total_results','page_index')):
         raise ServiceError('invalid_response','JSTOR returned no complete native page range')
     first=paging['page_start_index']-1;total=paging['total_results']
-    if paging['page_index']!=number or first!=(number-1)*25 or paging['page_end_index']!=first+len(items) or len(items)!=min(25,max(0,total-first)):
+    page_size=5 if group.get('comp_label')=='carousel' and number==1 else 25
+    expected_start=(number-1)*25 if expected_start is None else expected_start
+    if paging['page_index']!=number or first!=expected_start or paging['page_end_index']!=first+len(items) or len(items)!=min(page_size,max(0,total-first)):
         raise ServiceError('range_mismatch','JSTOR returned a repeated or inconsistent result page')
     rows=[];seen=set()
     for item in items:
@@ -38,7 +59,7 @@ def search_page(raw,query,number):
         if identifier in seen:raise ServiceError('range_mismatch','JSTOR repeated an item within its page')
         seen.add(identifier);citation=item.get('citation_line','')
         rows.append({'id':identifier,'uuid':item.get('id'),'doi':item.get('doi'),'title':item.get('result_title_text') or ' '.join(item.get('title',[])),
-            'authors':item.get('author',[]),'url':url,'type':item.get('human_readable_type',item.get('resource_type')),
+            'authors':item.get('author',[]),'url':url,'type':item.get('human_readable_type',item.get('resource_type')),'native_type':item.get('type'),
             'citation_html':citation,'citation_text':BeautifulSoup(citation,'html.parser').get_text(' ',strip=True),
             'publication_date_display':item.get('result_date_string'),'year':item.get('year'),
             'has_access':item.get('userHasAccess',item.get('has_access')),'flags':item.get('flags',[])})
@@ -52,11 +73,11 @@ def public_payload(value):
     return value
 
 
-def request_page(adapter,payload):
+def native_request(adapter,payload,endpoint,role,request):
     if adapter.gateway is None:raise ServiceError('browser_session_unavailable','JSTOR institutional API session is not configured',status='restricted')
     hosts={'www.jstor.org','jstor.org','www-jstor-org.libproxy.knu.ac.kr','jstor-org.libproxy.knu.ac.kr'}
     page=adapter.gateway.open('jstor','JSTOR',hosts,'body')
-    url='https://'+urlsplit(page.url).hostname+'/search-results/grouped-search/'
+    url='https://'+urlsplit(page.url).hostname+'/search-results/'+endpoint+'/'
     try:response=adapter.gateway.context.request.post(url,data=json.dumps(payload),headers={'Content-Type':'application/json'},max_redirects=0,timeout=45000)
     except Exception as error:raise ServiceError('search_connection_failed','JSTOR search API connection failed',error_type=type(error).__name__) from None
     if response.status in (401,403):raise ServiceError('access_restricted','JSTOR restricted its search API',status='restricted')
@@ -67,34 +88,71 @@ def request_page(adapter,payload):
     except ValueError:
         if is_access_challenge(data):raise ServiceError('publisher_access_challenge','JSTOR search API requires access verification',status='restricted') from None
         raise ServiceError('invalid_response','JSTOR search API returned no JSON') from None
-    evidence=adapter.store.put(encoded(public_payload(raw)),'application/json',adapter.source,url,role='native_search_response',
-        request={key:payload[key] for key in ('searchTerm','pageNumber','pageParams','sort','acc','startDate','endDate','msFacetFields')},
+    evidence=adapter.store.put(encoded(public_payload(raw)),'application/json',adapter.source,url,role=role,request=request,
         redacted_fields=['tokens','register_and_read_entitlement_id','requestId','ab_segment'])
     return raw,evidence
+
+
+def request_page(adapter,payload):
+    return native_request(adapter,payload,'grouped-search','native_search_response',
+        {key:payload[key] for key in ('searchTerm','pageNumber','pageParams','sort','acc','startDate','endDate','msFacetFields')})
+
+
+def apply_snippets(rows,raw,query,sanitizer=None):
+    from jstor import stable_id
+    from scholarly import Sanitizer
+    sanitizer=sanitizer or Sanitizer()
+    if not isinstance(raw,dict) or not isinstance(raw.get('results'),list):
+        raise ServiceError('invalid_response','JSTOR returned no snippet results')
+    if raw.get('errors'):raise ServiceError('snippet_error','JSTOR reported errors while preparing snippets')
+    expected={row['id'] for row in rows};snippets={}
+    for item in raw['results']:
+        if not isinstance(item,dict) or not isinstance(item.get('id'),str) or not isinstance(item.get('text'),str):
+            raise ServiceError('invalid_response','JSTOR returned a malformed snippet')
+        identifier=stable_id(item['id'])
+        if identifier not in expected or identifier in snippets:
+            raise ServiceError('snippet_identity_mismatch','JSTOR snippets contain an unrequested or repeated document')
+        html=clean_html(item['text'],sanitizer)
+        snippets[identifier]={'status':'available' if item['text'].strip() else 'not_offered','query':query,
+            'html':html,'text':BeautifulSoup(html,'html.parser').get_text(' ',strip=True)}
+    for row in rows:row['snippet']=snippets.get(row['id'],{'status':'not_offered','query':query,'reason':'No snippet was returned for this document and query'})
+
+
+def request_snippets(adapter,rows,query):
+    if any(not isinstance(row.get('uuid'),str) or not isinstance(row.get('native_type'),str) for row in rows):
+        raise ServiceError('snippet_identity_missing','A selected record lacks its native snippet request identity')
+    inner={'items':[{'id':row['uuid'],'type':row['native_type']} for row in rows],'query':query}
+    return native_request(adapter,{'snippetParams':json.dumps(inner)},'snippets','native_search_snippets',inner)
 
 
 def search(adapter,query,*,options,start=0,limit=20,cursor=None,export=None):
     if type(start) is not int or start<0 or type(limit) is not int or not 1<=limit<=1000:
         raise ServiceError('invalid_range','Use start >= 0 and limit 1..1000')
-    if cursor or set(options)-({'sort','access','start_date','end_date'}|set(FACETS)):
+    if cursor or set(options)-({'sort','access','start_date','end_date','snippets'}|set(FACETS)):
         raise ServiceError('invalid_options','Use documented JSTOR sort, access, dates and facets; paginate with start')
     if not isinstance(query,str) or not query.strip():raise ServiceError('invalid_query','Provide a nonempty native JSTOR query')
     if export not in (None,'json','csv','native','bibtex','ris'):raise ServiceError('invalid_export','Use json, csv, native, bibtex or ris')
+    if type(options.get('snippets',False)) is not bool:raise ServiceError('invalid_options','snippets must be boolean')
     sort=options.get('sort','relevance');access=options.get('access','available')
     if sort not in ('relevance','newest','oldest') or access not in ('available','all'):
         raise ServiceError('invalid_options','sort is relevance/newest/oldest; access is available/all')
     dates={};bounds={}
     for key in ('start_date','end_date'):
         value=options.get(key,'')
+        if isinstance(value,str) and re.fullmatch(r'-\d{1,4}',value):
+            year=int(value)
+            if year==0:raise ServiceError('invalid_options','Civil BCE/CE dates have no year zero')
+            bounds[key]=(year,1,1) if key=='start_date' else (year,12,31)
+            dates[key]=str(year);continue
         if not isinstance(value,str) or value and not re.fullmatch(r'\d{4}(?:/\d{2}(?:/\d{2})?)?',value):
-            raise ServiceError('invalid_options','Dates use YYYY, YYYY/MM or YYYY/MM/DD')
+            raise ServiceError('invalid_options','Use CE YYYY, YYYY/MM, YYYY/MM/DD or a negative BCE year such as -0500')
         if value:
             import datetime,calendar
             pieces=[int(x) for x in value.split('/')]
             try:
                 month=pieces[1] if len(pieces)>1 else 1 if key=='start_date' else 12
                 day=pieces[2] if len(pieces)>2 else 1 if key=='start_date' else calendar.monthrange(pieces[0],month)[1]
-                bounds[key]=datetime.date(pieces[0],month,day)
+                valid=datetime.date(pieces[0],month,day);bounds[key]=(valid.year,valid.month,valid.day)
             except ValueError:raise ServiceError('invalid_options','Date is outside the calendar range') from None
         dates[key]=value
     if dates['start_date'] and dates['end_date'] and bounds['start_date']>bounds['end_date']:
@@ -112,39 +170,67 @@ def search(adapter,query,*,options,start=0,limit=20,cursor=None,export=None):
         'tabType':'keyword','content_set_flags':[],'appliedFacets':applied}
     for key in ('startDate','endDate'):
         if payload[key]:applied[key]=payload[key]
-    selected=[];proofs=[];errors=[];total=source_total=None;seen=set();facets=None;group=None
-    while True:
-        try:
-            raw,proof=request_page(adapter,payload);proofs.append(proof)
-            found=search_page(raw,query,payload['pageNumber'])
-            if raw.get('acc')!=acc:raise ServiceError('filter_mismatch','JSTOR did not retain the requested access scope')
-            if found['total']:
-                queue=list(raw.get('facets',[]));selected_facets={}
-                while queue:
-                    facet=queue.pop()
-                    if not isinstance(facet,dict):continue
-                    queue.extend(facet.get('h_values',[]))
-                    if facet.get('field'):
-                        selected_facets.setdefault(facet['field'],set()).update(facet_key(facet['field'],v.get('label')) for v in facet.get('values',[]) if v.get('selected'))
-                for option,field in FACETS.items():
-                    if {facet_key(field,value) for value in options.get(option,[])}-selected_facets.get(field,set()):
-                        raise ServiceError('filter_mismatch','JSTOR did not retain a requested facet',field=option)
-            if total is not None and total!=found['total']:raise ServiceError('range_mismatch','JSTOR changed the result group total during pagination')
-            if total is None:source_total=found['source_total'];facets=raw.get('facets',[]);group=found['group']
-            total=found['total']
-            if seen&{row['id'] for row in found['rows']}:raise ServiceError('range_mismatch','JSTOR repeated records across pages')
-            seen.update(row['id'] for row in found['rows'])
-            selected.extend(row for i,row in enumerate(found['rows'],found['start']) if start<=i<start+limit)
-            if found['start']+len(found['rows'])>=min(total,start+limit):break
-            paging=found['paging']
-            if not isinstance(paging.get('next'),str) or not isinstance(paging.get('group_efq'),str):
-                raise ServiceError('pagination_control_missing','JSTOR omitted its next page mark')
-            payload={**payload,'pageNumber':payload['pageNumber']+1,'pageParams':{'groupEfq':paging['group_efq'],'pageMark':paging['next']}}
-        except ServiceError as error:
-            if not selected:
-                if proofs:error.result['evidence']=proofs
-                raise
-            errors.append(error.result);break
+    selected=[];proofs=[];errors=[];seen=set();groups=[];page_errors=[]
+    raw,proof=request_page(adapter,payload);proofs.append(proof)
+    try:
+        initial=search_pages(raw,query,1)
+        if raw.get('acc')!=acc:raise ServiceError('filter_mismatch','JSTOR did not retain the requested access scope')
+        if raw['totalResultCount']:
+            queue=list(raw.get('facets',[]));selected_facets={}
+            while queue:
+                facet=queue.pop()
+                if not isinstance(facet,dict):continue
+                queue.extend(facet.get('h_values',[]))
+                if facet.get('field'):
+                    selected_facets.setdefault(facet['field'],set()).update(facet_key(facet['field'],v.get('label')) for v in facet.get('values',[]) if v.get('selected'))
+            for option,field in FACETS.items():
+                if {facet_key(field,value) for value in options.get(option,[])}-selected_facets.get(field,set()):
+                    raise ServiceError('filter_mismatch','JSTOR did not retain a requested facet',field=option)
+    except ServiceError as error:
+        error.result['evidence']=proofs;raise
+    source_total=raw['totalResultCount'];facets=raw.get('facets',[])
+    total=sum(found['total'] for found in initial);group=initial[0]['group'] if len(initial)==1 else None
+    for first in initial:
+        found=first;local=[];number=1;failure=None
+        while True:
+            try:
+                if found is first and first['group']=='carousel':
+                    # Carousel previews are not a prefix of the full group's relevance order.
+                    raw,proof=request_page(adapter,{**payload,'pageParams':{'groupEfq':first['paging']['group_efq']}});proofs.append(proof)
+                    found=search_page(raw,query,1,0)
+                    if raw.get('acc')!=acc or found['total']!=first['total'] or group_key(found['paging'].get('group_efq'))!=group_key(first['paging']['group_efq']):
+                        raise ServiceError('range_mismatch','JSTOR expanded a different result group')
+                if seen&{row['id'] for row in found['rows']}:raise ServiceError('range_mismatch','JSTOR repeated records across pages or groups')
+                seen.update(row['id'] for row in found['rows'])
+                local.extend({**row,'result_group':first['group']} for i,row in enumerate(found['rows'],found['start']) if start<=i<start+limit)
+                following=found['start']+len(found['rows'])
+                if following>=min(first['total'],start+limit):break
+                paging=found['paging']
+                if not isinstance(paging.get('next'),str) or not isinstance(paging.get('group_efq'),str):
+                    raise ServiceError('pagination_control_missing','JSTOR omitted its next page mark')
+                number+=1
+                next_payload={**payload,'pageNumber':number,'pageParams':{'groupEfq':paging['group_efq'],'pageMark':paging['next']}}
+                raw,proof=request_page(adapter,next_payload);proofs.append(proof)
+                found=search_page(raw,query,number,following)
+                if raw.get('acc')!=acc or group_key(found['paging'].get('group_efq'))!=group_key(paging['group_efq']) or found['total']!=first['total']:
+                    raise ServiceError('range_mismatch','JSTOR changed the access scope, result group or total during pagination')
+            except ServiceError as error:
+                page_errors.append(error);errors.append(error.result);failure=error.result;break
+        selected.extend(local)
+        groups.append({'group':first['group'],'start':start,'requested':limit,'received':len(local),'total':first['total'],
+            'has_more':start+len(local)<first['total'],'status':'partial' if failure else 'ok' if local else 'not_found',**({'error':failure} if failure else {})})
+    if page_errors and not selected:
+        page_errors[0].result['evidence']=proofs;raise page_errors[0]
+    snippet_proofs=[]
+    if options.get('snippets'):
+        for offset in range(0,len(selected),25):
+            chunk=selected[offset:offset+25]
+            try:
+                raw,proof=request_snippets(adapter,chunk,query);snippet_proofs.append(proof)
+                apply_snippets(chunk,raw,query,adapter.store.sanitizer)
+            except ServiceError as error:
+                errors.append(error.result)
+                for row in chunk:row['snippet']={**error.result,'query':query}
     artifact=adapter.store.put(encoded(selected),'application/json',adapter.source,proofs[0]['url'],role='records',query=query,options=options,
         start=start,total=total,source_total=source_total,evidence_refs=[p['ref'] for p in proofs])
     facet_artifact=adapter.store.put(encoded(facets),'application/json',adapter.source,proofs[0]['url'],role='native_facets',parent_ref=artifact['ref'])
@@ -162,9 +248,10 @@ def search(adapter,query,*,options,start=0,limit=20,cursor=None,export=None):
             except ServiceError as error:failures.append({'id':row['id'],**error.result})
         exported={'status':'partial' if failures else 'available','artifacts':files,'errors':failures,'format':export}
         errors.extend(failures)
-    more=start+len(selected)<total
+    more=any(g['has_more'] for g in groups)
     return {'status':'partial' if errors else 'ok' if selected else 'not_found','source':adapter.source,'query':query,'options':options,
         'start':start,'requested':limit,'received':len(selected),'total':total,'source_total':source_total,'result_group':group,
-        'scope':'Native paginated result group; the initial source_total may also count other media groups. Select content_types for their own result groups.',
-        'has_more':more,'next':{'start':start+len(selected)} if more else None,'records':artifact,'export':exported,'evidence':proofs,'facets':facet_artifact,'errors':errors,
-        'preview':[{k:row[k] for k in ('id','title','doi','url')} for row in selected[:3]],'retrieval':'native_search_api','access':'institutional_proxy'}
+        'result_groups':groups,'scope':'start and limit apply separately to each native result group; records retain group identity in source group order. source_total may count groups not returned by this search view.',
+        'has_more':more,'next':{'start':start+limit} if more and not page_errors else None,
+        'retry':{'start':start,'limit':limit} if page_errors else None,'records':artifact,'export':exported,'evidence':proofs,'facets':facet_artifact,'errors':errors,
+        'snippet_evidence':snippet_proofs,'preview':[{k:row[k] for k in ('id','title','doi','url')} for row in selected[:3]],'retrieval':'native_search_api','access':'institutional_proxy'}

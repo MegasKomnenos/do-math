@@ -3,6 +3,61 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT))
 
 class JSTORSearchContract(unittest.TestCase):
+    def test_mixed_groups_expand_carousel_before_selecting_separate_windows(self):
+        from jstor_search import search
+        from scholarly import ArtifactStore
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        import tempfile
+        pages=[json.loads((ROOT/('tests/fixtures/'+name)).read_text('utf-8')) for name in ('jstor-search-mixed.json','jstor-search-mixed-images-first.json','jstor-search-mixed-images-next.json','jstor-search-mixed-text-next.json')]
+        with tempfile.TemporaryDirectory() as temp:
+            store=ArtifactStore(temp);responses=[(raw,store.put(json.dumps(raw),'application/json','jstor','https://www.jstor.org/search-results/grouped-search/')) for raw in pages]
+            with patch('jstor_search.request_page',side_effect=responses) as request:
+                result=search(SimpleNamespace(store=store,source='jstor'),'algebra',options={'content_types':['journal','contributed_images']},start=24,limit=2)
+            self.assertEqual((result['status'],result['received'],result['total']),('ok',4,178962))
+            self.assertEqual([g['received'] for g in result['result_groups']],[2,2])
+            self.assertEqual([g['total'] for g in result['result_groups']],[242,178720])
+            self.assertEqual(request.call_args_list[1].args[1]['msFacetFields'],request.call_args_list[0].args[1]['msFacetFields'])
+            self.assertNotIn('pageMark',request.call_args_list[1].args[1]['pageParams'])
+
+    def test_bce_years_are_ordered_before_ce_without_year_zero(self):
+        from jstor_search import search
+        from scholarly import ArtifactStore,ServiceError
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        import tempfile
+        raw=json.loads((ROOT/'tests/fixtures/jstor-search-zero.json').read_text('utf-8'))
+        with tempfile.TemporaryDirectory() as temp:
+            store=ArtifactStore(temp);proof=store.put(json.dumps(raw),'application/json','jstor','https://www.jstor.org/search-results/grouped-search/')
+            adapter=SimpleNamespace(store=store,source='jstor')
+            with patch('jstor_search.request_page',return_value=(raw,proof)) as request:
+                result=search(adapter,raw['searchQuery'],options={'start_date':'-0500','end_date':'-0100'})
+                self.assertEqual(result['status'],'not_found')
+                self.assertEqual(request.call_args.args[1]['startDate'],'-500')
+                for options in [{'start_date':'-0100','end_date':'-0500'},{'start_date':'0000'},{'start_date':'-0000'}]:
+                    with self.assertRaises(ServiceError):search(adapter,raw['searchQuery'],options=options)
+
+    def test_native_snippets_bind_by_stable_doi_not_response_order(self):
+        from jstor_search import search_page,apply_snippets
+        raw=json.loads((ROOT/'tests/fixtures/jstor-search-first.json').read_text('utf-8'))
+        snippets=json.loads((ROOT/'tests/fixtures/jstor-snippets.json').read_text('utf-8'))
+        rows=search_page(raw,'algebra',1)['rows']
+        apply_snippets(rows,snippets,'algebra')
+        self.assertEqual(rows[0]['native_type'],'journal')
+        self.assertEqual(rows[0]['snippet']['status'],'available')
+        self.assertEqual(rows[0]['snippet']['query'],'algebra')
+        self.assertIn('algebra',rows[0]['snippet']['text'].lower())
+        self.assertNotIn('<span',rows[0]['snippet']['text'])
+        self.assertEqual(sum(r['snippet']['status']=='available' for r in rows),25)
+
+    def test_snippet_foreign_and_duplicate_identity_are_rejected(self):
+        from jstor_search import apply_snippets
+        from scholarly import ServiceError
+        for results in [[{'id':'10.2307/999','text':'wrong'}],[{'id':'10.2307/1','text':'one'}]*2]:
+            with self.assertRaises(ServiceError):apply_snippets([{'id':'1'}],{'results':results,'errors':[]},'algebra')
+        rows=[{'id':'1'}];apply_snippets(rows,{'results':[],'errors':[]},'algebra')
+        self.assertEqual(rows[0]['snippet']['status'],'not_offered')
+
     def test_language_code_case_variants_match_the_native_selected_group(self):
         from jstor_search import search
         from scholarly import ArtifactStore

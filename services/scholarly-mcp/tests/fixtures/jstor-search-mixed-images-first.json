@@ -1,0 +1,2922 @@
+{
+  "ab_segment": "[REDACTED]",
+  "acc": "on",
+  "searchQuery": "algebra",
+  "errors": [],
+  "facets": [
+    {
+      "comp_label": "search-within-filter"
+    },
+    {
+      "comp_label": "content-type",
+      "h_values": [
+        {
+          "field": "cty",
+          "values": [
+            {
+              "label": "contributed_images",
+              "efq": "Y29udHJpYnV0ZWRfaW1hZ2Vz",
+              "display": "Images",
+              "count": 242,
+              "selected": true
+            }
+          ],
+          "comp_label": "primary-source-content"
+        }
+      ]
+    },
+    {
+      "field": "cc_media_resolution",
+      "values": [
+        {
+          "label": "cc_media_resolution:[9980929 TO *]",
+          "efq": "Y2NfbWVkaWFfcmVzb2x1dGlvbjpbOTk4MDkyOSBUTyAqXQ==",
+          "display": ">10 megapixels",
+          "count": 47,
+          "selected": false
+        },
+        {
+          "label": "cc_media_resolution:[7077889 TO 9980928]",
+          "efq": "Y2NfbWVkaWFfcmVzb2x1dGlvbjpbNzA3Nzg4OSBUTyA5OTgwOTI4XQ==",
+          "display": "7-10 megapixels",
+          "count": 19,
+          "selected": false
+        },
+        {
+          "label": "cc_media_resolution:[3686400 TO 7077888]",
+          "efq": "Y2NfbWVkaWFfcmVzb2x1dGlvbjpbMzY4NjQwMCBUTyA3MDc3ODg4XQ==",
+          "display": "4-7 megapixels",
+          "count": 35,
+          "selected": false
+        },
+        {
+          "label": "cc_media_resolution:[2073600 TO 3686399]",
+          "efq": "Y2NfbWVkaWFfcmVzb2x1dGlvbjpbMjA3MzYwMCBUTyAzNjg2Mzk5XQ==",
+          "display": "2-4 megapixels",
+          "count": 16,
+          "selected": false
+        },
+        {
+          "label": "cc_media_resolution:[* TO 2073599]",
+          "efq": "Y2NfbWVkaWFfcmVzb2x1dGlvbjpbKiBUTyAyMDczNTk5XQ==",
+          "display": "<2 megapixels",
+          "count": 167,
+          "selected": false
+        }
+      ],
+      "comp_label": "image-resolution"
+    },
+    {
+      "comp_label": "publication-date-filter"
+    },
+    {
+      "field": "classification",
+      "values": [
+        {
+          "label": "contributor1ClassificationHumanities and Social Sciences",
+          "efq": "Y29udHJpYnV0b3Lvo7gx76O4Q2xhc3NpZmljYXRpb27vo7hIdW1hbml0aWVzIGFuZCBTb2NpYWwgU2NpZW5jZXPvo7g=",
+          "display": "Humanities and Social Sciences",
+          "count": 6,
+          "selected": false
+        },
+        {
+          "label": "contributor1ClassificationManuscripts and Manuscript Illuminations",
+          "efq": "Y29udHJpYnV0b3Lvo7gx76O4Q2xhc3NpZmljYXRpb27vo7hNYW51c2NyaXB0cyBhbmQgTWFudXNjcmlwdCBJbGx1bWluYXRpb25z76O4",
+          "display": "Manuscripts and Manuscript Illuminations",
+          "count": 4,
+          "selected": false
+        },
+        {
+          "label": "contributor1ClassificationDecorative Arts, Utilitarian Objects and Interior Design",
+          "efq": "Y29udHJpYnV0b3Lvo7gx76O4Q2xhc3NpZmljYXRpb27vo7hEZWNvcmF0aXZlIEFydHMsIFV0aWxpdGFyaWFuIE9iamVjdHMgYW5kIEludGVyaW9yIERlc2lnbu+juA==",
+          "display": "Decorative Arts, Utilitarian Objects and Interior Design",
+          "count": 3,
+          "selected": false
+        },
+        {
+          "label": "contributor1ClassificationFilm, Audio, Video and Digital Art",
+          "efq": "Y29udHJpYnV0b3Lvo7gx76O4Q2xhc3NpZmljYXRpb27vo7hGaWxtLCBBdWRpbywgVmlkZW8gYW5kIERpZ2l0YWwgQXJ076O4",
+          "display": "Film, Audio, Video and Digital Art",
+          "count": 2,
+          "selected": false
+        },
+        {
+          "label": "contributor1ClassificationArchitecture and City Planning",
+          "efq": "Y29udHJpYnV0b3Lvo7gx76O4Q2xhc3NpZmljYXRpb27vo7hBcmNoaXRlY3R1cmUgYW5kIENpdHkgUGxhbm5pbmfvo7g=",
+          "display": "Architecture and City Planning",
+          "count": 1,
+          "selected": false
+        },
+        {
+          "label": "contributor1ClassificationGraphic Design and Illustration",
+          "efq": "Y29udHJpYnV0b3Lvo7gx76O4Q2xhc3NpZmljYXRpb27vo7hHcmFwaGljIERlc2lnbiBhbmQgSWxsdXN0cmF0aW9u76O4",
+          "display": "Graphic Design and Illustration",
+          "count": 1,
+          "selected": false
+        },
+        {
+          "label": "contributor1ClassificationPrints",
+          "efq": "Y29udHJpYnV0b3Lvo7gx76O4Q2xhc3NpZmljYXRpb27vo7hQcmludHPvo7g=",
+          "display": "Prints",
+          "count": 1,
+          "selected": false
+        },
+        {
+          "label": "contributor1ClassificationScience, Technology and Industry",
+          "efq": "Y29udHJpYnV0b3Lvo7gx76O4Q2xhc3NpZmljYXRpb27vo7hTY2llbmNlLCBUZWNobm9sb2d5IGFuZCBJbmR1c3Ryee+juA==",
+          "display": "Science, Technology and Industry",
+          "count": 1,
+          "selected": false
+        }
+      ],
+      "comp_label": "classification"
+    },
+    {
+      "field": "geography",
+      "values": [
+        {
+          "label": "contributor1geography-regionEast Asia",
+          "efq": "Y29udHJpYnV0b3Lvo7gx76O4Z2VvZ3JhcGh5LXJlZ2lvbu+juEVhc3QgQXNpYe+juA==",
+          "display": "East Asia",
+          "count": 1,
+          "selected": false,
+          "children": [
+            {
+              "label": "contributor2geography-regionEast AsiaChina",
+              "efq": "Y29udHJpYnV0b3Lvo7gy76O4Z2VvZ3JhcGh5LXJlZ2lvbu+juEVhc3QgQXNpYe+juENoaW5h76O4",
+              "display": "China",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "contributor1geography-regionEurope",
+          "efq": "Y29udHJpYnV0b3Lvo7gx76O4Z2VvZ3JhcGh5LXJlZ2lvbu+juEV1cm9wZe+juA==",
+          "display": "Europe",
+          "count": 5,
+          "selected": false,
+          "children": [
+            {
+              "label": "contributor2geography-regionEuropeGreece",
+              "efq": "Y29udHJpYnV0b3Lvo7gy76O4Z2VvZ3JhcGh5LXJlZ2lvbu+juEV1cm9wZe+juEdyZWVjZe+juA==",
+              "display": "Greece",
+              "count": 1,
+              "selected": false
+            },
+            {
+              "label": "contributor2geography-regionEuropeNetherlands",
+              "efq": "Y29udHJpYnV0b3Lvo7gy76O4Z2VvZ3JhcGh5LXJlZ2lvbu+juEV1cm9wZe+juE5ldGhlcmxhbmRz76O4",
+              "display": "Netherlands",
+              "count": 1,
+              "selected": false
+            },
+            {
+              "label": "contributor2geography-regionEuropeSpain",
+              "efq": "Y29udHJpYnV0b3Lvo7gy76O4Z2VvZ3JhcGh5LXJlZ2lvbu+juEV1cm9wZe+juFNwYWlu76O4",
+              "display": "Spain",
+              "count": 3,
+              "selected": false
+            },
+            {
+              "label": "contributor2geography-regionEuropeTurkey",
+              "efq": "Y29udHJpYnV0b3Lvo7gy76O4Z2VvZ3JhcGh5LXJlZ2lvbu+juEV1cm9wZe+juFR1cmtlee+juA==",
+              "display": "Turkey",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "contributor1geography-regionNorth America",
+          "efq": "Y29udHJpYnV0b3Lvo7gx76O4Z2VvZ3JhcGh5LXJlZ2lvbu+juE5vcnRoIEFtZXJpY2Hvo7g=",
+          "display": "North America",
+          "count": 6,
+          "selected": false,
+          "children": [
+            {
+              "label": "contributor2geography-regionNorth AmericaUnited States",
+              "efq": "Y29udHJpYnV0b3Lvo7gy76O4Z2VvZ3JhcGh5LXJlZ2lvbu+juE5vcnRoIEFtZXJpY2Hvo7hVbml0ZWQgU3RhdGVz76O4",
+              "display": "United States",
+              "count": 6,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "contributor1geography-regionWestern Asia",
+          "efq": "Y29udHJpYnV0b3Lvo7gx76O4Z2VvZ3JhcGh5LXJlZ2lvbu+juFdlc3Rlcm4gQXNpYe+juA==",
+          "display": "Western Asia",
+          "count": 1,
+          "selected": false,
+          "children": [
+            {
+              "label": "contributor2geography-regionWestern AsiaTurkey",
+              "efq": "Y29udHJpYnV0b3Lvo7gy76O4Z2VvZ3JhcGh5LXJlZ2lvbu+juFdlc3Rlcm4gQXNpYe+juFR1cmtlee+juA==",
+              "display": "Turkey",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        }
+      ],
+      "comp_label": "geography"
+    },
+    {
+      "field": "cc_portal_id",
+      "values": [
+        {
+          "label": "100637739",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDYzNzczOQ==",
+          "display": "LaGuardia Community College, CUNY  Institutional Archives",
+          "count": 29,
+          "selected": false,
+          "children": [
+            {
+              "label": "100644179",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDYzNzczOSNjb2xsZWN0aW9uX2lkcyMxMDA2NDQxNzk=",
+              "display": "College Newsletters",
+              "count": 12,
+              "selected": false
+            },
+            {
+              "label": "100644199",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDYzNzczOSNjb2xsZWN0aW9uX2lkcyMxMDA2NDQxOTk=",
+              "display": "Creating LaGuardia Community College",
+              "count": 7,
+              "selected": false
+            },
+            {
+              "label": "100657799",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDYzNzczOSNjb2xsZWN0aW9uX2lkcyMxMDA2NTc3OTk=",
+              "display": "In Transit",
+              "count": 7,
+              "selected": false
+            },
+            {
+              "label": "100644219",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDYzNzczOSNjb2xsZWN0aW9uX2lkcyMxMDA2NDQyMTk=",
+              "display": "Literary Journals",
+              "count": 1,
+              "selected": false
+            },
+            {
+              "label": "100644239",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDYzNzczOSNjb2xsZWN0aW9uX2lkcyMxMDA2NDQyMzk=",
+              "display": "Student Newpapers",
+              "count": 1,
+              "selected": false
+            },
+            {
+              "label": "100673259",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDYzNzczOSNjb2xsZWN0aW9uX2lkcyMxMDA2NzMyNTk=",
+              "display": "College Senate",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100689779",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDY4OTc3OQ==",
+          "display": "Northern State University",
+          "count": 26,
+          "selected": false,
+          "children": [
+            {
+              "label": "100689799",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDY4OTc3OSNjb2xsZWN0aW9uX2lkcyMxMDA2ODk3OTk=",
+              "display": "Northern State University History",
+              "count": 25,
+              "selected": false
+            },
+            {
+              "label": "100692379",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDY4OTc3OSNjb2xsZWN0aW9uX2lkcyMxMDA2OTIzNzk=",
+              "display": "Germans from Russia",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100319187",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDMxOTE4Nw==",
+          "display": "Park University",
+          "count": 24,
+          "selected": false,
+          "children": [
+            {
+              "label": "100335167",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDMxOTE4NyNjb2xsZWN0aW9uX2lkcyMxMDAzMzUxNjc=",
+              "display": "Frances Fishburn Archives & Special Collections",
+              "count": 17,
+              "selected": false
+            },
+            {
+              "label": "100481263",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDMxOTE4NyNjb2xsZWN0aW9uX2lkcyMxMDA0ODEyNjM=",
+              "display": "Narva Yearbooks",
+              "count": 7,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100479083",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDQ3OTA4Mw==",
+          "display": "Hong Kong University of Science and Technology",
+          "count": 24,
+          "selected": false,
+          "children": [
+            {
+              "label": "100669459",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDQ3OTA4MyNjb2xsZWN0aW9uX2lkcyMxMDA2Njk0NTk=",
+              "display": "Rare books on history of Science",
+              "count": 24,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100146467",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDE0NjQ2Nw==",
+          "display": "Artstor",
+          "count": 20,
+          "selected": false,
+          "children": [
+            {
+              "label": "100181127",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDE0NjQ2NyNjb2xsZWN0aW9uX2lkcyMxMDAxODExMjc=",
+              "display": "Open: Science Museum Group",
+              "count": 10,
+              "selected": false
+            },
+            {
+              "label": "100181167",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDE0NjQ2NyNjb2xsZWN0aW9uX2lkcyMxMDAxODExNjc=",
+              "display": "Open: The Cleveland Museum of Art",
+              "count": 3,
+              "selected": false
+            },
+            {
+              "label": "100141788",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDE0NjQ2NyNjb2xsZWN0aW9uX2lkcyMxMDAxNDE3ODg=",
+              "display": "Manuscripts and Early Printed Books (Bodleian Library, Oxford University)",
+              "count": 2,
+              "selected": false
+            },
+            {
+              "label": "100181187",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDE0NjQ2NyNjb2xsZWN0aW9uX2lkcyMxMDAxODExODc=",
+              "display": "Open: Wellcome Collection",
+              "count": 2,
+              "selected": false
+            },
+            {
+              "label": "100141287",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDE0NjQ2NyNjb2xsZWN0aW9uX2lkcyMxMDAxNDEyODc=",
+              "display": "Visual Arts Legacy Collection",
+              "count": 1,
+              "selected": false
+            },
+            {
+              "label": "100142307",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDE0NjQ2NyNjb2xsZWN0aW9uX2lkcyMxMDAxNDIzMDc=",
+              "display": "Historic Campus Architecture Project (HCAP) (Council of Independent Colleges)",
+              "count": 1,
+              "selected": false
+            },
+            {
+              "label": "100144567",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDE0NjQ2NyNjb2xsZWN0aW9uX2lkcyMxMDAxNDQ1Njc=",
+              "display": "Rijksmuseum",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100586839",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDU4NjgzOQ==",
+          "display": "HPU Libraries Digital Archives & Collections",
+          "count": 11,
+          "selected": false,
+          "children": [
+            {
+              "label": "100632839",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDU4NjgzOSNjb2xsZWN0aW9uX2lkcyMxMDA2MzI4Mzk=",
+              "display": "Archives at High Point University",
+              "count": 11,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100085767",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDA4NTc2Nw==",
+          "display": "Roanoke College Digital Collections",
+          "count": 9,
+          "selected": false,
+          "children": [
+            {
+              "label": "100150727",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDA4NTc2NyNjb2xsZWN0aW9uX2lkcyMxMDAxNTA3Mjc=",
+              "display": "Roanoke College Roanoke Collegian",
+              "count": 8,
+              "selected": false
+            },
+            {
+              "label": "100432991",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDA4NTc2NyNjb2xsZWN0aW9uX2lkcyMxMDA0MzI5OTE=",
+              "display": "Roanoke College Virginia Corpus of Spanish Variation",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100093207",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDA5MzIwNw==",
+          "display": "Brooklyn College",
+          "count": 7,
+          "selected": false,
+          "children": [
+            {
+              "label": "100536295",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDA5MzIwNyNjb2xsZWN0aW9uX2lkcyMxMDA1MzYyOTU=",
+              "display": "Brooklyn College Yearbooks",
+              "count": 7,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100175687",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDE3NTY4Nw==",
+          "display": "University of Tennessee Southern Digital Collections and Archives",
+          "count": 7,
+          "selected": false,
+          "children": [
+            {
+              "label": "100175747",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDE3NTY4NyNjb2xsZWN0aW9uX2lkcyMxMDAxNzU3NDc=",
+              "display": "University of Tennessee Southern Yearbooks",
+              "count": 7,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100666859",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDY2Njg1OQ==",
+          "display": "California Baptist University",
+          "count": 7,
+          "selected": false,
+          "children": [
+            {
+              "label": "100671159",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDY2Njg1OSNjb2xsZWN0aW9uX2lkcyMxMDA2NzExNTk=",
+              "display": "The Banner",
+              "count": 7,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100548715",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDU0ODcxNQ==",
+          "display": "Baruch College\nArchives and \nSpecial Collections",
+          "count": 6,
+          "selected": false,
+          "children": [
+            {
+              "label": "100612859",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDU0ODcxNSNjb2xsZWN0aW9uX2lkcyMxMDA2MTI4NTk=",
+              "display": "Municipal Assistance Corporation Collection",
+              "count": 3,
+              "selected": false
+            },
+            {
+              "label": "100612819",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDU0ODcxNSNjb2xsZWN0aW9uX2lkcyMxMDA2MTI4MTk=",
+              "display": "The Luther Halsey Gulick III Papers",
+              "count": 2,
+              "selected": false
+            },
+            {
+              "label": "100600159",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDU0ODcxNSNjb2xsZWN0aW9uX2lkcyMxMDA2MDAxNTk=",
+              "display": "Institute of Public Administration Collection",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100458071",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDQ1ODA3MQ==",
+          "display": "Colby College",
+          "count": 5,
+          "selected": false,
+          "children": [
+            {
+              "label": "100568899",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDQ1ODA3MSNjb2xsZWN0aW9uX2lkcyMxMDA1Njg4OTk=",
+              "display": "Colby Special Collections",
+              "count": 4,
+              "selected": false
+            },
+            {
+              "label": "100485163",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDQ1ODA3MSNjb2xsZWN0aW9uX2lkcyMxMDA0ODUxNjM=",
+              "display": "Colby College Archives (Open Access)",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100551855",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDU1MTg1NQ==",
+          "display": "ONU Digital Collections",
+          "count": 5,
+          "selected": false,
+          "children": [
+            {
+              "label": "100554795",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDU1MTg1NSNjb2xsZWN0aW9uX2lkcyMxMDA1NTQ3OTU=",
+              "display": "University Publications",
+              "count": 3,
+              "selected": false
+            },
+            {
+              "label": "100556075",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDU1MTg1NSNjb2xsZWN0aW9uX2lkcyMxMDA1NTYwNzU=",
+              "display": "Olivet Scholarship",
+              "count": 2,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100077907",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDA3NzkwNw==",
+          "display": "Trinity College Digital Repository",
+          "count": 4,
+          "selected": false,
+          "children": [
+            {
+              "label": "100452511",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDA3NzkwNyNjb2xsZWN0aW9uX2lkcyMxMDA0NTI1MTE=",
+              "display": "College Archives",
+              "count": 3,
+              "selected": false
+            },
+            {
+              "label": "100574719",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDA3NzkwNyNjb2xsZWN0aW9uX2lkcyMxMDA1NzQ3MTk=",
+              "display": "Trinity College Faculty Scholarship",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100079227",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDA3OTIyNw==",
+          "display": "Lawrence University",
+          "count": 4,
+          "selected": false,
+          "children": [
+            {
+              "label": "100477203",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDA3OTIyNyNjb2xsZWN0aW9uX2lkcyMxMDA0NzcyMDM=",
+              "display": "Lawrence University Archives",
+              "count": 4,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100086627",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDA4NjYyNw==",
+          "display": "Wheaton College (MA)",
+          "count": 4,
+          "selected": false,
+          "children": [
+            {
+              "label": "100663159",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDA4NjYyNyNjb2xsZWN0aW9uX2lkcyMxMDA2NjMxNTk=",
+              "display": "Honors Theses",
+              "count": 4,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100140167",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDE0MDE2Nw==",
+          "display": "University of Puget Sound",
+          "count": 4,
+          "selected": false,
+          "children": [
+            {
+              "label": "100544835",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDE0MDE2NyNjb2xsZWN0aW9uX2lkcyMxMDA1NDQ4MzU=",
+              "display": "Student Research and Creative Works",
+              "count": 4,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100427671",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDQyNzY3MQ==",
+          "display": "Goucher College",
+          "count": 4,
+          "selected": false,
+          "children": [
+            {
+              "label": "100427811",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDQyNzY3MSNjb2xsZWN0aW9uX2lkcyMxMDA0Mjc4MTE=",
+              "display": "Goucher College Historical Documents and Ephemera Collection",
+              "count": 3,
+              "selected": false
+            },
+            {
+              "label": "100631699",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDQyNzY3MSNjb2xsZWN0aW9uX2lkcyMxMDA2MzE2OTk=",
+              "display": "Notable Goucher College People Collection",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100636659",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDYzNjY1OQ==",
+          "display": "Middle Tennessee State University",
+          "count": 4,
+          "selected": false,
+          "children": [
+            {
+              "label": "100679159",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDYzNjY1OSNjb2xsZWN0aW9uX2lkcyMxMDA2NzkxNTk=",
+              "display": "Walker Library Collaborative Collections",
+              "count": 2,
+              "selected": false
+            },
+            {
+              "label": "100683339",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDYzNjY1OSNjb2xsZWN0aW9uX2lkcyMxMDA2ODMzMzk=",
+              "display": "University Archives",
+              "count": 2,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100071867",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDA3MTg2Nw==",
+          "display": "Chatham University Archives & Special Collections",
+          "count": 3,
+          "selected": false,
+          "children": [
+            {
+              "label": "100613739",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDA3MTg2NyNjb2xsZWN0aW9uX2lkcyMxMDA2MTM3Mzk=",
+              "display": "The_Dilworthian",
+              "count": 3,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100313787",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDMxMzc4Nw==",
+          "display": "California Institute of Technology",
+          "count": 3,
+          "selected": false,
+          "children": [
+            {
+              "label": "100315087",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDMxMzc4NyNjb2xsZWN0aW9uX2lkcyMxMDAzMTUwODc=",
+              "display": "Image Archive",
+              "count": 3,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100442871",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDQ0Mjg3MQ==",
+          "display": "Illinois College - Khalaf Al Habtoor Archives \n",
+          "count": 3,
+          "selected": false,
+          "children": [
+            {
+              "label": "100443271",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDQ0Mjg3MSNjb2xsZWN0aW9uX2lkcyMxMDA0NDMyNzE=",
+              "display": "Jacksonville, Illinois, Oral History Collection",
+              "count": 1,
+              "selected": false
+            },
+            {
+              "label": "100443291",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDQ0Mjg3MSNjb2xsZWN0aW9uX2lkcyMxMDA0NDMyOTE=",
+              "display": "Illinois College Poetry Magazine",
+              "count": 1,
+              "selected": false
+            },
+            {
+              "label": "100443391",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDQ0Mjg3MSNjb2xsZWN0aW9uX2lkcyMxMDA0NDMzOTE=",
+              "display": "Illinois College Yearbooks",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100444631",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDQ0NDYzMQ==",
+          "display": "Athens State University",
+          "count": 3,
+          "selected": false,
+          "children": [
+            {
+              "label": "100447551",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDQ0NDYzMSNjb2xsZWN0aW9uX2lkcyMxMDA0NDc1NTE=",
+              "display": "Student Newspapers",
+              "count": 3,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100578799",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDU3ODc5OQ==",
+          "display": "Southern California Institute of Architecture (SCI-Arc)",
+          "count": 3,
+          "selected": false,
+          "children": [
+            {
+              "label": "100690979",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDU3ODc5OSNjb2xsZWN0aW9uX2lkcyMxMDA2OTA5Nzk=",
+              "display": "SCI-Arc Course Catalogs",
+              "count": 3,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100105387",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDEwNTM4Nw==",
+          "display": "University College London Special Collections",
+          "count": 2,
+          "selected": false,
+          "children": [
+            {
+              "label": "100596299",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDEwNTM4NyNjb2xsZWN0aW9uX2lkcyMxMDA1OTYyOTk=",
+              "display": "University College Magazine",
+              "count": 1,
+              "selected": false
+            },
+            {
+              "label": "100596419",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDEwNTM4NyNjb2xsZWN0aW9uX2lkcyMxMDA1OTY0MTk=",
+              "display": "University College Union Magazine",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100148707",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDE0ODcwNw==",
+          "display": "Washington University in St. Louis",
+          "count": 2,
+          "selected": false,
+          "children": [
+            {
+              "label": "100148947",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDE0ODcwNyNjb2xsZWN0aW9uX2lkcyMxMDAxNDg5NDc=",
+              "display": "Walt Reed Illustration Archive Tear Sheet Collection",
+              "count": 2,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100325007",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDMyNTAwNw==",
+          "display": "Brigham Young University",
+          "count": 2,
+          "selected": false,
+          "children": [
+            {
+              "label": "100347927",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDMyNTAwNyNjb2xsZWN0aW9uX2lkcyMxMDAzNDc5Mjc=",
+              "display": "Miscellaneous 3",
+              "count": 1,
+              "selected": false
+            },
+            {
+              "label": "100500075",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDMyNTAwNyNjb2xsZWN0aW9uX2lkcyMxMDA1MDAwNzU=",
+              "display": "Special Collections - TMA Slides (UA1346)",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100432291",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDQzMjI5MQ==",
+          "display": "University of Delaware",
+          "count": 2,
+          "selected": false,
+          "children": [
+            {
+              "label": "100432311",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDQzMjI5MSNjb2xsZWN0aW9uX2lkcyMxMDA0MzIzMTE=",
+              "display": "Torbert-Ellegood collection",
+              "count": 1,
+              "selected": false
+            },
+            {
+              "label": "100578299",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDQzMjI5MSNjb2xsZWN0aW9uX2lkcyMxMDA1NzgyOTk=",
+              "display": "UD Library:  Robert H. Richards, Jr., Delaware Oral History Collection",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100455331",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDQ1NTMzMQ==",
+          "display": "Centenary University",
+          "count": 2,
+          "selected": false,
+          "children": [
+            {
+              "label": "100596179",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDQ1NTMzMSNjb2xsZWN0aW9uX2lkcyMxMDA1OTYxNzk=",
+              "display": "Centenary Collegiate Institute Funding, Finances, and Promotion History",
+              "count": 1,
+              "selected": false
+            },
+            {
+              "label": "100605459",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDQ1NTMzMSNjb2xsZWN0aW9uX2lkcyMxMDA2MDU0NTk=",
+              "display": "Event Programs",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100626779",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDYyNjc3OQ==",
+          "display": "Ferris State University",
+          "count": 2,
+          "selected": false,
+          "children": [
+            {
+              "label": "100685499",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDYyNjc3OSNjb2xsZWN0aW9uX2lkcyMxMDA2ODU0OTk=",
+              "display": "University Archives Photo Collection",
+              "count": 2,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100687839",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDY4NzgzOQ==",
+          "display": "Huntington Library",
+          "count": 2,
+          "selected": false,
+          "children": [
+            {
+              "label": "100687899",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDY4NzgzOSNjb2xsZWN0aW9uX2lkcyMxMDA2ODc4OTk=",
+              "display": "Edwin Powell Hubble papers",
+              "count": 2,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100086847",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDA4Njg0Nw==",
+          "display": "Emerson College Special Collections",
+          "count": 1,
+          "selected": false,
+          "children": [
+            {
+              "label": "100522235",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDA4Njg0NyNjb2xsZWN0aW9uX2lkcyMxMDA1MjIyMzU=",
+              "display": "Emerson College Sarah Moore Field Collection",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100098207",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDA5ODIwNw==",
+          "display": "University of Glasgow",
+          "count": 1,
+          "selected": false,
+          "children": [
+            {
+              "label": "100663759",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDA5ODIwNyNjb2xsZWN0aW9uX2lkcyMxMDA2NjM3NTk=",
+              "display": "Student Notebook of Colin MacLaurin, 1712-1714",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100109247",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDEwOTI0Nw==",
+          "display": "Fleet Library at RISD",
+          "count": 1,
+          "selected": false,
+          "children": [
+            {
+              "label": "100519215",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDEwOTI0NyNjb2xsZWN0aW9uX2lkcyMxMDA1MTkyMTU=",
+              "display": "Arden Phair Cartoon Collection",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100115127",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDExNTEyNw==",
+          "display": "Vanderbilt University",
+          "count": 1,
+          "selected": false,
+          "children": [
+            {
+              "label": "100605699",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDExNTEyNyNjb2xsZWN0aW9uX2lkcyMxMDA2MDU2OTk=",
+              "display": "Vanderbilt Magazine",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100137247",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDEzNzI0Nw==",
+          "display": "Santa Rosa \nJunior College",
+          "count": 1,
+          "selected": false,
+          "children": [
+            {
+              "label": "100175867",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDEzNzI0NyNjb2xsZWN0aW9uX2lkcyMxMDAxNzU4Njc=",
+              "display": "Santa Rosa Junior College Digital Archives Collection",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100150747",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDE1MDc0Nw==",
+          "display": "Skidmore College\n",
+          "count": 1,
+          "selected": false,
+          "children": [
+            {
+              "label": "100558455",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDE1MDc0NyNjb2xsZWN0aW9uX2lkcyMxMDA1NTg0NTU=",
+              "display": "George Cruikshank (from the Norman M. Fox Collection of Illustrated Books)",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100169927",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDE2OTkyNw==",
+          "display": "Ottawa University",
+          "count": 1,
+          "selected": false,
+          "children": [
+            {
+              "label": "100171087",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDE2OTkyNyNjb2xsZWN0aW9uX2lkcyMxMDAxNzEwODc=",
+              "display": "Indigenous People in the Contemporary World",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100339087",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDMzOTA4Nw==",
+          "display": "The Community Education System Digital Library",
+          "count": 1,
+          "selected": false,
+          "children": [
+            {
+              "label": "100341567",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDMzOTA4NyNjb2xsZWN0aW9uX2lkcyMxMDAzNDE1Njc=",
+              "display": "Elizabeth (Betty) Jones Archive – Pacific Oaks College",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        },
+        {
+          "label": "100477703",
+          "efq": "Y2NfcG9ydGFsX2lkIzEwMDQ3NzcwMw==",
+          "display": "King's College London",
+          "count": 1,
+          "selected": false,
+          "children": [
+            {
+              "label": "100485983",
+              "efq": "Y2NfcG9ydGFsX2lkIzEwMDQ3NzcwMyNjb2xsZWN0aW9uX2lkcyMxMDA0ODU5ODM=",
+              "display": "King’s College London Calendars",
+              "count": 1,
+              "selected": false
+            }
+          ]
+        }
+      ],
+      "comp_label": "collection"
+    },
+    {
+      "comp_label": "access-filter"
+    }
+  ],
+  "groupedResults": {
+    "column1": {
+      "comp_label": "component_set",
+      "results": [
+        {
+          "comp_label": "image-results-matrix",
+          "group_efq": "WyJjb250cmlidXRlZF9pbWFnZXMiLCJjb250cmlidXRlZF9wYW5vcmFtYXMiXQ==",
+          "image_assets_path": "//www-jstor-org.libproxy.knu.ac.kr/assets/global_20251201T215504/build/images/",
+          "register_and_read_entitlement_id": "[REDACTED]",
+          "results": [
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Alcoarismi (al-Khwarizmi)"
+              ],
+              "date": {
+                "CC Dates": [
+                  "1342"
+                ],
+                "Year": [
+                  "1342"
+                ],
+                "Display Date": [
+                  "1342"
+                ]
+              },
+              "doi": "10.2307/community.14612828",
+              "flags": [
+                "page_scan",
+                "pdf"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "c0269df3-7e7e-35ec-af99-4ad06348906e",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Algebra."
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "1342"
+              ],
+              "display_date": [
+                "1342"
+              ],
+              "year": 1342,
+              "pubdate": "",
+              "stable_url": "/stable/community.14612828",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Algebra.",
+              "result_date_string": "1342",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [],
+              "cc_compilation_titles": [],
+              "cc_work_type": [
+                "Manuscript"
+              ],
+              "collection_ids": [
+                "100141788"
+              ],
+              "collection_titles": [
+                "Manuscripts and Early Printed Books (Bodleian Library, Oxford University)"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/c0269df3-7e7e-35ec-af99-4ad06348906e/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [],
+              "alt_text": "",
+              "cc_compilation_urls": [],
+              "collection_url": "/site/artstor/ManuscriptsandEarlyPrintedBooksBodleianLibraryOxfordUniversity-100141788/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [],
+              "date": {
+                "CC Dates": [
+                  "1593 (l), 1303 (r)"
+                ],
+                "Year": [
+                  "1593"
+                ],
+                "Display Date": [
+                  "1593 (l), 1303 (r)"
+                ]
+              },
+              "doi": "10.2307/community.13880711",
+              "flags": [
+                "page_scan",
+                "pdf"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "0d14a4e7-5341-38b5-9672-e501435221df",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Teacher & Pupil at counting board. 1593 (Left) pg. fr. Algebra book w/ zeroes & neg. (r) fr. PRECIOUS MIRROR/4 ELEMENTS"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "1593 (l), 1303 (r)"
+              ],
+              "display_date": [
+                "1593 (l), 1303 (r)"
+              ],
+              "year": 1593,
+              "pubdate": "",
+              "stable_url": "/stable/community.13880711",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Teacher & Pupil at counting board. 1593 (Left) pg. fr. Algebra book w/ zeroes & neg. (r) fr. PRECIOUS MIRROR/4 ELEMENTS",
+              "result_date_string": "1593 (l), 1303 (r)",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [],
+              "cc_compilation_titles": [],
+              "cc_work_type": [],
+              "collection_ids": [
+                "100141287"
+              ],
+              "collection_titles": [
+                "Visual Arts Legacy Collection"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/0d14a4e7-5341-38b5-9672-e501435221df/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [],
+              "alt_text": "",
+              "cc_compilation_urls": [],
+              "collection_url": "/site/artstor/VisualArtsLegacy-100141287/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Chapman, Frederick T."
+              ],
+              "date": {
+                "CC Dates": [
+                  "ca. 1945"
+                ],
+                "Display Date": [
+                  "ca. 1945"
+                ]
+              },
+              "doi": "10.2307/community.15127804",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "33a9963a-e529-3159-9c61-0f334496c2ff",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "34. Helping to educate our citizens"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "ca. 1945"
+              ],
+              "display_date": [
+                "ca. 1945"
+              ],
+              "year": 0,
+              "pubdate": "",
+              "stable_url": "/stable/community.15127804",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "34. Helping to educate our citizens",
+              "result_date_string": "ca. 1945",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [],
+              "cc_compilation_titles": [],
+              "cc_work_type": [
+                "Book tearsheet"
+              ],
+              "collection_ids": [
+                "100148947"
+              ],
+              "collection_titles": [
+                "Walt Reed Illustration Archive"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/33a9963a-e529-3159-9c61-0f334496c2ff/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [],
+              "alt_text": "",
+              "cc_compilation_urls": [],
+              "collection_url": "/site/washu-stl/waltreedia/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "vermeld op object prentmaker: Quast, Pieter Jansz."
+              ],
+              "date": {
+                "CC Dates": [
+                  "1655 -  1668"
+                ],
+                "Display Date": [
+                  "1655 -  1668"
+                ]
+              },
+              "doi": "10.2307/community.8794025",
+              "flags": [
+                "page_scan",
+                "pdf"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "70fdc7a8-4858-39af-82b5-bf4214b2c534",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Titelpagina voor Algebra Ofte Nieuwe Stel-Regel"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "1655 -  1668"
+              ],
+              "display_date": [
+                "1655 -  1668"
+              ],
+              "year": 0,
+              "pubdate": "",
+              "stable_url": "/stable/community.8794025",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Titelpagina voor Algebra Ofte Nieuwe Stel-Regel",
+              "result_date_string": "1655 -  1668",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [],
+              "cc_compilation_titles": [],
+              "cc_work_type": [
+                "prent",
+                "titelpagina"
+              ],
+              "collection_ids": [
+                "100144567"
+              ],
+              "collection_titles": [
+                "Rijksmuseum"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/70fdc7a8-4858-39af-82b5-bf4214b2c534/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [],
+              "alt_text": "",
+              "cc_compilation_urls": [],
+              "collection_url": "/site/artstor/Rijksmuseum-100144567/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Will Cunhill, Maquoketa, IA"
+              ],
+              "date": {},
+              "doi": "10.2307/community.30991161",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "5e566fe0-d94a-31ce-a281-f083df897016",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Robert Millikan was the only boy in D. D. Priaulx’s algebra class in Maquoketa, Iowa."
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [],
+              "display_date": [],
+              "year": 0,
+              "pubdate": "",
+              "stable_url": "/stable/community.30991161",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Robert Millikan was the only boy in D. D. Priaulx’s algebra class in Maquoketa, Iowa.",
+              "result_date_string": "",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [
+                "31011619"
+              ],
+              "cc_compilation_titles": [
+                "Robert Andrews Millikan Papers"
+              ],
+              "cc_work_type": [
+                "photograph: negative"
+              ],
+              "collection_ids": [
+                "100315087"
+              ],
+              "collection_titles": [
+                "Image Archive"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/5e566fe0-d94a-31ce-a281-f083df897016/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [
+                "Robert Andrews Millikan Papers"
+              ],
+              "alt_text": "",
+              "cc_compilation_urls": [
+                "/site/california-institute-of-technology/image-archive/robertandrewsmillikanpapers-31011619/"
+              ],
+              "collection_url": "/site/california-institute-of-technology/image-archive/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "E. McClung Fleming, Dean of the College Park College"
+              ],
+              "date": {
+                "CC Dates": [
+                  "1949-01-25"
+                ],
+                "Display Date": [
+                  "1949-01-25"
+                ]
+              },
+              "doi": "10.2307/community.33293508",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "9425176d-5eb7-32c1-95bc-9ff0a66946ed",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Notification that Paul Kamitsuka would not be required to complete Plane Geometry and Algebra."
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "1949-01-25"
+              ],
+              "display_date": [
+                "1949-01-25"
+              ],
+              "year": 0,
+              "pubdate": "",
+              "stable_url": "/stable/community.33293508",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Notification that Paul Kamitsuka would not be required to complete Plane Geometry and Algebra.",
+              "result_date_string": "1949-01-25",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [
+                "33293307"
+              ],
+              "cc_compilation_titles": [
+                "Park University Nisei Collection"
+              ],
+              "cc_work_type": [
+                "Text"
+              ],
+              "collection_ids": [
+                "100335167"
+              ],
+              "collection_titles": [
+                "Frances Fishburn Archives & Special Collections"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/9425176d-5eb7-32c1-95bc-9ff0a66946ed/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [
+                "Park University Nisei Collection"
+              ],
+              "alt_text": "",
+              "cc_compilation_urls": [
+                "/site/park/archives/parkuniversityniseicollection-33293307/"
+              ],
+              "collection_url": "/site/park/archives/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Euclid"
+              ],
+              "date": {
+                "CC Dates": [
+                  "888; 14th century (additions)"
+                ],
+                "Year": [
+                  "888"
+                ],
+                "Display Date": [
+                  "888; 14th century (additions)"
+                ]
+              },
+              "doi": "10.2307/community.14623191",
+              "flags": [
+                "page_scan",
+                "pdf"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "6a59fa9e-74c8-3b84-938c-1d55ee72c478",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Elementa."
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "888; 14th century (additions)"
+              ],
+              "display_date": [
+                "888; 14th century (additions)"
+              ],
+              "year": 888,
+              "pubdate": "",
+              "stable_url": "/stable/community.14623191",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Elementa.",
+              "result_date_string": "888; 14th century (additions)",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [],
+              "cc_compilation_titles": [],
+              "cc_work_type": [
+                "Manuscript"
+              ],
+              "collection_ids": [
+                "100141788"
+              ],
+              "collection_titles": [
+                "Manuscripts and Early Printed Books (Bodleian Library, Oxford University)"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/6a59fa9e-74c8-3b84-938c-1d55ee72c478/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [],
+              "alt_text": "",
+              "cc_compilation_urls": [],
+              "collection_url": "/site/artstor/ManuscriptsandEarlyPrintedBooksBodleianLibraryOxfordUniversity-100141788/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Conner, McCauley \"Mac\""
+              ],
+              "date": {
+                "CC Dates": [
+                  "no date"
+                ],
+                "Display Date": [
+                  "no date"
+                ]
+              },
+              "doi": "10.2307/community.16021692",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "da66a53f-c197-31c5-9703-fb8913fdce21",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Pattern"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "no date"
+              ],
+              "display_date": [
+                "no date"
+              ],
+              "year": 0,
+              "pubdate": "",
+              "stable_url": "/stable/community.16021692",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Pattern",
+              "result_date_string": "no date",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [],
+              "cc_compilation_titles": [],
+              "cc_work_type": [
+                "Magazine tearsheet"
+              ],
+              "collection_ids": [
+                "100148947"
+              ],
+              "collection_titles": [
+                "Walt Reed Illustration Archive"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/da66a53f-c197-31c5-9703-fb8913fdce21/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [],
+              "alt_text": "",
+              "cc_compilation_urls": [],
+              "collection_url": "/site/washu-stl/waltreedia/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [],
+              "date": {
+                "CC Dates": [
+                  "early 1400s"
+                ],
+                "Year": [
+                  "1400"
+                ],
+                "Display Date": [
+                  "early 1400s"
+                ]
+              },
+              "doi": "10.2307/community.24554833",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free",
+                "openAccess"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "e678ebd9-97dd-39c5-9bf7-3af8ec0d5f0e",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Pair of Doors"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "early 1400s"
+              ],
+              "display_date": [
+                "early 1400s"
+              ],
+              "year": 1400,
+              "pubdate": "",
+              "stable_url": "/stable/community.24554833",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Pair of Doors",
+              "result_date_string": "early 1400s",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [],
+              "cc_compilation_titles": [],
+              "cc_work_type": [
+                "Furniture and woodwork"
+              ],
+              "collection_ids": [
+                "100181167"
+              ],
+              "collection_titles": [
+                "Open: The Cleveland Museum of Art"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/e678ebd9-97dd-39c5-9bf7-3af8ec0d5f0e/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [],
+              "alt_text": "",
+              "cc_compilation_urls": [],
+              "collection_url": "/site/artstor/open-the-cleveland-museum-of-art/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Unattributed"
+              ],
+              "date": {
+                "CC Dates": [
+                  "1702"
+                ],
+                "Year": [
+                  "1702"
+                ],
+                "Display Date": [
+                  "1702"
+                ]
+              },
+              "doi": "10.2307/community.38365590",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free",
+                "openAccess"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "c255c2a4-465d-3c5a-b04c-1959db5dbb12",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Trade card: J. Harris"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "1702"
+              ],
+              "display_date": [
+                "1702"
+              ],
+              "year": 1702,
+              "pubdate": "",
+              "stable_url": "/stable/community.38365590",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Trade card: J. Harris",
+              "result_date_string": "1702",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [],
+              "cc_compilation_titles": [],
+              "cc_work_type": [
+                "Art"
+              ],
+              "collection_ids": [
+                "100181127"
+              ],
+              "collection_titles": [
+                "Open: Science Museum Group"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/c255c2a4-465d-3c5a-b04c-1959db5dbb12/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [],
+              "alt_text": "",
+              "cc_compilation_urls": [],
+              "collection_url": "/site/artstor/open-science-museum-group/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Unattributed"
+              ],
+              "date": {
+                "CC Dates": [
+                  "1694"
+                ],
+                "Year": [
+                  "1694"
+                ],
+                "Display Date": [
+                  "1694"
+                ]
+              },
+              "doi": "10.2307/community.38365599",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free",
+                "openAccess"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "93b00027-a08e-3137-b14e-c2d486ffa680",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Trade card: Heber Lands"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "1694"
+              ],
+              "display_date": [
+                "1694"
+              ],
+              "year": 1694,
+              "pubdate": "",
+              "stable_url": "/stable/community.38365599",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Trade card: Heber Lands",
+              "result_date_string": "1694",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [],
+              "cc_compilation_titles": [],
+              "cc_work_type": [
+                "Art"
+              ],
+              "collection_ids": [
+                "100181127"
+              ],
+              "collection_titles": [
+                "Open: Science Museum Group"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/93b00027-a08e-3137-b14e-c2d486ffa680/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [],
+              "alt_text": "",
+              "cc_compilation_urls": [],
+              "collection_url": "/site/artstor/open-science-museum-group/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [],
+              "date": {
+                "CC Dates": [
+                  "1935, original construction",
+                  "Function: ca. 1935-1965, private residence",
+                  "Function: ca. 1949-1965, other (college guest house)",
+                  "Function: ca. 1990, other (college guest house)",
+                  "Function: ca. 2004-present (2007), president's house"
+                ],
+                "Display Date": [
+                  "1935, original construction",
+                  "Function: ca. 1935-1965, private residence",
+                  "Function: ca. 1949-1965, other (college guest house)",
+                  "Function: ca. 1990, other (college guest house)",
+                  "Function: ca. 2004-present (2007), president's house"
+                ]
+              },
+              "doi": "10.2307/community.11993484",
+              "flags": [
+                "page_scan",
+                "pdf"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "843a94fb-4300-3fec-9b65-7e667574bbea",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Guilford College"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "1935, original construction",
+                "Function: ca. 1935-1965, private residence",
+                "Function: ca. 1949-1965, other (college guest house)",
+                "Function: ca. 1990, other (college guest house)",
+                "Function: ca. 2004-present (2007), president's house"
+              ],
+              "display_date": [
+                "1935, original construction",
+                "Function: ca. 1935-1965, private residence",
+                "Function: ca. 1949-1965, other (college guest house)",
+                "Function: ca. 1990, other (college guest house)",
+                "Function: ca. 2004-present (2007), president's house"
+              ],
+              "year": 0,
+              "pubdate": "",
+              "stable_url": "/stable/community.11993484",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Guilford College",
+              "result_date_string": "1935, original construction",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [],
+              "cc_compilation_titles": [],
+              "cc_work_type": [],
+              "collection_ids": [
+                "100142307"
+              ],
+              "collection_titles": [
+                "Historic Campus Architecture Project (HCAP) (Council of Independent Colleges)"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/843a94fb-4300-3fec-9b65-7e667574bbea/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [],
+              "alt_text": "",
+              "cc_compilation_urls": [],
+              "collection_url": "/site/artstor/HistoricCampusArchitectureProjectHCAPCouncilofIndependentColleges-100142307/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [],
+              "date": {},
+              "doi": "10.2307/community.30991832",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "6ae5a943-9b82-311e-81bb-601a64deb9c6",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Portrait of Johannes Wallis (1616-1703)"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [],
+              "display_date": [],
+              "year": 0,
+              "pubdate": "",
+              "stable_url": "/stable/community.30991832",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Portrait of Johannes Wallis (1616-1703)",
+              "result_date_string": "",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [
+                "31011612"
+              ],
+              "cc_compilation_titles": [
+                "Fine Art"
+              ],
+              "cc_work_type": [
+                "photograph: negative"
+              ],
+              "collection_ids": [
+                "100315087"
+              ],
+              "collection_titles": [
+                "Image Archive"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/6ae5a943-9b82-311e-81bb-601a64deb9c6/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [
+                "Fine Art"
+              ],
+              "alt_text": "",
+              "cc_compilation_urls": [
+                "/site/california-institute-of-technology/image-archive/fineart-31011612/"
+              ],
+              "collection_url": "/site/california-institute-of-technology/image-archive/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [],
+              "date": {
+                "CC Dates": [
+                  "1825"
+                ],
+                "Display Date": [
+                  "1825"
+                ]
+              },
+              "doi": "10.2307/community.30991818",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "1a1b7e77-d21e-3cee-a33f-0862793a4157",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Portrait of John Wallis (1616-1703)"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "1825"
+              ],
+              "display_date": [
+                "1825"
+              ],
+              "year": 0,
+              "pubdate": "",
+              "stable_url": "/stable/community.30991818",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Portrait of John Wallis (1616-1703)",
+              "result_date_string": "1825",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [
+                "31011612"
+              ],
+              "cc_compilation_titles": [
+                "Fine Art"
+              ],
+              "cc_work_type": [
+                "photograph: print"
+              ],
+              "collection_ids": [
+                "100315087"
+              ],
+              "collection_titles": [
+                "Image Archive"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/1a1b7e77-d21e-3cee-a33f-0862793a4157/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [
+                "Fine Art"
+              ],
+              "alt_text": "",
+              "cc_compilation_urls": [
+                "/site/california-institute-of-technology/image-archive/fineart-31011612/"
+              ],
+              "collection_url": "/site/california-institute-of-technology/image-archive/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Colby marriage pact"
+              ],
+              "date": {
+                "CC Dates": [
+                  "2024"
+                ]
+              },
+              "doi": "10.2307/community.38600391",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "823f4b21-7fb2-3b1c-b7bb-181a1cab40ad",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Colby Marriage Pact You May Wish you Had a Backup Plan..."
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "2024"
+              ],
+              "display_date": [],
+              "year": 0,
+              "pubdate": "",
+              "stable_url": "/stable/community.38600391",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Colby Marriage Pact You May Wish you Had a Backup Plan...",
+              "result_date_string": "",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [
+                "37323426"
+              ],
+              "cc_compilation_titles": [
+                "Colby Posters, Fliers, and Ephemera"
+              ],
+              "cc_work_type": [],
+              "collection_ids": [
+                "100485163"
+              ],
+              "collection_titles": [
+                "Colby College Archives"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/823f4b21-7fb2-3b1c-b7bb-181a1cab40ad/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [
+                "Colby Posters, Fliers, and Ephemera"
+              ],
+              "alt_text": "",
+              "cc_compilation_urls": [
+                "/site/colbycollegelibraries/colbycollegearchiveimagecollection/colbypostersfliersandephemera-37323426/"
+              ],
+              "collection_url": "/site/colbycollegelibraries/colbycollegearchiveimagecollection/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Eddington, Arthur Stanley, Sir, 1882-1944, author."
+              ],
+              "date": {
+                "CC Dates": [
+                  "1/27/1927"
+                ],
+                "Year": [
+                  "1927"
+                ],
+                "Display Date": [
+                  "1/27/1927"
+                ]
+              },
+              "doi": "10.2307/community.43000127",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "2d7471d8-31ea-3e42-8916-9b059f799186",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "English astronomer Arthur Eddington writes to EPH."
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "1/27/1927"
+              ],
+              "display_date": [
+                "1/27/1927"
+              ],
+              "year": 1927,
+              "pubdate": "",
+              "stable_url": "/stable/community.43000127",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "English astronomer Arthur Eddington writes to EPH.",
+              "result_date_string": "1/27/1927",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [],
+              "cc_compilation_titles": [],
+              "cc_work_type": [],
+              "collection_ids": [
+                "100687899"
+              ],
+              "collection_titles": [
+                "Edwin Powell Hubble papers"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/2d7471d8-31ea-3e42-8916-9b059f799186/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [],
+              "alt_text": "",
+              "cc_compilation_urls": [],
+              "collection_url": "/site/huntington-library/edwin-powell-hubble-papers/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Unknown"
+              ],
+              "date": {
+                "CC Dates": [
+                  "1997"
+                ],
+                "Year": [
+                  "1997"
+                ],
+                "Display Date": [
+                  "1997"
+                ]
+              },
+              "doi": "10.2307/community.35948590",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "b1fb99af-7735-3421-85b6-ce1e7dfa6ab0",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "David A Robbins, Seabury Professor of Mathematics and Natural Philosophy, Emeritus, 1997"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "1997"
+              ],
+              "display_date": [
+                "1997"
+              ],
+              "year": 1997,
+              "pubdate": "",
+              "stable_url": "/stable/community.35948590",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "David A Robbins, Seabury Professor of Mathematics and Natural Philosophy, Emeritus, 1997",
+              "result_date_string": "1997",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [
+                "39176367"
+              ],
+              "cc_compilation_titles": [
+                "Archival Photos"
+              ],
+              "cc_work_type": [
+                "photographic prints"
+              ],
+              "collection_ids": [
+                "100452511"
+              ],
+              "collection_titles": [
+                "College Archives"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/b1fb99af-7735-3421-85b6-ce1e7dfa6ab0/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [
+                "Archival Photos"
+              ],
+              "alt_text": "",
+              "cc_compilation_urls": [
+                "/site/trinity/trinitycollegepublications/archivalphotos-39176367/"
+              ],
+              "collection_url": "/site/trinity/trinitycollegepublications/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [],
+              "date": {
+                "CC Dates": [
+                  "1910-1919",
+                  "2016"
+                ]
+              },
+              "doi": "10.2307/community.39436657",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "bf741354-7d9b-3c84-abdb-4d0641c4ee8f",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Lehr, Marguerite (Anna Marie)"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "1910-1919",
+                "2016"
+              ],
+              "display_date": [],
+              "year": 0,
+              "pubdate": "",
+              "stable_url": "/stable/community.39436657",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Lehr, Marguerite (Anna Marie)",
+              "result_date_string": "",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [],
+              "cc_compilation_titles": [],
+              "cc_work_type": [
+                "Still image"
+              ],
+              "collection_ids": [
+                "100631699"
+              ],
+              "collection_titles": [
+                "Notable Goucher College People Collection"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/bf741354-7d9b-3c84-abdb-4d0641c4ee8f/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [],
+              "alt_text": "",
+              "cc_compilation_urls": [],
+              "collection_url": "/site/goucher-college/notable-goucher-college-people-collection/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [],
+              "date": {},
+              "doi": "10.2307/community.38366275",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free",
+                "openAccess"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "e47fd25c-2810-3a68-94da-bfff68af63cb",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Trade card: William Court and Marmaduke Hodgeson"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [],
+              "display_date": [],
+              "year": 0,
+              "pubdate": "",
+              "stable_url": "/stable/community.38366275",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Trade card: William Court and Marmaduke Hodgeson",
+              "result_date_string": "",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [],
+              "cc_compilation_titles": [],
+              "cc_work_type": [
+                "Art"
+              ],
+              "collection_ids": [
+                "100181127"
+              ],
+              "collection_titles": [
+                "Open: Science Museum Group"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/e47fd25c-2810-3a68-94da-bfff68af63cb/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [],
+              "alt_text": "",
+              "cc_compilation_urls": [],
+              "collection_url": "/site/artstor/open-science-museum-group/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Unattributed"
+              ],
+              "date": {
+                "CC Dates": [
+                  "1631"
+                ],
+                "Year": [
+                  "1631"
+                ],
+                "Display Date": [
+                  "1631"
+                ]
+              },
+              "doi": "10.2307/community.26288058",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free",
+                "openAccess"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "2ff80dfe-b13a-3371-b5ad-70b057551c31",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Nathaniel Cutler"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "1631"
+              ],
+              "display_date": [
+                "1631"
+              ],
+              "year": 1631,
+              "pubdate": "",
+              "stable_url": "/stable/community.26288058",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Nathaniel Cutler",
+              "result_date_string": "1631",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [],
+              "cc_compilation_titles": [],
+              "cc_work_type": [
+                "Art"
+              ],
+              "collection_ids": [
+                "100181127"
+              ],
+              "collection_titles": [
+                "Open: Science Museum Group"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/2ff80dfe-b13a-3371-b5ad-70b057551c31/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [],
+              "alt_text": "",
+              "cc_compilation_urls": [],
+              "collection_url": "/site/artstor/open-science-museum-group/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Unattributed"
+              ],
+              "date": {
+                "CC Dates": [
+                  "1702"
+                ],
+                "Year": [
+                  "1702"
+                ],
+                "Display Date": [
+                  "1702"
+                ]
+              },
+              "doi": "10.2307/community.26288073",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free",
+                "openAccess"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "2f4bec6b-500a-38a1-b51c-683504e74dd9",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Trade card: J. Harris"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "1702"
+              ],
+              "display_date": [
+                "1702"
+              ],
+              "year": 1702,
+              "pubdate": "",
+              "stable_url": "/stable/community.26288073",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Trade card: J. Harris",
+              "result_date_string": "1702",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [],
+              "cc_compilation_titles": [],
+              "cc_work_type": [
+                "Art"
+              ],
+              "collection_ids": [
+                "100181127"
+              ],
+              "collection_titles": [
+                "Open: Science Museum Group"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/2f4bec6b-500a-38a1-b51c-683504e74dd9/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [],
+              "alt_text": "",
+              "cc_compilation_urls": [],
+              "collection_url": "/site/artstor/open-science-museum-group/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [
+                "Unattributed"
+              ],
+              "date": {
+                "CC Dates": [
+                  "1694"
+                ],
+                "Year": [
+                  "1694"
+                ],
+                "Display Date": [
+                  "1694"
+                ]
+              },
+              "doi": "10.2307/community.26288082",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free",
+                "openAccess"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "c24db18a-3ef4-3e6f-b07e-b7bfa617471b",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Trade card: Heber Lands"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "1694"
+              ],
+              "display_date": [
+                "1694"
+              ],
+              "year": 1694,
+              "pubdate": "",
+              "stable_url": "/stable/community.26288082",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Trade card: Heber Lands",
+              "result_date_string": "1694",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [],
+              "cc_compilation_titles": [],
+              "cc_work_type": [
+                "Art"
+              ],
+              "collection_ids": [
+                "100181127"
+              ],
+              "collection_titles": [
+                "Open: Science Museum Group"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/c24db18a-3ef4-3e6f-b07e-b7bfa617471b/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [],
+              "alt_text": "",
+              "cc_compilation_urls": [],
+              "collection_url": "/site/artstor/open-science-museum-group/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [],
+              "date": {
+                "CC Dates": [
+                  "early 1400s"
+                ],
+                "Year": [
+                  "1400"
+                ],
+                "Display Date": [
+                  "early 1400s"
+                ]
+              },
+              "doi": "10.2307/community.24554825",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free",
+                "openAccess"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "9afc673b-188c-340e-a701-9da659551c54",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Door (right)"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "early 1400s"
+              ],
+              "display_date": [
+                "early 1400s"
+              ],
+              "year": 1400,
+              "pubdate": "",
+              "stable_url": "/stable/community.24554825",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Door (right)",
+              "result_date_string": "early 1400s",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [],
+              "cc_compilation_titles": [],
+              "cc_work_type": [
+                "Furniture and woodwork"
+              ],
+              "collection_ids": [
+                "100181167"
+              ],
+              "collection_titles": [
+                "Open: The Cleveland Museum of Art"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/9afc673b-188c-340e-a701-9da659551c54/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [],
+              "alt_text": "",
+              "cc_compilation_urls": [],
+              "collection_url": "/site/artstor/open-the-cleveland-museum-of-art/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [],
+              "date": {
+                "CC Dates": [
+                  "early 1400s"
+                ],
+                "Year": [
+                  "1400"
+                ],
+                "Display Date": [
+                  "early 1400s"
+                ]
+              },
+              "doi": "10.2307/community.24554823",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free",
+                "openAccess"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "dbbff5d2-8166-3890-9757-3fb4a03e46f3",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Door (left)"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [
+                "early 1400s"
+              ],
+              "display_date": [
+                "early 1400s"
+              ],
+              "year": 1400,
+              "pubdate": "",
+              "stable_url": "/stable/community.24554823",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Door (left)",
+              "result_date_string": "early 1400s",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [],
+              "cc_compilation_titles": [],
+              "cc_work_type": [
+                "Furniture and woodwork"
+              ],
+              "collection_ids": [
+                "100181167"
+              ],
+              "collection_titles": [
+                "Open: The Cleveland Museum of Art"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/dbbff5d2-8166-3890-9757-3fb4a03e46f3/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [],
+              "alt_text": "",
+              "cc_compilation_urls": [],
+              "collection_url": "/site/artstor/open-the-cleveland-museum-of-art/"
+            },
+            {
+              "ab_segment": "[REDACTED]",
+              "author": [],
+              "date": {},
+              "doi": "10.2307/community.26290434",
+              "flags": [
+                "page_scan",
+                "pdf",
+                "free",
+                "openAccess"
+              ],
+              "genai_opt_out": false,
+              "has_access": true,
+              "human_readable_type": "Images",
+              "id": "fc940c6c-6ed3-3764-b396-e4be516ac159",
+              "is_review": false,
+              "resource_type": "contributed_images",
+              "register_and_read_entitlement_id": "[REDACTED]",
+              "item_title": [
+                "[Untitled]"
+              ],
+              "title": [
+                "Trade card: William Court and Marmaduke Hodgeson"
+              ],
+              "subtitle": [],
+              "tokens": "[REDACTED]",
+              "type": "contributed_images",
+              "cc_dates": [],
+              "display_date": [],
+              "year": 0,
+              "pubdate": "",
+              "stable_url": "/stable/community.26290434",
+              "userHasAccess": true,
+              "is_register_and_read": false,
+              "result_title_text": "Trade card: William Court and Marmaduke Hodgeson",
+              "result_date_string": "",
+              "attributions": {
+                "Agent": [],
+                "CollectionTypeNameId": [],
+                "Collections": [],
+                "CollectionTypes": []
+              },
+              "cc_compilation_ids": [],
+              "cc_compilation_titles": [],
+              "cc_work_type": [
+                "Art"
+              ],
+              "collection_ids": [
+                "100181127"
+              ],
+              "collection_titles": [
+                "Open: Science Museum Group"
+              ],
+              "img_thumbnail": "/api/authd/thumbnails/202003101501/byitem/fc940c6c-6ed3-3764-b396-e4be516ac159/0",
+              "primary_agents": [],
+              "cc_compilation_titles_truncated": [],
+              "alt_text": "",
+              "cc_compilation_urls": [],
+              "collection_url": "/site/artstor/open-science-museum-group/"
+            }
+          ],
+          "paging": {
+            "next": "eyJwYWdlIjoyLCJzdGFydCI6MjUsInRvdGFsIjoyNDJ9",
+            "page_start_index": 1,
+            "page_end_index": 25,
+            "total_results": 242,
+            "page_index": 1,
+            "total_pages": 10,
+            "group_efq": "WyJjb250cmlidXRlZF9pbWFnZXMiLCJjb250cmlidXRlZF9wYW5vcmFtYXMiXQ=="
+          }
+        }
+      ]
+    }
+  },
+  "tabs": [],
+  "notices": [],
+  "requestId": "[REDACTED]",
+  "spelling_suggestions": {},
+  "totalResultCount": 242
+}
