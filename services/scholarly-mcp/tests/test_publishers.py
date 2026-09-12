@@ -8,6 +8,51 @@ sys.path.insert(0, str(ROOT))
 
 
 class PublisherContract(unittest.TestCase):
+    def test_explicit_pdf_accepts_owned_native_download_without_page_download_event(self):
+        import tempfile,pymupdf
+        from types import SimpleNamespace
+        from unittest.mock import Mock,patch
+        from playwright.sync_api import Error
+        from scholarly import ArtifactStore
+        url='https://epubs.siam.org/doi/pdf/10.1137/example?download=1'
+        with pymupdf.open() as pdf:
+            pdf.new_page().insert_text((72,72),'Selected front matter')
+            data=pdf.tobytes()
+        page=SimpleNamespace(on=Mock(),remove_listener=Mock(),is_closed=lambda:False,close=Mock())
+        gateway=SimpleNamespace(start=Mock(),pages={},context=SimpleNamespace(on=Mock(),remove_listener=Mock()),
+            public_page=Mock(return_value=page),native_download=Mock(return_value=(data,'file.pdf',url)))
+        with tempfile.TemporaryDirectory() as temp:
+            adapter=self.mod.Publisher(ArtifactStore(temp),gateway,next(p for p in self.mod.PROFILES if p.source=='siam'))
+            with patch.object(adapter,'document',side_effect=Error('Download is starting')):
+                result=adapter.explicit_pdf(url,['metadata','fulltext'])
+            self.assertEqual(result['status'],'ok')
+            self.assertEqual(result['components']['fulltext']['artifact']['pages'],1)
+            self.assertEqual(gateway.native_download.call_args.kwargs['query'],'download=1')
+
+    def test_book_uses_publication_doi_and_document_heading_without_brand_suffix(self):
+        import json,tempfile
+        from types import SimpleNamespace
+        from unittest.mock import Mock,patch
+        from scholarly import ArtifactStore,ServiceError
+        identifier='10.1137/1.9780898717976'
+        title='Numerical Polynomial Algebra'
+        raw='<meta name="publication_doi" content="'+identifier+'"><meta property="og:title" content="'+title+' | SIAM Publications Library"><h1 class="banner-widget__heading">'+title+'</h1>'
+        url='https://epubs.siam.org/doi/book/'+identifier
+        page=SimpleNamespace(url=url,content=Mock(return_value=raw),wait_for_function=Mock(),
+            locator=Mock(return_value=SimpleNamespace(inner_text=lambda:title)),title=lambda:title,close=Mock())
+        with tempfile.TemporaryDirectory() as temp:
+            store=ArtifactStore(temp)
+            adapter=self.mod.Publisher(store,None,next(p for p in self.mod.PROFILES if p.source=='siam'))
+            with patch.object(adapter,'document',return_value=page):
+                result=adapter.fetch(url,parts=['metadata'])
+                record=json.loads(store.read(result['records']['ref'])[1])[0]
+                self.assertEqual((record['title'],record['doi']),(title,identifier))
+                self.assertEqual(record['metadata']['og:title'],[title+' | SIAM Publications Library'])
+                page.content.return_value=raw.replace('publication_doi','unrelated_field')
+                with self.assertRaises(ServiceError) as rejected:
+                    adapter.fetch(url,parts=['metadata'])
+                self.assertEqual(rejected.exception.result['code'],'metadata_not_identified')
+
     def test_translated_challenge_has_restricted_status_in_document_fetch(self):
         import tempfile
         from types import SimpleNamespace

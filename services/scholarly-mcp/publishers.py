@@ -40,12 +40,12 @@ PROFILES = [
     Profile("de-gruyter", ("www.degruyter.com", "www.degruyterbrill.com"), "De Gruyter"),
     Profile("jstor", ("www.jstor.org", "jstor.org"), "JSTOR", file_domains=('artstor-collections.s3.amazonaws.com','sequoia-forum-media.s3.amazonaws.com')),
     Profile("oxford", ("academic.oup.com", "www.oxfordacademic.com"), "OUP", file_domains=("watermark02.silverchair.com","oup.silverchair-cdn.com")),
-    Profile("science-direct", ("www.sciencedirect.com", "sciencedirect.com", "linkinghub.elsevier.com"), "ScienceDirect"),
+    Profile("science-direct", ("www.sciencedirect.com", "sciencedirect.com", "linkinghub.elsevier.com"), "ScienceDirect", file_domains=('pdf.sciencedirectassets.com',)),
     Profile("springer", ("link.springer.com", "link.springernature.com", "www.nature.com"), "Springer eJournal", file_domains=('citation-needed.springer.com','media.springernature.com')),
     Profile("taylor-francis", ("www.tandfonline.com", "tandfonline.com"), "Taylor"),
     Profile("wiley", ("onlinelibrary.wiley.com", "www.onlinelibrary.wiley.com"), "Wiley Online Library", '.article-section__abstract'),
     Profile("aip", ("pubs.aip.org", "aip.scitation.org"), "AIP", 'section.abstract:not(.abstractBorder)', file_domains=('watermark02.silverchair.com',)),
-    Profile("aps", ("www.aps.org", "journals.aps.org", "link.aps.org", "physics.aps.org"), "APS"),
+    Profile("aps", ("www.aps.org", "journals.aps.org", "link.aps.org", "physics.aps.org"), "APS", '#abstract-section-content'),
     Profile("iop", ("iopscience.iop.org",), "IOP", '.wd-jnl-art-abstract', file_domains=('content.cld.iop.org','cfn-live-content-bucket-iop-org.s3.eu-west-1.amazonaws.com')),
     Profile("siam", ("epubs.siam.org", "www.siam.org"), None),
     Profile("project-euclid", ("projecteuclid.org", "www.projecteuclid.org"), None, 'text.ArticleContentText > h2:text-is("Abstract") + div'),
@@ -211,22 +211,27 @@ class Publisher:
             opened(cached)
         context.on('page',opened)
         try:
-            try:
-                page=self.document(url)
-            except Exception as error:
-                if not downloads:
-                    if isinstance(error,ServiceError):
-                        raise
-                    raise ServiceError('pdf_navigation_failed','The requested PDF did not produce a document or download',error_type=type(error).__name__) from None
-            if downloads:
-                if len(downloads)!=1:
-                    raise ServiceError('ambiguous_download','The PDF navigation produced multiple matching downloads')
-                download=downloads[0]
-                require_source_url(download.url,self.profile.download_hosts)
-                data=Path(download.path()).read_bytes()
-                actual=download.url
+            if callable(getattr(self.gateway,'native_download',None)):
+                page=self.gateway.public_page(self.source)
+                data,_,actual=self.gateway.native_download(page,lambda:self.document(url),self.profile.download_hosts,
+                                                          expected.path,query=expected.query)
             else:
-                data,_,actual=browser_download(context,page.url,self.profile.download_hosts)
+                try:
+                    page=self.document(url)
+                except Exception as error:
+                    if not downloads:
+                        if isinstance(error,ServiceError):
+                            raise
+                        raise ServiceError('pdf_navigation_failed','The requested PDF did not produce a document or download',error_type=type(error).__name__) from None
+                if downloads:
+                    if len(downloads)!=1:
+                        raise ServiceError('ambiguous_download','The PDF navigation produced multiple matching downloads')
+                    download=downloads[0]
+                    require_source_url(download.url,self.profile.download_hosts)
+                    data=Path(download.path()).read_bytes()
+                    actual=download.url
+                else:
+                    data,_,actual=browser_download(context,page.url,self.profile.download_hosts)
             if not data.startswith(b'%PDF-'):
                 raise ServiceError('unexpected_content','The explicit PDF address returned no PDF')
             try:
@@ -501,7 +506,7 @@ class Publisher:
         page = self.document(url)
         try:
             try:
-                page.wait_for_function("() => [...document.querySelectorAll('meta[name],meta[property]')].some(m=>/^(citation_title|dc[.:]title)$/i.test(m.name||m.getAttribute('property')||'') && m.content?.trim()) || document.querySelector('#challenge-error-text,#capInput') || /^(Access Denied|Just a moment|Attention Required|403 Forbidden)/i.test(document.title)", timeout=20000)
+                page.wait_for_function("includeChallenge => [...document.querySelectorAll('meta[name],meta[property]')].some(m=>/^(citation_title|dc[.:]title)$/i.test(m.name||m.getAttribute('property')||'') && m.content?.trim()) || (document.querySelector('meta[name=publication_doi]')?.content?.trim() && document.querySelector('meta[property=\"og:title\"]')?.content?.trim() && document.querySelector('h1.banner-widget__heading')?.innerText?.trim()) || (includeChallenge && (document.querySelector('#challenge-error-text,#capInput') || /^(Access Denied|Just a moment|Attention Required|403 Forbidden)/i.test(document.title)))", arg=self.source!='siam', timeout=75000 if self.source=='siam' else 20000)
             except Exception:
                 if is_access_challenge(page.content()):
                     raise ServiceError('publisher_access_restricted','Publisher returned an access verification page',status='restricted',source=self.source) from None
@@ -513,6 +518,10 @@ class Publisher:
             raw = page.content()
             metadata = publication_metadata(raw)
             titles = metadata.get("citation_title", metadata.get("dc.title", metadata.get("dc:title", [])))
+            if not titles and metadata.get('publication_doi') and metadata.get('og:title') and publication_dois(metadata):
+                heading = BeautifulSoup(raw, 'html.parser').select_one('h1.banner-widget__heading')
+                if heading and heading.get_text(' ', strip=True):
+                    titles = [heading.get_text(' ', strip=True)]
             if not titles:
                 raise ServiceError("metadata_not_identified", "Publisher page has no recognized publication title metadata", source=self.source)
             observed_dois = publication_dois(metadata)

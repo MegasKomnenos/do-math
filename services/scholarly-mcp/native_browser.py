@@ -58,12 +58,15 @@ class NativeChromeGateway(KudosGateway):
             return
         candidates = [Path(os.environ.get('PROGRAMFILES', 'C:/Program Files')) / 'Google/Chrome/Application/chrome.exe',
                       Path(os.environ.get('LOCALAPPDATA', '')) / 'Google/Chrome/Application/chrome.exe']
-        executable = next((candidate for candidate in candidates if candidate.is_file()), None)
+        executable = next((candidate for candidate in candidates if candidate.is_absolute() and candidate.is_file()), None)
         if executable is None:
             raise ServiceError('browser_unavailable', 'This verified browser route requires installed Google Chrome', status='restricted')
         parent = self.root / 'scholarly-mcp' / 'native-chrome-runs'
         parent.mkdir(parents=True, exist_ok=True)
         self._run = Path(tempfile.mkdtemp(prefix='owned-', dir=parent)).resolve()
+        preferences = self._run / 'profile' / 'Default' / 'Preferences'
+        preferences.parent.mkdir(parents=True)
+        preferences.write_text(json.dumps({'plugins': {'always_open_pdf_externally': True}}), encoding='utf-8')
         self._download_dir = self._run / 'downloads'
         self._download_dir.mkdir()
         with socket.socket() as reservation:
@@ -129,14 +132,30 @@ class NativeChromeGateway(KudosGateway):
         if event['guid'] in self._downloads:
             self._downloads[event['guid']].update(event)
 
-    def native_download(self, page, action, hosts, path, *, timeout=45000):
+    def native_download(self, page, action, hosts, path, *, timeout=45000, query=None):
         """Read a completed, source-bound download started by the supplied UI action."""
         before = set(self._downloads)
-        action()
+        def matching():
+            return [(guid,item) for guid,item in self._downloads.items() if guid not in before
+                    and urlsplit(item['url']).hostname in hosts
+                    and (path(urlsplit(item['url']).path) if callable(path) else urlsplit(item['url']).path==path)
+                    and (query is None or urlsplit(item['url']).query==query)]
+        from playwright.sync_api import Error as BrowserError
+        try:
+            action()
+        except BrowserError:
+            for _ in range(10):
+                if matching():
+                    break
+                try:
+                    page.wait_for_timeout(100)
+                except BrowserError:
+                    break
+            if not matching():
+                raise
         deadline = time.monotonic() + timeout / 1000
         while time.monotonic() < deadline:
-            matches = [(guid, item) for guid, item in self._downloads.items() if guid not in before
-                       and urlsplit(item['url']).hostname in hosts and urlsplit(item['url']).path == path]
+            matches = matching()
             if len(matches) > 1:
                 raise ServiceError('ambiguous_download', 'The native action produced multiple matching files')
             if matches:
