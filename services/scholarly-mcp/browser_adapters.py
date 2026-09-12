@@ -343,6 +343,170 @@ class MathSciNet:
     def page(self):
         return self.gateway.open(self.source, "MathSciNet", MSC_HOSTS, "#searchTextInput, main h1")
 
+    @staticmethod
+    def validated_search_page(payload,page_number,page_size,previous_total=None):
+        if not isinstance(payload,dict) or not isinstance(payload.get('results'),list) or type(payload.get('total')) is not int or payload['total']<0:
+            raise ServiceError('invalid_response','MathSciNet search response has an unexpected schema')
+        total=payload['total']
+        if previous_total is not None and total!=previous_total:
+            raise ServiceError('search_range_changed','MathSciNet result total changed while reading the requested range',
+                previous_total=previous_total,current_total=total,page=page_number)
+        offset=(page_number-1)*page_size
+        expected=min(page_size,max(0,total-offset))
+        rows=payload['results']
+        identifiers=[]
+        for row in rows:
+            value=row.get('mrnumber') if isinstance(row,dict) else None
+            if isinstance(value,bool) or not re.fullmatch(r'[0-9]+',str(value or '')):
+                raise ServiceError('invalid_response','MathSciNet search result has no valid MR identity',page=page_number)
+            identifiers.append(str(int(value)))
+        if len(rows)!=expected or len(identifiers)!=len(set(identifiers)):
+            raise ServiceError('invalid_response','MathSciNet search page does not match its reported range',
+                page=page_number,expected=expected,received=len(rows))
+        return total,rows,identifiers
+
+    @staticmethod
+    def record_identity(text,mr):
+        match=re.search(r'\bMR([0-9]+)\b',text)
+        if not match or int(match[1])!=int(mr):
+            raise ServiceError('identity_mismatch','MathSciNet record heading identifies another MR publication')
+        return match[1]
+
+    @staticmethod
+    def citation_control(raw,base,mr,*,basis='references'):
+        if basis not in ('references','reviews'):
+            raise ServiceError('invalid_options','Use citation_basis references or reviews')
+        soup=BeautifulSoup(raw,'html.parser')
+        sections=[heading.parent for heading in soup.find_all('h3') if heading.get_text(' ',strip=True)=='Citations']
+        if len(sections)!=1:
+            raise ServiceError('citation_control_missing','MathSciNet record has no unique Citations section')
+        section=sections[0];canonical=str(int(mr));controls={}
+        for label,key in (('From References','references'),('From Reviews','reviews')):
+            lines=[node for node in section.find_all(['div','p'])
+                   if re.fullmatch(re.escape(label)+r':\s*[\d,]+',node.get_text(' ',strip=True))]
+            if len(lines)!=1:
+                raise ServiceError('citation_control_invalid','MathSciNet Citations section has no unique basis count',basis=key)
+            line=lines[0];count=int(re.search(r'([\d,]+)$',line.get_text(' ',strip=True))[1].replace(',',''))
+            links=line.select('a[href]');control={'total':count,'query':None,'url':None}
+            if count:
+                if len(links)!=1:
+                    raise ServiceError('citation_control_invalid','MathSciNet citation count has no unique search control',basis=key)
+                url=urljoin(base,links[0]['href']);parts=urlsplit(url);query=parse_qs(parts.query).get('query',[None])[0]
+                valid=parts.hostname==urlsplit(base).hostname and parts.path=='/mathscinet/publications-search'
+                if key=='references':valid=valid and query=='cp:'+canonical
+                else:
+                    match=re.fullmatch(r'r:\(MR([0-9]+) OR "refcno ([0-9]+)"\)',query or '')
+                    valid=valid and bool(match) and int(match[1])==int(match[2])==int(canonical)
+                if not valid:
+                    raise ServiceError('citation_control_invalid','MathSciNet citation control identifies another record or basis',basis=key)
+                control.update({'query':query,'url':url})
+            elif links:
+                raise ServiceError('citation_control_invalid','MathSciNet zero citation count unexpectedly has a search control',basis=key)
+            controls[key]=control
+        chosen=controls[basis]
+        return {'target':'MR'+mr,'query':chosen['query'],'total':chosen['total'],
+                'from_references':controls['references']['total'],'from_reviews':controls['reviews']['total'],'url':chosen['url']}
+
+    def citation_relation(self,mr,basis='references'):
+        page=self.page();host=urlsplit(page.url).hostname
+        url='https://'+host+'/mathscinet/article?'+urlencode({'mr':mr})
+        goto_source(page,url,MSC_HOSTS,wait_until='domcontentloaded',timeout=45000)
+        heading=page.locator('main h1').first;heading.wait_for(timeout=45000)
+        observed_mr=self.record_identity(heading.inner_text(),mr)
+        relation=self.citation_control(page.locator('main').inner_html(),url,observed_mr,basis=basis)
+        evidence=self.store.put(encoded(relation),'application/json',self.source,url,role='citation_relation_control',direction='incoming',basis=basis)
+        return {**relation,'evidence':evidence}
+
+    def relationship_target(self,target):
+        if re.fullmatch(r'(?:MR)?[0-9]+',target,re.I):
+            return {'mr':mathscinet_target(target),'requested_target':target,'lookup':None}
+        if not re.match(r'^(?:10\.\d{4,9}/|doi:|https?://(?:dx\.)?doi\.org/)',target,re.I):
+            raise ServiceError('invalid_target','Supply an MR number or DOI for a MathSciNet relationship search')
+        from api_adapters import doi
+        identifier=doi(target)
+        query='doi:('+json.dumps(identifier,ensure_ascii=False)+')'
+        found=self.search(query,options={},limit=2,export='bibtex')
+        lookup={'query':query,'records':found.get('records'),'export':found.get('export')}
+        if found.get('status')=='ok' and found.get('total')==found.get('received')==1:
+            rows=json.loads(self.store.read(found['records']['ref'])[1])
+            citations=bibliography(self.store.read(found['export']['ref'])[1],'application/x-bibtex')
+            if len(rows)==len(citations)==1 and citations[0].get('doi','').casefold()==identifier.casefold():
+                return {'mr':str(rows[0]['mrnumber']),'requested_target':target,'lookup':lookup}
+        raise ServiceError('selection_required','Select one MR record; DOI relationship searches require one native citation identity match',
+            status='selection_required',requested_target=target,lookup=lookup)
+
+    @staticmethod
+    def reference_control(raw,base,mr):
+        soup=BeautifulSoup(raw,'html.parser')
+        matches=[]
+        for link in soup.find_all('a',href=True):
+            if link.get_text(' ',strip=True)!='Search References':continue
+            url=urljoin(base,link['href']);parts=urlsplit(url)
+            query=parse_qs(parts.query).get('query',[None])[0]
+            if parts.hostname==urlsplit(base).hostname and parts.path=='/mathscinet/publications-search' and isinstance(query,str) and re.fullmatch(r'@\|mr:[0-9]+(?:,[0-9]+)*',query):
+                matches.append((link,url,query))
+        if len(matches)!=1:
+            raise ServiceError('reference_control_missing','MathSciNet record has no unique Search References control')
+        link,url,query=matches[0]
+        identifiers=query.removeprefix('@|mr:').split(',')
+        container=link.find_parent('div',class_=lambda value:value and 'card-body' in value.split())
+        source_items=len(container.select('li')) if container else None
+        unique=len(set(identifiers))
+        return {'target':'MR'+mr,'query':query,'url':url,'source_reference_items':source_items,
+                'searchable_mr_occurrences':len(identifiers),'searchable_unique_mrs':unique,
+                'duplicate_mr_occurrences':len(identifiers)-unique}
+
+    def reference_relation(self,mr):
+        page=self.page();host=urlsplit(page.url).hostname
+        url='https://'+host+'/mathscinet/article?'+urlencode({'mr':mr})
+        goto_source(page,url,MSC_HOSTS,wait_until='domcontentloaded',timeout=45000)
+        heading=page.locator('main h1').first;heading.wait_for(timeout=45000)
+        observed_mr=self.record_identity(heading.inner_text(),mr)
+        raw=page.locator('main').inner_html()
+        relation=self.reference_control(raw,url,observed_mr)
+        source_page=self.store.put(clean_html(raw,self.store.sanitizer),'text/html',self.source,url,
+            role='reference_source_page',mr='MR'+observed_mr,scope='Original source bibliography including entries without searchable MR identities')
+        evidence=self.store.put(encoded(relation),'application/json',self.source,url,role='reference_relation_control',direction='outgoing',
+            scope='MathSciNet-indexed MR subset from the source reference list',source_page_ref=source_page['ref'])
+        return {**relation,'evidence':evidence,'source_page':source_page}
+
+    def citing(self,target,*,sort,start=0,limit=20,cursor=None,export=None,citation_basis='references'):
+        resolved=self.relationship_target(target);mr=resolved['mr']
+        relation=self.citation_relation(mr,citation_basis)
+        label={'references':'From References','reviews':'From Reviews'}[citation_basis]
+        if relation['total']==0:
+            artifact=self.store.put(b'[]','application/json',self.source,relation['evidence']['url'],role='citation_records',target=relation['target'],basis=citation_basis,total=0)
+            return {'status':'not_found','source':self.source,'query':target,'options':{'kind':'citations','sort':sort,'citation_basis':citation_basis},
+                'kind':'citations','target':relation['target'],'lookup':resolved['lookup'],'native_query':None,'start':start,'requested':limit,
+                'received':0,'total':0,'has_more':False,'next':None,'records':artifact,'export':artifact,
+                'relation':{'direction':'incoming','basis':label,'total':0,'from_references':relation['from_references'],
+                'from_reviews':relation['from_reviews'],'evidence':relation['evidence']},'evidence':[relation['evidence']]}
+        found=self.search(relation['query'],options={'sort':sort},start=start,limit=limit,cursor=cursor,export=export)
+        if citation_basis=='references' and found.get('total')!=relation['total']:
+            raise ServiceError('citation_count_mismatch','MathSciNet cited-by results differ from the document control',
+                               target=relation['target'],control_total=relation['total'],search_total=found.get('total'),evidence=relation['evidence'])
+        counts={} if citation_basis=='references' else {'control_total':relation['total'],'result_total':found.get('total'),
+            'count_difference':found.get('total')-relation['total'] if type(found.get('total')) is int else None}
+        return {**found,'query':target,'options':{'kind':'citations','sort':sort,'citation_basis':citation_basis},'kind':'citations','target':relation['target'],'lookup':resolved['lookup'],
+                'native_query':relation['query'],'relation':{'direction':'incoming','basis':label,'total':relation['total'],
+                'from_references':relation['from_references'],'from_reviews':relation['from_reviews'],**counts,'evidence':relation['evidence']},
+                'evidence':[relation['evidence'],*found.get('evidence',[])]}
+
+    def references(self,target,*,sort,start=0,limit=20,cursor=None,export=None):
+        resolved=self.relationship_target(target);mr=resolved['mr']
+        relation=self.reference_relation(mr)
+        found=self.search(relation['query'],options={'sort':sort},start=start,limit=limit,cursor=cursor,export=export)
+        if found.get('total')!=relation['searchable_unique_mrs']:
+            raise ServiceError('reference_count_mismatch','MathSciNet searchable references differ from the document control',
+                target='MR'+mr,control_total=relation['searchable_unique_mrs'],search_total=found.get('total'),evidence=relation['evidence'])
+        fields={key:relation[key] for key in ('source_reference_items','searchable_mr_occurrences','searchable_unique_mrs','duplicate_mr_occurrences')}
+        source_evidence=[relation['source_page']] if relation.get('source_page') else []
+        return {**found,'query':target,'options':{'kind':'references','sort':sort},'kind':'references','target':'MR'+mr,'lookup':resolved['lookup'],
+            'native_query':relation['query'],'relation':{'direction':'outgoing','basis':'Search References',
+            'scope':'MathSciNet-indexed MR subset from the source reference list',**fields,'evidence':relation['evidence'],
+            **({'source_page':relation['source_page']} if relation.get('source_page') else {})},
+            'evidence':[relation['evidence'],*source_evidence,*found.get('evidence',[])]}
+
     def citation_exports(self,identifiers,formats):
         if any(not re.fullmatch(r'[0-9]+',str(value)) for value in identifiers):
             raise ServiceError('invalid_export','Every selected citation must have an MR number')
@@ -382,20 +546,31 @@ class MathSciNet:
     def search(self, query, *, options, start=0, limit=20, cursor=None, export=None):
         if type(start) is not int or start < 0 or type(limit) is not int or not 1 <= limit <= 100:
             raise ServiceError("invalid_range", "MathSciNet requires start >= 0 and limit 1..100")
-        if cursor or set(options) - {"sort"}:
-            raise ServiceError("invalid_options", "MathSciNet uses start; place field constraints in query and use options.sort for ordering")
+        if cursor or set(options) - {"sort","kind","citation_basis"}:
+            raise ServiceError("invalid_options", "MathSciNet uses start; select publications, citations or references and a documented sort")
         sort = options.get("sort", "newest")
         if sort not in ("newest", "oldest", "relevance"):
             raise ServiceError("invalid_options", "Validated sort values are newest, oldest, relevance")
+        kind=options.get('kind','publications')
+        if kind not in ('publications','citations','references'):
+            raise ServiceError('invalid_options','Use kind publications, citations or references')
+        citation_basis=options.get('citation_basis','references')
+        if citation_basis not in ('references','reviews') or (kind!='citations' and 'citation_basis' in options):
+            raise ServiceError('invalid_options','Use citation_basis references or reviews only with kind citations')
         if export not in (None, "json", *self.EXPORTS):
             raise ServiceError("invalid_export", "Use json, bibtex, endnote, amsref or tex")
+        if kind=='citations':
+            arguments={'sort':sort,'start':start,'limit':limit,'cursor':cursor,'export':export}
+            if 'citation_basis' in options:arguments['citation_basis']=citation_basis
+            return self.citing(query,**arguments)
+        if kind=='references':return self.references(query,sort=sort,start=start,limit=limit,cursor=cursor,export=export)
         page = self.page()
         host = urlsplit(page.url).hostname
         size = next(n for n in (5, 10, 20, 50, 100) if n >= limit)
         first_page = start // size + 1
         last_page = (start + limit - 1) // size + 1
         records, evidence, citations, citation_artifacts, export_errors = [], [], [], [], []
-        total = None
+        total = None;seen_mrs=set()
         from playwright.sync_api import TimeoutError as BrowserTimeout
         for page_number in range(first_page, last_page + 1):
             query_url = "https://" + host + "/mathscinet/publications-search?" + urlencode({"query": query, "page": page_number, "size": size, "sort": sort, "facets": ""})
@@ -410,24 +585,25 @@ class MathSciNet:
                 if response.status != 200:
                     raise ServiceError("provider_error", "MathSciNet search request failed", http_status=response.status)
                 payload = response.json()
-                if not isinstance(payload.get("results"), list) or type(payload.get("total")) is not int:
-                    raise ServiceError("invalid_response", "MathSciNet search response has an unexpected schema")
-                total = payload["total"]
+                total,rows,page_mrs=self.validated_search_page(payload,page_number,size,total)
+                if seen_mrs.intersection(page_mrs):
+                    raise ServiceError('invalid_response','MathSciNet search pages repeated an MR identity',page=page_number)
+                seen_mrs.update(page_mrs)
                 raw = self.store.put(encoded(payload), "application/json", self.source, response.url, role="provider_response", query=query, page=page_number, page_size=size, sort=sort)
                 evidence.append(raw)
                 offset = (page_number - 1) * size
-                selected_indexes = [i for i in range(len(payload["results"])) if start <= offset + i < start + limit]
+                selected_indexes = [i for i in range(len(rows)) if start <= offset + i < start + limit]
                 # Save the entire received response; the requested window is a separate artifact.
-                records.extend(payload["results"][i] for i in selected_indexes)
+                records.extend(rows[i] for i in selected_indexes)
                 if export in self.EXPORTS and selected_indexes:
                     try:
-                        selected=[str(payload['results'][i]['mrnumber']) for i in selected_indexes]
+                        selected=[str(rows[i]['mrnumber']) for i in selected_indexes]
                         native=self.citation_exports(selected,[export])[0]['artifact']
                         citations.append(self.store.read(native['ref'])[1].decode('utf-8'))
                         citation_artifacts.append(native)
                     except ServiceError as error:
                         export_errors.append({'page':page_number,**error.result})
-                if offset + len(payload["results"]) >= total:
+                if offset + len(rows) >= total:
                     break
             except BrowserTimeout:
                 raise ServiceError("source_timeout", "MathSciNet did not finish the requested search/export", source=self.source, evidence=evidence, retryable=True) from None
@@ -529,6 +705,96 @@ class WebOfScience:
     def cookies(self, page):
         dismiss_cookies(page)
 
+    def citing_target(self, target):
+        from api_adapters import doi
+        if target.startswith(('http://', 'https://')) and urlsplit(target).hostname not in ('doi.org', 'dx.doi.org'):
+            require_source_url(target, self.hosts)
+            match=re.search(r'/full-record/(WOS:[0-9A-Z]+)(?:/|$)',unquote(urlsplit(target).path))
+            if not match:raise ServiceError('invalid_target','Use a WOS accession number, DOI or full-record URL for citing works')
+            target=match[1]
+        if re.fullmatch(r'(?:WOS:)?[0-9A-Z]+',target):
+            value=target if target.startswith('WOS:') else 'WOS:'+target
+            return 'UT=('+value+')',None
+        if target.startswith(('10.','doi:','https://doi.org/','https://dx.doi.org/')):
+            value=doi(target)
+            return 'DO=('+json.dumps(value)+')',value
+        raise ServiceError('invalid_target','Use a WOS accession number, DOI or full-record URL for citing works')
+
+    def validate_citing_request(self,request,accession,sort):
+        search=request.get('search',{});retrieve=request.get('retrieve',{})
+        if search.get('database')!='WOSCC' or search.get('mode')!='citing_article' or search.get('parentId')!={'type':'colluid','value':accession}:
+            raise ServiceError('identity_mismatch','WOS citing search is not bound to the selected accession')
+        if retrieve.get('sort')!=sort or type(retrieve.get('count')) is not int or retrieve['count']<1:
+            raise ServiceError('query_mismatch','WOS citing search did not retain the requested sort or result window')
+        return retrieve['count']
+
+    def search_citations(self,target,*,start,limit,export,sort='date-descending'):
+        if sort!='date-descending':
+            raise ServiceError('invalid_options','The currently verified WOS citing sort is date-descending')
+        query,expected_doi=self.citing_target(target)
+        parent=self.search(query,options={},limit=1,export='plain')
+        if parent.get('status')!='ok':return {**parent,'kind':'citations','requested_target':target}
+        if parent.get('total')!=parent.get('received') or parent.get('total')!=1:
+            return {**parent,'status':'selection_required','kind':'citations','requested_target':target,
+                    'message':'Select one WOS accession number before requesting citing works'}
+        parent_rows=json.loads(self.store.read(parent['records']['ref'])[1]);parent_row=parent_rows[0]
+        accession=parent_row.get('id')
+        if not re.fullmatch(r'WOS:[0-9A-Z]+',accession or ''):
+            raise ServiceError('identity_mismatch','WOS parent search returned no unique accession')
+        if expected_doi and [value.casefold() for value in parent_row.get('fields',{}).get('di',[])]!=[expected_doi.casefold()]:
+            raise ServiceError('identity_mismatch','WOS parent search returned another DOI')
+        page=self.gateway.pages[self.source];host=urlsplit(page.url).hostname
+        record_url='https://'+host+'/wos/woscc/full-record/'+accession
+        goto_source(page,record_url,self.hosts,wait_until='domcontentloaded',timeout=45000);self.cookies(page)
+        link=page.locator('a[href*="/citing-summary/'+accession+'"]:visible').first
+        control_total=int(parent_row.get('fields',{}).get('tc',['0'])[0].replace(',',''))
+        if control_total:
+            try:link.wait_for(state='visible',timeout=45000)
+            except Exception:raise ServiceError('citing_control_missing','WOS full record has citations but no citing-results control',source_page=record_url) from None
+        if not link.count():
+            if control_total==0:
+                artifact=self.store.put(b'[]','application/json',self.source,record_url,role='citing_records',target=accession,total=0)
+                return {'status':'not_found','source':self.source,'query':target,'options':{'kind':'citations','sort':sort},
+                        'kind':'citations','target':accession,'start':start,'requested':limit,'received':0,'total':0,
+                        'has_more':False,'next':None,'records':artifact,'export':artifact,'parent':parent['records'],
+                        'scope':'Incoming WOS Core Collection records for the selected accession'}
+            raise ServiceError('citing_control_missing','WOS full record has citations but no citing-results control',source_page=record_url)
+        href=urlsplit(urljoin(record_url,link.get_attribute('href')))
+        if href.path!='/wos/woscc/citing-summary/'+accession:
+            raise ServiceError('identity_mismatch','WOS citing control identifies another accession')
+        citing_url='https://'+host+href.path
+        with page.expect_response(lambda r:urlsplit(r.url).hostname in self.hosts and urlsplit(r.url).path=='/api/wosnx/core/runQuerySearch',timeout=60000) as event:
+            goto_source(page,citing_url,self.hosts,wait_until='domcontentloaded',timeout=45000)
+        response=event.value
+        if response.status!=200:raise ServiceError('provider_error','WOS citing search failed',http_status=response.status)
+        request=response.request.post_data_json;page_size=self.validate_citing_request(request,accession,sort)
+        native=wos_events(response.text());total=native['total']
+        evidence=self.store.put(encoded(native['events']),'application/json',self.source,response.url,role='citing_search_response',
+                                target=accession,direction='incoming',control_total=control_total,result_total=total,
+                                native_page_size=page_size,sort=sort)
+        if start>=total:
+            artifact=self.store.put(b'[]','application/json',self.source,page.url,role='citing_records',target=accession,start=start,total=total)
+            return {'status':'not_found','source':self.source,'query':target,'options':{'kind':'citations','sort':sort},
+                    'kind':'citations','target':accession,'start':start,'requested':limit,'received':0,'total':total,
+                    'has_more':False,'next':None,'records':artifact,'export':artifact,'evidence':evidence,'parent':parent['records'],
+                    'relation':{'direction':'incoming','control_total':control_total,'result_total':total},
+                    'scope':'Incoming WOS Core Collection records for the selected accession'}
+        page.locator('#export-trigger-btn').wait_for(timeout=45000)
+        end=min(start+limit,total);full_export=self.export_records(page,start,end,'plain')
+        records=bibliography(self.store.read(full_export['ref'])[1],'application/x-wos')
+        if len(records)!=end-start:
+            raise ServiceError('export_range_mismatch','WOS citing export count differs from the requested record window',expected=end-start,received=len(records),evidence=full_export)
+        artifact=self.store.put(encoded(records),'application/json',self.source,page.url,role='citing_records',target=accession,
+                                start=start,requested=limit,total=total,export_ref=full_export['ref'])
+        exported=artifact if export in (None,'json') else full_export if export=='plain' else self.export_records(page,start,end,export)
+        return {'status':'ok','source':self.source,'query':target,'options':{'kind':'citations','sort':sort},'kind':'citations',
+                'target':accession,'start':start,'requested':limit,'received':len(records),'total':total,'records':artifact,
+                'export':exported,'full_record_export':full_export,'evidence':evidence,'parent':parent['records'],
+                'relation':{'direction':'incoming','control_total':control_total,'result_total':total},
+                'has_more':end<total,'next':{'start':end} if end<total else None,
+                'preview':[{'id':row['id'],'title':' '.join(row['fields'].get('ti',[]))} for row in records[:3]],
+                'scope':'Incoming WOS Core Collection records for the selected accession'}
+
     def export_records(self, page, start, end, format):
         label, media = self.formats[format]
         page.locator("#export-trigger-btn").click()
@@ -562,10 +828,14 @@ class WebOfScience:
     def search(self, query, *, options, start=0, limit=20, cursor=None, export=None):
         if type(start) is not int or start < 0 or type(limit) is not int or not 1 <= limit <= 1000:
             raise ServiceError("invalid_range", "WOS requires start >= 0 and limit 1..1000")
-        if options or cursor:
+        if cursor or set(options)-{'kind','sort'}:
             raise ServiceError("invalid_options", "Use native WOS field/date constraints in query and start for the requested window; additional UI filters are still being implemented")
         if export not in (None, "json", *self.formats):
             raise ServiceError("invalid_export", "Use json, plain, ris, bibtex, excel, tsv or html")
+        kind=options.get('kind','publications');sort=options.get('sort','date-descending' if kind=='citations' else None)
+        if kind=='citations':return self.search_citations(query,start=start,limit=limit,export=export,sort=sort)
+        if kind!='publications' or sort is not None:
+            raise ServiceError('invalid_options','Use kind publications or citations; publication sort options are still being verified')
         page = self.gateway.open(self.source, "Web of Science CPCI", self.hosts, '#composeQuerySmartSearch,input[name="search-main-box"]')
         self.cookies(page)
         page.get_by_role("link", name="Advanced Search", exact=True).first.click()
@@ -632,8 +902,15 @@ class WebOfScience:
         rows = json.loads(self.store.read(result["records"]["ref"])[1])
         components = {}
         for part in parts:
-            if part in ("metadata", "supplementary", "export") or (part == "abstract" and rows[0]["fields"].get("ab")):
+            if part in ("metadata", "export") or (part == "abstract" and rows[0]["fields"].get("ab")):
                 components[part] = {"status": "available", "artifact": result["records"]}
+            elif part == 'supplementary':
+                incoming=self.search(target,options={'kind':'citations'},limit=20)
+                components[part]={'status':'available' if incoming.get('status') in ('ok','not_found') else 'partial',
+                                  'artifact':result['records'],
+                                  'references':{'status':'available','direction':'outgoing','count':len(rows[0]['fields'].get('cr',[])),
+                                                'artifact':result['records']},
+                                  'citations':{'direction':'incoming',**incoming}}
             elif part == "abstract":
                 components[part] = {"status": "not_found", "reason": "No abstract tag in this full record"}
             elif part == "fulltext":

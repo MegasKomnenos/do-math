@@ -1,0 +1,14 @@
+{
+  "search": {
+    "database": "WOSCC",
+    "mode": "citing_article",
+    "parentId": {
+      "type": "colluid",
+      "value": "WOS:000269418800023"
+    }
+  },
+  "retrieve": {
+    "count": 50,
+    "sort": "date-descending"
+  }
+}
