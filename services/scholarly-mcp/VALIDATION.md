@@ -570,3 +570,27 @@ DjVu 독립 검토에서 실행 파일과 같은 폴더의 manifest 해시만 �
 전용 credential-root/data-dir의 semantic-cap-final.json은11개 algebra 조건의26,761건과 같은 앞10조건에11번째 불일치 조건을 넣은0건을 대조했다. 마지막 조건이 실제로 적용됨을 확인한 것이다. 기존4,804건은 complexity의 다른 표본이며 이 대조의 기준으로 사용하지 않는다. 재현 스크립트도 특정 과거 총건수에 묶지 않고 동일 실행의 양성·음성과 입력 보존을 검사한다.
 
 SIAM의 추가 대조는 조건 의미를 확인하기 전에 접근 단계에서 멈췄다. Root가 연203956Z의 후속 화면은 Cloudflare 보안 확인이고,204451Z는 Chrome ERR_CONNECTION_TIMED_OUT이다. 초기HTTP403만으로 provider_error를 내던 부분은 현재 HTML이 확인 화면이면 기존의 제한된 준비 대기를 따르도록 수정했다. 확인이 풀리면 정상 결과를 읽고 남아 있으면restricted이며 일반HTTP 오류는provider_error다. 이 세 경우를 포함한 SIAM28검사가 통과했다.52개 원 입력 보존·17건 양성은 기존 근거로 유지하지만 마지막52번째 조건만의 효과는 현재 실접속 실패로 미확정이다.51개 구현 상한을 다시 만들지 않는다.
+
+
+2026-09-13 KST, Scopus의 options 빈 객체 제한을 제거하고9개 정렬·13개 facet 분야를 연결했다. 원 checkbox의 label/native term과 분야·include/exclude·이전 조건을 제출 전후 요청에 결속하며, 정렬은 실제9개 native sortBy 구조와 대조한다. Article+Review·English·인용 수 정렬16건 뒤 같은 세션에서 options를 비우면21건·필터0으로 돌아오는 것을 확인했다. Year 단독도1건을 통과했다. Source title의 확장 후보는 넓은 TITLE(complexity) 121,798건에서160개를 확인했으나 해당 제어에는 문자열 검색이 없었으므로 전체 어휘 목록으로 표시하지 않는다.
+
+Scopus Export filter counts는 별도 개인 계정 없이 작동했다. 원 CSV는5개 설명 행 뒤13분야의 label/count 쌍26열이며, unfiltered10,193바이트·표139행을 기계적으로272개의 분야/후보/건수 행으로 읽었다. Article14건을 선택한 원 화면도 root가 직접 판독했다. 이 표본의 원 HTTP200 body8,887바이트와 다운로드8,890바이트는 BOM 차이뿐이고, 현재 전체 질의에는 LIMIT-TO DOCTYPE ar가 포함됐다. 표124행·기계233행이며 DOCUMENT TYPE은Article14다. 원 response와 download 모두 현재 parser를 다시 통과했다. 초기12바이트 undefined와 후속HTTP500은 별개 관측으로 보존하며 filtered export 전체의 부재로 확대하지 않는다.
+
+원 CSV와 응답은 현재 표시되는 전체 질의에 결속한다. Root의 마지막 반례에서 공백을 모두 지우면 TITLE(alpha beta)와 TITLE(alphabeta), 중괄호 exact phrase의 서로 다른 단어를 같은 질의로 오인했다. 일반 단어 경계·큰따옴표/중괄호 내부 공백·escape를 보존하는 token 비교로 교정했다. 현재 Copy query 제어의 값을 내부에서 회수하며 OS clipboard를 읽거나 쓰지 않는다. 연결되지 않은 hidden Monaco model의 가장 긴 값을 고르는 추정은 제거했고, Copy가 없을 때에도 실제 표시된 유일 질의만 사용한다. Copy 동작 실패는 값 없는 typed error로 바꾸어 정상 검색 결과의 partial 보존 경로로 전달한다.
+
+Scopus primary EID의 형식·페이지 내/간 중복을 검사한다. 뒤 페이지 오류는 앞 records·evidence·재개 offset을 유지하며 References의 원 반복 항목과 구별한다. 실패HTML은 실행/인증 요소를 정제하고 JSON도 필드 정제기를 거친다. 잘못된 파일·다운로드 부재/실패/잘못된 확장자·HTTP 오류에서도 얻은 원 응답과 오류 artifact를 보존한다. 숫자1,,2를12로 만드는 잘못된 CSV 허용도 제거했다. 최종 Scopus33·공용extract/WOS 결합70검사와 독립 재검토가 통과했다. 근거는 limitations-audit/scopus-final-review.json/md, root-scopus-query-review.json, institutional-scopus-filtered-export-scope.json 및 각 SDK 보고다.
+
+MathSciNet은6개 정렬과7개 facet 분야를 연결했다. 초기 후보 목록은 authors30·institutions100·primary30·journals30 등으로 제한되어 있어 그 목록 밖 후보의 부재를 기능 부재로 단정하지 않았다. 응답 관측을 페이지 진입·입력 전부터 시작하자 실제 authors-facet/authorName, institutions-facet/names, prim-class-facet/text, journals-facet/text 요청이 확인됐다. 원 base query·후보 검색값·전체 표시 이름·source ID를 대조하고 현재 UI에서 선택한다. 정확한 전체 표시명 검색이0이면 그 표시명의 긴 단어로 후보만 탐색한 뒤 같은 전체 표시명이 유일하게 일치하는 경우에만 선택한다. 호출자의 실제 문헌 질의나 최종 필터를 바꾸지 않는다. 후보 미리보기의 facet_query는 호출 문자열을 그대로 사용한다.
+
+MathSciNet의 wrong group·wrong author ID·추가 institution 조건·stale facets·0건의 checkbox 대기를 교정했다. 같은 분야의 native term은 순서에 무관한 정확한 다중집합으로 검사하고, 적용 뒤 현재 query의 후보 응답이 도착할 때까지 제한된 대기를 거쳐 목록을 갱신한다. Primary Classifications의 ID 접두부와 전체 이름도 같은 표시 규칙으로 대조한다. 실제 combined4,726/2·같은 세션 plain reset144,101/1·zero0/not_applicable·exclude142,930, 초기 목록 밖 저널204/1을 통과했다. 앞서 exclude142,929였던 값은 데이터 시점 차이로 남긴다. 최종24검사와 보존한 원 query/후보의 재검증이 통과했다.
+
+마지막 MathSciNet 재시도의 portal_login 실패는 당시 underlying error_type을 보고가 저장하지 않아 세부 원인을 소급 확정하지 않는다.21:17:36Z~21:17:56Z의 단일 후속 진단은 인증된 KUDOS 상태·로그아웃 제어·학술DB 바로가기·실제 MathSciNet 프록시의 준비 상태를 통과했다. 이후 보고에는 error_type/observed_host를 보존하도록 수정했다. 개인 입력·계정 영역은 캡처에서 제외했으며 공개 기관·저널 후보 이름을 비밀값으로 오인하지 않는다.
+
+WOS 피인용 검색은 일반 검색의21개 정렬과 date-descending 호환 별칭을 지원한다. 실제125건의 마지막 창에서 relevance와 Background 정렬, 원 native sort·QID 계승·부모 accession·export 범위를 대조했다. 원 정렬 메뉴·인용 맥락 submenu와 요청을 함께 확인했으며 모든 가능한 조합의 새 실측으로 확대하지 않는다. 독립 검토도 통과했다.
+
+모든 코드가 동결된 상태에서 전체 서비스 검사506개가25.360초에 통과했다. 기존 문헌 catalog parser16검사와 pip check도 통과했다. 마지막 자료원 설명을 수정한 뒤 새 SDK의 list_sources49개와 Scopus13/MathSciNet7/WOS22 facet 분야·options 객체·예제를 확인했다. final-describe-sdk.json은21:28:11Z~21:28:17Z completed=true다. 공유 인증 상태의 불변 검사는 별도 실패 이력으로 남기며 이 기능 검사 통과에 합치지 않는다.
+
+
+MathSciNet 마지막 같은 세션 검증에서 이전 질의의 늦은 facets 응답이 다음 호출의 base facets로 먼저 선택되는 문제가 재현됐다. 응답 선택 predicate에 처음부터 정확한 base query를 포함하도록 교정하고 stale/current 응답을 순서대로 주는 회귀를 추가했다. institutional-mathscinet-final-sdk-recheck.json은 정확한 공개 facet 표시명 Topology Appl.의204건/1행과 이어진 facet_query=Topology의 후보3개/추출3개를 같은 fresh SDK에서 모두 통과했다. 개인 계정값과 공개 저널 표시명을 구별하며 표시명을 임의의 정식 저널명으로 확장하지 않는다. MathSciNet25검사가 통과했다.
+
+이 마지막 수리 이후 전체 서비스507검사를23.952초에 다시 통과했다. 앞506검사는 이 event 선택 회귀 추가 전 관측이다. 나머지 코드 변경은 없으며 최종 문서·지원표·기억을 정리한다.

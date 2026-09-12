@@ -48,6 +48,17 @@ class ScopusContract(unittest.TestCase):
         rows, total, offset = mod.scopus_records(payload)
         self.assertEqual((len(rows), total, offset), (1, 1, 0))
 
+    def test_primary_pages_reject_duplicate_eids_within_and_across_pages(self):
+        from scopus import scopus_records,unique_primary_ids
+        from scholarly import ServiceError
+        payload=json.loads((ROOT/'tests/fixtures/scopus-primary.json').read_text('utf-8'));row=payload['items'][0]
+        payload={'metadata':{'offset':0,'totalCount':2,'itemCount':2},'items':[row,{**row}]}
+        with self.assertRaises(ServiceError):scopus_records(payload)
+        rows,_,_=scopus_records(payload,check_unique=False);self.assertEqual(len(rows),2)
+        with self.assertRaises(ServiceError):unique_primary_ids([{'eid':'2-s2.0-2'}],{'2-s2.0-2'})
+        with self.assertRaises(ServiceError):unique_primary_ids(rows,{'2-s2.0-prior'})
+        with self.assertRaises(ServiceError):unique_primary_ids([{'eid':'wrong'}])
+
 
 if __name__ == "__main__":
     unittest.main()

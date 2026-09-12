@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import logging
+from collections import Counter
 from pathlib import Path
 import re
 from uuid import uuid4
@@ -383,12 +384,287 @@ class KudosGateway:
 class MathSciNet:
     source = "mathscinet"
     EXPORTS = {"bibtex": "bib", "endnote": "end", "amsref": "ams", "tex": "tex"}
+    sorts={'newest':'newest','relevance':'relevance','oldest':'oldest','citations':'citations','author-count':'authors','paging':'paging'}
+    facet_groups={'review_status':'Review Status','publication_type':'Publication Type','authors':'Authors','institutions':'Institutions',
+                  'primary_classifications':'Primary Classifications','journals':'Journals','publication_years':'Publication Years'}
+    facet_native={'review_status':('frs','label'),'publication_type':('fpt','label'),'authors':('auid','numeric'),
+                  'institutions':('finst','institution'),'primary_classifications':('fpc','numeric'),
+                  'journals':('ji','numeric'),'publication_years':('y','label')}
+    facet_payload_groups={'review_status':'reviewStatuses','publication_type':'publicationTypes','authors':'authors',
+                          'institutions':'institutions','primary_classifications':'primaryClassifications',
+                          'journals':'journals','publication_years':'publicationYears'}
+    facet_search_routes={'authors':('/mathscinet/api/publications/authors-facet','authorName'),
+                         'institutions':('/mathscinet/api/publications/institutions-facet','names'),
+                         'primary_classifications':('/mathscinet/api/publications/prim-class-facet','text'),
+                         'journals':('/mathscinet/api/publications/journals-facet','text')}
 
     def __init__(self, store, gateway):
         self.store, self.gateway = store, gateway
 
     def page(self):
         return self.gateway.open(self.source, "MathSciNet", MSC_HOSTS, "#searchTextInput, main h1")
+
+    @classmethod
+    def advanced_options(cls,options):
+        if not isinstance(options,dict) or set(options)-{'sort','facet_filters','facet_group','facet_query'}:
+            raise ServiceError('invalid_options','Use current MathSciNet publication sort and facet fields')
+        sort=options.get('sort','newest');group=options.get('facet_group');query=options.get('facet_query')
+        if sort not in cls.sorts:raise ServiceError('invalid_options','Use a current MathSciNet publication sort')
+        if group is not None and group not in cls.facet_groups:raise ServiceError('invalid_options','Use a current MathSciNet publication facet field')
+        if query is not None and (group is None or not isinstance(query,str) or not query.strip()):
+            raise ServiceError('invalid_options','facet_query needs facet_group and a nonempty search string')
+        filters=[];raw=options.get('facet_filters')
+        if raw is not None:
+            if not isinstance(raw,dict):raise ServiceError('invalid_options','facet_filters must map current result fields to include/exclude labels')
+            for field,spec in raw.items():
+                if field not in cls.facet_groups or not isinstance(spec,dict) or not spec or set(spec)-{'include','exclude'}:
+                    raise ServiceError('invalid_options','Each facet field needs include and/or exclude exact labels')
+                include=spec.get('include',[]);exclude=spec.get('exclude',[])
+                if not include and not exclude or any(not isinstance(items,list) or not items or any(not isinstance(item,str) or not item.strip() for item in items)
+                       or len({item.casefold() for item in items})!=len(items) for items in (include,exclude) if items) \
+                        or {item.casefold() for item in include}&{item.casefold() for item in exclude}:
+                    raise ServiceError('invalid_options','Facet labels must be distinct and cannot be both included and excluded')
+                filters.append((field,cls.facet_groups[field],include,exclude))
+        return {'sort':cls.sorts[sort],'sort_name':sort,'facet_filters':filters,
+                'facet_preview':(group,query) if group else None}
+
+    @classmethod
+    def facet_candidates(cls,raw,field):
+        if field not in cls.facet_groups:raise ServiceError('invalid_options','Use a current MathSciNet publication facet field')
+        soup=BeautifulSoup(raw,'html.parser');sections=[]
+        for section in soup.select('div.section'):
+            title=section.select_one('.title label.m-0')
+            if title and title.get_text(' ',strip=True)==cls.facet_groups[field]:sections.append(section)
+        if len(sections)!=1:return []
+        result=[];seen=set()
+        for box in sections[0].select('[role="checkbox"][aria-label]'):
+            label=box.get('aria-label','')
+            if '<' in label:label=BeautifulSoup(label,'html.parser').get_text(' ',strip=True)
+            label=re.sub(r'\s+',' ',label).strip()
+            container=box.parent;count=None
+            for _ in range(4):
+                if container is None:break
+                numbers=re.findall(r'(?<!\d)([\d,]+)(?!\d)',container.get_text(' ',strip=True))
+                if numbers:
+                    count=int(numbers[-1].replace(',',''));break
+                container=container.parent
+            if not label or count is None:continue
+            key=label.casefold()
+            if key in seen:raise ServiceError('invalid_response','MathSciNet facet labels are duplicated in one group')
+            seen.add(key);result.append({'label':label,'count':count})
+        return result
+
+    @staticmethod
+    def validate_search_request(url,query,page,size,sort,facets):
+        params=parse_qs(urlsplit(url).query,keep_blank_values=True)
+        expected={'query':[query],'currentPage':[str(page)],'pageSize':[str(size)],'sort':[sort]}
+        if any(params.get(key)!=value for key,value in expected.items()):
+            raise ServiceError('query_mismatch','MathSciNet search request did not retain query, sort, facets and result range')
+        actual_facets=params.get('facets')
+        if actual_facets!=[facets] and not (facets=='' and actual_facets is None):
+            raise ServiceError('query_mismatch','MathSciNet search request retained another facet state')
+
+    @staticmethod
+    def matches_facet_response(response,host,query):
+        location=urlsplit(response.url)
+        return location.hostname==host and location.path=='/mathscinet/api/publications/facets' and \
+            parse_qs(location.query,keep_blank_values=True).get('query')==[query]
+
+    @classmethod
+    def facet_source_candidates(cls,field,rows):
+        if not isinstance(rows,list):raise ServiceError('invalid_response','MathSciNet facet response omitted a current group',field=field)
+        candidates=[];seen=set();_,kind=cls.facet_native[field]
+        for order,row in enumerate(rows):
+            if not isinstance(row,dict) or not isinstance(row.get('id'),str) or not isinstance(row.get('value'),str) or type(row.get('total')) is not int:
+                raise ServiceError('invalid_response','MathSciNet facet response has a malformed candidate',field=field)
+            source_label=' '.join(BeautifulSoup(row['value'],'html.parser').get_text(' ',strip=True).split())
+            label=(row['id']+' - '+source_label) if field=='primary_classifications' else source_label;folded=label.casefold()
+            if not label or folded in seen:raise ServiceError('invalid_response','MathSciNet facet response duplicated a label',field=field)
+            seen.add(folded);native=(json.dumps(label,ensure_ascii=False) if kind=='label' else "v'"+row['id']+"'" if kind=='institution' else json.dumps(row['id']))
+            candidates.append({'label':label,'source_label':source_label,'count':row['total'],'native_term':native,'native_order':order,'source_id':row['id']})
+        return candidates
+
+    @classmethod
+    def facet_payload_candidates(cls,payload):
+        if not isinstance(payload,dict):raise ServiceError('invalid_response','MathSciNet facet response is not an object')
+        return {field:cls.facet_source_candidates(field,payload.get(key)) for field,key in cls.facet_payload_groups.items()}
+
+    @classmethod
+    def validate_facet_query(cls,previous,current,field,selected):
+        tag,_=cls.facet_native[field]
+        if not selected or any(item.get('state') not in ('include','exclude') or not isinstance(item.get('native_term'),str) or not item['native_term'] for item in selected):
+            raise ServiceError('query_mismatch','MathSciNet facet validation requires source-bound native candidate values',field=field)
+        include=[item for item in selected if item['state']=='include'];exclude=[item for item in selected if item['state']=='exclude'];parts=[]
+        if not current.startswith(previous+' '):
+            raise ServiceError('query_mismatch','MathSciNet facet query did not retain the exact selected group, mode and native values',field=field,stage='facet_delta_prefix')
+        tail=current[len(previous)+1:]
+        def consume(text,items):
+            remaining=Counter(item['native_term'] for item in items);wrapped=len(items)>1
+            if wrapped:
+                if not text.startswith('('):return None
+                position=1
+            else:position=0
+            def match(offset,left):
+                if not left:
+                    return offset+1 if wrapped and text.startswith(')',offset) else offset if not wrapped else None
+                for term in sorted(left,key=len,reverse=True):
+                    if text.startswith(term,offset):
+                        rest=left.copy();rest[term]-=1
+                        if not rest[term]:del rest[term]
+                        end=offset+len(term)
+                        if rest:
+                            if not text.startswith(' OR ',end):continue
+                            end+=4
+                        found=match(end,rest)
+                        if found is not None:return found
+                return None
+            return match(position,remaining)
+        if include:
+            prefix=tag+':'
+            if not tail.startswith(prefix):raise ServiceError('query_mismatch','MathSciNet facet query used another native group',field=field)
+            end=consume(tail[len(prefix):],include)
+            if end is None:raise ServiceError('query_mismatch','MathSciNet facet query changed the included native values',field=field)
+            tail=tail[len(prefix)+end:]
+        if exclude:
+            prefix=(' NOT ' if include else 'NOT ')+tag+':'
+            if not tail.startswith(prefix):raise ServiceError('query_mismatch','MathSciNet facet query omitted or changed the exclusion',field=field)
+            end=consume(tail[len(prefix):],exclude)
+            if end is None:raise ServiceError('query_mismatch','MathSciNet facet query changed the excluded native values',field=field)
+            tail=tail[len(prefix)+end:]
+        if tail:
+            raise ServiceError('query_mismatch','MathSciNet facet query retained unrequested terms',field=field,stage='facet_delta_tail')
+
+    def facet_scope(self,page,field):
+        heading=self.facet_groups[field]
+        scopes=page.locator('div.section').filter(has=page.get_by_text(heading,exact=True)).filter(visible=True)
+        if scopes.count()!=1:
+            all_labels=page.get_by_text(heading,exact=True);display=None
+            raise ServiceError('facet_selection_required','The current MathSciNet result has no unique requested facet group',status='selection_required',field=field,
+                               candidate_group_count=scopes.count(),attached_group_count=all_labels.count(),panel_display=display)
+        return scopes.first
+
+    def open_facets(self,page):
+        if page.get_by_text('Review Status',exact=True).filter(visible=True).count():return
+        dismiss_cookies(page)
+        close=page.get_by_role('button',name='Close',exact=True).filter(visible=True)
+        if close.count():
+            close.first.click();page.wait_for_timeout(250)
+        button=page.locator('button[name="Show filters button"]').filter(visible=True)
+        try:button.first.wait_for(state='visible',timeout=30000)
+        except Exception:
+            main=page.locator('main');text=main.inner_text() if main.count() else ''
+            raise ServiceError('facet_selection_required','MathSciNet did not finish rendering its current result filters',status='selection_required',
+                               page_path=urlsplit(page.url).path,page_title=page.title(),main_text=' '.join(text.split())[:160]) from None
+        if button.count()!=1:raise ServiceError('facet_selection_required','MathSciNet did not offer its current result filters',status='selection_required',filter_button_count=button.count())
+        button.click()
+        page.get_by_text('Review Status',exact=True).filter(visible=True).first.wait_for(state='visible',timeout=15000)
+
+    def current_facet_candidates(self,scope,field):
+        return self.facet_candidates(scope.evaluate('(node)=>node.outerHTML'),field)
+
+    def search_facet_candidates(self,page,scope,field,value,effective_query,native_catalog=None):
+        search=scope.locator('input[placeholder="Search '+self.facet_groups[field]+'"]');route,param=self.facet_search_routes[field]
+        if search.input_value()==value:
+            search.fill('');page.wait_for_timeout(100)
+        with page.expect_response(lambda response:urlsplit(response.url).hostname in MSC_HOSTS and urlsplit(response.url).path==route and
+                                  parse_qs(urlsplit(response.url).query,keep_blank_values=True).get('query')==[effective_query] and
+                                  parse_qs(urlsplit(response.url).query,keep_blank_values=True).get(param)==[value],timeout=45000) as event:search.fill(value)
+        response=event.value
+        if response.status!=200:raise ServiceError('provider_error','MathSciNet facet candidate search failed',http_status=response.status,field=field)
+        searched=self.facet_source_candidates(field,response.json());existing={(item['label'].casefold(),item['source_id']):item for item in (native_catalog or {}).get(field,[])}
+        for item in searched:existing[(item['label'].casefold(),item['source_id'])]=item
+        if native_catalog is not None:native_catalog[field]=list(existing.values())
+        group=search.locator('xpath=ancestor::div[contains(@class,"input-group")][1]');button=group.locator('button:visible')
+        if button.count()!=1:raise ServiceError('facet_selection_required','MathSciNet facet search has no unique visible control',status='selection_required',field=field)
+        search.scroll_into_view_if_needed();button.click();source_labels={item['label'].casefold() for item in searched};current=None
+        for _ in range(60):
+            current=self.current_facet_candidates(scope,field)
+            if all(item['label'].casefold() in source_labels for item in current) and (current or not searched):break
+            page.wait_for_timeout(250)
+        else:raise ServiceError('facet_candidates_not_ready','MathSciNet facet search did not display its source-bound candidates',field=field)
+        return searched,current
+
+    def resolve_facet(self,page,scope,field,label,native_catalog=None,effective_query=None):
+        candidates=self.current_facet_candidates(scope,field)
+        matches=[item for item in candidates if item['label'].casefold()==label.casefold()]
+        if len(matches)!=1:
+            search=scope.locator('input[placeholder="Search '+self.facet_groups[field]+'"]')
+            if search.count():
+                tokens=re.findall(r'\w{3,}',label);fallback=max(tokens,key=len) if tokens else label;queries=list(dict.fromkeys((label,fallback)));searched=[]
+                for value in queries:
+                    searched,candidates=self.search_facet_candidates(page,scope,field,value,effective_query,native_catalog)
+                    if sum(item['label'].casefold()==label.casefold() for item in searched)==1:break
+                matches=[item for item in candidates if item['label'].casefold()==label.casefold()]
+        if len(matches)!=1:
+            raise ServiceError('facet_selection_required','Select one exact label from the current MathSciNet facet group',status='selection_required',field=field,candidates=candidates)
+        boxes=[]
+        for box in scope.locator('[role="checkbox"][aria-label]').all():
+            value=box.get_attribute('aria-label') or ''
+            if '<' in value:value=BeautifulSoup(value,'html.parser').get_text(' ',strip=True)
+            if re.sub(r'\s+',' ',value).strip().casefold()==label.casefold():boxes.append(box)
+        if len(boxes)!=1:raise ServiceError('facet_selection_required','The selected MathSciNet label has no unique native control',status='selection_required',field=field,candidates=candidates)
+        return boxes[0],matches[0],candidates
+
+    def apply_facets(self,page,query,size,sort,filters,preview,base_total=None,native_catalog=None):
+        if not filters and preview is None:return '',[],[],None
+        page.wait_for_function("() => document.querySelectorAll('input[name=\"Select article checkbox\"]').length > 0",timeout=15000)
+        self.open_facets(page);evidence=[];artifacts=[];effective=query;current_total=base_total
+        for field,_,include,exclude in filters:
+            self.open_facets(page)
+            scope=self.facet_scope(page,field);selected=[];all_candidates=[]
+            for state,labels in (('include',include),('exclude',exclude)):
+                for label in labels:
+                    box,candidate,candidates=self.resolve_facet(page,scope,field,label,native_catalog,effective);all_candidates=candidates
+                    native=[item for item in (native_catalog or {}).get(field,[]) if item['label'].casefold()==label.casefold()]
+                    if len(native)!=1:raise ServiceError('facet_selection_required','The selected MathSciNet label has no unique source facet identity',status='selection_required',field=field,candidates=candidates)
+                    clicks=1 if state=='include' else 2
+                    for _ in range(clicks):box.evaluate('(node)=>node.click()');page.wait_for_timeout(100)
+                    expected='true' if state=='include' else 'mixed'
+                    if box.get_attribute('aria-checked')!=expected:
+                        raise ServiceError('facet_selection_failed','MathSciNet did not retain the requested include/exclude state',field=field,label=label)
+                    selected.append({**candidate,**{key:native[0][key] for key in ('native_term','native_order')},'state':state})
+            artifacts.append(self.store.put(encoded(all_candidates),'application/json',self.source,page.url,role='facet_candidates',field=field,
+                scope='Current MathSciNet result facet candidates'))
+            facet_responses=[]
+            def captured_facet(response):
+                if urlsplit(response.url).hostname in MSC_HOSTS and urlsplit(response.url).path=='/mathscinet/api/publications/facets':facet_responses.append(response)
+            page.on('response',captured_facet)
+            try:
+                with page.expect_response(lambda response:urlsplit(response.url).hostname in MSC_HOSTS and urlsplit(response.url).path=='/mathscinet/api/publications/search',timeout=45000) as event:
+                    scope.get_by_role('button',name='Apply',exact=True).filter(visible=True).first.click(no_wait_after=True)
+                response=event.value
+                if response.status!=200:raise ServiceError('provider_error','MathSciNet facet refinement failed',http_status=response.status,field=field)
+                params=parse_qs(urlsplit(response.url).query,keep_blank_values=True);new_query=params.get('query',[None])[0]
+                if not isinstance(new_query,str) or not new_query or new_query==effective or params.get('sort')!=[sort]:
+                    raise ServiceError('query_mismatch','MathSciNet refinement did not add the selected facet labels',field=field,
+                                       query_keys=sorted(params),facets_present='facets' in params,query_matches=params.get('query')==[effective],
+                                        query_length=len(params.get('query',[''])[0]),observed_query=new_query,selected=selected)
+                self.validate_facet_query(effective,new_query,field,selected)
+                matching_facets=[]
+                for _ in range(180):
+                    matching_facets=[item for item in facet_responses if parse_qs(urlsplit(item.url).query,keep_blank_values=True).get('query')==[new_query]]
+                    if matching_facets:break
+                    page.wait_for_timeout(250)
+            finally:
+                page.remove_listener('response',captured_facet)
+            if not matching_facets or matching_facets[-1].status!=200:
+                raise ServiceError('query_mismatch','MathSciNet refreshed facets are not bound to the refined query',field=field,stage='facet_refresh_query')
+            native_catalog.update(self.facet_payload_candidates(matching_facets[-1].json()))
+            total,rows,_=self.validated_search_page(response.json(),1,size)
+            if current_total is not None and total>current_total:raise ServiceError('result_set_mismatch','MathSciNet refinement enlarged the current result set',field=field)
+            current_total=total;effective=new_query;evidence.append(self.store.put(encoded(response.json()),'application/json',self.source,response.url,
+                role='facet_response',field=field,selected=selected,total=total,received=len(rows),native_query=effective))
+        preview_artifact=None
+        if preview:
+            self.open_facets(page);field,facet_query=preview;scope=self.facet_scope(page,field)
+            if facet_query:
+                search=scope.locator('input[placeholder="Search '+self.facet_groups[field]+'"]')
+                if not search.count():raise ServiceError('facet_selection_required','This MathSciNet facet group has no candidate search',status='selection_required',field=field)
+                _,candidates=self.search_facet_candidates(page,scope,field,facet_query,effective,native_catalog)
+            else:candidates=self.current_facet_candidates(scope,field)
+            preview_artifact=self.store.put(encoded(candidates),'application/json',self.source,page.url,role='facet_candidates',field=field,query=facet_query,
+                scope='Current MathSciNet result facet candidates')
+        return effective,evidence,artifacts,preview_artifact
 
     @staticmethod
     def validated_search_page(payload,page_number,page_size,previous_total=None):
@@ -593,11 +869,11 @@ class MathSciNet:
     def search(self, query, *, options, start=0, limit=20, cursor=None, export=None):
         if type(start) is not int or start < 0 or type(limit) is not int or not 1 <= limit <= 100:
             raise ServiceError("invalid_range", "MathSciNet requires start >= 0 and limit 1..100")
-        if cursor or set(options) - {"sort","kind","citation_basis"}:
+        advanced_keys={'sort','facet_filters','facet_group','facet_query'}
+        if cursor or set(options) - (advanced_keys|{"kind","citation_basis"}):
             raise ServiceError("invalid_options", "MathSciNet uses start; select publications, citations or references and a documented sort")
-        sort = options.get("sort", "newest")
-        if sort not in ("newest", "oldest", "relevance"):
-            raise ServiceError("invalid_options", "Validated sort values are newest, oldest, relevance")
+        settings=self.advanced_options({key:value for key,value in options.items() if key in advanced_keys})
+        sort_name=options.get("sort", "newest");sort=settings['sort']
         kind=options.get('kind','publications')
         if kind not in ('publications','citations','references'):
             raise ServiceError('invalid_options','Use kind publications, citations or references')
@@ -607,24 +883,45 @@ class MathSciNet:
         if export not in (None, "json", *self.EXPORTS):
             raise ServiceError("invalid_export", "Use json, bibtex, endnote, amsref or tex")
         if kind=='citations':
-            arguments={'sort':sort,'start':start,'limit':limit,'cursor':cursor,'export':export}
+            if set(options)-{'kind','sort','citation_basis'}:raise ServiceError('invalid_options','MathSciNet relationship searches do not accept publication facet filters')
+            arguments={'sort':sort_name,'start':start,'limit':limit,'cursor':cursor,'export':export}
             if 'citation_basis' in options:arguments['citation_basis']=citation_basis
             return self.citing(query,**arguments)
-        if kind=='references':return self.references(query,sort=sort,start=start,limit=limit,cursor=cursor,export=export)
+        if kind=='references':
+            if set(options)-{'kind','sort'}:raise ServiceError('invalid_options','MathSciNet relationship searches do not accept publication facet filters')
+            return self.references(query,sort=sort_name,start=start,limit=limit,cursor=cursor,export=export)
         page = self.page()
         host = urlsplit(page.url).hostname
         size = next(n for n in (5, 10, 20, 50, 100) if n >= limit)
         first_page = start // size + 1
         last_page = (start + limit - 1) // size + 1
-        records, evidence, citations, citation_artifacts, export_errors = [], [], [], [], []
+        effective_query=query;filter_evidence=[];facet_artifacts=[];facet_preview=None;zero_filter_state=None
+        if settings['facet_filters'] or settings['facet_preview']:
+            control_url="https://"+host+"/mathscinet/publications-search?"+urlencode({'query':query,'page':1,'size':size,'sort':sort,'facets':''})
+            with page.expect_response(lambda response:self.matches_facet_response(response,host,query),timeout=45000) as facet_event:
+                with page.expect_response(lambda response:urlsplit(response.url).hostname==host and urlsplit(response.url).path=='/mathscinet/api/publications/search'
+                                           and parse_qs(urlsplit(response.url).query).get('query')==[query],timeout=45000) as control:
+                    goto_source(page,control_url,MSC_HOSTS,wait_until='domcontentloaded',timeout=45000)
+            self.validate_search_request(control.value.url,query,1,size,sort,'')
+            if facet_event.value.status!=200:raise ServiceError('provider_error','MathSciNet facet candidates failed',http_status=facet_event.value.status)
+            if parse_qs(urlsplit(facet_event.value.url).query,keep_blank_values=True).get('query')!=[query]:
+                raise ServiceError('query_mismatch','MathSciNet facet candidates are not bound to the base query')
+            native_catalog=self.facet_payload_candidates(facet_event.value.json())
+            base_total=self.validated_search_page(control.value.json(),1,size)[0]
+            if base_total==0:
+                zero_filter_state={'status':'not_applicable','reason':'The base MathSciNet query has no current facet candidates; requested filters were not applied'}
+            else:
+                effective_query,filter_evidence,facet_artifacts,facet_preview=self.apply_facets(page,query,size,sort,settings['facet_filters'],settings['facet_preview'],base_total,native_catalog)
+        records, evidence, citations, citation_artifacts, export_errors = [], list(filter_evidence), [], [], []
         total = None;seen_mrs=set()
         from playwright.sync_api import TimeoutError as BrowserTimeout
         for page_number in range(first_page, last_page + 1):
-            query_url = "https://" + host + "/mathscinet/publications-search?" + urlencode({"query": query, "page": page_number, "size": size, "sort": sort, "facets": ""})
+            query_url = "https://" + host + "/mathscinet/publications-search?" + urlencode({"query": effective_query, "page": page_number, "size": size, "sort": sort, "facets": ""})
             def matching(response):
                 url = urlsplit(response.url)
-                params = parse_qs(url.query)
-                return url.hostname == host and url.path == "/mathscinet/api/publications/search" and params.get("query") == [query] and params.get("currentPage") == [str(page_number)] and params.get("pageSize") == [str(size)]
+                if url.hostname!=host or url.path!="/mathscinet/api/publications/search":return False
+                try:self.validate_search_request(response.url,effective_query,page_number,size,sort,'');return True
+                except ServiceError:return False
             try:
                 with page.expect_response(matching, timeout=45000) as captured:
                     goto_source(page, query_url, MSC_HOSTS, wait_until="domcontentloaded", timeout=45000)
@@ -636,7 +933,8 @@ class MathSciNet:
                 if seen_mrs.intersection(page_mrs):
                     raise ServiceError('invalid_response','MathSciNet search pages repeated an MR identity',page=page_number)
                 seen_mrs.update(page_mrs)
-                raw = self.store.put(encoded(payload), "application/json", self.source, response.url, role="provider_response", query=query, page=page_number, page_size=size, sort=sort)
+                raw = self.store.put(encoded(payload), "application/json", self.source, response.url, role="provider_response", query=query,native_query=effective_query,
+                                     page=page_number, page_size=size, sort=sort)
                 evidence.append(raw)
                 offset = (page_number - 1) * size
                 selected_indexes = [i for i in range(len(rows)) if start <= offset + i < start + limit]
@@ -666,7 +964,10 @@ class MathSciNet:
         return {"status": "partial" if export_errors else "ok" if records else "not_found", "source": self.source, "query": query, "options": options,
             "start": start, "requested": limit, "received": len(records), "total": total, "has_more": has_more,
             "next": {"start": start + len(records)} if has_more else None, "records": artifact, "export": exported,
-            "evidence": evidence, "preview": [{"id": "MR" + str(row["mrnumber"]), "titles": row["titles"]} for row in records[:3]],
+            "evidence": evidence,"sort":sort_name,"native_query":effective_query,"facet_groups":list(self.facet_groups),"facet_candidates":facet_preview,
+            "filter_evidence":filter_evidence,"applied_facet_candidates":facet_artifacts,
+            **({'filter_state':zero_filter_state} if zero_filter_state else {}),
+            "preview": [{"id": "MR" + str(row["mrnumber"]), "titles": row["titles"]} for row in records[:3]],
             "scope": "KUDOS → academic DB → MathSciNet proxy; selected source only"}
 
     def fetch(self, target, *, parts):
@@ -756,6 +1057,7 @@ class WebOfScience:
            'background-highest':('Background: Highest first',None),'basis-highest':('Basis: Highest first',None),
            'support-highest':('Support: Highest first',None),'differ-highest':('Differ: Highest first',None),
            'discuss-highest':('Discuss: Highest first',None)}
+    citation_class_sorts={'background-highest','basis-highest','support-highest','differ-highest','discuss-highest'}
     edition_values={'SCI-EXPANDED':'WOS.SCI','SSCI':'WOS.SSCI','AHCI':'WOS.AHCI','CPCI-S':'WOS.ISTP','CPCI-SSH':'WOS.ISSHP','ESCI':'WOS.ESCI'}
 
     def __init__(self, store, gateway):
@@ -1014,9 +1316,14 @@ class WebOfScience:
         label,expected_native=sort;control=page.locator('#selectSortOption').filter(visible=True).first;control.wait_for(timeout=30000)
         evidence=None
         if control.get_attribute('aria-label')!='Sort by '+label:
-            control.click();choice=page.get_by_role('menuitem',name=label,exact=True)
+            control.click()
+            choice=page.get_by_role('menuitem',name=label,exact=True).filter(visible=True)
+            if not choice.count():
+                citation_class=page.get_by_role('menuitem',name='Citation class',exact=True).filter(visible=True)
+                if citation_class.count():citation_class.first.click();choice=page.get_by_role('menuitem',name=label,exact=True).filter(visible=True)
+            if choice.count()!=1:raise ServiceError('sort_not_offered','The current WOS result does not offer the requested sort',status='unsupported')
             with page.expect_response(lambda response:urlsplit(response.url).hostname in self.hosts and urlsplit(response.url).path=='/api/wosnx/core/runQueryGetRecordsStream',timeout=60000) as event:
-                choice.click()
+                choice.first.click()
             response=event.value
             if response.status!=200:raise ServiceError('provider_error','WOS result sorting failed',http_status=response.status)
             request=response.request.post_data_json;native=request.get('retrieve',{}).get('sort')
@@ -1057,8 +1364,9 @@ class WebOfScience:
         return retrieve['count']
 
     def search_citations(self,target,*,start,limit,export,sort='date-descending'):
-        if sort!='date-descending':
-            raise ServiceError('invalid_options','The currently verified WOS citing sort is date-descending')
+        sort_key='date-newest' if sort=='date-descending' else sort
+        if sort_key not in self.sorts:raise ServiceError('invalid_options','Use a current WOS citing-result sort')
+        sort_setting=self.sorts[sort_key]
         query,expected_doi=self.citing_target(target)
         parent=self.search(query,options={},limit=1,export='plain')
         if parent.get('status')!='ok':return {**parent,'kind':'citations','requested_target':target}
@@ -1083,7 +1391,7 @@ class WebOfScience:
             if control_total==0:
                 artifact=self.store.put(b'[]','application/json',self.source,record_url,role='citing_records',target=accession,total=0)
                 return {'status':'not_found','source':self.source,'query':target,'options':{'kind':'citations','sort':sort},
-                        'kind':'citations','target':accession,'start':start,'requested':limit,'received':0,'total':0,
+                        'kind':'citations','target':accession,'sort':sort,'start':start,'requested':limit,'received':0,'total':0,
                         'has_more':False,'next':None,'records':artifact,'export':artifact,'parent':parent['records'],
                         'scope':'Incoming WOS Core Collection records for the selected accession'}
             raise ServiceError('citing_control_missing','WOS full record has citations but no citing-results control',source_page=record_url)
@@ -1095,16 +1403,20 @@ class WebOfScience:
             goto_source(page,citing_url,self.hosts,wait_until='domcontentloaded',timeout=45000)
         response=event.value
         if response.status!=200:raise ServiceError('provider_error','WOS citing search failed',http_status=response.status)
-        request=response.request.post_data_json;page_size=self.validate_citing_request(request,accession,sort)
+        request=response.request.post_data_json;page_size=self.validate_citing_request(request,accession,'date-descending')
         native=wos_events(response.text());total=native['total']
-        evidence=self.store.put(encoded(native['events']),'application/json',self.source,response.url,role='citing_search_response',
+        initial_evidence=self.store.put(encoded(native['events']),'application/json',self.source,response.url,role='citing_search_response',
                                 target=accession,direction='incoming',control_total=control_total,result_total=total,
-                                native_page_size=page_size,sort=sort)
+                                native_page_size=page_size,sort='date-descending')
+        sort_evidence=None;native_sort='date-descending'
+        if sort_key!='date-newest':
+            native,sort_evidence,native_sort=self.apply_sort(page,native,sort_setting)
+            if native['total']!=total:raise ServiceError('result_set_mismatch','WOS citing sort changed the result set size')
         if start>=total:
             artifact=self.store.put(b'[]','application/json',self.source,page.url,role='citing_records',target=accession,start=start,total=total)
             return {'status':'not_found','source':self.source,'query':target,'options':{'kind':'citations','sort':sort},
-                    'kind':'citations','target':accession,'start':start,'requested':limit,'received':0,'total':total,
-                    'has_more':False,'next':None,'records':artifact,'export':artifact,'evidence':evidence,'parent':parent['records'],
+                    'kind':'citations','target':accession,'sort':sort,'start':start,'requested':limit,'received':0,'total':total,
+                    'has_more':False,'next':None,'records':artifact,'export':artifact,'evidence':initial_evidence,'sort_evidence':sort_evidence,'native_sort':native_sort,'parent':parent['records'],
                     'relation':{'direction':'incoming','control_total':control_total,'result_total':total},
                     'scope':'Incoming WOS Core Collection records for the selected accession'}
         page.locator('#export-trigger-btn').wait_for(timeout=45000)
@@ -1116,8 +1428,8 @@ class WebOfScience:
                                 start=start,requested=limit,total=total,export_ref=full_export['ref'])
         exported,export_error=self.requested_export(page,start,end,export,artifact,full_export)
         return {'status':'partial' if export_error else 'ok','source':self.source,'query':target,'options':{'kind':'citations','sort':sort},'kind':'citations',
-                'target':accession,'start':start,'requested':limit,'received':len(records),'total':total,'records':artifact,
-                'export':exported,'full_record_export':full_export,'evidence':evidence,'parent':parent['records'],
+                'target':accession,'sort':sort,'start':start,'requested':limit,'received':len(records),'total':total,'records':artifact,
+                'export':exported,'full_record_export':full_export,'evidence':initial_evidence,'sort_evidence':sort_evidence,'native_sort':native_sort,'parent':parent['records'],
                 'relation':{'direction':'incoming','control_total':control_total,'result_total':total},'export_error':export_error,
                 'has_more':end<total,'next':{'start':end} if end<total else None,
                 'preview':[{'id':row['id'],'title':' '.join(row['fields'].get('ti',[]))} for row in records[:3]],
@@ -1164,7 +1476,8 @@ class WebOfScience:
             raise ServiceError("invalid_export", "Use json, plain, ris, bibtex, excel, tsv or html")
         kind=options.get('kind','publications');sort=options.get('sort','date-descending' if kind=='citations' else None)
         if kind=='citations':
-            if set(options)-{'kind','sort'}:raise ServiceError('invalid_options','Citing works accept kind and their verified date-descending sort')
+            if set(options)-{'kind','sort'}:raise ServiceError('invalid_options','Citing works accept kind and a current citing-result sort')
+            if sort!='date-descending' and sort not in self.sorts:raise ServiceError('invalid_options','Use a current WOS citing-result sort')
             return self.search_citations(query,start=start,limit=limit,export=export,sort=sort)
         if kind!='publications':raise ServiceError('invalid_options','Use kind publications or citations')
         settings=self.advanced_options({key:value for key,value in options.items() if key!='kind'})

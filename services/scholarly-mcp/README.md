@@ -65,7 +65,7 @@ Codex 프로젝트 설정의 scholarly 호출 제한은 1,800초다. 대용량 �
 
 현재 실서비스 근거는 로컬 `data/validation/`과 [검증 기록](VALIDATION.md)에 있다. MathSciNet·Web of Science·ECCC·ACM·Scopus·IEEE·PQDT·DROPS·AFP의 구현 범위에 대해 실제 MCP 흐름을 수행했다. Crossref·Crossmark·arXiv·zbMATH는 MCP 검색·추출을 수행했다. GitHub의 고정 커밋 파일, Numdam의 JATS·PDF, Software Heritage의 origin 조회·cursor 순회, Springer의 서지·초록·PDF는 어댑터 직접 호출로 확인했다. 각 기록은 해당 시점·입력·호스트의 관측이며 모든 옵션의 검증으로 확대하지 않는다.
 
-Scopus의 native 내보내기는 별도 웹 계정을 요구하므로 사용자 지시에 따라 보류한다. 검색 결과와 원 JSON·기계적 CSV는 사용할 수 있고, native RIS·BibTeX 요청에는 `export_deferred`와 보존 결과를 함께 반환한다. PQDT는 docview 번호와 학위논문 publication number를 구별하며 실제 RIS의 AN 필드로 대조한다. IEEE는 Command Search와 초록을 포함한 native 인용문 내보내기를 사용한다.
+Scopus 문헌의 native RIS·BibTeX는 별도 웹 계정 경로를 사용자 지시에 따라 보류한다. 검색 결과·원 JSON·기계적 CSV와 개인 계정이 필요 없는 `facet-counts` 원 CSV는 제공한다. 필터 건수 CSV의 `extract`는 `facet_group`·`label`·`count` 행이며 `selection=raw`로 원 설명문과 줄을 읽는다. 문헌 RIS·BibTeX 요청에는 `export_deferred`와 보존 결과를 반환한다. PQDT는 docview 번호와 학위논문 publication number를 구별하며 실제 RIS의 AN 필드로 대조한다. IEEE는 Command Search와 초록을 포함한 native 인용문 내보내기를 사용한다.
 
 AFP는 공식 Heptapod의 별도 인증 없는 API를 사용한다. 기본 대상은 개발 저장소 `afp-devel`이며, 조회한 Mercurial 커밋을 파일 요청에 고정한다. 항목 검색 결과의 `target`을 fetch에 전달하면 같은 커밋의 항목 메타데이터와 증명 소스를 회수한다. `fulltext`는 이 자료원에서 Isabelle 소스 묶음을 뜻하며, 증명 실행이나 수학적 타당성 판정은 수행하지 않는다.
 
@@ -87,7 +87,7 @@ AIP의 Figshare 보충자료는 AIP 호출의 `source`·`target` 참조를 읽�
 
 `aps`는 별도 자격 없는 공개 Harvest API의 OA 자료 범위다. `aps-institutional`은 KUDOS를 거치는 기관 구독 접근이다. 호출자가 자료원을 선택하며 한 호출 안에서 접근 경로를 바꾸지 않는다. 기관 검색은 조건식·정렬·원 facet·날짜를 다루며 현재 지원 값과 실제 검증 범위는 `describe_source`와 검증 기록에서 확인한다.
 
-인증 색인의 추가 조건도 `describe_source`에서 확인한다. WOS는 edition·정렬·분야별 필터와 후보 검색, IEEE는 정렬·접근 범위·연도·추가 후보를 제공한다. ACM은 query를 비우고 options.expression에 Edit Query 검색식을 넣어 서로 다른 field도 대문자 AND·OR·NOT으로 결합한다. 일반 검색 행의 AND는 기본값이다. 별도 범주 연산은 그 범주 값 사이에 적용한다. PQDT의 include/exclude도 그룹별로 적용하며 Cite BibTeX의 고정 범위와 내용 선택이 가능한 다운로드 형식을 구별한다. 원 파일이 추가 문헌이나 문법 경고를 포함하면 그 사실과 원 자료를 함께 보존한다.
+인증 색인의 추가 조건도 `describe_source`에서 확인한다. Scopus는9개 정렬과13개 필터 분야, MathSciNet은6개 정렬과7개 필터 분야 및 초기 목록 밖 후보 검색을 제공한다. WOS의 피인용 문헌 검색에도 일반 검색의 정렬을 사용할 수 있다. WOS는 edition·정렬·분야별 필터와 후보 검색, IEEE는 정렬·접근 범위·연도·추가 후보를 제공한다. ACM은 query를 비우고 options.expression에 Edit Query 검색식을 넣어 서로 다른 field도 대문자 AND·OR·NOT으로 결합한다. 일반 검색 행의 AND는 기본값이다. 별도 범주 연산은 그 범주 값 사이에 적용한다. PQDT의 include/exclude도 그룹별로 적용하며 Cite BibTeX의 고정 범위와 내용 선택이 가능한 다운로드 형식을 구별한다. 원 파일이 추가 문헌이나 문법 경고를 포함하면 그 사실과 원 자료를 함께 보존한다.
 
 연락 이메일을 요구하는 Unpaywall은 사용자 지시에 따라 사용을 보류한다. `describe_source`에는 보류 상태를 표시하며, 검색·확보 호출은 네트워크 요청 없이 `source_deferred`를 반환한다. 별도 웹 계정이나 연락 이메일은 요청하지 않는다.
 

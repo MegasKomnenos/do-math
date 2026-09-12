@@ -494,8 +494,14 @@ def extract_artifact(store, ref, *, fields=None, start=0, count=20, selection=""
             rows = data.decode("utf-8-sig").splitlines()
             unit = "lines"
         elif media == "text/csv":
-            import csv, io
-            rows = list(csv.DictReader(io.StringIO(data.decode("utf-8-sig"))))
+            if meta.get('source')=='scopus' and meta.get('role') in ('native_facet_counts','native_facet_counts_response'):
+                if selection:raise ServiceError('invalid_selection','Scopus facet counts use records or selection=raw')
+                from scopus import filter_count_records
+                parsed=filter_count_records(data,meta.get('native_query',meta.get('query')))
+                rows=[{'facet_group':group,**candidate} for group in parsed['groups'] for candidate in parsed['candidates'][group]]
+            else:
+                import csv, io
+                rows = list(csv.DictReader(io.StringIO(data.decode("utf-8-sig"))))
         else:
             rows = bibliography(data, media)
     elif "html" in media:

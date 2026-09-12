@@ -2,9 +2,9 @@
 
 | 자료원 | source | 경로 | 구현 | 기능 | 실측 표지 |
 |---|---|---|---|---|---|
-| MathSciNet | mathscinet | playwright | partial | source_guide, search, fetch, export | live_mcp_search_four_exports_review_pdf_mr_doi_incoming_reviews_outgoing_subset_windows |
-| Web of Science Core Collection + CPCI | wos | playwright | partial | source_guide, search, fetch, export | live_mcp_editions_sorts_friendly_facets_discovery_windows_exports_citing_and_identity |
-| Scopus | scopus | playwright | partial | source_guide, search, fetch, export | live_mcp_search_fetch_references_pagination_cited_by_extract |
+| MathSciNet | mathscinet | playwright | partial | source_guide, search, fetch, export | live_mcp_six_sorts_seven_facets_searched_candidates_four_exports_review_graph_windows |
+| Web of Science Core Collection + CPCI | wos | playwright | partial | source_guide, search, fetch, export | live_mcp_editions_sorts_friendly_facets_windows_exports_citing_sorts_and_identity |
+| Scopus | scopus | playwright | partial | source_guide, search, fetch, export | live_mcp_nine_sorts_thirteen_facets_exact_windows_native_facet_counts_and_relations |
 | ACM Digital Library | acm-dl | playwright | partial | source_guide, search, fetch, export | live_mcp_edit_query_boolean_combined_filters_native_exports_html_tex_pdf_supplement_and_identity |
 | IEEE Xplore / IEL | ieee-xplore | playwright | partial | source_guide, search, fetch, export | live_mcp_native_exports_filtered_windows_typeahead_pdf_html_identity_references_media |
 | PQDT Global | pqdt | playwright | partial | source_guide, search, fetch, export | live_mcp_21_facet_values_filtered_windows_zero_seven_exports_fulltext_supplement |
