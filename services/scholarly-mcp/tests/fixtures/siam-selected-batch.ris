@@ -1,0 +1,36 @@
+
+TY  - BOOK
+PY  - 1997
+Y1  - 1997/01/01
+Y2  - 2026/09/12
+DO  - doi:10.1137/1.9780898719574
+UR  - https://doi.org/10.1137/1.9780898719574
+N1  - doi:10.1137/1.9780898719574
+M3  - doi:10.1137/1.9780898719574
+AU  - Trefethen, Lloyd N.
+AU  - Bau, III, David
+SP  - 373
+TI  - Numerical Linear Algebra
+T2  - Other Titles in Applied Mathematics
+SN  - 978-0-89871-361-9
+PB  - Society for Industrial and Applied Mathematics
+ER  - 
+
+TY  - CHAP
+PY  - 2018
+Y1  - 2018/12/10
+Y2  - 2026/09/12
+M1  - 0
+DO  - doi:10.1137/1.9781611975468.ch8
+UR  - https://doi.org/10.1137/1.9781611975468.ch8
+N1  - doi:10.1137/1.9781611975468.ch8
+M3  - doi:10.1137/1.9781611975468.ch8
+N2  - This chapter deals with exact and symbolic linear algebra over rings.
+AB  - This chapter deals with exact and symbolic linear algebra over rings.
+SP  - 153-176
+TI  - Linear Algebra
+T2  - Computational Mathematics with SageMath
+T3  - Other Titles in Applied Mathematics
+SN  - 978-1-61197-545-1
+PB  - Society for Industrial and Applied Mathematics
+ER  - 

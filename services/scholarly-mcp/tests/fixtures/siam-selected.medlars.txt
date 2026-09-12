@@ -1,0 +1,14 @@
+
+
+
+
+
+AU  - Lloyd N. TrefethenAU  - David Bau, III
+ED  - Lloyd N. TrefethenED  - David Bau, III
+TI  - 
+PT  - Book
+TA  - Numerical Linear Algebra
+AID  - 10.1137/1.9780898719574 [doi]
+4099  - https://epubs.siam.org/doi/abs/10.1137/1.9780898719574
+4100  - https://epubs.siam.org/doi/full/10.1137/1.9780898719574
+

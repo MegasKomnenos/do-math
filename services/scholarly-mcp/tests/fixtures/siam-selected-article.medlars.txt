@@ -1,0 +1,15 @@
+AU  - Di Rocco, Sandra
+AU  - Edwards, Parker B.
+AU  - Eklund, David
+AU  - Gäfvert, Oliver
+AU  - Hauenstein, Jonathan D.
+TI  - Computing Geometric Feature Sizes for Algebraic Manifolds
+PT  - Journal Article
+DP  - 2023
+TA  - SIAM Journal on Applied Algebra and Geometry
+PG  - 716-741
+VI  - 7
+IP  - 4
+AID  - 10.1137/22M1522656 [doi]
+4099  - https://epubs.siam.org/doi/abs/10.1137/22M1522656
+4100  - https://epubs.siam.org/doi/full/10.1137/22M1522656
