@@ -169,7 +169,7 @@ API_USAGE = {
     "dblp": {
         "search": "대소문자를 구별하지 않는 접두어 검색이다. 공백은 AND, |는 OR이며 단어 뒤 $는 정확한 단어를 지정한다. 제목·저자·venue·연도 등 DBLP 검색 색인의 텍스트를 대상으로 한다.",
         "options": {}, "fetch": "journals/… 또는 conf/… 형태의 DBLP key나 /rec/ 링크. 원 XML 서지를 보존한다. 초록과 논문 전문을 제공하는 색인이 아니다.",
-        "limits": "현재 limit 1..100. start로 순회. json/native 검색 export. API가 HTML 접근 확인 화면을 반환하면 restricted이며 브라우저로 전환하지 않는다. 같은 운영기관의 공개 지식 그래프는 dblp-kg라는 별도 자료원으로 명시적으로 선택할 수 있다. 그 질의 문법은 SPARQL이며 이 검색식의 자동 대체가 아니다.",
+        "limits": "현재 limit 1..100. start로 순회. json/native 검색 export. Anubis의 metarefresh 확인은 원 Refresh 헤더 또는 meta 태그의 대기 시간을 지켜 같은 API 클라이언트에서 처리한다. 확인 주소·원 검색 URL·일회성 값의 대응을 검사하며 쿠키와 확인 값은 내부에서만 사용한다. 다른 확인 방식이나 실패는 restricted다. 같은 운영기관의 공개 지식 그래프는 dblp-kg라는 별도 자료원으로 명시적으로 선택할 수 있다. 그 질의 문법은 SPARQL이며 이 검색식의 자동 대체가 아니다.",
         "examples": [{"tool": "search", "arguments": {"source": "dblp", "query": "P versus NP", "limit": 2}}],
         "official": ["https://dblp.org/faq/How+to+use+the+dblp+search+API.html", "https://dblp.org/db/"]},
     "zbmath": {
@@ -584,12 +584,12 @@ SOURCES['iop'].usage = {
 
     'fetch':'IOP DOI 또는 정확한 iopscience.iop.org 문헌 URL을 지정한다. 이름은 관련도 순의 원 검색 후보로 반환한다. KUDOS IOP 바로가기를 거쳐 기관 문헌의 서지 태그와 PDF를 회수한다. 초록은 원 wd-jnl-art-abstract 영역을 사용한다. fulltext_html은 본문 HTML·원 TeX·그림 파일을, supplementary는 해당 DOI의 원 보충자료 탭과 파일을 회수한다. 그림은 figures의 artifact를 extract하며 수식은 HTML의 script[type^="math/tex"]를 선택한다. 수식 그림의 원 URL도 보존하지만 수식 그림 파일 자체는 별도로 내려받지 않는다.',
     'exports':'문헌의 BibTeX·RIS 링크와 원 파일의 DOI를 대조한다. 두 형식의 실제 MCP 회수를 검증했다. 원 BibTeX 키에 공백이 있으면 원 키와 바이트를 유지하고 citation_key_contains_whitespace 경고와 함께 필드를 추출한다. 파일을 정상 키로 고쳐 쓰지 않는다. 파싱·식별자 검사 실패 때 source_export에 받은 파일을 보존한다.',
-    'limits':'현재 확인된 기관 세션에서 서지·초록·16쪽 PDF·BibTeX·RIS를 실제 MCP로 회수했다. API의 페이지 경계·start500 이후, 관련도 순의 경계·CSV·원 저널/문헌 유형/공개 접근 조건과 0건을 실제 MCP로 검증했다. 별도 문헌에서 본문 TeX154개·그림5개·보충 PDF2쪽을 검증했다. 기간 기본값 anytime, page_size10/20과 명시된 예제가 실측 범위이며 모든 조건 조합의 검증으로 확대하지 않는다. 접근 확인이 다시 필요하면 restricted를 반환한다. 본문 XML 다운로드 제어는 이 표본에서 발견하지 못했으며 XML 회수는 미연결이다.',
+    'limits':'현재 확인된 기관 세션에서 서지·초록·16쪽 PDF·BibTeX·RIS를 실제 MCP로 회수했다. API의 페이지 경계·start500 이후, 관련도 순의 경계·CSV·원 저널/문헌 유형/공개 접근 조건과 0건을 실제 MCP로 검증했다. 별도 문헌에서 본문 TeX154개·그림5개·보충 PDF2쪽을 검증했다. 기간 기본값 anytime, page_size10/20과 명시된 예제가 실측 범위이며 모든 조건 조합의 검증으로 확대하지 않는다. 접근 확인이 다시 필요하면 restricted를 반환한다. 본문 XML 다운로드 제어는 이 표본에서 발견하지 못했다. 현재 공식 XML 공급 경로는 별도 연락·검토를 요구하므로 추가 자격·연락 경로를 사용하지 않는 범위에 따라 제외한다.',
     'examples':[{'tool':'search','arguments':{'source':'iop','query':'complexity','start':500,'limit':2,'options':{'page_size':10},'export':'rss'}},
                 {'tool':'search','arguments':{'source':'iop','query':'complexity','start':9,'limit':2,'options':{'sort':'relevance','page_size':10},'export':'csv'}},
                 {'tool':'fetch','arguments':{'source':'iop','target':'https://iopscience.iop.org/article/10.1088/0022-3727/34/10/311/meta','parts':['metadata','fulltext','export']}},
                 {'tool':'fetch','arguments':{'source':'iop','target':'https://iopscience.iop.org/article/10.1088/1367-2630/add557','parts':['metadata','fulltext_html','supplementary']}}],
-    'official':['https://iopscience.iop.org/'],
+    'official':['https://iopscience.iop.org/','https://ioppublishing.org/legal/textanddataminingpolicy/'],
 }
 
 SOURCES['knu-fric'].implementation = 'partial'
@@ -636,7 +636,7 @@ for identifier, level in {
     "openalex": "live_mcp_arbitrary_window_group_cursor_abstract_relationships_name_doi",
     "core": "live_mcp_name_metadata_abstract_and_restricted_fulltext_notice",
     "semantic-scholar": "live_mcp_search_extract; new_workflow_rate_limited; schema_regressions",
-    "dblp": "access_challenge_observed",
+    "dblp": "live_mcp_search_extract_after_native_timed_refresh",
     "dblp-kg": "live_mcp_sparql_window_native_csv_tsv_key_doi_name; native_tsv_year_type_mismatch",
     "zenodo": "live_mcp_search_file_checksum_fetch_extract",
     "figshare": "live_mcp_public_search_window_collection_versioned_file_md5_pdf_extract",

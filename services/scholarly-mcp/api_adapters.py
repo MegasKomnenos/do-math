@@ -61,6 +61,9 @@ class APIAdapter:
                 raise ServiceError("timeout", "Source did not respond within the request timeout", source=self.source, retryable=True) from None
             except httpx.HTTPError:
                 raise ServiceError("connection_error", "Source connection failed", source=self.source, retryable=True) from None
+            if self.source=='dblp':
+                from dblp_access import timed_refresh
+                response=timed_refresh(self,response)
             if response.is_redirect:
                 if response.status_code in (301, 302, 303):
                     json_body = None

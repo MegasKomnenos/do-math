@@ -173,3 +173,6 @@ IOP도 fulltext_html로 원 본문·TeX·그림을 제공한다. supplementary�
 
 
 JSTOR는 확인된 KUDOS 기관 세션에서 원 검색 API를 사용한다. 필드 검색·정렬·접근 범위·기간·자료 유형·주제·언어 조건은 describe_source를 따른다. 원25건 페이지의 표식으로 임의 창을 회수하며 total은 현재 결과군, source_total은 최초 전체 건수다. 이미지 자료도 별도 content_types 조건으로 검색할 수 있다. JSON/CSV와 선택 문헌별 RIS/BibTeX를 제공하고 이름은 제목 후보로 반환한다. fulltext는 선택한 문헌의 원 Download로 PDF를 회수하며 표지·서지 쪽을 포함한다. 혼합 결과군은 start/limit를 각각 적용하고 result_groups·레코드의 result_group으로 범위와 귀속을 보존한다. 이미지 미리보기와 전체 검색의 순서가 달라 원 이미지 결과군을 펼쳐 순회한다. 음수 연도로 BCE 기간을 지정하고 snippets=true로 질의별 원 발췌문을 회수할 수 있다. 발췌문을 초록으로 표시하지 않는다. 이미지·음성·동영상 파일 자체와 추가 첨부는 아직 미연결이다.
+
+
+DBLP의 공개 API는 원 metarefresh 확인을 HTTP 클라이언트에서 처리한다. 제공자가 지정한 대기와 원 API URL로의 복귀를 검증하고 일회성 값·쿠키를 내부에 유지한다. 실제 MCP에서 P versus NP 검색49건 중2건과 추출을 확인했다. 다른 확인 방식이나 검증 실패는 접근 제한으로 반환한다.

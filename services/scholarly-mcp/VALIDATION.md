@@ -394,3 +394,11 @@ JSTOR 문헌24931626의 첫 Download는 이용 조건 모달 때문에 대기했
 혼합 검색의 carousel5건 다음 표식을 그대로 사용하면 전체 이미지 결과와 중복이 생겼다. `053615Z-jstor-group-order.json`은 원 이미지 결과군을 처음부터 펼친25건과 다음25건의 중복0건을 확인했다. 그 경로로 각 결과군의 start/limit를 적용하며 처음의 미리보기 원 응답도 evidence로 유지한다. group_efq의 유형 배열 순서는 바뀔 수 있어 집합으로 비교하되 요청에는 원 표식을 그대로 사용한다.
 
 `data/validation/20260912T053806Z-jstor-extended-mcp.json`은 원 발췌문2건·BCE14936건 중2건·journal과image 혼합178962건의각 start24/limit2·합계4건과 CSV ID 대조가 completed=true다. 앞선053213Z는 원 날짜 표기 B.C와BCE를 하나의 철자로 단언한 시험이 실패했으며 원 표기를 대조해 시험을 고쳤다. 공통257검사가 통과했다. 후속 이미지·음성·동영상 파일과 첨부 회수는 별도 작업으로 남긴다.
+
+
+2026-09-12 [IOP의2026년7월 XML 공급 안내](https://ioppublishing.org/legal/textanddataminingpolicy/)를 확인했다. 현재 안내된 공급 방식은 출판사에 문헌·형식·사용 목적을 제출하고 검토를 받는 경로이며 XML의 일반 다운로드 제어는 앞선 문헌 표본에서 발견하지 못했다. 별도 연락·자격을 요구하는 경로를 사용하지 않는 사용자 결정에 따라 이 XML 공급 경로는 제외한다. 안내는 MCP 등 자동 접근에도 별도 서면 합의를 요구한다고 명시하며, 기관의 실제 합의 여부를 이번 기능 검증으로 확인한 것은 아니다. 추가 연락·신청은 하지 않았다.
+
+
+2026-09-12 DBLP의 확인 응답은 [Anubis metarefresh](https://github.com/TecharoHQ/anubis/blob/main/docs/docs/admin/configuration/challenges/metarefresh.mdx)였다. Chromium의060822Z-dblp-verification.json은Access Denied였지만 HTTP 클라이언트에 제공된 원 확인은 JavaScript가 필요하지 않았다. `data/validation/20260912T063810Z-dblp-refresh.json`은 실제 Refresh 헤더가 지정한2초 대기, 확인302, 원 API JSON2건을 확인했다. 최초 별도 관측에서는 같은 지시가 meta 태그에 있었다. 두 형식을 같은 원 요청으로 처리한다.
+
+`data/validation/20260912T064842387254Z-dblp-workflow.json`은 describe_source→P versus NP 검색49건 중2건→extract를 실제 MCP로 completed=true 통과했다. 확인 주소가 다른 호스트로 나가거나 검색식이 바뀌는 경우를 요청 전에 거부하고 일회성 확인 값이 artifact에 남지 않는 검사를 추가했다. 다른 Anubis 방식은 처리했다고 주장하지 않는다. 공통261검사가 통과했다. 원 서지 형식·이름 후보의 추가 구현과 검증은 이어서 수행한다.
