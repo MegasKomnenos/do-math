@@ -1,16 +1,18 @@
 """Use native APS institution search, exports and page boundaries through stdio."""
-import asyncio,json,sys
+import argparse,asyncio,json,sys
 from pathlib import Path
 from datetime import datetime,timezone
 from mcp import ClientSession,StdioServerParameters
 from mcp.client.stdio import stdio_client
 root=Path(__file__).resolve().parents[1]
-async def main():
+async def main(credential_root=None):
     report={'source':'aps-institutional','calls':[],'completed':False}
     path=root/'data/validation'/f'{datetime.now(timezone.utc):%Y%m%dT%H%M%SZ}-aps-search-mcp.json'
     def save():path.write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
     save();print(json.dumps({'report':str(path)}),flush=True)
-    async with stdio_client(StdioServerParameters(command=sys.executable,args=[str(root/'server.py')])) as (read,write),ClientSession(read,write) as session:
+    server_args=[str(root/'server.py')]
+    if credential_root:server_args+=['--credential-root',str(credential_root)]
+    async with stdio_client(StdioServerParameters(command=sys.executable,args=server_args)) as (read,write),ClientSession(read,write) as session:
         await session.initialize()
         async def call(tool,args):
             result=(await session.call_tool(tool,args)).structuredContent
@@ -36,4 +38,6 @@ async def main():
         if not report['pagination_verified'] or not report['title_field_verified']:return
         if record['status']!='ok':return
         report['completed']=True;save();print(json.dumps({'completed':True}),flush=True)
-asyncio.run(main())
+if __name__=='__main__':
+    parser=argparse.ArgumentParser();parser.add_argument('--credential-root',type=Path)
+    asyncio.run(main(parser.parse_args().credential_root))
