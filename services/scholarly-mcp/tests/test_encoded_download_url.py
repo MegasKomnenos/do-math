@@ -4,6 +4,18 @@ ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT))
 from scholarly import Sanitizer
 
 class EncodedDownloadURLContract(unittest.TestCase):
+    def test_aws_credential_is_removed_from_links_text_fragments_and_nested_paths(self):
+        from urllib.parse import quote
+        from browser_adapters import clean_html
+        value='https://content.example/file.pdf?X-Amz-Credential=SYNTHETIC_ACCESS_ID%2F20260912%2Fregion%2Fs3%2Faws4_request&X-Amz-Signature=SYNTHETIC_SIGNATURE&part=1'
+        sanitizer=Sanitizer()
+        nested='https://example.org/download/'+quote(value,safe='')
+        cleaned=[sanitizer.url(value),sanitizer.text('file '+value),str(sanitizer.value({'url':value})),
+                 clean_html('<a href="'+value+'">file</a>',sanitizer),sanitizer.url(nested),
+                 sanitizer.url('https://example.org/file#X-Amz-Credential=SYNTHETIC_ACCESS_ID')]
+        self.assertTrue(all('SYNTHETIC' not in item for item in cleaned))
+        self.assertIn('part=1',cleaned[0])
+
     def test_azure_blob_signature_is_redacted_without_changing_rdf_sig_fields(self):
         value='https://swhvaultstorage.blob.core.windows.net/contents-uncompressed/example?sv=2025-05-05&sp=r&sig=SYNTHETIC_AZURE_SIGNATURE'
         sanitizer=Sanitizer()

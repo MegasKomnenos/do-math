@@ -353,3 +353,6 @@ IOP 홈페이지의 Search 버튼으로 메뉴를 열고 complexity를 검색하
 
 
 JSTOR는 Chrome의 원 음성 확인 파일도 회수했다. `data/validation/20260911-jstor-audio-diagnostic.json`은 WAV106312바이트·13.2835초, 현재 모델의 audio 입력 미지원, 로컬 PocketSphinx 인식에서 신뢰할 정답을 확인하지 못한 상태를 기록한다. 실제 키보드 입력 뒤에도 Client Challenge였다. 음성 회수를 웹 접근 통과로 세지 않으며, 별도 진단 환경의 인식기를 MCP 본체에 추가하지 않았다.
+
+
+2026-09-12 IOP 보충자료 진단 URL에서 서명은 제거됐지만 AWS 자격 쿼리 값이 남아 사용자에게 알렸다. 딕셔너리 정제와 URL 정제가 서로 다른 필드 목록을 사용한 결함이며 URL도 기존 secret_fields를 적용하도록 수정했다. URL·산문·HTML·중첩 경로·fragment의 실패 재현 뒤 공통235검사를 통과했다. `data/validation/20260912-iop-signed-url-sanitization.json`은 실제 원 링크1건의 자격 필드가 정제 후0개이고 서명도0개임을 값 출력 없이 대조한 기록이다. 이미 표시된 출력 삭제·원 URL 무효화·전체 과거 산출물 감사는 미확인이다.

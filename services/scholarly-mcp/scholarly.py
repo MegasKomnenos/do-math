@@ -65,7 +65,8 @@ class Sanitizer:
         return etree.tostring(tree, encoding="utf-8", xml_declaration=True)
 
     def _authentication_parameter(self,name,parts):
-        return bool(self.sensitive.search(name)) or (name.lower()=='sig' and (parts.hostname or '').lower().endswith('.blob.core.windows.net'))
+        normalized=re.sub(r'[^a-z0-9]','',name.lower())
+        return normalized in self.secret_fields or bool(self.sensitive.search(name)) or (name.lower()=='sig' and (parts.hostname or '').lower().endswith('.blob.core.windows.net'))
 
     def _url(self, url):
         original = url
