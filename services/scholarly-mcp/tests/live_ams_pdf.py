@@ -1,14 +1,16 @@
 """Verify an explicit AMS PDF through a real stdio MCP client."""
-import asyncio,json,sys
+import argparse,asyncio,json,sys
 from pathlib import Path
 from datetime import datetime,timezone
 from mcp import ClientSession,StdioServerParameters
 from mcp.client.stdio import stdio_client
 root=Path(__file__).resolve().parents[1]
-async def main():
+async def main(credential_root=None):
     report={'source':'ams','calls':[],'completed':False}
     path=root/'data/validation'/f'{datetime.now(timezone.utc):%Y%m%dT%H%M%SZ}-ams-pdf-mcp.json'
-    async with stdio_client(StdioServerParameters(command=sys.executable,args=[str(root/'server.py')])) as (read,write),ClientSession(read,write) as session:
+    args=[str(root/'server.py')]
+    if credential_root:args+=['--credential-root',str(credential_root)]
+    async with stdio_client(StdioServerParameters(command=sys.executable,args=args)) as (read,write),ClientSession(read,write) as session:
         await session.initialize()
         found=(await session.call_tool('fetch',{'source':'ams','target':'https://www.ams.org/books/gsm/128/gsm128-endmatter.pdf','parts':['metadata','fulltext','export']})).structuredContent
         report['calls'].append(found)
@@ -23,4 +25,6 @@ async def main():
             report['completed']=True
             path.write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
             print(json.dumps({'completed':True,'pages':extracted['total']}),flush=True)
-asyncio.run(main())
+if __name__=='__main__':
+    parser=argparse.ArgumentParser();parser.add_argument('--credential-root',type=Path)
+    asyncio.run(main(parser.parse_args().credential_root))

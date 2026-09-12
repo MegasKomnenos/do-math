@@ -1,5 +1,5 @@
 """AMS Digital Library native institutional browse records."""
-import csv,io,json,re
+import csv,html,io,json,re,zipfile
 from urllib.parse import urlsplit,urljoin,parse_qs,urlencode,urlunsplit,unquote
 from browser_adapters import goto_source,clean_html,dismiss_cookies,is_access_challenge
 from publishers import Publisher,PROFILES
@@ -61,13 +61,88 @@ def validate_search_page(raw,http_status=None):
 
 
 def product_records(payload):
+    if not isinstance(payload,dict):
+        raise ServiceError('invalid_response','AMS returned an error or non-object response instead of product results')
     rows=payload.get('Products')
     total,page,capacity=(payload.get(key) for key in ('TotalRows','PageNumber','RowsPerPage'))
+    if rows is None and type(total) is int and total==0:
+        rows=[]
     if not isinstance(rows,list) or any(not isinstance(row,dict) or not row.get('Title') for row in rows) or any(type(v) is not int for v in (total,page,capacity)):
         raise ServiceError('invalid_response','AMS returned no native product range')
     if total<0 or page<1 or capacity<1 or len(rows)!=min(capacity,max(0,total-(page-1)*capacity)):
         raise ServiceError('range_mismatch','AMS products do not match the declared range')
     return rows,total,(page-1)*capacity
+
+
+def validate_product_xlsx(data,row,secrets=()):
+    """Validate native variant rows without filling absent provider values."""
+    from defusedxml import ElementTree
+    from openpyxl import load_workbook
+    if not isinstance(data,bytes) or not data.startswith(b'PK\x03\x04'):
+        raise ServiceError('invalid_native_export','AMS did not return an XLSX file')
+    try:
+        with zipfile.ZipFile(io.BytesIO(data)) as archive:
+            names=archive.namelist()
+            if not all(name in names for name in ('[Content_Types].xml','xl/workbook.xml')):
+                raise ServiceError('invalid_native_export','AMS export is not an OOXML workbook')
+            protected=[]
+            for name in names:
+                if not name.endswith(('.xml','.rels')):continue
+                raw=archive.read(name)
+                decoded=html.unescape(raw.decode('utf-8',errors='replace'))
+                protected.append(decoded)
+                root=ElementTree.fromstring(raw)
+                for element in root.iter():
+                    protected.extend(value for value in (element.text,element.tail,*element.attrib.keys(),*element.attrib.values()) if value)
+        inspected='\n'.join(protected).casefold()
+        known=[str(value).casefold() for value in secrets if isinstance(value,str) and value]
+        markers=('__requestverificationtoken','name="password"','name="passwd"','name="cookie"')
+        if any(value in inspected for value in known) or any(marker in inspected for marker in markers):
+            raise ServiceError('sensitive_export','AMS XLSX contains a protected credential or request marker')
+        workbook=load_workbook(io.BytesIO(data),read_only=True,data_only=True)
+        sheets=[]
+        for sheet in workbook.worksheets:
+            rows=list(sheet.iter_rows(values_only=True))
+            if rows:sheets.append((sheet.title,rows))
+        workbook.close()
+    except ServiceError:raise
+    except Exception:
+        raise ServiceError('invalid_native_export','AMS export is not a readable XLSX workbook') from None
+    if len(sheets)!=1:
+        raise ServiceError('invalid_native_export','AMS native product export must contain one populated sheet')
+    sheet_name,rows=sheets[0]
+    expected_headers=('Product Code','Title','ISBN','Author/Editor','Publication Date')
+    headers=tuple(str(value) if value is not None else '' for value in rows[0])
+    if headers!=expected_headers or len(rows)<2:
+        raise ServiceError('invalid_native_export','AMS native product export has an unknown table structure')
+    physical=[[str(value) if value is not None else '' for value in values] for values in rows[1:]]
+    title=str(row.get('Title') or '').strip();subtitle=str(row.get('Subtitle') or '').strip()
+    expected_title=title+(': '+subtitle if subtitle else '')
+    if not expected_title or any(values[1]!=expected_title for values in physical):
+        raise ServiceError('identity_mismatch','AMS XLSX titles do not match the selected product')
+    groups={(values[1],values[3],values[4]) for values in physical}
+    if len(groups)!=1:
+        raise ServiceError('identity_mismatch','AMS XLSX rows do not identify one logical product')
+    native_isbn=str(row.get('ISBN') or '').strip()
+    isbns=[values[2] for values in physical]
+    if native_isbn and native_isbn not in isbns:
+        raise ServiceError('identity_mismatch','AMS XLSX does not contain the selected product ISBN')
+    product_code=str(row.get('ProductCode') or '').strip()
+    if not product_code or any(values[0].strip() not in ('',product_code) for values in physical):
+        raise ServiceError('identity_mismatch','AMS XLSX Product Code cells conflict with the selected product')
+    related=row.get('RelatedCustomers') or []
+    expected_people=[html.unescape(str(person.get('FullName') or '')).strip() for person in related
+                     if isinstance(person,dict) and person.get('RelationshipType') in ('AUTHOR','EDITOR') and person.get('FullName')]
+    exported_people=[part.strip() for part in physical[0][3].split(';') if part.strip()]
+    if expected_people and exported_people!=expected_people:
+        raise ServiceError('identity_mismatch','AMS XLSX authors or editors do not match the selected product')
+    expected_date=row.get('CopyrightYear')
+    if expected_date is not None and any(values[4]!=str(expected_date) for values in physical):
+        raise ServiceError('identity_mismatch','AMS XLSX publication date does not match the selected product')
+    return {'verified':True,'format':'xlsx','sheet':sheet_name,'headers':list(headers),'physical_rows':len(physical),
+            'logical_products':1,'product_code':product_code,'product_code_cells':sum(bool(values[0]) for values in physical),
+            'native_isbn_rows':sum(values[2]==native_isbn for values in physical) if native_isbn else None,
+            'variant_isbns':isbns,'scope':'One selected logical product; provider ISBN variants remain separate physical rows'}
 
 
 class AMS(Publisher):
@@ -78,6 +153,54 @@ class AMS(Publisher):
     def __init__(self,store,gateway):
         super().__init__(store,gateway,next(p for p in PROFILES if p.source=='ams'))
         self.known={}
+
+    def export_products(self,selected):
+        """Export the exact selected window as one native workbook per product."""
+        artifacts=[];errors=[]
+        page=self.gateway.pages.get(self.source)
+        if page is None or page.is_closed():
+            return {'status':'error','code':'export_page_unavailable','artifacts':[],'errors':[{'status':'error','code':'export_page_unavailable'}],
+                    'logical_products':len(selected),'available_products':0}
+        for row in selected:
+            code=row.get('ProductCode')
+            if not isinstance(code,str) or not code.strip():
+                errors.append({'status':'unsupported','code':'native_export_identity_unavailable','reason':'AMS native export needs a ProductCode that can select one logical product'})
+                continue
+            try:
+                exact=self.search(code,options={'field':'ProductCode'},limit=2,export=None)
+                if exact.get('total')!=1 or exact.get('received')!=1:
+                    raise ServiceError('native_export_identity_ambiguous','AMS ProductCode does not select exactly one logical product',status='unsupported')
+                exact_row=(exact.get('preview') or [{}])[0]
+                if exact_row.get('ProductCode')!=code:
+                    raise ServiceError('identity_mismatch','AMS exact export search returned another product')
+                page=self.gateway.pages.get(self.source)
+                def matches(response):
+                    parts=urlsplit(response.url)
+                    return parts.hostname in self.profile.hosts and parts.path=='/product/exportproducts' and response.request.method=='POST'
+                with page.expect_response(matches,timeout=60000) as pending:
+                    page.evaluate('uniqueId => initExportResults(uniqueId)','')
+                response=pending.value
+                if response.status in (401,403):
+                    raise ServiceError('access_restricted','AMS restricted the native product export',status='restricted')
+                if response.status!=200:
+                    raise ServiceError('provider_error','AMS native product export failed',http_status=response.status)
+                request=parse_qs(response.request.post_data or '')
+                advanced=parse_qs(request.get('advancedSearch',[''])[0])
+                if advanced.get('ProductCode')!=[code]:
+                    raise ServiceError('query_mismatch','AMS native export did not retain the exact ProductCode selection')
+                data=response.body()
+                integrity=validate_product_xlsx(data,row,getattr(self.store.sanitizer,'secrets',()))
+                actual=urlsplit(response.url);safe_url=urlunsplit((actual.scheme,actual.netloc,actual.path,'',''))
+                artifact=self.store.put(data,'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',self.source,safe_url,
+                    preserve_bytes=True,role='native_product_export',requested_product_code=code,integrity=integrity)
+                artifacts.append({'product_code':code,'artifact':artifact,**integrity})
+            except ServiceError as error:
+                errors.append({'product_code':code,**error.result})
+            except Exception as error:
+                errors.append({'product_code':code,'status':'error','code':'native_export_failed','error_type':type(error).__name__})
+        status='available' if artifacts and not errors else 'partial' if artifacts else 'error'
+        return {'status':status,'artifacts':artifacts,'errors':errors,'logical_products':len(selected),'available_products':len(artifacts),
+                'scope':'One provider XLSX per selected logical product; physical rows retain native ISBN variants'}
 
     def search(self,query,*,options,start=0,limit=20,cursor=None,export=None):
         if type(start) is not int or start<0 or type(limit) is not int or not 1<=limit<=1000:
@@ -90,8 +213,8 @@ class AMS(Publisher):
                 raise ServiceError('invalid_options','For expression search set query to an empty string and use expression as the only option')
             expression=advanced_expression(options['expression'])
             if not isinstance(expression.get('queryElements'),list):raise ServiceError('invalid_options','The outer expression must be an AND/OR group')
-        if export not in (None,'json','native','csv','html'):
-            raise ServiceError('export_not_implemented','AMS native file export remains unverified after access restrictions; use json, native, csv or html',status='not_implemented')
+        if export not in (None,'json','native','csv','html','xlsx'):
+            raise ServiceError('invalid_export','Use json, native, csv, html or the verified native xlsx export')
         content=options.get('content_type','All')
         if content not in ('All','EBook','Journal','Abstracts'):
             raise ServiceError('invalid_options','content_type must be All, EBook, Journal or Abstracts')
@@ -204,8 +327,12 @@ class AMS(Publisher):
             writer.writeheader()
             writer.writerows({k:json.dumps(v,ensure_ascii=False) if isinstance(v,(list,dict)) else v for k,v in row.items()} for row in selected)
             exported=self.store.put(buffer.getvalue(),'text/csv',self.source,search_url,role='mechanical_export',parent_ref=artifact['ref'])
+        elif export=='xlsx':
+            exported=self.export_products(selected)
         more=start+len(selected)<total
-        return {'status':'ok' if selected else 'not_found','source':self.source,'query':query,'options':options,'start':start,'requested':limit,
+        status='ok' if selected else 'not_found'
+        if export=='xlsx' and selected and exported['status']!='available':status='partial'
+        return {'status':status,'source':self.source,'query':query,'options':options,'start':start,'requested':limit,
                 'received':len(selected),'total':total,'has_more':more,'next':{'start':start+len(selected)} if more else None,
                 'records':artifact,'export':exported,'evidence':evidence,'preview':[{k:row.get(k) for k in ('Title','Subtitle','ProductCode','DOI','target')} for row in selected[:3]]}
 
