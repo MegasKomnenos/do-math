@@ -7,6 +7,19 @@ from scholarly import ArtifactStore,ServiceError,bibliography
 DOI='10.1088/0022-3727/34/10/311'
 
 class IOPCitationContract(unittest.TestCase):
+    def test_supplement_page_with_a_different_doi_is_not_downloaded(self):
+        from iop import supplementary
+        selected='10.1088/1367-2630/add557'
+        raw='<a class="wd-btn-supp-data" href="/article/'+selected+'/data">Supplementary data</a>'
+        viewer=SimpleNamespace(url='https://iopscience.iop.org/article/'+selected+'/data',content=lambda:'<meta name="citation_doi" content="10.1088/other">',close=Mock())
+        page=SimpleNamespace(url='https://iopscience.iop.org/article/'+selected,content=lambda:raw)
+        with tempfile.TemporaryDirectory() as temp:
+            store=ArtifactStore(temp);proof=store.put(raw,'text/html','iop',page.url)
+            adapter=SimpleNamespace(store=store,source='iop',gateway=SimpleNamespace(context=SimpleNamespace(new_page=lambda:viewer)),profile=SimpleNamespace(hosts=('iopscience.iop.org',)))
+            with patch('browser_adapters.goto_source'),patch('supplements.fetch_supplementary') as files:
+                result=supplementary(adapter,page,selected,proof)
+            self.assertEqual(result['code'],'identity_mismatch');files.assert_not_called();viewer.close.assert_called_once()
+
     def test_native_spaced_key_is_preserved_with_an_extraction_warning(self):
         data=(ROOT/'tests/fixtures/iop.bib').read_bytes()
         rows=bibliography(data,'application/x-bibtex')

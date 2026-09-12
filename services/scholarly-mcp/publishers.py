@@ -46,7 +46,7 @@ PROFILES = [
     Profile("wiley", ("onlinelibrary.wiley.com", "www.onlinelibrary.wiley.com"), "Wiley Online Library", '.article-section__abstract'),
     Profile("aip", ("pubs.aip.org", "aip.scitation.org"), "AIP", 'section.abstract:not(.abstractBorder)', file_domains=('watermark02.silverchair.com',)),
     Profile("aps", ("www.aps.org", "journals.aps.org", "link.aps.org", "physics.aps.org"), "APS"),
-    Profile("iop", ("iopscience.iop.org",), "IOP", '.wd-jnl-art-abstract'),
+    Profile("iop", ("iopscience.iop.org",), "IOP", '.wd-jnl-art-abstract', file_domains=('content.cld.iop.org','cfn-live-content-bucket-iop-org.s3.eu-west-1.amazonaws.com')),
     Profile("siam", ("epubs.siam.org", "www.siam.org"), None),
     Profile("project-euclid", ("projecteuclid.org", "www.projecteuclid.org"), None, 'text.ArticleContentText > h2:text-is("Abstract") + div'),
     Profile("theory-of-computing", ("theoryofcomputing.org", "www.theoryofcomputing.org"), None),
@@ -486,7 +486,7 @@ class Publisher:
 
     def fetch(self, target, *, parts):
         allowed={"metadata", "abstract", "fulltext", "supplementary", "export"}
-        if self.source=='springer':allowed.add('fulltext_html')
+        if self.source in ('springer','iop'):allowed.add('fulltext_html')
         unknown = set(parts) - allowed
         if unknown:
             raise ServiceError("invalid_parts", "Unknown requested content", parts=sorted(unknown))
@@ -641,8 +641,11 @@ class Publisher:
                         components[part] = {"status": "available", "artifact": pdf}
                     except ServiceError as error:
                         components[part] = error.result
-                elif part=='supplementary' and self.source in ('springer','wiley','aip','cambridge','oxford','taylor-francis','de-gruyter','project-euclid'):
-                    from supplements import fetch_supplementary
+                elif part=='supplementary' and self.source in ('springer','wiley','aip','cambridge','oxford','taylor-francis','de-gruyter','project-euclid','iop'):
+                    if self.source=='iop':
+                        from iop import supplementary as fetch_supplementary
+                    else:
+                        from supplements import fetch_supplementary
                     components[part]=fetch_supplementary(self,page,identifier or (observed_dois[0] if observed_dois else None),source_page)
                 else:
                     components[part] = {"status": "source_page", "artifact": source_page, "reason": "Supplementary content is preserved in its source context; automatic attachment retrieval is pending"}

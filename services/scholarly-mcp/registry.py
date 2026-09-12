@@ -575,12 +575,13 @@ SOURCES['iop'].usage = {
     'search_range':'start는0부터다. 최신순 API limit는1..1000이며 start500뒤 자료도 실제로 확인했다. API는 전역 일치 건수를 주지 않아 total=null이다. 원 검색 경로는 start+limit<=500이며 accessible_total은 노출된 상위 결과 수이고 전체 일치 건수가 아니다. 요청 범위를 조용히 잘라 맞추지 않는다.',
     'search_exports':'json/csv는 정확한 요청 창이다. 최신순 API의 rss/xml/native는 원 XML 페이지이며 그 밖의 검색에서 html/native는 원 HTML 페이지다. 원 RSS의 순서 참조가 빈 항목이면 item 등장 순서를 유지하고 empty_rdf_sequence_used_item_order 경고를 남긴다. 원문 XML은 evidence에 보존한다.',
 
-    'fetch':'IOP DOI 또는 정확한 iopscience.iop.org 문헌 URL을 지정한다. 이름은 관련도 순의 원 검색 후보로 반환한다. KUDOS IOP 바로가기를 거쳐 기관 문헌의 서지 태그와 PDF를 회수한다. 초록은 원 wd-jnl-art-abstract 영역을 사용한다.',
+    'fetch':'IOP DOI 또는 정확한 iopscience.iop.org 문헌 URL을 지정한다. 이름은 관련도 순의 원 검색 후보로 반환한다. KUDOS IOP 바로가기를 거쳐 기관 문헌의 서지 태그와 PDF를 회수한다. 초록은 원 wd-jnl-art-abstract 영역을 사용한다. fulltext_html은 본문 HTML·원 TeX·그림 파일을, supplementary는 해당 DOI의 원 보충자료 탭과 파일을 회수한다. 그림은 figures의 artifact를 extract하며 수식은 HTML의 script[type^="math/tex"]를 선택한다. 수식 그림의 원 URL도 보존하지만 수식 그림 파일 자체는 별도로 내려받지 않는다.',
     'exports':'문헌의 BibTeX·RIS 링크와 원 파일의 DOI를 대조한다. 두 형식의 실제 MCP 회수를 검증했다. 원 BibTeX 키에 공백이 있으면 원 키와 바이트를 유지하고 citation_key_contains_whitespace 경고와 함께 필드를 추출한다. 파일을 정상 키로 고쳐 쓰지 않는다. 파싱·식별자 검사 실패 때 source_export에 받은 파일을 보존한다.',
-    'limits':'현재 확인된 기관 세션에서 서지·초록·16쪽 PDF·BibTeX·RIS를 실제 MCP로 회수했다. API의 페이지 경계·start500 이후, 관련도 순의 경계·CSV·원 저널/문헌 유형/공개 접근 조건과 0건을 실제 MCP로 검증했다. 기간 기본값 anytime, page_size10/20과 명시된 예제가 실측 범위이며 모든 조건 조합의 검증으로 확대하지 않는다. 접근 확인이 다시 필요하면 restricted를 반환한다. 문헌 본문의 추가 XML·첨부 형식은 미연결이다.',
+    'limits':'현재 확인된 기관 세션에서 서지·초록·16쪽 PDF·BibTeX·RIS를 실제 MCP로 회수했다. API의 페이지 경계·start500 이후, 관련도 순의 경계·CSV·원 저널/문헌 유형/공개 접근 조건과 0건을 실제 MCP로 검증했다. 별도 문헌에서 본문 TeX154개·그림5개·보충 PDF2쪽을 검증했다. 기간 기본값 anytime, page_size10/20과 명시된 예제가 실측 범위이며 모든 조건 조합의 검증으로 확대하지 않는다. 접근 확인이 다시 필요하면 restricted를 반환한다. 본문 XML 다운로드 제어는 이 표본에서 발견하지 못했으며 XML 회수는 미연결이다.',
     'examples':[{'tool':'search','arguments':{'source':'iop','query':'complexity','start':500,'limit':2,'options':{'page_size':10},'export':'rss'}},
                 {'tool':'search','arguments':{'source':'iop','query':'complexity','start':9,'limit':2,'options':{'sort':'relevance','page_size':10},'export':'csv'}},
-                {'tool':'fetch','arguments':{'source':'iop','target':'https://iopscience.iop.org/article/10.1088/0022-3727/34/10/311/meta','parts':['metadata','fulltext','export']}}],
+                {'tool':'fetch','arguments':{'source':'iop','target':'https://iopscience.iop.org/article/10.1088/0022-3727/34/10/311/meta','parts':['metadata','fulltext','export']}},
+                {'tool':'fetch','arguments':{'source':'iop','target':'https://iopscience.iop.org/article/10.1088/1367-2630/add557','parts':['metadata','fulltext_html','supplementary']}}],
     'official':['https://iopscience.iop.org/'],
 }
 
@@ -653,7 +654,7 @@ for identifier, level in {
     "taylor-francis": "live_mcp_search_citation_pdf_dublin_doi_supplement_zip_tables_nested_source",
     "de-gruyter": "live_mcp_search_ris_pdf_and_supplement_zip_cif_lines; broken_link_observed",
     "jstor": "live_mcp_public_ris_bibtex_article_and_jj_book; web_search_pending",
-    "iop": "live_mcp_rss_beyond_500_ranked_filters_csv_zero; metadata_abstract_pdf_bibtex_ris_verified",
+    "iop": "live_mcp_rss_ranked_filters_csv_zero; citations_pdf_html_tex_figures_supplement_pdf_verified",
     "siam": "live_mcp_public_front_matter_pdf_fetch_extract; search_challenge_observed",
     "ams": "live_mcp_explicit_pdf; native_browser_mixed_search; dynamic_expression_offline_verified; live_search_restricted",
     "science-direct": "live_mcp_institutional_ris_bibtex_plain_metadata_abstract_fetch",

@@ -356,3 +356,10 @@ JSTOR는 Chrome의 원 음성 확인 파일도 회수했다. `data/validation/20
 
 
 2026-09-12 IOP 보충자료 진단 URL에서 서명은 제거됐지만 AWS 자격 쿼리 값이 남아 사용자에게 알렸다. 딕셔너리 정제와 URL 정제가 서로 다른 필드 목록을 사용한 결함이며 URL도 기존 secret_fields를 적용하도록 수정했다. URL·산문·HTML·중첩 경로·fragment의 실패 재현 뒤 공통235검사를 통과했다. `data/validation/20260912-iop-signed-url-sanitization.json`은 실제 원 링크1건의 자격 필드가 정제 후0개이고 서명도0개임을 값 출력 없이 대조한 기록이다. 이미 표시된 출력 삭제·원 URL 무효화·전체 과거 산출물 감사는 미확인이다.
+
+
+2026-09-12 IOP의 [Mastering data complexity beyond traditional computation](https://iopscience.iop.org/article/10.1088/1367-2630/add557)을 기관 경로에서 확보했다. 접근 확인 성공은 `data/validation/20260912T031727Z-iop-verification-control.json`이며 본문·보충자료 원 관측은 `032001Z`·`032112Z-iop-chromium-recovery.json`이다. 원 본문 영역·수식·그림·보충 탭을 연결했다. data-src에 있던 실제 주소를 처리하고 그림5개를 회수했다. 본문에는 TeX154개가 있으며 수식 이미지 파일 자체의 다운로드와 구별한다.
+
+`20260912T032900Z-iop-content-mcp.json`의 첫 실제 호출은 본문과 그림 성공, 보충 파일 connection_error로 partial이었다. `033040Z-iop-attachment-probe.json`은 원 프록시 호스트의 최대 DNS 레이블65자·연결 실패와 같은 서명·경로의 원 IOP 저장소 호스트에서 PDF250714바이트·2쪽 성공을 대조했다. 확인한 저장소 하나에 한해 원 호스트로 복원한다. API 실패에 따른 브라우저 전환이나 다른 자료원 탐색은 없다.
+
+`033208Z-iop-content-mcp.json`은 모든 회수·추출에 성공했으나 검사자가 추정한 Supplementary 문자열이 실제 제목의 Supplements와 달라 completed=false였다. PDF 첫 페이지의 실제 제목으로 대조한 `data/validation/20260912T033324Z-iop-content-mcp.json`은 completed=true다. 원 TeX 선택·그림 ImageContent·보충 PDF 첫 페이지 제목과2쪽을 확인했다. 다른 DOI의 보충 페이지를 거부하고 초록만 있는 페이지를 본문으로 세지 않는 검사까지 공통238검사를 통과했다. 이 표본에서 본문 XML 다운로드 제어는 발견하지 못했으며 XML 회수는 미연결이다.

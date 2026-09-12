@@ -1,7 +1,7 @@
 """Document-bound attachment controls; no cross-provider discovery."""
 import re,io,zipfile
 from pathlib import PurePosixPath
-from urllib.parse import urljoin,urlsplit,unquote,parse_qs
+from urllib.parse import urljoin,urlsplit,urlunsplit,unquote,parse_qs
 from bs4 import BeautifulSoup
 from browser_adapters import browser_download,clean_html
 from scholarly import ServiceError,encoded
@@ -131,6 +131,22 @@ def euclid_links(raw,base):
     return rows
 
 
+def iop_links(raw,base):
+    match=re.fullmatch(r'/article/(10\.\d{4,9}/.+)/data',unquote(urlsplit(base).path))
+    if not match:raise ServiceError('identity_mismatch','IOP attachments require the selected article data page')
+    soup=BeautifulSoup(raw,'html.parser');rows=[]
+    for anchor in soup.select('#supplementarydata a[href]'):
+        native=urljoin(base,anchor['href']);location=urlsplit(native);url=native;path=unquote(location.path)
+        storage='cfn-live-content-bucket-iop-org.s3.eu-west-1.amazonaws.com'
+        # The observed proxy rewrite makes a 65-byte DNS label; use the signed storage URL.
+        if location.hostname==storage.replace('-','--').replace('.','-')+'.libproxy.knu.ac.kr' and not location.username and not location.password and location.port is None:
+            url=urlunsplit((location.scheme,storage,location.path,location.query,location.fragment))
+        rows.append({'label':anchor.get_text(' ',strip=True),'description':anchor.parent.get_text(' ',strip=True),
+            'url':url,'native_url':native,'linked_doi':match[1],'filename':PurePosixPath(path).name,
+            'identity_basis':'Native file control on the selected DOI supplementary page'})
+    return rows
+
+
 def fetch_supplementary(adapter,page,identifier,source_page,*,download_hosts=None):
     if adapter.source=='project-euclid' and page.locator('#sup').count():
         try:
@@ -141,7 +157,7 @@ def fetch_supplementary(adapter,page,identifier,source_page,*,download_hosts=Non
         source_page=adapter.store.put(clean_html(page.content(),adapter.store.sanitizer),'text/html',adapter.source,page.url,
             role='supplementary_source_page',doi=identifier,parent_ref=source_page['ref'])
     raw=page.content()
-    rows={'springer':springer_links,'wiley':wiley_links,'aip':aip_links,'cambridge':cambridge_links,'oxford':oxford_links,'taylor-francis':taylor_links,'de-gruyter':degruyter_links,'acm-dl':acm_links,'project-euclid':euclid_links}[adapter.source](raw,page.url)
+    rows={'springer':springer_links,'wiley':wiley_links,'aip':aip_links,'cambridge':cambridge_links,'oxford':oxford_links,'taylor-francis':taylor_links,'de-gruyter':degruyter_links,'acm-dl':acm_links,'project-euclid':euclid_links,'iop':iop_links}[adapter.source](raw,page.url)
     if not rows:
         return {'status':'source_page','artifact':source_page,'reason':'No recognized document attachment controls; other supplementary layouts remain in development'}
     index=adapter.store.put(encoded(rows),'application/json',adapter.source,page.url,role='supplementary_index',doi=identifier,parent_ref=source_page['ref'])

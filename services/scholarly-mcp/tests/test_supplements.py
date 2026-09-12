@@ -4,6 +4,21 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 
 class SupplementContract(unittest.TestCase):
+    def test_iop_supplement_page_retains_native_filename_and_requires_selected_doi(self):
+        from supplements import iop_links
+        raw=(ROOT/'tests/fixtures/iop-supplement-region.html').read_text('utf-8')
+        base='https://iopscience.iop.org/article/10.1088/1367-2630/add557/data'
+        rows=iop_links(raw,base)
+        self.assertEqual(len(rows),1)
+        self.assertEqual(rows[0]['filename'],'njpadd557supp1.pdf')
+        self.assertEqual(rows[0]['linked_doi'],'10.1088/1367-2630/add557')
+        self.assertEqual(rows[0]['label'],'Supplementary data')
+        from urllib.parse import urlsplit
+        self.assertEqual(urlsplit(rows[0]['url']).hostname,'cfn-live-content-bucket-iop-org.s3.eu-west-1.amazonaws.com')
+        self.assertTrue(urlsplit(rows[0]['native_url']).hostname.endswith('.libproxy.knu.ac.kr'))
+        from scholarly import ServiceError
+        with self.assertRaises(ServiceError):iop_links(raw,'https://iopscience.iop.org/article/10.1088/example')
+
     def test_euclid_supplement_tab_keeps_parent_and_file_dois_separate(self):
         from supplements import euclid_links
         raw=(ROOT/'tests/fixtures/euclid-supplement-region.html').read_text('utf-8')
