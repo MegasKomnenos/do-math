@@ -163,7 +163,9 @@ IEEE도 fulltext_html로 원 HTML 전문을 회수한다. 현재 문헌의 번�
 
 DBLP의 공개 지식 그래프는 dblp-kg로 명시적으로 선택한다. query에 SPARQL SELECT를 쓰고 start/limit로 최상위 결과 범위를 지정한다. 서지·저자·저널·인용 관계를 같은 그래프에서 질의하며 외부 SERVICE와 FROM은 구문 분석 단계에서 거부한다. RDFLib는 질의 문법을 읽는 데만 사용하고 로컬에서 질의를 실행하거나 외부 RDF를 불러오지 않는다. 기존 dblp 검색 API 실패 뒤 자동 전환하지 않는다.
 
-dblp-kg의 JSON은 RDF binding의 자료형·언어·미결합 변수를 보존한다. native JSON·CSV·TSV를 내보낼 수 있으며 TSV는 원 줄을 읽는다. 원 TSV가 gYear를 정수로 출력하는 경우에는 export_term_mismatch와 partial을 반환하고 source_export에 받은 원 파일을 남긴다. DOI는 대소문자를 구별하지 않고 조회하되 원 RDF DOI 표기를 유지한다. DBLP key·DOI 조회는 문헌의 statements를 전건 회수하며 연결된 다른 객체를 자동 확장하지 않는다. 사용 예와 원 속성 이름은 describe_source(dblp-kg)에 있다.
+dblp-kg의 JSON은 RDF binding의 자료형·언어·미결합 변수를 보존한다. native JSON·CSV·TSV를 내보낼 수 있으며 TSV는 원 줄을 읽는다. 원 TSV가 gYear를 정수로 출력하는 경우에는 export_term_mismatch와 partial을 반환하고 source_export에 받은 원 파일을 남긴다. `tsv_exact`는 JSON binding으로부터 자료형과 원 문자열을 보존하는 TSV를 별도 생성하고 그 JSON 근거를 기록한다. 생성 실패도 이미 받은 검색 결과를 유지한다. DOI는 대소문자를 구별하지 않고 조회하되 원 RDF DOI 표기를 유지한다. DBLP key·DOI 조회는 문헌의 statements를 전건 회수하며 연결된 다른 객체를 자동 확장하지 않는다. 사용 예와 원 속성 이름은 describe_source(dblp-kg)에 있다.
+
+Crossmark의 `fetch`는 원 Crossref 메타데이터와 갱신 요약을 함께 반환한다. `updated-by`는 현재 문헌에 적용된 갱신 공지, `update-to`는 현재 공지가 갱신하는 대상 문헌이다. 출판사와 Retraction Watch가 같은 사건을 등록해도 원 항목을 합치지 않는다. 필드가 없다는 사실은 실제 정정·철회가 없다는 증거가 아니다. 예상 타입과 다른 필드가 있으면 원 값을 유지하고 경고를 반환하며, 갱신 상태를 해석할 수 없으면 `unknown`으로 구분한다.
 
 zbMATH는 DOI·이름·Zbl 번호·기존 문헌 링크를 받아 조회하고, 검색의 임의 start 위치를 원 페이지에서 조합한다. 리뷰·요약은 원 editorial_contributions 유형을 유지한다. 라이선스 충돌 안내는 abstract available로 표시하지 않는다. supplementary의 selection을 extract에 전달하면 원 참고문헌 배열을 읽을 수 있다.
 

@@ -11,12 +11,12 @@
 | zbMATH Open | zbmath | api | partial | source_guide, search, fetch, export | live_mcp_arbitrary_window_doi_legacy_link_license_state_references |
 | arXiv | arxiv | api | partial | source_guide, search, fetch, export | live_mcp_search_pinned_html_source_archive_tex_extract |
 | DBLP | dblp | api | partial | source_guide, search, fetch, export | live_mcp_native_timed_refresh_search_seven_exports_name_and_record_identity |
-| DBLP Knowledge Graph | dblp-kg | api | partial | source_guide, search, fetch, export | live_mcp_sparql_window_native_csv_tsv_key_doi_name; native_tsv_year_type_mismatch |
+| DBLP Knowledge Graph | dblp-kg | api | partial | source_guide, search, fetch, export | 원 CSV/TSV와 JSON 기반 tsv_exact; RDF 원 문자열·자료형 검증·생성 실패 시 JSON 보존 |
 | ECCC | eccc | playwright | partial | source_guide, search, fetch, export | live_mcp_name_candidates_search_and_pinned_revision_fetch |
 | DROPS / LIPIcs | drops | fixed: metadata API; search/document links Playwright | partial | source_guide, search, fetch, export | live_mcp_native_exports_pdf_html_codemeta_and_supplementary_references |
 | Theory of Computing | theory-of-computing | playwright | partial | source_guide, search, fetch, export | live_mcp_indexes_citation_pdf_source_ps_references_fetch_and_text_pagination |
 | Crossref | crossref | api | partial | source_guide, search, fetch, export | live_mcp_search_native_citation_eight_formats_extract |
-| Crossmark | crossmark | api | partial | source_guide, search, fetch, export | live_mcp_search_extract |
+| Crossmark | crossmark | api | partial | source_guide, search, fetch, export | 정정·철회 incoming/outgoing 구분·중복 보존·형식 오류 unknown·요청 간격과 제한 헤더 |
 | OpenAlex | openalex | api | partial | source_guide, search, fetch, export | live_mcp_arbitrary_window_group_cursor_abstract_relationships_name_doi |
 | Semantic Scholar | semantic-scholar | api | partial | source_guide, search, fetch, export | live_mcp_search_extract; new_workflow_rate_limited; schema_regressions |
 | OpenCitations | opencitations | api | partial | source_guide, search, fetch, export | live_mcp_native_csv_window_oci_fetch_reference_count |

@@ -639,3 +639,12 @@ JSTOR는 문헌 식별자만 기다리다 원시 timeout을 내던 부분을 수
 주 세션은 10463014의 문헌·Media 로딩·안정 화면을 직접 읽어 실제 영상 카드와 DOI 인용 링크를 확인했다. 같은 원 HTML에 이전 코드와 수정 코드를 적용하는 실제 로컬 실행도 전후·안정 화면 6개로 직접 판독했다. 이전 코드는 source_boundary, 수정 코드는 supp1-3374782.mp4 하나였다. 이 재생은 저장한 원 응답의 parser 검증이며 새 원격 페이지 방문으로 계산하지 않는다. 이어 원본 새 SDK는 전체 ok, 참고문헌 30개 available, MP4 45,091,657바이트를 포함한 첨부파일 available을 반환했다. 정제 근거는 `data/access-research/user-criteria-ieee/root-sdk.json`이다. Numdam 변경과 함께 원본 전체 534검사가 46.398초에 통과했다.
 
 CLI가 재검토한 과거 References timeout과 9문헌의 직접 REST 401은 같은 입력에서 재현되지 않았다. 각 문헌 UI와 직접 응답의 전후 이미지를 묶은 근거는 `data/dispatch/20260913T021511Z/ieee-media-flag/criteria-review.json`에 있다. 이를 언제나 가용하다는 보장이나 다른 endpoint 성공으로 원래 실패를 지운 결과로 표시하지 않는다.
+2026-09-13 Crossmark의 갱신 의미와 요청 간격을 원본에 반영했다. 주 세션과 독립 검토가 N16 실제 HTTP 실행 도구의 직전·직후·안정 이미지를 읽어, 무자격 순차 요청 중 목록 요청의 429·빈 body·Retry-After 부재를 확인했다. 이 화면은 Crossref 웹 UI가 아니다. 호출 시작 간격 1.5초와 제공된 제한 헤더를 보존하며, 429를 문헌 부재로 처리하지 않는다. 원본 새 SDK 9호출은 연속 철회/정정 목록, 추출, 철회된 원 문헌, 정정 원 문헌과 공지, 정책만 있는 문헌, 등록 정보 없는 문헌을 모두 통과했다. 정제 근거는 `data/access-research/user-criteria-crossmark/root-sdk.json`이다.
+
+Crossmark 사본의 추가 결함도 수리했다. 잘못된 타입의 updated-by를 빈 배열로 바꾸면 갱신 없음으로 오판한다. 원본 회귀에서 이 상태를 재현한 뒤 원 값·schema_warnings·unknown·partial로 구별했다. 메타데이터는 available로 보존한다. assertion·relation·content-domain의 잘못된 타입도 지우지 않는다. 정상 배열 안의 알 수 없는 갱신 type은 그대로 보존한다. Crossmark 10검사가 통과했다.
+
+DBLP KG에서는 표준이 아닌 application/csv·application/tab-separated-values 요청의 406과, 표준 text/csv·text/tab-separated-values 요청의 200을 같은 실행의 전후 화면으로 직접 확인했다. 숨은 TSV 메뉴를 열지 않고 누른 관찰 도구의 timeout도 원 UI가 정상 결과를 표시한 상태와 구별했다. 제공자 원 TSV의 1997은 정수였지만 원 JSON은 xsd:gYear였다. 원본 SDK는 그 원 파일과 partial을 보존하면서 tsv_exact에서 xsd:gYear를 유지한 별도 파일을 생성·추출했다. 근거는 `data/access-research/user-criteria-dblp-kg/root-sdk.json`이다.
+
+원본 TSV validator의 값 비교 오류도 독립 검토와 회귀로 재현했다. 숫자 01과 1, integer와 decimal, Boolean 1과 true를 같은 값이라는 이유로 허용했고, 뒤에 garbage가 붙은 문자열도 통과했다. 완전한 TSV 항 문법과 정규화하지 않은 원 문자열로 검증하도록 고쳤다. RDF 1.1에서 같은 항인 plain string/xsd:string과 언어 태그 대소문자는 허용하며 tsv_exact 생성은 원 JSON 표현을 그대로 유지한다. 생성 파일 저장만 실패시키는 회귀에서는 알려진 JSON 결과를 partial로 보존한다. 실제 서비스에서 디스크 실패를 관측했다는 뜻은 아니다.
+
+후속 독립 검토는 RDFLib 하위 문법을 그대로 쓰면 유효한 Unicode escape와 음수 decimal을 거부한다는 반례도 찾았다. Unicode escape를 포함한 원 토큰을 먼저 검증하고 그 뒤 한 번만 해석하며, 숫자는 원 문자열에서 자료형을 결정하도록 고쳤다. 따옴표가 되는 Unicode escape를 전체 셀에 먼저 치환하지 않는다. NUL·emoji·이중 escape·-.5·-0.5를 포함한 DBLP KG 16검사가 통과했다. 최종 새 원본 SDK는 gYear 보존과 원 TSV 불일치 외에 실제 Natural Proofs의 32개 RDF statement 전체를 tsv_exact로 생성했다. 근거는 `data/access-research/user-criteria-dblp-kg/root-sdk-final.json`이다. 최종 원본 전체 552검사가 47.366초에 통과했다.

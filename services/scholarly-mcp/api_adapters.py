@@ -81,9 +81,22 @@ class APIAdapter:
         else:
             raise ServiceError("redirect_limit", "Source returned too many redirects", source=self.source)
         code = response.status_code
+        rate_context = {
+            key: response.headers.get(header)
+            for key, header in (
+                ("retry_after", "retry-after"),
+                ("rate_limit", "x-rate-limit-limit"),
+                ("rate_limit_interval", "x-rate-limit-interval"),
+                ("rate_limit_type", "x-rate-limit-type"),
+                ("concurrency_limit", "x-concurrency-limit"),
+            )
+            if response.headers.get(header) is not None
+        }
         if code == 429:
             raise ServiceError("rate_limited", "Source request limit reached; retry according to retry_after", source=self.source,
-                retry_after=response.headers.get("retry-after"), retryable=True)
+                http_status=code, retry_after=response.headers.get("retry-after"), retryable=True, **{
+                    key: value for key, value in rate_context.items() if key != "retry_after"
+                })
         if code in (401, 403):
             raise ServiceError("access_restricted", "Source rejected the current access credentials or network", status="restricted", source=self.source, http_status=code)
         if code in (404, 410):
@@ -109,7 +122,7 @@ class APIAdapter:
             preserved = clean_html(preserved, self.store.sanitizer)
         evidence = self.store.put(preserved,
             "application/json" if accept == "json" else (media or "application/octet-stream"), self.source, str(response.url), preserve_bytes=accept == "binary", role="provider_response",
-            **({"next_cursor": page_cursor} if page_cursor else {}), **({"next_page": int(page_number)} if page_number.isdigit() else {}))
+            **rate_context, **({"next_cursor": page_cursor} if page_cursor else {}), **({"next_page": int(page_number)} if page_number.isdigit() else {}))
         return payload, evidence
 
     def validate(self, options, start, limit, cursor=None):
@@ -300,6 +313,78 @@ class Crossref(APIAdapter):
 class Crossmark(Crossref):
     """Crossmark deposits are exposed through the same public Crossref works API."""
     source = "crossmark"
+    # Public list requests (queries and filters) are limited to one per second.
+    # A single conservative interval also keeps mixed DOI/list workflows safe.
+    min_interval = 1.5
+
+    @staticmethod
+    def crossmark_summary(row):
+        warnings = []
+        for key, kind in (('updated-by', list), ('update-to', list), ('update-policy', str),
+                          ('assertion', list), ('relation', dict), ('content-domain', dict)):
+            value = row.get(key)
+            if value is not None and not isinstance(value, kind):
+                warnings.append({'field': key, 'expected': kind.__name__, 'observed_type': type(value).__name__})
+            elif key in ('updated-by', 'update-to') and isinstance(value, list) and any(not isinstance(item, dict) for item in value):
+                warnings.append({'field': key, 'expected': 'list of update objects', 'observed_type': 'list with non-object entries'})
+        malformed = {warning['field'] for warning in warnings}
+        incoming = row.get('updated-by') if isinstance(row.get('updated-by'), list) else []
+        outgoing = row.get('update-to') if isinstance(row.get('update-to'), list) else []
+        if malformed & {'updated-by', 'update-to'}:
+            update_state = 'unknown'
+        elif incoming and outgoing:
+            update_state = 'has_registered_updates_and_is_update'
+        elif incoming:
+            update_state = 'has_registered_updates'
+        elif outgoing:
+            update_state = 'is_update'
+        else:
+            update_state = 'no_registered_updates_in_record'
+        if malformed & {'updated-by', 'update-to', 'update-policy'}:
+            registration = 'unknown'
+        elif row.get('update-policy'):
+            registration = 'registered'
+        elif incoming or outgoing:
+            registration = 'update_metadata_only'
+        else:
+            registration = 'not_registered_in_record'
+        return {
+            'registration': registration,
+            'record_update_state': update_state,
+            'update-policy': row.get('update-policy'),
+            'updated-by': {
+                'direction': 'incoming_updates_to_this_work',
+                'count': None if 'updated-by' in malformed else len(incoming),
+                'items': incoming,
+                **({'unparsed_value': row['updated-by']} if 'updated-by' in malformed else {}),
+            },
+            'update-to': {
+                'direction': 'outgoing_targets_updated_by_this_work',
+                'count': None if 'update-to' in malformed else len(outgoing),
+                'items': outgoing,
+                **({'unparsed_value': row['update-to']} if 'update-to' in malformed else {}),
+            },
+            'assertion': row.get('assertion', []),
+            'relation': {
+                'role': 'general_crossref_relationships_not_crossmark_updates',
+                'value': row.get('relation', {}),
+            },
+            'content-domain': row.get('content-domain'),
+            'schema_warnings': warnings,
+            'source_scope': 'Exact update entries are preserved; publisher and retraction-watch update entries can duplicate or disagree.',
+            'absence_scope': 'Missing update fields mean no update was registered in this Crossref record; that does not prove that no real-world correction, retraction, or other update exists.',
+        }
+
+    def fetch(self, target, *, parts):
+        result = super().fetch(target, parts=parts)
+        records = result.get('records')
+        if records and result.get('status') != 'selection_required':
+            rows = json.loads(self.store.read(records['ref'])[1])
+            if len(rows) == 1 and isinstance(rows[0], dict):
+                result['crossmark'] = self.crossmark_summary(rows[0])
+                if result['crossmark']['schema_warnings']:
+                    result['status'] = 'partial'
+        return result
 
 
 class Arxiv(APIAdapter):

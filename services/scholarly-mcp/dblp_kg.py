@@ -2,15 +2,68 @@
 import csv,io,json,re
 from urllib.parse import quote,urlsplit,unquote
 from rdflib import BNode,Literal,URIRef
-from rdflib.plugins.sparql.parser import parseQuery
+from rdflib.namespace import XSD
+from rdflib.plugins.sparql.parser import parseQuery, BLANK_NODE_LABEL
 from rdflib.plugins.sparql.parserutils import CompValue
-from rdflib.util import from_n3
 from pyparsing import ParseResults
 from api_adapters import APIAdapter,doi
 from scholarly import ServiceError,encoded
 
 ENDPOINT='https://sparql.dblp.org/sparql'
 SCHEMA='https://dblp.org/rdf/schema#'
+
+# Parse raw tokens before decoding escapes so UCHAR cannot change delimiters.
+# RDFLib's query subgrammar normalizes numbers and omits the top-level Unicode
+# preprocessing; neither behavior is suitable for preserving TSV lexical forms.
+TSV_ESCAPE = r'''\\(?:["'tbnrf\\]|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8})'''
+TSV_STRING = rf'''(?:"(?:[^"\\\r\n]|{TSV_ESCAPE})*"|'(?:[^'\\\r\n]|{TSV_ESCAPE})*')'''
+TSV_IRI = r'<(?:[^<>"{}|^`\\\x00-\x20]|\\u[0-9A-Fa-f]{4}|\\U[0-9A-Fa-f]{8})*>'
+TSV_LITERAL = re.compile(rf'(?P<string>{TSV_STRING})(?:@(?P<lang>[a-zA-Z]+(?:-[a-zA-Z0-9]+)*)|\^\^(?P<datatype>{TSV_IRI}))?')
+TSV_BNODE = BLANK_NODE_LABEL.copy()
+
+
+def tsv_unescape(value):
+    escapes = {'"':'"', "'":"'", '\\':'\\', 't':'\t', 'b':'\b', 'n':'\n', 'r':'\r', 'f':'\f'}
+    def replace(match):
+        token = match.group()[1:]
+        return chr(int(token[1:], 16)) if token[0] in 'uU' else escapes[token]
+    decoded = re.sub(TSV_ESCAPE, replace, value)
+    if any(0xD800 <= ord(character) <= 0xDFFF for character in decoded):
+        raise ValueError('Invalid Unicode surrogate')
+    return decoded
+
+
+def tsv_term(cell):
+    if not cell or cell != cell.strip():
+        raise ServiceError('invalid_response','Native TSV contains an invalid RDF term')
+    try:
+        match = TSV_LITERAL.fullmatch(cell)
+        if match:
+            datatype = match.group('datatype')
+            return Literal(tsv_unescape(match.group('string')[1:-1]), lang=match.group('lang'),
+                           datatype=URIRef(tsv_unescape(datatype[1:-1])) if datatype else None, normalize=False)
+        if re.fullmatch(TSV_IRI, cell):
+            return URIRef(tsv_unescape(cell[1:-1]))
+        if cell.startswith('_:'):
+            return TSV_BNODE.parse_string(cell, parse_all=True)[0]
+        for pattern, datatype in ((r'[+-]?(?:[0-9]+\.[0-9]*|\.[0-9]+|[0-9]+)[eE][+-]?[0-9]+', XSD.double),
+                                  (r'[+-]?[0-9]*\.[0-9]+', XSD.decimal),
+                                  (r'[+-]?[0-9]+', XSD.integer), (r'true|false', XSD.boolean)):
+            if re.fullmatch(pattern, cell):
+                return Literal(cell, datatype=datatype, normalize=False)
+        raise ValueError('Invalid TSV term')
+    except Exception:
+        raise ServiceError('invalid_response','Native TSV contains an invalid RDF term') from None
+
+
+def same_rdf_term(observed, expected):
+    if isinstance(observed, Literal) and isinstance(expected, Literal):
+        # RDF 1.1 plain strings denote xsd:string; language tags ignore case.
+        # Numeric/boolean value equality must not replace lexical/type equality.
+        return (str(observed) == str(expected)
+                and (observed.datatype or XSD.string) == (expected.datatype or XSD.string)
+                and (observed.language or '').casefold() == (expected.language or '').casefold())
+    return type(observed) is type(expected) and observed == expected
 
 
 def bounded_query(query,start,limit):
@@ -62,11 +115,27 @@ def validate_table(data,format,variables,rows):
                 if cell:raise ServiceError('export_range_mismatch','Native TSV bound a missing variable')
                 continue
             expected=URIRef(term['value']) if term['type']=='uri' else BNode(term['value']) if term['type']=='bnode' else Literal(term['value'],lang=term.get('xml:lang'),datatype=term.get('datatype'),normalize=False)
-            try:observed=from_n3(cell)
-            except Exception:raise ServiceError('invalid_response','Native TSV contains an invalid RDF term') from None
-            if not (observed.eq(expected) if isinstance(observed,Literal) and isinstance(expected,Literal) else observed==expected):
+            observed=tsv_term(cell)
+            if not same_rdf_term(observed,expected):
                 raise ServiceError('export_term_mismatch','Native TSV differs from the selected RDF terms',variable=variable,
                     expected_datatype=term.get('datatype'),observed_datatype=str(observed.datatype) if isinstance(observed,Literal) and observed.datatype else None)
+
+
+def exact_tsv(variables,rows):
+    def render(term):
+        if term['type']=='uri':return URIRef(term['value']).n3()
+        if term['type']=='bnode':return BNode(term['value']).n3()
+        value=term['value']
+        if any(0xD800<=ord(character)<=0xDFFF for character in value):
+            raise ServiceError('invalid_response','An RDF literal contains an invalid Unicode surrogate')
+        language=term.get('xml:lang');datatype=term.get('datatype')
+        if language and datatype:
+            raise ServiceError('invalid_response','An RDF literal has both a language and datatype')
+        suffix='@'+language if language else '^^'+URIRef(datatype).n3() if datatype else ''
+        return json.dumps(value,ensure_ascii=False)+suffix
+    lines=['\t'.join('?'+variable for variable in variables)]
+    lines.extend('\t'.join(render(row[variable]) if variable in row else '' for variable in variables) for row in rows)
+    return ('\n'.join(lines)+'\n').encode('utf-8')
 
 
 class DBLPKG(APIAdapter):
@@ -78,8 +147,8 @@ class DBLPKG(APIAdapter):
     def search(self,query,*,options,start=0,limit=20,cursor=None,export=None):
         self.validate(options,start,limit)
         if cursor:raise ServiceError('invalid_cursor','Use start instead of a cursor')
-        if export not in (None,'json','native','csv','tsv'):
-            raise ServiceError('unsupported_export','Use json, native, csv or tsv',status='unsupported')
+        if export not in (None,'json','native','csv','tsv','tsv_exact'):
+            raise ServiceError('unsupported_export','Use json, native, csv, tsv or tsv_exact',status='unsupported')
         requested=bounded_query(query,start,limit)
         raw,evidence=self.request(ENDPOINT,params={'query':requested},headers={'Accept':'application/sparql-results+json'})
         variables,rows=bindings(raw)
@@ -89,6 +158,16 @@ class DBLPKG(APIAdapter):
             preview=[{key:term['value'] for key,term in row.items()} for row in rows[:3]],
             scope='Only the selected DBLP knowledge graph. RDF term type, language and datatype are preserved; missing bindings stay missing.')
         if export=='native':result['export']=evidence
+        elif export=='tsv_exact':
+            try:
+                data=exact_tsv(variables,rows)
+                validate_table(data,'tsv',variables,rows)
+                result['export']=self.store.put(data,'text/tab-separated-values',self.source,ENDPOINT,role='generated_lossless_tsv',
+                    request={'query':query,'start':start,'limit':limit},basis_format='application/sparql-results+json',evidence_refs=[evidence['ref']])
+            except ServiceError as error:
+                result.update(status='partial',export=error.result)
+            except Exception as error:
+                result.update(status='partial',export={'status':'error','code':'invalid_export','error_type':type(error).__name__})
         elif export in ('csv','tsv'):
             native=None
             try:
