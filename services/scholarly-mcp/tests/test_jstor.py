@@ -6,6 +6,55 @@ from scholarly import ArtifactStore,bibliography
 from jstor import JSTOR,stable_id
 
 class JSTORContract(unittest.TestCase):
+    def test_missing_document_identity_is_a_retryable_load_timeout(self):
+        from types import SimpleNamespace
+        from unittest.mock import Mock
+        from jstor import document_uuid
+        from scholarly import ServiceError
+        node=SimpleNamespace(wait_for=Mock(side_effect=TimeoutError('not attached')),count=lambda:0)
+        page=SimpleNamespace(locator=lambda _:node,content=lambda:'<title>JSTOR</title>',wait_for_timeout=Mock())
+        with self.assertRaises(ServiceError) as caught:document_uuid(page)
+        self.assertEqual(caught.exception.result['code'],'document_load_timeout')
+        self.assertTrue(caught.exception.result['retryable'])
+
+    def test_ready_document_identity_is_not_confused_with_a_challenge_like_title(self):
+        from types import SimpleNamespace
+        from unittest.mock import Mock
+        from jstor import document_uuid
+        value='12345678-1234-1234-1234-123456789abc'
+        node=SimpleNamespace(wait_for=Mock(),count=lambda:1,get_attribute=lambda _:value)
+        page=SimpleNamespace(locator=lambda _:node,content=lambda:'<title>Client Challenge: a study</title>',wait_for_timeout=Mock())
+        self.assertEqual(document_uuid(page),value)
+
+    def test_document_identity_wait_classifies_a_challenge_that_renders_after_blank_shell(self):
+        from jstor import document_uuid
+        from scholarly import ServiceError
+
+        class MissingIdentity:
+            def wait_for(self, **_):
+                raise TimeoutError("identity selector timed out")
+
+            def count(self):
+                return 0
+
+        class DelayedChallengePage:
+            def __init__(self):
+                self.polls = 0
+
+            def locator(self, _):
+                return MissingIdentity()
+
+            def content(self):
+                return "" if self.polls == 0 else "<title>Client Challenge</title><input id='capInput'>"
+
+            def wait_for_timeout(self, _):
+                self.polls += 1
+
+        with self.assertRaises(ServiceError) as caught:
+            document_uuid(DelayedChallengePage())
+        self.assertEqual(caught.exception.result["code"], "publisher_access_challenge")
+
+
     def test_document_parts_share_one_native_page_and_close_it_once(self):
         from unittest.mock import patch,Mock
         from publishers import Publisher,PROFILES

@@ -86,6 +86,13 @@ def primary_pdf_links(raw, base, *, identifier=None):
     if urls:
         return list(dict.fromkeys(urls))
     if identifier:
+        for tag in soup.select('a#downloadPdfUrl[data-doi][href*="/doi/pdf/"]'):
+            link=urljoin(base,tag['href'])
+            if (tag.get('data-doi','').casefold()==identifier.casefold()
+                    and unquote(urlsplit(link).path).casefold()=='/doi/pdf/'+identifier.casefold()):
+                urls.append(link)
+        if urls:
+            return list(dict.fromkeys(urls))
         for tag in soup.select('a.show-pdf[href*="/doi/pdf/"]'):
             link=urljoin(base,tag['href'])
             if unquote(urlsplit(link).path).lower()=='/doi/pdf/'+identifier.lower():
@@ -97,6 +104,13 @@ def primary_pdf_links(raw, base, *, identifier=None):
         if tag.get("href"):
             urls.append(urljoin(base, tag["href"]))
     return list(dict.fromkeys(urls))
+
+
+def pdf_access_restricted(raw):
+    soup=BeautifulSoup(raw,'html.parser')
+    text=soup.get_text(' ',strip=True)
+    return bool(re.search(r'\bPreviews are depleted\b',text,re.I)
+                or soup.select_one('#core-collateral-purchase-access') and re.search(r'\bGet Access\b',text,re.I))
 
 
 def wiley_records(raw, base):
@@ -246,8 +260,26 @@ class Publisher:
         try:
             if callable(getattr(self.gateway,'native_download',None)):
                 page=self.gateway.public_page(self.source)
-                data,_,actual=self.gateway.native_download(page,lambda:self.document(url),self.profile.download_hosts,
-                                                          expected.path,query=expected.query)
+                navigated=[]
+                def navigate():
+                    document=self.document(url)
+                    navigated.append(document)
+                    return document
+                try:
+                    data,_,actual=self.gateway.native_download(page,navigate,self.profile.download_hosts,
+                                                              expected.path,query=expected.query)
+                except ServiceError as error:
+                    if error.result.get('code')=='download_missing' and navigated and self.source=='siam':
+                        observed=urlsplit(navigated[-1].url)
+                        expected_path=unquote(expected.path).casefold()
+                        match=re.fullmatch(r'/doi/pdf/(10\..+)',expected_path)
+                        same_document_paths={expected_path}
+                        if match:
+                            same_document_paths.update({'/doi/'+match.group(1),'/doi/abs/'+match.group(1)})
+                        if (observed.hostname in self.profile.hosts and unquote(observed.path).casefold() in same_document_paths
+                                and pdf_access_restricted(navigated[-1].content())):
+                            raise ServiceError('access_restricted','Source restricted this document',status='restricted') from None
+                    raise
             else:
                 try:
                     page=self.document(url)

@@ -8,6 +8,81 @@ sys.path.insert(0, str(ROOT))
 
 
 class PublisherContract(unittest.TestCase):
+    def test_siam_access_classification_normalizes_doi_but_rejects_other_documents(self):
+        import tempfile
+        from types import SimpleNamespace
+        from unittest.mock import Mock,patch
+        from scholarly import ArtifactStore,ServiceError
+        target='https://epubs.siam.org/doi/pdf/10.1137%2F24m1711108?download=true'
+        cases=[
+            ('https://epubs.siam.org/doi/10.1137/24M1711108','access_restricted'),
+            ('https://epubs.siam.org/doi/pdf/10.1137/24M1711108','access_restricted'),
+            ('https://epubs.siam.org/doi/10.1137/other','download_missing'),
+            ('https://example.org/doi/10.1137/24M1711108','download_missing'),
+        ]
+        for observed,expected_code in cases:
+            with self.subTest(observed=observed),tempfile.TemporaryDirectory() as temp:
+                page=SimpleNamespace(url=observed,content=lambda:'<h2>Previews are depleted</h2>',
+                    on=Mock(),remove_listener=Mock(),is_closed=lambda:False,close=Mock())
+                def missing(_page,action,*_args,**_kwargs):
+                    action()
+                    raise ServiceError('download_missing','No completed file',retryable=True)
+                context=SimpleNamespace(on=Mock(),remove_listener=Mock())
+                gateway=SimpleNamespace(start=Mock(),pages={},context=context,public_page=Mock(return_value=page),
+                    native_download=Mock(side_effect=missing))
+                adapter=self.mod.Publisher(ArtifactStore(temp),gateway,next(p for p in self.mod.PROFILES if p.source=='siam'))
+                with patch.object(adapter,'document',return_value=page),self.assertRaises(ServiceError) as error:
+                    adapter.explicit_pdf(target,['fulltext'])
+                self.assertEqual(error.exception.result['code'],expected_code)
+
+    def test_siam_current_download_control_is_identity_bound_and_restricted(self):
+        import tempfile
+        from types import SimpleNamespace
+        from unittest.mock import Mock,patch
+        from scholarly import ArtifactStore,ServiceError
+        identifier='10.1137/24M1711108'
+        url='https://epubs.siam.org/doi/'+identifier
+        raw=('<meta name="citation_title" content="Codegree Conditions">'
+             '<meta name="citation_doi" content="'+identifier+'">'
+             '<a href="/doi/pdf/'+identifier+'?download=true" id="downloadPdfUrl" data-doi="'+identifier+'">Download PDF</a>')
+        page=SimpleNamespace(url=url,content=Mock(return_value=raw),wait_for_function=Mock(),close=Mock(),
+            locator=Mock(return_value=SimpleNamespace(inner_text=lambda:'GET ACCESS')),
+            evaluate=Mock(return_value='Browser UA'))
+        gateway=SimpleNamespace(context=object())
+        with tempfile.TemporaryDirectory() as temp:
+            adapter=self.mod.Publisher(ArtifactStore(temp),gateway,next(p for p in self.mod.PROFILES if p.source=='siam'))
+            denied=ServiceError('access_restricted','Source restricted this document',status='restricted',http_status=403)
+            with patch.object(adapter,'document',return_value=page),patch('publishers.browser_download',side_effect=denied) as download:
+                result=adapter.fetch(url,parts=['metadata','fulltext'])
+        self.assertEqual(result['components']['fulltext']['status'],'restricted')
+        self.assertEqual(result['components']['fulltext']['code'],'access_restricted')
+        download.assert_called_once()
+
+    def test_siam_explicit_pdf_access_page_is_not_reported_as_missing_download(self):
+        import tempfile
+        from types import SimpleNamespace
+        from unittest.mock import Mock,patch
+        from scholarly import ArtifactStore,ServiceError
+        identifier='10.1137/24M1711108'
+        url='https://epubs.siam.org/doi/pdf/'+identifier+'?download=true'
+        access=('<html><body><div>Previews are depleted</div><section><h3>Get Access</h3></section>'
+                '<a href="/doi/pdf/'+identifier+'?download=true">'+identifier+'</a></body></html>')
+        access_page=SimpleNamespace(url='https://epubs.siam.org/doi/'+identifier,content=lambda:access,
+            on=Mock(),remove_listener=Mock(),is_closed=lambda:False,close=Mock())
+        launcher=SimpleNamespace(on=Mock(),remove_listener=Mock(),is_closed=lambda:False,close=Mock())
+        def missing(_page,action,*_args,**_kwargs):
+            action()
+            raise ServiceError('download_missing','The native action did not produce a completed requested file',retryable=True)
+        context=SimpleNamespace(on=Mock(),remove_listener=Mock())
+        gateway=SimpleNamespace(start=Mock(),pages={},context=context,public_page=Mock(return_value=launcher),native_download=Mock(side_effect=missing))
+        with tempfile.TemporaryDirectory() as temp:
+            adapter=self.mod.Publisher(ArtifactStore(temp),gateway,next(p for p in self.mod.PROFILES if p.source=='siam'))
+            with patch.object(adapter,'document',return_value=access_page),self.assertRaises(ServiceError) as error:
+                adapter.explicit_pdf(url,['fulltext'])
+        self.assertEqual(error.exception.result['status'],'restricted')
+        self.assertEqual(error.exception.result['code'],'access_restricted')
+
+
     def test_explicit_pdf_accepts_owned_native_download_without_page_download_event(self):
         import tempfile,pymupdf
         from types import SimpleNamespace

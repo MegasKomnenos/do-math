@@ -55,9 +55,26 @@ def document_api(adapter,page,path,payload=None):
 
 
 def document_uuid(page):
-    node=page.locator('#cdt[data-content-id]');node.wait_for(state='attached',timeout=30000);uuid=node.get_attribute('data-content-id')
-    if not isinstance(uuid,str) or not re.fullmatch(r'[0-9a-f-]{36}',uuid):raise ServiceError('identity_mismatch','JSTOR document has no valid content identity')
-    return uuid
+    from browser_adapters import is_access_challenge
+    from playwright.sync_api import Error as PlaywrightError
+    node=page.locator('#cdt[data-content-id]');last_error=None
+    for attempt in range(121):
+        try:
+            if node.count():
+                uuid=node.get_attribute('data-content-id')
+                if not isinstance(uuid,str) or not re.fullmatch(r'[0-9a-f-]{36}',uuid):
+                    raise ServiceError('identity_mismatch','JSTOR document has no valid content identity')
+                return uuid
+            if is_access_challenge(page.content()):
+                raise ServiceError('publisher_access_challenge','JSTOR requires document access verification',status='restricted')
+        except PlaywrightError as error:
+            last_error=type(error).__name__
+        if attempt<120:
+            try:page.wait_for_timeout(250)
+            except PlaywrightError as error:
+                raise ServiceError('document_load_failed','JSTOR document loading could not be observed',retryable=True,error_type=type(error).__name__) from None
+    raise ServiceError('document_load_timeout','JSTOR document identity did not appear within the observation window',retryable=True,
+                       **({'error_type':last_error} if last_error else {}))
 
 
 def file_metadata(data):

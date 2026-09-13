@@ -618,3 +618,12 @@ tests/live_core_file.py의 새 SDK는22:21:51.377164Z~22:22:01.331314Z에 실제
 추가 확인한 DBLP limit100 기본값은 실제 SDK101 요청에서 invalid_range를 냈다. 주 세션은 이 실제 실행 도구의 입력 전·오류 후·안정 화면을 직접 읽었다. 상한1,000 수리만으로는 원 API가100개만 돌려주므로, 원 @first·@sent·total·key를 검증하면서 다음 f를 조회해 범위를 채우도록 했다. 다중 native export는 원 JSON 응답을 각각 보존한다. 뒤 페이지429를 모의 재현한 검사는 수리 전 ok·2건과 수리 후 partial·2건·next2·Retry-After60을 구별했다.
 
 실제101건 호출은2응답을 이어101개 고유 key와 추출101건을 통과했다.1,000건 호출의3초 대조는600건 뒤429였고 그 실제 실행 전후·안정 화면을 직접 읽었다.6.1초 대조는10응답·1,000건·고유 key1,000·추출1,000으로 성공했고, 같은 설정의 최종 원본 server.py도 같은 결과를 반환했다. 정제한 전후 실행과 각 페이지는 `data/access-research/user-criteria-dblp/root-limits.json`에 있다. 원본 전체523검사가94.186초에 통과했다. 마지막 원본 SDK는08:11:51Z부터 검색 창0·1·3, Cook71의7형식 내보내기와 각각의 추출을 포함한13호출을 모두 통과했다. `data/access-research/user-criteria-dblp/root-sdk.json`이 해당 최종 결과다.
+
+
+2026-09-13 SIAM·JSTOR 상태 판정 수리. SIAM의 현재 a#downloadPdfUrl[data-doi] 제어를 실제 DOI·경로에 결속하고, 명시 PDF가 같은 DOI의 Previews are depleted/Get Access 화면으로 돌아온 경우 access_restricted로 구별했다. DOI 대소문자·경로 인코딩을 정규화하되 다른 DOI나 호스트는 이 판정으로 바꾸지 않는다. 주 세션은 최신 실패 직전·확인 중·안정 접근 제한 화면을 직접 읽었다. Source의 기관 권리 부재를 증명한 것은 아니다.
+
+같은 source의 CLI가 끝난 뒤 원본의 새 SDK를 순차 실행했다.08:49:36Z부터 일반 DOI 호출은 metadata available·fulltext restricted의 partial, 명시 PDF는 access_restricted, 공개 대조는705,276바이트·53쪽 PDF available이었다. 공개 PDF 첫 쪽의 제목·DOI10.1137/19M1299001을 텍스트와 직접 이미지로 확인했다. 정제한5개 판정은 `data/access-research/user-criteria-siam/root-sdk.json`에 있다. KNU IdP 자격은 다시 제출하지 않았다.
+
+JSTOR는 문헌 식별자만 기다리다 원시 timeout을 내던 부분을 수리했다. 준비된 정상 식별자를 먼저 확인하고, 아직 없으면 늦게 렌더되는 접근 확인 화면도 관찰한다. 관찰 종료는 identity_mismatch가 아니라 retryable document_load_timeout이다. 이 선택으로 정상 문헌의 challenge처럼 보이는 제목만으로 접근 제한을 오판하지 않는다. 주 세션이 실제 홈페이지→흰 화면→client challenge→정상 문헌의 전후 이미지를 직접 읽었고, 회귀의 원시 TimeoutError를 먼저 재현했다.
+
+원본 SDK는 community.39197180에서 metadata와2,191바이트 VTT를 보존하고, native download disabled에 따라 fulltext not_offered를 반환했다. community.41259097은24,416,379바이트 audio/mpeg와33,159바이트 VTT가 모두 available인 ok였다. 두 결과의5개 판정은 `data/access-research/user-criteria-jstor/root-sdk.json`에 있다. 실제 영상 파일을 받은 것으로 계산하지 않는다. SIAM20검사와 JSTOR13검사, 두 수리를 포함한 전체529검사가67.613초에 통과했다.

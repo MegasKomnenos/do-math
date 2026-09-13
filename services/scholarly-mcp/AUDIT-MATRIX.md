@@ -1,4 +1,4 @@
-49개 자료원의 제한 판단을 현행 코드와 원 UI/API·실제 SDK·독립 검토에 대조한 표다. 최초 기준선의 전체514검사가 통과했다. 이후23개 CLI 과제에 사용자 세 기준을 적용해 재검토 중이며, 원본의 Springer와 DBLP 수리 통합까지는 전체523검사와 새 SDK가 통과했다. 표의 판정은 자료원의 모든 미래 기능이나 모든 조합을 보증하지 않는다. 확인된 구현 결함과 현재 접근 조건·미확정 표본을 구별한다.
+49개 자료원의 제한 판단을 현행 코드와 원 UI/API·실제 SDK·독립 검토에 대조한 표다. 최초 기준선의 전체514검사가 통과했다. 이후23개 CLI 과제에 사용자 세 기준을 적용해 재검토 중이며, 원본의 Springer·DBLP·SIAM·JSTOR 수리 통합까지는 전체529검사와 새 SDK가 통과했다. 표의 판정은 자료원의 모든 미래 기능이나 모든 조합을 보증하지 않는다. 확인된 구현 결함과 현재 접근 조건·미확정 표본을 구별한다.
 
 [현재 지원표](SUPPORT.md) · [실패 지점 분석](LIMITATIONS-AUDIT.md) · [검증 기록](VALIDATION.md) · [접근 이력](ACCESS-RESEARCH.md)
 
@@ -57,3 +57,5 @@
 | APS 기관 구독 접근 (`aps-institutional`) | 검증된 범위 | 고급 terms/facets/date/sort, arbitrary windows, Bib/RIS, PDF/supplement와 부분 결과 보존이 실제 SDK로 양성이다. | live_mcp_search_window_custom_multi_facets_bibtex_ris_abstract_pdf_supplement |
 
 JSON/Markdown의49행·49고유 source와 registry 순서를 대조했다. 상세 판정·재검증 조건은 `data/access-research/limitations-audit/final-matrix.json`·`final-review.md`에 있다. 공유 상태의 원시 파일 불변 검사는 실패한 이력이 있으며 기능 검사 통과와 별도로 [접근 이력](ACCESS-RESEARCH.md)에 기록했다.
+
+SIAM·JSTOR의 사용자 기준 후속 검증은 `data/access-research/user-criteria-siam/root-sdk.json`과 `user-criteria-jstor/root-sdk.json`에 있다. 로컬 제어/관찰/분류 수리와 현재 문헌의 실제 접근 제한·다운로드 비활성을 구별한다. SIAM 검색 조건의 별도 사본 수리는 아직 원본 통합 전이다.
