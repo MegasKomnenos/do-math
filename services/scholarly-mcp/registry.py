@@ -554,9 +554,10 @@ SOURCES['siam'].implementation='partial'
 SOURCES['siam'].transport='playwright'
 SOURCES['siam'].capabilities=('source_guide','search','fetch','export')
 SOURCES['siam'].usage={
-    'search':'query를 SIAM 기본검색에 그대로 전달한다. options.field가 있으면 고급검색의 해당 필드에 전달한다. 원 페이지의 전체 건수·행 범위·문헌 DOI와 다음 페이지의 검색 조건을 대조한다.',
+    'search':'query를 SIAM 기본검색에 그대로 전달한다. options.field가 있으면 고급검색의 해당 필드에 전달한다. Author 자유식도 밑줄·공백·Boolean·따옴표·wildcard를 자동 exact 변환하지 않고 그대로 보낸다. 밑줄이 든 자유 Author 식은 원 UI에서 exact 저자 식별과 같은 결과를 보장하지 않았음을 query_semantics 경고로 알린다. 원 페이지의 전체 건수·행 범위·문헌 DOI와 다음 페이지의 검색 조건을 대조한다.',
     'options':{'field':'Anywhere, Title, Author, Keywords, Abstract, Affiliation',
                'terms':'추가 검색 행의 순서 있는 {field, query} 배열. 요청한 각 행의 필드·값·순서를 원 요청과 대조한다. 원 UI에는 행별 AND/OR/NOT 선택 제어가 없어 operator를 받지 않는다.',
+               'authors_exact':'원 Authors/Editors 필터에 표시된 정확한 저자명 하나 이상의 배열. 각 값을 ContribRaw로 보내고 여러 값은 파라미터를 반복하며 실측 의미는 AND다. 자유 Author 행과 함께 지정하면 자유식과 모든 exact 저자 조건을 AND로 결합한다.',
                'topic':'현재 자동완성에 나오는 정확한 주제명. 후보가 유일하지 않으면 selection_required와 후보를 반환한다.',
                'publication':'현재 자동완성에 나오는 정확한 발행물명. 예: SIAM Journal on Optimization. 사용자가 내부 ID를 만들지 않는다.',
                'published_within':'month, six_months, year. 현재 원 제어의 상대 기간을 선택하며 절대 범위와 함께 사용하지 않는다.',
@@ -784,7 +785,7 @@ for identifier, level in {
     "de-gruyter": "DOI·DOI 없는 ISBN 책의 현재 CITE/RIS 복원; 원본7검증·PDF/첨부; 특정 옛 첨부404 별도",
     "jstor": "live_mcp_search_image_sorts_facets_citations_pdf_mp3_transcripts_supplement; native_video_download_disabled",
     "iop": "live_mcp_rss_ranked_filters_native_search_citations; pdf_html_tex_154_equations_manifest_images_supplement",
-    "siam": "live_mcp_52_fields_advanced_search_citations_book_zero; institution_auth_path_unavailable",
+    "siam": "52번째 조건17/17/0·자유 Author 보존·명시 exact 공동저자 AND 검증; 특정 기관 PDF 제한",
     "individual-subscription": "live_mcp_two_catalogues_95_holdings_six_siam_csv_range_year_fetch_zero",
     "ams": "live_mcp_native_search_window_zero_xlsx_product_fetch_pdf; dynamic_ui_provider_error",
     "science-direct": "live_mcp_search_cross_page_ris_zero_facets_exact_publication_three_citations_pdf_supplement_video",

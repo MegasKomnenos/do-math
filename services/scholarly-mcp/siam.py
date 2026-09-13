@@ -24,10 +24,34 @@ NATIVE_FORMATS={'bibtex':'application/x-bibtex','ris':'application/x-research-in
                 'refworks':'application/x-research-info-systems'}
 
 
+def author_query_semantics(query,options,params):
+    free=[]
+    if options.get('field','Anywhere')=='Author':free.append(query)
+    free.extend(term['query'] for term in options.get('terms',[]) if term.get('field')=='Author')
+    exact=list(params.get('ContribRaw',[]))
+    if not free and not exact:return None
+    if free and exact:
+        mode='free_author_expression_and_exact_facets'
+        note='Free Author queries remain Contrib fields and explicit visible labels are serialized as ContribRaw facets; the observed native combination is AND.'
+    elif exact:
+        mode='exact_author_facets'
+        note='Explicit visible author labels are serialized as ContribRaw facets; multiple values are repeated and their observed combination is AND.'
+    else:
+        mode='free_author_expression'
+        note='Free Author queries are serialized verbatim as Contrib fields; separate Author rows use SIAM native default AND.'
+    semantics={'mode':mode,'free_author_queries':free,'exact_author_facets':exact,'combination':'AND','note':note}
+    if any('_' in value for value in free):
+        semantics['warnings']=[{
+            'code':'underscore_free_author_analyzer',
+            'message':'Observed SIAM free Author searches preserved underscores but did not establish exact author identity; use options.authors_exact with a provider-visible label when exact identity is intended.',
+        }]
+    return semantics
+
+
 def search_params(query,options):
-    allowed={'field','terms','topic','publication','published_within','published_after','published_before','content_type','sort','page_size'}
+    allowed={'field','terms','authors_exact','topic','publication','published_within','published_after','published_before','content_type','sort','page_size'}
     if not isinstance(options,dict) or set(options)-allowed:
-        raise ServiceError('invalid_options','Use one documented SIAM field and its exposed filters; Boolean rows are not confirmed')
+        raise ServiceError('invalid_options','Use documented SIAM fields, terms and exposed filters')
     field=options.get('field','Anywhere');sort=options.get('sort','relevance');size=options.get('page_size',20)
     if field not in FIELDS or sort not in SORTS or size not in (20,50,100):
         raise ServiceError('invalid_options','Use a documented SIAM field, sort order and page size')
@@ -42,6 +66,11 @@ def search_params(query,options):
         if not isinstance(term,dict) or set(term)!={'field','query'} or term['field'] not in FIELDS or not isinstance(term['query'],str) or not term['query'].strip():
             raise ServiceError('invalid_options','Each additional SIAM term requires a documented field and non-empty query')
         params['field'+str(index)]=FIELDS[term['field']];params['text'+str(index)]=term['query']
+    if 'authors_exact' in options:
+        exact=options['authors_exact']
+        if not isinstance(exact,list) or not exact or any(not isinstance(value,str) or not value.strip() for value in exact):
+            raise ServiceError('invalid_options','authors_exact requires one or more non-empty visible SIAM author labels')
+        params['ContribRaw']=list(exact)
     for option in ('topic','publication'):
         if option in options and (not isinstance(options[option],str) or not options[option].strip()):
             raise ServiceError('invalid_options','Topic and publication require an exact non-empty visible label')
@@ -304,6 +333,8 @@ def search(publisher,query,*,options,start=0,limit=20,cursor=None,export=None):
     if export not in (None,'json','html','csv',*NATIVE_FORMATS):
         raise ServiceError('invalid_export','Use json, html, csv, BibTeX, RIS, EndNote or Medlars')
     params=search_params(query,options)
+    query_semantics=author_query_semantics(query,options,params)
+    exact_authors=params.get('ContribRaw')
     size=params['pageSize']
     profile=publisher.profile
     page=publisher.gateway.public_page(publisher.source)
@@ -314,6 +345,7 @@ def search(publisher,query,*,options,start=0,limit=20,cursor=None,export=None):
         params['pageSize']=[str(size)]
         if 'content_type' in options:params['PubType']=[CONTENT_TYPES[options['content_type']]]
         if SORTS[options.get('sort','relevance')]:params['sortBy']=[SORTS[options['sort']]]
+        if exact_authors is not None:params['ContribRaw']=exact_authors
     rows,evidence,citations,failures,total,actual=[],[],[],[],None,None
     first_page=start//size;last_page=(start+limit-1)//size
     following=None
@@ -373,7 +405,8 @@ def search(publisher,query,*,options,start=0,limit=20,cursor=None,export=None):
     more=start+len(rows)<total
     return {'status':'partial' if failures else 'ok' if rows else 'not_found','source':publisher.source,'query':query,'options':options,'start':start,'requested':limit,
             'received':len(rows),'total':total,'has_more':more,'next':{'start':start+len(rows)} if more else None,
-            'records':artifact,'export':exported,'evidence':evidence,'preview':[{k:row[k] for k in ('doi','title')} for row in rows[:3]]}
+            'records':artifact,'export':exported,'evidence':evidence,'preview':[{k:row[k] for k in ('doi','title')} for row in rows[:3]],
+            **({'query_semantics':query_semantics} if query_semantics is not None else {})}
 
 
 class SIAM(Publisher):

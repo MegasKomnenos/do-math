@@ -64,6 +64,58 @@ class SIAMContract(unittest.TestCase):
         many=search_params('algebra',{'field':'Title','terms':[{'field':'Author','query':'Stetter'}]*51})
         self.assertEqual(many['field52'],'Contrib');self.assertEqual(many['text52'],'Stetter')
 
+    def test_free_author_syntax_is_verbatim_and_has_free_semantics(self):
+        from siam import author_query_semantics,search_params
+        for query in ('Stetter','A_B','A_B Smith','A_B AND Smith','"A_B Smith"','A_B*'):
+            with self.subTest(query=query):
+                options={'field':'Author'}
+                params=search_params(query,options)
+                self.assertEqual((params['field1'],params['text1']),('Contrib',query))
+                self.assertNotIn('ContribRaw',params)
+                semantics=author_query_semantics(query,options,params)
+                self.assertEqual(semantics['mode'],'free_author_expression')
+                self.assertEqual(semantics['free_author_queries'],[query])
+                self.assertEqual(semantics['exact_author_facets'],[])
+                self.assertEqual(bool(semantics.get('warnings')),'_' in query)
+                if '_' in query:self.assertEqual(semantics['warnings'][0]['code'],'underscore_free_author_analyzer')
+
+    def test_explicit_exact_authors_are_independent_of_spelling_and_repeat_as_and(self):
+        from siam import author_query_semantics,search_params
+        labels=['Bank, Randolph E','Smith, R Kent']
+        options={'field':'Title','authors_exact':labels}
+        params=search_params('An Algebraic Multilevel Multigraph Algorithm',options)
+        self.assertEqual(params['ContribRaw'],labels)
+        semantics=author_query_semantics('An Algebraic Multilevel Multigraph Algorithm',options,params)
+        self.assertEqual(semantics,{
+            'mode':'exact_author_facets','free_author_queries':[],'exact_author_facets':labels,
+            'combination':'AND',
+            'note':'Explicit visible author labels are serialized as ContribRaw facets; multiple values are repeated and their observed combination is AND.',
+        })
+
+    def test_free_and_explicit_exact_authors_combine_without_rewriting(self):
+        from siam import author_query_semantics,search_params
+        free='"A_B Smith" OR Stetter*'
+        labels=['Bank, Randolph E','Smith, R Kent']
+        options={'field':'Author','terms':[{'field':'Author','query':'B_C AND Jones'}],'authors_exact':labels}
+        params=search_params(free,options)
+        self.assertEqual((params['field1'],params['text1'],params['field2'],params['text2']),
+                         ('Contrib',free,'Contrib','B_C AND Jones'))
+        self.assertEqual(params['ContribRaw'],labels)
+        semantics=author_query_semantics(free,options,params)
+        self.assertEqual(semantics['mode'],'free_author_expression_and_exact_facets')
+        self.assertEqual(semantics['free_author_queries'],[free,'B_C AND Jones'])
+        self.assertEqual(semantics['exact_author_facets'],labels)
+        self.assertEqual(semantics['combination'],'AND')
+        self.assertEqual(semantics['warnings'][0]['code'],'underscore_free_author_analyzer')
+
+    def test_exact_author_option_rejects_malformed_lists_before_navigation(self):
+        from siam import search_params
+        from scholarly import ServiceError
+        for value in (None,'Bank, Randolph E',[],[''],['  '],['Bank, Randolph E',3]):
+            with self.subTest(value=value),self.assertRaises(ServiceError) as error:
+                search_params('algebra',{'authors_exact':value})
+            self.assertEqual(error.exception.result['code'],'invalid_options')
+
     def test_unconfirmed_boolean_rows_and_invalid_native_options_are_rejected(self):
         from siam import search_params
         from scholarly import ServiceError
@@ -117,6 +169,32 @@ class SIAMContract(unittest.TestCase):
         self.assertIn('publication%5B%5D=sjope8',requested[0])
         self.assertIn('Ppub=20250912-20260912',requested[0])
         self.assertEqual(result['received'],1)
+
+    def test_dynamic_search_keeps_exact_author_facets_with_free_author_rows(self):
+        import tempfile
+        from types import SimpleNamespace
+        from urllib.parse import parse_qs,urlsplit
+        from unittest.mock import Mock,patch
+        from scholarly import ArtifactStore
+        from publishers import PROFILES
+        from siam import SIAM
+        raw=(ROOT/'tests/fixtures/siam-search.html').read_text('utf-8')
+        page=Mock();page.url='https://epubs.siam.org/';page.content.return_value=raw
+        gateway=SimpleNamespace(public_page=Mock(return_value=page),context=Mock())
+        native={'field1':['Title'],'text1':['algebra'],'field2':['Contrib'],'text2':['A_B Smith'],
+                'ConceptID':['',''],'publication':[''],'Ppub':[''],'pageSize':['20']}
+        requested=[]
+        def navigate(page,url,*args,**kwargs):page.url=url;requested.append(url);return SimpleNamespace(status=200)
+        options={'field':'Title','terms':[{'field':'Author','query':'A_B Smith'}],
+                 'authors_exact':['Bank, Randolph E','Smith, R Kent']}
+        with tempfile.TemporaryDirectory() as temp,patch('siam.goto_source',side_effect=navigate),patch('siam.configure_advanced',return_value=native):
+            result=SIAM(ArtifactStore(temp),gateway,next(p for p in PROFILES if p.source=='siam')).search('algebra',options=options,limit=1)
+        observed=parse_qs(urlsplit(requested[0]).query,keep_blank_values=True)
+        self.assertEqual(observed['text2'],['A_B Smith'])
+        self.assertEqual(observed['ContribRaw'],['Bank, Randolph E','Smith, R Kent'])
+        self.assertEqual(result['query_semantics']['mode'],'free_author_expression_and_exact_facets')
+        self.assertEqual(result['query_semantics']['exact_author_facets'],options['authors_exact'])
+        self.assertEqual(result['query_semantics']['warnings'][0]['code'],'underscore_free_author_analyzer')
 
     def test_autocomplete_requires_one_exact_label_and_preserves_candidates(self):
         from unittest.mock import Mock
