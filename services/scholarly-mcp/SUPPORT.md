@@ -1,4 +1,4 @@
-전체 구현은 부분 완료다. `partial`은 일부 기능 구현, `pending`은 미연결 또는 미구현, `deferred`는 사용자 지시에 따른 사용 보류다. 자료원별 입력·제약은 `describe_source`, 실제 검증 범위는 [검증 기록](VALIDATION.md)을 따른다.
+49개 자료원의 지원 범위를 나타낸다. `partial`은 그 자료원의 일부 기능을 지원한다는 뜻이며 이번에 확인한 수리가 미완료라는 뜻으로 일괄 해석하지 않는다. `pending`은 미연결 또는 미구현, `deferred`는 사용자 지시에 따른 사용 보류다. 자료원별 입력은 `describe_source`, 검증 근거는 [검증 기록](VALIDATION.md), 남은 개별 조건은 [후속 인계](CONTINUATION.md)를 따른다.
 
 | 자료원 | source | 경로 | 구현 | 기능 | 실측 표지 |
 |---|---|---|---|---|---|
@@ -31,13 +31,13 @@
 | GitHub | github | api | partial | source_guide, search, fetch, export | live_mcp_arbitrary_search_window_native_pages_pinned_zip_file_same_bytes |
 | Zenodo | zenodo | api | partial | source_guide, search, fetch, export | live_mcp_arbitrary_search_window_native_pages_file_checksum_fetch_extract |
 | Figshare | figshare | api | partial | source_guide, search, fetch, export | 판본별 구성원·동일 current 판본의 REST 보완·과거 불일치 partial; 원 파일 size/MD5 |
-| Software Heritage | software-heritage | api | partial | source_guide, search, fetch, export | live_mcp_verified_tree_files_cache_resume_and_native_git_archives; selected_flat_job_unprepared |
+| Software Heritage | software-heritage | api | partial | source_guide, search, fetch, export | 개별 파일·트리·cache 재개·원 archive 검증; 특정 Vault는 new·압축 미완료 |
 | AMS publications | ams | playwright (전용 Chrome 창/CDP) | partial | source_guide, search, fetch, export | Title/Author 식 부분집합·첫 XLSX·Unicode·순번 공백과 이어받기 원본13검증; 미매핑 식 별도 |
 | Cambridge University Press | cambridge | fixed: citation API; institutional search/document Playwright | partial | source_guide, search, fetch, export | live_mcp_filtered_search_ris_pdf_and_supplement_pdf_zip_source_extract |
 | De Gruyter Brill | de-gruyter | playwright | partial | source_guide, search, fetch, export | DOI·DOI 없는 ISBN 책의 현재 CITE/RIS 복원; 원본7검증·PDF/첨부; 특정 옛 첨부404 별도 |
 | JSTOR | jstor | fixed: citation/search API; institutional document Playwright | partial | source_guide, search, fetch, export | live_mcp_search_image_sorts_facets_citations_pdf_mp3_transcripts_supplement; native_video_download_disabled |
 | Oxford University Press | oxford | playwright | partial | source_guide, search, fetch, export | 렌더된 검색 행·원 인용·문헌/첨부; 별도 title-list는 현재 CAPTCHA 도메인 오류 |
-| ScienceDirect | science-direct | playwright (전용 Chrome 창/CDP) | partial | source_guide, search, fetch, export | 검색/선택 Export·상세 Cite·31쪽 PDF 원본검증; Preface 비구독·선택복원·검색 준비 수리 |
+| ScienceDirect | science-direct | playwright (전용 Chrome 창/CDP) | partial | source_guide, search, fetch, export | 검색/선택 Export·상세 Cite·31쪽 PDF 원본검증; Preface 비구독·선택 상태와 결과 보존·검색 준비 수리 |
 | Springer Nature | springer | playwright | partial | source_guide, search, fetch, export | live_mcp_advanced_search_citations_pdf_supplements_nature_springer_html_tex_figures |
 | Taylor & Francis | taylor-francis | playwright | partial | source_guide, search, fetch, export | 원 검색/인용/PDF/첨부·표; 두 editorial의 초록 필드 부재와 초록 양성 대조 |
 | Wiley | wiley | playwright | partial | source_guide, search, fetch, export | live_mcp_dynamic_advanced_rows_citations_pdf_zero_and_supplementary_zip |
@@ -55,7 +55,7 @@
 개별 구독은 KUDOS의 KNU 개별전자저널·KNU P+O Journal 보유 목록으로 구체화했다. 목록 기재와 실제 원문 권한은 구별한다. 학회 저널·저자 또는 기관 공개본은 지정 URL을, 일반 웹은 공개 후보 검색을 제공한다. Unpaywall과 Scopus의 별도 웹 계정 내보내기는 보류하며 해당 자격 정보를 요청하지 않는다. [접근 조건 조사](ACCESS-RESEARCH.md)는 창 모드·실행 방식·기관 경로의 비교 근거를 담는다.
 
 
-2026-09-13 KST의 제한 판단 전수조사는 [49개 자료원 재검토표](AUDIT-MATRIX.md)와 [실패 지점 분석](LIMITATIONS-AUDIT.md)에 정리했다. 당시 기준선은 전체514검사를 통과했다. 이후 사용자 세 기준으로23개 CLI 과제를 재검토하고 있으며, 원본에 통합한 Springer·DBLP·SIAM·JSTOR 수리까지는 전체529검사와 새 SDK를 통과했다. 자료원별 접근 상태·추가 자격 보류·미확정 검증은 같은 표에서 구별한다.
+2026-09-13 KST의 전수조사는 [49개 자료원 재검토표](AUDIT-MATRIX.md)와 [실패 지점 분석](LIMITATIONS-AUDIT.md)에 정리했다.24개 CLI 과제와 root의 추가 검토에서 확인한 수리를 원본에 통합했고, 최종 전체633검사가 통과했다. 새 원본 SDK, 실제 전후 이미지, 저장 응답 재생의 범위를 검증 기록에서 구별한다. 현재 자료원 오류·문헌별 미제공·접근 제한은 구현 수리와 별개로 남긴다.
 
 DBLP의 원본 재검증은 `data/access-research/user-criteria-dblp/root-sdk.json`과 `root-limits.json`에 있다. 검색·7형식 추출13호출과1,000개 고유 문헌 회수가 성공했다. 원 API의 현재100건 응답 크기를 전체 요청 범위의 한계로 쓰지 않으며, 중간 제한 때 부분 결과와 다음 위치를 보존한다.
 

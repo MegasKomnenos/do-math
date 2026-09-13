@@ -756,7 +756,7 @@ for identifier, level in {
     "author-repository": "live_mcp_public_author_pdf_dynamic_document_and_page_links",
     "society-journal": "live_mcp_public_journal_metadata_abstract_pdf_native_citations; shared_dynamic_renderer_verified",
     "numdam": "live_mcp_11_conditions_native_search_citations_jats_pdf_djvu_page_text_image_windows",
-    "software-heritage": "live_mcp_verified_tree_files_cache_resume_and_native_git_archives; selected_flat_job_unprepared",
+    "software-heritage": "개별 파일·트리·cache 재개·원 archive 검증; 특정 Vault는 new·압축 미완료",
     "openalex": "live_mcp_arbitrary_window_group_cursor_abstract_relationships_name_doi",
     "core": "원본 검색·work/output8쪽·명시26쪽·files01복구48쪽·제거404 검증; indexed 안내와 rate 구별",
     "semantic-scholar": "원본 bulk1000·cursor·title-match 검증; batch/BibTeX/관계 양성 이력·최신 batch429 구별",
@@ -789,7 +789,7 @@ for identifier, level in {
     "siam": "52번째 조건17/17/0·자유 Author 보존·명시 exact 공동저자 AND 검증; 특정 기관 PDF 제한",
     "individual-subscription": "live_mcp_two_catalogues_95_holdings_six_siam_csv_range_year_fetch_zero",
     "ams": "Title/Author 식 부분집합·첫 XLSX·Unicode·순번 공백과 이어받기 원본13검증; 미매핑 식 별도",
-    "science-direct": "검색/선택 Export·상세 Cite·31쪽 PDF 원본검증; Preface 비구독·선택복원·검색 준비 수리",
+    "science-direct": "검색/선택 Export·상세 Cite·31쪽 PDF 원본검증; Preface 비구독·선택 상태와 결과 보존·검색 준비 수리",
 }.items():
     SOURCES[identifier].verification = level
 

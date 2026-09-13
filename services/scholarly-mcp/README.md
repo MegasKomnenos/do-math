@@ -1,4 +1,4 @@
-학술자료 검색·확보용 로컬 stdio MCP 서버다. 선정한49개 자료원을 공통 도구와 자료원별 설명에 연결했다. 전체 상태는 부분 완료이며, 현재 외부 접근 제한과 미완료 실측은 [지원표](SUPPORT.md)와 [검증 기록](VALIDATION.md)에 구별한다. 확정 요구사항은 [구현 인계](../../학술자료-MCP-구현-인계.md)를 따른다.
+학술자료 검색·확보용 로컬 stdio MCP 서버다. 선정한49개 자료원을 공통 도구와 자료원별 설명에 연결했다. 지원하는 기능과 실제 접근 조건은 [지원표](SUPPORT.md), 검증 근거는 [검증 기록](VALIDATION.md), 현행 계약과 작업 인계는 [후속 인계](CONTINUATION.md)를 따른다. 최초 입력은 사용자가 로컬에 제공한 `학술자료-MCP-구현-인계.md`다.
 
 2026-09-09 사용자 교정에 따라 **공개 API는 별도 API 이용 자격 없이 호출할 수 있는 API**를 뜻한다. 별도 키·승인·계약을 요구하는 API는 구현 경로에서 제외한다. 그런 공개 API가 없는 인증 자료원은 KUDOS 로그인 → 검색 → 학술DB → 해당 바로가기 → 기관 프록시의 Playwright 경로를 사용한다. 어댑터 경로는 개발 시 정하며, 실행 중 API 오류를 이유로 브라우저로 전환하지 않는다. 기관 로그인 정보는 보호된 `.credentials/kudos.md`에서 서버가 직접 읽는다.
 
@@ -147,7 +147,7 @@ Project Euclid의 supplementary는 Supplemental Content 탭의 개별 PDF·ZIP�
 
 AMS는 기관 기본 고급검색의 원 상품 JSON을 회수한다. 책·논문·학회 초록의 ContentType과 제목·부제·DOI·제품 코드를 유지한다. xlsx는 선택 상품마다 원 workbook을 반환한다. 하나의 논리 상품이 여러 ISBN 변형 행으로 확장될 수 있으며 빈 Product Code 셀을 보충하지 않는다. 검색 결과·전체 건수는 원 요청 범위를 유지한다.
 
-AMS의 options.expression은 AND/OR 중첩 그룹과 필드별 equals/contains 조건을 받는다. query는 빈 문자열이고 다른 options는 함께 주지 않는다. 원 제어 복원·POST 대조는 오프라인으로 검증했으나, 현재 원 UI에서 직접 만든 단일 동적 조건도 서버 오류를 반환한다. 원 서버 오류를 0건으로 처리하지 않으며 정상 기본 검색·XLSX 성공과 구별한다. 입력 예와 제약은 describe_source(ams)에 있다.
+AMS의 `options.expression`은 가시 기본 필드로 검증한 부분집합을 받는다. Title/Author contains의 단일 영숫자 토큰, 같은 필드 OR·중첩 OR, Title식과 Author식의 AND를 지원한다. `query`는 빈 문자열이고 다른 options는 함께 주지 않는다. 같은 필드 AND/NOT·필드 간 OR·equals·안전하게 매핑하지 못한 다단어/문장부호 원자는 지원 범위 밖이다. 새 원본 SDK에서 첫 XLSX와 Unicode·중첩 조건·실제 순번 공백의 부분 결과 및 이어받기를 검증했다. 입력 예와 정확한 경계는 `describe_source(ams)`에 있다.
 
 Publisher 어댑터에 .pdf 링크를 직접 주면 그 파일의 바이트와 PDF 내장 메타데이터를 회수한다. 브라우저의 Download is starting 이동 예외와 실제 파일 회수 성공을 구별한다. metadata.kind가 embedded_pdf_metadata이면 PDF 내부 정보다. 파일이 발췌·부속 자료인 경우 전체 책을 확보했다는 뜻으로 해석하지 않는다. 이 경로의 실제 MCP 검증은 AMS gsm128-endmatter.pdf 51쪽으로 수행했다.
 
@@ -213,7 +213,7 @@ JSTOR 이미지 검색은 제목·제작자의 양방향 정렬과 해상도 정
 
 IOP 검색도 export=bibtex/ris를 받는다. 선택한 검색 창의 문헌마다 원 인용문을 회수하고 검색 방식·순서·레코드는 유지한다. 각 원 링크와 파일의 DOI를 대조하며 일부 내보내기 실패는 파일별 오류와 partial로 표시한다.
 
-Software Heritage의 files 항목은 Vault 준비 중에도 원 directory/content 객체를 회수한다. 경로별 manifest의 artifact로 원 파일을 추출하며, 디렉터리 Git tree와 파일 해시·길이를 검증한다. 같은 data-dir의 검증된 객체를 재사용하므로 호출 제한 뒤 재개할 때 이미 받은 파일을 다시 받지 않는다. 심볼릭 링크는 따라가지 않고 원 바이트를 보존하며 하위 revision은 참조로 남긴다. 캐시 재사용 수와 원 수신 시점을 표시한다. 익명 API는 시간당120회이며 첫429에서 중단한 부분 결과도 보존한다.
+Software Heritage의 files 항목은 Vault 준비 중에도 원 directory/content 객체를 회수한다. 경로별 manifest의 artifact로 원 파일을 추출하며, 디렉터리 Git tree와 파일 해시·길이를 검증한다. 같은 data-dir의 검증된 객체를 재사용하므로 호출 제한 뒤 재개할 때 이미 받은 파일을 다시 받지 않는다. 심볼릭 링크는 따라가지 않고 원 바이트를 보존하며 하위 revision은 참조로 남긴다. 캐시 재사용 수와 원 수신 시점을 표시한다. 관측한 익명 한도는 시간당120회였으며 현재 응답의 제한 정보를 따른다. 첫429에서 중단한 부분 결과도 보존한다.
 
 
-2026-09-13 KST의 전수조사 결과와 입력 전후 화면·요청·응답 대조는 [49개 재검토표](AUDIT-MATRIX.md)와 [실패 지점 분석](LIMITATIONS-AUDIT.md)에 있다. 확인된 구현 결함을 수리하고 전체514검사를 통과했으며, 현재 외부 접근 상태와 미확정 표본은 별도로 명시했다.
+2026-09-13 KST의 전수조사와 [사용자 세 기준](dispatch/remaining-20260913/USER-CRITERIA.md) 재검토를 마쳤다.24개 CLI 과제와 root의 추가 오류를 수리·통합한 최종 전체633검사가 통과했다. 원본 SDK·실제 전후 화면·저장 응답 재생의 구별은 [검증 기록](VALIDATION.md)에 있다. 현재 접근·미제공·부분 결과와 미확정 가용성은 [후속 인계](CONTINUATION.md)의 개별 표를 따른다.

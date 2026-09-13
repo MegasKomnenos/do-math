@@ -101,7 +101,7 @@ class EuDML(APIAdapter):
             result = self.search('defName = "' + literal + '"', options={}, limit=20)
             result["status"] = "selection_required" if result["received"] else "not_found"
             return result
-        raw, evidence = self.request("https://eudml.org/api/rest/" + value, params={"format": "eudml-nlm"}, accept="xml", timeout=NLM_TIMEOUT)
+        raw, evidence = self.request("https://eudml.org/api/rest/" + value, params={"format": "eudml-nlm"}, headers={"User-Agent": f"python-httpx/{httpx.__version__}"}, accept="xml", timeout=NLM_TIMEOUT)
         root = ElementTree.fromstring(raw)
         headers = [root.find(path) for path in ("./{*}front/{*}article-meta", "./{*}book-meta", "./{*}front/{*}book-meta", "./{*}book-part-meta")]
         header = next((node for node in headers if node is not None), None)
