@@ -94,6 +94,37 @@
     "execution_id": {
       "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/id_E"
     },
+    "execution_requests": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "execution_profile_id": {
+            "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/id"
+          },
+          "reason": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "revision": {
+            "maximum": 9007199254740991,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "task_id": {
+            "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/id_T"
+          }
+        },
+        "required": [
+          "task_id",
+          "revision",
+          "execution_profile_id",
+          "reason"
+        ],
+        "type": "object"
+      },
+      "minItems": 0,
+      "type": "array"
+    },
     "expectation_actual_comparison_ref": {
       "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/artifact_ref"
     },
@@ -151,6 +182,27 @@
       "type": "array",
       "uniqueItems": true
     },
+    "queued_cancellations": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "execution_id": {
+            "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/id_E"
+          },
+          "reason": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "execution_id",
+          "reason"
+        ],
+        "type": "object"
+      },
+      "minItems": 0,
+      "type": "array"
+    },
     "schema_version": {
       "const": "do-math-draft/plan/9"
     },
@@ -191,8 +243,10 @@
     "input_manifest_ref",
     "snapshot_commit",
     "candidate_dispositions",
+    "execution_requests",
     "dispatch_order",
     "parallel_relations",
+    "queued_cancellations",
     "preparation_requests",
     "completion_assessments",
     "user_decision_requests",

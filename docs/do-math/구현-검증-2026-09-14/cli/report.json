@@ -1,0 +1,670 @@
+{
+  "adapter": {
+    "cli_path": "C:\\Users\\wogud\\.codex\\packages\\standalone\\releases\\0.154.0-x86_64-pc-windows-msvc\\bin\\codex.exe",
+    "exec_help_bytes": {
+      "bytes": 4031,
+      "sha256": "0e82cfde0122715250e93dc65866caa956b2ac5b9d0b20ec4ad4f9e81486509e"
+    },
+    "exec_help_sha256": "0e82cfde0122715250e93dc65866caa956b2ac5b9d0b20ec4ad4f9e81486509e",
+    "supported": {
+      "effort_via_config": true,
+      "jsonl": true,
+      "local_job_stop": true,
+      "model": true,
+      "sandbox": true
+    },
+    "unknown": [
+      "actual_input_bytes",
+      "provider_operation_ids",
+      "remote_termination",
+      "per_call_usage",
+      "provider_stop_reason",
+      "automatic_compaction_control"
+    ],
+    "verified": true,
+    "version_bytes": {
+      "bytes": 18,
+      "sha256": "5efa0283757c66156d45d082b4e2e8afb881de3a97862bc03aed7fb34f45df7b"
+    },
+    "version_sha256": "5efa0283757c66156d45d082b4e2e8afb881de3a97862bc03aed7fb34f45df7b"
+  },
+  "cases": [
+    {
+      "artifacts": [
+        {
+          "bytes": 78,
+          "path": "do-math-codex-clet1ai0/prompt.bin",
+          "sha256": "8ff998bbe5e61e4de1bf5ccef17abe15c655b6c008d7a2f8d078f1f805708418"
+        },
+        {
+          "bytes": 820,
+          "path": "do-math-codex-clet1ai0/request.json",
+          "sha256": "21630887b37bbf02d13c2729c279b85df0eafcc043986179ec2aa82083c84b3b"
+        },
+        {
+          "bytes": 39,
+          "path": "final.txt",
+          "sha256": "556d9f96845c92ba5d85d98b546ee585248dbe82196dcc609ddaa6c4e1cc794f"
+        },
+        {
+          "bytes": 78,
+          "path": "prompt.txt",
+          "sha256": "8ff998bbe5e61e4de1bf5ccef17abe15c655b6c008d7a2f8d078f1f805708418"
+        },
+        {
+          "bytes": 850,
+          "path": "request.json",
+          "sha256": "8f4a7a929b28f2ce8d65ba935f0365957db5687521336879d9521e04d32a6f7e"
+        },
+        {
+          "bytes": 0,
+          "path": "stderr.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "bytes": 382,
+          "path": "stdout.jsonl",
+          "sha256": "4bb157309a336b80005d8c068a20d38a4c6ae02b57ddc382df5f03c6d2aa762b"
+        },
+        {
+          "bytes": 304,
+          "path": "worker-status.json",
+          "sha256": "062b83f4e33c7e11e1952544b538c985732edccc4cdab31622b0cdf885a6bf7c"
+        }
+      ],
+      "case": "text",
+      "collected": {
+        "final": {
+          "bytes": 39,
+          "present": true,
+          "sha256": "556d9f96845c92ba5d85d98b546ee585248dbe82196dcc609ddaa6c4e1cc794f"
+        },
+        "jsonl": {
+          "events": [
+            "thread.started",
+            "turn.started",
+            "item.completed",
+            "turn.completed"
+          ],
+          "parse_complete": true,
+          "parsed_bytes": 382,
+          "thread_id": "01a09bea-1acb-7640-81ba-522861a86eff",
+          "turn_completed": true,
+          "turn_failed": false,
+          "unknown_events": [],
+          "unparsed_tail_bytes": 0,
+          "usage": [
+            {
+              "cache_write_input_tokens": 0,
+              "cached_input_tokens": 8960,
+              "input_tokens": 15399,
+              "output_tokens": 26,
+              "reasoning_output_tokens": 0
+            }
+          ]
+        },
+        "provider_operation_ids": "unknown",
+        "provider_stop_reason": "unknown",
+        "reasons": [],
+        "remote_termination": "unknown",
+        "result": "output_collected",
+        "source_prompt": {
+          "bytes": 78,
+          "present": true,
+          "sha256": "8ff998bbe5e61e4de1bf5ccef17abe15c655b6c008d7a2f8d078f1f805708418"
+        },
+        "source_request": {
+          "bytes": 820,
+          "present": true,
+          "sha256": "21630887b37bbf02d13c2729c279b85df0eafcc043986179ec2aa82083c84b3b"
+        },
+        "stderr": {
+          "bytes": 0,
+          "present": true,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 382,
+          "present": true,
+          "sha256": "4bb157309a336b80005d8c068a20d38a4c6ae02b57ddc382df5f03c6d2aa762b"
+        },
+        "termination_barrier": {
+          "active_processes": 0,
+          "confirmed": true,
+          "process_ids": [],
+          "root_signaled": true
+        },
+        "worker_argv": [
+          "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+          "C:\\math\\.agents\\skills\\do-math\\scripts\\do_math\\codex_worker.py",
+          "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\cli\\text\\do-math-codex-clet1ai0\\request.json"
+        ],
+        "worker_status": {
+          "argv_sha256": "c1bc2507a0a1613e0c0b2cd2c6a5aed0cac5769079789050c020123968d62842",
+          "cli_exit_code": 0,
+          "request_sha256": "21630887b37bbf02d13c2729c279b85df0eafcc043986179ec2aa82083c84b3b",
+          "schema_sha256": null,
+          "state": "exited",
+          "stdin_sha256": "8ff998bbe5e61e4de1bf5ccef17abe15c655b6c008d7a2f8d078f1f805708418"
+        }
+      },
+      "initial": {
+        "job": {
+          "active_processes": 1,
+          "process_ids": [
+            51056
+          ],
+          "root_signaled": false
+        },
+        "jsonl": {
+          "events": [],
+          "parse_complete": false,
+          "parsed_bytes": 0,
+          "thread_id": null,
+          "turn_completed": false,
+          "turn_failed": false,
+          "unknown_events": [
+            "stdout_missing"
+          ],
+          "unparsed_tail_bytes": 0,
+          "usage": []
+        },
+        "stop_requested": false,
+        "worker_status_present": false
+      },
+      "passed": true,
+      "stopped_on_turn": false
+    },
+    {
+      "artifacts": [
+        {
+          "bytes": 112,
+          "path": "do-math-codex-2w9k196p/prompt.bin",
+          "sha256": "da4d8bf46d34af539fdd7d7577047623e0f659bc74bda6981cb9ce750cba284a"
+        },
+        {
+          "bytes": 983,
+          "path": "do-math-codex-2w9k196p/request.json",
+          "sha256": "6bbade1604d4f4663c0a775b4b918fef3b6de799df0e79f25768ab3dd0ed67c3"
+        },
+        {
+          "bytes": 326,
+          "path": "do-math-codex-2w9k196p/schema.json",
+          "sha256": "c1e70a224067ae32d6dfd76f4a299632031e87642d8c73c254aa9f7f574328cb"
+        },
+        {
+          "bytes": 62,
+          "path": "final.txt",
+          "sha256": "1846a9cb6998b66baed9a5a6ed9e28252b254a93270a7290df62cd5e2444f227"
+        },
+        {
+          "bytes": 326,
+          "path": "output-schema.json",
+          "sha256": "c1e70a224067ae32d6dfd76f4a299632031e87642d8c73c254aa9f7f574328cb"
+        },
+        {
+          "bytes": 112,
+          "path": "prompt.txt",
+          "sha256": "da4d8bf46d34af539fdd7d7577047623e0f659bc74bda6981cb9ce750cba284a"
+        },
+        {
+          "bytes": 1000,
+          "path": "request.json",
+          "sha256": "d9594bebcdb0498f57f89100570c4532a6847fab12971e607f01eae60ed8ac0a"
+        },
+        {
+          "bytes": 0,
+          "path": "stderr.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "bytes": 410,
+          "path": "stdout.jsonl",
+          "sha256": "0b0c0ea5123feb03af3096fefb6b1739df9e1738c275e8e525851fa9327f8940"
+        },
+        {
+          "bytes": 366,
+          "path": "worker-status.json",
+          "sha256": "294fc5ab85de9475098b25d3d59728301ac7bd386494e4c9b3587dcb94a1de8f"
+        }
+      ],
+      "case": "structured",
+      "collected": {
+        "final": {
+          "bytes": 62,
+          "present": true,
+          "sha256": "1846a9cb6998b66baed9a5a6ed9e28252b254a93270a7290df62cd5e2444f227"
+        },
+        "jsonl": {
+          "events": [
+            "thread.started",
+            "turn.started",
+            "item.completed",
+            "turn.completed"
+          ],
+          "parse_complete": true,
+          "parsed_bytes": 410,
+          "thread_id": "01a09bea-38a2-7570-8c37-7daf44aba9bd",
+          "turn_completed": true,
+          "turn_failed": false,
+          "unknown_events": [],
+          "unparsed_tail_bytes": 0,
+          "usage": [
+            {
+              "cache_write_input_tokens": 0,
+              "cached_input_tokens": 0,
+              "input_tokens": 15284,
+              "output_tokens": 38,
+              "reasoning_output_tokens": 0
+            }
+          ]
+        },
+        "provider_operation_ids": "unknown",
+        "provider_stop_reason": "unknown",
+        "reasons": [],
+        "remote_termination": "unknown",
+        "result": "output_collected",
+        "source_prompt": {
+          "bytes": 112,
+          "present": true,
+          "sha256": "da4d8bf46d34af539fdd7d7577047623e0f659bc74bda6981cb9ce750cba284a"
+        },
+        "source_request": {
+          "bytes": 983,
+          "present": true,
+          "sha256": "6bbade1604d4f4663c0a775b4b918fef3b6de799df0e79f25768ab3dd0ed67c3"
+        },
+        "stderr": {
+          "bytes": 0,
+          "present": true,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 410,
+          "present": true,
+          "sha256": "0b0c0ea5123feb03af3096fefb6b1739df9e1738c275e8e525851fa9327f8940"
+        },
+        "termination_barrier": {
+          "active_processes": 0,
+          "confirmed": true,
+          "process_ids": [],
+          "root_signaled": true
+        },
+        "worker_argv": [
+          "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+          "C:\\math\\.agents\\skills\\do-math\\scripts\\do_math\\codex_worker.py",
+          "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\cli\\structured\\do-math-codex-2w9k196p\\request.json"
+        ],
+        "worker_status": {
+          "argv_sha256": "fc79a724efd92b3f410db1886ecc490c703b9df940377b5124e32d183ce278ac",
+          "cli_exit_code": 0,
+          "request_sha256": "6bbade1604d4f4663c0a775b4b918fef3b6de799df0e79f25768ab3dd0ed67c3",
+          "schema_sha256": "c1e70a224067ae32d6dfd76f4a299632031e87642d8c73c254aa9f7f574328cb",
+          "state": "exited",
+          "stdin_sha256": "da4d8bf46d34af539fdd7d7577047623e0f659bc74bda6981cb9ce750cba284a"
+        }
+      },
+      "initial": {
+        "job": {
+          "active_processes": 1,
+          "process_ids": [
+            60736
+          ],
+          "root_signaled": false
+        },
+        "jsonl": {
+          "events": [],
+          "parse_complete": false,
+          "parsed_bytes": 0,
+          "thread_id": null,
+          "turn_completed": false,
+          "turn_failed": false,
+          "unknown_events": [
+            "stdout_missing"
+          ],
+          "unparsed_tail_bytes": 0,
+          "usage": []
+        },
+        "stop_requested": false,
+        "worker_status_present": false
+      },
+      "passed": true,
+      "stopped_on_turn": false
+    },
+    {
+      "artifacts": [
+        {
+          "bytes": 117,
+          "path": "do-math-codex-axpcvt3m/prompt.bin",
+          "sha256": "aa217509782b9e3a4937056e3aef5200a7c4ec4b4646360d36e311b1ac142370"
+        },
+        {
+          "bytes": 826,
+          "path": "do-math-codex-axpcvt3m/request.json",
+          "sha256": "f37e75072d72693dcdc9839cd71e53968509ec4f5db712238b201c280d7226b5"
+        },
+        {
+          "bytes": 64,
+          "path": "final.txt",
+          "sha256": "7b7cc1960622a7729a0080a6896e91b717778dd589402bbdd5e9eec8e04979b3"
+        },
+        {
+          "bytes": 117,
+          "path": "prompt.txt",
+          "sha256": "aa217509782b9e3a4937056e3aef5200a7c4ec4b4646360d36e311b1ac142370"
+        },
+        {
+          "bytes": 856,
+          "path": "request.json",
+          "sha256": "1a17266740e88fa9da19c224b0855697fa0eafc77576550078040261fe19888d"
+        },
+        {
+          "bytes": 0,
+          "path": "stderr.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "bytes": 987,
+          "path": "stdout.jsonl",
+          "sha256": "c56becde65617044069915db95a51be807fad0ac81849f3f00d91b764ed1c3fb"
+        },
+        {
+          "bytes": 304,
+          "path": "worker-status.json",
+          "sha256": "491e411194ae83d542f4464c0fd0e47243bd672f769ff00ca8ce94a1f2058369"
+        }
+      ],
+      "case": "tool",
+      "collected": {
+        "final": {
+          "bytes": 64,
+          "present": true,
+          "sha256": "7b7cc1960622a7729a0080a6896e91b717778dd589402bbdd5e9eec8e04979b3"
+        },
+        "jsonl": {
+          "events": [
+            "thread.started",
+            "turn.started",
+            "item.started",
+            "item.completed",
+            "item.completed",
+            "turn.completed"
+          ],
+          "parse_complete": true,
+          "parsed_bytes": 987,
+          "thread_id": "01a09bea-4c0d-7853-acd1-59aa3ad6d12e",
+          "turn_completed": true,
+          "turn_failed": false,
+          "unknown_events": [],
+          "unparsed_tail_bytes": 0,
+          "usage": [
+            {
+              "cache_write_input_tokens": 0,
+              "cached_input_tokens": 24064,
+              "input_tokens": 31059,
+              "output_tokens": 124,
+              "reasoning_output_tokens": 22
+            }
+          ]
+        },
+        "provider_operation_ids": "unknown",
+        "provider_stop_reason": "unknown",
+        "reasons": [],
+        "remote_termination": "unknown",
+        "result": "output_collected",
+        "source_prompt": {
+          "bytes": 117,
+          "present": true,
+          "sha256": "aa217509782b9e3a4937056e3aef5200a7c4ec4b4646360d36e311b1ac142370"
+        },
+        "source_request": {
+          "bytes": 826,
+          "present": true,
+          "sha256": "f37e75072d72693dcdc9839cd71e53968509ec4f5db712238b201c280d7226b5"
+        },
+        "stderr": {
+          "bytes": 0,
+          "present": true,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 987,
+          "present": true,
+          "sha256": "c56becde65617044069915db95a51be807fad0ac81849f3f00d91b764ed1c3fb"
+        },
+        "termination_barrier": {
+          "active_processes": 0,
+          "confirmed": true,
+          "process_ids": [],
+          "root_signaled": true
+        },
+        "worker_argv": [
+          "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+          "C:\\math\\.agents\\skills\\do-math\\scripts\\do_math\\codex_worker.py",
+          "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\cli\\tool\\do-math-codex-axpcvt3m\\request.json"
+        ],
+        "worker_status": {
+          "argv_sha256": "6c3d522b4b0662e2e47b7216384d4dbc0f8e2c7469bb236cfb6aec10962c8647",
+          "cli_exit_code": 0,
+          "request_sha256": "f37e75072d72693dcdc9839cd71e53968509ec4f5db712238b201c280d7226b5",
+          "schema_sha256": null,
+          "state": "exited",
+          "stdin_sha256": "aa217509782b9e3a4937056e3aef5200a7c4ec4b4646360d36e311b1ac142370"
+        }
+      },
+      "initial": {
+        "job": {
+          "active_processes": 1,
+          "process_ids": [
+            62860
+          ],
+          "root_signaled": false
+        },
+        "jsonl": {
+          "events": [],
+          "parse_complete": false,
+          "parsed_bytes": 0,
+          "thread_id": null,
+          "turn_completed": false,
+          "turn_failed": false,
+          "unknown_events": [
+            "stdout_missing"
+          ],
+          "unparsed_tail_bytes": 0,
+          "usage": []
+        },
+        "stop_requested": false,
+        "worker_status_present": false
+      },
+      "passed": true,
+      "stopped_on_turn": false
+    },
+    {
+      "artifacts": [
+        {
+          "bytes": 69,
+          "path": "do-math-codex-jbdyf2is/prompt.bin",
+          "sha256": "b82aadf42ec5e506831fe6de3fc0c77384e94ecbedce9de05b6cd592881119f8"
+        },
+        {
+          "bytes": 832,
+          "path": "do-math-codex-jbdyf2is/request.json",
+          "sha256": "3b22763c3acdc229ee9204caccf68f1c3ef9e776a60323584f95207a99f427ef"
+        },
+        {
+          "bytes": 69,
+          "path": "prompt.txt",
+          "sha256": "b82aadf42ec5e506831fe6de3fc0c77384e94ecbedce9de05b6cd592881119f8"
+        },
+        {
+          "bytes": 862,
+          "path": "request.json",
+          "sha256": "27b7504b4c8472db9aee798814aace01a914c988a5685be9ecc3f5022080ad78"
+        },
+        {
+          "bytes": 0,
+          "path": "stderr.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "bytes": 101,
+          "path": "stdout.jsonl",
+          "sha256": "4309631a0d792f3fe1390dfa7b0296d4f87d7e09f0fa055d1012f6a07e625b14"
+        }
+      ],
+      "case": "cancel",
+      "collected": {
+        "final": {
+          "bytes": null,
+          "present": false,
+          "sha256": null
+        },
+        "jsonl": {
+          "events": [
+            "thread.started",
+            "turn.started"
+          ],
+          "parse_complete": false,
+          "parsed_bytes": 101,
+          "thread_id": "01a09bea-75be-79f3-97cc-4605cfac4d94",
+          "turn_completed": false,
+          "turn_failed": false,
+          "unknown_events": [
+            {
+              "kind": "invalid_lifecycle_order"
+            },
+            {
+              "kind": "invalid_terminal_count_or_position"
+            }
+          ],
+          "unparsed_tail_bytes": 0,
+          "usage": []
+        },
+        "provider_operation_ids": "unknown",
+        "provider_stop_reason": "unknown",
+        "reasons": [
+          "worker_status_missing",
+          "turn_completed_missing",
+          "jsonl_parse_incomplete",
+          "final_message_missing"
+        ],
+        "remote_termination": "unknown",
+        "result": "incomplete",
+        "source_prompt": {
+          "bytes": 69,
+          "present": true,
+          "sha256": "b82aadf42ec5e506831fe6de3fc0c77384e94ecbedce9de05b6cd592881119f8"
+        },
+        "source_request": {
+          "bytes": 832,
+          "present": true,
+          "sha256": "3b22763c3acdc229ee9204caccf68f1c3ef9e776a60323584f95207a99f427ef"
+        },
+        "stderr": {
+          "bytes": 0,
+          "present": true,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 101,
+          "present": true,
+          "sha256": "4309631a0d792f3fe1390dfa7b0296d4f87d7e09f0fa055d1012f6a07e625b14"
+        },
+        "termination_barrier": {
+          "active_processes": 0,
+          "confirmed": true,
+          "process_ids": [],
+          "root_signaled": true
+        },
+        "worker_argv": [
+          "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+          "C:\\math\\.agents\\skills\\do-math\\scripts\\do_math\\codex_worker.py",
+          "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\cli\\cancel\\do-math-codex-jbdyf2is\\request.json"
+        ],
+        "worker_status": null
+      },
+      "initial": {
+        "job": {
+          "active_processes": 1,
+          "process_ids": [
+            61340
+          ],
+          "root_signaled": false
+        },
+        "jsonl": {
+          "events": [],
+          "parse_complete": false,
+          "parsed_bytes": 0,
+          "thread_id": null,
+          "turn_completed": false,
+          "turn_failed": false,
+          "unknown_events": [
+            "stdout_missing"
+          ],
+          "unparsed_tail_bytes": 0,
+          "usage": []
+        },
+        "stop_requested": false,
+        "worker_status_present": false
+      },
+      "passed": true,
+      "stopped_on_turn": true
+    }
+  ],
+  "effort": "low",
+  "finished_at": "2026-09-13T17:57:10.720103+00:00",
+  "implementation_complete": false,
+  "implementation_sources": [
+    {
+      "bytes": 84,
+      "path": "__init__.py",
+      "sha256": "a1c57a32d3d32541a69ca3b870252dd232d81960119ff051d71e502d0a8e732a"
+    },
+    {
+      "bytes": 20713,
+      "path": "budget.py",
+      "sha256": "4d7824d1499520dbeec2965ea6312ae6271d362e71de823de30c6b5a68019332"
+    },
+    {
+      "bytes": 14265,
+      "path": "codex_adapter.py",
+      "sha256": "6a9a667caab7c20f5a21ff9b9fb73dcb16da096e146398587611395df8df1e75"
+    },
+    {
+      "bytes": 7363,
+      "path": "codex_worker.py",
+      "sha256": "84958446ad2b4d69e3a17bea2bbb06f274ef0aa7be9cbd7e651d61961de864a7"
+    },
+    {
+      "bytes": 15309,
+      "path": "git_store.py",
+      "sha256": "6858ca6d7f49599b839acf779040265b9b7bb682b6b89fbeacf9ce3e14b9a86b"
+    },
+    {
+      "bytes": 8568,
+      "path": "preflight.py",
+      "sha256": "f67206e58c55b9b873240a6474f0dc294c47e67cc4e9025b103170e94d9995e4"
+    },
+    {
+      "bytes": 21570,
+      "path": "windows_job.py",
+      "sha256": "5c16df2c17ab5d54490e3f54ab2d3fc703454b9c4c898f743f12312fc9d8e3d6"
+    }
+  ],
+  "model": "gpt-5.6-luna",
+  "not_verified": [
+    "provider_call_identity",
+    "remote_termination",
+    "per_call_usage",
+    "actual_model_input",
+    "automatic_compaction_control",
+    "all_isolation_boundaries",
+    "research_roles",
+    "Lean",
+    "all_design_vectors"
+  ],
+  "passed": true,
+  "schema_version": "do-math-implementation-probe/1",
+  "scope": "codex_exec_live_probe",
+  "started_at": "2026-09-13T17:56:39.021655+00:00"
+}

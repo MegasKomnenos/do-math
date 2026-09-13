@@ -21,7 +21,7 @@
       "anchor": "fixture",
       "dependency_ids": [],
       "id": "F-00000000000000000000000001",
-      "kind": "definition",
+      "kind": "summary",
       "lean_coordinates": [
         {
           "anchor": "fixture",
@@ -44,5 +44,6 @@
   ],
   "required_domains": [],
   "revision": 1,
-  "schema_version": "do-math-draft/explanation/9"
+  "schema_version": "do-math-draft/explanation/9",
+  "summary_item_id": "F-00000000000000000000000001"
 }

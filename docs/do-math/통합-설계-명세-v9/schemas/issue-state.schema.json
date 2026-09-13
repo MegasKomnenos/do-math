@@ -96,6 +96,10 @@
             "type": "array",
             "uniqueItems": true
           },
+          "answer_role_slot_id": {
+            "minLength": 1,
+            "type": "string"
+          },
           "author_slot_id": {
             "minLength": 1,
             "type": "string"
@@ -181,6 +185,9 @@
             "minimum": 1,
             "type": "integer"
           },
+          "source_result_ref": {
+            "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+          },
           "state": {
             "enum": [
               "open",
@@ -198,6 +205,8 @@
           "lineage_id",
           "round",
           "author_slot_id",
+          "answer_role_slot_id",
+          "source_result_ref",
           "claim_ref",
           "coordinates",
           "evidence_refs",

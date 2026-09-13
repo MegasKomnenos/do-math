@@ -371,6 +371,11 @@
             "op": {
               "const": "counter_gte"
             },
+            "repeat_interval": {
+              "maximum": 9007199254740991,
+              "minimum": 1,
+              "type": "integer"
+            },
             "required_evidence": {
               "items": {
                 "minLength": 1,
@@ -419,6 +424,11 @@
             "op": {
               "const": "iteration_gte"
             },
+            "repeat_interval": {
+              "maximum": 9007199254740991,
+              "minimum": 1,
+              "type": "integer"
+            },
             "required_evidence": {
               "items": {
                 "minLength": 1,
@@ -466,6 +476,11 @@
             "op": {
               "const": "checkpoint_count_gte"
             },
+            "repeat_interval": {
+              "maximum": 9007199254740991,
+              "minimum": 1,
+              "type": "integer"
+            },
             "required_evidence": {
               "items": {
                 "minLength": 1,
@@ -508,6 +523,11 @@
             },
             "op": {
               "const": "active_duration_gte"
+            },
+            "repeat_interval": {
+              "maximum": 9007199254740991,
+              "minimum": 1,
+              "type": "integer"
             },
             "required_evidence": {
               "items": {
@@ -1349,8 +1369,13 @@
           "minItems": 0,
           "type": "array"
         },
-        "execution_profile_ref": {
-          "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+        "execution_profile_refs": {
+          "items": {
+            "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+          },
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
         },
         "expected_outputs": {
           "items": {
@@ -1551,7 +1576,7 @@
         "progress_criteria",
         "completion_criteria",
         "authority_refs",
-        "execution_profile_ref",
+        "execution_profile_refs",
         "basis_refs",
         "author_execution_ids",
         "author_proposal_ref"

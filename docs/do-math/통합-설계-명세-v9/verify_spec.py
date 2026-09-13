@@ -51,6 +51,8 @@ def validate(family, value, *, review_policy=None, target_execution=None):
         raise checks.ContractError(str(list(errors[0].path)) + ": " + errors[0].message)
     if family == "budget":
         checks.validate_budget(value)
+    elif family == "explanation":
+        checks.check_explanation_summary(value)
     elif family == "resource-reservation":
         checks.validate_reservation(value)
     elif family == "operational-review" and target_execution is not None:
@@ -1057,16 +1059,16 @@ class SpecificationTests(unittest.TestCase):
     def test_source_vectors_and_quality_bijection(self):
         mapping = checks.parse_json((ROOT / "source-vector-map.json").read_bytes())
         ids = [v["id"] for v in mapping["vectors"]]
-        self.assertEqual(set(ids), {"V" + str(i).zfill(2) for i in range(1, 226)})
-        self.assertEqual(len(ids), 225)
-        retired = {v["id"] for v in mapping["vectors"] if v["expected"] == "번호 미재사용"}
-        self.assertEqual(retired, {"V159", "V189"})
+        self.assertEqual(set(ids), {"V" + str(i).zfill(2) for i in range(1, 255)})
+        self.assertEqual(len(ids), 254)
+        retired = {v["id"] for v in mapping["vectors"] if v["expected"].startswith("번호 미재사용")}
+        self.assertEqual(retired, {"V159", "V162", "V189"})
         rules = checks.parse_json((ROOT / "semantic-rules.json").read_bytes())["rules"]
         for rule in rules:
             self.assertFalse(retired & set(rule["source_vectors"]), rule["id"])
         for q in mapping["quality_contracts"]:
             self.assertFalse(retired & set(q["source_vectors"]), q["id"])
-        self.assertEqual({q["id"] for q in mapping["quality_contracts"]}, {"Q" + str(i).zfill(2) for i in range(1, 23)})
+        self.assertEqual({q["id"] for q in mapping["quality_contracts"]}, {"Q" + str(i).zfill(2) for i in range(1, 26)})
         for q in mapping["quality_contracts"]:
             self.assertTrue(set(q["source_vectors"]) <= set(ids))
         self.assertTrue(all(v["execution_status"] == "not_run" for v in mapping["vectors"]))
@@ -1183,7 +1185,7 @@ class SpecificationTests(unittest.TestCase):
 
     def test_regression_task_terminal_fields_are_exclusive(self):
         value = read_example("task")
-        basis = value["contract"]["execution_profile_ref"]
+        basis = value["contract"]["execution_profile_refs"][0]
         value.update(state="completed", completion_ref=basis, closure_ref=basis, remaining_scope_ids=[])
         value["scope_dispositions"] = [{"scope_id": item["id"], "value": "fulfilled",
             "evidence_refs": [basis], "successor_task_ids": []} for item in value["contract"]["scope"]]
@@ -1242,6 +1244,91 @@ class SpecificationTests(unittest.TestCase):
         value["dispatch_order"] = ["T-" + "0"*25 + "1"]
         with self.assertRaises(checks.ContractError):
             validate("plan", value)
+
+    def test_current_summary_issue_and_repeat_contracts(self):
+        explanation = read_example("explanation")
+        validate("explanation", explanation)
+        explanation["summary_item_id"] = "F-" + "0" * 25 + "2"
+        with self.assertRaises(checks.ContractError):
+            validate("explanation", explanation)
+        rule = {"id": "fixture", "op": "counter_gte", "required_evidence": [],
+                "counter_id": "counter", "source_ref": read_example("task")["contract"]["basis_refs"][0],
+                "baseline": 0, "threshold": 1, "repeat_interval": 2}
+        validator(SCHEMAS["common"]["$defs"]["observation_rule"]).validate(rule)
+        rule["op"] = "event_recorded"
+        rule.pop("counter_id"); rule.pop("source_ref"); rule.pop("baseline"); rule.pop("threshold")
+        rule["event_kind"] = "fixture"; rule["target_id"] = "F-" + "0" * 25 + "1"
+        self.assertFalse(validator(SCHEMAS["common"]["$defs"]["observation_rule"]).is_valid(rule))
+        issue_state = read_example("issue-state")
+        issue_state["issues"] = [{"id": "IS-" + "0" * 25 + "2", "revision": 1,
+            "lineage_id": "IS-" + "0" * 25 + "2", "round": 1, "author_slot_id": "judge-1",
+            "answer_role_slot_id": "outside", "source_result_ref": read_example("task")["contract"]["basis_refs"][0],
+            "claim_ref": read_example("explanation")["document_ref"], "coordinates": [], "evidence_refs": [],
+            "parent_issue_ids": [], "answer_refs": [], "judge_results": [], "state": "open", "establishment_basis": "none"}]
+        with self.assertRaises(checks.ContractError):
+            checks.check_issue_answer_slots(issue_state, lambda _: {"phase": "initial", "role_slot_id": "judge-1",
+                "objections": [{"claim_ref": issue_state["issues"][0]["claim_ref"]}]}, {"judge-1"})
+
+    def test_profile_summary_judge_and_remainder_relations(self):
+        task = read_example("task")
+        profile_id = task["contract"]["execution_profile_refs"][0]["record_id"]
+        manifest = {"planning_input": {"candidate_listing": {"items": [{
+            "id": task["id"], "view": {"revision": 1, "profile_availability": [
+                {"profile_id": profile_id, "currently_usable": True}]}}]}}}
+        plan = {"candidate_dispositions": [{"task_id": task["id"], "revision": 1, "value": "selected"}],
+                "execution_requests": [{"task_id": task["id"], "revision": 1,
+                                        "execution_profile_id": profile_id}],
+                "dispatch_order": [task["id"]]}
+        contracts = {(task["id"], 1): task["contract"]}
+        self.assertTrue(checks.check_profile_selection(contracts, plan, manifest, lambda ref: ref["record_id"]))
+        artifact_contract = copy.deepcopy(task["contract"])
+        artifact_contract["execution_profile_refs"] = [{"ref_kind": "artifact", "bundle_id": "AB-fixture",
+            "path": "profile.json", "sha256": "1" * 64}]
+        artifact_plan = copy.deepcopy(plan)
+        artifact_plan["execution_requests"][0]["execution_profile_id"] = "EP-artifact"
+        artifact_manifest = copy.deepcopy(manifest)
+        artifact_manifest["planning_input"]["candidate_listing"]["items"][0]["view"]["profile_availability"] = [{"profile_id": "EP-artifact", "currently_usable": True}]
+        self.assertTrue(checks.check_profile_selection({(task["id"], 1): artifact_contract}, artifact_plan,
+            artifact_manifest, lambda ref: "EP-artifact" if ref["ref_kind"] == "artifact" else ref["record_id"]))
+        duplicate = copy.deepcopy(task["contract"])
+        duplicate["execution_profile_refs"].append(copy.deepcopy(duplicate["execution_profile_refs"][0]))
+        with self.assertRaises(checks.ContractError):
+            checks.check_profile_selection({(task["id"], 1): duplicate}, plan, manifest, lambda ref: ref["record_id"])
+        bad_plan = copy.deepcopy(plan)
+        bad_plan["execution_requests"][0]["execution_profile_id"] = "EP-not-allowed"
+        with self.assertRaises(checks.ContractError):
+            checks.check_profile_selection(contracts, bad_plan, manifest, lambda ref: ref["record_id"])
+        expanded = checks.expand_remainder_dispositions([(task["id"], 1), ("T-" + "0" * 25 + "2", 2)],
+            [{"task_id": task["id"], "revision": 1, "value": "selected", "reason": "fixture"}],
+            {"value": "not_selected", "reason": "fixture"})
+        self.assertEqual(expanded[1]["task_id"], "T-" + "0" * 25 + "2")
+        self.assertEqual(expanded[1]["revision"], 2)
+        with self.assertRaises(checks.ContractError):
+            checks.expand_remainder_dispositions([(task["id"], 1), (task["id"], 1)], [], None)
+        explanation = read_example("explanation")
+        explanation["math_items"][0]["kind"] = "summary"
+        canon = {"view": {"valid_explanation_available": True, "summary": "fixture"},
+                 "refs": {"explanation_links": [{"explanation_ref": {}, "summary_item_id": explanation["summary_item_id"],
+                    "assessment_value": "match", "use_state": "active"}]}}
+        self.assertTrue(checks.check_canon_summary(canon, lambda _: explanation, lambda _document, _anchor: "fixture"))
+        canon["refs"]["explanation_links"][0]["use_state"] = "suspended"
+        with self.assertRaises(checks.ContractError):
+            checks.check_canon_summary(canon, lambda _: explanation, lambda _document, _anchor: "fixture")
+        canon["refs"]["explanation_links"][0]["use_state"] = "active"
+        canon["view"]["valid_explanation_available"] = False
+        canon["view"]["summary"] = "wrong"
+        with self.assertRaises(checks.ContractError):
+            checks.check_canon_summary(canon, lambda _: explanation, lambda _document, _anchor: "fixture")
+        claim = {"ref_kind": "artifact", "bundle_id": "AB-00000000000000000000000001", "path": "claim.json", "sha256": "1" * 64}
+        source_ref = {"ref_kind": "artifact", "bundle_id": "AB-00000000000000000000000001", "path": "source.json", "sha256": "1" * 64}
+        issue = {"author_slot_id": "judge", "answer_role_slot_id": "initial", "source_result_ref": source_ref, "claim_ref": claim}
+        source = {"phase": "judge", "role_slot_id": "judge", "new_findings": [{"claim_ref": copy.deepcopy(claim)}]}
+        self.assertTrue(checks.check_issue_answer_slots({"issues": [issue]}, lambda _: source, {"initial"}))
+        with self.assertRaises(checks.ContractError):
+            checks.check_issue_answer_slots({"issues": [issue]}, lambda _: source, {"other"})
+        initial = {"phase": "initial", "role_slot_id": "initial", "objections": [{"claim_ref": copy.deepcopy(claim)}]}
+        initial_issue = {"author_slot_id": "initial", "answer_role_slot_id": "initial", "source_result_ref": source_ref, "claim_ref": claim}
+        self.assertTrue(checks.check_issue_answer_slots({"issues": [initial_issue]}, lambda _: initial, {"other"}))
 
     def test_regression_candidate_and_canon_listing_contracts(self):
         props = SCHEMAS["input-manifest"]["properties"]["planning_input"]["properties"]
@@ -1307,7 +1394,7 @@ def main():
         "record_examples": len(list((ROOT / "fixtures" / "records").glob("*.json"))),
         "command_examples": len(list((ROOT / "fixtures" / "commands").glob("*.json"))),
         "source_vectors": {"total": len(checks.parse_json((ROOT / "source-vector-map.json").read_bytes())["vectors"]),
-                           "retired": ["V159", "V189"], "runtime_execution": "not_run"},
+                           "retired": ["V159", "V162", "V189"], "runtime_execution": "not_run"},
         "input_basis": validation_basis(),
         "not_verified": ["actual_adapter", "adapter_compaction_control", "OS_isolation", "remote_termination", "provider_limits",
                          "all_runtime_domain_gates", "Lean_execution", "research_efficacy",

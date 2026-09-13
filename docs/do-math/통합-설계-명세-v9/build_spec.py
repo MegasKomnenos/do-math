@@ -355,7 +355,7 @@ contract_fields = {
     "completion_criteria": array(obj({"id": S, "condition": S,
           "assessor_kind": enum("maintenance", "research_plan", "identity_review", "goal_audit", "user_decision"),
           "required_inputs": REFS}), 1),
-    "authority_refs": NONEMPTY_REFS, "execution_profile_ref": EXACT, "basis_refs": NONEMPTY_REFS,
+    "authority_refs": NONEMPTY_REFS, "execution_profile_refs": NONEMPTY_REFS, "basis_refs": NONEMPTY_REFS,
     "author_execution_ids": array(ID, 1, True), "author_proposal_ref": ARTIFACT}
 task_contract = optional(contract_fields, "description", "academic_validation")
 task_contract["allOf"] = [
@@ -587,7 +587,10 @@ register("plan", "9,19.5", "runtime/artifacts/{bundle_id}/plan.json", {
         "task_id": ID, "revision": POS, "value": enum("selected", "not_selected", "not_assessable"),
         "reason": S, "information_status": enum("evidence", "inference", "hypothesis", "intuition", "random"),
         "uncertainty": S, "read_scope_refs": REFS})),
+    "execution_requests": array(obj({"task_id": ID, "revision": POS, "execution_profile_id": ID,
+                                      "reason": S})),
     "dispatch_order": IDS, "parallel_relations": array(obj({"task_ids": array(ID, 2, True), "reason": S})),
+    "queued_cancellations": array(obj({"execution_id": ID, "reason": S})),
     "preparation_requests": REFS, "completion_assessments": REFS,
     "user_decision_requests": array(obj({"question_ref": ARTIFACT, "basis_refs": NONEMPTY_REFS})),
     "expectation_actual_comparison_ref": ARTIFACT, "exploration_consideration": S,
@@ -612,7 +615,7 @@ register("formal-result", "1.2,11.1,11.6,15,19.6", "research/formal/results/{id}
     "kernel_check_ref": EXACT, "axiom_check_ref": EXACT,
     "formal_use": enum("active", "suspended", "historical"), "basis_refs": NONEMPTY_REFS}, prefix="K")
 
-math_item = obj({"id": ID, "kind": enum("definition", "assumption", "statement", "quantification", "proof_step", "scope", "conclusion"),
+math_item = obj({"id": ID, "kind": enum("summary", "definition", "assumption", "statement", "quantification", "proof_step", "scope", "conclusion"),
     "anchor": S, "dependency_ids": IDS,
     "lean_coordinates": array(obj({"declaration": S, "coordinate_kind": enum("declaration", "binder", "subexpression", "lemma", "obligation"), "anchor": S}), 1),
     "quantifiers": array(obj({"id": S, "kind": enum("forall", "exists", "exists_unique"),
@@ -620,7 +623,7 @@ math_item = obj({"id": ID, "kind": enum("definition", "assumption", "statement",
         "declaration": S, "lean_anchor": S}))})
 register("explanation", "11.1,19.6", "research/formal/explanations/{id}.json", {
     "id": ID, "revision": POS, "document_ref": ARTIFACT, "formal_result_refs": NONEMPTY_REFS,
-    "math_items": array(math_item, 1), "non_mathematical_anchors": STRINGS,
+    "math_items": array(math_item, 1), "summary_item_id": ID, "non_mathematical_anchors": STRINGS,
     "evidence": array(obj({"source_id": S, "artifact_ref": ARTIFACT, "anchors": STRINGS,
                           "purpose": enum("literature_transcription", "factual_support")})),
     "required_domains": STRINGS, "origin_refs": NONEMPTY_REFS}, prefix="EX")
@@ -636,7 +639,8 @@ register("review-policy", "11.3,19.6", "research/governance/review-policies/{id}
     "approval_ref": EXACT}, prefix="RP")
 
 issue = obj({"id": ID, "revision": POS, "lineage_id": ID, "round": POS,
-    "author_slot_id": S, "claim_ref": ARTIFACT, "coordinates": STRINGS,
+    "author_slot_id": S, "answer_role_slot_id": S, "source_result_ref": EXACT,
+    "claim_ref": ARTIFACT, "coordinates": STRINGS,
     "evidence_refs": REFS, "parent_issue_ids": IDS, "answer_refs": REFS,
     "judge_results": array(obj({"slot_id": S, "value": enum("approved", "rejected", "unresolved"),
                                "reason_ref": ARTIFACT}), 0),
@@ -918,7 +922,12 @@ for operation, fields in {
     "wall_time_reached": {"at": TIME},
     "tool_call_completed": {"call_id": ID},
 }.items():
-    observation_branches.append(obj({"id": S, "op": {"const": operation},
+    repeat = {"repeat_interval": POS} if operation in {
+        "counter_gte", "iteration_gte", "checkpoint_count_gte", "active_duration_gte"} else {}
+    observation_branches.append(optional({"id": S, "op": {"const": operation},
+                                          "required_evidence": STRINGS, **fields, **repeat},
+                                         "repeat_interval") if repeat else
+                                obj({"id": S, "op": {"const": operation},
                                      "required_evidence": STRINGS, **fields}))
 common_defs["observation_rule"] = {"oneOf": observation_branches}
 SCHEMAS["execution"]["properties"]["context_origin"] = {"oneOf": [
@@ -1066,7 +1075,7 @@ RULES = [
     ("R20", "9.3", "Exactly one disposition per supplied candidate; dispositions name a listed task_id/revision and the engine binds exact refs in the activity result without editing plan bytes; a plan cut at max output is a receipt failure that escalates without retry and is not a selection failure; sum requests per shared execution constraint respects its cap.", ["V120", "V183", "V205"], "plan"),
     ("R21", "9.4", "Academic state uses exact current solution/requirements and unresolved external rejection; old completed work never silently carries to changed bases.", ["V97", "V98", "V99", "V100"], "academic"),
     ("R22", "10.3", "Apply only declared changes to latest research and latest runtime; semantic merge is AI-owned; long checks rerun if their input closure changes.", ["V42", "V67", "V181"], "integration"),
-    ('R23', '11.3', 'Three basic perspectives plus required domains and source fidelity; every reviewer reads the full proposal. Only the proposal-overflow branch defined in 8.3 closes unresolved for restructuring; restored dialogue is never omitted from actual review input. Restructure an ongoing same obligation by contract revision, or create a new task after a completed/closed author task. Planners never split proposals.', ['V19', 'V44', 'V47', 'V90', 'V162', 'V177', 'V219', 'V222'], 'review'),
+    ('R23', '11.3', 'Three basic perspectives plus required domains and source fidelity; every reviewer reads the full proposal. Only the proposal-overflow branch defined in 8.3 closes unresolved for restructuring; restored dialogue is never omitted from actual review input. Restructure an ongoing same obligation by contract revision, or create a new task after a completed/closed author task. Planners never split proposals.', ['V19', 'V44', 'V47', 'V90', 'V177', 'V219', 'V222'], 'review'),
     ("R24", "11.4", "New proposal versions receive all new semantic judgments; same version/scope/input may retain other completed slots.", ["V62", "V139", "V142", "V143"], "review"),
     ("R25", "11.4.1", "Unanimous approved establishes an objection; final split/unresolved stays unresolved; last unanimous rejected closes without new response.", ["V136", "V147", "V149", "V170"], "review"),
     ('R26', '11.3.1,11.4', 'Count each AI execution owned by the review or its descendant activities once, including ended supplements, queued requests, failed starts, cancellations and retries; exclude machine executions. Check ownership completeness and cycles against one snapshot. Publish child assignment, parent count and consumed mandatory reserve atomically. Resolve the exact policy: one judging round reserves no answers and three judges; two or more reserve at least N answers and six judges. Protect the remaining mandatory allocations.', ['V20', 'V63', 'V137', 'V148', 'V190', 'V191', 'V216', 'V217'], 'review'),
@@ -1090,6 +1099,12 @@ RULES = [
     ("R44", "11.1,11.7,17.3.1", "Quantifier order and witness dependencies are semantic obligations. A false formal statement without a valid proof stops at the preliminary gate and is not evidence of identity-review detection. Test the identity gate with a valid formal proof paired with both a faithful explanation and a quantifier-mismatched explanation. A counterexample must meet every hypothesis and violate the conclusion; goal satisfaction follows the charter, not merely a proof of excluded middle.", ["V195", "V196", "V225"], "mathematics"),
     ("R45", "8.3,16.2", "A profile used for transcript restoration has compaction disabled with evidence; an overflowing call fails without compaction and the execution ends execution_incomplete with cause context_overflow and measured components; reference-form transcript entries lie within the execution's read scope.", ["V201", "V203", "V208"], "input"),
     ('R46', '5.5,13.1.1', 'Contract revision numbers increase from 1. Threshold usage subtracts the revision named by the last explicit continuation decision, with zero before any such decision. With limit 3, continuation at revision 3 allows revisions 4 through 6 and holds authoring of 7. Existing holds, lineage and total limits survive; other tasks continue.', ['V215', 'V220'], 'threshold'),
+    ('R47', '5.2,9.3,19.5', 'A task contract fixes a nonempty allowed profile set; a research request selects exactly one listed profile. Current applicability is checked for the selected profile without invalidating independent listed profiles. A plan names selected profile IDs, dispatch order and queued cancellation reasons; the engine binds exact refs without rewriting plan meaning.', ['V68', 'V183', 'V231', 'V232', 'V236'], 'plan'),
+    ('R48', '11.1,11.3.2,11.4.1,19.5,19.6', 'An explanation summary names one stable explanation item and canon listing returns that verified summary with exact links. Judge new findings are distinct from verdicts; each issue preserves its source result and names an eligible answer role slot.', ['V226', 'V227', 'V229', 'V237'], 'review'),
+    ('R49', '12.1.1,19.4', 'Only numeric observation operators may carry a positive repeat interval. Each event records the consumed threshold or range; retransmission and rule replacement do not consume it again.', ['V175', 'V176', 'V228'], 'observation'),
+    ('R50', '12.4,13.5.1,14.5,19.4', 'A paused instance permits only an approved maintenance procedure with bound target, scope and authority. Deterministic recovery applies directly; unresolved recovery meaning goes to a separate checking_recovery execution, and a renewed stop preserves the latest state.', ['V235', 'V238', 'V239', 'V240', 'V241', 'V242'], 'recovery'),
+    ('R51', '16.3,19.5', 'Generators bind only determined execution metadata and expand an explicit remainder disposition over the fixed candidate population. They reject ambiguous targets, omissions, duplicates and out-of-population entries; machine checks preserve generator inputs, outputs, hashes and rules.', ['V181', 'V182', 'V221', 'V234'], 'command'),
+    ('R52', '1.5,7.3.1,8.4,10.1,10.4,19.3,19.5', 'Knowledge records preserve source, scope, information status, relation direction and current assessment use. Preparation, selection, partial results, import, recovery and migration preserve the actual reused basis and next owner; links alone do not establish mathematical implication or research efficacy.', ['V243', 'V244', 'V245', 'V246', 'V247', 'V248', 'V249', 'V250', 'V251', 'V252', 'V253', 'V254'], 'knowledge'),
 ]
 RULES = [(rid, section, statement + (" Settled requires confirmed_consumed + returned == reserved." if rid == "R03" else ""),
           vectors, domain) for rid, section, statement, vectors, domain in RULES]
@@ -1152,9 +1167,10 @@ candidate_view = optional({
     "expected_research_change": S,
     "work_class": enum("research_production", "academic_validation"),
     "basis_ids": IDS, "review_status": enum("absent", "approved", "revision_required", "unresolved"),
+    "profile_availability": array(obj({"profile_id": ID, "currently_usable": BOOL}), 1),
 }, "description")
 candidate_refs = optional({"record_ref": EXACT, "basis_refs": NONEMPTY_REFS, "review_ref": EXACT,
-                           "author_execution_ids": array(ID, 1, True)}, "review_ref")
+                           "profile_refs": NONEMPTY_REFS, "author_execution_ids": array(ID, 1, True)}, "review_ref")
 candidate_item = obj({"id": ID, "view": candidate_view, "refs": candidate_refs})
 candidate_item["allOf"] = [
     {"if": {"properties": {"view": {"properties": {"review_status": {"const": "absent"}}, "required": ["review_status"]}}},
@@ -1165,12 +1181,12 @@ canon_view = obj({
     "declaration_kind": enum("definition", "theorem", "proof", "relation"),
     "declaration_names": array(S, 1, True),
     "explanation_states": array(obj({"assessment_value": ASSESSMENT, "use_state": USE})),
-    "valid_explanation_available": BOOL, "recently_changed": BOOL,
+    "valid_explanation_available": BOOL, "summary": S, "recently_changed": BOOL,
 })
 canon_refs = obj({
     "record_ref": EXACT,
     "explanation_links": array(obj({"explanation_ref": EXACT, "assessment_ref": EXACT,
-        "use_ref": EXACT, "use_state": USE, "assessment_value": ASSESSMENT})),
+        "use_ref": EXACT, "summary_item_id": ID, "use_state": USE, "assessment_value": ASSESSMENT})),
     "change_refs": REFS,
 })
 canon_item = obj({"id": ID, "view": canon_view, "refs": canon_refs})
@@ -1245,6 +1261,7 @@ register("review-result", "11.3,11.4,11.4.1,19.6", "runtime/artifacts/{bundle_id
     "actual_item_ids": IDS, "scope_complete": BOOL, "evidence_refs": REFS,
     "remaining_questions": STRINGS, "verdict": ASSESSMENT,
     "objections": array(objection_proposal),
+    "new_findings": array(objection_proposal),
     "objection_verdicts": array(obj({"objection_id": ID, "revision": POS,
         "value": enum("approved", "rejected", "unresolved"), "reason_ref": ARTIFACT,
         "evidence_refs": NONEMPTY_REFS})),
@@ -1256,7 +1273,8 @@ register("review-result", "11.3,11.4,11.4.1,19.6", "runtime/artifacts/{bundle_id
     "role_slot_id", "input_manifest_ref", "phase", "actual_item_ids", "scope_complete",
     "evidence_refs", "remaining_questions"], [
         condition("phase", "initial", {"allOf": [require("verdict", "objections"), forbid("objection_verdicts", "answers", "organization")]}),
-        condition("phase", "judge", {"allOf": [require("verdict", "objection_verdicts"), forbid("objections", "answers", "organization")]}),
+        condition("phase", "judge", {"allOf": [require("verdict", "objection_verdicts", "new_findings"), forbid("objections", "answers", "organization")]}),
+        {"if": {"properties": {"phase": {"not": {"const": "judge"}}}}, "then": forbid("new_findings")},
         condition("phase", "answer", {"allOf": [require("answers"), forbid("verdict", "objections", "objection_verdicts", "organization")]}),
         condition("phase", "organize", {"allOf": [require("organization"), forbid("verdict", "objections", "objection_verdicts", "answers")]}),
         condition("verdict", "match", {"properties": {"scope_complete": {"const": True}, "remaining_questions": {"maxItems": 0}, "objections": {"maxItems": 0}}}),

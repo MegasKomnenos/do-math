@@ -5,6 +5,7 @@
   "consumed_event_ids": [],
   "dispatch_order": [],
   "execution_id": "E-00000000000000000000000001",
+  "execution_requests": [],
   "expectation_actual_comparison_ref": {
     "bundle_id": "AB-00000000000000000000000001",
     "path": "fixture/input.json",
@@ -26,6 +27,7 @@
   },
   "parallel_relations": [],
   "preparation_requests": [],
+  "queued_cancellations": [],
   "schema_version": "do-math-draft/plan/9",
   "snapshot_commit": "1111111111111111111111111111111111111111",
   "user_decision_requests": []

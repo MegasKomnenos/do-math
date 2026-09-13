@@ -1,0 +1,22 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "nonce": {
+      "enum": [
+        "aa1f64e5b2314feabcb94d63d016adbc"
+      ],
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "CLI_OK"
+      ],
+      "type": "string"
+    }
+  },
+  "required": [
+    "status",
+    "nonce"
+  ],
+  "type": "object"
+}

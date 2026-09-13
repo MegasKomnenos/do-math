@@ -1,0 +1,6 @@
+{"type":"thread.started","thread_id":"01a09bea-4c0d-7853-acd1-59aa3ad6d12e"}
+{"type":"turn.started"}
+{"type":"item.started","item":{"id":"item_0","type":"command_execution","command":"\"C:\\\\Program Files\\\\PowerShell\\\\7\\\\pwsh.exe\" -NoProfile -Command Get-Location","aggregated_output":"","exit_code":null,"status":"in_progress"}}
+{"type":"item.completed","item":{"id":"item_0","type":"command_execution","command":"\"C:\\\\Program Files\\\\PowerShell\\\\7\\\\pwsh.exe\" -NoProfile -Command Get-Location","aggregated_output":"\r\nPath\r\n----\r\nC:\\math\\docs\\do-math\\구현-검증-2026-09-14\\cli\\tool\\workspace\r\n\r\n","exit_code":0,"status":"completed"}}
+{"type":"item.completed","item":{"id":"item_1","type":"agent_message","text":"C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\cli\\tool\\workspace"}}
+{"type":"turn.completed","usage":{"input_tokens":31059,"cached_input_tokens":24064,"cache_write_input_tokens":0,"output_tokens":124,"reasoning_output_tokens":22}}

@@ -305,7 +305,6 @@
         "V44",
         "V47",
         "V90",
-        "V162",
         "V177",
         "V219",
         "V222"
@@ -606,6 +605,94 @@
       "source_vectors": [
         "V215",
         "V220"
+      ]
+    },
+    {
+      "contract": "A task contract fixes a nonempty allowed profile set; a research request selects exactly one listed profile. Current applicability is checked for the selected profile without invalidating independent listed profiles. A plan names selected profile IDs, dispatch order and queued cancellation reasons; the engine binds exact refs without rewriting plan meaning.",
+      "domain": "plan",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R47",
+      "owner_section": "5.2,9.3,19.5",
+      "source_vectors": [
+        "V68",
+        "V183",
+        "V231",
+        "V232",
+        "V236"
+      ]
+    },
+    {
+      "contract": "An explanation summary names one stable explanation item and canon listing returns that verified summary with exact links. Judge new findings are distinct from verdicts; each issue preserves its source result and names an eligible answer role slot.",
+      "domain": "review",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R48",
+      "owner_section": "11.1,11.3.2,11.4.1,19.5,19.6",
+      "source_vectors": [
+        "V226",
+        "V227",
+        "V229",
+        "V237"
+      ]
+    },
+    {
+      "contract": "Only numeric observation operators may carry a positive repeat interval. Each event records the consumed threshold or range; retransmission and rule replacement do not consume it again.",
+      "domain": "observation",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R49",
+      "owner_section": "12.1.1,19.4",
+      "source_vectors": [
+        "V175",
+        "V176",
+        "V228"
+      ]
+    },
+    {
+      "contract": "A paused instance permits only an approved maintenance procedure with bound target, scope and authority. Deterministic recovery applies directly; unresolved recovery meaning goes to a separate checking_recovery execution, and a renewed stop preserves the latest state.",
+      "domain": "recovery",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R50",
+      "owner_section": "12.4,13.5.1,14.5,19.4",
+      "source_vectors": [
+        "V235",
+        "V238",
+        "V239",
+        "V240",
+        "V241",
+        "V242"
+      ]
+    },
+    {
+      "contract": "Generators bind only determined execution metadata and expand an explicit remainder disposition over the fixed candidate population. They reject ambiguous targets, omissions, duplicates and out-of-population entries; machine checks preserve generator inputs, outputs, hashes and rules.",
+      "domain": "command",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R51",
+      "owner_section": "16.3,19.5",
+      "source_vectors": [
+        "V181",
+        "V182",
+        "V221",
+        "V234"
+      ]
+    },
+    {
+      "contract": "Knowledge records preserve source, scope, information status, relation direction and current assessment use. Preparation, selection, partial results, import, recovery and migration preserve the actual reused basis and next owner; links alone do not establish mathematical implication or research efficacy.",
+      "domain": "knowledge",
+      "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
+      "id": "R52",
+      "owner_section": "1.5,7.3.1,8.4,10.1,10.4,19.3,19.5",
+      "source_vectors": [
+        "V243",
+        "V244",
+        "V245",
+        "V246",
+        "V247",
+        "V248",
+        "V249",
+        "V250",
+        "V251",
+        "V252",
+        "V253",
+        "V254"
       ]
     }
   ],

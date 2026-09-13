@@ -495,9 +495,117 @@ def check_plan_binding(plan, manifest):
     for item in manifest["planning_input"]["candidate_listing"]["items"]:
         listed[(item["id"], item["view"]["revision"])] = item["refs"]["record_ref"]
     given = [(row["task_id"], row["revision"]) for row in plan["candidate_dispositions"]]
-    if len(given) != len(set(given)) or set(given) != set(listed):
-        raise ContractError("dispositions must cover exactly the listed candidates")
+    expand_remainder_dispositions(listed, plan["candidate_dispositions"], None)
     return {key: listed[key] for key in given}
+
+
+def check_profile_selection(contracts, plan, manifest, resolve_profile):
+    """Bind every selected task revision to one allowed, current profile."""
+    listed = {(item["id"], item["view"]["revision"]): item
+              for item in manifest["planning_input"]["candidate_listing"]["items"]}
+    dispositions = {(row["task_id"], row["revision"]): row["value"]
+                    for row in plan["candidate_dispositions"]}
+    requests = [(row["task_id"], row["revision"]) for row in plan["execution_requests"]]
+    if len(requests) != len(set(requests)):
+        raise ContractError("duplicate plan execution request")
+    selected = {key for key, value in dispositions.items() if value == "selected"}
+    if set(requests) != selected:
+        raise ContractError("selected disposition and execution request differ")
+    if len(plan["dispatch_order"]) != len(set(plan["dispatch_order"])) or set(plan["dispatch_order"]) != {key[0] for key in selected}:
+        raise ContractError("dispatch order does not cover selected tasks exactly")
+    for request in plan["execution_requests"]:
+        key = (request["task_id"], request["revision"])
+        contract = contracts.get(key)
+        item = listed.get(key)
+        if contract is None or item is None:
+            raise ContractError("plan request lacks its task contract or candidate")
+        allowed = [resolve_profile(ref) for ref in contract["execution_profile_refs"]]
+        if any(not isinstance(profile_id, str) or not profile_id for profile_id in allowed):
+            raise ContractError("profile resolver did not resolve an exact profile reference")
+        if len(allowed) != len(set(allowed)):
+            raise ContractError("task contract repeats a profile")
+        available = {row["profile_id"] for row in item["view"]["profile_availability"]
+                     if row["currently_usable"]}
+        if request["execution_profile_id"] not in allowed:
+            raise ContractError("plan selects a profile outside the task contract")
+        if request["execution_profile_id"] not in available:
+            raise ContractError("plan selects a currently unusable profile")
+    return True
+
+
+def check_explanation_summary(explanation):
+    items = {item["id"]: item for item in explanation["math_items"]}
+    item = items.get(explanation["summary_item_id"])
+    if item is None or item["kind"] != "summary" or not item["anchor"]:
+        raise ContractError("summary must name an anchored summary item")
+    return True
+
+
+def check_canon_summary(item, resolve_explanation, read_anchor):
+    view, links = item["view"], item["refs"]["explanation_links"]
+    if not view["valid_explanation_available"]:
+        if view["summary"] != "검증된 요약 없음":
+            raise ContractError("canon without a valid explanation must say summary unavailable")
+        return True
+    if view["summary"] == "검증된 요약 없음" or not links:
+        raise ContractError("canon with a valid explanation lacks its summary")
+    for link in links:
+        if link.get("assessment_value") != "match" or link.get("use_state") != "active":
+            continue
+        explanation = resolve_explanation(link["explanation_ref"])
+        if explanation and explanation["summary_item_id"] == link["summary_item_id"]:
+            summary = {row["id"]: row for row in explanation["math_items"]}.get(link["summary_item_id"])
+            if summary and summary["kind"] == "summary" and summary["anchor"] and view["summary"] == read_anchor(explanation["document_ref"], summary["anchor"]):
+                return True
+    raise ContractError("canon summary item is not bound to a valid explanation")
+
+
+def check_issue_answer_slots(issue_state, resolve_result, eligible_answer_slots):
+    slots = set(eligible_answer_slots)
+    for issue in issue_state["issues"]:
+        source = resolve_result(issue["source_result_ref"])
+        if source is None:
+            raise ContractError("issue source result is absent")
+        if issue["author_slot_id"] != source.get("role_slot_id"):
+            raise ContractError("issue author differs from its source result")
+        claim = canonical_json(issue["claim_ref"])
+        if source.get("phase") == "initial":
+            if issue["answer_role_slot_id"] != issue["author_slot_id"]:
+                raise ContractError("an initial objection returns to its original reviewer")
+            findings = source.get("objections", [])
+        elif source.get("phase") == "judge":
+            if issue["answer_role_slot_id"] not in slots:
+                raise ContractError("a judge finding needs an eligible initial answer slot")
+            findings = source.get("new_findings", [])
+        else:
+            raise ContractError("issue source is neither initial objection nor judge finding")
+        if claim not in {canonical_json(finding["claim_ref"]) for finding in findings}:
+            raise ContractError("issue claim is not present in its source result")
+    return True
+
+
+def expand_remainder_dispositions(population, explicit, remainder):
+    """Expand an explicitly named remainder without inventing a disposition."""
+    population = list(population)
+    ids = set(population)
+    if len(ids) != len(population):
+        raise ContractError("candidate population repeats a task revision")
+    allowed = {"selected", "not_selected", "not_assessable"}
+    result = [dict(row) for row in explicit]
+    given = {(row.get("task_id"), row.get("revision")) for row in result}
+    if any(row.get("value") not in allowed or not isinstance(row.get("reason"), str) or not row["reason"] for row in result):
+        raise ContractError("explicit disposition is invalid")
+    if len(given) != len(result) or not given <= ids:
+        raise ContractError("explicit dispositions duplicate or leave the population")
+    if remainder is None:
+        if given != ids:
+            raise ContractError("missing candidate disposition")
+        return result
+    if set(remainder) != {"value", "reason"} or remainder["value"] not in allowed or not isinstance(remainder["reason"], str) or not remainder["reason"]:
+        raise ContractError("remainder disposition lacks value or reason")
+    result.extend({"task_id": task_id, "revision": revision, **remainder}
+                  for task_id, revision in sorted(ids - given))
+    return result
 
 
 def plan_receipt_disposition(stop_reason):

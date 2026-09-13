@@ -62,7 +62,8 @@
           {
             "required": [
               "verdict",
-              "objection_verdicts"
+              "objection_verdicts",
+              "new_findings"
             ]
           },
           {
@@ -87,6 +88,28 @@
             }
           }
         ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "phase": {
+            "not": {
+              "const": "judge"
+            }
+          }
+        }
+      },
+      "then": {
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "new_findings"
+              ]
+            }
+          ]
+        }
       }
     },
     {
@@ -318,6 +341,68 @@
     },
     "input_manifest_ref": {
       "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+    },
+    "new_findings": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "author_slot_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "claim_ref": {
+            "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/artifact_ref"
+          },
+          "coordinates": {
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "evidence_refs": {
+            "items": {
+              "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+            },
+            "minItems": 1,
+            "type": "array",
+            "uniqueItems": true
+          },
+          "id": {
+            "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/id"
+          },
+          "lineage_id": {
+            "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/id"
+          },
+          "parent_issue_ids": {
+            "items": {
+              "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/id"
+            },
+            "minItems": 0,
+            "type": "array",
+            "uniqueItems": true
+          },
+          "revision": {
+            "maximum": 9007199254740991,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "revision",
+          "lineage_id",
+          "author_slot_id",
+          "claim_ref",
+          "coordinates",
+          "evidence_refs",
+          "parent_issue_ids"
+        ],
+        "type": "object"
+      },
+      "minItems": 0,
+      "type": "array"
     },
     "objection_verdicts": {
       "items": {

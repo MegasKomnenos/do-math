@@ -1,0 +1,79 @@
+{
+  "scope": "implementation_regression",
+  "runtime_copy": ".agents/skills/do-math",
+  "results": [
+    {
+      "test": "test_budget.py",
+      "exit_code": 0,
+      "tests_run": 7,
+      "skipped": false,
+      "source_sha256": "8c0b4015cdbcac6ca3b5006951bea7cc0f5abcb5a511bb1d81ff58be4917cf91"
+    },
+    {
+      "test": "test_codex_adapter.py",
+      "exit_code": 0,
+      "tests_run": 8,
+      "skipped": false,
+      "source_sha256": "9042e3140c59d6ad7ec1f667786b4f943c74adc4cf18c67b5e1793d4c3b8c783"
+    },
+    {
+      "test": "test_git_store.py",
+      "exit_code": 0,
+      "tests_run": 12,
+      "skipped": false,
+      "source_sha256": "978f6c70223355f619e0a2d9ac34a66e7992055b0ac8b12deaae19794c51800c"
+    },
+    {
+      "test": "test_preflight.py",
+      "exit_code": 0,
+      "tests_run": 14,
+      "skipped": false,
+      "source_sha256": "338fcf3e99102a62ecaa673c57fa3806c0e0fe17817d06ea3ef9817611be478b"
+    },
+    {
+      "test": "test_probe_codex.py",
+      "exit_code": 0,
+      "tests_run": 1,
+      "skipped": false,
+      "source_sha256": "50e9ec30112a6f34633ccd2057397c7639f300d235dc72aeddfbd82202c5526c"
+    },
+    {
+      "test": "test_windows_job.py",
+      "exit_code": 0,
+      "tests_run": 8,
+      "skipped": false,
+      "source_sha256": "d6bb2575a9d033018faa4de70849a40d3f26f4320b5c3bf119acbff82084df09"
+    }
+  ],
+  "passed": true,
+  "implementation_sources": [
+    {
+      "path": "__init__.py",
+      "sha256": "a1c57a32d3d32541a69ca3b870252dd232d81960119ff051d71e502d0a8e732a"
+    },
+    {
+      "path": "budget.py",
+      "sha256": "4d7824d1499520dbeec2965ea6312ae6271d362e71de823de30c6b5a68019332"
+    },
+    {
+      "path": "codex_adapter.py",
+      "sha256": "68a75b9b1c6b74c24f8a2a1f0648479f5035725652372802c1b20fc405ccc206"
+    },
+    {
+      "path": "codex_worker.py",
+      "sha256": "84958446ad2b4d69e3a17bea2bbb06f274ef0aa7be9cbd7e651d61961de864a7"
+    },
+    {
+      "path": "git_store.py",
+      "sha256": "6858ca6d7f49599b839acf779040265b9b7bb682b6b89fbeacf9ce3e14b9a86b"
+    },
+    {
+      "path": "preflight.py",
+      "sha256": "f67206e58c55b9b873240a6474f0dc294c47e67cc4e9025b103170e94d9995e4"
+    },
+    {
+      "path": "windows_job.py",
+      "sha256": "5c16df2c17ab5d54490e3f54ab2d3fc703454b9c4c898f743f12312fc9d8e3d6"
+    }
+  ]
+}

@@ -97,7 +97,7 @@
       "owner_section": "19.2",
       "path": "schemas/common.schema.json",
       "schema_id": "https://do-math.invalid/schemas/draft/9/common",
-      "sha256": "e63ae8a301bd85131c7072cc31059f6efec044f2391bbca82d3a13c1554f2431",
+      "sha256": "d92e57bd4a5bb35d916fbd340b4403aede6f80201ef2a145f387c074265f77a3",
       "storage": "schema_only"
     },
     {
@@ -147,7 +147,7 @@
       "owner_section": "11.1,19.6",
       "path": "schemas/explanation.schema.json",
       "schema_id": "https://do-math.invalid/schemas/draft/9/explanation",
-      "sha256": "de0c9c227b68b4fe24d6e7000bae061bdc3e3266541fdc6653f8efc46d1b5da9",
+      "sha256": "9a82727189eb855b58846e71822a08499763f0e9c7d2938ff8340ffe492dde13",
       "storage": "research/formal/explanations/{id}.json"
     },
     {
@@ -197,7 +197,7 @@
       "owner_section": "8,13.1,16.5,19.5",
       "path": "schemas/input-manifest.schema.json",
       "schema_id": "https://do-math.invalid/schemas/draft/9/input-manifest",
-      "sha256": "90d01b0ab668ca0377a944b609d9a56ed3c39b45d68df31437125ca158f1b3fb",
+      "sha256": "451becb15ea4cb3f6b4cff01a7d077ded74b6a45f7fac6e5e5ab133b87371257",
       "storage": "runtime/artifacts/{bundle_id}/input-manifest.json"
     },
     {
@@ -227,7 +227,7 @@
       "owner_section": "8.3,11.3,11.4,19.6",
       "path": "schemas/issue-state.schema.json",
       "schema_id": "https://do-math.invalid/schemas/draft/9/issue-state",
-      "sha256": "de899df2c05cf909f24c147438194d460286c516a75ae99591aae32eac71b008",
+      "sha256": "145b231f05defee37a1c7fc644afaf073058c88ef5ad75bacd62bd0b7fd5e4ca",
       "storage": "runtime/activities/{activity_id}/issues/{id}.json"
     },
     {
@@ -287,7 +287,7 @@
       "owner_section": "9,19.5",
       "path": "schemas/plan.schema.json",
       "schema_id": "https://do-math.invalid/schemas/draft/9/plan",
-      "sha256": "4be22875d72ec1114aa7a63a8510732039dbc5e1539779db1aa94d33d35bec32",
+      "sha256": "931e0b40a5ac8a4f1f32fa16f76a240fb22280fa4d0a0c3a60f2c090086f21f9",
       "storage": "runtime/artifacts/{bundle_id}/plan.json"
     },
     {
@@ -347,7 +347,7 @@
       "owner_section": "11.3,11.4,11.4.1,19.6",
       "path": "schemas/review-result.schema.json",
       "schema_id": "https://do-math.invalid/schemas/draft/9/review-result",
-      "sha256": "c1764115b58af49a588ec63971f29e774031434943e091ae2f0c0c0881d9d98a",
+      "sha256": "d760a2b4119bbde83a2da5602f0fd8a4c99c0d9534ff70f20d59975e26f06322",
       "storage": "runtime/artifacts/{bundle_id}/review-result.json"
     },
     {

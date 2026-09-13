@@ -436,6 +436,14 @@
                         "type": "array",
                         "uniqueItems": true
                       },
+                      "profile_refs": {
+                        "items": {
+                          "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+                        },
+                        "minItems": 1,
+                        "type": "array",
+                        "uniqueItems": true
+                      },
                       "record_ref": {
                         "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
                       },
@@ -446,6 +454,7 @@
                     "required": [
                       "record_ref",
                       "basis_refs",
+                      "profile_refs",
                       "author_execution_ids"
                     ],
                     "type": "object"
@@ -500,6 +509,26 @@
                       "expected_research_change": {
                         "minLength": 1,
                         "type": "string"
+                      },
+                      "profile_availability": {
+                        "items": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "currently_usable": {
+                              "type": "boolean"
+                            },
+                            "profile_id": {
+                              "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/id"
+                            }
+                          },
+                          "required": [
+                            "profile_id",
+                            "currently_usable"
+                          ],
+                          "type": "object"
+                        },
+                        "minItems": 1,
+                        "type": "array"
                       },
                       "question": {
                         "minLength": 1,
@@ -571,7 +600,8 @@
                       "expected_research_change",
                       "work_class",
                       "basis_ids",
-                      "review_status"
+                      "review_status",
+                      "profile_availability"
                     ],
                     "type": "object"
                   }
@@ -721,6 +751,9 @@
                             "explanation_ref": {
                               "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
                             },
+                            "summary_item_id": {
+                              "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/id"
+                            },
                             "use_ref": {
                               "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
                             },
@@ -737,6 +770,7 @@
                             "explanation_ref",
                             "assessment_ref",
                             "use_ref",
+                            "summary_item_id",
                             "use_state",
                             "assessment_value"
                           ],
@@ -810,6 +844,10 @@
                       "recently_changed": {
                         "type": "boolean"
                       },
+                      "summary": {
+                        "minLength": 1,
+                        "type": "string"
+                      },
                       "valid_explanation_available": {
                         "type": "boolean"
                       }
@@ -819,6 +857,7 @@
                       "declaration_names",
                       "explanation_states",
                       "valid_explanation_available",
+                      "summary",
                       "recently_changed"
                     ],
                     "type": "object"
