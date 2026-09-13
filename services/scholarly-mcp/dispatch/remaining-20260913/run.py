@@ -126,6 +126,8 @@ def invocation(task, state, campaign):
                   "이번 재개는 최초 파견과 같은 로컬 실행·쓰기 권한을 명시했다. 먼저 자신의 output_dir에서 짧은 파일 읽기·쓰기·삭제 확인을 하고 작업을 이어가라. "
                   "이미 받은 자료와 사본 변경을 보존해 이어가라. 해결하거나 실행 가능한 방법을 근거로 모두 소진하기 전에는 최종 반환하지 마라. "
                   "실제 새 화면을 직접 열어 판독하고 원 요청·응답·파일과 대조하라. 보고의 누락만 고치는 것으로 남은 구현·검증을 대신하지 마라.")
+        if task.get('review_prompt_path'):
+            prompt += '\n\n주 세션이 근거를 대조해 보낸 추가 검토 지시:\n' + Path(task['review_prompt_path']).read_text('utf-8')
     else:
         command = [str(CODEX), 'exec', *options, '--sandbox', 'danger-full-access', '-C', str(ROOT), '-']
         prompt = (output / 'prompt.md').read_text('utf-8')
@@ -182,6 +184,26 @@ def check_claim(task, result):
     return None
 
 
+def apply_review_requests(state, campaign):
+    path = campaign / 'review-requests.json'
+    if not path.exists():
+        return
+    for request in read_json(path):
+        task = next((t for t in state['tasks'] if t['id'] == request['task_id']), None)
+        if task is None or task.get('review_request_id') == request['id'] or task['state'] != 'awaiting_review':
+            continue
+        prompt = Path(request['prompt_path']).resolve()
+        if not prompt.is_relative_to(campaign.resolve()) or not prompt.is_file():
+            raise ValueError('Invalid review request path')
+        result = Path(task['output_dir']) / 'result.json'
+        if result.exists():
+            preserved = result.with_name(f"result-before-review-{task['attempts']:03d}.json")
+            shutil.copyfile(result, preserved)
+        task.update(state='resume_queued', retry_at=0, review_request_id=request['id'],
+                    review_prompt_path=str(prompt), claimed_disposition=None,
+                    return_problem='주 세션의 근거 검토에서 추가 실험과 결론 재검토가 필요함')
+
+
 class AdoptedProcess:
     """Monitor an existing owned CLI without interrupting or duplicating it."""
     def __init__(self, task):
@@ -229,6 +251,7 @@ def run(campaign):
             except Exception as error:
                 task.update(state='controller_recovery_required', return_problem='실행 신원 확인 실패: '+type(error).__name__)
     while True:
+        apply_review_requests(state, campaign)
         limits = campaign / 'limits.json'
         if limits.exists():
             maximum = read_json(limits).get('max_parallel')

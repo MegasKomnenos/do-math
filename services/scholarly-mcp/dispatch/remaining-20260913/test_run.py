@@ -49,6 +49,22 @@ class ReturnContract(unittest.TestCase):
             for name in task['entry_files']:
                 self.assertTrue((module.SERVICE/name).is_file(),(task['id'],name))
 
+    def test_review_reopens_only_finished_claim_and_preserves_thread_and_result(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary)
+            (root/'review.md').write_text('Inspect the untested native control.',encoding='utf-8')
+            (root/'result.json').write_text('{"disposition":"exhausted"}',encoding='utf-8')
+            task={'id':'test','state':'awaiting_review','attempts':2,'thread_id':'same-thread','output_dir':str(root)}
+            state={'tasks':[task]}
+            (root/'review-requests.json').write_text(json.dumps([{'id':'r1','task_id':'test','prompt_path':str(root/'review.md')}]),encoding='utf-8')
+            module.apply_review_requests(state,root)
+            self.assertEqual(task['state'],'resume_queued')
+            self.assertEqual(task['thread_id'],'same-thread')
+            self.assertEqual((root/'result-before-review-002.json').read_bytes(),(root/'result.json').read_bytes())
+            task['state']='running'
+            module.apply_review_requests(state,root)
+            self.assertEqual(task['state'],'running')
+
 
 if __name__ == '__main__':
     unittest.main()
