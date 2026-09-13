@@ -6,7 +6,7 @@
 | Web of Science Core Collection + CPCI | wos | playwright | partial | source_guide, search, fetch, export | live_mcp_editions_sorts_friendly_facets_windows_exports_citing_sorts_and_identity |
 | Scopus | scopus | playwright | partial | source_guide, search, fetch, export | live_mcp_nine_sorts_thirteen_facets_exact_windows_native_facet_counts_and_relations |
 | ACM Digital Library | acm-dl | playwright | partial | source_guide, search, fetch, export | live_mcp_edit_query_boolean_combined_filters_native_exports_html_tex_pdf_supplement_and_identity |
-| IEEE Xplore / IEL | ieee-xplore | playwright | partial | source_guide, search, fetch, export | live_mcp_native_exports_filtered_windows_typeahead_pdf_html_identity_references_media |
+| IEEE Xplore / IEL | ieee-xplore | playwright | partial | source_guide, search, fetch, export | 원 내보내기·검색 창·PDF/HTML·참고문헌; DOI 인용 링크가 있는 Media 카드 MP4 복원 |
 | PQDT Global | pqdt | playwright | partial | source_guide, search, fetch, export | live_mcp_21_facet_values_filtered_windows_zero_seven_exports_fulltext_supplement |
 | zbMATH Open | zbmath | api | partial | source_guide, search, fetch, export | live_mcp_arbitrary_window_doi_legacy_link_license_state_references |
 | arXiv | arxiv | api | partial | source_guide, search, fetch, export | live_mcp_search_pinned_html_source_archive_tex_extract |

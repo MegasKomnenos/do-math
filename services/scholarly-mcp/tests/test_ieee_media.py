@@ -16,6 +16,16 @@ class IEEEMediaContract(unittest.TestCase):
         self.assertEqual(rows[0]['role'],'supplementary_media')
         with self.assertRaises(ServiceError):media_links(raw,'https://ieeexplore.ieee.org/','42')
 
+    def test_native_media_item_ignores_its_citation_doi_link(self):
+        from ieee_media import media_links
+        raw='''<div class="media-tab"><div class="media-item">
+          <div class="description">The supplementary video supports the article.</div>
+          <a href="/ielx7/6287639/10380310/10463014/supp1-3374782.mp4"></a>
+          <a href="https://doi.org/10.1109/ACCESS.2024.3374782/mm1">10.1109/ACCESS.2024.3374782/mm1</a>
+        </div></div>'''
+        rows=media_links(raw,'https://ieeexplore.ieee.org/document/10463014/media','10463014')
+        self.assertEqual([row['filename'] for row in rows],['supp1-3374782.mp4'])
+
     def test_ranges_assemble_only_matching_bytes_and_version(self):
         from ieee_media import range_download
         payload=b'abcdefghijkl'; calls=[]

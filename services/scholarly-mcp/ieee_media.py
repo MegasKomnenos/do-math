@@ -70,6 +70,8 @@ def media_links(raw,base,identifier):
         description=item.select_one('.description')
         for anchor in item.select('a[href]'):
             url=urljoin(base,anchor['href']);path=urlsplit(url).path
+            if not path.startswith('/ielx'):
+                continue
             if not re.fullmatch(r'/ielx\d+/\d+/\d+/0*'+re.escape(identifier)+r'/[^/]+',path):
                 raise ServiceError('source_boundary','Media-tab file is not bound to this IEEE document')
             if url in seen:continue
