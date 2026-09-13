@@ -1,0 +1,193 @@
+[
+  {
+    "task_id": "semantic-scholar-rate",
+    "cases": [
+      "N01",
+      "N02",
+      "N03",
+      "N04",
+      "B10"
+    ],
+    "focus": "현재 relevance/single/batch/match의 정확한 실패 요청을 화면과 원응답에 연결한다. 정상 논문 UI로 API429 판독을 대신하지 않는다. 요청 간격만 바꾸는 데 그치지 말고 실제 client 호출수·동시성·세션·fields·공식 실행 예제를 대조한다. screenshot font-ready timeout을 고친다."
+  },
+  {
+    "task_id": "core-indexed-text",
+    "cases": [
+      "N09"
+    ],
+    "focus": "fullText·exists·output-id 검색의 문법과 endpoint 역할을 공식 예제와 최소 양성에서 다시 확인한다. 부정확한 검색식을 서버500으로 해석한 가능성을 먼저 시험한다. indexed fullText 제한 안내와 PDF 정책을 분리한다."
+  },
+  {
+    "task_id": "core-work-download",
+    "cases": [
+      "N05",
+      "N08"
+    ],
+    "focus": "works download의 원 404/429와 공식 예시 metadata404를 각각 재현하고 판독한다. 작품 ID와 output ID, 문서 버전, method, Accept, 경로를 확인한다. metadata 기반 PDF 회수를 work endpoint 복원으로 표시하지 않는다. CORE 추천500과 잘못 누른 provider404도 로컬 조작 오류와 구별한다."
+  },
+  {
+    "task_id": "core-output-download",
+    "cases": [
+      "N06",
+      "N07"
+    ],
+    "focus": "output metadata/download의 실제 429, custom retry, 404, 양성302를 정확한 요청 화면으로 연결한다. 헤더와 reset 오독을 교정하고 무자격 다운로드 불가라는 과거 설명이 코드와 안내에 남지 않게 한다. 다른 CORE 과제와 동시에 API를 호출하지 않는다."
+  },
+  {
+    "task_id": "core-files01",
+    "cases": [
+      "N10",
+      "N07"
+    ],
+    "focus": "원 files01의 522 자체를 같은 파일 요청에서 전후 판독한다. 문헌403 화면으로 대신하지 않는다. 후속 metadata429도 별도로 확인하며 endpoint, TTFB, timeout과 실제 현재 공식 URL의 의미를 대조한다. 기존 같은 ID 복원과 부분 실패 보존을 검증한다."
+  },
+  {
+    "task_id": "eudml-nlm",
+    "cases": [
+      "N11",
+      "B07"
+    ],
+    "focus": "검색 CQL504를 홈페이지504와 분리해 재현하고 판독한다. CQL quoting, 검색 키, RSS 경로를 성공하는 최소 검색에서 다시 확인한다. 긴 NLM 응답을 기존45초 한도가 끊은 문제는 수리 후 재실행하며 경로별 시간 제한을 실측에 맞춘다."
+  },
+  {
+    "task_id": "dblp-challenge",
+    "cases": [
+      "N12",
+      "N13",
+      "N14"
+    ],
+    "focus": "RDF 요청 제한, plain timeout, Trier500 각각을 같은 입력으로 재시도하고 그 실행 화면을 판독한다. Anubis 정상 문헌 화면만으로 끝내지 않는다. metarefresh/redirect의 쿼리 인코딩, 경로, 클라이언트 수명, 정상 다운로드 후 파서의 외부 의존성을 수리하고 검증한다."
+  },
+  {
+    "task_id": "dblp-kg-tsv",
+    "cases": [
+      "N15",
+      "B13"
+    ],
+    "focus": "Accept406와 숨은 메뉴 클릭 timeout을 분리한다. 문서화된 미디어 타입과 실제 지원값, 헤더 전달을 확인하고 실제 요청 전후를 읽는다. 메뉴를 정상적으로 열도록 수리한다. typed TSV의 파일 의미 검증과 원 서버 출력의 한계를 구별한다."
+  },
+  {
+    "task_id": "crossmark-semantics",
+    "cases": [
+      "N16"
+    ],
+    "focus": "초기 Crossref429의 정확한 필터, 페이지, 요청 수, 공식 속도 조건을 재검토하고 실제 API 요청 전후를 읽는다. 헤더 누락을 고쳐 보존한다. 정상 Crossmark UI만으로 API 오류 판독 완료라고 하지 않는다. 성공한13건 검증을 유지한다."
+  },
+  {
+    "task_id": "ieee-media-flag",
+    "cases": [
+      "N17",
+      "N18"
+    ],
+    "focus": "참고문헌 timeout을 고쳐 같은10463014 전체 fetch를 다시 실행한다. 직접401인9표본의 method, 기관 경로, 자격 범위, 렌더 대기를 각각 대조하고 전후 판독한다. MP4 파서의 source_boundary도 기술 수리 후 실서비스 전체 상태를 확인한다. Media 성공으로 references 실패를 닫지 않는다."
+  },
+  {
+    "task_id": "swh-vault",
+    "cases": [
+      "N19",
+      "B09"
+    ],
+    "focus": "정확한 raw fetch_url404와 new 상태를 같은 작업에 결속해 전후 판독한다. 토스트 문자열 대기 timeout은 실제 DOM, 애니메이션, 정확한 문구로 고친다. 조리 작업의 ID, 종류, 상태, 공식 재개 동작을 검토하되 다른 양성 트리의 성공을 원 트리 완료로 대체하지 않는다."
+  },
+  {
+    "task_id": "figshare-historical-members",
+    "cases": [
+      "N20",
+      "N21"
+    ],
+    "focus": "추측 REST404와 대체 GraphQL errors를 실제 요청 전후에서 읽고 원 schema, variables, scope 문법을 다시 확인한다. v8의21/20과 v6의17/16 차집합을 설명하는 공식 관계 경로를 검토한다. 현재 판본으로의 무조건 치환, 임의 상한, 정상 부분 목록 폐기를 막는다."
+  },
+  {
+    "task_id": "oxford-title-export",
+    "cases": [
+      "N22",
+      "N23",
+      "B12",
+      "B14"
+    ],
+    "focus": "확정된 proxy invalid-domain의 전후 근거를 유지한다. 직접 POST의 빈 CSV와 오류 본문, DNS 실패는 별도 요청에서 전후 판독한다. 호스트 오기, obsolete 주소, 정상 citation과 title-list 구분을 다시 확인한다. CDP와 response 관측기 실패는 고쳐서 파일을 받는다. CAPTCHA 토큰 주입, 위조, 다른 도메인 전용 토큰의 전용은 금지한다."
+  },
+  {
+    "task_id": "degruyter-broken-supplement",
+    "cases": [
+      "N24",
+      "N25",
+      "N26",
+      "N27"
+    ],
+    "focus": "원 ZIP 회수 성공은 보존한다. Wayback429, CDX400, replay404, Common Crawl502를 보존 자료 없음으로 오판하지 않았는지 검토한다. 공식 쿼리 문법, 정확한 URL 인코딩, 캡처 시각, 재생 형식, 대기 기술 문제를 교정해 재현한다. 각 보조 실패의 전후 화면을 읽고 현재 출판사 실패와 구별한다."
+  },
+  {
+    "task_id": "ams-expression",
+    "cases": [
+      "B01"
+    ],
+    "focus": "KUDOS-shortcut product400의 원 입력, 세션, 헤더, 동적 로딩을 재현 전후 판독하고 원인 가능성을 검토한다. 새로 제한한 expression 부분집합도 문법 검토 대상이다. 공식 현재 필드에서3항 이상 OR, 같은 필드 AND/NOT, 괄호와 구문을 실제 지원할 표현이 있는지 확인한다. 잘못된 locator와 hidden legacy builder를 공식 전체 기능으로 일반화하지 않는다."
+  },
+  {
+    "task_id": "sciencedirect-export",
+    "cases": [
+      "B02",
+      "B04"
+    ],
+    "focus": "원 제어 미발견을 안정화 뒤 화면만으로 설명하지 않는다. 같은 행 입력 전, 조작, 즉시 DOM과 픽셀, 안정 상태에서 재현한다. 미재현이면 그렇게 기록한다. 직접403의 전후도 같은 PII로 확인한다. 대기, visible locator, 팝업, 네트워크 결속의 기술 문제를 고쳐 원 export를 재검증한다."
+  },
+  {
+    "task_id": "sciencedirect-pdf",
+    "cases": [
+      "B03"
+    ],
+    "focus": "완료된 object, View PDF, full-volume 전후를 유지하고 다운로드된 pdfft.htm의 실제 오류 내용도 읽는다. PII/DOI doc_id 검색 준비 실패, identity mismatch, citation 제한을 각각 현재 공식 문법과 ID 역할로 재검토하고 기술 문제를 고쳐 재현한다. 해결 가능한 경로가 남아 있는데 unresolved 분류만으로 완료하지 않는다."
+  },
+  {
+    "task_id": "numdam-date-only",
+    "cases": [
+      "B05",
+      "B06"
+    ],
+    "focus": "날짜 qdt의 pagination_missing과 옛 홈페이지 연결 timeout을 같은 입력의 재실행 전후로 확인한다. 현재 성공하면 원 오류 미재현과 수리 효과를 구별한다. 새 wildcard 열린 날짜의 공식 문법, 원 경계, 최종 페이지를 실제 SDK로 검증한다. qdt 수리 전 실패를 수리 후 양성만으로 가리지 않는다."
+  },
+  {
+    "task_id": "jstor-video",
+    "cases": [
+      "B08"
+    ],
+    "focus": "최초 흰 화면의 문헌 식별자 timeout을 정상 제어, 로드 단계, 동일 영상 ID로 재현하고 대기와 관측기를 수리한다. disabled 클릭과 관련 항목 오조작의 기존 전후 근거를 검토한다. 영상 권한과 스트리밍, 음성 양성을 혼동하지 않고 현재 원 제어에 정상 다운로드 경로가 남았는지 확인한다."
+  },
+  {
+    "task_id": "siam-institution",
+    "cases": [
+      "B11"
+    ],
+    "focus": "helper의 제어 탐색과 연결 timeout을 고쳐 정상 KUDOS, proxy, SIAM 경로를 재확인한다. 기존 PDF403, 기관 검색, KNU IdP 실패 전후를 검토한다. 거부된 IdP 로그인은 재시도하지 않는다. proxy, redirect, 쿠키 전달의 실제 관측과 권리 부재 주장을 구별하고 기술 결함을 권한 문제로 돌리지 않는다."
+  },
+  {
+    "task_id": "siam-last-condition",
+    "cases": [
+      "author-underscore-restriction"
+    ],
+    "focus": "Author underscore 선제 거부가 다시 회피적 제한인지 검토한다. 공식 Search Tips, 따옴표, literal escaping, exact author 구문, 필드별 tokenization을 근거 있는 대조로 시험한다. 임의 문자열이 반드시0이라고 가정하지 않되 입력한 절이 무시될 때의 동일 의미 표현을 찾는다. 올바른 표현이 있으면 거부 validator 대신 지원하고52조건 성공도 유지한다."
+  },
+  {
+    "task_id": "taylor-abstract",
+    "cases": [
+      "B15"
+    ],
+    "focus": "두 번째 음성 DOI10.1080/1551806X.2013.768873 자체에서 Citation & abstract 선택 전, 다운로드 직후, 안정 화면을 직접 읽고 RIS/BibTeX 실제 필드에 결속한다. 첫 문헌의 전후로 대신하지 않는다. 공개 본문, 원 초록, 일반 description을 구별하고 로컬 locator와 추출 실수부터 다시 검토한다."
+  },
+  {
+    "task_id": "degruyter-citation",
+    "cases": [
+      "local-doi-less-rejection"
+    ],
+    "focus": "문헌이 열리기 전 DOI가 없다는 이유로 거부했던 분기를 수리한 사본이 도서, 장, 저널 구분과 현재 native 제어를 정확히 처리하는지 검증한다. 같은 실행의 원 UI 전후와 로컬 실행을 결속하고 남은 identifier, path, hidden modal 기술 문제를 수리한다."
+  },
+  {
+    "task_id": "springer-html-negative",
+    "cases": [
+      "html-negative-classification"
+    ],
+    "owner": "root",
+    "focus": "주 세션이 원 전후 이미지, parser 진단, 원 응답, 사본 diff를 직접 대조한다. 제공 형식 부재와 selector 실수를 구별하고 정상 양성 및 PDF 대조를 검토해 세 기준 충족 여부를 결정한다."
+  }
+]
