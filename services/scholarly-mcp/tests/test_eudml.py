@@ -11,6 +11,33 @@ from scholarly import ArtifactStore, ServiceError
 
 
 class EuDMLContract(unittest.TestCase):
+    def test_cql_search_waits_for_observed_gateway_response_without_relaxing_common_client(self):
+        mod = importlib.import_module("eudml")
+        observed = {}
+        def serve(request):
+            observed.update(request.extensions["timeout"])
+            return httpx.Response(200, content=(ROOT / "tests/fixtures/eudml-search.xml").read_bytes(), headers={"Content-Type": "application/rss+xml"})
+        with tempfile.TemporaryDirectory() as folder:
+            with httpx.Client(transport=httpx.MockTransport(serve), timeout=httpx.Timeout(45, connect=20)) as client:
+                result = mod.EuDML(ArtifactStore(folder), client=client).search('all="P versus NP"', options={}, start=0, limit=2, export="rss")
+                self.assertEqual(result["received"], 2)
+                self.assertEqual(observed["read"], 90)
+                self.assertEqual(observed["connect"], 20)
+                self.assertEqual(client.timeout.read, 45)
+
+    def test_nlm_fetch_uses_observed_slow_ttfb_budget_without_relaxing_common_client(self):
+        mod = importlib.import_module("eudml")
+        observed = {}
+        def serve(request):
+            observed.update(request.extensions["timeout"])
+            return httpx.Response(200, content=(ROOT / "tests/fixtures/eudml-article.xml").read_bytes(), headers={"Content-Type": "application/xml"})
+        with tempfile.TemporaryDirectory() as folder:
+            with httpx.Client(transport=httpx.MockTransport(serve), timeout=httpx.Timeout(45, connect=20)) as client:
+                mod.EuDML(ArtifactStore(folder), client=client).fetch("196516", parts=["metadata"])
+                self.assertEqual(observed["read"], 120)
+                self.assertEqual(observed["connect"], 20)
+                self.assertEqual(client.timeout.read, 45)
+
     def test_rss_range_and_publication_year_are_distinct_from_feed_dates(self):
         self.assertTrue((ROOT / "eudml.py").exists(), "EuDML adapter is absent")
         mod = importlib.import_module("eudml")

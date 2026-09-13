@@ -42,7 +42,7 @@ class APIAdapter:
         parts = urlsplit(url)
         return parts.scheme == "https" and not parts.username and not parts.password and parts.hostname in self.hosts and parts.port in (None, 443)
 
-    def request(self, url, *, params=None, headers=None, accept="json", json_body=None, allow_redirect=None, url_guard=None):
+    def request(self, url, *, params=None, headers=None, accept="json", json_body=None, allow_redirect=None, url_guard=None, timeout=None):
         request_headers = httpx.Headers(headers or {})
         if "Accept" not in request_headers:
             request_headers["Accept"] = {"json": "application/json", "xml": "application/xml, application/atom+xml, application/rss+xml, text/xml;q=0.9, */*;q=0.1",
@@ -58,8 +58,11 @@ class APIAdapter:
                 time.sleep(wait)
             self.last_request = time.monotonic()
             try:
-                response = (self.client.get(url, params=params, headers=request_headers, follow_redirects=False) if json_body is None else
-                    self.client.post(url, params=params, json=json_body, headers=request_headers, follow_redirects=False))
+                request_args = {"params": params, "headers": request_headers, "follow_redirects": False}
+                if timeout is not None:
+                    request_args["timeout"] = timeout
+                response = (self.client.get(url, **request_args) if json_body is None else
+                    self.client.post(url, json=json_body, **request_args))
             except httpx.TimeoutException:
                 raise ServiceError("timeout", "Source did not respond within the request timeout", source=self.source, retryable=True) from None
             except httpx.HTTPError:

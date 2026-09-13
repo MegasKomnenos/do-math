@@ -46,6 +46,10 @@ PQDT는 지연 표시되는 쿠키 창과 별도 export 창을 처리한다. RIS
 
 추가 수리에서는 XML 요청에 JSON Accept 헤더를 보내 EuDML이 HTTP 406을 반환하던 조건을 재현했다. 형식에 맞는 Accept를 보내도록 바꿨다. URL 정제가 XML의 `&amp;`를 깨뜨리던 오류는 네임스페이스를 보존하는 XML 처리로 수리했다. 엔터티 선언·참조의 확장을 거부하며 외부 파일을 읽지 않는 검사도 통과했다. 인증 정보가 없는 URL은 원 표현을 유지하여 공개 서명 payload의 URL이 달라지지 않도록 했다.
 
+2026-09-13 사용자 기준 재검토에서 EuDML의 공통 45초 응답 대기가 실제 성공 지연보다 짧은 경우를 확인했다. CQL은 90초, NLM은 120초로 분리했고 연결 대기는 20초로 유지했다. 두 회귀가 기존 45초를 재현한 뒤 수정된 실제 요청 timeout extension과 공통 client 불변을 확인했다. 사본의 새 SDK는 CQL 45.919초·NLM 28.315초에 성공했지만, 원본 재검증에서는 CQL 91.535초 timeout과 NLM 63.019초 HTTP 504가 발생했다.
+
+주 세션은 검색식 `all="P versus NP"`의 공백을 `%20`과 `+`로 각각 전송하고 응답 대기를 180초로 늘린 별도 진단도 수행했다. 두 요청 모두 연결·TLS는 완료됐고 응답 헤더를 기다린 뒤 각각 63.844초·64.281초에 HTTP 504와 같은 122,858바이트 HTML을 받았다. 실제 요청 전·후·안정 상태의 진단 화면 6개를 직접 읽었다. 이 화면은 EuDML 웹 UI가 아니라 실제 HTTP 실행 도구다. 받은 원 HTML 바이트를 네트워크 없이 브라우저에 렌더링한 두 이미지에서는 사이트 유지보수 안내를 직접 읽었다. 이는 새 원격 페이지 방문이 아닌 해당 응답 본문의 판독이다. 현재 실패를 검색 문법 오류나 영구적인 NLM 미지원으로 분류하지 않는다. 정제 근거는 `data/access-research/user-criteria-eudml/root-review.json`이다.
+
 Theory of Computing의 옛 HTTP Google loader는 HTTPS 페이지에서 검색 입력을 초기화하지 못했다. 같은 저널이 공개한 엔진 ID를 현재 공개 위젯으로 렌더링해 검색·페이지 이동을 통과시켰다. 별도 Google API 키는 사용하지 않았다. 소스 ZIP의 `.bib`가 Windows MIME 추정에서 text/plain이 되던 문제와 엔트리 밖 `#OK` 주석 때문에 파서가 멈추던 문제도 수리했으며, 해당 gs010.bib의 84개 서지 레코드를 추출했다.
 
 출판사 재검증에서는 Oxford의 실제 PDF 전송 호스트를 파일 다운로드에 한해 허용해 PDF를 확보했고, Project Euclid의 초록 영역을 확인해 서지·초록·PDF를 확보했다. Cambridge의 현재 표본은 문헌 메타데이터와 접근 안내를 반환했고, AIP는 서지·초록을 반환했다. 이들의 근거는 `data/validation/20260909-publisher-recheck-*.json`이다. APS는 OA 문헌의 API JSON·PDF 성공과 다른 DOI의 HTTP 401을 확인했다. 별도로 시험한 기관 접근에서는 메타데이터를 얻었지만 PDF는 제한됐다(`data/validation/20260909-aps-institutional.json`). 공개 API 경로와 기관 경로를 별도 source로 제공한다.

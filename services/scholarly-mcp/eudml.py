@@ -2,12 +2,15 @@
 import re
 from urllib.parse import urlsplit
 
+import httpx
 from defusedxml import ElementTree
 
 from api_adapters import APIAdapter
 from scholarly import ServiceError, encoded
 
 NS = {"os": "http://a9.com/-/spec/opensearch/1.1/", "dc": "http://purl.org/dc/elements/1.1/"}
+CQL_TIMEOUT = httpx.Timeout(90, connect=20)
+NLM_TIMEOUT = httpx.Timeout(120, connect=20)
 
 
 def parse_rss(data):
@@ -46,7 +49,7 @@ class EuDML(APIAdapter):
         if cursor or export not in (None, "json", "native", "rss", "xml", "html"):
             raise ServiceError("invalid_options", "EuDML uses a native CQL query, start/limit and json/rss/xml/html export")
         params = {"q": query, "startIndex": start, "count": limit, "format": "rss"}
-        raw, evidence = self.request("https://eudml.org/api/search", params=params, accept="xml")
+        raw, evidence = self.request("https://eudml.org/api/search", params=params, accept="xml", timeout=CQL_TIMEOUT)
         rows, total, offset = parse_rss(raw)
         if offset != start:
             raise ServiceError("range_mismatch", "EuDML returned another result offset", evidence=evidence)
@@ -54,7 +57,7 @@ class EuDML(APIAdapter):
         if export in ("native", "rss"):
             result["export"] = evidence
         elif export in ("xml", "html"):
-            data, native = self.request("https://eudml.org/api/search", params={**params, "format": export}, accept="xml" if export == "xml" else "html")
+            data, native = self.request("https://eudml.org/api/search", params={**params, "format": export}, accept="xml" if export == "xml" else "html", timeout=CQL_TIMEOUT)
             identifiers = set(re.findall(r"(?:urn:eudml:doc:|/doc/)(\d+)", data.decode("utf-8")))
             if not {row["id"] for row in rows}.issubset(identifiers):
                 result.update(status="partial", export={"status": "error", "code": "export_identity_unverified", "artifact": native})
@@ -75,7 +78,7 @@ class EuDML(APIAdapter):
             result = self.search('defName = "' + literal + '"', options={}, limit=20)
             result["status"] = "selection_required" if result["received"] else "not_found"
             return result
-        raw, evidence = self.request("https://eudml.org/api/rest/" + value, params={"format": "eudml-nlm"}, accept="xml")
+        raw, evidence = self.request("https://eudml.org/api/rest/" + value, params={"format": "eudml-nlm"}, accept="xml", timeout=NLM_TIMEOUT)
         root = ElementTree.fromstring(raw)
         headers = [root.find(path) for path in ("./{*}front/{*}article-meta", "./{*}book-meta", "./{*}front/{*}book-meta", "./{*}book-part-meta")]
         header = next((node for node in headers if node is not None), None)
