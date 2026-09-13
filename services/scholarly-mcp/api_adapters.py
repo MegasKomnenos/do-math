@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 import re
 import time
-from urllib.parse import parse_qs, quote, unquote, urljoin, urlsplit
+from urllib.parse import parse_qs, quote, unquote, urlencode, urljoin, urlsplit
 
 import httpx
 from defusedxml import ElementTree
@@ -397,24 +397,63 @@ class Arxiv(APIAdapter):
 
 class DBLP(APIAdapter):
     source = "dblp"
-    hosts = ("dblp.org", "www.dblp.org", "dblp.uni-trier.de")
+    hosts = ("dblp.org", "www.dblp.org", "dblp.uni-trier.de", "dblp.dagstuhl.de")
+    max_limit = 1000
+    min_interval = 6.1
+
+    def _publication_page(self, query, start, limit):
+        query_string = urlencode({"q": query, "f": start, "h": limit, "format": "json"}, quote_via=quote)
+        raw, evidence = self.request("https://dblp.org/search/publ/api?" + query_string)
+        try:
+            hits = raw["result"]["hits"]
+            rows = hits.get("hit", [])
+            if isinstance(rows, dict): rows = [rows]
+            first, sent, total = int(hits['@first']), int(hits['@sent']), int(hits['@total'])
+            records = [r['info'] for r in rows]
+        except (KeyError, TypeError, ValueError):
+            raise ServiceError('invalid_response','DBLP returned an invalid publication page',evidence=evidence) from None
+        if first!=start or sent!=len(rows) or len(rows)>limit or total<0:
+            raise ServiceError('range_mismatch','DBLP returned a different publication window',evidence=evidence)
+        if any(not isinstance(r,dict) or not isinstance(r.get('key'),str) or not r['key'] for r in records):
+            raise ServiceError('invalid_response','DBLP returned a publication without its key',evidence=evidence)
+        return records, total, evidence
 
     def search(self, query, *, options, start=0, limit=20, cursor=None, export=None):
         self.validate(options, start, limit)
         if cursor:
             raise ServiceError("invalid_cursor", "DBLP uses start, not cursor")
-        raw, evidence = self.request("https://dblp.org/search/publ/api", params={"q": query, "f": start, "h": limit, "format": "json"})
-        hits = raw["result"]["hits"]
-        rows = hits.get("hit", [])
-        if isinstance(rows, dict): rows = [rows]
-        if int(hits['@first'])!=start or int(hits['@sent'])!=len(rows) or len(rows)>limit:
-            raise ServiceError('range_mismatch','DBLP returned a different publication window',evidence=evidence)
-        records=[r['info'] for r in rows]
-        result=self.page(records,int(hits['@total']),evidence,query,options,start,limit)
+        records=[];proofs=[];pages=[];errors=[];total=None;keys=set()
+        while len(records)<limit:
+            offset=start+len(records)
+            try:
+                rows, reported, evidence=self._publication_page(query,offset,limit-len(records))
+                if total is not None and reported!=total:
+                    raise ServiceError('result_set_changed','DBLP total changed between publication pages',evidence=evidence)
+                if not rows and offset<reported:
+                    raise ServiceError('incomplete_response','DBLP omitted records before its reported end',evidence=evidence)
+                incoming=[r['key'] for r in rows]
+                if len(set(incoming))!=len(incoming) or keys.intersection(incoming):
+                    raise ServiceError('inconsistent_pagination','DBLP repeated a publication in the requested window',evidence=evidence)
+            except ServiceError as error:
+                if not proofs:raise
+                errors.append(error.result);break
+            total=reported;proofs.append(evidence);keys.update(incoming)
+            pages.append({'artifact':evidence,'native_start':offset,'received':len(rows)})
+            records.extend(rows)
+            if not rows or start+len(records)>=total:break
+        result=self.page(records,total,proofs[0],query,options,start,limit,evidence_refs=[p['ref'] for p in proofs])
+        result['native_pages']=pages
+        if errors:result.update(status='partial',errors=errors)
         from dblp import FORMATS,export_rows
         if export in FORMATS:
+            if any(e.get('code')=='rate_limited' for e in errors):
+                result['export']={'format':export,'artifacts':[],'errors':errors}
+                return result
             result['export']=export_rows(self,records,export)
             if result['export']['errors']:result['status']='partial'
+            return result
+        if export=='native' and len(proofs)>1:
+            result['export']={'format':'native','artifacts':[{'format':'json','artifact':p} for p in proofs],'errors':errors}
             return result
         return self.export_page(result,export)
 

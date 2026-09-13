@@ -611,3 +611,10 @@ tests/live_core_file.py의 새 SDK는22:21:51.377164Z~22:22:01.331314Z에 실제
 원본 `publisher_html.py`는 초록·PDF 제어·Article PDF 영역과 실제로 비어 있는 `.main-content`가 함께 있는 관측 레이아웃만 `not_found/html_fulltext_not_available`로 구별한다. 인식하지 못한 텍스트나 이미지가 본문에 남으면 `not_implemented`를 유지한다. 새 회귀는 수정 전 예상 not_found 대신 not_implemented로 실패했고, 수리 뒤 HTML 검사10개가 통과했다. 원본 서비스의 전체516검사는71.651초에 통과했다.
 
 `data/access-research/user-criteria-springer/root-sdk.json`의 새 원본 SDK 실행은07:23:31Z–07:24:37Z이며15개 판정이 모두 참이다. 음성 문헌은 metadata·abstract·28쪽 PDF가 available이고 native HTML만 not_found인 partial이다. PDF는372,391바이트이며 첫 쪽 제목·DOI, 실제 이미지 운반을 확인하고 주 세션도 첫 쪽을 직접 읽었다. 양성 문헌의 native HTML7개 절 추출도 성공했다. 이 수리는 PDF-only 문헌에 새 HTML을 제공한 것이 아니라, 실제 형식 부재와 파서가 식별하지 못한 본문을 구별한 것이다. 다른23개 CLI 과제의 사용자 기준 재검토와 원본 통합은 별도로 진행 중이다.
+
+
+2026-09-13 DBLP 사용자 기준 검토와 원본 통합. Trier의 같은 q/f/h/format·같은 요청 헤더에서 + 공백 요청은500 HTML30,529바이트, %20 요청은200 JSON1,706바이트·2건이었다. 추가3초 대기만 한 + 요청도 같은500이어서 단순 대기를 해법으로 계산하지 않았다. URI 직렬화, 공식 Dagstuhl 문헌 링크, 호출 간격 회귀는 원본의 실패부터 관측해 수리했다. 원본의 기존 BibTeX/RIS parser는 정상 작동하므로 사본이 제안한 별도 parser와 scholarly.py 변경은 통합하지 않았다.
+
+추가 확인한 DBLP limit100 기본값은 실제 SDK101 요청에서 invalid_range를 냈다. 주 세션은 이 실제 실행 도구의 입력 전·오류 후·안정 화면을 직접 읽었다. 상한1,000 수리만으로는 원 API가100개만 돌려주므로, 원 @first·@sent·total·key를 검증하면서 다음 f를 조회해 범위를 채우도록 했다. 다중 native export는 원 JSON 응답을 각각 보존한다. 뒤 페이지429를 모의 재현한 검사는 수리 전 ok·2건과 수리 후 partial·2건·next2·Retry-After60을 구별했다.
+
+실제101건 호출은2응답을 이어101개 고유 key와 추출101건을 통과했다.1,000건 호출의3초 대조는600건 뒤429였고 그 실제 실행 전후·안정 화면을 직접 읽었다.6.1초 대조는10응답·1,000건·고유 key1,000·추출1,000으로 성공했고, 같은 설정의 최종 원본 server.py도 같은 결과를 반환했다. 정제한 전후 실행과 각 페이지는 `data/access-research/user-criteria-dblp/root-limits.json`에 있다. 원본 전체523검사가94.186초에 통과했다. 마지막 원본 SDK는08:11:51Z부터 검색 창0·1·3, Cook71의7형식 내보내기와 각각의 추출을 포함한13호출을 모두 통과했다. `data/access-research/user-criteria-dblp/root-sdk.json`이 해당 최종 결과다.

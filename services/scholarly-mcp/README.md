@@ -198,7 +198,7 @@ IOP도 fulltext_html로 원 본문·TeX·그림을 제공한다. supplementary�
 JSTOR는 확인된 KUDOS 기관 세션에서 원 검색 API를 사용한다. 필드 검색·정렬·접근 범위·기간·자료 유형·주제·언어 조건은 describe_source를 따른다. 원25건 페이지의 표식으로 임의 창을 회수하며 total은 현재 결과군, source_total은 최초 전체 건수다. 이미지 자료도 별도 content_types 조건으로 검색할 수 있다. JSON/CSV와 선택 문헌별 RIS/BibTeX를 제공하고 이름은 제목 후보로 반환한다. fulltext는 선택한 문헌의 원 Download로 PDF를 회수하며 표지·서지 쪽을 포함한다. 혼합 결과군은 start/limit를 각각 적용하고 result_groups·레코드의 result_group으로 범위와 귀속을 보존한다. 이미지 미리보기와 전체 검색의 순서가 달라 원 이미지 결과군을 펼쳐 순회한다. 음수 연도로 BCE 기간을 지정하고 snippets=true로 질의별 원 발췌문을 회수할 수 있다. 발췌문을 초록으로 표시하지 않는다. fulltext는 원 PDF·JPEG/PNG·MP3를 회수하고 supplementary는 원 첨부와 제공된 WebVTT 전사문을 회수한다. 자동 전사문은 원 transcript_type을 유지하며 정확성을 판정하지 않는다. 원 다운로드가 restricted인 항목과 disabled인 항목을 구별한다. 실제 동영상 표본의 파일 다운로드는 disabled였고 전사문은 회수했다. 문헌 파일·첨부는 같은 페이지에서 처리한다.
 
 
-DBLP의 공개 API는 원 metarefresh 확인을 HTTP 클라이언트에서 처리한다. 제공자가 지정한 대기와 원 API URL로의 복귀를 검증하고 일회성 값·쿠키를 내부에 유지한다. 실제 MCP에서 P versus NP 검색49건 중2건과 추출을 확인했다. 다른 확인 방식이나 검증 실패는 접근 제한으로 반환한다.
+DBLP는 limit 1..1000과 임의 start를 지원한다. 원 응답이100건씩 끝나면 f를 이어 요청 범위를 채우고 native_pages에 각 원 응답을 보존한다. 다음 페이지가 실패하면 받은 레코드와 errors·next를 partial로 반환한다. 검색 공백은 %20으로 보내고 실제 +는 %2B로 보존한다. 클라이언트는 연속 요청에6.1초 간격을 두며, 이는 자료원이 보장한 제한값이 아니다. DBLP의 공개 API는 원 metarefresh 확인을 HTTP 클라이언트에서 처리한다. 제공자가 지정한 대기와 원 API URL로의 복귀를 검증하고 일회성 값·쿠키를 내부에 유지한다. 실제 MCP에서 P versus NP 검색49건 중2건과 추출을 확인했다. 다른 확인 방식이나 검증 실패는 접근 제한으로 반환한다.
 
 
 DBLP는 publication key·문헌 URL·이름을 받는다. 이름은 후보이며 원 XML의 key를 대조해 문헌을 조회한다. 검색과 문헌 조회에서 XML·BibTeX·RIS·N-Triples·Turtle·RDF/XML·plain 원 파일을 제공한다. 형식별 오류가 다른 파일과 metadata를 지우지 않는다. XML 형식은 요소, BibTeX/RIS는 필드, N-Triples·Turtle·plain은 줄 단위로 추출한다.

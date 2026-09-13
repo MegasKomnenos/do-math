@@ -1,4 +1,4 @@
-49개 자료원의 제한 판단을 현행 코드와 원 UI/API·실제 SDK·독립 검토에 대조한 표다. 최초 기준선의 전체514검사가 통과했다. 이후23개 CLI 과제에 사용자 세 기준을 적용해 재검토 중이며, 원본의 Springer 형식 분류 통합까지는 전체516검사와 새 SDK가 통과했다. 표의 판정은 자료원의 모든 미래 기능이나 모든 조합을 보증하지 않는다. 확인된 구현 결함과 현재 접근 조건·미확정 표본을 구별한다.
+49개 자료원의 제한 판단을 현행 코드와 원 UI/API·실제 SDK·독립 검토에 대조한 표다. 최초 기준선의 전체514검사가 통과했다. 이후23개 CLI 과제에 사용자 세 기준을 적용해 재검토 중이며, 원본의 Springer와 DBLP 수리 통합까지는 전체523검사와 새 SDK가 통과했다. 표의 판정은 자료원의 모든 미래 기능이나 모든 조합을 보증하지 않는다. 확인된 구현 결함과 현재 접근 조건·미확정 표본을 구별한다.
 
 [현재 지원표](SUPPORT.md) · [실패 지점 분석](LIMITATIONS-AUDIT.md) · [검증 기록](VALIDATION.md) · [접근 이력](ACCESS-RESEARCH.md)
 
@@ -14,7 +14,7 @@
 | PQDT Global (`pqdt`) | 실제 기능 복원 | 21개 facet include를 실제 적용해 3,335건을 확인했다. 과거 20값 실패는 검색 실패가 아니라 bidi·공백·괄호 validator 결함이었다. 7 export, 40쪽 fulltext, 1쪽 서지 PDF, 부분 결과 보존도 양성이다. | pqdt-final/sdk-live.json; pqdt-final/sdk-recheck.json; range-cap-audit.json |
 | zbMATH Open (`zbmath`) | 유효한 source/사용자 조건 | API window·DOI·references는 양성이다. limit 100과 licensed review text 제한은 provider endpoint/권리 상태다. | live_mcp_arbitrary_window_doi_legacy_link_license_state_references |
 | arXiv (`arxiv`) | 유효한 source/사용자 조건 | 3초 cadence와 version별 HTML/source 제공 차이를 지키면서 PDF·HTML·TeX source를 검증했다. | live_mcp_search_pinned_html_source_archive_tex_extract |
-| DBLP (`dblp`) | 현재 확인 못함 | timed refresh와 7 export는 양성이지만 이후 공개 API run은 challenge가 재현됐다. 이는 문헌 부재가 아니다. | live_mcp_native_timed_refresh_search_seven_exports_name_and_record_identity |
+| DBLP (`dblp`) | 실제 기능 복원 | 같은 검색의 + 인코딩500과 %20 인코딩200을 대조해 요청을 수리했다. 로컬100건 제한을 제거하고 현재100건씩 오는 응답을 이어 원본 SDK에서101건·1000건을 회수했다. 7형식 내보내기·추출도 성공했으며, 다음 페이지 오류는 기회수 레코드와 함께 partial로 보존한다. | user-criteria-dblp/root-sdk.json; user-criteria-dblp/root-limits.json; dispatch/20260913T021511Z/dblp-challenge/criteria-review.json |
 | DBLP Knowledge Graph (`dblp-kg`) | 범위 한정 정상 guard | 공개 SPARQL SELECT의 행·CSV/TSV·identity를 제공한다. ASK/CONSTRUCT/UPDATE와 total은 현재 선택 역할 밖이다. | live_mcp_sparql_window_native_csv_tsv_key_doi_name; native_tsv_year_type_mismatch |
 | ECCC (`eccc`) | 범위 한정 정상 guard | 단일 원 UI query와 pinned revision을 제공하며 total 미제공과 snippet/abstract 구별을 보존한다. | live_mcp_name_candidates_search_and_pinned_revision_fetch |
 | DROPS / LIPIcs (`drops`) | 범위 한정 정상 guard | 서지·PDF/HTML·CodeMeta·references는 제공하고 외부 supplementary는 명시 링크로만 남긴다. | live_mcp_native_exports_pdf_html_codemeta_and_supplementary_references |
