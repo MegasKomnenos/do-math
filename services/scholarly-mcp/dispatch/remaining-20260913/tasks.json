@@ -1,0 +1,321 @@
+[
+  {
+    "id": "ams-expression",
+    "source": "ams",
+    "title": "AMS 동적 고급 검색식의 서버 null 오류",
+    "kind": "failure",
+    "known": "원 UI의 Title/contains/algebra 제출 뒤 HTTP200 내부 server-error/null, 화면0건. 기본 검색·XLSX·PDF는 양성.",
+    "investigate": "UI 입력칸·Edit Query·실제 직렬화·필드별 조합·양성 기본 검색을 대조하고 최초 오류 응답을 국소화한다. native expression 기능을 끝까지 구현·검증하거나 원 서버 제약을 입증한다.",
+    "entry_files": [
+      "ams.py",
+      "tests/live_ams_expression.py"
+    ],
+    "evidence": "limitations-audit/institutional-ams-timeline.json"
+  },
+  {
+    "id": "siam-institution",
+    "source": "siam",
+    "title": "SIAM 비공개 논문의 기관 원문 접근",
+    "kind": "failure",
+    "known": "DOI10.1137/24M1711108은 KNU2026 실제 바로가기→KUDOS→libproxy 뒤 Get Access, PDF302로 동일 초록 복귀. Kyungpook0/University184 기관 후보 대조에서도 연결 미확인.",
+    "investigate": "현 구독 목록의 정확한 저널/연도와 실제 proxy·기관표시·PDF동작을 비교한다. 공개 양성 PDF와 접근확인 해제 이후의 기관 인증을 구별하고 제공자가 실제 안내하는 기존기관 로그인 경로들을 조사한다. 계약상 권리 부재를 추정하지 않는다.",
+    "entry_files": [
+      "siam.py",
+      "native_browser.py"
+    ],
+    "evidence": "siam-institutional-recheck.json; siam-institution-search-control.json"
+  },
+  {
+    "id": "dblp-challenge",
+    "source": "dblp",
+    "title": "DBLP 공개 API의 재발하는 접근 확인",
+    "kind": "failure",
+    "known": "timed refresh 검색·일곱 export 성공 후 후속 API에서 challenge 재발.",
+    "investigate": "공식 기본/미러·원 timed refresh·쿠키·클라이언트별 응답과 실제 확인 화면을 비교한다. 별도 API자격 없이 고정 API 접근을 안정화하고 검색·단건·내보내기 새 SDK를 검증한다.",
+    "entry_files": [
+      "dblp.py",
+      "dblp_access.py",
+      "tests/live_dblp_documents.py"
+    ],
+    "evidence": "limitations-audit/final-matrix.json; data/validation의 dblp 보고"
+  },
+  {
+    "id": "semantic-scholar-rate",
+    "source": "semantic-scholar",
+    "title": "Semantic Scholar 무자격 요청의 429",
+    "kind": "failure",
+    "known": "이전 검색 양성, 최신 최소 paperId/title 요청도 첫429; Retry-After 없음.",
+    "investigate": "공식 무자격 endpoint별 검색·단건·관계·BibTeX와 현재 rate 정책을 구별한다. 원문헌 UI와 응답을 대조하고 간격/서버안내를 준수한다. 같은429 연타 대신 새로운 근거가 있는 경로·양성 대조·충분한 대기 후 최소 요청으로 판단한다.",
+    "entry_files": [
+      "semantic_scholar.py",
+      "api_adapters.py",
+      "tests/live_semantic_scholar.py"
+    ],
+    "evidence": "api-recheck/semantic-scholar.json; limitations-audit/public-final-semantic-scholar.json"
+  },
+  {
+    "id": "eudml-nlm",
+    "source": "eudml",
+    "title": "EuDML 단건 NLM 응답 시간초과",
+    "kind": "failure",
+    "known": "narrow CQL 검색200, direct record는 response header 대기 timeout. 기존 NLM article-meta 양성 있음.",
+    "investigate": "검색이 실제 제공한 단건·NLM 링크와 공식 메타데이터 경로를 따라 같은 문헌·MIME·본문을 대조한다. 연결/TTFB/본문수신/파싱 실패를 분리하고 실제 페이지도 판독한다.",
+    "entry_files": [
+      "eudml.py",
+      "tests/test_eudml.py"
+    ],
+    "evidence": "limitations-audit/independent-eudml-connectivity.json; limitations-audit/independent-eudml-artifacts.json"
+  },
+  {
+    "id": "core-indexed-text",
+    "source": "core",
+    "title": "CORE API 색인 전문의 공개 접근 제한",
+    "kind": "failure",
+    "known": "fullText가 Not available for public API users. 안내문인 표본을 restricted로 처리. 별도 명시 PDF 입력은 이미 구현됐으며26쪽·8쪽 SDK 양성.",
+    "investigate": "현재 공개 API가 실제 색인본문을 제공하는 조건과 표본을 조사한다. 제한안내·빈필드·실제텍스트를 구별하고 성공가능 표본과 공식정책을 대조한다. 기존명시PDF성공을 indexed fullText성공으로 바꾸지 않는다.",
+    "entry_files": [
+      "api_adapters.py",
+      "tests/test_core_public.py"
+    ],
+    "evidence": "core-public-reader/core-public-reader.json; api-recheck/core-sdk.json"
+  },
+  {
+    "id": "core-work-download",
+    "source": "core",
+    "title": "CORE work download의 404",
+    "kind": "failure",
+    "known": "work340524929 metadata200/다운로드404. 연결output1511018은 현재 UI상 저자 요청으로 전문 제거. 이 표본만으로 download endpoint 부재를 판단할 수 없음.",
+    "investigate": "원문이 실제 존재하는 다른 work의 공식 work/output관계와 API download명세·원응답을 대조한다. 삭제표본을 양성검증에 쓰지 않고 endpoint/ID종류/원문제공상태를 분리한다.",
+    "entry_files": [
+      "api_adapters.py",
+      "tests/live_core_public.py"
+    ],
+    "evidence": "api-recheck/core-download.json; core-public-reader/core-public-reader.json"
+  },
+  {
+    "id": "core-output-download",
+    "source": "core",
+    "title": "CORE output download의 429",
+    "kind": "failure",
+    "known": "output1511018 download429,436.806초 무호출 뒤에도429/remaining0. 같은output의 웹은 전문제거 고지. 명시다른PDF는 양성.",
+    "investigate": "공식 output endpoint의 정책·원문양성인 output·호출간격·응답헤더를 대조해429가발생하는정확단계를분리한다. 제거상태를rate원인으로단정하지않는다. 키·계정·이메일없이사용가능한범위만 구현한다.",
+    "entry_files": [
+      "api_adapters.py"
+    ],
+    "evidence": "api-recheck/core-download.json; core-public-reader/core-file-sdk.json"
+  },
+  {
+    "id": "core-files01",
+    "source": "core",
+    "title": "CORE files01 파일 서버의 522",
+    "kind": "failure",
+    "known": "실제색인URL https://files01.core.ac.uk/download/pdf/287883846.pdf가20초후522HTML. 다른output의fileserver-az→pdfCORE양성.",
+    "investigate": "같은문헌의현재공식UI가실제로제공하는파일연쇄와실패호스트를대조한다. 호스트를추정치환하지말고원redirect/현재제어로새경로를확립한다.502/522/확인HTML/PDF를구별하며새양성SDK까지검증한다.",
+    "entry_files": [
+      "api_adapters.py",
+      "tests/live_core_file.py",
+      "tests/test_core_files.py"
+    ],
+    "evidence": "core-public-reader/indexed-file.json; core-public-reader/core-file-sdk.json"
+  },
+  {
+    "id": "swh-vault",
+    "source": "software-heritage",
+    "title": "Software Heritage 특정 Vault 작업의 new·404",
+    "kind": "failure",
+    "known": "선택flat작업new/원fetch_url404. 동일트리는원directory/content와검증캐시로20directory·92파일완료.",
+    "investigate": "기존Vault정확대상·작업ID·상태·fetch_url을회수하고공식flat/gitfast계약과현재준비여부를대조한다. 준비된양성작업과미준비작업을구별하며필요한native prepare/poll을rate정책안에서수행한다. 코드실행·외부메시지없이원압축본을검증한다.",
+    "entry_files": [
+      "api_adapters.py",
+      "software_heritage.py",
+      "tests/live_swh_vault.py"
+    ],
+    "evidence": "limitations-audit/swh-vault-timeline.json; limitations-audit/swh-files-sdk.json"
+  },
+  {
+    "id": "oxford-title-export",
+    "source": "oxford",
+    "title": "Oxford 대량 title-list 내보내기 CAPTCHA",
+    "kind": "failure",
+    "known": "문헌검색·citation·files양성,별도title-list export는CAPTCHA경계. 과거기록의정확한제어/범위를먼저회수해야함.",
+    "investigate": "저널보유목록내보내기와문헌검색export를분리해문제제어의실제역할을확인한다. 원화면확인절차를직접판독·정상조작하고원export파일·범위·형식을검증한다. 이미권한이있는이번조사에서과거역할보류문구만으로종료하지않는다.",
+    "entry_files": [
+      "silverchair.py",
+      "publishers.py",
+      "registry.py"
+    ],
+    "evidence": "limitations-audit/final-matrix.json; ACCESS-RESEARCH.md에서 Oxford/title-list 원근거 추적"
+  },
+  {
+    "id": "jstor-video",
+    "source": "jstor",
+    "title": "JSTOR 동영상 다운로드 비활성",
+    "kind": "failure",
+    "known": "시험video1건download disabled. PDF·이미지·MP3·transcript양성.",
+    "investigate": "기존video표본과download가있는다른공식공개표본을대조한다. 화면상disabled·metadataflag·실제제어·native다운로드응답을분리한다. 제공자가허용한다운로드만회수하고단순스트림재생가능을다운로드권한으로바꾸지않는다.",
+    "entry_files": [
+      "jstor.py",
+      "tests/live_jstor_extras.py"
+    ],
+    "evidence": "VALIDATION.md의 JSTOR video 기록과 원보고"
+  },
+  {
+    "id": "degruyter-broken-supplement",
+    "source": "de-gruyter",
+    "title": "De Gruyter 오래된 보충 ZIP 링크 404",
+    "kind": "failure",
+    "known": "DOI10.2202/1558-3708.1089의실제Data and code제어 snde1089_supplementary_2.zip 요청404.",
+    "investigate": "현재같은DOI의보충제어·파일명·redirect·새플랫폼이관·공식버전링크를조사하고양성보충파일과비교한다. 문헌다른파일을대체하지않고원파일정체성과ZIP구조를검증한다.",
+    "entry_files": [
+      "degruyter.py",
+      "supplements.py"
+    ],
+    "evidence": "data/validation/20260910T093333Z-de-gruyter-supplements-mcp.json"
+  },
+  {
+    "id": "degruyter-citation",
+    "source": "de-gruyter",
+    "title": "De Gruyter DOI 없는 자료의 인용문 내보내기",
+    "kind": "failure",
+    "known": "일부DOI없는자료유형의citation부재로기록됨. 실제표본·제어는원근거에서회수해야함.",
+    "investigate": "DOI없음과자료원ID기반citation기능의부재를구별한다. 도서·장등해당실패유형의정상화면·export제어·요청을대조하고원서지export가능성을끝까지확인한다.",
+    "entry_files": [
+      "degruyter.py",
+      "publishers.py"
+    ],
+    "evidence": "limitations-audit/final-matrix.json; VALIDATION.md의 De Gruyter 원보고"
+  },
+  {
+    "id": "sciencedirect-export",
+    "source": "science-direct",
+    "title": "ScienceDirect 일부 결과의 export 제어 부재",
+    "kind": "failure",
+    "known": "일반cross-page검색·citation은양성이나일부row에export제어없음.",
+    "investigate": "해당row유형과PII를원기록에서회수하고목록·상세·bulk선택export의실제가능범위를대조한다. 제공필드와선택식별자결속을확인해기능누락이면구현한다.",
+    "entry_files": [
+      "sciencedirect.py",
+      "tests/live_science_direct_extended.py"
+    ],
+    "evidence": "limitations-audit/final-matrix.json; VALIDATION.md의 ScienceDirect extended 결과"
+  },
+  {
+    "id": "sciencedirect-pdf",
+    "source": "science-direct",
+    "title": "ScienceDirect 일부 문헌의 PDF 제어 부재",
+    "kind": "failure",
+    "known": "일반PDF·보충·video는양성이나일부row/문헌PDF제어없음.",
+    "investigate": "원실패PII·문헌유형·권한과실제상세본문·View PDF제어·원준비페이지를대조한다. 목차/서지/초록을논문PDF로오인하지않고같은문헌의실제제공형식을확인한다.",
+    "entry_files": [
+      "sciencedirect.py",
+      "native_browser.py"
+    ],
+    "evidence": "limitations-audit/final-matrix.json; VALIDATION.md의 ScienceDirect PDF control 기록"
+  },
+  {
+    "id": "taylor-abstract",
+    "source": "taylor-francis",
+    "title": "Taylor & Francis 인용문에 없는 초록",
+    "kind": "failure",
+    "known": "native citation에abstract가없는표본이있음. 검색·PDF·보충표는양성.",
+    "investigate": "citation필드부재와문헌자체초록부재를분리한다. 같은DOI의원상세HTML·메타데이터·공식abstract제어·내보내기를대조하고원초록이있으면기계회수로연결한다.",
+    "entry_files": [
+      "publishers.py",
+      "supplements.py"
+    ],
+    "evidence": "VALIDATION.md의 Taylor & Francis 초록 기록"
+  },
+  {
+    "id": "dblp-kg-tsv",
+    "source": "dblp-kg",
+    "title": "DBLP KG 원 TSV의 RDF 자료형 불일치",
+    "kind": "failure",
+    "known": "JSON xsd:gYear1997이TSV정수표기로바뀌는원응답차이. 현재partial/export_term_mismatch와source_export보존.",
+    "investigate": "공식SPARQL결과형식·동일SELECT의JSON/TSV/CSV를대조한다. 쿼리cast/원출력옵션의의미와datatype손실을분리하고원데이터를고쳐쓰지않는범위에서정확한내보내기나설명개선을확인한다.",
+    "entry_files": [
+      "dblp_kg.py",
+      "tests/test_dblp_kg.py"
+    ],
+    "evidence": "data/validation/20260910T132945Z-dblp-kg-terms.json; data/validation/20260910T133158Z-dblp-kg-extra-terms.json"
+  },
+  {
+    "id": "siam-last-condition",
+    "source": "siam",
+    "title": "SIAM 52번째 조건의 의미 적용 검증",
+    "kind": "unconfirmed",
+    "known": "52필드가원query에보존되고양성17건이었으나마지막조건만바꾼대조는challenge·timeout·blank shell.",
+    "investigate": "같은앞51조건을고정하고52번째조건만양성/불가능/제외로바꾼원UI또는동일native요청을대조한다. 직전/직후입력·요청식·결과·조건소실을검증한다. 단순문자열보존을의미적용으로세지않는다.",
+    "entry_files": [
+      "siam.py",
+      "tests/live_siam_semantic_52.py",
+      "tests/live_siam_52.py"
+    ],
+    "evidence": "siam-52-live.json; semantic-cap-diagnostic.json; siam-semantic-52.json"
+  },
+  {
+    "id": "numdam-date-only",
+    "source": "numdam",
+    "title": "Numdam 기본 검색어 없이 날짜만 검색",
+    "kind": "unconfirmed",
+    "known": "일반11조건의끝조건의미검증완료. blank-primary/date-only탐색은홈페이지연결timeout으로입력미수행.",
+    "investigate": "실제빈기본행+날짜조건의form제출·query직렬화·연도별양성/음성대조를실행한다. 날짜가필터인지검색조건인지원UI대로구별하고가능하면query빈입력지원·설명·회귀·SDK를완성한다.",
+    "entry_files": [
+      "numdam.py",
+      "tests/live_semantic_caps_final.py",
+      "tests/test_numdam.py"
+    ],
+    "evidence": "limitations-audit/numdam-date-only.json"
+  },
+  {
+    "id": "ieee-media-flag",
+    "source": "ieee-xplore",
+    "title": "IEEE multimedia=false일 때의 Media 탐색 누락 가능성",
+    "kind": "unconfirmed",
+    "known": "현재Media탭탐색은sections.multimedia=true일때만수행. showHtml=false의HTML양성은이미복원. graphicalAbstract video는별도지원.",
+    "investigate": "공식video/Media양성자료와false/true표본의실제제어·metadata·응답을대조한다. false인데Media제어있는표본을탐색하고flag를실제제어보다우선한오류가있으면제거한다. 그래픽초록과Media목록은구별한다.",
+    "entry_files": [
+      "ieee.py",
+      "ieee_media.py",
+      "tests/live_ieee_media.py"
+    ],
+    "evidence": "VALIDATION.md의 IEEE11259066·10488889·7780459 기록"
+  },
+  {
+    "id": "crossmark-semantics",
+    "source": "crossmark",
+    "title": "Crossmark 정정·철회 필드 의미와 누락 범위",
+    "kind": "unconfirmed",
+    "known": "Crossref update/assertion조회·추출양성이나필드별의미전수검증미수행. 누락을정정철회없음으로단정할수없음.",
+    "investigate": "공식Crossmark/Crossref필드계약과실제정정·철회·업데이트·정책만등록·미등록양성음성DOI를대조한다. update-to/relation/assertion과원Crossmark표시의정체성·방향·날짜·누락을검증해설명·필요구현·SDK를완성한다.",
+    "entry_files": [
+      "api_adapters.py",
+      "registry.py"
+    ],
+    "evidence": "data/validation/20260909T080306742349Z-crossmark-workflow.json; VALIDATION.md"
+  },
+  {
+    "id": "springer-html-negative",
+    "source": "springer",
+    "title": "기관 접근이 있는 Springer 문헌의 HTML 전문 부재",
+    "kind": "unconfirmed",
+    "known": "DOI10.1007/s00037-008-0249-x는KNU표시·PDF제어있지만SecN0/abstract-only. 비NatureHTML기능전체는다른문헌으로이미양성.",
+    "investigate": "해당구형문헌의실제HTML전문제공여부·다른원본문제어·PDF상태를대조한다. SecN선택자부재를전문부재로단정하지말고실제화면·원metadata·제공형식·양성레이아웃으로검증한다.",
+    "entry_files": [
+      "publisher_html.py",
+      "publishers.py"
+    ],
+    "evidence": "limitations-audit/independent-springer-negative.json"
+  },
+  {
+    "id": "figshare-historical-members",
+    "source": "figshare",
+    "title": "Figshare 과거 collection 판본의 구성원 목록",
+    "kind": "unconfirmed",
+    "known": "과거version metadata는있지만구성원목록공개OpenAPI경로미확인. 추측경로404여서현재목록으로대체하지않고not_implemented.",
+    "investigate": "공식versioned collection UI/API·원응답·실제판본2개이상의구성원차이를대조한다. 원UI가현재구성원을보여주는지과거목록인지확인하고판본정체성을지키는공개경로가있으면구현한다.",
+    "entry_files": [
+      "figshare.py",
+      "tests/test_figshare.py"
+    ],
+    "evidence": "VALIDATION.md의 Figshare collection version 기록; limitations-audit/final-matrix.json"
+  }
+]
