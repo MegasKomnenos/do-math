@@ -604,3 +604,10 @@ CORE의 기존 works 전용 입력은 이 공개 파일 URL을 거부했으므�
 tests/live_core_file.py의 새 SDK는22:21:51.377164Z~22:22:01.331314Z에 실제 HTTP 요청으로26쪽 파일을 다시 받아 completed=true였다.663,749바이트·첫 쪽 제목/DOI·마지막26쪽·ImageContent가 모두 통과했고 직접 받은 파일과 SHA-256도 같았다. 결과와 manifest5개에서 SAS sig query는0이었다. core-public-reader/core-file-sdk.json과 independent-review.json/md에 실측·독립 검토 범위를 기록했다. 새7검사는 기존 입력 거부와 sig 미정제를 RED로 재현한 뒤 GREEN이 됐고 기존 core/public 포함33검사를 통과했다. 최종 전체514검사는26.654초에 통과했다. 기존 catalog16검사와 의존성 검사의 통과도 유지하며 새 의존성은 없다.
 
 마지막으로 원 UI가 지정한 https://core.ac.uk/download/213561553.pdf 자체도 브라우저 상태 없는 새 SDK에서 대조했다.22:29:49.832944Z~22:30:01.370943Z의 core-public-reader/core-file-ui-sdk.json은329,196바이트·8쪽·첫 쪽 제목·마지막8쪽·ImageContent를 모두 통과했다. 원 UI에서 받은 파일과 SHA-256도 같다. 이 표본에는 DOI 일치 조건을 부여하지 않았다. 첫 CORE 호스트부터 파일 서버까지의 실제 원 연쇄와 다른26쪽 파일의 SDK가 모두 양성이며, files01의 별도522 표본은 그대로 남는다.
+
+
+2026-09-13 사용자 세 기준에 따라 Springer 음성 문헌을 주 세션이 새로 재현했다. `data/access-research/user-criteria-springer/root-ui.json`은 수정 전·후 두 실행과 정확한 parser 시각을 보존한다. 07:16:30Z의 수정 전 DOI10.1007/s00037-008-0249-x는 `not_implemented/html_fulltext_not_identified`였으며 직전·직후·안정 전체 화면을 주 세션이 직접 읽었다. 화면에는 기관 접근, 초록, Article PDF, 저자·서지 정보가 있고 원 `.main-content`는 자식 요소와 텍스트가 모두 없었다. 같은 소유 브라우저의 양성 DOI10.1016/S1018-3639(18)30727-X는 본문7개와 전체29,102자를 반환했다.
+
+원본 `publisher_html.py`는 초록·PDF 제어·Article PDF 영역과 실제로 비어 있는 `.main-content`가 함께 있는 관측 레이아웃만 `not_found/html_fulltext_not_available`로 구별한다. 인식하지 못한 텍스트나 이미지가 본문에 남으면 `not_implemented`를 유지한다. 새 회귀는 수정 전 예상 not_found 대신 not_implemented로 실패했고, 수리 뒤 HTML 검사10개가 통과했다. 원본 서비스의 전체516검사는71.651초에 통과했다.
+
+`data/access-research/user-criteria-springer/root-sdk.json`의 새 원본 SDK 실행은07:23:31Z–07:24:37Z이며15개 판정이 모두 참이다. 음성 문헌은 metadata·abstract·28쪽 PDF가 available이고 native HTML만 not_found인 partial이다. PDF는372,391바이트이며 첫 쪽 제목·DOI, 실제 이미지 운반을 확인하고 주 세션도 첫 쪽을 직접 읽었다. 양성 문헌의 native HTML7개 절 추출도 성공했다. 이 수리는 PDF-only 문헌에 새 HTML을 제공한 것이 아니라, 실제 형식 부재와 파서가 식별하지 못한 본문을 구별한 것이다. 다른23개 CLI 과제의 사용자 기준 재검토와 원본 통합은 별도로 진행 중이다.

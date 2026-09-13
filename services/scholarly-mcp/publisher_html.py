@@ -34,6 +34,13 @@ def springer_body(raw):
     body=bodies[0];sections=[node for node in body.select('[id^="Sec"][id$="-section"]')
                             if node.select_one('.c-article-section__content') and node.select_one('.c-article-section__content').get_text(' ',strip=True)]
     if not sections:
+        abstract=body.select_one('#Abs1-section .c-article-section__content')
+        preview=body.select_one('#preview-section')
+        main_content=body.select_one('.main-content')
+        pdf_control=soup.select_one('meta[name="citation_pdf_url"][content],a[data-test="pdf-link"][href]')
+        if (abstract and abstract.get_text(' ',strip=True) and preview and pdf_control
+                and main_content is not None and not main_content.find(True) and not main_content.get_text(strip=True)):
+            raise ServiceError('html_fulltext_not_available','Springer provides this article as abstract and PDF without a native HTML fulltext body',status='not_found')
         raise ServiceError('html_fulltext_not_identified','The Springer page exposes no substantive native article section',status='not_implemented')
     for node in body.select('.c-article-recommendations,.app-explore-related-subjects'):node.decompose()
     return body

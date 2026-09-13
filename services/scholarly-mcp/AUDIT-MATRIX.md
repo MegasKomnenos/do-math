@@ -1,4 +1,4 @@
-49개 자료원의 제한 판단을 현행 코드와 원 UI/API·실제 SDK·독립 검토에 대조한 표다. 마지막 코드의 전체514검사가 통과했다. 표의 판정은 자료원의 모든 미래 기능이나 모든 조합을 보증하지 않는다. 확인된 구현 결함과 현재 접근 조건·미확정 표본을 구별한다.
+49개 자료원의 제한 판단을 현행 코드와 원 UI/API·실제 SDK·독립 검토에 대조한 표다. 최초 기준선의 전체514검사가 통과했다. 이후23개 CLI 과제에 사용자 세 기준을 적용해 재검토 중이며, 원본의 Springer 형식 분류 통합까지는 전체516검사와 새 SDK가 통과했다. 표의 판정은 자료원의 모든 미래 기능이나 모든 조합을 보증하지 않는다. 확인된 구현 결함과 현재 접근 조건·미확정 표본을 구별한다.
 
 [현재 지원표](SUPPORT.md) · [실패 지점 분석](LIMITATIONS-AUDIT.md) · [검증 기록](VALIDATION.md) · [접근 이력](ACCESS-RESEARCH.md)
 
@@ -42,7 +42,7 @@
 | JSTOR (`jstor`) | 유효한 source/사용자 조건 | facets/citations/PDF/images/audio/transcripts/supplement는 양성이다. 시험 video 한 건은 download disabled였고 challenge가 재발할 수 있다. | live_mcp_search_image_sorts_facets_citations_pdf_mp3_transcripts_supplement; native_video_download_disabled |
 | Oxford University Press (`oxford`) | 유효한 source/사용자 조건 | 문헌 검색·citation·files는 양성이다. bulk title-list export의 CAPTCHA는 별도 기능이며 문헌 전체 접근 제한이 아니다. | live_mcp_search_citation_metadata_abstract_pagination_and_supplement_pdf |
 | ScienceDirect (`science-direct`) | 유효한 source/사용자 조건 | cross-page search·facets·citations·PDF·supplement·video는 양성이다. 일부 row의 export/PDF control 부재는 해당 문헌 상태로 보존한다. | live_mcp_search_cross_page_ris_zero_facets_exact_publication_three_citations_pdf_supplement_video |
-| Springer Nature (`springer`) | 실제 기능 복원 | Nature 전용 제한을 없애 link.springer.com의 실제 SecN body도 HTML/TeX/figures로 회수했다. 음성 표본은 KNU access와 PDF control이 있었으나 SecN0·abstract-only였다. paywall로 분류하지 않는다. | limitations-audit/independent-springer-sdk.json; independent-springer-negative.json; root-image-review.md |
+| Springer Nature (`springer`) | 실제 기능 복원 | Nature 전용 제한을 없애 link.springer.com의 실제 SecN body도 HTML/TeX/figures로 회수했다. 음성 표본은 KNU access와28쪽 PDF가 있지만 실제 main-content가 비어 있다. 새 전후 화면·원 HTML·SDK로 확인해 이 레이아웃만 html_fulltext_not_available로 구별하며, 미식별 본문은 not_implemented를 유지한다. | limitations-audit/independent-springer-sdk.json; independent-springer-negative.json; user-criteria-springer/root-ui.json; user-criteria-springer/root-sdk.json |
 | Taylor & Francis (`taylor-francis`) | 유효한 source/사용자 조건 | 검색·citation·PDF·supplement/table은 양성이다. native citation의 abstract 누락은 문헌별 source 상태다. | live_mcp_search_citation_pdf_dublin_doi_supplement_zip_tables_nested_source |
 | Wiley (`wiley`) | 실제 기능 복원 | 추가 2행 cap을 제거하고 요청 행마다 native add를 사용한다. 서로 다른 5조건이 원 field/text 순서로 제출돼 667건, 기존 3행 date 정렬도 회귀 통과했다. | limitations-audit/independent-wiley-sdk.json; 5 distinct rows total 667 |
 | AIP (`aip`) | 범위 한정 정상 guard | 검색·citation·PDF가 양성이고 Figshare supplement는 명시 cross-source DOI로 반환한다. | live_mcp_advanced_search_citation_pdf_and_explicit_figshare_supplement_reference |

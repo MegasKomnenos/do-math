@@ -107,6 +107,32 @@ class PublisherHTMLContract(unittest.TestCase):
         with self.assertRaises(ServiceError):iop_body('<div class="wd-jnl-art-abstract"><p>Abstract</p></div>')
         with self.assertRaises(ServiceError):springer_body('<div class="c-article-body"><div id="Abs1-section"><p>Abstract</p></div></div>')
 
+    def test_springer_abstract_pdf_with_empty_native_body_reports_source_absence(self):
+        from publisher_html import springer_body
+        raw='''<meta name="citation_pdf_url" content="https://link.springer.com/content/pdf/10.1007/example.pdf">
+        <div class="c-article-body">
+          <section id="Abs1-section"><div class="c-article-section__content">Abstract text.</div></section>
+          <section id="preview-section"><h2>Article PDF</h2></section>
+          <div class="main-content"></div>
+        </div>'''
+        with self.assertRaises(ServiceError) as raised:springer_body(raw)
+        self.assertEqual(raised.exception.result['status'],'not_found')
+        self.assertEqual(raised.exception.result['code'],'html_fulltext_not_available')
+
+    def test_springer_pdf_preview_does_not_prove_an_unrecognized_body_is_absent(self):
+        from publisher_html import springer_body
+        for content in ('<p>Article body in an unrecognized layout.</p>', '<img src="body.png">'):
+            with self.subTest(content=content):
+                raw='''<meta name="citation_pdf_url" content="https://link.springer.com/content/pdf/10.1007/example.pdf">
+                <div class="c-article-body">
+                  <section id="Abs1-section"><div class="c-article-section__content">Abstract text.</div></section>
+                  <section id="preview-section"><h2>Article PDF</h2></section>
+                  <div class="main-content">'''+content+'''</div>
+                </div>'''
+                with self.assertRaises(ServiceError) as raised:springer_body(raw)
+                self.assertEqual(raised.exception.result['status'],'not_implemented')
+                self.assertEqual(raised.exception.result['code'],'html_fulltext_not_identified')
+
     def test_iop_short_native_body_does_not_require_a_heading(self):
         from publisher_html import iop_body
         raw='<div class="wd-jnl-art-full-text"><div class="article-text"><p>Short native article body.</p></div></div>'
