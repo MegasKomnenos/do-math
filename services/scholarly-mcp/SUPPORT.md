@@ -36,10 +36,10 @@
 | Cambridge University Press | cambridge | fixed: citation API; institutional search/document Playwright | partial | source_guide, search, fetch, export | live_mcp_filtered_search_ris_pdf_and_supplement_pdf_zip_source_extract |
 | De Gruyter Brill | de-gruyter | playwright | partial | source_guide, search, fetch, export | live_mcp_search_ris_pdf_and_supplement_zip_cif_lines; broken_link_observed |
 | JSTOR | jstor | fixed: citation/search API; institutional document Playwright | partial | source_guide, search, fetch, export | live_mcp_search_image_sorts_facets_citations_pdf_mp3_transcripts_supplement; native_video_download_disabled |
-| Oxford University Press | oxford | playwright | partial | source_guide, search, fetch, export | live_mcp_search_citation_metadata_abstract_pagination_and_supplement_pdf |
+| Oxford University Press | oxford | playwright | partial | source_guide, search, fetch, export | 렌더된 검색 행·원 인용·문헌/첨부; 별도 title-list는 현재 CAPTCHA 도메인 오류 |
 | ScienceDirect | science-direct | playwright (전용 Chrome 창/CDP) | partial | source_guide, search, fetch, export | live_mcp_search_cross_page_ris_zero_facets_exact_publication_three_citations_pdf_supplement_video |
 | Springer Nature | springer | playwright | partial | source_guide, search, fetch, export | live_mcp_advanced_search_citations_pdf_supplements_nature_springer_html_tex_figures |
-| Taylor & Francis | taylor-francis | playwright | partial | source_guide, search, fetch, export | live_mcp_search_citation_pdf_dublin_doi_supplement_zip_tables_nested_source |
+| Taylor & Francis | taylor-francis | playwright | partial | source_guide, search, fetch, export | 원 검색/인용/PDF/첨부·표; 두 editorial의 초록 필드 부재와 초록 양성 대조 |
 | Wiley | wiley | playwright | partial | source_guide, search, fetch, export | live_mcp_dynamic_advanced_rows_citations_pdf_zero_and_supplementary_zip |
 | AIP | aip | playwright | partial | source_guide, search, fetch, export | live_mcp_advanced_search_citation_pdf_and_explicit_figshare_supplement_reference |
 | APS 공개 접근 | aps | api | partial | source_guide, search, fetch, export | live_mcp_arbitrary_feed_window_native_pages_metadata_abstract_pdf |

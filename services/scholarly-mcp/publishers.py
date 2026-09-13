@@ -39,7 +39,7 @@ PROFILES = [
     Profile("cambridge", ("www.cambridge.org", "resolve.cambridge.org"), "CUP", '.col.sec.summary, section.abstract, .abstract', file_domains=('static.cambridge.org',)),
     Profile("de-gruyter", ("www.degruyter.com", "www.degruyterbrill.com"), "De Gruyter"),
     Profile("jstor", ("www.jstor.org", "jstor.org"), "JSTOR", file_domains=('artstor-collections.s3.amazonaws.com','sequoia-forum-media.s3.amazonaws.com')),
-    Profile("oxford", ("academic.oup.com", "www.oxfordacademic.com"), "OUP", file_domains=("watermark02.silverchair.com","oup.silverchair-cdn.com")),
+    Profile("oxford", ("academic.oup.com",), "OUP", file_domains=("watermark02.silverchair.com","oup.silverchair-cdn.com")),
     Profile("science-direct", ("www.sciencedirect.com", "sciencedirect.com", "linkinghub.elsevier.com"), "ScienceDirect", file_domains=('pdf.sciencedirectassets.com','ars.els-cdn.com')),
     Profile("springer", ("link.springer.com", "link.springernature.com", "www.nature.com"), "Springer eJournal", file_domains=('citation-needed.springer.com','media.springernature.com')),
     Profile("taylor-francis", ("www.tandfonline.com", "tandfonline.com"), "Taylor"),

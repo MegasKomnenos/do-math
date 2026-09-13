@@ -477,10 +477,24 @@ SOURCES['oxford'].capabilities = ('source_guide','search','fetch','export')
 SOURCES['oxford'].usage = {
     'search': 'query를 선택 필드의 Query Builder에 제출한다. exact=true는 구문 일치다. exact=false이면 해당 필드의 원 검색식으로 처리한다. 문헌 결과와 자료원의 표시 건수가 일치한 뒤 반환한다.',
     'options': {'field':'All(기본 검색), Full Text(고급검색의 본문 필드), Keywords, Title, Author, Abstract, References', 'exact':'구문 일치 여부, 기본 false', 'sort':'relevance(기본), newest, oldest, title_asc, title_desc'},
-    'exports': 'json·html은 실제 문헌 결과, csv는 그 레코드의 기계적 CSV다. bibtex·ris·endnote·plain은 선택 문헌의 native citation 다운로드이며 export.artifacts의 ref로 읽는다. 사이트 Export title list는 책·저널 제목 목록이며 문헌 CSV와 다르고 CAPTCHA를 요구하므로 사용하지 않는다.',
+    'exports': 'json·html은 실제 문헌 결과, csv는 그 레코드의 기계적 CSV다. bibtex·ris·endnote·plain은 선택 문헌의 native citation 다운로드이며 export.artifacts의 ref로 읽는다. 사이트 Export title list는 아래의 현재 접근에서 검증되지 않은 별도 기능이며 이 export 인자에 포함되지 않는다.',
+    'title_list_export': {
+        'status': 'currently_unavailable',
+        'format': 'csv',
+        'scope': '현재 검색 결과에 포함된 책·저널 제목을 결과 수가 많은 순으로 최대 2000개 집계한다. 문헌 레코드 CSV나 문헌별 citation이 아니다.',
+        'observed_boundary': 'KUDOS의 현재 OUP 바로가기는 프록시 호스트로 이동한다. 같은 브라우저·같은 1건 검색에서 프록시는 제어를 노출하지만 reCAPTCHA 사이트 키가 프록시 도메인을 허용하지 않아 정상 과제를 만들지 못했고, Oxford 직접 호스트는 title-list 제어를 서버 마크업부터 노출하지 않았다.',
+        'validation': '현행 공식 코드는 /Solr/ExportResults에 captchaResponse를 POST하고 blob을 기대한다. UI는 유효한 응답 전 요청을 막으며, 빈 captchaResponse를 보낸 음성 대조는 HTTP 200 text/csv, 선언 길이140, 관찰 body0바이트였으며 유효한 CSV 파일을 확보하지 못했다. 이 음성 대조를 정상 CAPTCHA 경로의 가용성 증거로 사용하지 않는다.',
+        'institution_discovery': '직접 호스트의 SAMS Sigma 목록은 Abertay University 양성 대조를 포함한 2,483개 기관을 정상 필터링했다. Kyungpook National University·Kyungpook·Kyung Pook National University·KNU·knu.ac.kr·경북대학교는 원 기관 링크와 화면 결과 모두 0건이었다.',
+        'related_holdings_list': {
+            'status': 'separate_portal_control',
+            'format': 'xlsx',
+            'scope': 'KUDOS의 OUP 제공리스트는 252개 OUP 저널의 ISSN·제공연도·URL을 담은 기관 보유목록이다.',
+            'not_equivalent': '검색어로 집계한 책·저널 title-list CSV가 아니므로 비가용 title-list export의 대체 성공으로 세지 않는다.',
+        },
+    },
     'fetch': 'Oxford Academic의 정확한 문헌 URL 또는 이 플랫폼으로 연결되는 DOI. 검색 결과의 url을 사용하면 같은 플랫폼의 해당 판본을 지정한다. metadata·abstract·fulltext·export·supplementary를 요청한다. export는 native BibTeX이며 그 DOI를 문헌 metadata와 대조한다. 제목 입력은 Title 검색 후보를 반환한다.',
     'supplementary':'문헌의 ArticleDataSupplements 위젯에 나열된 원 파일을 회수한다. 파일명·설명·DOI를 부호화한 경로를 보존하고 문헌 DOI와 대조한다. supplementary.files의 artifact를 extract로 읽는다. 다른 첨부 레이아웃은 source_page로 남긴다.',
-    'limits': 'KUDOS 기관 접속. start 0부터, limit 1..1000, 원 페이지 20건. 제휴 출판사의 책, 저널·그림 같은 결과도 포함하므로 type을 보고 문헌을 선택한다. All과 Full Text는 다른 검색 범위다. 별도 계정이나 CAPTCHA가 필요한 기능을 자동 수행하지 않는다.',
+    'limits': 'KUDOS 기관 접속. start 0부터, limit 1..1000, 원 페이지 20건. 제휴 출판사의 책, 저널·그림 같은 결과도 포함하므로 type을 보고 문헌을 선택한다. All과 Full Text는 다른 검색 범위다. title-list의 현재 호스트/CAPTCHA 경계는 title_list_export를 본다.',
     'examples': [{'tool':'search','arguments':{'source':'oxford','query':'P versus NP','options':{'field':'Title','exact':True},'limit':2,'export':'bibtex'}}],
     'official':['https://academic.oup.com/search-results'],
 }

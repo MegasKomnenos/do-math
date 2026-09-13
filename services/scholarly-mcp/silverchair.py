@@ -56,6 +56,18 @@ def records(raw, base):
     return rows, total, max(0,first-1)
 
 
+def rendered_search_page(publisher, page, url):
+    # Oxford can report a count in the initial HTML before its rows are ready.
+    goto_source(page,url,publisher.profile.hosts,wait_until='domcontentloaded',timeout=45000)
+    page.wait_for_function(r"""() => {const el=document.querySelector('.sr-statistics');
+      const text=el?.textContent||'';const m=text.match(/([\d,]+)\s*[–-]\s*([\d,]+)\s+of\s+([\d,]+)/);
+      if(!m)return /^\s*0(?:\s+results)?\s*$/i.test(text);
+      const n=x=>Number(x.replaceAll(',',''));const rows=[...document.querySelectorAll('.sr-list')];
+      return rows.length===(n(m[3])?n(m[2])-n(m[1])+1:0)
+        && rows.every(row=>row.querySelector('.sri-title a'));} """,timeout=45000)
+    return clean_html(page.content(),publisher.store.sanitizer),page.url
+
+
 def citation(publisher, page, identifier, format='bibtex'):
     from api_adapters import doi
     formats={'ris':('0','application/x-research-info-systems'), 'endnote':('1','text/plain'),
@@ -142,17 +154,7 @@ def search(publisher, query, *, options, start=0, limit=20, cursor=None, export=
     for number in range(start//20+1,(start+limit-1)//20+2):
         params['page']=number
         result_url=base+'/search-results?'+urlencode(params)
-        if aip:
-            goto_source(page,result_url,profile.hosts,wait_until='domcontentloaded',timeout=45000)
-            page.wait_for_function("""() => {const el=document.querySelector('.sr-statistics');
-          const text=el?.textContent||''; const m=text.match(/([\\d,]+)\\s*[–-]\\s*([\\d,]+)\\s+of\\s+([\\d,]+)/);
-          if(!m) return /^\\s*0(?:\\s+results)?\\s*$/i.test(text);
-          const n=x=>Number(x.replaceAll(',',''));return document.querySelectorAll('.sr-list .sri-title a.article-link,.sr-list .sri-title h4 a').length===(n(m[3])?n(m[2])-n(m[1])+1:0); }""",timeout=45000)
-            raw=clean_html(page.content(),publisher.store.sanitizer)
-            result_url=page.url
-        else:
-            data,_,result_url=browser_download(publisher.gateway.context,result_url,profile.hosts)
-            raw=clean_html(data.decode('utf-8'),publisher.store.sanitizer)
+        raw,result_url=rendered_search_page(publisher,page,result_url)
         actual=parse_qs(urlsplit(result_url).query)
         query_key='cqb' if 'cqb' in params else 'q'
         if actual.get(query_key)!=[params[query_key]] or actual.get('page')!=[str(number)]:
@@ -166,8 +168,7 @@ def search(publisher, query, *, options, start=0, limit=20, cursor=None, export=
             raise ServiceError('search_parse_failed','Search response could not be reconciled with its range or the supported record layouts',status='partial' if rows else 'error',source=publisher.source,query=query,start=start,requested=limit,received=len(rows),records=partial,evidence=evidence,cause=error.result['code']) from None
         if not found and not aip:
             # Identical Oxford requests have returned an empty response followed by a nonempty response.
-            data,_,result_url=browser_download(publisher.gateway.context,result_url,profile.hosts)
-            raw=clean_html(data.decode('utf-8'),publisher.store.sanitizer)
+            raw,result_url=rendered_search_page(publisher,page,result_url)
             evidence.append(publisher.store.put(raw,'text/html',publisher.source,result_url,role='empty_search_recheck',query=query,options=options,page=number))
             native,found,first=records(raw,base)
         if found and first!=(number-1)*20 or total is not None and total!=found:
