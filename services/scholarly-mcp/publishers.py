@@ -643,7 +643,8 @@ class Publisher:
                 elif part == 'export' and self.source == 'de-gruyter':
                     from degruyter import citation
                     try:
-                        components[part]={'status':'available','artifact':citation(self,page,identifier or observed_dois[0]),'format':'ris'}
+                        components[part]={'status':'available','artifact':citation(self,page,{
+                            'url':page.url,'doi':identifier or (observed_dois[0] if observed_dois else None),'title':titles[0]}),'format':'ris'}
                     except ServiceError as error:
                         components[part]=error.result
                 elif part == 'export' and self.source in ('aip','taylor-francis'):

@@ -267,6 +267,74 @@ class PublisherContract(unittest.TestCase):
         self.assertEqual(rows[0]['doi'],'10.1515/joc-2026-0248')
         self.assertEqual(rows[0]['type'],'Article')
 
+    def test_degruyter_current_cite_modal_exports_doi_less_book_by_isbn(self):
+        from types import SimpleNamespace
+        from unittest.mock import Mock,patch
+        from degruyter import citation
+        state={'modal_open':False}
+        class RisControl:
+            @property
+            def first(self):return self
+            def count(self):return int(state['modal_open'])
+            def wait_for(self,**kwargs):
+                if not state['modal_open']:raise AssertionError('RIS exists only after opening the current cite modal')
+            def get_attribute(self,name):return '/document/doi/10.0000/9781447378938/machineReadableCitation/RIS'
+        class CiteButton:
+            @property
+            def first(self):return self
+            def count(self):return 1
+            def click(self):state['modal_open']=True
+        class HiddenRisControl(RisControl):
+            def count(self):return 1
+            def wait_for(self,**kwargs):raise AssertionError('The pre-rendered RIS link is hidden until the modal opens')
+        ris=RisControl();hidden_ris=HiddenRisControl();button=CiteButton()
+        page=SimpleNamespace(url='https://www.degruyterbrill.com/document/isbn/9781447378938/html',
+            locator=lambda selector: ris if selector=='a[title="Download in RIS format"]:visible' else hidden_ris if selector=='a[title="Download in RIS format"]' else button)
+        publisher=SimpleNamespace(gateway=SimpleNamespace(context=object()),profile=SimpleNamespace(download_hosts={'www.degruyterbrill.com'}),
+            store=SimpleNamespace(put=Mock(return_value={'ref':'citation'})),source='de-gruyter')
+        row={'url':page.url,'doi':None,'title':'Understanding the Complexity of Pacing in Long Covid','type':'Book'}
+        parsed=[{'fields':{'ty':['BOOK'],'t1':[row['title']],'sn':['9781447378938'],'au':['Uprichard, Emma','Martin, Sam']}}]
+        with patch('degruyter.browser_download',return_value=(b'RIS','citation.ris',page.url)),patch('degruyter.bibliography',return_value=parsed):
+            self.assertEqual(citation(publisher,page,row),{'ref':'citation'})
+        self.assertTrue(state['modal_open'])
+        from scholarly import ServiceError
+        parsed[0]['fields']['sn']=['9780000000000']
+        with patch('degruyter.browser_download',return_value=(b'RIS','citation.ris',page.url)),patch('degruyter.bibliography',return_value=parsed),self.assertRaises(ServiceError) as mismatch:
+            citation(publisher,page,row)
+        self.assertEqual(mismatch.exception.result['code'],'identity_mismatch')
+
+    def test_degruyter_reports_absent_native_cite_control_after_opening_doi_less_page(self):
+        from types import SimpleNamespace
+        from scholarly import ServiceError
+        from degruyter import citation
+        empty=SimpleNamespace(count=lambda:0)
+        page=SimpleNamespace(url='https://www.degruyterbrill.com/journal/key/gcc/html',locator=lambda selector:empty)
+        publisher=SimpleNamespace()
+        row={'url':page.url,'doi':None,'title':'Groups Complexity Cryptology','type':'Journal'}
+        with self.assertRaises(ServiceError) as unavailable:
+            citation(publisher,page,row)
+        self.assertEqual(unavailable.exception.result['status'],'unsupported')
+        self.assertEqual(unavailable.exception.result['code'],'document_citation_unavailable')
+
+    def test_degruyter_fetch_passes_doi_less_book_source_identity_to_citation(self):
+        import tempfile
+        from types import SimpleNamespace
+        from unittest.mock import Mock,patch
+        from scholarly import ArtifactStore
+        url='https://www.degruyterbrill.com/document/isbn/9781447378938/html'
+        title='Understanding the Complexity of Pacing in Long Covid: A New Approach to Chronic Illness'
+        raw='<meta name="citation_isbn" content="9781447378938"><meta name="citation_title" content="'+title+'">'
+        body=SimpleNamespace(inner_text=lambda:title)
+        page=SimpleNamespace(url=url,wait_for_function=Mock(),content=lambda:raw,locator=lambda selector:body,close=Mock())
+        with tempfile.TemporaryDirectory() as temp:
+            adapter=self.mod.Publisher(ArtifactStore(temp),None,next(p for p in self.mod.PROFILES if p.source=='de-gruyter'))
+            with patch.object(adapter,'document',return_value=page),patch('degruyter.citation',return_value={'ref':'citation'}) as cited:
+                result=adapter.fetch(url,parts=['metadata','export'])
+            self.assertEqual(result['status'],'ok')
+            self.assertEqual(result['components']['export']['status'],'available')
+            row=cited.call_args.args[2]
+            self.assertEqual((row['url'],row['doi'],row['title']),(url,None,title))
+
     def test_jstor_ris_retains_its_provider_preamble(self):
         from scholarly import bibliography
         raw=(ROOT / 'tests/fixtures/jstor.ris').read_bytes()

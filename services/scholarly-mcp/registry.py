@@ -541,7 +541,7 @@ SOURCES['de-gruyter'].transport='playwright'
 SOURCES['de-gruyter'].usage={
     'search':'query는 자료원의 고급검색이 생성하는 검색식이다. title:(complexity), familyName:(Goldreich), title:(complexity) AND familyName:(Goldreich)처럼 필드와 괄호를 사용한다. 원 문자열을 그대로 제출한다.',
     'options':{'sort':'relevance(기본), mostrecent, leastrecent, alphabetical, reversealpha','visibility':'all(기본), available(이용 가능), explicit(라이선스), open(OA), public(공개)'},
-    'exports':'json·html은 원 결과, csv는 같은 레코드의 기계적 CSV다. ris·native는 문헌에 연결된 RIS 다운로드이며 DOI를 대조한다. export.artifacts로 읽는다. DOI가 없는 자료 유형은 인용문 미확보를 따로 표시한다.',
+    'exports':'json·html은 원 결과, csv는 같은 레코드의 기계적 CSV다. ris·native는 문헌의 CITE THIS 제어에 연결된 RIS 다운로드다. DOI 문헌은 DOI를, DOI 없는 ISBN 도서는 ISBN을 대조한다. export.artifacts로 읽는다. 현재 문헌에 CITE THIS 제어가 없을 때만 document_citation_unavailable로 표시한다.',
     'fetch':'De Gruyter Brill의 DOI 또는 문헌 URL로 metadata·abstract·fulltext·export·supplementary를 요청한다. export는 native RIS다. 검색에는 책·장·논문 외 자료도 있으므로 type을 확인한다.',
     'supplementary':'Supplementary Material 목록의 원 다운로드 파일을 회수한다. downloadAsset 경로의 문헌 DOI를 대조하고 파일명·설명·파일별 상태를 유지한다. ZIP은 files의 artifact를 extract한 뒤 원 내부 파일 이름을 selection으로 선택한다. 오래된 제어가 404를 반환하면 그 파일의 not_found와 전체 partial을 보존한다.',
     'limits':'KUDOS의 De Gruyter 기관 바로가기를 사용한다. start 0부터, limit 1..1000, 원 페이지 10건. 자료원에 표시된 검색 건수와 실제 회수 행을 대조한다.',
@@ -781,7 +781,7 @@ for identifier, level in {
     "aip": "live_mcp_advanced_search_citation_pdf_and_explicit_figshare_supplement_reference",
     "wiley": "live_mcp_dynamic_advanced_rows_citations_pdf_zero_and_supplementary_zip",
     "taylor-francis": "live_mcp_search_citation_pdf_dublin_doi_supplement_zip_tables_nested_source",
-    "de-gruyter": "live_mcp_search_ris_pdf_and_supplement_zip_cif_lines; broken_link_observed",
+    "de-gruyter": "DOI·DOI 없는 ISBN 책의 현재 CITE/RIS 복원; 원본7검증·PDF/첨부; 특정 옛 첨부404 별도",
     "jstor": "live_mcp_search_image_sorts_facets_citations_pdf_mp3_transcripts_supplement; native_video_download_disabled",
     "iop": "live_mcp_rss_ranked_filters_native_search_citations; pdf_html_tex_154_equations_manifest_images_supplement",
     "siam": "live_mcp_52_fields_advanced_search_citations_book_zero; institution_auth_path_unavailable",

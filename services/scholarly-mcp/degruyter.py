@@ -1,4 +1,4 @@
-"""De Gruyter Brill native search expressions and document RIS controls."""
+"""De Gruyter Brill native search expressions and DOI/ISBN-bound RIS controls."""
 import csv
 import io
 import re
@@ -32,15 +32,34 @@ def records(raw,base):
     return rows,total
 
 
-def citation(publisher,page,identifier):
-    control=page.locator('a[title="Download in RIS format"]')
-    control.first.wait_for(state='attached',timeout=30000)
+def citation(publisher,page,row):
+    control=page.locator('a[title="Download in RIS format"]:visible')
+    if not control.count():
+        opener=page.locator('#citationsModalButton:visible')
+        if opener.count()!=1:
+            raise ServiceError('document_citation_unavailable','This publication has no native citation control',status='unsupported')
+        opener.first.click()
+    control.first.wait_for(state='visible',timeout=30000)
     url=urljoin(page.url,control.first.get_attribute('href'))
     data,_,actual=browser_download(publisher.gateway.context,url,publisher.profile.download_hosts)
-    evidence=publisher.store.put(data,'application/x-research-info-systems',publisher.source,actual,role='native_citation',doi=identifier)
+    identifier=row.get('doi')
+    isbn_match=re.search(r'/document/isbn/([^/]+)/(?:html|xml)$',unquote(urlsplit(row['url']).path),re.I)
+    isbn=isbn_match[1] if isbn_match else None
+    evidence=publisher.store.put(data,'application/x-research-info-systems',publisher.source,actual,role='native_citation',doi=identifier,isbn=isbn)
     parsed=bibliography(data,'application/x-research-info-systems')
-    found=[r['fields'].get('do',[None])[0] for r in parsed]
-    if len(found)!=1 or doi(str(found[0])).lower()!=identifier.lower():
+    if len(parsed)!=1:
+        raise ServiceError('identity_mismatch','RIS does not identify the requested publication',evidence=evidence)
+    fields=parsed[0]['fields']
+    if identifier:
+        found=fields.get('do',[None])[0]
+        try: matches=doi(str(found)).lower()==identifier.lower()
+        except ServiceError: matches=False
+    elif isbn:
+        normalized=lambda value:re.sub(r'[^0-9X]','',str(value).upper())
+        matches=normalized(isbn) in {normalized(value) for value in fields.get('sn',[])}
+    else:
+        matches=False
+    if not matches:
         raise ServiceError('identity_mismatch','RIS does not identify the requested publication',evidence=evidence)
     return evidence
 
@@ -79,13 +98,10 @@ def search(publisher,query,*,options,start=0,limit=20,cursor=None,export=None):
         rows.extend(selected)
         if export in ('ris','native'):
             for row in selected:
-                if not row['doi']:
-                    failures.append({'id':row['id'],'status':'unsupported','code':'document_citation_unavailable'})
-                    continue
                 document=publisher.gateway.context.new_page()
                 try:
                     goto_source(document,row['url'],profile.hosts,wait_until='domcontentloaded',timeout=45000)
-                    citations.append(citation(publisher,document,row['doi']))
+                    citations.append(citation(publisher,document,row))
                 except ServiceError as error:
                     failures.append({'id':row['id'],**error.result})
                 except Exception as error:

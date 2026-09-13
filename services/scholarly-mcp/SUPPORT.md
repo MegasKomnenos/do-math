@@ -34,7 +34,7 @@
 | Software Heritage | software-heritage | api | partial | source_guide, search, fetch, export | live_mcp_verified_tree_files_cache_resume_and_native_git_archives; selected_flat_job_unprepared |
 | AMS publications | ams | playwright (전용 Chrome 창/CDP) | partial | source_guide, search, fetch, export | live_mcp_native_search_window_zero_xlsx_product_fetch_pdf; dynamic_ui_provider_error |
 | Cambridge University Press | cambridge | fixed: citation API; institutional search/document Playwright | partial | source_guide, search, fetch, export | live_mcp_filtered_search_ris_pdf_and_supplement_pdf_zip_source_extract |
-| De Gruyter Brill | de-gruyter | playwright | partial | source_guide, search, fetch, export | live_mcp_search_ris_pdf_and_supplement_zip_cif_lines; broken_link_observed |
+| De Gruyter Brill | de-gruyter | playwright | partial | source_guide, search, fetch, export | DOI·DOI 없는 ISBN 책의 현재 CITE/RIS 복원; 원본7검증·PDF/첨부; 특정 옛 첨부404 별도 |
 | JSTOR | jstor | fixed: citation/search API; institutional document Playwright | partial | source_guide, search, fetch, export | live_mcp_search_image_sorts_facets_citations_pdf_mp3_transcripts_supplement; native_video_download_disabled |
 | Oxford University Press | oxford | playwright | partial | source_guide, search, fetch, export | 렌더된 검색 행·원 인용·문헌/첨부; 별도 title-list는 현재 CAPTCHA 도메인 오류 |
 | ScienceDirect | science-direct | playwright (전용 Chrome 창/CDP) | partial | source_guide, search, fetch, export | live_mcp_search_cross_page_ris_zero_facets_exact_publication_three_citations_pdf_supplement_video |
