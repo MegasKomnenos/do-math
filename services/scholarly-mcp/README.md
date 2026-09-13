@@ -109,7 +109,7 @@ ACM은 문헌 보충자료 목록의 파일명·설명·DOI를 보존하고 ZIP 
 
 CORE의 `fullText`에 공개 API 접근 제한 안내문이 들어 있으면 `restricted`로 반환한다. 실제 색인 본문은 별도 텍스트 artifact로 제공하며 원 메타데이터도 보존한다. 이름은 검색 후보로 반환하고 CORE works 번호를 선택한 뒤에는 응답의 ID를 대조한다.
 
-CORE의 공개 PDF 파일 URL도 명시해서 요청할 수 있다. `https://fileserver-az.core.ac.uk/download/287883844.pdf`와 같은 파일 URL을 `target`으로 주고 `fulltext`를 요청하면 원 PDF와 쪽별 추출을 제공한다. `core.ac.uk/download/OUTPUT_ID.pdf`와 `files01.core.ac.uk/download/pdf/OUTPUT_ID.pdf` 형식도 받으며, 실제 파일 응답이 지정한 같은 output의 CORE 파일 서버와 PDF 호스트 연결만 따른다. 이 입력의 `metadata`와 `export`는 PDF 내장 정보다. 숫자만 지정하면 기존대로 works 번호이며, works API의 제한 응답을 브라우저 검색이나 다른 저장소 조회로 바꾸지 않는다.
+CORE의 공개 PDF 파일 URL도 명시해서 요청할 수 있다. `https://fileserver-az.core.ac.uk/download/287883844.pdf`와 같은 파일 URL, `core.ac.uk/download/OUTPUT_ID.pdf`, `files01.core.ac.uk/download/pdf/OUTPUT_ID.pdf`, `api.core.ac.uk/v3/outputs/OUTPUT_ID/download`를 지원한다. 파일 입력의 `metadata`와 `export`는 PDF 내장 정보다. 숫자만 지정하면 works 번호이며, work가 연결한 같은 output의 공식 메타데이터에서 CORE 다운로드 URL을 확인한다. files01의 404·시간초과·연결 실패·5xx는 같은 output의 현행 공식 URL로 해결할 수 있지만, 429·401·403·410 또는 제거·비활성 메타데이터에서는 대체 다운로드를 시도하지 않는다. 원 실패와 해결 단계의 실패를 함께 보존한다. API 제한 응답을 브라우저나 다른 저장소 조회로 바꾸지 않는다.
 
 OpenAlex는 임의 검색 창과 원 그룹 집계의 커서 페이지를 지원한다. 그룹의 문헌 수와 이번 페이지 그룹 수를 구별하며 전체 그룹 수는 추정하지 않는다. 위치 색인의 단어 순서로 초록 텍스트를 복원하고, 원 색인과 참고·관련 문헌 ID 배열도 보존한다. 이 초록은 OpenAlex의 색인상 초록이며 출판사 원문과의 대조는 별도다.
 

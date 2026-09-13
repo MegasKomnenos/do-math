@@ -99,6 +99,177 @@ class COREFileContract(unittest.TestCase):
         self.assertEqual(self.calls, [target, self.target, self.signed])
         self.assertEqual(result['components']['fulltext']['artifact']['core_output_id'], 287883844)
 
+    def test_explicit_output_download_url_follows_only_the_same_output_chain(self):
+        data = self.pdf()
+        output = 'https://api.core.ac.uk/v3/outputs/287883844/download'
+        current = 'https://core.ac.uk/download/287883844.pdf'
+
+        def handle(request):
+            if request.url.host == 'api.core.ac.uk':
+                return httpx.Response(302, headers={'location': current})
+            if request.url.host == 'core.ac.uk':
+                return httpx.Response(302, headers={'location': self.target})
+            if request.url.host == 'fileserver-az.core.ac.uk':
+                return httpx.Response(302, headers={'location': self.signed})
+            return httpx.Response(200, content=data, headers={'content-type': 'application/pdf'})
+
+        result = self.adapter(handle).fetch(output, parts=['fulltext'])
+        self.assertEqual(result['components']['fulltext']['status'], 'available')
+        self.assertEqual(self.calls, [output, current, self.target, self.signed])
+
+        other = current.replace('287883844', '287883845')
+        adapter = self.adapter(lambda request: httpx.Response(302, headers={'location': other}))
+        with self.assertRaises(ServiceError) as error:
+            adapter.fetch(output, parts=['fulltext'])
+        self.assertEqual(error.exception.result['code'], 'source_boundary')
+        self.assertEqual(self.calls, [output])
+
+    def work_record(self, fulltext='Not available for public API users.'):
+        return {'id': 42, 'title': 'A public CORE paper', 'abstract': 'Summary',
+                'fullText': fulltext,
+                'outputs': ['https://api.core.ac.uk/v3/outputs/287883844'],
+                'downloadUrl': 'https://core.ac.uk/download/287883844.pdf',
+                'links': [{'type': 'download', 'url': 'https://core.ac.uk/download/287883844.pdf'}]}
+
+    def test_related_metadata_can_use_the_supported_output_api_download(self):
+        data=self.pdf()
+        output='https://api.core.ac.uk/v3/outputs/287883844/download'
+        record=self.work_record();record.update(downloadUrl=output,links=[])
+        def handle(request):
+            if str(request.url)==output:return httpx.Response(302,headers={'location':self.target})
+            if request.url.path=='/v3/works/42':return httpx.Response(200,json=record)
+            return httpx.Response(200,content=data,headers={'content-type':'application/pdf'})
+        result=self.adapter(handle).fetch('42',parts=['metadata','fulltext'])
+        self.assertEqual(result['components']['fulltext']['status'],'available')
+        self.assertIn(output,self.calls)
+
+    def test_legacy_resolution_can_use_the_supported_same_output_api_download(self):
+        data=self.pdf()
+        legacy='https://files01.core.ac.uk/download/pdf/287883844.pdf'
+        output='https://api.core.ac.uk/v3/outputs/287883844/download'
+        def handle(request):
+            if str(request.url)==legacy:return httpx.Response(404)
+            if str(request.url)==output:return httpx.Response(302,headers={'location':self.target})
+            if request.url.path=='/v3/outputs/287883844':
+                return httpx.Response(200,json={'id':287883844,'fulltextStatus':'enabled','deleted':'ALLOWED','downloadUrl':output})
+            return httpx.Response(200,content=data,headers={'content-type':'application/pdf'})
+        result=self.adapter(handle).fetch(legacy,parts=['fulltext'])
+        self.assertEqual(result['components']['fulltext']['status'],'available')
+        self.assertIn(output,self.calls)
+
+    def test_work_uses_only_its_related_output_file_and_preserves_partial_failure(self):
+        data = self.pdf()
+        def handle(request):
+            if request.url.host == 'api.core.ac.uk':
+                return httpx.Response(200, json=self.work_record())
+            if request.url.host == 'core.ac.uk':
+                return httpx.Response(302, headers={'location': self.target})
+            if request.url.host == 'fileserver-az.core.ac.uk':
+                return httpx.Response(302, headers={'location': self.signed})
+            return httpx.Response(200, content=data, headers={'content-type': 'application/pdf'})
+        result = self.adapter(handle).fetch('42', parts=['metadata', 'abstract', 'fulltext'])
+        self.assertEqual(result['status'], 'ok')
+        self.assertEqual(result['components']['fulltext']['content_kind'], 'core_pdf')
+        self.assertEqual(result['components']['fulltext']['work_id'], 42)
+
+        wrong = self.work_record();wrong['outputs']=['https://api.core.ac.uk/v3/outputs/287883845']
+        adapter = self.adapter(lambda request: httpx.Response(200, json=wrong))
+        result = adapter.fetch('42', parts=['metadata', 'fulltext'])
+        self.assertEqual(result['components']['metadata']['status'], 'available')
+        self.assertEqual(result['components']['fulltext']['code'], 'public_fulltext_restricted')
+        self.assertEqual(len(self.calls), 1)
+
+        def limited(request):
+            if request.url.host == 'api.core.ac.uk':
+                return httpx.Response(200, json=self.work_record(''))
+            return httpx.Response(429, headers={'X-RateLimit-Retry-After': '2099-01-01T00:00:00+0000',
+                                                'X-RateLimit-Limit': '10', 'X-RateLimit-Remaining': '0'})
+        result = self.adapter(limited).fetch('42', parts=['metadata', 'abstract', 'fulltext'])
+        self.assertEqual(result['status'], 'partial')
+        self.assertEqual(result['components']['metadata']['status'], 'available')
+        self.assertEqual(result['components']['fulltext']['code'], 'rate_limited')
+        self.assertEqual(result['components']['fulltext']['rate_limit_remaining'], '0')
+
+    def test_whitespace_fulltext_uses_a_verified_file_candidate(self):
+        data = self.pdf()
+        def handle(request):
+            if request.url.host == 'api.core.ac.uk':
+                return httpx.Response(200, json=self.work_record(' \r\n\t '))
+            if request.url.host == 'core.ac.uk':
+                return httpx.Response(302, headers={'location': self.target})
+            if request.url.host == 'fileserver-az.core.ac.uk':
+                return httpx.Response(302, headers={'location': self.signed})
+            return httpx.Response(200, content=data, headers={'content-type': 'application/pdf'})
+        result = self.adapter(handle).fetch('42', parts=['fulltext'])
+        self.assertEqual(result['components']['fulltext']['status'], 'available')
+        self.assertEqual(result['components']['fulltext']['content_kind'], 'core_pdf')
+
+    def test_legacy_files01_404_uses_current_enabled_same_output_metadata(self):
+        data = self.pdf()
+        legacy = 'https://files01.core.ac.uk/download/pdf/287883844.pdf'
+        current = 'https://core.ac.uk/download/287883844.pdf'
+        def handle(request):
+            if request.url.host == 'files01.core.ac.uk':
+                return httpx.Response(404, content=b'missing')
+            if request.url.host == 'api.core.ac.uk':
+                return httpx.Response(200, json={'id': 287883844, 'fulltextStatus': 'enabled',
+                                                 'deleted': 'ALLOWED', 'downloadUrl': current})
+            if request.url.host == 'core.ac.uk':
+                return httpx.Response(302, headers={'location': self.target})
+            if request.url.host == 'fileserver-az.core.ac.uk':
+                return httpx.Response(302, headers={'location': self.signed})
+            return httpx.Response(200, content=data, headers={'content-type': 'application/pdf'})
+        result = self.adapter(handle).fetch(legacy, parts=['fulltext'])
+        self.assertEqual(result['components']['fulltext']['status'], 'available')
+        self.assertIn('resolution_ref', result['components']['fulltext']['artifact'])
+
+    def test_legacy_access_denial_gone_and_rate_limit_do_not_resolve(self):
+        legacy = 'https://files01.core.ac.uk/download/pdf/287883844.pdf'
+        cases = [(401, 'access_restricted'), (403, 'access_restricted'),
+                 (410, 'not_found_at_source'), (429, 'rate_limited')]
+        for status, code in cases:
+            with self.subTest(status=status):
+                headers = {'X-RateLimit-Retry-After': '2099-01-01T00:00:00+0000'} if status == 429 else {}
+                adapter = self.adapter(lambda request, status=status, headers=headers:
+                                       httpx.Response(status, headers=headers))
+                with self.assertRaises(ServiceError) as error:
+                    adapter.fetch(legacy, parts=['fulltext'])
+                self.assertEqual(error.exception.result['code'], code)
+                self.assertEqual(self.calls, [legacy])
+
+    def test_disabled_or_removed_output_metadata_is_not_followed(self):
+        legacy = 'https://files01.core.ac.uk/download/pdf/287883844.pdf'
+        current = 'https://core.ac.uk/download/287883844.pdf'
+        for state in ({'fulltextStatus': 'disabled', 'deleted': 'ALLOWED'},
+                      {'fulltextStatus': 'enabled', 'deleted': 'REMOVED'}):
+            with self.subTest(state=state):
+                def handle(request):
+                    if request.url.host == 'files01.core.ac.uk':
+                        return httpx.Response(404)
+                    if request.url.host == 'api.core.ac.uk':
+                        return httpx.Response(200, json={'id': 287883844, 'downloadUrl': current, **state})
+                    self.fail('Disabled or removed output URL was followed')
+                adapter = self.adapter(handle)
+                with self.assertRaises(ServiceError) as error:
+                    adapter.fetch(legacy, parts=['fulltext'])
+                self.assertEqual(error.exception.result['code'], 'not_found_at_source')
+                self.assertEqual(error.exception.result['resolution_error_code'], 'fulltext_not_available')
+                self.assertEqual(self.calls, [legacy, 'https://api.core.ac.uk/v3/outputs/287883844'])
+
+    def test_failed_legacy_resolution_preserves_both_failure_stages(self):
+        legacy = 'https://files01.core.ac.uk/download/pdf/287883844.pdf'
+        def handle(request):
+            if request.url.host == 'files01.core.ac.uk':
+                return httpx.Response(404)
+            return httpx.Response(503)
+        adapter = self.adapter(handle)
+        with self.assertRaises(ServiceError) as error:
+            adapter.fetch(legacy, parts=['fulltext'])
+        self.assertEqual(error.exception.result['code'], 'not_found_at_source')
+        self.assertEqual(error.exception.result['http_status'], 404)
+        self.assertEqual(error.exception.result['resolution_error_code'], 'provider_error')
+        self.assertEqual(error.exception.result['resolution_http_status'], 503)
+
     def test_html_and_damaged_pdf_are_not_reported_as_fulltext(self):
         for data, media, expected in [(b'<html><title>Just a moment</title></html>', 'text/html', 'access_challenge'),
                                        (b'%PDF-1.7\nnot a PDF', 'application/pdf', 'invalid_pdf'),

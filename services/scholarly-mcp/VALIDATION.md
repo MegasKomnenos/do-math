@@ -684,3 +684,13 @@ Taylor B15와 Software Heritage N19/B09도 원본 변경 없이 root가 근거�
 새 원본 SDK13검증은 첫 expression XLSX의 SURV/168·논리1상품·물리3행, 위 두 범위, Gödel total5, 동등한 중첩 OR total8,685, Title OR와 Author smith AND total38을 통과했다. cursor 전용 새 서버는 소유 브라우저를 만들지 않았다. 같은 문헌/범위의 원 전후·안정 이미지를 직접 판독했고 원 요청·응답 hash와 대조했다. 이전51쪽 PDF 경로는 변경되지 않아 다시 내려받지 않았다. 원본32검사 및 전체624검사가 통과했다. native/html 부분 export의 설명은 실제 순번 공백뿐 아니라 후속 응답 실패에도 쓰이므로, root가 불완전한 요청 범위의 확인된 prefix라는 원인 중립 표현으로 정리하고32검사를 다시 통과했다. 근거는 `data/access-research/user-criteria-ams/root-sdk.json`이다.
 
 같은 필드 AND/NOT, 필드 간 OR, equals 및 안전하게 매핑하지 못한 다단어·문장부호 원자는 여전히 지원되지 않는다. 원 가시 UI의 연산자·따옴표·양성/음성 대조와 숨은 builder의 message-only 응답·Edit500을 조사했으며, 복원된 기본 필드 부분집합으로 이 제한을 감추지 않는다. 현 제어 미제공과 로컬 expression_mapping_unavailable도 서로 다른 코드로 유지한다.
+
+2026-09-13 CORE 네 후보를 현 원본에 선택 통합했다. 명시 outputs/{id}/download, work outputs에 결속된 downloadUrl/links, files01 실패 뒤 동일 output의 현행 주소 해결을 지원한다. work 연결과 metadata 다운로드 주소에 이미 지원하는 output API URL도 사용할 수 있도록 두 회귀를 추가해 CORE files16·public7검사가 통과했다. whitespace-only fullText는 본문 양성으로 세지 않는다. 실제 indexed 문자열과 공개 API 안내문, 별도의 공개 PDF 파일을 구별한다.
+
+files01의404·timeout·connection error·5xx에서만 같은 output metadata를 확인한다. 최초429·401·403·410이나 제거/비활성 metadata에서는 대체 다운로드를 실행하지 않는다. 첫 오류와 해결 단계 오류를 함께 보존한다. 표준 Retry-After를 우선하고 없을 때만 X-RateLimit-Retry-After를 사용하며, 성공 응답의 custom 시각은 rate_limit_retry_after 메타정보로만 남긴다. 기존 EuDML timeout·DBLP·Crossmark 수리는 유지했다.
+
+새 원본 SDK의 초기 output/work 호출은 서버가 제시한 시각 이후에도429였고 오류 body는0바이트였다. files01은 먼저522, 해결용 output metadata는429였다. root는 실제 전후·안정 실행 콘솔을 직접 읽었고,7,258바이트 원522 HTML을 외부 요청 없이 렌더해 Browser/Cloudflare Working, files01 Host Error와 origin connection timeout 안내를 읽었다. 콘솔과 저장 HTML 재생을 새 자료원 웹 화면으로 부르지 않는다.
+
+이후 같은 원본에서 검색2건, 명시 파일287883844의663,749바이트·26쪽, work399925820과 명시 output213561553의329,196바이트·8쪽이 성공했다. work/output 파일 SHA256은 모두 b3c0ab29e9647bfd7f8b263ed99851c9847c4519dc7bfcf5fe35116a48d50551이었다. files01/287883846도12:18:50UTC에 동일 output의 현행 주소로1,037,492바이트·48쪽 PDF를 받았다. root는 각 원 PDF 첫 쪽을 직접 읽어 Pseudorandomness and the Minimum Circuit Size Problem, Personal Extreme Programming, Beyond Natural Proofs: Hardness Magnification and Locality를 확인했다. 마지막 파일 SHA256은0000db3de4dc8c80e38ece2a98a47c53ca0e6e006cc5ad4f053c5fe0ec622d53이다.
+
+제거된 output1511018은12:18:50UTC의429 뒤 안내 시각12:28:50UTC를 지나 재호출해12:29:23UTC에404/not_found_at_source였다. 두 요청의 전후·안정 이미지를 직접 읽었다. 실제 파일 제거의 선행 UI 근거와 현재404를 연결하되429 자체를 자료 부재로 해석하지 않는다. 별도 키·계정·연락 이메일·브라우저/cross-source fallback은 사용하지 않았다. 정제 결과는 `data/access-research/user-criteria-core/root-sdk.json`이며 이 결과는 여러 시점의 개별 새 SDK 검증을 합친 것이지 전체가 한 연속 호출에서 무제한 성공했다는 뜻이 아니다.

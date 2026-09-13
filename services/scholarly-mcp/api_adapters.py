@@ -85,7 +85,9 @@ class APIAdapter:
             key: response.headers.get(header)
             for key, header in (
                 ("retry_after", "retry-after"),
+                ("rate_limit_retry_after", "x-ratelimit-retry-after"),
                 ("rate_limit", "x-rate-limit-limit"),
+                ("rate_limit_remaining", "x-ratelimit-remaining"),
                 ("rate_limit_interval", "x-rate-limit-interval"),
                 ("rate_limit_type", "x-rate-limit-type"),
                 ("concurrency_limit", "x-concurrency-limit"),
@@ -93,8 +95,12 @@ class APIAdapter:
             if response.headers.get(header) is not None
         }
         if code == 429:
+            standard_retry=response.headers.get("retry-after")
+            custom_retry=response.headers.get("x-ratelimit-retry-after")
             raise ServiceError("rate_limited", "Source request limit reached; retry according to retry_after", source=self.source,
-                http_status=code, retry_after=response.headers.get("retry-after"), retryable=True, **{
+                http_status=code, retry_after=standard_retry or custom_retry,
+                retry_after_header="retry-after" if standard_retry else "x-ratelimit-retry-after" if custom_retry else None,
+                retryable=True, **{
                     key: value for key, value in rate_context.items() if key != "retry_after"
                 })
         if code in (401, 403):
@@ -864,29 +870,110 @@ class CORE(APIAdapter):
         match = re.fullmatch(pattern, parsed.path) if pattern else None
         return match[1] if match else None
 
+    @staticmethod
+    def output_download_id(url):
+        try:
+            parsed=urlsplit(url)
+            if (parsed.scheme!='https' or parsed.hostname!='api.core.ac.uk'
+                    or parsed.username or parsed.password or parsed.port not in (None,443)
+                    or parsed.query or parsed.fragment):
+                return None
+        except ValueError:
+            return None
+        match=re.fullmatch(r'/v3/outputs/([0-9]+)/download',parsed.path)
+        return match[1] if match else None
+
+    @staticmethod
+    def output_file_disabled(record):
+        status=str(record.get('fulltextStatus') or '').strip().casefold()
+        deleted=record.get('deleted')
+        removed=(deleted is True or str(deleted or '').strip().casefold() in
+                 {'true','deleted','removed','disabled','disallowed','denied','not_allowed'})
+        return status in {'disabled','deleted','removed'} or removed
+
+    @classmethod
+    def work_file(cls,record):
+        if cls.output_file_disabled(record):
+            return None,None
+        output_ids=set()
+        for output in record.get('outputs') or []:
+            try:
+                parsed=urlsplit(output)
+                match=re.fullmatch(r'/v3/outputs/([0-9]+)',parsed.path)
+                if (parsed.scheme=='https' and parsed.hostname=='api.core.ac.uk'
+                        and not parsed.username and not parsed.password and parsed.port in (None,443)
+                        and not parsed.query and not parsed.fragment and match):
+                    output_ids.add(match[1])
+            except (TypeError,ValueError):
+                continue
+        candidates=[record.get('downloadUrl')]
+        candidates.extend(link.get('url') for link in record.get('links') or []
+                          if isinstance(link,dict) and link.get('type')=='download')
+        for candidate in candidates:
+            if not isinstance(candidate,str):
+                continue
+            identifier=cls.file_id(candidate) or cls.output_download_id(candidate)
+            if identifier in output_ids:
+                return candidate,identifier
+        return None,None
+
     def fetch_file(self, target, identifier, parts):
         unknown = set(parts) - {'metadata', 'abstract', 'fulltext', 'supplementary', 'export'}
         if unknown:
             raise ServiceError('invalid_parts', 'Unknown requested content', parts=sorted(unknown))
 
-        def file_route(url, previous):
-            if previous is None:
-                return url == target
-            # Only a native file response can introduce the PDF-host redirect.
-            if self.file_id(previous) != identifier:
-                return False
-            if self.file_id(url) == identifier:
-                return True
-            try:
-                parsed = urlsplit(url)
-                return (parsed.scheme == 'https' and parsed.hostname == 'pdf.core.ac.uk'
-                    and not parsed.username and not parsed.password and parsed.port in (None, 443)
-                    and not parsed.fragment
-                    and re.fullmatch(r'(?:/[A-Za-z0-9_-]+)+/' + re.escape(identifier) + r'\.pdf', parsed.path) is not None)
-            except ValueError:
-                return False
+        def file_route(first):
+            def guard(url,previous):
+                if previous is None:
+                    return url==first
+                if previous==first and self.output_download_id(previous)==identifier:
+                    return self.file_id(url)==identifier
+                # Only a native file response can introduce the PDF-host redirect.
+                if self.file_id(previous)!=identifier:
+                    return False
+                if self.file_id(url)==identifier:
+                    return True
+                try:
+                    parsed=urlsplit(url)
+                    return (parsed.scheme=='https' and parsed.hostname=='pdf.core.ac.uk'
+                        and not parsed.username and not parsed.password and parsed.port in (None,443)
+                        and not parsed.fragment
+                        and re.fullmatch(r'(?:/[A-Za-z0-9_-]+)+/'+re.escape(identifier)+r'\.pdf',parsed.path) is not None)
+                except ValueError:
+                    return False
+            return guard
 
-        data, evidence = self.request(target, accept='binary', url_guard=file_route)
+        resolution=None
+        try:
+            data,evidence=self.request(target,headers={'Accept':'application/pdf'},accept='binary',url_guard=file_route(target))
+        except ServiceError as error:
+            code=error.result.get('code');http_status=error.result.get('http_status')
+            can_resolve=(code in {'timeout','connection_error'} or
+                         code=='provider_error' and isinstance(http_status,int) and http_status>=500 or
+                         code=='not_found_at_source' and http_status==404)
+            if urlsplit(target).hostname!='files01.core.ac.uk' or not can_resolve:
+                raise
+            try:
+                current,resolution=self.request('https://api.core.ac.uk/v3/outputs/'+identifier)
+                if not isinstance(current,dict) or str(current.get('id'))!=str(int(identifier)):
+                    raise ServiceError('identity_mismatch','CORE returned a different output ID',evidence=resolution)
+                if self.output_file_disabled(current):
+                    raise ServiceError('fulltext_not_available','CORE output metadata marks this file disabled or removed',status='not_found',evidence=resolution)
+                download=current.get('downloadUrl')
+                if not isinstance(download,str) or (self.file_id(download) or self.output_download_id(download))!=identifier:
+                    raise ServiceError('invalid_response','CORE output metadata did not provide a same-output public file URL',evidence=resolution)
+                data,evidence=self.request(download,headers={'Accept':'application/pdf'},accept='binary',url_guard=file_route(download))
+            except ServiceError as resolution_error:
+                error.result['resolution_error_code']=resolution_error.result['code']
+                for source_key,target_key in (
+                    ('http_status','resolution_http_status'),('retry_after','resolution_retry_after'),
+                    ('retry_after_header','resolution_retry_after_header'),('rate_limit','resolution_rate_limit'),
+                    ('rate_limit_remaining','resolution_rate_limit_remaining')):
+                    if resolution_error.result.get(source_key) is not None:
+                        error.result[target_key]=resolution_error.result[source_key]
+                if resolution is not None:
+                    error.result['resolution_ref']=resolution['ref']
+                raise error
         if not data.startswith(b'%PDF-'):
             raise ServiceError('invalid_pdf', 'CORE did not return a PDF file', evidence=evidence)
         import pymupdf
@@ -900,11 +987,13 @@ class CORE(APIAdapter):
                 error_type=type(error).__name__, evidence=evidence) from None
         record = {'id': target, 'url': target, 'core_output_id': int(identifier), 'type': 'pdf_document',
                   'title': metadata.get('title') or '', 'metadata': metadata, 'pages': pages,
-                  'identity_basis': 'Exact requested CORE file/output ID and source redirect; bibliographic fields are embedded PDF metadata'}
+                  'identity_basis': 'Exact requested CORE file/output ID and source redirect; bibliographic fields are embedded PDF metadata',
+                  **({'resolution_ref':resolution['ref']} if resolution else {})}
         result = self.fetched([record], evidence, parts, ('metadata', 'export'))
         if 'fulltext' in parts:
             artifact = self.store.put(data, 'application/pdf', self.source, target, preserve_bytes=True,
-                role='fulltext', pages=pages, core_output_id=int(identifier), response_ref=evidence['ref'])
+                role='fulltext', pages=pages, core_output_id=int(identifier), response_ref=evidence['ref'],
+                **({'resolution_ref':resolution['ref']} if resolution else {}))
             result['components']['fulltext'] = {'status': 'available', 'artifact': artifact, 'content_kind': 'core_pdf'}
         result['status'] = 'ok' if all(component['status'] == 'available' for component in result['components'].values()) else 'partial'
         return result
@@ -913,12 +1002,12 @@ class CORE(APIAdapter):
         self.validate(options, start, limit)
         if cursor:
             raise ServiceError("invalid_cursor", "CORE uses start")
-        raw, evidence = self.request("https://api.core.ac.uk/v3/search/works", params={"q": query, "offset": start, "limit": limit, **options})
+        raw, evidence = self.request("https://api.core.ac.uk/v3/search/works/", params={"q": query, "offset": start, "limit": limit, **options})
         return self.export_page(self.page(raw["results"], raw["totalHits"], evidence, query, options, start, limit), export)
 
     def fetch(self, target, *, parts):
         value = target.strip()
-        identifier = self.file_id(value)
+        identifier = self.file_id(value) or self.output_download_id(value)
         if identifier is not None:
             return self.fetch_file(value, identifier, parts)
         if value.startswith(('http://','https://')):
@@ -944,11 +1033,21 @@ class CORE(APIAdapter):
             result['components']['abstract']={'status':'not_found','reason':'This CORE record has no abstract'}
         if 'fulltext' in parts:
             content=raw.get('fullText')
-            if content is None or content=='':
+            notice=isinstance(content,str) and ' '.join(content.split())=='Not available for public API users.'
+            missing=content is None or isinstance(content,str) and not content.strip()
+            file_target,output_id=self.work_file(raw) if missing or notice else (None,None)
+            if file_target:
+                try:
+                    file_result=self.fetch_file(file_target,output_id,('fulltext',))
+                    component={**file_result['components']['fulltext'],'work_id':raw['id']}
+                except ServiceError as error:
+                    component={**error.result,'core_output_id':int(output_id),
+                               'reason':'The verified CORE output file for this work could not be retrieved'}
+            elif missing:
                 component={'status':'not_found','reason':'This CORE record contains no indexed full text'}
             elif not isinstance(content,str):
                 component={'status':'error','code':'invalid_response','reason':'CORE fullText was not text'}
-            elif ' '.join(content.split())=='Not available for public API users.':
+            elif notice:
                 component={'status':'restricted','code':'public_fulltext_restricted','reason':'CORE provides an access notice instead of full text for public API users'}
             else:
                 artifact=self.store.put(content,'text/plain',self.source,evidence['url'],role='indexed_fulltext',work_id=raw['id'],metadata_ref=result['records']['ref'])
