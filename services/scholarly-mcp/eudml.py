@@ -11,6 +11,8 @@ from scholarly import ServiceError, encoded
 NS = {"os": "http://a9.com/-/spec/opensearch/1.1/", "dc": "http://purl.org/dc/elements/1.1/"}
 CQL_TIMEOUT = httpx.Timeout(90, connect=20)
 NLM_TIMEOUT = httpx.Timeout(120, connect=20)
+BODY_METADATA = {"front", "article-meta", "book-meta", "book-part-meta", "toc", "book-part-id", "self-uri", "ext-link"}
+BODY_CONTAINERS = {"body", "book-body", "book-part"}
 
 
 def parse_rss(data):
@@ -37,6 +39,27 @@ def parse_rss(data):
             "year": item.findtext("dc:date", namespaces=NS), "pubDate": item.findtext("pubDate"),
             "native_fields": native, "raw_xml": ElementTree.tostring(item, encoding="unicode")})
     return rows, total, offset
+
+
+def has_native_body(root):
+    def contains_content(node):
+        if (node.text or "").strip():
+            return True
+        for child in node:
+            name = child.tag.split("}")[-1]
+            if name in BODY_METADATA:
+                if (child.tail or "").strip():
+                    return True
+                continue
+            if name in BODY_CONTAINERS:
+                if contains_content(child):
+                    return True
+            else:
+                return True
+            if (child.tail or "").strip():
+                return True
+        return False
+    return any(contains_content(node) for node in root if node.tag.split("}")[-1] in ("body", "book-body"))
 
 
 class EuDML(APIAdapter):
@@ -90,7 +113,7 @@ class EuDML(APIAdapter):
         titles = [header.find(path) for path in ("./{*}title-group/{*}article-title", "./{*}book-title-group/{*}book-title", "./{*}title-group/{*}title")]
         title = next(("".join(node.itertext()) for node in titles if node is not None), None)
         abstract = any(node.tag.split("}")[-1] in ("abstract", "trans-abstract") for node in header)
-        full_body = any(node.tag.split("}")[-1] in ("body", "book-body") for node in root)
+        full_body = has_native_body(root)
         links = [{"label": "".join(node.itertext()), "attributes": dict(node.attrib)} for node in root.iter() if node.tag.split("}")[-1] in ("self-uri", "ext-link")]
         record = {"id": value, "title": title, "links": links, "native_metadata": evidence}
         artifact = self.store.put(encoded([record]), "application/json", self.source, evidence["url"], role="records", target=value)

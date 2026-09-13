@@ -11,6 +11,41 @@ from scholarly import ArtifactStore, ServiceError
 
 
 class EuDMLContract(unittest.TestCase):
+    def test_real_book_catalogue_body_is_not_reported_as_fulltext(self):
+        mod = importlib.import_module("eudml")
+        data = (ROOT / "tests/fixtures/eudml-book.xml").read_bytes()
+        with tempfile.TemporaryDirectory() as folder, httpx.Client(transport=httpx.MockTransport(lambda request: httpx.Response(200, content=data, headers={"Content-Type": "application/xml"}))) as client:
+            result = mod.EuDML(ArtifactStore(folder), client=client).fetch("204358", parts=["metadata", "fulltext", "supplementary"])
+            self.assertEqual(result["status"], "partial")
+            self.assertEqual(result["target"], "204358")
+            self.assertEqual(result["components"]["metadata"]["status"], "available")
+            self.assertEqual(result["components"]["fulltext"]["status"], "not_offered")
+            self.assertEqual(result["components"]["supplementary"]["status"], "available")
+        changed = data.replace(b"urn:eudml:doc:204358", b"urn:eudml:doc:999999").replace(b"PPN577927043", b"provider:204358")
+        with tempfile.TemporaryDirectory() as folder, httpx.Client(transport=httpx.MockTransport(lambda request: httpx.Response(200, content=changed, headers={"Content-Type": "application/xml"}))) as client:
+            with self.assertRaises(ServiceError) as raised:
+                mod.EuDML(ArtifactStore(folder), client=client).fetch("204358", parts=["metadata"])
+            self.assertEqual(raised.exception.result["code"], "identity_mismatch")
+
+    def test_article_and_nested_book_part_native_bodies_remain_fulltext(self):
+        from xml.etree import ElementTree
+        mod = importlib.import_module("eudml")
+        article = ElementTree.fromstring((ROOT / "tests/fixtures/eudml-article.xml").read_bytes())
+        body = ElementTree.SubElement(article, "body")
+        section = ElementTree.SubElement(body, "sec")
+        ElementTree.SubElement(section, "p").text = "Native article body."
+        book = ElementTree.fromstring((ROOT / "tests/fixtures/eudml-book.xml").read_bytes())
+        part = book.find("./body/book-part")
+        part_body = ElementTree.SubElement(part, "body")
+        ElementTree.SubElement(part_body, "p").text = "Native preface body."
+        for target, data in (("196516", ElementTree.tostring(article)), ("204358", ElementTree.tostring(book))):
+            with self.subTest(target=target), tempfile.TemporaryDirectory() as folder, httpx.Client(transport=httpx.MockTransport(lambda request, data=data: httpx.Response(200, content=data, headers={"Content-Type": "application/xml"}))) as client:
+                result = mod.EuDML(ArtifactStore(folder), client=client).fetch(target, parts=["metadata", "fulltext", "supplementary"])
+                self.assertEqual(result["status"], "ok")
+                self.assertEqual(result["components"]["metadata"]["status"], "available")
+                self.assertEqual(result["components"]["fulltext"]["status"], "available")
+                self.assertEqual(result["components"]["supplementary"]["status"], "available")
+
     def test_cql_search_waits_for_observed_gateway_response_without_relaxing_common_client(self):
         mod = importlib.import_module("eudml")
         observed = {}

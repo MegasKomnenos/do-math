@@ -23,7 +23,7 @@
 | Unpaywall | unpaywall | api | deferred | source_guide | public_endpoint_contact_requirement_observed |
 | CORE | core | api | partial | source_guide, search, fetch, export | 원본 검색·work/output8쪽·명시26쪽·files01복구48쪽·제거404 검증; indexed 안내와 rate 구별 |
 | Project Euclid | project-euclid | playwright | partial | source_guide, search, fetch, export | live_mcp_21_condition_semantics_window_50_page_bound_citations_pdf_supplement |
-| EuDML | eudml | api | partial | source_guide, search, fetch, export | CQL/NLM 양성 이력·경로별 대기 수리; 최신 원본 재검증 504·검색 응답 유지보수 안내 |
+| EuDML | eudml | api | partial | source_guide, search, fetch, export | CQL/NLM·실제 책 서지와14장 검증; 목차의 전문 오판 수리·간헐적504 구별 |
 | Numdam | numdam | fixed: OAI/citation API; native search/DOI resolution Playwright | partial | source_guide, search, fetch, export | 11조건·날짜만 검색·한쪽 열린 범위·qdt 마지막 페이지·원 인용/JATS/PDF/DJVU |
 | Mathlib | mathlib | api | partial | source_guide, search, fetch, export | live_mcp_pinned_source_search_file_fetch_line_comparison |
 | Archive of Formal Proofs | afp | api | partial | source_guide, search, fetch, export | live_mcp_entry_search_pinned_metadata_and_proof_source_fetch_extract |

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<book>
+  <front>
+    <book-meta>
+      <book-id pub-id-type="eudml-id">urn:eudml:doc:204358</book-id>
+      <book-id pub-id-type="gdz-id">PPN577927043</book-id>
+      <book-title-group>
+        <book-title>New mathematical tables</book-title>
+      </book-title-group>
+      <contrib-group>
+        <contrib contrib-type="author"><name><surname>Barlow</surname><given-names>Peter</given-names></name></contrib>
+      </contrib-group>
+      <pub-date><year>1814</year></pub-date>
+    </book-meta>
+  </front>
+  <body>
+    <book-part book-part-type="preface">
+      <book-part-meta>
+        <book-part-id book-part-id-type="gdz-id">PPN577927043+DMDLOG_0001</book-part-id>
+        <title-group><title>Preface.</title></title-group>
+      </book-part-meta>
+    </book-part>
+  </body>
+</book>

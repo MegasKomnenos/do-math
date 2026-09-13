@@ -415,9 +415,9 @@ SOURCES["eudml"].implementation = "partial"
 SOURCES["eudml"].usage = {
     "search": "query는 EuDML OpenSearch의 CQL 검색식이다. 필드·관계·조건을 쓴다. 예: all=\"P versus NP\" 또는 defName=\"Matematika\". 큰따옴표로 구문을 감싸고 AND·OR·NOT·괄호로 조건을 결합한다. 검색식을 서버가 새로 작성하지 않는다.",
     "fields": {"all": "전체 검색 영역", "defName": "제목", "authorCoauthorName": "저자 이름", "language": "ISO 639-1 언어", "journalName": "저널명", "published": "발행일", "id": "식별자"},
-    "fetch": "196516 같은 문헌 번호, urn:eudml:doc:번호 또는 eudml.org/doc/번호 링크. eudml-nlm 원 메타데이터를 확보하고 현재 문헌의 article/book metadata header에 있는 EuDML ID를 대조한다. 제목 입력은 defName 후보 검색으로 반환한다.",
+    "fetch": "196516 같은 문헌 번호, urn:eudml:doc:번호 또는 eudml.org/doc/번호 링크. eudml-nlm 원 메타데이터를 확보하고 현재 문헌의 article/book metadata header에 있는 EuDML ID를 대조한다. 실제 책204358의 서지와14개 장 정보도 검증했다. 제목 입력은 defName 후보 검색으로 반환한다.",
     "exports": "json은 파싱한 레코드, native·rss는 원 RSS 표현, xml·html은 같은 검색 조건의 자료원 export다. year는 RSS dc:date이며 pubDate와 구별한다. fetch의 metadata·export·supplementary는 원 NLM 메타데이터다.",
-    "limits": "options는 비운다. start는 0부터, limit는 1..1000. 원 RSS의 totalResults·startIndex를 대조한다. CQL 요청의 응답 대기 한도는90초, NLM 요청은120초이며 연결 대기는20초다. NLM에 본문이 없고 외부 원문 링크만 있는 경우 fulltext는 not_offered다. 원 저장소를 호출 AI가 별도 자료원으로 선택한다. XML 내부 항목은 extract selection에 ./front/article-meta/article-id 또는 .//{*}abstract 같은 경로로 지정한다.",
+    "limits": "options는 비운다. start는 0부터, limit는 1..1000. 원 RSS의 totalResults·startIndex를 대조한다. CQL 요청의 응답 대기 한도는90초, NLM 요청은120초이며 연결 대기는20초다. NLM에 본문이 없고 목차·장별 서지·외부 원문 링크만 있는 경우 fulltext는 not_offered다. XML에 body 태그가 있다는 이유만으로 전문으로 세지 않으며 서지·장 정보·링크는 계속 보존한다. 원 저장소를 호출 AI가 별도 자료원으로 선택한다. XML 내부 항목은 extract selection에 ./front/article-meta/article-id, .//{*}book-part-meta 또는 .//{*}abstract 같은 경로로 지정한다.",
     "examples": [{"tool": "search", "arguments": {"source": "eudml", "query": "all=\"P versus NP\"", "start": 1, "limit": 2, "export": "rss"}}, {"tool": "fetch", "arguments": {"source": "eudml", "target": "196516", "parts": ["metadata"]}}],
     "official": ["https://wiki.eudml.org/mediawiki/eudml/images/D6.4.pdf", "https://eudml.org/api/search?q=all%3D%22P%20versus%20NP%22&count=2&format=rss"],
 }
@@ -774,7 +774,7 @@ for identifier, level in {
     "unpaywall": "public_endpoint_contact_requirement_observed",
     "theory-of-computing": "live_mcp_indexes_citation_pdf_source_ps_references_fetch_and_text_pagination",
     "pqdt": "live_mcp_21_facet_values_filtered_windows_zero_seven_exports_fulltext_supplement",
-    "eudml": "live_mcp_cql_rss_extract_nlm_fetch",
+    "eudml": "CQL/NLM·실제 책 서지와14장 검증; 목차의 전문 오판 수리·간헐적504 구별",
     "aps": "live_mcp_arbitrary_feed_window_native_pages_metadata_abstract_pdf",
     "aps-institutional": "live_mcp_search_window_custom_multi_facets_bibtex_ris_abstract_pdf_supplement",
     "project-euclid": "live_mcp_21_condition_semantics_window_50_page_bound_citations_pdf_supplement",
