@@ -15,7 +15,7 @@ def public_row(value):
 
 class Figshare(APIAdapter):
     source='figshare'
-    hosts=('api.figshare.com','ndownloader.figshare.com','s3-eu-west-1.amazonaws.com')
+    hosts=('api.figshare.com','figshare.com','ndownloader.figshare.com','s3-eu-west-1.amazonaws.com')
     min_interval=1.05
     max_limit=1000
     options=('kind','order','order_direction','institution','published_since','modified_since','group','resource_doi','doi','handle','item_type','project_id','collection_id')
@@ -25,6 +25,8 @@ class Figshare(APIAdapter):
         parsed=urlsplit(url)
         if parsed.hostname=='api.figshare.com':
             return bool(re.fullmatch(r'/v2/(articles|collections)(?:/(?:search|[1-9]\d*(?:/versions/[1-9]\d*)?(?:/articles)?))?',parsed.path))
+        if parsed.hostname=='figshare.com':
+            return parsed.path=='/api/graphql'
         if parsed.hostname=='ndownloader.figshare.com':
             return bool(re.fullmatch(r'/files/[1-9]\d*',parsed.path))
         # The observed AIP storage bucket. Additional Figshare stores need an observed route.
@@ -121,7 +123,105 @@ class Figshare(APIAdapter):
 
     def collection_members(self,row,version,evidence):
         if version is not None:
-            return {'status':'not_implemented','reason':'The public API exposes current membership only; a historical collection version is not replaced with that list'}
+            query='''query getItems($searchQuery: String, $cursor: String, $pageSize: Int, $sort: Order, $filters: AdvancedSearchFilter) {
+              searchAdvanced(searchQuery: $searchQuery, cursor: $cursor, pageSize: $pageSize, sort: $sort, filters: $filters, scope: "public_collection_items") {
+                results { count cursor elements { id title contentType: entityType institution: institutionName publishedDate revisionDate isEmbargoed embargoDate embargoType url } }
+              }
+            }'''
+            rows=[]; refs=[]; expected=row.get('articles_count'); reported=None; cursor=''; error=None
+            while True:
+                try:
+                    raw,page_evidence=self.request('https://figshare.com/api/graphql',json_body={
+                        'operationName':'getItems','variables':{'searchQuery':'','cursor':cursor,'pageSize':40,
+                        'sort':{'by':'added_date','type':'desc'},'filters':{'collectionIdVersion':f"{row['id']}_{version}"}},'query':query})
+                    if not isinstance(raw,dict) or raw.get('errors'):
+                        raise ServiceError('invalid_response','Figshare returned an error for historical collection membership',evidence=page_evidence)
+                    data=raw.get('data')
+                    advanced=data.get('searchAdvanced') if isinstance(data,dict) else None
+                    result=advanced.get('results') if isinstance(advanced,dict) else None
+                    if not isinstance(result,dict) or type(result.get('count')) is not int or result['count']<0 \
+                            or not isinstance(result.get('elements'),list) or any(not isinstance(item,dict) or type(item.get('id')) is not int for item in result['elements']):
+                        raise ServiceError('invalid_response','Figshare returned an invalid historical collection member page',evidence=page_evidence)
+                    if reported is not None and result['count']!=reported:
+                        raise ServiceError('result_set_changed','Figshare changed the historical membership count between pages',evidence=page_evidence)
+                    identifiers=[item['id'] for item in rows+result['elements']]
+                    if len(identifiers)!=len(set(identifiers)):
+                        raise ServiceError('inconsistent_pagination','Figshare repeated a historical collection member',evidence=page_evidence)
+                    next_cursor=result.get('cursor')
+                    if next_cursor is not None and (not isinstance(next_cursor,str) or not next_cursor or next_cursor==cursor):
+                        raise ServiceError('inconsistent_pagination','Figshare returned an invalid historical membership cursor',evidence=page_evidence)
+                    if next_cursor is not None and not result['elements']:
+                        raise ServiceError('incomplete_response','Figshare reported another historical membership page after an empty page',evidence=page_evidence)
+                    reported=result['count']; rows.extend(public_row(result['elements'])); refs.append(page_evidence['ref'])
+                    if len(rows)>reported:
+                        raise ServiceError('invalid_response','Figshare returned more historical members than its reported count',evidence=page_evidence)
+                    if len(rows)==reported or next_cursor is None: break
+                    cursor=next_cursor
+                except ServiceError as exc:
+                    error=exc.result; break
+            search_artifact=self.store.put(encoded(rows),'application/json',self.source,evidence['url'],role='collection_member_search_subset',evidence_refs=refs,
+                metadata_ref=evidence['ref'],collection_id=row['id'],membership_version=version)
+            if error is None and reported is not None and len(rows)!=reported:
+                error={'code':'incomplete_response','message':'Historical collection search pagination ended before its reported count',
+                       'search_received':len(rows),'search_reported':reported}
+            if error is None and type(expected) is int and len(rows)!=expected:
+                mismatch={'code':'provider_membership_count_mismatch',
+                    'message':'Version metadata count differs from the public collection-version search subset',
+                    'metadata_count':expected,'search_count':reported,'search_received':len(rows)}
+                try:
+                    current_before,before_evidence=self.request(f"https://api.figshare.com/v2/collections/{row['id']}")
+                    if not isinstance(current_before,dict) or current_before.get('id')!=row['id'] or type(current_before.get('version')) is not int:
+                        raise ServiceError('identity_mismatch','Figshare returned invalid current collection identity',evidence=before_evidence)
+                    mismatch['current_version']=current_before['version']
+                    same_doi=not row.get('doi') or bool(current_before.get('doi')) \
+                        and str(row['doi']).casefold()==str(current_before['doi']).casefold()
+                    if current_before['version']==version and same_doi:
+                        import json
+                        current_rows=[]; current_refs=[]; current_error=None
+                        while True:
+                            try:
+                                page=self.search('',options={'collection_id':row['id']},start=len(current_rows),limit=100)
+                                batch=json.loads(self.store.read(page['records']['ref'])[1]); current_refs.append(page['evidence']['ref'])
+                                if set(x['id'] for x in current_rows)&set(x['id'] for x in batch):
+                                    raise ServiceError('inconsistent_pagination','Current collection pagination repeated a member')
+                                current_rows.extend(batch)
+                                if page.get('status')=='partial':
+                                    current_error=(page.get('errors') or [{'code':'incomplete_response'}])[0]; break
+                                if not page['has_more'] or len(current_rows)>=expected: break
+                            except ServiceError as exc:
+                                current_error=exc.result; break
+                        current_after,after_evidence=self.request(f"https://api.figshare.com/v2/collections/{row['id']}")
+                        stable=isinstance(current_after,dict) and current_after.get('id')==row['id'] \
+                            and current_after.get('version')==version and current_after.get('doi')==current_before.get('doi') \
+                            and current_after.get('articles_count')==current_before.get('articles_count')
+                        search_ids={item['id'] for item in rows}; current_ids={item['id'] for item in current_rows}
+                        if current_error is None and stable and len(current_rows)==expected \
+                                and current_before.get('articles_count')==expected and search_ids<=current_ids:
+                            artifact=self.store.put(encoded(current_rows),'application/json',self.source,evidence['url'],role='collection_members',
+                                evidence_refs=current_refs,metadata_ref=evidence['ref'],current_identity_refs=[before_evidence['ref'],after_evidence['ref']],
+                                collection_id=row['id'],membership_version=version)
+                            return {'status':'available','artifact':artifact,'search_subset_artifact':search_artifact,
+                                'received':len(current_rows),'expected':expected,'reported':reported,'error':None,
+                                'content_kind':'historical_collection_member_references','membership_version':version,
+                                'membership_basis':'current_rest_verified_same_version',
+                                'reconciliation':{'search_received':len(rows),'current_rest_received':len(current_rows),
+                                    'search_only_ids':sorted(search_ids-current_ids),'current_rest_only_ids':sorted(current_ids-search_ids)},
+                                'scope':'Member references for the explicitly selected immutable collection version. The current REST relation was used only after matching the requested version before and after listing; the public collection-version search subset is preserved separately.'}
+                        if not stable:
+                            mismatch.update(code='result_set_changed',message='Current collection identity changed while reconciling the requested version')
+                        elif current_error is not None:
+                            mismatch['current_rest_error']=current_error
+                        else:
+                            mismatch.update(current_rest_received=len(current_rows),current_rest_count=current_before.get('articles_count'),
+                                search_only_ids=sorted(search_ids-current_ids))
+                except ServiceError as exc:
+                    mismatch['current_identity_error']=exc.result
+                error=mismatch
+            artifact=search_artifact
+            return {'status':'partial' if error else 'available','artifact':artifact,'received':len(rows),'expected':expected,
+                    'reported':reported,'error':error,'content_kind':'historical_collection_member_references','membership_version':version,
+                    'membership_basis':'version_ui_public_collection_search',
+                    'scope':'Member references for the explicitly selected immutable collection version. Select a member DOI or article ID to retrieve its files.'}
         rows=[]; refs=[]; expected=row.get('articles_count'); error=None
         while True:
             if len(rows)>=5000000:

@@ -83,7 +83,7 @@ Theory of Computing은 공식 저자·주제 색인과 저널이 지정한 검�
 
 EuDML은 CQL/OpenSearch와 NLM 메타데이터 API를 사용한다. 참고문헌의 ID를 현재 문헌의 ID로 쓰지 않으며, 외부 원문 링크를 자동 방문하지 않는다. Zenodo는 레코드나 특정 파일 URL로 파일을 받아 제공된 크기·checksum과 대조한다. 파일 URL을 지정하면 해당 파일을 선택하고, 레코드에 fulltext·supplementary를 요청하면 그 레코드의 파일들을 회수한다.
 
-AIP의 Figshare 보충자료는 AIP 호출의 `source`·`target` 참조를 읽고 `figshare`를 명시적으로 선택한다. Figshare 공개 API의 검색·현재 컬렉션 구성원·버전별 문헌 파일을 연결했으며 별도 계정이나 토큰을 사용하지 않는다. 다운로드한 파일은 제공된 크기와 MD5를 대조한다. 과거 컬렉션 구성원 조회는 현재 목록으로 대체하지 않으며 외부 저장소 링크도 자동 방문하지 않는다. 공개 repository description은 저자 초록으로 단정하지 않는다.
+AIP의 Figshare 보충자료는 AIP 호출의 `source`·`target` 참조를 읽고 `figshare`를 명시적으로 선택한다. Figshare 공개 API의 검색·현재 및 과거 판본의 컬렉션 구성원·버전별 문헌 파일을 연결했으며 별도 계정이나 토큰을 사용하지 않는다. 다운로드한 파일은 제공된 크기와 MD5를 대조한다. 판본별 GraphQL 목록과 메타데이터 건수가 다르면 확보한 목록을 partial로 보존한다. 요청 판본이 current라는 사실과 DOI·건수·부분집합 관계를 조회 전후에 확인한 경우에만 그 판본의 REST 관계로 보완한다. 다른 current 판본으로 과거 목록을 대체하지 않으며 외부 저장소 링크도 자동 방문하지 않는다. 공개 repository description은 저자 초록으로 단정하지 않는다.
 
 `aps`는 별도 자격 없는 공개 Harvest API의 OA 자료 범위다. `aps-institutional`은 KUDOS를 거치는 기관 구독 접근이다. 호출자가 자료원을 선택하며 한 호출 안에서 접근 경로를 바꾸지 않는다. 기관 검색은 조건식·정렬·원 facet·날짜를 다루며 현재 지원 값과 실제 검증 범위는 `describe_source`와 검증 기록에서 확인한다.
 
