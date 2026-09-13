@@ -631,3 +631,6 @@ tests/live_core_file.py의 새 SDK는22:21:51.377164Z~22:22:01.331314Z에 실제
 JSTOR는 문헌 식별자만 기다리다 원시 timeout을 내던 부분을 수리했다. 준비된 정상 식별자를 먼저 확인하고, 아직 없으면 늦게 렌더되는 접근 확인 화면도 관찰한다. 관찰 종료는 identity_mismatch가 아니라 retryable document_load_timeout이다. 이 선택으로 정상 문헌의 challenge처럼 보이는 제목만으로 접근 제한을 오판하지 않는다. 주 세션이 실제 홈페이지→흰 화면→client challenge→정상 문헌의 전후 이미지를 직접 읽었고, 회귀의 원시 TimeoutError를 먼저 재현했다.
 
 원본 SDK는 community.39197180에서 metadata와2,191바이트 VTT를 보존하고, native download disabled에 따라 fulltext not_offered를 반환했다. community.41259097은24,416,379바이트 audio/mpeg와33,159바이트 VTT가 모두 available인 ok였다. 두 결과의5개 판정은 `data/access-research/user-criteria-jstor/root-sdk.json`에 있다. 실제 영상 파일을 받은 것으로 계산하지 않는다. SIAM20검사와 JSTOR13검사, 두 수리를 포함한 전체529검사가67.613초에 통과했다.
+2026-09-13 Numdam 날짜 검색을 원본에 통합했다. 기존 코드는 빈 주 검색어와 날짜 조건을 invalid_query로 거절했고, 실제 날짜 결과의 `-2-qdt` 링크를 `-2-qt` 전용 판별식으로 거절했다. 원본 회귀에서 두 실패를 확인한 뒤 수리해 Numdam 8검사가 통과했다. 한쪽 경계를 빈 문자열로 보내면 정상 열린 범위가 되지 않으므로, 생략한 경계에 원 검색의 `*`를 입력한다. 임의 최소·최대 연도는 만들지 않는다.
+
+주 세션은 로컬 페이지 판별 실패 직전·직후·안정 화면이 모두 정상 976건 첫 페이지라는 것을 직접 읽고, 수리 후 활성 49페이지도 읽었다. 원본 새 SDK 6호출에서 정확 2012년 976건, 2012년 이후 12,021건, 이전 65,819건을 확인했다. 각각 마지막 offset 975·12,020·65,818에서 문헌 하나를 회수했고 활성 페이지는 49·602·3,291, has_more는 false였다. 검증 8조건이 모두 통과했다. 근거는 `data/access-research/user-criteria-numdam/root-sdk.json`이다. 이 숫자는 관측 시점의 결과이며 고정 총수 계약이 아니다.

@@ -16,6 +16,12 @@ FORMATS = {'bibtex': ('bib', 'application/x-bibtex'), 'ris': ('ris', 'applicatio
 NATIVE = re.compile(r'[A-Za-z0-9]+_[A-Za-z0-9_]+')
 
 
+def numbered_page_link(second, number):
+    if not re.search(r'-2-q(?:d)?t(?:&|$)', second):
+        return None
+    return re.sub(r'-2-(q(?:d)?t)(?=&|$)', rf'-{number}-\1', second)
+
+
 def search_records(raw, base):
     soup = BeautifulSoup(raw, 'html.parser')
     header = soup.select_one('.results-header')
@@ -108,7 +114,10 @@ class Numdam(NumdamOAI):
         self.validate({}, start, limit)
         if not isinstance(options.get('terms', []), list):
             raise ServiceError('invalid_options', 'terms must be an array of search conditions')
-        terms = [{'field': options.get('field', 'all'), 'query': query}] + options.get('terms', [])
+        additional = options.get('terms', [])
+        date_only = (not query and options.get('field', 'all') == 'all' and additional
+                     and all(isinstance(term, dict) and term.get('field') == 'date' for term in additional))
+        terms = [{'field': options.get('field', 'all'), 'query': '*' if date_only else query}] + additional
         for index, term in enumerate(terms):
             if not isinstance(term, dict) or set(term) - {'field', 'query', 'not', 'from', 'until'} or term.get('field') not in FIELDS:
                 raise ServiceError('invalid_options', 'Each term needs a supported field and query; date uses from/until')
@@ -116,8 +125,12 @@ class Numdam(NumdamOAI):
                 raise ServiceError('invalid_options', 'Use date/keywords in additional terms; not must be boolean')
             if term['field'] != 'date' and (not isinstance(term.get('query'), str) or not term['query'].strip()):
                 raise ServiceError('invalid_query', 'Every text search field needs a nonempty query')
-            if term['field'] == 'date' and (not any(term.get(k) for k in ('from', 'until')) or any(term.get(k) and not re.fullmatch(r'\d{4}', str(term[k])) for k in ('from', 'until'))):
-                raise ServiceError('invalid_options', 'Date bounds are four-digit years')
+            if term['field'] == 'date':
+                bounds = [term.get(key) for key in ('from', 'until')]
+                if (not any(value not in (None, '') for value in bounds)
+                        or any(value not in (None, '') and not re.fullmatch(r'\d{4}', str(value))
+                               for value in bounds)):
+                    raise ServiceError('invalid_options', 'Date bounds are four-digit years')
         page = self.gateway.public_page(self.source)
         goto_source(page, 'https://www.numdam.org/', self.hosts, wait_until='domcontentloaded', timeout=45000)
         for index, term in enumerate(terms):
@@ -128,8 +141,9 @@ class Numdam(NumdamOAI):
             group.locator('a.dropdown-item').filter(has_text=re.compile('^' + FIELDS[term['field']] + '$')).click()
             if term['field'] == 'date':
                 for key, name in (('from', 'q-f-'), ('until', 'q-l-')):
-                    if term.get(key):
-                        group.locator(f'input[name="{name}{index}"]').fill(str(term[key]))
+                    value = term.get(key)
+                    group.locator(f'input[name="{name}{index}"]').fill(
+                        '*' if value in (None, '') else str(value))
             else:
                 group.locator(f'input[name="q{index}"]').fill(term['query'])
             if term.get('not'):
@@ -152,9 +166,9 @@ class Numdam(NumdamOAI):
             if number == 1:
                 batch = first_rows
             else:
-                if not second or not re.search(r'-2-qt(?:&|$)', second):
+                link = numbered_page_link(second or '', number)
+                if not link:
                     raise ServiceError('pagination_missing', 'Numdam did not expose its next page link', evidence=first)
-                link = re.sub(r'-2-qt(?=&|$)', '-' + str(number) + '-qt', second)
                 goto_source(page, urljoin(first['url'], link), self.hosts, wait_until='domcontentloaded', timeout=45000)
                 raw = page.content()
                 current = self.store.put(clean_html(raw, self.store.sanitizer), 'text/html', self.source, page.url, role='native_search_page', page=number)
@@ -168,6 +182,8 @@ class Numdam(NumdamOAI):
                 raise ServiceError('range_mismatch', 'Numdam returned an incomplete result page', evidence=evidence[-1])
             rows.extend(batch[max(0, start - (number - 1) * 20):min(20, start + limit - (number - 1) * 20)])
         result = self.page(rows, total, first, query, options, start, limit)
+        if date_only:
+            result['native_match_all_query'] = '*'
         result['evidence_pages'] = evidence
         if export in ('native', 'html'):
             result['export'] = {'artifacts': evidence}

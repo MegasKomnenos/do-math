@@ -3,6 +3,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -11,6 +12,96 @@ from numdam import Numdam, search_records
 
 
 class NumdamContract(unittest.TestCase):
+    def test_numbered_page_link_supports_text_and_date_search_pages(self):
+        from numdam import numbered_page_link
+        self.assertEqual(numbered_page_link('?algebra-2-qt', 49), '?algebra-49-qt')
+        self.assertEqual(numbered_page_link('?*-[2012 TO 2012]-2-qdt', 49),
+                         '?*-[2012 TO 2012]-49-qdt')
+        self.assertIsNone(numbered_page_link('?unrecognized-page=2', 49))
+
+    def test_blank_query_with_only_date_terms_uses_the_native_match_all_query(self):
+        class Submitted(Exception):
+            pass
+
+        class Navigation:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
+        class Locator:
+            def __init__(self, page, selector):
+                self.page = page
+                self.selector = selector
+
+            def count(self):
+                return 1
+
+            def filter(self, **kwargs):
+                return self
+
+            def locator(self, selector):
+                return Locator(self.page, selector)
+
+            def click(self):
+                if self.selector == 'button[type=submit]':
+                    raise Submitted
+
+            def fill(self, value):
+                self.page.fills[self.selector] = value
+
+            def check(self):
+                self.page.checked.add(self.selector)
+
+        class Page:
+            def __init__(self):
+                self.fills = {}
+                self.checked = set()
+
+            def locator(self, selector):
+                return Locator(self, selector)
+
+            def expect_navigation(self, **kwargs):
+                return Navigation()
+
+        class Gateway:
+            def __init__(self, page):
+                self.page = page
+
+            def public_page(self, source):
+                return self.page
+
+        page = Page()
+        with tempfile.TemporaryDirectory() as temp:
+            adapter = Numdam(ArtifactStore(temp), Gateway(page))
+            options = {'terms': [{'field': 'date', 'from': '2012', 'until': '2012'}]}
+            with patch('numdam.goto_source'), self.assertRaises(Submitted):
+                adapter.search('', options=options)
+        self.assertEqual(page.fills['input[name="q0"]'], '*')
+        self.assertEqual(page.fills['input[name="q-f-1"]'], '2012')
+        self.assertEqual(page.fills['input[name="q-l-1"]'], '2012')
+
+        for bound, expected in (
+            ({'from': '2012'}, {'q-f-1': '2012', 'q-l-1': '*'}),
+            ({'until': '2012'}, {'q-f-1': '*', 'q-l-1': '2012'}),
+        ):
+            one_sided = Page()
+            with tempfile.TemporaryDirectory() as temp:
+                adapter = Numdam(ArtifactStore(temp), Gateway(one_sided))
+                options = {'terms': [{'field': 'date', **bound}]}
+                with patch('numdam.goto_source'), self.assertRaises(Submitted):
+                    adapter.search('', options=options)
+            self.assertEqual(one_sided.fills['input[name="q0"]'], '*')
+            self.assertEqual(one_sided.fills['input[name="q-f-1"]'], expected['q-f-1'])
+            self.assertEqual(one_sided.fills['input[name="q-l-1"]'], expected['q-l-1'])
+
+        with tempfile.TemporaryDirectory() as temp:
+            adapter = Numdam(ArtifactStore(temp), Gateway(Page()))
+            with patch('numdam.goto_source'), self.assertRaises(ServiceError) as caught:
+                adapter.search('', options={'terms': [{'field': 'date', 'from': 0, 'until': '2012'}]})
+        self.assertEqual(caught.exception.result['code'], 'invalid_options')
+
     def test_native_endnote_can_be_extracted_without_losing_repeated_authors(self):
         raw = (ROOT / 'tests/fixtures/numdam.enw').read_bytes()
         with tempfile.TemporaryDirectory() as temp:

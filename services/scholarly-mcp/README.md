@@ -122,6 +122,8 @@ Taylor & Francis는 원 고급검색 필드와 연도·정렬, native BibTeX·RI
 
 Numdam은 공개 웹의 검색 필드·추가 조건·발행연도 검색과 OAI 갱신일 열거를 구별해 제공한다. DOI 페이지의 내부 식별자를 OAI 메타데이터와 연결하고 원 BibTeX·RIS·EndNote, PDF와 DJVU를 회수한다. EndNote의 `fields`는 원 태그 대소문자와 반복 필드를 유지하며 `selection="raw"`로 원 줄도 읽을 수 있다.
 
+발행연도만 검색하려면 Numdam의 `query`를 비우고 `options.terms`에 날짜 조건을 둔다. 예를 들어 `{"field":"date","from":"2012"}`는 2012년을 포함한 이후 범위다. `until`만 있으면 그 연도를 포함한 이전 범위다. 어댑터는 원 검색 폼의 전체 검색어와 생략한 날짜 경계에 `*`를 입력한다. 두 연도를 지정하면 그 범위를 그대로 사용하며, 날짜 검색의 다음 페이지도 조회한다.
+
 
 DROPS는 문헌별 원 XML·BibTeX 등 내보내기, PDF·HTML 전문과 소프트웨어 artifact의 CodeMeta를 지원한다. 직접 파일 URL은 문헌의 Files 목록과 대조한다. 부가자료의 외부 저장소 링크는 설명과 함께 반환하며 다른 자료원으로 자동 이동하지 않는다.
 
