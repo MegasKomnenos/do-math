@@ -1,5 +1,5 @@
 """AMS Digital Library native institutional browse records."""
-import csv,html,io,json,re,zipfile
+import csv,html,io,json,re,unicodedata,zipfile
 from urllib.parse import urlsplit,urljoin,parse_qs,urlencode,urlunsplit,unquote
 from browser_adapters import goto_source,clean_html,dismiss_cookies,is_access_challenge
 from publishers import Publisher,PROFILES
@@ -24,6 +24,67 @@ def advanced_expression(expression,_nested=False):
     return {'condition':'','queryElements':None,**expression,'field':fields[expression['field']]}
 
 
+def basic_expression(expression):
+    """Compile the provider-verified expression subset to visible basic controls."""
+    advanced_expression(expression)
+
+    def unavailable():
+        raise ServiceError(
+            'provider_feature_unavailable',
+            'The current AMS controls cannot execute this Boolean field combination',
+            status='unsupported',source='ams',stage='search_options',
+            supported_expression_subset={
+                'terms':'Title or Author with contains and one alphanumeric token',
+                'groups':'Nested same-field OR, or AND over one Title expression and one Author expression',
+            })
+
+    def unmapped():
+        raise ServiceError(
+            'expression_mapping_unavailable',
+            'The local AMS adapter has not mapped this field, operator, or atomic value without changing its meaning',
+            status='unsupported',source='ams',stage='search_options')
+
+    def term(value):
+        if set(value)!={'field','operator','value'} or value['field'] not in ('Title','Author') or value['operator']!='contains':
+            unmapped()
+        text=unicodedata.normalize('NFC',value['value'].strip())
+        if not text.isalnum() or text.upper() in ('AND','OR','NOT'):
+            unmapped()
+        return value['field'],text
+
+    def compile_node(value):
+        if set(value)=={'field','operator','value'}:
+            field,text=term(value)
+            return {field:text}
+        compiled=[compile_node(child) for child in value['terms']]
+        if value['condition']=='OR':
+            fields={next(iter(item)) for item in compiled if len(item)==1}
+            if len(fields)!=1 or len(compiled)!=sum(len(item)==1 for item in compiled):
+                unavailable()
+            field=fields.pop()
+            return {field:' '.join(item[field] for item in compiled)}
+        result={}
+        for item in compiled:
+            if set(result)&set(item):
+                unavailable()
+            result.update(item)
+        if not result or set(result)-{'Title','Author'}:
+            unavailable()
+        return result
+
+    return compile_node(expression)
+
+
+def basic_search_value(value):
+    """Mirror the visible AMS form's documented client-side value normalization."""
+    decomposed=unicodedata.normalize('NFD',value)
+    return ''.join(char for char in decomposed if not '\u0300'<=char<='\u036f').replace('\u2018',"'").replace('\u2019',"'")
+
+
+def basic_search_expected(values,fields):
+    return {fields[name][1]:[basic_search_value(value)] for name,value in values.items()}
+
+
 def check_expression_request(body,expected):
     request=parse_qs(body or '');values=request.get('advancedSearchJson',[])+request.get('dynamicAdvancedSearch',[])
     if len(values)==1 and not request.get('advancedSearch'):
@@ -34,6 +95,13 @@ def check_expression_request(body,expected):
             if observed==expected:return
             break
     raise ServiceError('query_mismatch','AMS did not retain the submitted expression and groups')
+
+
+def basic_search_request(body):
+    """Read the provider product API's pipe-delimited advanced-search fields."""
+    request=parse_qs(body or '')
+    values=request.get('advancedSearch',[])
+    return parse_qs(values[0],separator='|') if len(values)==1 else {}
 
 
 def prepare_expression(page,expression):
@@ -67,11 +135,70 @@ def product_records(payload):
     total,page,capacity=(payload.get(key) for key in ('TotalRows','PageNumber','RowsPerPage'))
     if rows is None and type(total) is int and total==0:
         rows=[]
-    if not isinstance(rows,list) or any(not isinstance(row,dict) or not row.get('Title') for row in rows) or any(type(v) is not int for v in (total,page,capacity)):
+    if not isinstance(rows,list) or any(not isinstance(row,dict) for row in rows) or any(type(v) is not int for v in (total,page,capacity)):
         raise ServiceError('invalid_response','AMS returned no native product range')
-    if total<0 or page<1 or capacity<1 or len(rows)!=min(capacity,max(0,total-(page-1)*capacity)):
+    normalized=[]
+    for row in rows:
+        if row.get('Title'):
+            normalized.append(row)
+            continue
+        reviews=row.get('BookReviews')
+        if row.get('DocumentType')=='BOOKREV' and isinstance(reviews,list) and len(reviews)==1 and isinstance(reviews[0],dict) and reviews[0].get('Title'):
+            normalized.append({**row,'Title':reviews[0]['Title'],'TitleSource':'BookReviews[0].Title'})
+            continue
+        raise ServiceError('invalid_response','AMS returned a product without a native display title')
+    remaining=max(0,total-(page-1)*capacity)
+    if (total<0 or page<1 or capacity<1 or len(rows)>min(capacity,remaining)
+            or bool(rows)!=(remaining>0)):
         raise ServiceError('range_mismatch','AMS products do not match the declared range')
-    return rows,total,(page-1)*capacity
+    return normalized,total,(page-1)*capacity
+
+
+def requested_page_gap(first,count,capacity,total,start,limit):
+    """Describe a provider-declared ordinal hole only when it intersects the request."""
+    actual_end=first+count
+    declared_end=min(first+capacity,total)
+    if actual_end>=declared_end or actual_end>=start+limit or declared_end<=start:
+        return None
+    return {'status':'error','code':'source_range_gap',
+            'reason':'AMS displayed fewer products than its declared page range',
+            'missing_start':max(start,actual_end),'missing_end':min(start+limit,declared_end),
+            'resume_start':declared_end,'page_first':first,'page_received':count,
+            'page_capacity':capacity,'total':total}
+
+
+def native_record_fingerprint(row):
+    """Use the whole native row: AMS ProductId can identify several abstract rows."""
+    return encoded(row)
+
+
+def validate_page_sequence(observed_page,expected_page,previous_total,reported_total):
+    if observed_page!=expected_page or previous_total is not None and previous_total!=reported_total:
+        raise ServiceError('range_mismatch','AMS changed the page or result total')
+
+
+def select_native_page(rows,first,capacity,total,start,limit,seen):
+    """Select a confirmed ordinal prefix and report the first source-side hole."""
+    selected=[]
+    for index,row in enumerate(rows,first):
+        fingerprint=native_record_fingerprint(row)
+        duplicate=fingerprint in seen
+        seen.add(fingerprint)
+        if start<=index<start+limit:
+            if duplicate:
+                return selected,{'status':'error','code':'source_duplicate_record',
+                    'reason':'AMS repeated an identical native product at another ordinal',
+                    'duplicate_at':index,'resume_start':index+1,'total':total}
+            selected.append((index,row))
+    return selected,requested_page_gap(first,len(rows),capacity,total,start,limit)
+
+
+def page_export_scope(format,incomplete):
+    if incomplete:
+        return 'Visited native pages; records contains only the confirmed prefix; the requested window is incomplete'
+    if format=='native':
+        return 'Whole native pages covering the requested window'
+    return 'Visited native pages; records contains the exact requested window'
 
 
 def validate_product_xlsx(data,row,secrets=()):
@@ -157,10 +284,6 @@ class AMS(Publisher):
     def export_products(self,selected):
         """Export the exact selected window as one native workbook per product."""
         artifacts=[];errors=[]
-        page=self.gateway.pages.get(self.source)
-        if page is None or page.is_closed():
-            return {'status':'error','code':'export_page_unavailable','artifacts':[],'errors':[{'status':'error','code':'export_page_unavailable'}],
-                    'logical_products':len(selected),'available_products':0}
         for row in selected:
             code=row.get('ProductCode')
             if not isinstance(code,str) or not code.strip():
@@ -174,6 +297,8 @@ class AMS(Publisher):
                 if exact_row.get('ProductCode')!=code:
                     raise ServiceError('identity_mismatch','AMS exact export search returned another product')
                 page=self.gateway.pages.get(self.source)
+                if page is None or page.is_closed():
+                    raise ServiceError('export_page_unavailable','AMS did not prepare the institutional product page for export')
                 def matches(response):
                     parts=urlsplit(response.url)
                     return parts.hostname in self.profile.hosts and parts.path=='/product/exportproducts' and response.request.method=='POST'
@@ -205,33 +330,78 @@ class AMS(Publisher):
     def search(self,query,*,options,start=0,limit=20,cursor=None,export=None):
         if type(start) is not int or start<0 or type(limit) is not int or not 1<=limit<=1000:
             raise ServiceError('invalid_range','Use start >= 0 and limit 1..1000')
-        if cursor or set(options)-{'field','title','author','product_code','book_text','isbn','msc','content_type','expression'} or options.get('field','Title') not in self.fields:
-            raise ServiceError('invalid_options','Use the documented AMS advanced-search fields')
-        expression=None
+        if cursor:
+            raise ServiceError('invalid_options','AMS search does not accept a cursor; use start and limit')
+        expression_values=None
         if 'expression' in options:
             if query or set(options)!={'expression'}:
-                raise ServiceError('invalid_options','For expression search set query to an empty string and use expression as the only option')
-            expression=advanced_expression(options['expression'])
-            if not isinstance(expression.get('queryElements'),list):raise ServiceError('invalid_options','The outer expression must be an AND/OR group')
+                raise ServiceError('invalid_options','Expression cannot be combined with a query or other AMS options')
+            expression_values=basic_expression(options['expression'])
+        if set(options)-{'field','title','author','product_code','book_text','isbn','msc','content_type'} or options.get('field','Title') not in self.fields:
+            if expression_values is None:
+                raise ServiceError('invalid_options','Use the documented AMS advanced-search fields')
+        expression=None
         if export not in (None,'json','native','csv','html','xlsx'):
             raise ServiceError('invalid_export','Use json, native, csv, html or the verified native xlsx export')
         content=options.get('content_type','All')
         if content not in ('All','EBook','Journal','Abstracts'):
             raise ServiceError('invalid_options','content_type must be All, EBook, Journal or Abstracts')
-        page=self.gateway.open('ams','AMS',self.profile.hosts,'body')
-        response=goto_source(page,'https://'+urlsplit(page.url).hostname+'/AdvancedSearch',self.profile.hosts,wait_until='domcontentloaded',timeout=45000)
-        validate_search_page(page.content(),response.status if response else None)
+        if expression_values is not None:
+            public_key=self.source+'-expression-public'
+            cached=self.gateway.pages.get(public_key)
+            if cached is not None and not cached.is_closed():
+                cached.close()
+                self.gateway.pages.pop(public_key,None)
+            page=self.gateway.public_page(public_key)
+            search_page='https://pubs.ams.org/AdvancedSearch'
+        else:
+            page=self.gateway.open('ams','AMS',self.profile.hosts,'body')
+            search_page='https://'+urlsplit(page.url).hostname+'/AdvancedSearch'
+        try:
+            response=goto_source(page,search_page,self.profile.hosts,wait_until='domcontentloaded',timeout=45000)
+        except Exception as first_error:
+            from playwright.sync_api import TimeoutError as BrowserTimeout
+            if not isinstance(first_error,BrowserTimeout):raise
+            current=urlsplit(page.url)
+            ready=(current.hostname in self.profile.hosts and current.path=='/AdvancedSearch'
+                   and page.locator('#advancedSearchTitleInput').count())
+            if ready:
+                response=None
+            else:
+                try:
+                    response=goto_source(page,search_page,self.profile.hosts,wait_until='commit',timeout=20000)
+                except Exception as retry_error:
+                    raise ServiceError('search_interface_not_ready','AMS advanced-search navigation did not stabilize',
+                                       source=self.source,stage='search_interface_navigation',
+                                       initial_error_type=type(first_error).__name__,
+                                       retry_error_type=type(retry_error).__name__) from None
+        if response is not None:
+            validate_search_page(page.content(),response.status)
         try:
             page.wait_for_function('(ids) => ids.every(id=>document.getElementById(id))',arg=[control for control,_ in self.fields.values()],timeout=20000)
         except Exception as error:
             validate_search_page(page.content())
             raise ServiceError('search_interface_not_ready','AMS did not initialize the documented advanced-search controls',source=self.source,stage='search_interface',error_type=type(error).__name__) from None
-        dismiss_cookies(page)
+        if response is None:
+            validate_search_page(page.content())
+        okay=page.get_by_role('button',name='Okay',exact=True).filter(visible=True)
+        if okay.count():
+            okay.first.evaluate('node => node.click()')
+        else:
+            try:
+                dismiss_cookies(page)
+            except Exception as error:
+                okay=page.get_by_role('button',name='Okay',exact=True).filter(visible=True)
+                if okay.count():
+                    okay.first.evaluate('node => node.click()')
+                else:
+                    raise ServiceError('search_interface_not_ready','AMS cookie controls did not become actionable',
+                                       source=self.source,stage='cookie_control',error_type=type(error).__name__) from None
         for control,_ in self.fields.values():
             if page.locator('#'+control).input_value():
                 page.locator('#'+control).fill('')
         field=options.get('field','Title')
-        values={field:query}
+        values=expression_values if expression_values is not None else {field:query}
         aliases={'title':'Title','author':'Author','product_code':'ProductCode','book_text':'BookText','isbn':'ISBN','msc':'MSC'}
         for key,name in aliases.items():
             if key in options:
@@ -244,14 +414,14 @@ class AMS(Publisher):
             for name,value in values.items():
                 page.locator('#'+self.fields[name][0]).fill(value)
             if not page.locator('#advancedSearchContentTypeInput'+content).is_checked():
-                page.locator('label[for="advancedSearchContentTypeInput'+content+'"]').click()
+                page.locator('label[for="advancedSearchContentTypeInput'+content+'"]').evaluate('node => node.click()')
 
         def matches(response):
             return urlsplit(response.url).hostname in self.profile.hosts and urlsplit(response.url).path=='/product/browseproducts' and response.request.method=='POST'
 
         try:
             with page.expect_response(matches,timeout=60000) as pending:
-                page.locator('#advancedSearchGo').filter(visible=True).filter(has_text=re.compile(r'^Search$')).first.click()
+                page.locator('#advancedSearchGo').filter(visible=True).filter(has_text=re.compile(r'^Search$')).first.evaluate('node => node.click()')
                 if re.search(r'^(Just a moment|Access Denied|Attention Required)',page.title(),re.I):
                     raise ServiceError('publisher_access_challenge','AMS displayed an access verification page',status='restricted')
         except ServiceError:
@@ -262,64 +432,114 @@ class AMS(Publisher):
             raise ServiceError('publisher_access_challenge' if challenged else 'search_response_not_received','AMS did not provide a native search response',status='restricted' if challenged else 'error',error_type=type(error).__name__) from None
         response=pending.value
         selected,evidence,html_pages=[],[],[]
+        errors=[];seen=set();incomplete=False;resume_start=None;last_capacity=None
         total=None
         search_url=None
         page_number=1
         while True:
-            if response.status in (401,403):
-                raise ServiceError('access_restricted','AMS restricted this search response',status='restricted')
-            if response.status!=200:
-                raise ServiceError('provider_error','AMS search failed',http_status=response.status)
-            request=parse_qs(response.request.post_data or '')
-            advanced=parse_qs(request.get('advancedSearch',[''])[0])
-            if expression:
-                check_expression_request(response.request.post_data,expression)
-            elif any(advanced.get(self.fields[name][1])!=[value] for name,value in values.items()):
-                raise ServiceError('query_mismatch','AMS native request does not retain the submitted fields')
-            payload=response.json()
-            native,reported,first=product_records(payload)
-            expected_type={'EBook':'B','Journal':'A','Abstracts':'ABS'}.get(content)
-            if expected_type and any(row.get('ContentType')!=expected_type for row in native):
-                raise ServiceError('filter_mismatch','AMS returned a product outside the requested content type')
-            if payload['PageNumber']!=page_number or total is not None and total!=reported:
-                raise ServiceError('range_mismatch','AMS changed the page or result total')
+            try:
+                if response.status in (401,403):
+                    raise ServiceError('access_restricted','AMS restricted this search response',status='restricted')
+                if response.status!=200:
+                    raise ServiceError('provider_error','AMS search failed',http_status=response.status)
+                advanced=basic_search_request(response.request.post_data)
+                if expression:
+                    check_expression_request(response.request.post_data,expression)
+                elif any(advanced.get(field)!=value for field,value in basic_search_expected(values,self.fields).items()):
+                    raise ServiceError('query_mismatch','AMS native request does not retain the submitted fields')
+                payload=response.json()
+                native,reported,first=product_records(payload)
+                expected_type={'EBook':'B','Journal':'A','Abstracts':'ABS'}.get(content)
+                if expected_type and any(row.get('ContentType')!=expected_type for row in native):
+                    raise ServiceError('filter_mismatch','AMS returned a product outside the requested content type')
+                validate_page_sequence(payload['PageNumber'],page_number,total,reported)
+            except ServiceError as error:
+                if not evidence:raise
+                try:
+                    failed=self.store.put(response.body(),response.headers.get('content-type','application/octet-stream'),self.source,response.url,
+                                          role='native_search_error_response',query=query,options=options,page_number=page_number)
+                    evidence.append(failed)
+                except Exception:pass
+                resume_start=(page_number-1)*(last_capacity or 1)
+                errors.append({**error.result,'page_number':page_number,'resume_start':resume_start})
+                incomplete=True
+                break
             total=reported
+            last_capacity=payload['RowsPerPage']
             proof=self.store.put(encoded(payload),'application/json',self.source,response.url,role='native_search_response',query=query,options=options)
             evidence.append(proof)
             selector='#productBrowseListContainer > li.productBrowseListItem:not(.placeHolderItem) a.productBrowseTitleLink'
-            page.wait_for_function('(arg) => document.querySelectorAll(arg.selector).length === arg.count',arg={'selector':selector,'count':len(native)},timeout=30000)
-            if native:
-                expected='Showing '+str(first+1)+' - '+str(first+len(native))+' of '+str(total)+' results'
-                page.wait_for_function('(expected) => document.querySelector("#productBrowseResultCountTopOneColumn")?.textContent.replace(/\\s+/g," ").trim() === expected',arg=expected,timeout=30000)
+            try:
+                try:
+                    page.wait_for_function('(arg) => document.querySelectorAll(arg.selector).length === arg.count',arg={'selector':selector,'count':len(native)},timeout=30000)
+                except Exception as error:
+                    raise ServiceError('search_render_mismatch','AMS rendered a different number of product links',
+                                       page_number=page_number,native_count=len(native),
+                                       rendered_count=page.locator(selector).count(),error_type=type(error).__name__) from None
+                if native:
+                    expected='Showing '+str(first+1)+' - '+str(first+len(native))+' of '+str(total)+' results'
+                    page.wait_for_function('(expected) => document.querySelector("#productBrowseResultCountTopOneColumn")?.textContent.replace(/\\s+/g," ").trim() === expected',arg=expected,timeout=30000)
+            except ServiceError as error:
+                if page_number==1:raise
+                resume_start=first
+                errors.append({**error.result,'page_number':page_number,'resume_start':resume_start})
+                incomplete=True
+                break
+            except Exception as error:
+                if native:
+                    count=page.locator('#productBrowseResultCountTopOneColumn')
+                    observed=' '.join(count.inner_text().split()) if count.count() else None
+                    failure=ServiceError('search_render_mismatch','AMS rendered a different product ordinal range',
+                                         page_number=page_number,expected=expected,observed=observed,
+                                         error_type=type(error).__name__)
+                    if page_number==1:raise failure from None
+                    resume_start=first
+                    errors.append({**failure.result,'page_number':page_number,'resume_start':resume_start})
+                    incomplete=True
+                    break
+            page_selected,issue=select_native_page(native,first,payload['RowsPerPage'],total,start,limit,seen)
+            selected_indices={index for index,_ in page_selected}
             anchors=page.locator(selector).all()
             for i,(row,anchor) in enumerate(zip(native,anchors),first):
                 row={**row,'target':urljoin(page.url,anchor.get_attribute('href'))}
                 for key in (row['target'],row.get('DOI'),row.get('ProductCode') if row['ContentType']=='B' else None):
                     if key:
                         self.known[key.casefold()]=(row,proof)
-                if start<=i<start+limit:
+                if i in selected_indices:
                     selected.append(row)
             search_url=page.url
             if export=='html':
                 html_pages.append(self.store.put(clean_html(page.content(),self.store.sanitizer),'text/html',self.source,page.url,role='search_page',first=first,total=total))
+            if issue:
+                errors.append(issue);resume_start=issue['resume_start'];incomplete=True
+                break
             if first+len(native)>=min(start+limit,total):
                 break
             page_number=max(page_number+1,start//payload['RowsPerPage']+1)
             parsed=urlsplit(page.url)
             params=parse_qs(parsed.query)
             params['PageNumber']=[str(page_number)]
-            with page.expect_response(matches,timeout=60000) as pending:
-                if expression:
-                    page.evaluate("number => clickPageBtn(number, '')",page_number)
-                else:
-                    goto_source(page,urlunsplit((parsed.scheme,parsed.netloc,parsed.path,urlencode(params,doseq=True),'')),self.profile.hosts,wait_until='domcontentloaded',timeout=45000)
-            response=pending.value
+            try:
+                with page.expect_response(matches,timeout=60000) as pending:
+                    if expression:
+                        page.evaluate("number => clickPageBtn(number, '')",page_number)
+                    else:
+                        goto_source(page,urlunsplit((parsed.scheme,parsed.netloc,parsed.path,urlencode(params,doseq=True),'')),self.profile.hosts,wait_until='domcontentloaded',timeout=45000)
+                response=pending.value
+            except Exception as error:
+                resume_start=(page_number-1)*payload['RowsPerPage']
+                errors.append({'status':'error','code':'search_response_not_received',
+                               'reason':'AMS did not provide the next native search page',
+                               'page_number':page_number,'resume_start':resume_start,
+                               'error_type':type(error).__name__})
+                incomplete=True
+                break
         artifact=self.store.put(encoded(selected),'application/json',self.source,search_url,role='records',query=query,options=options,start=start,total=total)
         exported=artifact
         if export=='native':
-            exported={'artifacts':evidence,'scope':'Whole native pages covering the requested window'}
+            exported={'artifacts':evidence,'scope':page_export_scope('native',incomplete)}
         elif export=='html':
-            exported={'artifacts':html_pages,'scope':'Visited native pages; records contains the exact requested window'}
+            exported={'artifacts':html_pages,'scope':page_export_scope('html',incomplete)}
         elif export=='csv':
             buffer=io.StringIO(newline='')
             fields=list(dict.fromkeys(k for row in selected for k in row))
@@ -329,12 +549,15 @@ class AMS(Publisher):
             exported=self.store.put(buffer.getvalue(),'text/csv',self.source,search_url,role='mechanical_export',parent_ref=artifact['ref'])
         elif export=='xlsx':
             exported=self.export_products(selected)
-        more=start+len(selected)<total
-        status='ok' if selected else 'not_found'
+        next_start=resume_start if incomplete else start+len(selected)
+        more=next_start<total
+        status='partial' if incomplete else 'ok' if selected else 'not_found'
         if export=='xlsx' and selected and exported['status']!='available':status='partial'
         return {'status':status,'source':self.source,'query':query,'options':options,'start':start,'requested':limit,
-                'received':len(selected),'total':total,'has_more':more,'next':{'start':start+len(selected)} if more else None,
-                'records':artifact,'export':exported,'evidence':evidence,'preview':[{k:row.get(k) for k in ('Title','Subtitle','ProductCode','DOI','target')} for row in selected[:3]]}
+                'received':len(selected),'total':total,'has_more':more,
+                'records':artifact,'export':exported,'evidence':evidence,'preview':[{k:row.get(k) for k in ('Title','Subtitle','ProductCode','DOI','target')} for row in selected[:3]],
+                **({'errors':errors,'incomplete_results':True} if incomplete else {}),
+                **({'next':{'start':next_start}} if more else {'next':None})}
 
     def fetch(self,target,*,parts):
         if set(parts)-{'metadata','abstract','fulltext','supplementary','export'}:

@@ -32,7 +32,7 @@
 | Zenodo | zenodo | api | partial | source_guide, search, fetch, export | live_mcp_arbitrary_search_window_native_pages_file_checksum_fetch_extract |
 | Figshare | figshare | api | partial | source_guide, search, fetch, export | 판본별 구성원·동일 current 판본의 REST 보완·과거 불일치 partial; 원 파일 size/MD5 |
 | Software Heritage | software-heritage | api | partial | source_guide, search, fetch, export | live_mcp_verified_tree_files_cache_resume_and_native_git_archives; selected_flat_job_unprepared |
-| AMS publications | ams | playwright (전용 Chrome 창/CDP) | partial | source_guide, search, fetch, export | live_mcp_native_search_window_zero_xlsx_product_fetch_pdf; dynamic_ui_provider_error |
+| AMS publications | ams | playwright (전용 Chrome 창/CDP) | partial | source_guide, search, fetch, export | Title/Author 식 부분집합·첫 XLSX·Unicode·순번 공백과 이어받기 원본13검증; 미매핑 식 별도 |
 | Cambridge University Press | cambridge | fixed: citation API; institutional search/document Playwright | partial | source_guide, search, fetch, export | live_mcp_filtered_search_ris_pdf_and_supplement_pdf_zip_source_extract |
 | De Gruyter Brill | de-gruyter | playwright | partial | source_guide, search, fetch, export | DOI·DOI 없는 ISBN 책의 현재 CITE/RIS 복원; 원본7검증·PDF/첨부; 특정 옛 첨부404 별도 |
 | JSTOR | jstor | fixed: citation/search API; institutional document Playwright | partial | source_guide, search, fetch, export | live_mcp_search_image_sorts_facets_citations_pdf_mp3_transcripts_supplement; native_video_download_disabled |

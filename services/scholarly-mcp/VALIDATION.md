@@ -676,3 +676,11 @@ Taylor B15와 Software Heritage N19/B09도 원본 변경 없이 root가 근거�
 새 원본 SDK는 정확한 제목 An Algebraic Multilevel Multigraph Algorithm 범위에서 Bank, Randolph E와 Smith, R Kent의 A+B/B+A가 같은 DOI10.1137/S1064827500381045 한 건을 남기고, 없는 exact 이름은0건임을 확인했다. 기존 단일/반복/서로 다른 저자 음성 대조와 함께 반복 facet의 AND 의미를 뒷받침한다. 자유 Stetter와 exact Stetter, Hans J 결합은19건이며 실제 Contrib·ContribRaw를 함께 보존했다. 자유 A_B AND Smith는 원문 그대로 전송돼345건 중 요청 창10건을 받았고 exact로 해석하지 않았다. 서로 다른 과거 조건의17·16·1,320건과 같은 표본인 것처럼 비교하지 않는다.
 
 독립 세션은 이 다섯 경우의 실제 source before/after/stable15이미지를 모두 읽었다. root도 적용된 두 공동저자와 목표 문헌, Author 입력칸의 A_B AND Smith 및 그 뒤345건·Smith 저자 행을 직접 읽었다. SDK와 별도 소유 브라우저의 요청 필드를 대조했으며, 이 화면을 SDK 자체의 자동 캡처라고 부르지 않는다. private harness의 경로·blob 읽기·async/sync 혼용 오류는 수리하고 그 실패 산출도 남겼다. 원본 전체624검사가49.487초에 통과했다. 정제 결과는 `data/access-research/user-criteria-siam-author/root-sdk.json`이다. 기존52번째 Title17/17/0은 해당 번호 필드 전송 경로가 바뀌지 않아 실제 선행 근거를 재사용한다.
+
+2026-09-13 AMS의 현재 가시 기본 필드로 의미가 확인된 expression 부분집합을 복원했다. Title/Author의 contains 단일 영숫자 토큰, 같은 필드의 중첩 OR, Title식과 Author식의 AND를 원 제어에 대응시킨다. Unicode는 원 폼의 실제 정규화와 대조한다. cursor는 브라우저 생성 전에 거부하고, expression 첫 호출의 XLSX는 기관 ProductCode 검색을 먼저 준비하도록 순서를 고쳤다. 초기 사본의 대기·가시 제어 동작 오류도 동일 정상 제어에서 수리했다.
+
+원 페이지 용량12에11행만 있다는 이유로 전체 응답을 버리던 판별식도 수리했다. 같은 Title OR algebra topology analysis의 페이지1·2·3·724를 새 원 화면과 요청으로 대조하자 실제 표시가1–11·13–24·25–36·8,677–8,685였고 total8,685가 같았다. 실제12번째 순번이 비어 있으므로 start0/limit20은 확인된11행과 partial/source_range_gap, next.start12를 반환한다. start12/limit20은 다음20행과 next32다. 같은 ProductId가 다른 제목의 원 행을 가리키므로 ID만으로 중복 제거하지 않는다.44개 원 행의 전체 표현은 모두 고유하지만 ProductId는37개였다.
+
+새 원본 SDK13검증은 첫 expression XLSX의 SURV/168·논리1상품·물리3행, 위 두 범위, Gödel total5, 동등한 중첩 OR total8,685, Title OR와 Author smith AND total38을 통과했다. cursor 전용 새 서버는 소유 브라우저를 만들지 않았다. 같은 문헌/범위의 원 전후·안정 이미지를 직접 판독했고 원 요청·응답 hash와 대조했다. 이전51쪽 PDF 경로는 변경되지 않아 다시 내려받지 않았다. 원본32검사 및 전체624검사가 통과했다. native/html 부분 export의 설명은 실제 순번 공백뿐 아니라 후속 응답 실패에도 쓰이므로, root가 불완전한 요청 범위의 확인된 prefix라는 원인 중립 표현으로 정리하고32검사를 다시 통과했다. 근거는 `data/access-research/user-criteria-ams/root-sdk.json`이다.
+
+같은 필드 AND/NOT, 필드 간 OR, equals 및 안전하게 매핑하지 못한 다단어·문장부호 원자는 여전히 지원되지 않는다. 원 가시 UI의 연산자·따옴표·양성/음성 대조와 숨은 builder의 message-only 응답·Edit500을 조사했으며, 복원된 기본 필드 부분집합으로 이 제한을 감추지 않는다. 현 제어 미제공과 로컬 expression_mapping_unavailable도 서로 다른 코드로 유지한다.
