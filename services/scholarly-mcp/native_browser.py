@@ -194,7 +194,11 @@ class NativeChromeGateway(KudosGateway):
                 process.wait(timeout=15)
             except subprocess.TimeoutExpired:
                 process.terminate()
-                process.wait(timeout=10)
+                try:
+                    process.wait(timeout=10)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    process.wait(timeout=10)
         if self._process_log is not None:
             self._process_log.close()
         if self._run is not None and (process is None or process.poll() is not None):

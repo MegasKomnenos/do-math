@@ -702,3 +702,13 @@ CLI는 body 태그와14개 part가 있다는 이유로 fulltext available을 성
 원본 회귀의 ok 대 partial 실패를 먼저 확인한 뒤 EuDML7검사가 통과했다. 같은8,336바이트 실제 XML을 원본 SDK에 재생한 수정 전 실행은 metadata/fulltext/supplementary가 모두 available이었고, 수정 후에는 metadata/supplementary available·fulltext not_offered인 partial로 바로잡혔다. 두 입력 SHA256은 모두 a9a574160ccae0b03307fe254ea2253fed9b7d927495279ceccdffc61ab66a47이며, ID·제목·14개 장을 보존하는6판정이 통과했다. root는 두 실행의 전후·안정6이미지와 실제 HTML 재생 이미지를 직접 읽었다. 이 두 실행은 저장 응답 재생이며 새 원격 성공이 아니다. 전체631검사가66.773초에 통과했다. 근거는 `data/access-research/user-criteria-eudml/root-book-review.json`이다.
 
 수정 후 별도로 실행한 실제 원본 API 재호출은13:26:04UTC에504와122,858바이트 HTML을 받았다. root는 그 실행의 전후·안정 화면을 읽고 원 HTML도 오프라인 렌더해 사이트 유지보수 안내를 직접 확인했다. UTF-8을 가정한 첫 로컬 렌더는 decode 오류여서 HTML 인코딩 감지를 적용해 다시 읽었다. 원 bytes는 바꾸지 않았다. 이 현재 provider 오류를 파서 수리 실패나 책 부재로 세지 않으며, 반대로 재생 검증을 현재 원격200 성공으로 쓰지 않는다. 이후 최종 원본 전체633검사가63.146초에 통과했다.
+
+2026-09-13 ScienceDirect의 PDF·Export 사본을 현 원본에서 선택 병합했다. 행 Export가 준비되지 않으면 정확 PII checkbox 하나를 선택해 상단 Export를 쓰고, 검색 행을 복원하지 못하면 같은 PII 상세의 Cite를 쓴다. 모든 인용은 PII·제목·제공 DOI를 대조한다. doc_id는 ISSN/ISBN 구조만 검증하며 PII·DOI 검색 입력과 혼동하지 않는다. 상세 View PDF, 검색 행 PDF 및 선택 문헌 다운로드의 실제 파일·미제공·비구독·미해결을 구별한다. 로컬 loopback handler404를 공급자 PDF404로 해석했던 이전 결론은 철회했다.
+
+새 Title=Preface+doc_id=0065-230X 검색은45건 중 정확 PII S0065230X26000631을 찾았다. 해당 행은 View PDF가 없지만 한 행을 선택한 Download 1 article은 현재 비구독을 명시했다. root는 입력 전·정확 행·선택 직전·비구독 직후·안정 이미지를 직접 읽었다. Preface PDF를 받은 것으로 세지 않으며, 이 강한 접근 상태를 restricted/fulltext_access_restricted로 보존하고 상세 HTML 복귀는 detail_error_code=fulltext_unresolved로 함께 남긴다.
+
+후보가 이미 선택된 대상까지 토글하고 다른 선택을 남기는 회귀도 수리했다. 정확한 대상 하나를 확인하고 이전 선택 집합을 저장·복원한다. 제한 모달 때문에 정리 동작만 실패하면 주 접근 오류를 지우지 않는다. 검증된 PDF가 먼저 확보된 경우도 파일을 버리지 않고 selection_cleanup_error_type을 덧붙인다. 원본 RED3실패·1오류와 추가 PDF 보존 RED1오류를 확인한 뒤34검사가 통과했다. 소유 Chrome의 연속 종료 timeout 때 해당 프로세스만 kill·reap하는12검사도 통과했다.
+
+새 원본 stdio SDK4기능은 모두 통과했다. S0022123626003204의 RIS1,165바이트와 DOI10.1016/j.jfa.2026.111656, Preface 상세 Cite의 RIS405·BibTeX440·plain316바이트, S156042922600065X의1,031,433바이트·31쪽 PDF와 첫 두 쪽 DOI, 정확 Preface의 비구독 상태를 확인했다. 별도 소유 브라우저의 네 기능 전후·안정 이미지도 직접 읽었다. 시각 하네스의 사후 선택 해제가 모달에 막힌 오류는 이미 확인한 주 결과와 구별했다. 근거는 `data/access-research/user-criteria-sciencedirect/root-sdk.json`이다.
+
+동일 Preface 시각 검증에서 원본의30초 selector 대기가 한 번 search_interface_not_ready로 끝났지만,33.589초 시점의 직후 화면에는 조건 chip·45건·목표 첫 행이 있었다. root도 이 화면을 직접 읽었다. timeout 직후 같은 selector를 즉시 확인하고, 아직 없을 때만5초 추가 대기하는 수리 뒤36검사가 통과했다. URL·query·PII 검증은 그대로다. 새 원본의 같은 검색은28.828초, 별도 브라우저는20.078초에 성공했고45건·정확 PII·선택 다운로드의 비구독을 다시 확인했다. 전 환경의 timeout 제거를 주장하지 않는다. 근거는 `data/access-research/user-criteria-sciencedirect/root-waitfix-sdk.json`이며 최종 전체633검사가 통과했다.

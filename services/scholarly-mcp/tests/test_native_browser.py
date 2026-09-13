@@ -3,6 +3,7 @@ import json
 import os
 from pathlib import Path
 import socket
+import subprocess
 import sys
 import tempfile
 from types import SimpleNamespace
@@ -87,6 +88,25 @@ class NativeBrowserContract(unittest.TestCase):
                 gateway.close()
             wait.assert_called_once_with(timeout=15)
             self.assertNotIn('SYNTHETIC_PRIVATE', '\n'.join(captured.output))
+
+    def test_close_kills_the_owned_process_when_terminate_also_times_out(self):
+        with tempfile.TemporaryDirectory() as temp:
+            gateway = NativeChromeGateway(temp, Sanitizer())
+            process = SimpleNamespace(
+                wait=Mock(side_effect=[
+                    subprocess.TimeoutExpired('chrome', 15),
+                    subprocess.TimeoutExpired('chrome', 10),
+                    None,
+                ]),
+                terminate=Mock(),
+                kill=Mock(),
+                poll=lambda: 0,
+            )
+            gateway._process = process
+            gateway.close()
+            process.terminate.assert_called_once_with()
+            process.kill.assert_called_once_with()
+            self.assertEqual(process.wait.call_count, 3)
 
     def test_temporary_windows_file_lock_is_retried_after_process_exit(self):
         import shutil

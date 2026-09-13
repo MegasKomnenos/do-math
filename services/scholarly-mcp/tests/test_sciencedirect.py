@@ -6,7 +6,55 @@ sys.path.insert(0,str(ROOT))
 from scholarly import ServiceError
 from sciencedirect import citation_record,pii_from_url
 
+
+class StatefulCheckbox:
+    def __init__(self,identifier,checked):self.identifier=identifier;self.checked=checked
+    def get_attribute(self,name):return self.identifier if name=='id' else None
+    def is_checked(self):return self.checked
+    def check(self,force=False):self.checked=True
+    def uncheck(self,force=False):self.checked=False
+    def press(self,key):
+        if key=='Space':self.checked=not self.checked
+
+
+class ToggleLabel:
+    def __init__(self,checkbox):self.checkbox=checkbox;self.clicks=0
+    def count(self):return 1
+    def click(self):self.clicks+=1;self.checkbox.checked=not self.checkbox.checked
+    def evaluate(self,script):self.click()
+
+
+class LocatorItems:
+    def __init__(self,items):self.items=items
+    def count(self):return len(self.items)
+    def nth(self,index):return self.items[index]
+
+
 class ScienceDirectContract(unittest.TestCase):
+    def test_search_accepts_results_visible_immediately_after_wait_timeout(self):
+        from sciencedirect import wait_for_search_results
+        from unittest.mock import Mock
+        from playwright.sync_api import TimeoutError
+        page=Mock();page.wait_for_function.side_effect=TimeoutError('initial render wait expired')
+        page.content.return_value=(ROOT/'tests/fixtures/science-direct-search.html').read_text('utf-8')
+        page.locator.return_value.count.return_value=3
+        wait_for_search_results(page)
+        self.assertEqual(page.wait_for_function.call_count,1)
+        page.goto.assert_not_called()
+
+    def test_search_unready_state_remains_a_bounded_retryable_error(self):
+        from sciencedirect import wait_for_search_results
+        from unittest.mock import Mock
+        from playwright.sync_api import TimeoutError
+        page=Mock();page.wait_for_function.side_effect=TimeoutError('render wait expired')
+        page.content.return_value='<html><body>Loading</body></html>'
+        page.locator.return_value.count.return_value=0
+        with self.assertRaises(ServiceError) as raised:wait_for_search_results(page)
+        self.assertEqual(raised.exception.result['code'],'search_interface_not_ready')
+        self.assertTrue(raised.exception.result['retryable'])
+        self.assertEqual([call.kwargs['timeout'] for call in page.wait_for_function.call_args_list],[30000,5000])
+        page.goto.assert_not_called()
+
     def test_native_ris_identity_title_and_full_abstract_are_preserved(self):
         data=(ROOT/'tests/fixtures/science-direct.ris').read_bytes()
         row=citation_record(data,'S002200009791494X','10.1006/jcss.1997.1494')
@@ -63,6 +111,19 @@ class ScienceDirectContract(unittest.TestCase):
             with self.assertRaises(ServiceError):search_params('x',bad,0,25)
         for bad in ({'date':'95-17'},{'date':'2017-1995'},{'volume':'five'},{'issue':'1..3'}):
             with self.assertRaises(ServiceError):search_params('x',bad,0,25)
+
+    def test_doc_id_accepts_only_the_native_issn_or_isbn_role(self):
+        from sciencedirect import search_params
+        for value in ('0065-230X','0065230X','978-0-443-43236-1','9780443432361'):
+            self.assertEqual(search_params('',{'doc_id':value},0,25)['docId'],value)
+        self.assertEqual(search_params('0065-230X',{'field':'ISSNISBN'},0,25)['docId'],'0065-230X')
+        for value in ('S0065230X26000631','10.1016/S0065-230X(26)00063-1'):
+            with self.assertRaises(ServiceError) as error:
+                search_params('',{'doc_id':value},0,25)
+            self.assertEqual(error.exception.result['code'],'invalid_options')
+            with self.assertRaises(ServiceError) as error:
+                search_params(value,{'field':'ISSNISBN'},0,25)
+            self.assertEqual(error.exception.result['code'],'invalid_options')
 
     def test_current_facet_references_and_native_array_serialization(self):
         from sciencedirect import facet_candidates,search_params
@@ -214,15 +275,59 @@ class ScienceDirectContract(unittest.TestCase):
         from unittest.mock import Mock
         import tempfile
         row={'pii':'S002200009791494X','doi':None,'title':'Natural Proofs'}
-        checkbox=Mock();checkbox.get_attribute.return_value=row['pii']
+        checkbox=Mock();checkbox.get_attribute.return_value=row['pii'];checkbox.is_checked.side_effect=[False,True,True]
         title=Mock();title.get_attribute.return_value='/science/article/pii/'+row['pii'];title.inner_text.return_value=row['title']
         missing=Mock();missing.count.return_value=0;missing.wait_for.side_effect=RuntimeError('absent')
-        item=Mock();item.locator.side_effect=lambda selector: checkbox if 'checkbox' in selector else title;item.get_by_role.return_value=missing
-        listed=Mock();listed.nth.return_value=item;page=Mock();page.url='https://www.sciencedirect.com/search';page.locator.return_value=listed
+        label=Mock();item=Mock()
+        item.locator.side_effect=lambda selector: checkbox if 'checkbox' in selector else label if selector.startswith('label[') else title
+        item.get_by_role.return_value=missing
+        listed=Mock();listed.nth.return_value=item
+        boxes=Mock();boxes.count.return_value=1;boxes.nth.return_value=checkbox
+        buttons=Mock();buttons.count.return_value=0
+        page=Mock();page.url='https://www.sciencedirect.com/search'
+        page.locator.side_effect=lambda selector: listed if selector=='li.ResultItem' else buttons if selector=='button' else boxes
+        page.get_by_role.return_value=missing
         with tempfile.TemporaryDirectory() as temp:
             adapter=ScienceDirect(ArtifactStore(temp),Mock())
             with self.assertRaises(ServiceError) as error:native_search_citation(adapter,page,row,0)
         self.assertEqual(error.exception.result['code'],'native_export_not_offered')
+        self.assertEqual(label.click.call_count,2)
+
+    def test_missing_row_export_uses_exact_checkbox_selected_bulk_export(self):
+        from sciencedirect import ScienceDirect,native_search_citation
+        from scholarly import ArtifactStore
+        from unittest.mock import Mock
+        import tempfile
+        data=(ROOT/'tests/fixtures/science-direct.ris').read_bytes()
+        row={'pii':'S002200009791494X','doi':None,'title':'Natural Proofs'}
+        checkbox=Mock();checkbox.get_attribute.return_value=row['pii'];checkbox.is_checked.side_effect=[False,True,True]
+        title=Mock();title.get_attribute.return_value='/science/article/pii/'+row['pii'];title.inner_text.return_value=row['title']
+        label=Mock()
+        row_missing=Mock();row_missing.count.return_value=0;row_missing.is_visible.return_value=False
+        row_trigger=Mock();row_trigger.count.return_value=0;row_trigger.wait_for.side_effect=RuntimeError('not hydrated')
+        item=Mock()
+        def item_locator(selector):
+            if 'checkbox-input' in selector:return checkbox
+            if 'result-list-title-link' in selector:return title
+            if selector.startswith('label['):return label
+            raise AssertionError(selector)
+        item.locator.side_effect=item_locator
+        item.get_by_role.side_effect=lambda role,name,exact=True: row_trigger if name=='Export' else row_missing
+        listed=Mock();listed.nth.return_value=item
+        all_boxes=Mock();all_boxes.count.return_value=1;all_boxes.nth.return_value=checkbox
+        bulk_trigger=Mock();bulk_trigger.inner_text.return_value='Export';bulk_trigger.evaluate.return_value=False
+        bulk_choice=Mock();bulk_choice.inner_text.return_value='Export citation to RIS';bulk_choice.evaluate.return_value=False
+        buttons=Mock();buttons.count.return_value=2;buttons.nth.side_effect=[bulk_trigger,bulk_choice,bulk_trigger,bulk_choice]
+        page=Mock();page.url='https://www.sciencedirect.com/search'
+        page.locator.side_effect=lambda selector: listed if selector=='li.ResultItem' else buttons if selector=='button' else all_boxes
+        page.get_by_role.side_effect=lambda role,name,exact=True: bulk_trigger if name=='Export' else bulk_choice
+        gateway=Mock();gateway.native_download.return_value=(data,'citation.ris','https://www.sciencedirect.com/search/api/export-citations')
+        with tempfile.TemporaryDirectory() as temp:
+            found=native_search_citation(ScienceDirect(ArtifactStore(temp),gateway),page,row,0)
+        self.assertEqual((found['pii'],found['doi']),(row['pii'],'10.1006/jcss.1997.1494'))
+        label.click.assert_called()
+        bulk_trigger.click.assert_called_once()
+        self.assertEqual(gateway.native_download.call_args.args[3],'/search/api/export-citations')
 
     def test_result_export_trigger_may_hydrate_after_the_result_row(self):
         from sciencedirect import ScienceDirect,native_search_citation
@@ -279,6 +384,238 @@ class ScienceDirectContract(unittest.TestCase):
             found=native_result_pdf(ScienceDirect(ArtifactStore(temp),gateway),page,row,0,'10.1007/s40593-025-00498-2')
         self.assertEqual(found['status'],'available')
 
+    def test_selected_pdf_keeps_a_preselected_target_and_restores_other_selection_after_success(self):
+        from sciencedirect import ScienceDirect,native_result_pdf
+        from scholarly import ArtifactStore
+        from unittest.mock import Mock
+        import pymupdf,tempfile
+        row={'pii':'S0065230X26000631','title':'Preface'};doi='10.1016/S0065-230X(26)00063-1'
+        target=StatefulCheckbox(row['pii'],True);other=StatefulCheckbox('S0000000000000001',True)
+        labels={box.identifier:ToggleLabel(box) for box in (target,other)}
+        title=Mock();title.get_attribute.return_value='/science/article/pii/'+row['pii'];title.inner_text.return_value=row['title']
+        absent=Mock();absent.count.return_value=0
+        item=Mock();item.locator.side_effect=lambda selector: target if 'checkbox-input' in selector else labels[row['pii']] if selector.startswith('label[') else title;item.get_by_role.return_value=absent
+        listed=LocatorItems([item]);boxes=LocatorItems([target,other]);bulk=Mock();bulk.count.return_value=1;bulk.is_visible.return_value=True
+        body=Mock();body.inner_text.return_value=''
+        page=Mock();page.url='https://www.sciencedirect.com/search?title=Preface&docId=0065-230X'
+        def locate(selector):
+            if selector=='li.ResultItem':return listed
+            if selector=='li.ResultItem input.checkbox-input[type="checkbox"]':return boxes
+            if selector=='body':return body
+            if selector.startswith('label[for="'):return labels[selector.split('"')[1]]
+            raise AssertionError(selector)
+        page.locator.side_effect=locate;page.get_by_text.return_value.first=bulk
+        doc=pymupdf.open();pdf_page=doc.new_page();pdf_page.insert_text((72,72),doi);doc.set_metadata({'title':row['title']});data=doc.tobytes();doc.close()
+        observed=[]
+        def download(_,action,*args,**kwargs):
+            observed.append([box.identifier for box in (target,other) if box.is_checked()]);action()
+            return data,'main.pdf','https://pdf.sciencedirectassets.com/path/1-s2.0-'+row['pii']+'/main.pdf'
+        gateway=Mock();gateway.native_download.side_effect=download
+        with tempfile.TemporaryDirectory() as temp:
+            found=native_result_pdf(ScienceDirect(ArtifactStore(temp),gateway),page,row,0,doi)
+        self.assertEqual(found['status'],'available')
+        self.assertEqual(observed,[[row['pii']]])
+        self.assertTrue(target.is_checked())
+        self.assertTrue(other.is_checked())
+        self.assertEqual(labels[row['pii']].clicks,0)
+
+    def test_selected_pdf_restores_new_target_and_other_selection_after_subscription_error(self):
+        from sciencedirect import ScienceDirect,native_result_pdf
+        from scholarly import ArtifactStore
+        from unittest.mock import Mock
+        import tempfile
+        row={'pii':'S0065230X26000631','title':'Preface'};doi='10.1016/S0065-230X(26)00063-1'
+        target=StatefulCheckbox(row['pii'],False);other=StatefulCheckbox('S0000000000000001',True)
+        labels={box.identifier:ToggleLabel(box) for box in (target,other)}
+        title=Mock();title.get_attribute.return_value='/science/article/pii/'+row['pii'];title.inner_text.return_value=row['title']
+        absent=Mock();absent.count.return_value=0
+        item=Mock();item.locator.side_effect=lambda selector: target if 'checkbox-input' in selector else labels[row['pii']] if selector.startswith('label[') else title;item.get_by_role.return_value=absent
+        listed=LocatorItems([item]);boxes=LocatorItems([target,other]);bulk=Mock();bulk.count.return_value=1;bulk.is_visible.return_value=True
+        body=Mock();body.inner_text.return_value='Your selections could not be downloaded as you are not subscribed to that content.'
+        page=Mock();page.url='https://www.sciencedirect.com/search?title=Preface&docId=0065-230X'
+        def locate(selector):
+            if selector=='li.ResultItem':return listed
+            if selector=='li.ResultItem input.checkbox-input[type="checkbox"]':return boxes
+            if selector=='body':return body
+            if selector.startswith('label[for="'):return labels[selector.split('"')[1]]
+            raise AssertionError(selector)
+        page.locator.side_effect=locate;page.get_by_text.return_value.first=bulk
+        observed=[]
+        def missing(_,action,*args,**kwargs):
+            observed.append([box.identifier for box in (target,other) if box.is_checked()]);action()
+            raise ServiceError('download_missing','no file',retryable=True)
+        gateway=Mock();gateway.native_download.side_effect=missing
+        with tempfile.TemporaryDirectory() as temp:
+            with self.assertRaises(ServiceError) as error:
+                native_result_pdf(ScienceDirect(ArtifactStore(temp),gateway),page,row,0,doi)
+        self.assertEqual(error.exception.result['code'],'fulltext_access_restricted')
+        self.assertEqual(error.exception.result['status'],'restricted')
+        self.assertEqual(observed,[[row['pii']]])
+        self.assertFalse(target.is_checked())
+        self.assertTrue(other.is_checked())
+
+    def test_selected_pdf_cleanup_failure_does_not_replace_subscription_error(self):
+        from sciencedirect import ScienceDirect,native_result_pdf
+        from scholarly import ArtifactStore
+        from unittest.mock import Mock
+        import tempfile
+        row={'pii':'S0065230X26000631','title':'Preface'};doi='10.1016/S0065-230X(26)00063-1'
+        target=StatefulCheckbox(row['pii'],False);label=ToggleLabel(target)
+        original_evaluate=label.evaluate
+        def blocked_after_modal(script):
+            if label.clicks:raise RuntimeError('modal detached the label')
+            original_evaluate(script)
+        label.evaluate=blocked_after_modal
+        target.uncheck=lambda force=False:(_ for _ in ()).throw(RuntimeError('detached checkbox'))
+        title=Mock();title.get_attribute.return_value='/science/article/pii/'+row['pii'];title.inner_text.return_value=row['title']
+        absent=Mock();absent.count.return_value=0
+        item=Mock();item.locator.side_effect=lambda selector: target if 'checkbox-input' in selector else label if selector.startswith('label[') else title;item.get_by_role.return_value=absent
+        listed=LocatorItems([item]);boxes=LocatorItems([target]);bulk=Mock();bulk.count.return_value=1;bulk.is_visible.return_value=True
+        body=Mock();body.inner_text.return_value='Your selections could not be downloaded as you are not subscribed to that content.'
+        page=Mock();page.url='https://www.sciencedirect.com/search?title=Preface&docId=0065-230X'
+        def locate(selector):
+            if selector=='li.ResultItem':return listed
+            if selector=='li.ResultItem input.checkbox-input[type="checkbox"]':return boxes
+            if selector=='body':return body
+            if selector.startswith('label[for="'):return label
+            raise AssertionError(selector)
+        page.locator.side_effect=locate;page.get_by_text.return_value.first=bulk
+        gateway=Mock();gateway.native_download.side_effect=ServiceError('download_missing','no file',retryable=True)
+        with tempfile.TemporaryDirectory() as temp:
+            with self.assertRaises(ServiceError) as error:
+                native_result_pdf(ScienceDirect(ArtifactStore(temp),gateway),page,row,0,doi)
+        self.assertEqual(error.exception.result['code'],'fulltext_access_restricted')
+        self.assertEqual(error.exception.result['status'],'restricted')
+        self.assertEqual(error.exception.result['selection_cleanup_error_type'],'RuntimeError')
+
+    def test_verified_pdf_survives_a_later_selection_cleanup_failure(self):
+        from sciencedirect import ScienceDirect,native_result_pdf
+        from scholarly import ArtifactStore
+        from unittest.mock import Mock,patch
+        import pymupdf,tempfile
+        row={'pii':'S0065230X26000631','title':'Preface'};doi='10.1016/S0065-230X(26)00063-1'
+        checkbox=Mock();checkbox.get_attribute.return_value=row['pii']
+        title=Mock();title.get_attribute.return_value='/science/article/pii/'+row['pii'];title.inner_text.return_value=row['title']
+        absent=Mock();absent.count.return_value=0
+        item=Mock();item.locator.side_effect=lambda selector:checkbox if 'checkbox' in selector else title;item.get_by_role.return_value=absent
+        page=Mock();page.url='https://www.sciencedirect.com/search';page.locator.return_value.nth.return_value=item
+        bulk=page.get_by_text.return_value.first;bulk.count.return_value=1;bulk.is_visible.return_value=True
+        doc=pymupdf.open();doc.new_page().insert_text((72,72),doi);doc.set_metadata({'title':row['title']});data=doc.tobytes();doc.close()
+        gateway=Mock();gateway.native_download.return_value=(data,'main.pdf','https://pdf.sciencedirectassets.com/path/'+row['pii']+'/main.pdf')
+        restore=Mock(side_effect=RuntimeError('page closed during cleanup'))
+        with tempfile.TemporaryDirectory() as temp,patch('sciencedirect.exact_result_selection',return_value=restore):
+            store=ArtifactStore(temp)
+            result=native_result_pdf(ScienceDirect(store,gateway),page,row,0,doi)
+            self.assertEqual(result['status'],'available')
+            self.assertEqual(store.read(result['artifact']['ref'])[1],data)
+            self.assertEqual(result['selection_cleanup_error_type'],'RuntimeError')
+
+    def test_fetch_keeps_result_row_subscription_condition_when_detail_pdf_is_unresolved(self):
+        from sciencedirect import ScienceDirect
+        from publishers import Publisher
+        from scholarly import ArtifactStore,encoded
+        from unittest.mock import Mock,patch
+        import tempfile
+        pii='S0065230X26000631';title='Preface';doi='10.1016/S0065-230X(26)00063-1'
+        with tempfile.TemporaryDirectory() as temp:
+            store=ArtifactStore(temp);adapter=ScienceDirect(store,Mock())
+            records=store.put(encoded([{'pii':pii,'title':title,'metadata':{'citation_pii':[pii]}}]),'application/json','science-direct','https://www.sciencedirect.com/science/article/pii/'+pii)
+            base={'status':'partial','source':'science-direct','records':records,'source_page':{'ref':'page'},
+                  'components':{'metadata':{'status':'available'},'fulltext':{'status':'not_implemented'}},
+                  'identity':{'observed_dois':[doi]}}
+            selected=ServiceError('fulltext_access_restricted','selected download says not subscribed',status='restricted')
+            detail=ServiceError('fulltext_unresolved','detail PDF returned same record HTML')
+            adapter.known[pii]={'query':'Preface','options':{'field':'Title','doc_id':'0065-230X'},'page_offset':0}
+            adapter.search=Mock(return_value={'records':records})
+            with patch.object(Publisher,'fetch',return_value=base),patch('sciencedirect.native_result_pdf',side_effect=selected),patch('sciencedirect.native_document_pdf',side_effect=detail):
+                result=adapter.fetch(pii,parts=['metadata','fulltext'])
+        component=result['components']['fulltext']
+        self.assertEqual(component['code'],'fulltext_access_restricted')
+        self.assertEqual(component['status'],'restricted')
+        self.assertEqual(component['detail_error_code'],'fulltext_unresolved')
+
+    def test_document_pdf_control_can_supply_a_pdf_when_the_result_row_cannot(self):
+        from sciencedirect import ScienceDirect,native_document_pdf
+        from scholarly import ArtifactStore
+        from unittest.mock import Mock,patch
+        import pymupdf,tempfile
+        pii='S0065230X26000631';title='Preface';doi='10.1016/S0065-230X(26)00063-1'
+        initial='<meta name="citation_pii" content="'+pii+'"><meta name="citation_title" content="'+title+'">'
+        stable=initial+'<a href="/science/article/pii/'+pii+'/pdfft">View PDF</a>'
+        doc=pymupdf.open();pdf_page=doc.new_page();pdf_page.insert_text((72,72),doi);doc.set_metadata({'title':title});data=doc.tobytes();doc.close()
+        page=Mock();page.url='https://www.sciencedirect.com/science/chapter/bookseries/pii/'+pii
+        page.content.side_effect=[initial,stable]
+        wait=Mock();page.locator.return_value.first=wait
+        gateway=Mock();gateway.context.pages=[page];gateway.native_download.return_value=(data,'main.pdf','https://pdf.sciencedirectassets.com/path/1-s2.0-'+pii+'/main.pdf')
+        with tempfile.TemporaryDirectory() as temp:
+            adapter=ScienceDirect(ArtifactStore(temp),gateway);adapter.document=Mock(return_value=page)
+            found=native_document_pdf(adapter,pii,title,doi)
+        self.assertEqual(found['status'],'available')
+        self.assertEqual(found['pages'],1)
+        wait.wait_for.assert_called_once_with(state='attached',timeout=15000)
+        self.assertEqual(gateway.native_download.call_args.kwargs['timeout'],20000)
+        page.close.assert_called_once()
+
+    def test_document_pdf_purchase_is_a_record_access_condition(self):
+        from sciencedirect import ScienceDirect,native_document_pdf
+        from scholarly import ArtifactStore
+        from unittest.mock import Mock
+        import tempfile
+        pii='S1765462926000553';title='A book review';doi='10.1016/example'
+        raw=('<meta name="citation_pii" content="'+pii+'"><meta name="citation_title" content="'+title+'">'
+             '<a href="/getaccess/pii/'+pii+'/purchase">Purchase PDF</a>')
+        page=Mock();page.url='https://www.sciencedirect.com/science/article/abs/pii/'+pii;page.content.return_value=raw
+        with tempfile.TemporaryDirectory() as temp:
+            adapter=ScienceDirect(ArtifactStore(temp),Mock());adapter.document=Mock(return_value=page)
+            with self.assertRaises(ServiceError) as error:native_document_pdf(adapter,pii,title,doi)
+        self.assertEqual(error.exception.result['code'],'fulltext_access_restricted')
+        self.assertEqual(error.exception.result['status'],'restricted')
+        page.close.assert_called_once()
+
+    def test_document_pdf_control_returning_the_same_record_html_is_unresolved(self):
+        from sciencedirect import ScienceDirect,native_document_pdf
+        from scholarly import ArtifactStore
+        from unittest.mock import Mock,patch
+        import tempfile
+        pii='S0065230X26000631';title='Preface';doi='10.1016/S0065-230X(26)00063-1'
+        initial='<meta name="citation_pii" content="'+pii+'"><meta name="citation_title" content="'+title+'">'
+        stable=initial+'<a href="/science/article/pii/'+pii+'/pdfft">View PDF</a>'
+        page=Mock();page.url='https://www.sciencedirect.com/science/chapter/bookseries/pii/'+pii;page.is_closed.return_value=False
+        page.content.side_effect=[initial,stable];page.locator.return_value.first=Mock()
+        popup=Mock();popup.url=page.url;popup.is_closed.return_value=False;popup.content.return_value=stable
+        gateway=Mock();pages=[page];gateway.context.pages=pages
+        def missing(*args,**kwargs):
+            pages.append(popup)
+            raise ServiceError('download_missing','no file',retryable=True)
+        gateway.native_download.side_effect=missing
+        with tempfile.TemporaryDirectory() as temp:
+            adapter=ScienceDirect(ArtifactStore(temp),gateway);adapter.document=Mock(return_value=page)
+            with self.assertRaises(ServiceError) as error:native_document_pdf(adapter,pii,title,doi)
+        self.assertEqual(error.exception.result['code'],'fulltext_unresolved')
+        self.assertEqual(error.exception.result['status'],'error')
+        popup.close.assert_called_once()
+        page.close.assert_called_once()
+
+    def test_fetch_uses_exact_document_state_when_title_search_cannot_restore_the_row(self):
+        from sciencedirect import ScienceDirect
+        from publishers import Publisher
+        from scholarly import ArtifactStore,encoded
+        from unittest.mock import Mock,patch
+        import tempfile
+        pii='S0065230X26000631';title='Preface';doi='10.1016/S0065-230X(26)00063-1'
+        with tempfile.TemporaryDirectory() as temp:
+            store=ArtifactStore(temp);adapter=ScienceDirect(store,Mock())
+            records=store.put(encoded([{'title':title,'metadata':{'citation_pii':[pii]}}]),'application/json','science-direct','https://www.sciencedirect.com/science/article/pii/'+pii)
+            base={'status':'partial','source':'science-direct','records':records,'source_page':{'ref':'page'},
+                  'components':{'metadata':{'status':'available'},'fulltext':{'status':'not_implemented'}},
+                  'identity':{'observed_dois':[doi]}}
+            missing=ServiceError('selection_required','ambiguous title',status='unsupported')
+            detail=ServiceError('fulltext_not_offered','record has no individual PDF',status='not_offered')
+            with patch.object(Publisher,'fetch',return_value=base),patch.object(adapter,'search',side_effect=missing),patch('sciencedirect.native_document_pdf',side_effect=detail) as fallback:
+                result=adapter.fetch(pii,parts=['metadata','fulltext'])
+        self.assertEqual(result['components']['fulltext']['code'],'fulltext_not_offered')
+        fallback.assert_called_once_with(adapter,pii,title,doi)
+
     def test_document_metadata_survives_a_separate_current_ui_export_restriction(self):
         from sciencedirect import ScienceDirect
         from publishers import Publisher
@@ -295,8 +632,63 @@ class ScienceDirectContract(unittest.TestCase):
                 result=adapter.fetch('S002200009791494X',parts=['metadata','export'])
         self.assertEqual(result['status'],'partial')
         self.assertEqual(result['components']['metadata']['status'],'available')
-        self.assertEqual(result['components']['export']['code'],'publisher_access_challenge')
+        self.assertEqual(result['components']['export']['status'],'error')
+        self.assertEqual(result['components']['export']['result_row_error_code'],'publisher_access_challenge')
+        self.assertEqual([item['code'] for item in result['components']['export']['errors']],
+                         ['native_browser_required']*3)
         source.assert_called_once_with('https://www.sciencedirect.com/science/article/pii/S002200009791494X',parts=['metadata'])
+
+    def test_fetch_export_uses_detail_cite_controls_when_title_search_cannot_restore_row(self):
+        from sciencedirect import ScienceDirect
+        from publishers import Publisher
+        from scholarly import ArtifactStore,encoded
+        from unittest.mock import Mock,patch
+        import tempfile
+        pii='S0065230X26000631';title='Preface';doi='10.1016/S0065-230X(26)00063-1'
+        with tempfile.TemporaryDirectory() as temp:
+            store=ArtifactStore(temp);adapter=ScienceDirect(store,Mock())
+            source_records=store.put(encoded([{'title':title,'metadata':{'citation_pii':[pii]}}]),'application/json','science-direct','https://www.sciencedirect.com/science/article/pii/'+pii)
+            base={'status':'ok','source':'science-direct','records':source_records,'source_page':{'ref':'page'},
+                  'components':{'metadata':{'status':'available'}},'identity':{'observed_dois':[doi]}}
+            missing=ServiceError('selection_required','title search did not restore exact PII',status='unsupported')
+            made=[]
+            def detail(_,selected_pii,selected_title,format='ris',expected_doi=None):
+                made.append((selected_pii,selected_title,format,expected_doi))
+                return {'status':'available','format':format,'artifact':{'ref':format}}
+            with patch.object(Publisher,'fetch',return_value=base),patch.object(adapter,'search',side_effect=missing),patch('sciencedirect.native_document_citation',side_effect=detail):
+                result=adapter.fetch(pii,parts=['metadata','export'])
+        self.assertEqual(result['components']['export']['status'],'available')
+        self.assertEqual(result['components']['export']['result_row_error_code'],'selection_required')
+        self.assertEqual([item[2] for item in made],['ris','bibtex','plain'])
+        self.assertTrue(all(item[:2]==(pii,title) and item[3]==doi for item in made))
+
+    def test_detail_citation_control_validates_pii_title_and_doi(self):
+        from sciencedirect import ScienceDirect,native_document_citation
+        from scholarly import ArtifactStore
+        from unittest.mock import Mock
+        import tempfile
+        pii='S0065230X26000631';title='Preface';doi='10.1016/S0065-230X(26)00063-1'
+        raw=('<meta name="citation_pii" content="'+pii+'">'
+             '<meta name="citation_title" content="'+title+'">')
+        ris=('TY  - CHAP\nT1  - '+title+'\nDO  - '+doi+'\n'
+             'UR  - https://www.sciencedirect.com/science/article/pii/'+pii+'\nER  - \n').encode()
+        page=Mock();page.content.return_value=raw;page.is_closed.return_value=False
+        trigger=Mock();trigger_group=Mock();trigger_group.first=trigger
+        choice=Mock();choice.is_visible.return_value=True
+        choices=Mock();choices.first=choice;choices.count.return_value=1;choices.nth.return_value=choice
+        page.get_by_text.side_effect=lambda label,exact=True:trigger_group if label=='Cite' else choices
+        gateway=Mock()
+        def download(_,action,*args):
+            action()
+            return ris,'preface.ris','https://www.sciencedirect.com/sdfe/arp/cite'
+        gateway.native_download.side_effect=download
+        with tempfile.TemporaryDirectory() as temp:
+            adapter=ScienceDirect(ArtifactStore(temp),gateway);adapter.document=Mock(return_value=page)
+            result=native_document_citation(adapter,pii,title,format='ris',expected_doi=doi)
+        self.assertEqual((result['status'],result['title'],result['doi']),('available',title,doi))
+        self.assertEqual(result['scope'],'One native detail-page citation selected by PII')
+        gateway.native_download.assert_called_once()
+        trigger.click.assert_called_once();choice.click.assert_called_once();page.close.assert_called_once()
 
     def test_fetch_export_finds_the_exact_pii_before_using_current_result_controls(self):
         from sciencedirect import ScienceDirect

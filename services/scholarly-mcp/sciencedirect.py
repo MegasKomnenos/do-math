@@ -5,10 +5,13 @@ from urllib.parse import parse_qs, urlencode, urljoin, urlsplit, urlunsplit, unq
 from bs4 import BeautifulSoup
 from browser_adapters import browser_download,clean_html,goto_source,is_access_challenge
 from api_adapters import doi
-from publishers import Publisher, PROFILES
+from publishers import Publisher, PROFILES, publication_metadata
 from scholarly import ServiceError, bibliography, encoded
 
 FORMATS = {'ris': 'application/x-research-info-systems', 'bibtex': 'text/x-bibtex', 'plain': 'text/plain'}
+CITATION_CONTROLS = {'ris': ('Export citation to RIS','application/x-research-info-systems'),
+                     'bibtex': ('Export citation to BibTeX','application/x-bibtex'),
+                     'plain': ('Export citation to text','text/plain')}
 SEARCH_FIELDS={'Anywhere':'qs','Title':'title','TitleAbstractKeywords':'tak','Author':'authors','Affiliation':'affiliations',
                'Publication':'pub','References':'references','ISSNISBN':'docId'}
 FACET_GROUPS={'articleTypes':'article_type','publicationTitles':'publication_title','subjectAreas':'subject_area',
@@ -240,6 +243,10 @@ def search_params(query,options,offset,show):
         if key in options:
             if native==primary:raise ServiceError('invalid_options','The primary field and an additional field must not overlap')
             params[native]=str(options[key])
+    if 'docId' in params:
+        compact=re.sub(r'[-\s]','',params['docId'].strip())
+        if not re.fullmatch(r'(?:\d{7}[\dXx]|\d{9}[\dXx]|\d{13})',compact):
+            raise ServiceError('invalid_options','ScienceDirect doc_id is the native ISSN or ISBN field; use fetch for a PII or DOI')
     if 'date' in params:
         years=re.fullmatch(r'(\d{4})(?:-(\d{4}))?',params['date'].strip())
         if not years or years[2] and int(years[2])<int(years[1]):
@@ -268,33 +275,9 @@ def title_key(value):
     return re.sub(r'\s+','',value) if isinstance(value,str) else None
 
 
-def native_search_citation(publisher,page,row,index,format='ris',expected_doi=None):
-    """Download one citation from the exact native search-result control."""
-    formats={'ris':('Export citation to RIS','application/x-research-info-systems'),
-             'bibtex':('Export citation to BibTeX','application/x-bibtex'),
-             'plain':('Export citation to text','text/plain')}
-    if format not in formats:raise ServiceError('invalid_export','Use ris, bibtex or plain for ScienceDirect native citations')
-    if not hasattr(publisher.gateway,'native_download'):
-        raise ServiceError('native_browser_required','ScienceDirect result citation export requires the native Chrome gateway',status='restricted')
-    item=page.locator('li.ResultItem').nth(index)
-    checkbox=item.locator('input.checkbox-input[type="checkbox"]')
-    title=item.locator('a.result-list-title-link[href*="/science/article/pii/"]')
-    if checkbox.get_attribute('id')!=row['pii'] or pii_from_url(urljoin(page.url,title.get_attribute('href')))!=row['pii'] or title_key(title.inner_text())!=title_key(row['title']):
-        raise ServiceError('identity_mismatch','ScienceDirect citation controls do not match the selected result row')
-    label,media=formats[format]
-    choice=item.get_by_role('button',name=label,exact=True)
-    if not choice.count() or not choice.is_visible():
-        trigger=item.get_by_role('button',name='Export',exact=True)
-        try:trigger.wait_for(state='visible',timeout=10000)
-        except Exception:
-            raise ServiceError('native_export_not_offered','This ScienceDirect result row has no native Export control',status='not_offered') from None
-        trigger.click()
-        choice=item.get_by_role('button',name=label,exact=True)
-    try:choice.wait_for(state='visible',timeout=10000)
-    except Exception:
-        raise ServiceError('native_export_not_offered','This ScienceDirect result row does not offer the requested citation format',status='not_offered') from None
-    data,filename,actual=publisher.gateway.native_download(
-        page,lambda:choice.click(),publisher.profile.hosts,'/search/api/export-citations')
+def verified_citation(publisher,data,filename,actual,row,format,expected_doi,role,scope):
+    """Validate a native citation against the selected PII, title and DOI before storing it."""
+    media=CITATION_CONTROLS[format][1]
     if format=='ris':
         record=citation_record(data,row['pii'],expected_doi)
         observed_title=record.get('title');observed_doi=record.get('doi')
@@ -312,12 +295,192 @@ def native_search_citation(publisher,page,row,index,format='ris',expected_doi=No
         observed_doi=expected_doi if expected_doi and expected_doi.casefold() in text.casefold() else None
         if row['pii'].casefold() not in text.casefold():raise ServiceError('identity_mismatch','ScienceDirect plain citation does not identify the selected PII')
     if title_key(observed_title)!=title_key(row['title']) or expected_doi and (not observed_doi or observed_doi.casefold()!=expected_doi.casefold()):
-        raise ServiceError('identity_mismatch','ScienceDirect citation title or DOI differs from the selected result row')
+        raise ServiceError('identity_mismatch','ScienceDirect citation title or DOI differs from the selected publication')
     parsed=urlsplit(actual);safe_url=urlunsplit((parsed.scheme,parsed.netloc,parsed.path,'',''))
-    artifact=publisher.store.put(data,media,publisher.source,safe_url,role='native_search_citation',
+    artifact=publisher.store.put(data,media,publisher.source,safe_url,role=role,
                                  pii=row['pii'],doi=observed_doi,suggested_filename=filename,parent_title=row['title'],format=format)
     return {'status':'available','artifact':artifact,'pii':row['pii'],'doi':observed_doi,'title':observed_title,
-            'format':format,'scope':'One native search-result citation selected by PII'}
+            'format':format,'scope':scope}
+
+
+def selected_export_choice(page,item,row,label):
+    """Select exactly one PII and return its page-level citation export action."""
+    boxes=page.locator('li.ResultItem input.checkbox-input[type="checkbox"]')
+    for index in range(boxes.count()):
+        box=boxes.nth(index);box_id=box.get_attribute('id')
+        if box_id!=row['pii'] and box.is_checked():
+            page.locator(f'label[for="{box_id}"]').click()
+    checkbox=item.locator('input.checkbox-input[type="checkbox"]')
+    selection=item.locator(f'label[for="{row["pii"]}"]')
+    newly_selected=not checkbox.is_checked()
+    if newly_selected:selection.click()
+    if not checkbox.is_checked():
+        raise ServiceError('identity_mismatch','ScienceDirect did not select the requested PII for page-level export')
+    def outside_result(candidates,expected):
+        for index in range(candidates.count()):
+            candidate=candidates.nth(index)
+            if ' '.join(candidate.inner_text().split())!=expected:
+                continue
+            if candidate.evaluate("element => Boolean(element.closest('li.ResultItem'))"):
+                continue
+            try:
+                candidate.scroll_into_view_if_needed();candidate.wait_for(state='visible',timeout=10000)
+                return candidate
+            except Exception:
+                continue
+    try:
+        trigger=outside_result(page.locator('button'),'Export')
+        if trigger is None:
+            raise ServiceError('native_export_not_offered','This ScienceDirect result page has no selected-item Export control',status='not_offered')
+        trigger.click()
+        choice=outside_result(page.locator('button'),label)
+        if choice is None:
+            raise ServiceError('native_export_not_offered','ScienceDirect selected-item export does not offer the requested citation format',status='not_offered')
+    except Exception:
+        if newly_selected and checkbox.is_checked():selection.click()
+        raise
+    return choice,selection,checkbox
+
+
+def native_search_citation(publisher,page,row,index,format='ris',expected_doi=None):
+    """Download one citation from the exact native search-result control."""
+    if format not in CITATION_CONTROLS:raise ServiceError('invalid_export','Use ris, bibtex or plain for ScienceDirect native citations')
+    if not hasattr(publisher.gateway,'native_download'):
+        raise ServiceError('native_browser_required','ScienceDirect result citation export requires the native Chrome gateway',status='restricted')
+    item=page.locator('li.ResultItem').nth(index)
+    checkbox=item.locator('input.checkbox-input[type="checkbox"]')
+    title=item.locator('a.result-list-title-link[href*="/science/article/pii/"]')
+    if checkbox.get_attribute('id')!=row['pii'] or pii_from_url(urljoin(page.url,title.get_attribute('href')))!=row['pii'] or title_key(title.inner_text())!=title_key(row['title']):
+        raise ServiceError('identity_mismatch','ScienceDirect citation controls do not match the selected result row')
+    label,media=CITATION_CONTROLS[format]
+    choice=item.get_by_role('button',name=label,exact=True)
+    selected=None
+    if not choice.count() or not choice.is_visible():
+        trigger=item.get_by_role('button',name='Export',exact=True)
+        try:trigger.wait_for(state='visible',timeout=10000)
+        except Exception:
+            choice,selection,selected=selected_export_choice(page,item,row,label)
+        else:
+            trigger.click()
+            choice=item.get_by_role('button',name=label,exact=True)
+    if selected is None:
+        try:choice.wait_for(state='visible',timeout=10000)
+        except Exception:
+            choice,selection,selected=selected_export_choice(page,item,row,label)
+    try:
+        data,filename,actual=publisher.gateway.native_download(
+            page,lambda:choice.click(),publisher.profile.hosts,'/search/api/export-citations')
+    finally:
+        if selected is not None and selected.is_checked():
+            try:selection.click()
+            except Exception:selected.uncheck(force=True)
+    return verified_citation(publisher,data,filename,actual,row,format,expected_doi,'native_search_citation',
+                             'One native search-result citation selected by PII')
+
+
+def native_document_citation(publisher,pii,title=None,format='ris',expected_doi=None):
+    """Download a citation through the exact publication's native detail-page Cite control."""
+    if format not in CITATION_CONTROLS:raise ServiceError('invalid_export','Use ris, bibtex or plain for ScienceDirect native citations')
+    if not hasattr(publisher.gateway,'native_download'):
+        raise ServiceError('native_browser_required','ScienceDirect citation export requires the native Chrome gateway',status='restricted')
+    page=None
+    try:
+        page=publisher.document('https://www.sciencedirect.com/science/article/pii/'+pii)
+        metadata=publication_metadata(page.content())
+        observed_title=(metadata.get('citation_title') or [None])[0]
+        if metadata.get('citation_pii')!=[pii] or not observed_title or title and title_key(observed_title)!=title_key(title):
+            raise ServiceError('identity_mismatch','ScienceDirect detail citation controls identify another publication')
+        row={'pii':pii,'title':title or observed_title}
+        # Metadata arrives before the React article actions are hydrated; an attached label can otherwise ignore the click.
+        page.wait_for_timeout(12000)
+        trigger=page.get_by_text('Cite',exact=True).first
+        try:
+            trigger.wait_for(state='attached',timeout=15000);trigger.scroll_into_view_if_needed();trigger.wait_for(state='visible',timeout=10000)
+        except Exception:
+            raise ServiceError('native_export_not_offered','This ScienceDirect publication has no native Cite control',status='not_offered') from None
+        trigger.click()
+        label=CITATION_CONTROLS[format][0]
+        choices=page.get_by_text(label,exact=True)
+        try:
+            choices.first.wait_for(state='attached',timeout=10000);page.wait_for_timeout(300)
+            choice=next(choices.nth(index) for index in range(choices.count()) if choices.nth(index).is_visible())
+        except Exception:
+            raise ServiceError('native_export_not_offered','This ScienceDirect publication does not offer the requested citation format',status='not_offered') from None
+        data,filename,actual=publisher.gateway.native_download(
+            page,lambda:choice.click(),publisher.profile.hosts,'/sdfe/arp/cite')
+        return verified_citation(publisher,data,filename,actual,row,format,expected_doi,'native_document_citation',
+                                 'One native detail-page citation selected by PII')
+    finally:
+        if page is not None and not page.is_closed():page.close()
+
+
+def verified_pdf(publisher,data,filename,actual,pii,title,expected_doi,control_url):
+    """Store a ScienceDirect PDF only after checking the selected publication."""
+    if not data.startswith(b'%PDF-'):raise ServiceError('unexpected_content','ScienceDirect View PDF returned no PDF')
+    import pymupdf
+    try:
+        with pymupdf.open(stream=data,filetype='pdf') as document:
+            pages=len(document);metadata_title=document.metadata.get('title') or ''
+            first='\n'.join(document[number].get_text() for number in range(min(2,pages)))
+    except Exception:
+        raise ServiceError('invalid_document','ScienceDirect PDF could not be read') from None
+    normalized=lambda value:re.sub(r'[^a-z0-9]+','',value.casefold())
+    title_identity=normalized(metadata_title)==normalized(title) or normalized(title) in normalized(first)
+    if pages<1 or not title_identity or not expected_doi or normalized(expected_doi) not in normalized(first):
+        raise ServiceError('identity_mismatch','ScienceDirect PDF metadata or first pages differ from the selected publication')
+    obtained=urlsplit(actual);safe_url=urlunsplit((obtained.scheme,obtained.netloc,obtained.path,'',''))
+    artifact=publisher.store.put(data,'application/pdf',publisher.source,safe_url,preserve_bytes=True,role='fulltext',
+                                 pii=pii,doi=expected_doi,pages=pages,suggested_filename=filename,
+                                 source_control_path=urlsplit(control_url).path)
+    return {'status':'available','artifact':artifact,'pii':pii,'doi':expected_doi,'pages':pages,
+            'source_control_path':urlsplit(control_url).path}
+
+
+def exact_result_selection(page,pii):
+    """Temporarily select only one PII, then restore the prior page selection."""
+    boxes=page.locator('li.ResultItem input.checkbox-input[type="checkbox"]')
+    snapshot=[];targets=0
+    for index in range(boxes.count()):
+        box=boxes.nth(index);identifier=box.get_attribute('id')
+        snapshot.append((box,identifier,box.is_checked()))
+        targets+=identifier==pii
+    if targets!=1:
+        raise ServiceError('identity_mismatch','ScienceDirect result selection has no unique requested PII')
+
+    def set_state(box,identifier,checked):
+        if box.is_checked()==checked:return
+        label=page.locator(f'label[for="{identifier}"]') if identifier else None
+        try:
+            if label is not None and label.count():label.evaluate('node => node.click()')
+            elif checked:box.check(force=True)
+            else:box.uncheck(force=True)
+        except Exception:
+            if checked:box.check(force=True)
+            else:box.uncheck(force=True)
+        if box.is_checked()!=checked:
+            if checked:box.check(force=True)
+            else:box.uncheck(force=True)
+        if box.is_checked()!=checked:
+            raise ServiceError('selection_state_mismatch','ScienceDirect did not retain the required result selection')
+
+    def restore():
+        first_error=None
+        for box,identifier,checked in snapshot:
+            try:set_state(box,identifier,checked)
+            except Exception as error:
+                if first_error is None:first_error=error
+        if first_error is not None:raise first_error
+
+    try:
+        for box,identifier,_ in snapshot:set_state(box,identifier,identifier==pii)
+        selected=[identifier for box,identifier,_ in snapshot if box.is_checked()]
+        if selected!=[pii]:
+            raise ServiceError('identity_mismatch','ScienceDirect did not select exactly the requested PII')
+    except Exception:
+        try:restore()
+        except Exception:pass
+        raise
+    return restore
 
 
 def native_result_pdf(publisher,page,row,index,expected_doi):
@@ -330,31 +493,116 @@ def native_result_pdf(publisher,page,row,index,expected_doi):
     if checkbox.get_attribute('id')!=row['pii'] or pii_from_url(urljoin(page.url,title.get_attribute('href')))!=row['pii'] or title_key(title.inner_text())!=title_key(row['title']):
         raise ServiceError('identity_mismatch','ScienceDirect PDF controls do not match the selected result row')
     control=item.get_by_role('link',name='View PDF',exact=True)
-    if not control.count():raise ServiceError('fulltext_not_offered','This ScienceDirect result row has no View PDF control',status='not_offered')
+    if not control.count():
+        restore=exact_result_selection(page,row['pii'])
+        primary_error=None
+        try:
+            bulk=page.get_by_text(re.compile(r'^Download\s+(?:selected articles|1 article)$',re.I)).first
+            if not bulk.count() or not bulk.is_visible():
+                raise ServiceError('fulltext_not_offered','This ScienceDirect result row has no View PDF or selected-article download control',status='not_offered')
+            try:
+                def selected_path(path):return row['pii'] in path and (path.endswith('/main.pdf') or path.casefold().endswith('.pdf'))
+                data,filename,actual=publisher.gateway.native_download(
+                    page,lambda:bulk.click(),publisher.profile.download_hosts,selected_path,timeout=20000)
+            except ServiceError as error:
+                if error.result.get('code')!='download_missing':raise
+                body=page.locator('body').inner_text()
+                if 'not subscribed to that content' in body.casefold():
+                    raise ServiceError('fulltext_access_restricted','ScienceDirect selected-article download says the current session is not subscribed to this content',status='restricted') from None
+                raise ServiceError('fulltext_unresolved','ScienceDirect offered a selected-article download but returned no verified PDF') from None
+            result=verified_pdf(publisher,data,filename,actual,row['pii'],row['title'],expected_doi,page.url)
+        except Exception as error:
+            primary_error=error
+            raise
+        finally:
+            try:restore()
+            except Exception as cleanup_error:
+                if primary_error is None:
+                    result['selection_cleanup_error_type']=type(cleanup_error).__name__
+                elif isinstance(primary_error,ServiceError):
+                    primary_error.result['selection_cleanup_error_type']=type(cleanup_error).__name__
+        return result
     control_url=urljoin(page.url,control.get_attribute('href'))
     if pii_from_url(control_url)!=row['pii'] or not urlsplit(control_url).path.endswith('/pdfft'):
         raise ServiceError('identity_mismatch','ScienceDirect PDF control identifies another publication')
     def path_matches(path):return row['pii'] in path and path.endswith('/main.pdf')
     data,filename,actual=publisher.gateway.native_download(page,lambda:control.click(),publisher.profile.download_hosts,path_matches)
-    if not data.startswith(b'%PDF-'):
-        raise ServiceError('unexpected_content','ScienceDirect View PDF returned no PDF')
-    import pymupdf
+    return verified_pdf(publisher,data,filename,actual,row['pii'],row['title'],expected_doi,control_url)
+
+
+def native_document_pdf(publisher,pii,title,expected_doi):
+    """Use the exact detail page when a title-search row cannot supply the PDF state."""
+    if not hasattr(publisher.gateway,'native_download'):
+        raise ServiceError('native_browser_required','ScienceDirect PDF requires the native Chrome gateway',status='restricted')
+    page=publisher.document('https://www.sciencedirect.com/science/article/pii/'+pii)
     try:
-        with pymupdf.open(stream=data,filetype='pdf') as document:
-            pages=len(document);metadata_title=document.metadata.get('title') or ''
-            first='\n'.join(document[number].get_text() for number in range(min(2,pages)))
-    except Exception:
-        raise ServiceError('invalid_document','ScienceDirect PDF could not be read') from None
-    normalized=lambda value:re.sub(r'[^a-z0-9]+','',value.casefold())
-    title_identity=normalized(metadata_title)==normalized(row['title']) or normalized(row['title']) in normalized(first)
-    if pages<1 or not title_identity or not expected_doi or normalized(expected_doi) not in normalized(first):
-        raise ServiceError('identity_mismatch','ScienceDirect PDF metadata or first pages differ from the selected publication')
-    obtained=urlsplit(actual);safe_url=urlunsplit((obtained.scheme,obtained.netloc,obtained.path,'',''))
-    artifact=publisher.store.put(data,'application/pdf',publisher.source,safe_url,preserve_bytes=True,role='fulltext',
-                                 pii=row['pii'],doi=expected_doi,pages=pages,suggested_filename=filename,
-                                 source_control_path=urlsplit(control_url).path)
-    return {'status':'available','artifact':artifact,'pii':row['pii'],'doi':expected_doi,'pages':pages,
-            'source_control_path':urlsplit(control_url).path}
+        raw=page.content();metadata=publication_metadata(raw)
+        if metadata.get('citation_pii')!=[pii] or not metadata.get('citation_title') or title_key(metadata['citation_title'][0])!=title_key(title):
+            raise ServiceError('identity_mismatch','ScienceDirect detail-page metadata differs from the requested publication')
+        def controls(value):
+            soup=BeautifulSoup(value,'html.parser')
+            purchase=next((node for node in soup.select('a[href]') if '/getaccess/pii/'+pii+'/purchase' in node.get('href','')),None)
+            pdf=next((node for node in soup.select('a[href]') if '/pii/'+pii+'/pdfft' in node.get('href','')),None)
+            return purchase,pdf
+        purchase,control=controls(raw)
+        if purchase is not None:
+            raise ServiceError('fulltext_access_restricted','ScienceDirect offers this record through Purchase PDF rather than current institutional access',status='restricted')
+        if control is None:
+            try:page.locator('a[href*="/pii/'+pii+'/pdfft"]').first.wait_for(state='attached',timeout=15000)
+            except Exception:pass
+            raw=page.content();purchase,control=controls(raw)
+        if purchase is not None:
+            raise ServiceError('fulltext_access_restricted','ScienceDirect offers this record through Purchase PDF rather than current institutional access',status='restricted')
+        if control is None:
+            raise ServiceError('fulltext_not_offered','The exact ScienceDirect detail page exposes no individual PDF control',status='not_offered')
+        control_url=urljoin(page.url,control['href'])
+        if pii_from_url(control_url)!=pii or not urlsplit(control_url).path.endswith('/pdfft'):
+            raise ServiceError('identity_mismatch','ScienceDirect detail-page PDF control identifies another publication')
+        live_control=page.locator('a[href*="/pii/'+pii+'/pdfft"]').filter(visible=True).first
+        before=set(publisher.gateway.context.pages)
+        try:
+            def path_matches(path):return pii in path and path.endswith('/main.pdf')
+            data,filename,actual=publisher.gateway.native_download(
+                page,lambda:live_control.click(),publisher.profile.download_hosts,path_matches,timeout=20000)
+        except ServiceError as error:
+            if error.result.get('code')!='download_missing':raise
+            returned=False
+            for opened in [item for item in publisher.gateway.context.pages if item not in before and not item.is_closed()]:
+                try:
+                    try:opened.wait_for_load_state('domcontentloaded',timeout=5000)
+                    except Exception:pass
+                    final=opened.content();final_metadata=publication_metadata(final)
+                    try:actual_pii=pii_from_url(opened.url)
+                    except ServiceError:actual_pii=None
+                    returned=returned or actual_pii==pii and final_metadata.get('citation_pii')==[pii] \
+                        and final_metadata.get('citation_title') and title_key(final_metadata['citation_title'][0])==title_key(title)
+                finally:opened.close()
+            if returned:
+                raise ServiceError('fulltext_unresolved','The ScienceDirect View PDF control returned HTML for the same record; no PDF file was verified') from None
+            raise
+        return verified_pdf(publisher,data,filename,actual,pii,title,expected_doi,control_url)
+    finally:
+        page.close()
+
+
+def wait_for_search_results(page):
+    selector='span.search-body-results-text,li.ResultItem,div.error-zero-results'
+    predicate='selector => document.querySelector(selector)'
+    try:
+        page.wait_for_function(predicate,arg=selector,timeout=30000)
+        return
+    except Exception as initial_error:
+        if is_access_challenge(page.content()):
+            raise ServiceError('publisher_access_challenge','ScienceDirect search reached an access challenge',status='restricted') from None
+        if page.locator(selector).count():return
+        try:
+            page.wait_for_function(predicate,arg=selector,timeout=5000)
+        except Exception as error:
+            if is_access_challenge(page.content()):
+                raise ServiceError('publisher_access_challenge','ScienceDirect search reached an access challenge',status='restricted') from None
+            raise ServiceError('search_interface_not_ready','ScienceDirect did not render native results',
+                               retryable=True,error_type=type(error).__name__,
+                               initial_error_type=type(initial_error).__name__) from None
 
 
 class ScienceDirect(Publisher):
@@ -412,12 +660,7 @@ class ScienceDirect(Publisher):
             url=urlunsplit((origin.scheme,origin.netloc,'/search',urlencode(params),''))
             response=goto_source(page,url,self.profile.hosts,wait_until='domcontentloaded',timeout=45000)
             validate_search_location(page.url,params)
-            try:page.wait_for_function("() => document.querySelector('span.search-body-results-text,li.ResultItem,div.error-zero-results')",timeout=30000)
-            except Exception as error:
-                raw=page.content()
-                if is_access_challenge(raw):
-                    raise ServiceError('publisher_access_challenge','ScienceDirect search reached an access challenge',status='restricted') from None
-                raise ServiceError('search_interface_not_ready','ScienceDirect did not render native results',error_type=type(error).__name__) from None
+            wait_for_search_results(page)
             if page.locator('li.ResultItem').count():
                 try:page.wait_for_function("() => document.querySelectorAll('input[id^=\"articleTypes-\"],input[id^=\"publicationTitles-\"],input[id^=\"subjectAreas-\"],input[id^=\"languages-\"],input[id^=\"accessTypes-\"]').length > 0",timeout=10000)
                 except Exception:pass
@@ -482,24 +725,8 @@ class ScienceDirect(Publisher):
                 'preview':[{key:row.get(key) for key in ('pii','doi','title','url')} for row in selected[:3]]}
 
     def citation(self, pii, format='ris', expected_doi=None):
-        page = self.gateway.open(self.source,self.profile.gateway_label,self.profile.hosts,'body')
-        origin = urlsplit(page.url)
-        url = urlunsplit((origin.scheme,origin.netloc,'/sdfe/arp/cite',urlencode({'pii':pii,'format':FORMATS[format],'withabstract':'true'}),''))
-        data, media, actual = browser_download(self.gateway.context,url,self.profile.hosts)
-        canonical = 'application/x-bibtex' if format=='bibtex' else FORMATS[format]
-        if format in ('ris','bibtex'):
-            rows = bibliography(data,canonical)
-            if len(rows)!=1:
-                raise ServiceError('identity_mismatch','ScienceDirect citation is not a single record')
-            observed = rows[0].get('doi') if format=='bibtex' else rows[0].get('fields',{}).get('do',[None])[0]
-            if expected_doi and (not observed or doi(observed).casefold()!=expected_doi.casefold()):
-                raise ServiceError('identity_mismatch','ScienceDirect export identifies another DOI')
-        elif not data.strip() or data.lstrip().startswith(b'<'):
-            raise ServiceError('unexpected_content','ScienceDirect returned no plain citation')
-        elif expected_doi and expected_doi.casefold() not in data.decode('utf-8').casefold():
-            raise ServiceError('identity_mismatch','ScienceDirect plain citation does not identify the requested DOI')
-        artifact = self.store.put(data,canonical,self.source,actual,role='native_citation',pii=pii,format=format,source_media_type=media)
-        return data, artifact
+        result=native_document_citation(self,pii,format=format,expected_doi=expected_doi)
+        return self.store.read(result['artifact']['ref'])[1],result['artifact']
 
     def fetch(self,target,*,parts):
         if set(parts)-{'metadata','abstract','fulltext','supplementary','export'}:
@@ -559,9 +786,9 @@ class ScienceDirect(Publisher):
             selection=(page,row,index)
             return selection
         if 'export' in parts:
+            artifacts=[];errors=[];result_row_error=None
             try:
                 page,row,index=exact_result()
-                artifacts=[];errors=[]
                 for format in ('ris','bibtex','plain'):
                     try:
                         artifact=native_search_citation(self,page,row,index,format=format,expected_doi=citation_doi)
@@ -569,17 +796,44 @@ class ScienceDirect(Publisher):
                         if format=='ris':native=artifact['artifact']
                     except ServiceError as error:errors.append({'format':format,**error.result})
                     except Exception as error:errors.append({'format':format,'status':'error','code':'native_citation_failed','error_type':type(error).__name__})
-                components['export']={'status':'partial' if errors and artifacts else 'error' if errors else 'available',
-                                      'artifacts':artifacts,'errors':errors,'scope':'Current source-page PII matched to one native title-search result'}
-                if native:components['export']['artifact']=native
             except ServiceError as error:
-                components['export']=error.result
+                result_row_error=error.result.get('code')
+                source_rows=json.loads(self.store.read(source['records']['ref'])[1])
+                title=source_rows[0].get('title') if len(source_rows)==1 else None
+                if not isinstance(title,str) or not title.strip():
+                    components['export']=error.result
+                else:
+                    for format in ('ris','bibtex','plain'):
+                        try:
+                            artifact=native_document_citation(self,pii,title,format=format,expected_doi=citation_doi)
+                            artifacts.append({'format':format,'artifact':artifact['artifact']})
+                            if format=='ris':native=artifact['artifact']
+                        except ServiceError as detail_error:errors.append({'format':format,**detail_error.result})
+                        except Exception as detail_error:errors.append({'format':format,'status':'error','code':'native_citation_failed','error_type':type(detail_error).__name__})
             except Exception as error:
                 components['export']={'status':'error','code':'citation_export_failed','error_type':type(error).__name__}
+            if artifacts or errors:
+                components['export']={'status':'partial' if errors and artifacts else 'error' if errors else 'available',
+                                      'artifacts':artifacts,'errors':errors,
+                                      'scope':'Native detail-page Cite control' if result_row_error else 'Current source-page PII matched to one native title-search result'}
+                if result_row_error:components['export']['result_row_error_code']=result_row_error
+                if native:components['export']['artifact']=native
         if 'fulltext' in parts and components['fulltext']['status']!='available':
             try:
-                page,row,index=exact_result()
-                components['fulltext']=native_result_pdf(self,page,row,index,citation_doi)
+                try:
+                    page,row,index=exact_result()
+                    components['fulltext']=native_result_pdf(self,page,row,index,citation_doi)
+                except ServiceError as result_error:
+                    detail_rows=json.loads(self.store.read(source['records']['ref'])[1])
+                    detail_title=detail_rows[0].get('title') if len(detail_rows)==1 else None
+                    if not isinstance(detail_title,str) or not detail_title.strip():
+                        raise ServiceError('identity_mismatch','ScienceDirect source page has no unique publication title')
+                    try:components['fulltext']=native_document_pdf(self,pii,detail_title,citation_doi)
+                    except ServiceError as detail_error:
+                        if result_error.result.get('status')=='restricted' and detail_error.result.get('code') in ('fulltext_unresolved','fulltext_not_offered'):
+                            components['fulltext']={**result_error.result,'detail_error_code':detail_error.result.get('code')}
+                        else:raise
+                    else:components['fulltext']['result_row_error_code']=result_error.result.get('code')
             except ServiceError as error:components['fulltext']=error.result
             except Exception as error:components['fulltext']={'status':'error','code':'fulltext_retrieval_failed','error_type':type(error).__name__}
         status='ok' if all(component['status']=='available' for component in components.values()) else 'partial'

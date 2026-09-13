@@ -37,7 +37,7 @@
 | De Gruyter Brill | de-gruyter | playwright | partial | source_guide, search, fetch, export | DOI·DOI 없는 ISBN 책의 현재 CITE/RIS 복원; 원본7검증·PDF/첨부; 특정 옛 첨부404 별도 |
 | JSTOR | jstor | fixed: citation/search API; institutional document Playwright | partial | source_guide, search, fetch, export | live_mcp_search_image_sorts_facets_citations_pdf_mp3_transcripts_supplement; native_video_download_disabled |
 | Oxford University Press | oxford | playwright | partial | source_guide, search, fetch, export | 렌더된 검색 행·원 인용·문헌/첨부; 별도 title-list는 현재 CAPTCHA 도메인 오류 |
-| ScienceDirect | science-direct | playwright (전용 Chrome 창/CDP) | partial | source_guide, search, fetch, export | live_mcp_search_cross_page_ris_zero_facets_exact_publication_three_citations_pdf_supplement_video |
+| ScienceDirect | science-direct | playwright (전용 Chrome 창/CDP) | partial | source_guide, search, fetch, export | 검색/선택 Export·상세 Cite·31쪽 PDF 원본검증; Preface 비구독·선택복원·검색 준비 수리 |
 | Springer Nature | springer | playwright | partial | source_guide, search, fetch, export | live_mcp_advanced_search_citations_pdf_supplements_nature_springer_html_tex_figures |
 | Taylor & Francis | taylor-francis | playwright | partial | source_guide, search, fetch, export | 원 검색/인용/PDF/첨부·표; 두 editorial의 초록 필드 부재와 초록 양성 대조 |
 | Wiley | wiley | playwright | partial | source_guide, search, fetch, export | live_mcp_dynamic_advanced_rows_citations_pdf_zero_and_supplementary_zip |

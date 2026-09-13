@@ -647,24 +647,24 @@ SOURCES['science-direct'].usage = {
     'fields':['Anywhere','Title','TitleAbstractKeywords','Author','Affiliation','Publication','References','ISSNISBN'],
     'syntax':'현재 웹 검색의 Boolean은 대문자 AND/OR/NOT와 제외 하이픈이다. 우선순위는 NOT, AND, OR이며 괄호로 결합한다. 큰따옴표는 이웃한 단어의 구문 검색이지만 구두점·복수형·철자 변형까지 정확히 고정하지 않는다. W/n·PRE/n 근접 연산자는 지원하지 않는다. 오래된 별도 API 문법으로 바꾸지 않는다.',
     'options':{'field':'위 fields 중 하나. 기본 Anywhere. 같은 필드를 추가 옵션으로 중복 지정하지 않는다.',
-               'publication / authors / affiliations / title / references / doc_id':'추가 필드의 문자열. publication은 발행물 제목 검색어, doc_id는 ISSN/ISBN이며 PII가 아니다. 다른 조건이 있으면 query를 비울 수 있다.',
+               'publication / authors / affiliations / title / references / doc_id':'추가 필드의 문자열. publication은 발행물 제목 검색어다. doc_id는 ISSN/ISBN의 길이·문자·하이픈 구조만 검사하며 PII·DOI는 fetch target으로 지정한다. 잘못된 식별자 역할은 원격 요청 전에 invalid_options로 거부한다. 다른 조건이 있으면 query를 비울 수 있다.',
                'publication_exact':'현재 자동완성에서 선택할 정확한 저널명. 예: Journal of Algebra. 서버가 후보와 고유 식별자를 대조하며 유일하지 않으면 selection_required와 후보를 반환한다. publication 문자열·field=Publication·publication_titles와 함께 지정하지 않는다.',
                'date':'YYYY 또는 순서가 맞는 YYYY-YYYY. 결과 화면의 연도 범위와 같은 조건이다.',
                'volume / issue / page':'숫자 또는 숫자 범위 문자열. page에는 숫자로 된 article number도 지정할 수 있다.',
                'article_types / publication_titles / subject_areas / languages / access_types':'현재 검색 응답 facets의 해당 그룹 value를 복사한 문자열 배열. 같은 그룹의 값은 OR, 다른 그룹은 AND로 결합한다. 예: article_types=["FLA","REV"], subject_areas=["2600"].',
                'subscribed_only':'true이면 기관이 구독한 저널로 제한한다. 기본 false.',
                'sort':'relevance(기본) 또는 date'},
-    'search_exports':'json은 정확한 결과 창, csv는 같은 필드의 기계적 직렬화, html/native는 회수한 원 결과 페이지 목록이다. ris/bibtex/plain은 선택한 각 PII의 원 검색 인용 제어에서 받은 파일이며 export.artifacts의 순서로 읽는다. 일부 내보내기가 실패해도 검색 레코드와 파일별 오류를 보존한다. 원 검색 행에 DOI가 없으면 null로 유지한다.',
+    'search_exports':'json은 정확한 결과 창, csv는 같은 필드의 기계적 직렬화, html/native는 회수한 원 결과 페이지 목록이다. ris/bibtex/plain은 선택한 각 PII의 원 검색 인용 제어에서 받은 파일이며 export.artifacts의 순서로 읽는다. 행의 Export가 준비되지 않으면 같은 PII checkbox 하나만 선택한 목록 상단 Export를 사용하고 선택을 정리한다. 내려받은 서지의 PII·제목·제공 DOI를 다시 대조한다. 일부 내보내기가 실패해도 검색 레코드와 파일별 오류를 보존한다. 원 검색 행에 DOI가 없으면 null로 유지한다.',
     'facets':'현재 결과의 추가 후보를 펼친 뒤 group/value/label/count/selected를 반환한다. facet_groups.complete와 visible_candidates는 이번 화면에서 확인한 범위다. 발행물 자동완성과 발행물 facet은 별도 제어다.',
     'fetch':'DOI·ScienceDirect PII·문헌 URL을 지정한다. 원 문헌 페이지의 서지·초록을 회수하고 PII·제목·DOI를 같은 문헌의 검색 행과 대조한다. 이름은 Title 검색 후보와 selection_required를 반환한다. 서지와 초록을 인용문 파일의 접근 상태와 따로 보존한다.',
-    'exports':'fetch의 export는 같은 PII·제목·제공 DOI를 대조한 RIS·BibTeX·plain 원 파일 목록이다. 기본 artifact는 RIS다. 현재 검색 행의 원 인용 제어를 사용하며 파일을 다른 서지 서비스로 재작성하지 않는다.',
-    'fulltext':'정확한 PII의 View PDF 제어에서 PDF를 회수한다. 최종 파일 경로, PDF 형식, 첫 두 쪽 DOI와 제목을 대조한다. supplementary는 같은 PII의 mmc 원 파일과 설명이다. 파일 artifact는 resources/read 또는 해당 형식의 extract로 읽는다. 보충 제어가 없는 표본은 원 source_page와 관측 범위를 반환한다.',
+    'exports':'fetch의 export는 같은 PII·제목·제공 DOI를 대조한 RIS·BibTeX·plain 원 파일 목록이다. 기본 artifact는 RIS다. 정확한 검색 행을 복원하면 행 Export와 필요시 같은 PII 하나의 목록 상단 Export를 사용한다. 검색 행을 복원하지 못하면 같은 PII 상세 화면의 Cite를 사용한다. 주소만 조합한 citation endpoint나 다른 서지 서비스로 자동 전환하지 않는다.',
+    'fulltext':'정확한 PII의 View PDF 제어에서 PDF를 회수한다. 검색 행에 View PDF가 없지만 선택 문헌 다운로드가 있으면 다른 행 선택을 임시로 해제하고 정확한 PII 하나만 선택해 실행한 뒤 기존 선택 상태를 복원한다. 이 제어가 현재 세션의 비구독을 명시하면 restricted로 보존한다. 검색 행이 상태를 결정하지 못하거나 정확한 행을 다시 찾지 못하면 같은 PII·제목·DOI의 상세 화면을 대조한다. 검색 행의 명시적 restricted와 상세의 unresolved/not_offered가 함께 관측되면 restricted를 유지하고 상세 코드를 함께 반환한다. 상세 View PDF가 같은 문헌 HTML로 돌아와 파일을 검증하지 못하면 unresolved 오류, 상세에 PDF 제어가 없으면 not_offered, Purchase PDF만 제공하면 restricted로 구별한다. Download full volume과 다른 플랫폼의 View full text는 개별 문헌 PDF로 표시하지 않는다. 최종 PDF는 파일 경로, 형식, 첫 두 쪽 DOI와 제목을 대조한다. supplementary는 같은 PII의 mmc 원 파일과 설명이다. 파일 artifact는 resources/read 또는 해당 형식의 extract로 읽는다.',
     'limits':'start는0부터, limit는1..1000이며 원 페이지25행을 순회한다. 원 페이지 번호·전체 건수·PII·요청하지 않은 조건의 부재를 검사한다. fulltext가 실패해도 확보한 서지·초록·인용문과 component별 오류를 보존한다. PDF 준비 HTML이나 Chrome viewer를 원 PDF로 표시하지 않는다. 별도 Elsevier API 키·웹 계정은 요구하지 않는다.',
     'examples':[{'tool':'search','arguments':{'source':'science-direct','query':'algebra','options':{'article_types':['FLA','REV'],'subject_areas':['2600'],'date':'2020-2025','subscribed_only':True},'limit':2,'export':'csv'}},
                 {'tool':'search','arguments':{'source':'science-direct','query':'algebra','options':{'publication_exact':'Journal of Algebra'},'limit':2}},
                 {'tool':'fetch','arguments':{'source':'science-direct','target':'S156042922600065X','parts':['metadata','abstract','export','fulltext']}},
                 {'tool':'fetch','arguments':{'source':'science-direct','target':'S0167278924001155','parts':['metadata','supplementary']}}],
-    'official':['https://www.sciencedirect.com/','https://www.elsevier.support/sciencedirect/answer/how-do-i-use-the-advanced-search'],
+    'official':['https://www.sciencedirect.com/','https://www.elsevier.support/sciencedirect/answer/how-do-i-use-the-advanced-search','https://www.elsevier.support/sciencedirect/answer/how-can-i-export-my-citations'],
 }
 
 SOURCES['general-web'].implementation = 'partial'
@@ -789,7 +789,7 @@ for identifier, level in {
     "siam": "52번째 조건17/17/0·자유 Author 보존·명시 exact 공동저자 AND 검증; 특정 기관 PDF 제한",
     "individual-subscription": "live_mcp_two_catalogues_95_holdings_six_siam_csv_range_year_fetch_zero",
     "ams": "Title/Author 식 부분집합·첫 XLSX·Unicode·순번 공백과 이어받기 원본13검증; 미매핑 식 별도",
-    "science-direct": "live_mcp_search_cross_page_ris_zero_facets_exact_publication_three_citations_pdf_supplement_video",
+    "science-direct": "검색/선택 Export·상세 Cite·31쪽 PDF 원본검증; Preface 비구독·선택복원·검색 준비 수리",
 }.items():
     SOURCES[identifier].verification = level
 
