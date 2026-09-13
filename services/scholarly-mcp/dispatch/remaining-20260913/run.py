@@ -115,10 +115,15 @@ def invocation(task, state, campaign):
                '-c', 'approval_policy="never"', '-c', 'mcp_servers={}',
                '--json', '--output-schema', str(campaign / 'result-schema.json'), '-o', str(last)]
     if task['thread_id']:
-        command = [str(CODEX), 'exec', 'resume', *options, task['thread_id'], '-']
+        if task.get('resume_without_schema'):
+            schema_index = options.index('--output-schema')
+            del options[schema_index:schema_index+2]
+        command = [str(CODEX), 'exec', 'resume', '--dangerously-bypass-approvals-and-sandbox',
+                   *options, task['thread_id'], '-']
         prompt = (f"미완료 작업 {task['id']}을 같은 세션에서 계속한다. 원 파견문 {output / 'prompt.md'}와 "
                   f"{output / 'progress.json'}를 먼저 확인하라. 이전 반환은 완료로 수용되지 않았다. "
                   f"반환 문제: {task.get('return_problem', '실행이 정상 완료되지 않음')}. "
+                  "이번 재개는 최초 파견과 같은 로컬 실행·쓰기 권한을 명시했다. 먼저 자신의 output_dir에서 짧은 파일 읽기·쓰기·삭제 확인을 하고 작업을 이어가라. "
                   "이미 받은 자료와 사본 변경을 보존해 이어가라. 해결하거나 실행 가능한 방법을 근거로 모두 소진하기 전에는 최종 반환하지 마라. "
                   "실제 새 화면을 직접 열어 판독하고 원 요청·응답·파일과 대조하라. 보고의 누락만 고치는 것으로 남은 구현·검증을 대신하지 마라.")
     else:
@@ -251,6 +256,9 @@ def run(campaign):
                 write_json(Path(task['output_dir']) / 'result.json', result)
                 task.update(state='awaiting_review', claimed_disposition=result['disposition'], return_problem=None)
             else:
+                stderr_path = Path(task['private_dir']) / f"attempt-{task['attempts']:03d}-stderr.log"
+                if stderr_path.exists() and 'ActiveTurnOutputSchemaMismatch' in stderr_path.read_text('utf-8', errors='replace'):
+                    task['resume_without_schema'] = True
                 task.update(state='resume_queued', return_problem=problem or 'CLI 비정상 종료',
                             retry_at=time.time() + min(300, 30 * task['attempts']))
             del active[task_id]

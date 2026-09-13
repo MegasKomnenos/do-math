@@ -34,6 +34,7 @@ class ReturnContract(unittest.TestCase):
                     'thread_id':'11111111-1111-1111-1111-111111111111'}
             command, prompt, last = module.invocation(task, {'model':'gpt-5.6-sol'}, Path(temporary))
             self.assertIn('resume', command)
+            self.assertIn('--dangerously-bypass-approvals-and-sandbox', command)
             self.assertIn(task['thread_id'], command)
             self.assertNotIn('--last', command)
             self.assertIn('mcp_servers={}', command)
