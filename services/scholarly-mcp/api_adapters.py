@@ -677,7 +677,7 @@ class OpenAlex(APIAdapter):
 class SemanticScholar(APIAdapter):
     source = "semantic-scholar"
     hosts = ("api.semanticscholar.org",)
-    options = ("kind", "year", "fieldsOfStudy", "publicationTypes", "venue", "openAccessPdf", "minCitationCount", "publicationDateOrYear", "fields")
+    options = ("kind", "year", "fieldsOfStudy", "publicationTypes", "venue", "openAccessPdf", "minCitationCount", "publicationDateOrYear", "fields", "sort")
     max_limit=1000
     min_interval=1.05
 

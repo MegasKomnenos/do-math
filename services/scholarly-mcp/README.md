@@ -113,7 +113,7 @@ CORE의 공개 PDF 파일 URL도 명시해서 요청할 수 있다. `https://fil
 
 OpenAlex는 임의 검색 창과 원 그룹 집계의 커서 페이지를 지원한다. 그룹의 문헌 수와 이번 페이지 그룹 수를 구별하며 전체 그룹 수는 추정하지 않는다. 위치 색인의 단어 순서로 초록 텍스트를 복원하고, 원 색인과 참고·관련 문헌 ID 배열도 보존한다. 이 초록은 OpenAlex의 색인상 초록이며 출판사 원문과의 대조는 별도다.
 
-Semantic Scholar는 문헌 검색과 참고·피인용 관계 검색을 `options.kind`로 구별한다. `openAccessPdf=false`는 공개 PDF 필터를 해제한다. 이름·문헌 링크를 받아 후보 또는 대조한 문헌을 반환하며, 기본 서지 조회에 전체 인용 배열을 붙이지 않는다. 원 BibTeX와 관계 페이지는 연결했으나 신규 실서비스 흐름은 호출 제한으로 아직 검증하지 못했다.
+Semantic Scholar는 문헌 검색과 참고·피인용 관계 검색을 `options.kind`로 구별한다. `openAccessPdf=false`는 공개 PDF 필터를 해제한다. 이름은 공식 title-match의 최대 한 후보로 반환하며 자동 선택하지 않는다. 식별자 조회는 공식 batch에 ID 한 개를 보내 반환 정체성을 대조한다. 사본 실서비스에서 batch·BibTeX·관계 조회가 성공한 이력이 있다. 최신 원본 검증에서는 bulk의 원 1,000건 분할·다음 페이지와 title-match가 성공했지만, batch는 226초 간격의 두 요청 모두429였다. 이 결과를 모든 endpoint의 동일한 가용성으로 일반화하지 않는다. `fulltext=not_offered`는 Graph API가 본문 파일 bytes를 제공하지 않는 범위의 의미다. `openAccessPdf`의 외부 PDF는 자동 방문하지 않으며, 모든 Semantic Scholar 문헌의 PDF 부재를 뜻하지 않는다.
 
 Cambridge는 저자·연도·자료 유형·기관 이용 가능 여부의 검색 조건과 공개 RIS API를 사용한다. 주제·저널·출판사·학회 필터 ID는 검색 결과의 `facets.ref`를 `extract`로 읽어 선택한다. RIS의 `UR`에 있는 문헌 ID를 요청한 ID와 대조한다. 온라인 발행일과 인쇄 발행일을 원 검색 기록에 함께 보존한다.
 

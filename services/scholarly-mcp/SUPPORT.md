@@ -18,7 +18,7 @@
 | Crossref | crossref | api | partial | source_guide, search, fetch, export | live_mcp_search_native_citation_eight_formats_extract |
 | Crossmark | crossmark | api | partial | source_guide, search, fetch, export | 정정·철회 incoming/outgoing 구분·중복 보존·형식 오류 unknown·요청 간격과 제한 헤더 |
 | OpenAlex | openalex | api | partial | source_guide, search, fetch, export | live_mcp_arbitrary_window_group_cursor_abstract_relationships_name_doi |
-| Semantic Scholar | semantic-scholar | api | partial | source_guide, search, fetch, export | live_mcp_search_extract; new_workflow_rate_limited; schema_regressions |
+| Semantic Scholar | semantic-scholar | api | partial | source_guide, search, fetch, export | 원본 bulk1000·cursor·title-match 검증; batch/BibTeX/관계 양성 이력·최신 batch429 구별 |
 | OpenCitations | opencitations | api | partial | source_guide, search, fetch, export | live_mcp_native_csv_window_oci_fetch_reference_count |
 | Unpaywall | unpaywall | api | deferred | source_guide | public_endpoint_contact_requirement_observed |
 | CORE | core | api | partial | source_guide, search, fetch, export | live_mcp_name_metadata_abstract_restricted_notice_and_explicit_public_pdf |
