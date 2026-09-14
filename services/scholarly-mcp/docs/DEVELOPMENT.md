@@ -29,6 +29,8 @@ scholarly-mcp/
 
 `server.py`는 `registry.py`의 자료원 계약과 개별 어댑터를 연결합니다. `search`와 `fetch`는 하나의 worker에서 실행되어 브라우저 세션을 소유합니다. `ArtifactStore`는 보존 파일과 출처 manifest를 관리하고, `extract_artifact`는 형식별 추출을 선택합니다. `api_adapters.py`, `browser_adapters.py`, `native_browser.py`를 읽은 뒤 관심 있는 자료원 모듈로 이동하면 호출 경로를 따라갈 수 있습니다.
 
+BibTeX·RIS 파서는 `bibliography_parsers.py`에 있습니다. 서비스는 과거 연구 디렉터리의 수집 스크립트 없이 서지정보를 추출할 수 있습니다. 초기 구현 계약과 당시 자료원 선정 근거는 `history/IMPLEMENTATION-CONTRACT.md`, `history/SOURCE-SELECTION.md`에 보존합니다.
+
 구현 모듈은 서비스 루트의 동일한 import 경로를 사용합니다. 새 자료원이나 인자를 변경할 때는 실제 구현과 `registry.py`의 사용 계약, 지원표를 함께 대조합니다. 구체적인 과거 실서비스 관측은 `docs/history/`에 보존합니다.
 
 ## 검증 실행

@@ -270,17 +270,7 @@ def bibliography(data, media):
         if fields is not None:
             raise ServiceError("bibliography_parse_error", "Final WOS record is missing ER")
         return rows
-    import importlib.util
-    import sys
-    script_name = "build_b002_catalog" if media == "application/x-bibtex" else "build_b001_catalog"
-    module_name = "scholarly_" + script_name
-    if module_name not in sys.modules:
-        path = Path(__file__).resolve().parents[2] / "research/pvsnp/literature-baseline/scripts" / (script_name + ".py")
-        spec = importlib.util.spec_from_file_location(module_name, path)
-        module = importlib.util.module_from_spec(spec)
-        sys.modules[module_name] = module
-        spec.loader.exec_module(module)
-    module = sys.modules[module_name]
+    import bibliography_parsers as module
     text = data.decode("utf-8-sig")
     try:
         if media == "application/x-bibtex":
