@@ -1,6 +1,6 @@
 {
   "status": "PASS",
-  "local_links_checked": 28,
+  "local_links_checked": 26,
   "missing": [],
   "reviewed_claims": [
     "P uses exact maximum displacement counts and all n >= 1",
@@ -9,7 +9,8 @@
     "Pappe total-sum result and Selig-Zhu nondecreasing result do not directly settle P",
     "Source boundary errors are distinguished from a refutation of unimodality",
     "Newness and MSc-level difficulty are qualified judgments",
-    "Preparation does not initialize or run a do-math instance"
+    "Preparation contains research inputs and mathematical criteria; no proof search has started"
   ],
-  "scope": "Local references and root self-review of preparation documents; no independent full mathematical review and no solution certification."
+  "scope": "Local references and root self-review of preparation documents; no independent full mathematical review and no solution certification.",
+  "implementation_dependencies_remaining": []
 }

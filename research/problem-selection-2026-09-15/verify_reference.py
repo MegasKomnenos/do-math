@@ -96,7 +96,7 @@ def main():
     report = {
         "checked_at_utc": datetime.now(timezone.utc).isoformat(),
         "status": "PASS" if not errors else "FAIL",
-        "scope": "Source bytes; S1 published table n=1..9 via S2 recurrence; direct enumeration n=1..5; interpretation boundaries. No n>9 computation, new proof, Lean run or do-math instance.",
+        "scope": "Source bytes; S1 published table n=1..9 via S2 recurrence; direct enumeration n=1..5; interpretation boundaries. No n>9 computation or new proof search.",
         "check_count": len(checks), "errors": errors, "checks": checks,
     }
     (BASE / "evidence/reference-validation.json").write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
