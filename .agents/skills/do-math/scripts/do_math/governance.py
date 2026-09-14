@@ -115,7 +115,10 @@ def apply_decision(instance: dict, runtime: dict, change: dict, *, source_ref: s
                 task["status"] = "needs_revision"
                 task.setdefault("change_reasons", []).append({"decision_id": decision_id, "reason": "goal changed"})
                 event["affected"].append(task["id"])
-        runtime["queue"] = [a for a in runtime["queue"] if a["role"] in {"operational_review", "maintenance"}]
+        goal_dependent = {"research_preparation", "research_plan", "goal_audit", "task_contract_review", "research_work", "supplemental_research"}
+        # Only actions that consume the replaced goal are cancelled; machine transitions, identity review
+        # slots (including their fixed-question research), intent checks and recovery actions continue.
+        runtime["queue"] = [a for a in runtime["queue"] if a["role"] not in goal_dependent or a.get("review_cycle_id")]
         _queue(runtime, "research_preparation", "goal changed", decision_id=decision_id)
         runtime["questions"] = []
         if runtime["status"] in {"waiting", "completed", "budget_exhausted"}:
@@ -139,7 +142,7 @@ def apply_decision(instance: dict, runtime: dict, change: dict, *, source_ref: s
         instance = set_requirements(instance, requirements)
         event["requirements_revision"] = instance["academic_requirements"]["revision"]
         for task in runtime["tasks"].values():
-            if task.get("academic_requirement_id"):
+            if task.get("academic_requirement_id") and task["status"] not in {"completed", "closed"}:
                 task["status"] = "planned"
                 event["affected"].append(task["id"])
         _queue(runtime, "research_plan", "academic requirements changed")
@@ -210,6 +213,9 @@ def apply_decision(instance: dict, runtime: dict, change: dict, *, source_ref: s
             _queue(runtime, "task_contract_review", "transferred obligations require review", target=target['id'])
         task["scope_disposition"] = {"kind": disposition, "reason": reason, "decision_id": decision_id, "target_task_id": change.get("target_task_id")}
         task["status"] = "needs_revision" if disposition == "revise" else "closed"
+        if disposition == "revise":
+            # The current contract revision may not be scheduled again until preparation authors a new revision.
+            task["revision_requested"] = {"source": decision_id, "revision": task.get("revision"), "reason": reason}
         event["affected"].append(tid)
         runtime["queue"] = [a for a in runtime["queue"] if a.get("target") != tid]
         if disposition == "revise":

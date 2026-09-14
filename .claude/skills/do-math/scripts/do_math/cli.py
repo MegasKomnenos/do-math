@@ -175,7 +175,7 @@ def _control(args: argparse.Namespace, action: str, *, text: str = "", config: d
     except GitStateStoreLockError:
         return {**request, "effect": "pending engine processing", "lock": "busy"}
     outcome = next(h for h in reversed(engine.runtime["history"]) if
-                   h.get("request", {}).get("id") == request["request_id"])
+                   request["request_id"] in {h.get("request", {}).get("id"), h.get("request_id")})
     return {**request, "effect": "rejected" if outcome["kind"] == "rejected_user_control" else "applied",
             "reason": outcome.get("reason"), "status": status["status"], "snapshot": status["snapshot"],
             "config": engine.instance["config"] if action == "configure" else None}

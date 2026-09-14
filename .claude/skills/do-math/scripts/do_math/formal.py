@@ -65,6 +65,7 @@ def verify_lean(*, source: str, declarations: list[str], workspace: Path,
                 allowed_axioms: tuple[str,...] = ('propext','Classical.choice','Quot.sound'), should_stop=None) -> dict:
     workspace=workspace.resolve(); raw=source.encode(); base={"source_sha256":_hash(raw),"declarations":declarations,"axioms":{},"declaration_signatures":{},"signature_hash":None,"stdout":"","stderr":"","command":None,"toolchain":None,"reason":None}
     if not all(_ident(x) for x in declarations): return {**base,"status":"rejected","reason":"invalid declaration"}
+    if not declarations: return {**base,"status":"rejected","reason":"no declaration to audit"}
     command=list(lean_command) if lean_command else (discover_lean() or [])
     if not command or not command[0]: return {**base,"status":"unavailable","reason":"lean not found"}
     if any(not isinstance(x,str) or '\x00' in x for x in command) or timeout_seconds<=0: return {**base,"status":"rejected","reason":"unsafe command or timeout"}

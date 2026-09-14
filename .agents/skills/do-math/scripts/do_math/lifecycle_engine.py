@@ -521,6 +521,13 @@ class LifecycleEngineMixin:
         operation = self.runtime['external_operations'][operation_id]
         if not operation.get('execution_id'): operation['execution_id'] = new_id('EX')
         if operation['status'] in {'confirmed', 'failed', 'cancelled'}: return
+        if operation['status'] == 'running' and operation.get('transmitted') is False:
+            # transmitted=true is published before transport, so a published false proves that no request left.
+            operation.update(status='failed', error='Executor resumed before the request was transmitted')
+            self._external_execution_record(operation)
+            self._lifecycle_event('external_operation_failed', target=operation_id, source_ref=operation['source_ref'],
+                                  request_sha256=operation['request_sha256'])
+            return
         if operation['status'] in {'unknown', 'running'}:
             if operation['status'] == 'running':
                 operation.update(status='unknown', error='Executor resumed without a confirmed remote outcome')

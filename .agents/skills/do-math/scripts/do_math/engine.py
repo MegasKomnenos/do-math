@@ -350,9 +350,11 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
                                 execution["stop_requested"] = "required_input_changed"
                 for kid in list(self.instance["knowledge"]):
                     record = self.instance["knowledge"][kid]
-                    if not sources_current(record.get("source_basis", []), self.instance):
-                        self.instance, self.runtime = knowledge.invalidate_knowledge(self.instance, self.runtime, kid,
-                            reason="Required source content changed: " + spec["name"], actor_ref=request["id"])
+                    basis = record.get("source_basis", [])
+                    if (record.get("status") != "withdrawn" and any(row.get("name") == spec["name"] for row in basis)
+                            and not sources_current(basis, self.instance)):
+                        self.instance, self.runtime = knowledge.suspend_for_source_change(self.instance, self.runtime, kid,
+                            source_name=spec["name"], reason="Required source content changed: " + spec["name"], actor_ref=request["id"])
                 self._invalidate_goal_currentness()
                 if self.runtime["status"] in {"waiting", "budget_exhausted"}: self.runtime["status"] = "ready"
                 self.runtime["processed_controls"].append(request["id"])
@@ -437,7 +439,8 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
         if operation == "import":
             self.instance, self.runtime, kid = knowledge_io.import_candidate(self.instance, self.runtime, spec["candidate"],
                 source_ref=request["id"], actor_ref=request["id"])
-            self.instance["knowledge"][kid]["source_basis"] = capture_sources(self.instance, spec["candidate"].get("source_refs"))
+            # An omitted source_refs declares no source dependency; it does not mean every imported source.
+            self.instance["knowledge"][kid]["source_basis"] = capture_sources(self.instance, spec["candidate"].get("source_refs", []))
             for execution in self.runtime["executions"].values():
                 if execution["status"] != "ended" and execution.get("action", {}).get("target") == kid:
                     execution["stop_requested"] = "imported_knowledge_revision"
@@ -561,8 +564,10 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
         for execution in unfinished:
             eid, bundle = execution["id"], new_id("BA")
             workspace = Path(self.instance["workspace"]) / "runs" / eid / "workspace"
-            if execution["role"] in {"formal_check", "trust_check"}:
+            if execution["role"] == "formal_check":
                 workspace = Path(self.instance["workspace"]) / "formal" / eid
+            elif execution["role"] == "trust_check":
+                workspace = Path(self.instance["workspace"]) / "trust" / eid
             files = collect_outputs(workspace, max_bytes=self.instance["config"]["max_artifact_bytes"])
             entries = []
             for path, raw in files["files"].items():
@@ -576,6 +581,10 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
                     artifacts[f"runtime/artifacts/{bundle}/adapter-evidence/{path}"] = raw
                 artifacts[f"runtime/artifacts/{bundle}/adapter-evidence-manifest.json"] = canonical_json(evidence["manifest"])
             checkpoint = json_safe(recovered_checkpoint(workspace))
+            observed = self.runtime.get("checkpoints", {}).get(eid)
+            if checkpoint["kind"] != "worker_checkpoint" and isinstance(observed, dict) and observed.get("kind") == "worker_checkpoint":
+                # An unreadable final checkpoint file never replaces the last valid checkpoint observed during execution.
+                checkpoint = {**observed, "final_observation": checkpoint}
             self.runtime.setdefault("checkpoints", {})[eid] = checkpoint
             artifacts[f"runtime/artifacts/{bundle}/checkpoint-recovery.json"] = canonical_json(checkpoint)
             artifacts[f"runtime/artifacts/{bundle}/output-manifest.json"] = canonical_json(files["manifest"])
@@ -592,7 +601,11 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
             self.runtime["history"].append({"kind": "recovery", "execution_id": eid, "remote_termination": "unknown"})
         for operation in self.runtime.get("external_operations", {}).values():
             if operation["status"] == "running":
-                operation.update(status="unknown", error="executor disappeared after recording transmission intent")
+                if operation.get("transmitted") is False:
+                    # transmitted=true is published before transport, so a published false proves that no request left.
+                    operation.update(status="failed", error="executor disappeared before transmission")
+                else:
+                    operation.update(status="unknown", error="executor disappeared after recording transmission intent")
                 self.runtime["queue"] = [a for a in self.runtime["queue"] if not (a["role"] == "external_action" and a.get("target") == operation["id"])]
                 self._external_execution_record(operation)
         self.runtime["active_execution"] = None
@@ -618,8 +631,11 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
             path = directory / "knowledge" / (kid + ".json")
             path.parent.mkdir(exist_ok=True)
             path.write_bytes(canonical_json(record))
+            use = knowledge.assess_use(knowledge_record, self.instance)
             catalog.append({"id": kid, "kind": knowledge_record["kind"], "title": knowledge_record["title"],
                             "summary": knowledge_record["summary"], "status": knowledge_record["status"],
+                            "use_suspended": bool(knowledge_record.get("use_suspended")),
+                            "usable_as_k": use["valid"], "use_reasons": use["reasons"],
                             "path": path.relative_to(workspace).as_posix()})
             cycle_id = knowledge_record.get("review_cycle_id")
             cycle = self.runtime.get("review_cycles", {}).get(cycle_id)
@@ -916,6 +932,7 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
         input_bundle = new_id("BA")
         execution = {"id": eid, "activity_id": aid, "parent_execution_id": parent_id, "role": action["role"],
                      "action": action, "budget_kind": "operations", "status": "starting", "created_at": now(),
+                     "model": config["role_models"].get("operational_review", config["model"]), "effort": config["effort"],
                      "grant_id": authority["grant_id"], "engine_sha256": ENGINE_SHA256,
                      "input_snapshot": self.head, "input_sha256": hashlib.sha256(prompt.encode()).hexdigest(),
                      "input_bundle": input_bundle}
@@ -934,8 +951,8 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
                     not governance.authorize(self.instance, action)["allowed"] or time.monotonic() >= deadline)
         try:
             result = self.runner.run(prompt=prompt, output_schema=schema, workspace=workspace,
-                evidence_dir=base / "evidence", model=config["role_models"].get("operational_review", config["model"]),
-                effort=config["effort"], timeout_seconds=max(.1, min(config["call_timeout_seconds"], deadline-time.monotonic())),
+                evidence_dir=base / "evidence", model=execution["model"],
+                effort=execution["effort"], timeout_seconds=max(.1, min(config["call_timeout_seconds"], deadline-time.monotonic())),
                 should_stop=stop, on_started=started)
         except Exception as error:
             result = {"status": "failed", "error": str(error), "output": None, "usage": {}}
@@ -1083,7 +1100,9 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
         rules = self.runtime.get("task_observation_rules", {}).get(action.get("target"), task.get("initial_observation_rules", []))
         tracker = ObservationTracker(execution_id, workspace, {**config, "observation_rules": rules})
         stop_started = None
-        call_deadline = min(deadline, time.monotonic()+config["call_timeout_seconds"])
+        # Work-budget executions (research, review, audit) carry no per-execution
+        # deadline; they end by submission, stop conditions or the run deadline.
+        call_deadline = deadline if pool == "work" else min(deadline, time.monotonic()+config["call_timeout_seconds"])
         def started(identity):
             self.runtime["executions"][execution_id].update(status="running", process=json_safe(identity))
             self._save()
@@ -1127,6 +1146,11 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
             result = {"status": "failed", "output": None, "usage": {}, "error": f"{type(error).__name__}: {error}"}
         self._live_execution_ids.discard(execution_id)
         result = json_safe(result)
+        if result["status"] == "completed" and stop_started is not None and (
+                self.runtime["executions"][execution_id].get("after_stop") or self.runtime["status"] == "paused"):
+            # The stop request already revoked general authority; keep the late output only as preserved evidence.
+            result = {**result, "status": "stopped",
+                      "error": "final output was collected after a pause or operational stop request; preserved without acceptance"}
         bundle = new_id("BA")
         files = collect_outputs(workspace, max_bytes=config["max_artifact_bytes"])
         artifacts = {f"runtime/artifacts/{bundle}/result.json": canonical_json(result),
@@ -1139,9 +1163,13 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
             output_files.append({"path": path, "artifact_ref": ref, "sha256": hashlib.sha256(raw).hexdigest(), "bytes": len(raw)})
         if result.get("output") is not None:
             artifacts[f"runtime/artifacts/{bundle}/output.json"] = canonical_json(result["output"])
-        checkpoint = recovered_checkpoint(workspace, tracker.messages)
-        self.runtime.setdefault("checkpoints", {})[execution_id] = json_safe(checkpoint)
-        artifacts[f"runtime/artifacts/{bundle}/checkpoint-recovery.json"] = canonical_json(json_safe(checkpoint))
+        checkpoint = json_safe(recovered_checkpoint(workspace, tracker.messages))
+        observed = self.runtime.get("checkpoints", {}).get(execution_id)
+        if checkpoint["kind"] != "worker_checkpoint" and isinstance(observed, dict) and observed.get("kind") == "worker_checkpoint":
+            # An unreadable final checkpoint file never replaces the last valid checkpoint observed during execution.
+            checkpoint = {**observed, "final_observation": checkpoint}
+        self.runtime.setdefault("checkpoints", {})[execution_id] = checkpoint
+        artifacts[f"runtime/artifacts/{bundle}/checkpoint-recovery.json"] = canonical_json(checkpoint)
         execution = self.runtime["executions"][execution_id]
         execution.update(status="ended", ended_at=now(), usage=result.get("usage", {}), artifact_bundle=bundle,
                          output_files=output_files, outputs_complete=files["complete"],
@@ -1208,8 +1236,10 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
                 if after["decision"] == "revise": self._enqueue("research_preparation", reason=after["reason"])
                 self.runtime["status"] = "ready" if self.runtime["queue"] else "waiting"
                 if held_pause or after["decision"] == "stop": self.runtime["status"] = "paused"
-            elif result["status"] == "failed" and role != "operational_review" and action.get("recovery_attempt", 0) < 1:
-                self.runtime["status"] = "ready"
+            elif result["status"] == "failed" and role != "operational_review" and action.get("recovery_attempt", 0) < 1 and self.runtime["status"] != "closed":
+                # A pause applied while this execution was stopping stays in force; the diagnosis runs after resume.
+                if self.runtime["status"] != "paused":
+                    self.runtime["status"] = "ready"
                 self.runtime["queue"].insert(0, {"id": new_id("AC"), "role": "operational_review", "target": execution_id,
                                                "reason": "Diagnose the preserved failure before selecting recovery"})
             elif self.runtime["status"] not in {"closed", "paused"}:
@@ -1252,10 +1282,28 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
             for change in extension["knowledge_changes"]:
                 kid = change["id"]
                 previous_cycle = self.instance["knowledge"][kid].get("review_cycle_id")
+                cycle = self.runtime.get("review_cycles", {}).get(previous_cycle)
+                if cycle and cycle["status"] == "working":
+                    # A sealed proposal must not change under an open review: close that review
+                    # as unresolved before the revised proposal starts its own review.
+                    cycle.update(status="unresolved", decision="unresolved", phase="ended")
+                    cycle.setdefault("history", []).append({"event": "worker_knowledge_change", "source_ref": execution_id, "reason": change["reason"]})
+                    for investigation in cycle.get("research", {}).values():
+                        if investigation.get("status") == "pending":
+                            investigation.update(status="cancelled", cancellation={"source_ref": execution_id, "reason": change["reason"]})
+                    cycle["deferred_actions"] = {}
                 self.instance, self.runtime = knowledge.revise_knowledge(self.instance, self.runtime, kid,
                     change["changes"], reason=change["reason"], actor_ref=execution_id)
-                self.instance["knowledge"][kid]["previous_review_cycle_id"] = previous_cycle
-                self._enqueue("formal_check", kid)
+                item = self.instance["knowledge"][kid]
+                item["previous_review_cycle_id"] = previous_cycle
+                item.pop("review_cycle_id", None)
+                if isinstance(item.get("identity_assessment"), dict):
+                    item["identity_assessment"]["effective"] = False
+                    item["identity_assessment"]["reason"] = "Knowledge revision awaits a fresh full review"
+                self.runtime["queue"] = [a for a in self.runtime["queue"] if not (a.get("target") == kid and
+                    (a.get("role") in {"identity_review", "formal_check"} or (a.get("role") == "supplemental_research" and a.get("review_cycle_id"))))]
+                if item.get("lean_code"):
+                    self._enqueue("formal_check", kid)
             self._invalidate_goal_currentness()
         for index, request in enumerate(extension.get("external_requests", [])):
             task = self.runtime["tasks"].get(action.get("target"), {})
@@ -1388,6 +1436,11 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
                 raise ValueError("contract changed while being reviewed")
             task["reviews"].append({"id": new_id("CR"), "execution_id": execution_id, **basis, **output})
             task["status"] = "planned" if output["decision"] == "approved" else "needs_revision"
+            if output["decision"] != "approved":
+                # The unapproved contract's defects and open questions go back to preparation.
+                self._enqueue("research_preparation", target,
+                              reason="Task contract review returned " + output["decision"] + "; revise the contract from its findings or preserve the obligation with the open questions",
+                              contract_review_execution=execution_id)
         elif role == "research_plan":
             self._apply_plan(output, execution_id)
         elif role in {"research_work", "supplemental_research"}:
@@ -1399,7 +1452,10 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
             task["status"] = "waiting" if output["outcome"] == "waiting" else "assessing"
             task["remaining_work"] = output["remaining_work"]
             new_items = {}
-            metadata = {entry["title"]: entry for entry in self.runtime["executions"][execution_id].get("extensions", {}).get("knowledge_metadata", [])}
+            metadata_entries = self.runtime["executions"][execution_id].get("extensions", {}).get("knowledge_metadata", [])
+            metadata = {entry["title"]: entry for entry in metadata_entries}
+            if len(metadata) != len(metadata_entries) or set(metadata) - {item["title"] for item in output["knowledge"]}:
+                raise ValueError("knowledge_metadata titles must be distinct and match new knowledge titles in this output")
             for item in output["knowledge"]:
                 extra = metadata.get(item["title"], {})
                 if set(extra) - {"title", "relation_claim", "confirmed_scope", "epistemic_status", "selection_relevance", "uncertainty_assessment"}:
@@ -1513,6 +1569,11 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
                 failed = self.runtime["executions"].get(target)
                 if failed:
                     self.runtime["queue"] = [a for a in self.runtime["queue"] if a != failed.get("action")]
+                    failed_task = self.runtime["tasks"].get(failed.get("action", {}).get("target"))
+                    if failed_task is not None and failed_task["status"] not in {"completed", "closed"}:
+                        # The diagnosed contract returns to preparation; the current revision stays unschedulable until revised.
+                        failed_task["status"] = "needs_revision"
+                        failed_task["revision_requested"] = {"source": execution_id, "revision": failed_task.get("revision"), "reason": output["reason"]}
                 self._enqueue("research_preparation", reason=output["reason"])
             elif output["decision"] == "retry":
                 failed = self.runtime["executions"].get(target)

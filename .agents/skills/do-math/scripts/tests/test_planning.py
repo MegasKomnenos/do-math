@@ -26,7 +26,7 @@ class PlanningTests(unittest.TestCase):
   task['question']='changed';self.assertNotEqual(contract_hash(task),baseline)
  def test_due_events_are_unique_and_paused_preserves_pending(self):
   self.runtime['tasks']['T'].update(wake_at='2026-01-01T00:00:00Z',due_conditions=[{'op':'always'}],newinput=True)
-  events=collect_due_events(self.instance,self.runtime,'2026-01-02T00:00:00Z'); self.assertGreaterEqual(len(events),3)
+  events=collect_due_events(self.instance,self.runtime,'2026-01-02T00:00:00Z'); self.assertEqual(sorted(e['kind'] for e in events),['research_reconsider_due','task_condition_due','task_new_input','task_wake_due']); self.assertEqual(len({e['id'] for e in events}),len(events))
   self.runtime['status']='paused'; applied=apply_event_schedule(self.instance,self.runtime,'2026-01-02T00:00:00Z'); self.assertTrue(applied['runtime'].get('pending_events',[]))
   again=apply_event_schedule(applied['instance'],applied['runtime'],'2026-01-02T00:00:00Z'); self.assertEqual(again['events'],[])
  def test_source_arrival_and_trust_transition_are_machine_conditions(self):

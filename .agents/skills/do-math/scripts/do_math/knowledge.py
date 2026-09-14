@@ -97,8 +97,12 @@ _REFERENCE_KEYS = frozenset({
     "evidence_refs", "source_refs", "formal_result_refs", "assessment_refs",
     "inputs", "reuse",
 })
+# Preserved earlier versions are history, not current dependencies of the record.
+_HISTORY_KEYS = frozenset({"history", "use_history", "review_history", "revision_history", "assessment_history", "governance_history"})
 _KNOWLEDGE_ID = re.compile(r"^KN-[A-Z0-9][A-Z0-9-]*$")
 _ID_KEYS = frozenset({"id", "ref", "record_id", "knowledge_id"})
+# Earlier revisions and superseded review rounds are preserved history, not current dependencies.
+_HISTORY_KEYS = frozenset({"history", "previous_initial_reviews"})
 
 
 def _field_refs(value: Any, *, strict: bool, known_ids: set[str]) -> set[str]:
@@ -127,12 +131,16 @@ def _explicit_refs(value: Any, known_ids: set[str]) -> set[str]:
     refs: set[str] = set()
     if isinstance(value, dict):
         for key, item in value.items():
+            if key in _HISTORY_KEYS:
+                continue
             if key in _STRICT_REFERENCE_KEYS:
                 refs.update(_field_refs(item, strict=True, known_ids=known_ids))
             elif key in _REFERENCE_KEYS:
                 refs.update(_field_refs(item, strict=False, known_ids=known_ids))
             elif key == "basis" and isinstance(item, list):
                 refs.update(_field_refs(item, strict=False, known_ids=known_ids))
+            elif key in _HISTORY_KEYS:
+                continue
             else:
                 refs.update(_explicit_refs(item, known_ids))
     elif isinstance(value, list):
@@ -275,6 +283,22 @@ def invalidate_knowledge(instance: dict, runtime: dict, knowledge_id: str, *,
     _propagate(new_instance, new_runtime, {knowledge_id}, reason)
     return new_instance, new_runtime
 
+def suspend_for_source_change(instance: dict, runtime: dict, knowledge_id: str, *, source_name: str,
+                              reason: str, actor_ref: str) -> tuple[dict, dict]:
+    """Stop current use after a required source changed; the record itself is not withdrawn."""
+    _require_text(source_name, "source_name"); _require_text(reason, "reason"); _require_text(actor_ref, "actor_ref")
+    new_instance, new_runtime = deepcopy(instance), deepcopy(runtime)
+    record = new_instance.get("knowledge", {}).get(knowledge_id)
+    if record is None: raise ValueError(f"unknown knowledge ID: {knowledge_id}")
+    suspension = {"kind": "dependency", "source_name": source_name, "reason": reason}
+    if suspension in record.get("use_suspensions", []):
+        return new_instance, new_runtime
+    record.setdefault("use_history", []).append({"action": "required_source_changed", "source_name": source_name,
+                                                 "reason": reason, "actor_ref": actor_ref})
+    _suspend(record, suspension)
+    _propagate(new_instance, new_runtime, {knowledge_id}, reason)
+    return new_instance, new_runtime
+
 
 def register_environment(instance: dict, toolchain: dict,
                          allowed_axioms: list[str]) -> tuple[dict, str]:
@@ -378,7 +402,7 @@ def activate_transition(instance: dict, transition: dict) -> dict:
             "transition_id": transition.get("id"), "reasons": reasons,
             "resolved_suspensions": deepcopy(resolved),
             "previous_environment_ids": deepcopy(target["previous_environment_ids"])})
-        record["formal"] = {**deepcopy(result), "trust_environment_id": new_id_value,
+        record["formal"] = {**deepcopy(result), "trust_environment_id": new_id_value, "trust_environment_status": "active",
                             "previous_environment_ids": deepcopy(target["previous_environment_ids"])}
         if remaining is None:
             record["use_suspended"] = bool(record.get("use_suspended"))

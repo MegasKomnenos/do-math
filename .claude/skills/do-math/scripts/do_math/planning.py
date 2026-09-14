@@ -106,6 +106,9 @@ def task_ready(task: dict, instance: dict, runtime: dict) -> dict:
         return {"state": "not_ready", "basis": [], "errors": ["research production stopped after goal satisfaction"]}
     if task.get("status") not in {"planned", "waiting", "needs_revision", "ready"}:
         return {"state": "not_ready", "basis": [], "errors": ["task state is not schedulable"]}
+    requested = task.get("revision_requested")
+    if isinstance(requested, dict) and requested.get("revision") == task.get("revision"):
+        return {"state": "not_ready", "basis": [], "errors": ["a contract revision was requested by " + str(requested.get("source")) + "; awaiting a new revision"]}
     revision = task.get("revision")
     reviews = task.get("reviews", [])
     approved = [r for r in reviews if r.get("revision") == revision and r.get("decision") == "approved" and r.get("inputs_current", True)]

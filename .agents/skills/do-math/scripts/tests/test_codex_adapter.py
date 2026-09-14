@@ -6,6 +6,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 
 SCRIPTS = Path(__file__).resolve().parents[1]
@@ -36,19 +37,32 @@ class CodexWorkerTests(unittest.TestCase):
 
     def test_worker_does_not_accept_fake_argument_prefixes(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory); fake = root / "fake.py"; prompt = root / "prompt"; prompt.write_bytes(b"hello")
-            fake.write_text("import os,pathlib,sys; pathlib.Path(sys.argv[sys.argv.index('--output-last-message')+1]).write_bytes(repr(os.getenv('OPENAI_API_KEY')).encode()); print('{\\\"type\\\":\\\"thread.started\\\",\\\"thread_id\\\":\\\"t1\\\"}'); print('{\\\"type\\\":\\\"turn.completed\\\"}')", encoding="utf-8")
+            root = Path(directory); prompt = root / "prompt"; prompt.write_bytes(b"hello")
             request = {"codex_path": sys.executable, "prompt_path": str(prompt), "cwd": str(root), "model": "gpt-x",
                        "effort": "low", "sandbox": "read-only", "approval_policy": "never", "max_runtime_seconds": 5,
                        "stdout_path": str(root / "out"), "stderr_path": str(root / "err"), "final_path": str(root / "final"), "status_path": str(root / "status")}
-            request_path = root / "request.json"; request_path.write_text(json.dumps(request), encoding="utf-8")
+            request_path = root / "request.json"
+            request_path.write_text(json.dumps({**request, "codex_argv": [sys.executable, str(root / "fake.py")]}), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "codex_argv is forbidden"):
+                codex_worker.run(request_path)
+            request_path.write_text(json.dumps(request), encoding="utf-8")
+            captured = {}
+            class Process:
+                returncode = 0
+                def __init__(self, command, **options): captured.update(command=command, env=options["env"], shell=options["shell"])
+                def communicate(self, input=None, timeout=None): captured["stdin"] = input; return b"", b""
             old = os.environ.get("OPENAI_API_KEY"); os.environ["OPENAI_API_KEY"] = "must-not-pass"
-            try: self.assertEqual(codex_worker.run(request_path), 0)
+            try:
+                with patch.object(codex_worker.subprocess, "Popen", Process):
+                    self.assertEqual(codex_worker.run(request_path), 0)
             finally:
                 if old is None: os.environ.pop("OPENAI_API_KEY", None)
                 else: os.environ["OPENAI_API_KEY"] = old
-            self.assertNotEqual(json.loads((root / "status").read_text())["cli_exit_code"], 0)
-            self.assertFalse((root / "final").exists())
+            self.assertEqual(captured["command"], codex_worker.build_argv(request))
+            self.assertNotIn("OPENAI_API_KEY", captured["env"])
+            self.assertFalse(captured["shell"])
+            self.assertEqual(captured["stdin"], b"hello")
+            self.assertEqual(json.loads((root / "status").read_text())["cli_exit_code"], 0)
 
     def test_sanitized_environment_removes_every_forced_api_route(self):
         clean = codex_worker.sanitized_environment({"OPENAI_API_KEY": "x", "CODEX_API_KEY": "x",

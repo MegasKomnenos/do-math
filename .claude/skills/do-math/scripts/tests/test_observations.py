@@ -15,7 +15,8 @@ class Tests(unittest.TestCase):
   self.write();self.assertEqual([x['kind'] for x in self.t.observe({'type':'tick'})],['checkpoint']);self.assertEqual(self.t.observe({'type':'tick'}),[])
  def test_blocked_periodic_and_invalid_checkpoint(self):
   self.write('blocked');self.assertTrue(any(x.get('reason')=='worker_reported_obstacle' for x in self.t.observe({'type':'tick'})))
-  self.t.config['observation_mode']='periodic';self.clock.x=10;self.assertLessEqual(self.t.review_count,2)
+  self.t.config['observation_mode']='periodic';self.clock.x=10;self.write('working');due=[x for x in self.t.observe({'type':'tick'}) if x['kind']=='operational_review_due'];self.assertEqual([x['reason'] for x in due],['periodic_review']);self.assertEqual(self.t.review_count,2)
+  self.clock.x=20;self.write('working',' ');self.assertEqual([x for x in self.t.observe({'type':'tick'}) if x['kind']=='operational_review_due'],[]);self.assertEqual(self.t.review_count,2)
   (self.ws/'checkpoint.json').write_bytes(b'\xff');self.assertEqual(read_checkpoint(self.ws)['status'],'invalid')
   (self.ws/'checkpoint.json').unlink();self.assertEqual(read_checkpoint(self.ws)['status'],'missing')
   (self.ws/'checkpoint.json').write_text('{"current_claim":"partial"}',encoding='utf-8');self.assertEqual(read_checkpoint(self.ws)['status'],'invalid')

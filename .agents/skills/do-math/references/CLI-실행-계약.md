@@ -130,7 +130,7 @@ status의 `knowledge.K`, `knowledge.F`, `knowledge.suspended_K`는 각각 `verif
 
 - 실행 선택: `model`, `effort`, `role_models`가 기본 모델·추론 노력과 역할별 모델 override를 정한다. effort는 실행 코드가 허용한 닫힌 값만 받는다.
 - 작업·운영 용량: `work_calls`, `operations_calls`는 각각 작업·운영 예산의 AI execution 시도 한도다. 공급자 내부 호출이나 토큰 한도가 아니다.
-- 실행 시간과 반복: call·run·Lean timeout, 자동 후보 준비 회차, 출력 수리 횟수, 검토 회차와 보충 조사 한도를 각 대응 설정이 정한다.
+- 실행 시간과 반복: `call_timeout_seconds`는 운영 예산 AI 실행 하나의 기한이다. 작업 예산 AI 실행(연구 수행·보충 조사·작업 계약 검토·동일성 검토·목표 감사)에는 이 기한을 적용하지 않으며, 그 실행은 제출, `run_timeout_seconds`가 정한 `run` 호출의 기한, pause·close와 권한·입력 변경으로 끝난다. Lean timeout, 자동 후보 준비 회차, 출력 수리 횟수, 검토 회차와 보충 조사 한도는 각 대응 설정이 정한다.
 - 입력·산출: 모델 입력과 한 실행의 artifact 회수 바이트 한도를 정한다.
 - 형식 검사: `lean_command`는 argv 배열이며, 없으면 실행기가 지원 경로에서 Lean을 탐색한다. 허용 공리 목록은 중앙 공리 감사의 기준이다.
 - 관찰: event-driven·periodic 모드, 관찰·idle 간격, 한 실행의 점검 수와 checkpoint 유예를 정한다.
@@ -655,13 +655,13 @@ Codex 어댑터가 완료를 반환하면 실행기는 주 JSON Schema, workspac
 
 AI 실행을 시작할 때 현재 예산과 grant, 대상 과제의 readiness를 다시 검사한다. 현재 Codex 어댑터는 `codex_worker.py`를 Windows Job의 루트이자 실행 래퍼로 시작한다. 루트의 PID·생성 시각과 Job 프로세스 집합을 추적하고, 래퍼는 고정 prompt·schema로 `codex exec`을 호출해 JSONL·최종 응답·상태 파일을 남긴다. 작업·운영 실행 시도 수가 설정 한도에 닿으면 `budget_exhausted`로 끝난다. grant가 없으면 action을 waiting으로 옮기며 다른 queue action은 계속할 수 있다.
 
-실행 중 pause·close, goal·policy·계약·지식·source·학술 요구 변경, grant 철회 또는 call deadline을 감지하면 `stop-request.json`을 쓴다. 즉시 중단 조건이 아니면 `checkpoint_grace_seconds` 동안 이미 얻은 결과를 보존할 기회를 준 뒤 Codex 실행의 로컬 프로세스 트리를 끝낸다. 현재 실행의 실제 Job 종료와 output 수집을 확인하지만 공급자 내부 원격 호출 종료는 보증하지 않는다.
+실행 중 pause·close, goal·policy·계약·지식·source·학술 요구 변경, grant 철회, 운영 예산 실행의 call deadline 또는 `run` 기한을 감지하면 `stop-request.json`을 쓴다. 즉시 중단 조건이 아니면 `checkpoint_grace_seconds` 동안 이미 얻은 결과를 보존할 기회를 준 뒤 Codex 실행의 로컬 프로세스 트리를 끝낸다. 현재 실행의 실제 Job 종료와 output 수집을 확인하지만 공급자 내부 원격 호출 종료는 보증하지 않는다.
 
 ### 실행기 소실 뒤 재개
 
 새 실행기는 `starting` 또는 `running`으로 남은 execution마다 workspace 파일, adapter evidence와 checkpoint를 회수한다. 그 execution을 `ended/execution_incomplete`로 닫고 활동을 `unresolved`로 기록한다. 원 action은 `recovery={execution_id, reason}`을 가진 새 queue action으로 연결한다. 이전 실행을 다시 열거나 checkpoint에 없는 결과를 추측하지 않는다.
 
-외부 operation이 `running`이었다면 전송 의도가 이미 기록됐으므로 `unknown`으로 바꾸고 자동 재전송하지 않는다. 모든 미종료 실행을 정리한 뒤 CLI는 `paused`가 되며 운영자가 status·check·원자료를 확인하고 명시적으로 resume해야 한다.
+외부 operation이 `running`이었다면 원장의 `transmitted`를 확인한다. 실행기는 요청을 보내기 직전에 `transmitted=true`를 공개하므로, 그 값이 `true`이거나 없으면 요청이 나갔을 수 있어 `unknown`으로 바꾸고 자동 재전송하지 않는다. `transmitted=false`로 남았으면 요청이 나가기 전에 멈춘 것이므로 효과 부재가 확정된 `failed`로 닫고, 같은 요청은 `external` retry 절차로만 다시 준비한다. 모든 미종료 실행을 정리한 뒤 CLI는 `paused`가 되며 운영자가 status·check·원자료를 확인하고 명시적으로 resume해야 한다.
 
 실행 중 설치 코드나 역할 문서의 hash가 바뀌면 현재 `run`은 `paused`로 전환하고 일관된 새 실행기 판본에서 재시작하도록 질문을 남긴다. 이미 고정한 과거 input·output artifact는 생성 당시 판본으로 보존한다.
 

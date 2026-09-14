@@ -89,4 +89,7 @@ class KnowledgeTests(unittest.TestCase):
   stopped,new_id=register_environment(stopped,{'executable':'fixed'},[]);tr=begin_transition(stopped,new_id)
   for target in tr['targets']:tr=record_transition_result(stopped,tr,{'id':target['id'],'status':'verified','source_sha256':target['source_sha256']})
   recovered=activate_transition(stopped,tr);self.assertTrue(recovered['knowledge']['KN-B']['use_suspended']);self.assertEqual(recovered['knowledge']['KN-B']['use_suspensions'][0]['kind'],'dependency');self.assertEqual(recovered['knowledge']['KN-A']['status'],'withdrawn')
+ def test_revision_history_is_not_a_current_dependency(self):
+  ins,run=fixture();ins['knowledge']['KN-B']['dependencies']=[];ins['knowledge']['KN-B']['history']=[{'action':'revise','previous':{'dependencies':['KN-C']}}]
+  new,_=revise_knowledge(ins,run,'KN-C',{'statement':'new'},reason='r',actor_ref='a');self.assertNotIn('use_suspended',new['knowledge']['KN-B']);self.assertTrue(assess_use(new['knowledge']['KN-B'],new)['valid'])
 if __name__=='__main__':unittest.main(verbosity=2)

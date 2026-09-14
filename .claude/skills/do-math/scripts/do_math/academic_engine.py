@@ -32,6 +32,13 @@ class AcademicEngineMixin:
         current_hash = requirements["sha256"]
         for task in self.runtime["tasks"].values():
             if task.get("academic_requirement_id") and (task.get("solution_basis") != basis or task.get("requirements_sha256") != current_hash):
+                if task["status"] == "closed":
+                    continue
+                if task["status"] == "completed":
+                    # completed is absorbing; the old assessment only stops being current.
+                    if isinstance(task.get("assessment"), dict) and task["assessment"].get("current") is not False:
+                        task["assessment"].update(current=False, invalidated_reason="Academic requirements or solution basis changed; new tasks carry the current basis")
+                    continue
                 task["status"] = "closed"
                 task["scope_disposition"] = {"kind": "superseded_requirements", "reason": "New tasks carry the current requirements and solution basis"}
                 self.runtime["queue"] = [a for a in self.runtime["queue"] if a.get("target") != task["id"]]

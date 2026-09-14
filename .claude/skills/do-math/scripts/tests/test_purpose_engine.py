@@ -382,6 +382,21 @@ class PurposeEngineTests(PurposeHarness):
         self.assertGreaterEqual(runner.work_order.count('Dependent'), 2)
         self.assertTrue(engine.instance['goal_judgments'][-1].get('current', True))
 
+    def test_work_budget_execution_is_not_bounded_by_operations_call_timeout(self):
+        engine, runner = self.make(call_timeout_seconds=1, run_timeout_seconds=3600)
+        seen = []
+        original = runner.run
+        def recording_run(**arguments):
+            role = arguments['prompt'].split('You are the do-math role: ', 1)[1].split('.', 1)[0]
+            seen.append((role, arguments['timeout_seconds']))
+            return original(**arguments)
+        runner.run = recording_run
+        self.drive(engine, predicate=lambda current: any(role == 'research_work' for role, _ in seen))
+        work = [timeout for role, timeout in seen if role in {'research_work', 'task_contract_review'}]
+        operations = [timeout for role, timeout in seen if role in {'research_preparation', 'research_plan'}]
+        self.assertTrue(work and all(timeout > 1 for timeout in work))
+        self.assertTrue(operations and all(timeout <= 1 for timeout in operations))
+
     def test_live_continue_preserves_checkpoint_and_uses_operating_budget(self):
         engine, runner = self.make(observation='continue')
         self.drive(engine)

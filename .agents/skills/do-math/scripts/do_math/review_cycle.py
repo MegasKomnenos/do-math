@@ -353,7 +353,12 @@ def _aggregate_judges(cycle, entries):
     for issue_id, issue in cycle["issues"].items():
         votes = [next(v for v in entry["output"]["issue_verdicts"] if v["issue_id"] == issue_id) for entry in entries]
         decisions = {v["decision"] for v in votes}
-        status = next(iter(decisions)) if len(decisions) == 1 else "unresolved"
+        # An objection version that all three judges approved is sealed as established;
+        # later votes on the same version cannot undo it (a changed version is judged anew).
+        sealed = any(record.get("version") == issue["version"] and record.get("results")
+                     and all(result.get("decision") == "approved" for result in record["results"])
+                     for record in issue["verdicts"])
+        status = "approved" if sealed else (next(iter(decisions)) if len(decisions) == 1 else "unresolved")
         issue["status"] = status
         issue["verdicts"].append({"round": cycle["round"], "version": issue["version"], "results": copy.deepcopy(votes)})
         withdrawal_confirmed = status == "rejected" and issue["answers"] and issue["answers"][-1]["disposition"] == "withdraw"
@@ -375,7 +380,11 @@ def _aggregate_judges(cycle, entries):
     if unresolved_issues:
         cycle["followup"].append({"reason": "unresolved objections", "issue_ids": unresolved_issues,
                                  "answer_slots": {i: cycle["issues"][i]["answer_role_slot_id"] for i in unresolved_issues}})
-    if len(decisions) == 1 and "unresolved" not in decisions and complete and not cycle["pending_findings"] and not unresolved_issues:
+    established = [i for i, issue in cycle["issues"].items() if issue["status"] == "approved"]
+    if established and decisions == {"match"}:
+        cycle["followup"].append({"reason": "match conflicts with an established objection", "issue_ids": established})
+    if (len(decisions) == 1 and "unresolved" not in decisions and complete and not cycle["pending_findings"]
+            and not unresolved_issues and not (established and decisions == {"match"})):
         _finish(cycle, next(iter(decisions)), "All three independent final judgments sealed")
     else:
         _finish(cycle, "unresolved", "Review incomplete, disputed, or at its round limit")

@@ -133,6 +133,26 @@ class AcademicEngineTests(PurposeHarness):
         self.assertNotEqual(current["requirements_sha256"], old_hash)
         self.assertNotEqual(engine.runtime["status"], "completed")
 
+    def test_changed_requirements_preserve_completed_academic_task(self):
+        engine, _ = self.make()
+        self._set_requirements(engine, ["draft account"], "academic-v1")
+        self.drive(engine, predicate=lambda current: current.instance["goal_status"] == "mathematically_solved")
+        self.drive(engine, predicate=lambda current: current.runtime["status"] == "completed", limit=30)
+        old = self._academic_tasks(engine)[0]
+        self.assertEqual(old["status"], "completed")
+
+        self._set_requirements(engine, ["draft account", "archival supplement"], "academic-v2")
+        engine.run(max_steps=1)
+        tasks = self._academic_tasks(engine)
+        preserved = next(task for task in tasks if task["id"] == old["id"])
+        current = next(task for task in tasks if task["id"] != old["id"])
+        self.assertEqual(preserved["status"], "completed")
+        self.assertNotIn("scope_disposition", preserved)
+        self.assertFalse(preserved["assessment"]["current"])
+        self.assertTrue(preserved["assessment"]["invalidated_reason"].strip())
+        self.assertEqual(current["completion_criteria"], ["draft account", "archival supplement"])
+        self.assertNotEqual(engine.runtime["status"], "completed")
+
     def test_external_rejection_keeps_formal_solution_and_requires_planner_evidence_to_clear(self):
         engine, _ = self.make()
         self.drive(engine)

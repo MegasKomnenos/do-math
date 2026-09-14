@@ -5,6 +5,8 @@ from do_math.formal import project_fingerprint, verify_lean
 class T(unittest.TestCase):
  def test_invalid_declaration_rejected(self):
   with tempfile.TemporaryDirectory() as d:self.assertEqual(verify_lean(source='',declarations=['bad;'],workspace=Path(d))['status'],'rejected')
+ def test_empty_declaration_list_is_rejected(self):
+  with tempfile.TemporaryDirectory() as d:self.assertEqual(verify_lean(source='theorem foo : False := sorry',declarations=[],workspace=Path(d))['status'],'rejected')
  def test_missing_lean_unavailable(self):
   with tempfile.TemporaryDirectory() as d:self.assertEqual(verify_lean(source='',declarations=['X'],workspace=Path(d),lean_command=['no-such-lean'])['status'],'unavailable')
  def test_fake_lean_rejects_real_sorry_even_when_source_prints_allowed_text(self):

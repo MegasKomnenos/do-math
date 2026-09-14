@@ -103,6 +103,9 @@ class AdvancedCliTests(unittest.TestCase):
         head, instance, _ = self.load(); record = instance["sources"][-1]
         self.assertEqual(record["name"], "evidence.bin"); self.assertEqual(record["sha256"], hashlib.sha256(raw).hexdigest())
         self.assertEqual(ResearchRepository(self.repo, self.instance_id).read(record["path"], head), raw)
+        repeated = self.cli("source", "--repository", str(self.repo), "--instance", self.instance_id,
+                            "--file", str(source), "--name", "evidence.bin")
+        self.assertEqual((repeated[0], repeated[1]["effect"]), (0, "applied"))
 
     def test_invalid_json_shape_and_missing_source_are_input_errors(self):
         path = self.root / "array.json"; path.write_text("[]", encoding="utf-8")

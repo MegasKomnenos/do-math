@@ -12,6 +12,10 @@ class Tests(unittest.TestCase):
   self.assertEqual(i['goal_revision'],2);self.assertEqual(r['tasks']['old']['status'],'needs_revision');self.assertEqual(r['tasks']['done']['status'],'completed')
   i2,r2,same=apply_decision(i,r,{'kind':'goal','decision_id':'D','goal':'new','expected_revision':1},source_ref='user');self.assertEqual(same,event)
   with self.assertRaises(ValueError):apply_decision(i,r,{'kind':'policy','text':'x'},source_ref='user',actor='ai')
+ def test_goal_change_keeps_goal_independent_queue_actions(self):
+  self.runtime['queue']=[{'role':'trust_check','transition_id':'TR','target':'KN'},{'role':'identity_review','target':'KN','review_cycle_id':'RC','stage':'initial'},{'role':'intent_interpretation','target':'IN'},{'role':'research_plan'},{'role':'research_work','target':'old'}]
+  i,r,_=apply_decision(self.instance,self.runtime,{'kind':'goal','decision_id':'G','goal':'new','expected_revision':1},source_ref='user')
+  roles=[a['role'] for a in r['queue']];self.assertEqual(roles[:3],['trust_check','identity_review','intent_interpretation']);self.assertNotIn('research_plan',roles);self.assertNotIn('research_work',roles);self.assertIn('research_preparation',roles)
  def test_grant_expiry_revoke_and_operations_survive(self):
   i=ensure_governance(self.instance,'2026-01-01T00:00:00Z');work=next(g for g in i['grants'].values() if g['budget_kind']=='work');ops=next(g for g in i['grants'].values() if g['budget_kind']=='operations')
   self.assertTrue(authorize(i,{'role':'operational_review'},'2026-01-01T00:00:00Z')['allowed']);i['grants'][work['id']]['expires_at']='2020-01-01T00:00:00Z';self.assertFalse(authorize(i,{'role':'research_work'},'2026-01-01T00:00:00Z')['allowed']);self.assertTrue(authorize(i,{'role':'operational_review'},'2026-01-01T00:00:00Z')['allowed'])

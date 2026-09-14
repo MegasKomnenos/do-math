@@ -107,22 +107,27 @@ class BudgetTests(unittest.TestCase):
             plan_reservations(self.snapshot(), self.budget(), self.profile(), self.request(host_memory=101))
 
     def test_cumulative_consumption_is_not_returned_and_unknown_remote_remains_held(self) -> None:
-        existing = {
+        consumed = {
             "RR-consumed": {
                 "id": "RR-consumed", "constraint_id": "tokens", "unit": "tokens", "budget_kind": "work",
                 "reserved": 30, "confirmed_consumed": 30, "returned": 0, "state": "settled",
                 "evidence_refs": [{"receipt": "tokens"}],
             },
+        }
+        remote = {
             "RR-remote": {
                 "id": "RR-remote", "constraint_id": "provider", "unit": "provider_operation", "budget_kind": "work",
                 "reserved": 1, "confirmed_consumed": 0, "returned": 0, "state": "held",
                 "reobserve": {"kind": "time", "at": "2026-09-14T00:00:00.000Z"},
             },
         }
-        with self.assertRaises(BudgetConflict):
-            plan_reservations(self.snapshot(existing), self.budget(), self.profile(), self.request(token_amount=80))
-        with self.assertRaises(BudgetConflict):
-            plan_reservations(self.snapshot(existing), self.budget(), self.profile(), self.request(token_amount=20))
+        # Concurrency slots are free here, so only the settled cumulative consumption can block the request.
+        allowed = plan_reservations(self.snapshot(consumed), self.budget(), self.profile(), self.request(token_amount=70))
+        self.assertEqual(len(allowed.records), 7)
+        with self.assertRaisesRegex(BudgetConflict, "usage capacity unavailable: tokens"):
+            plan_reservations(self.snapshot(consumed), self.budget(), self.profile(), self.request(token_amount=71))
+        with self.assertRaisesRegex(BudgetConflict, "concurrency capacity unavailable: provider"):
+            plan_reservations(self.snapshot(remote), self.budget(), self.profile(), self.request(token_amount=20))
 
     def test_exact_request_replays_but_changed_request_with_same_id_is_rejected(self) -> None:
         first = plan_reservations(self.snapshot(), self.budget(), self.profile(), self.request())
