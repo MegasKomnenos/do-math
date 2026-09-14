@@ -24,6 +24,7 @@ test_machine_has_no_ai_budget (__main__.SpecificationTests.test_machine_has_no_a
 test_objection_round_boundary (__main__.SpecificationTests.test_objection_round_boundary) ... ok
 test_overflow_disposition_and_restore_forms (__main__.SpecificationTests.test_overflow_disposition_and_restore_forms) ... ok
 test_overflow_prioritizes_common_text_and_distinguishes_restoration (__main__.SpecificationTests.test_overflow_prioritizes_common_text_and_distinguishes_restoration) ... ok
+test_paused_maintenance_and_recovery_paths (__main__.SpecificationTests.test_paused_maintenance_and_recovery_paths) ... ok
 test_periodic_continue_requires_time_from_bound_execution (__main__.SpecificationTests.test_periodic_continue_requires_time_from_bound_execution) ... ok
 test_plan_binding_and_output_truncation (__main__.SpecificationTests.test_plan_binding_and_output_truncation) ... ok
 test_profile_summary_judge_and_remainder_relations (__main__.SpecificationTests.test_profile_summary_judge_and_remainder_relations) ... ok
@@ -79,6 +80,6 @@ test_yaml_golden_empty_typed_and_body (__main__.SpecificationTests.test_yaml_gol
 test_yaml_nested_duplicate_tags_and_aliases (__main__.SpecificationTests.test_yaml_nested_duplicate_tags_and_aliases) ... ok
 
 ----------------------------------------------------------------------
-Ran 79 tests in 7.498s
+Ran 80 tests in 5.427s
 
 OK

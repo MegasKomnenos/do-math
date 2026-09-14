@@ -133,7 +133,7 @@ def main() -> int:
     parser.add_argument("--codex", default=shutil.which("codex"))
     parser.add_argument("--model", help="Required for a live CLI probe")
     parser.add_argument("--effort", choices=("low", "medium", "high", "xhigh", "max", "ultra"), default="low")
-    parser.add_argument("--windows-sandbox", choices=("unelevated", "elevated"), default="unelevated")
+    parser.add_argument("--windows-sandbox", choices=("unelevated", "elevated"), default="elevated")
     parser.add_argument("--timeout-seconds", type=int, default=60)
     parser.add_argument("--cases", nargs="+", choices=("text", "structured", "tool", "cancel"), default=["text", "structured", "cancel"])
     parser.add_argument("--output-dir", type=Path, help="New evidence directory, which must not already exist")

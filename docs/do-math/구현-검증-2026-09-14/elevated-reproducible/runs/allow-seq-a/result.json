@@ -1,0 +1,20 @@
+{
+  "label": "allow-seq-a",
+  "started_at": "2026-09-14T01:46:01.172766+00:00",
+  "finished_at": "2026-09-14T01:46:02.599905+00:00",
+  "timed_out": false,
+  "terminate_job_called": false,
+  "runner_status": {
+    "state": "exited",
+    "exit_code": 0
+  },
+  "barrier": {
+    "root_signaled": true,
+    "active_processes": 0,
+    "process_ids": [],
+    "confirmed": true
+  },
+  "request": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\runs\\allow-seq-a\\request.json",
+  "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\runs\\allow-seq-a\\stdout.txt",
+  "stderr": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\runs\\allow-seq-a\\stderr.txt"
+}

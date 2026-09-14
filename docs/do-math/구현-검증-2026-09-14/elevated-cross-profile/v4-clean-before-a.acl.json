@@ -1,0 +1,30 @@
+{
+  "label": "v4-clean-before-a",
+  "observed_at": "2026-09-14T01:14:45.391350+00:00",
+  "paths": {
+    "inputA@controlled-v3": {
+      "path": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputA",
+      "returncode": 0,
+      "stdout": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputA DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                       OWNER RIGHTS:(OI)(CI)(F)\n                                                                                       BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                       NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+      "stderr": ""
+    },
+    "inputB@controlled-v3": {
+      "path": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputB",
+      "returncode": 0,
+      "stdout": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputB DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                       OWNER RIGHTS:(OI)(CI)(F)\n                                                                                       BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                       NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+      "stderr": ""
+    },
+    "workspaceA@controlled-v3": {
+      "path": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA",
+      "returncode": 0,
+      "stdout": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA S-1-5-21-3263183468-2920482624-1734182234-581200304:(OI)(CI)(M)\n                                                                                           DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                           OWNER RIGHTS:(OI)(CI)(F)\n                                                                                           BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                           NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+      "stderr": ""
+    },
+    "workspaceB@controlled-v3": {
+      "path": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceB",
+      "returncode": 0,
+      "stdout": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceB S-1-5-21-306793552-117145142-145913783-2398932532:(OI)(CI)(M)\n                                                                                           DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                           OWNER RIGHTS:(OI)(CI)(F)\n                                                                                           BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                           NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+      "stderr": ""
+    }
+  }
+}

@@ -14,19 +14,19 @@
     },
     {
       "path": "do-math/통합-설계-명세-v9/build_spec.py",
-      "sha256": "ff8affbd34046250040f9e536e4609d9f94fcf70143a468e5fd501c111bd974e"
+      "sha256": "60432de1c0f1eca3e49b6c227c2d990f68412039f6af8d0c13194bb787babaf2"
     },
     {
       "path": "do-math/통합-설계-명세-v9/spec_checks.py",
-      "sha256": "1bfdb9b185334a2cc7aec52a0076d0584e5c8b30133157b55ae3ec8d33bc9f54"
+      "sha256": "3a4ec1c64b78fe505ea571b562450d1b05d78638311a78270e53910b61dc4985"
     },
     {
       "path": "do-math/통합-설계-명세-v9/verify_spec.py",
-      "sha256": "a527bc2037d1bf869a378399316cf2236fe9a950d77e2b1eb4cf8eb4b0df764e"
+      "sha256": "15bab2f5e4f52c98e832e97a4f917c46cd4618b08e1bfcd028be8be58c396bfd"
     },
     {
       "path": "do-math/통합-설계-명세-v9/schema-registry.json",
-      "sha256": "e647d30fc0a69e36b1d3be4d12f8df17b4dbc555a2d6ec7c487074f66260bcbf"
+      "sha256": "cff32e9effd00805a85e74b5dcb16dce1e451d8b8718de2668f3a8edf64331c0"
     },
     {
       "path": "do-math/통합-설계-명세-v9/command-contracts.json",
@@ -94,7 +94,7 @@
     },
     {
       "path": "do-math/통합-설계-명세-v9/schemas/common.schema.json",
-      "sha256": "d92e57bd4a5bb35d916fbd340b4403aede6f80201ef2a145f387c074265f77a3"
+      "sha256": "6780f49c363c560fc28d0da53da6a83d650543c06f1deaef494fdbd0752db3b0"
     },
     {
       "path": "do-math/통합-설계-명세-v9/schemas/conversation-state.schema.json",
@@ -110,7 +110,7 @@
     },
     {
       "path": "do-math/통합-설계-명세-v9/schemas/execution.schema.json",
-      "sha256": "32dec05eb082c721611b80db8e259897c7c0522269d1585998ec15793d6217f2"
+      "sha256": "1285c9a57093c5a0f9e0fe0792cff7efc1919cd99d293d1adfa6e66b7b262dc8"
     },
     {
       "path": "do-math/통합-설계-명세-v9/schemas/explanation.schema.json",
@@ -166,7 +166,7 @@
     },
     {
       "path": "do-math/통합-설계-명세-v9/schemas/operational-review.schema.json",
-      "sha256": "3ba3cca60633755105c6e38bd8e52e4af6cf4c628339ab2f618fb31f08a3c34e"
+      "sha256": "44c641e2339f354e17827509f7cd63f17a8e40ca6f4bce873edfc89a30009e96"
     },
     {
       "path": "do-math/통합-설계-명세-v9/schemas/plan.schema.json",
@@ -530,5 +530,5 @@
     "runtime_execution": "not_run",
     "total": 254
   },
-  "tests_run": 79
+  "tests_run": 80
 }

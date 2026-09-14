@@ -1,0 +1,28 @@
+{
+  "label": "allow-seq-a",
+  "argv": [
+    "C:\\Users\\wogud\\.codex\\packages\\standalone\\releases\\0.154.0-x86_64-pc-windows-msvc\\bin\\codex.exe",
+    "sandbox",
+    "-C",
+    "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-sequential\\workspaceA",
+    "-P",
+    "allowa",
+    "-c",
+    "windows.sandbox=\"elevated\"",
+    "-c",
+    "permissions.allowa.filesystem={\":minimal\"=\"read\",\":workspace_roots\"=\"write\",\"C:/math/docs/do-math/구현-검증-2026-09-14/elevated-reproducible/fixtures/allow-sequential/inputA\"=\"read\"}",
+    "-c",
+    "permissions.allowa.network.enabled=false",
+    "--",
+    "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+    "-NoProfile",
+    "-NonInteractive",
+    "-File",
+    "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-sequential\\workspaceA\\probe.ps1"
+  ],
+  "started_at": "2026-09-14T01:46:01.172766+00:00",
+  "timeout_seconds": 50.0,
+  "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\runs\\allow-seq-a\\stdout.txt",
+  "stderr": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\runs\\allow-seq-a\\stderr.txt",
+  "status": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\runs\\allow-seq-a\\runner-status.json"
+}

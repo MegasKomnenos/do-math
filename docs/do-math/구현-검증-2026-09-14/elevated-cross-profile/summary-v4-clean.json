@@ -1,0 +1,506 @@
+{
+  "schema_version": "do-math-isolation-review/4-clean",
+  "scope": "explicit deny concurrent run after deny+grant ACL reset",
+  "prior_sequential_summary": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\evidence\\summary-v4.json",
+  "acl_reset": {
+    "label": "v4-clean-reset",
+    "observed_at": "2026-09-14T01:14:45.390350+00:00",
+    "records": [
+      {
+        "path": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputA",
+        "argv": [
+          "icacls",
+          "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputA",
+          "/inheritance:r"
+        ],
+        "returncode": 0,
+        "stdout": "processed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputA\r\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+        "stderr": ""
+      },
+      {
+        "path": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputA",
+        "argv": [
+          "icacls",
+          "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputA",
+          "/remove:g",
+          "BUILTIN\\Users",
+          "NT AUTHORITY\\Authenticated Users",
+          "DESKTOP\\CodexSandboxUsers",
+          "DESKTOP\\CodexSandboxOffline",
+          "DESKTOP\\CodexSandboxOnline",
+          "/T",
+          "/C"
+        ],
+        "returncode": 0,
+        "stdout": "processed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputA\r\nprocessed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputA\\canary.txt\r\nSuccessfully processed 2 files; Failed processing 0 files\r\n",
+        "stderr": ""
+      },
+      {
+        "path": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputA",
+        "argv": [
+          "icacls",
+          "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputA",
+          "/remove:d",
+          "BUILTIN\\Users",
+          "NT AUTHORITY\\Authenticated Users",
+          "DESKTOP\\CodexSandboxUsers",
+          "DESKTOP\\CodexSandboxOffline",
+          "DESKTOP\\CodexSandboxOnline",
+          "/T",
+          "/C"
+        ],
+        "returncode": 0,
+        "stdout": "processed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputA\r\nprocessed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputA\\canary.txt\r\nSuccessfully processed 2 files; Failed processing 0 files\r\n",
+        "stderr": ""
+      },
+      {
+        "path": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputA",
+        "argv": [
+          "icacls",
+          "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputA",
+          "/grant:r",
+          "NT AUTHORITY\\SYSTEM:(OI)(CI)F",
+          "BUILTIN\\Administrators:(OI)(CI)F",
+          "DESKTOP\\wogud:(OI)(CI)F"
+        ],
+        "returncode": 0,
+        "stdout": "processed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputA\r\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+        "stderr": ""
+      },
+      {
+        "path": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputA",
+        "argv": [
+          "icacls",
+          "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputA\\*",
+          "/reset",
+          "/T",
+          "/C"
+        ],
+        "returncode": 0,
+        "stdout": "processed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputA\\canary.txt\r\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+        "stderr": ""
+      },
+      {
+        "path": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputB",
+        "argv": [
+          "icacls",
+          "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputB",
+          "/inheritance:r"
+        ],
+        "returncode": 0,
+        "stdout": "processed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputB\r\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+        "stderr": ""
+      },
+      {
+        "path": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputB",
+        "argv": [
+          "icacls",
+          "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputB",
+          "/remove:g",
+          "BUILTIN\\Users",
+          "NT AUTHORITY\\Authenticated Users",
+          "DESKTOP\\CodexSandboxUsers",
+          "DESKTOP\\CodexSandboxOffline",
+          "DESKTOP\\CodexSandboxOnline",
+          "/T",
+          "/C"
+        ],
+        "returncode": 0,
+        "stdout": "processed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputB\r\nprocessed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputB\\canary.txt\r\nSuccessfully processed 2 files; Failed processing 0 files\r\n",
+        "stderr": ""
+      },
+      {
+        "path": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputB",
+        "argv": [
+          "icacls",
+          "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputB",
+          "/remove:d",
+          "BUILTIN\\Users",
+          "NT AUTHORITY\\Authenticated Users",
+          "DESKTOP\\CodexSandboxUsers",
+          "DESKTOP\\CodexSandboxOffline",
+          "DESKTOP\\CodexSandboxOnline",
+          "/T",
+          "/C"
+        ],
+        "returncode": 0,
+        "stdout": "processed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputB\r\nprocessed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputB\\canary.txt\r\nSuccessfully processed 2 files; Failed processing 0 files\r\n",
+        "stderr": ""
+      },
+      {
+        "path": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputB",
+        "argv": [
+          "icacls",
+          "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputB",
+          "/grant:r",
+          "NT AUTHORITY\\SYSTEM:(OI)(CI)F",
+          "BUILTIN\\Administrators:(OI)(CI)F",
+          "DESKTOP\\wogud:(OI)(CI)F"
+        ],
+        "returncode": 0,
+        "stdout": "processed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputB\r\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+        "stderr": ""
+      },
+      {
+        "path": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputB",
+        "argv": [
+          "icacls",
+          "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputB\\*",
+          "/reset",
+          "/T",
+          "/C"
+        ],
+        "returncode": 0,
+        "stdout": "processed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputB\\canary.txt\r\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+        "stderr": ""
+      },
+      {
+        "path": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA",
+        "argv": [
+          "icacls",
+          "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA",
+          "/inheritance:r"
+        ],
+        "returncode": 0,
+        "stdout": "processed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA\r\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+        "stderr": ""
+      },
+      {
+        "path": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA",
+        "argv": [
+          "icacls",
+          "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA",
+          "/remove:g",
+          "BUILTIN\\Users",
+          "NT AUTHORITY\\Authenticated Users",
+          "DESKTOP\\CodexSandboxUsers",
+          "DESKTOP\\CodexSandboxOffline",
+          "DESKTOP\\CodexSandboxOnline",
+          "/T",
+          "/C"
+        ],
+        "returncode": 0,
+        "stdout": "processed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA\r\nprocessed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA\\concurrent-v4-clean.ps1\r\nprocessed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA\\concurrent-v4.ps1\r\nprocessed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA\\concurrent.ps1\r\nprocessed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA\\Microsoft\r\nprocessed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA\\probe.ps1\r\nprocessed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA\\ready-v4.txt\r\nprocessed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA\\ready.txt\r\nprocessed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA\\samples-v4.jsonl\r\nprocessed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA\\samples.jsonl\r\nprocessed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA\\Microsoft\\Windows\r\nprocessed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA\\Microsoft\\Windows\\PowerShell\r\nprocessed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA\\Microsoft\\Windows\\PowerShell\\ModuleAnalysisCache\r\nSuccessfully processed 13 files; Failed processing 0 files\r\n",
+        "stderr": ""
+      },
+      {
+        "path": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA",
+        "argv": [
+          "icacls",
+          "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA",
+          "/remove:d",
+          "BUILTIN\\Users",
+          "NT AUTHORITY\\Authenticated Users",
+          "DESKTOP\\CodexSandboxUsers",
+          "DESKTOP\\CodexSandboxOffline",
+          "DESKTOP\\CodexSandboxOnline",
+          "/T",
+          "/C"
+        ],
+        "returncode": 0,
+        "stdout": "processed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA\r\nprocessed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA\\concurrent-v4-clean.ps1\r\nprocessed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA\\concurrent-v4.ps1\r\nprocessed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA\\concurrent.ps1\r\nprocessed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA\\Microsoft\r\nprocessed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA\\probe.ps1\r\nprocessed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA\\ready-v4.txt\r\nprocessed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA\\ready.txt\r\nprocessed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA\\samples-v4.jsonl\r\nprocessed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA\\samples.jsonl\r\nprocessed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA\\Microsoft\\Windows\r\nprocessed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA\\Microsoft\\Windows\\PowerShell\r\nprocessed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA\\Microsoft\\Windows\\PowerShell\\ModuleAnalysisCache\r\nSuccessfully processed 13 files; Failed processing 0 files\r\n",
+        "stderr": ""
+      },
+      {
+        "path": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA",
+        "argv": [
+          "icacls",
+          "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA",
+          "/grant:r",
+          "NT AUTHORITY\\SYSTEM:(OI)(CI)F",
+          "BUILTIN\\Administrators:(OI)(CI)F",
+          "DESKTOP\\wogud:(OI)(CI)F"
+        ],
+        "returncode": 0,
+        "stdout": "processed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA\r\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+        "stderr": ""
+      },
+      {
+        "path": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA",
+        "argv": [
+          "icacls",
+          "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA\\*",
+          "/reset",
+          "/T",
+          "/C"
+        ],
+        "returncode": 0,
+        "stdout": "processed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA\\concurrent-v4-clean.ps1\r\nprocessed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA\\concurrent-v4.ps1\r\nprocessed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA\\concurrent.ps1\r\nprocessed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA\\Microsoft\r\nprocessed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA\\probe.ps1\r\nprocessed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA\\ready-v4.txt\r\nprocessed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA\\ready.txt\r\nprocessed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA\\samples-v4.jsonl\r\nprocessed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA\\samples.jsonl\r\nprocessed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA\\Microsoft\\Windows\r\nprocessed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA\\Microsoft\\Windows\\PowerShell\r\nprocessed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA\\Microsoft\\Windows\\PowerShell\\ModuleAnalysisCache\r\nSuccessfully processed 12 files; Failed processing 0 files\r\n",
+        "stderr": ""
+      },
+      {
+        "path": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceB",
+        "argv": [
+          "icacls",
+          "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceB",
+          "/inheritance:r"
+        ],
+        "returncode": 0,
+        "stdout": "processed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceB\r\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+        "stderr": ""
+      },
+      {
+        "path": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceB",
+        "argv": [
+          "icacls",
+          "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceB",
+          "/remove:g",
+          "BUILTIN\\Users",
+          "NT AUTHORITY\\Authenticated Users",
+          "DESKTOP\\CodexSandboxUsers",
+          "DESKTOP\\CodexSandboxOffline",
+          "DESKTOP\\CodexSandboxOnline",
+          "/T",
+          "/C"
+        ],
+        "returncode": 0,
+        "stdout": "processed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceB\r\nprocessed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceB\\probe.ps1\r\nSuccessfully processed 2 files; Failed processing 0 files\r\n",
+        "stderr": ""
+      },
+      {
+        "path": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceB",
+        "argv": [
+          "icacls",
+          "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceB",
+          "/remove:d",
+          "BUILTIN\\Users",
+          "NT AUTHORITY\\Authenticated Users",
+          "DESKTOP\\CodexSandboxUsers",
+          "DESKTOP\\CodexSandboxOffline",
+          "DESKTOP\\CodexSandboxOnline",
+          "/T",
+          "/C"
+        ],
+        "returncode": 0,
+        "stdout": "processed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceB\r\nprocessed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceB\\probe.ps1\r\nSuccessfully processed 2 files; Failed processing 0 files\r\n",
+        "stderr": ""
+      },
+      {
+        "path": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceB",
+        "argv": [
+          "icacls",
+          "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceB",
+          "/grant:r",
+          "NT AUTHORITY\\SYSTEM:(OI)(CI)F",
+          "BUILTIN\\Administrators:(OI)(CI)F",
+          "DESKTOP\\wogud:(OI)(CI)F"
+        ],
+        "returncode": 0,
+        "stdout": "processed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceB\r\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+        "stderr": ""
+      },
+      {
+        "path": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceB",
+        "argv": [
+          "icacls",
+          "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceB\\*",
+          "/reset",
+          "/T",
+          "/C"
+        ],
+        "returncode": 0,
+        "stdout": "processed file: C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceB\\probe.ps1\r\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+        "stderr": ""
+      }
+    ]
+  },
+  "acl_states": {
+    "before_a": {
+      "label": "v4-clean-before-a",
+      "observed_at": "2026-09-14T01:14:45.391350+00:00",
+      "paths": {
+        "inputA@controlled-v3": {
+          "path": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputA",
+          "returncode": 0,
+          "stdout": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputA DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                       OWNER RIGHTS:(OI)(CI)(F)\n                                                                                       BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                       NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+          "stderr": ""
+        },
+        "inputB@controlled-v3": {
+          "path": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputB",
+          "returncode": 0,
+          "stdout": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputB DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                       OWNER RIGHTS:(OI)(CI)(F)\n                                                                                       BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                       NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+          "stderr": ""
+        },
+        "workspaceA@controlled-v3": {
+          "path": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA",
+          "returncode": 0,
+          "stdout": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA S-1-5-21-3263183468-2920482624-1734182234-581200304:(OI)(CI)(M)\n                                                                                           DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                           OWNER RIGHTS:(OI)(CI)(F)\n                                                                                           BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                           NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+          "stderr": ""
+        },
+        "workspaceB@controlled-v3": {
+          "path": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceB",
+          "returncode": 0,
+          "stdout": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceB S-1-5-21-306793552-117145142-145913783-2398932532:(OI)(CI)(M)\n                                                                                           DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                           OWNER RIGHTS:(OI)(CI)(F)\n                                                                                           BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                           NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+          "stderr": ""
+        }
+      }
+    },
+    "a_running_before_b": {
+      "label": "v4-clean-a-running-before-b",
+      "observed_at": "2026-09-14T01:14:47.269957+00:00",
+      "paths": {
+        "inputA@controlled-v3": {
+          "path": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputA",
+          "returncode": 0,
+          "stdout": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputA DESKTOP\\CodexSandboxUsers:(OI)(CI)(RX)\n                                                                                       DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                       OWNER RIGHTS:(OI)(CI)(F)\n                                                                                       BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                       NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+          "stderr": ""
+        },
+        "inputB@controlled-v3": {
+          "path": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputB",
+          "returncode": 0,
+          "stdout": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputB DESKTOP\\CodexSandboxUsers:(DENY)(R)\n                                                                                       DESKTOP\\CodexSandboxUsers:(OI)(CI)(IO)(DENY)(R,GR)\n                                                                                       DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                       OWNER RIGHTS:(OI)(CI)(F)\n                                                                                       BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                       NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+          "stderr": ""
+        },
+        "workspaceA@controlled-v3": {
+          "path": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA",
+          "returncode": 0,
+          "stdout": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA DESKTOP\\CodexSandboxUsers:(OI)(CI)(M)\n                                                                                           S-1-5-21-3263183468-2920482624-1734182234-581200304:(OI)(CI)(M)\n                                                                                           DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                           OWNER RIGHTS:(OI)(CI)(F)\n                                                                                           BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                           NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+          "stderr": ""
+        },
+        "workspaceB@controlled-v3": {
+          "path": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceB",
+          "returncode": 0,
+          "stdout": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceB S-1-5-21-306793552-117145142-145913783-2398932532:(OI)(CI)(M)\n                                                                                           DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                           OWNER RIGHTS:(OI)(CI)(F)\n                                                                                           BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                           NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+          "stderr": ""
+        }
+      }
+    },
+    "after_b_while_a_running": {
+      "label": "v4-clean-after-b-while-a-running",
+      "observed_at": "2026-09-14T01:14:48.520457+00:00",
+      "paths": {
+        "inputA@controlled-v3": {
+          "path": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputA",
+          "returncode": 0,
+          "stdout": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputA DESKTOP\\CodexSandboxUsers:(DENY)(R)\n                                                                                       DESKTOP\\CodexSandboxUsers:(OI)(CI)(IO)(DENY)(R,GR)\n                                                                                       DESKTOP\\CodexSandboxUsers:(OI)(CI)(RX)\n                                                                                       DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                       OWNER RIGHTS:(OI)(CI)(F)\n                                                                                       BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                       NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+          "stderr": ""
+        },
+        "inputB@controlled-v3": {
+          "path": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputB",
+          "returncode": 0,
+          "stdout": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\inputB DESKTOP\\CodexSandboxUsers:(OI)(CI)(RX)\n                                                                                       DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                       OWNER RIGHTS:(OI)(CI)(F)\n                                                                                       BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                       NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+          "stderr": ""
+        },
+        "workspaceA@controlled-v3": {
+          "path": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA",
+          "returncode": 0,
+          "stdout": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA DESKTOP\\CodexSandboxUsers:(OI)(CI)(M)\n                                                                                           S-1-5-21-3263183468-2920482624-1734182234-581200304:(OI)(CI)(M)\n                                                                                           DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                           OWNER RIGHTS:(OI)(CI)(F)\n                                                                                           BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                           NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+          "stderr": ""
+        },
+        "workspaceB@controlled-v3": {
+          "path": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceB",
+          "returncode": 0,
+          "stdout": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceB DESKTOP\\CodexSandboxUsers:(OI)(CI)(M)\n                                                                                           S-1-5-21-306793552-117145142-145913783-2398932532:(OI)(CI)(M)\n                                                                                           DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                           OWNER RIGHTS:(OI)(CI)(F)\n                                                                                           BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                           NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+          "stderr": ""
+        }
+      }
+    }
+  },
+  "runs": {
+    "a": {
+      "label": "v4-clean-concurrent-a",
+      "argv": [
+        "C:\\Users\\wogud\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin\\codex.EXE",
+        "sandbox",
+        "-C",
+        "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA",
+        "-P",
+        "reviewa4",
+        "-c",
+        "windows.sandbox=\"elevated\"",
+        "-c",
+        "permissions.reviewa4.filesystem={\":minimal\"=\"read\",\":workspace_roots\"=\"write\",\"C:/math/.skill-workspace/do-math-isolation-review-20260914-a7c19f/controlled-v3/inputA\"=\"read\",\"C:/math/.skill-workspace/do-math-isolation-review-20260914-a7c19f/controlled-v3/inputB\"=\"deny\"}",
+        "-c",
+        "permissions.reviewa4.network.enabled=false",
+        "--",
+        "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA\\concurrent-v4-clean.ps1"
+      ],
+      "started_at": "2026-09-14T01:14:45.455238+00:00",
+      "timeout_seconds": 50,
+      "pid": 26428,
+      "ready_observed": true,
+      "ready_observed_at": "2026-09-14T01:14:47.269957+00:00",
+      "returncode": 8,
+      "timed_out": false,
+      "recovery": {
+        "needed": false
+      },
+      "finished_at": "2026-09-14T01:15:07.003016+00:00"
+    },
+    "b": {
+      "label": "v4-clean-concurrent-b",
+      "argv": [
+        "C:\\Users\\wogud\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin\\codex.EXE",
+        "sandbox",
+        "-C",
+        "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceB",
+        "-P",
+        "reviewb4",
+        "-c",
+        "windows.sandbox=\"elevated\"",
+        "-c",
+        "permissions.reviewb4.filesystem={\":minimal\"=\"read\",\":workspace_roots\"=\"write\",\"C:/math/.skill-workspace/do-math-isolation-review-20260914-a7c19f/controlled-v3/inputB\"=\"read\",\"C:/math/.skill-workspace/do-math-isolation-review-20260914-a7c19f/controlled-v3/inputA\"=\"deny\"}",
+        "-c",
+        "permissions.reviewb4.network.enabled=false",
+        "--",
+        "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceB\\probe.ps1"
+      ],
+      "started_at": "2026-09-14T01:14:47.322561+00:00",
+      "timeout_seconds": 50,
+      "pid": 61680,
+      "returncode": 0,
+      "timed_out": false,
+      "recovery": {
+        "needed": false
+      },
+      "finished_at": "2026-09-14T01:14:48.517458+00:00"
+    }
+  },
+  "observations": {
+    "a": {
+      "label": "concurrent-a-v4-clean",
+      "sample_count": 166,
+      "own_failed": 164,
+      "own_denied": 164,
+      "other_reads": 163
+    },
+    "b": {
+      "label": "b",
+      "observed_at": "2026-09-14T01:14:48.2134227+00:00",
+      "results": {
+        "own": {
+          "state": "read",
+          "content": "CONTROLLED_B_75af20",
+          "error_type": null,
+          "message": null
+        },
+        "other": {
+          "state": "access_denied",
+          "content": null,
+          "error_type": "System.UnauthorizedAccessException",
+          "message": "Access is denied"
+        }
+      }
+    }
+  },
+  "samples": {
+    "path": "C:\\math\\.skill-workspace\\do-math-isolation-review-20260914-a7c19f\\controlled-v3\\workspaceA\\samples-v4-clean.jsonl",
+    "count": 166,
+    "own_denied": 164,
+    "other_reads": 163,
+    "relative_to_b": {
+      "before_b": 1,
+      "during_b": 9,
+      "after_b": 156
+    }
+  },
+  "passed": false
+}

@@ -1,0 +1,1 @@
+{"label":"b","observed_at":"2026-09-14T01:12:13.2981450+00:00","results":{"own":{"state":"read","content":"CONTROLLED_B_75af20","error_type":null,"message":null},"other":{"state":"access_denied","content":null,"error_type":"System.UnauthorizedAccessException","message":"Access is denied"}}}

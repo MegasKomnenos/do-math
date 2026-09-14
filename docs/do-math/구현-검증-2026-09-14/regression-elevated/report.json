@@ -1,0 +1,55 @@
+{
+  "scope": "implementation_regression",
+  "passed": true,
+  "results": [
+    {
+      "test": "test_budget.py",
+      "exit_code": 0,
+      "tests_run": 7,
+      "skipped": false,
+      "sha256": "8c0b4015cdbcac6ca3b5006951bea7cc0f5abcb5a511bb1d81ff58be4917cf91"
+    },
+    {
+      "test": "test_codex_adapter.py",
+      "exit_code": 0,
+      "tests_run": 11,
+      "skipped": false,
+      "sha256": "c3532b45570427d1013ee1eb2685aafae595a7a7a0d52a813a92344fa618f063"
+    },
+    {
+      "test": "test_git_store.py",
+      "exit_code": 0,
+      "tests_run": 12,
+      "skipped": false,
+      "sha256": "978f6c70223355f619e0a2d9ac34a66e7992055b0ac8b12deaae19794c51800c"
+    },
+    {
+      "test": "test_native_probe.py",
+      "exit_code": 0,
+      "tests_run": 2,
+      "skipped": false,
+      "sha256": "03a0ad3a75920f84cb698e9f02aa1a7f078fbff7c206d1b5555bd9ff3c560d65"
+    },
+    {
+      "test": "test_preflight.py",
+      "exit_code": 0,
+      "tests_run": 14,
+      "skipped": false,
+      "sha256": "338fcf3e99102a62ecaa673c57fa3806c0e0fe17817d06ea3ef9817611be478b"
+    },
+    {
+      "test": "test_probe_codex.py",
+      "exit_code": 0,
+      "tests_run": 1,
+      "skipped": false,
+      "sha256": "50e9ec30112a6f34633ccd2057397c7639f300d235dc72aeddfbd82202c5526c"
+    },
+    {
+      "test": "test_windows_job.py",
+      "exit_code": 0,
+      "tests_run": 8,
+      "skipped": false,
+      "sha256": "d6bb2575a9d033018faa4de70849a40d3f26f4320b5c3bf119acbff82084df09"
+    }
+  ]
+}

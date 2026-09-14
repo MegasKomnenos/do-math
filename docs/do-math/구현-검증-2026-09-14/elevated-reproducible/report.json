@@ -1,0 +1,1141 @@
+{
+  "schema_version": "do-math-native-isolation-probe/1",
+  "scope": "elevated Windows sandbox sequential/concurrent read-root independence",
+  "started_at": "2026-09-14T01:45:59.649632+00:00",
+  "finished_at": "2026-09-14T01:46:18.998297+00:00",
+  "codex": "C:\\Users\\wogud\\.codex\\packages\\standalone\\releases\\0.154.0-x86_64-pc-windows-msvc\\bin\\codex.exe",
+  "powershell": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+  "step_timeout_seconds": 50.0,
+  "canaries": {
+    "a": "NATIVE_ISOLATION_A_7f983a",
+    "b": "NATIVE_ISOLATION_B_2c41de"
+  },
+  "scenarios": {
+    "allow_only": {
+      "deny_other_root": false,
+      "sequential": {
+        "passed": false,
+        "runs": {
+          "a": {
+            "label": "allow-seq-a",
+            "started_at": "2026-09-14T01:46:01.172766+00:00",
+            "finished_at": "2026-09-14T01:46:02.599905+00:00",
+            "timed_out": false,
+            "terminate_job_called": false,
+            "runner_status": {
+              "state": "exited",
+              "exit_code": 0
+            },
+            "barrier": {
+              "root_signaled": true,
+              "active_processes": 0,
+              "process_ids": [],
+              "confirmed": true
+            },
+            "request": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\runs\\allow-seq-a\\request.json",
+            "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\runs\\allow-seq-a\\stdout.txt",
+            "stderr": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\runs\\allow-seq-a\\stderr.txt"
+          },
+          "b": {
+            "label": "allow-seq-b",
+            "started_at": "2026-09-14T01:46:02.652565+00:00",
+            "finished_at": "2026-09-14T01:46:04.231469+00:00",
+            "timed_out": false,
+            "terminate_job_called": false,
+            "runner_status": {
+              "state": "exited",
+              "exit_code": 7
+            },
+            "barrier": {
+              "root_signaled": true,
+              "active_processes": 0,
+              "process_ids": [],
+              "confirmed": true
+            },
+            "request": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\runs\\allow-seq-b\\request.json",
+            "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\runs\\allow-seq-b\\stdout.txt",
+            "stderr": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\runs\\allow-seq-b\\stderr.txt"
+          }
+        },
+        "observations": {
+          "a": {
+            "label": "a",
+            "observed_at": "2026-09-14T01:46:02.3231704+00:00",
+            "results": {
+              "own": {
+                "state": "read",
+                "content": "NATIVE_ISOLATION_A_7f983a",
+                "error_type": null,
+                "message": null
+              },
+              "other": {
+                "state": "access_denied",
+                "content": null,
+                "error_type": "System.UnauthorizedAccessException",
+                "message": "Access is denied"
+              }
+            }
+          },
+          "b": {
+            "label": "b",
+            "observed_at": "2026-09-14T01:46:03.9351366+00:00",
+            "results": {
+              "own": {
+                "state": "read",
+                "content": "NATIVE_ISOLATION_B_2c41de",
+                "error_type": null,
+                "message": null
+              },
+              "other": {
+                "state": "read",
+                "content": "NATIVE_ISOLATION_A_7f983a",
+                "error_type": null,
+                "message": null
+              }
+            }
+          }
+        },
+        "acl": {
+          "initial": {
+            "inputA@allow-sequential": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-sequential\\inputA"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-sequential\\inputA DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                             BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                             NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            },
+            "inputB@allow-sequential": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-sequential\\inputB"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-sequential\\inputB DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                             BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                             NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            },
+            "workspaceA@allow-sequential": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-sequential\\workspaceA"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-sequential\\workspaceA DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                                 BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                                 NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            },
+            "workspaceB@allow-sequential": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-sequential\\workspaceB"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-sequential\\workspaceB DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                                 BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                                 NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            }
+          },
+          "after_a": {
+            "inputA@allow-sequential": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-sequential\\inputA"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-sequential\\inputA DESKTOP\\CodexSandboxUsers:(OI)(CI)(RX)\n                                                                                             DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                             BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                             NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            },
+            "inputB@allow-sequential": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-sequential\\inputB"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-sequential\\inputB DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                             BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                             NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            },
+            "workspaceA@allow-sequential": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-sequential\\workspaceA"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-sequential\\workspaceA DESKTOP\\CodexSandboxUsers:(OI)(CI)(M)\n                                                                                                 S-1-5-21-3486396775-2010708780-2038664293-3265490230:(OI)(CI)(M)\n                                                                                                 DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                                 BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                                 NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            },
+            "workspaceB@allow-sequential": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-sequential\\workspaceB"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-sequential\\workspaceB DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                                 BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                                 NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            }
+          },
+          "after_b": {
+            "inputA@allow-sequential": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-sequential\\inputA"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-sequential\\inputA DESKTOP\\CodexSandboxUsers:(OI)(CI)(RX)\n                                                                                             DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                             BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                             NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            },
+            "inputB@allow-sequential": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-sequential\\inputB"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-sequential\\inputB DESKTOP\\CodexSandboxUsers:(OI)(CI)(RX)\n                                                                                             DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                             BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                             NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            },
+            "workspaceA@allow-sequential": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-sequential\\workspaceA"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-sequential\\workspaceA DESKTOP\\CodexSandboxUsers:(OI)(CI)(M)\n                                                                                                 S-1-5-21-3486396775-2010708780-2038664293-3265490230:(OI)(CI)(M)\n                                                                                                 DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                                 BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                                 NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            },
+            "workspaceB@allow-sequential": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-sequential\\workspaceB"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-sequential\\workspaceB DESKTOP\\CodexSandboxUsers:(OI)(CI)(M)\n                                                                                                 S-1-5-21-12601632-4227660072-3057409260-357471711:(OI)(CI)(M)\n                                                                                                 DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                                 BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                                 NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            }
+          }
+        }
+      },
+      "concurrent": {
+        "passed": false,
+        "ready_observed": true,
+        "ready_observed_at": "2026-09-14T01:46:05.824058+00:00",
+        "runs": {
+          "a": {
+            "label": "allow-concurrent-a",
+            "started_at": "2026-09-14T01:46:04.759752+00:00",
+            "finished_at": "2026-09-14T01:46:10.453343+00:00",
+            "timed_out": false,
+            "terminate_job_called": false,
+            "runner_status": {
+              "state": "exited",
+              "exit_code": 8
+            },
+            "barrier": {
+              "root_signaled": true,
+              "active_processes": 0,
+              "process_ids": [],
+              "confirmed": true
+            },
+            "request": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\runs\\allow-concurrent-a\\request.json",
+            "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\runs\\allow-concurrent-a\\stdout.txt",
+            "stderr": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\runs\\allow-concurrent-a\\stderr.txt"
+          },
+          "b": {
+            "label": "allow-concurrent-b",
+            "started_at": "2026-09-14T01:46:05.873625+00:00",
+            "finished_at": "2026-09-14T01:46:06.868340+00:00",
+            "timed_out": false,
+            "terminate_job_called": false,
+            "runner_status": {
+              "state": "exited",
+              "exit_code": 7
+            },
+            "barrier": {
+              "root_signaled": true,
+              "active_processes": 0,
+              "process_ids": [],
+              "confirmed": true
+            },
+            "request": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\runs\\allow-concurrent-b\\request.json",
+            "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\runs\\allow-concurrent-b\\stdout.txt",
+            "stderr": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\runs\\allow-concurrent-b\\stderr.txt"
+          }
+        },
+        "observations": {
+          "a": {
+            "label": "concurrent-a",
+            "sample_count": 40,
+            "own_failed": 0,
+            "own_denied": 0,
+            "other_reads": 37
+          },
+          "b": {
+            "label": "b",
+            "observed_at": "2026-09-14T01:46:06.6427936+00:00",
+            "results": {
+              "own": {
+                "state": "read",
+                "content": "NATIVE_ISOLATION_B_2c41de",
+                "error_type": null,
+                "message": null
+              },
+              "other": {
+                "state": "read",
+                "content": "NATIVE_ISOLATION_A_7f983a",
+                "error_type": null,
+                "message": null
+              }
+            }
+          }
+        },
+        "samples": {
+          "path": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-concurrent\\workspaceA\\samples.jsonl",
+          "count": 40,
+          "own_failures": 0,
+          "own_denied": 0,
+          "other_reads": 37,
+          "relative_to_b": {
+            "before_b": 1,
+            "during_b": 8,
+            "after_b": 31
+          }
+        },
+        "acl": {
+          "initial": {
+            "inputA@allow-concurrent": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-concurrent\\inputA"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-concurrent\\inputA DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                             BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                             NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            },
+            "inputB@allow-concurrent": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-concurrent\\inputB"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-concurrent\\inputB DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                             BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                             NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            },
+            "workspaceA@allow-concurrent": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-concurrent\\workspaceA"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-concurrent\\workspaceA DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                                 BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                                 NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            },
+            "workspaceB@allow-concurrent": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-concurrent\\workspaceB"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-concurrent\\workspaceB DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                                 BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                                 NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            }
+          },
+          "a_running_before_b": {
+            "inputA@allow-concurrent": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-concurrent\\inputA"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-concurrent\\inputA DESKTOP\\CodexSandboxUsers:(OI)(CI)(RX)\n                                                                                             DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                             BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                             NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            },
+            "inputB@allow-concurrent": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-concurrent\\inputB"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-concurrent\\inputB DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                             BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                             NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            },
+            "workspaceA@allow-concurrent": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-concurrent\\workspaceA"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-concurrent\\workspaceA DESKTOP\\CodexSandboxUsers:(OI)(CI)(M)\n                                                                                                 S-1-5-21-104544557-1634560924-4125702203-862359834:(OI)(CI)(M)\n                                                                                                 DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                                 BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                                 NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            },
+            "workspaceB@allow-concurrent": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-concurrent\\workspaceB"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-concurrent\\workspaceB DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                                 BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                                 NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            }
+          },
+          "after_b_while_a_running": {
+            "inputA@allow-concurrent": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-concurrent\\inputA"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-concurrent\\inputA DESKTOP\\CodexSandboxUsers:(OI)(CI)(RX)\n                                                                                             DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                             BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                             NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            },
+            "inputB@allow-concurrent": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-concurrent\\inputB"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-concurrent\\inputB DESKTOP\\CodexSandboxUsers:(OI)(CI)(RX)\n                                                                                             DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                             BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                             NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            },
+            "workspaceA@allow-concurrent": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-concurrent\\workspaceA"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-concurrent\\workspaceA DESKTOP\\CodexSandboxUsers:(OI)(CI)(M)\n                                                                                                 S-1-5-21-104544557-1634560924-4125702203-862359834:(OI)(CI)(M)\n                                                                                                 DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                                 BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                                 NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            },
+            "workspaceB@allow-concurrent": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-concurrent\\workspaceB"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\allow-concurrent\\workspaceB DESKTOP\\CodexSandboxUsers:(OI)(CI)(M)\n                                                                                                 S-1-5-21-3443211400-4190177935-3962424791-1734021564:(OI)(CI)(M)\n                                                                                                 DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                                 BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                                 NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            }
+          }
+        }
+      },
+      "passed": false
+    },
+    "explicit_deny": {
+      "deny_other_root": true,
+      "sequential": {
+        "passed": true,
+        "runs": {
+          "a": {
+            "label": "deny-seq-a",
+            "started_at": "2026-09-14T01:46:10.798383+00:00",
+            "finished_at": "2026-09-14T01:46:11.797216+00:00",
+            "timed_out": false,
+            "terminate_job_called": false,
+            "runner_status": {
+              "state": "exited",
+              "exit_code": 0
+            },
+            "barrier": {
+              "root_signaled": true,
+              "active_processes": 0,
+              "process_ids": [],
+              "confirmed": true
+            },
+            "request": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\runs\\deny-seq-a\\request.json",
+            "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\runs\\deny-seq-a\\stdout.txt",
+            "stderr": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\runs\\deny-seq-a\\stderr.txt"
+          },
+          "b": {
+            "label": "deny-seq-b",
+            "started_at": "2026-09-14T01:46:11.847767+00:00",
+            "finished_at": "2026-09-14T01:46:12.838639+00:00",
+            "timed_out": false,
+            "terminate_job_called": false,
+            "runner_status": {
+              "state": "exited",
+              "exit_code": 0
+            },
+            "barrier": {
+              "root_signaled": true,
+              "active_processes": 0,
+              "process_ids": [],
+              "confirmed": true
+            },
+            "request": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\runs\\deny-seq-b\\request.json",
+            "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\runs\\deny-seq-b\\stdout.txt",
+            "stderr": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\runs\\deny-seq-b\\stderr.txt"
+          }
+        },
+        "observations": {
+          "a": {
+            "label": "a",
+            "observed_at": "2026-09-14T01:46:11.6064266+00:00",
+            "results": {
+              "own": {
+                "state": "read",
+                "content": "NATIVE_ISOLATION_A_7f983a",
+                "error_type": null,
+                "message": null
+              },
+              "other": {
+                "state": "access_denied",
+                "content": null,
+                "error_type": "System.UnauthorizedAccessException",
+                "message": "Access is denied"
+              }
+            }
+          },
+          "b": {
+            "label": "b",
+            "observed_at": "2026-09-14T01:46:12.6327813+00:00",
+            "results": {
+              "own": {
+                "state": "read",
+                "content": "NATIVE_ISOLATION_B_2c41de",
+                "error_type": null,
+                "message": null
+              },
+              "other": {
+                "state": "access_denied",
+                "content": null,
+                "error_type": "System.UnauthorizedAccessException",
+                "message": "Access is denied"
+              }
+            }
+          }
+        },
+        "acl": {
+          "initial": {
+            "inputA@deny-sequential": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-sequential\\inputA"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-sequential\\inputA DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                            BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                            NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            },
+            "inputB@deny-sequential": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-sequential\\inputB"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-sequential\\inputB DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                            BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                            NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            },
+            "workspaceA@deny-sequential": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-sequential\\workspaceA"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-sequential\\workspaceA DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                                BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                                NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            },
+            "workspaceB@deny-sequential": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-sequential\\workspaceB"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-sequential\\workspaceB DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                                BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                                NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            }
+          },
+          "after_a": {
+            "inputA@deny-sequential": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-sequential\\inputA"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-sequential\\inputA DESKTOP\\CodexSandboxUsers:(OI)(CI)(RX)\n                                                                                            DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                            BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                            NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            },
+            "inputB@deny-sequential": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-sequential\\inputB"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-sequential\\inputB DESKTOP\\CodexSandboxUsers:(DENY)(R)\n                                                                                            DESKTOP\\CodexSandboxUsers:(OI)(CI)(IO)(DENY)(R,GR)\n                                                                                            DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                            BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                            NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            },
+            "workspaceA@deny-sequential": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-sequential\\workspaceA"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-sequential\\workspaceA DESKTOP\\CodexSandboxUsers:(OI)(CI)(M)\n                                                                                                S-1-5-21-846411149-1453470606-4265197435-2508391097:(OI)(CI)(M)\n                                                                                                DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                                BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                                NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            },
+            "workspaceB@deny-sequential": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-sequential\\workspaceB"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-sequential\\workspaceB DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                                BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                                NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            }
+          },
+          "after_b": {
+            "inputA@deny-sequential": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-sequential\\inputA"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-sequential\\inputA DESKTOP\\CodexSandboxUsers:(DENY)(R)\n                                                                                            DESKTOP\\CodexSandboxUsers:(OI)(CI)(IO)(DENY)(R,GR)\n                                                                                            DESKTOP\\CodexSandboxUsers:(OI)(CI)(RX)\n                                                                                            DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                            BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                            NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            },
+            "inputB@deny-sequential": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-sequential\\inputB"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-sequential\\inputB DESKTOP\\CodexSandboxUsers:(OI)(CI)(RX)\n                                                                                            DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                            BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                            NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            },
+            "workspaceA@deny-sequential": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-sequential\\workspaceA"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-sequential\\workspaceA DESKTOP\\CodexSandboxUsers:(OI)(CI)(M)\n                                                                                                S-1-5-21-846411149-1453470606-4265197435-2508391097:(OI)(CI)(M)\n                                                                                                DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                                BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                                NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            },
+            "workspaceB@deny-sequential": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-sequential\\workspaceB"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-sequential\\workspaceB DESKTOP\\CodexSandboxUsers:(OI)(CI)(M)\n                                                                                                S-1-5-21-3336504727-3031391342-2234532556-299059511:(OI)(CI)(M)\n                                                                                                DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                                BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                                NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            }
+          }
+        }
+      },
+      "concurrent": {
+        "passed": false,
+        "ready_observed": true,
+        "ready_observed_at": "2026-09-14T01:46:14.236580+00:00",
+        "runs": {
+          "a": {
+            "label": "deny-concurrent-a",
+            "started_at": "2026-09-14T01:46:13.257661+00:00",
+            "finished_at": "2026-09-14T01:46:18.980737+00:00",
+            "timed_out": false,
+            "terminate_job_called": false,
+            "runner_status": {
+              "state": "exited",
+              "exit_code": 8
+            },
+            "barrier": {
+              "root_signaled": true,
+              "active_processes": 0,
+              "process_ids": [],
+              "confirmed": true
+            },
+            "request": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\runs\\deny-concurrent-a\\request.json",
+            "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\runs\\deny-concurrent-a\\stdout.txt",
+            "stderr": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\runs\\deny-concurrent-a\\stderr.txt"
+          },
+          "b": {
+            "label": "deny-concurrent-b",
+            "started_at": "2026-09-14T01:46:14.282157+00:00",
+            "finished_at": "2026-09-14T01:46:15.406650+00:00",
+            "timed_out": false,
+            "terminate_job_called": false,
+            "runner_status": {
+              "state": "exited",
+              "exit_code": 0
+            },
+            "barrier": {
+              "root_signaled": true,
+              "active_processes": 0,
+              "process_ids": [],
+              "confirmed": true
+            },
+            "request": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\runs\\deny-concurrent-b\\request.json",
+            "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\runs\\deny-concurrent-b\\stdout.txt",
+            "stderr": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\runs\\deny-concurrent-b\\stderr.txt"
+          }
+        },
+        "observations": {
+          "a": {
+            "label": "concurrent-a",
+            "sample_count": 40,
+            "own_failed": 37,
+            "own_denied": 37,
+            "other_reads": 37
+          },
+          "b": {
+            "label": "b",
+            "observed_at": "2026-09-14T01:46:15.2177247+00:00",
+            "results": {
+              "own": {
+                "state": "read",
+                "content": "NATIVE_ISOLATION_B_2c41de",
+                "error_type": null,
+                "message": null
+              },
+              "other": {
+                "state": "access_denied",
+                "content": null,
+                "error_type": "System.UnauthorizedAccessException",
+                "message": "Access is denied"
+              }
+            }
+          }
+        },
+        "samples": {
+          "path": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-concurrent\\workspaceA\\samples.jsonl",
+          "count": 40,
+          "own_failures": 37,
+          "own_denied": 37,
+          "other_reads": 37,
+          "relative_to_b": {
+            "before_b": 1,
+            "during_b": 9,
+            "after_b": 30
+          }
+        },
+        "acl": {
+          "initial": {
+            "inputA@deny-concurrent": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-concurrent\\inputA"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-concurrent\\inputA DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                            BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                            NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            },
+            "inputB@deny-concurrent": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-concurrent\\inputB"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-concurrent\\inputB DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                            BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                            NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            },
+            "workspaceA@deny-concurrent": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-concurrent\\workspaceA"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-concurrent\\workspaceA DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                                BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                                NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            },
+            "workspaceB@deny-concurrent": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-concurrent\\workspaceB"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-concurrent\\workspaceB DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                                BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                                NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            }
+          },
+          "a_running_before_b": {
+            "inputA@deny-concurrent": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-concurrent\\inputA"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-concurrent\\inputA DESKTOP\\CodexSandboxUsers:(OI)(CI)(RX)\n                                                                                            DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                            BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                            NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            },
+            "inputB@deny-concurrent": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-concurrent\\inputB"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-concurrent\\inputB DESKTOP\\CodexSandboxUsers:(DENY)(R)\n                                                                                            DESKTOP\\CodexSandboxUsers:(OI)(CI)(IO)(DENY)(R,GR)\n                                                                                            DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                            BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                            NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            },
+            "workspaceA@deny-concurrent": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-concurrent\\workspaceA"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-concurrent\\workspaceA DESKTOP\\CodexSandboxUsers:(OI)(CI)(M)\n                                                                                                S-1-5-21-1018554566-1255100600-1401414449-2162178282:(OI)(CI)(M)\n                                                                                                DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                                BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                                NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            },
+            "workspaceB@deny-concurrent": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-concurrent\\workspaceB"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-concurrent\\workspaceB DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                                BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                                NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            }
+          },
+          "after_b_while_a_running": {
+            "inputA@deny-concurrent": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-concurrent\\inputA"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-concurrent\\inputA DESKTOP\\CodexSandboxUsers:(DENY)(R)\n                                                                                            DESKTOP\\CodexSandboxUsers:(OI)(CI)(IO)(DENY)(R,GR)\n                                                                                            DESKTOP\\CodexSandboxUsers:(OI)(CI)(RX)\n                                                                                            DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                            BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                            NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            },
+            "inputB@deny-concurrent": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-concurrent\\inputB"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-concurrent\\inputB DESKTOP\\CodexSandboxUsers:(OI)(CI)(RX)\n                                                                                            DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                            BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                            NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            },
+            "workspaceA@deny-concurrent": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-concurrent\\workspaceA"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-concurrent\\workspaceA DESKTOP\\CodexSandboxUsers:(OI)(CI)(M)\n                                                                                                S-1-5-21-1018554566-1255100600-1401414449-2162178282:(OI)(CI)(M)\n                                                                                                DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                                BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                                NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            },
+            "workspaceB@deny-concurrent": {
+              "argv": [
+                "icacls",
+                "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-concurrent\\workspaceB"
+              ],
+              "returncode": 0,
+              "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\fixtures\\deny-concurrent\\workspaceB DESKTOP\\CodexSandboxUsers:(OI)(CI)(M)\n                                                                                                S-1-5-21-3727040120-3196004471-1819451965-1578551488:(OI)(CI)(M)\n                                                                                                DESKTOP\\wogud:(OI)(CI)(F)\n                                                                                                BUILTIN\\Administrators:(OI)(CI)(F)\n                                                                                                NT AUTHORITY\\SYSTEM:(OI)(CI)(F)\n\nSuccessfully processed 1 files; Failed processing 0 files\r\n",
+              "stderr": ""
+            }
+          }
+        }
+      },
+      "passed": false
+    }
+  },
+  "passed": false,
+  "model_calls": 0,
+  "not_tested": [
+    "network isolation",
+    "global ACL changes",
+    "other sandbox backends"
+  ],
+  "host": {
+    "platform": "Windows-11-10.0.22631-SP0",
+    "python": "3.12.10"
+  },
+  "source_sha256": "52a410bda7726b044ec6f30c5659d628765214a839e432a45df3d762c73ae04b",
+  "codex_binary_sha256": "be96b992178b1e467c225800da0d65f2c86d5eba1ef0b14632f65db381cbdfde",
+  "codex_version": {
+    "argv": [
+      "C:\\Users\\wogud\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin\\codex.EXE",
+      "--version"
+    ],
+    "returncode": 0,
+    "stdout": "codex-cli 0.154.0\n",
+    "stderr": ""
+  },
+  "artifacts": [
+    {
+      "path": "fixtures/allow-concurrent/inputA/canary.txt",
+      "sha256": "f231b62518f6e1e4dc7967242b11efa52324790b0106a93560f02463d90e0b95"
+    },
+    {
+      "path": "fixtures/allow-concurrent/inputB/canary.txt",
+      "sha256": "46ba0be6d234727c1bde2984dbb8edcdba03042aceacaa2ab5c9b214c024b3de"
+    },
+    {
+      "path": "fixtures/allow-concurrent/workspaceA/concurrent.ps1",
+      "sha256": "22eec3d89e558b1b4e6098fbb5cd091bd4b54a85e56448e539d40acd45207583"
+    },
+    {
+      "path": "fixtures/allow-concurrent/workspaceA/probe.ps1",
+      "sha256": "c906c11f18ac3df45107ce76cbba0117b8f1392b40e7cfe1f249249d4d509727"
+    },
+    {
+      "path": "fixtures/allow-concurrent/workspaceA/ready.txt",
+      "sha256": "83e24203f3532a5d379e2dfcab2a0bffa0b0d059eddc22ab04155ed229343ef3"
+    },
+    {
+      "path": "fixtures/allow-concurrent/workspaceA/samples.jsonl",
+      "sha256": "6cbaf8157f9a0b988dcb4b7f4dcd2bee2cc2547d621ecef610dfc22ff44e9aca"
+    },
+    {
+      "path": "fixtures/allow-concurrent/workspaceB/probe.ps1",
+      "sha256": "558b11133acbbccff51bd43a8e7e3a64a6e7eada3ca4d6d4fd32212038e81c83"
+    },
+    {
+      "path": "fixtures/allow-sequential/inputA/canary.txt",
+      "sha256": "f231b62518f6e1e4dc7967242b11efa52324790b0106a93560f02463d90e0b95"
+    },
+    {
+      "path": "fixtures/allow-sequential/inputB/canary.txt",
+      "sha256": "46ba0be6d234727c1bde2984dbb8edcdba03042aceacaa2ab5c9b214c024b3de"
+    },
+    {
+      "path": "fixtures/allow-sequential/workspaceA/concurrent.ps1",
+      "sha256": "8787f4e6f03aab58b20bcdb256b57aca384c4bf6bc9eb0ad646be5bd07bfd7ab"
+    },
+    {
+      "path": "fixtures/allow-sequential/workspaceA/probe.ps1",
+      "sha256": "e92b25842d1f7f6712488be9626c46e15ecca79b047b33f64aef931f9eeba90c"
+    },
+    {
+      "path": "fixtures/allow-sequential/workspaceB/probe.ps1",
+      "sha256": "0e4f758476c7de20a94737e91ebe3983f1f3265d3a272d9d23861bfc65b3eda4"
+    },
+    {
+      "path": "fixtures/deny-concurrent/inputA/canary.txt",
+      "sha256": "f231b62518f6e1e4dc7967242b11efa52324790b0106a93560f02463d90e0b95"
+    },
+    {
+      "path": "fixtures/deny-concurrent/inputB/canary.txt",
+      "sha256": "46ba0be6d234727c1bde2984dbb8edcdba03042aceacaa2ab5c9b214c024b3de"
+    },
+    {
+      "path": "fixtures/deny-concurrent/workspaceA/concurrent.ps1",
+      "sha256": "475092139430b3bcc9aa3d0aff05c5b6978b77171996b57e4cfc9579c99abeda"
+    },
+    {
+      "path": "fixtures/deny-concurrent/workspaceA/probe.ps1",
+      "sha256": "271337255cc4dd1ee2696dbe51ab18152cc85e87a274e2ef9d97a7715d7544b4"
+    },
+    {
+      "path": "fixtures/deny-concurrent/workspaceA/ready.txt",
+      "sha256": "83e24203f3532a5d379e2dfcab2a0bffa0b0d059eddc22ab04155ed229343ef3"
+    },
+    {
+      "path": "fixtures/deny-concurrent/workspaceA/samples.jsonl",
+      "sha256": "8e2b633412ff7912ded69283524d00bb7cc5507fb16267de4bdfdf02f4dbe9d5"
+    },
+    {
+      "path": "fixtures/deny-concurrent/workspaceB/probe.ps1",
+      "sha256": "234d05e819cd8ace020f615b454b1896972aca0c4fa17fdedb75f73764bfce2b"
+    },
+    {
+      "path": "fixtures/deny-sequential/inputA/canary.txt",
+      "sha256": "f231b62518f6e1e4dc7967242b11efa52324790b0106a93560f02463d90e0b95"
+    },
+    {
+      "path": "fixtures/deny-sequential/inputB/canary.txt",
+      "sha256": "46ba0be6d234727c1bde2984dbb8edcdba03042aceacaa2ab5c9b214c024b3de"
+    },
+    {
+      "path": "fixtures/deny-sequential/workspaceA/concurrent.ps1",
+      "sha256": "3f9cc280d084a30699b9e4a342819479c417511a9bbeb024cf1f382ee09f03fa"
+    },
+    {
+      "path": "fixtures/deny-sequential/workspaceA/probe.ps1",
+      "sha256": "277b10a0bc0b98c965914e01c934ba82125460dde133e7b32463236a15c8fcb6"
+    },
+    {
+      "path": "fixtures/deny-sequential/workspaceB/probe.ps1",
+      "sha256": "72db35c601ba9962ca571347d695e59e44d117aea4ce1b02b27e1527e0b655c1"
+    },
+    {
+      "path": "runner.py",
+      "sha256": "3d64edc063451820f3bf1da3507b61bf1639799b899ba99f5948aaab80e23958"
+    },
+    {
+      "path": "runs/allow-concurrent-a/process.json",
+      "sha256": "8cac276a9cd729a205fb4a662c8538ca0c0ad90097918e2f7ac6405bb93938f9"
+    },
+    {
+      "path": "runs/allow-concurrent-a/request.json",
+      "sha256": "fad4dcbb35ccf71d4bd5ff83d6ee103eeb822e8b6b6360710268e05c726415a9"
+    },
+    {
+      "path": "runs/allow-concurrent-a/result.json",
+      "sha256": "8ea6fd8024adbec7ff886db2e89580f192740aca73ec6d27af8ff40bcf6da008"
+    },
+    {
+      "path": "runs/allow-concurrent-a/runner-status.json",
+      "sha256": "3ec0f2a4caac2db9b0c255d2b5ff409aa0626c2670a5ccbb1686e64323c65e68"
+    },
+    {
+      "path": "runs/allow-concurrent-a/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "runs/allow-concurrent-a/stdout.txt",
+      "sha256": "7eb0076bad140ed44738eb3559b8f574fa1f83f7bc046b7336413eb5f562df70"
+    },
+    {
+      "path": "runs/allow-concurrent-b/process.json",
+      "sha256": "c7af0b5a311415bdb7a9a85531e79cdcb4f817d181e1e000ef3375311d65548f"
+    },
+    {
+      "path": "runs/allow-concurrent-b/request.json",
+      "sha256": "da9ef3a43ad88b7075ad95ac343aa1b8fdf0406a31543462dc0e06d861d14b7e"
+    },
+    {
+      "path": "runs/allow-concurrent-b/result.json",
+      "sha256": "f6db4390930838fabf910071750bb5257075d5c59bf85d83bfd9f25bfe7c3636"
+    },
+    {
+      "path": "runs/allow-concurrent-b/runner-status.json",
+      "sha256": "e03957e73feea6de6181e07634d4f15da17e4593db4a4ec2a7b8bb7431d5aaa3"
+    },
+    {
+      "path": "runs/allow-concurrent-b/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "runs/allow-concurrent-b/stdout.txt",
+      "sha256": "0cb3cc3ff2604977d3b813250b6c7eec2c2875982187f3959ad1936df4ef99a9"
+    },
+    {
+      "path": "runs/allow-seq-a/process.json",
+      "sha256": "f12d243487cb8e2e80a772a6638dc75af2832f639be0d0e4f4958b98ec0fb222"
+    },
+    {
+      "path": "runs/allow-seq-a/request.json",
+      "sha256": "3b67ee24a75f5fcbf71b173437f20c80ee91ef7ec1e968c13c3b6a257d3f7e06"
+    },
+    {
+      "path": "runs/allow-seq-a/result.json",
+      "sha256": "ced1d11caa4529cb357f1dab1f83d3292ab28f6ce0c8690a8950f756b6e4ba1b"
+    },
+    {
+      "path": "runs/allow-seq-a/runner-status.json",
+      "sha256": "aecfa5301ed3f3d216224e0915ff349cfc4277b7fbffb60292bcf39bf7c13feb"
+    },
+    {
+      "path": "runs/allow-seq-a/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "runs/allow-seq-a/stdout.txt",
+      "sha256": "d7ec6cabf58331165e06bbebb8ff15aeff06ee4f5f27c5326b6a52d24ae82115"
+    },
+    {
+      "path": "runs/allow-seq-b/process.json",
+      "sha256": "50897526671316f69eda6799bf5834ee915f6125a3c3e401f6f98af307049a32"
+    },
+    {
+      "path": "runs/allow-seq-b/request.json",
+      "sha256": "044eae37f04d74bb89697c31ef0740b9e34f6828556cb3e0f82de5f76970a976"
+    },
+    {
+      "path": "runs/allow-seq-b/result.json",
+      "sha256": "b914178dfb86b0ac4f39454486e22b63c70ff6a2887b48e6998faac4146e28a1"
+    },
+    {
+      "path": "runs/allow-seq-b/runner-status.json",
+      "sha256": "e03957e73feea6de6181e07634d4f15da17e4593db4a4ec2a7b8bb7431d5aaa3"
+    },
+    {
+      "path": "runs/allow-seq-b/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "runs/allow-seq-b/stdout.txt",
+      "sha256": "1db40c78408f157931c3977a0878428423292dcbccae3be46bbc69ae193c418f"
+    },
+    {
+      "path": "runs/deny-concurrent-a/process.json",
+      "sha256": "64d4e5bc650cddc0865ee03fca829240eb2e46e6a8eb0cd0bb076a2d4a200642"
+    },
+    {
+      "path": "runs/deny-concurrent-a/request.json",
+      "sha256": "b7cd6697dd3fe86e33f3b37c98093ad1ad1cc9409b05d41dacf91ccdc9c42cc6"
+    },
+    {
+      "path": "runs/deny-concurrent-a/result.json",
+      "sha256": "9427083cd132319ba5bbad0cd435fcc9d5631e19772da52435e2c399ead17e88"
+    },
+    {
+      "path": "runs/deny-concurrent-a/runner-status.json",
+      "sha256": "3ec0f2a4caac2db9b0c255d2b5ff409aa0626c2670a5ccbb1686e64323c65e68"
+    },
+    {
+      "path": "runs/deny-concurrent-a/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "runs/deny-concurrent-a/stdout.txt",
+      "sha256": "81cf1849dd80f44f8cd167bcea9df349f5f823972d0ad4bbac4ca3db000d5175"
+    },
+    {
+      "path": "runs/deny-concurrent-b/process.json",
+      "sha256": "9bbb142889b25b49f84bfc818b310750ce4d5080dfa97bda7622afa5aaca4602"
+    },
+    {
+      "path": "runs/deny-concurrent-b/request.json",
+      "sha256": "18fce3c7270ad32a4a09105343fecaa6e7e4df40e2af6b98ace732d26cfffc08"
+    },
+    {
+      "path": "runs/deny-concurrent-b/result.json",
+      "sha256": "5115e0a075370ba9d3621c805d0d9d4ef396f2017badbd1061d2b11298a01a74"
+    },
+    {
+      "path": "runs/deny-concurrent-b/runner-status.json",
+      "sha256": "aecfa5301ed3f3d216224e0915ff349cfc4277b7fbffb60292bcf39bf7c13feb"
+    },
+    {
+      "path": "runs/deny-concurrent-b/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "runs/deny-concurrent-b/stdout.txt",
+      "sha256": "5261c43baff3aa5a4180768430f5e99b0dfc67f3e70d62a75632ad7109fe0c8b"
+    },
+    {
+      "path": "runs/deny-seq-a/process.json",
+      "sha256": "2c01b40e18050cefbfc3af46af1fdf42d4840c44904f6f8d79ac05fee9ade05f"
+    },
+    {
+      "path": "runs/deny-seq-a/request.json",
+      "sha256": "d72cb7bcbe8974aed61135a8628e7db07d62168222d03465cdac38c3393c3cc9"
+    },
+    {
+      "path": "runs/deny-seq-a/result.json",
+      "sha256": "d94f50809a209bf441c1390b037320a3846265075ed9df9a0f34c43a7bc9214b"
+    },
+    {
+      "path": "runs/deny-seq-a/runner-status.json",
+      "sha256": "aecfa5301ed3f3d216224e0915ff349cfc4277b7fbffb60292bcf39bf7c13feb"
+    },
+    {
+      "path": "runs/deny-seq-a/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "runs/deny-seq-a/stdout.txt",
+      "sha256": "c440d766989cc500f36c387b351ad0c6c72ffd8cbd64bdcc96f9e4724b1e973d"
+    },
+    {
+      "path": "runs/deny-seq-b/process.json",
+      "sha256": "f2890cdafed5a0e6c2862ea6053d0471ded2167127f0e68a3a6592e441fc904a"
+    },
+    {
+      "path": "runs/deny-seq-b/request.json",
+      "sha256": "e0fd28bf86deda461ff47a35a050054cb60c5b82650f2868521fc9d12dfc6629"
+    },
+    {
+      "path": "runs/deny-seq-b/result.json",
+      "sha256": "88ad22feb7254258f4ffc105df7fbbf06f388090d03b7efacdcc8cbb479c576a"
+    },
+    {
+      "path": "runs/deny-seq-b/runner-status.json",
+      "sha256": "aecfa5301ed3f3d216224e0915ff349cfc4277b7fbffb60292bcf39bf7c13feb"
+    },
+    {
+      "path": "runs/deny-seq-b/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "runs/deny-seq-b/stdout.txt",
+      "sha256": "d869324b9b1b5c02fcf87d65de0b98fa1a7aa34987896bc958c20f6b01f07c02"
+    }
+  ]
+}

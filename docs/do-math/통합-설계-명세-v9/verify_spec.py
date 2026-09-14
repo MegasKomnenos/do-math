@@ -1330,6 +1330,37 @@ class SpecificationTests(unittest.TestCase):
         initial_issue = {"author_slot_id": "initial", "answer_role_slot_id": "initial", "source_result_ref": source_ref, "claim_ref": claim}
         self.assertTrue(checks.check_issue_answer_slots({"issues": [initial_issue]}, lambda _: initial, {"other"}))
 
+    def test_paused_maintenance_and_recovery_paths(self):
+        ref = read_example("task")["contract"]["basis_refs"][0]
+        runtime = {"lifecycle": "paused"}
+        execution = {"id": "E-check", "activity_kind": "maintenance",
+            "paused_maintenance_authorization": {"procedure_ref": ref, "approval_ref": ref,
+                "target_refs": [ref], "scope": [], "authority_refs": [ref]}}
+        deterministic = {"execution_id": "E-diagnosing", "stage": "diagnosing", "disposition": "resume_checkpoint",
+            "recovery": {"path": "deterministic", "prior_execution_ref": ref, "input_manifest_ref": ref,
+                "profile_ref": ref, "authority_refs": [ref], "external_action_refs": [], "scope": [],
+                "diagnosing_execution_id": "E-diagnosing"}}
+        facts = {key: True for key in ("barrier_confirmed", "inputs_unchanged", "profile_current", "authority_current",
+            "external_actions_replay_safe", "basis_current", "procedure_current", "target_in_scope", "start_checks_valid")}
+        self.assertTrue(checks.check_paused_recovery(runtime, deterministic, execution, facts))
+        broken = copy.deepcopy(deterministic); broken["stage"] = "checking_recovery"
+        with self.assertRaises(checks.ContractError):
+            checks.check_paused_recovery(runtime, broken, execution, facts)
+        meaning = copy.deepcopy(deterministic); meaning["execution_id"] = "E-checking"; meaning["stage"] = "checking_recovery"; meaning["recovery"]["path"] = "meaning_review"
+        self.assertTrue(checks.check_paused_recovery(runtime, meaning, execution, facts))
+        for key in ("barrier_confirmed", "inputs_unchanged", "profile_current", "authority_current",
+                    "external_actions_replay_safe", "basis_current"):
+            with self.subTest(missing_recovery_fact=key), self.assertRaises(checks.ContractError):
+                checks.check_paused_recovery(runtime, meaning, execution, dict(facts, **{key: False}))
+        stopped = dict(facts, new_stop=True, future_assignments_blocked=True, authority_revoked=True,
+                       common_stop_started=True, resume_lifecycle_preserved=True, no_automatic_resume=True)
+        self.assertTrue(checks.check_paused_maintenance_stop(stopped))
+        with self.assertRaisesRegex(checks.ContractError, "closes recovery admission"):
+            checks.check_paused_recovery(runtime, deterministic, execution, stopped)
+        stopped.pop("no_automatic_resume")
+        with self.assertRaises(checks.ContractError):
+            checks.check_paused_maintenance_stop(stopped)
+
     def test_regression_candidate_and_canon_listing_contracts(self):
         props = SCHEMAS["input-manifest"]["properties"]["planning_input"]["properties"]
         candidate_shape = props["candidate_listing"]["properties"]["items"]["items"]

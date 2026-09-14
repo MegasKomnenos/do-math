@@ -1,0 +1,20 @@
+{
+  "label": "deny-concurrent-a",
+  "started_at": "2026-09-14T01:46:13.257661+00:00",
+  "finished_at": "2026-09-14T01:46:18.980737+00:00",
+  "timed_out": false,
+  "terminate_job_called": false,
+  "runner_status": {
+    "state": "exited",
+    "exit_code": 8
+  },
+  "barrier": {
+    "root_signaled": true,
+    "active_processes": 0,
+    "process_ids": [],
+    "confirmed": true
+  },
+  "request": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\runs\\deny-concurrent-a\\request.json",
+  "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\runs\\deny-concurrent-a\\stdout.txt",
+  "stderr": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\elevated-reproducible\\runs\\deny-concurrent-a\\stderr.txt"
+}

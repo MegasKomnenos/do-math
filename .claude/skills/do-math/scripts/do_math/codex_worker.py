@@ -44,7 +44,7 @@ def load_request(path: Path) -> dict[str, Any]:
     value = json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=_pairs)
     if not isinstance(value, dict):
         raise ValueError("worker request must be an object")
-    required = ("codex_path", "prompt_path", "cwd", "model", "effort", "sandbox", "approval_policy",
+    required = ("codex_path", "prompt_path", "cwd", "model", "effort", "approval_policy",
                 "max_runtime_seconds", "stdout_path", "stderr_path", "final_path", "status_path")
     missing = [name for name in required if name not in value]
     if missing:
@@ -53,8 +53,16 @@ def load_request(path: Path) -> dict[str, Any]:
         raise ValueError("codex_path must be one NUL-free executable string")
     if "codex_argv" in value:
         raise ValueError("codex_argv is forbidden; production accepts one executable only")
-    if value["effort"] not in _EFFORTS or value["sandbox"] not in _SANDBOXES or value["approval_policy"] != "never":
-        raise ValueError("unsupported effort, sandbox, or approval policy")
+    unknown = set(value) - set(required) - {"sandbox", "filesystem", "windows_sandbox", "output_schema_path"}
+    if unknown:
+        raise ValueError("unknown worker request fields: " + ", ".join(sorted(unknown)))
+    if not isinstance(value["effort"], str) or value["effort"] not in _EFFORTS or value["approval_policy"] != "never":
+        raise ValueError("unsupported effort or approval policy")
+    if "filesystem" in value:
+        if "sandbox" in value:
+            raise ValueError("filesystem and legacy sandbox are mutually exclusive")
+    elif not isinstance(value.get("sandbox"), str) or value["sandbox"] not in _SANDBOXES:
+        raise ValueError("a supported legacy sandbox or filesystem profile is required")
     if not isinstance(value["model"], str) or not value["model"]:
         raise ValueError("model must be non-empty")
     if (not isinstance(value["max_runtime_seconds"], (int, float)) or isinstance(value["max_runtime_seconds"], bool)
@@ -68,6 +76,26 @@ def load_request(path: Path) -> dict[str, Any]:
         raise ValueError("output_schema_path must be a non-empty path when present")
     if "windows_sandbox" in value and value["windows_sandbox"] not in _WINDOWS_SANDBOXES:
         raise ValueError("windows_sandbox must be elevated or unelevated when present")
+    if "filesystem" in value:
+        fs = value["filesystem"]
+        if value.get("windows_sandbox") != "elevated" or not isinstance(fs, dict):
+            raise ValueError("filesystem profile requires elevated windows sandbox")
+        if set(fs) != {"read_roots", "write_roots", "deny_roots"}:
+            raise ValueError("filesystem has exactly read_roots, write_roots, deny_roots")
+        seen = set()
+        for field in ("read_roots", "write_roots", "deny_roots"):
+            roots = fs.get(field, [])
+            if not isinstance(roots, list): raise ValueError(field + " must be a list")
+            for root in roots:
+                if (not isinstance(root, str) or "\x00" in root or any(char in root for char in "*?[]")
+                        or not Path(root).is_absolute()):
+                    raise ValueError("filesystem roots must be distinct absolute paths")
+                key = str(Path(root).resolve()).casefold()
+                if key in seen:
+                    raise ValueError("filesystem roots must be distinct absolute paths")
+                seen.add(key)
+        if set(x.casefold() for x in fs.get("read_roots", [])) & set(x.casefold() for x in fs.get("write_roots", [])):
+            raise ValueError("read and write roots overlap")
     return value
 
 
@@ -75,7 +103,7 @@ def build_argv(request: Mapping[str, Any]) -> list[str]:
     """Use only documented non-interactive flags and a stdin prompt sentinel."""
     argv = [request["codex_path"], "--ask-for-approval", request["approval_policy"], "exec",
             "--json", "--color", "never", "--output-last-message", request["final_path"],
-            "--model", request["model"], "--sandbox", request["sandbox"], "--cd", request["cwd"],
+            "--model", request["model"], "--cd", request["cwd"],
             "--strict-config", "--config", 'model_reasoning_effort="' + request["effort"] + '"',
             "--config", "project_doc_max_bytes=0",
             "--ephemeral", "--ignore-user-config", "--ignore-rules", "--skip-git-repo-check"]
@@ -83,6 +111,15 @@ def build_argv(request: Mapping[str, Any]) -> list[str]:
         argv.extend(["--output-schema", request["output_schema_path"]])
     if "windows_sandbox" in request:
         argv.extend(["--config", 'windows.sandbox="' + request["windows_sandbox"] + '"'])
+    if "filesystem" in request:
+        fs = request["filesystem"]; entries = {'":minimal"': '"read"'}
+        for field, mode in (("read_roots", "read"), ("write_roots", "write"), ("deny_roots", "deny")):
+            for root in fs.get(field, []): entries[json.dumps(Path(root).resolve().as_posix(), ensure_ascii=False)] = '"' + mode + '"'
+        inline = "{" + ",".join(key + "=" + value for key, value in entries.items()) + "}"
+        argv.extend(["--config", 'default_permissions="do_math"', "--config", "permissions.do_math.filesystem=" + inline,
+                     "--config", "permissions.do_math.network.enabled=false"])
+    else:
+        argv.extend(["--sandbox", request["sandbox"]])
     return [*argv, "-"]
 
 

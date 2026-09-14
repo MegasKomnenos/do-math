@@ -1118,6 +1118,9 @@
     "owner_activity_id": {
       "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/id_AC"
     },
+    "paused_maintenance_authorization": {
+      "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/paused_maintenance_authorization"
+    },
     "process": {
       "additionalProperties": false,
       "properties": {

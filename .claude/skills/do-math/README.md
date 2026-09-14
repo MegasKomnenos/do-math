@@ -9,10 +9,12 @@
 저장소 루트에서 다음 명령을 실행한다. 모델 호출을 수행하며, 원문 입력·JSONL·표준 오류·최종 응답·사용량·로컬 종료 관찰과 해시를 새 보고 디렉터리에 보존한다. `--output-dir`로 지정한 디렉터리는 새 경로여야 한다.
 
 ```powershell
-python .claude/skills/do-math/scripts/probe_codex.py --model gpt-5.6-luna --windows-sandbox unelevated --cases text structured tool cancel
+python .claude/skills/do-math/scripts/probe_codex.py --model gpt-5.6-luna --windows-sandbox elevated --cases text structured tool cancel
 ```
 
 모델과 노력은 설치된 CLI에서 실제 사용할 값을 지정한다. Windows 샌드박스는 해당 호스트에 설정된 `unelevated` 또는 `elevated` 값을 명시한다. 검증을 위해 사용자 설정 파일을 변경하지 않는다. 샌드박스 설정이나 도구 실행이 실패하면 원인과 미수행 범위를 결과에 남긴다.
+
+이 호스트에는 사용자 승인으로 `elevated` backend를 설정했다. 단일 프로필의 허용 읽기·쓰기와 금지 접근은 확인했지만, 서로 다른 프로필을 순차·동시에 적용하면 공유 그룹 ACL이 남거나 교체되어 읽기 범위가 섞였다. 명시적 `deny`도 동시 실행의 독립성을 제공하지 못했다. 따라서 이 backend를 실행별 비공개 입력의 동시 격리 근거로 사용하지 않는다. 실제 원문과 결과는 [구현 진행](../../../docs/do-math/구현-진행.md)에서 확인한다.
 
 | 검사 | 실제 확인하는 것 |
 |---|---|
@@ -24,6 +26,14 @@ python .claude/skills/do-math/scripts/probe_codex.py --model gpt-5.6-luna --wind
 프로세스가 끝났다는 사실과 공급자 서버의 처리 상태는 구별한다. CLI에서 회수하지 못한 공급자별 호출 식별자·원격 종료·호출별 사용량은 `unknown`으로 남긴다. `turn.completed`의 사용량은 CLI turn 단위의 관찰값이다. 모델에 실제 전달한 전체 입력과 자동 압축 통제, 모든 파일·네트워크·IPC·비밀 접근 경계는 이 네 검사의 통과로 입증되지 않는다.
 
 반환 JSON의 `passed`는 선택한 검사들의 통과 여부이고 `implementation_complete`는 전체 통합 설계의 완료 여부다. 두 값은 서로 다른 판단이다. 이 도구는 연구를 활성화하지 않는다.
+
+native 프로필의 읽기 격리는 모델 호출 없이 별도로 재현한다. 새 검사 디렉터리의 ACL을 설정하며 기존 디렉터리는 사용하지 않는다.
+
+```powershell
+python .claude/skills/do-math/scripts/probe_native_isolation.py
+```
+
+현재 호스트에서는 프로필 간 읽기 격리 결함을 재현해 exit 1을 반환한다. 이는 진단 도구가 발견한 backend의 불통과이며, 검사 프로그램이 실행되지 않은 경우와 보고에서 구별한다. 순차 결과만으로 동시 격리를 승인하지 않는다.
 
 ## 원자료 현재성 검사
 
@@ -41,6 +51,8 @@ python .claude/skills/do-math/scripts/probe_codex.py --spec-only
 
 `codex_worker.py`는 어댑터 내부에서만 실행한다. 직접 실행하면 Job 소유권과 시작 전 입력 검사를 거치지 않는다. 요청·입력·작업 공간·출력 경로는 실행기를 구현하는 호출자가 통제한다. 프로세스 Job만으로 그 파일의 접근 권한까지 확보되지는 않는다.
 
+worker 요청은 `sandbox` 또는 `filesystem` 중 하나를 가진다. `filesystem`은 `read_roots`, `write_roots`, `deny_roots`의 절대 경로 목록이며 `windows_sandbox="elevated"`를 요구한다. 쓰기 루트는 모델 작업 공간 안에 두고 고정 입력·출력·상태 파일을 포함할 수 없다. 이 필드는 CLI의 명시적 프로필 구성을 생성한다. 그 구성을 검증된 읽기 격리로 표시하지 않는다. 현재 `describe().verified`의 범위도 `cli_command_surface_only`이며 D01 통과를 뜻하지 않는다.
+
 `GitStateStore`는 `research`와 `runtime`을 단일 상태 ref로 공개한다. `publish()`는 이전 머리를 비교해 갱신하고 다른 갱신이 먼저 일어났으면 충돌로 반환한다. 기존 산출 묶음의 수정·삭제를 거부한다. 기록 스키마·권한·의미 검사는 저장소 호출 전에 실행기가 수행해야 한다.
 
 ## 로컬 검사
@@ -52,6 +64,7 @@ python .claude/skills/do-math/scripts/tests/test_git_store.py
 python .claude/skills/do-math/scripts/tests/test_budget.py
 python .claude/skills/do-math/scripts/tests/test_preflight.py
 python .claude/skills/do-math/scripts/tests/test_probe_codex.py
+python .claude/skills/do-math/scripts/tests/test_native_probe.py
 ```
 
 Git 검사는 임시 저장소에서 수행한다. CLI 단위 검사는 시험용 실행 파일을 사용하며, 실제 CLI 검증은 위의 `probe_codex.py`가 수행한다. 명세 검사는 `docs/do-math/통합-설계-명세-v9/README.md`의 절차를 따른다.

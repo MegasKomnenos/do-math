@@ -124,12 +124,14 @@ class CodexExecAdapter:
                     b"--ignore-user-config", b"--ignore-rules", b"--skip-git-repo-check", b"--output-schema", b"--config")
         verified = (version_result.returncode == 0 and global_help_result.returncode == 0 and help_result.returncode == 0
                     and b"--ask-for-approval" in global_help_result.stdout and all(flag in help_bytes for flag in required))
-        return {"cli_path": self.codex_path, "version_bytes": version, "version_sha256": _sha256(version),
+        return {"scope": "cli_command_surface_only",
+                "cli_path": self.codex_path, "version_bytes": version, "version_sha256": _sha256(version),
                 "exec_help_bytes": help_bytes, "exec_help_sha256": _sha256(help_bytes),
                 "verified": verified, "supported": {"jsonl": verified, "model": verified,
                               "effort_via_config": verified, "sandbox": verified, "local_job_stop": True},
                 "unknown": ["actual_input_bytes", "provider_operation_ids", "remote_termination", "per_call_usage",
-                            "provider_stop_reason", "automatic_compaction_control"]}
+                            "provider_stop_reason", "automatic_compaction_control",
+                            "per_execution_read_isolation", "cross_profile_noninterference"]}
 
     def start(self, request_path: Path, *, cwd: Path, env: Mapping[str, str]) -> CodexExecution:
         from do_math.codex_worker import load_request
@@ -145,10 +147,22 @@ class CodexExecAdapter:
         if any(path.exists() for path in (stdout_path, stderr_path, final_path, status_path)):
             raise FileExistsError("output paths must be newly allocated")
         workspace = Path(request["cwd"]).resolve()
+        filesystem = request.get("filesystem")
+        if filesystem is not None:
+            write_roots = [Path(value).resolve() for value in filesystem["write_roots"]]
+            if any(not root.is_relative_to(workspace) for root in write_roots):
+                raise ValueError("filesystem write roots must stay inside the model workspace")
+            controls = [request_path, prompt_path, stdout_path, stderr_path, final_path, status_path]
+            if "output_schema_path" in request:
+                controls.append(Path(request["output_schema_path"]))
+            if any(control.resolve().is_relative_to(root) for root in write_roots for control in controls):
+                raise ValueError("fixed inputs, outputs, and status must be outside every write root")
         if any(path.resolve().is_relative_to(workspace) for path in (stdout_path, stderr_path, final_path, status_path)):
             raise ValueError("worker outputs and status must be outside the model workspace")
         request_raw, prompt_raw = request_path.read_bytes(), prompt_path.read_bytes()
         stage = Path(tempfile.mkdtemp(prefix="do-math-codex-", dir=workspace.parent))
+        if filesystem is not None and any(stage.resolve().is_relative_to(root) for root in write_roots):
+            raise RuntimeError("snapshot directory would be writable by the model")
         snapshot_prompt = stage / "prompt.bin"; snapshot_prompt.write_bytes(prompt_raw)
         snapshot_schema = None
         schema_sha256 = None

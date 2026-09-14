@@ -943,6 +943,72 @@
       "minLength": 1,
       "type": "string"
     },
+    "paused_maintenance_authorization": {
+      "additionalProperties": false,
+      "properties": {
+        "approval_ref": {
+          "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+        },
+        "authority_refs": {
+          "items": {
+            "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+          },
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "procedure_ref": {
+          "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+        },
+        "scope": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "description": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "evidence_refs": {
+                "items": {
+                  "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+                },
+                "minItems": 0,
+                "type": "array",
+                "uniqueItems": true
+              },
+              "id": {
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "description",
+              "evidence_refs"
+            ],
+            "type": "object"
+          },
+          "minItems": 0,
+          "type": "array"
+        },
+        "target_refs": {
+          "items": {
+            "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+          },
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "procedure_ref",
+        "approval_ref",
+        "target_refs",
+        "scope",
+        "authority_refs"
+      ],
+      "type": "object"
+    },
     "prior_hash": {
       "oneOf": [
         {

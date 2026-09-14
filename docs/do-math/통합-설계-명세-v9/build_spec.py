@@ -343,6 +343,9 @@ progress = obj({"expected_changes": array(RANGE, 1),
     "no_progress_limit": integer(2), "reconsider_conditions": STRINGS})
 scope_disposition = obj({"scope_id": S, "value": enum("fulfilled", "waived", "transferred", "open"),
     "evidence_refs": REFS, "successor_task_ids": IDS})
+common_defs["paused_maintenance_authorization"] = obj({
+    "procedure_ref": EXACT, "approval_ref": EXACT, "target_refs": NONEMPTY_REFS,
+    "scope": RANGES, "authority_refs": NONEMPTY_REFS})
 contract_fields = {
     "revision": POS, "title": S, "description": {"type": "string", "minLength": 1, "pattern": r"^[^\r\n]+$"},
     "question": S, "work_class": enum("research_production", "academic_validation"),
@@ -448,6 +451,7 @@ register("execution", "6,12,19.4", "runtime/executions/{id}/record.json", {
     "input_manifest_ref": EXACT, "output_schema_id": S, "authority_refs": NONEMPTY_REFS,
     "output_phase": enum("initial", "judge", "answer", "organize"), "role_slot_id": S,
     "workspace": PATH, "state": enum("queued", "starting", "running", "stopping", "ended"),
+    "paused_maintenance_authorization": common("paused_maintenance_authorization"),
     "created_at": TIME, "budget_kind": enum("work", "operations"),
     "operational_review_mode": enum("event_driven", "periodic"),
     "execution_deadline": TIME, "next_operational_review_at": TIME,
@@ -689,6 +693,9 @@ register("operational-review", "12,19.4", "runtime/activities/{activity_id}/revi
     "disposition": enum("continue", "repair", "resume_checkpoint", "restart", "revise_task", "close_task", "ask_user", "no_action"),
     "basis": BASIS, "next_review_at": {**TIME, "description": "For continue, required by the target execution's periodic mode. In event_driven mode, absence means no further reservation for the reviewed duty; a supplied time requires remaining uncertainty and diagnosis evidence. Check against the bound target execution."}, "recovery_approval_ref": EXACT,
     "checkpoint_ref": ARTIFACT, "followups": FOLLOWUPS,
+    "recovery": obj({"path": enum("deterministic", "meaning_review"), "prior_execution_ref": EXACT,
+        "input_manifest_ref": EXACT, "profile_ref": EXACT, "authority_refs": NONEMPTY_REFS,
+        "external_action_refs": REFS, "scope": RANGES, "diagnosing_execution_id": ID}),
 }, ["id", "activity_id", "execution_id", "stage", "trigger_event_ids", "observation_refs",
     "diagnosis_ref", "actual_scope", "uncertainties", "disposition", "basis", "followups"],
     prefix="OR")
@@ -944,6 +951,12 @@ SCHEMAS["execution"]["allOf"].extend([
             "required": ["next_operational_review_at", "operational_review_mode"]},
      "then": require("explicit_review_basis_ref")},
 ])
+SCHEMAS["operational-review"]["allOf"] = [
+    {"if": {"properties": {"disposition": {"enum": ["resume_checkpoint", "restart"]}}},
+     "then": require("recovery")},
+    condition("stage", "checking_recovery", {"allOf": [require("recovery"),
+        {"properties": {"recovery": {"properties": {"path": {"const": "meaning_review"}}}}}]}),
+]
 knowledge_optional = ["description", "sources", "uncertainty_assessment", "replacement_refs", "withdrawal_reason_ref"]
 extra_by_kind = {"frontier": [], "evidence": ["external_rejection"],
                  "relation": ["assessment_refs", "formal_result_refs"], "context": [], "memory": []}

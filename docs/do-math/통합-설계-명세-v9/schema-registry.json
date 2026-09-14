@@ -97,7 +97,7 @@
       "owner_section": "19.2",
       "path": "schemas/common.schema.json",
       "schema_id": "https://do-math.invalid/schemas/draft/9/common",
-      "sha256": "d92e57bd4a5bb35d916fbd340b4403aede6f80201ef2a145f387c074265f77a3",
+      "sha256": "6780f49c363c560fc28d0da53da6a83d650543c06f1deaef494fdbd0752db3b0",
       "storage": "schema_only"
     },
     {
@@ -127,7 +127,7 @@
       "owner_section": "6,12,19.4",
       "path": "schemas/execution.schema.json",
       "schema_id": "https://do-math.invalid/schemas/draft/9/execution",
-      "sha256": "32dec05eb082c721611b80db8e259897c7c0522269d1585998ec15793d6217f2",
+      "sha256": "1285c9a57093c5a0f9e0fe0792cff7efc1919cd99d293d1adfa6e66b7b262dc8",
       "storage": "runtime/executions/{id}/record.json"
     },
     {
@@ -277,7 +277,7 @@
       "owner_section": "12,19.4",
       "path": "schemas/operational-review.schema.json",
       "schema_id": "https://do-math.invalid/schemas/draft/9/operational-review",
-      "sha256": "3ba3cca60633755105c6e38bd8e52e4af6cf4c628339ab2f618fb31f08a3c34e",
+      "sha256": "44c641e2339f354e17827509f7cd63f17a8e40ca6f4bce873edfc89a30009e96",
       "storage": "runtime/activities/{activity_id}/reviews/{id}.json"
     },
     {

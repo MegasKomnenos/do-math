@@ -471,6 +471,45 @@ def check_truncation_permission(planning_input, permission):
     return True
 
 
+def check_paused_recovery(runtime, review, execution, facts):
+    """Check the already-authorized paused maintenance and recovery path."""
+    def require_facts(*names):
+        if any(facts.get(name) is not True for name in names):
+            raise ContractError("missing recovery fact: " + ",".join(names))
+    if facts.get("new_stop") is True:
+        raise ContractError("a new stop closes recovery admission")
+    recovery = review.get("recovery")
+    if review["disposition"] in ("resume_checkpoint", "restart") and recovery is None:
+        raise ContractError("recovery disposition lacks its fixed inputs")
+    if recovery is not None:
+        require_facts("barrier_confirmed", "inputs_unchanged", "profile_current",
+                      "authority_current", "external_actions_replay_safe", "basis_current")
+        if recovery["path"] == "deterministic":
+            if review["stage"] != "diagnosing":
+                raise ContractError("deterministic recovery cannot use meaning-review stage")
+        elif recovery["path"] == "meaning_review":
+            if review["stage"] != "checking_recovery" or review["execution_id"] == recovery["diagnosing_execution_id"]:
+                raise ContractError("meaning recovery requires a distinct checking execution")
+        else:
+            raise ContractError("unknown recovery path")
+    if runtime["lifecycle"] != "paused":
+        return True
+    authorization = execution.get("paused_maintenance_authorization")
+    if execution["activity_kind"] != "maintenance" or authorization is None:
+        raise ContractError("paused runtime permits only authorized maintenance")
+    require_facts("procedure_current", "target_in_scope", "authority_current", "start_checks_valid")
+    return True
+
+
+def check_paused_maintenance_stop(facts):
+    """A renewed stop is a separate disposition, never permission to recover."""
+    names = ("new_stop", "future_assignments_blocked", "authority_revoked", "common_stop_started",
+             "resume_lifecycle_preserved", "no_automatic_resume")
+    if any(facts.get(name) is not True for name in names):
+        raise ContractError("new stop has not preserved every required stop condition")
+    return True
+
+
 def restore_forms(entries):
     """Uniform restore form per role; relevance-based selection is never allowed."""
     forms = []

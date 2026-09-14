@@ -1,0 +1,15 @@
+{
+  "scope": "existing_wsl2_distribution_start",
+  "argv": [
+    "wsl.exe",
+    "--distribution",
+    "Ubuntu-20.04",
+    "--exec",
+    "/bin/true"
+  ],
+  "exit_code": 4294967295,
+  "stdout": "가상화가 활성화되지 않은 이 컴퓨터에서는 WSL2를 시작할 수 없습니다.\r\n컴퓨터의 펌웨어 설정에서 ‘가상 머신 플랫폼’ 선택적 구성 요소가 활성화되고, 가상화가 켜져 있는지 확인하세요.\r\n\r\n‘가상 머신 플랫폼’을 활성화기 위해 다음 명령 실행: wsl.exe --install --no-distribution\r\n\r\n자세한 내용을 알아보려면 https://aka.ms/enablevirtualization을 방문하세요.\r\n오류 코드: Wsl/Service/CreateInstance/CreateVm/HCS/HCS_E_HYPERV_NOT_INSTALLED\r\n",
+  "stderr": "",
+  "configuration_changed": false,
+  "model_calls": 0
+}
