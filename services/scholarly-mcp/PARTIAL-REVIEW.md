@@ -6,6 +6,8 @@
 
 지원표와 요청 결과의 `partial`은 다른 값이다. `registry.py`의 구현 표지는 현재 49개 자료원 중 48개에 명시적으로 설정된 부분 지원 범위이며, 나머지 하나는 사용자 결정으로 보류한 Unpaywall이다. 실패 건수에서 계산한 값이 아니다. 개별 요청의 `partial`은 요청한 구성요소들의 실제 상태를 집계한 값이다. 예를 들어 Semantic Scholar가 서지·초록·인용문·참고문헌을 모두 반환해도, 함께 요청한 원문 파일은 해당 API의 제공 범위 밖이므로 요청 전체는 `partial`이다.
 
+사용자는 형식 미제공 등의 UI 조사 범위를 수용한 뒤 잔여 문제의 추가 시도를 허용했다. 도서관 연결을 따라 Google 도서까지 확인하자 조사 범위가 계속 넓어진다고 지적했고, 이후 추가 탐색과 지원 범위 확장을 멈추고 기존 결과만 정리하기로 했다. 이 후속 작업에서는 서비스 코드와 자료원 지원을 추가하지 않았다. 아래 재개 조건은 남은 불확실성을 설명하는 기록이며 새로운 탐색의 실행 지시가 아니다.
+
 **AMS의 실제 처리 과정**
 
 최초 건수 비교는 의도한 AND·NOT와 결과가 다르다는 반례였다. 그것만으로 원인을 설명한 판단을 보완했다. 해당 실행의 `3-before/after.png`, `4-before/after.png`를 직접 열었고, 별도의 새 실행에서는 실제 Search 버튼 클릭 전·후·안정 화면과 입력 제어 전체, POST 본문을 함께 기록했다.
@@ -105,3 +107,25 @@ Software Heritage 복원물은 `data/partial-investigation-20260914/software-her
 확보한 주요 PDF의 경로·바이트 수·SHA-256·실제 페이지 수는 로컬 `data/ui-walkthrough-20260914/verified-downloads.json`에 root가 다시 확인해 보존했다. 각 문헌의 판본·외부 출처 경계는 위 사이트 보고서를 함께 따른다. 전체639검사 통과 기록은 같은 디렉터리의 `integration-tests.txt`다.
 
 확정한 것은 위 화면·응답·파일이 보여 준 발생 지점과 동작이다. AMS 동적 조회의 null 및 비공개 검색 구현, SIAM 기관 권한 성립 조건과 보유표 충돌, ScienceDirect–ClinicalKey 접근 표지의 불일치, Vault 대기 사유, Figshare v6의 정확한 누락 구성원은 현재 공개 근거만으로 내부 원인을 확정할 수 없다. Oxford의 오류는 사이트 키 도메인 문제를 명시하지만 어떤 운영 설정을 고쳐야 하는지까지 확인한 것은 아니다. De Gruyter의404도 파일의 실제 삭제·이동 여부를 증명하지 않는다. 이 한계를 공급자 전체의 영구 불가로 바꾸지 않는다. 새 공식 제어·원 응답·정확한 권한 상태가 생기면 해당 입력에서 재개한다. 자격 추가, IdP 재제출, 지원팀 연락은 이번에 실행하지 않았다.
+
+**추가 조사와 종료 판정**
+
+Figshare·Software Heritage·ScienceDirect의 후속 조사와 도서관 검색 보완을 별도 CLI로 수행했다. De Gruyter 역사 첨부도 실제 원 화면·README와 다시 대조했다. 사용자의 범위 제한에 따라 추가 탐색은 종료하고 아래 확인 결과를 보존한다. 모든 공급자 문제를 해결하거나 가능한 모든 경로를 소진했다는 뜻은 아니다.
+
+| 대상 | 마지막 확인·조치 | 남은 문제를 재개할 조건 |
+|---|---|---|
+| AMS 논리 검색 | 기본 Title·동적 경로·자체 도움말·가이드 탐색을 대조했고, 추가 공식 도메인 문서 검색에서도 새 문법 근거를 얻지 못했다. 입력 문자열을 바꿔 같은 null을 반복하거나 다른 서비스의 Boolean을 이 기능으로 세지 않는다. | Digital Library의 해당 문법에 대한 공식 안내 또는 정상 실행 사례, 동적 검색 응답의 변화. |
+| SIAM 출판사 PDF | 공식 보유표·프록시·기관 선택·실제 호 목차를 이미 확인했다. 새 자격 없이 다른 정상 기관 경로가 발견되지 않아 잠금 화면을 다시 요청하지 않았다. accepted arXiv v2는 확보되어 있다. | 기관의 실제 계약·등록 IP·프록시 연동 확인 또는 정상 기관 세션의 성립. |
+| ScienceDirect 두 대상 원문 | 별도 ClinicalKey eBook 경로와 다섯 제공리스트를 확인했다. ClinicalKey Books 제목 필터, 소장 eBook의 서명·총서명 완전일치에서 Preface 모책을 찾지 못했다. Book review 저널은 네 저널 목록에 일치 행이 없었다. 실제 PDF 접근 상태를 바꾸는 새 경로는 얻지 못했다. | 대상2026년 권·문헌을 포함하는 실제 기관 권한, 정상 도서 제공 경로 또는 ScienceDirect–ClinicalKey 연결의 교정. |
+| Preface의 도서관 연결 | 총서명0건 뒤 서명 전방일치에서 시리즈1건을 찾았다. 확인한 물리 소장은 중앙 최대v.116·의학분관 최대v.122이며 대상ISBN 조회는0건이다. Summon의 시리즈·171·2026 검색10건 중9건은171권,1건은169권이었다. 기관 ProQuest의 한171권 장은 MEDLINE 서지·초록이고360LINK는 이용 가능한 전자자료가 없다고 했다. Google 연결의 다른eBook ISBN 샘플도 Preface xiii–xviii의 페이지 미리보기를 제공하지 않았다. | 대상171권의 실제 원문 제공 또는 접근 상태 변화. 다른 장·ISBN의 자료와 검색 스니펫을 Preface 원문 확보로 세지 않는다. |
+| Oxford 검색별 title export | 실제 기관 OUP 경로의 사이트 키 도메인 오류와 공식 인증 안내를 확인했다. 같은 Download 재시도나 새 개인 계정 생성은 수행하지 않았다. 제품별 목록·장 인용은 별도 확보 상태다. | CAPTCHA 설정 수정 또는 기관이 제공하는 다른 정상 인증 경로. |
+| JSTOR 대상 영상 파일 | 실제 시청·전사문 시간 이동은 가능하지만 원 Download가 비활성이고 옛 원 저장소는 같은 JSTOR 항목으로 돌아간다. 새 정상 파일 링크가 없어 같은 동선을 반복하지 않았다. | 기여 기관의 다운로드 활성화 또는 별도의 공식 파일 제공. |
+| De Gruyter 데이터·코드 | 당시 동일 논문 화면의 Supporting Files가 Belaire_Contreras.zip을 Data and code로 명시함을 root가 이미지로 재확인했다. ZIP에는6개국 데이터·Ox2파일·FORTRAN·README가 있다. 당시 첨부 확보는 확정하며 새 다운로드로 세지 않는다. | 현재 ZIP의 정상 제공 또는 과거 첨부와 현재 파일의 이관·교체 근거. 현재 링크의 byte 동일성은 미확정이다. |
+| Software Heritage 원 Vault | 2026-09-14 10:21 KST의 저장 상태 재개와 공식 GET 모두 같은 task419779186·new·progress null이다. Vault Operational 및 공개 장애 이력에서도 이 작업의 대기를 설명하는 사건은 발견하지 못했다. 새 POST·재큐잉·반복 polling을 하지 않았다. | 제공자 측 작업 진행이나 구체적인 운영 안내. 기존 원 객체 기반 재구성 tar.gz는 별도로 이용할 수 있다. |
+| Figshare v6 구성원 | 인접 판본의 metadata/UI·RIS는 v5 15/15, v6 17/16, v7 19/18이다. v6보다2분45초 먼저 게시된17061347.v1은 현재v8 REST/UI의 유일한 차이 항목이며 가장 강한 후보로 좁혀졌다. 실제 후보 PDF19,298,271바이트·41쪽을 확보했다. | v6의 역사적 관계 ID 목록이나 소유자·제공자의 확인. 후보를 확정된17번째로 삽입하지 않는다. |
+
+Figshare 후보 PDF의 SHA-256은 `c1ed6815d3138343f3538f3ade4277dff8f6d9e9a30a1550a68d452f191f5e78`이다. root가 파일 크기·쪽수·표지를 대조했다. 후보가 공개되어 있고 정상 다운로드되는 사실은 확정했지만, v6의17/16 차이를 만든 내부 처리 원인은 여전히 미확정이다. 역사 ID 관계가 없는 상태에서 current 관계를 소급해 채우면 과거 판본을 바꾸므로 기존 partial 보존은 유지한다.
+
+ScienceDirect 추가 조사에서 받은 ClinicalKey eBook 목록은1,039개 도서와2010–2025 Copyright Year를 담고, 별도 ClinicalKey 콘텐츠 목록은2026-04-15 갱신 표기다. ScienceDirect의2025 목록은2,596행 모두 Journal이다. 이 저널 목록에 책 시리즈가 없다는 사실은 도서 계약 부재의 증거가 아니며,2025 목록으로2026년 최신 권한을 확정할 수도 없다. Book review의 실제 비구독 화면과 오래된 목록의 부재를 별도 근거로 유지한다. root는 원 XLSX의 범위·헤더·대상 제목·ISSN·시점을 대조했고 로컬 `science-direct/root-list-review.json`에 파일 확인값을 보존했다.
+
+새 근거는 [Figshare 후속](data/ui-walkthrough-20260914/figshare/report-close.md), [Vault 후속](data/ui-walkthrough-20260914/software-heritage/report-close.md), [ScienceDirect 도서·제공리스트](data/ui-walkthrough-20260914/science-direct/report-close.md), [도서관 연결 확인](data/ui-walkthrough-20260914/catalog-close/report.md), [De Gruyter 역사 첨부 대조](data/ui-walkthrough-20260914/de-gruyter/report-close.md)에 있다. 각 보고서가 실제 이미지·원응답·다운로드 경로를 제공한다. Google 도서 확인은 기존 Preface의 연결 경로 조사였으며 MCP 자료원 추가나 자동 대체 기능 구현이 아니다. 이후에는 새 연결을 따라 조사 범위를 넓히지 않는다.

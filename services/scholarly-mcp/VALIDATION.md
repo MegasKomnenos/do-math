@@ -736,3 +736,9 @@ UI 조사로 앞선 접근 실패의 범위를 더 좁혔다. JSTOR의 대상 �
 Figshare v6의 실제 Cite all items TXT/RIS는 UI와 같은16개 제목 및 아이템별 판본 DOI를 제공했다. 아이템 Back은 최신v8로 돌아가므로 v6를 다시 열었다. CORE Reader와 원 제공기관에서 각각8쪽 PDF를 받았으며 CORE 배너 때문에 bytes가 다르다. Semantic Scholar Reader의 외부 arXiv v2 PDF는698,413바이트·28쪽이고 첫 페이지의 판본을 이미지로 확인했다. comments의26 pages를 Reader 변환의 증거로 추론하지 않았다. SIAM accepted arXiv v2·Springer Archive PDF·De Gruyter 문헌 PDF·Oxford 사서용 제품 목록의 확보는 원래 제한된 파일·형식·검색 export의 성공과 구별한다. 세부 정상 동선과13개 보고서·이미지 연결은 PARTIAL-REVIEW.md를 따른다.
 
 마지막 다운로드 대조에서 Taylor & Francis의 둘째 editorial은 새 ePDF 뷰어 안의 Download PDF로187,178바이트를 받았다. 뷰어의 논문9쪽과 저장 PDF의 서지 표지 포함10쪽을 구별했고, 페이지 전환 오류를 파일 미제공으로 보던 판정을 고쳤다. EuDML 원 링크의 GDZ 전체책은156,700,606바이트·412쪽이며 표지1쪽+411개 스캔이다. IIIF/METS 원파일과14개 부분 매핑을 확보하고 TIFY 페이지 선택기의 Preface·Table X 실제 판면을 확인했다. 재로드가 개입한 옛 화면으로 구식 부분 링크의 위치 손실을 확정했던 판단은 철회했다. 후속 원 링크의 로딩 미완료와 전체책·부분 페이지 이동 성공은 서로 다른 관찰이다. root의8개 PDF 해시·쪽수 재검증은 `data/ui-walkthrough-20260914/verified-downloads.json`에 있다.
+
+808d4d6 이후 잔여 문제를 추가 조사했다. Figshare v5/v6/v7의metadata·RIS를 대조해15/15·17/16·19/18을 확인했고, 후보17061347.v1 PDF의19,298,271바이트·41쪽·SHA-256 및 표지를 root가 확인했다. 과거v6의 정확한 관계ID 증명과 후보 파일 확보는 구별한다. Software Heritage는10:21KST의 UI와 공식GET 모두 기존task419779186·new·progress null이었다. 운영 상태와 장애 이력에도 이 작업의 대기 원인은 확인되지 않았다. De Gruyter는 기회수 역사ZIP의 당시 Supporting Files 화면과README를 다시 대조했으며 새 다운로드로 세지 않았다.
+
+ScienceDirect의 다섯 제공리스트 및 도서관 연결을 확인했다. 총서명0건 뒤 서명 전방일치에서 시리즈1건을 찾았고, 실제 권별 소장은 최대v.122였다. 대상ISBN은0건이고 기관360LINK는 연결한171권 연구 장에 이용 가능한 전자자료가 없다고 표시했다. Google 연결의 다른ISBN 샘플도 Preface 페이지 미리보기를 제공하지 않았다. 이 결과를 같은 연구 장·다른ISBN의 원문 확보나 모든 외부 경로의 부재로 확대하지 않는다. 상세 근거는 PARTIAL-REVIEW의 추가 조사 표와 로컬 후속 보고서에 있다.
+
+사용자가 조사 범위 확대를 중단하도록 한 뒤에는 새로운 탐색이나 서비스 기능 추가 없이 결과를 정리했다. 후속 CLI4개는 모두exit0으로 종료했다. 서비스 코드 변경이 없어 기존639개 코드 검사를 다시 실행하지 않았으며, 이번 문서 변경에는 메모리 색인·변경 형식·staged 인증값 검사를 적용한다.
