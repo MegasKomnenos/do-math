@@ -1,3 +1,0 @@
-{"case": 0, "query": "10.1109/mcs.2008.931718", "expanded": true, "zero_results": false, "passed": true}
-{"case": 1, "query": "g02nonexistentliteraturezzzz12345", "expanded": true, "zero_results": true, "passed": true}
-{"case": 2, "query": "10.1007/978-1-84800-998-1", "expanded": true, "zero_results": false, "passed": true}

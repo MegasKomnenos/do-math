@@ -1,4 +1,0 @@
-Traceback (most recent call last):
-  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_source_kind.py", line 3, in <module>
-    from source_kind import assess
-ModuleNotFoundError: No module named 'source_kind'

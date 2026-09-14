@@ -1,4 +1,0 @@
-Traceback (most recent call last):
-  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_selected_summary.py", line 3, in <module>
-    from selected_summary import extract,approved
-ModuleNotFoundError: No module named 'selected_summary'

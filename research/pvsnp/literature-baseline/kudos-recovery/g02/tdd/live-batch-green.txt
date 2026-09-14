@@ -1,1 +1,0 @@
-{"query": "\"10.1109/mcs.2008.931718\" OR \"10.1007/978-1-84800-998-1\"", "records": 5, "first_matches": 1, "book_matches": 3, "passed": true}

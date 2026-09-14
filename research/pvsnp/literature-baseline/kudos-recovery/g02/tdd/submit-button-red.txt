@@ -1,8 +1,0 @@
-{"case": 0, "query": "10.1109/mcs.2008.931718", "records": 2, "matches": 1, "passed": true}
-{"case": 1, "query": "g02nonexistentliteraturezzzz12345", "records": 0, "matches": 0, "passed": true}
-{"case": 2, "query": "9782730215077", "records": 0, "matches": 0, "passed": true}
-Traceback (most recent call last):
-  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_live_submit.py", line 11, in <module>
-    payload=search_ui(page,q);assert not payload.get('_ui_retry_observations'), 'Search submit must produce response on first submission';rows=select_documents(paper,payload,q);assert bool(rows)==expected
-                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AssertionError: Search submit must produce response on first submission

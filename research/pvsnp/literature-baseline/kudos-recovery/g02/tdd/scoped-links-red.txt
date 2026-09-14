@@ -1,4 +1,0 @@
-Traceback (most recent call last):
-  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_scoped_links.py", line 3, in <module>
-    from scoped_links import select_links,download_kind
-ModuleNotFoundError: No module named 'scoped_links'

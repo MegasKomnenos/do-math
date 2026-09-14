@@ -1,5 +1,0 @@
-Traceback (most recent call last):
-  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_bmstu.py", line 3, in <module>
-    from bmstu import abstract_field
-ModuleNotFoundError: No module named 'bmstu'
-Python exit code: 1

@@ -1,4 +1,0 @@
-Traceback (most recent call last):
-  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_snapshot_progress.py", line 2, in <module>
-    from snapshot_progress import summarize
-ModuleNotFoundError: No module named 'snapshot_progress'

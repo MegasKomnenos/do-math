@@ -4,7 +4,7 @@
 # Use Codex's built-in unrestricted local permission profile in this project.
 default_permissions = ":danger-full-access"
 approval_policy = "never"
-model = "gpt-5.6-sol"
+model = "gpt-6-astra"
 model_context_window = 1000000
 model_auto_compact_token_limit = 900000
 

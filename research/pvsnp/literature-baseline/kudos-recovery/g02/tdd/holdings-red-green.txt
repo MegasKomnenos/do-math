@@ -1,4 +1,0 @@
-실물 실패: 2026-09-08 Playwright UI로 ho=t 기본 검색 범위에서 10.1007/978-1-84800-998-1 입력+Enter -> 관련된 검색결과가 없습니다.
-실물 교정 검증: 같은 화면 #searchInfoBeyondHoldings 클릭 -> hash ho=f, 3 results, 첫 Quick Look의 DOI/ISBN/2009년/2nd ed 확인. #ho0 checked=True 확인.
-원자료: intake/kudos-recovery/g02/VER-00108c1d6fee2df17ddd9c9d/summon-beyond-holdings.txt
-수리: 시작 화면 #ho0를 실제 check()로 선택. 모든 기존 ui 단계 결과는 expanded 완료 표지가 없어 재조사하며 이미 확보한 초록/서지/근거를 보존한다.

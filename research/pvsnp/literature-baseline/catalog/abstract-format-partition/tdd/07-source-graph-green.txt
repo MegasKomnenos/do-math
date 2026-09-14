@@ -1,6 +1,0 @@
-{"iteration": 1, "first_paper_id": "a", "family": "csv", "outcome": "extracted", "before": 2, "removed": 1, "remaining": 1, "group": "groups/01-extracted-csv"}
-..........................................
-----------------------------------------------------------------------
-Ran 42 tests in 45.298s
-
-OK

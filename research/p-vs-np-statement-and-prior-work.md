@@ -1,5 +1,7 @@
 # P 대 NP 문제의 정본 명제와 선행연구
 
+> 보존 자료: 2026-09-14 연구 초기화 이전의 입력·배경이다. 새 연구의 활성 계약이나 재개 지시가 아니며, 현재 상태는 `research/README.md`를 따른다. 본문의 실행 경로와 상태는 당시 기록이다.
+
 ## 결론
 
 연구 대상의 정본 명제는 `P = NP`인지 판정하는 일이다. 여기서 `P`는 결정론적 다항시간 Turing machine이 판정하는 언어의 계급이다. `NP`는 다항 길이 증명서를 결정론적 다항시간에 검증할 수 있는 언어의 계급이다. 따라서 문제는 모든 다항시간 비결정론적 계산을 다항시간 결정론적 계산으로 바꿀 수 있는지 묻는다. 이 문서는 2026-08-25를 기준일로 한다. Clay Mathematics Institute(CMI)는 현재 `P vs NP`를 `Unsolved` 아래에 둔다. 그러므로 수용된 `P = NP` 증명이나 `P ≠ NP` 증명은 이 기준일에 확인되지 않는다. [CMI 현행 문제 페이지](https://www.claymath.org/millennium/p-vs-np/), [CMI 현행 Millennium Prize Problems 목록](https://www.claymath.org/millennium-problems/).

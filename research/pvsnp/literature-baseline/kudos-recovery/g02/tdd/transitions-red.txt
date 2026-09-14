@@ -1,8 +1,0 @@
-Traceback (most recent call last):
-  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_live_transitions.py", line 31, in <module>
-    if __name__=='__main__':live()
-                            ^^^^^^
-  File "C:\math\research\pvsnp\literature-baseline\kudos-recovery\g02\test_live_transitions.py", line 15, in live
-    assert page.locator('#ho0').is_checked(),'Search must include non-holdings before corpus queries'
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AssertionError: Search must include non-holdings before corpus queries
