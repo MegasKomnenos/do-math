@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="지정한 세 문서만을 바탕으로 구성한 do-math 학습 자료"><title>어디까지 설계했고 무엇을 검증했나 · do-math 읽기</title><link rel="stylesheet" href="../assets/teach-do-math.css"><script src="../assets/teach-do-math.js" defer></script></head><body><main class="shell "><nav class="topbar" aria-label="공통 탐색"><a href="0001-do-math-overview.html">do-math · 세 문서 읽기</a><span><a href="../reference/0001-course-map.html">전체 지도</a> &nbsp; <a href="../reference/0002-glossary.html">용어집</a></span></nav><p class="eyebrow">LESSON 11 / 12 · 약 5분</p><h1>어디까지 설계했고 무엇을 검증했나</h1><div class="goal"><strong>이번 수업의 목표</strong><p>설계 채택, 실제 구현, 연구 효과의 검증을 각각 어떤 근거로 판단하는지 알 수 있습니다.</p></div>
+
+<p class="lead">설계에 ‘정지할 수 있다’고 적혀 있다는 것과 실제 프로그램을 안전하게 정지시킬 수 있다는 것은 다릅니다. 또 안전하게 실행되는 체계라고 해서 더 좋은 수학 연구를 한다는 사실까지 확인된 것은 아닙니다.</p>
+<p>세 문서의 현황을 읽을 때도 무엇을 설계했고 무엇을 실제로 검사했는지 구별해야 합니다. 문서의 기준 시점은 9차 판본의 2026-09-12 본문 개정입니다.</p>
+<h2>검사가 무엇을 확인했는지 먼저 봅니다</h2>
+<p>가장 먼저 자료가 정해진 형식에 맞는지 검사할 수 있습니다. 필수 필드와 자료형을 정한 규칙이 <strong>스키마</strong>입니다. 스키마와 참조 형식, 정규화와 예제를 검사하면 기록의 구조를 확인할 수 있습니다.</p>
+<p>그다음에는 상태 변화나 자원 계산, 판정 집계가 규칙대로 되는지 시험합니다. 문서의 규칙과 시험 사례가 제대로 연결됐는지도 대조합니다. 다만 가상의 입력으로 계산이 맞았다는 결과만으로 실제 OS나 원격 공급자에서 같은 일이 일어났다고 할 수는 없습니다.</p>
+<p>실제 실행 능력은 해당 호스트와 어댑터에서 따로 확인합니다. <strong>실행 어댑터</strong>는 실행기의 요청을 실제 모델·도구 환경에 연결하고 시작·조회·정지·수집하는 구성 요소입니다. 정확한 입력이 전달되는지, 허가하지 않은 파일에 접근할 수 없는지, 로컬과 원격 실행의 종료를 확인할 수 있는지 검증해야 합니다.</p>
+<p>마지막으로 연구 효과를 비교합니다. 대표 과제에서 필요한 지식을 실제로 찾고 올바르게 적용했는지, 다음 선택이 어떤 근거로 달라졌는지, 오류를 얼마나 발견하고 비용이 얼마나 들었는지를 봅니다. 이는 구현이 계약대로 작동하는지와 구별되는 <strong>연구 효능 평가</strong>입니다.</p><p class="source">원문: <a href="../reference/sources/design.html#L1855">통합 설계 17절</a></p><p class="source">원문: <a href="../reference/sources/design.html#L2342">통합 설계 19.8절</a></p>
+<h2>작은 실제 실행에서 전체 연구 흐름으로 넓혀 갑니다</h2>
+<p>첫 구현은 작은 실제 실행으로 어댑터의 입력·모델·도구 권한·격리·종료 능력을 확인하는 데서 시작합니다. 이 조건을 만족한 뒤 공통 활동과 실행 상태, 분리 예산, 단일 상태 ref와 복구를 구현합니다.</p>
+<p>초기에는 AI 역할이 낼 출력을 미리 만든 시험 자료, 곧 <strong>fixture</strong>로 대신해 상태 흐름을 시험할 수 있습니다. 그 결과와 실제 AI 실행의 증거는 구별해 기록합니다. 이후 실제 AI를 연결하고 Lean·동일성·목표 검증을 붙여 전체 연구 흐름을 따라가 봅니다.</p>
+<p>시간선 시험은 마지막 상태만 보는 데 그치지 않습니다. 어느 단계에서 실행기가 사라졌는지, 어떤 자료와 효과가 남았는지, 다음 일을 누가 맡는지 확인합니다. 예를 들어 Windows의 Job Object로 프로세스 수명을 관리하더라도 파일·네트워크·비밀 접근은 별도 접근 제어로 검증해야 합니다.</p><p class="source">원문: <a href="../reference/sources/design.html#L1640">통합 설계 16.1·16.1.1절</a></p><p class="source">원문: <a href="../reference/sources/design.html#L1855">통합 설계 17.1·17.2절</a></p>
+<h2>아직 확인하거나 결정해야 할 사항</h2>
+<p>통합 설계는 남은 일을 D 번호로 표시하고, 누가 언제 확인할지 정합니다. 번호만 있는 작업 목록보다 각 항목이 어느 시점의 전제인지 함께 읽는 것이 중요합니다.</p>
+<div class="table-wrap"><table><thead><tr><th>번호</th><th>남은 내용</th><th>필요한 시점</th></tr></thead><tbody>
+<tr><td>D01</td><td>실제 어댑터가 입력·격리·종료 등의 능력을 제공하는지</td><td>실운전 활성화 전</td></tr>
+<tr><td>D02</td><td>모델·계정 사이에서 실제 공급자 한도를 어떻게 공유하는지</td><td>예산 활성화 전</td></tr>
+<tr><td>D03</td><td>사용자 대화가 사라지면 계속할지 정지할지</td><td>인스턴스 생성 때 사용자 결정</td></tr>
+<tr><td>D04</td><td>검토 구성과 총예산이 충분한 신뢰와 운용성을 주는지</td><td>검토 방침 채택 전</td></tr>
+<tr><td>D05</td><td>큰 제안을 독립적으로 인증할 보조 결과로 재구성할 수 있는지</td><td>대표 제안에서 확인</td></tr>
+<tr><td>D07</td><td>검토 자리·대화 복원·답변·전면 재검토·복구가 실제로 이어지는지</td><td>해당 역할 입력 확정 전</td></tr>
+<tr><td>D08</td><td>개정 본문과 규범 묶음·역할 입력을 맞추고 다시 검증하기</td><td>개정 동작을 구현에 넘기고 활성화하기 전</td></tr>
+<tr><td>D09</td><td>지식 탐색과 재사용, 선택과 환류의 실제 효과·비용</td><td>성능 우위와 지원 범위 주장 전</td></tr>
+<tr><td>D10</td><td>초안 계약 식별자를 확정할지, 한다면 어떤 값으로 할지</td><td>묶음을 설치하고 해시로 고정하기 전</td></tr></tbody></table></div>
+<p>D06은 최초 정의 동기화를 완료한 이력으로 남아 있습니다. 이후의 동기화는 현행 규칙에 따라 진행합니다. 또한 모든 D 항목이 같은 시점에 운전을 막는 조건은 아닙니다. 프로젝트 컨텍스트는 연구 효능을 평가하지 않은 프로필도 미평가로 표시한 채 다른 활성화 조건 안에서 운전할 수 있다고 설명합니다. 그 상태에서 성능 우위를 주장할 수는 없습니다.</p><p class="source">원문: <a href="../reference/sources/design.html#L2323">통합 설계 18절</a></p><p class="source">원문: <a href="../reference/sources/design.html#L2550">통합 설계 20절</a></p><p class="source">원문: <a href="../reference/sources/project.html#section-2">P vs NP 컨텍스트 2절</a></p>
+<h2>이 문서들이 말하는 현재 위치</h2>
+<p>문서 기준으로 통합 설계 본문은 채택됐지만, D08에 해당하는 규범 묶음과 실제 역할 입력의 동기화·재검증은 미완료입니다. 프로젝트 컨텍스트는 do-math 스킬 구현 경로에 아직 구현이 없다고 기록합니다. 이번 수업에서는 그 경로나 외부 이슈를 별도로 조사하지 않았으므로, 이 내용은 세 문서가 기록한 현황입니다.</p>
+<p>같은 ‘9차’라는 이름을 사용해도 본문 내용이 바뀌었다면 새 내용에 맞는 검증이 필요합니다. 이전 검사 보고가 새 동작을 지원한다는 증거가 되지는 않습니다.</p>
+<p><strong>구현 완료</strong>에는 정의와 규범, 실제 역할 입력과 도구가 서로 맞아야 합니다. 실제 어댑터 능력과 현행 시간선 시험, 전체 연구 흐름도 확인해야 합니다. 원자료와 미완료 범위가 후속까지 전달되는지 검증하고 판본·환경·결과·남은 제한을 보존합니다. <strong>연구 성능이 더 좋은지</strong>는 대표 과제의 별도 비교로 확인합니다.</p><p class="source">원문: <a href="../reference/sources/design.html#L6">통합 설계 0절</a></p><p class="source">원문: <a href="../reference/sources/design.html#L1855">통합 설계 17.4·17.5절</a></p>
+<fieldset class="quiz" data-answer="false" data-explain="가상 입력의 규칙 검사와 실제 환경의 능력 검사는 다릅니다. 해당 호스트와 어댑터에서 실제 동작의 증거를 확인해야 합니다."><legend>가상의 상태 변화 시험이 통과했다면, 실제 Windows 격리와 원격 종료 능력도 확인된 것이다.</legend><button type="button" data-choice="true" aria-pressed="false">맞음</button><button type="button" data-choice="false" aria-pressed="false">틀림</button><p class="feedback" role="status" aria-live="polite">답을 고르면 해설이 나옵니다.</p><noscript><p>정답: 틀림. 가상 입력의 규칙 검사와 실제 환경의 능력 검사는 다릅니다. 해당 호스트와 어댑터에서 실제 동작의 증거를 확인해야 합니다.</p></noscript></fieldset>
+<fieldset class="quiz" data-answer="true" data-explain="아직 평가하지 않았다는 상태를 그대로 밝혀야 합니다. 성능 우위는 실제 효과와 비용을 평가한 범위에서 주장합니다."><legend>D09가 미평가라면, 그 평가를 근거로 연구 성능이 더 좋다고 주장할 수 없다.</legend><button type="button" data-choice="true" aria-pressed="false">맞음</button><button type="button" data-choice="false" aria-pressed="false">틀림</button><p class="feedback" role="status" aria-live="polite">답을 고르면 해설이 나옵니다.</p><noscript><p>정답: 맞음. 아직 평가하지 않았다는 상태를 그대로 밝혀야 합니다. 성능 우위는 실제 효과와 비용을 평가한 범위에서 주장합니다.</p></noscript></fieldset>
+<div class="recall"><strong>잠깐, 자기 말로 설명해 보세요</strong><p>설계 채택, 구현 완료, 연구 효능 평가를 구별해서 설명해 보세요.</p><textarea aria-label="설계 채택, 구현 완료, 연구 효능 평가를 구별해서 설명해 보세요." placeholder="먼저 생각을 적어 보고 아래 설명과 비교해 보세요. 적은 내용은 저장하거나 전송하지 않습니다."></textarea><details><summary>설명 확인하기</summary><p>설계 채택은 따를 의미와 규칙을 정한 것입니다. 구현 완료는 그 규칙이 실제 역할·도구·환경과 연구 흐름에서 작동함을 확인한 것입니다. 연구 효능 평가는 대표 과제에서 실제 연구 효과와 오류, 비용을 비교한 것입니다.</p></details></div>
+<details><summary>원문에서 이어 읽기</summary><p><a href="../reference/sources/design.html#L2323">통합 설계 §18</a>를 읽으며 방금 배운 내용이 원문에서는 어떤 조건과 절차로 설명되는지 살펴보세요.</p></details><nav class="lesson-nav" aria-label="수업 이동"><a href="0010-pvsnp-project.html">← 10강</a><a href="0001-do-math-overview.html#course">수업 목록</a><a href="0012-research-walkthrough.html">12강 →</a></nav><p class="footer">이해되지 않는 문장이나 연습 답을 대화에 보내 주세요. 그 지점부터 이어서 설명하겠습니다. 이 페이지에 적은 답은 저장하거나 전송하지 않습니다. 인쇄하면 사례의 모든 사건과 대조 설명을 함께 볼 수 있습니다.</p></main></body></html>
