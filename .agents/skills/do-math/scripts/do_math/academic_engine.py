@@ -45,7 +45,9 @@ class AcademicEngineMixin:
         created = False
         for requirement in requirements["items"]:
             if any(t.get("academic_requirement_id") == requirement["id"] and t.get("solution_basis") == basis and
-                   t.get("requirements_sha256") == current_hash for t in self.runtime["tasks"].values()): continue
+                   t.get("requirements_sha256") == current_hash and not (
+                       t.get("status") == "completed" and t.get("assessment", {}).get("current") is False)
+                   for t in self.runtime["tasks"].values()): continue
             tid = new_id("TK")
             refs = [r["id"] for r in basis["records"] if r["id"] in self.instance["knowledge"]]
             inputs = list(dict.fromkeys([*refs, *requirement["required_inputs"]]))
@@ -107,3 +109,7 @@ class AcademicEngineMixin:
             entry.setdefault("assessment_history", []).append({"execution_id": execution_id, **deepcopy(resolution)})
             if resolution["decision"] == "resolved":
                 entry.update(resolved=True, resolution_evidence=resolution["evidence"], resolution_execution_id=execution_id)
+            else:
+                entry["resolved"] = False
+                entry.pop("resolution_evidence", None)
+                entry.pop("resolution_execution_id", None)

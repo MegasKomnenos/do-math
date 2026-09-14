@@ -75,10 +75,29 @@ def evaluate_condition(condition: dict, instance: dict, runtime: dict) -> dict:
                 result = visit(node.get("arg"))
                 return "evaluation_error" if result == "evaluation_error" else "not_ready" if result == "ready" else "ready"
             if op == "relation_exists":
-                matches = [r for r in instance.get("relations", []) if isinstance(r, dict) and r.get("kind") == node.get("subkind") and r.get("source") == node.get("from_id") and r.get("target") == node.get("to_id")]
-                matches=[r for r in matches if r.get("status","active") not in {"withdrawn","invalid"} and r.get("evidence") and r.get("use_status","active") not in {"suspended","withdrawn"}]
-                if matches: basis.extend(_basis(r) for r in matches); return "ready"
-                basis.append({"absencequery": {"op": op, "subkind": node.get("subkind"), "from_id": node.get("from_id"), "to_id": node.get("to_id")}}); return "not_ready"
+                from .knowledge_io import _RELATION_FIELDS, validate_relation
+                candidates = [r for r in instance.get("relations", []) if isinstance(r, dict) and r.get("kind") == node.get("subkind") and r.get("source") == node.get("from_id") and r.get("target") == node.get("to_id")]
+                matches = []
+                for relation in candidates:
+                    basis.append(_basis(relation))
+                    if relation.get("status", "active") in {"suspended", "withdrawn", "invalid"} or relation.get("use_status", "active") in {"suspended", "withdrawn"}:
+                        continue
+                    value = {key: value for key, value in relation.items() if key in _RELATION_FIELDS}
+                    result = validate_relation(instance, value)
+                    unavailable = ("formal_result_not_usable:", "assessment_not_effective:")
+                    structural = [reason for reason in result["reasons"] if not reason.startswith(unavailable)]
+                    if structural:
+                        raise ValueError("invalid relation: " + ", ".join(structural))
+                    for record_id in dict.fromkeys([relation.get("source"), relation.get("target"), *relation.get("formal_result_refs", [])]):
+                        record = records.get(record_id)
+                        if record is not None:
+                            basis.append(_basis(record[1]))
+                    if result["valid"]:
+                        matches.append(relation)
+                if matches:
+                    return "ready"
+                basis.append({"absencequery": {"op": op, "subkind": node.get("subkind"), "from_id": node.get("from_id"), "to_id": node.get("to_id")}})
+                return "not_ready"
             if op == "task_disposition_is":
                 record = records.get(node.get("task_id"));
                 if record is None: basis.append({"absencequery": {"op": op, "task_id": node.get("task_id")}}); return "not_ready"

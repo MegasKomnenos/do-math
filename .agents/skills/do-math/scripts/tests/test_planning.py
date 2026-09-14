@@ -37,4 +37,20 @@ class PlanningTests(unittest.TestCase):
   self.assertEqual(evaluate_condition(condition,self.instance,self.runtime)['state'],'ready')
   self.instance['trust_environments']['TE-1']['status']='invalid'
   self.assertEqual(evaluate_condition(condition,self.instance,self.runtime)['state'],'not_ready')
+ def test_relation_condition_rechecks_its_proof_after_import(self):
+  from do_math.knowledge_io import import_candidate, import_relation
+  from do_math.knowledge import invalidate_knowledge
+  base = dict(kind='theorem', title='T', statement='P', explanation='E', summary='S', lean_code='theorem t : True := by trivial', declaration_names=['t'], dependencies=[])
+  instance, runtime = dict(config={'reviewers':2}, knowledge={}, relations=[]), dict(queue=[], history=[])
+  for kid in ('KN-A', 'KN-B'):
+   instance, runtime, _ = import_candidate(instance, runtime, dict(base, id=kid), source_ref='input', actor_ref='user')
+  claim = dict(kind='formally_implies', source='KN-A', target='KN-B', confirmed_scope='P implies Q')
+  instance, runtime, _ = import_candidate(instance, runtime, dict(base, id='KN-P', relation_claim=claim), source_ref='input', actor_ref='user')
+  instance['knowledge']['KN-P'].update(status='verified', formal={'status':'verified'}, identity_assessment={'effective':True, 'cycle_id':'RC-P'})
+  relation = dict(claim, evidence='proof', formal_result_refs=['KN-P'], assessment_refs=['RC-P'])
+  instance, _ = import_relation(instance, relation, source_ref='input', actor_ref='user')
+  condition = dict(op='relation_exists', subkind='formally_implies', from_id='KN-A', to_id='KN-B')
+  self.assertEqual(evaluate_condition(condition, instance, runtime)['state'], 'ready')
+  instance, runtime = invalidate_knowledge(instance, runtime, 'KN-P', reason='proof withdrawn', actor_ref='user')
+  self.assertEqual(evaluate_condition(condition, instance, runtime)['state'], 'not_ready')
 if __name__=='__main__': unittest.main()

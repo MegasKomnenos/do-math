@@ -156,10 +156,20 @@ class EngineTests(unittest.TestCase):
         self.assertIn(resumed["status"], {"paused", "budget_exhausted"})
 
     def test_work_budget_exhaustion_does_not_prevent_operations(self):
-        engine, _ = self.make(ScriptedRunner(), work_calls=1, operations_calls=3)
-        status = engine.run(max_steps=10)
-        self.assertEqual(status["status"], "budget_exhausted")
-        self.assertGreater(status["budget"]["operations"]["used"], 0)
+        runner = ScriptedRunner()
+        engine, _ = self.make(runner, work_calls=1, operations_calls=10)
+        engine.run(max_steps=3)
+        self.assertEqual(engine.runtime["queue"][0]["role"], "research_work")
+        blocked = dict(engine.runtime["queue"][0])
+        before = engine.status()["budget"]
+        self.assertEqual(before["work"]["used"], before["work"]["limit"])
+        engine._enqueue("research_plan", reason="Assess next steps with the remaining operating budget")
+        engine._save()
+        status = engine.run(max_steps=1)
+        self.assertEqual(runner.prompts[-1][0], "research_plan")
+        self.assertEqual(status["budget"]["operations"]["used"], before["operations"]["used"] + 1)
+        self.assertEqual(status["budget"]["work"]["used"], before["work"]["used"])
+        self.assertEqual(engine.runtime["queue"][0], blocked)
 
     def test_crash_recovery_and_artifact_immutability(self):
         engine, instance = self.make(ScriptedRunner())

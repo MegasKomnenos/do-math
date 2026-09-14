@@ -23,7 +23,7 @@ from .contracts import render_prompt, schema_for, all_prompt_documents, reading_
 from .formal import verify_lean, discover_lean
 from . import governance, knowledge, planning, knowledge_io
 from .input_basis import capture_sources, sources_current
-from .context_store import collect_outputs, fit_context, materialize_inputs
+from .context_store import collect_outputs, fit_context, materialize_inputs, read_source
 from .observations import ObservationTracker, CHECKPOINT_SCHEMA, recovered_checkpoint, request_checkpoint, validate_rules
 from .review_engine import ReviewEngineMixin
 from .lifecycle_engine import LifecycleEngineMixin
@@ -283,18 +283,38 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
     def _render_prompt(self, role: str, context: dict, **kwargs) -> str:
         return render_prompt(role, context, documents=self._documents[role], **kwargs)
 
-    def _input_artifacts(self, bundle: str, role: str, prompt: str, schema: dict, fitted: dict) -> dict[str, bytes]:
+    def _input_artifacts(self, bundle: str, role: str, prompt: str, schema: dict, fitted: dict,
+                         workspace: Path) -> dict[str, bytes]:
         base = f"runtime/artifacts/{bundle}"
         documents = self._documents[role]
         manifest = [*fitted["manifest"], *({"key": "implementation_document", "logical_path": document["path"],
             "path": "input/implementation/" + document["path"], "sha256": document["sha256"],
             "bytes": len(document["content"].encode("utf-8"))} for document in documents)]
-        return {f"{base}/input.txt": prompt.encode("utf-8"), f"{base}/schema.json": canonical_json(schema),
-                f"{base}/manifest.json": canonical_json(manifest),
-                **{f"{base}/input/implementation/{document['path']}": document["content"].encode("utf-8")
-                   for document in documents}}
+        artifacts = {f"{base}/input.txt": prompt.encode("utf-8"), f"{base}/schema.json": canonical_json(schema),
+                     f"{base}/manifest.json": canonical_json(manifest),
+                     **{f"{base}/input/implementation/{document['path']}": document["content"].encode("utf-8")
+                        for document in documents}}
+        for entry in fitted["manifest"]:
+            source = read_source(workspace, entry, limit=max(1, entry["bytes"]))
+            if source["status"] != "ok" or source["truncated"]:
+                raise ValueError("input catalog could not be preserved: " + entry["path"])
+            artifacts[f"{base}/{entry['path']}"] = source["bytes"]
+        return artifacts
 
     def _save(self, artifacts: dict[str, bytes] | None = None) -> None:
+        for task_id, task in self.runtime["tasks"].items():
+            if not task.get("pending_withdrawal"):
+                continue
+            live_work = any(execution.get("status") != "ended"
+                            and execution.get("role") in {"research_work", "supplemental_research"}
+                            and execution.get("action", {}).get("target") == task_id
+                            and not execution.get("action", {}).get("review_cycle_id")
+                            for execution in self.runtime["executions"].values())
+            if not live_work:
+                task["status"] = "closed"
+                task.pop("pending_withdrawal")
+                self.runtime["queue"] = [action for action in self.runtime["queue"]
+                                         if action.get("target") != task_id]
         self.runtime["updated_at"] = now()
         self.head = self.store.save(self.head, self.instance, self.runtime, artifacts=artifacts)
 
@@ -541,7 +561,13 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
                     self._save()
                     if self.runtime["status"] == "waiting":
                         break
-                action = self.runtime["queue"][0]
+                used = {pool: sum(e.get("budget_kind") == pool for e in self.runtime["executions"].values())
+                        for pool in ("work", "operations")}
+                action = next((queued for queued in self.runtime["queue"]
+                               if queued["role"] in {"formal_check", "trust_check", "trust_activate", "external_action"}
+                               or used["work" if queued["role"] in WORK_ROLES else "operations"]
+                               < self.instance["config"][("work" if queued["role"] in WORK_ROLES else "operations") + "_calls"]),
+                              self.runtime["queue"][0])
                 if action["role"] == "formal_check":
                     self._formal(action)
                 elif self._process_machine_action(action):
@@ -940,7 +966,7 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
         self.runtime["activities"][aid] = {"id": aid, "role": action["role"], "status": "active", "execution_ids": [eid]}
         self._live_execution_ids.add(eid)
         self._inline_reviewing = True
-        self._save(self._input_artifacts(input_bundle, action["role"], prompt, schema, fitted))
+        self._save(self._input_artifacts(input_bundle, action["role"], prompt, schema, fitted, workspace))
         def started(identity):
             self.runtime["executions"][eid].update(status="running", process=json_safe(identity))
             self._save()
@@ -1095,7 +1121,7 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
         self.runtime["status"] = "running"
         if role == "identity_review" and action.get("review_cycle_id"):
             self._record_review_input(action, execution_id)
-        self._save(self._input_artifacts(input_bundle, role, prompt, schema, fitted))
+        self._save(self._input_artifacts(input_bundle, role, prompt, schema, fitted, workspace))
         task = self.runtime["tasks"].get(action.get("target"), {})
         rules = self.runtime.get("task_observation_rules", {}).get(action.get("target"), task.get("initial_observation_rules", []))
         tracker = ObservationTracker(execution_id, workspace, {**config, "observation_rules": rules})
@@ -1192,6 +1218,10 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
                     raise ValueError("task contract changed during execution")
                 if not knowledge.validate_basis(execution["validity_basis"], self.instance, self.runtime)["valid"]:
                     raise ValueError("a decision dependency changed during execution")
+                _, input_instance, _ = self.store.load(execution["input_snapshot"])
+                declared_source_names = [row["name"] for row in execution["source_basis"]]
+                execution["source_basis"] = capture_sources(input_instance,
+                    [*declared_source_names, *result["output"].get("used_sources", [])])
                 if not sources_current(execution["source_basis"], self.instance):
                     raise ValueError("required source content changed during execution")
                 if execution.get("academic_requirements_sha256") and execution["academic_requirements_sha256"] != self.instance.get("academic_requirements", {}).get("sha256"):

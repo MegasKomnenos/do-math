@@ -124,6 +124,7 @@ def academic_status(instance: dict, runtime: dict, current_basis: dict | None) -
         matching = [assessment for assessment in assessments if assessment.get("requirement_id") == requirement["id"]
                     and assessment.get("solution_basis") == current_basis
                     and assessment.get("requirements_sha256") == requirements["sha256"]
+                    and runtime.get("tasks", {}).get(assessment.get("task_id"), {}).get("assessment", {}).get("current") is not False
                     and assessment.get("assessor") == "research_plan" and assessment.get("decision") == "satisfied"]
         if not matching:
             break

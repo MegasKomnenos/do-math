@@ -576,5 +576,19 @@ class LifecycleTests(unittest.TestCase):
         with self.assertRaises(ValueError): engine.control('external', changed, 'changed-payload')
 
 
+class TrustCommandTests(unittest.TestCase):
+    def test_transition_uses_the_full_recorded_verifier_command(self):
+        with tempfile.TemporaryDirectory() as directory:
+            engine = FakeEngine(directory)
+            old = engine.environment('lean-old', active=True)
+            engine.knowledge('K1', old)
+            new = engine.environment('lake-new')
+            command = ['lake-new', '--dir', 'project', 'env', 'lean']
+            engine.instance['trust_environments'][new]['toolchain']['configured_command'] = command
+            engine.control('trust', {'operation': 'transition', 'env_id': new})
+            engine.machine('trust_check')
+            self.assertEqual(engine.formal_calls[0]['lean_command'], command)
+
+
 if __name__ == '__main__':
     unittest.main()

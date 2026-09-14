@@ -590,7 +590,7 @@ class LifecycleEngineMixin:
         self.runtime['active_execution'] = execution_id
         self._save()
         toolchain = environment['toolchain']
-        command = toolchain.get('lean_command') or ([toolchain['executable']] if toolchain.get('executable') else None)
+        command = toolchain.get('lean_command') or toolchain.get('configured_command') or ([toolchain['executable']] if toolchain.get('executable') else None)
         check = validate_basis([target['basis']], self.instance, self.runtime)
         try:
             if not check['valid']: raise ValueError('trust transition basis changed: ' + ', '.join(check['reasons']))

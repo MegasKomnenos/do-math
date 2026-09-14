@@ -212,7 +212,19 @@ def apply_decision(instance: dict, runtime: dict, change: dict, *, source_ref: s
             target.setdefault("transferred_obligations", []).append({"from_task": tid, "criteria": task["completion_criteria"], "decision_id": decision_id})
             _queue(runtime, "task_contract_review", "transferred obligations require review", target=target['id'])
         task["scope_disposition"] = {"kind": disposition, "reason": reason, "decision_id": decision_id, "target_task_id": change.get("target_task_id")}
-        task["status"] = "needs_revision" if disposition == "revise" else "closed"
+        task.pop("pending_withdrawal", None)
+        live_work = [execution for execution in runtime.get("executions", {}).values()
+                     if execution.get("status") != "ended"
+                     and execution.get("role") in {"research_work", "supplemental_research"}
+                     and execution.get("action", {}).get("target") == tid
+                     and not execution.get("action", {}).get("review_cycle_id")]
+        if disposition == "withdraw" and live_work:
+            task["pending_withdrawal"] = deepcopy(task["scope_disposition"])
+            for execution in live_work:
+                execution["stop_requested"] = "task_withdrawn"
+                execution["after_stop"] = {"decision": "wait", "reason": reason}
+        else:
+            task["status"] = "needs_revision" if disposition == "revise" else "closed"
         if disposition == "revise":
             # The current contract revision may not be scheduled again until preparation authors a new revision.
             task["revision_requested"] = {"source": decision_id, "revision": task.get("revision"), "reason": reason}

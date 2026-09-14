@@ -650,10 +650,10 @@ Codex 어댑터가 완료를 반환하면 실행기는 주 JSON Schema, workspac
 2. control inbox를 순서대로 적용한다.
 3. 이전 실행기가 남긴 미종료 execution을 회수한다.
 4. 현재 수학적 해결과 학술 요구에서 필요한 후속 과제를 확인한다.
-5. queue의 첫 action을 형식·신뢰·외부 기계 action 또는 AI 역할 실행으로 처리한다.
+5. queue의 순서를 유지하면서 해당 AI 예산이 소진된 action을 건너뛰고, 남은 예산으로 진행할 수 있는 첫 AI action 또는 기계 action을 처리한다. 각 action의 권한·착수 조건은 해당 실행 경로에서 다시 검사한다.
 6. 결과와 artifact를 저장하고 후속 action·현재성을 갱신한다.
 
-AI 실행을 시작할 때 현재 예산과 grant, 대상 과제의 readiness를 다시 검사한다. 현재 Codex 어댑터는 `codex_worker.py`를 Windows Job의 루트이자 실행 래퍼로 시작한다. 루트의 PID·생성 시각과 Job 프로세스 집합을 추적하고, 래퍼는 고정 prompt·schema로 `codex exec`을 호출해 JSONL·최종 응답·상태 파일을 남긴다. 작업·운영 실행 시도 수가 설정 한도에 닿으면 `budget_exhausted`로 끝난다. grant가 없으면 action을 waiting으로 옮기며 다른 queue action은 계속할 수 있다.
+AI 실행을 시작할 때 현재 예산과 grant, 대상 과제의 readiness를 다시 검사한다. 현재 Codex 어댑터는 `codex_worker.py`를 Windows Job의 루트이자 실행 래퍼로 시작한다. 루트의 PID·생성 시각과 Job 프로세스 집합을 추적하고, 래퍼는 고정 prompt·schema로 `codex exec`을 호출해 JSONL·최종 응답·상태 파일을 남긴다. 한 예산의 실행 시도 수가 설정 한도에 닿으면 그 예산을 쓰는 요청은 queue의 원래 위치에 남기고, 다른 예산의 요청과 기계 action은 계속 검사한다. queue에 남은 요청 전부가 해당 예산의 소진으로 진행할 수 없으면 `budget_exhausted`로 끝난다. grant가 없으면 action을 waiting으로 옮기며 다른 queue action은 계속할 수 있다.
 
 실행 중 pause·close, goal·policy·계약·지식·source·학술 요구 변경, grant 철회, 운영 예산 실행의 call deadline 또는 `run` 기한을 감지하면 `stop-request.json`을 쓴다. 즉시 중단 조건이 아니면 `checkpoint_grace_seconds` 동안 이미 얻은 결과를 보존할 기회를 준 뒤 Codex 실행의 로컬 프로세스 트리를 끝낸다. 현재 실행의 실제 Job 종료와 output 수집을 확인하지만 공급자 내부 원격 호출 종료는 보증하지 않는다.
 

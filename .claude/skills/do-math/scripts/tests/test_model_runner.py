@@ -37,6 +37,7 @@ class Tests(unittest.TestCase):
    root=Path(d); ws=root/'ws'; ws.mkdir(); ev=root/'e'; r=runner.CodexModelRunner('fake'); a=Adapter({}); r._adapter=a
    with self.assertRaises(RuntimeError): r.run(prompt='x',output_schema={},workspace=ws,evidence_dir=ev,model='m',effort='low',timeout_seconds=1,on_started=lambda _:(_ for _ in ()).throw(RuntimeError()))
    self.assertTrue(a.stopped)
+   self.assertFalse(getattr(a,'resumed',False), 'a failed start record must not resume the root')
  def test_pre_start_stop_does_not_resume(self):
   with tempfile.TemporaryDirectory() as d:
    root=Path(d); ws=root/'ws'; ws.mkdir(); ev=root/'e'; r=runner.CodexModelRunner('fake'); a=Adapter({'result':'incomplete','jsonl':{}}); r._adapter=a
