@@ -80,6 +80,6 @@ test_yaml_golden_empty_typed_and_body (__main__.SpecificationTests.test_yaml_gol
 test_yaml_nested_duplicate_tags_and_aliases (__main__.SpecificationTests.test_yaml_nested_duplicate_tags_and_aliases) ... ok
 
 ----------------------------------------------------------------------
-Ran 80 tests in 5.427s
+Ran 80 tests in 3.634s
 
 OK
