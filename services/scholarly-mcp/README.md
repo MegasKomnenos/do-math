@@ -1,4 +1,4 @@
-학술자료 검색·확보용 로컬 stdio MCP 서버다. 선정한49개 자료원을 공통 도구와 자료원별 설명에 연결했다. 지원하는 기능과 실제 접근 조건은 [지원표](SUPPORT.md), 검증 근거는 [검증 기록](VALIDATION.md), 현행 계약과 작업 인계는 [후속 인계](CONTINUATION.md)를 따른다. 최초 입력은 사용자가 로컬에 제공한 `학술자료-MCP-구현-인계.md`다.
+학술자료 검색·확보용 로컬 stdio MCP 서버다. 선정한49개 자료원을 공통 도구와 자료원별 설명에 연결했다. 완료한 구현·수리와 남은 외부 조건은 [최종 구현 정리](FINAL-IMPLEMENTATION.md), 자료원별 기능은 [지원표](SUPPORT.md), 검증 근거는 [검증 기록](VALIDATION.md), 현행 계약과 작업 인계는 [후속 인계](CONTINUATION.md)를 따른다. 최초 입력은 사용자가 로컬에 제공한 `학술자료-MCP-구현-인계.md`다.
 
 2026-09-14 KST의 [partial 재검토](PARTIAL-REVIEW.md)는 잔여19항목과 13개 사이트의 실제 UI·가이드·기관 동선에서 확인한 원인 및 해결 시도를 기록한다. AMS Title OR의 잘못된 문자열 변환을 거부하고, ScienceDirect 새 세션의 제목 후보를 원 ISSN·ISBN으로 좁힌다. API HTTP 오류의 정제한 원 응답은 `evidence` artifact에서 `extract`로 확인할 수 있다. 수정 후 전체639검사가 통과했다.
 
