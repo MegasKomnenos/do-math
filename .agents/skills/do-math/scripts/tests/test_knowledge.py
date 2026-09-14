@@ -21,12 +21,18 @@ class KnowledgeTests(unittest.TestCase):
   ins,run=fixture();new,nrun=revise_knowledge(ins,run,'KN-A',{'statement':'new'},reason='correction',actor_ref='human:x')
   self.assertEqual(new['knowledge']['KN-A']['revision'],2);self.assertEqual(new['knowledge']['KN-A']['status'],'candidate');self.assertEqual(new['knowledge']['KN-A']['formal'],{});self.assertEqual(new['knowledge']['KN-A']['reviews'],[])
   self.assertEqual(new['knowledge']['KN-A']['history'][-1]['previous']['statement'],'old');self.assertTrue(new['knowledge']['KN-B']['use_suspended']);self.assertNotIn('use_suspended',new['knowledge']['KN-C'])
-  self.assertEqual(nrun['tasks']['TK-1']['status'],'waiting');self.assertEqual(nrun['tasks']['TK-2']['status'],'completed');self.assertFalse(nrun['tasks']['TK-1']['assessment']['current']);self.assertFalse(new['goal_judgments'][0]['current']);self.assertTrue(nrun['queue'])
+  self.assertEqual(nrun['tasks']['TK-1']['status'],'completed');self.assertEqual(nrun['tasks']['TK-2']['status'],'completed');self.assertFalse(nrun['tasks']['TK-1']['assessment']['current']);self.assertEqual(nrun['tasks']['TK-1']['assessment']['invalidated_reason'],'correction');self.assertFalse(new['goal_judgments'][0]['current']);self.assertTrue(nrun['queue'])
   self.assertEqual(ins['knowledge']['KN-A']['statement'],'old')
  def test_task_dependencies_are_strong_reassessment_edges(self):
   ins,run=fixture();run['tasks']['TK-3']={'id':'TK-3','status':'completed','dependencies':['KN-B'],'inputs':[],'reuse':[],'results':[],'assessment':{'decision':'completed','current':True}}
   new,nrun=revise_knowledge(ins,run,'KN-A',{'statement':'new'},reason='dependency changed',actor_ref='human:x')
-  self.assertTrue(new['knowledge']['KN-B']['use_suspended']);self.assertEqual(nrun['tasks']['TK-3']['status'],'waiting');self.assertFalse(nrun['tasks']['TK-3']['assessment']['current'])
+  self.assertTrue(new['knowledge']['KN-B']['use_suspended']);self.assertEqual(nrun['tasks']['TK-3']['status'],'completed');self.assertFalse(nrun['tasks']['TK-3']['assessment']['current'])
+ def test_terminal_tasks_keep_disposition_and_unfinished_tasks_wait(self):
+  ins,run=fixture();run['tasks']['TK-4']={'id':'TK-4','status':'closed','inputs':['KN-B'],'reuse':[],'results':[],'scope_disposition':{'kind':'withdraw','reason':'user withdrawal'},'assessment':{'decision':'closed','current':True}};run['tasks']['TK-5']={'id':'TK-5','status':'planned','inputs':['KN-B'],'reuse':[],'results':[]}
+  new,nrun=invalidate_knowledge(ins,run,'KN-A',reason='false',actor_ref='review:1')
+  self.assertEqual(nrun['tasks']['TK-1']['status'],'completed');self.assertEqual(nrun['tasks']['TK-1']['assessment']['invalidated_reason'],'false');self.assertNotIn('status_before_reassessment',nrun['tasks']['TK-1'])
+  self.assertEqual(nrun['tasks']['TK-4']['status'],'closed');self.assertFalse(nrun['tasks']['TK-4']['assessment']['current'])
+  self.assertEqual(nrun['tasks']['TK-5']['status'],'waiting');self.assertEqual(nrun['tasks']['TK-5']['status_before_reassessment'],'planned')
  def test_invalidation_withdraws_without_deleting_and_relation_neighbor_is_preserved(self):
   ins,run=fixture();new,nrun=invalidate_knowledge(ins,run,'KN-A',reason='false',actor_ref='review:1')
   self.assertIn('KN-A',new['knowledge']);self.assertEqual(new['knowledge']['KN-A']['status'],'withdrawn');self.assertEqual(new['knowledge']['KN-C']['status'],'verified');self.assertEqual(nrun['tasks']['TK-2']['status'],'completed')

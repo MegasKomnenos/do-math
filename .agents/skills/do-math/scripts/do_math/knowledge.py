@@ -219,8 +219,10 @@ def _propagate(instance: dict, runtime: dict, roots: set[str], reason: str) -> N
     tasks_changed: list[str] = []
     for task_id, task in runtime.get("tasks", {}).items():
         if _explicit_refs({key: task.get(key) for key in ("dependencies", "inputs", "reuse", "results", "assessment")}, known_ids) & affected:
-            task.setdefault("status_before_reassessment", task.get("status"))
-            task["status"] = "waiting"
+            # completed and closed are absorbing: keep the sealed disposition and only stop the current use of its assessment.
+            if task.get("status") not in {"completed", "closed"}:
+                task.setdefault("status_before_reassessment", task.get("status"))
+                task["status"] = "waiting"
             if isinstance(task.get("assessment"), dict):
                 task["assessment"]["current"] = False
                 task["assessment"]["invalidated_reason"] = reason

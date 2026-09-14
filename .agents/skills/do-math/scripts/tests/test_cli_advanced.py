@@ -77,7 +77,8 @@ class AdvancedCliTests(unittest.TestCase):
         store.save(head, instance, runtime)
         invalid = self.control("knowledge", {"operation": "invalidate", "id": "KN-1", "reason": "withdrawn"})
         self.assertEqual((invalid[0], invalid[1]["effect"]), (0, "applied"))
-        _, instance, runtime = self.load(); self.assertEqual(instance["knowledge"]["KN-1"]["status"], "withdrawn"); self.assertTrue(instance["knowledge"]["KN-2"]["use_suspended"]); self.assertEqual(runtime["tasks"]["TK-1"]["status"], "waiting")
+        _, instance, runtime = self.load(); self.assertEqual(instance["knowledge"]["KN-1"]["status"], "withdrawn"); self.assertTrue(instance["knowledge"]["KN-2"]["use_suspended"])
+        self.assertEqual(runtime["tasks"]["TK-1"]["status"], "completed"); self.assertFalse(runtime["tasks"]["TK-1"]["assessment"]["current"]); self.assertEqual(runtime["tasks"]["TK-1"]["assessment"]["invalidated_reason"], "withdrawn")
         trust = self.control("trust", {"operation": "register", "toolchain": {"executable": "lean", "sha256": "abc"}, "allowed_axioms": []})
         self.assertEqual((trust[0], trust[1]["effect"]), (0, "applied")); self.assertTrue(self.load()[1]["trust_environments"])
 

@@ -268,6 +268,15 @@ class AcademicEngineTests(PurposeHarness):
                     break
             self.assertIsNotNone(operation)
             self.assertEqual((operation["status"], operation.get("succeeded")), expected)
+            task = self._academic_tasks(engine)[0]
+            # The loop stops before any planner assessment exists, so the status checks below hold even without the
+            # receipt gate. Submit the planner's completed assessment to that gate against the actual ledger state.
+            completed = {"task_id": task["id"], "decision": "completed", "reason": "The returned report says the manuscript was sent.",
+                         "criteria_results": [{"criterion": "send manuscript", "satisfied": True,
+                                               "evidence": "The worker report states that the manuscript request was sent."}]}
+            with self.assertRaisesRegex(ValueError, "lacks confirmed successful required external effects"):
+                engine._record_academic_assessment(task, completed, "EX-planner-fixture")
+            self.assertFalse([entry for entry in engine.runtime.get("academic_assessments", []) if entry.get("task_id") == task["id"]])
             self.assertNotEqual(engine.status()["academic_validation"]["status"], "completed")
             self.assertNotEqual(engine.runtime["status"], "completed")
         self.assertEqual(received, ["/reject", "/unknown"])

@@ -106,7 +106,7 @@ GLOSSARY의 보편 상태가 개념의 뜻을 소유한다. 아래 값은 현재
 | `completed` | 완료 기준 전건과 근거 있는 독립 완료 판정을 기록한 흡수 상태여야 한다 |
 | `closed` | 철회·이전·대체의 근거와 범위 처분으로 닫은 흡수 상태여야 한다 |
 
-같은 이름의 source가 갱신돼도 `completed` 과제의 상태와 완료 이력은 유지한다. 현재 완료 판정은 `current=false`, `invalidated_reason`으로 사용을 정지한다. 단순 `task_disposition_is(completed)` 이력 질의는 완료 사실을 유지하지만, 실제 task dependency의 착수 검사는 낡은 완료 판정을 사용할 수 없다. 새 검증 의무는 후속 과제로 연결한다.
+같은 이름의 source가 갱신되거나, 과제가 참조한 지식이 개정·무효화되거나, 그 지식의 신뢰 환경이 무효화돼도 `completed`·`closed` 과제의 상태와 종결 이력은 유지한다. 현재 완료 판정은 `current=false`, `invalidated_reason`으로 사용을 정지한다. 단순 `task_disposition_is(completed)` 이력 질의는 완료 사실을 유지하지만, 실제 task dependency의 착수 검사는 낡은 완료 판정을 사용할 수 없다. 새 검증 의무는 후속 과제로 연결한다. 아직 끝나지 않은 과제가 지식 변경의 영향을 받으면 `waiting`으로 돌아가 현재 착수 검사를 다시 받는다.
 
 ### 목표와 학술 후속 상태
 

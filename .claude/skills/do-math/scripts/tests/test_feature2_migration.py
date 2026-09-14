@@ -44,7 +44,9 @@ class Feature2MigrationTests(unittest.TestCase):
         self.assertFalse(engine.instance['goal_judgments'][0]['current'])
         self.assertEqual(engine.instance['goal_status'], 'unresolved')
         self.assertEqual(engine.runtime['status'], 'ready')
-        self.assertEqual(engine.runtime['tasks']['T1']['status'], 'waiting')
+        self.assertEqual(engine.runtime['tasks']['T1']['status'], 'completed')
+        self.assertTrue(any(event.get('kind') == 'knowledge_reassessment_required' and 'T1' in event['tasks']
+                            for event in engine.runtime['history']))
         self.assertEqual(len([a for a in engine.runtime['queue'] if a['role'] == 'formal_check']), 1)
         state = deepcopy((engine.instance, engine.runtime))
         engine._upgrade_runtime()

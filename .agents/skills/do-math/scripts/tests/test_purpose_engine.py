@@ -369,7 +369,10 @@ class PurposeEngineTests(PurposeHarness):
         control(self.repo, engine.instance['id'], 'knowledge', config={'operation': 'invalidate', 'id': kid, 'reason': 'The previous explanation is disputed and its use is withdrawn'})
         engine.process_controls()
         self.assertEqual(engine.instance['goal_status'], 'unresolved')
-        self.assertEqual(engine.runtime['tasks'][downstream['id']]['status'], 'waiting')
+        suspended = engine.runtime['tasks'][downstream['id']]
+        self.assertEqual(suspended['status'], 'completed')
+        self.assertFalse(suspended['assessment']['current'])
+        self.assertIn('disputed', suspended['assessment']['invalidated_reason'])
         self.assertFalse(engine.instance['goal_judgments'][-1]['current'])
         control(self.repo, engine.instance['id'], 'knowledge', config={'operation': 'revise', 'id': kid,
             'changes': {'explanation': EXPLANATION + ' This revision explicitly resolves the disputed domain description.'},
@@ -379,7 +382,10 @@ class PurposeEngineTests(PurposeHarness):
         self.assertEqual(item['status'], 'verified')
         self.assertNotEqual(item['review_cycle_id'], previous_cycle)
         self.assertIn(previous_cycle, item['review_history'])
-        self.assertGreaterEqual(runner.work_order.count('Dependent'), 2)
+        preserved = engine.runtime['tasks'][downstream['id']]
+        self.assertEqual(preserved['status'], 'completed')
+        self.assertFalse(preserved['assessment']['current'])
+        self.assertEqual(runner.work_order.count('Dependent'), 1)
         self.assertTrue(engine.instance['goal_judgments'][-1].get('current', True))
 
     def test_work_budget_execution_is_not_bounded_by_operations_call_timeout(self):
