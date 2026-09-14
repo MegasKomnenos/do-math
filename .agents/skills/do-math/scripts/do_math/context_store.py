@@ -14,7 +14,7 @@ from .repository import canonical_json
 _REPARSE_POINT = 0x400
 _CATALOG_KEYS = (
     "recent_history", "tasks", "knowledge_catalog", "eligible_knowledge",
-    "relations", "sources", "user_inputs", "open_questions", "goal_judgments",
+    "relations", "sources", "user_inputs", "open_questions", "goal_judgments", "preparation_history",
 )
 
 

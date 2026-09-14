@@ -1,0 +1,381 @@
+{
+  "$id": "https://do-math.invalid/schemas/draft/9/task",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "const": "waiting"
+          }
+        },
+        "required": [
+          "state"
+        ]
+      },
+      "then": {
+        "required": [
+          "waiting"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "const": "completed"
+          }
+        },
+        "required": [
+          "state"
+        ]
+      },
+      "then": {
+        "required": [
+          "completion_ref"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "const": "closed"
+          }
+        },
+        "required": [
+          "state"
+        ]
+      },
+      "then": {
+        "required": [
+          "closure_ref"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "enum": [
+              "planned",
+              "active",
+              "completed",
+              "closed"
+            ]
+          }
+        }
+      },
+      "then": {
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "waiting"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "const": "completed"
+          }
+        },
+        "required": [
+          "state"
+        ]
+      },
+      "then": {
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "closure_ref"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "const": "closed"
+          }
+        },
+        "required": [
+          "state"
+        ]
+      },
+      "then": {
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "completion_ref"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "enum": [
+              "planned",
+              "active",
+              "waiting"
+            ]
+          }
+        }
+      },
+      "then": {
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "completion_ref"
+              ]
+            },
+            {
+              "required": [
+                "closure_ref"
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "properties": {
+    "closure_ref": {
+      "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+    },
+    "completion_ref": {
+      "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+    },
+    "contract": {
+      "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/task_contract"
+    },
+    "followups": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "input_refs": {
+            "items": {
+              "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+            },
+            "minItems": 0,
+            "type": "array",
+            "uniqueItems": true
+          },
+          "kind": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "owner": {
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/id"
+              },
+              "kind": {
+                "enum": [
+                  "instance",
+                  "task",
+                  "activity"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "id"
+            ],
+            "type": "object"
+          },
+          "reason": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "wake": {
+            "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/wake"
+          }
+        },
+        "required": [
+          "kind",
+          "owner",
+          "input_refs",
+          "wake",
+          "reason"
+        ],
+        "type": "object"
+      },
+      "minItems": 0,
+      "type": "array"
+    },
+    "id": {
+      "allOf": [
+        {
+          "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/id"
+        },
+        {
+          "pattern": "^T-"
+        }
+      ]
+    },
+    "remaining_scope_ids": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 0,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "research_execution_ids": {
+      "items": {
+        "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/id_E"
+      },
+      "minItems": 0,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "schema_version": {
+      "const": "do-math-draft/task/9"
+    },
+    "scope_dispositions": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "evidence_refs": {
+            "items": {
+              "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+            },
+            "minItems": 0,
+            "type": "array",
+            "uniqueItems": true
+          },
+          "scope_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "successor_task_ids": {
+            "items": {
+              "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/id_T"
+            },
+            "minItems": 0,
+            "type": "array",
+            "uniqueItems": true
+          },
+          "value": {
+            "enum": [
+              "fulfilled",
+              "waived",
+              "transferred",
+              "open"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "scope_id",
+          "value",
+          "evidence_refs",
+          "successor_task_ids"
+        ],
+        "type": "object"
+      },
+      "minItems": 0,
+      "type": "array"
+    },
+    "state": {
+      "enum": [
+        "planned",
+        "active",
+        "waiting",
+        "completed",
+        "closed"
+      ],
+      "type": "string"
+    },
+    "waiting": {
+      "additionalProperties": false,
+      "properties": {
+        "next_owner": {
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/id"
+            },
+            "kind": {
+              "enum": [
+                "instance",
+                "task",
+                "activity"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "id"
+          ],
+          "type": "object"
+        },
+        "target_refs": {
+          "items": {
+            "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+          },
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "wait_kind": {
+          "enum": [
+            "user_decision",
+            "research_input",
+            "validation",
+            "external_event",
+            "execution_repair"
+          ],
+          "type": "string"
+        },
+        "wake": {
+          "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/wake"
+        }
+      },
+      "required": [
+        "wait_kind",
+        "target_refs",
+        "next_owner",
+        "wake"
+      ],
+      "type": "object"
+    }
+  },
+  "required": [
+    "schema_version",
+    "id",
+    "contract",
+    "state",
+    "research_execution_ids",
+    "scope_dispositions",
+    "remaining_scope_ids",
+    "followups"
+  ],
+  "title": "task",
+  "type": "object",
+  "x-contract-id": "do-math-draft/task/9",
+  "x-id-prefix": "T",
+  "x-owner-section": "5,9.4,19.5",
+  "x-storage": "runtime/tasks/{id}/record.json"
+}

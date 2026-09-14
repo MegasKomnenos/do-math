@@ -1,0 +1,2 @@
+# Preserve captured bytes despite the original source tree's text normalization.
+* -text !eol -whitespace

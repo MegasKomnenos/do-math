@@ -1,0 +1,1379 @@
+{
+  "$id": "https://do-math.invalid/schemas/draft/9/execution",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "actor_kind": {
+            "const": "ai"
+          }
+        },
+        "required": [
+          "actor_kind"
+        ]
+      },
+      "then": {
+        "required": [
+          "budget_kind",
+          "context_origin"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "actor_kind": {
+            "const": "machine"
+          }
+        },
+        "required": [
+          "actor_kind"
+        ]
+      },
+      "then": {
+        "allOf": [
+          {
+            "required": [
+              "execution_deadline"
+            ]
+          },
+          {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "budget_kind"
+                  ]
+                },
+                {
+                  "required": [
+                    "context_origin"
+                  ]
+                },
+                {
+                  "required": [
+                    "operational_review_mode"
+                  ]
+                },
+                {
+                  "required": [
+                    "next_operational_review_at"
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "budget_kind": {
+            "const": "operations"
+          }
+        },
+        "required": [
+          "budget_kind"
+        ]
+      },
+      "then": {
+        "allOf": [
+          {
+            "required": [
+              "execution_deadline"
+            ]
+          },
+          {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "next_operational_review_at"
+                  ]
+                },
+                {
+                  "required": [
+                    "operational_review_mode"
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "budget_kind": {
+            "const": "work"
+          }
+        },
+        "required": [
+          "budget_kind"
+        ]
+      },
+      "then": {
+        "allOf": [
+          {
+            "required": [
+              "operational_review_mode"
+            ]
+          },
+          {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "execution_deadline"
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "operational_review_mode": {
+            "const": "periodic"
+          }
+        },
+        "required": [
+          "operational_review_mode"
+        ]
+      },
+      "then": {
+        "required": [
+          "next_operational_review_at"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "const": "stopping"
+          }
+        },
+        "required": [
+          "state"
+        ]
+      },
+      "then": {
+        "required": [
+          "stop_phase",
+          "stop_requested_at",
+          "stop_cause"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "enum": [
+              "queued",
+              "starting",
+              "running",
+              "ended"
+            ]
+          }
+        }
+      },
+      "then": {
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "stop_phase"
+              ]
+            },
+            {
+              "required": [
+                "stop_checkpoint_deadline"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "stop_phase": {
+            "const": "checkpointing"
+          }
+        },
+        "required": [
+          "stop_phase"
+        ]
+      },
+      "then": {
+        "required": [
+          "stop_checkpoint_deadline"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "const": "ended"
+          }
+        },
+        "required": [
+          "state"
+        ]
+      },
+      "then": {
+        "required": [
+          "end"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "enum": [
+              "queued",
+              "starting",
+              "running",
+              "stopping"
+            ]
+          }
+        }
+      },
+      "then": {
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "end"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "activity_kind": {
+            "const": "research_work"
+          }
+        },
+        "required": [
+          "activity_kind"
+        ]
+      },
+      "then": {
+        "required": [
+          "task_id",
+          "task_revision"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "const": "queued"
+          }
+        },
+        "required": [
+          "state"
+        ]
+      },
+      "then": {
+        "allOf": [
+          {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "process"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "properties": {
+              "provider_operation_ids": {
+                "maxItems": 0
+              },
+              "reservation_ids": {
+                "maxItems": 0
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "const": "running"
+          }
+        },
+        "required": [
+          "state"
+        ]
+      },
+      "then": {
+        "required": [
+          "process"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "activity_kind": {
+            "const": "research_work"
+          },
+          "state": {
+            "const": "running"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "self_check_revision",
+          "self_check_rules",
+          "observation_clock_anchor",
+          "next_self_check_at"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "operational_review_mode": {
+            "const": "event_driven"
+          }
+        },
+        "required": [
+          "next_operational_review_at",
+          "operational_review_mode"
+        ]
+      },
+      "then": {
+        "required": [
+          "explicit_review_basis_ref"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "activity_kind": {
+            "const": "research_preparation"
+          }
+        },
+        "required": [
+          "activity_kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "stage": {
+            "enum": [
+              "drafting"
+            ],
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "activity_kind": {
+            "const": "research_plan"
+          }
+        },
+        "required": [
+          "activity_kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "stage": {
+            "enum": [
+              "selecting"
+            ],
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "activity_kind": {
+            "const": "research_work"
+          }
+        },
+        "required": [
+          "activity_kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "stage": {
+            "enum": [
+              "performing"
+            ],
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "activity_kind": {
+            "const": "task_contract_review"
+          }
+        },
+        "required": [
+          "activity_kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "stage": {
+            "enum": [
+              "assessing"
+            ],
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "activity_kind": {
+            "const": "identity_review"
+          }
+        },
+        "required": [
+          "activity_kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "stage": {
+            "enum": [
+              "planning",
+              "reviewing",
+              "clarifying",
+              "judging"
+            ],
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "activity_kind": {
+            "const": "goal_audit"
+          }
+        },
+        "required": [
+          "activity_kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "stage": {
+            "enum": [
+              "assessing"
+            ],
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "activity_kind": {
+            "const": "operational_review"
+          }
+        },
+        "required": [
+          "activity_kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "stage": {
+            "enum": [
+              "diagnosing",
+              "checking_recovery"
+            ],
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "activity_kind": {
+            "const": "intent_interpretation"
+          }
+        },
+        "required": [
+          "activity_kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "stage": {
+            "enum": [
+              "interpreting",
+              "checking"
+            ],
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "activity_kind": {
+            "const": "supplemental_research"
+          }
+        },
+        "required": [
+          "activity_kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "stage": {
+            "enum": [
+              "investigating"
+            ],
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "activity_kind": {
+            "const": "maintenance"
+          }
+        },
+        "required": [
+          "activity_kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "stage": {
+            "enum": [
+              "initializing",
+              "integrating",
+              "transitioning",
+              "migrating"
+            ],
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "else": {
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "output_phase"
+              ]
+            },
+            {
+              "required": [
+                "role_slot_id"
+              ]
+            }
+          ]
+        }
+      },
+      "if": {
+        "properties": {
+          "activity_kind": {
+            "const": "identity_review"
+          },
+          "stage": {
+            "enum": [
+              "reviewing",
+              "clarifying",
+              "judging"
+            ]
+          }
+        },
+        "required": [
+          "activity_kind",
+          "stage"
+        ]
+      },
+      "then": {
+        "allOf": [
+          {
+            "required": [
+              "output_phase",
+              "role_slot_id"
+            ]
+          },
+          {
+            "if": {
+              "properties": {
+                "stage": {
+                  "const": "reviewing"
+                }
+              },
+              "required": [
+                "stage"
+              ]
+            },
+            "then": {
+              "properties": {
+                "output_phase": {
+                  "enum": [
+                    "initial"
+                  ],
+                  "type": "string"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "stage": {
+                  "const": "clarifying"
+                }
+              },
+              "required": [
+                "stage"
+              ]
+            },
+            "then": {
+              "properties": {
+                "output_phase": {
+                  "enum": [
+                    "organize",
+                    "answer"
+                  ],
+                  "type": "string"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "stage": {
+                  "const": "judging"
+                }
+              },
+              "required": [
+                "stage"
+              ]
+            },
+            "then": {
+              "properties": {
+                "output_phase": {
+                  "enum": [
+                    "judge"
+                  ],
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "properties": {
+    "activity_kind": {
+      "enum": [
+        "research_preparation",
+        "research_plan",
+        "research_work",
+        "task_contract_review",
+        "identity_review",
+        "goal_audit",
+        "operational_review",
+        "intent_interpretation",
+        "supplemental_research",
+        "maintenance"
+      ],
+      "type": "string"
+    },
+    "actor_kind": {
+      "enum": [
+        "ai",
+        "machine"
+      ],
+      "type": "string"
+    },
+    "authority_refs": {
+      "items": {
+        "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "budget_kind": {
+      "enum": [
+        "work",
+        "operations"
+      ],
+      "type": "string"
+    },
+    "checkpoint_refs": {
+      "items": {
+        "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+      },
+      "minItems": 0,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "context_origin": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "fresh"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "execution_ids": {
+              "items": {
+                "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/id_E"
+              },
+              "minItems": 1,
+              "type": "array",
+              "uniqueItems": true
+            },
+            "kind": {
+              "enum": [
+                "continued",
+                "restored",
+                "replacement"
+              ],
+              "type": "string"
+            },
+            "transcript_ref": {
+              "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/artifact_ref"
+            }
+          },
+          "required": [
+            "kind",
+            "execution_ids",
+            "transcript_ref"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "continuation_of": {
+      "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/id_E"
+    },
+    "created_at": {
+      "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/instant"
+    },
+    "end": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "cause": {
+                "properties": {
+                  "code": {
+                    "const": "context_overflow"
+                  }
+                },
+                "required": [
+                  "code"
+                ]
+              }
+            },
+            "required": [
+              "cause"
+            ]
+          },
+          "then": {
+            "required": [
+              "overflow"
+            ]
+          }
+        }
+      ],
+      "properties": {
+        "actual_scope": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "description": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "evidence_refs": {
+                "items": {
+                  "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+                },
+                "minItems": 0,
+                "type": "array",
+                "uniqueItems": true
+              },
+              "id": {
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "description",
+              "evidence_refs"
+            ],
+            "type": "object"
+          },
+          "minItems": 0,
+          "type": "array"
+        },
+        "artifact_refs": {
+          "items": {
+            "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+          },
+          "minItems": 0,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "at": {
+          "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/instant"
+        },
+        "barrier_evidence_refs": {
+          "items": {
+            "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+          },
+          "minItems": 0,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "cause": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "evidence_refs": {
+              "items": {
+                "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+              },
+              "minItems": 0,
+              "type": "array",
+              "uniqueItems": true
+            },
+            "message": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "code",
+            "message",
+            "evidence_refs"
+          ],
+          "type": "object"
+        },
+        "kind": {
+          "enum": [
+            "output_accepted",
+            "execution_incomplete",
+            "cancelled",
+            "start_failed"
+          ],
+          "type": "string"
+        },
+        "next_owner": {
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/id"
+            },
+            "kind": {
+              "enum": [
+                "instance",
+                "task",
+                "activity"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "id"
+          ],
+          "type": "object"
+        },
+        "outstanding_reservation_ids": {
+          "items": {
+            "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/id_RR"
+          },
+          "minItems": 0,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "overflow": {
+          "additionalProperties": false,
+          "properties": {
+            "component_tokens": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "component": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "tokens": {
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "component",
+                  "tokens"
+                ],
+                "type": "object"
+              },
+              "minItems": 1,
+              "type": "array"
+            },
+            "limit": {
+              "maximum": 9007199254740991,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "component_tokens",
+            "limit"
+          ],
+          "type": "object"
+        },
+        "remaining_scope": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "description": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "evidence_refs": {
+                "items": {
+                  "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+                },
+                "minItems": 0,
+                "type": "array",
+                "uniqueItems": true
+              },
+              "id": {
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "description",
+              "evidence_refs"
+            ],
+            "type": "object"
+          },
+          "minItems": 0,
+          "type": "array"
+        },
+        "stop_reasons": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "provider_operation_id": {
+                "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/id"
+              },
+              "stop_reason": {
+                "enum": [
+                  "end_turn",
+                  "max_output",
+                  "context_overflow",
+                  "cancelled",
+                  "error"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "provider_operation_id",
+              "stop_reason"
+            ],
+            "type": "object"
+          },
+          "minItems": 0,
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "at",
+        "cause",
+        "actual_scope",
+        "remaining_scope",
+        "artifact_refs",
+        "barrier_evidence_refs",
+        "outstanding_reservation_ids",
+        "next_owner",
+        "stop_reasons"
+      ],
+      "type": "object"
+    },
+    "execution_deadline": {
+      "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/instant"
+    },
+    "explicit_review_basis_ref": {
+      "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+    },
+    "id": {
+      "allOf": [
+        {
+          "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/id"
+        },
+        {
+          "pattern": "^E-"
+        }
+      ]
+    },
+    "input_manifest_ref": {
+      "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+    },
+    "next_operational_review_at": {
+      "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/instant"
+    },
+    "next_self_check_at": {
+      "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/instant"
+    },
+    "observation_clock_anchor": {
+      "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/instant"
+    },
+    "operational_review_mode": {
+      "enum": [
+        "event_driven",
+        "periodic"
+      ],
+      "type": "string"
+    },
+    "output_phase": {
+      "enum": [
+        "initial",
+        "judge",
+        "answer",
+        "organize"
+      ],
+      "type": "string"
+    },
+    "output_schema_id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "owner_activity_id": {
+      "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/id_AC"
+    },
+    "paused_maintenance_authorization": {
+      "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/paused_maintenance_authorization"
+    },
+    "process": {
+      "additionalProperties": false,
+      "properties": {
+        "creation_filetime": {
+          "pattern": "^[0-9]+$",
+          "type": "string"
+        },
+        "handle_observation_ref": {
+          "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/artifact_ref"
+        },
+        "image_path": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "job_id": {
+          "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/id"
+        },
+        "pid": {
+          "maximum": 9007199254740991,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "pid",
+        "creation_filetime",
+        "image_path",
+        "job_id",
+        "handle_observation_ref"
+      ],
+      "type": "object"
+    },
+    "profile_ref": {
+      "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+    },
+    "provider_operation_ids": {
+      "items": {
+        "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/id_PO"
+      },
+      "minItems": 0,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "reservation_ids": {
+      "items": {
+        "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/id_RR"
+      },
+      "minItems": 0,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "role_slot_id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "do-math-draft/execution/9"
+    },
+    "self_check_revision": {
+      "maximum": 9007199254740991,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "self_check_rules": {
+      "items": {
+        "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/observation_rule"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "self_checks": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "attempts_ref": {
+            "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/artifact_ref"
+          },
+          "event_ids": {
+            "items": {
+              "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/id_EVT"
+            },
+            "minItems": 1,
+            "type": "array",
+            "uniqueItems": true
+          },
+          "evidence_refs": {
+            "items": {
+              "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+            },
+            "minItems": 0,
+            "type": "array",
+            "uniqueItems": true
+          },
+          "method_difference": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "next_method": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "results": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "description": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "evidence_refs": {
+                  "items": {
+                    "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+                  },
+                  "minItems": 0,
+                  "type": "array",
+                  "uniqueItems": true
+                },
+                "id": {
+                  "minLength": 1,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "description",
+                "evidence_refs"
+              ],
+              "type": "object"
+            },
+            "minItems": 0,
+            "type": "array"
+          },
+          "rule_revision": {
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "submitted_at": {
+            "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/instant"
+          },
+          "value": {
+            "enum": [
+              "progress",
+              "no_progress",
+              "contract_mismatch"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "event_ids",
+          "rule_revision",
+          "value",
+          "results",
+          "evidence_refs",
+          "attempts_ref",
+          "next_method",
+          "method_difference",
+          "submitted_at"
+        ],
+        "type": "object"
+      },
+      "minItems": 0,
+      "type": "array"
+    },
+    "stage": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "state": {
+      "enum": [
+        "queued",
+        "starting",
+        "running",
+        "stopping",
+        "ended"
+      ],
+      "type": "string"
+    },
+    "stop_cause": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "evidence_refs": {
+          "items": {
+            "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+          },
+          "minItems": 0,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "message": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "message",
+        "evidence_refs"
+      ],
+      "type": "object"
+    },
+    "stop_checkpoint_deadline": {
+      "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/instant"
+    },
+    "stop_phase": {
+      "enum": [
+        "checkpointing",
+        "terminating"
+      ],
+      "type": "string"
+    },
+    "stop_requested_at": {
+      "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/instant"
+    },
+    "task_id": {
+      "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/id_T"
+    },
+    "task_revision": {
+      "maximum": 9007199254740991,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "workspace": {
+      "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/path"
+    }
+  },
+  "required": [
+    "schema_version",
+    "id",
+    "owner_activity_id",
+    "activity_kind",
+    "stage",
+    "actor_kind",
+    "profile_ref",
+    "input_manifest_ref",
+    "output_schema_id",
+    "authority_refs",
+    "workspace",
+    "state",
+    "created_at",
+    "provider_operation_ids",
+    "reservation_ids",
+    "checkpoint_refs"
+  ],
+  "title": "execution",
+  "type": "object",
+  "x-contract-id": "do-math-draft/execution/9",
+  "x-id-prefix": "E",
+  "x-owner-section": "6,12,19.4",
+  "x-storage": "runtime/executions/{id}/record.json"
+}

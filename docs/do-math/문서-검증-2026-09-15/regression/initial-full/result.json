@@ -1,0 +1,78 @@
+{
+  "tests_run": 272,
+  "passed": false,
+  "failures": [
+    {
+      "test": "test_actual_signatures_preserve_binders_and_unicode (test_formal.T.test_actual_signatures_preserve_binders_and_unicode)",
+      "traceback": "Traceback (most recent call last):\n  File \"C:\\math\\.skill-workspace\\do-math-docs-20260914\\verification-20260915-v1\\skill\\scripts\\tests\\test_formal.py\", line 22, in test_actual_signatures_preserve_binders_and_unicode\n    self.assertEqual(r['status'],'verified');self.assertIn('(n : Nat)',r['declaration_signatures']['good']);self.assertIn('α',r['declaration_signatures']['unicodeGood'])\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: 'unavailable' != 'verified'\n- unavailable\n+ verified\n\n"
+    },
+    {
+      "test": "test_external_retry_reuses_operation_identity_only_after_known_failure (test_lifecycle_engine.LifecycleTests.test_external_retry_reuses_operation_identity_only_after_known_failure)",
+      "traceback": "Traceback (most recent call last):\n  File \"C:\\math\\.skill-workspace\\do-math-docs-20260914\\verification-20260915-v1\\skill\\scripts\\tests\\test_lifecycle_engine.py\", line 511, in test_external_retry_reuses_operation_identity_only_after_known_failure\n    self.assertEqual((confirmed['status'], confirmed['succeeded']), ('confirmed', True))\nAssertionError: Tuples differ: ('unknown', None) != ('confirmed', True)\n\nFirst differing element 0:\n'unknown'\n'confirmed'\n\n- ('unknown', None)\n+ ('confirmed', True)\n"
+    }
+  ],
+  "errors": [
+    {
+      "test": "test_duplicate_json_keys_fail (test_preflight.PreflightTests.test_duplicate_json_keys_fail)",
+      "traceback": "Traceback (most recent call last):\n  File \"C:\\math\\.skill-workspace\\do-math-docs-20260914\\verification-20260915-v1\\skill\\scripts\\tests\\test_preflight.py\", line 21, in setUp\n    shutil.copytree(REPOSITORY / \"docs/do-math/통합-설계-명세-v9\", self.bundle,\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\shutil.py\", line 598, in copytree\n    with os.scandir(src) as itr:\n         ^^^^^^^^^^^^^^^\nFileNotFoundError: [WinError 3] 지정된 경로를 찾을 수 없습니다: 'C:\\\\math\\\\.skill-workspace\\\\docs\\\\do-math\\\\통합-설계-명세-v9'\n"
+    },
+    {
+      "test": "test_empty_registry_is_not_verified (test_preflight.PreflightTests.test_empty_registry_is_not_verified)",
+      "traceback": "Traceback (most recent call last):\n  File \"C:\\math\\.skill-workspace\\do-math-docs-20260914\\verification-20260915-v1\\skill\\scripts\\tests\\test_preflight.py\", line 21, in setUp\n    shutil.copytree(REPOSITORY / \"docs/do-math/통합-설계-명세-v9\", self.bundle,\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\shutil.py\", line 598, in copytree\n    with os.scandir(src) as itr:\n         ^^^^^^^^^^^^^^^\nFileNotFoundError: [WinError 3] 지정된 경로를 찾을 수 없습니다: 'C:\\\\math\\\\.skill-workspace\\\\docs\\\\do-math\\\\통합-설계-명세-v9'\n"
+    },
+    {
+      "test": "test_existing_report_cannot_hide_a_changed_design (test_preflight.PreflightTests.test_existing_report_cannot_hide_a_changed_design)",
+      "traceback": "Traceback (most recent call last):\n  File \"C:\\math\\.skill-workspace\\do-math-docs-20260914\\verification-20260915-v1\\skill\\scripts\\tests\\test_preflight.py\", line 21, in setUp\n    shutil.copytree(REPOSITORY / \"docs/do-math/통합-설계-명세-v9\", self.bundle,\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\shutil.py\", line 598, in copytree\n    with os.scandir(src) as itr:\n         ^^^^^^^^^^^^^^^\nFileNotFoundError: [WinError 3] 지정된 경로를 찾을 수 없습니다: 'C:\\\\math\\\\.skill-workspace\\\\docs\\\\do-math\\\\통합-설계-명세-v9'\n"
+    },
+    {
+      "test": "test_missing_report_is_incomplete (test_preflight.PreflightTests.test_missing_report_is_incomplete)",
+      "traceback": "Traceback (most recent call last):\n  File \"C:\\math\\.skill-workspace\\do-math-docs-20260914\\verification-20260915-v1\\skill\\scripts\\tests\\test_preflight.py\", line 21, in setUp\n    shutil.copytree(REPOSITORY / \"docs/do-math/통합-설계-명세-v9\", self.bundle,\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\shutil.py\", line 598, in copytree\n    with os.scandir(src) as itr:\n         ^^^^^^^^^^^^^^^\nFileNotFoundError: [WinError 3] 지정된 경로를 찾을 수 없습니다: 'C:\\\\math\\\\.skill-workspace\\\\docs\\\\do-math\\\\통합-설계-명세-v9'\n"
+    },
+    {
+      "test": "test_new_fixture_is_not_covered_by_old_report (test_preflight.PreflightTests.test_new_fixture_is_not_covered_by_old_report)",
+      "traceback": "Traceback (most recent call last):\n  File \"C:\\math\\.skill-workspace\\do-math-docs-20260914\\verification-20260915-v1\\skill\\scripts\\tests\\test_preflight.py\", line 21, in setUp\n    shutil.copytree(REPOSITORY / \"docs/do-math/통합-설계-명세-v9\", self.bundle,\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\shutil.py\", line 598, in copytree\n    with os.scandir(src) as itr:\n         ^^^^^^^^^^^^^^^\nFileNotFoundError: [WinError 3] 지정된 경로를 찾을 수 없습니다: 'C:\\\\math\\\\.skill-workspace\\\\docs\\\\do-math\\\\통합-설계-명세-v9'\n"
+    },
+    {
+      "test": "test_read_only (test_preflight.PreflightTests.test_read_only)",
+      "traceback": "Traceback (most recent call last):\n  File \"C:\\math\\.skill-workspace\\do-math-docs-20260914\\verification-20260915-v1\\skill\\scripts\\tests\\test_preflight.py\", line 21, in setUp\n    shutil.copytree(REPOSITORY / \"docs/do-math/통합-설계-명세-v9\", self.bundle,\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\shutil.py\", line 598, in copytree\n    with os.scandir(src) as itr:\n         ^^^^^^^^^^^^^^^\nFileNotFoundError: [WinError 3] 지정된 경로를 찾을 수 없습니다: 'C:\\\\math\\\\.skill-workspace\\\\docs\\\\do-math\\\\통합-설계-명세-v9'\n"
+    },
+    {
+      "test": "test_rehashed_invalid_schema_is_incomplete (test_preflight.PreflightTests.test_rehashed_invalid_schema_is_incomplete)",
+      "traceback": "Traceback (most recent call last):\n  File \"C:\\math\\.skill-workspace\\do-math-docs-20260914\\verification-20260915-v1\\skill\\scripts\\tests\\test_preflight.py\", line 21, in setUp\n    shutil.copytree(REPOSITORY / \"docs/do-math/통합-설계-명세-v9\", self.bundle,\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\shutil.py\", line 598, in copytree\n    with os.scandir(src) as itr:\n         ^^^^^^^^^^^^^^^\nFileNotFoundError: [WinError 3] 지정된 경로를 찾을 수 없습니다: 'C:\\\\math\\\\.skill-workspace\\\\docs\\\\do-math\\\\통합-설계-명세-v9'\n"
+    },
+    {
+      "test": "test_reject_unsafe_paths (test_preflight.PreflightTests.test_reject_unsafe_paths)",
+      "traceback": "Traceback (most recent call last):\n  File \"C:\\math\\.skill-workspace\\do-math-docs-20260914\\verification-20260915-v1\\skill\\scripts\\tests\\test_preflight.py\", line 21, in setUp\n    shutil.copytree(REPOSITORY / \"docs/do-math/통합-설계-명세-v9\", self.bundle,\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\shutil.py\", line 598, in copytree\n    with os.scandir(src) as itr:\n         ^^^^^^^^^^^^^^^\nFileNotFoundError: [WinError 3] 지정된 경로를 찾을 수 없습니다: 'C:\\\\math\\\\.skill-workspace\\\\docs\\\\do-math\\\\통합-설계-명세-v9'\n"
+    },
+    {
+      "test": "test_report_cannot_drop_design_from_basis (test_preflight.PreflightTests.test_report_cannot_drop_design_from_basis)",
+      "traceback": "Traceback (most recent call last):\n  File \"C:\\math\\.skill-workspace\\do-math-docs-20260914\\verification-20260915-v1\\skill\\scripts\\tests\\test_preflight.py\", line 21, in setUp\n    shutil.copytree(REPOSITORY / \"docs/do-math/통합-설계-명세-v9\", self.bundle,\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\shutil.py\", line 598, in copytree\n    with os.scandir(src) as itr:\n         ^^^^^^^^^^^^^^^\nFileNotFoundError: [WinError 3] 지정된 경로를 찾을 수 없습니다: 'C:\\\\math\\\\.skill-workspace\\\\docs\\\\do-math\\\\통합-설계-명세-v9'\n"
+    },
+    {
+      "test": "test_report_paths_cannot_escape_docs (test_preflight.PreflightTests.test_report_paths_cannot_escape_docs)",
+      "traceback": "Traceback (most recent call last):\n  File \"C:\\math\\.skill-workspace\\do-math-docs-20260914\\verification-20260915-v1\\skill\\scripts\\tests\\test_preflight.py\", line 21, in setUp\n    shutil.copytree(REPOSITORY / \"docs/do-math/통합-설계-명세-v9\", self.bundle,\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\shutil.py\", line 598, in copytree\n    with os.scandir(src) as itr:\n         ^^^^^^^^^^^^^^^\nFileNotFoundError: [WinError 3] 지정된 경로를 찾을 수 없습니다: 'C:\\\\math\\\\.skill-workspace\\\\docs\\\\do-math\\\\통합-설계-명세-v9'\n"
+    },
+    {
+      "test": "test_schema_tampering_is_detected (test_preflight.PreflightTests.test_schema_tampering_is_detected)",
+      "traceback": "Traceback (most recent call last):\n  File \"C:\\math\\.skill-workspace\\do-math-docs-20260914\\verification-20260915-v1\\skill\\scripts\\tests\\test_preflight.py\", line 21, in setUp\n    shutil.copytree(REPOSITORY / \"docs/do-math/통합-설계-명세-v9\", self.bundle,\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\shutil.py\", line 598, in copytree\n    with os.scandir(src) as itr:\n         ^^^^^^^^^^^^^^^\nFileNotFoundError: [WinError 3] 지정된 경로를 찾을 수 없습니다: 'C:\\\\math\\\\.skill-workspace\\\\docs\\\\do-math\\\\통합-설계-명세-v9'\n"
+    },
+    {
+      "test": "test_source_hash_alone_cannot_hide_missing_vectors (test_preflight.PreflightTests.test_source_hash_alone_cannot_hide_missing_vectors)",
+      "traceback": "Traceback (most recent call last):\n  File \"C:\\math\\.skill-workspace\\do-math-docs-20260914\\verification-20260915-v1\\skill\\scripts\\tests\\test_preflight.py\", line 21, in setUp\n    shutil.copytree(REPOSITORY / \"docs/do-math/통합-설계-명세-v9\", self.bundle,\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\shutil.py\", line 598, in copytree\n    with os.scandir(src) as itr:\n         ^^^^^^^^^^^^^^^\nFileNotFoundError: [WinError 3] 지정된 경로를 찾을 수 없습니다: 'C:\\\\math\\\\.skill-workspace\\\\docs\\\\do-math\\\\통합-설계-명세-v9'\n"
+    },
+    {
+      "test": "test_swapped_schema_paths_are_blocked (test_preflight.PreflightTests.test_swapped_schema_paths_are_blocked)",
+      "traceback": "Traceback (most recent call last):\n  File \"C:\\math\\.skill-workspace\\do-math-docs-20260914\\verification-20260915-v1\\skill\\scripts\\tests\\test_preflight.py\", line 21, in setUp\n    shutil.copytree(REPOSITORY / \"docs/do-math/통합-설계-명세-v9\", self.bundle,\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\shutil.py\", line 598, in copytree\n    with os.scandir(src) as itr:\n         ^^^^^^^^^^^^^^^\nFileNotFoundError: [WinError 3] 지정된 경로를 찾을 수 없습니다: 'C:\\\\math\\\\.skill-workspace\\\\docs\\\\do-math\\\\통합-설계-명세-v9'\n"
+    },
+    {
+      "test": "test_unreadable_schema_is_incomplete (test_preflight.PreflightTests.test_unreadable_schema_is_incomplete)",
+      "traceback": "Traceback (most recent call last):\n  File \"C:\\math\\.skill-workspace\\do-math-docs-20260914\\verification-20260915-v1\\skill\\scripts\\tests\\test_preflight.py\", line 21, in setUp\n    shutil.copytree(REPOSITORY / \"docs/do-math/통합-설계-명세-v9\", self.bundle,\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\shutil.py\", line 598, in copytree\n    with os.scandir(src) as itr:\n         ^^^^^^^^^^^^^^^\nFileNotFoundError: [WinError 3] 지정된 경로를 찾을 수 없습니다: 'C:\\\\math\\\\.skill-workspace\\\\docs\\\\do-math\\\\통합-설계-명세-v9'\n"
+    }
+  ],
+  "skipped": [
+    {
+      "test": "test_outside_symlink_is_reported_when_supported (test_context_store.ContextStoreTests.test_outside_symlink_is_reported_when_supported)",
+      "reason": "[WinError 1314] 클라이언트가 필요한 권한을 가지고 있지 않습니다: 'C:\\\\Users\\\\wogud\\\\AppData\\\\Local\\\\Temp\\\\tmp5bgnx_nu\\\\secret' -> 'C:\\\\Users\\\\wogud\\\\AppData\\\\Local\\\\Temp\\\\tmpb8jdesk0\\\\link'"
+    }
+  ]
+}

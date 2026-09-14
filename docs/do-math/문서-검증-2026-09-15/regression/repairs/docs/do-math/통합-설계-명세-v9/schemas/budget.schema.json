@@ -1,0 +1,204 @@
+{
+  "$id": "https://do-math.invalid/schemas/draft/9/budget",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "activation_evidence_refs": {
+      "items": {
+        "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "approval_refs": {
+      "items": {
+        "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "constraints": {
+      "items": {
+        "oneOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "accounting_unit": {
+                "enum": [
+                  "execution",
+                  "provider_operation"
+                ],
+                "type": "string"
+              },
+              "id": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "kind": {
+                "const": "concurrency"
+              },
+              "operations_slots": {
+                "maximum": 9007199254740991,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "source": {
+                "enum": [
+                  "local_budget",
+                  "provider_verified"
+                ],
+                "type": "string"
+              },
+              "source_ref": {
+                "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+              },
+              "total_slots": {
+                "maximum": 9007199254740991,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "work_slots": {
+                "maximum": 9007199254740991,
+                "minimum": 0,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "accounting_unit",
+              "work_slots",
+              "operations_slots",
+              "total_slots",
+              "source",
+              "source_ref"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "authority_refs": {
+                "items": {
+                  "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+                },
+                "minItems": 1,
+                "type": "array",
+                "uniqueItems": true
+              },
+              "id": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "kind": {
+                "enum": [
+                  "cumulative",
+                  "window"
+                ],
+                "type": "string"
+              },
+              "limit": {
+                "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/limit"
+              },
+              "source_ref": {
+                "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+              },
+              "unit": {
+                "enum": [
+                  "tokens",
+                  "requests",
+                  "currency_minor",
+                  "tool_milliseconds",
+                  "bytes"
+                ],
+                "type": "string"
+              },
+              "window": {
+                "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/window"
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "unit",
+              "limit",
+              "window",
+              "source_ref",
+              "authority_refs"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "control_headroom_evidence_ref": {
+                "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/artifact_ref"
+              },
+              "cpu_rate_basis_points": {
+                "maximum": 10000,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "id": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "kind": {
+                "const": "host"
+              },
+              "max_jobs": {
+                "maximum": 9007199254740991,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "memory_bytes": {
+                "maximum": 9007199254740991,
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "max_jobs",
+              "memory_bytes",
+              "cpu_rate_basis_points",
+              "control_headroom_evidence_ref"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "id": {
+      "allOf": [
+        {
+          "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/id"
+        },
+        {
+          "pattern": "^BG-"
+        }
+      ]
+    },
+    "schema_version": {
+      "const": "do-math-draft/budget/9"
+    }
+  },
+  "required": [
+    "schema_version",
+    "id",
+    "constraints",
+    "approval_refs",
+    "activation_evidence_refs"
+  ],
+  "title": "budget",
+  "type": "object",
+  "x-contract-id": "do-math-draft/budget/9",
+  "x-id-prefix": "BG",
+  "x-owner-section": "4,19.4",
+  "x-storage": "research/governance/budgets/{id}.json"
+}

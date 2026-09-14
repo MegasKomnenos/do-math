@@ -1,0 +1,94 @@
+{
+  "approval_ref": {
+    "commit": "1111111111111111111111111111111111111111",
+    "record_id": "F-00000000000000000000000001",
+    "ref_kind": "record",
+    "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+    "space": "research"
+  },
+  "execution_limit": 14,
+  "final_judges": [
+    {
+      "id": "judge-1",
+      "perspective": "objection_establishment",
+      "profile_ref": {
+        "commit": "1111111111111111111111111111111111111111",
+        "record_id": "F-00000000000000000000000001",
+        "ref_kind": "record",
+        "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+        "space": "research"
+      },
+      "qualification_ref": {
+        "bundle_id": "AB-00000000000000000000000001",
+        "path": "fixture/input.json",
+        "ref_kind": "artifact",
+        "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+      }
+    },
+    {
+      "id": "judge-2",
+      "perspective": "objection_rebuttal",
+      "profile_ref": {
+        "commit": "1111111111111111111111111111111111111111",
+        "record_id": "F-00000000000000000000000001",
+        "ref_kind": "record",
+        "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+        "space": "research"
+      },
+      "qualification_ref": {
+        "bundle_id": "AB-00000000000000000000000001",
+        "path": "fixture/input.json",
+        "ref_kind": "artifact",
+        "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+      }
+    },
+    {
+      "id": "judge-3",
+      "perspective": "context_comparison",
+      "profile_ref": {
+        "commit": "1111111111111111111111111111111111111111",
+        "record_id": "F-00000000000000000000000001",
+        "ref_kind": "record",
+        "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+        "space": "research"
+      },
+      "qualification_ref": {
+        "bundle_id": "AB-00000000000000000000000001",
+        "path": "fixture/input.json",
+        "ref_kind": "artifact",
+        "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+      }
+    }
+  ],
+  "id": "RP-00000000000000000000000001",
+  "independence_rules_ref": {
+    "bundle_id": "AB-00000000000000000000000001",
+    "path": "fixture/input.json",
+    "ref_kind": "artifact",
+    "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+  },
+  "objection_round_limit": 3,
+  "required_evidence": [],
+  "required_perspectives": [
+    {
+      "count": 1,
+      "name": "argument_reconstruction"
+    },
+    {
+      "count": 1,
+      "name": "adversarial_scope"
+    },
+    {
+      "count": 1,
+      "name": "semantic_identity"
+    }
+  ],
+  "revision": 1,
+  "schema_version": "do-math-draft/review-policy/9",
+  "scope_rule_ref": {
+    "bundle_id": "AB-00000000000000000000000001",
+    "path": "fixture/input.json",
+    "ref_kind": "artifact",
+    "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+  }
+}

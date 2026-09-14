@@ -422,9 +422,12 @@ class LifecycleTests(unittest.TestCase):
         class Handler(BaseHTTPRequestHandler):
             def do_GET(self):
                 received.append(self.path)
+                body = b'confirmed local response'
                 self.send_response(409 if self.path == '/reject' else 200)
-                self.end_headers(); self.wfile.write(b'confirmed local response')
+                self.send_header('Content-Length', str(len(body)))
+                self.end_headers(); self.wfile.write(body)
             def do_POST(self):
+                self.rfile.read(int(self.headers.get('Content-Length', '0')))
                 received.append(self.path)
                 self.close_connection = True
             def log_message(self, *args): pass
@@ -478,8 +481,12 @@ class LifecycleTests(unittest.TestCase):
         received = []
         class Handler(BaseHTTPRequestHandler):
             def do_POST(self):
+                self.rfile.read(int(self.headers.get('Content-Length', '0')))
                 received.append(self.path)
-                self.send_response(200); self.end_headers(); self.wfile.write(b'retried receipt')
+                body = b'retried receipt'
+                self.send_response(200)
+                self.send_header('Content-Length', str(len(body)))
+                self.end_headers(); self.wfile.write(body)
             def log_message(self, *args): pass
         server = HTTPServer(('127.0.0.1', 0), Handler)
         worker = threading.Thread(target=server.serve_forever, daemon=True)
@@ -519,11 +526,16 @@ class LifecycleTests(unittest.TestCase):
         received = []
         class Handler(BaseHTTPRequestHandler):
             def do_POST(self):
+                self.rfile.read(int(self.headers.get('Content-Length', '0')))
                 received.append(self.path)
                 if len(received) == 1:
                     self.close_connection = True
                 else:
-                    self.send_response(200); self.end_headers(); self.wfile.write(b'retried')
+                    body = b'retried'
+                    self.send_response(200)
+                    self.send_header('Content-Length', str(len(body)))
+                    self.end_headers()
+                    self.wfile.write(body)
             def log_message(self, *args): pass
         server = HTTPServer(('127.0.0.1', 0), Handler)
         worker = threading.Thread(target=server.serve_forever, daemon=True)

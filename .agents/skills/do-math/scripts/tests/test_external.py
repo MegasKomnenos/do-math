@@ -5,8 +5,9 @@ from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from do_math.external import *
 class H(BaseHTTPRequestHandler):
- def do_POST(self): self.send_response(201);self.end_headers();self.wfile.write(b'ok')
- def do_GET(self): self.send_response(302);self.send_header('Location','http://evil/');self.end_headers()
+ def do_POST(self):
+  self.rfile.read(int(self.headers.get('Content-Length','0')));body=b'ok';self.send_response(201);self.send_header('Content-Length',str(len(body)));self.end_headers();self.wfile.write(body)
+ def do_GET(self): self.send_response(302);self.send_header('Location','http://evil/');self.send_header('Content-Length','0');self.end_headers()
  def log_message(self,*a):pass
 class Tests(unittest.TestCase):
  def setUp(self):

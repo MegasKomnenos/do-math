@@ -1,0 +1,17 @@
+{
+  "activity_kind": "research_preparation",
+  "assigned_execution_ids": [],
+  "followups": [],
+  "id": "AC-00000000000000000000000001",
+  "input_refs": [],
+  "opened_at": "2026-09-07T00:00:00.000Z",
+  "owner_ref": {
+    "id": "F-00000000000000000000000001",
+    "kind": "instance"
+  },
+  "result_refs": [],
+  "schema_version": "do-math-draft/activity/9",
+  "stage": "drafting",
+  "state": "ready",
+  "unresolved_refs": []
+}

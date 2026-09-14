@@ -3,13 +3,14 @@ from __future__ import annotations
 import json
 import sys
 import tempfile
+import shutil
 import unittest
 from pathlib import Path
 
 import jsonschema
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from do_math.contracts import ROLE_FILES, ROLES, prompt_documents, render_prompt, schema_for
+from do_math.contracts import ROLES, reading_map, prompt_documents, render_prompt, schema_for
 
 
 class ContractTests(unittest.TestCase):
@@ -32,7 +33,9 @@ class ContractTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / "계약").mkdir()
-            (root / "SKILL.md").write_text("x", encoding="utf-8")
+            source = Path(__file__).resolve().parents[2]
+            shutil.copy2(source / "SKILL.md", root / "SKILL.md")
+            shutil.copytree(source / "references", root / "references")
             (root / "GLOSSARY.md").write_text("x", encoding="utf-8")
             with self.assertRaises(FileNotFoundError):
                 prompt_documents("research_work", skill_root=root)
@@ -46,8 +49,8 @@ class ContractTests(unittest.TestCase):
         self.assertIn('"do-math-cli/1"', prompt)
         self.assertIn("Do not emit Markdown", prompt)
 
-    def test_role_files_are_complete(self):
-        self.assertEqual(set(ROLE_FILES), set(ROLES))
+    def test_declared_role_documents_are_complete(self):
+        self.assertEqual(set(reading_map()), set(ROLES))
 
     def test_plan_assessment_fields_are_required(self):
         schema = schema_for("research_plan")

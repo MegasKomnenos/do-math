@@ -1,0 +1,373 @@
+{
+  "$id": "https://do-math.invalid/schemas/draft/9/operational-review",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "disposition": {
+            "enum": [
+              "resume_checkpoint",
+              "restart"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "recovery"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "stage": {
+            "const": "checking_recovery"
+          }
+        },
+        "required": [
+          "stage"
+        ]
+      },
+      "then": {
+        "allOf": [
+          {
+            "required": [
+              "recovery"
+            ]
+          },
+          {
+            "properties": {
+              "recovery": {
+                "properties": {
+                  "path": {
+                    "const": "meaning_review"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "properties": {
+    "activity_id": {
+      "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/id_AC"
+    },
+    "actual_scope": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "evidence_refs": {
+            "items": {
+              "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+            },
+            "minItems": 0,
+            "type": "array",
+            "uniqueItems": true
+          },
+          "id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "description",
+          "evidence_refs"
+        ],
+        "type": "object"
+      },
+      "minItems": 0,
+      "type": "array"
+    },
+    "basis": {
+      "additionalProperties": false,
+      "properties": {
+        "absence_queries": {
+          "items": {
+            "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/query_scope"
+          },
+          "minItems": 0,
+          "type": "array"
+        },
+        "record_refs": {
+          "items": {
+            "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+          },
+          "minItems": 0,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "required_effects": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "effect": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "record_ref": {
+                "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+              }
+            },
+            "required": [
+              "record_ref",
+              "effect"
+            ],
+            "type": "object"
+          },
+          "minItems": 0,
+          "type": "array"
+        }
+      },
+      "required": [
+        "record_refs",
+        "absence_queries",
+        "required_effects"
+      ],
+      "type": "object"
+    },
+    "checkpoint_ref": {
+      "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/artifact_ref"
+    },
+    "diagnosis_ref": {
+      "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/artifact_ref"
+    },
+    "disposition": {
+      "enum": [
+        "continue",
+        "repair",
+        "resume_checkpoint",
+        "restart",
+        "revise_task",
+        "close_task",
+        "ask_user",
+        "no_action"
+      ],
+      "type": "string"
+    },
+    "execution_id": {
+      "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/id_E"
+    },
+    "followups": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "input_refs": {
+            "items": {
+              "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+            },
+            "minItems": 0,
+            "type": "array",
+            "uniqueItems": true
+          },
+          "kind": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "owner": {
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/id"
+              },
+              "kind": {
+                "enum": [
+                  "instance",
+                  "task",
+                  "activity"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "id"
+            ],
+            "type": "object"
+          },
+          "reason": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "wake": {
+            "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/wake"
+          }
+        },
+        "required": [
+          "kind",
+          "owner",
+          "input_refs",
+          "wake",
+          "reason"
+        ],
+        "type": "object"
+      },
+      "minItems": 0,
+      "type": "array"
+    },
+    "id": {
+      "allOf": [
+        {
+          "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/id"
+        },
+        {
+          "pattern": "^OR-"
+        }
+      ]
+    },
+    "next_review_at": {
+      "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/instant",
+      "description": "For continue, required by the target execution's periodic mode. In event_driven mode, absence means no further reservation for the reviewed duty; a supplied time requires remaining uncertainty and diagnosis evidence. Check against the bound target execution."
+    },
+    "observation_refs": {
+      "items": {
+        "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "recovery": {
+      "additionalProperties": false,
+      "properties": {
+        "authority_refs": {
+          "items": {
+            "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+          },
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "diagnosing_execution_id": {
+          "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/id"
+        },
+        "external_action_refs": {
+          "items": {
+            "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+          },
+          "minItems": 0,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "input_manifest_ref": {
+          "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+        },
+        "path": {
+          "enum": [
+            "deterministic",
+            "meaning_review"
+          ],
+          "type": "string"
+        },
+        "prior_execution_ref": {
+          "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+        },
+        "profile_ref": {
+          "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+        },
+        "scope": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "description": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "evidence_refs": {
+                "items": {
+                  "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+                },
+                "minItems": 0,
+                "type": "array",
+                "uniqueItems": true
+              },
+              "id": {
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "description",
+              "evidence_refs"
+            ],
+            "type": "object"
+          },
+          "minItems": 0,
+          "type": "array"
+        }
+      },
+      "required": [
+        "path",
+        "prior_execution_ref",
+        "input_manifest_ref",
+        "profile_ref",
+        "authority_refs",
+        "external_action_refs",
+        "scope",
+        "diagnosing_execution_id"
+      ],
+      "type": "object"
+    },
+    "recovery_approval_ref": {
+      "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+    },
+    "schema_version": {
+      "const": "do-math-draft/operational-review/9"
+    },
+    "stage": {
+      "enum": [
+        "diagnosing",
+        "checking_recovery"
+      ],
+      "type": "string"
+    },
+    "trigger_event_ids": {
+      "items": {
+        "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/id_EVT"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "uncertainties": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 0,
+      "type": "array",
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "schema_version",
+    "id",
+    "activity_id",
+    "execution_id",
+    "stage",
+    "trigger_event_ids",
+    "observation_refs",
+    "diagnosis_ref",
+    "actual_scope",
+    "uncertainties",
+    "disposition",
+    "basis",
+    "followups"
+  ],
+  "title": "operational-review",
+  "type": "object",
+  "x-contract-id": "do-math-draft/operational-review/9",
+  "x-id-prefix": "OR",
+  "x-owner-section": "12,19.4",
+  "x-storage": "runtime/activities/{activity_id}/reviews/{id}.json"
+}

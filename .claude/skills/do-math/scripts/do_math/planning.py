@@ -13,7 +13,8 @@ def _hash(value: Any) -> str: return hashlib.sha256(canonical_json(value)).hexdi
 CONTRACT_FIELDS = ("id", "revision", "title", "question", "scope", "excluded_scope", "expected_result",
                    "completion_criteria", "inputs", "reuse", "dependencies", "occurrence_condition",
                    "work_class", "profile_refs", "authority_refs", "expected_research_change",
-                   "academic_requirement_id", "requirements_sha256", "solution_basis", "required_external_effects")
+                   "academic_requirement_id", "requirements_sha256", "solution_basis", "required_external_effects",
+                   "initial_observation_rules")
 
 def contract_hash(task: dict) -> str:
     """Hash only fields whose revision approval is intended to cover."""
@@ -122,7 +123,9 @@ def task_ready(task: dict, instance: dict, runtime: dict) -> dict:
                if dep not in records or records[dep][1].get("use_suspended")
                or records[dep][1].get("status") in {"blocked", "withdrawn", "invalid", "use_suspended"}
                or (records[dep][0] == "knowledge" and records[dep][1].get("lean_code") and records[dep][1].get("status") != "verified")
-               or (records[dep][0] == "task" and dep in task.get("dependencies", []) and records[dep][1].get("status") != "completed")]
+               or (records[dep][0] == "task" and dep in task.get("dependencies", []) and
+                   (records[dep][1].get("status") != "completed" or
+                    records[dep][1].get("assessment", {}).get("current") is False))]
     if blocked: return {"state": "not_ready", "basis": [], "errors": ["blocked dependencies: " + ",".join(blocked)]}
     result = evaluate_condition(task.get("occurrence_condition", {"op": "always"}), instance, runtime)
     result["basis"].extend(_basis(x) for x in approved if isinstance(x, dict) and "id" in x)

@@ -1,0 +1,29 @@
+{
+  "constraints": {
+    "allowed_epistemic_status": [
+      "open"
+    ],
+    "required_fields": []
+  },
+  "family": "frontier",
+  "generated": {
+    "at": "2026-09-07T00:00:00.000Z",
+    "by": "human:fixture"
+  },
+  "id": "KD-00000000000000000000000001",
+  "lifecycle": "active",
+  "meaning": "fixture",
+  "origin_refs": [
+    {
+      "commit": "1111111111111111111111111111111111111111",
+      "record_id": "F-00000000000000000000000001",
+      "ref_kind": "record",
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "space": "research"
+    }
+  ],
+  "schema_version": "do-math-draft/kind-definition/9",
+  "title": "fixture",
+  "token": "fixture",
+  "type": "kind_definition"
+}

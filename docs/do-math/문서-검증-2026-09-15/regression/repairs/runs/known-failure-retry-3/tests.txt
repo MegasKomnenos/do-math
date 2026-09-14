@@ -1,0 +1,6 @@
+test_external_retry_reuses_operation_identity_only_after_known_failure (test_lifecycle_engine.LifecycleTests.test_external_retry_reuses_operation_identity_only_after_known_failure) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.570s
+
+OK

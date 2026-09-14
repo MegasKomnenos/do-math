@@ -64,7 +64,7 @@ class StateCheckTests(PurposeStateHarness):
         task["assessment"]["current"] = False
         runtime["executions"]["EX-live-work"] = {"id": "EX-live-work", "role": "research_work", "status": "running",
                                                      "action": {"target": task["id"]}}
-        self.assertError(instance, runtime, "assessment is not current")
+        self.assertError(instance, runtime, "suspended completed task assessment lacks an invalidation reason")
         self.assertError(instance, runtime, "has a live worker")
 
         instance, runtime = deepcopy(engine.instance), deepcopy(engine.runtime)
@@ -91,8 +91,12 @@ class StateCheckTests(PurposeStateHarness):
         class Handler(BaseHTTPRequestHandler):
             def do_GET(self):
                 received.append(self.path)
-                self.send_response(200); self.end_headers(); self.wfile.write(b"local receipt")
+                body = b"local receipt"
+                self.send_response(200)
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers(); self.wfile.write(body)
             def do_POST(self):
+                self.rfile.read(int(self.headers.get("Content-Length", "0")))
                 received.append(self.path)
                 self.close_connection = True
             def log_message(self, *args):

@@ -19,11 +19,11 @@ from typing import Any
 
 import jsonschema
 
-from .contracts import render_prompt, schema_for, prompt_documents, ROLES
+from .contracts import render_prompt, schema_for, all_prompt_documents, reading_map
 from .formal import verify_lean, discover_lean
 from . import governance, knowledge, planning, knowledge_io
 from .input_basis import capture_sources, sources_current
-from .context_store import collect_outputs, fit_context
+from .context_store import collect_outputs, fit_context, materialize_inputs
 from .observations import ObservationTracker, CHECKPOINT_SCHEMA, recovered_checkpoint, request_checkpoint, validate_rules
 from .review_engine import ReviewEngineMixin
 from .lifecycle_engine import LifecycleEngineMixin
@@ -267,7 +267,7 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
         self.instance["config"] = {**deepcopy(DEFAULT_CONFIG), **self.instance["config"]}
         self._live_execution_ids = set()
         self._inline_reviewing = False
-        self._documents = {role: prompt_documents(role) for role in ROLES}
+        self._documents = all_prompt_documents()
         self._installation = self._installation_manifest()
         self._upgrade_runtime()
         self.instance = knowledge_io.ensure_ontology(self.instance)
@@ -275,13 +275,24 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
     @staticmethod
     def _installation_manifest() -> dict:
         root = Path(__file__).resolve().parents[2]
-        paths = [*sorted((root / "scripts" / "do_math").glob("*.py")), root / "SKILL.md", root / "GLOSSARY.md",
-                 *sorted((root / "계약").glob("*.md"))]
+        documents = dict.fromkeys(relative for paths in reading_map(skill_root=root).values() for relative in paths)
+        paths = [*sorted((root / "scripts" / "do_math").glob("*.py")), *(root / relative for relative in documents)]
         files = {path.relative_to(root).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest() for path in paths}
         return {"feature_version": 2, "files": files, "sha256": hashlib.sha256(canonical_json(files)).hexdigest()}
 
     def _render_prompt(self, role: str, context: dict, **kwargs) -> str:
         return render_prompt(role, context, documents=self._documents[role], **kwargs)
+
+    def _input_artifacts(self, bundle: str, role: str, prompt: str, schema: dict, fitted: dict) -> dict[str, bytes]:
+        base = f"runtime/artifacts/{bundle}"
+        documents = self._documents[role]
+        manifest = [*fitted["manifest"], *({"key": "implementation_document", "logical_path": document["path"],
+            "path": "input/implementation/" + document["path"], "sha256": document["sha256"],
+            "bytes": len(document["content"].encode("utf-8"))} for document in documents)]
+        return {f"{base}/input.txt": prompt.encode("utf-8"), f"{base}/schema.json": canonical_json(schema),
+                f"{base}/manifest.json": canonical_json(manifest),
+                **{f"{base}/input/implementation/{document['path']}": document["content"].encode("utf-8")
+                   for document in documents}}
 
     def _save(self, artifacts: dict[str, bytes] | None = None) -> None:
         self.runtime["updated_at"] = now()
@@ -328,8 +339,11 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
                     if names.intersection(task.get("inputs", [])):
                         task["newinput"] = request["id"]
                         if old and task["status"] != "closed":
-                            task["status"] = "planned"
-                            if task.get("assessment"): task["assessment"]["current"] = False
+                            reason = "Required source content changed: " + spec["name"]
+                            if task["status"] != "completed":
+                                task["status"] = "planned"
+                            if task.get("assessment"):
+                                task["assessment"].update(current=False, invalidated_reason=reason)
                             for review in task.get("reviews", []): review["inputs_current"] = False
                         for execution in self.runtime["executions"].values():
                             if execution.get("action", {}).get("target") == task["id"] and execution["status"] != "ended":
@@ -588,6 +602,12 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
     def _context(self, action: dict, workspace: Path) -> dict:
         directory = workspace / "input"
         directory.mkdir(parents=True, exist_ok=True)
+        documents = self._documents[action["role"]]
+        materialize_inputs(workspace, {"implementation/" + document["path"]: document["content"].encode("utf-8")
+                                      for document in documents})
+        implementation_documents = [{"path": document["path"], "local_path": "input/implementation/" + document["path"],
+                                     "sha256": document["sha256"], "bytes": len(document["content"].encode("utf-8"))}
+                                    for document in documents]
         catalog = []
         for kid, knowledge_record in sorted(self.instance["knowledge"].items()):
             # Hide the current review group's partial results. Completed prior
@@ -640,7 +660,7 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
                     result["output_files"] = restored
         context = {"snapshot": self.head, "workspace": str(workspace.resolve()), "goal": self.instance["goal"], "goal_kind": self.instance["goal_kind"],
                    "policies": self.instance["policies"], "action": action, "task": task,
-                   "tasks": task_views, "knowledge_catalog": catalog,
+                   "tasks": task_views, "knowledge_catalog": catalog, "implementation_documents": implementation_documents,
                    "relations": self.instance["relations"], "sources": sources,
                    "user_inputs": self.runtime["inputs"], "open_questions": self.runtime["questions"],
                    "recent_history": self.runtime["history"][-8:],
@@ -692,9 +712,60 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
                     entry["review_cycle_source"] = next((k.get("review_cycle_source") for k in catalog if k["id"] == entry["id"]), None)
             context["tasks"] = [{k: v for k, v in t.items() if k not in {"reviews", "assessment"}} for t in task_views]
         if action["role"] == "operational_review":
-            context["execution_to_review"] = self.runtime["executions"].get(target)
+            reviewed_execution = deepcopy(self.runtime["executions"].get(target))
+            context["execution_to_review"] = reviewed_execution
             context["observation"] = action.get("observation", self.runtime.get("observations", {}).get(target))
             context["live_review"] = action.get("live", False)
+            if reviewed_execution and not context["live_review"] and reviewed_execution.get("artifact_bundle"):
+                source_snapshot = self.head
+                bundle = reviewed_execution["artifact_bundle"]
+                prefix = "operational-review/" + reviewed_execution["id"]
+                materialized = {}
+
+                def recover(artifact_ref: str, relative: str, *, expected_sha256: str | None = None,
+                            expected_bytes: int | None = None) -> dict:
+                    raw = self.store.read(artifact_ref, source_snapshot)
+                    digest = hashlib.sha256(raw).hexdigest()
+                    if expected_sha256 is not None and digest != expected_sha256:
+                        raise ValueError("operational review artifact hash changed")
+                    if expected_bytes is not None and len(raw) != expected_bytes:
+                        raise ValueError("operational review artifact size changed")
+                    logical = prefix + "/" + relative
+                    materialized[logical] = raw
+                    return {"artifact_ref": artifact_ref, "snapshot": source_snapshot,
+                            "local_path": "input/" + logical, "sha256": digest, "bytes": len(raw)}
+
+                normal_result_ref = f"runtime/artifacts/{bundle}/result.json"
+                checkpoint_ref = f"runtime/artifacts/{bundle}/checkpoint-recovery.json"
+                activity = self.runtime["activities"].get(reviewed_execution.get("activity_id"), {})
+                activity_result_ref = activity.get("result_ref")
+                if activity_result_ref:
+                    selected_result_ref = activity_result_ref
+                elif reviewed_execution.get("error") == "previous executor disappeared":
+                    selected_result_ref = checkpoint_ref
+                else:
+                    selected_result_ref = normal_result_ref
+                result_kind = ("execution_result" if selected_result_ref == normal_result_ref else
+                               "checkpoint_recovery" if selected_result_ref == checkpoint_ref else
+                               "activity_result")
+                result_source = recover(selected_result_ref,
+                    "result.json" if result_kind == "execution_result" else
+                    "checkpoint-recovery.json" if result_kind == "checkpoint_recovery" else "activity-result.json")
+                checkpoint_source = (result_source if selected_result_ref == checkpoint_ref else
+                                     recover(checkpoint_ref, "checkpoint-recovery.json"))
+                output_files = []
+                for entry in reviewed_execution.get("output_files", []):
+                    restored = recover(entry["artifact_ref"], "files/" + entry["path"],
+                                       expected_sha256=entry.get("sha256"), expected_bytes=entry.get("bytes"))
+                    output_files.append({**entry, **restored})
+                materialize_inputs(workspace, materialized)
+                context["recovery_materials"] = {"execution_id": reviewed_execution["id"],
+                    "source_snapshot": source_snapshot,
+                    "checkpoint": deepcopy(self.runtime.get("checkpoints", {}).get(target)),
+                    "checkpoint_source": checkpoint_source, "result_source": result_source,
+                    "result_kind": result_kind,
+                    "final_result_status": "available" if result_kind == "execution_result" else "not_produced",
+                    "output_files": output_files}
         if action["role"] == "intent_interpretation":
             context["user_request"] = next((r for r in self.runtime["inputs"] if r["id"] == target), None)
             context["interpretation_stage"] = action.get("stage", "interpret")
@@ -719,7 +790,31 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
         if reviewed_action.get("review_cycle_id"):
             for key in ("open_questions", "recent_history", "tasks"):
                 context.pop(key, None)
+        if action["role"] in {"research_preparation", "research_plan"}:
+            context["config"] = deepcopy(self.instance["config"])
+            context["recent_history"] = self._planning_history("research_plan", workspace)
+            if action["role"] == "research_preparation":
+                context["preparation_history"] = self._planning_history("research_preparation", workspace)
         return context
+
+    def _planning_history(self, role: str, workspace: Path) -> list[dict]:
+        """Keep rejected and incomplete submissions readable after later events."""
+        history = []
+        for execution in self.runtime["executions"].values():
+            if execution.get("role") != role or execution.get("status") != "ended":
+                continue
+            row = {"execution_id": execution["id"], "role": role, "outcome": execution.get("outcome"),
+                   "error": execution.get("error"), "action": deepcopy(execution.get("action", {}))}
+            if execution.get("artifact_bundle"):
+                activity = self.runtime["activities"].get(execution.get("activity_id"), {})
+                reference = activity.get("result_ref") or f"runtime/artifacts/{execution['artifact_bundle']}/result.json"
+                raw = self.store.read(reference, self.head)
+                relative = f"planning-history/{execution['id']}.json"
+                materialize_inputs(workspace, {relative: raw})
+                row.update(artifact_ref=reference, local_path="input/" + relative,
+                           sha256=hashlib.sha256(raw).hexdigest(), bytes=len(raw))
+            history.append(row)
+        return history
 
     def _response_schema(self, action: dict) -> dict:
         if action["role"] == "supplemental_research" and action.get("review_cycle_id"):
@@ -828,9 +923,7 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
         self.runtime["activities"][aid] = {"id": aid, "role": action["role"], "status": "active", "execution_ids": [eid]}
         self._live_execution_ids.add(eid)
         self._inline_reviewing = True
-        self._save({f"runtime/artifacts/{input_bundle}/input.txt": prompt.encode(),
-                    f"runtime/artifacts/{input_bundle}/schema.json": canonical_json(schema),
-                    f"runtime/artifacts/{input_bundle}/manifest.json": canonical_json(fitted["manifest"])})
+        self._save(self._input_artifacts(input_bundle, action["role"], prompt, schema, fitted))
         def started(identity):
             self.runtime["executions"][eid].update(status="running", process=json_safe(identity))
             self._save()
@@ -985,10 +1078,9 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
         self.runtime["status"] = "running"
         if role == "identity_review" and action.get("review_cycle_id"):
             self._record_review_input(action, execution_id)
-        self._save({f"runtime/artifacts/{input_bundle}/input.txt": prompt.encode(),
-                    f"runtime/artifacts/{input_bundle}/schema.json": canonical_json(schema),
-                    f"runtime/artifacts/{input_bundle}/manifest.json": canonical_json(fitted["manifest"])})
-        rules = self.runtime.get("task_observation_rules", {}).get(action.get("target"), [])
+        self._save(self._input_artifacts(input_bundle, role, prompt, schema, fitted))
+        task = self.runtime["tasks"].get(action.get("target"), {})
+        rules = self.runtime.get("task_observation_rules", {}).get(action.get("target"), task.get("initial_observation_rules", []))
         tracker = ObservationTracker(execution_id, workspace, {**config, "observation_rules": rules})
         stop_started = None
         call_deadline = min(deadline, time.monotonic()+config["call_timeout_seconds"])
@@ -1236,10 +1328,12 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
                     # the new wording and additional criteria of the same task.
                     criteria = list(dict.fromkeys([*old["completion_criteria"], *criteria]))
                     proposal = {**proposal, "completion_criteria": criteria}
+                    self.runtime.get("task_observation_rules", {}).pop(tid, None)
                 self.runtime["tasks"][tid] = {**proposal, "id": tid, "revision": (old["revision"]+1 if old else 1),
                                               "status": "planned", "producer_execution": execution_id,
                                               "results": old.get("results", []) if old else [], "reviews": [],
                                               "occurrence_condition": {"op": "always"}, "dependencies": [],
+                                              "initial_observation_rules": deepcopy(old.get("initial_observation_rules", [])) if old else [],
                                               "revision_history": [*old.get("revision_history", []),
                                                   {k: v for k, v in old.items() if k != "revision_history"}] if old else []}
                 if proposal["title"] in titles:
@@ -1248,7 +1342,7 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
                 self._enqueue("task_contract_review", tid)
             for specification in self.runtime["executions"][execution_id].get("extensions", {}).get("task_conditions", []):
                 tid = titles.get(specification.get("task_title"), specification.get("task_id"))
-                if tid not in self.runtime["tasks"]:
+                if tid not in titles.values():
                     raise ValueError("task condition must identify a prepared task")
                 condition = deepcopy(specification.get("occurrence_condition", {"op": "always"}))
                 def bind_names(node):
@@ -1268,6 +1362,8 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
                 if evaluated["state"] == "evaluation_error":
                     raise ValueError("invalid task occurrence condition: " + "; ".join(evaluated["errors"]))
                 self.runtime["tasks"][tid].update(occurrence_condition=condition, dependencies=dependencies)
+                if "observation_rules" in specification:
+                    self.runtime["tasks"][tid]["initial_observation_rules"] = deepcopy(validate_rules(specification["observation_rules"]))
             available = set(self._available_inputs())
             for tid in titles.values():
                 task = self.runtime["tasks"][tid]

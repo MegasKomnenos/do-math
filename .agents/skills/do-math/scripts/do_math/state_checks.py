@@ -122,8 +122,9 @@ def _task_errors(runtime: dict, errors: list[str], feature2: bool) -> None:
         assessment = task.get("assessment") if isinstance(task.get("assessment"), dict) else {}
         criteria = task.get("completion_criteria")
         checks = assessment.get("criteria_results")
-        if not assessment.get("current", True):
-            _error(errors, str(task_id), "completed task assessment is not current")
+        if assessment.get("current") is False and not (
+                isinstance(assessment.get("invalidated_reason"), str) and assessment["invalidated_reason"].strip()):
+            _error(errors, str(task_id), "suspended completed task assessment lacks an invalidation reason")
         if assessment.get("decision") != "completed" or not isinstance(criteria, list) or not isinstance(checks, list):
             _error(errors, str(task_id), "completed task lacks criteria assessment")
         else:

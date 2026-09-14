@@ -1,0 +1,10 @@
+{
+  "command": "apply",
+  "exit_code": 0,
+  "request_id": "RQ-00000000000000000000000001",
+  "result": {
+    "integration_id": "IN-00000000000000000000000001",
+    "snapshot_commit": "1111111111111111111111111111111111111111"
+  },
+  "schema_version": "do-math-draft/command-response/9"
+}

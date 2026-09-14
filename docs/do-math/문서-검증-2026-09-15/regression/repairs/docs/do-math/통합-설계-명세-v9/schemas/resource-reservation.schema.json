@@ -1,0 +1,186 @@
+{
+  "$id": "https://do-math.invalid/schemas/draft/9/resource-reservation",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "const": "held"
+          }
+        },
+        "required": [
+          "state"
+        ]
+      },
+      "then": {
+        "required": [
+          "reobserve"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "const": "settled"
+          }
+        },
+        "required": [
+          "state"
+        ]
+      },
+      "then": {
+        "properties": {
+          "evidence_refs": {
+            "items": {
+              "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+            },
+            "minItems": 1,
+            "type": "array",
+            "uniqueItems": true
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "const": "unrecoverable"
+          }
+        },
+        "required": [
+          "state"
+        ]
+      },
+      "then": {
+        "properties": {
+          "evidence_refs": {
+            "items": {
+              "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+            },
+            "minItems": 1,
+            "type": "array",
+            "uniqueItems": true
+          }
+        }
+      }
+    }
+  ],
+  "properties": {
+    "authority_refs": {
+      "items": {
+        "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "budget_kind": {
+      "enum": [
+        "work",
+        "operations"
+      ],
+      "type": "string"
+    },
+    "confirmed_consumed": {
+      "maximum": 9007199254740991,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "constraint_id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "evidence_refs": {
+      "items": {
+        "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+      },
+      "minItems": 0,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "id": {
+      "allOf": [
+        {
+          "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/id"
+        },
+        {
+          "pattern": "^RR-"
+        }
+      ]
+    },
+    "owner_id": {
+      "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/id"
+    },
+    "owner_kind": {
+      "enum": [
+        "execution",
+        "provider_operation"
+      ],
+      "type": "string"
+    },
+    "purpose": {
+      "enum": [
+        "normal",
+        "stop_checkpoint"
+      ],
+      "type": "string"
+    },
+    "reconcile_owner": {
+      "const": "engine"
+    },
+    "reobserve": {
+      "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/wake"
+    },
+    "reserved": {
+      "maximum": 9007199254740991,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "returned": {
+      "maximum": 9007199254740991,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "do-math-draft/resource-reservation/9"
+    },
+    "state": {
+      "enum": [
+        "held",
+        "settled",
+        "unrecoverable"
+      ],
+      "type": "string"
+    },
+    "unit": {
+      "minLength": 1,
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "id",
+    "constraint_id",
+    "unit",
+    "authority_refs",
+    "owner_kind",
+    "owner_id",
+    "purpose",
+    "reserved",
+    "confirmed_consumed",
+    "returned",
+    "state",
+    "evidence_refs",
+    "reconcile_owner"
+  ],
+  "title": "resource-reservation",
+  "type": "object",
+  "x-contract-id": "do-math-draft/resource-reservation/9",
+  "x-id-prefix": "RR",
+  "x-owner-section": "4.2,4.5,19.4",
+  "x-storage": "runtime/reservations/{id}.json"
+}

@@ -1,0 +1,25 @@
+test_failed_execution_materials_are_restored_for_its_operational_review (test_currentness_recovery.CurrentnessTests.test_failed_execution_materials_are_restored_for_its_operational_review) ... ok
+test_graceful_output_on_changed_source_is_preserved_but_not_accepted (test_currentness_recovery.CurrentnessTests.test_graceful_output_on_changed_source_is_preserved_but_not_accepted) ... ok
+test_live_rules_repeat_exact_thresholds_and_preserve_last_valid_update (test_currentness_recovery.CurrentnessTests.test_live_rules_repeat_exact_thresholds_and_preserve_last_valid_update) ... ok
+test_recovery_captures_parent_and_inline_child_without_losing_action (test_currentness_recovery.CurrentnessTests.test_recovery_captures_parent_and_inline_child_without_losing_action) ... ok
+test_same_source_is_idempotent_changed_source_preserves_completed_task_history (test_currentness_recovery.CurrentnessTests.test_same_source_is_idempotent_changed_source_preserves_completed_task_history) ... ok
+test_declared_documents_have_recoverable_input_copies (test_reading_map.DocumentContextTests.test_declared_documents_have_recoverable_input_copies) ... ok
+test_installed_reference_changes_are_part_of_the_version_check (test_reading_map.DocumentContextTests.test_installed_reference_changes_are_part_of_the_version_check) ... ok
+test_changing_the_declared_role_path_changes_the_supplied_document (test_reading_map.ReadingMapTests.test_changing_the_declared_role_path_changes_the_supplied_document) ... ok
+test_declared_shared_procedures_are_supplied_in_reading_order (test_reading_map.ReadingMapTests.test_declared_shared_procedures_are_supplied_in_reading_order) ... ok
+test_missing_or_ambiguous_reading_map_is_an_error (test_reading_map.ReadingMapTests.test_missing_or_ambiguous_reading_map_is_an_error) ... ok
+test_missing_required_reference_is_not_silently_omitted (test_reading_map.ReadingMapTests.test_missing_required_reference_is_not_silently_omitted) ... ok
+test_declared_role_documents_are_complete (test_contracts.ContractTests.test_declared_role_documents_are_complete) ... ok
+test_every_role_has_closed_schema (test_contracts.ContractTests.test_every_role_has_closed_schema) ... ok
+test_invalid_decisions_fail (test_contracts.ContractTests.test_invalid_decisions_fail) ... ok
+test_plan_assessment_fields_are_required (test_contracts.ContractTests.test_plan_assessment_fields_are_required) ... ok
+test_prompt_contains_actual_documents_context_and_schema (test_contracts.ContractTests.test_prompt_contains_actual_documents_context_and_schema) ... ok
+test_role_document_missing_fails (test_contracts.ContractTests.test_role_document_missing_fails) ... ok
+test_old_rejected_preparation_remains_readable_after_recent_history_moves (test_document_followup.FollowupDocumentTests.test_old_rejected_preparation_remains_readable_after_recent_history_moves) ... ok
+test_planning_roles_receive_the_complete_current_settings (test_document_followup.FollowupDocumentTests.test_planning_roles_receive_the_complete_current_settings) ... ok
+test_prepared_observation_rule_reaches_contract_review (test_document_followup.FollowupDocumentTests.test_prepared_observation_rule_reaches_contract_review) ... ok
+
+----------------------------------------------------------------------
+Ran 20 tests in 4.405s
+
+OK
