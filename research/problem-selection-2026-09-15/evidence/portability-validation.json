@@ -1,0 +1,6 @@
+{
+  "status": "PASS",
+  "checks": 34,
+  "service_data_present": false,
+  "scope": "Fresh workspace with saved catalog/manifests and byte-identical PDFs; no original MCP data store."
+}

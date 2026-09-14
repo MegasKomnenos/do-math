@@ -1,6 +1,6 @@
 {
   "checked_date_kst": "2026-09-15",
-  "scope": "S1-S4 원문은 scholarly MCP로 확보했다. originals/는 Git에서 제외한 동일 바이트 로컬 사본이다. 원문 부재 시 기록된 source와 URL로 fetch하고 해시 차이는 새 판본으로 다룬다.",
+  "scope": "최초 scholarly MCP 원문 S1-S4와 원 회수 manifest. PDF 사본은 originals/에 로컬 보존하고, 원 manifest 바이트는 evidence/source-manifests/에서 추적한다. 이후 전문 독해·추가 원문 목록은 fullread 기록을 따른다.",
   "sources": [
     {
       "id": "S1",
@@ -18,7 +18,7 @@
         "pages": 25,
         "requested_target": "https://jeremymartinmath.github.io/papers/StatisticsLIPF.pdf"
       },
-      "manifest": "services/scholarly-mcp/data/manifests/7a9e425e32cec868557feaeeb93b20e4b74c09c927d6887574dfc4c82dfd9922",
+      "manifest": "research/problem-selection-2026-09-15/evidence/source-manifests/7a9e425e32cec868557feaeeb93b20e4b74c09c927d6887574dfc4c82dfd9922",
       "blob": "services/scholarly-mcp/data/blobs/ee0da6973fe6d573b48bb5144bc37c58b8edaa9af4488134e70de9ed75d12237"
     },
     {
@@ -37,7 +37,7 @@
         "pages": 29,
         "parent_ref": "scholarly://artifact/7b81f7f17b298eeda5f17ba87728d22112355e9d8b9746a4d78b68ee8527c10e"
       },
-      "manifest": "services/scholarly-mcp/data/manifests/81863cdf0665dd933e3281a115d0e5551ce379fb5b9778f450313ecabd9bfbae",
+      "manifest": "research/problem-selection-2026-09-15/evidence/source-manifests/81863cdf0665dd933e3281a115d0e5551ce379fb5b9778f450313ecabd9bfbae",
       "blob": "services/scholarly-mcp/data/blobs/062a21f50827c0c73996b8f9c5a364c2c88b48a27441393c1a620fbcf529dbdb"
     },
     {
@@ -56,7 +56,7 @@
         "pages": 8,
         "requested_target": "https://www.dmlett.com/archive/v14/DML24_v14_pp77-84.pdf"
       },
-      "manifest": "services/scholarly-mcp/data/manifests/ce7ca9cfc2a9f53faebf4c71edb69c25caebe74ff4f64466695cb442f7822913",
+      "manifest": "research/problem-selection-2026-09-15/evidence/source-manifests/ce7ca9cfc2a9f53faebf4c71edb69c25caebe74ff4f64466695cb442f7822913",
       "blob": "services/scholarly-mcp/data/blobs/7c35016e1759a69900ac4ce69168e3cf4edc9ac8818962b18bf7f668bbdc9f80"
     },
     {
@@ -75,7 +75,7 @@
         "pages": 36,
         "requested_target": "https://sites.cs.st-andrews.ac.uk/pp25/program/slides/celano.pdf"
       },
-      "manifest": "services/scholarly-mcp/data/manifests/2242e938e236d0b1847b0a50bb0da0fd7f89e7c62ae918d5ef9702712a759b06",
+      "manifest": "research/problem-selection-2026-09-15/evidence/source-manifests/2242e938e236d0b1847b0a50bb0da0fd7f89e7c62ae918d5ef9702712a759b06",
       "blob": "services/scholarly-mcp/data/blobs/6d4e58f81a9e7d5c958878b7e80fed16bba36a5bd134fa9737444a852fd90b9a"
     }
   ]
