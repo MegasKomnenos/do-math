@@ -1,0 +1,34 @@
+{
+  "checkpoint": "Saved checkpoint.json with the proof candidate ready for central submission; central verification and identity review remain pending.",
+  "knowledge": [
+    {
+      "declaration_names": [
+        "nat_add_zero_right"
+      ],
+      "dependencies": [],
+      "explanation": "The domain is the natural numbers. The theorem universally quantifies over every natural number `n` and concludes that adding zero on the right leaves `n` unchanged. The proof uses definitional reduction of natural-number addition.",
+      "kind": "theorem",
+      "lean_code": "theorem nat_add_zero_right : ∀ n : Nat, n + 0 = n := by\n  intro n\n  rfl\n",
+      "statement": "For every natural number n, n + 0 = n.",
+      "summary": "A self-contained Lean-core proof of right addition by zero for all natural numbers, submitted for central formal verification and independent identity review.",
+      "title": "Natural-number right addition by zero"
+    }
+  ],
+  "outcome": "submitted",
+  "questions": [],
+  "relations": [],
+  "remaining_work": [
+    "Run the configured central Lean verifier on `nat_add_zero_right`.",
+    "Perform independent semantic identity review of the formal declaration and explanation.",
+    "After the mathematical goal is established as solved, handle the deferred reproducibility-note requirement using the verifier-recorded Lean version."
+  ],
+  "report": "Constructed a self-contained Lean declaration using only core syntax and definitions. The declaration explicitly proves `∀ n : Nat, n + 0 = n`; its proof introduces the universally quantified natural number and closes by reflexivity after definitional reduction. No worker-local verification is claimed because verification is configured to occur centrally after submission and the observed Lean version is not yet recorded.",
+  "summary": "Submitted `nat_add_zero_right`, a self-contained Lean-core proof that every natural number is unchanged when zero is added on the right, with a matching explanation of its natural-number domain and universal quantification.",
+  "used_sources": [
+    "SKILL.md",
+    "GLOSSARY.md",
+    "TK-01M2FGY4G0BMS1C1ZZYB19V64M",
+    "context:goal",
+    "tool:lean"
+  ]
+}

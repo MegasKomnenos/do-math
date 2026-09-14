@@ -1,0 +1,47 @@
+{
+  "deferred": [],
+  "goal_audit": true,
+  "preparation_requests": [
+    "After the goal audit establishes the mathematical goal as solved, prepare the deferred reproducibility-note academic task using the verified theorem name, natural-number quantifier, and verifier-recorded Lean version."
+  ],
+  "questions": [],
+  "selections": [],
+  "summary": "TK-01M2FGY4G0BMS1C1ZZYB19V64M is completed: the returned self-contained Lean-core declaration `nat_add_zero_right` was centrally verified with signature `nat_add_zero_right (n : Nat) : n + 0 = n` and no axioms, and two independent identity reviews confirmed that the formal result and explanation agree. No tasks are currently ready. Request a goal audit against the verified theorem; the academic reproducibility note remains deferred until that audit establishes the goal as solved.",
+  "task_assessments": [
+    {
+      "criteria_results": [
+        {
+          "criterion": "Return self-contained Lean source using only Lean core that exports a declaration proving `∀ n : Nat, n + 0 = n`.",
+          "evidence": "The returned source in TK-01M2FGY4G0BMS1C1ZZYB19V64M defines `theorem nat_add_zero_right : ∀ n : Nat, n + 0 = n := by intro n; rfl`. KN-01M2FH1PJXVS8CMCVD6DWTV43V records central status `verified`, the exact matching declaration signature, and no axiom dependencies.",
+          "satisfied": true
+        },
+        {
+          "criterion": "Identify the exact exported declaration name for central formal verification.",
+          "evidence": "The result identifies `nat_add_zero_right`; KN-01M2FH1PJXVS8CMCVD6DWTV43V records that exact name in both `declaration_names` and the centrally verified declarations.",
+          "satisfied": true
+        },
+        {
+          "criterion": "Provide a concise explanation that explicitly states the domain is the natural numbers and that the equality holds for every natural number `n`.",
+          "evidence": "The returned explanation explicitly says that the domain is the natural numbers, universally quantifies over every natural number `n`, and concludes that adding zero on the right leaves `n` unchanged.",
+          "satisfied": true
+        },
+        {
+          "criterion": "The formal result and explanation must agree on the operation, zero being added on the right, equality conclusion, domain, and universal quantification.",
+          "evidence": "KN-01M2FH1PJXVS8CMCVD6DWTV43V has an effective completed identity assessment with two independent `match` reviews. Both reviews confirm agreement on `Nat`, universal quantification, addition, right-hand zero, and the equality `n + 0 = n`.",
+          "satisfied": true
+        }
+      ],
+      "decision": "completed",
+      "reason": "All completion criteria are supported by the returned source, central Lean verification, and the completed independent identity-review cycle.",
+      "task_id": "TK-01M2FGY4G0BMS1C1ZZYB19V64M"
+    }
+  ],
+  "used_sources": [
+    "SKILL.md",
+    "GLOSSARY.md",
+    "TK-01M2FGY4G0BMS1C1ZZYB19V64M",
+    "KN-01M2FH1PJXVS8CMCVD6DWTV43V",
+    "context:goal",
+    "tool:lean"
+  ]
+}

@@ -1,0 +1,787 @@
+{
+  "academic_requirements": {
+    "items": [
+      {
+        "assessor": "research_plan",
+        "criteria": [
+          "Create a readable note naming the verified theorem, the natural-number quantifier, and the exact Lean version recorded by the formal verifier."
+        ],
+        "external_effects": [],
+        "id": "reproducibility-note",
+        "required_inputs": [],
+        "scope": "Write a brief reproducibility note for the solved theorem using its recorded Lean verification."
+      }
+    ],
+    "revision": 1,
+    "sha256": "89364916cb1b16bcbe6879d4216be4d50ae68ffcd795f196141875d8b12ce30f"
+  },
+  "active_trust_environment": "TE-01M2FH1VYSXHP3RARAQ4F1W4GF",
+  "available_input_refs": [
+    "GLOSSARY.md",
+    "KN-01M2FH1PJXVS8CMCVD6DWTV43V",
+    "KN-01M2FHHGATDZ5GD9CDJH9T1S9N",
+    "SKILL.md",
+    "TK-01M2FGY4G0BMS1C1ZZYB19V64M",
+    "TK-01M2FH77QWR9ZYQN56771NH098",
+    "context:goal",
+    "context:policy",
+    "tool:lean"
+  ],
+  "config": {
+    "allowed_axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "call_timeout_seconds": 300,
+    "checkpoint_grace_seconds": 10,
+    "effort": "medium",
+    "goal_auditors": 2,
+    "lean_command": [
+      "C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin\\lean.exe"
+    ],
+    "lean_timeout_seconds": 120,
+    "max_artifact_bytes": 268435456,
+    "max_cycles": 4,
+    "max_input_bytes": 500000,
+    "max_observation_reviews": 3,
+    "max_output_repairs": 1,
+    "model": "gpt-5.6-sol",
+    "observation_idle_seconds": 120,
+    "observation_interval_seconds": 300,
+    "observation_mode": "event_driven",
+    "operations_calls": 20,
+    "research_reconsider_seconds": 86400,
+    "review_research_limit": 3,
+    "review_rounds": 3,
+    "reviewers": 2,
+    "role_models": {},
+    "run_timeout_seconds": 2400,
+    "work_calls": 30
+  },
+  "contract_id": "do-math-cli/1",
+  "created_at": "2026-09-14T08:35:34.902404+00:00",
+  "decisions": {
+    "DC-01M2FGXE3PC8WKYABGXJB71656": {
+      "actor": "user",
+      "affected": [],
+      "change": {
+        "kind": "academic_requirements",
+        "requirements": [
+          {
+            "assessor": "research_plan",
+            "criteria": [
+              "Create a readable note naming the verified theorem, the natural-number quantifier, and the exact Lean version recorded by the formal verifier."
+            ],
+            "id": "reproducibility-note",
+            "scope": "Write a brief reproducibility note for the solved theorem using its recorded Lean verification."
+          }
+        ]
+      },
+      "created_at": "2026-09-14T08:35:37.206014+00:00",
+      "id": "DC-01M2FGXE3PC8WKYABGXJB71656",
+      "kind": "academic_requirements",
+      "requirements_revision": 1,
+      "source_ref": "UC-01M2FGXD7NA53NBZA2PQRP8SFP"
+    }
+  },
+  "feature_version": 2,
+  "goal": "Prove that for every natural number n, n + 0 = n. Give a self-contained Lean proof using Lean core and a faithful concise explanation of its domain and quantification. Complete the reviewed task and the independent mathematical goal audits.",
+  "goal_assessment_basis": "8e9d11f01c2939924a70c4bf87ee80ec6117ded1e61c573f47addb1ff18e23fb",
+  "goal_judgments": [
+    {
+      "basis": "8e9d11f01c2939924a70c4bf87ee80ec6117ded1e61c573f47addb1ff18e23fb",
+      "basis_is_conservative": false,
+      "current": true,
+      "decision": "satisfied",
+      "dependencies": [
+        "TK-01M2FGY4G0BMS1C1ZZYB19V64M",
+        "KN-01M2FH1PJXVS8CMCVD6DWTV43V"
+      ],
+      "execution_id": "EX-01M2FH5X903ECHVKDMJFQ9892R",
+      "goal_revision": 1,
+      "policy_revision": 1,
+      "questions": [],
+      "reason": "The completed task TK-01M2FGY4G0BMS1C1ZZYB19V64M produced the requested self-contained Lean-core theorem. Eligible knowledge KN-01M2FH1PJXVS8CMCVD6DWTV43V is currently valid and verified: `nat_add_zero_right (n : Nat) : n + 0 = n` was checked under Lean 4.32.0 with no axioms, and the effective completed identity assessment plus both final independent judgments confirm that the statement and explanation faithfully agree on the natural-number domain, universal quantification, right addition of zero, and equality conclusion. This establishes the mathematical goal. The reproducibility-note academic requirement is correctly deferred until after goal solution and is separate from this mathematical satisfaction decision.",
+      "record_basis": [
+        {
+          "id": "TK-01M2FGY4G0BMS1C1ZZYB19V64M",
+          "sha256": "7d9991c34a9c2e7f859e9f1c2179e4054631f763e9612a805b94ba99bb56285f",
+          "status": "completed"
+        },
+        {
+          "id": "KN-01M2FH1PJXVS8CMCVD6DWTV43V",
+          "sha256": "5714fbd05e1a120df06af2378ef073f7ad2773ff6c61459b9250ddd3437f2f09",
+          "status": "verified"
+        }
+      ],
+      "required": 2,
+      "scope_complete": true,
+      "slot": 0,
+      "source_basis": [],
+      "summary": "The verified, independently identity-reviewed theorem proves exactly that every natural number n satisfies n + 0 = n; the mathematical goal is satisfied.",
+      "used_sources": [
+        "context:goal",
+        "TK-01M2FGY4G0BMS1C1ZZYB19V64M",
+        "KN-01M2FH1PJXVS8CMCVD6DWTV43V",
+        "tool:lean"
+      ]
+    },
+    {
+      "basis": "8e9d11f01c2939924a70c4bf87ee80ec6117ded1e61c573f47addb1ff18e23fb",
+      "basis_is_conservative": false,
+      "current": true,
+      "decision": "satisfied",
+      "dependencies": [
+        "KN-01M2FH1PJXVS8CMCVD6DWTV43V",
+        "TK-01M2FGY4G0BMS1C1ZZYB19V64M"
+      ],
+      "execution_id": "EX-01M2FH6J92SBCJ8N1FEV25WTY6",
+      "goal_revision": 1,
+      "policy_revision": 1,
+      "questions": [],
+      "reason": "The mathematical goal is established by eligible verified knowledge KN-01M2FH1PJXVS8CMCVD6DWTV43V. Its centrally verified Lean declaration nat_add_zero_right has signature nat_add_zero_right (n : Nat) : n + 0 = n, uses no axioms, and was checked with Lean 4.32.0. The completed identity assessment and both final independent judgments confirm that the formal theorem and explanation faithfully agree on the natural-number domain, universal quantification, right addition of zero, and equality conclusion. TK-01M2FGY4G0BMS1C1ZZYB19V64M is completed. The deferred reproducibility-note academic requirement is separate from mathematical goal satisfaction.",
+      "record_basis": [
+        {
+          "id": "KN-01M2FH1PJXVS8CMCVD6DWTV43V",
+          "sha256": "5714fbd05e1a120df06af2378ef073f7ad2773ff6c61459b9250ddd3437f2f09",
+          "status": "verified"
+        },
+        {
+          "id": "TK-01M2FGY4G0BMS1C1ZZYB19V64M",
+          "sha256": "7d9991c34a9c2e7f859e9f1c2179e4054631f763e9612a805b94ba99bb56285f",
+          "status": "completed"
+        }
+      ],
+      "required": 2,
+      "scope_complete": true,
+      "slot": 1,
+      "source_basis": [],
+      "summary": "The requested theorem has a verified, axiom-free Lean-core proof and completed independent semantic identity review. The mathematical goal is satisfied; the deferred reproducibility note remains a separate academic-phase requirement.",
+      "used_sources": [
+        "context:goal",
+        "KN-01M2FH1PJXVS8CMCVD6DWTV43V",
+        "TK-01M2FGY4G0BMS1C1ZZYB19V64M",
+        "tool:lean"
+      ]
+    }
+  ],
+  "goal_kind": "mathematical",
+  "goal_revision": 1,
+  "goal_status": "mathematically_solved",
+  "governance_history": [],
+  "grants": {
+    "GR-01M2FGXBVP2PKJWHAH8P5PHKQT": {
+      "budget_kind": "work",
+      "checkpoint_allowed": true,
+      "created_at": "2026-09-14T08:35:34.902404+00:00",
+      "expires_at": null,
+      "id": "GR-01M2FGXBVP2PKJWHAH8P5PHKQT",
+      "kind": "local",
+      "roles": [
+        "formal_check",
+        "goal_audit",
+        "identity_review",
+        "research_work",
+        "supplemental_research",
+        "task_contract_review"
+      ],
+      "source_ref": "instance-init",
+      "status": "active",
+      "task_ids": []
+    },
+    "GR-01M2FGXBVP9116GFHJVQH1PQBK": {
+      "budget_kind": "operations",
+      "checkpoint_allowed": true,
+      "created_at": "2026-09-14T08:35:34.902404+00:00",
+      "expires_at": null,
+      "id": "GR-01M2FGXBVP9116GFHJVQH1PQBK",
+      "kind": "local",
+      "roles": [
+        "intent_interpretation",
+        "maintenance",
+        "operational_review",
+        "research_plan",
+        "research_preparation"
+      ],
+      "source_ref": "instance-init",
+      "status": "active",
+      "task_ids": []
+    }
+  },
+  "id": "RI-01M2FGXBVNET8VXSNDD26D8SPR",
+  "kind_definitions": {
+    "knowledge:conjecture": {
+      "builtin": true,
+      "constraints": {
+        "mathematical_claim": false,
+        "requires_assessments": false,
+        "requires_evidence": false,
+        "requires_formal_results": false
+      },
+      "family": "knowledge",
+      "meaning": "An unverified mathematical proposition.",
+      "status": "active",
+      "token": "conjecture"
+    },
+    "knowledge:definition": {
+      "builtin": true,
+      "constraints": {
+        "mathematical_claim": false,
+        "requires_assessments": false,
+        "requires_evidence": false,
+        "requires_formal_results": false
+      },
+      "family": "knowledge",
+      "meaning": "A stated mathematical or research definition.",
+      "status": "active",
+      "token": "definition"
+    },
+    "knowledge:definition_candidate": {
+      "builtin": true,
+      "constraints": {
+        "mathematical_claim": false,
+        "requires_assessments": false,
+        "requires_evidence": false,
+        "requires_formal_results": false
+      },
+      "family": "knowledge",
+      "meaning": "A proposed definition not yet adopted.",
+      "status": "active",
+      "token": "definition_candidate"
+    },
+    "knowledge:observation": {
+      "builtin": true,
+      "constraints": {
+        "mathematical_claim": false,
+        "requires_assessments": false,
+        "requires_evidence": false,
+        "requires_formal_results": false
+      },
+      "family": "knowledge",
+      "meaning": "A bounded observation with stated evidence and scope.",
+      "status": "active",
+      "token": "observation"
+    },
+    "knowledge:obstacle": {
+      "builtin": true,
+      "constraints": {
+        "mathematical_claim": false,
+        "requires_assessments": false,
+        "requires_evidence": false,
+        "requires_formal_results": false
+      },
+      "family": "knowledge",
+      "meaning": "A recorded obstruction or failed approach.",
+      "status": "active",
+      "token": "obstacle"
+    },
+    "knowledge:partial_result": {
+      "builtin": true,
+      "constraints": {
+        "mathematical_claim": false,
+        "requires_assessments": false,
+        "requires_evidence": false,
+        "requires_formal_results": false
+      },
+      "family": "knowledge",
+      "meaning": "A result whose verified scope is smaller than the target.",
+      "status": "active",
+      "token": "partial_result"
+    },
+    "knowledge:proof_candidate": {
+      "builtin": true,
+      "constraints": {
+        "mathematical_claim": false,
+        "requires_assessments": false,
+        "requires_evidence": false,
+        "requires_formal_results": false
+      },
+      "family": "knowledge",
+      "meaning": "A proposed proof or proof direction.",
+      "status": "active",
+      "token": "proof_candidate"
+    },
+    "knowledge:question": {
+      "builtin": true,
+      "constraints": {
+        "mathematical_claim": false,
+        "requires_assessments": false,
+        "requires_evidence": false,
+        "requires_formal_results": false
+      },
+      "family": "knowledge",
+      "meaning": "An open research question.",
+      "status": "active",
+      "token": "question"
+    },
+    "knowledge:research_direction": {
+      "builtin": true,
+      "constraints": {
+        "mathematical_claim": false,
+        "requires_assessments": false,
+        "requires_evidence": false,
+        "requires_formal_results": false
+      },
+      "family": "knowledge",
+      "meaning": "A direction for future investigation.",
+      "status": "active",
+      "token": "research_direction"
+    },
+    "knowledge:theorem": {
+      "builtin": true,
+      "constraints": {
+        "mathematical_claim": false,
+        "requires_assessments": false,
+        "requires_evidence": false,
+        "requires_formal_results": false
+      },
+      "family": "knowledge",
+      "meaning": "A proposition proposed for formal and semantic verification.",
+      "status": "active",
+      "token": "theorem"
+    },
+    "relation:analogous_to": {
+      "builtin": true,
+      "constraints": {
+        "mathematical_claim": false,
+        "requires_assessments": false,
+        "requires_evidence": true,
+        "requires_formal_results": false
+      },
+      "family": "relation",
+      "meaning": "The records are analogous in the stated respects; no implication is asserted.",
+      "status": "active",
+      "token": "analogous_to"
+    },
+    "relation:challenges": {
+      "builtin": true,
+      "constraints": {
+        "mathematical_claim": false,
+        "requires_assessments": false,
+        "requires_evidence": true,
+        "requires_formal_results": false
+      },
+      "family": "relation",
+      "meaning": "Research evidence challenges a claim without itself refuting it.",
+      "status": "active",
+      "token": "challenges"
+    },
+    "relation:cites": {
+      "builtin": true,
+      "constraints": {
+        "mathematical_claim": false,
+        "requires_assessments": false,
+        "requires_evidence": true,
+        "requires_formal_results": false
+      },
+      "family": "relation",
+      "meaning": "The source cites the target as evidence or background.",
+      "status": "active",
+      "token": "cites"
+    },
+    "relation:derived_from": {
+      "builtin": true,
+      "constraints": {
+        "mathematical_claim": false,
+        "requires_assessments": false,
+        "requires_evidence": true,
+        "requires_formal_results": false
+      },
+      "family": "relation",
+      "meaning": "The target was derived using the source as research input.",
+      "status": "active",
+      "token": "derived_from"
+    },
+    "relation:formally_encodes": {
+      "builtin": true,
+      "constraints": {
+        "mathematical_claim": true,
+        "requires_assessments": true,
+        "requires_evidence": true,
+        "requires_formal_results": true
+      },
+      "family": "relation",
+      "meaning": "The source is formally encoded by the target with stated preservation.",
+      "status": "active",
+      "token": "formally_encodes"
+    },
+    "relation:formally_equivalent": {
+      "builtin": true,
+      "constraints": {
+        "mathematical_claim": true,
+        "requires_assessments": true,
+        "requires_evidence": true,
+        "requires_formal_results": true
+      },
+      "family": "relation",
+      "meaning": "The source and target are formally equivalent in both directions.",
+      "status": "active",
+      "token": "formally_equivalent"
+    },
+    "relation:formally_implies": {
+      "builtin": true,
+      "constraints": {
+        "mathematical_claim": true,
+        "requires_assessments": true,
+        "requires_evidence": true,
+        "requires_formal_results": true
+      },
+      "family": "relation",
+      "meaning": "The source proposition formally implies the target proposition.",
+      "status": "active",
+      "token": "formally_implies"
+    },
+    "relation:formally_reduces_to": {
+      "builtin": true,
+      "constraints": {
+        "mathematical_claim": true,
+        "requires_assessments": true,
+        "requires_evidence": true,
+        "requires_formal_results": true
+      },
+      "family": "relation",
+      "meaning": "The source problem formally reduces to the target problem.",
+      "status": "active",
+      "token": "formally_reduces_to"
+    },
+    "relation:formally_simulates": {
+      "builtin": true,
+      "constraints": {
+        "mathematical_claim": true,
+        "requires_assessments": true,
+        "requires_evidence": true,
+        "requires_formal_results": true
+      },
+      "family": "relation",
+      "meaning": "The target formally simulates the stated source behavior.",
+      "status": "active",
+      "token": "formally_simulates"
+    },
+    "relation:generated_from": {
+      "builtin": true,
+      "constraints": {
+        "mathematical_claim": false,
+        "requires_assessments": false,
+        "requires_evidence": true,
+        "requires_formal_results": false
+      },
+      "family": "relation",
+      "meaning": "The target was generated from the source.",
+      "status": "active",
+      "token": "generated_from"
+    },
+    "relation:narrows_scope": {
+      "builtin": true,
+      "constraints": {
+        "mathematical_claim": true,
+        "requires_assessments": true,
+        "requires_evidence": true,
+        "requires_formal_results": true
+      },
+      "family": "relation",
+      "meaning": "The source formally justifies a narrower target scope.",
+      "status": "active",
+      "token": "narrows_scope"
+    },
+    "relation:partially_addresses": {
+      "builtin": true,
+      "constraints": {
+        "mathematical_claim": true,
+        "requires_assessments": true,
+        "requires_evidence": true,
+        "requires_formal_results": true
+      },
+      "family": "relation",
+      "meaning": "The source formally addresses an explicit part of the target.",
+      "status": "active",
+      "token": "partially_addresses"
+    },
+    "relation:refines": {
+      "builtin": true,
+      "constraints": {
+        "mathematical_claim": false,
+        "requires_assessments": false,
+        "requires_evidence": true,
+        "requires_formal_results": false
+      },
+      "family": "relation",
+      "meaning": "The target refines the source as a research judgment, not a formal implication.",
+      "status": "active",
+      "token": "refines"
+    },
+    "relation:refutes": {
+      "builtin": true,
+      "constraints": {
+        "mathematical_claim": true,
+        "requires_assessments": true,
+        "requires_evidence": true,
+        "requires_formal_results": true
+      },
+      "family": "relation",
+      "meaning": "The source formally refutes the target claim.",
+      "status": "active",
+      "token": "refutes"
+    },
+    "relation:solves": {
+      "builtin": true,
+      "constraints": {
+        "mathematical_claim": true,
+        "requires_assessments": true,
+        "requires_evidence": true,
+        "requires_formal_results": true
+      },
+      "family": "relation",
+      "meaning": "The source establishes the target problem in the stated scope.",
+      "status": "active",
+      "token": "solves"
+    },
+    "relation:splits_from": {
+      "builtin": true,
+      "constraints": {
+        "mathematical_claim": false,
+        "requires_assessments": false,
+        "requires_evidence": true,
+        "requires_formal_results": false
+      },
+      "family": "relation",
+      "meaning": "The target is one part split from the source.",
+      "status": "active",
+      "token": "splits_from"
+    },
+    "relation:supersedes": {
+      "builtin": true,
+      "constraints": {
+        "mathematical_claim": false,
+        "requires_assessments": false,
+        "requires_evidence": true,
+        "requires_formal_results": false
+      },
+      "family": "relation",
+      "meaning": "The target is a newer meaning-preserving or explicitly revised record.",
+      "status": "active",
+      "token": "supersedes"
+    },
+    "relation:supports": {
+      "builtin": true,
+      "constraints": {
+        "mathematical_claim": false,
+        "requires_assessments": false,
+        "requires_evidence": true,
+        "requires_formal_results": false
+      },
+      "family": "relation",
+      "meaning": "Research evidence supports consideration; it does not imply the target.",
+      "status": "active",
+      "token": "supports"
+    }
+  },
+  "knowledge": {
+    "KN-01M2FH1PJXVS8CMCVD6DWTV43V": {
+      "created_at": "2026-09-14T08:37:56.957300+00:00",
+      "declaration_names": [
+        "nat_add_zero_right"
+      ],
+      "dependencies": [],
+      "explanation": "The domain is the natural numbers. The theorem universally quantifies over every natural number `n` and concludes that adding zero on the right leaves `n` unchanged. The proof uses definitional reduction of natural-number addition.",
+      "formal": {
+        "allowed_axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "artifact_ref": "runtime/artifacts/BA-01M2FH1VYS9TKAEEJZ4W5QH4QA/formal.json",
+        "axioms": {
+          "nat_add_zero_right": []
+        },
+        "command": [
+          "C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin\\lean.exe",
+          "C:\\math\\.skill-workspace\\do-math-feature2-live-normal-v2\\workspace\\formal\\EX-01M2FH1RZRBVKHEYTPW18Z7Y5S\\tmpbgiu6nwp\\proposal.lean"
+        ],
+        "declaration_signatures": {
+          "nat_add_zero_right": "nat_add_zero_right (n : Nat) : n + 0 = n"
+        },
+        "declarations": [
+          "nat_add_zero_right"
+        ],
+        "execution_id": "EX-01M2FH1RZRBVKHEYTPW18Z7Y5S",
+        "reason": null,
+        "signature_hash": "8275da4923ff59fefc57581716bf179360c8d4c16b1c8aa980b9682969be6b20",
+        "source_sha256": "e1ae4922282fbacd851c65e2839a05ad5bb2c69fac6a442b9e832a440a11f148",
+        "status": "verified",
+        "stderr": "",
+        "stdout": "\"__DO_MATH_SIGNATURE_BEGIN_nat_add_zero_right__\"\nnat_add_zero_right (n : Nat) : n + 0 = n\n\"__DO_MATH_SIGNATURE_END_nat_add_zero_right__\"\n'nat_add_zero_right' does not depend on any axioms\n",
+        "toolchain": {
+          "configured_command": [
+            "C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin\\lean.exe"
+          ],
+          "executable": "C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin\\lean.exe",
+          "project": null,
+          "sha256": "10c6a27583eb65ff6a7e92b9718ff01d851ad594e6d70bb283fa5a10092fd810",
+          "version": "Lean (version 4.32.0, x86_64-w64-windows-gnu, commit 8c9756b28d64dab099da31a4c09229a9e6a2ef35, Release)",
+          "version_exit": 0
+        },
+        "trust_environment_id": "TE-01M2FH1VYSXHP3RARAQ4F1W4GF",
+        "trust_environment_status": "active"
+      },
+      "id": "KN-01M2FH1PJXVS8CMCVD6DWTV43V",
+      "identity_assessment": {
+        "cycle_id": "RC-01M2FH1VYS8THG2029HQ1BNHZ5",
+        "decision": "match",
+        "effective": true,
+        "execution_ids": [
+          "EX-01M2FH1WQ6YYRBMBK4NSZ9AAKH",
+          "EX-01M2FH2DN0EGQ1X28D55R8QPR4"
+        ],
+        "formal_environment": {
+          "configured_command": [
+            "C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin\\lean.exe"
+          ],
+          "executable": "C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin\\lean.exe",
+          "project": null,
+          "sha256": "10c6a27583eb65ff6a7e92b9718ff01d851ad594e6d70bb283fa5a10092fd810",
+          "version": "Lean (version 4.32.0, x86_64-w64-windows-gnu, commit 8c9756b28d64dab099da31a4c09229a9e6a2ef35, Release)",
+          "version_exit": 0
+        },
+        "formal_verification": {
+          "allowed_axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "artifact_ref": "runtime/artifacts/BA-01M2FH1VYS9TKAEEJZ4W5QH4QA/formal.json",
+          "axioms": {
+            "nat_add_zero_right": []
+          },
+          "declaration_signatures": {
+            "nat_add_zero_right": "nat_add_zero_right (n : Nat) : n + 0 = n"
+          },
+          "declarations": [
+            "nat_add_zero_right"
+          ],
+          "execution_id": "EX-01M2FH1RZRBVKHEYTPW18Z7Y5S",
+          "signature_hash": "8275da4923ff59fefc57581716bf179360c8d4c16b1c8aa980b9682969be6b20",
+          "source_sha256": "e1ae4922282fbacd851c65e2839a05ad5bb2c69fac6a442b9e832a440a11f148",
+          "status": "verified",
+          "toolchain": {
+            "configured_command": [
+              "C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin\\lean.exe"
+            ],
+            "executable": "C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin\\lean.exe",
+            "project": null,
+            "sha256": "10c6a27583eb65ff6a7e92b9718ff01d851ad594e6d70bb283fa5a10092fd810",
+            "version": "Lean (version 4.32.0, x86_64-w64-windows-gnu, commit 8c9756b28d64dab099da31a4c09229a9e6a2ef35, Release)",
+            "version_exit": 0
+          },
+          "trust_environment_id": "TE-01M2FH1VYSXHP3RARAQ4F1W4GF",
+          "trust_environment_status": "active"
+        },
+        "proposal_digest": "16998c074c4e560a514da3151ec4837ecf01de17b100994739a77ff5f7685e60",
+        "reason": "Complete identity match and the exact formal source and environment remain valid",
+        "revision": 1,
+        "scope_complete": true,
+        "source_sha256": "e1ae4922282fbacd851c65e2839a05ad5bb2c69fac6a442b9e832a440a11f148",
+        "status": "completed"
+      },
+      "kind": "theorem",
+      "lean_code": "theorem nat_add_zero_right : ∀ n : Nat, n + 0 = n := by\n  intro n\n  rfl\n",
+      "producer_execution": "EX-01M2FH0FH9EGG0184XRJFM85GC",
+      "required_reviews": 2,
+      "review_cycle_id": "RC-01M2FH1VYS8THG2029HQ1BNHZ5",
+      "review_history": [
+        "RC-01M2FH1VYS8THG2029HQ1BNHZ5"
+      ],
+      "reviews": [
+        {
+          "cycle_id": "RC-01M2FH1VYS8THG2029HQ1BNHZ5",
+          "decision": "match",
+          "execution_id": "EX-01M2FH1WQ6YYRBMBK4NSZ9AAKH",
+          "findings": [],
+          "proposal_digest": "16998c074c4e560a514da3151ec4837ecf01de17b100994739a77ff5f7685e60",
+          "questions": [],
+          "scope_complete": true,
+          "slot": "initial-0",
+          "summary": "The statement, explanation, summary, Lean source, exported declaration, and verified declaration signature agree. The Lean theorem universally quantifies n over Nat and proves n + 0 = n by definitional reduction; the recorded formal result verifies the exact declaration with no axioms. No dependencies or relation claims require further review.",
+          "used_sources": [
+            "role_review.proposal",
+            "proposal:formal.declaration_signatures",
+            "proposal:formal.axioms",
+            "proposal:formal.toolchain"
+          ]
+        },
+        {
+          "cycle_id": "RC-01M2FH1VYS8THG2029HQ1BNHZ5",
+          "decision": "match",
+          "execution_id": "EX-01M2FH2DN0EGQ1X28D55R8QPR4",
+          "findings": [],
+          "proposal_digest": "16998c074c4e560a514da3151ec4837ecf01de17b100994739a77ff5f7685e60",
+          "questions": [],
+          "scope_complete": true,
+          "slot": "initial-1",
+          "summary": "The statement, explanation, summary, assumptions, declaration name, verified declaration signature, and Lean source agree. The Lean theorem universally quantifies over n : Nat and proves n + 0 = n by definitional reduction, exactly matching the stated natural-number domain, quantification, and conclusion. No dependencies or axioms are used, and no relation claim requires separate review.",
+          "used_sources": [
+            "KN-01M2FH1PJXVS8CMCVD6DWTV43V",
+            "context:goal",
+            "tool:lean"
+          ]
+        }
+      ],
+      "revision": 1,
+      "source_basis": [],
+      "statement": "For every natural number n, n + 0 = n.",
+      "status": "verified",
+      "summary": "A self-contained Lean-core proof of right addition by zero for all natural numbers, submitted for central formal verification and independent identity review.",
+      "task_id": "TK-01M2FGY4G0BMS1C1ZZYB19V64M",
+      "title": "Natural-number right addition by zero",
+      "verified_at": "2026-09-14T08:38:40.499332+00:00"
+    },
+    "KN-01M2FHHGATDZ5GD9CDJH9T1S9N": {
+      "created_at": "2026-09-14T08:46:34.842112+00:00",
+      "declaration_names": [],
+      "dependencies": [
+        "KN-01M2FH1PJXVS8CMCVD6DWTV43V"
+      ],
+      "explanation": "Reproducibility note: The verified theorem is `nat_add_zero_right`, with recorded signature `nat_add_zero_right (n : Nat) : n + 0 = n`. It quantifies over every natural number `n`. The formal verifier recorded the exact toolchain version as `Lean (version 4.32.0, x86_64-w64-windows-gnu, commit 8c9756b28d64dab099da31a4c09229a9e6a2ef35, Release)`.",
+      "id": "KN-01M2FHHGATDZ5GD9CDJH9T1S9N",
+      "kind": "observation",
+      "lean_code": "",
+      "producer_execution": "EX-01M2FHG36BTRGAYGESASBFWFNN",
+      "required_reviews": 2,
+      "reviews": [],
+      "revision": 1,
+      "source_basis": [],
+      "statement": "The verified theorem `nat_add_zero_right` proves `n + 0 = n` for every `n : Nat` and was verified using `Lean (version 4.32.0, x86_64-w64-windows-gnu, commit 8c9756b28d64dab099da31a4c09229a9e6a2ef35, Release)`.",
+      "status": "candidate",
+      "summary": "A brief reproducibility note naming the verified theorem, its universal natural-number quantification, and the exact verifier-recorded Lean version.",
+      "task_id": "TK-01M2FH77QWR9ZYQN56771NH098",
+      "title": "Reproducibility note for nat_add_zero_right"
+    }
+  },
+  "policies": "",
+  "policy_revision": 1,
+  "relations": [],
+  "sources": [],
+  "title": "Prove that for every natural number n, n + 0 = n. Give a self-contained Lean pro",
+  "trust_environments": {
+    "TE-01M2FH1VYSXHP3RARAQ4F1W4GF": {
+      "allowed_axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "id": "TE-01M2FH1VYSXHP3RARAQ4F1W4GF",
+      "status": "active",
+      "toolchain": {
+        "configured_command": [
+          "C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin\\lean.exe"
+        ],
+        "executable": "C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin\\lean.exe",
+        "project": null,
+        "sha256": "10c6a27583eb65ff6a7e92b9718ff01d851ad594e6d70bb283fa5a10092fd810",
+        "version": "Lean (version 4.32.0, x86_64-w64-windows-gnu, commit 8c9756b28d64dab099da31a4c09229a9e6a2ef35, Release)",
+        "version_exit": 0
+      }
+    }
+  },
+  "workspace": "C:\\math\\.skill-workspace\\do-math-feature2-live-normal-v2\\workspace"
+}

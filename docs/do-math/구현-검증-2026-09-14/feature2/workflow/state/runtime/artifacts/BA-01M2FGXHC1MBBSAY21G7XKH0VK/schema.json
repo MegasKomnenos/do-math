@@ -1,0 +1,93 @@
+{
+  "$id": "https://do-math.invalid/schemas/cli/1/role-response",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "candidates": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "completion_criteria": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "expected_result": {
+            "type": "string"
+          },
+          "inputs": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "question": {
+            "type": "string"
+          },
+          "reuse": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "revises_task_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "scope": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "work_class": {
+            "enum": [
+              "formal",
+              "nonformal"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "revises_task_id",
+          "title",
+          "question",
+          "scope",
+          "expected_result",
+          "completion_criteria",
+          "inputs",
+          "work_class",
+          "reuse"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "questions": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "summary": {
+      "type": "string"
+    },
+    "used_sources": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "summary",
+    "used_sources",
+    "questions",
+    "candidates"
+  ],
+  "type": "object",
+  "x-contract-id": "do-math-cli/1"
+}

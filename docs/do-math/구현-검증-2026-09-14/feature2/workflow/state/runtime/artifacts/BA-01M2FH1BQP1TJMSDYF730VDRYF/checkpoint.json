@@ -1,0 +1,16 @@
+{
+  "current_claim": "The Lean-core declaration nat_add_zero_right states and proves ∀ n : Nat, n + 0 = n by definitional reduction.",
+  "evidence_paths": [],
+  "attempts": [
+    "Constructed a self-contained theorem with an explicit universal quantifier over Nat and proof `by intro n; rfl`."
+  ],
+  "remaining_work": [
+    "Central formal verification and independent semantic identity review must be performed after submission."
+  ],
+  "next_step": "Submit the complete Lean source and exact exported declaration name to the central verifier.",
+  "progress_state": "ready_to_submit",
+  "iteration": 1,
+  "counters": {
+    "proof_candidates": 1
+  }
+}

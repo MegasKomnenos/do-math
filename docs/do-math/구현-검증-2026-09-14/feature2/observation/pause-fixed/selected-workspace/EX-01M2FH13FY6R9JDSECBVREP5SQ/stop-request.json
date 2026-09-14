@@ -1,0 +1,1 @@
+{"reason": "user_or_deadline_stop", "immediate": false, "deadline": "2026-09-14T08:38:15.764144+00:00", "instruction": "Preserve only already obtained facts in checkpoint.json and finish. Do not start new research or external actions."}

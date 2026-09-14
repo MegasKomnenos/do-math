@@ -1,0 +1,554 @@
+{
+  "case": "dispute",
+  "files": [
+    {
+      "bytes": 23459,
+      "origin": "byte-exact source copy",
+      "path": "actual-cli-invocations.json",
+      "sha256": "cdcad759376b6efeb7f7e384d99a1f1b3d95af526ae727387043a1168a71bd4b",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\actual-cli-invocations.json",
+      "source_relative": "actual-cli-invocations.json"
+    },
+    {
+      "bytes": 1765,
+      "origin": "byte-exact source copy",
+      "path": "actual-formal-result.json",
+      "sha256": "24f4cccea55fb906aefa726923109d990fb667ae597710597d1e766bfc0926a1",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\actual-formal-result.json",
+      "source_relative": "actual-formal-result.json"
+    },
+    {
+      "bytes": 892,
+      "origin": "byte-exact source copy",
+      "path": "case.json",
+      "sha256": "3d0b70b9c6b5cc1bd110067bb269e1b033943447401d99ce8f651793accbfac6",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\case.json",
+      "source_relative": "case.json"
+    },
+    {
+      "bytes": 63,
+      "origin": "byte-exact source copy",
+      "path": "case.lean",
+      "sha256": "2f84203599a2726ed07b21211927a5916794aa587686fb817389b82f5cd71efb",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\case.lean",
+      "source_relative": "case.lean"
+    },
+    {
+      "bytes": 23057,
+      "origin": "byte-exact source copy",
+      "path": "final-instance.json",
+      "sha256": "7caaf94e33699f80ab7f43d67f2778c34fc3ea962d4f77e364b02adb52323f5c",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\final-instance.json",
+      "source_relative": "final-instance.json"
+    },
+    {
+      "bytes": 314760,
+      "origin": "byte-exact source copy",
+      "path": "final-runtime.json",
+      "sha256": "4c0e4c739645967c4981d40a29b111208e1f5f4549e9b27b56efed79fd96b221",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\final-runtime.json",
+      "source_relative": "final-runtime.json"
+    },
+    {
+      "bytes": 1880,
+      "origin": "byte-exact source copy",
+      "path": "jsonl-manifest.json",
+      "sha256": "27a6f78b5d62cb8a8db1ec9456d17176b0276d47d3f958179715d23ddeca2edb",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\jsonl-manifest.json",
+      "source_relative": "jsonl-manifest.json"
+    },
+    {
+      "bytes": 2169,
+      "origin": "byte-exact source copy",
+      "path": "post-run-audit.json",
+      "sha256": "14db28fa251f2a04b2e73a213104d9abff86e97621edf371074c40b6e3c890a2",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\post-run-audit.json",
+      "source_relative": "post-run-audit.json"
+    },
+    {
+      "bytes": 3357,
+      "origin": "byte-exact source copy",
+      "path": "post_run_audit.py",
+      "sha256": "d3a5b45bd74976b821160056c47576f210557933a198bd9340407b7852b3272a",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\post_run_audit.py",
+      "source_relative": "post_run_audit.py"
+    },
+    {
+      "bytes": 240853,
+      "origin": "byte-exact source copy",
+      "path": "progress.json",
+      "sha256": "b3bad71068a9e2c3606549c59afea59ae69ec2ab4d1d6d9fb5c2bfb297e0c268",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\progress.json",
+      "source_relative": "progress.json"
+    },
+    {
+      "bytes": 611,
+      "origin": "byte-exact source copy",
+      "path": "result.json",
+      "sha256": "afe2e5444c7c8b9e454f1197e5987308b24bc3b5fd76adb76d488ef1160967c6",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\result.json",
+      "source_relative": "result.json"
+    },
+    {
+      "bytes": 14920,
+      "origin": "byte-exact source copy",
+      "path": "run_disputed_review.py",
+      "sha256": "8ce0185124c34c50dec6c7faa1a8aa5c918896bcb833f00c6d81e9b4266c6f19",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\run_disputed_review.py",
+      "source_relative": "run_disputed_review.py"
+    },
+    {
+      "bytes": 231,
+      "origin": "byte-exact source copy",
+      "path": "script-manifest.json",
+      "sha256": "de6171f1b2a4ea3cbc52d9d539173466edc3fda2a17f8a443917e171f93161ca",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\script-manifest.json",
+      "source_relative": "script-manifest.json"
+    },
+    {
+      "bytes": 13818,
+      "origin": "byte-exact source copy",
+      "path": "skill-source-manifest.json",
+      "sha256": "92d2f16034160373d7610d1176d5d40d1d50ff447bb4012bc132862a7b75cf0f",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\skill-source-manifest.json",
+      "source_relative": "skill-source-manifest.json"
+    },
+    {
+      "bytes": 206792,
+      "origin": "byte-exact source copy",
+      "path": "state.bundle",
+      "sha256": "1d4551110e1b0f443d66148112f2a90af6d42cd6d658a3c34084d34b26b27537",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\state.bundle",
+      "source_relative": "state.bundle"
+    },
+    {
+      "bytes": 927,
+      "origin": "byte-exact source copy",
+      "path": "synthetic-initial-0.jsonl",
+      "sha256": "b931dcd2e17fc24b7b2be3d6e62f8e4777754b5e70625e608e13c0e5dc8a2480",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\synthetic-initial-0.jsonl",
+      "source_relative": "synthetic-initial-0.jsonl"
+    },
+    {
+      "bytes": 707,
+      "origin": "byte-exact source copy",
+      "path": "synthetic-initial-1.jsonl",
+      "sha256": "511055c96f8d4e8fbe1761a2fccb0244cdfd4f52395ad6a5bc013e11a216586f",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\synthetic-initial-1.jsonl",
+      "source_relative": "synthetic-initial-1.jsonl"
+    },
+    {
+      "bytes": 611,
+      "origin": "byte-exact source copy",
+      "path": "run.log",
+      "sha256": "e9040f71781aa8c1dc488108a17e21caaa75986446e7c313fc9103547574982f",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\run.log",
+      "source_relative": "../run.log"
+    },
+    {
+      "bytes": 980,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFSNQDXY1YKF4TTSE5FTKF/stdout.jsonl",
+      "sha256": "9be7e788b0f560fcda79eaf1a6ee24c2aa0e38ad0b5d1726a07d3ebf8890f5b1",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFSNQDXY1YKF4TTSE5FTKF\\evidence\\stdout.jsonl",
+      "source_relative": "workspace/runs/EX-01M2FFSNQDXY1YKF4TTSE5FTKF/evidence/stdout.jsonl"
+    },
+    {
+      "bytes": 0,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFSNQDXY1YKF4TTSE5FTKF/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFSNQDXY1YKF4TTSE5FTKF\\evidence\\stderr.txt",
+      "source_relative": "workspace/runs/EX-01M2FFSNQDXY1YKF4TTSE5FTKF/evidence/stderr.txt"
+    },
+    {
+      "bytes": 1356,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFSNQDXY1YKF4TTSE5FTKF/request.json",
+      "sha256": "39cca4d35e33e7f736401053ef5c3512514ef79136ede9a3d389d42163f9d50e",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFSNQDXY1YKF4TTSE5FTKF\\evidence\\request.json",
+      "source_relative": "workspace/runs/EX-01M2FFSNQDXY1YKF4TTSE5FTKF/evidence/request.json"
+    },
+    {
+      "bytes": 366,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFSNQDXY1YKF4TTSE5FTKF/worker-status.json",
+      "sha256": "99ad117ecc430d22a4d45811352ab3456377a0d3aeafb1a703bcd5ffc5934091",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFSNQDXY1YKF4TTSE5FTKF\\evidence\\worker-status.json",
+      "source_relative": "workspace/runs/EX-01M2FFSNQDXY1YKF4TTSE5FTKF/evidence/worker-status.json"
+    },
+    {
+      "bytes": 594,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFSNQDXY1YKF4TTSE5FTKF/final.txt",
+      "sha256": "5b4e8af7d1c356ff393ac00fa39cbb2b556b577a2e17c9920f8116ed49513b71",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFSNQDXY1YKF4TTSE5FTKF\\evidence\\final.txt",
+      "source_relative": "workspace/runs/EX-01M2FFSNQDXY1YKF4TTSE5FTKF/evidence/final.txt"
+    },
+    {
+      "bytes": 1088,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFSNQDXY1YKF4TTSE5FTKF/output.schema.json",
+      "sha256": "86a1bf0bfb2f06898a8c1753e35dcdb642f6b57a48e20aebd6069e8d5815e64a",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFSNQDXY1YKF4TTSE5FTKF\\evidence\\output.schema.json",
+      "source_relative": "workspace/runs/EX-01M2FFSNQDXY1YKF4TTSE5FTKF/evidence/output.schema.json"
+    },
+    {
+      "bytes": 1820,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFT7RPDE6MZV9BM5Y49GKC/stdout.jsonl",
+      "sha256": "bf0c70abd0999c17a97dda04b334b7c0afd6b49545760576a64b47df9d70ba98",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFT7RPDE6MZV9BM5Y49GKC\\evidence\\stdout.jsonl",
+      "source_relative": "workspace/runs/EX-01M2FFT7RPDE6MZV9BM5Y49GKC/evidence/stdout.jsonl"
+    },
+    {
+      "bytes": 0,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFT7RPDE6MZV9BM5Y49GKC/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFT7RPDE6MZV9BM5Y49GKC\\evidence\\stderr.txt",
+      "source_relative": "workspace/runs/EX-01M2FFT7RPDE6MZV9BM5Y49GKC/evidence/stderr.txt"
+    },
+    {
+      "bytes": 1356,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFT7RPDE6MZV9BM5Y49GKC/request.json",
+      "sha256": "3b87d2aaf5fcc2ec3f55288ad7bf7b307b526a13c03f4df57625821a66155be1",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFT7RPDE6MZV9BM5Y49GKC\\evidence\\request.json",
+      "source_relative": "workspace/runs/EX-01M2FFT7RPDE6MZV9BM5Y49GKC/evidence/request.json"
+    },
+    {
+      "bytes": 366,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFT7RPDE6MZV9BM5Y49GKC/worker-status.json",
+      "sha256": "232aad87dd5312181f79612011ae9f755f551740dfec0919b2b08f25caf602e4",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFT7RPDE6MZV9BM5Y49GKC\\evidence\\worker-status.json",
+      "source_relative": "workspace/runs/EX-01M2FFT7RPDE6MZV9BM5Y49GKC/evidence/worker-status.json"
+    },
+    {
+      "bytes": 1414,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFT7RPDE6MZV9BM5Y49GKC/final.txt",
+      "sha256": "1e49ae4bad4f04d1db3b1531ed7c736f29581d83c0864af4a6b727d93052aa17",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFT7RPDE6MZV9BM5Y49GKC\\evidence\\final.txt",
+      "source_relative": "workspace/runs/EX-01M2FFT7RPDE6MZV9BM5Y49GKC/evidence/final.txt"
+    },
+    {
+      "bytes": 1365,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFT7RPDE6MZV9BM5Y49GKC/output.schema.json",
+      "sha256": "e213fc46ed249eebf1e379fab7cecddbb31fac4288039af96555d598cd7b358f",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFT7RPDE6MZV9BM5Y49GKC\\evidence\\output.schema.json",
+      "source_relative": "workspace/runs/EX-01M2FFT7RPDE6MZV9BM5Y49GKC/evidence/output.schema.json"
+    },
+    {
+      "bytes": 1818,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFV12Z93FMEDN6TG2G47JA/stdout.jsonl",
+      "sha256": "1e8b5e2c6da47e12ad477e813f1dd4df950a7e01b4cca24a563a9019279f298e",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFV12Z93FMEDN6TG2G47JA\\evidence\\stdout.jsonl",
+      "source_relative": "workspace/runs/EX-01M2FFV12Z93FMEDN6TG2G47JA/evidence/stdout.jsonl"
+    },
+    {
+      "bytes": 0,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFV12Z93FMEDN6TG2G47JA/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFV12Z93FMEDN6TG2G47JA\\evidence\\stderr.txt",
+      "source_relative": "workspace/runs/EX-01M2FFV12Z93FMEDN6TG2G47JA/evidence/stderr.txt"
+    },
+    {
+      "bytes": 1356,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFV12Z93FMEDN6TG2G47JA/request.json",
+      "sha256": "be4a837cad8972506f62f0ac0f20ba64d4a7e4ce9f36194fb892b5302a9576fe",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFV12Z93FMEDN6TG2G47JA\\evidence\\request.json",
+      "source_relative": "workspace/runs/EX-01M2FFV12Z93FMEDN6TG2G47JA/evidence/request.json"
+    },
+    {
+      "bytes": 366,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFV12Z93FMEDN6TG2G47JA/worker-status.json",
+      "sha256": "e50b58a60dc918ad948aa457d4f5e0f7852679c8925af72b4e827a318bc9e093",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFV12Z93FMEDN6TG2G47JA\\evidence\\worker-status.json",
+      "source_relative": "workspace/runs/EX-01M2FFV12Z93FMEDN6TG2G47JA/evidence/worker-status.json"
+    },
+    {
+      "bytes": 1408,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFV12Z93FMEDN6TG2G47JA/final.txt",
+      "sha256": "d40fbe8a889a92a6cb7be637f5df1e9d3822dc060401006f84cf18af245bc36a",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFV12Z93FMEDN6TG2G47JA\\evidence\\final.txt",
+      "source_relative": "workspace/runs/EX-01M2FFV12Z93FMEDN6TG2G47JA/evidence/final.txt"
+    },
+    {
+      "bytes": 1365,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFV12Z93FMEDN6TG2G47JA/output.schema.json",
+      "sha256": "e213fc46ed249eebf1e379fab7cecddbb31fac4288039af96555d598cd7b358f",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFV12Z93FMEDN6TG2G47JA\\evidence\\output.schema.json",
+      "source_relative": "workspace/runs/EX-01M2FFV12Z93FMEDN6TG2G47JA/evidence/output.schema.json"
+    },
+    {
+      "bytes": 1776,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFVXCN4V29DTQ94ATRE8AK/stdout.jsonl",
+      "sha256": "9ed025f3995c1a116c7ddb5508ce2b5b17054be854daaacaffa93f117b791aae",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFVXCN4V29DTQ94ATRE8AK\\evidence\\stdout.jsonl",
+      "source_relative": "workspace/runs/EX-01M2FFVXCN4V29DTQ94ATRE8AK/evidence/stdout.jsonl"
+    },
+    {
+      "bytes": 0,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFVXCN4V29DTQ94ATRE8AK/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFVXCN4V29DTQ94ATRE8AK\\evidence\\stderr.txt",
+      "source_relative": "workspace/runs/EX-01M2FFVXCN4V29DTQ94ATRE8AK/evidence/stderr.txt"
+    },
+    {
+      "bytes": 1356,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFVXCN4V29DTQ94ATRE8AK/request.json",
+      "sha256": "602bc8ba0716341ee46fae4221af72b3b4c9cdd49e6240f6a998b74741dc9e57",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFVXCN4V29DTQ94ATRE8AK\\evidence\\request.json",
+      "source_relative": "workspace/runs/EX-01M2FFVXCN4V29DTQ94ATRE8AK/evidence/request.json"
+    },
+    {
+      "bytes": 366,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFVXCN4V29DTQ94ATRE8AK/worker-status.json",
+      "sha256": "b09b92c7d1ce40e662305140eb1d53f32ab476348bed0af91cbfddff13ac925a",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFVXCN4V29DTQ94ATRE8AK\\evidence\\worker-status.json",
+      "source_relative": "workspace/runs/EX-01M2FFVXCN4V29DTQ94ATRE8AK/evidence/worker-status.json"
+    },
+    {
+      "bytes": 1366,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFVXCN4V29DTQ94ATRE8AK/final.txt",
+      "sha256": "8fb69ea2b746aa91948c8e316bdb0940a84d4a384250093cdbbbc0d4a075e060",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFVXCN4V29DTQ94ATRE8AK\\evidence\\final.txt",
+      "source_relative": "workspace/runs/EX-01M2FFVXCN4V29DTQ94ATRE8AK/evidence/final.txt"
+    },
+    {
+      "bytes": 1365,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFVXCN4V29DTQ94ATRE8AK/output.schema.json",
+      "sha256": "e213fc46ed249eebf1e379fab7cecddbb31fac4288039af96555d598cd7b358f",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFVXCN4V29DTQ94ATRE8AK\\evidence\\output.schema.json",
+      "source_relative": "workspace/runs/EX-01M2FFVXCN4V29DTQ94ATRE8AK/evidence/output.schema.json"
+    },
+    {
+      "bytes": 1747,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFWT0ETM8Y5TJDMB56XHY4/stdout.jsonl",
+      "sha256": "d2a8c7a5b53bab96ad5a321d45c57255880dee8c7aa10db8600beacdd51702f4",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFWT0ETM8Y5TJDMB56XHY4\\evidence\\stdout.jsonl",
+      "source_relative": "workspace/runs/EX-01M2FFWT0ETM8Y5TJDMB56XHY4/evidence/stdout.jsonl"
+    },
+    {
+      "bytes": 0,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFWT0ETM8Y5TJDMB56XHY4/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFWT0ETM8Y5TJDMB56XHY4\\evidence\\stderr.txt",
+      "source_relative": "workspace/runs/EX-01M2FFWT0ETM8Y5TJDMB56XHY4/evidence/stderr.txt"
+    },
+    {
+      "bytes": 1356,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFWT0ETM8Y5TJDMB56XHY4/request.json",
+      "sha256": "e154be2d09840af62a1d0849d5d7837182399337ab166da6451cefc80517274b",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFWT0ETM8Y5TJDMB56XHY4\\evidence\\request.json",
+      "source_relative": "workspace/runs/EX-01M2FFWT0ETM8Y5TJDMB56XHY4/evidence/request.json"
+    },
+    {
+      "bytes": 366,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFWT0ETM8Y5TJDMB56XHY4/worker-status.json",
+      "sha256": "a11ffc5d800e3d65c5a208e98ef416a76e16651916d7ad80a1ea2e88fac85a14",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFWT0ETM8Y5TJDMB56XHY4\\evidence\\worker-status.json",
+      "source_relative": "workspace/runs/EX-01M2FFWT0ETM8Y5TJDMB56XHY4/evidence/worker-status.json"
+    },
+    {
+      "bytes": 1345,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFWT0ETM8Y5TJDMB56XHY4/final.txt",
+      "sha256": "f86ed02374c9c152c5c81a50bf3450509353d47a1384e6e55639b67a5985a5ea",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFWT0ETM8Y5TJDMB56XHY4\\evidence\\final.txt",
+      "source_relative": "workspace/runs/EX-01M2FFWT0ETM8Y5TJDMB56XHY4/evidence/final.txt"
+    },
+    {
+      "bytes": 1344,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFWT0ETM8Y5TJDMB56XHY4/output.schema.json",
+      "sha256": "41b1da897226fb8ca37432acb76d33abf64a1c60669556196a4bd4976a6c7040",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFWT0ETM8Y5TJDMB56XHY4\\evidence\\output.schema.json",
+      "source_relative": "workspace/runs/EX-01M2FFWT0ETM8Y5TJDMB56XHY4/evidence/output.schema.json"
+    },
+    {
+      "bytes": 2212,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFXRJE7MAS50MZMCF0BWRN/stdout.jsonl",
+      "sha256": "90af68ba57ae497f7d9902dbf0856ca61f342e50b69506bb96bfa27c7b996848",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFXRJE7MAS50MZMCF0BWRN\\evidence\\stdout.jsonl",
+      "source_relative": "workspace/runs/EX-01M2FFXRJE7MAS50MZMCF0BWRN/evidence/stdout.jsonl"
+    },
+    {
+      "bytes": 0,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFXRJE7MAS50MZMCF0BWRN/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFXRJE7MAS50MZMCF0BWRN\\evidence\\stderr.txt",
+      "source_relative": "workspace/runs/EX-01M2FFXRJE7MAS50MZMCF0BWRN/evidence/stderr.txt"
+    },
+    {
+      "bytes": 1356,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFXRJE7MAS50MZMCF0BWRN/request.json",
+      "sha256": "6f988d6aaa0ec7db33904a5a7079cbf1259e46a65b5603133ac9d612e438ac45",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFXRJE7MAS50MZMCF0BWRN\\evidence\\request.json",
+      "source_relative": "workspace/runs/EX-01M2FFXRJE7MAS50MZMCF0BWRN/evidence/request.json"
+    },
+    {
+      "bytes": 366,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFXRJE7MAS50MZMCF0BWRN/worker-status.json",
+      "sha256": "c27ed848ad66679c8a6bfd51c6037048ed2890039a1e9962c911aa40a7d9d37f",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFXRJE7MAS50MZMCF0BWRN\\evidence\\worker-status.json",
+      "source_relative": "workspace/runs/EX-01M2FFXRJE7MAS50MZMCF0BWRN/evidence/worker-status.json"
+    },
+    {
+      "bytes": 1800,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFXRJE7MAS50MZMCF0BWRN/final.txt",
+      "sha256": "dbbc2f85f6d11162f53ec1f735fcf0f93e2d362d0a37fa3d2a1772d5f832db38",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFXRJE7MAS50MZMCF0BWRN\\evidence\\final.txt",
+      "source_relative": "workspace/runs/EX-01M2FFXRJE7MAS50MZMCF0BWRN/evidence/final.txt"
+    },
+    {
+      "bytes": 1365,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFXRJE7MAS50MZMCF0BWRN/output.schema.json",
+      "sha256": "e213fc46ed249eebf1e379fab7cecddbb31fac4288039af96555d598cd7b358f",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFXRJE7MAS50MZMCF0BWRN\\evidence\\output.schema.json",
+      "source_relative": "workspace/runs/EX-01M2FFXRJE7MAS50MZMCF0BWRN/evidence/output.schema.json"
+    },
+    {
+      "bytes": 2190,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFYE0WBTATW1C925EGJAN9/stdout.jsonl",
+      "sha256": "e545bc3e329656ad42080f768d80719663bb8f75ce4dbae8be77f49adc257f92",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFYE0WBTATW1C925EGJAN9\\evidence\\stdout.jsonl",
+      "source_relative": "workspace/runs/EX-01M2FFYE0WBTATW1C925EGJAN9/evidence/stdout.jsonl"
+    },
+    {
+      "bytes": 0,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFYE0WBTATW1C925EGJAN9/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFYE0WBTATW1C925EGJAN9\\evidence\\stderr.txt",
+      "source_relative": "workspace/runs/EX-01M2FFYE0WBTATW1C925EGJAN9/evidence/stderr.txt"
+    },
+    {
+      "bytes": 1356,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFYE0WBTATW1C925EGJAN9/request.json",
+      "sha256": "1bd5a70981fb4468e73915b02141ca949e489cda73e081b272426706b43f964a",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFYE0WBTATW1C925EGJAN9\\evidence\\request.json",
+      "source_relative": "workspace/runs/EX-01M2FFYE0WBTATW1C925EGJAN9/evidence/request.json"
+    },
+    {
+      "bytes": 366,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFYE0WBTATW1C925EGJAN9/worker-status.json",
+      "sha256": "4ee585ed1a5fc0235a77f360f87287d702e699dc49124a3d6dcbadb4e6629267",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFYE0WBTATW1C925EGJAN9\\evidence\\worker-status.json",
+      "source_relative": "workspace/runs/EX-01M2FFYE0WBTATW1C925EGJAN9/evidence/worker-status.json"
+    },
+    {
+      "bytes": 1778,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFYE0WBTATW1C925EGJAN9/final.txt",
+      "sha256": "a745c9de70210c8891eb690ce89926ffc4b3093f66adebeb28ffea7f035658eb",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFYE0WBTATW1C925EGJAN9\\evidence\\final.txt",
+      "source_relative": "workspace/runs/EX-01M2FFYE0WBTATW1C925EGJAN9/evidence/final.txt"
+    },
+    {
+      "bytes": 1365,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFYE0WBTATW1C925EGJAN9/output.schema.json",
+      "sha256": "e213fc46ed249eebf1e379fab7cecddbb31fac4288039af96555d598cd7b358f",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFYE0WBTATW1C925EGJAN9\\evidence\\output.schema.json",
+      "source_relative": "workspace/runs/EX-01M2FFYE0WBTATW1C925EGJAN9/evidence/output.schema.json"
+    },
+    {
+      "bytes": 2166,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFZ1NFDH5MM8RD0YJ7HC1S/stdout.jsonl",
+      "sha256": "12667ac6d7ea0b3a3b891fe7977bc2c64db7560487dfbf060485c571eb328281",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFZ1NFDH5MM8RD0YJ7HC1S\\evidence\\stdout.jsonl",
+      "source_relative": "workspace/runs/EX-01M2FFZ1NFDH5MM8RD0YJ7HC1S/evidence/stdout.jsonl"
+    },
+    {
+      "bytes": 0,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFZ1NFDH5MM8RD0YJ7HC1S/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFZ1NFDH5MM8RD0YJ7HC1S\\evidence\\stderr.txt",
+      "source_relative": "workspace/runs/EX-01M2FFZ1NFDH5MM8RD0YJ7HC1S/evidence/stderr.txt"
+    },
+    {
+      "bytes": 1356,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFZ1NFDH5MM8RD0YJ7HC1S/request.json",
+      "sha256": "a9cfe730fd472d20f5c44eddbe5c7c7499de071a89c97b89fcbc8ab2f8d9e5b8",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFZ1NFDH5MM8RD0YJ7HC1S\\evidence\\request.json",
+      "source_relative": "workspace/runs/EX-01M2FFZ1NFDH5MM8RD0YJ7HC1S/evidence/request.json"
+    },
+    {
+      "bytes": 366,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFZ1NFDH5MM8RD0YJ7HC1S/worker-status.json",
+      "sha256": "4a53c5d205daad2ddfee351f461da7e9a4280d9c5dadf5c0bc4667c9cafee0e0",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFZ1NFDH5MM8RD0YJ7HC1S\\evidence\\worker-status.json",
+      "source_relative": "workspace/runs/EX-01M2FFZ1NFDH5MM8RD0YJ7HC1S/evidence/worker-status.json"
+    },
+    {
+      "bytes": 1754,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFZ1NFDH5MM8RD0YJ7HC1S/final.txt",
+      "sha256": "22c63c0dea693538e0a0397de5b0fcc10ac1e13b7857ca3d4181002d8b6ea5a6",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFZ1NFDH5MM8RD0YJ7HC1S\\evidence\\final.txt",
+      "source_relative": "workspace/runs/EX-01M2FFZ1NFDH5MM8RD0YJ7HC1S/evidence/final.txt"
+    },
+    {
+      "bytes": 1365,
+      "origin": "byte-exact source copy",
+      "path": "cli/EX-01M2FFZ1NFDH5MM8RD0YJ7HC1S/output.schema.json",
+      "sha256": "e213fc46ed249eebf1e379fab7cecddbb31fac4288039af96555d598cd7b358f",
+      "source_absolute": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\runs\\EX-01M2FFZ1NFDH5MM8RD0YJ7HC1S\\evidence\\output.schema.json",
+      "source_relative": "workspace/runs/EX-01M2FFZ1NFDH5MM8RD0YJ7HC1S/evidence/output.schema.json"
+    },
+    {
+      "bytes": 247137,
+      "origin": "generated archive of byte-exact manifested source",
+      "path": "tested-skill.zip",
+      "sha256": "c6d6d34284041763f2ae39e7116c1632a71c9be47529f2062d53e098104c1388"
+    },
+    {
+      "bytes": 2045,
+      "origin": "package scope documentation",
+      "path": "README.md",
+      "sha256": "d50b65af2e8473b1057f355d7e0a0f0eb5ff830ee9d5fc580ca18b825c6f604c"
+    },
+    {
+      "bytes": 1835,
+      "origin": "offline integrity verifier",
+      "path": "verify-package.py",
+      "sha256": "754262a9522d7d01e330cbddd229154b3a48ef425375d65f3990b2d0d642722c"
+    }
+  ],
+  "original_evidence_root": "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence",
+  "packaged_at_utc": "2026-09-14T08:48:02.198973+00:00",
+  "source_copy_policy": "Byte-exact files; relocated CLI records mapped by source_relative; repeated repository/workspace trees omitted"
+}

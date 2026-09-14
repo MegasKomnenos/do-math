@@ -1,0 +1,40 @@
+{
+  "allowed_axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "artifact_ref": "runtime/artifacts/BA-01M2FH7M5JVYYT330EGQG143CM/formal.json",
+  "axioms": {
+    "successor_witness": []
+  },
+  "command": [
+    "C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin\\lean.exe",
+    "C:\\math\\.skill-workspace\\do-math-feature2-live-negative\\evidence\\workspace\\formal\\EX-01M2FH7JCW34N7PRWR1FV7ESKS\\tmpd29fdd25\\proposal.lean"
+  ],
+  "declaration_signatures": {
+    "successor_witness": "successor_witness (n : Nat) : ∃ m, m = n + 1"
+  },
+  "declarations": [
+    "successor_witness"
+  ],
+  "execution_id": "EX-01M2FH7JCW34N7PRWR1FV7ESKS",
+  "reason": null,
+  "signature_hash": "c2807aa8f4b8e1203db3a7645d01332364dfc302ed2afda6f736fe8340d2dfe6",
+  "source_sha256": "3ddc25febcd10c6e64afb1ead604c2cf811c6d58ec69a5d10c702d2de729cac8",
+  "status": "verified",
+  "stderr": "",
+  "stdout": "\"__DO_MATH_SIGNATURE_BEGIN_successor_witness__\"\nsuccessor_witness (n : Nat) : ∃ m, m = n + 1\n\"__DO_MATH_SIGNATURE_END_successor_witness__\"\n'successor_witness' does not depend on any axioms\n",
+  "toolchain": {
+    "configured_command": [
+      "C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin\\lean.exe"
+    ],
+    "executable": "C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin\\lean.exe",
+    "project": null,
+    "sha256": "10c6a27583eb65ff6a7e92b9718ff01d851ad594e6d70bb283fa5a10092fd810",
+    "version": "Lean (version 4.32.0, x86_64-w64-windows-gnu, commit 8c9756b28d64dab099da31a4c09229a9e6a2ef35, Release)",
+    "version_exit": 0
+  },
+  "trust_environment_id": "TE-01M2FH7M5JAZ4S9BQ35XDNTWG1",
+  "trust_environment_status": "active"
+}

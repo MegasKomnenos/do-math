@@ -1,0 +1,79 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "decision": {
+      "enum": [
+        "match",
+        "mismatch",
+        "unresolved"
+      ]
+    },
+    "findings": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "evidence": {
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "statement": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "statement",
+          "evidence"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "proposal_digest": {
+      "enum": [
+        "16998c074c4e560a514da3151ec4837ecf01de17b100994739a77ff5f7685e60"
+      ],
+      "minLength": 1,
+      "type": "string"
+    },
+    "questions": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "scope_complete": {
+      "type": "boolean"
+    },
+    "summary": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "used_sources": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "proposal_digest",
+    "summary",
+    "used_sources",
+    "questions",
+    "decision",
+    "scope_complete",
+    "findings"
+  ],
+  "type": "object"
+}

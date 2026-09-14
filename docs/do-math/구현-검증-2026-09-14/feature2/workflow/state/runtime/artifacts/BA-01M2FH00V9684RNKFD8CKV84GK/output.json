@@ -1,0 +1,13 @@
+{
+  "candidates": [],
+  "questions": [],
+  "summary": "The existing task TK-01M2FGY4G0BMS1C1ZZYB19V64M now has an approved contract review, CR-01M2FGZKKV1ZKXJSKJ8JSR2459, and its current readiness state is ready. It should return to research planning for selection. No new or revised candidate is needed because the approved ready task already captures the full proof obligation, and the reproducibility-note requirement remains deferred until the mathematical goal is established as solved.",
+  "used_sources": [
+    "SKILL.md",
+    "GLOSSARY.md",
+    "TK-01M2FGY4G0BMS1C1ZZYB19V64M",
+    "context:goal",
+    "context:policy",
+    "tool:lean"
+  ]
+}

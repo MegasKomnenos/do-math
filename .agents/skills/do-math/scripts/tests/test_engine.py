@@ -64,7 +64,18 @@ class ScriptedRunner:
                 "kind": "theorem", "title": "T", "statement": "s", "explanation": "e", "summary": "sum",
                 "lean_code": "theorem t : True := by trivial" if self.formal else "", "declaration_names": ["t"] if self.formal else [], "dependencies": []}])
         elif role == "identity_review":
-            out.update(decision="match", findings=[], scope_complete=True)
+            review = ctx["role_review"]
+            stage = review["action"]["stage"]
+            out = {"proposal_digest": review["proposal_digest"], "summary": "complete semantic match",
+                   "used_sources": ["proposal"], "questions": []}
+            if stage == "initial":
+                out.update(decision="match", findings=[], scope_complete=True)
+            elif stage == "organize":
+                out["issues"] = []
+            elif stage == "answer":
+                out.update(answers=[], new_findings=[])
+            elif stage == "judge":
+                out.update(decision="match", scope_complete=True, issue_verdicts=[], new_findings=[])
         elif role == "goal_audit":
             out.update(decision="satisfied", reason="basis", scope_complete=True)
         elif role == "operational_review":
@@ -73,8 +84,15 @@ class ScriptedRunner:
         return {"status": "completed", "output": out, "usage": {"calls": 1}, "error": None}
 
 
-def formal_ok(*, source, declarations, workspace, lean_command, timeout_seconds):
-    return {"status": "verified", "source_sha256": hashlib.sha256(source.encode()).hexdigest(), "declarations": declarations}
+def formal_ok(*, source, declarations, workspace, lean_command, timeout_seconds,
+              allowed_axioms=(), should_stop=None):
+    return {"status": "verified", "source_sha256": hashlib.sha256(source.encode()).hexdigest(),
+            "declarations": declarations, "axioms": {name: [] for name in declarations},
+            "declaration_signatures": {name: f"{name} : True" for name in declarations},
+            "signature_hash": hashlib.sha256("\n".join(declarations).encode()).hexdigest(),
+            "allowed_axioms": list(allowed_axioms),
+            "toolchain": {"executable": "test-lean", "sha256": "f" * 64,
+                          "version": "Lean test 4.32.0", "version_exit": 0}}
 
 
 def formal_fail(**_): return {"status": "failed", "reason": "mock formal failure; not Lean sorry evidence"}
@@ -111,6 +129,10 @@ class EngineTests(unittest.TestCase):
         self.assertEqual(len(reviews), 2)
         self.assertTrue(all('"reviews"' not in prompt for prompt in reviews))
         self.assertEqual(solved["knowledge"]["K"], 1)
+        verified = next(iter(engine.instance["knowledge"].values()))
+        self.assertEqual(verified["formal"]["trust_environment_status"], "active")
+        self.assertEqual(engine.instance["active_trust_environment"], verified["formal"]["trust_environment_id"])
+        self.assertEqual(verified["formal"]["toolchain"]["sha256"], "f" * 64)
         failed_runner = ScriptedRunner(formal=True); failed, _ = self.make(failed_runner, formal_fail)
         self.assertEqual(failed.run(max_steps=20)["knowledge"]["K"], 0)
 
@@ -141,11 +163,22 @@ class EngineTests(unittest.TestCase):
 
     def test_crash_recovery_and_artifact_immutability(self):
         engine, instance = self.make(ScriptedRunner())
-        engine.runtime["active_execution"] = "EX-crash"; engine.runtime["executions"]["EX-crash"] = {"id": "EX-crash", "status": "running"}; engine._save()
+        action = {"role": "research_work", "target": "TK-crash"}
+        engine.runtime["active_execution"] = "EX-crash"
+        engine.runtime["activities"]["AY-crash"] = {"id": "AY-crash", "role": "research_work",
+            "status": "active", "execution_ids": ["EX-crash"]}
+        engine.runtime["executions"]["EX-crash"] = {"id": "EX-crash", "activity_id": "AY-crash",
+            "role": "research_work", "status": "running", "action": action,
+            "input_snapshot": engine.head, "parent_execution_id": None}
+        engine.runtime["queue"].insert(0, action)
+        engine._save()
         recovered = ResearchEngine(self.repo, instance, runner=ScriptedRunner()).run(max_steps=1)
         self.assertEqual(recovered["status"], "paused")
         _, _, runtime = ResearchRepository(self.repo, instance).load()
         self.assertEqual(runtime["executions"]["EX-crash"]["outcome"], "execution_incomplete")
+        self.assertEqual(runtime["activities"]["AY-crash"]["status"], "unresolved")
+        self.assertTrue(any(action.get("recovery", {}).get("execution_id") == "EX-crash"
+                            for action in runtime["queue"]))
         engine, _ = self.make(ScriptedRunner())
         engine.run(max_steps=1)
         head, instance_data, runtime_data = ResearchRepository(self.repo, engine.instance["id"]).load()

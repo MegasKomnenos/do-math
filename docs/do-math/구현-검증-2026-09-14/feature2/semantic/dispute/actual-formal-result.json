@@ -1,0 +1,40 @@
+{
+  "allowed_axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "artifact_ref": "runtime/artifacts/BA-01M2FFSJ2G0VKHGP6KTE4AWZ4J/formal.json",
+  "axioms": {
+    "zero_identity": []
+  },
+  "command": [
+    "C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin\\lean.exe",
+    "C:\\math\\.skill-workspace\\do-math-feature2-live-disputed\\evidence\\workspace\\formal\\EX-01M2FFSFYX6JAZR02510M2PFAW\\tmp13xmf_ac\\proposal.lean"
+  ],
+  "declaration_signatures": {
+    "zero_identity": "zero_identity (n : Nat) : n + 0 = n"
+  },
+  "declarations": [
+    "zero_identity"
+  ],
+  "execution_id": "EX-01M2FFSFYX6JAZR02510M2PFAW",
+  "reason": null,
+  "signature_hash": "15425042faee4e2a8ffe9a60aecc9a4f2eeee6413f9636550fd9da2746773bf1",
+  "source_sha256": "54010995641f6c21741b07f5ec59a9fce368358e01a4f885be5309bbcbcadc9e",
+  "status": "verified",
+  "stderr": "",
+  "stdout": "\"__DO_MATH_SIGNATURE_BEGIN_zero_identity__\"\nzero_identity (n : Nat) : n + 0 = n\n\"__DO_MATH_SIGNATURE_END_zero_identity__\"\n'zero_identity' does not depend on any axioms\n",
+  "toolchain": {
+    "configured_command": [
+      "C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin\\lean.exe"
+    ],
+    "executable": "C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin\\lean.exe",
+    "project": null,
+    "sha256": "10c6a27583eb65ff6a7e92b9718ff01d851ad594e6d70bb283fa5a10092fd810",
+    "version": "Lean (version 4.32.0, x86_64-w64-windows-gnu, commit 8c9756b28d64dab099da31a4c09229a9e6a2ef35, Release)",
+    "version_exit": 0
+  },
+  "trust_environment_id": "TE-01M2FFSJ2G0NSBHDVKVGYCZ2Y5",
+  "trust_environment_status": "active"
+}

@@ -1,0 +1,2486 @@
+{
+  "academic_assessments": [
+    {
+      "assessor": "research_plan",
+      "decision": "satisfied",
+      "evidence": [
+        {
+          "criterion": "Create a readable note naming the verified theorem, the natural-number quantifier, and the exact Lean version recorded by the formal verifier.",
+          "evidence": "The returned report and observation for TK-01M2FH77QWR9ZYQN56771NH098 name `nat_add_zero_right`, state that it applies to every natural number `n`, and give the exact version `Lean (version 4.32.0, x86_64-w64-windows-gnu, commit 8c9756b28d64dab099da31a4c09229a9e6a2ef35, Release)`. The complete verified record KN-01M2FH1PJXVS8CMCVD6DWTV43V independently records the same declaration name, signature `nat_add_zero_right (n : Nat) : n + 0 = n`, and exact toolchain version.",
+          "satisfied": true
+        }
+      ],
+      "execution_id": "EX-01M2FHHJF9Y0R15A7JE6M8S1CE",
+      "external_effect_receipts": [],
+      "requirement_id": "reproducibility-note",
+      "requirements_sha256": "89364916cb1b16bcbe6879d4216be4d50ae68ffcd795f196141875d8b12ce30f",
+      "solution_basis": {
+        "goal_ref": "1:8e9d11f01c2939924a70c4bf87ee80ec6117ded1e61c573f47addb1ff18e23fb",
+        "records": [
+          {
+            "id": "KN-01M2FH1PJXVS8CMCVD6DWTV43V",
+            "sha256": "5714fbd05e1a120df06af2378ef073f7ad2773ff6c61459b9250ddd3437f2f09"
+          },
+          {
+            "id": "EX-01M2FH5X903ECHVKDMJFQ9892R",
+            "sha256": "4e5adbb2dd2d0d90480494332c7e5449dc01fcbc629dbbb08f57df446f6fb383"
+          },
+          {
+            "id": "EX-01M2FH6J92SBCJ8N1FEV25WTY6",
+            "sha256": "fab64a873af15ef49a535c174c9ae0424341c859ffe653d7d2879998ce5593f0"
+          }
+        ]
+      },
+      "task_id": "TK-01M2FH77QWR9ZYQN56771NH098"
+    }
+  ],
+  "active_execution": null,
+  "activities": {
+    "AY-01M2FGXHB59A2DF5PPNV38D4EV": {
+      "execution_ids": [
+        "EX-01M2FGXHB5B6E5DWM53GZZSYEB"
+      ],
+      "id": "AY-01M2FGXHB59A2DF5PPNV38D4EV",
+      "result_ref": "runtime/artifacts/BA-01M2FGY4F71WZZ5K2MM6FSF7F1/result.json",
+      "role": "research_preparation",
+      "status": "finished"
+    },
+    "AY-01M2FGY6F80H6QE5C5KAVRRMF1": {
+      "execution_ids": [
+        "EX-01M2FGY6F822RQGNK95GN64AJQ"
+      ],
+      "id": "AY-01M2FGY6F80H6QE5C5KAVRRMF1",
+      "result_ref": "runtime/artifacts/BA-01M2FGYP6JNJ5C66B7GTMN3ACP/result.json",
+      "role": "research_plan",
+      "status": "finished"
+    },
+    "AY-01M2FGYR50CCCPYGBTYSX0CFJ5": {
+      "execution_ids": [
+        "EX-01M2FGYR50T1FYHP4M0GX672PX"
+      ],
+      "id": "AY-01M2FGYR50CCCPYGBTYSX0CFJ5",
+      "result_ref": "runtime/artifacts/BA-01M2FGZKK9BFA6AM843Q3PYKYF/result.json",
+      "role": "task_contract_review",
+      "status": "finished"
+    },
+    "AY-01M2FGZMYYJVZ6EDBGXWN9QW59": {
+      "execution_ids": [
+        "EX-01M2FGZMYYCDSA41T5995J5EBM"
+      ],
+      "id": "AY-01M2FGZMYYJVZ6EDBGXWN9QW59",
+      "result_ref": "runtime/artifacts/BA-01M2FH00V9684RNKFD8CKV84GK/result.json",
+      "role": "research_preparation",
+      "status": "finished"
+    },
+    "AY-01M2FH027JVMMFTFKSS05J22VJ": {
+      "execution_ids": [
+        "EX-01M2FH027J4KNT6HTK3TJNPXTC"
+      ],
+      "id": "AY-01M2FH027JVMMFTFKSS05J22VJ",
+      "result_ref": "runtime/artifacts/BA-01M2FH0E47MJDAGQ00MG4EEVQP/result.json",
+      "role": "research_plan",
+      "status": "finished"
+    },
+    "AY-01M2FH0FHATVGWQCCAWRHQ0WCR": {
+      "execution_ids": [
+        "EX-01M2FH0FH9EGG0184XRJFM85GC"
+      ],
+      "id": "AY-01M2FH0FHATVGWQCCAWRHQ0WCR",
+      "result_ref": "runtime/artifacts/BA-01M2FH1PH4BFD1MPG1AYF0ZVXZ/result.json",
+      "role": "research_work",
+      "status": "finished"
+    },
+    "AY-01M2FH1RZR03BH40T7YWXY63FG": {
+      "actor_kind": "machine",
+      "execution_ids": [
+        "EX-01M2FH1RZRBVKHEYTPW18Z7Y5S"
+      ],
+      "id": "AY-01M2FH1RZR03BH40T7YWXY63FG",
+      "result_ref": "runtime/artifacts/BA-01M2FH1VYS9TKAEEJZ4W5QH4QA/formal.json",
+      "role": "maintenance",
+      "status": "finished"
+    },
+    "AY-01M2FH1WQ63S7K500E21S4DTW6": {
+      "execution_ids": [
+        "EX-01M2FH1WQ6YYRBMBK4NSZ9AAKH"
+      ],
+      "id": "AY-01M2FH1WQ63S7K500E21S4DTW6",
+      "result_ref": "runtime/artifacts/BA-01M2FH2C7DDDR7VHJZYSE6KWVV/result.json",
+      "role": "identity_review",
+      "status": "finished"
+    },
+    "AY-01M2FH2DN0W6JXVY9DQMPZF7ZG": {
+      "execution_ids": [
+        "EX-01M2FH2DN0EGQ1X28D55R8QPR4"
+      ],
+      "id": "AY-01M2FH2DN0W6JXVY9DQMPZF7ZG",
+      "result_ref": "runtime/artifacts/BA-01M2FH312NKHY4EAY4R414QXX2/result.json",
+      "role": "identity_review",
+      "status": "finished"
+    },
+    "AY-01M2FH3326MN7KRNB75HRHVF9S": {
+      "execution_ids": [
+        "EX-01M2FH33266ZD7SX4YAN9P8D7X"
+      ],
+      "id": "AY-01M2FH3326MN7KRNB75HRHVF9S",
+      "result_ref": "runtime/artifacts/BA-01M2FH5VTEVC72Y5D2RWXTY501/result.json",
+      "role": "research_plan",
+      "status": "finished"
+    },
+    "AY-01M2FH5X9077WYCXXCV9B0H14S": {
+      "execution_ids": [
+        "EX-01M2FH5X903ECHVKDMJFQ9892R"
+      ],
+      "id": "AY-01M2FH5X9077WYCXXCV9B0H14S",
+      "result_ref": "runtime/artifacts/BA-01M2FH6GSQB0R3YR5P4YVPMD01/result.json",
+      "role": "goal_audit",
+      "status": "finished"
+    },
+    "AY-01M2FH6J9266SWXY4WPAV5FFDC": {
+      "execution_ids": [
+        "EX-01M2FH6J92SBCJ8N1FEV25WTY6"
+      ],
+      "id": "AY-01M2FH6J9266SWXY4WPAV5FFDC",
+      "result_ref": "runtime/artifacts/BA-01M2FH77Q6P95XJ9E03GZJA9K9/result.json",
+      "role": "goal_audit",
+      "status": "finished"
+    },
+    "AY-01M2FH793V9JNEDDT2MFV5HGM9": {
+      "execution_ids": [
+        "EX-01M2FH793VACGECB61M7K6KGBJ"
+      ],
+      "id": "AY-01M2FH793V9JNEDDT2MFV5HGM9",
+      "result_ref": "runtime/artifacts/BA-01M2FHDQ7DHM9NPBJMK7848890/result.json",
+      "role": "research_plan",
+      "status": "finished"
+    },
+    "AY-01M2FHC1QRSXSY9QJ7ZD4Z2RM3": {
+      "execution_ids": [
+        "EX-01M2FHC1QR8SDNRBQM6D4PQHJ3"
+      ],
+      "id": "AY-01M2FHC1QRSXSY9QJ7ZD4Z2RM3",
+      "result_ref": "runtime/artifacts/BA-01M2FHCKF9TBBMQPY11MTPBYXY/result.json",
+      "role": "operational_review",
+      "status": "finished"
+    },
+    "AY-01M2FHDS2CDE9K59C9A21CKB39": {
+      "execution_ids": [
+        "EX-01M2FHDS2CZG1KSHRMGHB9DZ8E"
+      ],
+      "id": "AY-01M2FHDS2CDE9K59C9A21CKB39",
+      "result_ref": "runtime/artifacts/BA-01M2FHEZYY30JPYRZ3MS16DQVB/result.json",
+      "role": "task_contract_review",
+      "status": "finished"
+    },
+    "AY-01M2FHF1VP63TBPB88QS4468B0": {
+      "execution_ids": [
+        "EX-01M2FHF1VP4PGG7GN0W8KE03RP"
+      ],
+      "id": "AY-01M2FHF1VP63TBPB88QS4468B0",
+      "result_ref": "runtime/artifacts/BA-01M2FHFFKVT3T2NW3WY35P6HC1/result.json",
+      "role": "research_preparation",
+      "status": "finished"
+    },
+    "AY-01M2FHFHCY30KZ4XZ7WRSD4RMB": {
+      "execution_ids": [
+        "EX-01M2FHFHCYBZ8NGHANH61BWEM2"
+      ],
+      "id": "AY-01M2FHFHCY30KZ4XZ7WRSD4RMB",
+      "result_ref": "runtime/artifacts/BA-01M2FHG1CH99F8JSRHX700JPS5/result.json",
+      "role": "research_plan",
+      "status": "finished"
+    },
+    "AY-01M2FHG36BKDET28Q2F0C50XG8": {
+      "execution_ids": [
+        "EX-01M2FHG36BTRGAYGESASBFWFNN"
+      ],
+      "id": "AY-01M2FHG36BKDET28Q2F0C50XG8",
+      "result_ref": "runtime/artifacts/BA-01M2FHHG96DNXJBH68EN14JV86/result.json",
+      "role": "research_work",
+      "status": "finished"
+    },
+    "AY-01M2FHHJF91MRK3WKBZX7GH6JK": {
+      "execution_ids": [
+        "EX-01M2FHHJF9Y0R15A7JE6M8S1CE"
+      ],
+      "id": "AY-01M2FHHJF91MRK3WKBZX7GH6JK",
+      "result_ref": "runtime/artifacts/BA-01M2FHK3P6KZHJPYE1NCBQJXYK/result.json",
+      "role": "research_plan",
+      "status": "finished"
+    }
+  },
+  "checkpoints": {
+    "EX-01M2FGXHB5B6E5DWM53GZZSYEB": {
+      "checkpoint_status": "missing",
+      "kind": "observed_partial_state",
+      "limitation": "No complete worker checkpoint was received; infer no unreported result.",
+      "messages": [
+        {
+          "observed_at": "2026-09-14T08:35:59.479861+00:00",
+          "text": "{\"candidates\":[{\"completion_criteria\":[\"Return self-contained Lean source using only Lean core that exports a declaration proving `∀ n : Nat, n + 0 = n`.\",\"Identify the exact exported declaration name for central formal verification.\",\"Provide a concise explanation that explicitly states the domain is the natural numbers and that the equality holds for every natural number `n`.\",\"The formal result and explanation must agree on the operation, zero being added on the right, equality conclusion, domain, and universal quantification.\"],\"expected_result\":\"A self-contained Lean theorem proving right-addition of zero for every natural number, together with its exported declaration name and a faithful concise explanation suitable for formal checking and independent identity review.\",\"inputs\":[\"context:goal\",\"tool:lean\"],\"question\":\"Can a self-contained Lean-core declaration prove that for every natural number n, n + 0 = n, with an explanation faithful to the declaration's domain and quantification?\",\"reuse\":[],\"revises_task_id\":null,\"scope\":\"Construct the requested Lean-core proof of the universally quantified natural-number identity `n + 0 = n` and explain exactly its domain, quantification, operation, and conclusion. Do not perform the deferred academic reproducibility requirement in this task.\",\"title\":\"Prove natural-number right addition by zero\",\"work_class\":\"formal\"}],\"questions\":[],\"summary\":\"One formal research task is sufficient to address the mathematical goal. The reproducibility-note academic requirement is excluded because academic_phase is deferred_until_goal_solved; it should be handled only after a goal audit establishes the solution and the formal verifier has recorded the exact Lean version.\",\"used_sources\":[\"SKILL.md\",\"GLOSSARY.md\",\"context:goal\",\"context:policy\",\"tool:lean\"]}"
+        }
+      ],
+      "workspace": "C:\\math\\.skill-workspace\\do-math-feature2-live-normal-v2\\workspace\\runs\\EX-01M2FGXHB5B6E5DWM53GZZSYEB\\workspace"
+    },
+    "EX-01M2FGY6F822RQGNK95GN64AJQ": {
+      "checkpoint_status": "missing",
+      "kind": "observed_partial_state",
+      "limitation": "No complete worker checkpoint was received; infer no unreported result.",
+      "messages": [
+        {
+          "observed_at": "2026-09-14T08:36:17.621107+00:00",
+          "text": "{\"deferred\":[],\"goal_audit\":false,\"preparation_requests\":[\"Obtain an approved task contract review for TK-01M2FGY4G0BMS1C1ZZYB19V64M, then return the task to planning when its readiness state is ready.\"],\"questions\":[],\"selections\":[],\"summary\":\"No task is currently ready for execution. TK-01M2FGY4G0BMS1C1ZZYB19V64M remains planned and its readiness record reports that the current revision lacks an approved contract review. The deferred academic reproducibility requirement is not yet eligible because the mathematical goal has not been established as solved.\",\"task_assessments\":[],\"used_sources\":[\"SKILL.md\",\"GLOSSARY.md\",\"TK-01M2FGY4G0BMS1C1ZZYB19V64M\",\"context:goal\",\"context:policy\",\"tool:lean\"]}"
+        }
+      ],
+      "workspace": "C:\\math\\.skill-workspace\\do-math-feature2-live-normal-v2\\workspace\\runs\\EX-01M2FGY6F822RQGNK95GN64AJQ\\workspace"
+    },
+    "EX-01M2FGYR50T1FYHP4M0GX672PX": {
+      "checkpoint_status": "missing",
+      "kind": "observed_partial_state",
+      "limitation": "No complete worker checkpoint was received; infer no unreported result.",
+      "messages": [
+        {
+          "observed_at": "2026-09-14T08:36:47.942358+00:00",
+          "text": "{\"decision\":\"approved\",\"findings\":[\"Question and scope are precise: the task asks for a universally quantified Lean-core proof of `n + 0 = n` over `Nat`, and explicitly excludes the deferred academic reproducibility requirement.\",\"Inputs are sufficient for assignment: `context:goal` supplies the target and `tool:lean` supplies the central-after-submission verification mechanism. The unknown observed Lean version is not a contract defect because recording verification evidence is the executor's later responsibility.\",\"The expected result and completion criteria are concrete and assessable: self-contained Lean source, an exact exported declaration name, and a concise explanation matching the formal statement's domain, universal quantification, addition operation, right-hand zero, and equality conclusion.\",\"The contract correctly separates formal verification from semantic identity review. It does not treat the configured Lean command as proof of successful checking and does not require completed proof evidence before assignment.\",\"The task has no dependencies, its occurrence condition is always, and it does not duplicate a completed task; the task has no prior results or reuse claims requiring scope or validity reconciliation.\",\"The active local work grant includes `task_contract_review`, `research_work`, `formal_check`, `identity_review`, and `goal_audit`; the task requests no external effects. Checkpoint and runtime controls are supplied independently by the execution context.\",\"The academic requirement is correctly deferred until the mathematical goal is solved, so it is not used as a circular prerequisite for this proof task.\",\"Progress can be judged directly from production of the required Lean source, exported declaration name, and faithful explanation; final completion remains subject to central formal verification and independent semantic review rather than this contract approval.\"],\"questions\":[],\"summary\":\"The contract is ready for assignment. It defines a bounded formal obligation, supplies sufficient authorized inputs, gives observable completion criteria, correctly delegates Lean checking to the central verifier after submission, and keeps the deferred reproducibility note outside the proof task.\",\"used_sources\":[\"SKILL.md\",\"GLOSSARY.md\",\"TK-01M2FGY4G0BMS1C1ZZYB19V64M\",\"context:goal\",\"context:policy\",\"tool:lean\"]}"
+        }
+      ],
+      "workspace": "C:\\math\\.skill-workspace\\do-math-feature2-live-normal-v2\\workspace\\runs\\EX-01M2FGYR50T1FYHP4M0GX672PX\\workspace"
+    },
+    "EX-01M2FGZMYYCDSA41T5995J5EBM": {
+      "checkpoint_status": "missing",
+      "kind": "observed_partial_state",
+      "limitation": "No complete worker checkpoint was received; infer no unreported result.",
+      "messages": [
+        {
+          "observed_at": "2026-09-14T08:37:01.302950+00:00",
+          "text": "{\"candidates\":[],\"questions\":[],\"summary\":\"The existing task TK-01M2FGY4G0BMS1C1ZZYB19V64M now has an approved contract review, CR-01M2FGZKKV1ZKXJSKJ8JSR2459, and its current readiness state is ready. It should return to research planning for selection. No new or revised candidate is needed because the approved ready task already captures the full proof obligation, and the reproducibility-note requirement remains deferred until the mathematical goal is established as solved.\",\"used_sources\":[\"SKILL.md\",\"GLOSSARY.md\",\"TK-01M2FGY4G0BMS1C1ZZYB19V64M\",\"context:goal\",\"context:policy\",\"tool:lean\"]}"
+        }
+      ],
+      "workspace": "C:\\math\\.skill-workspace\\do-math-feature2-live-normal-v2\\workspace\\runs\\EX-01M2FGZMYYCDSA41T5995J5EBM\\workspace"
+    },
+    "EX-01M2FH027J4KNT6HTK3TJNPXTC": {
+      "checkpoint_status": "missing",
+      "kind": "observed_partial_state",
+      "limitation": "No complete worker checkpoint was received; infer no unreported result.",
+      "messages": [
+        {
+          "observed_at": "2026-09-14T08:37:15.103045+00:00",
+          "text": "{\"deferred\":[],\"goal_audit\":false,\"preparation_requests\":[],\"questions\":[],\"selections\":[\"TK-01M2FGY4G0BMS1C1ZZYB19V64M\"],\"summary\":\"Select the sole ready task for execution. Its contract is approved, it has no dependencies, and it directly covers the full formal proof obligation. The academic reproducibility note remains ineligible until the mathematical goal is established as solved and the formal verifier records the exact Lean version. No goal audit is requested before the selected task returns verified and independently reviewed results.\",\"task_assessments\":[],\"used_sources\":[\"SKILL.md\",\"GLOSSARY.md\",\"TK-01M2FGY4G0BMS1C1ZZYB19V64M\",\"context:goal\",\"context:policy\",\"tool:lean\"]}"
+        }
+      ],
+      "workspace": "C:\\math\\.skill-workspace\\do-math-feature2-live-normal-v2\\workspace\\runs\\EX-01M2FH027J4KNT6HTK3TJNPXTC\\workspace"
+    },
+    "EX-01M2FH0FH9EGG0184XRJFM85GC": {
+      "checkpoint": {
+        "attempts": [
+          "Constructed a self-contained theorem with an explicit universal quantifier over Nat and proof `by intro n; rfl`."
+        ],
+        "counters": {
+          "proof_candidates": 1
+        },
+        "current_claim": "The Lean-core declaration nat_add_zero_right states and proves ∀ n : Nat, n + 0 = n by definitional reduction.",
+        "evidence_paths": [],
+        "iteration": 1,
+        "next_step": "Submit the complete Lean source and exact exported declaration name to the central verifier.",
+        "progress_state": "ready_to_submit",
+        "remaining_work": [
+          "Central formal verification and independent semantic identity review must be performed after submission."
+        ]
+      },
+      "kind": "worker_checkpoint",
+      "sha256": "7bcac4476cd6ec5bedbab4d3862270d6a41b5a48a842ea36ddf4be517eb4589e"
+    },
+    "EX-01M2FH1WQ6YYRBMBK4NSZ9AAKH": {
+      "checkpoint_status": "missing",
+      "kind": "observed_partial_state",
+      "limitation": "No complete worker checkpoint was received; infer no unreported result.",
+      "messages": [
+        {
+          "observed_at": "2026-09-14T08:38:18.682032+00:00",
+          "text": "{\"decision\":\"match\",\"findings\":[],\"proposal_digest\":\"16998c074c4e560a514da3151ec4837ecf01de17b100994739a77ff5f7685e60\",\"questions\":[],\"scope_complete\":true,\"summary\":\"The statement, explanation, summary, Lean source, exported declaration, and verified declaration signature agree. The Lean theorem universally quantifies n over Nat and proves n + 0 = n by definitional reduction; the recorded formal result verifies the exact declaration with no axioms. No dependencies or relation claims require further review.\",\"used_sources\":[\"role_review.proposal\",\"proposal:formal.declaration_signatures\",\"proposal:formal.axioms\",\"proposal:formal.toolchain\"]}"
+        }
+      ],
+      "workspace": "C:\\math\\.skill-workspace\\do-math-feature2-live-normal-v2\\workspace\\runs\\EX-01M2FH1WQ6YYRBMBK4NSZ9AAKH\\workspace"
+    },
+    "EX-01M2FH2DN0EGQ1X28D55R8QPR4": {
+      "checkpoint_status": "missing",
+      "kind": "observed_partial_state",
+      "limitation": "No complete worker checkpoint was received; infer no unreported result.",
+      "messages": [
+        {
+          "observed_at": "2026-09-14T08:38:39.826278+00:00",
+          "text": "{\"decision\":\"match\",\"findings\":[],\"proposal_digest\":\"16998c074c4e560a514da3151ec4837ecf01de17b100994739a77ff5f7685e60\",\"questions\":[],\"scope_complete\":true,\"summary\":\"The statement, explanation, summary, assumptions, declaration name, verified declaration signature, and Lean source agree. The Lean theorem universally quantifies over n : Nat and proves n + 0 = n by definitional reduction, exactly matching the stated natural-number domain, quantification, and conclusion. No dependencies or axioms are used, and no relation claim requires separate review.\",\"used_sources\":[\"KN-01M2FH1PJXVS8CMCVD6DWTV43V\",\"context:goal\",\"tool:lean\"]}"
+        }
+      ],
+      "workspace": "C:\\math\\.skill-workspace\\do-math-feature2-live-normal-v2\\workspace\\runs\\EX-01M2FH2DN0EGQ1X28D55R8QPR4\\workspace"
+    },
+    "EX-01M2FH33266ZD7SX4YAN9P8D7X": {
+      "checkpoint": {
+        "attempts": [
+          "Compared every completion criterion verbatim against the returned Lean source, exact exported declaration name, central formal verification record, and two independent identity reviews."
+        ],
+        "counters": {
+          "assessed_tasks": 1,
+          "satisfied_criteria": 4
+        },
+        "current_claim": "TK-01M2FGY4G0BMS1C1ZZYB19V64M satisfies all four completion criteria based on the verified knowledge record and completed independent identity review.",
+        "evidence_paths": [
+          "input/catalog/tasks.json",
+          "input/knowledge/KN-01M2FH1PJXVS8CMCVD6DWTV43V.json",
+          "input/review-cycles/RC-01M2FH1VYS8THG2029HQ1BNHZ5.json",
+          "input/task-results/TK-01M2FGY4G0BMS1C1ZZYB19V64M/EX-01M2FH0FH9EGG0184XRJFM85GC/checkpoint.json"
+        ],
+        "iteration": 1,
+        "next_step": "Submit the completed task assessment and request a goal audit.",
+        "progress_state": "ready_to_submit",
+        "remaining_work": [
+          "Run a mathematical goal audit against verified knowledge KN-01M2FH1PJXVS8CMCVD6DWTV43V.",
+          "If the goal audit establishes the goal as solved, prepare and perform the deferred reproducibility-note academic requirement."
+        ]
+      },
+      "kind": "worker_checkpoint",
+      "sha256": "7cc7a1fa811b0b87602a98014d0328e02e645901f94b2e7b29270d1808330dc9"
+    },
+    "EX-01M2FH5X903ECHVKDMJFQ9892R": {
+      "checkpoint_status": "missing",
+      "kind": "observed_partial_state",
+      "limitation": "No complete worker checkpoint was received; infer no unreported result.",
+      "messages": [
+        {
+          "observed_at": "2026-09-14T08:40:34.449082+00:00",
+          "text": "{\"decision\":\"satisfied\",\"questions\":[],\"reason\":\"The completed task TK-01M2FGY4G0BMS1C1ZZYB19V64M produced the requested self-contained Lean-core theorem. Eligible knowledge KN-01M2FH1PJXVS8CMCVD6DWTV43V is currently valid and verified: `nat_add_zero_right (n : Nat) : n + 0 = n` was checked under Lean 4.32.0 with no axioms, and the effective completed identity assessment plus both final independent judgments confirm that the statement and explanation faithfully agree on the natural-number domain, universal quantification, right addition of zero, and equality conclusion. This establishes the mathematical goal. The reproducibility-note academic requirement is correctly deferred until after goal solution and is separate from this mathematical satisfaction decision.\",\"scope_complete\":true,\"summary\":\"The verified, independently identity-reviewed theorem proves exactly that every natural number n satisfies n + 0 = n; the mathematical goal is satisfied.\",\"used_sources\":[\"context:goal\",\"TK-01M2FGY4G0BMS1C1ZZYB19V64M\",\"KN-01M2FH1PJXVS8CMCVD6DWTV43V\",\"tool:lean\"]}"
+        }
+      ],
+      "workspace": "C:\\math\\.skill-workspace\\do-math-feature2-live-normal-v2\\workspace\\runs\\EX-01M2FH5X903ECHVKDMJFQ9892R\\workspace"
+    },
+    "EX-01M2FH6J92SBCJ8N1FEV25WTY6": {
+      "checkpoint_status": "missing",
+      "kind": "observed_partial_state",
+      "limitation": "No complete worker checkpoint was received; infer no unreported result.",
+      "messages": [
+        {
+          "observed_at": "2026-09-14T08:40:57.926264+00:00",
+          "text": "{\"decision\":\"satisfied\",\"questions\":[],\"reason\":\"The mathematical goal is established by eligible verified knowledge KN-01M2FH1PJXVS8CMCVD6DWTV43V. Its centrally verified Lean declaration nat_add_zero_right has signature nat_add_zero_right (n : Nat) : n + 0 = n, uses no axioms, and was checked with Lean 4.32.0. The completed identity assessment and both final independent judgments confirm that the formal theorem and explanation faithfully agree on the natural-number domain, universal quantification, right addition of zero, and equality conclusion. TK-01M2FGY4G0BMS1C1ZZYB19V64M is completed. The deferred reproducibility-note academic requirement is separate from mathematical goal satisfaction.\",\"scope_complete\":true,\"summary\":\"The requested theorem has a verified, axiom-free Lean-core proof and completed independent semantic identity review. The mathematical goal is satisfied; the deferred reproducibility note remains a separate academic-phase requirement.\",\"used_sources\":[\"context:goal\",\"KN-01M2FH1PJXVS8CMCVD6DWTV43V\",\"TK-01M2FGY4G0BMS1C1ZZYB19V64M\",\"tool:lean\"]}"
+        }
+      ],
+      "workspace": "C:\\math\\.skill-workspace\\do-math-feature2-live-normal-v2\\workspace\\runs\\EX-01M2FH6J92SBCJ8N1FEV25WTY6\\workspace"
+    },
+    "EX-01M2FH793VACGECB61M7K6KGBJ": {
+      "checkpoint": {
+        "attempts": [
+          "Compared the complete task list and task_readiness snapshot.",
+          "Read the verified knowledge record to confirm that the theorem name, natural-number quantification, and exact verifier-recorded Lean version needed by the academic task are available."
+        ],
+        "current_claim": "The postsolution reproducibility-note task is planned but not ready because its current revision lacks an approved contract review; therefore no ready task can be selected in this planning action.",
+        "evidence_paths": [
+          "input/knowledge/KN-01M2FH1PJXVS8CMCVD6DWTV43V.json"
+        ],
+        "next_step": "Request preparation/contract review for the academic reproducibility-note task.",
+        "progress_state": "ready_to_submit",
+        "remaining_work": [
+          "Obtain an approved contract review for TK-01M2FH77QWR9ZYQN56771NH098.",
+          "Return the task to research planning once its readiness state becomes ready."
+        ]
+      },
+      "kind": "worker_checkpoint",
+      "sha256": "17459f077b0333abe9cd4fd77c3359a920646d7ee57897f390b505a7ca3d80cb"
+    },
+    "EX-01M2FHDS2CZG1KSHRMGHB9DZ8E": {
+      "checkpoint_status": "missing",
+      "kind": "observed_partial_state",
+      "limitation": "No complete worker checkpoint was received; infer no unreported result.",
+      "messages": [
+        {
+          "observed_at": "2026-09-14T08:45:11.721034+00:00",
+          "text": "{\"decision\":\"approved\",\"findings\":[\"The question, scope, and work class define a bounded nonformal obligation: write a brief reproducibility note for the already solved theorem. The task does not reopen or duplicate the completed proof task TK-01M2FGY4G0BMS1C1ZZYB19V64M.\",\"The postsolution occurrence is valid. KN-01M2FH1PJXVS8CMCVD6DWTV43V is verified, has an effective completed identity assessment, and the recorded goal audits establish the mathematical goal as satisfied before this academic task is assigned.\",\"The task input, dependency, and reuse reference KN-01M2FH1PJXVS8CMCVD6DWTV43V exactly. That record contains all facts needed for the note: theorem name `nat_add_zero_right`, signature `nat_add_zero_right (n : Nat) : n + 0 = n`, universal natural-number quantification, and the verifier-recorded version `Lean (version 4.32.0, x86_64-w64-windows-gnu, commit 8c9756b28d64dab099da31a4c09229a9e6a2ef35, Release)`.\",\"Reuse is within the verified record's effective scope: the task asks only to report recorded theorem and verification metadata, not to infer a new mathematical claim or claim a fresh formal verification.\",\"The expected result and completion criterion are concrete and assessable by the designated research_plan assessor: the returned note must be readable and name the verified theorem, the natural-number quantifier, and the exact recorded Lean version.\",\"The single deliverable provides an adequate progress and completion observation for this brief task; completion is not inferred merely from assignment and remains subject to assessment of the returned note against the exact criterion.\",\"The task requests no external effects. The active local grants cover the relevant research and planning roles, and no additional permission, network operation, or formal-verifier execution is required to author the note.\",\"The contract basis matches the current goal revision, policy revision, and task revision, and the task retains the academic requirement's recorded requirements hash and solution basis.\"],\"questions\":[],\"summary\":\"The contract is ready for assignment. It is a bounded postsolution documentation task with sufficient verified input, a valid dependency and reuse basis, an exact assessable completion criterion, a designated assessor, and no external-effect or circular-proof requirement.\",\"used_sources\":[\"SKILL.md\",\"GLOSSARY.md\",\"TK-01M2FH77QWR9ZYQN56771NH098\",\"KN-01M2FH1PJXVS8CMCVD6DWTV43V\",\"TK-01M2FGY4G0BMS1C1ZZYB19V64M\",\"context:goal\",\"context:policy\",\"tool:lean\"]}"
+        }
+      ],
+      "workspace": "C:\\math\\.skill-workspace\\do-math-feature2-live-normal-v2\\workspace\\runs\\EX-01M2FHDS2CZG1KSHRMGHB9DZ8E\\workspace"
+    },
+    "EX-01M2FHF1VP4PGG7GN0W8KE03RP": {
+      "checkpoint_status": "missing",
+      "kind": "observed_partial_state",
+      "limitation": "No complete worker checkpoint was received; infer no unreported result.",
+      "messages": [
+        {
+          "observed_at": "2026-09-14T08:45:28.133837+00:00",
+          "text": "{\"candidates\":[],\"questions\":[],\"summary\":\"No new or revised research task is needed. Existing task TK-01M2FH77QWR9ZYQN56771NH098 now has approved contract review CR-01M2FHEZZWACFBQ0EVCG3XQYXE and current readiness state ready. It should return unchanged to research planning for selection; creating another candidate would duplicate the existing unfinished postsolution reproducibility-note obligation.\",\"used_sources\":[\"SKILL.md\",\"GLOSSARY.md\",\"TK-01M2FH77QWR9ZYQN56771NH098\",\"KN-01M2FH1PJXVS8CMCVD6DWTV43V\",\"context:goal\",\"context:policy\",\"tool:lean\"]}"
+        }
+      ],
+      "workspace": "C:\\math\\.skill-workspace\\do-math-feature2-live-normal-v2\\workspace\\runs\\EX-01M2FHF1VP4PGG7GN0W8KE03RP\\workspace"
+    },
+    "EX-01M2FHFHCYBZ8NGHANH61BWEM2": {
+      "checkpoint_status": "missing",
+      "kind": "observed_partial_state",
+      "limitation": "No complete worker checkpoint was received; infer no unreported result.",
+      "messages": [
+        {
+          "observed_at": "2026-09-14T08:45:46.134171+00:00",
+          "text": "{\"deferred\":[],\"goal_audit\":false,\"preparation_requests\":[],\"questions\":[],\"selections\":[\"TK-01M2FH77QWR9ZYQN56771NH098\"],\"summary\":\"Select the sole current ready task, the approved postsolution reproducibility-note obligation. Its verified knowledge dependency records the theorem name, universal natural-number quantification, and exact Lean verifier version needed for the note. The mathematical goal has already passed independent goal audits, so no further goal audit is requested.\",\"task_assessments\":[],\"used_sources\":[\"SKILL.md\",\"GLOSSARY.md\",\"TK-01M2FH77QWR9ZYQN56771NH098\",\"KN-01M2FH1PJXVS8CMCVD6DWTV43V\",\"context:goal\",\"context:policy\",\"tool:lean\"]}"
+        }
+      ],
+      "workspace": "C:\\math\\.skill-workspace\\do-math-feature2-live-normal-v2\\workspace\\runs\\EX-01M2FHFHCYBZ8NGHANH61BWEM2\\workspace"
+    },
+    "EX-01M2FHG36BTRGAYGESASBFWFNN": {
+      "checkpoint": {
+        "attempts": [
+          "Read the complete verified knowledge record and extracted the exact theorem name, natural-number quantification, declaration signature, and verifier-recorded Lean version."
+        ],
+        "counters": {
+          "notes_prepared": 1,
+          "source_records_read": 1
+        },
+        "current_claim": "The reproducibility note can be completed from the verified knowledge record: nat_add_zero_right universally quantifies n : Nat and was verified with the recorded Lean 4.32.0 toolchain string.",
+        "evidence_paths": [
+          "input/knowledge/KN-01M2FH1PJXVS8CMCVD6DWTV43V.json"
+        ],
+        "iteration": 1,
+        "next_step": "Submit the brief reproducibility note for research-plan assessment.",
+        "progress_state": "ready_to_submit",
+        "remaining_work": []
+      },
+      "kind": "worker_checkpoint",
+      "sha256": "5a65718a0d3e725faa9444e82e5fd6902f2c3ac651b8f1a695720801275f69eb"
+    },
+    "EX-01M2FHHJF9Y0R15A7JE6M8S1CE": {
+      "checkpoint": {
+        "attempts": [
+          "Read the complete verified theorem record and the returned task checkpoint, then compared the returned note against the exact completion criterion."
+        ],
+        "counters": {
+          "assessing_tasks_reviewed": 1,
+          "criteria_assessed": 1
+        },
+        "current_claim": "The assessing reproducibility-note task satisfies its sole completion criterion: the returned note names nat_add_zero_right, states its universal natural-number quantification, and gives the exact verifier-recorded Lean version.",
+        "evidence_paths": [
+          "input/knowledge/KN-01M2FH1PJXVS8CMCVD6DWTV43V.json",
+          "input/task-results/TK-01M2FH77QWR9ZYQN56771NH098/EX-01M2FHG36BTRGAYGESASBFWFNN/checkpoint.json"
+        ],
+        "iteration": 1,
+        "next_step": "Submit the completed task assessment; no ready tasks remain and no further goal audit is needed.",
+        "progress_state": "ready_to_submit",
+        "remaining_work": []
+      },
+      "kind": "worker_checkpoint",
+      "sha256": "44bc23215819a9bc4b51e8eb857b0edf79dee8936f1924ab8e33f078370dedce"
+    }
+  },
+  "condition_states": {},
+  "contract_id": "do-math-cli/1",
+  "conversations": {},
+  "cycles": 3,
+  "events": [
+    {
+      "assigned_at": "2026-09-14T08:35:37.207012+00:00",
+      "assigned_to": "AC-01M2FGXE3RKVY7ZXSH7XZKSWN0",
+      "at": "2026-09-14T08:35:37.207012+00:00",
+      "consumed_at": "2026-09-14T08:36:18.283654+00:00",
+      "consumed_by": "EX-01M2FGY6F822RQGNK95GN64AJQ",
+      "decision_id": "DC-01M2FGXE3PC8WKYABGXJB71656",
+      "id": "EV-01M2FGXE3Q3J0VHXM7MZ9A2FB7",
+      "kind": "user_decision_applied",
+      "opened_at": "2026-09-14T08:35:37.207012+00:00",
+      "source_ref": "UC-01M2FGXD7NA53NBZA2PQRP8SFP",
+      "target": null
+    },
+    {
+      "assigned_at": "2026-09-14T08:36:49.126196+00:00",
+      "assigned_to": "AC-01M2FGZMB8J9WB4JJ4XXERE1D5",
+      "at": "2026-09-14T08:36:49.128194+00:00",
+      "basis": [
+        {
+          "id": "CR-01M2FGZKKV1ZKXJSKJ8JSR2459",
+          "sha256": "1bc748dc549eb4b6d0cea10df39c10180f7f514e3450cd62d899239be69f85f0",
+          "status": null
+        }
+      ],
+      "consumed_at": "2026-09-14T08:37:15.552604+00:00",
+      "consumed_by": "EX-01M2FH027J4KNT6HTK3TJNPXTC",
+      "id": "EV-01M2FGZMB8CMZW8X9V3NZJW20B",
+      "kind": "task_became_ready",
+      "opened_at": "2026-09-14T08:36:49.128194+00:00",
+      "source_ref": null,
+      "target": "TK-01M2FGY4G0BMS1C1ZZYB19V64M"
+    },
+    {
+      "assigned_at": "2026-09-14T08:45:13.554935+00:00",
+      "assigned_to": "AC-01M2FHF0YST54CT98WAQCNPCPD",
+      "at": "2026-09-14T08:45:13.558932+00:00",
+      "basis": [
+        {
+          "id": "CR-01M2FHEZZWACFBQ0EVCG3XQYXE",
+          "sha256": "fba93d39f6c372119b816ec08059c6ac692a52bdab7adea0973776a4405c5cc2",
+          "status": null
+        }
+      ],
+      "consumed_at": "2026-09-14T08:45:46.811958+00:00",
+      "consumed_by": "EX-01M2FHFHCYBZ8NGHANH61BWEM2",
+      "id": "EV-01M2FHF0YPD29WM5GY339X6ERY",
+      "kind": "task_became_ready",
+      "opened_at": "2026-09-14T08:45:13.558932+00:00",
+      "source_ref": null,
+      "target": "TK-01M2FH77QWR9ZYQN56771NH098"
+    }
+  ],
+  "executions": {
+    "EX-01M2FGXHB5B6E5DWM53GZZSYEB": {
+      "action": {
+        "id": "AC-01M2FGXHB4BJPF2K43YX6NZXKK",
+        "reason": "initial research preparation",
+        "role": "research_preparation"
+      },
+      "activity_id": "AY-01M2FGXHB59A2DF5PPNV38D4EV",
+      "artifact_bundle": "BA-01M2FGY4F71WZZ5K2MM6FSF7F1",
+      "budget_kind": "operations",
+      "created_at": "2026-09-14T08:35:40.545298+00:00",
+      "effort": "medium",
+      "ended_at": "2026-09-14T08:36:00.114573+00:00",
+      "engine_sha256": "75a135dc5ecb42a0f9c5b7ac0e28f783b524cd67b70cc7f483ee0b9a5998ef9e",
+      "error": null,
+      "extensions": {},
+      "goal_revision": 1,
+      "grant_id": "GR-01M2FGXBVP9116GFHJVQH1PQBK",
+      "id": "EX-01M2FGXHB5B6E5DWM53GZZSYEB",
+      "input_bundle": "BA-01M2FGXHC1MBBSAY21G7XKH0VK",
+      "input_reductions": [],
+      "input_sha256": "076689a09b81c07e469d830a4dc98f1be00c59220fe91da6c783c4ca49709edc",
+      "input_snapshot": "4de93a790f3f3b728dfa93dc8f56e7fb8a61adf2",
+      "model": "gpt-5.6-sol",
+      "outcome": "output_accepted",
+      "output_files": [],
+      "outputs_complete": true,
+      "policy_revision": 1,
+      "process": {
+        "creation_filetime": "134338485413166523",
+        "pid": 24632,
+        "request_sha256": "1e434b2d05b4d22658dc95408e8bed03e7148d588be9273ba20f1978d22b9f9f"
+      },
+      "role": "research_preparation",
+      "source_basis": [],
+      "status": "ended",
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 0,
+        "input_tokens": 24395,
+        "output_tokens": 483,
+        "reasoning_output_tokens": 119
+      },
+      "validity_basis": []
+    },
+    "EX-01M2FGY6F822RQGNK95GN64AJQ": {
+      "action": {
+        "event_refs": [
+          "EV-01M2FGXE3Q3J0VHXM7MZ9A2FB7"
+        ],
+        "id": "AC-01M2FGXE3RKVY7ZXSH7XZKSWN0",
+        "opened_at": "2026-09-14T08:35:37.207012+00:00",
+        "reason": "academic requirements changed",
+        "role": "research_plan"
+      },
+      "activity_id": "AY-01M2FGY6F80H6QE5C5KAVRRMF1",
+      "artifact_bundle": "BA-01M2FGYP6JNJ5C66B7GTMN3ACP",
+      "budget_kind": "operations",
+      "created_at": "2026-09-14T08:36:02.191574+00:00",
+      "effort": "medium",
+      "ended_at": "2026-09-14T08:36:18.269530+00:00",
+      "engine_sha256": "75a135dc5ecb42a0f9c5b7ac0e28f783b524cd67b70cc7f483ee0b9a5998ef9e",
+      "error": null,
+      "extensions": {},
+      "goal_revision": 1,
+      "grant_id": "GR-01M2FGXBVP9116GFHJVQH1PQBK",
+      "id": "EX-01M2FGY6F822RQGNK95GN64AJQ",
+      "input_bundle": "BA-01M2FGY6GF89E9NEZ9X4C1MGQR",
+      "input_reductions": [],
+      "input_sha256": "9288e88cc32144cc7c5997fbeee8e7f19a9490a8beecacefd61edf58b4d32aae",
+      "input_snapshot": "6245788fff64cdd90eeae6c645cb5f99805c2112",
+      "model": "gpt-5.6-sol",
+      "outcome": "output_accepted",
+      "output_files": [],
+      "outputs_complete": true,
+      "policy_revision": 1,
+      "process": {
+        "creation_filetime": "134338485634550926",
+        "pid": 34544,
+        "request_sha256": "b98f896cd254f1afe985973129fc3dba83510429ce5b4ac19656fd2dd48ceb37"
+      },
+      "role": "research_plan",
+      "source_basis": [],
+      "status": "ended",
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 0,
+        "input_tokens": 25502,
+        "output_tokens": 280,
+        "reasoning_output_tokens": 77
+      },
+      "validity_basis": []
+    },
+    "EX-01M2FGYR50T1FYHP4M0GX672PX": {
+      "action": {
+        "contract_basis": {
+          "contract_sha256": "14641ba8f9aeac3c4cbd7b6afe7f137758e96bc7d05fcf4acb9236c1c2f76f44",
+          "goal_revision": 1,
+          "policy_revision": 1,
+          "revision": 1
+        },
+        "id": "AC-01M2FGY4G0E0WY3V31YV49QKES",
+        "role": "task_contract_review",
+        "target": "TK-01M2FGY4G0BMS1C1ZZYB19V64M"
+      },
+      "activity_id": "AY-01M2FGYR50CCCPYGBTYSX0CFJ5",
+      "artifact_bundle": "BA-01M2FGZKK9BFA6AM843Q3PYKYF",
+      "budget_kind": "work",
+      "contract_sha256": "14641ba8f9aeac3c4cbd7b6afe7f137758e96bc7d05fcf4acb9236c1c2f76f44",
+      "created_at": "2026-09-14T08:36:20.301632+00:00",
+      "effort": "medium",
+      "ended_at": "2026-09-14T08:36:48.373840+00:00",
+      "engine_sha256": "75a135dc5ecb42a0f9c5b7ac0e28f783b524cd67b70cc7f483ee0b9a5998ef9e",
+      "error": null,
+      "extensions": {},
+      "goal_revision": 1,
+      "grant_id": "GR-01M2FGXBVP2PKJWHAH8P5PHKQT",
+      "id": "EX-01M2FGYR50T1FYHP4M0GX672PX",
+      "input_bundle": "BA-01M2FGYR6DS5H02FVXM9K7GQD3",
+      "input_reductions": [],
+      "input_sha256": "eef3c91d6cf06391ca2bf526d24d126cbd2846caba48e74e0a765016e6159ab6",
+      "input_snapshot": "bfdc660141d9e1267459ca9e91b07d860163cfd3",
+      "model": "gpt-5.6-sol",
+      "outcome": "output_accepted",
+      "output_files": [],
+      "outputs_complete": true,
+      "policy_revision": 1,
+      "process": {
+        "creation_filetime": "134338485813254636",
+        "pid": 48784,
+        "request_sha256": "2be919657d501b576899f451538bbf5f2102c46d983431b985b113cdbe2cd2e6"
+      },
+      "role": "task_contract_review",
+      "source_basis": [],
+      "status": "ended",
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 0,
+        "input_tokens": 25103,
+        "output_tokens": 630,
+        "reasoning_output_tokens": 186
+      },
+      "validity_basis": []
+    },
+    "EX-01M2FGZMYYCDSA41T5995J5EBM": {
+      "action": {
+        "id": "AC-01M2FGYP7B3HF00QR0FE21MB2H",
+        "reason": "Obtain an approved task contract review for TK-01M2FGY4G0BMS1C1ZZYB19V64M, then return the task to planning when its readiness state is ready.",
+        "role": "research_preparation"
+      },
+      "activity_id": "AY-01M2FGZMYYJVZ6EDBGXWN9QW59",
+      "artifact_bundle": "BA-01M2FH00V9684RNKFD8CKV84GK",
+      "budget_kind": "operations",
+      "created_at": "2026-09-14T08:36:49.800300+00:00",
+      "effort": "medium",
+      "ended_at": "2026-09-14T08:37:01.943817+00:00",
+      "engine_sha256": "75a135dc5ecb42a0f9c5b7ac0e28f783b524cd67b70cc7f483ee0b9a5998ef9e",
+      "error": null,
+      "extensions": {},
+      "goal_revision": 1,
+      "grant_id": "GR-01M2FGXBVP9116GFHJVQH1PQBK",
+      "id": "EX-01M2FGZMYYCDSA41T5995J5EBM",
+      "input_bundle": "BA-01M2FGZN08HQX7NKJCNTV33EA8",
+      "input_reductions": [],
+      "input_sha256": "b05aca5dca2f23f8fe7121a057f88870ab182517e00dd4d08064ede2603889d0",
+      "input_snapshot": "ab6b8056a68b9817ef1dd89a14079b14268b81d0",
+      "model": "gpt-5.6-sol",
+      "outcome": "output_accepted",
+      "output_files": [],
+      "outputs_complete": true,
+      "policy_revision": 1,
+      "process": {
+        "creation_filetime": "134338486105450478",
+        "pid": 44796,
+        "request_sha256": "375153265c8c1e88702fdb63a2b64ec1197045bc680eba8fe935d7b1b756c036"
+      },
+      "role": "research_preparation",
+      "source_basis": [],
+      "status": "ended",
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 0,
+        "input_tokens": 25789,
+        "output_tokens": 280,
+        "reasoning_output_tokens": 103
+      },
+      "validity_basis": []
+    },
+    "EX-01M2FH027J4KNT6HTK3TJNPXTC": {
+      "action": {
+        "event_refs": [
+          "EV-01M2FGZMB8CMZW8X9V3NZJW20B"
+        ],
+        "id": "AC-01M2FGZMB8J9WB4JJ4XXERE1D5",
+        "opened_at": "2026-09-14T08:36:49.126196+00:00",
+        "reason": "Preserved research events require reconsideration",
+        "role": "research_plan"
+      },
+      "activity_id": "AY-01M2FH027JVMMFTFKSS05J22VJ",
+      "artifact_bundle": "BA-01M2FH0E47MJDAGQ00MG4EEVQP",
+      "budget_kind": "operations",
+      "created_at": "2026-09-14T08:37:03.380286+00:00",
+      "effort": "medium",
+      "ended_at": "2026-09-14T08:37:15.538610+00:00",
+      "engine_sha256": "75a135dc5ecb42a0f9c5b7ac0e28f783b524cd67b70cc7f483ee0b9a5998ef9e",
+      "error": null,
+      "extensions": {},
+      "goal_revision": 1,
+      "grant_id": "GR-01M2FGXBVP9116GFHJVQH1PQBK",
+      "id": "EX-01M2FH027J4KNT6HTK3TJNPXTC",
+      "input_bundle": "BA-01M2FH028MPMW8SMS62CV6VH7F",
+      "input_reductions": [],
+      "input_sha256": "f2cf54e99be490239eee4e702afa62e2e7e8c3b42a3763a54f275f5fc3e26026",
+      "input_snapshot": "401e2fefa101a11ccfe782c828eb45b42efed9e3",
+      "model": "gpt-5.6-sol",
+      "outcome": "output_accepted",
+      "output_files": [],
+      "outputs_complete": true,
+      "policy_revision": 1,
+      "process": {
+        "creation_filetime": "134338486241582712",
+        "pid": 30580,
+        "request_sha256": "2fac6dbf71c1a9a8a4940ca34ba7fad4277f5c6bdab36ad263dd6ce0d56b84b4"
+      },
+      "role": "research_plan",
+      "source_basis": [],
+      "status": "ended",
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 0,
+        "input_tokens": 26475,
+        "output_tokens": 281,
+        "reasoning_output_tokens": 97
+      },
+      "validity_basis": []
+    },
+    "EX-01M2FH0FH9EGG0184XRJFM85GC": {
+      "action": {
+        "id": "AC-01M2FH0E504300127WTVQMYFJG",
+        "role": "research_work",
+        "target": "TK-01M2FGY4G0BMS1C1ZZYB19V64M"
+      },
+      "activity_id": "AY-01M2FH0FHATVGWQCCAWRHQ0WCR",
+      "artifact_bundle": "BA-01M2FH1PH4BFD1MPG1AYF0ZVXZ",
+      "budget_kind": "work",
+      "contract_sha256": "14641ba8f9aeac3c4cbd7b6afe7f137758e96bc7d05fcf4acb9236c1c2f76f44",
+      "created_at": "2026-09-14T08:37:17.012938+00:00",
+      "effort": "medium",
+      "ended_at": "2026-09-14T08:37:56.938205+00:00",
+      "engine_sha256": "75a135dc5ecb42a0f9c5b7ac0e28f783b524cd67b70cc7f483ee0b9a5998ef9e",
+      "error": null,
+      "extensions": {},
+      "goal_revision": 1,
+      "grant_id": "GR-01M2FGXBVP2PKJWHAH8P5PHKQT",
+      "id": "EX-01M2FH0FH9EGG0184XRJFM85GC",
+      "input_bundle": "BA-01M2FH0FJMGXGA7ZCEA0B7DYP0",
+      "input_reductions": [],
+      "input_sha256": "47cdbf285f42514b25680a2904a34b90fc93b866200217e001dc60b5faa646e3",
+      "input_snapshot": "6a8093da4d25ef8c84a06fae6790de0e5324909e",
+      "model": "gpt-5.6-sol",
+      "outcome": "output_accepted",
+      "output_files": [
+        {
+          "artifact_ref": "runtime/artifacts/BA-01M2FH1PH4BFD1MPG1AYF0ZVXZ/files/checkpoint.json",
+          "bytes": 655,
+          "path": "checkpoint.json",
+          "sha256": "7bcac4476cd6ec5bedbab4d3862270d6a41b5a48a842ea36ddf4be517eb4589e"
+        }
+      ],
+      "outputs_complete": true,
+      "policy_revision": 1,
+      "process": {
+        "creation_filetime": "134338486377067443",
+        "pid": 22684,
+        "request_sha256": "be8df99099c0e6b72165b5f56b7a52791d64d5bb32b6b8c9f35384f4e64080ed"
+      },
+      "role": "research_work",
+      "source_basis": [],
+      "status": "ended",
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 69120,
+        "input_tokens": 82519,
+        "output_tokens": 1328,
+        "reasoning_output_tokens": 298
+      },
+      "validity_basis": []
+    },
+    "EX-01M2FH1RZRBVKHEYTPW18Z7Y5S": {
+      "action": {
+        "id": "AC-01M2FH1PJXVA4FJ4PEY9Q545ET",
+        "role": "formal_check",
+        "target": "KN-01M2FH1PJXVS8CMCVD6DWTV43V"
+      },
+      "activity_id": "AY-01M2FH1RZR03BH40T7YWXY63FG",
+      "artifact_bundle": "BA-01M2FH1VYS9TKAEEJZ4W5QH4QA",
+      "created_at": "2026-09-14T08:37:59.417929+00:00",
+      "ended_at": "2026-09-14T08:38:02.457540+00:00",
+      "engine_sha256": "75a135dc5ecb42a0f9c5b7ac0e28f783b524cd67b70cc7f483ee0b9a5998ef9e",
+      "grant_id": "GR-01M2FGXBVP2PKJWHAH8P5PHKQT",
+      "id": "EX-01M2FH1RZRBVKHEYTPW18Z7Y5S",
+      "outcome": "verified",
+      "role": "formal_check",
+      "status": "ended"
+    },
+    "EX-01M2FH1WQ6YYRBMBK4NSZ9AAKH": {
+      "action": {
+        "id": "AC-01M2FH1VYSEXJ9Z9X4QT642HY2",
+        "review_cycle_id": "RC-01M2FH1VYS8THG2029HQ1BNHZ5",
+        "role": "identity_review",
+        "round": 1,
+        "slot": "initial-0",
+        "stage": "initial",
+        "target": "KN-01M2FH1PJXVS8CMCVD6DWTV43V"
+      },
+      "activity_id": "AY-01M2FH1WQ63S7K500E21S4DTW6",
+      "artifact_bundle": "BA-01M2FH2C7DDDR7VHJZYSE6KWVV",
+      "budget_kind": "work",
+      "created_at": "2026-09-14T08:38:03.271685+00:00",
+      "effort": "medium",
+      "ended_at": "2026-09-14T08:38:19.131138+00:00",
+      "engine_sha256": "75a135dc5ecb42a0f9c5b7ac0e28f783b524cd67b70cc7f483ee0b9a5998ef9e",
+      "error": null,
+      "extensions": {},
+      "goal_revision": 1,
+      "grant_id": "GR-01M2FGXBVP2PKJWHAH8P5PHKQT",
+      "id": "EX-01M2FH1WQ6YYRBMBK4NSZ9AAKH",
+      "input_bundle": "BA-01M2FH1WR7NB4E5YJWZ2REDPFF",
+      "input_reductions": [],
+      "input_sha256": "b1632fa40a0776896654c409aaa61a09aff40f59a463a62425b4bb7e0b42219d",
+      "input_snapshot": "7a291448baf0bf5057a51c03428a9025c608bdd2",
+      "model": "gpt-5.6-sol",
+      "outcome": "output_accepted",
+      "output_files": [],
+      "outputs_complete": true,
+      "policy_revision": 1,
+      "process": {
+        "creation_filetime": "134338486841512231",
+        "pid": 49476,
+        "request_sha256": "a4b0d0c808931d9eeed3028e000108d0ede1e0862a436929ca9e8cbc2bdf53f3"
+      },
+      "role": "identity_review",
+      "source_basis": [],
+      "status": "ended",
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 0,
+        "input_tokens": 28970,
+        "output_tokens": 314,
+        "reasoning_output_tokens": 152
+      },
+      "validity_basis": []
+    },
+    "EX-01M2FH2DN0EGQ1X28D55R8QPR4": {
+      "action": {
+        "id": "AC-01M2FH1VYS7V3GYVGDE7HRVJ4C",
+        "review_cycle_id": "RC-01M2FH1VYS8THG2029HQ1BNHZ5",
+        "role": "identity_review",
+        "round": 1,
+        "slot": "initial-1",
+        "stage": "initial",
+        "target": "KN-01M2FH1PJXVS8CMCVD6DWTV43V"
+      },
+      "activity_id": "AY-01M2FH2DN0W6JXVY9DQMPZF7ZG",
+      "artifact_bundle": "BA-01M2FH312NKHY4EAY4R414QXX2",
+      "budget_kind": "work",
+      "created_at": "2026-09-14T08:38:20.601940+00:00",
+      "effort": "medium",
+      "ended_at": "2026-09-14T08:38:40.482737+00:00",
+      "engine_sha256": "75a135dc5ecb42a0f9c5b7ac0e28f783b524cd67b70cc7f483ee0b9a5998ef9e",
+      "error": null,
+      "extensions": {},
+      "goal_revision": 1,
+      "grant_id": "GR-01M2FGXBVP2PKJWHAH8P5PHKQT",
+      "id": "EX-01M2FH2DN0EGQ1X28D55R8QPR4",
+      "input_bundle": "BA-01M2FH2DNS4A0H5Q92CEKS7KKP",
+      "input_reductions": [],
+      "input_sha256": "4dac84472922b2f80f2ade568916ef8fb2965db4f329dce9a3ddfb6c067f9bfd",
+      "input_snapshot": "605d4ff8fc18de5bb91f575597d8c5168febd8d5",
+      "model": "gpt-5.6-sol",
+      "outcome": "output_accepted",
+      "output_files": [],
+      "outputs_complete": true,
+      "policy_revision": 1,
+      "process": {
+        "creation_filetime": "134338487013007107",
+        "pid": 49880,
+        "request_sha256": "d1d1ec4caf37709539f2960c8c19f86e3aa6b4bc2904ab229625b1a31b11846f"
+      },
+      "role": "identity_review",
+      "source_basis": [],
+      "status": "ended",
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 0,
+        "input_tokens": 28976,
+        "output_tokens": 352,
+        "reasoning_output_tokens": 178
+      },
+      "validity_basis": []
+    },
+    "EX-01M2FH33266ZD7SX4YAN9P8D7X": {
+      "action": {
+        "id": "AC-01M2FH1PJXQ0133VDTDTA3968C",
+        "role": "research_plan"
+      },
+      "activity_id": "AY-01M2FH3326MN7KRNB75HRHVF9S",
+      "artifact_bundle": "BA-01M2FH5VTEVC72Y5D2RWXTY501",
+      "budget_kind": "operations",
+      "created_at": "2026-09-14T08:38:42.612261+00:00",
+      "effort": "medium",
+      "ended_at": "2026-09-14T08:40:13.421037+00:00",
+      "engine_sha256": "75a135dc5ecb42a0f9c5b7ac0e28f783b524cd67b70cc7f483ee0b9a5998ef9e",
+      "error": null,
+      "extensions": {},
+      "goal_revision": 1,
+      "grant_id": "GR-01M2FGXBVP9116GFHJVQH1PQBK",
+      "id": "EX-01M2FH33266ZD7SX4YAN9P8D7X",
+      "input_bundle": "BA-01M2FH335MF58BZ7V6P9M57BG8",
+      "input_reductions": [],
+      "input_sha256": "4913e129ff036961db60286d72db69f1feddf129b32f71cea0fe9d1a503b7044",
+      "input_snapshot": "e65da124a4aee5361b718ea3d53bdb2dfc49d908",
+      "model": "gpt-5.6-sol",
+      "outcome": "output_accepted",
+      "output_files": [
+        {
+          "artifact_ref": "runtime/artifacts/BA-01M2FH5VTEVC72Y5D2RWXTY501/files/checkpoint.json",
+          "bytes": 1135,
+          "path": "checkpoint.json",
+          "sha256": "7cc7a1fa811b0b87602a98014d0328e02e645901f94b2e7b29270d1808330dc9"
+        }
+      ],
+      "outputs_complete": true,
+      "policy_revision": 1,
+      "process": {
+        "creation_filetime": "134338487234871114",
+        "pid": 56192,
+        "request_sha256": "5d509a1f2b89cbd42fccb7b31302e1660be2f63349662f61cf7300bf27d115c6"
+      },
+      "role": "research_plan",
+      "source_basis": [],
+      "status": "ended",
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 168704,
+        "input_tokens": 210065,
+        "output_tokens": 2588,
+        "reasoning_output_tokens": 649
+      },
+      "validity_basis": []
+    },
+    "EX-01M2FH5X903ECHVKDMJFQ9892R": {
+      "action": {
+        "basis": "8e9d11f01c2939924a70c4bf87ee80ec6117ded1e61c573f47addb1ff18e23fb",
+        "id": "AC-01M2FH5VVXGFDJW1ZJGSNR8WB3",
+        "required": 2,
+        "role": "goal_audit",
+        "slot": 0
+      },
+      "activity_id": "AY-01M2FH5X9077WYCXXCV9B0H14S",
+      "artifact_bundle": "BA-01M2FH6GSQB0R3YR5P4YVPMD01",
+      "budget_kind": "work",
+      "created_at": "2026-09-14T08:40:14.993040+00:00",
+      "effort": "medium",
+      "ended_at": "2026-09-14T08:40:34.884861+00:00",
+      "engine_sha256": "75a135dc5ecb42a0f9c5b7ac0e28f783b524cd67b70cc7f483ee0b9a5998ef9e",
+      "error": null,
+      "extensions": {},
+      "goal_revision": 1,
+      "grant_id": "GR-01M2FGXBVP2PKJWHAH8P5PHKQT",
+      "id": "EX-01M2FH5X903ECHVKDMJFQ9892R",
+      "input_bundle": "BA-01M2FH5XCFCKG7BXSYYNEB0WH8",
+      "input_reductions": [],
+      "input_sha256": "afa829def73c4a25e141a8dfcc287ec4833eb2bd24757cfdcdfd58566b18f393",
+      "input_snapshot": "7d79b68f54ba09070704b440d2282b759bf845cc",
+      "model": "gpt-5.6-sol",
+      "outcome": "output_accepted",
+      "output_files": [],
+      "outputs_complete": true,
+      "policy_revision": 1,
+      "process": {
+        "creation_filetime": "134338488157251963",
+        "pid": 51124,
+        "request_sha256": "22c1518497df77f7d66f362a7d98434084049c3257d8dfbc8bc8e8ad18b7c27a"
+      },
+      "role": "goal_audit",
+      "source_basis": [],
+      "status": "ended",
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 0,
+        "input_tokens": 28111,
+        "output_tokens": 406,
+        "reasoning_output_tokens": 135
+      },
+      "validity_basis": [
+        {
+          "id": "KN-01M2FH1PJXVS8CMCVD6DWTV43V",
+          "sha256": "5714fbd05e1a120df06af2378ef073f7ad2773ff6c61459b9250ddd3437f2f09",
+          "status": "verified"
+        }
+      ]
+    },
+    "EX-01M2FH6J92SBCJ8N1FEV25WTY6": {
+      "action": {
+        "basis": "8e9d11f01c2939924a70c4bf87ee80ec6117ded1e61c573f47addb1ff18e23fb",
+        "id": "AC-01M2FH5VVXH8T4WW8X49D0CN7C",
+        "required": 2,
+        "role": "goal_audit",
+        "slot": 1
+      },
+      "activity_id": "AY-01M2FH6J9266SWXY4WPAV5FFDC",
+      "artifact_bundle": "BA-01M2FH77Q6P95XJ9E03GZJA9K9",
+      "budget_kind": "work",
+      "created_at": "2026-09-14T08:40:36.482796+00:00",
+      "effort": "medium",
+      "ended_at": "2026-09-14T08:40:58.356840+00:00",
+      "engine_sha256": "75a135dc5ecb42a0f9c5b7ac0e28f783b524cd67b70cc7f483ee0b9a5998ef9e",
+      "error": null,
+      "extensions": {},
+      "goal_revision": 1,
+      "grant_id": "GR-01M2FGXBVP2PKJWHAH8P5PHKQT",
+      "id": "EX-01M2FH6J92SBCJ8N1FEV25WTY6",
+      "input_bundle": "BA-01M2FH6JBZ6SHP8ZJJKZDANTAW",
+      "input_reductions": [],
+      "input_sha256": "23598fcfa783cb126b7136b44023741c3b073767cfe554f474e3aebeec541450",
+      "input_snapshot": "29a56c4b4b2822ce3b73dc022a3ea57199e625fc",
+      "model": "gpt-5.6-sol",
+      "outcome": "output_accepted",
+      "output_files": [],
+      "outputs_complete": true,
+      "policy_revision": 1,
+      "process": {
+        "creation_filetime": "134338488372072302",
+        "pid": 47580,
+        "request_sha256": "6ceaeb51231b30d56ef1e72bb4e167394445e1b5abd3c39dbf6b0bf48d2f4d1d"
+      },
+      "role": "goal_audit",
+      "source_basis": [],
+      "status": "ended",
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 0,
+        "input_tokens": 28128,
+        "output_tokens": 444,
+        "reasoning_output_tokens": 173
+      },
+      "validity_basis": [
+        {
+          "id": "KN-01M2FH1PJXVS8CMCVD6DWTV43V",
+          "sha256": "5714fbd05e1a120df06af2378ef073f7ad2773ff6c61459b9250ddd3437f2f09",
+          "status": "verified"
+        }
+      ]
+    },
+    "EX-01M2FH793VACGECB61M7K6KGBJ": {
+      "action": {
+        "id": "AC-01M2FH77QWVZ2Y4QSMHQ821T3F",
+        "reason": "Complete the explicit postsolution academic requirements",
+        "role": "research_plan"
+      },
+      "activity_id": "AY-01M2FH793V9JNEDDT2MFV5HGM9",
+      "artifact_bundle": "BA-01M2FHDQ7DHM9NPBJMK7848890",
+      "budget_kind": "operations",
+      "created_at": "2026-09-14T08:40:59.870705+00:00",
+      "effort": "medium",
+      "ended_at": "2026-09-14T08:44:30.867960+00:00",
+      "engine_sha256": "75a135dc5ecb42a0f9c5b7ac0e28f783b524cd67b70cc7f483ee0b9a5998ef9e",
+      "error": null,
+      "extensions": {},
+      "goal_revision": 1,
+      "grant_id": "GR-01M2FGXBVP9116GFHJVQH1PQBK",
+      "id": "EX-01M2FH793VACGECB61M7K6KGBJ",
+      "input_bundle": "BA-01M2FH796YH3EGMMA5X42PQFSV",
+      "input_reductions": [],
+      "input_sha256": "4f6e5908b9b2f439d6f4018bf656ad543ab159a97f5ffa9579a848290d0ae3c5",
+      "input_snapshot": "17ee0095dac9a80a4137e7d6760290176d9a2a27",
+      "model": "gpt-5.6-sol",
+      "outcome": "output_accepted",
+      "output_files": [
+        {
+          "artifact_ref": "runtime/artifacts/BA-01M2FHDQ7DHM9NPBJMK7848890/files/checkpoint.json",
+          "bytes": 909,
+          "path": "checkpoint.json",
+          "sha256": "17459f077b0333abe9cd4fd77c3359a920646d7ee57897f390b505a7ca3d80cb"
+        },
+        {
+          "artifact_ref": "runtime/artifacts/BA-01M2FHDQ7DHM9NPBJMK7848890/files/observation-feedback.json",
+          "bytes": 1169,
+          "path": "observation-feedback.json",
+          "sha256": "6e869dd78aabacd8f33c19c38d21a3514c43b3ed81aa7d2b9090221cefe74b3e"
+        }
+      ],
+      "outputs_complete": true,
+      "policy_revision": 1,
+      "process": {
+        "creation_filetime": "134338488606684733",
+        "pid": 54432,
+        "request_sha256": "1b3a2a351e3d0241b3e89e9a599e6784f7c32323935ec675fc4aefeb7714facd"
+      },
+      "role": "research_plan",
+      "source_basis": [],
+      "status": "ended",
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 78464,
+        "input_tokens": 124871,
+        "output_tokens": 1392,
+        "reasoning_output_tokens": 168
+      },
+      "validity_basis": []
+    },
+    "EX-01M2FHC1QR8SDNRBQM6D4PQHJ3": {
+      "action": {
+        "id": "AC-01M2FHC1QRZ25P0NC56QEASDM5",
+        "live": true,
+        "observation": {
+          "execution_id": "EX-01M2FH793VACGECB61M7K6KGBJ",
+          "kind": "operational_review_due",
+          "observed_at": "2026-09-14T08:43:35.260499+00:00",
+          "reason": "no_visible_activity",
+          "sample": {
+            "checkpoint": null,
+            "checkpoint_status": "missing",
+            "elapsed_seconds": 154.625,
+            "events_seen": 4,
+            "inactive_seconds": 120.0,
+            "pending_tools": [],
+            "recent_messages": [],
+            "tool_results": 1
+          }
+        },
+        "role": "operational_review",
+        "target": "EX-01M2FH793VACGECB61M7K6KGBJ"
+      },
+      "activity_id": "AY-01M2FHC1QRSXSY9QJ7ZD4Z2RM3",
+      "artifact_bundle": "BA-01M2FHCKF9TBBMQPY11MTPBYXY",
+      "budget_kind": "operations",
+      "created_at": "2026-09-14T08:43:36.174627+00:00",
+      "ended_at": "2026-09-14T08:43:54.223913+00:00",
+      "engine_sha256": "75a135dc5ecb42a0f9c5b7ac0e28f783b524cd67b70cc7f483ee0b9a5998ef9e",
+      "error": null,
+      "grant_id": "GR-01M2FGXBVP9116GFHJVQH1PQBK",
+      "id": "EX-01M2FHC1QR8SDNRBQM6D4PQHJ3",
+      "input_bundle": "BA-01M2FHC1VENRA49D8QSE96MWG3",
+      "input_sha256": "6db5def7b959ba0a63bae09dd9711782cfd34d5e30dbea5d3567b82300f39b68",
+      "input_snapshot": "a5293e4f7a1b70315108dba47b1956ffd3c02bdd",
+      "outcome": "output_accepted",
+      "output_files": [],
+      "parent_execution_id": "EX-01M2FH793VACGECB61M7K6KGBJ",
+      "process": {
+        "creation_filetime": "134338490172790301",
+        "pid": 40304,
+        "request_sha256": "f1e3076bf9b1f81ee29f6969e2e76eb195916f608818faa067e3e6af7852f3f2"
+      },
+      "role": "operational_review",
+      "status": "ended",
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 0,
+        "input_tokens": 28486,
+        "output_tokens": 353,
+        "reasoning_output_tokens": 103
+      }
+    },
+    "EX-01M2FHDS2CZG1KSHRMGHB9DZ8E": {
+      "academic_requirements_sha256": "89364916cb1b16bcbe6879d4216be4d50ae68ffcd795f196141875d8b12ce30f",
+      "action": {
+        "contract_basis": {
+          "contract_sha256": "1d583e8c2e71ae93f2594d2568c287da3cb28c055070a7cdcb578eeb72533555",
+          "goal_revision": 1,
+          "policy_revision": 1,
+          "revision": 1
+        },
+        "id": "AC-01M2FH78FCJTKKP1A7A8J8YZ73",
+        "reason": "Current contract and policy require independent approval",
+        "role": "task_contract_review",
+        "target": "TK-01M2FH77QWR9ZYQN56771NH098"
+      },
+      "activity_id": "AY-01M2FHDS2CDE9K59C9A21CKB39",
+      "artifact_bundle": "BA-01M2FHEZYY30JPYRZ3MS16DQVB",
+      "budget_kind": "work",
+      "contract_sha256": "1d583e8c2e71ae93f2594d2568c287da3cb28c055070a7cdcb578eeb72533555",
+      "created_at": "2026-09-14T08:44:32.823217+00:00",
+      "effort": "medium",
+      "ended_at": "2026-09-14T08:45:12.561134+00:00",
+      "engine_sha256": "75a135dc5ecb42a0f9c5b7ac0e28f783b524cd67b70cc7f483ee0b9a5998ef9e",
+      "error": null,
+      "extensions": {},
+      "goal_revision": 1,
+      "grant_id": "GR-01M2FGXBVP2PKJWHAH8P5PHKQT",
+      "id": "EX-01M2FHDS2CZG1KSHRMGHB9DZ8E",
+      "input_bundle": "BA-01M2FHDS5QZ56P323R46BNR8X1",
+      "input_reductions": [],
+      "input_sha256": "029a7dd309d92ab623867daaf17fe64f4b2da3108a447fc5eadaced926855fa8",
+      "input_snapshot": "464c46e1eaf2aecc30a242a96dc9c586e32ee2b4",
+      "model": "gpt-5.6-sol",
+      "outcome": "output_accepted",
+      "output_files": [],
+      "outputs_complete": true,
+      "policy_revision": 1,
+      "process": {
+        "creation_filetime": "134338490737571607",
+        "pid": 51552,
+        "request_sha256": "bb9f005ee433d33d49f7191200ef9fe469c1a747b62c67881c5c68afed8b5c5a"
+      },
+      "role": "task_contract_review",
+      "source_basis": [],
+      "status": "ended",
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 28160,
+        "input_tokens": 59450,
+        "output_tokens": 960,
+        "reasoning_output_tokens": 200
+      },
+      "validity_basis": [
+        {
+          "id": "KN-01M2FH1PJXVS8CMCVD6DWTV43V",
+          "sha256": "5714fbd05e1a120df06af2378ef073f7ad2773ff6c61459b9250ddd3437f2f09",
+          "status": "verified"
+        }
+      ]
+    },
+    "EX-01M2FHF1VP4PGG7GN0W8KE03RP": {
+      "action": {
+        "id": "AC-01M2FHDQ96Z2MP6G4GHC0CM5RZ",
+        "reason": "Obtain an approved contract review for TK-01M2FH77QWR9ZYQN56771NH098, then return it to research planning when its readiness state is ready. The verified knowledge record already supplies the theorem name `nat_add_zero_right`, the universal natural-number signature `nat_add_zero_right (n : Nat) : n + 0 = n`, and the exact verifier-recorded version `Lean (version 4.32.0, x86_64-w64-windows-gnu, commit 8c9756b28d64dab099da31a4c09229a9e6a2ef35, Release)` needed to perform the note task.",
+        "role": "research_preparation"
+      },
+      "activity_id": "AY-01M2FHF1VP63TBPB88QS4468B0",
+      "artifact_bundle": "BA-01M2FHFFKVT3T2NW3WY35P6HC1",
+      "budget_kind": "operations",
+      "created_at": "2026-09-14T08:45:14.641186+00:00",
+      "effort": "medium",
+      "ended_at": "2026-09-14T08:45:28.589918+00:00",
+      "engine_sha256": "75a135dc5ecb42a0f9c5b7ac0e28f783b524cd67b70cc7f483ee0b9a5998ef9e",
+      "error": null,
+      "extensions": {},
+      "goal_revision": 1,
+      "grant_id": "GR-01M2FGXBVP9116GFHJVQH1PQBK",
+      "id": "EX-01M2FHF1VP4PGG7GN0W8KE03RP",
+      "input_bundle": "BA-01M2FHF20H84RF02NEFG6QV4RV",
+      "input_reductions": [],
+      "input_sha256": "4ac03d934a131554dc4a9b07a5da43b56fec1450ef6f3239cd74ae8629388165",
+      "input_snapshot": "688cb982873d585eaf4d97730ca90dd9f78138ac",
+      "model": "gpt-5.6-sol",
+      "outcome": "output_accepted",
+      "output_files": [],
+      "outputs_complete": true,
+      "policy_revision": 1,
+      "process": {
+        "creation_filetime": "134338491156859278",
+        "pid": 49580,
+        "request_sha256": "7f238d95a8550b88e5deb5cf07b589666d63b9254ba3d59f9ff93599f2f40ab0"
+      },
+      "role": "research_preparation",
+      "source_basis": [],
+      "status": "ended",
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 0,
+        "input_tokens": 29001,
+        "output_tokens": 302,
+        "reasoning_output_tokens": 135
+      },
+      "validity_basis": []
+    },
+    "EX-01M2FHFHCYBZ8NGHANH61BWEM2": {
+      "action": {
+        "event_refs": [
+          "EV-01M2FHF0YPD29WM5GY339X6ERY"
+        ],
+        "id": "AC-01M2FHF0YST54CT98WAQCNPCPD",
+        "opened_at": "2026-09-14T08:45:13.554935+00:00",
+        "reason": "Preserved research events require reconsideration",
+        "role": "research_plan"
+      },
+      "activity_id": "AY-01M2FHFHCY30KZ4XZ7WRSD4RMB",
+      "artifact_bundle": "BA-01M2FHG1CH99F8JSRHX700JPS5",
+      "budget_kind": "operations",
+      "created_at": "2026-09-14T08:45:30.512471+00:00",
+      "effort": "medium",
+      "ended_at": "2026-09-14T08:45:46.790860+00:00",
+      "engine_sha256": "75a135dc5ecb42a0f9c5b7ac0e28f783b524cd67b70cc7f483ee0b9a5998ef9e",
+      "error": null,
+      "extensions": {},
+      "goal_revision": 1,
+      "grant_id": "GR-01M2FGXBVP9116GFHJVQH1PQBK",
+      "id": "EX-01M2FHFHCYBZ8NGHANH61BWEM2",
+      "input_bundle": "BA-01M2FHFHGGQH0HSGEJ4B42MPWF",
+      "input_reductions": [],
+      "input_sha256": "e2e77f21325a6d542c797285dfa9b4589d3160674196db64f19b793b9a6e5bca",
+      "input_snapshot": "851120598dddb644aec92284f3b558f3dafcd67a",
+      "model": "gpt-5.6-sol",
+      "outcome": "output_accepted",
+      "output_files": [],
+      "outputs_complete": true,
+      "policy_revision": 1,
+      "process": {
+        "creation_filetime": "134338491313787337",
+        "pid": 61584,
+        "request_sha256": "49cf8d32d21e3688a78b911bc08c209efa263e6f7d3063532c6961b245b4a802"
+      },
+      "role": "research_plan",
+      "source_basis": [],
+      "status": "ended",
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 0,
+        "input_tokens": 29471,
+        "output_tokens": 321,
+        "reasoning_output_tokens": 141
+      },
+      "validity_basis": []
+    },
+    "EX-01M2FHG36BTRGAYGESASBFWFNN": {
+      "academic_requirements_sha256": "89364916cb1b16bcbe6879d4216be4d50ae68ffcd795f196141875d8b12ce30f",
+      "action": {
+        "id": "AC-01M2FHG1DTAJ59H8YQPAA8Q7ZR",
+        "role": "research_work",
+        "target": "TK-01M2FH77QWR9ZYQN56771NH098"
+      },
+      "activity_id": "AY-01M2FHG36BKDET28Q2F0C50XG8",
+      "artifact_bundle": "BA-01M2FHHG96DNXJBH68EN14JV86",
+      "budget_kind": "work",
+      "contract_sha256": "1d583e8c2e71ae93f2594d2568c287da3cb28c055070a7cdcb578eeb72533555",
+      "created_at": "2026-09-14T08:45:48.736962+00:00",
+      "effort": "medium",
+      "ended_at": "2026-09-14T08:46:34.824016+00:00",
+      "engine_sha256": "75a135dc5ecb42a0f9c5b7ac0e28f783b524cd67b70cc7f483ee0b9a5998ef9e",
+      "error": null,
+      "extensions": {},
+      "goal_revision": 1,
+      "grant_id": "GR-01M2FGXBVP2PKJWHAH8P5PHKQT",
+      "id": "EX-01M2FHG36BTRGAYGESASBFWFNN",
+      "input_bundle": "BA-01M2FHG3A0AVA1WRHMK438C7QS",
+      "input_reductions": [],
+      "input_sha256": "7dd2fa544a469b4aa07ad4e265bee6dcb317bf3e65d13b7221370bef19cc0da9",
+      "input_snapshot": "7823e77dfc721a05a3df4ff827bb7260e23bfaa7",
+      "model": "gpt-5.6-sol",
+      "outcome": "output_accepted",
+      "output_files": [
+        {
+          "artifact_ref": "runtime/artifacts/BA-01M2FHHG96DNXJBH68EN14JV86/files/checkpoint.json",
+          "bytes": 743,
+          "path": "checkpoint.json",
+          "sha256": "5a65718a0d3e725faa9444e82e5fd6902f2c3ac651b8f1a695720801275f69eb"
+        }
+      ],
+      "outputs_complete": true,
+      "policy_revision": 1,
+      "process": {
+        "creation_filetime": "134338491497446882",
+        "pid": 59220,
+        "request_sha256": "b46d45b8d8bd7ebefb2dc9a2438d0c37664d4c84722abf69dd827a270f8485b3"
+      },
+      "role": "research_work",
+      "source_basis": [],
+      "status": "ended",
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 63232,
+        "input_tokens": 97278,
+        "output_tokens": 1505,
+        "reasoning_output_tokens": 300
+      },
+      "validity_basis": [
+        {
+          "id": "KN-01M2FH1PJXVS8CMCVD6DWTV43V",
+          "sha256": "5714fbd05e1a120df06af2378ef073f7ad2773ff6c61459b9250ddd3437f2f09",
+          "status": "verified"
+        }
+      ]
+    },
+    "EX-01M2FHHJF9Y0R15A7JE6M8S1CE": {
+      "action": {
+        "id": "AC-01M2FHHGAT4DH9C2XQHYPEY56Y",
+        "role": "research_plan"
+      },
+      "activity_id": "AY-01M2FHHJF91MRK3WKBZX7GH6JK",
+      "artifact_bundle": "BA-01M2FHK3P6KZHJPYE1NCBQJXYK",
+      "budget_kind": "operations",
+      "created_at": "2026-09-14T08:46:37.230690+00:00",
+      "effort": "medium",
+      "ended_at": "2026-09-14T08:47:27.460705+00:00",
+      "engine_sha256": "75a135dc5ecb42a0f9c5b7ac0e28f783b524cd67b70cc7f483ee0b9a5998ef9e",
+      "error": null,
+      "extensions": {},
+      "goal_revision": 1,
+      "grant_id": "GR-01M2FGXBVP9116GFHJVQH1PQBK",
+      "id": "EX-01M2FHHJF9Y0R15A7JE6M8S1CE",
+      "input_bundle": "BA-01M2FHHJNE4NA6RNJF8YCGA69Q",
+      "input_reductions": [],
+      "input_sha256": "037af5d1c69150f970fecc62c70855cbf3ff0458549eac5a8b58be8b3f24194a",
+      "input_snapshot": "d4a017d7ef1ce55a1226b53dc63184877fb085cc",
+      "model": "gpt-5.6-sol",
+      "outcome": "output_accepted",
+      "output_files": [
+        {
+          "artifact_ref": "runtime/artifacts/BA-01M2FHK3P6KZHJPYE1NCBQJXYK/files/checkpoint.json",
+          "bytes": 894,
+          "path": "checkpoint.json",
+          "sha256": "44bc23215819a9bc4b51e8eb857b0edf79dee8936f1924ab8e33f078370dedce"
+        }
+      ],
+      "outputs_complete": true,
+      "policy_revision": 1,
+      "process": {
+        "creation_filetime": "134338491983925707",
+        "pid": 44876,
+        "request_sha256": "d10465d8d73ec57c04258dc163112acf835ded9d608edb486aed37edc669a8fd"
+      },
+      "role": "research_plan",
+      "source_basis": [],
+      "status": "ended",
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 63104,
+        "input_tokens": 97237,
+        "output_tokens": 1565,
+        "reasoning_output_tokens": 312
+      },
+      "validity_basis": []
+    }
+  },
+  "extended_controls": {
+    "UC-01M2FGXD7NA53NBZA2PQRP8SFP": {
+      "action": "decision",
+      "applied_at": "2026-09-14T08:35:37.207012+00:00",
+      "sha256": "c95ddfacd9d95216e7e4890536812a300c73f40947f7a32e1d9962da688358b5"
+    }
+  },
+  "external_operations": {},
+  "feature_version": 2,
+  "history": [
+    {
+      "decision_id": "DC-01M2FGXE3PC8WKYABGXJB71656",
+      "kind": "governance_decision",
+      "source_ref": "UC-01M2FGXD7NA53NBZA2PQRP8SFP"
+    },
+    {
+      "kind": "user_control",
+      "request": {
+        "action": "decision",
+        "config": {
+          "change": {
+            "kind": "academic_requirements",
+            "requirements": [
+              {
+                "assessor": "research_plan",
+                "criteria": [
+                  "Create a readable note naming the verified theorem, the natural-number quantifier, and the exact Lean version recorded by the formal verifier."
+                ],
+                "id": "reproducibility-note",
+                "scope": "Write a brief reproducibility note for the solved theorem using its recorded Lean verification."
+              }
+            ]
+          }
+        },
+        "created_at": "2026-09-14T08:35:36.309892+00:00",
+        "id": "UC-01M2FGXD7NA53NBZA2PQRP8SFP",
+        "instance_id": "RI-01M2FGXBVNET8VXSNDD26D8SPR",
+        "text": ""
+      }
+    },
+    {
+      "execution_id": "EX-01M2FGXHB5B6E5DWM53GZZSYEB",
+      "role": "research_preparation",
+      "summary": "One formal research task is sufficient to address the mathematical goal. The reproducibility-note academic requirement is excluded because academic_phase is deferred_until_goal_solved; it should be handled only after a goal audit establishes the solution and the formal verifier has recorded the exact Lean version."
+    },
+    {
+      "execution_id": "EX-01M2FGY6F822RQGNK95GN64AJQ",
+      "role": "research_plan",
+      "summary": "No task is currently ready for execution. TK-01M2FGY4G0BMS1C1ZZYB19V64M remains planned and its readiness record reports that the current revision lacks an approved contract review. The deferred academic reproducibility requirement is not yet eligible because the mathematical goal has not been established as solved."
+    },
+    {
+      "execution_id": "EX-01M2FGYR50T1FYHP4M0GX672PX",
+      "role": "task_contract_review",
+      "summary": "The contract is ready for assignment. It defines a bounded formal obligation, supplies sufficient authorized inputs, gives observable completion criteria, correctly delegates Lean checking to the central verifier after submission, and keeps the deferred reproducibility note outside the proof task."
+    },
+    {
+      "execution_id": "EX-01M2FGZMYYCDSA41T5995J5EBM",
+      "role": "research_preparation",
+      "summary": "The existing task TK-01M2FGY4G0BMS1C1ZZYB19V64M now has an approved contract review, CR-01M2FGZKKV1ZKXJSKJ8JSR2459, and its current readiness state is ready. It should return to research planning for selection. No new or revised candidate is needed because the approved ready task already captures the full proof obligation, and the reproducibility-note requirement remains deferred until the mathematical goal is established as solved."
+    },
+    {
+      "execution_id": "EX-01M2FH027J4KNT6HTK3TJNPXTC",
+      "role": "research_plan",
+      "summary": "Select the sole ready task for execution. Its contract is approved, it has no dependencies, and it directly covers the full formal proof obligation. The academic reproducibility note remains ineligible until the mathematical goal is established as solved and the formal verifier records the exact Lean version. No goal audit is requested before the selected task returns verified and independently reviewed results."
+    },
+    {
+      "execution_id": "EX-01M2FH0FH9EGG0184XRJFM85GC",
+      "role": "research_work",
+      "summary": "Submitted `nat_add_zero_right`, a self-contained Lean-core proof that every natural number is unchanged when zero is added on the right, with a matching explanation of its natural-number domain and universal quantification."
+    },
+    {
+      "execution_id": "EX-01M2FH1WQ6YYRBMBK4NSZ9AAKH",
+      "role": "identity_review",
+      "summary": "The statement, explanation, summary, Lean source, exported declaration, and verified declaration signature agree. The Lean theorem universally quantifies n over Nat and proves n + 0 = n by definitional reduction; the recorded formal result verifies the exact declaration with no axioms. No dependencies or relation claims require further review."
+    },
+    {
+      "execution_id": "EX-01M2FH2DN0EGQ1X28D55R8QPR4",
+      "role": "identity_review",
+      "summary": "The statement, explanation, summary, assumptions, declaration name, verified declaration signature, and Lean source agree. The Lean theorem universally quantifies over n : Nat and proves n + 0 = n by definitional reduction, exactly matching the stated natural-number domain, quantification, and conclusion. No dependencies or axioms are used, and no relation claim requires separate review."
+    },
+    {
+      "execution_id": "EX-01M2FH33266ZD7SX4YAN9P8D7X",
+      "role": "research_plan",
+      "summary": "TK-01M2FGY4G0BMS1C1ZZYB19V64M is completed: the returned self-contained Lean-core declaration `nat_add_zero_right` was centrally verified with signature `nat_add_zero_right (n : Nat) : n + 0 = n` and no axioms, and two independent identity reviews confirmed that the formal result and explanation agree. No tasks are currently ready. Request a goal audit against the verified theorem; the academic reproducibility note remains deferred until that audit establishes the goal as solved."
+    },
+    {
+      "execution_id": "EX-01M2FH5X903ECHVKDMJFQ9892R",
+      "role": "goal_audit",
+      "summary": "The verified, independently identity-reviewed theorem proves exactly that every natural number n satisfies n + 0 = n; the mathematical goal is satisfied."
+    },
+    {
+      "execution_id": "EX-01M2FH6J92SBCJ8N1FEV25WTY6",
+      "role": "goal_audit",
+      "summary": "The requested theorem has a verified, axiom-free Lean-core proof and completed independent semantic identity review. The mathematical goal is satisfied; the deferred reproducibility note remains a separate academic-phase requirement."
+    },
+    {
+      "execution_id": "EX-01M2FH793VACGECB61M7K6KGBJ",
+      "role": "research_plan",
+      "summary": "No task currently has status ready. The sole remaining postsolution academic task, TK-01M2FH77QWR9ZYQN56771NH098, is planned and its readiness evaluation is not_ready because the current revision lacks an approved contract review. It therefore cannot be selected or deferred in this planning action. The mathematical goal has already received completed goal audits, so no further goal audit is requested."
+    },
+    {
+      "execution_id": "EX-01M2FHDS2CZG1KSHRMGHB9DZ8E",
+      "role": "task_contract_review",
+      "summary": "The contract is ready for assignment. It is a bounded postsolution documentation task with sufficient verified input, a valid dependency and reuse basis, an exact assessable completion criterion, a designated assessor, and no external-effect or circular-proof requirement."
+    },
+    {
+      "execution_id": "EX-01M2FHF1VP4PGG7GN0W8KE03RP",
+      "role": "research_preparation",
+      "summary": "No new or revised research task is needed. Existing task TK-01M2FH77QWR9ZYQN56771NH098 now has approved contract review CR-01M2FHEZZWACFBQ0EVCG3XQYXE and current readiness state ready. It should return unchanged to research planning for selection; creating another candidate would duplicate the existing unfinished postsolution reproducibility-note obligation."
+    },
+    {
+      "execution_id": "EX-01M2FHFHCYBZ8NGHANH61BWEM2",
+      "role": "research_plan",
+      "summary": "Select the sole current ready task, the approved postsolution reproducibility-note obligation. Its verified knowledge dependency records the theorem name, universal natural-number quantification, and exact Lean verifier version needed for the note. The mathematical goal has already passed independent goal audits, so no further goal audit is requested."
+    },
+    {
+      "execution_id": "EX-01M2FHG36BTRGAYGESASBFWFNN",
+      "role": "research_work",
+      "summary": "Completed the requested reproducibility note using the verified theorem record, including the theorem name, natural-number quantifier, and exact recorded Lean version."
+    },
+    {
+      "execution_id": "EX-01M2FHHJF9Y0R15A7JE6M8S1CE",
+      "role": "research_plan",
+      "summary": "TK-01M2FH77QWR9ZYQN56771NH098 is completed. Its returned reproducibility note names the verified theorem `nat_add_zero_right`, states that it quantifies over every natural number `n`, and reproduces the exact Lean version recorded in KN-01M2FH1PJXVS8CMCVD6DWTV43V. No tasks currently have status ready, and the mathematical goal has already passed its goal audits."
+    }
+  ],
+  "implementation_history": [
+    {
+      "at": "2026-09-14T08:35:39.694566+00:00",
+      "from": null,
+      "migration": "known CLI record contract; additive feature-2 fields and preserved prior artifacts",
+      "to": {
+        "feature_version": 2,
+        "files": {
+          "GLOSSARY.md": "0b5110aafdb37cf1a597abb85eb78992d97927cc3293245cc13d489b1ec6d033",
+          "SKILL.md": "b3cbd41bcb0389fbda5567773fd10983fed86565fb7c4ee65d789cfed2f320ca",
+          "scripts/do_math/__init__.py": "a1c57a32d3d32541a69ca3b870252dd232d81960119ff051d71e502d0a8e732a",
+          "scripts/do_math/academic.py": "1e145847ec4c1abd4ad6ec0352ab9a90f286e8050eacb4f3f3138d86004ef4df",
+          "scripts/do_math/academic_engine.py": "762b28976087790f511106743d1b89bb83dd792674f1ff00476393cb6034127e",
+          "scripts/do_math/budget.py": "4d7824d1499520dbeec2965ea6312ae6271d362e71de823de30c6b5a68019332",
+          "scripts/do_math/cli.py": "7c491517ce7ca96376427f793a490a438dd3a5a28404f4289e693f03992d6930",
+          "scripts/do_math/codex_adapter.py": "af87b6f275ea9c85a3207667caa87d692945c7afc99837aafc1becf6ab4e134b",
+          "scripts/do_math/codex_worker.py": "b9af6cf80cb9f0a29a4a6767514068d1538bb41a257b97a93cda79a84a26fd74",
+          "scripts/do_math/context_store.py": "1acd322f3950ff1d035cb815fb39e4a61182bb84103f1561b5f53d4943ad61ae",
+          "scripts/do_math/contracts.py": "b4c1254808d96277bfaae0a29f42625ab590a7e222f595193c30be124fc83503",
+          "scripts/do_math/engine.py": "75a135dc5ecb42a0f9c5b7ac0e28f783b524cd67b70cc7f483ee0b9a5998ef9e",
+          "scripts/do_math/external.py": "a4e9e407fce678275fe6dc94ac0cb5235f53d5f38a368f2e3c376fdc9684b137",
+          "scripts/do_math/formal.py": "692988c473afe4b5b04e6a97ef33e7bdd138408ce40e57d908202e3bc1ba2dab",
+          "scripts/do_math/git_store.py": "6858ca6d7f49599b839acf779040265b9b7bb682b6b89fbeacf9ce3e14b9a86b",
+          "scripts/do_math/governance.py": "8babaca52be4f5e36cb51841ef6a97259d17ad4d6eb22064e053cf5032c7ff42",
+          "scripts/do_math/input_basis.py": "cac43001fc29c92f861b66db1ebbe9921cf7301e812579c7039f1bc5176d9382",
+          "scripts/do_math/knowledge.py": "567b5cc0b7bd24a3b30629622db4b68f6e6682e3b2425c27c5a5c20a313e8158",
+          "scripts/do_math/knowledge_io.py": "902a1aca27445b3f73326511940c21d3b44ce95a65189298ae4c93db309df721",
+          "scripts/do_math/lifecycle_engine.py": "129eae6286171dbd0ac7ab4a4f9514ccddc5d6bd1e35592657546ce303c28c64",
+          "scripts/do_math/model_runner.py": "6227ac343ecdd40b7e2128d795f56b212a637674133a042c7ae249e4a97890c5",
+          "scripts/do_math/observations.py": "ce68839c903a0cad7491654ee4a6170fa7b44516daedf454c193f9db91f68fbf",
+          "scripts/do_math/planning.py": "aea0ed2b684f42d6cc6f264024a9659a30dfe57f43dbcb760d14b0868977e7ab",
+          "scripts/do_math/preflight.py": "f67206e58c55b9b873240a6474f0dc294c47e67cc4e9025b103170e94d9995e4",
+          "scripts/do_math/repository.py": "c0443e87134a10bba4818d1530a3a635b6d53d595b0ad1c6008a509b56582e45",
+          "scripts/do_math/review_cycle.py": "5c1d4080e4c2030d9439b961969202a0d2ee109681f4d87780dd25e3848fb51e",
+          "scripts/do_math/review_engine.py": "3a26574ca7cd58193e5df71eb3b9617ce144d32a8fc0f758875084e28e9c4275",
+          "scripts/do_math/state_checks.py": "0684eaf962ad96f84088033e5453ae70e5ed5baeca50635dc978a0fd20779255",
+          "scripts/do_math/windows_job.py": "5c16df2c17ab5d54490e3f54ab2d3fc703454b9c4c898f743f12312fc9d8e3d6",
+          "계약/동일성-검토.md": "ae3bdc0580232f6b85b8d1c7cc6f3f4b8b0afe7ef763d6320e84ae65ea17e56d",
+          "계약/목표-감사.md": "e5030c6ba84219317f3983004ccd129abf118a898dfbe1a2627ca7cf6dece253",
+          "계약/보충-조사.md": "9882c6986e95b719c08c02f5013dcafadbe37fcc33b2092c585c6236072b0da7",
+          "계약/연구-계획.md": "f034741675f71903e9b8c34daa3503dd71611fc75f1606d2882d551b1c5bec8b",
+          "계약/연구-수행.md": "eeb149118e45b0a7ec13312c08ea92ab843401a7fdb2f5efd350770acee647c4",
+          "계약/운영-점검.md": "379dd589722b5b865ecb40808b455f240bd92ae293f8f4a267f4bf87ef3884ee",
+          "계약/유지보수.md": "650bbcd7b84ac9a3112ec85e153904c9dde19c8b0980359c5a5980f7f6006754",
+          "계약/의도-해석.md": "6de7914b1b43c3597c4fd7acffd6ab36d7c02e44fd277d3088f4a32b8c3d0c68",
+          "계약/작업-계약-검토.md": "90cfd23e2252a72245bf9f3dcf9c699113b87b33b08dbbf3759a6b8d1aa83b1a",
+          "계약/후보-준비.md": "bbc8e33774a5ad13717c8351a451146757158a510b915cf021580b1e38e5ae13"
+        },
+        "sha256": "e406a25fa3b45539fa7ad0818c9f74e8ea352db0576fbbac12977245bfbd0a3a"
+      }
+    }
+  ],
+  "inputs": [],
+  "installation": {
+    "feature_version": 2,
+    "files": {
+      "GLOSSARY.md": "0b5110aafdb37cf1a597abb85eb78992d97927cc3293245cc13d489b1ec6d033",
+      "SKILL.md": "b3cbd41bcb0389fbda5567773fd10983fed86565fb7c4ee65d789cfed2f320ca",
+      "scripts/do_math/__init__.py": "a1c57a32d3d32541a69ca3b870252dd232d81960119ff051d71e502d0a8e732a",
+      "scripts/do_math/academic.py": "1e145847ec4c1abd4ad6ec0352ab9a90f286e8050eacb4f3f3138d86004ef4df",
+      "scripts/do_math/academic_engine.py": "762b28976087790f511106743d1b89bb83dd792674f1ff00476393cb6034127e",
+      "scripts/do_math/budget.py": "4d7824d1499520dbeec2965ea6312ae6271d362e71de823de30c6b5a68019332",
+      "scripts/do_math/cli.py": "7c491517ce7ca96376427f793a490a438dd3a5a28404f4289e693f03992d6930",
+      "scripts/do_math/codex_adapter.py": "af87b6f275ea9c85a3207667caa87d692945c7afc99837aafc1becf6ab4e134b",
+      "scripts/do_math/codex_worker.py": "b9af6cf80cb9f0a29a4a6767514068d1538bb41a257b97a93cda79a84a26fd74",
+      "scripts/do_math/context_store.py": "1acd322f3950ff1d035cb815fb39e4a61182bb84103f1561b5f53d4943ad61ae",
+      "scripts/do_math/contracts.py": "b4c1254808d96277bfaae0a29f42625ab590a7e222f595193c30be124fc83503",
+      "scripts/do_math/engine.py": "75a135dc5ecb42a0f9c5b7ac0e28f783b524cd67b70cc7f483ee0b9a5998ef9e",
+      "scripts/do_math/external.py": "a4e9e407fce678275fe6dc94ac0cb5235f53d5f38a368f2e3c376fdc9684b137",
+      "scripts/do_math/formal.py": "692988c473afe4b5b04e6a97ef33e7bdd138408ce40e57d908202e3bc1ba2dab",
+      "scripts/do_math/git_store.py": "6858ca6d7f49599b839acf779040265b9b7bb682b6b89fbeacf9ce3e14b9a86b",
+      "scripts/do_math/governance.py": "8babaca52be4f5e36cb51841ef6a97259d17ad4d6eb22064e053cf5032c7ff42",
+      "scripts/do_math/input_basis.py": "cac43001fc29c92f861b66db1ebbe9921cf7301e812579c7039f1bc5176d9382",
+      "scripts/do_math/knowledge.py": "567b5cc0b7bd24a3b30629622db4b68f6e6682e3b2425c27c5a5c20a313e8158",
+      "scripts/do_math/knowledge_io.py": "902a1aca27445b3f73326511940c21d3b44ce95a65189298ae4c93db309df721",
+      "scripts/do_math/lifecycle_engine.py": "129eae6286171dbd0ac7ab4a4f9514ccddc5d6bd1e35592657546ce303c28c64",
+      "scripts/do_math/model_runner.py": "6227ac343ecdd40b7e2128d795f56b212a637674133a042c7ae249e4a97890c5",
+      "scripts/do_math/observations.py": "ce68839c903a0cad7491654ee4a6170fa7b44516daedf454c193f9db91f68fbf",
+      "scripts/do_math/planning.py": "aea0ed2b684f42d6cc6f264024a9659a30dfe57f43dbcb760d14b0868977e7ab",
+      "scripts/do_math/preflight.py": "f67206e58c55b9b873240a6474f0dc294c47e67cc4e9025b103170e94d9995e4",
+      "scripts/do_math/repository.py": "c0443e87134a10bba4818d1530a3a635b6d53d595b0ad1c6008a509b56582e45",
+      "scripts/do_math/review_cycle.py": "5c1d4080e4c2030d9439b961969202a0d2ee109681f4d87780dd25e3848fb51e",
+      "scripts/do_math/review_engine.py": "3a26574ca7cd58193e5df71eb3b9617ce144d32a8fc0f758875084e28e9c4275",
+      "scripts/do_math/state_checks.py": "0684eaf962ad96f84088033e5453ae70e5ed5baeca50635dc978a0fd20779255",
+      "scripts/do_math/windows_job.py": "5c16df2c17ab5d54490e3f54ab2d3fc703454b9c4c898f743f12312fc9d8e3d6",
+      "계약/동일성-검토.md": "ae3bdc0580232f6b85b8d1c7cc6f3f4b8b0afe7ef763d6320e84ae65ea17e56d",
+      "계약/목표-감사.md": "e5030c6ba84219317f3983004ccd129abf118a898dfbe1a2627ca7cf6dece253",
+      "계약/보충-조사.md": "9882c6986e95b719c08c02f5013dcafadbe37fcc33b2092c585c6236072b0da7",
+      "계약/연구-계획.md": "f034741675f71903e9b8c34daa3503dd71611fc75f1606d2882d551b1c5bec8b",
+      "계약/연구-수행.md": "eeb149118e45b0a7ec13312c08ea92ab843401a7fdb2f5efd350770acee647c4",
+      "계약/운영-점검.md": "379dd589722b5b865ecb40808b455f240bd92ae293f8f4a267f4bf87ef3884ee",
+      "계약/유지보수.md": "650bbcd7b84ac9a3112ec85e153904c9dde19c8b0980359c5a5980f7f6006754",
+      "계약/의도-해석.md": "6de7914b1b43c3597c4fd7acffd6ab36d7c02e44fd277d3088f4a32b8c3d0c68",
+      "계약/작업-계약-검토.md": "90cfd23e2252a72245bf9f3dcf9c699113b87b33b08dbbf3759a6b8d1aa83b1a",
+      "계약/후보-준비.md": "bbc8e33774a5ad13717c8351a451146757158a510b915cf021580b1e38e5ae13"
+    },
+    "sha256": "e406a25fa3b45539fa7ad0818c9f74e8ea352db0576fbbac12977245bfbd0a3a"
+  },
+  "next_research_reconsider_at": "2026-09-15T08:35:37.196020+00:00",
+  "observations": {
+    "EX-01M2FH793VACGECB61M7K6KGBJ": {
+      "execution_id": "EX-01M2FH793VACGECB61M7K6KGBJ",
+      "kind": "operational_review_due",
+      "observed_at": "2026-09-14T08:43:35.260499+00:00",
+      "operational_decision": {
+        "decision": "checkpoint",
+        "questions": [
+          "Report whether contract review for TK-01M2FH77QWR9ZYQN56771NH098 has been requested or is blocked, and record the next executable step in checkpoint.json."
+        ],
+        "reason": "The live research_plan execution has shown no visible activity for 120 seconds, has no pending tool, and has not written the required checkpoint. This does not establish lack of mathematical progress, but it leaves the current planning action and recovery path unobservable. The academic task is planned but currently not ready because its current revision lacks an approved contract review, so the worker should checkpoint its status and identify the next authorized step rather than silently waiting or selecting it.",
+        "summary": "Request an immediate checkpoint from the live planner. Preserve the execution and have it state the status of the reproducibility-note task, the missing contract-review dependency, and its next executable action.",
+        "used_sources": [
+          "SKILL.md",
+          "GLOSSARY.md",
+          "TK-01M2FH77QWR9ZYQN56771NH098",
+          "KN-01M2FH1PJXVS8CMCVD6DWTV43V",
+          "context:goal",
+          "context:policy",
+          "tool:lean"
+        ]
+      },
+      "reason": "no_visible_activity",
+      "sample": {
+        "checkpoint": null,
+        "checkpoint_status": "missing",
+        "elapsed_seconds": 154.625,
+        "events_seen": 4,
+        "inactive_seconds": 120.0,
+        "pending_tools": [],
+        "recent_messages": [],
+        "tool_results": 1
+      }
+    }
+  },
+  "pending_events": [],
+  "private_insights": {},
+  "processed_controls": [
+    "UC-01M2FGXD7NA53NBZA2PQRP8SFP"
+  ],
+  "questions": [],
+  "queue": [],
+  "review_cycles": {
+    "RC-01M2FH1VYS8THG2029HQ1BNHZ5": {
+      "answer_requests": [],
+      "decision": "match",
+      "deferred_actions": {},
+      "findings": {},
+      "followup": [],
+      "history": [
+        {
+          "round": 1,
+          "sealed": [
+            "initial:1:initial-0",
+            "initial:1:initial-1"
+          ],
+          "stage": "initial"
+        },
+        {
+          "event": "closed",
+          "reason": "All required initial reviewers matched the complete proposal",
+          "round": 1
+        }
+      ],
+      "id": "RC-01M2FH1VYS8THG2029HQ1BNHZ5",
+      "input_snapshot": "48934c11a55f8f9fa1cceb9e286b123ae3c73579",
+      "issues": {},
+      "judge_slots": [
+        "judge-0",
+        "judge-1",
+        "judge-2"
+      ],
+      "judges": 3,
+      "knowledge_id": "KN-01M2FH1PJXVS8CMCVD6DWTV43V",
+      "max_rounds": 3,
+      "pending_findings": [],
+      "phase": "ended",
+      "previous_reviews": [],
+      "producer_execution_ids": [
+        "EX-01M2FH0FH9EGG0184XRJFM85GC"
+      ],
+      "proposal": {
+        "confirmed_scope": "",
+        "declaration_names": [
+          "nat_add_zero_right"
+        ],
+        "dependencies": [],
+        "epistemic_status": "",
+        "explanation": "The domain is the natural numbers. The theorem universally quantifies over every natural number `n` and concludes that adding zero on the right leaves `n` unchanged. The proof uses definitional reduction of natural-number addition.",
+        "formal": {
+          "allowed_axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "artifact_ref": "runtime/artifacts/BA-01M2FH1VYS9TKAEEJZ4W5QH4QA/formal.json",
+          "axioms": {
+            "nat_add_zero_right": []
+          },
+          "declaration_signatures": {
+            "nat_add_zero_right": "nat_add_zero_right (n : Nat) : n + 0 = n"
+          },
+          "declarations": [
+            "nat_add_zero_right"
+          ],
+          "execution_id": "EX-01M2FH1RZRBVKHEYTPW18Z7Y5S",
+          "signature_hash": "8275da4923ff59fefc57581716bf179360c8d4c16b1c8aa980b9682969be6b20",
+          "source_sha256": "e1ae4922282fbacd851c65e2839a05ad5bb2c69fac6a442b9e832a440a11f148",
+          "status": "verified",
+          "toolchain": {
+            "configured_command": [
+              "C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin\\lean.exe"
+            ],
+            "executable": "C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin\\lean.exe",
+            "project": null,
+            "sha256": "10c6a27583eb65ff6a7e92b9718ff01d851ad594e6d70bb283fa5a10092fd810",
+            "version": "Lean (version 4.32.0, x86_64-w64-windows-gnu, commit 8c9756b28d64dab099da31a4c09229a9e6a2ef35, Release)",
+            "version_exit": 0
+          },
+          "trust_environment_id": "TE-01M2FH1VYSXHP3RARAQ4F1W4GF",
+          "trust_environment_status": "active"
+        },
+        "id": "KN-01M2FH1PJXVS8CMCVD6DWTV43V",
+        "lean_code": "theorem nat_add_zero_right : ∀ n : Nat, n + 0 = n := by\n  intro n\n  rfl\n",
+        "relation_claim": "",
+        "relation_endpoint_basis": "",
+        "revision": 1,
+        "statement": "For every natural number n, n + 0 = n.",
+        "summary": "A self-contained Lean-core proof of right addition by zero for all natural numbers, submitted for central formal verification and independent identity review."
+      },
+      "proposal_digest": "16998c074c4e560a514da3151ec4837ecf01de17b100994739a77ff5f7685e60",
+      "research": {},
+      "results": {
+        "initial:1:initial-0": {
+          "action": {
+            "round": 1,
+            "slot": "initial-0",
+            "stage": "initial"
+          },
+          "execution_id": "EX-01M2FH1WQ6YYRBMBK4NSZ9AAKH",
+          "manifest": {
+            "context_origin": [],
+            "continuation_of": [],
+            "input_sha256": "b1632fa40a0776896654c409aaa61a09aff40f59a463a62425b4bb7e0b42219d",
+            "input_snapshot": "7a291448baf0bf5057a51c03428a9025c608bdd2",
+            "proposal_digest": "16998c074c4e560a514da3151ec4837ecf01de17b100994739a77ff5f7685e60",
+            "role_slot_id": "initial-0",
+            "visible_execution_ids": []
+          },
+          "output": {
+            "decision": "match",
+            "findings": [],
+            "proposal_digest": "16998c074c4e560a514da3151ec4837ecf01de17b100994739a77ff5f7685e60",
+            "questions": [],
+            "scope_complete": true,
+            "summary": "The statement, explanation, summary, Lean source, exported declaration, and verified declaration signature agree. The Lean theorem universally quantifies n over Nat and proves n + 0 = n by definitional reduction; the recorded formal result verifies the exact declaration with no axioms. No dependencies or relation claims require further review.",
+            "used_sources": [
+              "role_review.proposal",
+              "proposal:formal.declaration_signatures",
+              "proposal:formal.axioms",
+              "proposal:formal.toolchain"
+            ]
+          },
+          "proposal_digest": "16998c074c4e560a514da3151ec4837ecf01de17b100994739a77ff5f7685e60",
+          "stage": "initial"
+        },
+        "initial:1:initial-1": {
+          "action": {
+            "round": 1,
+            "slot": "initial-1",
+            "stage": "initial"
+          },
+          "execution_id": "EX-01M2FH2DN0EGQ1X28D55R8QPR4",
+          "manifest": {
+            "context_origin": [],
+            "continuation_of": [],
+            "input_sha256": "4dac84472922b2f80f2ade568916ef8fb2965db4f329dce9a3ddfb6c067f9bfd",
+            "input_snapshot": "605d4ff8fc18de5bb91f575597d8c5168febd8d5",
+            "proposal_digest": "16998c074c4e560a514da3151ec4837ecf01de17b100994739a77ff5f7685e60",
+            "role_slot_id": "initial-1",
+            "visible_execution_ids": []
+          },
+          "output": {
+            "decision": "match",
+            "findings": [],
+            "proposal_digest": "16998c074c4e560a514da3151ec4837ecf01de17b100994739a77ff5f7685e60",
+            "questions": [],
+            "scope_complete": true,
+            "summary": "The statement, explanation, summary, assumptions, declaration name, verified declaration signature, and Lean source agree. The Lean theorem universally quantifies over n : Nat and proves n + 0 = n by definitional reduction, exactly matching the stated natural-number domain, quantification, and conclusion. No dependencies or axioms are used, and no relation claim requires separate review.",
+            "used_sources": [
+              "KN-01M2FH1PJXVS8CMCVD6DWTV43V",
+              "context:goal",
+              "tool:lean"
+            ]
+          },
+          "proposal_digest": "16998c074c4e560a514da3151ec4837ecf01de17b100994739a77ff5f7685e60",
+          "stage": "initial"
+        }
+      },
+      "review_lineage_id": "16998c074c4e560a514da3151ec4837ecf01de17b100994739a77ff5f7685e60",
+      "reviewer_slots": [
+        "initial-0",
+        "initial-1"
+      ],
+      "reviewers": 2,
+      "revision": 1,
+      "round": 1,
+      "sealed": [
+        "initial:1:initial-0",
+        "initial:1:initial-1"
+      ],
+      "status": "completed",
+      "transcript_manifest": {
+        "initial-0": [
+          {
+            "bytes": 1974,
+            "index": 0,
+            "proposal_digest": "16998c074c4e560a514da3151ec4837ecf01de17b100994739a77ff5f7685e60",
+            "ref": "review-transcript:16998c074c4e560a514da3151ec4837ecf01de17b100994739a77ff5f7685e60:initial-0:0",
+            "sha256": "32640551d9d3b7f0878f9b9d2b531c0741df8980d4ebc56b04861d84e59d28a0"
+          },
+          {
+            "bytes": 1578,
+            "index": 1,
+            "proposal_digest": "16998c074c4e560a514da3151ec4837ecf01de17b100994739a77ff5f7685e60",
+            "ref": "review-transcript:16998c074c4e560a514da3151ec4837ecf01de17b100994739a77ff5f7685e60:initial-0:1",
+            "sha256": "33d5c541c23d7a4cb5f047c8468612d8ef96cc527385ccacfd6a72af392a8fc0"
+          },
+          {
+            "bytes": 734,
+            "index": 2,
+            "proposal_digest": "16998c074c4e560a514da3151ec4837ecf01de17b100994739a77ff5f7685e60",
+            "ref": "review-transcript:16998c074c4e560a514da3151ec4837ecf01de17b100994739a77ff5f7685e60:initial-0:2",
+            "sha256": "a68d875a3bd9c341e031f37fc3415fe9286ca058fd09e29eaab0880190fcd67a"
+          }
+        ],
+        "initial-1": [
+          {
+            "bytes": 1974,
+            "index": 0,
+            "proposal_digest": "16998c074c4e560a514da3151ec4837ecf01de17b100994739a77ff5f7685e60",
+            "ref": "review-transcript:16998c074c4e560a514da3151ec4837ecf01de17b100994739a77ff5f7685e60:initial-1:0",
+            "sha256": "4a44fb04ff28181959897ab617412a63fe74ccfd564e64e05102ce9bf24bec51"
+          },
+          {
+            "bytes": 1578,
+            "index": 1,
+            "proposal_digest": "16998c074c4e560a514da3151ec4837ecf01de17b100994739a77ff5f7685e60",
+            "ref": "review-transcript:16998c074c4e560a514da3151ec4837ecf01de17b100994739a77ff5f7685e60:initial-1:1",
+            "sha256": "24c0da2d1112daeb4081df6e0440e1eccf1604bb8e286db956ec6e1b30310f8a"
+          },
+          {
+            "bytes": 721,
+            "index": 2,
+            "proposal_digest": "16998c074c4e560a514da3151ec4837ecf01de17b100994739a77ff5f7685e60",
+            "ref": "review-transcript:16998c074c4e560a514da3151ec4837ecf01de17b100994739a77ff5f7685e60:initial-1:2",
+            "sha256": "8cccae51dcc3f6ff951f7f5995399f8b1b404a76f49c9c2354f84c5c7e4badea"
+          }
+        ]
+      },
+      "turns": {
+        "initial-0": [
+          {
+            "content": {
+              "confirmed_scope": "",
+              "declaration_names": [
+                "nat_add_zero_right"
+              ],
+              "dependencies": [],
+              "epistemic_status": "",
+              "explanation": "The domain is the natural numbers. The theorem universally quantifies over every natural number `n` and concludes that adding zero on the right leaves `n` unchanged. The proof uses definitional reduction of natural-number addition.",
+              "formal": {
+                "allowed_axioms": [
+                  "propext",
+                  "Classical.choice",
+                  "Quot.sound"
+                ],
+                "artifact_ref": "runtime/artifacts/BA-01M2FH1VYS9TKAEEJZ4W5QH4QA/formal.json",
+                "axioms": {
+                  "nat_add_zero_right": []
+                },
+                "declaration_signatures": {
+                  "nat_add_zero_right": "nat_add_zero_right (n : Nat) : n + 0 = n"
+                },
+                "declarations": [
+                  "nat_add_zero_right"
+                ],
+                "execution_id": "EX-01M2FH1RZRBVKHEYTPW18Z7Y5S",
+                "signature_hash": "8275da4923ff59fefc57581716bf179360c8d4c16b1c8aa980b9682969be6b20",
+                "source_sha256": "e1ae4922282fbacd851c65e2839a05ad5bb2c69fac6a442b9e832a440a11f148",
+                "status": "verified",
+                "toolchain": {
+                  "configured_command": [
+                    "C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin\\lean.exe"
+                  ],
+                  "executable": "C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin\\lean.exe",
+                  "project": null,
+                  "sha256": "10c6a27583eb65ff6a7e92b9718ff01d851ad594e6d70bb283fa5a10092fd810",
+                  "version": "Lean (version 4.32.0, x86_64-w64-windows-gnu, commit 8c9756b28d64dab099da31a4c09229a9e6a2ef35, Release)",
+                  "version_exit": 0
+                },
+                "trust_environment_id": "TE-01M2FH1VYSXHP3RARAQ4F1W4GF",
+                "trust_environment_status": "active"
+              },
+              "id": "KN-01M2FH1PJXVS8CMCVD6DWTV43V",
+              "lean_code": "theorem nat_add_zero_right : ∀ n : Nat, n + 0 = n := by\n  intro n\n  rfl\n",
+              "relation_claim": "",
+              "relation_endpoint_basis": "",
+              "revision": 1,
+              "statement": "For every natural number n, n + 0 = n.",
+              "summary": "A self-contained Lean-core proof of right addition by zero for all natural numbers, submitted for central formal verification and independent identity review."
+            },
+            "kind": "proposal",
+            "message_id": "EX-01M2FH1WQ6YYRBMBK4NSZ9AAKH:proposal",
+            "role": "user"
+          },
+          {
+            "content": {
+              "action": {
+                "id": "AC-01M2FH1VYSEXJ9Z9X4QT642HY2",
+                "review_cycle_id": "RC-01M2FH1VYS8THG2029HQ1BNHZ5",
+                "role": "identity_review",
+                "round": 1,
+                "slot": "initial-0",
+                "stage": "initial",
+                "target": "KN-01M2FH1PJXVS8CMCVD6DWTV43V"
+              },
+              "answer_requests": [],
+              "completed_results": {},
+              "issues": {},
+              "pending_findings": [],
+              "previous_reviews": [],
+              "proposal_digest": "16998c074c4e560a514da3151ec4837ecf01de17b100994739a77ff5f7685e60",
+              "research_request_contract": {
+                "extension_file": "activity-extensions.json",
+                "field": "research_requests",
+                "instructions": "If investigation is necessary, write research_requests and return unresolved provisionally for initial/judge. The slot is deferred without sealing a verdict; all requested answers return to this same slot. Use an existing answer when it resolves the question. Investigation cannot replace your final complete review.",
+                "item": {
+                  "id": "local request ID",
+                  "question": "One fixed question to investigate",
+                  "source_refs": [
+                    "proposal or proposal:<field.path>, issue:<id>, supplied source ref, or readable knowledge ID"
+                  ]
+                },
+                "remaining_requests": 3
+              },
+              "review_cycle_id": "RC-01M2FH1VYS8THG2029HQ1BNHZ5",
+              "snapshot": "48934c11a55f8f9fa1cceb9e286b123ae3c73579",
+              "source_instructions": "Read each referenced source through its local_path when needed. The JSON file contains the exact original public message; its content is the original source body. Compare the complete current proposal. Prior revision judgments do not approve this revision.",
+              "source_refs": [],
+              "supplemental_results": []
+            },
+            "kind": "review_request",
+            "message_id": "EX-01M2FH1WQ6YYRBMBK4NSZ9AAKH:request",
+            "role": "user"
+          },
+          {
+            "content": {
+              "decision": "match",
+              "findings": [],
+              "proposal_digest": "16998c074c4e560a514da3151ec4837ecf01de17b100994739a77ff5f7685e60",
+              "questions": [],
+              "scope_complete": true,
+              "summary": "The statement, explanation, summary, Lean source, exported declaration, and verified declaration signature agree. The Lean theorem universally quantifies n over Nat and proves n + 0 = n by definitional reduction; the recorded formal result verifies the exact declaration with no axioms. No dependencies or relation claims require further review.",
+              "used_sources": [
+                "role_review.proposal",
+                "proposal:formal.declaration_signatures",
+                "proposal:formal.axioms",
+                "proposal:formal.toolchain"
+              ]
+            },
+            "message_id": "EX-01M2FH1WQ6YYRBMBK4NSZ9AAKH:assistant",
+            "role": "assistant"
+          }
+        ],
+        "initial-1": [
+          {
+            "content": {
+              "confirmed_scope": "",
+              "declaration_names": [
+                "nat_add_zero_right"
+              ],
+              "dependencies": [],
+              "epistemic_status": "",
+              "explanation": "The domain is the natural numbers. The theorem universally quantifies over every natural number `n` and concludes that adding zero on the right leaves `n` unchanged. The proof uses definitional reduction of natural-number addition.",
+              "formal": {
+                "allowed_axioms": [
+                  "propext",
+                  "Classical.choice",
+                  "Quot.sound"
+                ],
+                "artifact_ref": "runtime/artifacts/BA-01M2FH1VYS9TKAEEJZ4W5QH4QA/formal.json",
+                "axioms": {
+                  "nat_add_zero_right": []
+                },
+                "declaration_signatures": {
+                  "nat_add_zero_right": "nat_add_zero_right (n : Nat) : n + 0 = n"
+                },
+                "declarations": [
+                  "nat_add_zero_right"
+                ],
+                "execution_id": "EX-01M2FH1RZRBVKHEYTPW18Z7Y5S",
+                "signature_hash": "8275da4923ff59fefc57581716bf179360c8d4c16b1c8aa980b9682969be6b20",
+                "source_sha256": "e1ae4922282fbacd851c65e2839a05ad5bb2c69fac6a442b9e832a440a11f148",
+                "status": "verified",
+                "toolchain": {
+                  "configured_command": [
+                    "C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin\\lean.exe"
+                  ],
+                  "executable": "C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin\\lean.exe",
+                  "project": null,
+                  "sha256": "10c6a27583eb65ff6a7e92b9718ff01d851ad594e6d70bb283fa5a10092fd810",
+                  "version": "Lean (version 4.32.0, x86_64-w64-windows-gnu, commit 8c9756b28d64dab099da31a4c09229a9e6a2ef35, Release)",
+                  "version_exit": 0
+                },
+                "trust_environment_id": "TE-01M2FH1VYSXHP3RARAQ4F1W4GF",
+                "trust_environment_status": "active"
+              },
+              "id": "KN-01M2FH1PJXVS8CMCVD6DWTV43V",
+              "lean_code": "theorem nat_add_zero_right : ∀ n : Nat, n + 0 = n := by\n  intro n\n  rfl\n",
+              "relation_claim": "",
+              "relation_endpoint_basis": "",
+              "revision": 1,
+              "statement": "For every natural number n, n + 0 = n.",
+              "summary": "A self-contained Lean-core proof of right addition by zero for all natural numbers, submitted for central formal verification and independent identity review."
+            },
+            "kind": "proposal",
+            "message_id": "EX-01M2FH2DN0EGQ1X28D55R8QPR4:proposal",
+            "role": "user"
+          },
+          {
+            "content": {
+              "action": {
+                "id": "AC-01M2FH1VYS7V3GYVGDE7HRVJ4C",
+                "review_cycle_id": "RC-01M2FH1VYS8THG2029HQ1BNHZ5",
+                "role": "identity_review",
+                "round": 1,
+                "slot": "initial-1",
+                "stage": "initial",
+                "target": "KN-01M2FH1PJXVS8CMCVD6DWTV43V"
+              },
+              "answer_requests": [],
+              "completed_results": {},
+              "issues": {},
+              "pending_findings": [],
+              "previous_reviews": [],
+              "proposal_digest": "16998c074c4e560a514da3151ec4837ecf01de17b100994739a77ff5f7685e60",
+              "research_request_contract": {
+                "extension_file": "activity-extensions.json",
+                "field": "research_requests",
+                "instructions": "If investigation is necessary, write research_requests and return unresolved provisionally for initial/judge. The slot is deferred without sealing a verdict; all requested answers return to this same slot. Use an existing answer when it resolves the question. Investigation cannot replace your final complete review.",
+                "item": {
+                  "id": "local request ID",
+                  "question": "One fixed question to investigate",
+                  "source_refs": [
+                    "proposal or proposal:<field.path>, issue:<id>, supplied source ref, or readable knowledge ID"
+                  ]
+                },
+                "remaining_requests": 3
+              },
+              "review_cycle_id": "RC-01M2FH1VYS8THG2029HQ1BNHZ5",
+              "snapshot": "48934c11a55f8f9fa1cceb9e286b123ae3c73579",
+              "source_instructions": "Read each referenced source through its local_path when needed. The JSON file contains the exact original public message; its content is the original source body. Compare the complete current proposal. Prior revision judgments do not approve this revision.",
+              "source_refs": [],
+              "supplemental_results": []
+            },
+            "kind": "review_request",
+            "message_id": "EX-01M2FH2DN0EGQ1X28D55R8QPR4:request",
+            "role": "user"
+          },
+          {
+            "content": {
+              "decision": "match",
+              "findings": [],
+              "proposal_digest": "16998c074c4e560a514da3151ec4837ecf01de17b100994739a77ff5f7685e60",
+              "questions": [],
+              "scope_complete": true,
+              "summary": "The statement, explanation, summary, assumptions, declaration name, verified declaration signature, and Lean source agree. The Lean theorem universally quantifies over n : Nat and proves n + 0 = n by definitional reduction, exactly matching the stated natural-number domain, quantification, and conclusion. No dependencies or axioms are used, and no relation claim requires separate review.",
+              "used_sources": [
+                "KN-01M2FH1PJXVS8CMCVD6DWTV43V",
+                "context:goal",
+                "tool:lean"
+              ]
+            },
+            "message_id": "EX-01M2FH2DN0EGQ1X28D55R8QPR4:assistant",
+            "role": "assistant"
+          }
+        ]
+      }
+    }
+  },
+  "review_inputs": {},
+  "status": "completed",
+  "task_readiness": {
+    "TK-01M2FGY4G0BMS1C1ZZYB19V64M": {
+      "basis": [
+        {
+          "id": "CR-01M2FGZKKV1ZKXJSKJ8JSR2459",
+          "sha256": "1bc748dc549eb4b6d0cea10df39c10180f7f514e3450cd62d899239be69f85f0",
+          "status": null
+        }
+      ],
+      "contract_basis": {
+        "contract_sha256": "14641ba8f9aeac3c4cbd7b6afe7f137758e96bc7d05fcf4acb9236c1c2f76f44",
+        "goal_revision": 1,
+        "policy_revision": 1,
+        "revision": 1
+      },
+      "errors": [],
+      "evaluated_at": "2026-09-14T08:37:03.343590+00:00",
+      "state": "ready"
+    },
+    "TK-01M2FH77QWR9ZYQN56771NH098": {
+      "basis": [
+        {
+          "id": "CR-01M2FHEZZWACFBQ0EVCG3XQYXE",
+          "sha256": "fba93d39f6c372119b816ec08059c6ac692a52bdab7adea0973776a4405c5cc2",
+          "status": null
+        }
+      ],
+      "contract_basis": {
+        "contract_sha256": "1d583e8c2e71ae93f2594d2568c287da3cb28c055070a7cdcb578eeb72533555",
+        "goal_revision": 1,
+        "policy_revision": 1,
+        "revision": 1
+      },
+      "errors": [],
+      "evaluated_at": "2026-09-14T08:45:30.392599+00:00",
+      "state": "ready"
+    }
+  },
+  "tasks": {
+    "TK-01M2FGY4G0BMS1C1ZZYB19V64M": {
+      "assessment": {
+        "criteria_results": [
+          {
+            "criterion": "Return self-contained Lean source using only Lean core that exports a declaration proving `∀ n : Nat, n + 0 = n`.",
+            "evidence": "The returned source in TK-01M2FGY4G0BMS1C1ZZYB19V64M defines `theorem nat_add_zero_right : ∀ n : Nat, n + 0 = n := by intro n; rfl`. KN-01M2FH1PJXVS8CMCVD6DWTV43V records central status `verified`, the exact matching declaration signature, and no axiom dependencies.",
+            "satisfied": true
+          },
+          {
+            "criterion": "Identify the exact exported declaration name for central formal verification.",
+            "evidence": "The result identifies `nat_add_zero_right`; KN-01M2FH1PJXVS8CMCVD6DWTV43V records that exact name in both `declaration_names` and the centrally verified declarations.",
+            "satisfied": true
+          },
+          {
+            "criterion": "Provide a concise explanation that explicitly states the domain is the natural numbers and that the equality holds for every natural number `n`.",
+            "evidence": "The returned explanation explicitly says that the domain is the natural numbers, universally quantifies over every natural number `n`, and concludes that adding zero on the right leaves `n` unchanged.",
+            "satisfied": true
+          },
+          {
+            "criterion": "The formal result and explanation must agree on the operation, zero being added on the right, equality conclusion, domain, and universal quantification.",
+            "evidence": "KN-01M2FH1PJXVS8CMCVD6DWTV43V has an effective completed identity assessment with two independent `match` reviews. Both reviews confirm agreement on `Nat`, universal quantification, addition, right-hand zero, and the equality `n + 0 = n`.",
+            "satisfied": true
+          }
+        ],
+        "decision": "completed",
+        "execution_id": "EX-01M2FH33266ZD7SX4YAN9P8D7X",
+        "reason": "All completion criteria are supported by the returned source, central Lean verification, and the completed independent identity-review cycle.",
+        "task_id": "TK-01M2FGY4G0BMS1C1ZZYB19V64M"
+      },
+      "completion_criteria": [
+        "Return self-contained Lean source using only Lean core that exports a declaration proving `∀ n : Nat, n + 0 = n`.",
+        "Identify the exact exported declaration name for central formal verification.",
+        "Provide a concise explanation that explicitly states the domain is the natural numbers and that the equality holds for every natural number `n`.",
+        "The formal result and explanation must agree on the operation, zero being added on the right, equality conclusion, domain, and universal quantification."
+      ],
+      "dependencies": [],
+      "expected_result": "A self-contained Lean theorem proving right-addition of zero for every natural number, together with its exported declaration name and a faithful concise explanation suitable for formal checking and independent identity review.",
+      "feature_version": 2,
+      "id": "TK-01M2FGY4G0BMS1C1ZZYB19V64M",
+      "inputs": [
+        "context:goal",
+        "tool:lean"
+      ],
+      "occurrence_condition": {
+        "op": "always"
+      },
+      "producer_execution": "EX-01M2FGXHB5B6E5DWM53GZZSYEB",
+      "question": "Can a self-contained Lean-core declaration prove that for every natural number n, n + 0 = n, with an explanation faithful to the declaration's domain and quantification?",
+      "remaining_work": [
+        "Run the configured central Lean verifier on `nat_add_zero_right`.",
+        "Perform independent semantic identity review of the formal declaration and explanation.",
+        "After the mathematical goal is established as solved, handle the deferred reproducibility-note requirement using the verifier-recorded Lean version."
+      ],
+      "results": [
+        {
+          "checkpoint": "Saved checkpoint.json with the proof candidate ready for central submission; central verification and identity review remain pending.",
+          "execution_id": "EX-01M2FH0FH9EGG0184XRJFM85GC",
+          "knowledge": [
+            {
+              "declaration_names": [
+                "nat_add_zero_right"
+              ],
+              "dependencies": [],
+              "explanation": "The domain is the natural numbers. The theorem universally quantifies over every natural number `n` and concludes that adding zero on the right leaves `n` unchanged. The proof uses definitional reduction of natural-number addition.",
+              "kind": "theorem",
+              "lean_code": "theorem nat_add_zero_right : ∀ n : Nat, n + 0 = n := by\n  intro n\n  rfl\n",
+              "statement": "For every natural number n, n + 0 = n.",
+              "summary": "A self-contained Lean-core proof of right addition by zero for all natural numbers, submitted for central formal verification and independent identity review.",
+              "title": "Natural-number right addition by zero"
+            }
+          ],
+          "outcome": "submitted",
+          "output_files": [
+            {
+              "artifact_ref": "runtime/artifacts/BA-01M2FH1PH4BFD1MPG1AYF0ZVXZ/files/checkpoint.json",
+              "bytes": 655,
+              "path": "checkpoint.json",
+              "sha256": "7bcac4476cd6ec5bedbab4d3862270d6a41b5a48a842ea36ddf4be517eb4589e"
+            }
+          ],
+          "questions": [],
+          "relations": [],
+          "remaining_work": [
+            "Run the configured central Lean verifier on `nat_add_zero_right`.",
+            "Perform independent semantic identity review of the formal declaration and explanation.",
+            "After the mathematical goal is established as solved, handle the deferred reproducibility-note requirement using the verifier-recorded Lean version."
+          ],
+          "report": "Constructed a self-contained Lean declaration using only core syntax and definitions. The declaration explicitly proves `∀ n : Nat, n + 0 = n`; its proof introduces the universally quantified natural number and closes by reflexivity after definitional reduction. No worker-local verification is claimed because verification is configured to occur centrally after submission and the observed Lean version is not yet recorded.",
+          "summary": "Submitted `nat_add_zero_right`, a self-contained Lean-core proof that every natural number is unchanged when zero is added on the right, with a matching explanation of its natural-number domain and universal quantification.",
+          "used_sources": [
+            "SKILL.md",
+            "GLOSSARY.md",
+            "TK-01M2FGY4G0BMS1C1ZZYB19V64M",
+            "context:goal",
+            "tool:lean"
+          ]
+        }
+      ],
+      "reuse": [],
+      "reviews": [
+        {
+          "contract_sha256": "14641ba8f9aeac3c4cbd7b6afe7f137758e96bc7d05fcf4acb9236c1c2f76f44",
+          "decision": "approved",
+          "execution_id": "EX-01M2FGYR50T1FYHP4M0GX672PX",
+          "findings": [
+            "Question and scope are precise: the task asks for a universally quantified Lean-core proof of `n + 0 = n` over `Nat`, and explicitly excludes the deferred academic reproducibility requirement.",
+            "Inputs are sufficient for assignment: `context:goal` supplies the target and `tool:lean` supplies the central-after-submission verification mechanism. The unknown observed Lean version is not a contract defect because recording verification evidence is the executor's later responsibility.",
+            "The expected result and completion criteria are concrete and assessable: self-contained Lean source, an exact exported declaration name, and a concise explanation matching the formal statement's domain, universal quantification, addition operation, right-hand zero, and equality conclusion.",
+            "The contract correctly separates formal verification from semantic identity review. It does not treat the configured Lean command as proof of successful checking and does not require completed proof evidence before assignment.",
+            "The task has no dependencies, its occurrence condition is always, and it does not duplicate a completed task; the task has no prior results or reuse claims requiring scope or validity reconciliation.",
+            "The active local work grant includes `task_contract_review`, `research_work`, `formal_check`, `identity_review`, and `goal_audit`; the task requests no external effects. Checkpoint and runtime controls are supplied independently by the execution context.",
+            "The academic requirement is correctly deferred until the mathematical goal is solved, so it is not used as a circular prerequisite for this proof task.",
+            "Progress can be judged directly from production of the required Lean source, exported declaration name, and faithful explanation; final completion remains subject to central formal verification and independent semantic review rather than this contract approval."
+          ],
+          "goal_revision": 1,
+          "id": "CR-01M2FGZKKV1ZKXJSKJ8JSR2459",
+          "policy_revision": 1,
+          "questions": [],
+          "revision": 1,
+          "summary": "The contract is ready for assignment. It defines a bounded formal obligation, supplies sufficient authorized inputs, gives observable completion criteria, correctly delegates Lean checking to the central verifier after submission, and keeps the deferred reproducibility note outside the proof task.",
+          "used_sources": [
+            "SKILL.md",
+            "GLOSSARY.md",
+            "TK-01M2FGY4G0BMS1C1ZZYB19V64M",
+            "context:goal",
+            "context:policy",
+            "tool:lean"
+          ]
+        }
+      ],
+      "revises_task_id": null,
+      "revision": 1,
+      "revision_history": [],
+      "scope": "Construct the requested Lean-core proof of the universally quantified natural-number identity `n + 0 = n` and explain exactly its domain, quantification, operation, and conclusion. Do not perform the deferred academic reproducibility requirement in this task.",
+      "selected_by": "EX-01M2FH027J4KNT6HTK3TJNPXTC",
+      "status": "completed",
+      "title": "Prove natural-number right addition by zero",
+      "work_class": "formal"
+    },
+    "TK-01M2FH77QWR9ZYQN56771NH098": {
+      "academic_requirement_id": "reproducibility-note",
+      "assessment": {
+        "criteria_results": [
+          {
+            "criterion": "Create a readable note naming the verified theorem, the natural-number quantifier, and the exact Lean version recorded by the formal verifier.",
+            "evidence": "The returned report and observation for TK-01M2FH77QWR9ZYQN56771NH098 name `nat_add_zero_right`, state that it applies to every natural number `n`, and give the exact version `Lean (version 4.32.0, x86_64-w64-windows-gnu, commit 8c9756b28d64dab099da31a4c09229a9e6a2ef35, Release)`. The complete verified record KN-01M2FH1PJXVS8CMCVD6DWTV43V independently records the same declaration name, signature `nat_add_zero_right (n : Nat) : n + 0 = n`, and exact toolchain version.",
+            "satisfied": true
+          }
+        ],
+        "decision": "completed",
+        "execution_id": "EX-01M2FHHJF9Y0R15A7JE6M8S1CE",
+        "reason": "The returned readable note satisfies the sole academic completion criterion, with every required detail matching the verified theorem record.",
+        "task_id": "TK-01M2FH77QWR9ZYQN56771NH098"
+      },
+      "completion_criteria": [
+        "Create a readable note naming the verified theorem, the natural-number quantifier, and the exact Lean version recorded by the formal verifier."
+      ],
+      "dependencies": [
+        "KN-01M2FH1PJXVS8CMCVD6DWTV43V"
+      ],
+      "expected_result": "Evidence for the user-defined academic criteria",
+      "feature_version": 2,
+      "id": "TK-01M2FH77QWR9ZYQN56771NH098",
+      "inputs": [
+        "KN-01M2FH1PJXVS8CMCVD6DWTV43V"
+      ],
+      "occurrence_condition": {
+        "op": "always"
+      },
+      "producer_execution": "user-requirement:reproducibility-note",
+      "question": "Write a brief reproducibility note for the solved theorem using its recorded Lean verification.",
+      "remaining_work": [],
+      "required_external_effects": [],
+      "requirements_sha256": "89364916cb1b16bcbe6879d4216be4d50ae68ffcd795f196141875d8b12ce30f",
+      "results": [
+        {
+          "checkpoint": "Saved checkpoint.json with the completed reproducibility note and its verified source record.",
+          "execution_id": "EX-01M2FHG36BTRGAYGESASBFWFNN",
+          "knowledge": [
+            {
+              "declaration_names": [],
+              "dependencies": [
+                "KN-01M2FH1PJXVS8CMCVD6DWTV43V"
+              ],
+              "explanation": "Reproducibility note: The verified theorem is `nat_add_zero_right`, with recorded signature `nat_add_zero_right (n : Nat) : n + 0 = n`. It quantifies over every natural number `n`. The formal verifier recorded the exact toolchain version as `Lean (version 4.32.0, x86_64-w64-windows-gnu, commit 8c9756b28d64dab099da31a4c09229a9e6a2ef35, Release)`.",
+              "kind": "observation",
+              "lean_code": "",
+              "statement": "The verified theorem `nat_add_zero_right` proves `n + 0 = n` for every `n : Nat` and was verified using `Lean (version 4.32.0, x86_64-w64-windows-gnu, commit 8c9756b28d64dab099da31a4c09229a9e6a2ef35, Release)`.",
+              "summary": "A brief reproducibility note naming the verified theorem, its universal natural-number quantification, and the exact verifier-recorded Lean version.",
+              "title": "Reproducibility note for nat_add_zero_right"
+            }
+          ],
+          "outcome": "submitted",
+          "output_files": [
+            {
+              "artifact_ref": "runtime/artifacts/BA-01M2FHHG96DNXJBH68EN14JV86/files/checkpoint.json",
+              "bytes": 743,
+              "path": "checkpoint.json",
+              "sha256": "5a65718a0d3e725faa9444e82e5fd6902f2c3ac651b8f1a695720801275f69eb"
+            }
+          ],
+          "questions": [],
+          "relations": [],
+          "remaining_work": [],
+          "report": "Reproducibility note: The verified theorem is `nat_add_zero_right`, recorded with signature `nat_add_zero_right (n : Nat) : n + 0 = n`. Thus it states that for every natural number `n`, adding zero on the right leaves `n` unchanged. Its verification record gives the exact version `Lean (version 4.32.0, x86_64-w64-windows-gnu, commit 8c9756b28d64dab099da31a4c09229a9e6a2ef35, Release)`. This note reports the existing verification record and does not claim a new formal verification.",
+          "summary": "Completed the requested reproducibility note using the verified theorem record, including the theorem name, natural-number quantifier, and exact recorded Lean version.",
+          "used_sources": [
+            "SKILL.md",
+            "GLOSSARY.md",
+            "TK-01M2FH77QWR9ZYQN56771NH098",
+            "KN-01M2FH1PJXVS8CMCVD6DWTV43V",
+            "tool:lean"
+          ]
+        }
+      ],
+      "reuse": [
+        "KN-01M2FH1PJXVS8CMCVD6DWTV43V"
+      ],
+      "reviews": [
+        {
+          "contract_sha256": "1d583e8c2e71ae93f2594d2568c287da3cb28c055070a7cdcb578eeb72533555",
+          "decision": "approved",
+          "execution_id": "EX-01M2FHDS2CZG1KSHRMGHB9DZ8E",
+          "findings": [
+            "The question, scope, and work class define a bounded nonformal obligation: write a brief reproducibility note for the already solved theorem. The task does not reopen or duplicate the completed proof task TK-01M2FGY4G0BMS1C1ZZYB19V64M.",
+            "The postsolution occurrence is valid. KN-01M2FH1PJXVS8CMCVD6DWTV43V is verified, has an effective completed identity assessment, and the recorded goal audits establish the mathematical goal as satisfied before this academic task is assigned.",
+            "The task input, dependency, and reuse reference KN-01M2FH1PJXVS8CMCVD6DWTV43V exactly. That record contains all facts needed for the note: theorem name `nat_add_zero_right`, signature `nat_add_zero_right (n : Nat) : n + 0 = n`, universal natural-number quantification, and the verifier-recorded version `Lean (version 4.32.0, x86_64-w64-windows-gnu, commit 8c9756b28d64dab099da31a4c09229a9e6a2ef35, Release)`.",
+            "Reuse is within the verified record's effective scope: the task asks only to report recorded theorem and verification metadata, not to infer a new mathematical claim or claim a fresh formal verification.",
+            "The expected result and completion criterion are concrete and assessable by the designated research_plan assessor: the returned note must be readable and name the verified theorem, the natural-number quantifier, and the exact recorded Lean version.",
+            "The single deliverable provides an adequate progress and completion observation for this brief task; completion is not inferred merely from assignment and remains subject to assessment of the returned note against the exact criterion.",
+            "The task requests no external effects. The active local grants cover the relevant research and planning roles, and no additional permission, network operation, or formal-verifier execution is required to author the note.",
+            "The contract basis matches the current goal revision, policy revision, and task revision, and the task retains the academic requirement's recorded requirements hash and solution basis."
+          ],
+          "goal_revision": 1,
+          "id": "CR-01M2FHEZZWACFBQ0EVCG3XQYXE",
+          "policy_revision": 1,
+          "questions": [],
+          "revision": 1,
+          "summary": "The contract is ready for assignment. It is a bounded postsolution documentation task with sufficient verified input, a valid dependency and reuse basis, an exact assessable completion criterion, a designated assessor, and no external-effect or circular-proof requirement.",
+          "used_sources": [
+            "SKILL.md",
+            "GLOSSARY.md",
+            "TK-01M2FH77QWR9ZYQN56771NH098",
+            "KN-01M2FH1PJXVS8CMCVD6DWTV43V",
+            "TK-01M2FGY4G0BMS1C1ZZYB19V64M",
+            "context:goal",
+            "context:policy",
+            "tool:lean"
+          ]
+        }
+      ],
+      "revision": 1,
+      "scope": "Write a brief reproducibility note for the solved theorem using its recorded Lean verification.",
+      "selected_by": "EX-01M2FHFHCYBZ8NGHANH61BWEM2",
+      "solution_basis": {
+        "goal_ref": "1:8e9d11f01c2939924a70c4bf87ee80ec6117ded1e61c573f47addb1ff18e23fb",
+        "records": [
+          {
+            "id": "KN-01M2FH1PJXVS8CMCVD6DWTV43V",
+            "sha256": "5714fbd05e1a120df06af2378ef073f7ad2773ff6c61459b9250ddd3437f2f09"
+          },
+          {
+            "id": "EX-01M2FH5X903ECHVKDMJFQ9892R",
+            "sha256": "4e5adbb2dd2d0d90480494332c7e5449dc01fcbc629dbbb08f57df446f6fb383"
+          },
+          {
+            "id": "EX-01M2FH6J92SBCJ8N1FEV25WTY6",
+            "sha256": "fab64a873af15ef49a535c174c9ae0424341c859ffe653d7d2879998ce5593f0"
+          }
+        ]
+      },
+      "status": "completed",
+      "title": "Academic validation: reproducibility-note",
+      "work_class": "nonformal"
+    }
+  },
+  "trust_transitions": {},
+  "updated_at": "2026-09-14T08:47:27.483297+00:00"
+}

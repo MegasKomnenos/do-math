@@ -1,0 +1,76 @@
+{
+  "passed": true,
+  "actual_cli_invocations": 8,
+  "synthetic_initial_fixtures": 2,
+  "same_slot_prior_assistant_verified": 3,
+  "judge_peer_results_hidden_in_actual_input": 6,
+  "answer_withdrawal_verified": true,
+  "checks": [
+    {
+      "stage": "organize",
+      "slot": "organize",
+      "round": 1,
+      "input_sha256": "06534311a370c318d20ab861b200f5009652fd6635a8889ddce9385c62729fe8",
+      "passed": true
+    },
+    {
+      "stage": "judge",
+      "slot": "judge-0",
+      "round": 1,
+      "input_sha256": "79c987ab7140d03f6b12b067698167263e5a0297e95171e84d43052213d1a25f",
+      "passed": true
+    },
+    {
+      "stage": "judge",
+      "slot": "judge-1",
+      "round": 1,
+      "input_sha256": "955e1a023a651dae109e6f048c158494752c065699a2bcb1ef6cecc524c28e78",
+      "passed": true
+    },
+    {
+      "stage": "judge",
+      "slot": "judge-2",
+      "round": 1,
+      "input_sha256": "b6ee7fe1beaa59fee191f15f65017c37e3fe2cb865d09ea0215bc7d8e9928ea7",
+      "passed": true
+    },
+    {
+      "stage": "answer",
+      "slot": "initial-0",
+      "round": 2,
+      "input_sha256": "1f7f424c1ad662f8cdf3df8ad0e4afaa05d16649a4bc226c094c9daa0efe5620",
+      "passed": true
+    },
+    {
+      "stage": "judge",
+      "slot": "judge-0",
+      "round": 2,
+      "input_sha256": "bc3b14c155ee4fcde496595b737244cfe8289950a36aca1a8ffde21fcdf39e8f",
+      "passed": true
+    },
+    {
+      "stage": "judge",
+      "slot": "judge-1",
+      "round": 2,
+      "input_sha256": "376f6658a9f43826f47836c421560ac147eb855685d57fa1cad5dfd7514a6cb8",
+      "passed": true
+    },
+    {
+      "stage": "judge",
+      "slot": "judge-2",
+      "round": 2,
+      "input_sha256": "1e77d6d0dd5adbbdca58cf4eb65073a4bc2933a7030787bf298561d5cdc1e5c0",
+      "passed": true
+    }
+  ],
+  "actual_cli_usage": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 11008,
+    "input_tokens": 257805,
+    "output_tokens": 2955,
+    "reasoning_output_tokens": 408
+  },
+  "git_bundle_verified": true,
+  "frozen_source_hashes_verified": 81,
+  "final_snapshot": "cd004ee3e41f50112340c6b4d968be1ba4230bb1"
+}

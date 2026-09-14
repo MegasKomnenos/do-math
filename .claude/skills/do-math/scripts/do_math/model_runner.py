@@ -14,14 +14,21 @@ from do_math.codex_adapter import CodexExecAdapter
 
 
 class CodexModelRunner:
-    def __init__(self, codex_path: str | None = None) -> None:
+    def __init__(self, codex_path: str | None = None, *, windows_sandbox: str = "unelevated", sandbox: str = "danger-full-access") -> None:
         self.codex_path = codex_path or shutil.which("codex") or "codex"
+        if windows_sandbox not in {"unelevated", "elevated"}:
+            raise ValueError("windows_sandbox must be unelevated or elevated")
+        self.windows_sandbox = windows_sandbox
+        if sandbox not in {"read-only", "workspace-write", "danger-full-access"}:
+            raise ValueError("unsupported CLI sandbox")
+        self.sandbox = sandbox
         self._adapter = CodexExecAdapter(self.codex_path)
 
     def run(self, *, prompt: str, output_schema: dict, workspace: Path, evidence_dir: Path,
             model: str, effort: str, timeout_seconds: float,
             should_stop: Callable[[], bool] | None = None,
-            on_started: Callable[[dict], None] | None = None) -> dict:
+            on_started: Callable[[dict], None] | None = None,
+            on_observation: Callable[[dict], None] | None = None) -> dict:
         workspace, evidence_dir = workspace.resolve(), evidence_dir.resolve()
         if evidence_dir.exists():
             raise FileExistsError("evidence_dir must be new")
@@ -32,13 +39,40 @@ class CodexModelRunner:
         prompt_path.write_text(prompt, encoding="utf-8")
         schema_path.write_text(json.dumps(output_schema, ensure_ascii=False, sort_keys=True), encoding="utf-8")
         request = {"codex_path": self.codex_path, "prompt_path": str(prompt_path), "output_schema_path": str(schema_path),
-                   "cwd": str(workspace), "model": model, "effort": effort, "sandbox": "workspace-write",
-                   "approval_policy": "never", "windows_sandbox": "elevated", "max_runtime_seconds": timeout_seconds,
+                   "cwd": str(workspace), "model": model, "effort": effort, "sandbox": self.sandbox,
+                   "approval_policy": "never", "windows_sandbox": self.windows_sandbox, "max_runtime_seconds": timeout_seconds,
                    "stdout_path": str(evidence_dir / "stdout.jsonl"), "stderr_path": str(evidence_dir / "stderr.txt"),
                    "final_path": str(evidence_dir / "final.txt"), "status_path": str(evidence_dir / "worker-status.json")}
         request_path = evidence_dir / "request.json"
         request_path.write_text(json.dumps(request, ensure_ascii=False, sort_keys=True), encoding="utf-8")
         execution = self._adapter.start(request_path, cwd=evidence_dir, env=os.environ)
+        offset = 0
+        buffer = b""
+        last_tick = 0.0
+
+        def observe() -> None:
+            nonlocal offset, buffer, last_tick
+            if on_observation is None:
+                return
+            stdout_path = evidence_dir / "stdout.jsonl"
+            if stdout_path.exists():
+                with stdout_path.open("rb") as stream:
+                    stream.seek(offset)
+                    chunk = stream.read()
+                    offset = stream.tell()
+                buffer += chunk
+                while b"\n" in buffer:
+                    line, buffer = buffer.split(b"\n", 1)
+                    if line.strip():
+                        try:
+                            event = json.loads(line)
+                        except (UnicodeError, json.JSONDecodeError):
+                            event = {"type": "unparsed_observation", "bytes": len(line)}
+                        on_observation(event)
+            current = time.monotonic()
+            if current - last_tick >= 1:
+                last_tick = current
+                on_observation({"type": "tick"})
         started = {"pid": execution.job.pid, "creation_filetime": execution.job.creation_filetime,
                    "request_sha256": execution.request_sha256}
         try:
@@ -53,6 +87,9 @@ class CodexModelRunner:
             self._adapter.resume(execution)
             deadline, stopped = time.monotonic() + timeout_seconds, False
             while not self._adapter.wait_for_termination(execution, 0):
+                observe()
+                if self._adapter.wait_for_termination(execution, 0):
+                    break
                 if not stopped and ((should_stop and should_stop()) or time.monotonic() >= deadline):
                     self._adapter.stop(execution); stopped = True
                 time.sleep(.2)

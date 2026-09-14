@@ -1,0 +1,24 @@
+{
+  "actual_cli_invocations": 8,
+  "actual_lean": true,
+  "actual_stages": [
+    "organize",
+    "judge",
+    "judge",
+    "judge",
+    "answer",
+    "judge",
+    "judge",
+    "judge"
+  ],
+  "all_debate_judgments_actual_cli": true,
+  "all_initial_judgments_synthetic": true,
+  "case": "actual CLI dispute with explicitly synthetic initial fixtures",
+  "cycle_id": "RC-01M2FFSJ2GV5D4FC7NHFPNDBB1",
+  "decision": "match",
+  "effective": true,
+  "elapsed_seconds": 201.1720000000205,
+  "knowledge_id": "KN-01M2FFSFBC9DQZ35YN15N3BNC2",
+  "passed": true,
+  "synthetic_initial_judgments": 2
+}

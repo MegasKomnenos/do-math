@@ -92,6 +92,7 @@ def build_parser() -> _Parser:
     run = commands.add_parser("run", help="advance the workflow")
     _instance_arguments(run)
     run.add_argument("--max-steps", type=int)
+    run.add_argument("--watch", action="store_true")
 
     status = commands.add_parser("status", help="show current status")
     _instance_arguments(status)
@@ -121,6 +122,16 @@ def build_parser() -> _Parser:
     reason = request.add_mutually_exclusive_group()
     reason.add_argument("--reason")
     reason.add_argument("--text")
+
+    for name in ("decision", "knowledge", "trust", "external", "conversation"):
+        command = commands.add_parser(name, help=f"apply a structured {name} control")
+        _instance_arguments(command)
+        command.add_argument("--file", required=True)
+
+    source = commands.add_parser("source", help="import an exact local source file")
+    _instance_arguments(source)
+    source.add_argument("--file", required=True)
+    source.add_argument("--name")
 
     query = commands.add_parser("query", help="query records or raw snapshot files")
     _instance_arguments(query)
@@ -187,7 +198,7 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
         return initialize(args.repository, goal=goal, workspace=args.workspace, config=config, title=args.title,
                           goal_kind=args.goal_kind, policies=policies, sources=args.source), 0
     if command == "run":
-        return ResearchEngine(args.repository, args.instance).run(max_steps=args.max_steps), 0
+        return ResearchEngine(args.repository, args.instance).run(max_steps=args.max_steps, watch=args.watch), 0
     if command == "status":
         status = ResearchEngine(args.repository, args.instance).status()
         if args.json:
@@ -202,6 +213,15 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
     if command == "request":
         return _control(args, "request", text=args.reason if args.reason is not None else args.text or "",
                         config={"role": args.role, "target": args.target}), 0
+    if command in {"decision", "knowledge", "trust", "external", "conversation"}:
+        payload = _json_file(args.file)
+        return _control(args, command,
+                        config={"change": payload} if command == "decision" else payload), 0
+    if command == "source":
+        path = Path(args.file).resolve()
+        if not path.is_file():
+            raise CliInputError(f"--file is not a file: {args.file}")
+        return _control(args, "source", config={"path": str(path), "name": args.name or path.name}), 0
     if command == "query":
         if args.files:
             return ResearchRepository(args.repository, args.instance).query(snapshot=args.snapshot, prefix=args.prefix,

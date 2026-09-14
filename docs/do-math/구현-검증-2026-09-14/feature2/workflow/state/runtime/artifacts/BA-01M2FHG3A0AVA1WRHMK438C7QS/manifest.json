@@ -1,0 +1,51 @@
+[
+  {
+    "bytes": 3534,
+    "format": "canonical-json",
+    "key": "recent_history",
+    "path": "input/catalog/recent_history.json",
+    "sha256": "87cf48fdf3c559e5537bf5a96d9fa6ad72b2fbbccd67c28baf1ccb3fcf26ec09"
+  },
+  {
+    "bytes": 15098,
+    "format": "canonical-json",
+    "key": "tasks",
+    "path": "input/catalog/tasks.json",
+    "sha256": "cfea6aad51f5070c1fc28c847bc656081de6884312929f676d33a66402c7e6fc"
+  },
+  {
+    "bytes": 591,
+    "format": "canonical-json",
+    "key": "knowledge_catalog",
+    "path": "input/catalog/knowledge_catalog.json",
+    "sha256": "04294a157672826b8dd041baca0665cd01a7751f599e8ea203d8a4e8ce1ca4e4"
+  },
+  {
+    "bytes": 3,
+    "format": "canonical-json",
+    "key": "relations",
+    "path": "input/catalog/relations.json",
+    "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+  },
+  {
+    "bytes": 3,
+    "format": "canonical-json",
+    "key": "sources",
+    "path": "input/catalog/sources.json",
+    "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+  },
+  {
+    "bytes": 3,
+    "format": "canonical-json",
+    "key": "user_inputs",
+    "path": "input/catalog/user_inputs.json",
+    "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+  },
+  {
+    "bytes": 3,
+    "format": "canonical-json",
+    "key": "open_questions",
+    "path": "input/catalog/open_questions.json",
+    "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+  }
+]

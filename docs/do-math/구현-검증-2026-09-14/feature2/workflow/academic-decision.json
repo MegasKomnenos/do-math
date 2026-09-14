@@ -1,0 +1,1 @@
+{"kind": "academic_requirements", "requirements": [{"id": "reproducibility-note", "scope": "Write a brief reproducibility note for the solved theorem using its recorded Lean verification.", "assessor": "research_plan", "criteria": ["Create a readable note naming the verified theorem, the natural-number quantifier, and the exact Lean version recorded by the formal verifier."]}]}

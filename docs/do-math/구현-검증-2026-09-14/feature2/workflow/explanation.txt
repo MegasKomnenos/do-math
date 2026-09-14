@@ -1,0 +1,1 @@
+The domain is the natural numbers. The theorem universally quantifies over every natural number `n` and concludes that adding zero on the right leaves `n` unchanged. The proof uses definitional reduction of natural-number addition.

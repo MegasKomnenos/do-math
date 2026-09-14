@@ -1,0 +1,1 @@
+Prove that for every natural number n, n + 0 = n. Give a self-contained Lean proof using Lean core and a faithful concise explanation of its domain and quantification. Complete the reviewed task and the independent mathematical goal audits.

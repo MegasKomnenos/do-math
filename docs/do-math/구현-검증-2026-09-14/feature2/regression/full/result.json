@@ -1,0 +1,9 @@
+{
+  "exit_code": 0,
+  "elapsed_seconds": 536.1263182163239,
+  "source_manifest": "manifest.json",
+  "tests": 261,
+  "skipped": 1,
+  "failed": 0,
+  "source_scope": "Frozen source; final planning delta is verified separately"
+}

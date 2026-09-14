@@ -1,0 +1,126 @@
+{
+  "passed": false,
+  "result": {
+    "status": "completed",
+    "output": {
+      "read_back": "Set-Content: Access to the path 'C:\\math\\.skill-workspace\\do-math-unelevated-write-8fb2mqs9\\workspace\\probe.txt' is denied.\nGet-Content: The path could not be found because 'C:\\math\\.skill-workspace\\do-math-unelevated-write-8fb2mqs9\\workspace\\probe.txt' does not exist."
+    },
+    "usage": {
+      "input_tokens": 34907,
+      "cached_input_tokens": 17024,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 294,
+      "reasoning_output_tokens": 0
+    },
+    "evidence_dir": "C:\\math\\.skill-workspace\\do-math-unelevated-write-8fb2mqs9\\evidence",
+    "execution": {
+      "started": {
+        "pid": 63440,
+        "creation_filetime": 134338479966953209,
+        "request_sha256": "3f26da892540def1b5a52ee9a065d52776f5fdae278cb00892eed3da3e28f110"
+      },
+      "collect": {
+        "source_request": {
+          "present": true,
+          "bytes": 963,
+          "sha256": "3f26da892540def1b5a52ee9a065d52776f5fdae278cb00892eed3da3e28f110",
+          "raw": {
+            "base64": "eyJhcHByb3ZhbF9wb2xpY3kiOiJuZXZlciIsImNvZGV4X3BhdGgiOiJDOlxcVXNlcnNcXHdvZ3VkXFxBcHBEYXRhXFxMb2NhbFxcUHJvZ3JhbXNcXE9wZW5BSVxcQ29kZXhcXGJpblxcY29kZXguRVhFIiwiY3dkIjoiQzpcXG1hdGhcXC5za2lsbC13b3Jrc3BhY2VcXGRvLW1hdGgtdW5lbGV2YXRlZC13cml0ZS04ZmIybXFzOVxcd29ya3NwYWNlIiwiZWZmb3J0IjoibG93IiwiZmluYWxfcGF0aCI6IkM6XFxtYXRoXFwuc2tpbGwtd29ya3NwYWNlXFxkby1tYXRoLXVuZWxldmF0ZWQtd3JpdGUtOGZiMm1xczlcXGV2aWRlbmNlXFxmaW5hbC50eHQiLCJtYXhfcnVudGltZV9zZWNvbmRzIjoxMjAsIm1vZGVsIjoiZ3B0LTUuNi1zb2wiLCJvdXRwdXRfc2NoZW1hX3BhdGgiOiJDOlxcbWF0aFxcLnNraWxsLXdvcmtzcGFjZVxcZG8tbWF0aC11bmVsZXZhdGVkLXdyaXRlLThmYjJtcXM5XFxkby1tYXRoLWNvZGV4LWNmX3ppY2l6XFxzY2hlbWEuanNvbiIsInByb21wdF9wYXRoIjoiQzpcXG1hdGhcXC5za2lsbC13b3Jrc3BhY2VcXGRvLW1hdGgtdW5lbGV2YXRlZC13cml0ZS04ZmIybXFzOVxcZG8tbWF0aC1jb2RleC1jZl96aWNpelxccHJvbXB0LmJpbiIsInNhbmRib3giOiJ3b3Jrc3BhY2Utd3JpdGUiLCJzdGF0dXNfcGF0aCI6IkM6XFxtYXRoXFwuc2tpbGwtd29ya3NwYWNlXFxkby1tYXRoLXVuZWxldmF0ZWQtd3JpdGUtOGZiMm1xczlcXGV2aWRlbmNlXFx3b3JrZXItc3RhdHVzLmpzb24iLCJzdGRlcnJfcGF0aCI6IkM6XFxtYXRoXFwuc2tpbGwtd29ya3NwYWNlXFxkby1tYXRoLXVuZWxldmF0ZWQtd3JpdGUtOGZiMm1xczlcXGV2aWRlbmNlXFxzdGRlcnIudHh0Iiwic3Rkb3V0X3BhdGgiOiJDOlxcbWF0aFxcLnNraWxsLXdvcmtzcGFjZVxcZG8tbWF0aC11bmVsZXZhdGVkLXdyaXRlLThmYjJtcXM5XFxldmlkZW5jZVxcc3Rkb3V0Lmpzb25sIiwid2luZG93c19zYW5kYm94IjoidW5lbGV2YXRlZCJ9"
+          }
+        },
+        "source_prompt": {
+          "present": true,
+          "bytes": 588,
+          "sha256": "615ad4b6c723f0ec002fc96f4c83566943629ad76efcfd0448a508b50c7614bc",
+          "raw": {
+            "base64": "VGhpcyBpcyBhIGJvdW5kZWQgZmlsZXN5c3RlbSBjYXBhYmlsaXR5IHRlc3QuIFlvdXIgZXhhY3Qgd29ya3NwYWNlIGlzIEM6XG1hdGhcLnNraWxsLXdvcmtzcGFjZVxkby1tYXRoLXVuZWxldmF0ZWQtd3JpdGUtOGZiMm1xczlcd29ya3NwYWNlLiBVc2UgZXhlY19jb21tYW5kIHdpdGggd29ya2RpciBzZXQgZXhwbGljaXRseSB0byB0aGF0IHBhdGggYW5kIGxvZ2luPWZhbHNlLiBVc2UgUG93ZXJTaGVsbCBTZXQtQ29udGVudCAtTGl0ZXJhbFBhdGggd2l0aCB0aGUgYWJzb2x1dGUgcGF0aCBDOlxtYXRoXC5za2lsbC13b3Jrc3BhY2VcZG8tbWF0aC11bmVsZXZhdGVkLXdyaXRlLThmYjJtcXM5XHdvcmtzcGFjZVxwcm9iZS50eHQgdG8gd3JpdGUgZG8tbWF0aC1maWxlLW9rLCB0aGVuIEdldC1Db250ZW50IC1MaXRlcmFsUGF0aCB1c2luZyB0aGF0IGFic29sdXRlIHBhdGguIERvIG5vdCB1c2UgYXBwbHlfcGF0Y2ggZm9yIHRoaXMgcHJvYmUuIFJldHVybiByZWFkX2JhY2sgd2l0aCB0aGUgYWN0dWFsIGNvbnRlbnQuIElmIHRvb2xzIGZhaWwgcmV0dXJuIHRoZSBhY3R1YWwgZXJyb3I7IGRvIG5vdCBjbGFpbSB0aGUgZmlsZSBleGlzdHMu"
+          }
+        },
+        "stdout": {
+          "present": true,
+          "bytes": 2496,
+          "sha256": "fbc5cc5d6c3d929a30724560f99e088adfae10ceab7639cd5f8a94eed4c6cbc0",
+          "raw": {
+            "base64": "eyJ0eXBlIjoidGhyZWFkLnN0YXJ0ZWQiLCJ0aHJlYWRfaWQiOiIwMWEwOWYwNi04MDlkLTcwOTMtYTA5Yi04ZjliZmI1OWFmNzMifQp7InR5cGUiOiJ0dXJuLnN0YXJ0ZWQifQp7InR5cGUiOiJpdGVtLmNvbXBsZXRlZCIsIml0ZW0iOnsiaWQiOiJpdGVtXzAiLCJ0eXBlIjoiYWdlbnRfbWVzc2FnZSIsInRleHQiOiJ7IFwicmVhZF9iYWNrXCI6IFwiSeKAmWxsIHBlcmZvcm0gdGhlIGV4YWN0IGJvdW5kZWQgd3JpdGUvcmVhZCBwcm9iZSBub3cuXCIgfSJ9fQp7InR5cGUiOiJpdGVtLnN0YXJ0ZWQiLCJpdGVtIjp7ImlkIjoiaXRlbV8xIiwidHlwZSI6ImNvbW1hbmRfZXhlY3V0aW9uIiwiY29tbWFuZCI6IlwiQzpcXFxcUHJvZ3JhbSBGaWxlc1xcXFxQb3dlclNoZWxsXFxcXDdcXFxccHdzaC5leGVcIiAtTm9Qcm9maWxlIC1Db21tYW5kIFwiU2V0LUNvbnRlbnQgLUxpdGVyYWxQYXRoICdDOlxcXFxtYXRoXFxcXC5za2lsbC13b3Jrc3BhY2VcXFxcZG8tbWF0aC11bmVsZXZhdGVkLXdyaXRlLThmYjJtcXM5XFxcXHdvcmtzcGFjZVxcXFxwcm9iZS50eHQnIC1WYWx1ZSAnZG8tbWF0aC1maWxlLW9rJzsgR2V0LUNvbnRlbnQgLUxpdGVyYWxQYXRoICdDOlxcXFxtYXRoXFxcXC5za2lsbC13b3Jrc3BhY2VcXFxcZG8tbWF0aC11bmVsZXZhdGVkLXdyaXRlLThmYjJtcXM5XFxcXHdvcmtzcGFjZVxcXFxwcm9iZS50eHQnXCIiLCJhZ2dyZWdhdGVkX291dHB1dCI6IiIsImV4aXRfY29kZSI6bnVsbCwic3RhdHVzIjoiaW5fcHJvZ3Jlc3MifX0KeyJ0eXBlIjoiaXRlbS5jb21wbGV0ZWQiLCJpdGVtIjp7ImlkIjoiaXRlbV8xIiwidHlwZSI6ImNvbW1hbmRfZXhlY3V0aW9uIiwiY29tbWFuZCI6IlwiQzpcXFxcUHJvZ3JhbSBGaWxlc1xcXFxQb3dlclNoZWxsXFxcXDdcXFxccHdzaC5leGVcIiAtTm9Qcm9maWxlIC1Db21tYW5kIFwiU2V0LUNvbnRlbnQgLUxpdGVyYWxQYXRoICdDOlxcXFxtYXRoXFxcXC5za2lsbC13b3Jrc3BhY2VcXFxcZG8tbWF0aC11bmVsZXZhdGVkLXdyaXRlLThmYjJtcXM5XFxcXHdvcmtzcGFjZVxcXFxwcm9iZS50eHQnIC1WYWx1ZSAnZG8tbWF0aC1maWxlLW9rJzsgR2V0LUNvbnRlbnQgLUxpdGVyYWxQYXRoICdDOlxcXFxtYXRoXFxcXC5za2lsbC13b3Jrc3BhY2VcXFxcZG8tbWF0aC11bmVsZXZhdGVkLXdyaXRlLThmYjJtcXM5XFxcXHdvcmtzcGFjZVxcXFxwcm9iZS50eHQnXCIiLCJhZ2dyZWdhdGVkX291dHB1dCI6IlNldC1Db250ZW50OiBcclxuTGluZSB8XHJcbiAgIDIgfCAgU2V0LUNvbnRlbnQgLUxpdGVyYWxQYXRoICdDOlxcbWF0aFxcLnNraWxsLXdvcmtzcGFjZVxcZG8tbWF0aC11bmVsZXZhdGVkIOKAplxyXG4gICAgIHwgIH5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fuyXkOyEnFxyXG4gICAgIHwgQWNjZXNzIHRvIHRoZSBwYXRoICdDOlxcbWF0aFxcLnNraWxsLXdvcmtzcGFjZVxcZG8tbWF0aC11bmVsZXZhdGVkLXdyaXRlLThmYjJtcXM5XFx3b3Jrc3BhY2VcXHByb2JlLnR4dCcgaXMgZGVuaWVkLlxyXG5HZXQtQ29udGVudDogXHJcbkxpbmUgfFxyXG4gICAyIHwgIOKApiBoLWZpbGUtb2snOyBHZXQtQ29udGVudCAtTGl0ZXJhbFBhdGggJ0M6XFxtYXRoXFwuc2tpbGwtd29ya3NwYWNlXFxkby1tYXQg4oCmXHJcbiAgICAgfCAgICAgICAgICAgICAgICB+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn7sl5DshJxcclxuICAgICB8IOqyveuhnCAnQzpcXG1hdGhcXC5za2lsbC13b3Jrc3BhY2VcXGRvLW1hdGgtdW5lbGV2YXRlZC13cml0ZS04ZmIybXFzOVxcd29ya3NwYWNlXFxwcm9iZS50eHQn7J20KOqwgCkg7JeG7Jy866+A66GcIOywvuydhCDsiJgg7JeG7Iq164uI64ukLlxyXG4iLCJleGl0X2NvZGUiOjEsInN0YXR1cyI6ImZhaWxlZCJ9fQp7InR5cGUiOiJpdGVtLmNvbXBsZXRlZCIsIml0ZW0iOnsiaWQiOiJpdGVtXzIiLCJ0eXBlIjoiYWdlbnRfbWVzc2FnZSIsInRleHQiOiJ7XCJyZWFkX2JhY2tcIjpcIlNldC1Db250ZW50OiBBY2Nlc3MgdG8gdGhlIHBhdGggJ0M6XFxcXG1hdGhcXFxcLnNraWxsLXdvcmtzcGFjZVxcXFxkby1tYXRoLXVuZWxldmF0ZWQtd3JpdGUtOGZiMm1xczlcXFxcd29ya3NwYWNlXFxcXHByb2JlLnR4dCcgaXMgZGVuaWVkLlxcbkdldC1Db250ZW50OiBUaGUgcGF0aCBjb3VsZCBub3QgYmUgZm91bmQgYmVjYXVzZSAnQzpcXFxcbWF0aFxcXFwuc2tpbGwtd29ya3NwYWNlXFxcXGRvLW1hdGgtdW5lbGV2YXRlZC13cml0ZS04ZmIybXFzOVxcXFx3b3Jrc3BhY2VcXFxccHJvYmUudHh0JyBkb2VzIG5vdCBleGlzdC5cIn0ifX0KeyJ0eXBlIjoidHVybi5jb21wbGV0ZWQiLCJ1c2FnZSI6eyJpbnB1dF90b2tlbnMiOjM0OTA3LCJjYWNoZWRfaW5wdXRfdG9rZW5zIjoxNzAyNCwiY2FjaGVfd3JpdGVfaW5wdXRfdG9rZW5zIjowLCJvdXRwdXRfdG9rZW5zIjoyOTQsInJlYXNvbmluZ19vdXRwdXRfdG9rZW5zIjowfX0K"
+          }
+        },
+        "stderr": {
+          "present": true,
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "raw": {
+            "base64": ""
+          }
+        },
+        "final": {
+          "present": true,
+          "bytes": 296,
+          "sha256": "0b43350850745b8e3501011916f0225de060fc4d16e0f57557ac6fdc08db9b30",
+          "raw": {
+            "base64": "eyJyZWFkX2JhY2siOiJTZXQtQ29udGVudDogQWNjZXNzIHRvIHRoZSBwYXRoICdDOlxcbWF0aFxcLnNraWxsLXdvcmtzcGFjZVxcZG8tbWF0aC11bmVsZXZhdGVkLXdyaXRlLThmYjJtcXM5XFx3b3Jrc3BhY2VcXHByb2JlLnR4dCcgaXMgZGVuaWVkLlxuR2V0LUNvbnRlbnQ6IFRoZSBwYXRoIGNvdWxkIG5vdCBiZSBmb3VuZCBiZWNhdXNlICdDOlxcbWF0aFxcLnNraWxsLXdvcmtzcGFjZVxcZG8tbWF0aC11bmVsZXZhdGVkLXdyaXRlLThmYjJtcXM5XFx3b3Jrc3BhY2VcXHByb2JlLnR4dCcgZG9lcyBub3QgZXhpc3QuIn0="
+          }
+        },
+        "worker_status": {
+          "argv_sha256": "ac2f7764a3cdc8b8d58e497cf6d202726de30d24693e9a4ab9f6189d06fdbdf5",
+          "cli_exit_code": 0,
+          "request_sha256": "3f26da892540def1b5a52ee9a065d52776f5fdae278cb00892eed3da3e28f110",
+          "schema_sha256": "6abfaafe44e417fe219994138876653f79b45fd71faec63a7627d9bea418b357",
+          "state": "exited",
+          "stdin_sha256": "615ad4b6c723f0ec002fc96f4c83566943629ad76efcfd0448a508b50c7614bc"
+        },
+        "jsonl": {
+          "parsed_bytes": 2496,
+          "unparsed_tail_bytes": 0,
+          "events": [
+            "thread.started",
+            "turn.started",
+            "item.completed",
+            "item.started",
+            "item.completed",
+            "item.completed",
+            "turn.completed"
+          ],
+          "thread_id": "01a09f06-809d-7093-a09b-8f9bfb59af73",
+          "turn_completed": true,
+          "turn_failed": false,
+          "usage": [
+            {
+              "input_tokens": 34907,
+              "cached_input_tokens": 17024,
+              "cache_write_input_tokens": 0,
+              "output_tokens": 294,
+              "reasoning_output_tokens": 0
+            }
+          ],
+          "unknown_events": [],
+          "parse_complete": true
+        },
+        "worker_argv": [
+          "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+          "C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\codex_worker.py",
+          "C:\\math\\.skill-workspace\\do-math-unelevated-write-8fb2mqs9\\do-math-codex-cf_ziciz\\request.json"
+        ],
+        "process_identity": {
+          "pid": 63440,
+          "creation_filetime": 134338479966953209
+        },
+        "stop_receipts": [],
+        "result": "output_collected",
+        "reasons": [],
+        "termination_barrier": {
+          "active_processes": 0,
+          "process_ids": [],
+          "root_signaled": true,
+          "confirmed": true
+        },
+        "provider_operation_ids": "unknown",
+        "remote_termination": "unknown",
+        "provider_stop_reason": "unknown"
+      }
+    },
+    "error": null
+  },
+  "file_sha256": null,
+  "profile": "workspace-write / unelevated",
+  "evidence_dir": "C:\\math\\.skill-workspace\\do-math-unelevated-write-8fb2mqs9"
+}

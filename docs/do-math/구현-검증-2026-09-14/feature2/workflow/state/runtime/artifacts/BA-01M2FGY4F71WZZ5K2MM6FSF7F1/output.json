@@ -1,0 +1,32 @@
+{
+  "candidates": [
+    {
+      "completion_criteria": [
+        "Return self-contained Lean source using only Lean core that exports a declaration proving `∀ n : Nat, n + 0 = n`.",
+        "Identify the exact exported declaration name for central formal verification.",
+        "Provide a concise explanation that explicitly states the domain is the natural numbers and that the equality holds for every natural number `n`.",
+        "The formal result and explanation must agree on the operation, zero being added on the right, equality conclusion, domain, and universal quantification."
+      ],
+      "expected_result": "A self-contained Lean theorem proving right-addition of zero for every natural number, together with its exported declaration name and a faithful concise explanation suitable for formal checking and independent identity review.",
+      "inputs": [
+        "context:goal",
+        "tool:lean"
+      ],
+      "question": "Can a self-contained Lean-core declaration prove that for every natural number n, n + 0 = n, with an explanation faithful to the declaration's domain and quantification?",
+      "reuse": [],
+      "revises_task_id": null,
+      "scope": "Construct the requested Lean-core proof of the universally quantified natural-number identity `n + 0 = n` and explain exactly its domain, quantification, operation, and conclusion. Do not perform the deferred academic reproducibility requirement in this task.",
+      "title": "Prove natural-number right addition by zero",
+      "work_class": "formal"
+    }
+  ],
+  "questions": [],
+  "summary": "One formal research task is sufficient to address the mathematical goal. The reproducibility-note academic requirement is excluded because academic_phase is deferred_until_goal_solved; it should be handled only after a goal audit establishes the solution and the formal verifier has recorded the exact Lean version.",
+  "used_sources": [
+    "SKILL.md",
+    "GLOSSARY.md",
+    "context:goal",
+    "context:policy",
+    "tool:lean"
+  ]
+}

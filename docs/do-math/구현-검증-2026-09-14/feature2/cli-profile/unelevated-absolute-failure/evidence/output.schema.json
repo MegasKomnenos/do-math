@@ -1,0 +1,1 @@
+{"additionalProperties": false, "properties": {"read_back": {"type": "string"}}, "required": ["read_back"], "type": "object"}

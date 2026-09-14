@@ -1,0 +1,24 @@
+{
+  "actual_cli_invocation_limit": 8,
+  "declarations": [
+    "zero_identity"
+  ],
+  "effort": "medium",
+  "expected_actual_stages": [
+    "organize",
+    "judge",
+    "judge",
+    "judge",
+    "answer",
+    "judge",
+    "judge",
+    "judge"
+  ],
+  "explanation": "The variable n ranges over Nat, the natural numbers. Nat.add_zero n proves the displayed identity. No claim about another domain is being made.",
+  "formal_verification": "Actual frozen verify_lean adapter; no compiler test double",
+  "goal_audit": "Not part of this case; the independent all-real normal workflow owns goal evidence",
+  "initial_judgments": "Two intentionally synthetic fixtures; not actual model executions",
+  "lean_source_sha256": "54010995641f6c21741b07f5ec59a9fce368358e01a4f885be5309bbcbcadc9e",
+  "model": "gpt-5.6-sol",
+  "statement": "For every natural number n, n + 0 = n."
+}

@@ -1,0 +1,20 @@
+{
+  "deferred": [],
+  "goal_audit": false,
+  "preparation_requests": [],
+  "questions": [],
+  "selections": [
+    "TK-01M2FH77QWR9ZYQN56771NH098"
+  ],
+  "summary": "Select the sole current ready task, the approved postsolution reproducibility-note obligation. Its verified knowledge dependency records the theorem name, universal natural-number quantification, and exact Lean verifier version needed for the note. The mathematical goal has already passed independent goal audits, so no further goal audit is requested.",
+  "task_assessments": [],
+  "used_sources": [
+    "SKILL.md",
+    "GLOSSARY.md",
+    "TK-01M2FH77QWR9ZYQN56771NH098",
+    "KN-01M2FH1PJXVS8CMCVD6DWTV43V",
+    "context:goal",
+    "context:policy",
+    "tool:lean"
+  ]
+}

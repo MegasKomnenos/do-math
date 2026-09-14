@@ -1,0 +1,11 @@
+{
+  "deliberately_incorrect_explanation": "The proof supplies one fixed natural number m that works simultaneously for every natural number n. In other words, there exists m in Nat such that for all n in Nat, m = n + 1.",
+  "deliberately_incorrect_summary": "There is a single natural number m equal to n + 1 for every natural number n.",
+  "expected_error_label_not_supplied_to_reviewers": true,
+  "fixture_error": "forall n exists m is replaced by exists m forall n in the explanatory material",
+  "maximum_actual_cli_invocations": 2,
+  "scope": "Actual primary negative detection only; stop before organize and final adjudication",
+  "source_sha256": "3ddc25febcd10c6e64afb1ead604c2cf811c6d58ec69a5d10c702d2de729cac8",
+  "synthetic_reviewer_outputs": 0,
+  "true_formal_statement": "For every natural number n, there exists a natural number m such that m = n + 1."
+}

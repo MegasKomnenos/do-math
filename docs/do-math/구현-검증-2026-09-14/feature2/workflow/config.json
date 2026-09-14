@@ -1,0 +1,1 @@
+{"model": "gpt-5.6-sol", "effort": "medium", "work_calls": 30, "operations_calls": 20, "max_cycles": 4, "reviewers": 2, "goal_auditors": 2, "review_rounds": 3, "call_timeout_seconds": 300, "run_timeout_seconds": 2400, "lean_command": ["C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin\\lean.exe"]}

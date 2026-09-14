@@ -1,0 +1,30 @@
+[
+  {
+    "bytes": 401,
+    "format": "canonical-json",
+    "key": "knowledge_catalog",
+    "path": "input/catalog/knowledge_catalog.json",
+    "sha256": "022e6b5c372cc70e9d1c7cf2f4b6f67ec5f55b0996a7e20ada8bc04194d3c4ba"
+  },
+  {
+    "bytes": 3,
+    "format": "canonical-json",
+    "key": "relations",
+    "path": "input/catalog/relations.json",
+    "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+  },
+  {
+    "bytes": 3,
+    "format": "canonical-json",
+    "key": "sources",
+    "path": "input/catalog/sources.json",
+    "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+  },
+  {
+    "bytes": 3,
+    "format": "canonical-json",
+    "key": "user_inputs",
+    "path": "input/catalog/user_inputs.json",
+    "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+  }
+]

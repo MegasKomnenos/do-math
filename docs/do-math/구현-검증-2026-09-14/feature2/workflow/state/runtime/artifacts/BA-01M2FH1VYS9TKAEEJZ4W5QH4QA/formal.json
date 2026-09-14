@@ -1,0 +1,38 @@
+{
+  "allowed_axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "axioms": {
+    "nat_add_zero_right": []
+  },
+  "command": [
+    "C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin\\lean.exe",
+    "C:\\math\\.skill-workspace\\do-math-feature2-live-normal-v2\\workspace\\formal\\EX-01M2FH1RZRBVKHEYTPW18Z7Y5S\\tmpbgiu6nwp\\proposal.lean"
+  ],
+  "declaration_signatures": {
+    "nat_add_zero_right": "nat_add_zero_right (n : Nat) : n + 0 = n"
+  },
+  "declarations": [
+    "nat_add_zero_right"
+  ],
+  "reason": null,
+  "signature_hash": "8275da4923ff59fefc57581716bf179360c8d4c16b1c8aa980b9682969be6b20",
+  "source_sha256": "e1ae4922282fbacd851c65e2839a05ad5bb2c69fac6a442b9e832a440a11f148",
+  "status": "verified",
+  "stderr": "",
+  "stdout": "\"__DO_MATH_SIGNATURE_BEGIN_nat_add_zero_right__\"\nnat_add_zero_right (n : Nat) : n + 0 = n\n\"__DO_MATH_SIGNATURE_END_nat_add_zero_right__\"\n'nat_add_zero_right' does not depend on any axioms\n",
+  "toolchain": {
+    "configured_command": [
+      "C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin\\lean.exe"
+    ],
+    "executable": "C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin\\lean.exe",
+    "project": null,
+    "sha256": "10c6a27583eb65ff6a7e92b9718ff01d851ad594e6d70bb283fa5a10092fd810",
+    "version": "Lean (version 4.32.0, x86_64-w64-windows-gnu, commit 8c9756b28d64dab099da31a4c09229a9e6a2ef35, Release)",
+    "version_exit": 0
+  },
+  "trust_environment_id": "TE-01M2FH1VYSXHP3RARAQ4F1W4GF",
+  "trust_environment_status": "active"
+}

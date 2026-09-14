@@ -11,9 +11,11 @@ description: codex exec으로 수학 연구의 후보 준비, 계약 검토, 선
 
 실행기는 다음 명령을 제공한다.
 
-    python .agents/skills/do-math/scripts/do_math.py init|run|status|pause|resume|close|input|configure|request|query|read|export|check|profile
+    python .agents/skills/do-math/scripts/do_math.py init|run|status|pause|resume|close|input|configure|request|decision|knowledge|source|trust|external|conversation|query|read|export|check|profile
 
 명령의 성공은 요청 처리 성공일 뿐 수학적 승인·과제 완료·실행 종료를 뜻하지 않는다. 실행기는 실제 제공한 입력과 허가, 산출·종료·미검사 범위를 기록한다. 모델은 명시한 입력과 허용 조회를 사용하고 실제 사용한 근거·범위·남은 질문을 결과에 남긴다.
+
+AI 실행은 기존 Codex CLI 로그인으로 `codex exec`을 사용한다. 별도의 OpenAI API 키를 요청하지 않는다. 사용자는 목표·정책·예산·외부 행동 허가를 정한다. 실행기는 작업과 운영의 호출 한도를 따로 집행한다. 초기화와 명시적 제어의 사용법은 `README.md`, 영속 기록과 제어의 계약은 `references/CLI-실행-계약.md`에 있다. `run --watch`는 입력·사건 대기 중에도 설정한 실행 시간 안에서 재관찰한다.
 
 일반 역할은 역할 계약의 지시, 선별된 입력, 별도 세션과 작업 공간을 사용한다. 동료의 이번 결과는 정상 입력과 조회에서 제외한다. 이 구성은 모든 호스트 경로의 비공개 자료 접근을 강제 차단한다고 보증하지 않는다. 정본 갱신·외부 효과·권한 회수는 실행기가 실제 영향과 근거에 맞춰 통제한다.
 
@@ -29,6 +31,14 @@ description: codex exec으로 수학 연구의 후보 준비, 계약 검토, 선
 ## 공통 산출과 실패
 
 AI는 주장·판정·이유·대상·근거를 저작한다. 생성기와 실행기는 ID·해시·정확한 참조·배정 메타데이터를 결합한다. 모델은 그 기계 값을 임의로 바꾸지 않는다.
+
+현재 출력 스키마가 해당 실행의 결과 형식을 정한다. 스키마 밖의 보충 자료는 작업 공간에 파일로 남기며 실행기가 원문·해시를 수집한다. `source_ref`가 본문 대신 제공되면 그 파일을 읽는다. 목록의 생략은 해당 자료의 부재를 뜻하지 않는다. `available_input_refs`의 참조를 그대로 사용한다.
+
+긴 도구 실행 전과 연구 상태가 바뀐 뒤에는 제공된 `checkpoint_schema`에 맞춰 `checkpoint.json`을 쓴다. 이미 얻은 주장·근거·시도·남은 일·다음 방법을 기록한다. 새 연구 행동 전에 `stop-request.json`과 `observation-feedback.json`이 있으면 읽는다. 정지 요청을 받으면 이미 얻은 결과만 남기고 끝낸다. 작업자가 제안하는 관찰 조건은 `observation-rules.json`에 쓰며, 기존 시간·권한·예산 상한은 유지된다.
+
+입력의 K와 F를 질문에 맞춰 비교하고 적용 범위·차이·근거를 기록한다. 후보 준비와 계획은 확보된 자료로 판단한다. 새 입증이나 장기 재해석이 필요하면 작업 예산의 조사 과제를 제안한다. 부수 통찰은 `activity-extensions.json`의 `research_insights`로 남길 수 있다. 검토 중 발견한 통찰은 독립 검토가 끝난 뒤 공개된다.
+
+외부 요청은 `activity-extensions.json`의 `external_requests`로 실행기에 제안한다. 현재 허가 ID와 요청 목적을 적고, 같은 논리 요청을 재시도할 때 요청 ID를 유지한다. 직접 HTTP 전송·공개·계정 변경으로 이 경로를 우회하지 않는다. 필요한 허가가 없으면 요청과 이유를 반환한다. 외부 결과의 `unknown`은 성공이나 실패로 추정하지 않는다.
 
 필수 입력이 없거나 판정에 충분하지 않으면 승인·통과·미호출을 추측하지 않는다. 실제 범위, 확인한 사실, 미확인 이유, 다음 소유자와 대기 조건을 반환하고 실행을 종료한다. 실행 종료, 활동 종료, 과제 완료, 수학적 해결은 각각 다른 판정이다.
 

@@ -1,0 +1,126 @@
+{
+  "passed": true,
+  "result": {
+    "status": "completed",
+    "output": {
+      "read_back": "do-math-file-ok"
+    },
+    "usage": {
+      "input_tokens": 34231,
+      "cached_input_tokens": 16768,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 218,
+      "reasoning_output_tokens": 0
+    },
+    "evidence_dir": "C:\\math\\.skill-workspace\\do-math-unelevated-write-z1ipqamf\\evidence",
+    "execution": {
+      "started": {
+        "pid": 51080,
+        "creation_filetime": 134338480793791405,
+        "request_sha256": "b2ccbe2416a7992af9456d1c447709ed8668bc4373e8d9e4dc12c7338556e53e"
+      },
+      "collect": {
+        "source_request": {
+          "present": true,
+          "bytes": 966,
+          "sha256": "b2ccbe2416a7992af9456d1c447709ed8668bc4373e8d9e4dc12c7338556e53e",
+          "raw": {
+            "base64": "eyJhcHByb3ZhbF9wb2xpY3kiOiJuZXZlciIsImNvZGV4X3BhdGgiOiJDOlxcVXNlcnNcXHdvZ3VkXFxBcHBEYXRhXFxMb2NhbFxcUHJvZ3JhbXNcXE9wZW5BSVxcQ29kZXhcXGJpblxcY29kZXguRVhFIiwiY3dkIjoiQzpcXG1hdGhcXC5za2lsbC13b3Jrc3BhY2VcXGRvLW1hdGgtdW5lbGV2YXRlZC13cml0ZS16MWlwcWFtZlxcd29ya3NwYWNlIiwiZWZmb3J0IjoibG93IiwiZmluYWxfcGF0aCI6IkM6XFxtYXRoXFwuc2tpbGwtd29ya3NwYWNlXFxkby1tYXRoLXVuZWxldmF0ZWQtd3JpdGUtejFpcHFhbWZcXGV2aWRlbmNlXFxmaW5hbC50eHQiLCJtYXhfcnVudGltZV9zZWNvbmRzIjoxMjAsIm1vZGVsIjoiZ3B0LTUuNi1zb2wiLCJvdXRwdXRfc2NoZW1hX3BhdGgiOiJDOlxcbWF0aFxcLnNraWxsLXdvcmtzcGFjZVxcZG8tbWF0aC11bmVsZXZhdGVkLXdyaXRlLXoxaXBxYW1mXFxkby1tYXRoLWNvZGV4LWxjNjB1Yzg3XFxzY2hlbWEuanNvbiIsInByb21wdF9wYXRoIjoiQzpcXG1hdGhcXC5za2lsbC13b3Jrc3BhY2VcXGRvLW1hdGgtdW5lbGV2YXRlZC13cml0ZS16MWlwcWFtZlxcZG8tbWF0aC1jb2RleC1sYzYwdWM4N1xccHJvbXB0LmJpbiIsInNhbmRib3giOiJkYW5nZXItZnVsbC1hY2Nlc3MiLCJzdGF0dXNfcGF0aCI6IkM6XFxtYXRoXFwuc2tpbGwtd29ya3NwYWNlXFxkby1tYXRoLXVuZWxldmF0ZWQtd3JpdGUtejFpcHFhbWZcXGV2aWRlbmNlXFx3b3JrZXItc3RhdHVzLmpzb24iLCJzdGRlcnJfcGF0aCI6IkM6XFxtYXRoXFwuc2tpbGwtd29ya3NwYWNlXFxkby1tYXRoLXVuZWxldmF0ZWQtd3JpdGUtejFpcHFhbWZcXGV2aWRlbmNlXFxzdGRlcnIudHh0Iiwic3Rkb3V0X3BhdGgiOiJDOlxcbWF0aFxcLnNraWxsLXdvcmtzcGFjZVxcZG8tbWF0aC11bmVsZXZhdGVkLXdyaXRlLXoxaXBxYW1mXFxldmlkZW5jZVxcc3Rkb3V0Lmpzb25sIiwid2luZG93c19zYW5kYm94IjoidW5lbGV2YXRlZCJ9"
+          }
+        },
+        "source_prompt": {
+          "present": true,
+          "bytes": 588,
+          "sha256": "7893a41a503d62c99f9c9be0581974c12ddaebd423929bd6e17f2ab1ea167085",
+          "raw": {
+            "base64": "VGhpcyBpcyBhIGJvdW5kZWQgZmlsZXN5c3RlbSBjYXBhYmlsaXR5IHRlc3QuIFlvdXIgZXhhY3Qgd29ya3NwYWNlIGlzIEM6XG1hdGhcLnNraWxsLXdvcmtzcGFjZVxkby1tYXRoLXVuZWxldmF0ZWQtd3JpdGUtejFpcHFhbWZcd29ya3NwYWNlLiBVc2UgZXhlY19jb21tYW5kIHdpdGggd29ya2RpciBzZXQgZXhwbGljaXRseSB0byB0aGF0IHBhdGggYW5kIGxvZ2luPWZhbHNlLiBVc2UgUG93ZXJTaGVsbCBTZXQtQ29udGVudCAtTGl0ZXJhbFBhdGggd2l0aCB0aGUgYWJzb2x1dGUgcGF0aCBDOlxtYXRoXC5za2lsbC13b3Jrc3BhY2VcZG8tbWF0aC11bmVsZXZhdGVkLXdyaXRlLXoxaXBxYW1mXHdvcmtzcGFjZVxwcm9iZS50eHQgdG8gd3JpdGUgZG8tbWF0aC1maWxlLW9rLCB0aGVuIEdldC1Db250ZW50IC1MaXRlcmFsUGF0aCB1c2luZyB0aGF0IGFic29sdXRlIHBhdGguIERvIG5vdCB1c2UgYXBwbHlfcGF0Y2ggZm9yIHRoaXMgcHJvYmUuIFJldHVybiByZWFkX2JhY2sgd2l0aCB0aGUgYWN0dWFsIGNvbnRlbnQuIElmIHRvb2xzIGZhaWwgcmV0dXJuIHRoZSBhY3R1YWwgZXJyb3I7IGRvIG5vdCBjbGFpbSB0aGUgZmlsZSBleGlzdHMu"
+          }
+        },
+        "stdout": {
+          "present": true,
+          "bytes": 1579,
+          "sha256": "7ca6e08264854155fe53188f9b2848dd1f9de38d3577f9e09f8435d762708aed",
+          "raw": {
+            "base64": "eyJ0eXBlIjoidGhyZWFkLnN0YXJ0ZWQiLCJ0aHJlYWRfaWQiOiIwMWEwOWYwNy1jM2JhLTdmNDEtOTU2MS0yMmYxYWY0NmVkNDYifQp7InR5cGUiOiJ0dXJuLnN0YXJ0ZWQifQp7InR5cGUiOiJpdGVtLmNvbXBsZXRlZCIsIml0ZW0iOnsiaWQiOiJpdGVtXzAiLCJ0eXBlIjoiYWdlbnRfbWVzc2FnZSIsInRleHQiOiJ7XCJyZWFkX2JhY2tcIjpcIknigJlsbCBwZXJmb3JtIHRoZSBleGFjdCBib3VuZGVkIHdyaXRlL3JlYWQgcHJvYmUgd2l0aCB0aGUgc3BlY2lmaWVkIFBvd2VyU2hlbGwgc2V0dGluZ3MuXCJ9In19CnsidHlwZSI6Iml0ZW0uc3RhcnRlZCIsIml0ZW0iOnsiaWQiOiJpdGVtXzEiLCJ0eXBlIjoiY29tbWFuZF9leGVjdXRpb24iLCJjb21tYW5kIjoiXCJDOlxcXFxQcm9ncmFtIEZpbGVzXFxcXFBvd2VyU2hlbGxcXFxcN1xcXFxwd3NoLmV4ZVwiIC1Ob1Byb2ZpbGUgLUNvbW1hbmQgXCJTZXQtQ29udGVudCAtTGl0ZXJhbFBhdGggJ0M6XFxcXG1hdGhcXFxcLnNraWxsLXdvcmtzcGFjZVxcXFxkby1tYXRoLXVuZWxldmF0ZWQtd3JpdGUtejFpcHFhbWZcXFxcd29ya3NwYWNlXFxcXHByb2JlLnR4dCcgLVZhbHVlICdkby1tYXRoLWZpbGUtb2snOyBHZXQtQ29udGVudCAtTGl0ZXJhbFBhdGggJ0M6XFxcXG1hdGhcXFxcLnNraWxsLXdvcmtzcGFjZVxcXFxkby1tYXRoLXVuZWxldmF0ZWQtd3JpdGUtejFpcHFhbWZcXFxcd29ya3NwYWNlXFxcXHByb2JlLnR4dCdcIiIsImFnZ3JlZ2F0ZWRfb3V0cHV0IjoiIiwiZXhpdF9jb2RlIjpudWxsLCJzdGF0dXMiOiJpbl9wcm9ncmVzcyJ9fQp7InR5cGUiOiJpdGVtLmNvbXBsZXRlZCIsIml0ZW0iOnsiaWQiOiJpdGVtXzEiLCJ0eXBlIjoiY29tbWFuZF9leGVjdXRpb24iLCJjb21tYW5kIjoiXCJDOlxcXFxQcm9ncmFtIEZpbGVzXFxcXFBvd2VyU2hlbGxcXFxcN1xcXFxwd3NoLmV4ZVwiIC1Ob1Byb2ZpbGUgLUNvbW1hbmQgXCJTZXQtQ29udGVudCAtTGl0ZXJhbFBhdGggJ0M6XFxcXG1hdGhcXFxcLnNraWxsLXdvcmtzcGFjZVxcXFxkby1tYXRoLXVuZWxldmF0ZWQtd3JpdGUtejFpcHFhbWZcXFxcd29ya3NwYWNlXFxcXHByb2JlLnR4dCcgLVZhbHVlICdkby1tYXRoLWZpbGUtb2snOyBHZXQtQ29udGVudCAtTGl0ZXJhbFBhdGggJ0M6XFxcXG1hdGhcXFxcLnNraWxsLXdvcmtzcGFjZVxcXFxkby1tYXRoLXVuZWxldmF0ZWQtd3JpdGUtejFpcHFhbWZcXFxcd29ya3NwYWNlXFxcXHByb2JlLnR4dCdcIiIsImFnZ3JlZ2F0ZWRfb3V0cHV0IjoiZG8tbWF0aC1maWxlLW9rXHJcbiIsImV4aXRfY29kZSI6MCwic3RhdHVzIjoiY29tcGxldGVkIn19CnsidHlwZSI6Iml0ZW0uY29tcGxldGVkIiwiaXRlbSI6eyJpZCI6Iml0ZW1fMiIsInR5cGUiOiJhZ2VudF9tZXNzYWdlIiwidGV4dCI6IntcInJlYWRfYmFja1wiOlwiZG8tbWF0aC1maWxlLW9rXCJ9In19CnsidHlwZSI6InR1cm4uY29tcGxldGVkIiwidXNhZ2UiOnsiaW5wdXRfdG9rZW5zIjozNDIzMSwiY2FjaGVkX2lucHV0X3Rva2VucyI6MTY3NjgsImNhY2hlX3dyaXRlX2lucHV0X3Rva2VucyI6MCwib3V0cHV0X3Rva2VucyI6MjE4LCJyZWFzb25pbmdfb3V0cHV0X3Rva2VucyI6MH19Cg=="
+          }
+        },
+        "stderr": {
+          "present": true,
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "raw": {
+            "base64": ""
+          }
+        },
+        "final": {
+          "present": true,
+          "bytes": 31,
+          "sha256": "22b7503980365f5630cda264f38a5e11869cddf41cca0ea162916e92c0dde12b",
+          "raw": {
+            "base64": "eyJyZWFkX2JhY2siOiJkby1tYXRoLWZpbGUtb2sifQ=="
+          }
+        },
+        "worker_status": {
+          "argv_sha256": "ea633bd3f83d0ce4e834f79951c37ea4ca5ad2478fbdc81e0e54536a8b5bbeec",
+          "cli_exit_code": 0,
+          "request_sha256": "b2ccbe2416a7992af9456d1c447709ed8668bc4373e8d9e4dc12c7338556e53e",
+          "schema_sha256": "6abfaafe44e417fe219994138876653f79b45fd71faec63a7627d9bea418b357",
+          "state": "exited",
+          "stdin_sha256": "7893a41a503d62c99f9c9be0581974c12ddaebd423929bd6e17f2ab1ea167085"
+        },
+        "jsonl": {
+          "parsed_bytes": 1579,
+          "unparsed_tail_bytes": 0,
+          "events": [
+            "thread.started",
+            "turn.started",
+            "item.completed",
+            "item.started",
+            "item.completed",
+            "item.completed",
+            "turn.completed"
+          ],
+          "thread_id": "01a09f07-c3ba-7f41-9561-22f1af46ed46",
+          "turn_completed": true,
+          "turn_failed": false,
+          "usage": [
+            {
+              "input_tokens": 34231,
+              "cached_input_tokens": 16768,
+              "cache_write_input_tokens": 0,
+              "output_tokens": 218,
+              "reasoning_output_tokens": 0
+            }
+          ],
+          "unknown_events": [],
+          "parse_complete": true
+        },
+        "worker_argv": [
+          "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+          "C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\codex_worker.py",
+          "C:\\math\\.skill-workspace\\do-math-unelevated-write-z1ipqamf\\do-math-codex-lc60uc87\\request.json"
+        ],
+        "process_identity": {
+          "pid": 51080,
+          "creation_filetime": 134338480793791405
+        },
+        "stop_receipts": [],
+        "result": "output_collected",
+        "reasons": [],
+        "termination_barrier": {
+          "active_processes": 0,
+          "process_ids": [],
+          "root_signaled": true,
+          "confirmed": true
+        },
+        "provider_operation_ids": "unknown",
+        "remote_termination": "unknown",
+        "provider_stop_reason": "unknown"
+      }
+    },
+    "error": null
+  },
+  "file_sha256": "982425935f4a3e059d61264cf212be8ddc21d96642760dfe878626a1f4618072",
+  "profile": "danger-full-access / explicit workspace paths / Windows Job lifetime",
+  "evidence_dir": "C:\\math\\.skill-workspace\\do-math-unelevated-write-z1ipqamf"
+}

@@ -1,0 +1,19 @@
+{
+  "deferred": [],
+  "goal_audit": false,
+  "preparation_requests": [],
+  "questions": [],
+  "selections": [
+    "TK-01M2FGY4G0BMS1C1ZZYB19V64M"
+  ],
+  "summary": "Select the sole ready task for execution. Its contract is approved, it has no dependencies, and it directly covers the full formal proof obligation. The academic reproducibility note remains ineligible until the mathematical goal is established as solved and the formal verifier records the exact Lean version. No goal audit is requested before the selected task returns verified and independently reviewed results.",
+  "task_assessments": [],
+  "used_sources": [
+    "SKILL.md",
+    "GLOSSARY.md",
+    "TK-01M2FGY4G0BMS1C1ZZYB19V64M",
+    "context:goal",
+    "context:policy",
+    "tool:lean"
+  ]
+}
