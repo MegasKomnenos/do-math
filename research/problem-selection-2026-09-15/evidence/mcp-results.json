@@ -1,0 +1,1098 @@
+{
+  "purpose": "문제 선정·원문 확보에 사용한 실제 학술 MCP 응답. 성공은 요청 범위에 한정한다.",
+  "results": [
+    {
+      "session_key": "round2_0",
+      "result": {
+        "status": "error",
+        "code": "provider_error",
+        "message": "Source returned an HTTP error",
+        "source": "arxiv",
+        "http_status": 500,
+        "retryable": true,
+        "evidence": {
+          "ref": "scholarly://artifact/2d197b2977d8ce154a39df303978f7d3ae3bbfae0a0296cd1e94a801e468057d",
+          "sha256": "120189fbda21dfb3a3ba0a3cb21a702a4f65e3d0e7510aba3f1565e5192e186c",
+          "bytes": 332,
+          "media_type": "text/html",
+          "source": "arxiv",
+          "url": "https://export.arxiv.org/api/query?search_query=cat%3Amath.CO+AND+%28ti%3A%22conjectures%22+OR+ti%3A%22open+problems%22%29&start=0&max_results=20&sortBy=submittedDate&sortOrder=descending",
+          "retrieved_at": "2026-09-14T15:51:31.798597+00:00",
+          "role": "provider_error_response",
+          "http_status": 500,
+          "request_method": "GET",
+          "source_media_type": "text/html"
+        }
+      }
+    },
+    {
+      "session_key": "parking_0",
+      "result": {
+        "status": "error",
+        "code": "timeout",
+        "message": "Source did not respond within the request timeout",
+        "source": "arxiv",
+        "retryable": true
+      }
+    },
+    {
+      "session_key": "parking_1",
+      "result": {
+        "status": "ok",
+        "source": "crossref",
+        "query": "Statistics on interval parking functions",
+        "options": {},
+        "start": 0,
+        "requested": 5,
+        "received": 5,
+        "total": 992091,
+        "has_more": true,
+        "next": {
+          "start": 5
+        },
+        "records": {
+          "ref": "scholarly://artifact/48260e53dd1325f3368fea7b4cb0cbbf494ff0a2e646de4f5fa50636f3bd5d22",
+          "sha256": "a377fa211bdd9b9caadb7480a3e126277b9f577899af4a5b1941e5baaf4f47ef",
+          "bytes": 21418,
+          "media_type": "application/json",
+          "source": "crossref",
+          "url": "https://api.crossref.org/works?query=Statistics+on+interval+parking+functions&rows=5&offset=0",
+          "retrieved_at": "2026-09-14T15:51:41.870010+00:00",
+          "role": "records",
+          "request": {
+            "query": "Statistics on interval parking functions",
+            "options": {},
+            "start": 0,
+            "limit": 5
+          },
+          "evidence_ref": "scholarly://artifact/3631d3ad8412f5444ef9a947995cb32a59dea13a91615216f63c8669b3154267"
+        },
+        "export": {
+          "ref": "scholarly://artifact/48260e53dd1325f3368fea7b4cb0cbbf494ff0a2e646de4f5fa50636f3bd5d22",
+          "sha256": "a377fa211bdd9b9caadb7480a3e126277b9f577899af4a5b1941e5baaf4f47ef",
+          "bytes": 21418,
+          "media_type": "application/json",
+          "source": "crossref",
+          "url": "https://api.crossref.org/works?query=Statistics+on+interval+parking+functions&rows=5&offset=0",
+          "retrieved_at": "2026-09-14T15:51:41.870010+00:00",
+          "role": "records",
+          "request": {
+            "query": "Statistics on interval parking functions",
+            "options": {},
+            "start": 0,
+            "limit": 5
+          },
+          "evidence_ref": "scholarly://artifact/3631d3ad8412f5444ef9a947995cb32a59dea13a91615216f63c8669b3154267"
+        },
+        "evidence": {
+          "ref": "scholarly://artifact/3631d3ad8412f5444ef9a947995cb32a59dea13a91615216f63c8669b3154267",
+          "sha256": "5ab54bb94d7735850336515d7a9ab4d9072df8a883144d0618e9165e9ffc06ee",
+          "bytes": 21645,
+          "media_type": "application/json",
+          "source": "crossref",
+          "url": "https://api.crossref.org/works?query=Statistics+on+interval+parking+functions&rows=5&offset=0",
+          "retrieved_at": "2026-09-14T15:51:41.855751+00:00",
+          "role": "provider_response",
+          "rate_limit": "1",
+          "rate_limit_interval": "1s",
+          "concurrency_limit": "1"
+        },
+        "preview": [
+          {
+            "DOI": "10.1525/9780520325883-027",
+            "title": [
+              "THE SPECTRAL ANALYSIS OF STATIONARY INTERVAL FUNCTIONS"
+            ],
+            "published": {
+              "date-parts": [
+                [
+                  1972,
+                  12,
+                  31
+                ]
+              ]
+            },
+            "author": [
+              {
+                "given": "David R.",
+                "family": "Brillinger",
+                "sequence": "first",
+                "affiliation": [],
+                "role": [
+                  {
+                    "vocabulary": "crossref",
+                    "role": "author"
+                  }
+                ]
+              }
+            ],
+            "URL": "https://doi.org/10.1525/9780520325883-027"
+          },
+          {
+            "DOI": "10.1002/cjs.5550340207",
+            "title": [
+              "Interval estimation via tail functions"
+            ],
+            "published": {
+              "date-parts": [
+                [
+                  2006,
+                  6
+                ]
+              ]
+            },
+            "author": [
+              {
+                "given": "Borek",
+                "family": "Puza",
+                "sequence": "first",
+                "affiliation": [],
+                "role": [
+                  {
+                    "role": "author",
+                    "vocabulary": "crossref"
+                  }
+                ]
+              },
+              {
+                "given": "Terence",
+                "family": "O'Neill",
+                "sequence": "additional",
+                "affiliation": [],
+                "role": [
+                  {
+                    "role": "author",
+                    "vocabulary": "crossref"
+                  }
+                ]
+              }
+            ],
+            "URL": "https://doi.org/10.1002/cjs.5550340207"
+          },
+          {
+            "DOI": "10.37236/10630",
+            "title": [
+              "Connecting $k$-Naples Parking Functions and Obstructed Parking Functions via Involutions"
+            ],
+            "published": {
+              "date-parts": [
+                [
+                  2022,
+                  7,
+                  1
+                ]
+              ]
+            },
+            "author": [
+              {
+                "given": "Roger",
+                "family": "Tian",
+                "sequence": "first",
+                "affiliation": [],
+                "role": [
+                  {
+                    "role": "author",
+                    "vocabulary": "crossref"
+                  }
+                ]
+              }
+            ],
+            "URL": "https://doi.org/10.37236/10630"
+          }
+        ],
+        "scope": "Only the named source and the requested result window were searched"
+      }
+    },
+    {
+      "session_key": "parking3_0",
+      "result": {
+        "status": "ok",
+        "id": "author-repository",
+        "name": "저자·기관 공개본",
+        "role": "open_category",
+        "transport": "fixed: public document Playwright; OJS native citation API",
+        "implementation": "partial",
+        "verification": "live_mcp_public_author_pdf_dynamic_document_and_page_links",
+        "capabilities": [
+          "source_guide",
+          "fetch",
+          "export"
+        ],
+        "home": "",
+        "usage": {
+          "fetch": "알려진 공개 문서의 절대 HTTP(S) URL을 target으로 지정한다. 인증 상태를 공유하지 않는 공개 context로 PDF·HTML·기타 파일을 직접 회수한다. 등록된 플랫폼의 주소면 사용할 source를 반환한다. 임의 URL의 제목·DOI를 외부 서비스에서 추정하지 않는다.",
+          "parts": "metadata는 PDF 내장 정보 또는 HTML의 공개 서지 태그 JSON. export는 OJS의 실제 citation_formats 제어가 있으면 공개 RIS·BibTeX API의 원 파일이며 DOI를 대조한다. 해당 제어가 없으면 서지 JSON이다. fulltext는 지정 URL의 내용이며 HTML에 같은 호스트의 citation_pdf_url이 있으면 그 PDF도 회수한다. abstract는 HTML에 표시된 abstract 영역. supplementary는 해당 페이지의 링크 목록이며 연결 파일 자체의 확보를 뜻하지 않는다.",
+          "limits": "이 범주는 단일 검색 색인을 갖지 않는다. 이름·검색식·플랫폼 고급검색에는 구체 자료원을 먼저 선택한다. 직접 URL과 같은 호스트의 리디렉션만 허용하며 로컬·사설망 주소는 거부한다. 스크립트만 있는 초기 화면은 격리된 공개 브라우저로 렌더하고 실제 visible 내용·문서 제목과 알려진 준비 신호를 확인한다. 짧은 문서나 복수 heading을 임의로 배제하지 않는다. 빈 로딩 화면·로그인·보안 확인은 성공한 문헌으로 표시하지 않고 준비 실패의 source_page를 보존한다. 별도 로그인은 수행하지 않는다.",
+          "examples": [
+            {
+              "tool": "fetch",
+              "arguments": {
+                "source": "author-repository",
+                "target": "https://www.cs.toronto.edu/~sacook/homepage/ptime.pdf",
+                "parts": [
+                  "metadata",
+                  "fulltext"
+                ]
+              }
+            }
+          ]
+        },
+        "scope": "한 호출은 이 자료원에 한정된다. pending은 개발이 남았다는 뜻이며 자료원 자체의 기능 부재를 뜻하지 않는다."
+      }
+    },
+    {
+      "session_key": "primary_0",
+      "result": {
+        "status": "ok",
+        "source": "author-repository",
+        "target": "https://jeremymartinmath.github.io/papers/StatisticsLIPF.pdf",
+        "records": {
+          "ref": "scholarly://artifact/ac28f8e153a002ed16379235f5e3630507ea0518822bb8916adec381c04f8705",
+          "sha256": "4773186f4f2b7cef500e5a75e192d8dd7e958ee44115a0dd32988d697572648c",
+          "bytes": 452,
+          "media_type": "application/json",
+          "source": "author-repository",
+          "url": "https://jeremymartinmath.github.io/papers/StatisticsLIPF.pdf",
+          "retrieved_at": "2026-09-14T15:52:50.827296+00:00",
+          "role": "records",
+          "evidence_ref": "scholarly://artifact/7a9e425e32cec868557feaeeb93b20e4b74c09c927d6887574dfc4c82dfd9922"
+        },
+        "source_document": {
+          "ref": "scholarly://artifact/7a9e425e32cec868557feaeeb93b20e4b74c09c927d6887574dfc4c82dfd9922",
+          "sha256": "ee0da6973fe6d573b48bb5144bc37c58b8edaa9af4488134e70de9ed75d12237",
+          "bytes": 465915,
+          "media_type": "application/pdf",
+          "source": "author-repository",
+          "url": "https://jeremymartinmath.github.io/papers/StatisticsLIPF.pdf",
+          "retrieved_at": "2026-09-14T15:52:50.819581+00:00",
+          "role": "fulltext",
+          "pages": 25,
+          "requested_target": "https://jeremymartinmath.github.io/papers/StatisticsLIPF.pdf"
+        },
+        "components": {
+          "metadata": {
+            "status": "available",
+            "artifact": {
+              "ref": "scholarly://artifact/ac28f8e153a002ed16379235f5e3630507ea0518822bb8916adec381c04f8705",
+              "sha256": "4773186f4f2b7cef500e5a75e192d8dd7e958ee44115a0dd32988d697572648c",
+              "bytes": 452,
+              "media_type": "application/json",
+              "source": "author-repository",
+              "url": "https://jeremymartinmath.github.io/papers/StatisticsLIPF.pdf",
+              "retrieved_at": "2026-09-14T15:52:50.827296+00:00",
+              "role": "records",
+              "evidence_ref": "scholarly://artifact/7a9e425e32cec868557feaeeb93b20e4b74c09c927d6887574dfc4c82dfd9922"
+            },
+            "format": "source_metadata_json"
+          },
+          "fulltext": {
+            "status": "available",
+            "artifact": {
+              "ref": "scholarly://artifact/7a9e425e32cec868557feaeeb93b20e4b74c09c927d6887574dfc4c82dfd9922",
+              "sha256": "ee0da6973fe6d573b48bb5144bc37c58b8edaa9af4488134e70de9ed75d12237",
+              "bytes": 465915,
+              "media_type": "application/pdf",
+              "source": "author-repository",
+              "url": "https://jeremymartinmath.github.io/papers/StatisticsLIPF.pdf",
+              "retrieved_at": "2026-09-14T15:52:50.819581+00:00",
+              "role": "fulltext",
+              "pages": 25,
+              "requested_target": "https://jeremymartinmath.github.io/papers/StatisticsLIPF.pdf"
+            },
+            "scope": "Content of the requested document URL"
+          }
+        },
+        "scope": "The exact public document and its own same-host citation PDF; other linked documents are not followed"
+      }
+    },
+    {
+      "session_key": "core_0",
+      "result": {
+        "status": "ok",
+        "source": "zbmath",
+        "query": "ti:parking & ti:interval",
+        "options": {},
+        "start": 0,
+        "requested": 20,
+        "received": 9,
+        "total": 9,
+        "has_more": false,
+        "next": null,
+        "records": {
+          "ref": "scholarly://artifact/74dbc1bb836acdcee12eb3a6c31bf35b8cffcec2504b8e0172fb4d4c87a0d2ca",
+          "sha256": "41d37b08d11bb515a6d1cded3feb26de9e27f3f066b3cadcf16e415aa31fa99c",
+          "bytes": 65518,
+          "media_type": "application/json",
+          "source": "zbmath",
+          "url": "https://api.zbmath.org/v1/document/_search?page=0&results_per_page=20&search_string=ti%3Aparking+%26+ti%3Ainterval",
+          "retrieved_at": "2026-09-14T15:53:22.242879+00:00",
+          "role": "records",
+          "request": {
+            "query": "ti:parking & ti:interval",
+            "options": {},
+            "start": 0,
+            "limit": 20
+          },
+          "evidence_refs": [
+            "scholarly://artifact/9a6218b07207cfe4261ba8b754cb1c189d1c02c24fc32b10a266ba1c5c1543b7"
+          ]
+        },
+        "export": {
+          "ref": "scholarly://artifact/74dbc1bb836acdcee12eb3a6c31bf35b8cffcec2504b8e0172fb4d4c87a0d2ca",
+          "sha256": "41d37b08d11bb515a6d1cded3feb26de9e27f3f066b3cadcf16e415aa31fa99c",
+          "bytes": 65518,
+          "media_type": "application/json",
+          "source": "zbmath",
+          "url": "https://api.zbmath.org/v1/document/_search?page=0&results_per_page=20&search_string=ti%3Aparking+%26+ti%3Ainterval",
+          "retrieved_at": "2026-09-14T15:53:22.242879+00:00",
+          "role": "records",
+          "request": {
+            "query": "ti:parking & ti:interval",
+            "options": {},
+            "start": 0,
+            "limit": 20
+          },
+          "evidence_refs": [
+            "scholarly://artifact/9a6218b07207cfe4261ba8b754cb1c189d1c02c24fc32b10a266ba1c5c1543b7"
+          ]
+        },
+        "evidence": {
+          "ref": "scholarly://artifact/9a6218b07207cfe4261ba8b754cb1c189d1c02c24fc32b10a266ba1c5c1543b7",
+          "sha256": "381b4e6b7b0d56e2569c3bb12df5fc0daf7277f35823f6feb4d4448c76b2f987",
+          "bytes": 65783,
+          "media_type": "application/json",
+          "source": "zbmath",
+          "url": "https://api.zbmath.org/v1/document/_search?page=0&results_per_page=20&search_string=ti%3Aparking+%26+ti%3Ainterval",
+          "retrieved_at": "2026-09-14T15:53:22.221381+00:00",
+          "role": "provider_response"
+        },
+        "preview": [
+          {
+            "id": 6638900,
+            "title": {
+              "addition": null,
+              "original": null,
+              "subtitle": null,
+              "title": "Exhaustion of an interval by iterated Rényi parking"
+            },
+            "year": "2017"
+          },
+          {
+            "id": 902780586,
+            "title": {
+              "addition": null,
+              "original": null,
+              "subtitle": null,
+              "title": "Statistics on $\\ell$-interval parking functions"
+            },
+            "year": "2025"
+          },
+          {
+            "id": 7304625,
+            "title": {
+              "addition": null,
+              "original": null,
+              "subtitle": null,
+              "title": "Interval parking functions"
+            },
+            "year": "2021"
+          }
+        ]
+      }
+    },
+    {
+      "session_key": "prep_1",
+      "result": {
+        "status": "ok",
+        "source": "zbmath",
+        "query": "",
+        "options": {},
+        "start": 0,
+        "requested": 1,
+        "received": 1,
+        "total": 1,
+        "has_more": false,
+        "next": null,
+        "records": {
+          "ref": "scholarly://artifact/74fe5213bdb2af9f4177c8d79cb6dde94478cc66987212d798e6473666628796",
+          "sha256": "d87f7934b00e9b5ec6b47370bb96a81ecd29a690a18787c17df7904dd34824ba",
+          "bytes": 36188,
+          "media_type": "application/json",
+          "source": "zbmath",
+          "url": "https://api.zbmath.org/v1/document/8145459",
+          "retrieved_at": "2026-09-14T15:53:57.863782+00:00",
+          "role": "records",
+          "request": {
+            "query": "",
+            "options": {},
+            "start": 0,
+            "limit": 1
+          },
+          "evidence_ref": "scholarly://artifact/20e78fcfbe45463c433a3c5d602dc965883309b48b891464c278b86e8143e5fe"
+        },
+        "export": {
+          "ref": "scholarly://artifact/74fe5213bdb2af9f4177c8d79cb6dde94478cc66987212d798e6473666628796",
+          "sha256": "d87f7934b00e9b5ec6b47370bb96a81ecd29a690a18787c17df7904dd34824ba",
+          "bytes": 36188,
+          "media_type": "application/json",
+          "source": "zbmath",
+          "url": "https://api.zbmath.org/v1/document/8145459",
+          "retrieved_at": "2026-09-14T15:53:57.863782+00:00",
+          "role": "records",
+          "request": {
+            "query": "",
+            "options": {},
+            "start": 0,
+            "limit": 1
+          },
+          "evidence_ref": "scholarly://artifact/20e78fcfbe45463c433a3c5d602dc965883309b48b891464c278b86e8143e5fe"
+        },
+        "evidence": {
+          "ref": "scholarly://artifact/20e78fcfbe45463c433a3c5d602dc965883309b48b891464c278b86e8143e5fe",
+          "sha256": "973496517b2d4cbfb1c26ac9fb8ab5b06d92981e34d25d25a14e13fedbf07bde",
+          "bytes": 36451,
+          "media_type": "application/json",
+          "source": "zbmath",
+          "url": "https://api.zbmath.org/v1/document/8145459",
+          "retrieved_at": "2026-09-14T15:53:57.853143+00:00",
+          "role": "provider_response"
+        },
+        "preview": [
+          {
+            "id": 8145459,
+            "title": {
+              "addition": null,
+              "original": null,
+              "subtitle": null,
+              "title": "Interval and \\(\\ell\\)-interval rational parking functions"
+            },
+            "year": "2024"
+          }
+        ],
+        "scope": "Only the named source and the requested result window were searched",
+        "components": {
+          "metadata": {
+            "status": "available",
+            "artifact": {
+              "ref": "scholarly://artifact/74fe5213bdb2af9f4177c8d79cb6dde94478cc66987212d798e6473666628796",
+              "sha256": "d87f7934b00e9b5ec6b47370bb96a81ecd29a690a18787c17df7904dd34824ba",
+              "bytes": 36188,
+              "media_type": "application/json",
+              "source": "zbmath",
+              "url": "https://api.zbmath.org/v1/document/8145459",
+              "retrieved_at": "2026-09-14T15:53:57.863782+00:00",
+              "role": "records",
+              "request": {
+                "query": "",
+                "options": {},
+                "start": 0,
+                "limit": 1
+              },
+              "evidence_ref": "scholarly://artifact/20e78fcfbe45463c433a3c5d602dc965883309b48b891464c278b86e8143e5fe"
+            }
+          },
+          "supplementary": {
+            "status": "available",
+            "artifact": {
+              "ref": "scholarly://artifact/74fe5213bdb2af9f4177c8d79cb6dde94478cc66987212d798e6473666628796",
+              "sha256": "d87f7934b00e9b5ec6b47370bb96a81ecd29a690a18787c17df7904dd34824ba",
+              "bytes": 36188,
+              "media_type": "application/json",
+              "source": "zbmath",
+              "url": "https://api.zbmath.org/v1/document/8145459",
+              "retrieved_at": "2026-09-14T15:53:57.863782+00:00",
+              "role": "records",
+              "request": {
+                "query": "",
+                "options": {},
+                "start": 0,
+                "limit": 1
+              },
+              "evidence_ref": "scholarly://artifact/20e78fcfbe45463c433a3c5d602dc965883309b48b891464c278b86e8143e5fe"
+            },
+            "selection": "/0/references",
+            "reference_count": 75,
+            "scope": "Native indexed references; external links are not followed"
+          }
+        },
+        "target": "8145459",
+        "identity": {
+          "zbmath_id": 8145459,
+          "identifier": "1581.05008",
+          "requested_doi": null
+        }
+      }
+    },
+    {
+      "session_key": "prep_2",
+      "result": {
+        "status": "ok",
+        "source": "crossref",
+        "query": "",
+        "options": {
+          "query.title": "Statistics on interval parking functions",
+          "query.author": "Celano"
+        },
+        "start": 0,
+        "requested": 5,
+        "received": 5,
+        "total": 14,
+        "has_more": true,
+        "next": {
+          "start": 5
+        },
+        "records": {
+          "ref": "scholarly://artifact/b2554c4c2d6c1118793a9bc3496583ea5c2dac8b2a64b7125873c39c629319d7",
+          "sha256": "13a0c2bf362817392878e2278e05a16bd58463abf81b817c4369b72fc4a35a7a",
+          "bytes": 36832,
+          "media_type": "application/json",
+          "source": "crossref",
+          "url": "https://api.crossref.org/works?query=&rows=5&query.title=Statistics+on+interval+parking+functions&query.author=Celano&offset=0",
+          "retrieved_at": "2026-09-14T15:53:58.904162+00:00",
+          "role": "records",
+          "request": {
+            "query": "",
+            "options": {
+              "query.title": "Statistics on interval parking functions",
+              "query.author": "Celano"
+            },
+            "start": 0,
+            "limit": 5
+          },
+          "evidence_ref": "scholarly://artifact/ffdd38b28e7fd16a5d62b9cae94459c7b53903f44e0c9f204aa65c3109c5f6b5"
+        },
+        "export": {
+          "ref": "scholarly://artifact/b2554c4c2d6c1118793a9bc3496583ea5c2dac8b2a64b7125873c39c629319d7",
+          "sha256": "13a0c2bf362817392878e2278e05a16bd58463abf81b817c4369b72fc4a35a7a",
+          "bytes": 36832,
+          "media_type": "application/json",
+          "source": "crossref",
+          "url": "https://api.crossref.org/works?query=&rows=5&query.title=Statistics+on+interval+parking+functions&query.author=Celano&offset=0",
+          "retrieved_at": "2026-09-14T15:53:58.904162+00:00",
+          "role": "records",
+          "request": {
+            "query": "",
+            "options": {
+              "query.title": "Statistics on interval parking functions",
+              "query.author": "Celano"
+            },
+            "start": 0,
+            "limit": 5
+          },
+          "evidence_ref": "scholarly://artifact/ffdd38b28e7fd16a5d62b9cae94459c7b53903f44e0c9f204aa65c3109c5f6b5"
+        },
+        "evidence": {
+          "ref": "scholarly://artifact/ffdd38b28e7fd16a5d62b9cae94459c7b53903f44e0c9f204aa65c3109c5f6b5",
+          "sha256": "33522ad159d4ff0613749c1323242a4c16fd6821181c57a065bb6d670cf964f8",
+          "bytes": 37015,
+          "media_type": "application/json",
+          "source": "crossref",
+          "url": "https://api.crossref.org/works?query=&rows=5&query.title=Statistics+on+interval+parking+functions&query.author=Celano&offset=0",
+          "retrieved_at": "2026-09-14T15:53:58.894922+00:00",
+          "role": "provider_response",
+          "rate_limit": "1",
+          "rate_limit_interval": "1s",
+          "concurrency_limit": "1"
+        },
+        "preview": [
+          {
+            "DOI": "10.1002/eqe.4065",
+            "title": [
+              "Risk‐targeted fragility functions considering a system performance requirement and domino effects"
+            ],
+            "published": {
+              "date-parts": [
+                [
+                  2023,
+                  12,
+                  21
+                ]
+              ]
+            },
+            "author": [
+              {
+                "given": "Francesca",
+                "family": "Celano",
+                "sequence": "first",
+                "affiliation": [
+                  {
+                    "name": "Faculty of Civil and Geodetic Engineering University of Ljubljana  Ljubljana Slovenia"
+                  }
+                ],
+                "role": [
+                  {
+                    "vocabulary": "crossref",
+                    "role": "author"
+                  }
+                ]
+              },
+              {
+                "ORCID": "https://orcid.org/0000-0003-3564-5135",
+                "authenticated-orcid": false,
+                "given": "Matjaž",
+                "family": "Dolšek",
+                "sequence": "additional",
+                "affiliation": [
+                  {
+                    "name": "Faculty of Civil and Geodetic Engineering University of Ljubljana  Ljubljana Slovenia"
+                  }
+                ],
+                "role": [
+                  {
+                    "vocabulary": "crossref",
+                    "role": "author"
+                  }
+                ]
+              }
+            ],
+            "URL": "https://doi.org/10.1002/eqe.4065"
+          },
+          {
+            "DOI": "10.1080/0740817x.2013.876128",
+            "title": [
+              "The variable sampling interval control chart for finite-horizon processes"
+            ],
+            "published": {
+              "date-parts": [
+                [
+                  2014,
+                  6,
+                  27
+                ]
+              ]
+            },
+            "author": [
+              {
+                "given": "George",
+                "family": "Nenes",
+                "sequence": "first",
+                "affiliation": [],
+                "role": [
+                  {
+                    "vocabulary": "crossref",
+                    "role": "author"
+                  }
+                ]
+              },
+              {
+                "given": "Philippe",
+                "family": "Castagliola",
+                "sequence": "additional",
+                "affiliation": [],
+                "role": [
+                  {
+                    "vocabulary": "crossref",
+                    "role": "author"
+                  }
+                ]
+              },
+              {
+                "given": "Giovanni",
+                "family": "Celano",
+                "sequence": "additional",
+                "affiliation": [],
+                "role": [
+                  {
+                    "vocabulary": "crossref",
+                    "role": "author"
+                  }
+                ]
+              },
+              {
+                "given": "Sofia",
+                "family": "Panagiotidou",
+                "sequence": "additional",
+                "affiliation": [],
+                "role": [
+                  {
+                    "vocabulary": "crossref",
+                    "role": "author"
+                  }
+                ]
+              }
+            ],
+            "URL": "https://doi.org/10.1080/0740817x.2013.876128"
+          },
+          {
+            "DOI": "10.1080/16843703.2006.11673117",
+            "title": [
+              "Evaluation of the Statistical Performance of a Variable Sampling Interval<i>R</i>EWMA Control Chart"
+            ],
+            "published": {
+              "date-parts": [
+                [
+                  2006,
+                  1
+                ]
+              ]
+            },
+            "author": [
+              {
+                "given": "P.",
+                "family": "Castagliola",
+                "sequence": "first",
+                "affiliation": [],
+                "role": [
+                  {
+                    "role": "author",
+                    "vocabulary": "crossref"
+                  }
+                ]
+              },
+              {
+                "given": "G.",
+                "family": "Celano",
+                "sequence": "additional",
+                "affiliation": [],
+                "role": [
+                  {
+                    "role": "author",
+                    "vocabulary": "crossref"
+                  }
+                ]
+              },
+              {
+                "given": "S.",
+                "family": "Fichera",
+                "sequence": "additional",
+                "affiliation": [],
+                "role": [
+                  {
+                    "role": "author",
+                    "vocabulary": "crossref"
+                  }
+                ]
+              }
+            ],
+            "URL": "https://doi.org/10.1080/16843703.2006.11673117"
+          }
+        ],
+        "scope": "Only the named source and the requested result window were searched"
+      }
+    },
+    {
+      "session_key": "source_2",
+      "result": {
+        "status": "ok",
+        "source": "society-journal",
+        "target": "https://dmtcs.episciences.org/12598",
+        "records": {
+          "ref": "scholarly://artifact/b583eff3d5bdd9727c8ad2cd388510d94f394eb5e486a0cc87b729b2f132d7e0",
+          "sha256": "e8bb396d9b76eacf5a87f0dac41eb9d1727cf8481c7e2358c5902165a5996c43",
+          "bytes": 5905,
+          "media_type": "application/json",
+          "source": "society-journal",
+          "url": "https://dmtcs.episciences.org/14279",
+          "retrieved_at": "2026-09-14T15:54:11.616353+00:00",
+          "role": "records",
+          "evidence_ref": "scholarly://artifact/7b81f7f17b298eeda5f17ba87728d22112355e9d8b9746a4d78b68ee8527c10e"
+        },
+        "source_document": {
+          "ref": "scholarly://artifact/7b81f7f17b298eeda5f17ba87728d22112355e9d8b9746a4d78b68ee8527c10e",
+          "sha256": "418ecd10bf348566ca5ad8fa1851b10c78a765a283dcdbabfc0b08ed8fe3ebc2",
+          "bytes": 40881,
+          "media_type": "text/html",
+          "source": "society-journal",
+          "url": "https://dmtcs.episciences.org/14279",
+          "retrieved_at": "2026-09-14T15:54:10.151845+00:00",
+          "role": "requested_web_page",
+          "requested_target": "https://dmtcs.episciences.org/12598",
+          "rendered_public_browser": false
+        },
+        "components": {
+          "fulltext": {
+            "status": "available",
+            "artifact": {
+              "ref": "scholarly://artifact/81863cdf0665dd933e3281a115d0e5551ce379fb5b9778f450313ecabd9bfbae",
+              "sha256": "062a21f50827c0c73996b8f9c5a364c2c88b48a27441393c1a620fbcf529dbdb",
+              "bytes": 296962,
+              "media_type": "application/pdf",
+              "source": "society-journal",
+              "url": "https://dmtcs.episciences.org/14279/pdf",
+              "retrieved_at": "2026-09-14T15:54:11.611352+00:00",
+              "role": "fulltext",
+              "pages": 29,
+              "parent_ref": "scholarly://artifact/7b81f7f17b298eeda5f17ba87728d22112355e9d8b9746a4d78b68ee8527c10e"
+            },
+            "source_page": {
+              "ref": "scholarly://artifact/7b81f7f17b298eeda5f17ba87728d22112355e9d8b9746a4d78b68ee8527c10e",
+              "sha256": "418ecd10bf348566ca5ad8fa1851b10c78a765a283dcdbabfc0b08ed8fe3ebc2",
+              "bytes": 40881,
+              "media_type": "text/html",
+              "source": "society-journal",
+              "url": "https://dmtcs.episciences.org/14279",
+              "retrieved_at": "2026-09-14T15:54:10.151845+00:00",
+              "role": "requested_web_page",
+              "requested_target": "https://dmtcs.episciences.org/12598",
+              "rendered_public_browser": false
+            }
+          },
+          "metadata": {
+            "status": "available",
+            "artifact": {
+              "ref": "scholarly://artifact/b583eff3d5bdd9727c8ad2cd388510d94f394eb5e486a0cc87b729b2f132d7e0",
+              "sha256": "e8bb396d9b76eacf5a87f0dac41eb9d1727cf8481c7e2358c5902165a5996c43",
+              "bytes": 5905,
+              "media_type": "application/json",
+              "source": "society-journal",
+              "url": "https://dmtcs.episciences.org/14279",
+              "retrieved_at": "2026-09-14T15:54:11.616353+00:00",
+              "role": "records",
+              "evidence_ref": "scholarly://artifact/7b81f7f17b298eeda5f17ba87728d22112355e9d8b9746a4d78b68ee8527c10e"
+            },
+            "format": "source_metadata_json"
+          }
+        },
+        "scope": "The exact public document and its own same-host citation PDF; other linked documents are not followed"
+      }
+    },
+    {
+      "session_key": "source_3",
+      "result": {
+        "status": "ok",
+        "source": "society-journal",
+        "target": "https://www.dmlett.com/archive/v14/DML24_v14_pp77-84.pdf",
+        "records": {
+          "ref": "scholarly://artifact/efd55714dd90c4d66fab847f5194edef9ea8cfb73f6c73e8fdd33075ae52fa60",
+          "sha256": "eb4c4760c1679348e3cde6017845f3230080f2060f5aa0f64d808c2c752669c8",
+          "bytes": 435,
+          "media_type": "application/json",
+          "source": "society-journal",
+          "url": "https://www.dmlett.com/archive/v14/DML24_v14_pp77-84.pdf",
+          "retrieved_at": "2026-09-14T15:54:13.068208+00:00",
+          "role": "records",
+          "evidence_ref": "scholarly://artifact/ce7ca9cfc2a9f53faebf4c71edb69c25caebe74ff4f64466695cb442f7822913"
+        },
+        "source_document": {
+          "ref": "scholarly://artifact/ce7ca9cfc2a9f53faebf4c71edb69c25caebe74ff4f64466695cb442f7822913",
+          "sha256": "7c35016e1759a69900ac4ce69168e3cf4edc9ac8818962b18bf7f668bbdc9f80",
+          "bytes": 322106,
+          "media_type": "application/pdf",
+          "source": "society-journal",
+          "url": "https://www.dmlett.com/archive/v14/DML24_v14_pp77-84.pdf",
+          "retrieved_at": "2026-09-14T15:54:13.061703+00:00",
+          "role": "fulltext",
+          "pages": 8,
+          "requested_target": "https://www.dmlett.com/archive/v14/DML24_v14_pp77-84.pdf"
+        },
+        "components": {
+          "metadata": {
+            "status": "available",
+            "artifact": {
+              "ref": "scholarly://artifact/efd55714dd90c4d66fab847f5194edef9ea8cfb73f6c73e8fdd33075ae52fa60",
+              "sha256": "eb4c4760c1679348e3cde6017845f3230080f2060f5aa0f64d808c2c752669c8",
+              "bytes": 435,
+              "media_type": "application/json",
+              "source": "society-journal",
+              "url": "https://www.dmlett.com/archive/v14/DML24_v14_pp77-84.pdf",
+              "retrieved_at": "2026-09-14T15:54:13.068208+00:00",
+              "role": "records",
+              "evidence_ref": "scholarly://artifact/ce7ca9cfc2a9f53faebf4c71edb69c25caebe74ff4f64466695cb442f7822913"
+            },
+            "format": "source_metadata_json"
+          },
+          "fulltext": {
+            "status": "available",
+            "artifact": {
+              "ref": "scholarly://artifact/ce7ca9cfc2a9f53faebf4c71edb69c25caebe74ff4f64466695cb442f7822913",
+              "sha256": "7c35016e1759a69900ac4ce69168e3cf4edc9ac8818962b18bf7f668bbdc9f80",
+              "bytes": 322106,
+              "media_type": "application/pdf",
+              "source": "society-journal",
+              "url": "https://www.dmlett.com/archive/v14/DML24_v14_pp77-84.pdf",
+              "retrieved_at": "2026-09-14T15:54:13.061703+00:00",
+              "role": "fulltext",
+              "pages": 8,
+              "requested_target": "https://www.dmlett.com/archive/v14/DML24_v14_pp77-84.pdf"
+            },
+            "scope": "Content of the requested document URL"
+          }
+        },
+        "scope": "The exact public document and its own same-host citation PDF; other linked documents are not followed"
+      }
+    },
+    {
+      "session_key": "source_4",
+      "result": {
+        "status": "ok",
+        "source": "author-repository",
+        "target": "https://sites.cs.st-andrews.ac.uk/pp25/program/slides/celano.pdf",
+        "records": {
+          "ref": "scholarly://artifact/0fdffbf038ed5bb663724b26a0485d87735dd84752c701f110e419fab44e9359",
+          "sha256": "11f65b8dda73e509e054e106e7de2e783ad386998aa49473bfb22147ce8af377",
+          "bytes": 665,
+          "media_type": "application/json",
+          "source": "author-repository",
+          "url": "https://sites.cs.st-andrews.ac.uk/pp25/program/slides/celano.pdf",
+          "retrieved_at": "2026-09-14T15:54:18.097748+00:00",
+          "role": "records",
+          "evidence_ref": "scholarly://artifact/2242e938e236d0b1847b0a50bb0da0fd7f89e7c62ae918d5ef9702712a759b06"
+        },
+        "source_document": {
+          "ref": "scholarly://artifact/2242e938e236d0b1847b0a50bb0da0fd7f89e7c62ae918d5ef9702712a759b06",
+          "sha256": "6d4e58f81a9e7d5c958878b7e80fed16bba36a5bd134fa9737444a852fd90b9a",
+          "bytes": 2855663,
+          "media_type": "application/pdf",
+          "source": "author-repository",
+          "url": "https://sites.cs.st-andrews.ac.uk/pp25/program/slides/celano.pdf",
+          "retrieved_at": "2026-09-14T15:54:18.068538+00:00",
+          "role": "fulltext",
+          "pages": 36,
+          "requested_target": "https://sites.cs.st-andrews.ac.uk/pp25/program/slides/celano.pdf"
+        },
+        "components": {
+          "metadata": {
+            "status": "available",
+            "artifact": {
+              "ref": "scholarly://artifact/0fdffbf038ed5bb663724b26a0485d87735dd84752c701f110e419fab44e9359",
+              "sha256": "11f65b8dda73e509e054e106e7de2e783ad386998aa49473bfb22147ce8af377",
+              "bytes": 665,
+              "media_type": "application/json",
+              "source": "author-repository",
+              "url": "https://sites.cs.st-andrews.ac.uk/pp25/program/slides/celano.pdf",
+              "retrieved_at": "2026-09-14T15:54:18.097748+00:00",
+              "role": "records",
+              "evidence_ref": "scholarly://artifact/2242e938e236d0b1847b0a50bb0da0fd7f89e7c62ae918d5ef9702712a759b06"
+            },
+            "format": "source_metadata_json"
+          },
+          "fulltext": {
+            "status": "available",
+            "artifact": {
+              "ref": "scholarly://artifact/2242e938e236d0b1847b0a50bb0da0fd7f89e7c62ae918d5ef9702712a759b06",
+              "sha256": "6d4e58f81a9e7d5c958878b7e80fed16bba36a5bd134fa9737444a852fd90b9a",
+              "bytes": 2855663,
+              "media_type": "application/pdf",
+              "source": "author-repository",
+              "url": "https://sites.cs.st-andrews.ac.uk/pp25/program/slides/celano.pdf",
+              "retrieved_at": "2026-09-14T15:54:18.068538+00:00",
+              "role": "fulltext",
+              "pages": 36,
+              "requested_target": "https://sites.cs.st-andrews.ac.uk/pp25/program/slides/celano.pdf"
+            },
+            "scope": "Content of the requested document URL"
+          }
+        },
+        "scope": "The exact public document and its own same-host citation PDF; other linked documents are not followed"
+      }
+    },
+    {
+      "session_key": "novelty_0",
+      "result": {
+        "status": "ok",
+        "source": "zbmath",
+        "query": "parking & unimodal",
+        "options": {},
+        "start": 0,
+        "requested": 20,
+        "received": 4,
+        "total": 4,
+        "has_more": false,
+        "next": null,
+        "records": {
+          "ref": "scholarly://artifact/b199e7280d400b995591965c2eb9d19be06688794f02a59daa99eb0934afa2f5",
+          "sha256": "8ebfc12c086be46317089813a772f242e5c5454facc2950435d80269eb4feac0",
+          "bytes": 20648,
+          "media_type": "application/json",
+          "source": "zbmath",
+          "url": "https://api.zbmath.org/v1/document/_search?page=0&results_per_page=20&search_string=parking+%26+unimodal",
+          "retrieved_at": "2026-09-14T15:55:18.694351+00:00",
+          "role": "records",
+          "request": {
+            "query": "parking & unimodal",
+            "options": {},
+            "start": 0,
+            "limit": 20
+          },
+          "evidence_refs": [
+            "scholarly://artifact/b3b0e92257749936306601a6bc5253adafec7c09fd6a66ff06e9372c4f72440d"
+          ]
+        },
+        "export": {
+          "ref": "scholarly://artifact/b199e7280d400b995591965c2eb9d19be06688794f02a59daa99eb0934afa2f5",
+          "sha256": "8ebfc12c086be46317089813a772f242e5c5454facc2950435d80269eb4feac0",
+          "bytes": 20648,
+          "media_type": "application/json",
+          "source": "zbmath",
+          "url": "https://api.zbmath.org/v1/document/_search?page=0&results_per_page=20&search_string=parking+%26+unimodal",
+          "retrieved_at": "2026-09-14T15:55:18.694351+00:00",
+          "role": "records",
+          "request": {
+            "query": "parking & unimodal",
+            "options": {},
+            "start": 0,
+            "limit": 20
+          },
+          "evidence_refs": [
+            "scholarly://artifact/b3b0e92257749936306601a6bc5253adafec7c09fd6a66ff06e9372c4f72440d"
+          ]
+        },
+        "evidence": {
+          "ref": "scholarly://artifact/b3b0e92257749936306601a6bc5253adafec7c09fd6a66ff06e9372c4f72440d",
+          "sha256": "4721c5f520e0b4fcbdf0afea7ec2724139c25a9ff989855b57fe9746989eceb2",
+          "bytes": 20913,
+          "media_type": "application/json",
+          "source": "zbmath",
+          "url": "https://api.zbmath.org/v1/document/_search?page=0&results_per_page=20&search_string=parking+%26+unimodal",
+          "retrieved_at": "2026-09-14T15:55:18.685789+00:00",
+          "role": "provider_response"
+        },
+        "preview": [
+          {
+            "id": 902988627,
+            "title": {
+              "addition": null,
+              "original": null,
+              "subtitle": null,
+              "title": "Luck and magic for Pitman-Stanley polytopes and parking functions"
+            },
+            "year": "2026"
+          },
+          {
+            "id": 8090028,
+            "title": {
+              "addition": null,
+              "original": null,
+              "subtitle": null,
+              "title": "Out of the parking lot and into the forest: parking functions, bond lattices, and unimodal forests"
+            },
+            "year": "2025"
+          },
+          {
+            "id": 7434830,
+            "title": {
+              "addition": null,
+              "original": null,
+              "subtitle": null,
+              "title": "Integer sequences and monomial ideals"
+            },
+            "year": "2021"
+          }
+        ]
+      }
+    },
+    {
+      "session_key": "novelty_1",
+      "result": {
+        "status": "not_found",
+        "code": "not_found_at_source",
+        "message": "Target was not found at this source",
+        "source": "zbmath",
+        "http_status": 404,
+        "evidence": {
+          "ref": "scholarly://artifact/975509b79753c25ead55b0d1e49e2c325b44e27347761fdbce35c1dcdba3423d",
+          "sha256": "e4948ef4e55c239188edca4a88025f99d9d7f65c414b891f80bd47c827ffba8d",
+          "bytes": 319,
+          "media_type": "application/json",
+          "source": "zbmath",
+          "url": "https://api.zbmath.org/v1/document/_search?page=0&results_per_page=20&search_string=parking+%26+%22maximum+displacement%22",
+          "retrieved_at": "2026-09-14T15:55:19.248591+00:00",
+          "role": "provider_error_response",
+          "http_status": 404,
+          "request_method": "GET",
+          "source_media_type": "application/json"
+        }
+      }
+    }
+  ]
+}

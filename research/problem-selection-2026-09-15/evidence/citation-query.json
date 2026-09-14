@@ -1,0 +1,68 @@
+{
+  "status": "not_found",
+  "source": "semantic-scholar",
+  "query": "ARXIV:2507.07243",
+  "options": {
+    "kind": "citations",
+    "fields": "title,authors,year,externalIds,url"
+  },
+  "start": 0,
+  "requested": 100,
+  "received": 0,
+  "total": null,
+  "has_more": false,
+  "next": null,
+  "records": {
+    "ref": "scholarly://artifact/84329dd067a28d5f512a64e418628ee7cba19652dfca69b154192fa3f1974988",
+    "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "bytes": 2,
+    "media_type": "application/json",
+    "source": "semantic-scholar",
+    "url": "https://api.semanticscholar.org/graph/v1/paper/ARXIV%3A2507.07243/citations?offset=0&limit=100&fields=title%2Cauthors%2Cyear%2CexternalIds%2Curl",
+    "retrieved_at": "2026-09-14T16:01:08.937249+00:00",
+    "role": "records",
+    "request": {
+      "query": "ARXIV:2507.07243",
+      "options": {
+        "kind": "citations",
+        "fields": "title,authors,year,externalIds,url"
+      },
+      "start": 0,
+      "limit": 100
+    },
+    "evidence_ref": "scholarly://artifact/8aec7ab5d6a797774659f9936a3747059be880df9fbb0cc37b0bfe1b952784b8"
+  },
+  "export": {
+    "ref": "scholarly://artifact/84329dd067a28d5f512a64e418628ee7cba19652dfca69b154192fa3f1974988",
+    "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "bytes": 2,
+    "media_type": "application/json",
+    "source": "semantic-scholar",
+    "url": "https://api.semanticscholar.org/graph/v1/paper/ARXIV%3A2507.07243/citations?offset=0&limit=100&fields=title%2Cauthors%2Cyear%2CexternalIds%2Curl",
+    "retrieved_at": "2026-09-14T16:01:08.937249+00:00",
+    "role": "records",
+    "request": {
+      "query": "ARXIV:2507.07243",
+      "options": {
+        "kind": "citations",
+        "fields": "title,authors,year,externalIds,url"
+      },
+      "start": 0,
+      "limit": 100
+    },
+    "evidence_ref": "scholarly://artifact/8aec7ab5d6a797774659f9936a3747059be880df9fbb0cc37b0bfe1b952784b8"
+  },
+  "evidence": {
+    "ref": "scholarly://artifact/8aec7ab5d6a797774659f9936a3747059be880df9fbb0cc37b0bfe1b952784b8",
+    "sha256": "95d86dc467c5a3b64166f0d784e1816e2ce751b0bbd1a692e0d562d0723cb39f",
+    "bytes": 22,
+    "media_type": "application/json",
+    "source": "semantic-scholar",
+    "url": "https://api.semanticscholar.org/graph/v1/paper/ARXIV%3A2507.07243/citations?offset=0&limit=100&fields=title%2Cauthors%2Cyear%2CexternalIds%2Curl",
+    "retrieved_at": "2026-09-14T16:01:08.933252+00:00",
+    "role": "provider_response"
+  },
+  "preview": [],
+  "scope": "Only the named source and the requested result window were searched",
+  "records_kind": "citations"
+}

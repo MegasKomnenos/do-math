@@ -1,0 +1,15 @@
+{
+  "status": "PASS",
+  "local_links_checked": 28,
+  "missing": [],
+  "reviewed_claims": [
+    "P uses exact maximum displacement counts and all n >= 1",
+    "A cumulative counts are distinguished from b exact counts",
+    "S2 Theorem 3.7 is existing research, not a new result",
+    "Pappe total-sum result and Selig-Zhu nondecreasing result do not directly settle P",
+    "Source boundary errors are distinguished from a refutation of unimodality",
+    "Newness and MSc-level difficulty are qualified judgments",
+    "Preparation does not initialize or run a do-math instance"
+  ],
+  "scope": "Local references and root self-review of preparation documents; no independent full mathematical review and no solution certification."
+}
