@@ -31,11 +31,11 @@ def basic_expression(expression):
     def unavailable():
         raise ServiceError(
             'provider_feature_unavailable',
-            'The current AMS controls cannot execute this Boolean field combination',
+            'No verified mapping of the current AMS text fields preserves this Boolean combination',
             status='unsupported',source='ams',stage='search_options',
             supported_expression_subset={
                 'terms':'Title or Author with contains and one alphanumeric token',
-                'groups':'Nested same-field OR, or AND over one Title expression and one Author expression',
+                'groups':'Same-field Author OR, or AND over a Title term and an Author expression; singleton groups are allowed',
             })
 
     def unmapped():
@@ -58,11 +58,13 @@ def basic_expression(expression):
             return {field:text}
         compiled=[compile_node(child) for child in value['terms']]
         if value['condition']=='OR':
-            fields={next(iter(item)) for item in compiled if len(item)==1}
-            if len(fields)!=1 or len(compiled)!=sum(len(item)==1 for item in compiled):
-                unavailable()
-            field=fields.pop()
-            return {field:' '.join(item[field] for item in compiled)}
+            if len(compiled)==1:
+                return compiled[0]
+            if all(set(item)=={'Author'} for item in compiled):
+                return {'Author':' '.join(item['Author'] for item in compiled)}
+            # The native Title field may return an exact-title result instead of a
+            # union, with either spaces or explicit OR between the same words.
+            unavailable()
         result={}
         for item in compiled:
             if set(result)&set(item):

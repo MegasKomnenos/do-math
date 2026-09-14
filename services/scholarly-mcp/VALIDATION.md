@@ -718,3 +718,21 @@ CLI는 body 태그와14개 part가 있다는 이유로 fulltext available을 성
 사본의 최초 회귀는 주입한 client 자체가 이미 HTTPX 기본값이어서 override 부재를 잡지 못했다. root가 실제 전역 헤더를 가진 client로 바꿔 RED1실패를 확인한 뒤 수리했다. NLM의 전송 값만 바뀌고 공유 client와 CQL의 헤더가 그대로임을 검사해7검사가 통과했다. 수정 후 새 원본 API는14:08:13UTC에200/XML8,336바이트를 반환했고 ID·제목·14개 장 보존·fulltext not_offered의6판정이 통과했다. root는 실제 전후·안정3이미지를 읽었다. 최종 전체633검사는49.824초에 통과했다. 앞선504 및 저장 재생과 이 실제200은 `user-criteria-eudml/root-book-review.json`에서 구별한다.
 
 마지막 가용성 확인은 원본 Semantic Scholar batch를13:53:07UTC에 한 번 호출했으며429/174바이트와 Retry-After 부재가 유지됐다. 다른 endpoint를 대신 호출하지 않았다. Software Heritage는13:53:02UTC에 정확한 status GET 한 번으로 task419779186·같은 SWHID·new를 확인했으며 raw GET·POST·재큐잉은 하지 않았다. 각 새 실행의 local console 전후·안정 이미지를 직접 판독했다. 근거는 `user-criteria-semantic-scholar/root-current-batch.json`과 `user-criteria-swh/root-current-vault.json`이다. 이 두 현재 조건을 자료원 전체 부재나 아직 수리하지 않은 로컬 오류로 바꾸지 않는다.
+
+## 2026-09-14 KST 추가 재검토
+
+[partial 재검토](PARTIAL-REVIEW.md)에 잔여19항목의 현재 재현·원인·수리와 미확정 범위를 보존했다. 원본 기준선633검사 뒤 API 오류의 정제 근거 보존, ScienceDirect 새 세션의 ISSN·ISBN 후보 축소 및 복수 실패 보존을 수리했고638검사가46.166초에 통과했다. 실패 재현은 `data/partial-investigation-20260914/error-evidence-red.txt`, `sciencedirect-red.txt`, 전체 통과는 `final-tests.txt`에 있다.
+
+새 원본 SDK의15:31:22UTC Semantic Scholar 호출은 같은 paper ID에 metadata·abstract·BibTeX·참고문헌30개 available, fulltext not_offered였다.15:31:24UTC Software Heritage는 같은 task419779186 new였다. 별도 원 객체 재구성 tar.gz는92파일·20디렉터리의 Git tree를 다시 검증했다. CORE는15:26:45UTC의429가 안내한15:36:45 이후에 재조회해15:37:31UTC에200과 공개 fullText 안내문을 확인했다. 새 SDK, 새 어댑터 직접 호출, 과거 원 응답 재판독, 기회수 객체의 오프라인 복원을 같은 실서비스 성공으로 합치지 않는다.
+
+AMS에서는 실제 Title 입력·결과 화면과 POST의 `advancedSearch` 문자열, 빈 `dynamicAdvancedSearch`·다른 필터를 대조했다. AND·NOT 단독 검색, 각각0건인 두 음성어 사이의 결합, 대소문자 대조로 기본 Title에서 AND·NOT가 일반 검색어로 처리되는 것을 확인했다. OR는 단독과 단어 사이의 동작이 달라 별도로 기록했다. Custom Search 한 조건의97바이트 null 응답은 UI와 원 JSON 구조, 두 단계 인코딩 변형을 대조했으나 지속했다. 건수 반례만으로 처리 원인을 확정하지 않는다. 세부 원 요청·응답과 실제로 연 이미지의 좌표는 재검토 문서와 로컬 보고서가 정본이다.
+
+사용자의 추가 교정에 따라13개 사이트에 별도 codex exec를 파견해 가시 화면·정상 메뉴·가이드·기관 동선을 실제 이미지로 읽었다. 이때 AMS의 짧은 Title OR915건과 전체 제목 OR1건, 빠진 실제 문헌을 확인했다. 공백 변환도 같아 기존 Title OR의 일반 합집합 지원 판정을 철회했다. 이 변환을 거부하는 회귀는 수정 전 ServiceError 미발생2실패, 수정 후 AMS33검사 통과였다. 단일 Title/Author·Author OR·서로 다른 필드 AND는 유지한다. 최신 전체639검사는46.447초에 통과했다. 근거는 `data/ui-walkthrough-20260914/ams-or-red.txt`와 `integration-tests.txt`다. 이전 문단의 Title OR 지원은 이 후속 반례로 대체되며, Author 필드의 별도 검증과 구별한다.
+
+AMS의 결과 YEAR는 Use Single Year를 켜고 적용하는 정상 흐름에서2025년132건·2024년182건을 반환했다. 실제 칩과 자료별 연도를 이미지로 확인했다. 내부 필드 정의는 화면에 없고 현재 MCP 옵션도 아니므로 PublicationYear expression 성공으로 세지 않는다. MathSciNet의 별도 Boolean 성공도 Digital Library와 다른 서비스다.
+
+UI 조사로 앞선 접근 실패의 범위를 더 좁혔다. JSTOR의 대상 영상은 실제 시청·전사문 시간 이동이 가능하나 Download가 비활성이었다. SIAM은 KNU2026 보유표의 current 기재와 실제 Get Access가 다르며 통합 포털의2011 종료와도 달랐다. Oxford는 OUP 약칭의 실제 기관 경로를 확인했지만 export CAPTCHA 오류가 지속했다. ScienceDirect는 제목·시리즈·권 필터로 정확한 Preface를 찾았고, ClinicalKey 배너와 실제 권 목차 No access·선택 다운로드 비구독의 차이를 확인했다. SWH의 모달 부재/탭 고장 추정은 고정 overlay가 누락된 캡처·조작 오판으로 철회했다. 공급자 내부 원인을 확인한 것으로 확대하지 않는다.
+
+Figshare v6의 실제 Cite all items TXT/RIS는 UI와 같은16개 제목 및 아이템별 판본 DOI를 제공했다. 아이템 Back은 최신v8로 돌아가므로 v6를 다시 열었다. CORE Reader와 원 제공기관에서 각각8쪽 PDF를 받았으며 CORE 배너 때문에 bytes가 다르다. Semantic Scholar Reader의 외부 arXiv v2 PDF는698,413바이트·28쪽이고 첫 페이지의 판본을 이미지로 확인했다. comments의26 pages를 Reader 변환의 증거로 추론하지 않았다. SIAM accepted arXiv v2·Springer Archive PDF·De Gruyter 문헌 PDF·Oxford 사서용 제품 목록의 확보는 원래 제한된 파일·형식·검색 export의 성공과 구별한다. 세부 정상 동선과13개 보고서·이미지 연결은 PARTIAL-REVIEW.md를 따른다.
+
+마지막 다운로드 대조에서 Taylor & Francis의 둘째 editorial은 새 ePDF 뷰어 안의 Download PDF로187,178바이트를 받았다. 뷰어의 논문9쪽과 저장 PDF의 서지 표지 포함10쪽을 구별했고, 페이지 전환 오류를 파일 미제공으로 보던 판정을 고쳤다. EuDML 원 링크의 GDZ 전체책은156,700,606바이트·412쪽이며 표지1쪽+411개 스캔이다. IIIF/METS 원파일과14개 부분 매핑을 확보하고 TIFY 페이지 선택기의 Preface·Table X 실제 판면을 확인했다. 재로드가 개입한 옛 화면으로 구식 부분 링크의 위치 손실을 확정했던 판단은 철회했다. 후속 원 링크의 로딩 미완료와 전체책·부분 페이지 이동 성공은 서로 다른 관찰이다. root의8개 PDF 해시·쪽수 재검증은 `data/ui-walkthrough-20260914/verified-downloads.json`에 있다.

@@ -1,5 +1,7 @@
 학술자료 검색·확보용 로컬 stdio MCP 서버다. 선정한49개 자료원을 공통 도구와 자료원별 설명에 연결했다. 지원하는 기능과 실제 접근 조건은 [지원표](SUPPORT.md), 검증 근거는 [검증 기록](VALIDATION.md), 현행 계약과 작업 인계는 [후속 인계](CONTINUATION.md)를 따른다. 최초 입력은 사용자가 로컬에 제공한 `학술자료-MCP-구현-인계.md`다.
 
+2026-09-14 KST의 [partial 재검토](PARTIAL-REVIEW.md)는 잔여19항목과 13개 사이트의 실제 UI·가이드·기관 동선에서 확인한 원인 및 해결 시도를 기록한다. AMS Title OR의 잘못된 문자열 변환을 거부하고, ScienceDirect 새 세션의 제목 후보를 원 ISSN·ISBN으로 좁힌다. API HTTP 오류의 정제한 원 응답은 `evidence` artifact에서 `extract`로 확인할 수 있다. 수정 후 전체639검사가 통과했다.
+
 2026-09-09 사용자 교정에 따라 **공개 API는 별도 API 이용 자격 없이 호출할 수 있는 API**를 뜻한다. 별도 키·승인·계약을 요구하는 API는 구현 경로에서 제외한다. 그런 공개 API가 없는 인증 자료원은 KUDOS 로그인 → 검색 → 학술DB → 해당 바로가기 → 기관 프록시의 Playwright 경로를 사용한다. 어댑터 경로는 개발 시 정하며, 실행 중 API 오류를 이유로 브라우저로 전환하지 않는다. 기관 로그인 정보는 보호된 `.credentials/kudos.md`에서 서버가 직접 읽는다.
 
 서버의 도구는 다음 다섯 개다. 자료의 연구상 가치와 다른 자료원의 추가 탐색 여부는 호출 AI가 결정한다.
@@ -147,7 +149,7 @@ Project Euclid의 supplementary는 Supplemental Content 탭의 개별 PDF·ZIP�
 
 AMS는 기관 기본 고급검색의 원 상품 JSON을 회수한다. 책·논문·학회 초록의 ContentType과 제목·부제·DOI·제품 코드를 유지한다. xlsx는 선택 상품마다 원 workbook을 반환한다. 하나의 논리 상품이 여러 ISBN 변형 행으로 확장될 수 있으며 빈 Product Code 셀을 보충하지 않는다. 검색 결과·전체 건수는 원 요청 범위를 유지한다.
 
-AMS의 `options.expression`은 가시 기본 필드로 검증한 부분집합을 받는다. Title/Author contains의 단일 영숫자 토큰, 같은 필드 OR·중첩 OR, Title식과 Author식의 AND를 지원한다. `query`는 빈 문자열이고 다른 options는 함께 주지 않는다. 같은 필드 AND/NOT·필드 간 OR·equals·안전하게 매핑하지 못한 다단어/문장부호 원자는 지원 범위 밖이다. 새 원본 SDK에서 첫 XLSX와 Unicode·중첩 조건·실제 순번 공백의 부분 결과 및 이어받기를 검증했다. 입력 예와 정확한 경계는 `describe_source(ams)`에 있다.
+AMS의 `options.expression`은 가시 기본 필드로 검증한 부분집합을 받는다. Title/Author contains의 단일 영숫자 토큰, 같은 Author 필드의 OR, 서로 다른 Title term과 Author 식의 AND를 지원한다. `query`는 빈 문자열이고 다른 options는 함께 주지 않는다. 여러 Title term의 OR는 실제 UI 반례로 동등성 판정을 철회하여 지원하지 않는다. 일반 query/field 문자열 검색과 구조화된 Boolean 식을 구별한다. 같은 필드 AND/NOT·필드 간 OR·equals·안전하게 매핑하지 못한 다단어/문장부호 원자도 지원 범위 밖이다. 첫 XLSX와 Unicode·실제 순번 공백의 부분 결과 및 이어받기는 유지한다. 입력 예와 정확한 경계는 `describe_source(ams)`에 있다.
 
 Publisher 어댑터에 .pdf 링크를 직접 주면 그 파일의 바이트와 PDF 내장 메타데이터를 회수한다. 브라우저의 Download is starting 이동 예외와 실제 파일 회수 성공을 구별한다. metadata.kind가 embedded_pdf_metadata이면 PDF 내부 정보다. 파일이 발췌·부속 자료인 경우 전체 책을 확보했다는 뜻으로 해석하지 않는다. 이 경로의 실제 MCP 검증은 AMS gsm128-endmatter.pdf 51쪽으로 수행했다.
 

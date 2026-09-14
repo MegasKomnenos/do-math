@@ -767,7 +767,16 @@ class ScienceDirect(Publisher):
                 raise ServiceError('identity_mismatch','ScienceDirect source page has no publication title')
             known=self.known.get(pii)
             if not known:
-                candidates=self.search('"'+title.replace('"','')+'"',options={'field':'Title'},limit=100)
+                search_options={'field':'Title'}
+                for field in ('citation_issn','citation_isbn'):
+                    values=metadata.get(field,[])
+                    if not isinstance(values,list):continue
+                    identifiers={value.strip() for value in values if isinstance(value,str)
+                        and re.fullmatch(r'(?:\d{7}[\dXx]|\d{9}[\dXx]|\d{13})',re.sub(r'[-\s]','',value))}
+                    if len(identifiers)==1:
+                        search_options['doc_id']=identifiers.pop()
+                        break
+                candidates=self.search('"'+title.replace('"','')+'"',options=search_options,limit=100)
                 all_rows=json.loads(self.store.read(candidates['records']['ref'])[1])
                 if sum(row.get('pii')==pii for row in all_rows)!=1:
                     raise ServiceError('selection_required','ScienceDirect title candidates do not contain one exact requested PII',status='unsupported')
@@ -831,8 +840,10 @@ class ScienceDirect(Publisher):
                     try:components['fulltext']=native_document_pdf(self,pii,detail_title,citation_doi)
                     except ServiceError as detail_error:
                         if result_error.result.get('status')=='restricted' and detail_error.result.get('code') in ('fulltext_unresolved','fulltext_not_offered'):
-                            components['fulltext']={**result_error.result,'detail_error_code':detail_error.result.get('code')}
-                        else:raise
+                            components['fulltext']={**result_error.result,'detail_error_code':detail_error.result.get('code'),
+                                'detail_error':detail_error.result}
+                        else:
+                            components['fulltext']={**detail_error.result,'result_row_error':result_error.result}
                     else:components['fulltext']['result_row_error_code']=result_error.result.get('code')
             except ServiceError as error:components['fulltext']=error.result
             except Exception as error:components['fulltext']={'status':'error','code':'fulltext_retrieval_failed','error_type':type(error).__name__}

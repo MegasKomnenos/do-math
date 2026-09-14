@@ -534,6 +534,50 @@ class ScienceDirectContract(unittest.TestCase):
         self.assertEqual(component['status'],'restricted')
         self.assertEqual(component['detail_error_code'],'fulltext_unresolved')
 
+    def test_cold_fetch_uses_publication_identifier_to_find_a_common_title(self):
+        from sciencedirect import ScienceDirect
+        from publishers import Publisher
+        from scholarly import ArtifactStore,encoded
+        from unittest.mock import Mock,patch
+        import tempfile
+        pii='S0065230X26000631'
+        for key,value in [('citation_issn','0065-230X'),('citation_isbn','9780443330902')]:
+            with self.subTest(field=key),tempfile.TemporaryDirectory() as temp:
+                store=ArtifactStore(temp);adapter=ScienceDirect(store,Mock())
+                records=store.put(encoded([{'pii':pii,'title':'Preface','metadata':{'citation_pii':[pii],key:[value]}}]),
+                    'application/json','science-direct','https://www.sciencedirect.com/science/article/pii/'+pii)
+                base={'status':'partial','records':records,'components':{'fulltext':{'status':'not_implemented'}}}
+                def search(query,*,options,start=0,limit=20):
+                    if options.get('doc_id')!=value:
+                        return {'records':store.put(encoded([{'pii':'OTHER','title':'Preface'}]),'application/json','science-direct','https://www.sciencedirect.com/search')}
+                    adapter.known[pii]={'query':query,'options':options,'page_offset':0}
+                    return {'records':records}
+                adapter.search=Mock(side_effect=search)
+                with patch.object(Publisher,'fetch',return_value=base),patch('sciencedirect.native_result_pdf',return_value={'status':'available'}) as native,patch('sciencedirect.native_document_pdf',side_effect=ServiceError('fulltext_unresolved','same record HTML')):
+                    result=adapter.fetch(pii,parts=['fulltext'])
+                self.assertEqual(result['components']['fulltext']['status'],'available')
+                self.assertEqual(adapter.search.call_args_list[0].kwargs['options'],{'field':'Title','doc_id':value})
+                native.assert_called_once()
+
+    def test_pdf_failure_preserves_search_and_detail_causes(self):
+        from sciencedirect import ScienceDirect
+        from publishers import Publisher
+        from scholarly import ArtifactStore,encoded
+        from unittest.mock import Mock,patch
+        import tempfile
+        pii='S0065230X26000631'
+        with tempfile.TemporaryDirectory() as temp:
+            store=ArtifactStore(temp);adapter=ScienceDirect(store,Mock())
+            records=store.put(encoded([{'title':'Preface','metadata':{'citation_pii':[pii]}}]),'application/json','science-direct','https://www.sciencedirect.com')
+            base={'status':'partial','records':records,'components':{'fulltext':{'status':'not_implemented'}}}
+            adapter.search=Mock(side_effect=ServiceError('search_interface_not_ready','Search timed out',retryable=True))
+            with patch.object(Publisher,'fetch',return_value=base),patch('sciencedirect.native_document_pdf',side_effect=ServiceError('fulltext_unresolved','Same record HTML')):
+                result=adapter.fetch(pii,parts=['fulltext'])
+            component=result['components']['fulltext']
+            self.assertEqual(component['code'],'fulltext_unresolved')
+            self.assertEqual(component['result_row_error']['code'],'search_interface_not_ready')
+            self.assertTrue(component['result_row_error']['retryable'])
+
     def test_document_pdf_control_can_supply_a_pdf_when_the_result_row_cannot(self):
         from sciencedirect import ScienceDirect,native_document_pdf
         from scholarly import ArtifactStore

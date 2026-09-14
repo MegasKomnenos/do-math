@@ -1,5 +1,7 @@
 49개 자료원의 지원 범위를 나타낸다. `partial`은 그 자료원의 일부 기능을 지원한다는 뜻이며 이번에 확인한 수리가 미완료라는 뜻으로 일괄 해석하지 않는다. `pending`은 미연결 또는 미구현, `deferred`는 사용자 지시에 따른 사용 보류다. 자료원별 입력은 `describe_source`, 검증 근거는 [검증 기록](VALIDATION.md), 남은 개별 조건은 [후속 인계](CONTINUATION.md)를 따른다.
 
+2026-09-14 KST의 [추가 재검토](PARTIAL-REVIEW.md)에서는 인계의19항목과 13개 사이트의 실제 화면·가이드·이용 동선을 대조했다. 새로 확인한 AMS Title OR 변환 오류까지 수정한 뒤639검사가 통과했다. Semantic Scholar batch 가용성을 확인하고, 원 Vault 작업과 별도로 Software Heritage 객체의 압축물을 재구성했다. UI에서 확보한 외부 원고·제품 목록은 해당 MCP 기능의 성공과 구별한다. 아래48개 partial 표지는 요청 실패 건수에서 계산한 상태가 아니다.
+
 | 자료원 | source | 경로 | 구현 | 기능 | 실측 표지 |
 |---|---|---|---|---|---|
 | MathSciNet | mathscinet | playwright | partial | source_guide, search, fetch, export | live_mcp_six_sorts_seven_facets_searched_candidates_four_exports_review_graph_windows |
@@ -18,7 +20,7 @@
 | Crossref | crossref | api | partial | source_guide, search, fetch, export | live_mcp_search_native_citation_eight_formats_extract |
 | Crossmark | crossmark | api | partial | source_guide, search, fetch, export | 정정·철회 incoming/outgoing 구분·중복 보존·형식 오류 unknown·요청 간격과 제한 헤더 |
 | OpenAlex | openalex | api | partial | source_guide, search, fetch, export | live_mcp_arbitrary_window_group_cursor_abstract_relationships_name_doi |
-| Semantic Scholar | semantic-scholar | api | partial | source_guide, search, fetch, export | 원본 bulk1000·cursor·title-match 검증; batch/BibTeX/관계 양성 이력·최신 batch429 구별 |
+| Semantic Scholar | semantic-scholar | api | partial | source_guide, search, fetch, export | bulk/cursor/title-match 검증; 최신 batch·초록·BibTeX·참고문헌30개 양성·Graph 원문 파일 미제공 |
 | OpenCitations | opencitations | api | partial | source_guide, search, fetch, export | live_mcp_native_csv_window_oci_fetch_reference_count |
 | Unpaywall | unpaywall | api | deferred | source_guide | public_endpoint_contact_requirement_observed |
 | CORE | core | api | partial | source_guide, search, fetch, export | 원본 검색·work/output8쪽·명시26쪽·files01복구48쪽·제거404 검증; indexed 안내와 rate 구별 |
@@ -31,13 +33,13 @@
 | GitHub | github | api | partial | source_guide, search, fetch, export | live_mcp_arbitrary_search_window_native_pages_pinned_zip_file_same_bytes |
 | Zenodo | zenodo | api | partial | source_guide, search, fetch, export | live_mcp_arbitrary_search_window_native_pages_file_checksum_fetch_extract |
 | Figshare | figshare | api | partial | source_guide, search, fetch, export | 판본별 구성원·동일 current 판본의 REST 보완·과거 불일치 partial; 원 파일 size/MD5 |
-| Software Heritage | software-heritage | api | partial | source_guide, search, fetch, export | 개별 파일·트리·cache 재개·원 archive 검증; 특정 Vault는 new·압축 미완료 |
-| AMS publications | ams | playwright (전용 Chrome 창/CDP) | partial | source_guide, search, fetch, export | Title/Author 식 부분집합·첫 XLSX·Unicode·순번 공백과 이어받기 원본13검증; 미매핑 식 별도 |
+| Software Heritage | software-heritage | api | partial | source_guide, search, fetch, export | 개별 파일·트리·cache 재개·원 archive 검증; 특정 Vault new·같은 Git tree의 로컬 압축물 별도 복원 |
+| AMS publications | ams | playwright (전용 Chrome 창/CDP) | partial | source_guide, search, fetch, export | 단일 Title·Author OR·필드 AND·XLSX·Unicode·범위 보존; 실제 UI 반례로 Title OR 동등성 철회 |
 | Cambridge University Press | cambridge | fixed: citation API; institutional search/document Playwright | partial | source_guide, search, fetch, export | live_mcp_filtered_search_ris_pdf_and_supplement_pdf_zip_source_extract |
 | De Gruyter Brill | de-gruyter | playwright | partial | source_guide, search, fetch, export | DOI·DOI 없는 ISBN 책의 현재 CITE/RIS 복원; 원본7검증·PDF/첨부; 특정 옛 첨부404 별도 |
 | JSTOR | jstor | fixed: citation/search API; institutional document Playwright | partial | source_guide, search, fetch, export | live_mcp_search_image_sorts_facets_citations_pdf_mp3_transcripts_supplement; native_video_download_disabled |
 | Oxford University Press | oxford | playwright | partial | source_guide, search, fetch, export | 렌더된 검색 행·원 인용·문헌/첨부; 별도 title-list는 현재 CAPTCHA 도메인 오류 |
-| ScienceDirect | science-direct | playwright (전용 Chrome 창/CDP) | partial | source_guide, search, fetch, export | 검색/선택 Export·상세 Cite·31쪽 PDF 원본검증; Preface 비구독·선택 상태와 결과 보존·검색 준비 수리 |
+| ScienceDirect | science-direct | playwright (전용 Chrome 창/CDP) | partial | source_guide, search, fetch, export | 검색/선택 Export·상세 Cite·PDF 검증; 새 세션 ISSN·ISBN 후보 축소·Preface 비구독과 복수 실패 보존 |
 | Springer Nature | springer | playwright | partial | source_guide, search, fetch, export | live_mcp_advanced_search_citations_pdf_supplements_nature_springer_html_tex_figures |
 | Taylor & Francis | taylor-francis | playwright | partial | source_guide, search, fetch, export | 원 검색/인용/PDF/첨부·표; 두 editorial의 초록 필드 부재와 초록 양성 대조 |
 | Wiley | wiley | playwright | partial | source_guide, search, fetch, export | live_mcp_dynamic_advanced_rows_citations_pdf_zero_and_supplementary_zip |

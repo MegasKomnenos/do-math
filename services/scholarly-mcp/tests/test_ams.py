@@ -76,17 +76,26 @@ class AMSContract(unittest.TestCase):
                 with self.assertRaises(ServiceError) as error:adapter.search(query,options=options)
                 self.assertEqual(error.exception.result['code'],'invalid_options')
 
+    def test_or_expression_is_not_replaced_by_a_native_full_title_lookup(self):
+        from ams import basic_expression
+        from scholarly import ServiceError
+        # Actual UI: two Title words gave 915 results; adding OR words gave one
+        # exact-title result. Neither spaces nor explicit OR preserved a union.
+        for words in ('Quantum realization', 'Quantum realization of the finite element method'):
+            expression={'condition':'OR','terms':[
+                {'field':'Title','operator':'contains','value':word} for word in words.split()]}
+            with self.subTest(words=words):
+                with self.assertRaises(ServiceError) as error:
+                    basic_expression(expression)
+                self.assertEqual(error.exception.result['status'],'unsupported')
+                self.assertEqual(error.exception.result['stage'],'search_options')
+
     def test_verified_basic_expression_subset_preserves_boolean_meaning(self):
         from ams import basic_expression,basic_search_expected,basic_search_request,basic_search_value
         from urllib.parse import urlencode
         title={'field':'Title','operator':'contains','value':'algebra'}
         author={'field':'Author','operator':'contains','value':'smith'}
         self.assertEqual(basic_expression(title),{'Title':'algebra'})
-        self.assertEqual(basic_expression({'condition':'OR','terms':[title,{**title,'value':'topology'}]}),
-                         {'Title':'algebra topology'})
-        self.assertEqual(basic_expression({'condition':'OR','terms':[
-            title,{**title,'value':'topology'},{**title,'value':'geometry'}]}),
-                         {'Title':'algebra topology geometry'})
         self.assertEqual(basic_expression({'condition':'AND','terms':[title,author]}),
                          {'Title':'algebra','Author':'smith'})
         self.assertEqual(basic_expression({'field':'Title','operator':'contains','value':'Go\u0308del'}),
@@ -101,17 +110,18 @@ class AMSContract(unittest.TestCase):
         implicit=urlencode({'advancedSearch':'ProductTitle=algebra topology geometry','pageNumber':'1'})
         self.assertEqual(basic_search_request(implicit),{'ProductTitle':['algebra topology geometry']})
 
-    def test_semantics_equivalent_nested_basic_expressions_are_compiled(self):
+    def test_singleton_and_distinct_field_groups_preserve_boolean_meaning(self):
         from ams import basic_expression
         title=lambda value:{'field':'Title','operator':'contains','value':value}
         author=lambda value:{'field':'Author','operator':'contains','value':value}
-        nested={'condition':'OR','terms':[title('algebra'),
-            {'condition':'OR','terms':[title('topology'),title('analysis')]}]}
-        self.assertEqual(basic_expression(nested),{'Title':'algebra topology analysis'})
+        nested={'condition':'OR','terms':[{'condition':'AND','terms':[title('algebra')]}]}
+        self.assertEqual(basic_expression(nested),{'Title':'algebra'})
         combined={'condition':'AND','terms':[nested,author('smith')]}
-        self.assertEqual(basic_expression(combined),{'Title':'algebra topology analysis','Author':'smith'})
-        author_union={'condition':'OR','terms':[author('Boykan'),author('Jech')]}
-        self.assertEqual(basic_expression(author_union),{'Author':'Boykan Jech'})
+        self.assertEqual(basic_expression(combined),{'Title':'algebra','Author':'smith'})
+        self.assertEqual(basic_expression({'condition':'OR','terms':[combined]}),
+                         {'Title':'algebra','Author':'smith'})
+        self.assertEqual(basic_expression({'condition':'OR','terms':[author('Boykan'),author('Jech')]}),
+                         {'Author':'Boykan Jech'})
 
     def test_unverified_expression_shapes_are_rejected_before_browser_navigation(self):
         from ams import AMS,basic_expression
@@ -120,6 +130,7 @@ class AMSContract(unittest.TestCase):
         provider_unsupported=[
             {'condition':'AND','terms':[title,{**title,'value':'topology'}]},
             {'condition':'OR','terms':[title,{'field':'Author','operator':'contains','value':'smith'}]},
+            {'condition':'OR','terms':[title,{**title,'value':'topology'}]},
         ]
         locally_unmapped=[
             {'field':'PublicationYear','operator':'equals','value':'2000'},
@@ -225,14 +236,15 @@ class AMSContract(unittest.TestCase):
         guide=SOURCES['ams'].usage
         self.assertIn('expression',guide)
         self.assertIn('Title contains',guide['expression'])
-        self.assertIn('두 개 이상',guide['expression'])
         self.assertIn('Unicode',guide['expression'])
-        self.assertIn('중첩',guide['expression'])
-        self.assertIn('Author term 두 개 이상의 OR',guide['expression'])
         self.assertIn('expression_mapping_unavailable',guide['options'])
         examples=[example.get('arguments',{}).get('options',{}).get('expression')
                   for example in guide['examples']]
-        self.assertTrue(any(value and value.get('condition')=='OR' and len(value['terms'])==3 for value in examples))
+        from ams import basic_expression
+        expressions=[value for value in examples if value]
+        self.assertTrue(expressions)
+        for expression in expressions:
+            self.assertTrue(basic_expression(expression))
 
     def test_unavailable_search_page_is_not_an_input_timeout_or_no_results(self):
         from ams import validate_search_page

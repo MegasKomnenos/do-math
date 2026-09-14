@@ -14,6 +14,50 @@ from scholarly import ArtifactStore, ServiceError
 
 
 class APIContract(unittest.TestCase):
+    def test_http_errors_retain_sanitized_provider_evidence_without_retry(self):
+        for status, code in ((429, 'rate_limited'), (404, 'not_found_at_source'),
+                             (403, 'access_restricted'), (500, 'provider_error')):
+            with self.subTest(status=status):
+                self.calls.clear()
+                adapter = self.adapter('semantic-scholar', lambda request: httpx.Response(
+                    status, json={'message': 'Provider reason', 'token': 'private-value'},
+                    headers={'Retry-After': '120', 'Set-Cookie': 'private-cookie'}))
+                with self.assertRaises(ServiceError) as cm:
+                    adapter.request('https://api.semanticscholar.org/graph/v1/paper/batch',
+                                    json_body={'ids': ['a' * 40]})
+                result = cm.exception.result
+                self.assertEqual(result['code'], code)
+                self.assertEqual(len(self.calls), 1)
+                meta, data = self.store.read(result['evidence']['ref'])
+                self.assertEqual(json.loads(data), {'message': 'Provider reason', 'token': '[REDACTED]'})
+                self.assertEqual(meta['http_status'], status)
+                self.assertEqual(meta['request_method'], 'POST')
+                self.assertEqual(meta['retry_after'], '120')
+                self.assertEqual(meta['role'], 'provider_error_response')
+                self.assertNotIn('private-', json.dumps(meta) + data.decode())
+
+    def test_http_error_html_keeps_visible_reason_without_active_form_fields(self):
+        adapter = self.adapter('crossref', lambda request: httpx.Response(403,
+            text='<html><body><h1>Access denied</h1><input name="csrf" value="private-token">'
+                 '<script>secret="private-script"</script></body></html>',
+            headers={'Content-Type': 'text/html'}))
+        with self.assertRaises(ServiceError) as cm:
+            adapter.request('https://api.crossref.org/works')
+        meta, data = self.store.read(cm.exception.result['evidence']['ref'])
+        self.assertIn(b'Access denied', data)
+        self.assertNotIn(b'private-', data)
+        self.assertEqual(meta['media_type'], 'text/html')
+
+    def test_error_evidence_storage_failure_does_not_mask_rate_limit(self):
+        from unittest.mock import patch
+        adapter = self.adapter('crossref', lambda request: httpx.Response(429, json={'message': 'slow down'}))
+        with patch.object(self.store, 'put', side_effect=OSError('private-local-path')):
+            with self.assertRaises(ServiceError) as cm:
+                adapter.request('https://api.crossref.org/works')
+        self.assertEqual(cm.exception.result['code'], 'rate_limited')
+        self.assertEqual(cm.exception.result['evidence_unavailable'], {'error_type': 'OSError'})
+        self.assertNotIn('private-local-path', json.dumps(cm.exception.result))
+
     def test_crossref_native_export_is_for_the_selected_doi(self):
         record = {'message': {'items': [{'DOI':'10.1145/321250.321251', 'title':['A Turing Machine Simulator']}], 'total-results':1}}
         native = (ROOT / 'tests/fixtures/crossref.bib').read_bytes()

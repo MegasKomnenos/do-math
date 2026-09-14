@@ -94,21 +94,40 @@ class APIAdapter:
             )
             if response.headers.get(header) is not None
         }
+        error_context = {}
+        if code >= 400:
+            try:
+                source_media = response.headers.get('content-type', '').split(';')[0].strip().lower()
+                try:
+                    error_body = encoded(response.json())
+                    error_media = 'application/json'
+                except ValueError:
+                    error_body = response.text.encode('utf-8')
+                    error_media = 'text/plain'
+                    if source_media in ('text/html', 'application/xhtml+xml') or response.content.lstrip().lower().startswith((b'<!doctype html', b'<html')):
+                        from browser_adapters import clean_html
+                        error_body = clean_html(error_body, self.store.sanitizer) if error_body else b''
+                        error_media = 'text/html'
+                error_context['evidence'] = self.store.put(error_body, error_media, self.source, str(response.url),
+                    role='provider_error_response', http_status=code, request_method=response.request.method,
+                    source_media_type=source_media, **rate_context)
+            except (ServiceError, OSError, ValueError) as error:
+                error_context['evidence_unavailable'] = {'error_type': type(error).__name__}
         if code == 429:
             standard_retry=response.headers.get("retry-after")
             custom_retry=response.headers.get("x-ratelimit-retry-after")
             raise ServiceError("rate_limited", "Source request limit reached; retry according to retry_after", source=self.source,
                 http_status=code, retry_after=standard_retry or custom_retry,
                 retry_after_header="retry-after" if standard_retry else "x-ratelimit-retry-after" if custom_retry else None,
-                retryable=True, **{
+                retryable=True, **error_context, **{
                     key: value for key, value in rate_context.items() if key != "retry_after"
                 })
         if code in (401, 403):
-            raise ServiceError("access_restricted", "Source rejected the current access credentials or network", status="restricted", source=self.source, http_status=code)
+            raise ServiceError("access_restricted", "Source rejected the current access credentials or network", status="restricted", source=self.source, http_status=code, **error_context)
         if code in (404, 410):
-            raise ServiceError("not_found_at_source", "Target was not found at this source", status="not_found", source=self.source, http_status=code)
+            raise ServiceError("not_found_at_source", "Target was not found at this source", status="not_found", source=self.source, http_status=code, **error_context)
         if code >= 400:
-            raise ServiceError("provider_error", "Source returned an HTTP error", source=self.source, http_status=code, retryable=code >= 500)
+            raise ServiceError("provider_error", "Source returned an HTTP error", source=self.source, http_status=code, retryable=code >= 500, **error_context)
         media = response.headers.get("content-type", "").split(";")[0].strip().lower()
         is_html = media in ('text/html', 'application/xhtml+xml') or response.content.lstrip().lower().startswith((b'<!doctype html', b'<html'))
         if accept != 'html' and is_html:

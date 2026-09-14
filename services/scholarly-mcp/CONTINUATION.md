@@ -1,10 +1,16 @@
 # 학술자료 MCP 현행 구현과 재검토 인계
 
-2026-09-13 작업을 잇는 문서다. 최초 입력은 사용자가 로컬에 제공한 `학술자료-MCP-구현-인계.md`이며 이 저장소에 함께 배포하는 파일은 아니다. 현행 계약은 아래에 보존했다. 실제 호출법은 [README](README.md)와 `describe_source`, 자료원별 상태는 [지원표](SUPPORT.md)를 따른다. 과거 보고의 완료·불가 판정은 아래 최신 검증을 대신하지 않는다.
+2026-09-14 KST의 추가 재검토를 반영한 인계다. 최초 입력은 사용자가 로컬에 제공한 `학술자료-MCP-구현-인계.md`이며 이 저장소에 함께 배포하는 파일은 아니다. 현행 계약은 아래에 보존했다. 실제 호출법은 [README](README.md)와 `describe_source`, 자료원별 상태는 [지원표](SUPPORT.md)를 따른다. 잔여 19개 항목의 실제 처리 과정과 해결 시도는 [partial 재검토](PARTIAL-REVIEW.md)에 있다. 과거 보고의 완료·불가 판정은 아래 최신 검증을 대신하지 않는다.
+
+사용자의 후속 지시에 따라 13개 사이트의 자연스러운 화면 이용 흐름을 사이트별 독립 `codex exec`로 조사했다. 작업자는 페이지·메뉴·내용·가이드·UI를 이미지로 읽고 다음 행동을 정했고 root도 핵심 이미지를 열어 검토했다. 파견문·사이트별 보고·후속 요청은 로컬 `data/ui-walkthrough-20260914/`에 있다. `state.json`은 첫 실행만 추적하므로 후속 결과는 각 `report.md`와 `last-message-followup.md`를 따른다. 현재 판정은 [partial 재검토](PARTIAL-REVIEW.md)에 통합한다.
+
+UI 후속에서 Title OR의 기존 지원 판정을 철회했다. 실제 Title 검색에서 `Quantum OR realization`은915건인데 같은 제목의 나머지 단어를 OR로 추가하면1건으로 좁아졌다. 공백으로 결합해도 같았다. 입력·결과 화면과 빠진 문헌을 확인한 뒤 여러 Title term의 OR 문자열 변환을 거부하도록 수리했다. 관련33검사와 전체639검사가 통과했다. 일반 query/field 검색과 기존 Author OR·서로 다른 Title/Author 조건은 유지한다. Digital Library 자체의 YEAR 단일 연도 필터는 정상 UI로 작동하지만 특정 expression 메타데이터 필드와 같다고 단정하지 않는다.
 
 ## 구현·검증 범위
 
 24개 CLI 과제와 root가 추가로 찾은 구현 오류를 원본에 통합했다. 전체633검사가 통과했다. 새 원본 SDK에서 De Gruyter7판정, Semantic Scholar bulk/title-match, SIAM 저자 필터, AMS13판정, CORE 검색·work/output·파일 복구·제거 음성, ScienceDirect4기능과 검색 대기 수리를 확인했다. 자료원별 `partial`은 지원 기능의 범위이며, 아래 실제 접근 조건을 코드 미통합과 혼동하지 않는다.
+
+추가 재검토에서는 API 오류 응답의 정제 artifact 보존, ScienceDirect 새 세션의 ISSN·ISBN 기반 후보 축소와 검색 행·상세 PDF 실패 보존을 수리했다. 수정 후 전체638검사가 통과했다. Semantic Scholar는 2026-09-13 15:31 UTC의 새 SDK에서 metadata·abstract·BibTeX·참고문헌30개가 available이었다. Software Heritage의 원 Vault는 여전히 new지만 기존92파일·20디렉터리로 같은 Git tree의 별도 압축물을 복원했다. 복원물과 원 작업의 완료는 구별한다.
 
 ScienceDirect의 검색 Export·상세 Cite·PDF를 병합했고 정확한 한 행 선택과 기존 상태 복원, 정리 실패 시 주 결과 보존, 검색 준비 재확인을 수리했다. Preface의 실제 비구독은 PDF 확보 성공으로 세지 않는다. EuDML은 실제 책204358과14개 장의 서지·외부 링크를 확인하고, 목차를 전문으로 오인하던 판별을 고쳤다. 원본의 같은 실제 XML 재생은 metadata/supplementary available·fulltext not_offered이며 자료를 생략하지 않는다.
 
@@ -17,6 +23,7 @@ ScienceDirect의 검색 Export·상세 Cite·PDF를 병합했고 정확한 한 �
 | [지원표](SUPPORT.md) |49개 자료원의 구현과 실제 검증 범위 |
 | [감사표](AUDIT-MATRIX.md) | 잘못된 제한을 수리한 항목과 실제 접근·자료 상태 |
 | [검증 기록](VALIDATION.md) | 원본 회귀·새 SDK·전후 이미지 및 원 응답의 대조 |
+| [partial 재검토](PARTIAL-REVIEW.md) | 잔여19항목의 원인·해결 시도·현재 판정; AMS 실제 화면·전송 경로와 어휘 대조 |
 | [실패 지점 분석](LIMITATIONS-AUDIT.md) | 최초 실패 원인과 후속 정정 |
 | [접근 이력](ACCESS-RESEARCH.md) | 기관 경로와 공유 상태·인증값 출력 사건 |
 | `data/dispatch/20260913T021511Z/root-integration-status.json` | 과제별 root 통합·커밋 상태; CLI 완료 주장과 구별 |
@@ -37,30 +44,32 @@ ScienceDirect의 검색 Export·상세 Cite·PDF를 병합했고 정확한 한 �
 
 | 개별 기능·자료 | 현재 상태와 이유 |
 |---|---|
-| AMS 같은 필드의 AND 식 | 가시 기본 제어의 동일 필드 결합은 OR이며 동등한 AND 실행 경로를 확인하지 못했다. 숨은 builder는 원 오류를 반환했다. |
-| AMS 같은 필드의 NOT 식 | 현재 원 제어에서 의미를 보존해 실행할 경로를 확인하지 못했다. |
+| AMS 같은 Title 필드의 OR 식 | 기본 Title 문자열은 논리 합집합을 보장하지 않는다. 정상 화면에서 OR 조건을 추가했는데915건에서1건으로 좁아진 반례를 확인했고 잘못된 문자열 변환을 거부하도록 수리했다. Author 필드의 별도 기존 검증과 구별한다. |
+| AMS 같은 필드의 AND 식 | 기본 Title 칸의 AND는 일반 검색어로 처리된다. 실제 입력·결과 화면, 원 POST, 단독 AND와 음성어 대조로 확인했다. 동적 Custom Search는 별도 경로이며 한 조건도97바이트 null 오류를 반환했다. 인코딩 대조도 같았고 서버 내부 원인은 미확정이다. |
+| AMS 같은 필드의 NOT 식 | 기본 Title 칸의 NOT는 일반 검색어로 처리된다. 단독 NOT와 두 음성어 사이 NOT 모두3,398건이며 화면·원 응답이 일치했다. 제외 연산의 정상 실행 경로는 확보하지 못했다. |
 | AMS 서로 다른 필드의 OR 식 | 검증된 기본 필드 간 결합은 AND다. 필드 간 OR로 자동 바꾸지 않는다. |
-| AMS equals 조건 | 현재 검증한 contains 부분집합에 포함되지 않는다. 원 제어의 실패와 구별해 미지원으로 반환한다. |
+| AMS equals 조건 | expression 매핑은 미지원이다. Title/Author equals와 별도로, 실제 결과의 YEAR → Use Single Year → 연도 입력 → Apply Filter(s)는 정확한 한 해 제한을 제공한다. 2025·2024 적용을 확인했으며 현재 MCP 옵션에 추가한 기능은 아니다. |
 | AMS expression의 다단어·문장부호 원자 | 기본 필드 문자열로 옮기면 의미가 바뀔 수 있어 `expression_mapping_unavailable`이다. 임의로 한 토큰 또는 다른 논리식으로 바꾸지 않는다. |
-| SIAM DOI10.1137/24M1711108의 비공개 PDF | 실제 기관 경로 뒤에도 Get Access 및 같은 문헌 초록 복귀였다. 현재 인증 미성립이며 행정적 구독권 부재를 입증한 것은 아니다. |
-| ScienceDirect Preface S0065230X26000631의 PDF | 정확 Title+ISSN 행을 선택한 다운로드가 비구독을 명시했다. 상세 HTML 복귀도 함께 기록했다. |
+| SIAM DOI10.1137/24M1711108의 출판사 PDF | 공식 KNU2026 개별전자저널 목록은1997–current로 기재하지만 목록 링크·호 목차·공식 프록시 뒤에도 Get Access다. 통합 포털의2011 종료 기재와도 다르며 내부 권한 원인은 미확정이다. 같은 논문의 accepted arXiv2411.07981v2 PDF28쪽을 별도 확보했다. |
+| ScienceDirect Preface S0065230X26000631의 PDF | 새 세션의 제목 단독 후보 누락을 수리했다. 원 ISSN으로45건 중 정확한 행을 선택한다. 정상 UI의 Preface·시리즈·Volume171 검색도 정확한1건이다. 그러나 ClinicalKey 접근 배너와 달리 권 목차는 No access, 선택 다운로드는 비구독이며 ClinicalKey 링크·Books 목록도 대상 원문을 주지 못했다. |
 | ScienceDirect Book review S1765462926000553의 PDF | 해당 문헌이 Purchase PDF와 비구독 상태를 표시했다. 다른 문헌의31쪽 PDF 양성과 구별한다. |
-| Oxford 검색별 Export title list | 현재 proxy의 CAPTCHA 사이트 키 도메인 오류로 정상 제출이 안 됐다. 같은 직접 호스트에는 제어가 없었다. 개별 문헌 CSV·인용과 다른 기능이다. |
-| JSTOR community.39197180 영상 다운로드 | 원 다운로드 제어가 비활성이다. 전사문 및 별도 오디오 양성을 영상 파일 확보로 세지 않는다. |
-| De Gruyter snde1089_supplementary_2.zip | 현재 원 링크는404다. 역사 보존 Belaire_Contreras.zip은 별도 확보했으나 같은 bytes라는 근거는 없다. |
-| Taylor & Francis의 두 editorial 초록 | 실제 본문과 Citation & abstract 파일에 초록이 없었다. 일반 description으로 채우지 않는다. |
+| Oxford 검색별 Export title list | KUDOS OUP 경로에서 CAPTCHA 사이트 키 도메인 오류가 지속하고 Download가 파일을 주지 못했다. 공식 가이드는 인증 상태에서 Export가 나타난다고 설명한다. 별도 전체 도서 Excel·OSO/UPSO KBART·장 RIS는 확보했지만 검색별 title export와 구별한다. |
+| JSTOR community.39197180 영상 다운로드 | 후속 실제 UI에서는 FREE 영상이 재생되고 전사문0:22 링크로 이동한다. Download는 비활성이다. 앞선 별도 호출의 Client Challenge를 현재 영상 시청 불가로 확대하지 않는다. 옛 기관 저장소는 폐지 안내이며 Handle은 같은 JSTOR 항목으로 돌아온다. |
+| De Gruyter snde1089_supplementary_2.zip | 문헌의 기관 PDF11쪽은 실제 확보했지만 같은 Data and code 원 링크는404다. Replication은 현재 논문 유형이며 대체 파일이 아니다. 역사 보존 Belaire_Contreras.zip과 같은 bytes라는 근거는 없다. |
+| Taylor & Francis의 두 editorial 초록 | 실제 전체 HTML과 Citation & abstract RIS에 초록이 없었다. 둘째 문헌은 View PDF → 새 뷰어 → Download PDF로187,178바이트·서지표지 포함10쪽도 확보했다. 뷰어 전환 오류를 PDF 미제공으로 판정하지 않으며 일반 description으로 초록을 채우지 않는다. |
 | Springer DOI10.1007/s00037-008-0249-x의 HTML 본문 | 실제 main-content가 비어 있다. 같은 문헌 PDF는 확보했고 미식별 레이아웃 전체로 일반화하지 않는다. |
-| EuDML 책204358의 NLM 전문 | 이 XML은 서지·14개 장 metadata·외부 링크를 제공하며 책 본문은 없다. metadata와 목차는 보존한다. |
-| CORE 일부 문헌의 indexed fullText 필드 | 실제 본문 대신 공개 API 안내문을 준다. 같은 work의 검증된 공개 PDF가 있으면 별도 파일로 회수하며 전체 CORE PDF 부재를 뜻하지 않는다. |
-| Semantic Scholar Graph API의 원문 파일 bytes | Graph API의 제공 범위 밖이다. 외부 openAccessPdf와 모든 논문의 PDF 부재를 동일시하지 않는다. |
+| EuDML 책204358의 NLM 전문 | XML은 서지·14개 장 metadata·외부 링크를 제공하며 책 본문은 없다. 원 링크의 GDZ에서는 실제 전체책 PDF412쪽·IIIF·METS를 확보했다. 서지 표지1쪽+스캔411쪽 및14개 부분의 면 대응을 구별하며 EuDML XML 전문으로 세지 않는다. |
+| CORE 일부 문헌의 indexed fullText 필드 | 최신 Output213561553도 실제 본문 대신 공개 API 안내문을 준다. 먼저429의 재시도 시각을 지킨 뒤200의 필드를 확인했다. 같은 work의 검증된 공개 PDF가 있으면 별도 파일로 회수하며 전체 CORE PDF 부재를 뜻하지 않는다. |
+| Semantic Scholar Graph API의 원문 파일 bytes | Graph API의 제공 범위 밖이다. 대상의 빈 openAccessPdf·isOpenAccess=false와 달리 실제 Reader·arXiv는 원문을 제공했다. 외부 arXiv v2 PDF698,413바이트·28쪽을 확보했으며 Graph 파일 반환으로 세지 않는다. |
 
 ## 결과가 일부이거나 현재 검증을 마치지 못한 항목
 
 | 개별 항목 | 확인한 사실·남은 불확실성 |
 |---|---|
-| Semantic Scholar 현재 batch full-parts 가용성 |13:53:07UTC의 최신 원본 요청도429/174바이트, Retry-After 없음이었다. 이전 batch·BibTeX·참고문헌 양성은 있으나 현재 새 payload는 받지 못했다. bulk/title-match 성공과 별개다. |
-| Software Heritage 원 Vault 압축 작업 |13:53:02UTC의 정확한 상태 GET은 task419779186과 같은 SWHID의 `new`였다. 완료 시각은 알 수 없다. 별도92파일·20디렉터리 회수는 이 압축 작업 완료가 아니다. |
-| Figshare collection4046897 과거 v6의 전체 구성원 | metadata17건과 실제 목록16건이 달라16건 partial로 보존한다. current v8의21건으로 과거를 채우지 않는다. |
+| Software Heritage 원 Vault 압축 작업 |15:31UTC 새 SDK의 task419779186과 후속 정상 UI의 같은 SWHID가 new였다. tarball 요청 모달·제출 성공을 확인했고 약80초 뒤에도 완료 링크가 없었다. 캡처의 모달 누락을 탭 고장으로 오인한 판정은 철회했다. 별도899,228바이트 tar.gz는 기존92파일·20디렉터리로 재구성해 같은 Git tree를 검증했다. 원 Vault 완료로 세지 않는다. |
+| Figshare collection4046897 과거 v6의 전체 구성원 | metadata17건과 UI·검색·실제 Cite all items TXT/RIS16건이 다르다. TXT는 아이템별 판본 DOI를 제공한다. 아이템 Back은 최신v8로 돌아가므로 v6 주소로 복귀해야 한다. 원 인용 파일과 첫 아이템 ZIP은 확보했지만 정확한17번째 ID는 미확정이며 v8로 채우지 않는다. |
+
+Semantic Scholar의 현재 batch 가용성은 미확정 목록에서 해소했다. 15:06UTC의429 뒤15:31UTC에 같은 대상의 새 payload·초록·BibTeX·참고문헌30개를 받았고 metadata의 referenceCount30과 일치했다. fulltext까지 요청한 전체 응답의 partial은 Graph API가 원문 파일을 제공하지 않는 범위 때문이며 batch 실패가 아니다. Figshare는 같은 v6를 재현하고 별도 DataCite 등록도 확인했지만 구성원 관계가 없어 정확한 누락 ID는 확정하지 못했다.
 
 CORE의 work/output 및 files01 복구, SIAM52번째 조건·저자 필터, Numdam 날짜만/한쪽 범위, IEEE Media 파싱, Crossmark 의미, DBLP·KG 형식과 원 범위, De Gruyter DOI 없는 책 인용은 더 이상 위 미확정 목록에 남기지 않는다. 새 실패나 원 서비스 변화가 생기면 해당 입력과 근거를 새로 기록한다.
 
