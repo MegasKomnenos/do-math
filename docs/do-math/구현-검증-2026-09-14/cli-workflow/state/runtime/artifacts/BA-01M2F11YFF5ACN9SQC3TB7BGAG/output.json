@@ -1,0 +1,15 @@
+{
+  "deferred": [],
+  "goal_audit": false,
+  "preparation_requests": [],
+  "questions": [],
+  "selections": [
+    "TK-01M2F114R1CXW7ZA4SF6EMV8X0"
+  ],
+  "summary": "단일 ready 작업이 승인된 계약과 명확한 완료 기준을 갖추고 있으므로 실행 순서로 선택한다. 형식 증명, 충실한 해설, 정확한 선언명 기록 및 실제 검사 통과 여부는 research_work와 후속 검토에서 확인한다.",
+  "task_assessments": [],
+  "used_sources": [
+    "TK-01M2F114R1CXW7ZA4SF6EMV8X0",
+    "EX-01M2F10N7CVXVXS9MPK027AV5E"
+  ]
+}

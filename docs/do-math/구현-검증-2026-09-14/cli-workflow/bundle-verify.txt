@@ -1,0 +1,5 @@
+The bundle contains this ref:
+886266d3c34ce6d5c940ea5f42a96ff23ff5ae65 refs/heads/do-math/RI-01M2F10KN3P706D2651DBN8Q5V
+The bundle records a complete history.
+The bundle uses this hash algorithm: sha1
+C:/math/docs/do-math/구현-검증-2026-09-14/cli-workflow/instance.bundle is okay

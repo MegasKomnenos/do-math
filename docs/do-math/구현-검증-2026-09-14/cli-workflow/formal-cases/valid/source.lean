@@ -1,0 +1,1 @@
+theorem good (n : Nat) : n = n := rfl

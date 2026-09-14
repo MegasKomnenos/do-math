@@ -1,0 +1,25 @@
+{
+  "axioms": {
+    "bad": [
+      "sorryAx"
+    ]
+  },
+  "command": [
+    "C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin\\lean.exe",
+    "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\cli-workflow\\formal-cases\\sorry\\tmpvct6m9ew\\proposal.lean"
+  ],
+  "declarations": [
+    "bad"
+  ],
+  "reason": "forbidden axiom",
+  "source_sha256": "8f635ac6c75d1eefe3bb826be09f8c97bf9adf348e2a1c8b3589ba59eca400d6",
+  "status": "rejected",
+  "stderr": "",
+  "stdout": "C:\\math\\docs\\do-math\\구현-검증-2026-09-14\\cli-workflow\\formal-cases\\sorry\\tmpvct6m9ew\\proposal.lean:1:8: warning: declaration uses `sorry`\n'bad' depends on axioms: [sorryAx]\n",
+  "toolchain": {
+    "executable": "C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin\\lean.exe",
+    "sha256": "10c6a27583eb65ff6a7e92b9718ff01d851ad594e6d70bb283fa5a10092fd810",
+    "version": "Lean (version 4.32.0, x86_64-w64-windows-gnu, commit 8c9756b28d64dab099da31a4c09229a9e6a2ef35, Release)",
+    "version_exit": 0
+  }
+}

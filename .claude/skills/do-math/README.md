@@ -1,8 +1,49 @@
 # do-math 구현
 
-`codex exec`과 기존 Codex 로그인을 사용하는 Windows 실행 어댑터다. 직접 API를 호출하거나 별도 API 키를 요구하지 않는다. 실행기 구현의 기준은 [통합 설계](../../../docs/do-math/통합-설계.md)이고, 전체 구현의 남은 범위는 [구현 진행](../../../docs/do-math/구현-진행.md)에 기록한다.
+`codex exec`과 기존 Codex 로그인을 사용하는 Windows 수학 연구 실행기다. 후보 준비, 계약 검토, 작업 선택·수행, Lean 검사, 독립 검토, 목표 감사와 다음 연구를 연결하고 입력·결과·상태를 Git에 보존한다. 별도 OpenAI API 키를 요구하지 않는다.
 
-현재 제공하는 것은 CLI 실행 어댑터, Windows Job 프로세스 소유권, Git 상태 저장, 예산 계산과 구현 검증 도구다. 연구 역할과 인스턴스 운전 명령은 아직 제공하지 않는다. 설계의 `do-math run`을 구현 검증 명령으로 대신하지 않는다.
+구현 판단은 [통합 설계 0절의 위임](../../../docs/do-math/통합-설계.md#implementation-judgment)을 따른다. 현재 운전과 기록의 계약은 [CLI 실행 계약](references/CLI-실행-계약.md)이며, `do-math-cli/1` 기록을 과거 `do-math-draft/*/9` 명세 기록과 섞지 않는다. [구현 진행](../../../docs/do-math/구현-진행.md)은 실제 검증 범위를 기록한다.
+
+## 연구 인스턴스 실행
+
+Python 3.12, Git, 로그인한 Codex CLI와 `requirements.txt`의 Python 의존성이 필요하다. 이 호스트에는 Codex Windows backend와 portable Lean 4.32.0을 설치해 검증했다. Lean은 PATH에서 찾고, 없으면 이 저장소 `.skill-workspace/do-math-toolchains/lean-4.32.0/lean-4.32.0-windows/bin/lean.exe`를 사용한다. 다른 설치는 설정의 `lean_command`에 argv 배열로 지정한다. Lean을 찾지 못하면 형식 결과를 인증하지 않고 원인을 보존한다.
+
+저장소 루트에서 새 연구 저장소와 작업 공간을 지정한다. 아래 예제는 작은 정리 하나의 전체 흐름을 실행한다.
+
+```powershell
+python .agents/skills/do-math/scripts/do_math.py init --create-repository --repository .skill-workspace/my-math/repo --workspace .skill-workspace/my-math/work --goal-file .agents/skills/do-math/examples/nat-add-zero.txt --model gpt-5.6-luna --effort low
+```
+
+반환된 `instance_id`를 다음 명령의 `RI-...` 자리에 넣는다.
+
+```powershell
+python .agents/skills/do-math/scripts/do_math.py run --repository .skill-workspace/my-math/repo --instance RI-...
+python .agents/skills/do-math/scripts/do_math.py status --repository .skill-workspace/my-math/repo --instance RI-... --json
+python .agents/skills/do-math/scripts/do_math.py check --repository .skill-workspace/my-math/repo --instance RI-...
+```
+
+`run --max-steps 1`은 한 단계만 진행하고 상태를 보존한다. 제한 없이 호출해도 인스턴스의 실행 횟수·시간·회차 한도 안에서만 진행한다. 종료된 같은 프로세스를 되살리지 않고 다음 실행에 저장된 결과와 남은 일을 제공한다. 비형식 조사나 설명 작성이 목표라면 `init --goal-kind research`를 사용한다. 그 완료는 수학적 해결과 구별한다.
+
+| 명령 | 효과 |
+|---|---|
+| `pause`, `resume`, `close` | 정지·재개·종결 요청을 기록한다. 실행 중 pause는 현재 Job의 정지를 요청한다. resume 뒤 run으로 진행한다 |
+| `input --text ...` 또는 `--file ...` | 사용자 원문을 보존하고 의도 해석과 다음 준비에 전달한다 |
+| `configure --config-file ...` | 명시한 모델·예산·시간·검토 구성을 변경한다. 과거 사용량과 판정을 지우지 않는다 |
+| `request --role ... --target ... --reason ...` | 준비·계획·보충 조사·운영 점검·유지보수 활동을 요청한다. 요청 자체는 모델을 호출하지 않는다 |
+| `query --kind knowledge` | 고정 snapshot의 기록을 조회한다. `--related-to`와 `--direction`으로 관계 방향을 선택한다 |
+| `read --id ...` 또는 `--path ...` | 정확한 기록 또는 보존한 파일을 회수한다 |
+| `export --destination ... --all` | 비어 있는 새 대상에 연구·실행 기록과 산출물을 회수한다 |
+| `profile` | 설치된 CLI 명령 표면과 미확인 능력을 보고한다 |
+
+`profile`을 제외한 위 명령에도 `--repository`와 `--instance`를 붙인다. 상세 인자는 각 명령의 `--help`에 있다. 보충 조사는 검토된 ready 과제 ID를, 운영 점검은 기존 실행 ID를 대상으로 한다. paused 상태의 활동 요청은 재개 전까지 실행하지 않는다.
+
+`init --config-file`과 `configure --config-file`은 같은 설정 키를 쓴다. 예를 들어 아래 파일은 작업·운영 실행 시도 횟수와 호출 시간을 정한다. 실패·중단된 시도도 횟수에 포함하며, 이 값은 공급자 내부의 개별 모델 호출 수와 다르다.
+
+```json
+{"work_calls": 40, "operations_calls": 30, "call_timeout_seconds": 600, "run_timeout_seconds": 7200, "max_cycles": 5, "reviewers": 2, "goal_auditors": 2}
+```
+
+`role_models`로 역할별 모델을 선택할 수 있다. 모델 사용 가능 여부는 실제 CLI 응답으로 확인한다. `reviewers`는 새 수학 제안의 독립 검토 수, `goal_auditors`는 새 목표 감사 묶음의 판정 수다. 기존 제안은 생성 시점에 고정한 검토 수를 유지한다.
 
 ## 실제 CLI 검증
 
@@ -56,6 +97,14 @@ worker 요청은 `sandbox` 또는 `filesystem` 중 하나를 가진다. `filesys
 `GitStateStore`는 `research`와 `runtime`을 단일 상태 ref로 공개한다. `publish()`는 이전 머리를 비교해 갱신하고 다른 갱신이 먼저 일어났으면 충돌로 반환한다. 기존 산출 묶음의 수정·삭제를 거부한다. 기록 스키마·권한·의미 검사는 저장소 호출 전에 실행기가 수행해야 한다.
 
 ## 로컬 검사
+
+전체 구현 검사는 모델을 호출하지 않는 임시 Git·모의 실행 검사와 실제 Windows 프로세스 검사를 실행한다.
+
+```powershell
+python -m unittest discover -s .claude/skills/do-math/scripts/tests -p "test_*.py" -v
+```
+
+개별 기반 기능도 따로 검사할 수 있다.
 
 ```powershell
 python .claude/skills/do-math/scripts/tests/test_windows_job.py

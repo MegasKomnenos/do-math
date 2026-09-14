@@ -1,0 +1,46 @@
+{
+  "$id": "https://do-math.invalid/schemas/cli/1/role-response",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "decision": {
+      "enum": [
+        "satisfied",
+        "not_satisfied",
+        "unresolved"
+      ],
+      "type": "string"
+    },
+    "questions": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "reason": {
+      "type": "string"
+    },
+    "scope_complete": {
+      "type": "boolean"
+    },
+    "summary": {
+      "type": "string"
+    },
+    "used_sources": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "summary",
+    "used_sources",
+    "questions",
+    "decision",
+    "reason",
+    "scope_complete"
+  ],
+  "type": "object",
+  "x-contract-id": "do-math-cli/1"
+}

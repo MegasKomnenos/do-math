@@ -6,7 +6,7 @@
   "input_basis": [
     {
       "path": "do-math/통합-설계.md",
-      "sha256": "d53826eacbe550d0527d8545374d21c9ed42de04d1c80b29778bf6ff9770a6db"
+      "sha256": "0238ab92f7a56e9baa1e8843b19617566f80a09930ebf196f4182ecdc799b25e"
     },
     {
       "path": "형식과-절차.md",
@@ -46,7 +46,7 @@
     },
     {
       "path": "do-math/통합-설계-명세-v9/source-vector-map.json",
-      "sha256": "e2b460354b006bd7913c9065b77984fc043a4d8ad417bda41a0d299462dd4f62"
+      "sha256": "f755a0a9c54878cfa2c59bb9e1936195bd73a6bbc35eb7ed32b91697d0225725"
     },
     {
       "path": "do-math/통합-설계-명세-v9/relation-templates.json",

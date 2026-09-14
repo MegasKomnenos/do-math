@@ -1,0 +1,152 @@
+{
+  "testsRun": 97,
+  "failures": 0,
+  "errors": 0,
+  "successful": true,
+  "elapsed_seconds": 323.26600000006147,
+  "discover_test_files": [
+    ".agents/skills/do-math/scripts/tests/test_budget.py",
+    ".agents/skills/do-math/scripts/tests/test_cli.py",
+    ".agents/skills/do-math/scripts/tests/test_codex_adapter.py",
+    ".agents/skills/do-math/scripts/tests/test_contracts.py",
+    ".agents/skills/do-math/scripts/tests/test_controls.py",
+    ".agents/skills/do-math/scripts/tests/test_engine.py",
+    ".agents/skills/do-math/scripts/tests/test_formal.py",
+    ".agents/skills/do-math/scripts/tests/test_git_store.py",
+    ".agents/skills/do-math/scripts/tests/test_model_runner.py",
+    ".agents/skills/do-math/scripts/tests/test_native_probe.py",
+    ".agents/skills/do-math/scripts/tests/test_preflight.py",
+    ".agents/skills/do-math/scripts/tests/test_probe_codex.py",
+    ".agents/skills/do-math/scripts/tests/test_query_records.py",
+    ".agents/skills/do-math/scripts/tests/test_repository.py",
+    ".agents/skills/do-math/scripts/tests/test_windows_job.py"
+  ],
+  "discover_test_file_count": 15,
+  "source_files_hashes": [
+    {
+      "path": ".agents/skills/do-math/scripts/do_math/__init__.py",
+      "sha256": "a1c57a32d3d32541a69ca3b870252dd232d81960119ff051d71e502d0a8e732a"
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/do_math/budget.py",
+      "sha256": "4d7824d1499520dbeec2965ea6312ae6271d362e71de823de30c6b5a68019332"
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/do_math/cli.py",
+      "sha256": "3ba79f97da35cd0234895b1a676baa17711599848b78b423943d11a9c4e685e7"
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/do_math/codex_adapter.py",
+      "sha256": "af87b6f275ea9c85a3207667caa87d692945c7afc99837aafc1becf6ab4e134b"
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/do_math/codex_worker.py",
+      "sha256": "b9af6cf80cb9f0a29a4a6767514068d1538bb41a257b97a93cda79a84a26fd74"
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/do_math/contracts.py",
+      "sha256": "7169770b191937a32bc42306ac5475a861fb80a8b04302973537d9cc6e165589"
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/do_math/engine.py",
+      "sha256": "280bbc714e055c3d3150c1de518a5f061ef809b2a2284687c45b62b59726c16f"
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/do_math/formal.py",
+      "sha256": "b61bd82656087be0b1b8079e474014789ded5cf49fd92814d70c4eb09a252c0f"
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/do_math/git_store.py",
+      "sha256": "6858ca6d7f49599b839acf779040265b9b7bb682b6b89fbeacf9ce3e14b9a86b"
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/do_math/model_runner.py",
+      "sha256": "d46d2c20b607b5c5ec7b3366a49d72caa657c3f0d0406c8abb7e9ad28b298344"
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/do_math/preflight.py",
+      "sha256": "f67206e58c55b9b873240a6474f0dc294c47e67cc4e9025b103170e94d9995e4"
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/do_math/repository.py",
+      "sha256": "c0443e87134a10bba4818d1530a3a635b6d53d595b0ad1c6008a509b56582e45"
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/do_math/windows_job.py",
+      "sha256": "5c16df2c17ab5d54490e3f54ab2d3fc703454b9c4c898f743f12312fc9d8e3d6"
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/do_math.py",
+      "sha256": "24403f801deb26dcad72b4fc327109223eab76fb9d373aa1f3ddd27c0510b604"
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/probe_codex.py",
+      "sha256": "73518eaea98b42208dd1edddcfc36a3d8f4a01f918e4c792fd6586142a51b5a2"
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/probe_native_isolation.py",
+      "sha256": "52a410bda7726b044ec6f30c5659d628765214a839e432a45df3d762c73ae04b"
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/test_budget.py",
+      "sha256": "8c0b4015cdbcac6ca3b5006951bea7cc0f5abcb5a511bb1d81ff58be4917cf91"
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/test_cli.py",
+      "sha256": "65694c1c50651435bae88f7bc7da6fc895b2491acda74c6234295419bff7ce63"
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/test_codex_adapter.py",
+      "sha256": "c3532b45570427d1013ee1eb2685aafae595a7a7a0d52a813a92344fa618f063"
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/test_contracts.py",
+      "sha256": "f437876f51c510184193706e9142c9f36e34fde79e048448b35bb9464d9095bd"
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/test_controls.py",
+      "sha256": "9bd457476613462c9c32e94697ef6497443e837e8c02ad70ecec3a0127190bfe"
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/test_engine.py",
+      "sha256": "7119aa6266a1500af581bf0192262175b69742d3abc0376d90fad08092f97ce5"
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/test_formal.py",
+      "sha256": "0f322433d954d89c0422569d878eba522a570c291be14a3110440be1cc1f75dd"
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/test_git_store.py",
+      "sha256": "978f6c70223355f619e0a2d9ac34a66e7992055b0ac8b12deaae19794c51800c"
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/test_model_runner.py",
+      "sha256": "53d5b296568761f0a53941b69e1f29d19f9acfb7dc3e8224d730c968cbe34d39"
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/test_native_probe.py",
+      "sha256": "03a0ad3a75920f84cb698e9f02aa1a7f078fbff7c206d1b5555bd9ff3c560d65"
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/test_preflight.py",
+      "sha256": "338fcf3e99102a62ecaa673c57fa3806c0e0fe17817d06ea3ef9817611be478b"
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/test_probe_codex.py",
+      "sha256": "50e9ec30112a6f34633ccd2057397c7639f300d235dc72aeddfbd82202c5526c"
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/test_query_records.py",
+      "sha256": "fbd25fa9ee39000f7542c8edd19df131fb83f80d23a19c1e821ada5ed7bb7924"
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/test_repository.py",
+      "sha256": "9fabe8166da4c3e8b3432cb26e06b77e263594e20f8b0cefcd7a7280b1fa35d7"
+    },
+    {
+      "path": ".agents/skills/do-math/scripts/tests/test_windows_job.py",
+      "sha256": "d6bb2575a9d033018faa4de70849a40d3f26f4320b5c3bf119acbff82084df09"
+    }
+  ],
+  "tracebacks": []
+}

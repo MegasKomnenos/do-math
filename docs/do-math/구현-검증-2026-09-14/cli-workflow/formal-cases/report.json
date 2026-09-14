@@ -1,0 +1,30 @@
+{
+  "cases": {
+    "extra_axiom": {
+      "actual": "rejected",
+      "expected": "rejected",
+      "passed": true
+    },
+    "invalid_proof": {
+      "actual": "failed",
+      "expected": "failed",
+      "passed": true
+    },
+    "missing_declaration": {
+      "actual": "failed",
+      "expected": "failed",
+      "passed": true
+    },
+    "sorry": {
+      "actual": "rejected",
+      "expected": "rejected",
+      "passed": true
+    },
+    "valid": {
+      "actual": "verified",
+      "expected": "verified",
+      "passed": true
+    }
+  },
+  "passed": true
+}

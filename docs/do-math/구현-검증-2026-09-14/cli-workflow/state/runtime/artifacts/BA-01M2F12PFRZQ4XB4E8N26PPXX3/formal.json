@@ -1,0 +1,23 @@
+{
+  "axioms": {
+    "nat_add_zero": []
+  },
+  "command": [
+    "C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin\\lean.exe",
+    "C:\\math\\.skill-workspace\\do-math-final-e2e-909dtdk7\\work\\formal\\EX-01M2F12M9EX12VTNHRTJ4F2WJW\\tmprr9fr1__\\proposal.lean"
+  ],
+  "declarations": [
+    "nat_add_zero"
+  ],
+  "reason": null,
+  "source_sha256": "dad93b80d678d1229abf2c473d1e5c45d1748abeefb190cf62c70986332f6cd6",
+  "status": "verified",
+  "stderr": "",
+  "stdout": "'nat_add_zero' does not depend on any axioms\n",
+  "toolchain": {
+    "executable": "C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin\\lean.exe",
+    "sha256": "10c6a27583eb65ff6a7e92b9718ff01d851ad594e6d70bb283fa5a10092fd810",
+    "version": "Lean (version 4.32.0, x86_64-w64-windows-gnu, commit 8c9756b28d64dab099da31a4c09229a9e6a2ef35, Release)",
+    "version_exit": 0
+  }
+}

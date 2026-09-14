@@ -1,0 +1,564 @@
+{
+  "active_execution": null,
+  "activities": {
+    "AY-01M2F10N7CYMAJH8JVFXKDS1DX": {
+      "execution_ids": [
+        "EX-01M2F10N7CVXVXS9MPK027AV5E"
+      ],
+      "id": "AY-01M2F10N7CYMAJH8JVFXKDS1DX",
+      "result_ref": "runtime/artifacts/BA-01M2F114QPX4P5K15BHW3AMTAN/result.json",
+      "role": "research_preparation",
+      "status": "finished"
+    },
+    "AY-01M2F115F5H8N3X4MXXQ8A3JM8": {
+      "execution_ids": [
+        "EX-01M2F115F5TT6PG0075QTDEAQ1"
+      ],
+      "id": "AY-01M2F115F5H8N3X4MXXQ8A3JM8",
+      "result_ref": "runtime/artifacts/BA-01M2F11JSAZ7F3M7MQH54V9PTM/result.json",
+      "role": "task_contract_review",
+      "status": "finished"
+    },
+    "AY-01M2F11KGDJQS80E2AMJ33J1EV": {
+      "execution_ids": [
+        "EX-01M2F11KGD5MSN2HJR6AEBV57P"
+      ],
+      "id": "AY-01M2F11KGDJQS80E2AMJ33J1EV",
+      "result_ref": "runtime/artifacts/BA-01M2F11YFF5ACN9SQC3TB7BGAG/result.json",
+      "role": "research_plan",
+      "status": "finished"
+    },
+    "AY-01M2F11ZG6N35JGE1CGMN1Q3DR": {
+      "execution_ids": [
+        "EX-01M2F11ZG6C0PXA2S46739B2EV"
+      ],
+      "id": "AY-01M2F11ZG6N35JGE1CGMN1Q3DR",
+      "result_ref": "runtime/artifacts/BA-01M2F12KFQB0FKVS6MNGZPM9YD/result.json",
+      "role": "research_work",
+      "status": "finished"
+    },
+    "AY-01M2F12Q6QCEHGCNDSWMHJW8A9": {
+      "execution_ids": [
+        "EX-01M2F12Q6Q6RJH6FFRG27XM3HW"
+      ],
+      "id": "AY-01M2F12Q6QCEHGCNDSWMHJW8A9",
+      "result_ref": "runtime/artifacts/BA-01M2F132M4761AVN4NZGHT5483/result.json",
+      "role": "identity_review",
+      "status": "finished"
+    },
+    "AY-01M2F133DR5JJMT22167M5C4JP": {
+      "execution_ids": [
+        "EX-01M2F133DRV9KXZH93HBPF1C30"
+      ],
+      "id": "AY-01M2F133DR5JJMT22167M5C4JP",
+      "result_ref": "runtime/artifacts/BA-01M2F13FS7SSQX9P7N3BDQKNG0/result.json",
+      "role": "identity_review",
+      "status": "finished"
+    },
+    "AY-01M2F13GKY480JSBYNNVM644CJ": {
+      "execution_ids": [
+        "EX-01M2F13GKY79PXDJ80SXXCSE1R"
+      ],
+      "id": "AY-01M2F13GKY480JSBYNNVM644CJ",
+      "result_ref": "runtime/artifacts/BA-01M2F14379KCKGD4HJD4TGJT8Q/result.json",
+      "role": "research_plan",
+      "status": "finished"
+    },
+    "AY-01M2F1442HE985JXQZZ2ZJRMF5": {
+      "execution_ids": [
+        "EX-01M2F1442HEQRZ2VGTEM4YPD5S"
+      ],
+      "id": "AY-01M2F1442HE985JXQZZ2ZJRMF5",
+      "result_ref": "runtime/artifacts/BA-01M2F14H3SA4QRNSN1ZWJ99P1B/result.json",
+      "role": "goal_audit",
+      "status": "finished"
+    },
+    "AY-01M2F14J4SZ8TVZJZ23KV24H5T": {
+      "execution_ids": [
+        "EX-01M2F14J4SBJGWSG82BHECNVZS"
+      ],
+      "id": "AY-01M2F14J4SZ8TVZJZ23KV24H5T",
+      "result_ref": "runtime/artifacts/BA-01M2F14Z07ENYNPG53D5Q6W2NJ/result.json",
+      "role": "goal_audit",
+      "status": "finished"
+    }
+  },
+  "contract_id": "do-math-cli/1",
+  "cycles": 1,
+  "executions": {
+    "EX-01M2F10N7CVXVXS9MPK027AV5E": {
+      "action": {
+        "reason": "initial research preparation",
+        "role": "research_preparation"
+      },
+      "activity_id": "AY-01M2F10N7CYMAJH8JVFXKDS1DX",
+      "artifact_bundle": "BA-01M2F114QPX4P5K15BHW3AMTAN",
+      "budget_kind": "operations",
+      "created_at": "2026-09-14T03:57:45.584932+00:00",
+      "effort": "low",
+      "ended_at": "2026-09-14T03:58:01.465317+00:00",
+      "engine_sha256": "441609a135cb763d74cb312f98f774f8d923a9fa7d7083f72f64f6a3ddc959cf",
+      "error": null,
+      "id": "EX-01M2F10N7CVXVXS9MPK027AV5E",
+      "input_sha256": "c8cb970cb06702c61d8e0e3cef42eb00af13d00900ada4d1efc99551b26d952b",
+      "input_snapshot": "be2ed293fe7fd34e682c9802bb1455a041c64450",
+      "model": "gpt-5.6-luna",
+      "outcome": "output_accepted",
+      "process": {
+        "creation_filetime": "134338318661552830",
+        "pid": 35092,
+        "request_sha256": "508945100014c8e83b39f285f56adf406f9673492f76f97024f54ef458f62c22"
+      },
+      "role": "research_preparation",
+      "status": "ended",
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 0,
+        "input_tokens": 18935,
+        "output_tokens": 530,
+        "reasoning_output_tokens": 52
+      }
+    },
+    "EX-01M2F115F5TT6PG0075QTDEAQ1": {
+      "action": {
+        "role": "task_contract_review",
+        "target": "TK-01M2F114R1CXW7ZA4SF6EMV8X0"
+      },
+      "activity_id": "AY-01M2F115F5H8N3X4MXXQ8A3JM8",
+      "artifact_bundle": "BA-01M2F11JSAZ7F3M7MQH54V9PTM",
+      "budget_kind": "work",
+      "created_at": "2026-09-14T03:58:02.216178+00:00",
+      "effort": "low",
+      "ended_at": "2026-09-14T03:58:15.853305+00:00",
+      "engine_sha256": "441609a135cb763d74cb312f98f774f8d923a9fa7d7083f72f64f6a3ddc959cf",
+      "error": null,
+      "id": "EX-01M2F115F5TT6PG0075QTDEAQ1",
+      "input_sha256": "1ad39bdcd461742e68fb75a4b09838e58643a31bc70dee056dc7eed5e337e3e1",
+      "input_snapshot": "2d0297a43ceab8ddcc4339016bfcc441ceaaff71",
+      "model": "gpt-5.6-luna",
+      "outcome": "output_accepted",
+      "process": {
+        "creation_filetime": "134338318829346023",
+        "pid": 25492,
+        "request_sha256": "77cb308f56d3c1af071885856ec30f2c2a6513ee460193e0721248af41430645"
+      },
+      "role": "task_contract_review",
+      "status": "ended",
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 0,
+        "input_tokens": 19671,
+        "output_tokens": 373,
+        "reasoning_output_tokens": 73
+      }
+    },
+    "EX-01M2F11KGD5MSN2HJR6AEBV57P": {
+      "action": {
+        "role": "research_plan"
+      },
+      "activity_id": "AY-01M2F11KGDJQS80E2AMJ33J1EV",
+      "artifact_bundle": "BA-01M2F11YFF5ACN9SQC3TB7BGAG",
+      "budget_kind": "operations",
+      "created_at": "2026-09-14T03:58:16.593681+00:00",
+      "effort": "low",
+      "ended_at": "2026-09-14T03:58:27.826387+00:00",
+      "engine_sha256": "441609a135cb763d74cb312f98f774f8d923a9fa7d7083f72f64f6a3ddc959cf",
+      "error": null,
+      "id": "EX-01M2F11KGD5MSN2HJR6AEBV57P",
+      "input_sha256": "15fe89417f65b34c97267a0a958b67a7f2b77d36780cfad6f5be74d6a986922a",
+      "input_snapshot": "c3b1f146a8e1d4921e1b59743de1d639de991321",
+      "model": "gpt-5.6-luna",
+      "outcome": "output_accepted",
+      "process": {
+        "creation_filetime": "134338318972082338",
+        "pid": 42096,
+        "request_sha256": "14c505d86a9778cbd4ad9cae46e143d8301d4f04154156e2bc7000628e0271ba"
+      },
+      "role": "research_plan",
+      "status": "ended",
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 0,
+        "input_tokens": 20120,
+        "output_tokens": 209,
+        "reasoning_output_tokens": 37
+      }
+    },
+    "EX-01M2F11ZG6C0PXA2S46739B2EV": {
+      "action": {
+        "role": "research_work",
+        "target": "TK-01M2F114R1CXW7ZA4SF6EMV8X0"
+      },
+      "activity_id": "AY-01M2F11ZG6N35JGE1CGMN1Q3DR",
+      "artifact_bundle": "BA-01M2F12KFQB0FKVS6MNGZPM9YD",
+      "budget_kind": "work",
+      "created_at": "2026-09-14T03:58:28.872632+00:00",
+      "effort": "low",
+      "ended_at": "2026-09-14T03:58:49.339291+00:00",
+      "engine_sha256": "441609a135cb763d74cb312f98f774f8d923a9fa7d7083f72f64f6a3ddc959cf",
+      "error": null,
+      "id": "EX-01M2F11ZG6C0PXA2S46739B2EV",
+      "input_sha256": "865f4fa58f68acb2ade62bb85316fe9f0a6e06fe5b23f395e60bb8657ca84907",
+      "input_snapshot": "d17a0b1fcd54b22967c261f8a9a602ae0153bb53",
+      "model": "gpt-5.6-luna",
+      "outcome": "output_accepted",
+      "process": {
+        "creation_filetime": "134338319095933930",
+        "pid": 54004,
+        "request_sha256": "db86ffe228d1da438c1d89303f26d6c288d3ed2269b15d73f836bf7b2c85aadd"
+      },
+      "role": "research_work",
+      "status": "ended",
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 0,
+        "input_tokens": 20989,
+        "output_tokens": 728,
+        "reasoning_output_tokens": 206
+      }
+    },
+    "EX-01M2F12M9EX12VTNHRTJ4F2WJW": {
+      "action": {
+        "role": "formal_check",
+        "target": "KN-01M2F12KGB2MNHDX920773E6KS"
+      },
+      "artifact_bundle": "BA-01M2F12PFRZQ4XB4E8N26PPXX3",
+      "created_at": "2026-09-14T03:58:50.159625+00:00",
+      "ended_at": "2026-09-14T03:58:52.408113+00:00",
+      "id": "EX-01M2F12M9EX12VTNHRTJ4F2WJW",
+      "outcome": "verified",
+      "role": "formal_check",
+      "status": "ended"
+    },
+    "EX-01M2F12Q6Q6RJH6FFRG27XM3HW": {
+      "action": {
+        "role": "identity_review",
+        "slot": 0,
+        "target": "KN-01M2F12KGB2MNHDX920773E6KS"
+      },
+      "activity_id": "AY-01M2F12Q6QCEHGCNDSWMHJW8A9",
+      "artifact_bundle": "BA-01M2F132M4761AVN4NZGHT5483",
+      "budget_kind": "work",
+      "created_at": "2026-09-14T03:58:53.149227+00:00",
+      "effort": "low",
+      "ended_at": "2026-09-14T03:59:04.840480+00:00",
+      "engine_sha256": "441609a135cb763d74cb312f98f774f8d923a9fa7d7083f72f64f6a3ddc959cf",
+      "error": null,
+      "id": "EX-01M2F12Q6Q6RJH6FFRG27XM3HW",
+      "input_sha256": "1fe41b21ede082641636c61b8e7152b034ec84719e37214b8f134a661986b6ea",
+      "input_snapshot": "cefc234610243d01bd222d96330a2ca62161226d",
+      "model": "gpt-5.6-luna",
+      "outcome": "output_accepted",
+      "process": {
+        "creation_filetime": "134338319338335876",
+        "pid": 16888,
+        "request_sha256": "0b711178ad194da5ae89aaf443fb4d009d1564406d3e2fbb81e1020cd3eac29d"
+      },
+      "role": "identity_review",
+      "status": "ended",
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 0,
+        "input_tokens": 19774,
+        "output_tokens": 277,
+        "reasoning_output_tokens": 90
+      }
+    },
+    "EX-01M2F133DRV9KXZH93HBPF1C30": {
+      "action": {
+        "role": "identity_review",
+        "slot": 1,
+        "target": "KN-01M2F12KGB2MNHDX920773E6KS"
+      },
+      "activity_id": "AY-01M2F133DR5JJMT22167M5C4JP",
+      "artifact_bundle": "BA-01M2F13FS7SSQX9P7N3BDQKNG0",
+      "budget_kind": "work",
+      "created_at": "2026-09-14T03:59:05.661285+00:00",
+      "effort": "low",
+      "ended_at": "2026-09-14T03:59:18.313328+00:00",
+      "engine_sha256": "441609a135cb763d74cb312f98f774f8d923a9fa7d7083f72f64f6a3ddc959cf",
+      "error": null,
+      "id": "EX-01M2F133DRV9KXZH93HBPF1C30",
+      "input_sha256": "2e4e368896adefe73a2eded49bb75d8fa6b329c8ddfeee9729c56606f52707c7",
+      "input_snapshot": "8d8fab726789471483981564836f3ffc233ada8e",
+      "model": "gpt-5.6-luna",
+      "outcome": "output_accepted",
+      "process": {
+        "creation_filetime": "134338319462800409",
+        "pid": 63484,
+        "request_sha256": "879e9f7fa169ce8f5b6a992dc6825101a3aaa64ccecff8449484e96f868226d8"
+      },
+      "role": "identity_review",
+      "status": "ended",
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 0,
+        "input_tokens": 19576,
+        "output_tokens": 311,
+        "reasoning_output_tokens": 103
+      }
+    },
+    "EX-01M2F13GKY79PXDJ80SXXCSE1R": {
+      "action": {
+        "role": "research_plan"
+      },
+      "activity_id": "AY-01M2F13GKY480JSBYNNVM644CJ",
+      "artifact_bundle": "BA-01M2F14379KCKGD4HJD4TGJT8Q",
+      "budget_kind": "operations",
+      "created_at": "2026-09-14T03:59:19.170851+00:00",
+      "effort": "low",
+      "ended_at": "2026-09-14T03:59:38.221106+00:00",
+      "engine_sha256": "441609a135cb763d74cb312f98f774f8d923a9fa7d7083f72f64f6a3ddc959cf",
+      "error": null,
+      "id": "EX-01M2F13GKY79PXDJ80SXXCSE1R",
+      "input_sha256": "baba1b6d34ca65ab90eeaaf4416fcd3f4b5c5943b7c9a555ed96d215c5b7b798",
+      "input_snapshot": "5c8d647142c3e431d9c89b61287451030cf547d9",
+      "model": "gpt-5.6-luna",
+      "outcome": "output_accepted",
+      "process": {
+        "creation_filetime": "134338319598851541",
+        "pid": 49296,
+        "request_sha256": "6698e20f08f91603cf3453a60ae94696a77bcd77088fb8460328e60137e3a7d6"
+      },
+      "role": "research_plan",
+      "status": "ended",
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 0,
+        "input_tokens": 21213,
+        "output_tokens": 669,
+        "reasoning_output_tokens": 127
+      }
+    },
+    "EX-01M2F1442HEQRZ2VGTEM4YPD5S": {
+      "action": {
+        "basis": "2eddae84de3e2b3e52555fd614dba09e856248cd052d9d16d584148354c46fb0",
+        "required": 2,
+        "role": "goal_audit",
+        "slot": 0
+      },
+      "activity_id": "AY-01M2F1442HE985JXQZZ2ZJRMF5",
+      "artifact_bundle": "BA-01M2F14H3SA4QRNSN1ZWJ99P1B",
+      "budget_kind": "work",
+      "created_at": "2026-09-14T03:59:39.093443+00:00",
+      "effort": "low",
+      "ended_at": "2026-09-14T03:59:52.444637+00:00",
+      "engine_sha256": "441609a135cb763d74cb312f98f774f8d923a9fa7d7083f72f64f6a3ddc959cf",
+      "error": null,
+      "id": "EX-01M2F1442HEQRZ2VGTEM4YPD5S",
+      "input_sha256": "91ed6780b4df2226cd59fdf61b9d6e70a5373aa5ed8b5d1fc2774b7630234dd8",
+      "input_snapshot": "530b110c63162ead9c7b96b80e1973e107fd0da4",
+      "model": "gpt-5.6-luna",
+      "outcome": "output_accepted",
+      "process": {
+        "creation_filetime": "134338319799178458",
+        "pid": 59772,
+        "request_sha256": "b77d81beb83a988e2a09f09ef7b94f9b8f6cc9f5d1a48be523146648b6a9caa7"
+      },
+      "role": "goal_audit",
+      "status": "ended",
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 0,
+        "input_tokens": 20748,
+        "output_tokens": 289,
+        "reasoning_output_tokens": 39
+      }
+    },
+    "EX-01M2F14J4SBJGWSG82BHECNVZS": {
+      "action": {
+        "basis": "2eddae84de3e2b3e52555fd614dba09e856248cd052d9d16d584148354c46fb0",
+        "required": 2,
+        "role": "goal_audit",
+        "slot": 1
+      },
+      "activity_id": "AY-01M2F14J4SZ8TVZJZ23KV24H5T",
+      "artifact_bundle": "BA-01M2F14Z07ENYNPG53D5Q6W2NJ",
+      "budget_kind": "work",
+      "created_at": "2026-09-14T03:59:53.501649+00:00",
+      "effort": "low",
+      "ended_at": "2026-09-14T04:00:06.667558+00:00",
+      "engine_sha256": "441609a135cb763d74cb312f98f774f8d923a9fa7d7083f72f64f6a3ddc959cf",
+      "error": null,
+      "id": "EX-01M2F14J4SBJGWSG82BHECNVZS",
+      "input_sha256": "939e28b6380000a48fb835ab99fbb3ebbe13dff8899e983c1ec62217cb68c97f",
+      "input_snapshot": "288e131f845aa7c702bce760d8f1f48bc954df1b",
+      "model": "gpt-5.6-luna",
+      "outcome": "output_accepted",
+      "process": {
+        "creation_filetime": "134338319943001647",
+        "pid": 59212,
+        "request_sha256": "74c748075fa22103743d2de1b1c7bb294d4fa0421d1fc2bf59d7dac1b4fc6e84"
+      },
+      "role": "goal_audit",
+      "status": "ended",
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 0,
+        "input_tokens": 20741,
+        "output_tokens": 346,
+        "reasoning_output_tokens": 54
+      }
+    }
+  },
+  "history": [
+    {
+      "execution_id": "EX-01M2F10N7CVXVXS9MPK027AV5E",
+      "role": "research_preparation",
+      "summary": "현재 지식 카탈로그·원자료·기존 과제가 없지만, 목표 자체가 필요한 명제와 범위를 충분히 지정한다. 따라서 Lean 4 core 단일 형식 작업을 제안한다. 증명과 해설의 실제 충실성은 후속 research_work, Lean 검사, 독립 동일성 검토에서 확인해야 한다."
+    },
+    {
+      "execution_id": "EX-01M2F115F5TT6PG0075QTDEAQ1",
+      "role": "task_contract_review",
+      "summary": "작업 계약은 배정 전에 판정 가능한 연구 의무로 충분히 정의되어 있으므로 승인한다. validity basis: 제공된 목표, task 계약의 question/scope/inputs/completion_criteria, 그리고 이전 후보 준비 결과의 범위 판단."
+    },
+    {
+      "execution_id": "EX-01M2F11KGD5MSN2HJR6AEBV57P",
+      "role": "research_plan",
+      "summary": "단일 ready 작업이 승인된 계약과 명확한 완료 기준을 갖추고 있으므로 실행 순서로 선택한다. 형식 증명, 충실한 해설, 정확한 선언명 기록 및 실제 검사 통과 여부는 research_work와 후속 검토에서 확인한다."
+    },
+    {
+      "execution_id": "EX-01M2F11ZG6C0PXA2S46739B2EV",
+      "role": "research_work",
+      "summary": "Lean 4 core에서 모든 자연수 `n`에 대한 `n + 0 = n`의 형식 증명과 충실한 짧은 해설을 제출했다."
+    },
+    {
+      "execution_id": "EX-01M2F12Q6Q6RJH6FFRG27XM3HW",
+      "role": "identity_review",
+      "summary": "제안의 형식 명제, 자연어 설명, 요약, 가정 및 Lean 소스가 서로 일치한다. `nat_add_zero`는 모든 `n : Nat`에 대해 `n + 0 = n`을 주장하고, `rfl`로 정의상 등식을 증명한다. Lean 검사는 verified이며 공리 의존성도 없다."
+    },
+    {
+      "execution_id": "EX-01M2F133DRV9KXZH93HBPF1C30",
+      "role": "identity_review",
+      "summary": "제안의 형식 명제, 자연어 설명, 요약, 가정 및 Lean 소스가 서로 일치한다. `nat_add_zero`는 모든 자연수 n에 대해 `n + 0 = n`을 주장하며, `Nat.add`의 정의적 환원에 따른 `rfl` 증명으로 이를 정확히 구현한다. 제출된 Lean 검사는 검증되었고 공리에 의존하지 않는다."
+    },
+    {
+      "execution_id": "EX-01M2F13GKY79PXDJ80SXXCSE1R",
+      "role": "research_plan",
+      "summary": "연구 결과와 후속 동일성 검토에서 Lean 4 core의 `nat_add_zero` 형식 증명, 짧은 충실한 해설, 선언명이 확인되었고 Mathlib·외부 문헌 의존성도 없다. 모든 완료 기준이 충족되었으므로 과제를 완료로 판정하며, 수학적 목표 감사로 최종 대조를 요청한다."
+    },
+    {
+      "execution_id": "EX-01M2F1442HEQRZ2VGTEM4YPD5S",
+      "role": "goal_audit",
+      "summary": "목표가 충족되었다. 형식 선언은 `nat_add_zero`이며 `rfl`로 증명되었다."
+    },
+    {
+      "execution_id": "EX-01M2F14J4SBJGWSG82BHECNVZS",
+      "role": "goal_audit",
+      "summary": "Lean 4 core에서 자연수 덧셈의 오른쪽 영원 법칙을 형식적으로 검증했고, 충실한 짧은 해설과 정확한 선언명 nat_add_zero가 기록되었다."
+    }
+  ],
+  "inputs": [],
+  "processed_controls": [],
+  "questions": [],
+  "queue": [],
+  "status": "completed",
+  "tasks": {
+    "TK-01M2F114R1CXW7ZA4SF6EMV8X0": {
+      "assessment": {
+        "criteria_results": [
+          {
+            "criterion": "Lean 4 core 소스가 `n + 0 = n`을 모든 `n : Nat`에 대해 증명하고 실행기의 검사를 통과한다.",
+            "evidence": "연구 결과는 `theorem nat_add_zero (n : Nat) : n + 0 = n := by rfl`을 제출했고, 후속 동일성 검토 기록은 제출된 Lean 검사가 verified라고 확인한다.",
+            "satisfied": true
+          },
+          {
+            "criterion": "자연어 해설이 검사된 형식 명제와 증명 방법에 충실하며, Mathlib·외부 문헌을 사용하지 않는다.",
+            "evidence": "해설은 `Nat.add`의 정의에 따라 `n + 0`이 `n`으로 환원되어 `rfl`로 증명된다고 설명하며, 연구 보고는 Mathlib와 외부 문헌을 사용하지 않았다고 명시한다. 동일성 검토도 형식 명제와 해설의 일치를 승인했다.",
+            "satisfied": true
+          },
+          {
+            "criterion": "형식 명제와 증명의 정확한 Lean 선언명이 연구 결과에 기록된다.",
+            "evidence": "연구 결과의 `declaration_names`에 정확한 선언명 `nat_add_zero`가 기록되어 있다.",
+            "satisfied": true
+          }
+        ],
+        "decision": "completed",
+        "execution_id": "EX-01M2F13GKY79PXDJ80SXXCSE1R",
+        "reason": "세 완료 기준이 연구 결과, 검증된 지식 및 후속 독립 동일성 검토로 충족되었다.",
+        "task_id": "TK-01M2F114R1CXW7ZA4SF6EMV8X0"
+      },
+      "completion_criteria": [
+        "Lean 4 core 소스가 `n + 0 = n`을 모든 `n : Nat`에 대해 증명하고 실행기의 검사를 통과한다.",
+        "자연어 해설이 검사된 형식 명제와 증명 방법에 충실하며, Mathlib·외부 문헌을 사용하지 않는다.",
+        "형식 명제와 증명의 정확한 Lean 선언명이 연구 결과에 기록된다."
+      ],
+      "expected_result": "Lean 4 core만으로 모든 자연수 n에 대한 n + 0 = n의 형식 증명과 그 증명에 충실한 짧은 자연어 해설.",
+      "id": "TK-01M2F114R1CXW7ZA4SF6EMV8X0",
+      "inputs": [
+        "현재 목표: 모든 자연수 n에 대해 n + 0 = n임을 Lean 4 core만 사용하여 증명한다.",
+        "현재 목표의 범위 제한: Mathlib나 외부 문헌은 필요하지 않으며 하나의 작은 작업으로 충분하다.",
+        "실행기 검사, 독립 검토, 목표 감사가 제출 후 수행된다."
+      ],
+      "producer_execution": "EX-01M2F10N7CVXVXS9MPK027AV5E",
+      "question": "Lean 4 core에서 자연수 덧셈의 재귀 정의에 맞는 방식으로 `n + 0 = n`을 증명하고, 형식 결과와 일치하는 짧은 해설을 작성할 수 있는가?",
+      "remaining_work": [
+        "제출된 소스의 실제 Lean 실행기 검사 결과를 확인해야 한다.",
+        "형식 명제와 자연어 해설의 독립 동일성 검토 및 목표 감사를 수행해야 한다."
+      ],
+      "results": [
+        {
+          "checkpoint": "Lean 4 core에서 `Nat.add`의 오른쪽 인자가 0인 경우의 재귀 정의를 이용한 증명을 제출했다. 실행기 검사와 독립 검토는 제출 후 수행된다.",
+          "execution_id": "EX-01M2F11ZG6C0PXA2S46739B2EV",
+          "knowledge": [
+            {
+              "declaration_names": [
+                "nat_add_zero"
+              ],
+              "dependencies": [],
+              "explanation": "`Nat.add`의 재귀 정의에 의해 두 번째 인자가 0이면 `n + 0`이 정의상 `n`으로 환원되므로, 반사성 증명 `rfl`로 명제를 증명한다.",
+              "kind": "theorem",
+              "lean_code": "theorem nat_add_zero (n : Nat) : n + 0 = n := by\n  rfl",
+              "statement": "모든 `n : Nat`에 대해 `n + 0 = n`이다.",
+              "summary": "Lean 4 core만 사용해 자연수 덧셈의 오른쪽 영원 법칙을 정의상 등식으로 증명했다.",
+              "title": "자연수 덧셈의 오른쪽 영원 법칙"
+            }
+          ],
+          "outcome": "submitted",
+          "questions": [],
+          "relations": [],
+          "remaining_work": [
+            "제출된 소스의 실제 Lean 실행기 검사 결과를 확인해야 한다.",
+            "형식 명제와 자연어 해설의 독립 동일성 검토 및 목표 감사를 수행해야 한다."
+          ],
+          "report": "범위: 제공된 작업 계약에 따라 Lean 4 core의 단일 정리만 구성했다. 근거: `Nat`과 덧셈의 core 정의에 따른 정의상 환원이다. 외부 문헌과 Mathlib는 사용하지 않았다. 증명은 `nat_add_zero (n : Nat) : n + 0 = n`이며 본문은 `rfl`이다. 이는 실행기 검사 전의 제출 결과이며, 검사 통과를 선취하지 않는다.",
+          "summary": "Lean 4 core에서 모든 자연수 `n`에 대한 `n + 0 = n`의 형식 증명과 충실한 짧은 해설을 제출했다.",
+          "used_sources": [
+            "TK-01M2F114R1CXW7ZA4SF6EMV8X0",
+            "EX-01M2F10N7CVXVXS9MPK027AV5E",
+            "EX-01M2F115F5TT6PG0075QTDEAQ1",
+            "EX-01M2F11KGD5MSN2HJR6AEBV57P"
+          ]
+        }
+      ],
+      "reuse": [],
+      "reviews": [
+        {
+          "decision": "approved",
+          "execution_id": "EX-01M2F115F5TT6PG0075QTDEAQ1",
+          "findings": [
+            "질문과 범위가 명확하다: Lean 4 core에서 Nat의 `n + 0 = n`을 증명하는 단일 형식 작업이며 Mathlib·외부 문헌·추가 정리는 제외된다.",
+            "입력이 충분하다: 목표, 범위 제한, 실행기 검사·독립 검토·목표 감사의 후속 절차가 제공되어 있다.",
+            "기대 산출과 완료 기준이 판정 가능하다: 검사 통과 Lean 소스, 형식 결과에 충실한 짧은 해설, 정확한 선언명 기록이 요구된다.",
+            "권한·프로필·생성 근거에 충돌이나 미해결 질문이 없다. 실행기 검사를 실제로 통과했다는 주장은 아직 요구되지 않으며 후속 연구 작업과 검사에서 확인할 사항이다."
+          ],
+          "questions": [],
+          "revision": 1,
+          "summary": "작업 계약은 배정 전에 판정 가능한 연구 의무로 충분히 정의되어 있으므로 승인한다. validity basis: 제공된 목표, task 계약의 question/scope/inputs/completion_criteria, 그리고 이전 후보 준비 결과의 범위 판단.",
+          "used_sources": [
+            "TK-01M2F114R1CXW7ZA4SF6EMV8X0",
+            "EX-01M2F10N7CVXVXS9MPK027AV5E"
+          ]
+        }
+      ],
+      "revises_task_id": null,
+      "revision": 1,
+      "scope": "새로운 단일 형식 연구 작업으로, Lean 4 core의 Nat 덧셈 정의와 귀납법만 사용해 모든 자연수 n에 대한 `n + 0 = n`을 증명하고 해설한다. Mathlib, 외부 문헌, 추가 조사 및 다른 정리로 범위를 확장하지 않는다.",
+      "selected_by": "EX-01M2F11KGD5MSN2HJR6AEBV57P",
+      "status": "completed",
+      "title": "Lean 4 core에서 자연수 덧셈의 오른쪽 영원 증명",
+      "work_class": "formal"
+    }
+  },
+  "updated_at": "2026-09-14T04:00:06.673555+00:00"
+}

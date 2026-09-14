@@ -1,0 +1,12 @@
+{
+  "decision": "match",
+  "findings": [],
+  "questions": [],
+  "scope_complete": true,
+  "summary": "제안의 형식 명제, 자연어 설명, 요약, 가정 및 Lean 소스가 서로 일치한다. `nat_add_zero`는 모든 `n : Nat`에 대해 `n + 0 = n`을 주장하고, `rfl`로 정의상 등식을 증명한다. Lean 검사는 verified이며 공리 의존성도 없다.",
+  "used_sources": [
+    "KN-01M2F12KGB2MNHDX920773E6KS",
+    "runtime/artifacts/BA-01M2F12PFRZQ4XB4E8N26PPXX3/formal.json",
+    "EX-01M2F12M9EX12VTNHRTJ4F2WJW/proposal.lean"
+  ]
+}

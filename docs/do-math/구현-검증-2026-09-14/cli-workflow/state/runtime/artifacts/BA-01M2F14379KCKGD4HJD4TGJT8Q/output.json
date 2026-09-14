@@ -1,0 +1,38 @@
+{
+  "deferred": [],
+  "goal_audit": true,
+  "preparation_requests": [],
+  "questions": [],
+  "selections": [],
+  "summary": "연구 결과와 후속 동일성 검토에서 Lean 4 core의 `nat_add_zero` 형식 증명, 짧은 충실한 해설, 선언명이 확인되었고 Mathlib·외부 문헌 의존성도 없다. 모든 완료 기준이 충족되었으므로 과제를 완료로 판정하며, 수학적 목표 감사로 최종 대조를 요청한다.",
+  "task_assessments": [
+    {
+      "criteria_results": [
+        {
+          "criterion": "Lean 4 core 소스가 `n + 0 = n`을 모든 `n : Nat`에 대해 증명하고 실행기의 검사를 통과한다.",
+          "evidence": "연구 결과는 `theorem nat_add_zero (n : Nat) : n + 0 = n := by rfl`을 제출했고, 후속 동일성 검토 기록은 제출된 Lean 검사가 verified라고 확인한다.",
+          "satisfied": true
+        },
+        {
+          "criterion": "자연어 해설이 검사된 형식 명제와 증명 방법에 충실하며, Mathlib·외부 문헌을 사용하지 않는다.",
+          "evidence": "해설은 `Nat.add`의 정의에 따라 `n + 0`이 `n`으로 환원되어 `rfl`로 증명된다고 설명하며, 연구 보고는 Mathlib와 외부 문헌을 사용하지 않았다고 명시한다. 동일성 검토도 형식 명제와 해설의 일치를 승인했다.",
+          "satisfied": true
+        },
+        {
+          "criterion": "형식 명제와 증명의 정확한 Lean 선언명이 연구 결과에 기록된다.",
+          "evidence": "연구 결과의 `declaration_names`에 정확한 선언명 `nat_add_zero`가 기록되어 있다.",
+          "satisfied": true
+        }
+      ],
+      "decision": "completed",
+      "reason": "세 완료 기준이 연구 결과, 검증된 지식 및 후속 독립 동일성 검토로 충족되었다.",
+      "task_id": "TK-01M2F114R1CXW7ZA4SF6EMV8X0"
+    }
+  ],
+  "used_sources": [
+    "TK-01M2F114R1CXW7ZA4SF6EMV8X0",
+    "EX-01M2F11ZG6C0PXA2S46739B2EV",
+    "EX-01M2F133DRV9KXZH93HBPF1C30",
+    "KN-01M2F12KGB2MNHDX920773E6KS"
+  ]
+}

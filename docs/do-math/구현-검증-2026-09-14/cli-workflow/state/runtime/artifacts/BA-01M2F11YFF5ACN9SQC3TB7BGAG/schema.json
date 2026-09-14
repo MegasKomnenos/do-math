@@ -1,0 +1,120 @@
+{
+  "$id": "https://do-math.invalid/schemas/cli/1/role-response",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "deferred": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "type": "string"
+          },
+          "task_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "task_id",
+          "reason"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "goal_audit": {
+      "type": "boolean"
+    },
+    "preparation_requests": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "questions": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "selections": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "summary": {
+      "type": "string"
+    },
+    "task_assessments": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "criteria_results": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "criterion": {
+                  "type": "string"
+                },
+                "evidence": {
+                  "type": "string"
+                },
+                "satisfied": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "criterion",
+                "satisfied",
+                "evidence"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "decision": {
+            "enum": [
+              "completed",
+              "incomplete",
+              "closed"
+            ],
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "task_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "task_id",
+          "decision",
+          "reason",
+          "criteria_results"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "used_sources": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "summary",
+    "used_sources",
+    "questions",
+    "selections",
+    "deferred",
+    "preparation_requests",
+    "goal_audit",
+    "task_assessments"
+  ],
+  "type": "object",
+  "x-contract-id": "do-math-cli/1"
+}
