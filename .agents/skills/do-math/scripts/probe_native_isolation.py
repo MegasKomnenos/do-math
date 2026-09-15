@@ -293,7 +293,7 @@ def scenario(root: Path, runner: Path, codex: Path, name: str, deny: bool, durat
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--repository", type=Path, default=Path(__file__).resolve().parents[4])
+    parser.add_argument("--repository", type=Path, default=Path.cwd(), help="Base directory for probe evidence")
     parser.add_argument("--codex", type=Path, default=shutil.which("codex"))
     parser.add_argument("--output-dir", type=Path, help="New evidence directory; must not exist")
     parser.add_argument("--duration-seconds", type=int, default=15, help="Concurrent A observation duration (5-30)")

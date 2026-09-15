@@ -11,7 +11,9 @@ def discover_lean() -> list[str] | None:
     """Discover an already-installed Lean; never downloads or changes PATH."""
     found=shutil.which('lean')
     if found: return [found]
-    portable=Path(__file__).resolve().parents[5]/'.skill-workspace/do-math-toolchains/lean-4.32.0/lean-4.32.0-windows/bin/lean.exe'
+    parents=Path(__file__).resolve().parents
+    if len(parents) <= 5: return None
+    portable=parents[5]/'.skill-workspace/do-math-toolchains/lean-4.32.0/lean-4.32.0-windows/bin/lean.exe'
     return [str(portable)] if portable.is_file() else None
 def _ident(x: str) -> bool:
     return isinstance(x,str) and x and all(part and part.replace('_','a').isalnum() and part[0].isalpha() for part in x.split('.'))

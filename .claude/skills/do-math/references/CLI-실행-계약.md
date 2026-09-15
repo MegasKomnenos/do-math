@@ -2,7 +2,7 @@
 
 이 문서는 `do-math-cli/1`, 기능 판본 2의 구체 인터페이스 참조다. 명령행 인자, 구조화 제어, 현재 저장 형식, CLI 상태 투영, AI 입력·출력과 산출 경로를 설명한다. do-math의 목적과 전체 연구 흐름은 `SKILL.md`, 보편 개념의 정의는 `GLOSSARY.md`, 역할별 판단·산출·실패 행동은 `계약/` 문서가 소유한다.
 
-이 계약은 통합 설계의 기능 목적을 현재 CLI에 연결하지만 `do-math-draft/*/9`의 wire 형식을 그대로 구현한다고 주장하지 않는다. 현재 구현이 목적을 다른 수단으로 달성한 경우 그 수단과 보증 범위를 적고, 목적 자체가 충족되지 않은 경우에는 실제 미완료로 적는다.
+아래에서는 공통 개념과 역할 의무를 구현하는 필드와 절차, 실제 보증 범위와 미완료 기능을 설명한다.
 
 ## 호출과 공통 반환
 
@@ -12,7 +12,7 @@
 python .agents/skills/do-math/scripts/do_math.py <command> [options]
 ```
 
-수기 편집 정본은 `.claude/skills/do-math/`이고 `.agents/skills/do-math/`는 실행용 생성 사본이다. 운영 명령은 동기화된 `.agents` 사본을 사용한다. 두 트리가 같은 판본인지 확인하지 않은 상태에서 한쪽 문서와 다른 쪽 코드를 섞지 않는다.
+명령 예시는 스킬을 `.agents/skills/do-math/`에 설치한 경우다. 다른 위치에 설치했다면 명령의 이 경로를 실제 스킬 폴더 경로로 바꾼다. 운영할 때는 같은 설치본의 문서와 코드를 함께 사용한다. 별도 위치의 사본을 함께 참고한다면 두 사본의 판본이 같은지 먼저 확인한다.
 
 `profile`을 제외한 모든 명령은 `--repository`와 `--instance`를 요구한다. `init`은 새 인스턴스를 만들므로 `--instance` 대신 목표와 `--workspace`를 받는다. JSON을 입력받는 제어 명령은 UTF-8 JSON 객체 하나를 담은 `--file`을 사용한다. 중복 JSON 키, 배열이나 scalar 최상위 값, 읽기·디코딩 실패는 입력 오류다.
 
@@ -47,7 +47,7 @@ runtime/state.json
 runtime/artifacts/<bundle_id>/...
 ```
 
-`research/instance.json`은 goal·policy·config, 지식·관계·source, grant·결정·신뢰 환경과 목표 판정을 한 객체에 보존한다. `runtime/state.json`은 CLI 운전 상태, 과제·활동·실행, queue, 질문·이력·체크포인트·외부 operation과 학술 후속을 한 객체에 보존한다. 이는 통합 설계 7절의 세분된 디렉터리별 wire 형식을 구현한 것이 아니다. 연구 정본과 실행 원장의 의미 구별은 유지하지만 현재 CLI의 두 JSON 내부 필드로 투영한다.
+`research/instance.json`은 goal·policy·config, 지식·관계·source, grant·결정·신뢰 환경과 목표 판정을 한 객체에 보존한다. `runtime/state.json`은 CLI 운전 상태, 과제·활동·실행, queue, 질문·이력·체크포인트·외부 operation과 학술 후속을 한 객체에 보존한다. GLOSSARY.md의 연구 정본과 실행 원장에 해당하는 내용을 각각 이 두 JSON의 내부 필드로 보존한다.
 
 artifact는 기존 경로를 수정하지 않고 새 bundle에 추가한다. 대표 경로는 다음과 같다.
 
@@ -341,7 +341,7 @@ source --file PATH [--name FILE_NAME]
 }
 ```
 
-`family`는 현재 CLI에서 `knowledge` 또는 `relation`이다. `token`은 소문자로 시작하는 영문 소문자·숫자·underscore 문자열이고 기존 token과 중복될 수 없다. 수학 주장 종류는 `requires_formal_results`와 `requires_assessments`가 자동으로 참이 된다. 이 `knowledge` family는 현재 CLI 레지스트리의 구현 이름이며 통합 설계의 F 기록 가족을 새로 정의하지 않는다.
+`family`는 현재 CLI에서 `knowledge` 또는 `relation`이다. `token`은 소문자로 시작하는 영문 소문자·숫자·underscore 문자열이고 기존 token과 중복될 수 없다. 수학 주장 종류는 `requires_formal_results`와 `requires_assessments`가 자동으로 참이 된다. 이 `knowledge` family는 현재 CLI 레지스트리의 구현 이름이며 GLOSSARY.md의 F 객체 의미를 새로 정의하지 않는다.
 
 #### 관계 수입
 
@@ -529,7 +529,7 @@ export --destination PATH [--snapshot OID] [--all]
 
 `selections`에는 현재 ready 과제의 정확한 ID만 실행 순서대로 두고, `deferred`에는 선택하지 않은 ready 과제의 ID와 이유를 둔다. `preparation_requests`는 후보 준비가 처리할 정련·탐색을, `goal_audit`는 현재 근거로 목표 감사를 열지를 표현한다. `task_assessments`는 이미 결과를 반환한 assessing·waiting 과제에만 사용한다. 각 완료 판정은 계약의 completion criterion 원문을 정확히 한 번 복사해 충족 여부와 실제 evidence를 연결한다. 수행 전 과제를 판정하거나 ready 과제를 assessment에 넣지 않는다.
 
-수신자는 ready 모집단의 모든 ID가 selections와 deferred 중 정확히 한 번 있는지 검사한다. 현재 기본 schema에는 통합 설계의 `not_assessable`을 별도 후보 처분으로 표현하는 필드가 없다. 판단할 수 없는 후보를 일반 보류와 같은 의미로 숨기지 않고 `deferred.reason`, `questions`와 준비 요청에 실제 원인을 보존해야 하며, 보편 처분을 충실히 구조화하는 필드는 미완료다.
+수신자는 ready 모집단의 모든 ID가 selections와 deferred 중 정확히 한 번 있는지 검사한다. 현재 기본 schema에는 판단 불가를 별도 후보 처분으로 표현하는 필드가 없다. 판단할 수 없는 후보를 일반 보류와 같은 의미로 숨기지 않고 `deferred.reason`, `questions`와 준비 요청에 실제 원인을 보존해야 하며, 보편 처분을 충실히 구조화하는 필드는 미완료다.
 
 ### 연구 수행 `research_work`와 과제 기반 `supplemental_research`
 
@@ -688,13 +688,13 @@ Lean source가 있는 knowledge candidate는 중앙 `formal_check` action으로 
 - 중앙 Lean·공리 검사, 현재 동일성 이의 왕복, 독립 목표 감사와 학술 요구·외부 효과 영수증을 연결한다.
 - checkpoint·부분 파일·실패와 external unknown을 보존해 새 실행의 복구 근거로 연결한다.
 
-통합 설계와 현재 CLI의 표현 차이는 각각 다음처럼 해석한다.
+GLOSSARY.md의 공통 개념과 현재 CLI의 표현 차이는 각각 다음처럼 해석한다.
 
-- 연구 정본·실행 원장의 세분된 v9 wire 대신 두 JSON 루트를 쓴다. 이 저장 수단의 차이 자체는 기능 목적의 누락이 아니다. 현재 필드와 후속 검사가 보존하는 의미를 기준으로 판단하며, v9 schema 가족과 전이 벡터의 wire 호환성은 제공하지 않는다.
+- 연구 정본·실행 원장은 각각 두 JSON 루트의 내부 필드로 보존한다. 기록의 의미와 현재성을 판단할 때는 필드 내용과 후속 검사를 함께 확인한다. 지원하는 저장 형식은 이 문서의 `do-math-cli/1` 형식이며, 다른 계약 판본의 기록을 그대로 수입할 수 있다고 가정하지 않는다.
 - 활동 상태는 `active/finished/unresolved`, 실행 상태는 `starting/running/ended`로 압축한다. queue action, stop request, 실행 outcome과 활동 result를 함께 읽어 보편 상태의 의미를 복원한다. 상태 문자열 하나만으로 생략된 전이를 추측하지 않는다.
 - 연구 계획 후보 처분에는 `not_assessable` 전용 필드가 없다. 현재는 판정 불가 원인을 deferred reason·questions·준비 요청에 보존한다. 이 표현이 판정 불가와 전략적 보류를 기계적으로 구별하지 못하는 영향은 남는다.
 - 동일성 검토는 독립 범위 계획 대신 전면 검토 고정 배정을 쓴다. 세 기본 관점을 역할 계약으로 요구하지만 전문 분야의 독립 자리 자동 선정은 없고, 동적 범위 계획과의 검토 강도 동등성은 미평가다.
-- 작업 계약 검토의 현재 주 JSON은 판정과 findings에 항목별 판단을 서술한다. 정확한 계약·goal·policy basis는 실행기가 결합하지만, 통합 설계의 항목별 `validity_basis`를 별도 구조 필드로 표현하지 않는다. 의미 전건이 실제 findings에 보존되는지는 역할 결과와 검증에서 확인해야 한다.
+- 작업 계약 검토의 현재 주 JSON은 판정과 findings에 항목별 판단을 서술한다. 정확한 계약·goal·policy basis는 실행기가 결합하지만, 항목별 승인 유효성의 근거를 별도 구조 필드로 표현하지 않는다. 의미 전건이 실제 findings에 보존되는지는 역할 결과와 검증에서 확인해야 한다.
 
 현재 기본 Windows 실행은 `danger-full-access`와 승인 정책 `never`로 기존 사용자 권한을 사용한다. Windows Job은 로컬 프로세스 수명과 자손 종료를 관리한다. 이 조합은 모든 host 파일·network·credential 접근을 차단하는 격리가 아니다. 역할 경계는 고정 문서·선별 입력, 별도 session·workspace, 순차 배정과 같은 단계 동료 결과 비제공으로 운전하며 통계적 독립성이나 강한 OS 읽기 격리를 보증하지 않는다.
 
@@ -702,12 +702,8 @@ Lean source가 있는 knowledge candidate는 중앙 `formal_check` action으로 
 
 ## 검증 근거의 해석
 
-검증 증거는 실행 당시 source와 사례 범위에 결박해 읽는다.
+검증 증거는 실행 당시 코드·문서 판본과 사례 범위에 결박해 읽는다. 실행 명령과 입력, 실제 출력, 통과·실패·미실행 범위, 사용한 도구와 모델·신뢰 환경의 판본을 함께 보존한다. 과거 검증 기록이 현재 설치본의 검증을 대신하지 않는다.
 
-- `docs/do-math/구현-검증-2026-09-14/cli-workflow/`는 초기 CLI 판본의 실제 AI·Lean 흐름을 보존한다.
-- `docs/do-math/구현-검증-2026-09-14/feature2/workflow/`는 실제 CLI 18회와 Lean 1회의 목표·학술 후속 사례를 보존한다.
-- `feature2/semantic/`은 이의 왕복과 양화 순서 오류의 의미 반례를 구별한다.
-- `feature2/trust/`, `feature2/observation/`, `feature2/cli-profile/`은 각각 신뢰 전환, 관찰·정지와 실행 프로필의 확인 범위를 보존한다.
-- `feature2/regression/`은 해당 동결 source의 자동 검사 결과다.
+스킬의 `scripts/tests/`는 회귀 검사를, `scripts/probe_codex.py`는 설치 문서·역할 스키마 검사와 실제 CLI 실행 검사를 제공한다. 설치 구조 검사 `--skill-only`와 모델을 호출하는 실제 검사는 보증 범위가 다르다. 실제 실행·중단·도구 호출은 해당 실행 증거에서, 수학적 결과는 형식 검사·동일성 판정·목표 감사에서 확인한다.
 
 한 작은 수학 사례와 합성 fixture의 통과를 일반 연구 성능이나 수학 판단의 무오류성으로 확대하지 않는다. 현재 source를 검증하려면 안정된 사본에서 관련 테스트를 실행하고, 실제 Codex·Lean·HTTP·Windows 프로세스가 필요한 검사는 model-double 단위 검사와 구별한다.

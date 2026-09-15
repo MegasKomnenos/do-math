@@ -287,4 +287,14 @@ python .agents/skills/do-math/scripts/do_math.py resume `
 
 작업·운영 예산은 현재 CLI의 AI 실행 시도 수로 계산한다. Codex CLI가 보고한 turn usage는 보존하지만 공급자 내부 호출별 ID·예약·원격 종료를 보증하지 않는다. 현재 기본 Windows 실행은 `danger-full-access`와 승인 정책 `never`로 기존 사용자 권한을 쓴다. Windows Job은 로컬 프로세스 수명과 자손 종료를 관리하지만 모든 host 파일·network·credential 접근을 차단하지 않는다. 별도 세션·작업 공간, 순차 배정과 동료 결과 비제공은 입력 경계를 만들지만 통계적 독립성이나 강한 OS 격리의 증거가 아니다.
 
-검증 증거는 판본과 사례 범위에 맞게 읽는다. 통합 설계 기능별 현재 대응은 [기능 완료 대응](../../../docs/do-math/기능-완료-대응.md), 구현 재개 좌표는 [구현 진행](../../../docs/do-math/구현-진행.md), 보존된 실제 실행·Lean·회귀 증거는 `docs/do-math/구현-검증-2026-09-14/` 아래에 있다.
+## 설치본 검사
+
+스킬 폴더 전체를 설치한 뒤 다음 명령으로 역할별 필수 문서와 출력 스키마를 확인한다. 경로는 실제 설치 위치에 맞춘다.
+
+```powershell
+python .agents/skills/do-math/scripts/probe_codex.py --skill-only
+```
+
+이 검사는 스킬 폴더 안의 문서와 코드만 읽으며 모델을 호출하지 않는다. `scope="installed_skill_structure"`, `status="verified"`는 역할 읽기 대응표의 문서와 운영 문서를 읽었고 역할 출력 스키마의 형식 검사를 통과했다는 뜻이다. 문서 내용의 정확성, 실행 환경이나 연구 성능까지 검증한 결과는 아니다. `--spec-only`는 같은 검사의 호환 별칭이다.
+
+현재 코드의 회귀 검사는 `scripts/tests/test_*.py`를 각 파일 직접 실행으로 수행한다. 실제 Codex·Lean·HTTP·Windows 프로세스가 필요한 검사는 각 시험의 환경 조건과 실행 결과를 확인한다. 검증 결과는 검사한 판본, 사례, 통과·실패·미실행 범위와 함께 보존하고, 해석 기준은 [CLI 실행 계약](references/CLI-실행-계약.md)의 「검증 근거의 해석」을 따른다.
