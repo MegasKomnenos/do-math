@@ -17,6 +17,9 @@ __pycache__/
 .playwright-mcp/
 .skill-workspace/
 
+# 세션별 작문 실행 상태와 독해 원문. 검증 사례는 별도로 선별해 보존한다.
+/.codex/writing-flow/
+
 # 일반적인 빌드 산출물.
 /build/
 

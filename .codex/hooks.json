@@ -1,0 +1,17 @@
+{
+  "description": "등록된 작문 작업의 독해와 합의 대조를 종료 시 확인한다.",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$(git rev-parse --show-toplevel)/.agents/skills/write-for-reader/scripts/writing_flow.py\" stop",
+            "commandWindows": "powershell.exe -NoProfile -NonInteractive -Command \"& python (Join-Path (git rev-parse --show-toplevel) '.agents/skills/write-for-reader/scripts/writing_flow.py') stop\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
