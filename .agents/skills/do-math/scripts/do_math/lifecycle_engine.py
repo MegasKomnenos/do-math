@@ -373,7 +373,9 @@ class LifecycleEngineMixin:
         self._check_conversations()
         self._invalidate_goal_currentness()
         for task_id, task in self.runtime['tasks'].items():
-            if task.get('status') not in _SCHEDULABLE: continue
+            if task.get('status') not in _SCHEDULABLE:
+                self.runtime['task_readiness'].pop(task_id, None)
+                continue
             required = {'revision': task['revision'], 'contract_sha256': contract_hash(task),
                         'goal_revision': self.instance['goal_revision'], 'policy_revision': self.instance['policy_revision']}
             approved = any(review.get('decision') == 'approved' and review.get('inputs_current', True) and all(review.get(key) == value for key, value in required.items())

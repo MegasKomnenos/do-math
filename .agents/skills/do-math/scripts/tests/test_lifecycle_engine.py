@@ -186,6 +186,17 @@ class LifecycleTests(unittest.TestCase):
         plan = next(a for a in engine.runtime['queue'] if a['role'] == 'research_plan')
         self.assertTrue(plan['event_refs'])
 
+    def test_completed_task_does_not_retain_ready_projection(self):
+        engine = self.engine
+        engine.task()
+        engine._refresh_readiness()
+        self.assertEqual(engine.runtime['task_readiness']['T1']['state'], 'ready')
+
+        engine.runtime['tasks']['T1']['status'] = 'completed'
+        engine._refresh_readiness()
+
+        self.assertNotIn('T1', engine.runtime['task_readiness'])
+
     def test_paused_events_survive_and_opened_at_sets_the_next_tick(self):
         engine = self.engine
         engine.runtime['status'] = 'paused'
