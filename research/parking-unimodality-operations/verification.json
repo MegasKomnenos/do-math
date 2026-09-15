@@ -1,0 +1,55 @@
+{
+  "operator_action": "\"C:\\math\\research\\parking-unimodality-operations\\supervisor.py\" check",
+  "next_run": "2026-09-16T02:29:29+09:00",
+  "probe_task_exit": 0,
+  "scope": "Scheduled manual invocation and registration; future timer firing and mathematical recovery are not yet observed",
+  "probe_report": {
+    "summary": "Probe completed without changing research state, configuration, code, or scheduled tasks. Scholarly MCP is available; list_sources returned status=ok with 49 sources, including arXiv, zbMATH, Crossref, and Semantic Scholar. The paused state follows two research_plan validation failures caused by a mismatch involving completed tasks still marked task_readiness=ready. No mathematical solution or counterexample exists yet.",
+    "observed_status": "paused at snapshot 719fd45e7e6412899a92e52e6563e3e4c806bb99; goal_status=unresolved; active_execution=null; pending_actions=3; pending_controls=0; HOLD absent. Engine task is Ready with LastTaskResult=0.",
+    "actions": [
+      "Re-read current do-math status and exact runtime records.",
+      "Inspected both failed research_plan executions and their preserved outputs.",
+      "Checked both scheduled tasks and HOLD state.",
+      "Confirmed scholarly MCP tools and called list_sources only.",
+      "Saved and validated a probe evidence report; no operational or research mutation was made."
+    ],
+    "evidence_paths": [
+      "C:\\math\\.skill-workspace\\parking-unimodality-20260915\\operator\\check\\20260915T152147Z-7e76e286\\probe-observation.json",
+      "C:\\math\\.skill-workspace\\parking-unimodality-20260915\\operator\\check\\20260915T152147Z-7e76e286\\before.json",
+      "runtime/state.json@719fd45e7e6412899a92e52e6563e3e4c806bb99",
+      "runtime/artifacts/BA-01M2JSW7VHTBMZP1KVBBVCAZF9/result.json@719fd45e7e6412899a92e52e6563e3e4c806bb99",
+      "runtime/artifacts/BA-01M2JSX94AMYY1Q3HSSW30MSE4/result.json@719fd45e7e6412899a92e52e6563e3e4c806bb99"
+    ],
+    "user_questions": [],
+    "next_step": "On the next non-probe call, recheck status and HOLD, run check, reproduce the completed-task/ready-universe mismatch, compare producer input with receiver validation, repair and test the scoped implementation, then resume. Separately use describe_source before scholarly search/extract/fetch and source any required public evidence into the instance."
+  },
+  "probe_run": "C:\\math\\.skill-workspace\\parking-unimodality-20260915\\operator\\check\\20260915T152147Z-7e76e286",
+  "unit_tests": {
+    "command": "python research/parking-unimodality-operations/test_operator.py",
+    "passed": 4
+  },
+  "duplicate_trigger_run_count": 1,
+  "observed_probe_process_chain": {
+    "operator_pid": 52872,
+    "parent_pid": 1848,
+    "parent_name": "svchost"
+  },
+  "engine_guard_task_exit": 0,
+  "repeat_duration": null,
+  "research_snapshot_preserved": true,
+  "repeat_interval": "PT2H",
+  "checked_at": "2026-09-16T00:30:22.5000043+09:00",
+  "probe_outcome": "completed",
+  "multiple_instances": "IgnoreNew",
+  "logon_type": "Interactive",
+  "first_general_run": {
+    "started_at": "2026-09-16T00:31:28.886835+09:00",
+    "mode": "check",
+    "probe": false,
+    "run_directory": "C:\\math\\.skill-workspace\\parking-unimodality-20260915\\operator\\check\\20260915T153128Z-300871ae",
+    "outcome": "running",
+    "pid": 50912,
+    "parent_pid": 1848
+  },
+  "scholarly_transport": "stdio"
+}
