@@ -155,27 +155,64 @@ class WindowsJobTests(unittest.TestCase):
 
     def test_owner_process_loss_closes_job_and_ends_root(self) -> None:
         root_pid_file = self.path / "root-pid"
-        survived_marker = self.path / "root-survived"
+        started_marker = self.path / "root-started"
         module_root = str(SCRIPTS)
         root_code = (
-            "import time; "
-            "time.sleep(1); "
-            f"open({str(survived_marker)!r}, 'w').write('alive')"
+            "import time; from pathlib import Path; "
+            f"Path({str(started_marker)!r}).write_text('running'); "
+            "time.sleep(60)"
         )
         owner_code = (
-            "import os, sys; "
+            "import os, sys; from pathlib import Path; "
             f"sys.path.insert(0, {module_root!r}); "
             "from do_math.windows_job import WindowsJob; "
             f"job=WindowsJob([sys.executable, '-c', {root_code!r}]); "
             "job.resume(); "
-            f"open({str(root_pid_file)!r}, 'w').write(str(job.pid)); "
-            "os._exit(0)"
+            f"Path({str(root_pid_file)!r}).write_text(str(job.pid)); "
+            "sys.stdin.buffer.read(1); os._exit(0)"
         )
-        owner = subprocess.Popen([sys.executable, "-c", owner_code])
-        self.assertEqual(owner.wait(timeout=10), 0)
-        self.wait_for(root_pid_file.exists)
-        time.sleep(1.5)
-        self.assertFalse(survived_marker.exists(), "root outlived the process that owned its Job handle")
+        kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel.OpenProcess.argtypes = [ctypes.c_uint32, ctypes.c_int, ctypes.c_uint32]
+        kernel.OpenProcess.restype = ctypes.c_void_p
+        kernel.WaitForSingleObject.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+        kernel.WaitForSingleObject.restype = ctypes.c_uint32
+        kernel.TerminateProcess.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+        kernel.TerminateProcess.restype = ctypes.c_int
+        kernel.CloseHandle.argtypes = [ctypes.c_void_p]
+        kernel.CloseHandle.restype = ctypes.c_int
+        owner = subprocess.Popen(
+            [sys.executable, "-c", owner_code], stdin=subprocess.PIPE,
+            creationflags=subprocess.CREATE_NO_WINDOW,
+        )
+        root_handle = None
+        try:
+            self.wait_for(lambda: root_pid_file.exists() and bool(root_pid_file.read_text()))
+            # Hold only the process handle; retaining a Job handle would prevent
+            # the owner-loss condition from closing the last Job handle.
+            root_handle = kernel.OpenProcess(0x00100001, False, int(root_pid_file.read_text()))
+            self.assertTrue(root_handle, f"OpenProcess failed: {ctypes.get_last_error()}")
+            self.wait_for(started_marker.exists)
+            self.assertIsNone(owner.poll())
+            self.assertEqual(kernel.WaitForSingleObject(root_handle, 0), 258)
+            owner.stdin.write(b"x")
+            owner.stdin.flush()
+            self.assertEqual(owner.wait(timeout=10), 0)
+            self.assertEqual(
+                kernel.WaitForSingleObject(root_handle, 5000), 0,
+                "the running root did not terminate after its Job owner exited",
+            )
+        finally:
+            if owner.poll() is None:
+                owner.kill()
+                owner.wait(timeout=10)
+            owner.stdin.close()
+            if root_handle:
+                try:
+                    if kernel.WaitForSingleObject(root_handle, 0) == 258:
+                        kernel.TerminateProcess(root_handle, 1)
+                        kernel.WaitForSingleObject(root_handle, 5000)
+                finally:
+                    kernel.CloseHandle(root_handle)
 
     def test_job_handle_is_not_inheritable_and_breakaway_is_disabled(self) -> None:
         with WindowsJob([sys.executable, "-c", "import time; time.sleep(30)"]) as job:

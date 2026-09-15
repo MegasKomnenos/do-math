@@ -46,6 +46,9 @@ class FakeEngine(LifecycleEngineMixin):
         self._enqueue('identity_review', knowledge_id, review_cycle_id=cycle_id, stage='initial', slot='initial-0', round=1)
         return cycle_id
 
+    def _controls(self):
+        pass
+
     def _save(self, artifacts=None):
         self.saves.append({'instance': deepcopy(self.instance), 'runtime': deepcopy(self.runtime), 'artifacts': artifacts})
         self.head = f'snapshot-{len(self.saves)+1}'
@@ -103,6 +106,33 @@ class LifecycleTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.engine = FakeEngine(self.temp.name)
+
+    def test_trust_check_pause_preserves_target_until_explicit_resume(self):
+        engine = self.engine
+        old_environment = engine.environment('old', active=True)
+        new_environment = engine.environment('new')
+        engine.knowledge('K1', old_environment)
+        engine.control('trust', {'operation': 'transition', 'env_id': new_environment})
+        transition_id = next(iter(engine.runtime['trust_transitions']))
+        def pause_during_check(arguments):
+            engine.runtime['status'] = 'paused'
+            self.assertTrue(arguments['should_stop']())
+            return {'status': 'stopped', 'reason': 'user pause'}
+        engine.formal_behavior = pause_during_check
+        engine.machine('trust_check')
+        stopped_id = next(iter(engine.runtime['executions']))
+        self.assertEqual(engine.runtime['executions'][stopped_id]['status'], 'ended')
+        self.assertEqual(engine.runtime['executions'][stopped_id]['outcome'], 'stopped')
+        self.assertEqual(engine.runtime['status'], 'paused')
+        self.assertEqual(engine.instance['active_trust_environment'], old_environment)
+        self.assertNotIn('K1', engine.runtime['trust_transitions'][transition_id]['results'])
+        self.assertTrue(any(a['role'] == 'trust_check' and a['target'] == 'K1' for a in engine.runtime['queue']))
+        engine.formal_behavior = None
+        engine.runtime['status'] = 'ready'  # Explicit resume, as performed by the host executor.
+        engine.machine('trust_check')
+        self.assertEqual(len(engine.runtime['executions']), 2)
+        self.assertEqual(engine.runtime['executions'][stopped_id]['outcome'], 'stopped')
+        self.assertEqual(engine.instance['active_trust_environment'], new_environment)
 
     def test_upgrade_is_idempotent_and_does_not_invent_toolchain(self):
         engine = self.engine

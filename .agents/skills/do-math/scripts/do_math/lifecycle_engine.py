@@ -509,6 +509,11 @@ class LifecycleEngineMixin:
             self._run_external_action(action)
         elif role == 'trust_check':
             self._run_trust_check(action)
+            if (self.runtime.get('status') == 'paused' and
+                    action['target'] not in self.runtime['trust_transitions'][action['transition_id']]['results']):
+                # Keep the unfinished target for an explicit resume, without repeating completed targets.
+                self._save()
+                return True
         else:
             self._finish_trust_transition(action['transition_id'])
         self.runtime['queue'][:] = [queued for queued in self.runtime['queue'] if queued != action]
@@ -592,13 +597,32 @@ class LifecycleEngineMixin:
         toolchain = environment['toolchain']
         command = toolchain.get('lean_command') or toolchain.get('configured_command') or ([toolchain['executable']] if toolchain.get('executable') else None)
         check = validate_basis([target['basis']], self.instance, self.runtime)
+        stop_requested = False
+        def should_stop():
+            nonlocal stop_requested
+            self._controls()
+            if self._check_conversations(): self._save()
+            stop_requested = stop_requested or bool(
+                self.runtime.get('status') in {'paused', 'closed'} or self.runtime.get('stop_requested') or
+                self.runtime['executions'][execution_id].get('stop_requested'))
+            return stop_requested
         try:
             if not check['valid']: raise ValueError('trust transition basis changed: ' + ', '.join(check['reasons']))
             if environment.get('status') == 'invalid': raise ValueError('trust transition environment was invalidated')
             if not command: raise ValueError('trust environment has no executable command')
-            result = self.formal_verifier(source=item['lean_code'], declarations=item['declaration_names'], workspace=workspace,
+            import inspect
+            arguments = dict(source=item['lean_code'], declarations=item['declaration_names'], workspace=workspace,
                 lean_command=command, timeout_seconds=self.instance['config'].get('lean_timeout_seconds', 120),
                 allowed_axioms=tuple(environment['allowed_axioms']))
+            parameters = inspect.signature(self.formal_verifier).parameters
+            if 'should_stop' in parameters or any(p.kind == inspect.Parameter.VAR_KEYWORD for p in parameters.values()):
+                arguments['should_stop'] = should_stop
+            if should_stop():
+                result = {'status': 'stopped', 'reason': 'stopped before trust verification'}
+            else:
+                result = self.formal_verifier(**arguments)
+            if should_stop():
+                result = {**result, 'status': 'stopped', 'reason': 'trust verification stopped by control request'}
             if result.get('status') == 'verified' and (result.get('source_sha256') != target['source_sha256'] or
                     not _toolchain_matches(toolchain, result.get('toolchain'))):
                 result = {**result, 'status': 'rejected', 'reason': 'Compiler fingerprint or source differs from the fixed transition input'}
@@ -615,6 +639,14 @@ class LifecycleEngineMixin:
         result['artifact_ref'] = artifact
         self.runtime['executions'][execution_id].update(status='ended', outcome=result['status'], artifact_ref=artifact)
         self.runtime['active_execution'] = None
+        if result['status'] == 'stopped' or stop_requested:
+            result.update(status='stopped', reason=result.get('reason') or 'trust verification stopped')
+            self.runtime['executions'][execution_id]['outcome'] = 'stopped'
+            if self.runtime.get('status') != 'closed': self.runtime['status'] = 'paused'
+            self._lifecycle_event('trust_target_stopped', target=knowledge_id, transition_id=transition_id,
+                                  execution_id=execution_id, artifact_ref=artifact)
+            self._save({artifact: canonical_json(result)})
+            return
         self.runtime['trust_transitions'][transition_id] = record_transition_result(self.instance, self.runtime['trust_transitions'][transition_id], result)
         self._save({artifact: canonical_json(result)})
         self._lifecycle_event('trust_target_checked', target=knowledge_id, transition_id=transition_id, result=result['status'])

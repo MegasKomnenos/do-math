@@ -793,8 +793,15 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
                 result_source = recover(selected_result_ref,
                     "result.json" if result_kind == "execution_result" else
                     "checkpoint-recovery.json" if result_kind == "checkpoint_recovery" else "activity-result.json")
-                checkpoint_source = (result_source if selected_result_ref == checkpoint_ref else
-                                     recover(checkpoint_ref, "checkpoint-recovery.json"))
+                if selected_result_ref == checkpoint_ref:
+                    checkpoint_source = result_source
+                elif (reviewed_execution.get("role") == "formal_check" or
+                      reviewed_execution.get("parent_execution_id")) and checkpoint_ref not in self.store.list_files(
+                          f"runtime/artifacts/{bundle}/", source_snapshot):
+                    # These producers do not create a recovery checkpoint on normal completion.
+                    checkpoint_source = None
+                else:
+                    checkpoint_source = recover(checkpoint_ref, "checkpoint-recovery.json")
                 output_files = []
                 for entry in reviewed_execution.get("output_files", []):
                     restored = recover(entry["artifact_ref"], "files/" + entry["path"],
@@ -812,20 +819,56 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
             context["user_request"] = next((r for r in self.runtime["inputs"] if r["id"] == target), None)
             context["interpretation_stage"] = action.get("stage", "interpret")
             context["interpretation_to_check"] = self.runtime.get("interpretations", {}).get(target)
-        if task:
+        attempts = [e for e in self.runtime["executions"].values()
+                    if action.get("id") and e.get("action", {}).get("id") == action["id"]
+                    and e.get("status") == "ended" and e.get("role") == action["role"]
+                    and all(e.get("action", {}).get(key) == action.get(key)
+                            for key in ("target", "review_cycle_id", "stage", "slot", "round"))]
+        latest = max(attempts, key=lambda e: (e.get("ended_at", ""), e.get("created_at", ""), e["id"]), default=None)
+        previous_id = (latest["id"] if latest else action.get("repair", {}).get("execution_id") or
+                       action.get("recovery", {}).get("execution_id"))
+        previous = None
+        if previous_id:
+            previous = self.runtime["executions"].get(previous_id)
+            if (not previous or previous.get("status") != "ended" or
+                    previous.get("role") != action["role"] or
+                    any(previous.get("action", {}).get(key) != action.get(key)
+                        for key in ("target", "review_cycle_id", "stage", "slot", "round"))):
+                raise ValueError("resume source does not identify this action's ended execution")
+        elif task and action["role"] in {"research_work", "supplemental_research"}:
             previous = next((e for e in reversed(list(self.runtime["executions"].values()))
-                             if e.get("action", {}).get("target") == target and e.get("role") in WORK_ROLES
-                             and e.get("artifact_bundle") and e.get("output_files")), None)
-            if previous:
-                restored = []
-                for entry in previous["output_files"]:
-                    raw = self.store.read(entry["artifact_ref"], self.head)
-                    path = directory / "previous-output" / entry["path"]
-                    path.parent.mkdir(parents=True, exist_ok=True)
-                    path.write_bytes(raw)
-                    restored.append({**entry, "local_path": path.relative_to(workspace).as_posix()})
-                context["previous_output_files"] = restored
-                context["resume_checkpoint"] = self.runtime.get("checkpoints", {}).get(previous["id"])
+                             if e.get("action", {}).get("target") == target
+                             and e.get("role") in {"research_work", "supplemental_research"}
+                             and not e.get("action", {}).get("review_cycle_id")
+                             and e.get("status") == "ended" and e.get("artifact_bundle")), None)
+        if previous:
+            restored = []
+            for entry in previous.get("output_files", []):
+                raw = self.store.read(entry["artifact_ref"], self.head)
+                if (hashlib.sha256(raw).hexdigest() != entry["sha256"] or
+                        len(raw) != entry["bytes"]):
+                    raise ValueError("resume artifact differs from its preserved reference")
+                logical = "previous-output/" + entry["path"]
+                materialize_inputs(workspace, {logical: raw})
+                restored.append({**entry, "local_path": "input/" + logical})
+            context["previous_output_files"] = restored
+            context["resume_checkpoint"] = deepcopy(self.runtime.get("checkpoints", {}).get(previous["id"]))
+            activity = self.runtime["activities"].get(previous.get("activity_id"), {})
+            result_ref = activity.get("result_ref")
+            if not result_ref and previous.get("artifact_bundle"):
+                filename = "checkpoint-recovery.json" if previous.get("error") == "previous executor disappeared" else "result.json"
+                result_ref = f"runtime/artifacts/{previous['artifact_bundle']}/{filename}"
+            result_source = None
+            if result_ref:
+                raw = self.store.read(result_ref, self.head)
+                materialize_inputs(workspace, {"resume-result.json": raw})
+                result_source = {"artifact_ref": result_ref, "snapshot": self.head,
+                                 "local_path": "input/resume-result.json",
+                                 "sha256": hashlib.sha256(raw).hexdigest(), "bytes": len(raw)}
+            context["previous_execution"] = {"id": previous["id"], "role": previous["role"],
+                "action": deepcopy(previous.get("action", {})), "outcome": previous.get("outcome"),
+                "error": previous.get("error"), "result_source": result_source,
+                "instruction": "Read the preserved result, checkpoint and previous_output_files before resuming. Reuse established work only within the current inputs and authority. For output repair, review every prior activity-extensions.json entry and resubmit the applicable corrected extensions in this workspace; preserved files are evidence, not automatically applied output."}
         if action["role"] == "supplemental_research" and action.get("review_cycle_id"):
             context.update(self._review_research_context(action, workspace))
         reviewed_action = self.runtime["executions"].get(target, {}).get("action", {}) if action["role"] == "operational_review" else action
@@ -1014,7 +1057,10 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
             # A deterministic bound still works if the operating model is unavailable.
             self.runtime["executions"][parent_id]["stop_requested"] = "operating_review_unavailable"
         files = collect_outputs(workspace, max_bytes=config["max_artifact_bytes"])
+        checkpoint = json_safe(recovered_checkpoint(workspace))
+        self.runtime.setdefault("checkpoints", {})[eid] = checkpoint
         artifacts = {f"runtime/artifacts/{bundle}/result.json": canonical_json(result),
+                     f"runtime/artifacts/{bundle}/checkpoint-recovery.json": canonical_json(checkpoint),
                      f"runtime/artifacts/{bundle}/output-manifest.json": canonical_json(files["manifest"]),
                      f"runtime/artifacts/{bundle}/omitted.json": canonical_json(files["omitted"])}
         execution["output_files"] = []
@@ -1246,7 +1292,7 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
                 held_status = self.runtime["status"] if self.runtime["status"] in {"paused", "closed"} else None
                 if action.get("repair_attempt", 0) < config.get("max_output_repairs", 1):
                     self.runtime["queue"].insert(0, {**action, "repair_attempt": action.get("repair_attempt", 0)+1,
-                        "repair": {"error": str(error), "previous_output": result["output"]}})
+                        "repair": {"execution_id": execution_id, "error": str(error), "previous_output": result["output"]}})
                     self.runtime["status"] = "ready"
                 else:
                     self.runtime.setdefault("waiting_actions", {})[action["id"]] = {"action": action, "reason": str(error)}
@@ -1734,7 +1780,10 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
             if self.runtime["status"] != "closed": self.runtime["status"] = "paused"
         else:
             self._enqueue("research_plan", reason="Formal verification returned a result requiring a new research decision", formal_target=kid)
+        checkpoint = json_safe(recovered_checkpoint(workspace))
+        self.runtime.setdefault("checkpoints", {})[execution_id] = checkpoint
         self._save({f"runtime/artifacts/{bundle}/proposal.lean": source.encode(),
+                    f"runtime/artifacts/{bundle}/checkpoint-recovery.json": canonical_json(checkpoint),
                     f"runtime/artifacts/{bundle}/formal.json": canonical_json(result)})
 
     def check(self) -> dict:

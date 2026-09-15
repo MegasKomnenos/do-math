@@ -608,17 +608,7 @@ relation 항목은 `kind`, `source`, `target`, `evidence`를 가진다. source�
 
 ### `observation-rules.json`
 
-작업자가 실행 중 관찰 규칙을 바꿀 때 쓰는 배열이다. 최대 16개이며 각 규칙은 고유 `id`, `op`, 양의 `threshold`, 선택적 양의 `repeat_interval`과 reason을 가진다. op는 다음과 같다.
-
-| op | 대조 값 |
-|---|---|
-| `iteration_gte` | checkpoint의 iteration |
-| `counter_gte` | checkpoint `counters[counter]`; 이 op만 비어 있지 않은 `counter`를 요구 |
-| `checkpoint_count_gte` | 실행기가 관찰한 새 유효 checkpoint 수 |
-| `active_duration_gte` | 실행 활성 경과 초 |
-| `tool_results_gte` | 완료된 command·MCP tool 결과 수 |
-
-규칙 도래는 운영 점검을 열 뿐 연구 진전·실패·중단을 판정하지 않는다. 64 KiB를 넘거나 잘못된 갱신은 마지막 유효 규칙을 바꾸지 않는다.
+작업자가 실행 중 관찰 규칙을 바꾸는 파일이다. 배열·필드·연산자·크기 한도와 작성 예시는 실제 생산 역할에도 제공되는 [공통 실행](공통-실행.md)의 「진행을 기록하고 관찰 요청에 응답한다」 절을 따른다. 기계 검사는 `scripts/do_math/observations.py`의 `validate_rules`와 `ObservationTracker.observe`가 수행한다. 규칙 도래는 운영 점검을 열 뿐 연구 진전·실패·중단을 판정하지 않으며, 잘못된 갱신은 마지막 유효 규칙을 바꾸지 않는다.
 
 후보 준비가 새·개정 과제에 최초 관찰 규칙을 제안할 때는 `activity-extensions.json`의 `task_conditions` 항목에 `observation_rules`를 넣고 같은 결과의 `task_title` 또는 정확한 `task_id`에 결박한다. 실행기는 이를 `initial_observation_rules`로 작업 계약 hash와 계약 검토에 포함하고, 실제 연구 수행 tracker의 시작 규칙으로 사용한다.
 

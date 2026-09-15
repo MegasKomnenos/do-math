@@ -135,7 +135,8 @@ def academic_status(instance: dict, runtime: dict, current_basis: dict | None) -
         return {"status": "completed", "reason": "all current requirements satisfied"}
     tasks = [task for task in runtime.get("tasks", {}).values() if task.get("academic_requirement_id") in {item["id"] for item in requirements["items"]}
              and task.get("solution_basis") == current_basis and task.get("requirements_sha256") == requirements["sha256"]]
-    return {"status": "active" if tasks else "pending", "reason": "requirements remain"}
+    started = any(task.get("selected_by") or task.get("results") for task in tasks)
+    return {"status": "active" if started else "pending", "reason": "requirements remain"}
 
 
 def requirements_changed(old: dict, new: dict) -> bool:
