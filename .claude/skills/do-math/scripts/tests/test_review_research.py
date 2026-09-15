@@ -165,6 +165,12 @@ class ReviewResearchEngineTests(PurposeHarness):
         self.assertFalse(runner.research_answers)
         self.assertEqual(next(iter(engine.runtime['review_cycles'].values()))['decision'], 'unresolved')
 
+    def test_unlimited_work_budget_admits_fixed_question_research(self):
+        engine, runner = self.make_research(work_calls=None, operations_calls=None)
+        self.drive(engine)
+        self.assertTrue(runner.research_answers)
+        self.assertEqual(engine.instance['goal_status'], 'mathematically_solved')
+
     def test_initial_peer_question_is_not_exposed_before_phase_seal(self):
         engine, runner = self.make_research()
         original = runner.answer

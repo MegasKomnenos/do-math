@@ -425,6 +425,14 @@ class PurposeEngineTests(PurposeHarness):
         self.assertEqual(operating[0]['outcome'], 'output_accepted')
         self.assertEqual(operating[0]['budget_kind'], 'operations')
 
+    def test_live_review_works_with_unlimited_operating_budget(self):
+        engine, runner = self.make(observation='continue', work_calls=None, operations_calls=None)
+        self.drive(engine)
+        reviews = [e for e in engine.runtime['executions'].values()
+                   if e['role'] == 'operational_review' and e['action'].get('live')]
+        self.assertEqual(len(reviews), 1)
+        self.assertEqual(reviews[0]['outcome'], 'output_accepted')
+
     def test_large_history_uses_exact_context_source_files_without_losing_work(self):
         engine, runner = self.make('catalog', max_input_bytes=180000)
         self.drive(engine)

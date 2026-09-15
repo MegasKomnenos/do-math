@@ -390,13 +390,13 @@ class ReviewEngineMixin:
             source_specs.append([self._research_source_spec(cycle, action, ref) for ref in request['source_refs']])
         cycle = self._record_review_input(action, execution_id)
         used = sum(ex.get('budget_kind') == 'work' for ex in self.runtime.get('executions', {}).values())
-        remaining = self.instance['config'].get('work_calls', 40) - used
         reserved = len(next_actions(cycle)) + len(cycle.get('deferred_actions', {}))
         if cycle['phase'] == 'initial': reserved += 4 + (cycle['reviewers'] + 3 if cycle['max_rounds'] > 1 else 0)
         elif cycle['phase'] in ('organize', 'answer'): reserved += 3
         elif cycle['phase'] == 'judge' and cycle['round'] < cycle['max_rounds']: reserved += cycle['reviewers'] + 3
         updated = defer_for_research(cycle, _action(action), output, requests, execution_id,
-            limit=self.instance['config'].get('review_research_limit', 3), budget_available=remaining >= len(requests) + reserved)
+            limit=self.instance['config'].get('review_research_limit', 3),
+            budget_available=self._budget_available('work', used, len(requests) + reserved))
         self.runtime['review_cycles'][action['review_cycle_id']] = updated
         self.runtime.get('review_inputs', {}).pop(_pending_key(action), None)
         self.runtime['queue'][:] = [queued for queued in self.runtime['queue'] if not (

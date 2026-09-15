@@ -1,5 +1,5 @@
 {
-  "checked_at_utc": "2026-09-14T16:43:38.987905+00:00",
+  "checked_at_utc": "2026-09-15T14:06:47.077262+00:00",
   "status": "PASS",
   "scope": "Source bytes; S1 published table n=1..9 via S2 recurrence; direct enumeration n=1..5; interpretation boundaries. No n>9 computation or new proof search.",
   "check_count": 34,

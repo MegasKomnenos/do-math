@@ -81,7 +81,10 @@ def validate_config(config: dict) -> None:
         raise ValueError("role_models must map roles to model names")
     for role in config["role_models"]:
         schema_for(role)
-    for key in ("work_calls", "operations_calls", "call_timeout_seconds", "run_timeout_seconds",
+    for key in ("work_calls", "operations_calls"):
+        if config[key] is not None and (isinstance(config[key], bool) or not isinstance(config[key], int) or config[key] < 1):
+            raise ValueError(f"{key} must be a positive integer or null (unlimited)")
+    for key in ("call_timeout_seconds", "run_timeout_seconds",
                 "max_cycles", "reviewers", "goal_auditors", "max_input_bytes", "lean_timeout_seconds",
                 "review_rounds", "review_research_limit", "research_reconsider_seconds", "observation_interval_seconds",
                 "observation_idle_seconds", "max_observation_reviews", "checkpoint_grace_seconds", "max_artifact_bytes"):
@@ -566,8 +569,8 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
                         for pool in ("work", "operations")}
                 action = next((queued for queued in self.runtime["queue"]
                                if queued["role"] in {"formal_check", "trust_check", "trust_activate", "external_action"}
-                               or used["work" if queued["role"] in WORK_ROLES else "operations"]
-                               < self.instance["config"][("work" if queued["role"] in WORK_ROLES else "operations") + "_calls"]),
+                               or self._budget_available("work" if queued["role"] in WORK_ROLES else "operations",
+                                                         used["work" if queued["role"] in WORK_ROLES else "operations"])),
                               self.runtime["queue"][0])
                 if action["role"] == "formal_check":
                     self._formal(action)
@@ -977,7 +980,7 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
 
     def _run_inline_review(self, parent_id: str, observation: dict, deadline: float) -> None:
         config = self.instance["config"]
-        if sum(e.get("budget_kind") == "operations" for e in self.runtime["executions"].values()) >= config["operations_calls"]:
+        if not self._budget_available("operations", sum(e.get("budget_kind") == "operations" for e in self.runtime["executions"].values())):
             self.runtime["executions"][parent_id]["stop_requested"] = "operating_budget_unavailable"
             return
         action = {"id": new_id("AC"), "role": "operational_review", "target": parent_id,
@@ -1071,6 +1074,10 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
             execution["output_files"].append({"path": path, "artifact_ref": ref, "sha256": hashlib.sha256(raw).hexdigest(), "bytes": len(raw)})
         self._save(artifacts)
 
+    def _budget_available(self, pool: str, used: int, required: int = 1) -> bool:
+        limit = self.instance["config"][pool + "_calls"]
+        return limit is None or used + required <= limit
+
     def _call(self, action: dict, deadline: float) -> bool:
         action.setdefault("id", new_id("AC"))
         action = deepcopy(action)
@@ -1085,7 +1092,7 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
         pool = "work" if role in WORK_ROLES else "operations"
         config = self.instance["config"]
         used = sum(e.get("budget_kind") == pool for e in self.runtime["executions"].values())
-        if used >= config[pool + "_calls"]:
+        if not self._budget_available(pool, used):
             self.runtime["status"] = "budget_exhausted"
             self._save()
             return False

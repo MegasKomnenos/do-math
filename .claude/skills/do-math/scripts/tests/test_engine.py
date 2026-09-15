@@ -14,7 +14,7 @@ SCRIPTS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SCRIPTS))
 
 from do_math.contracts import schema_for  # noqa: E402
-from do_math.engine import ResearchEngine, control, initialize  # noqa: E402
+from do_math.engine import ResearchEngine, control, initialize, validate_config  # noqa: E402
 from do_math.repository import ResearchRepository  # noqa: E402
 
 
@@ -170,6 +170,41 @@ class EngineTests(unittest.TestCase):
         self.assertEqual(status["budget"]["operations"]["used"], before["operations"]["used"] + 1)
         self.assertEqual(status["budget"]["work"]["used"], before["work"]["used"])
         self.assertEqual(engine.runtime["queue"][0], blocked)
+
+    def test_unlimited_budgets_continue_after_finite_exhaustion(self):
+        runner = ScriptedRunner()
+        engine, instance = self.make(runner, goal_kind="research", work_calls=1, operations_calls=2)
+        exhausted = engine.run(max_steps=20)
+        self.assertEqual(exhausted["status"], "budget_exhausted")
+        old_executions = set(engine.runtime["executions"])
+        control(self.repo, instance, "configure", config={"work_calls": None, "operations_calls": None})
+        status = engine.run(max_steps=20)
+        self.assertEqual(status["status"], "completed")
+        self.assertTrue(old_executions <= set(engine.runtime["executions"]))
+        for pool in ("work", "operations"):
+            self.assertIsNone(status["budget"][pool]["limit"])
+            self.assertGreater(status["budget"][pool]["used"], exhausted["budget"][pool]["used"])
+        self.assertTrue(engine.check()["passed"])
+
+    def test_budget_config_allows_null_only_for_call_limits(self):
+        validate_config({"work_calls": None, "operations_calls": None})
+        for field in ("work_calls", "operations_calls"):
+            for value in (0, -1, True, "unlimited", 1.5):
+                with self.subTest(field=field, value=value), self.assertRaises(ValueError):
+                    validate_config({field: value})
+        with self.assertRaises(ValueError):
+            validate_config({"run_timeout_seconds": None})
+
+    def test_each_unlimited_pool_keeps_the_other_pool_finite(self):
+        for work, operations, exhausted_pool in ((None, 1, "operations"), (1, None, "work")):
+            with self.subTest(work=work, operations=operations):
+                engine, _ = self.make(ScriptedRunner(), work_calls=work, operations_calls=operations)
+                status = engine.run(max_steps=20)
+                self.assertEqual(status["status"], "budget_exhausted")
+                self.assertEqual(status["budget"][exhausted_pool]["used"], 1)
+                unlimited_pool = "work" if work is None else "operations"
+                self.assertIsNone(status["budget"][unlimited_pool]["limit"])
+                self.assertGreater(status["budget"][unlimited_pool]["used"], 0)
 
     def test_crash_recovery_and_artifact_immutability(self):
         engine, instance = self.make(ScriptedRunner())

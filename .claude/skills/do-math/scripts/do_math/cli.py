@@ -259,6 +259,7 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
 
 def _human_status(status: dict[str, Any]) -> str:
     budget = status["budget"]
+    limits = {pool: "unlimited" if row["limit"] is None else row["limit"] for pool, row in budget.items()}
     tasks = status["tasks"]
     assurance = status["assurance"]
     task_text = ", ".join(f"{task['id']}={task['status']}" for task in tasks) or "none"
@@ -267,7 +268,7 @@ def _human_status(status: dict[str, Any]) -> str:
         f"goal: {status['goal']}",
         f"goal_status: {status['goal_status']}",
         f"status: {status['status']}  snapshot: {status['snapshot']}",
-        f"budget: work {budget['work']['used']}/{budget['work']['limit']}; operations {budget['operations']['used']}/{budget['operations']['limit']}",
+        f"budget: work {budget['work']['used']}/{limits['work']}; operations {budget['operations']['used']}/{limits['operations']}",
         f"tasks: {task_text}",
         f"unknown or bounded scope: {unknown}",
     ))

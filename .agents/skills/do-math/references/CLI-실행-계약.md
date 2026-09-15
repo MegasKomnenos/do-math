@@ -129,7 +129,7 @@ status의 `knowledge.K`, `knowledge.F`, `knowledge.suspended_K`는 각각 `verif
 허용 필드와 기본값의 기계 정본은 `scripts/do_math/engine.py`의 `DEFAULT_CONFIG`와 `validate_config`다. 인스턴스에 실제 적용된 값은 해당 snapshot의 `research/instance.json` 안 `config`가 소유한다. 이 문서는 그 목록을 따로 복제하지 않고 설정 가족이 어떤 동작을 바꾸는지 설명한다.
 
 - 실행 선택: `model`, `effort`, `role_models`가 기본 모델·추론 노력과 역할별 모델 override를 정한다. effort는 실행 코드가 허용한 닫힌 값만 받는다.
-- 작업·운영 용량: `work_calls`, `operations_calls`는 각각 작업·운영 예산의 AI execution 시도 한도다. 공급자 내부 호출이나 토큰 한도가 아니다.
+- 작업·운영 용량: `work_calls`, `operations_calls`는 각각 작업·운영 예산의 AI execution 시도 한도다. 양의 정수는 유한 상한이며 `null`은 해당 예산의 실행 횟수 상한이 없음을 뜻한다. 무제한이어도 사용 횟수는 계속 누적한다. 공급자 내부 호출이나 토큰 한도가 아니다.
 - 실행 시간과 반복: `call_timeout_seconds`는 운영 예산 AI 실행 하나의 기한이다. 작업 예산 AI 실행(연구 수행·보충 조사·작업 계약 검토·동일성 검토·목표 감사)에는 이 기한을 적용하지 않으며, 그 실행은 제출, `run_timeout_seconds`가 정한 `run` 호출의 기한, pause·close와 권한·입력 변경으로 끝난다. Lean timeout, 자동 후보 준비 회차, 출력 수리 횟수, 검토 회차와 보충 조사 한도는 각 대응 설정이 정한다.
 - 입력·산출: 모델 입력과 한 실행의 artifact 회수 바이트 한도를 정한다.
 - 형식 검사: `lean_command`는 argv 배열이며, 없으면 실행기가 지원 경로에서 Lean을 탐색한다. 허용 공리 목록은 중앙 공리 감사의 기준이다.
@@ -151,6 +151,8 @@ status의 `knowledge.K`, `knowledge.F`, `knowledge.suspended_K`는 각각 `verif
 ```
 
 `configure`는 기존 설정 위에 제공 필드를 덮어쓴 뒤 전체 설정을 다시 검사한다. 알 수 없는 필드는 거부한다. 대부분의 수치 설정은 양의 정수이고, 출력 수리 횟수만 0을 허용한다. 정확한 현재 값은 `read --path research/instance.json`으로 확인한다.
+
+두 실행 예산을 모두 무제한으로 바꾸려면 설정 파일에 `{"work_calls":null,"operations_calls":null}`을 넣어 `configure --config-file`로 적용한다. 생략한 필드는 기존 값을 유지한다. JSON status와 역할 입력의 `resources`는 해당 예산의 `limit`를 `null`로 표시하고, 사람용 status는 `unlimited`로 표시한다. 실행 시간·검토 횟수·행동 허가는 각각의 설정과 계약을 따른다.
 
 ## 명령 표면
 
