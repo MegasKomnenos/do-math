@@ -31,6 +31,7 @@ from .academic_engine import AcademicEngineMixin
 from .model_runner import CodexModelRunner
 from .repository import ResearchRepository, canonical_json, new_id
 from .state_checks import state_errors
+from .git_store import GitStateStoreError
 
 CONTRACT = "do-math-cli/1"
 ENGINE_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
@@ -1115,15 +1116,17 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
         self.instance["available_input_refs"] = self._available_inputs()
         context = self._context(action, workspace)
         schema = self._response_schema(action)
-        overhead = len(self._render_prompt(role, {}, output_schema=schema).encode()) + 2048
+        common_prompt_bytes = len(self._render_prompt(role, {}, output_schema=schema).encode())
+        overhead = common_prompt_bytes + 2048
         mandatory = [key for key in ("goal", "goal_kind", "policies", "action", "task", "proposal", "role_review", "user_request", "interpretation_to_check") if key in context]
         fitted = fit_context(context, max_bytes=max(1, config["max_input_bytes"]-overhead), workspace=workspace, mandatory_keys=mandatory)
         prompt = self._render_prompt(role, fitted["context"], output_schema=schema)
         if fitted["overflow"] or len(prompt.encode()) > config["max_input_bytes"]:
             detail = fitted["overflow"] or {"reason": "rendered_prompt_exceeds_limit", "actual_bytes": len(prompt.encode())}
+            detail = {**detail, "common_prompt_bytes": common_prompt_bytes}
             self.runtime.setdefault("input_overflows", []).append({"action": action, "detail": detail, "source_catalog": fitted["manifest"]})
             self._remove_action(action)
-            if role == "identity_review":
+            if role == "identity_review" and common_prompt_bytes <= config["max_input_bytes"]:
                 self.instance["knowledge"][action["target"]]["status"] = "needs_reconstruction"
                 self._enqueue("research_preparation", reason="Split the oversized proposal into independently verifiable results", reconstruction_target=action["target"])
                 self.runtime["status"] = "ready"
@@ -1308,7 +1311,11 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
                 self._remove_action(action)
                 self._abandon_review_research(action, execution_id, after["reason"])
                 if action.get("target") in self.runtime["tasks"]:
-                    self.runtime["tasks"][action["target"]]["status"] = "needs_revision" if after["decision"] == "revise" else "waiting"
+                    stopped_task = self.runtime["tasks"][action["target"]]
+                    stopped_task["status"] = "needs_revision" if after["decision"] == "revise" else "waiting"
+                    if after["decision"] == "revise":
+                        stopped_task["revision_requested"] = {"source": execution_id,
+                            "revision": stopped_task.get("revision"), "reason": after["reason"]}
                 if after["decision"] == "revise": self._enqueue("research_preparation", reason=after["reason"])
                 self.runtime["status"] = "ready" if self.runtime["queue"] else "waiting"
                 if held_pause or after["decision"] == "stop": self.runtime["status"] = "paused"
@@ -1743,11 +1750,16 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
         self.runtime["activities"][activity_id] = {"id": activity_id, "role": "maintenance", "actor_kind": "machine", "status": "active", "execution_ids": [execution_id]}
         self.runtime["active_execution"] = execution_id
         self._save()
+        stop_requested = False
         def stop():
+            nonlocal stop_requested
             self._controls()
             if self._check_conversations(): self._save()
-            return (self.runtime["status"] in {"paused", "closed"} or self.runtime.get("stop_requested") or
-                    not governance.authorize(self.instance, action)["allowed"])
+            stop_requested = stop_requested or bool(
+                self.runtime["status"] in {"paused", "closed"} or self.runtime.get("stop_requested") or
+                self.runtime["executions"][execution_id].get("stop_requested") or
+                not governance.authorize(self.instance, action)["allowed"])
+            return stop_requested
         kwargs = dict(source=source, declarations=declarations, workspace=workspace,
                       lean_command=self.instance["config"]["lean_command"], timeout_seconds=self.instance["config"]["lean_timeout_seconds"])
         parameters = inspect.signature(self.formal_verifier).parameters
@@ -1755,14 +1767,21 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
         if "should_stop" in parameters or accepts_extra: kwargs["should_stop"] = stop
         if "allowed_axioms" in parameters or accepts_extra: kwargs["allowed_axioms"] = tuple(self.instance["config"]["allowed_axioms"])
         try:
-            result = self.formal_verifier(**kwargs)
+            if stop():
+                result = {"status": "stopped", "reason": "stopped before formal verification"}
+            else:
+                result = self.formal_verifier(**kwargs)
         except Exception as error:
             result = {"status": "failed", "reason": str(error)}
-        result = self._bind_formal_environment(json_safe(result))
+        if stop():
+            result = {**result, "status": "stopped", "reason": "formal verification stopped by control request"}
+        result = json_safe(result)
+        if result["status"] != "stopped":
+            result = self._bind_formal_environment(result)
         bundle = new_id("BA")
         item = self.instance["knowledge"][kid]
         source_unchanged = hashlib.sha256(item["lean_code"].encode()).hexdigest() == hashlib.sha256(source.encode()).hexdigest()
-        if not source_unchanged:
+        if not source_unchanged and result["status"] != "stopped":
             result.update(status="failed", reason="proposal changed during formal verification")
         item["formal"] = {**result, "execution_id": execution_id, "artifact_ref": f"runtime/artifacts/{bundle}/formal.json"}
         self.runtime["executions"][execution_id].update(status="ended", ended_at=now(), outcome=result["status"], artifact_bundle=bundle)
@@ -1799,7 +1818,7 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
                 raw = self.store.read(ref, self.head)
                 if hashlib.sha256(raw).hexdigest() != digest or (size is not None and len(raw) != size):
                     errors.append(f"{ref}: preserved artifact differs from its content reference")
-            except (KeyError, ValueError, OSError) as error:
+            except (KeyError, ValueError, OSError, GitStateStoreError) as error:
                 errors.append(f"{ref}: preserved artifact cannot be read: {error}")
         if instance.get("contract_id") != CONTRACT or runtime.get("contract_id") != CONTRACT:
             errors.append("unsupported instance/runtime contract")

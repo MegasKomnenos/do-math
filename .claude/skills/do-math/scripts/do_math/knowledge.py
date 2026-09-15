@@ -262,8 +262,10 @@ def revise_knowledge(instance: dict, runtime: dict, knowledge_id: str, changes: 
     record.pop("verified_at", None); record.pop("use_suspension_reasons", None)
     record.pop("use_suspensions", None)
     record["use_suspended"] = False
-    if "source_basis" in record:
-        record["source_basis"] = capture_sources(new_instance, [row["name"] for row in record["source_basis"]])
+    if "source_basis" in record or "source_refs" in record:
+        source_refs = [row["name"] for row in record.get("source_basis", [])]
+        source_refs.extend(record.get("source_refs", []))
+        record["source_basis"] = capture_sources(new_instance, source_refs)
     claim = record.get("relation_claim")
     if claim:
         if not isinstance(claim, dict) or any(key not in claim for key in ("source", "target")):

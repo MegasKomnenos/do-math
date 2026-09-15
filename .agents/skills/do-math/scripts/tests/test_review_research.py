@@ -84,6 +84,25 @@ class ReviewResearchEngineTests(PurposeHarness):
         self.runners[-1] = runner
         return engine, runner
 
+    def test_common_document_overflow_waits_without_reconstructing_the_proposal(self):
+        engine, runner = self.make_research()
+        self.drive(engine, predicate=lambda e: bool(e.runtime['review_cycles']))
+        action = next(a for a in engine.runtime['queue'] if a['role'] == 'identity_review')
+        knowledge_id = action['target']
+        before = deepcopy(engine.instance['knowledge'][knowledge_id])
+        schema = engine._response_schema(action)
+        common_bytes = len(engine._render_prompt('identity_review', {}, output_schema=schema).encode())
+        engine.instance['config']['max_input_bytes'] = common_bytes - 1
+        engine._save()
+        calls = len(runner.calls)
+        engine.run(max_steps=1)
+        self.assertEqual(len(runner.calls), calls)
+        self.assertEqual(engine.instance['knowledge'][knowledge_id], before)
+        self.assertTrue(any(w['action'].get('id') == action['id'] and w['reason'] == 'input_overflow'
+                            for w in engine.runtime.get('waiting_actions', {}).values()))
+        self.assertFalse(any(a.get('reconstruction_target') == knowledge_id for a in engine.runtime['queue']))
+        self.assertTrue(engine.runtime['questions'])
+
     def test_same_slot_defers_investigates_and_resumes_before_approval(self):
         engine, runner = self.make_research()
         self.drive(engine)

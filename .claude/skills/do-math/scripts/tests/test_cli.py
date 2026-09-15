@@ -41,7 +41,7 @@ class CliTests(unittest.TestCase):
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
-            cwd=SCRIPTS.parents[3],
+            cwd=self.root,
         )
 
     def instance_args(self) -> tuple[str, ...]:

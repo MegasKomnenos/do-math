@@ -297,4 +297,10 @@ python .agents/skills/do-math/scripts/probe_codex.py --skill-only
 
 이 검사는 스킬 폴더 안의 문서와 코드만 읽으며 모델을 호출하지 않는다. `scope="installed_skill_structure"`, `status="verified"`는 역할 읽기 대응표의 문서와 운영 문서를 읽었고 역할 출력 스키마의 형식 검사를 통과했다는 뜻이다. 문서 내용의 정확성, 실행 환경이나 연구 성능까지 검증한 결과는 아니다. `--spec-only`는 같은 검사의 호환 별칭이다.
 
-현재 코드의 회귀 검사는 `scripts/tests/test_*.py`를 각 파일 직접 실행으로 수행한다. 실제 Codex·Lean·HTTP·Windows 프로세스가 필요한 검사는 각 시험의 환경 조건과 실행 결과를 확인한다. 검증 결과는 검사한 판본, 사례, 통과·실패·미실행 범위와 함께 보존하고, 해석 기준은 [CLI 실행 계약](references/CLI-실행-계약.md)의 「검증 근거의 해석」을 따른다.
+현재 코드의 회귀 검사는 unittest discovery로 `scripts/tests/test_*.py`를 수집해 실행한다. 일부 시험 파일은 직접 실행해도 시험을 시작하지 않으므로 파일별 종료 코드만으로 회귀 검사를 완료했다고 판단하지 않는다.
+
+```powershell
+python -m unittest discover -s .claude/skills/do-math/scripts/tests -p "test_*.py"
+```
+
+실제 Codex·Lean·HTTP·Windows 프로세스가 필요한 검사는 각 시험의 환경 조건과 실행 결과를 확인한다. 검증 결과는 검사한 판본, 사례, 통과·실패·미실행 범위와 함께 보존하고, 해석 기준은 [CLI 실행 계약](references/CLI-실행-계약.md)의 「검증 근거의 해석」을 따른다.
