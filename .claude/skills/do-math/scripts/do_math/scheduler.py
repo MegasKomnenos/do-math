@@ -72,9 +72,27 @@ class SchedulerMixin:
                 "inputs": [i.get("id") for i in self.runtime["inputs"]]}
 
     def _ensure_model_assessments(self):
-        """Batch missing assessments without allowing contract review to race them."""
+        """Prepare missing or rejected academic assessments before review."""
         if not self._session_mode():
             return set()
+        live = {e.get("action", {}).get("id") for e in self.runtime["executions"].values() if e["status"] != "ended"}
+        for tid, task in self.runtime["tasks"].items():
+            if (not task.get("academic_requirement_id") or task.get("status") != "needs_revision"
+                    or not task.get("model_assessment")):
+                continue
+            basis = assessment_basis(task)
+            review = next((r for r in reversed(task.get("reviews", []))
+                           if all(r.get(k) == v for k, v in basis.items())), None)
+            if not review or review.get("decision") == "approved":
+                continue
+            task.setdefault("model_assessment_history", []).append({
+                **basis, "assessment": task.pop("model_assessment"),
+                "contract_review_execution": review["execution_id"]})
+            # Retire the old implementation's unstarted, general revision request.
+            self.runtime["queue"][:] = [a for a in self.runtime["queue"] if not (
+                a.get("role") == "research_preparation" and a.get("target") == tid
+                and a.get("contract_review_execution") == review["execution_id"]
+                and a.get("id") not in live)]
         missing = {tid: assessment_basis(task) for tid, task in self.runtime["tasks"].items()
                    if task.get("status") in {"planned", "ready", "waiting", "needs_revision"}
                    and not task.get("model_assessment")}
@@ -85,7 +103,6 @@ class SchedulerMixin:
                 self.runtime["history"].append({"kind": "assessment_inputs_changed", "action_id": aid})
                 self.runtime["questions"] = [q for q in self.runtime["questions"] if q != entry.get("question")]
                 del self.runtime["waiting_actions"][aid]
-        live = {e.get("action", {}).get("id") for e in self.runtime["executions"].values() if e["status"] != "ended"}
         self.runtime["queue"][:] = [a for a in self.runtime["queue"] if not (
             a["role"] == "task_contract_review" and a.get("target") in missing and a.get("id") not in live)]
         pending = self.runtime["queue"] + [e["action"] for e in self.runtime.get("waiting_actions", {}).values()]
@@ -94,11 +111,23 @@ class SchedulerMixin:
         if targets:
             from .repository import new_id
             self.runtime["queue"].append({"id": new_id("AC"), "role": "research_preparation",
-                "assessment_targets": targets, "reason": "Assess these existing contracts without changing their terms before independent review."})
+                "assessment_targets": targets, "reason": "Assess these existing contracts without changing their terms before independent review. Read their reviews and model_assessment_history when repairing a rejected assessment."})
         return set(missing)
 
     def _finish_assessment_preparation(self, action, execution_id):
         deferred = self.runtime["executions"][execution_id].get("extensions", {}).get("model_assessment_deferrals", [])
+        deferred_ids = {row["task_id"] for row in deferred}
+        for tid in action["assessment_targets"]:
+            if tid in deferred_ids:
+                continue
+            task = self.runtime["tasks"][tid]
+            if task.get("academic_requirement_id") and task.get("status") == "needs_revision":
+                task["status"] = "planned"
+                # Even an unchanged rating needs a fresh judgment after new input.
+                self._enqueue("task_contract_review", tid, contract_basis={
+                    **assessment_basis(task), "goal_revision": self.instance.get("goal_revision", 1),
+                    "policy_revision": self.instance.get("policy_revision", 1)},
+                    reason="Reassessed academic contract requires independent review")
         if deferred:
             pending = {row["task_id"]: action["assessment_targets"][row["task_id"]] for row in deferred}
             question = "Model assessment pending: " + "; ".join(row["task_id"] + ": " + row["reason"] for row in deferred)

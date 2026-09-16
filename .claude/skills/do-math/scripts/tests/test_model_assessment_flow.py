@@ -275,5 +275,107 @@ class ActualGitAssessmentTests(PurposeHarness):
         AssessmentFlowTests.test_assessment_only_run_preserves_user_contract_and_unblocks_independent_review(self)
 
 
+class RejectedAcademicAssessmentTests(PurposeHarness):
+    prepare_engine = AssessmentFlowTests.prepare_engine
+
+    def rejected_engine(self, decision="revision_required"):
+        engine = self.prepare_engine()
+        tid = "TK-academic-1"
+        engine.runtime["tasks"].pop("TK-academic-2")
+        task = engine.runtime["tasks"][tid]
+        task["model_assessment"] = rating()
+        engine.runtime["queue"] = []
+        original = deepcopy(task)
+        engine._apply({"role": "task_contract_review", "target": tid}, {
+            **common("task_contract_review"), "decision": decision,
+            "findings": ["model_assessment.reason: explain the impact on later verification."],
+            "questions": []}, "EX-rejected")
+        engine._refresh_readiness()
+        engine._save()
+        return engine, tid, original
+
+    def test_rejected_rating_is_preserved_and_replaced_by_assessment_only_request(self):
+        engine, tid, original = self.rejected_engine()
+        task = engine.runtime["tasks"][tid]
+        self.assertNotIn("model_assessment", task)
+        self.assertEqual(task["model_assessment_history"][0]["assessment"], original["model_assessment"])
+        self.assertEqual(task["model_assessment_history"][0]["contract_review_execution"], "EX-rejected")
+        requests = [a for a in engine.runtime["queue"] if a["role"] == "research_preparation"]
+        self.assertEqual(len(requests), 1)
+        self.assertEqual(requests[0]["assessment_targets"][tid]["contract_sha256"], contract_hash(task))
+        for key, value in original.items():
+            if key not in {"model_assessment", "reviews", "status"}:
+                self.assertEqual(task[key], value)
+        for _ in range(3):
+            engine._refresh_readiness()
+        self.assertEqual(len(task["model_assessment_history"]), 1)
+        self.assertFalse(any(a["role"] == "task_contract_review" for a in engine.runtime["queue"]))
+
+    def test_repaired_and_unchanged_ratings_both_receive_fresh_independent_review(self):
+        for unchanged in (False, True):
+            with self.subTest(unchanged=unchanged):
+                engine, tid, original = self.rejected_engine("unresolved" if unchanged else "revision_required")
+                chosen = rating() if unchanged else {**rating(), "importance": "high", "reason": "Later verification depends on this report."}
+                seen = []
+                class Runner:
+                    def run(inner, **args):
+                        args["on_started"]({"pid": 1})
+                        context = context_from(args["prompt"])
+                        seen.append(context)
+                        role = context["action"]["role"]
+                        if role == "research_preparation":
+                            self.assertIn(tid, context["action"]["assessment_targets"])
+                            supplied = next(t for t in context["tasks"] if t["id"] == tid)
+                            self.assertEqual(supplied["reviews"][-1]["execution_id"], "EX-rejected")
+                            self.assertEqual(supplied["model_assessment_history"][0]["assessment"], rating())
+                            (args["workspace"] / "activity-extensions.json").write_bytes(canonical_json({
+                                "model_assessments": [{"task_id": tid, **chosen}]}))
+                            output = {**common(role), "candidates": []}
+                        else:
+                            self.assertEqual(role, "task_contract_review")
+                            output = {**common(role), "decision": "approved", "findings": ["The supplied grounds support the rating."]}
+                        return {"status": "completed", "output": output, "usage": {}}
+                engine.runner = Runner()
+                engine.run(max_steps=1)
+                self.assertEqual(engine.runtime["tasks"][tid]["model_assessment"], chosen)
+                review = next(a for a in engine.runtime["queue"] if a["role"] == "task_contract_review")
+                self.assertEqual(engine._select_model(review)["tier"], "medium" if unchanged else "high")
+                engine.run(max_steps=1)
+                self.assertEqual([c["action"]["role"] for c in seen], ["research_preparation", "task_contract_review"])
+                task = engine.runtime["tasks"][tid]
+                self.assertEqual(task["status"], "ready")
+                self.assertEqual(len(task["reviews"]), 2)
+                self.assertEqual(task["reviews"][-1]["decision"], "approved")
+                self.assertEqual(engine.runtime["cycles"], 0)
+                for key, value in original.items():
+                    if key not in {"model_assessment", "reviews", "status"}:
+                        self.assertEqual(task[key], value)
+
+    def test_preexisting_rejection_enters_repair_on_refresh(self):
+        engine = self.prepare_engine()
+        task = engine.runtime["tasks"]["TK-academic-1"]
+        task.update(status="needs_revision", model_assessment=rating())
+        task["reviews"] = [{"execution_id": "EX-old", "decision": "revision_required",
+                            "revision": task["revision"], "contract_sha256": contract_hash(task)}]
+        engine.runtime["queue"] = []
+        engine._enqueue("research_preparation", task["id"], contract_review_execution="EX-old")
+        engine._refresh_readiness()
+        self.assertNotIn("model_assessment", task)
+        self.assertFalse(any(a.get("contract_review_execution") == "EX-old" for a in engine.runtime["queue"]))
+        self.assertTrue(any(task["id"] in a.get("assessment_targets", {}) for a in engine.runtime["queue"]))
+
+    def test_repair_deferral_preserves_obligation_until_resume(self):
+        from unittest.mock import patch
+        engine, _, _ = self.rejected_engine()
+        with patch.object(self, "prepare_engine", return_value=engine):
+            AssessmentFlowTests.test_deferred_assessment_waits_for_input_and_can_resume_without_stale_question(self)
+
+    def test_late_repair_cannot_overwrite_a_changed_user_contract(self):
+        from unittest.mock import patch
+        engine, _, _ = self.rejected_engine()
+        with patch.object(self, "prepare_engine", return_value=engine):
+            AssessmentFlowTests.test_late_assessment_cannot_change_a_revised_user_contract(self)
+
+
 if __name__ == "__main__":
     unittest.main()

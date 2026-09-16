@@ -1910,6 +1910,9 @@ class ResearchEngine(SchedulerMixin, ReviewEngineMixin, LifecycleEngineMixin, Ac
             task["reviews"].append({"id": new_id("CR"), "execution_id": execution_id, **basis, **output})
             task["status"] = "planned" if output["decision"] == "approved" else "needs_revision"
             if output["decision"] != "approved":
+                if task.get("academic_requirement_id") and self._session_mode():
+                    self._ensure_model_assessments()
+                    return
                 # The unapproved contract's defects and open questions go back to preparation.
                 self._enqueue("research_preparation", target,
                               reason="Task contract review returned " + output["decision"] + "; revise the contract from its findings or preserve the obligation with the open questions",

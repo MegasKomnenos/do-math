@@ -1,0 +1,70 @@
+{
+  "items": [
+    "R1-01",
+    "R1-13",
+    "R1-15"
+  ],
+  "baseline_commit": "f341b26f2660c70ebd134b86e8655764fdae07e3",
+  "full_regression": {
+    "total": 417,
+    "passed": 415,
+    "skipped": 1,
+    "seconds": 1790.49,
+    "failures": 1,
+    "errors": 0
+  },
+  "scheduler_recheck": {
+    "total": 21,
+    "passed": 21,
+    "seconds": 237.397
+  },
+  "initial_failure": {
+    "test": "test_pause_reaches_all_parallel_calls_and_releases_their_slots",
+    "assertion": "2 != 3",
+    "location": "test_session_scheduler.py:318",
+    "earlier_pause_and_slot_assertions_passed": true,
+    "single_test_recheck_passed": true,
+    "test_unchanged": true
+  },
+  "focused": {
+    "total": 23,
+    "passed": 23
+  },
+  "actual_git_repair": {
+    "total": 5,
+    "passed": 5,
+    "model_responses": "fixtures"
+  },
+  "baseline_repair_cases": {
+    "total": 5,
+    "failures": 3,
+    "errors": 3,
+    "includes_subtests": true
+  },
+  "files": {
+    ".agents/skills/do-math/references/공통-실행.md": "f0e1a71ca787fce6a160e021387b5024e21a6c906b86f0eba6595bd1ed443231",
+    ".agents/skills/do-math/references/모델과-실행예산.md": "9f8929196ac161a751257e1003aee862111fcec80af5d44290b9dc3df0605011",
+    ".agents/skills/do-math/scripts/do_math/engine.py": "0fcf06d4ef3c1ceeb3a60198a6ef32c07f547f62d79986f0dffbb2599ef50121",
+    ".agents/skills/do-math/scripts/do_math/scheduler.py": "84294c8ba493d419b23a04d39ea221fdce932fbf78b725b1cd62165dca3f666d",
+    ".agents/skills/do-math/scripts/tests/test_model_assessment_flow.py": "ebf488b3c9259d50202e3dad5a09718d8bd18314f57ea21b6519162a474bebd7",
+    ".agents/skills/do-math/계약/작업-계약-검토.md": "8056aad75cda712921c3d81588d2b65889ce111c3ae38af242667a75b534535e",
+    ".agents/skills/do-math/계약/후보-준비.md": "9e0913cb409b166b07624c44e954dbe22ee60f82e6e304b0fdd7f85e3716ae46",
+    ".claude/skills/do-math/references/공통-실행.md": "f0e1a71ca787fce6a160e021387b5024e21a6c906b86f0eba6595bd1ed443231",
+    ".claude/skills/do-math/references/모델과-실행예산.md": "9f8929196ac161a751257e1003aee862111fcec80af5d44290b9dc3df0605011",
+    ".claude/skills/do-math/scripts/do_math/engine.py": "0fcf06d4ef3c1ceeb3a60198a6ef32c07f547f62d79986f0dffbb2599ef50121",
+    ".claude/skills/do-math/scripts/do_math/scheduler.py": "84294c8ba493d419b23a04d39ea221fdce932fbf78b725b1cd62165dca3f666d",
+    ".claude/skills/do-math/scripts/tests/test_model_assessment_flow.py": "ebf488b3c9259d50202e3dad5a09718d8bd18314f57ea21b6519162a474bebd7",
+    ".claude/skills/do-math/계약/작업-계약-검토.md": "8056aad75cda712921c3d81588d2b65889ce111c3ae38af242667a75b534535e",
+    ".claude/skills/do-math/계약/후보-준비.md": "9e0913cb409b166b07624c44e954dbe22ee60f82e6e304b0fdd7f85e3716ae46"
+  },
+  "logs": {
+    "병렬정지재검사.log": "10e990ef35d73ed18894b7c6e0deaa49c592eccf58800fe3c4e1d931d4c36a95",
+    "세션배정재검사.log": "1608597bf817b90f5a926a0868be2f757520571390b9fd6738eb61fb7b860b97",
+    "수정전.log": "30cfc1ee0e2e1b0dadcface5585c474c248b4f3c827c43fa6b94b421c99fa2e3",
+    "실제Git.log": "3b65cafd514ecc45bd58c70942fff35a80ec361f364f4e3ad62fdde30c74a2d1",
+    "전체회귀.log": "65646d68609e1c123a0095f704242c3c565704a4f7d47eb08c7b328b0c6b2ae5",
+    "집중검사.log": "926d41675fd9215f1525cec08f7fbeaea833aa50de240e8a79478040eb48b764"
+  },
+  "document_reading": "f83919e371184cf686bfdadc15fc6f22",
+  "existing_research_resumed": false
+}
