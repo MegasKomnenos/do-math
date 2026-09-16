@@ -1,0 +1,44 @@
+{
+  "scope": "manually started Windows scheduled operator probe",
+  "outcome": "completed",
+  "run_directory": "C:\\math\\.skill-workspace\\do-math-improvement-20260916\\operator-live\\workspace\\operator\\runs\\20260916T010433Z-06b3714a",
+  "snapshot_before": "9778a6800af4f1f8a81ce89e755ba03a8e8a37f3",
+  "snapshot_after": "9778a6800af4f1f8a81ce89e755ba03a8e8a37f3",
+  "snapshot_unchanged": true,
+  "worker_exit": 0,
+  "termination_barrier": {
+    "active_processes": 0,
+    "process_ids": [],
+    "root_signaled": true,
+    "confirmed": true
+  },
+  "parse_complete": true,
+  "usage": {
+    "input_tokens": 337908,
+    "cached_input_tokens": 243968,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 4052,
+    "reasoning_output_tokens": 1147
+  },
+  "output": {
+    "actions": [
+      "do-math README와 CLI 실행 계약, 이전 운영 보고와 연결 증거를 읽었다.",
+      "최신 status, 고정 snapshot의 runtime/state.json, 전체 원장 30건을 조회했다.",
+      "HOLD.json 부재와 user_pause=null을 확인했다.",
+      "operator status로 연구·운영 예약 작업을 조회했다.",
+      "scholarly list_sources만 호출해 status=ok와 자료원 49개를 확인했다.",
+      "연구 제어, 엔진 시작, 코드·설정·연구 상태 변경은 수행하지 않았다."
+    ],
+    "evidence_paths": [
+      "C:\\math\\.skill-workspace\\do-math-improvement-20260916\\operator-live\\workspace\\operator\\runs\\20260916T010433Z-06b3714a\\context.json",
+      "C:\\math\\.skill-workspace\\do-math-improvement-20260916\\operator-live\\workspace\\operator\\runs\\20260916T010433Z-06b3714a\\evidence\\stdout.jsonl",
+      "C:\\math\\.skill-workspace\\do-math-improvement-20260916\\operator-live\\repository@9778a6800af4f1f8a81ce89e755ba03a8e8a37f3:runtime/state.json",
+      "C:\\math\\.skill-workspace\\do-math-improvement-20260916\\operator-live\\workspace\\operator\\runs\\20260916T005737Z-0b49d8e3\\context.json"
+    ],
+    "next_step": "다음 probe에서도 먼저 최신 status·원장·operator status를 재조회하고, scholarly가 configured이면 list_sources만 호출한다.",
+    "observed_status": "ready; snapshot=9778a6800af4f1f8a81ce89e755ba03a8e8a37f3; goal_status=unresolved; active_execution=null; pending_actions=1(initial research_preparation); pending_controls=0; user_pause=null; HOLD 없음. 시작·종료 snapshot은 동일하다. 연구 예약 작업은 Ready이며 interval과 next_run이 비어 있고 last_result=267011이다. 운영 probe 작업은 Running이며 interval=PT2H, next_run=2026-09-16 11:51:51 KST, last_result=267009이다.",
+    "summary": "읽기 전용 설치 probe를 완료했다. 연구 snapshot과 인스턴스 상태 변화는 관찰되지 않았고 실행·활동·과제 이력도 없다. scholarly list_sources는 정상 응답하여 49개 자료원을 노출했다.",
+    "user_questions": []
+  },
+  "original_result_path": "C:\\math\\.skill-workspace\\do-math-improvement-20260916\\operator-live\\final-probe-result.json"
+}

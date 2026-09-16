@@ -23,11 +23,12 @@ class ReadingMapTests(unittest.TestCase):
         (self.root/'references').mkdir()
         (self.root/'references/공통-실행.md').write_bytes(b'Common procedure.\r\nKeep this exact edition.\r\n')
         (self.root/'references/지식-저작과-재사용.md').write_text('Apply the existing result only within its actual assumptions.',encoding='utf-8')
+        (self.root/'references/학술자료-활용.md').write_text('Read the original rendered equation before criticizing its transcription.',encoding='utf-8')
 
     def test_declared_shared_procedures_are_supplied_in_reading_order(self):
         documents=prompt_documents('research_work',skill_root=self.root)
         self.assertEqual([d['path'] for d in documents],['SKILL.md','GLOSSARY.md','references/공통-실행.md',
-                                                        'references/지식-저작과-재사용.md','계약/연구-수행.md'])
+                                                        'references/지식-저작과-재사용.md','references/학술자료-활용.md','계약/연구-수행.md'])
         for document in documents:
             raw=(self.root/document['path']).read_bytes()
             self.assertEqual(document['content'].encode('utf-8'),raw)
@@ -73,6 +74,7 @@ class DocumentContextTests(PurposeHarness):
         files=engine._installation_manifest()['files']
         self.assertIn('references/공통-실행.md',files)
         self.assertIn('references/지식-저작과-재사용.md',files)
+        self.assertIn('references/학술자료-활용.md',files)
 
 
 if __name__=='__main__': unittest.main()

@@ -24,9 +24,11 @@ class CliTests(unittest.TestCase):
         self.repository.mkdir()
         subprocess.run(["git", "-C", str(self.repository), "init", "-q"], check=True)
         self.workspace = self.root / "workspace"
+        self.operator_disabled = self.root / "operator-disabled.json"
+        self.operator_disabled.write_text(json.dumps({"operator_enabled": False}), encoding="utf-8")
         initialized = self.run_cli(
             "init", "--repository", str(self.repository), "--workspace", str(self.workspace),
-            "--goal", "Prove a small theorem", "--title", "Small theorem",
+            "--goal", "Prove a small theorem", "--title", "Small theorem", "--config-file", str(self.operator_disabled),
         )
         self.assertEqual(initialized.returncode, 0, initialized.stderr)
         self.initial = json.loads(initialized.stdout)
@@ -130,7 +132,7 @@ class CliTests(unittest.TestCase):
         created = self.root / "created"
         result = self.run_cli(
             "init", "--create-repository", "--repository", str(created), "--workspace", str(self.root / "other-workspace"),
-            "--goal", "A research goal",
+            "--goal", "A research goal", "--config-file", str(self.operator_disabled),
         )
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertTrue((created / ".git").exists())
@@ -139,7 +141,7 @@ class CliTests(unittest.TestCase):
         (nonempty / "file.txt").write_text("x", encoding="utf-8")
         refused = self.run_cli(
             "init", "--create-repository", "--repository", str(nonempty), "--workspace", str(self.root / "third-workspace"),
-            "--goal", "A research goal",
+            "--goal", "A research goal", "--config-file", str(self.operator_disabled),
         )
         self.assertEqual(refused.returncode, 2)
 

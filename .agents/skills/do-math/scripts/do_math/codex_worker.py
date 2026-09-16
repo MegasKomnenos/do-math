@@ -11,6 +11,11 @@ import sys
 import tempfile
 from typing import Any, Mapping
 
+try:  # This module is also the direct ``python codex_worker.py`` Job root.
+    from do_math.scholarly import validate_scholarly_server
+except ModuleNotFoundError:  # pragma: no cover - exercised by the direct-script regression.
+    from scholarly import validate_scholarly_server
+
 
 _REMOVED_ENV = frozenset({
     "OPENAI_API_KEY", "CODEX_API_KEY", "CODEX_ACCESS_TOKEN", "OPENAI_BASE_URL",
@@ -53,7 +58,7 @@ def load_request(path: Path) -> dict[str, Any]:
         raise ValueError("codex_path must be one NUL-free executable string")
     if "codex_argv" in value:
         raise ValueError("codex_argv is forbidden; production accepts one executable only")
-    unknown = set(value) - set(required) - {"sandbox", "filesystem", "windows_sandbox", "output_schema_path"}
+    unknown = set(value) - set(required) - {"sandbox", "filesystem", "windows_sandbox", "output_schema_path", "scholarly_server"}
     if unknown:
         raise ValueError("unknown worker request fields: " + ", ".join(sorted(unknown)))
     if not isinstance(value["effort"], str) or value["effort"] not in _EFFORTS or value["approval_policy"] != "never":
@@ -76,6 +81,8 @@ def load_request(path: Path) -> dict[str, Any]:
         raise ValueError("output_schema_path must be a non-empty path when present")
     if "windows_sandbox" in value and value["windows_sandbox"] not in _WINDOWS_SANDBOXES:
         raise ValueError("windows_sandbox must be elevated or unelevated when present")
+    if "scholarly_server" in value and value["scholarly_server"] is not None:
+        value["scholarly_server"] = validate_scholarly_server(value["scholarly_server"])
     if "filesystem" in value:
         fs = value["filesystem"]
         if value.get("windows_sandbox") != "elevated" or not isinstance(fs, dict):
@@ -111,6 +118,13 @@ def build_argv(request: Mapping[str, Any]) -> list[str]:
         argv.extend(["--output-schema", request["output_schema_path"]])
     if "windows_sandbox" in request:
         argv.extend(["--config", 'windows.sandbox="' + request["windows_sandbox"] + '"'])
+    scholarly = request.get("scholarly_server")
+    if scholarly is not None:
+        server = validate_scholarly_server(scholarly)
+        data_dir = str((Path(request["cwd"]).resolve() / "scholarly-data"))
+        args = [*server["args"], "--data-dir", data_dir]
+        argv.extend(["--config", "mcp_servers.scholarly.command=" + json.dumps(server["command"], ensure_ascii=False),
+                     "--config", "mcp_servers.scholarly.args=" + json.dumps(args, ensure_ascii=False)])
     if "filesystem" in request:
         fs = request["filesystem"]; entries = {'":minimal"': '"read"'}
         for field, mode in (("read_roots", "read"), ("write_roots", "write"), ("deny_roots", "deny")):

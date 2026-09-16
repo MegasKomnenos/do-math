@@ -14,7 +14,7 @@ python .agents/skills/do-math/scripts/do_math.py <command> [options]
 
 명령 예시는 스킬을 `.agents/skills/do-math/`에 설치한 경우다. 다른 위치에 설치했다면 명령의 이 경로를 실제 스킬 폴더 경로로 바꾼다. 운영할 때는 같은 설치본의 문서와 코드를 함께 사용한다. 별도 위치의 사본을 함께 참고한다면 두 사본의 판본이 같은지 먼저 확인한다.
 
-`profile`을 제외한 모든 명령은 `--repository`와 `--instance`를 요구한다. `init`은 새 인스턴스를 만들므로 `--instance` 대신 목표와 `--workspace`를 받는다. JSON을 입력받는 제어 명령은 UTF-8 JSON 객체 하나를 담은 `--file`을 사용한다. 중복 JSON 키, 배열이나 scalar 최상위 값, 읽기·디코딩 실패는 입력 오류다.
+`profile`을 제외한 모든 명령은 `--repository`와 `--instance`를 요구한다. `init`은 새 인스턴스를 만들므로 `--instance` 대신 목표와 `--workspace`를 받는다. JSON을 입력받는 제어 명령은 UTF-8 JSON 객체 하나를 담은 `--file`을 사용한다. 중복 JSON 키, 배열이나 scalar 최상위 값, 읽기·디코딩 실패는 입력 오류다. 제어의 `--origin`은 `user`가 기본이며 독립 운영 담당은 `operator`를 사용한다. 자동 출처는 `pause`, `resume`, `request`, `configure`, `source`만 사용할 수 있고 실행 횟수 한도를 변경할 수 없다.
 
 ### 종료 코드
 
@@ -118,6 +118,8 @@ status의 `knowledge.K`, `knowledge.F`, `knowledge.suspended_K`는 각각 `verif
 
 ### 활동·실행·외부 operation
 
+다음 표는 현재 CLI 저장값의 뜻을 설명한다. 보편 활동 상태와의 완전한 일대일 변환표는 아니다. 실제 남은 의무와 다음 행동은 해당 역할의 queue·실행 outcome·활동 result를 함께 읽어 판단한다.
+
 | 대상 | CLI 값 | 대응과 한계 |
 |---|---|---|
 | 활동 | `active`, `finished`, `unresolved` | `active`는 실행을 배정한 진행 국면이다. `finished`는 출력 수신·적용 성공, `unresolved`는 실행 또는 출력 적용 미완료라는 현재 CLI terminal 결과다. 보편 활동 상태 `ready/working/waiting/finished`의 완전한 wire 구현이 아니다 |
@@ -134,6 +136,8 @@ status의 `knowledge.K`, `knowledge.F`, `knowledge.suspended_K`는 각각 `verif
 - 입력·산출: 모델 입력과 한 실행의 artifact 회수 바이트 한도를 정한다.
 - 형식 검사: `lean_command`는 argv 배열이며, 없으면 실행기가 지원 경로에서 Lean을 탐색한다. 허용 공리 목록은 중앙 공리 감사의 기준이다.
 - 관찰: event-driven·periodic 모드, 관찰·idle 간격, 한 실행의 점검 수와 checkpoint 유예를 정한다.
+- 독립 운영: `operator_enabled`는 기본 true, `operator_interval_seconds`는 기본 7200초다. `operator_timeout_seconds`는 한 점검 실행의 상한으로 기본 5400초이며, `operator_model`·`operator_effort`의 기본값은 gpt-5.6-sol·high다. 이는 내부 `research_reconsider_seconds`가 정하는 후보 밖 탐색 주기와 별개다.
+- 학술자료: `scholarly_enabled`는 기본 true다. `scholarly_server`는 null 또는 `command`·`args` 객체이며 초기화 때 명시 설정이나 Codex 설정의 scholarly 항목에서 회수한다. command/서버 파일 경로는 실행 위치와 무관하게 사용할 수 있도록 고정한다. 다른 MCP와 사용자 훅은 하위 연구 실행에 자동 상속하지 않는다. 서버의 자료 저장 위치는 실행별 `scholarly-data/`로 지정한다.
 
 다음은 일부 설정을 명시하는 예다. 생략한 필드는 현재 코드의 기본값을 사용한다.
 
@@ -141,8 +145,8 @@ status의 `knowledge.K`, `knowledge.F`, `knowledge.suspended_K`는 각각 `verif
 {
   "model":"gpt-5.6-sol",
   "effort":"medium",
-  "work_calls":40,
-  "operations_calls":30,
+  "work_calls":null,
+  "operations_calls":null,
   "call_timeout_seconds":600,
   "run_timeout_seconds":7200,
   "lean_command":["C:/Lean/bin/lean.exe"],
@@ -165,7 +169,9 @@ init --repository PATH [--create-repository] --workspace PATH
      [--source PATH ...] [--config-file PATH] [--model NAME] [--effort VALUE]
 ```
 
-목표·정책·설정과 초기 source를 한 인스턴스로 저장하고 첫 후보 준비 action을 queue에 넣는다. 응답은 `instance_id`, `snapshot`, `status`다. `--create-repository`는 없거나 빈 디렉터리에만 Git 저장소를 만든다. 기존 비어 있지 않은 경로와 Git이 아닌 저장소는 거부한다.
+목표·정책·설정과 초기 source를 한 인스턴스로 저장하고 첫 후보 준비 action을 queue에 넣는다. 기본 두 실행 횟수 예산은 null이다. 독립 운영이 활성인 새 인스턴스의 대화 소실 정책은 `continue_authorized`로 시작한다. 이후의 명시적 사용자 정지와 대화 정책은 별도로 존중한다. 응답은 `instance_id`, `snapshot`, `status`를 가진다. `--create-repository`는 없거나 빈 디렉터리에만 Git 저장소를 만든다. 기존 비어 있지 않은 경로와 Git이 아닌 저장소는 거부한다.
+
+CLI는 초기화 뒤 독립 운영이 활성일 때 해당 인스턴스의 Windows 작업 두 개를 등록하고 `operator_schedule`에 결과를 반환한다. 이 등록은 모델이나 연구 실행의 시작이 아니다. 인스턴스 저장 뒤 등록이 실패하면 생성된 ID·snapshot과 실패 및 재조정 명령을 보존해 종료 코드 5로 반환한다. 저장과 운영체제의 효과가 하나의 원자적 트랜잭션이라고 가정하지 않는다.
 
 ### `run`, `status`, `check`, `profile`
 
@@ -182,6 +188,23 @@ init --repository PATH [--create-repository] --workspace PATH
 - `request --role ROLE [--target ID] [--reason TEXT|--text TEXT]`는 모델을 호출하지 않고 action을 queue 맨 앞에 넣는다. 지원 role은 `research_preparation`, `research_plan`, `supplemental_research`, `operational_review`, `maintenance`다. 보충 조사는 현재 `ready` 과제 ID, 운영 점검은 존재하는 execution ID를 target으로 요구한다.
 
 `request`는 새 권한이나 완료 판정을 만들지 않는다. `completed`와 `closed` 인스턴스에는 새 요청을 넣지 않는다.
+
+사용자 출처의 pause는 `runtime.user_pause`에 요청 ID·이유·시각을 보존한다. operator 출처의 resume은 유효한 user_pause가 있으면 거부한다. 사용자 resume은 이 표시를 해제한다. 일반 resume은 `waiting_actions` 중 `output_validation`·`execution_failure`를 재실행하지 않으며 진단이나 새 역할 요청이 필요하다. 성공한 후속 실행은 대응하는 실패 행동을 해결 이력으로 옮기고 원 실패 실행·산출을 보존한다.
+
+### `operator`
+
+```text
+operator install|uninstall|status|start|start-operator|check|probe|engine|hold|release
+         --repository PATH --instance ID [--workspace PATH] [--reason TEXT]
+```
+
+workspace는 인스턴스에 보존된 경로와 같아야 한다. `install`은 현재 설정으로 두 예약 작업을 등록하고, `uninstall`은 해당 두 작업만 제거한다. `status`는 실제 등록 상태를 읽는다. `start`는 별도 연구 작업을, `start-operator`는 별도 운영 점검 작업을 시작한다. 명령 접수 뒤 실제 실행 결과를 다시 확인한다.
+
+`check`는 즉시 독립 Codex 점검을 수행한다. `probe`는 상태·기록과 scholarly 자료원 목록만 확인하는 설치 검사다. `engine`은 예약 작업에서 연구를 운전하는 진입점이며 HOLD·사용자 정지·현재 상태를 다시 검사한다. `hold`는 고유 ID의 HOLD와 사용자 pause를 만들고, `release`는 같은 HOLD가 만든 현재 사용자 정지에만 재개를 적용한다.
+
+예약은 현재 Windows 사용자의 Interactive 로그인, IgnoreNew, StartWhenAvailable로 구성한다. 작업 이름은 저장소·인스턴스로 구별한다. 운영과 연구 프로세스는 서로 별도 예약 작업에 속한다. 작업 스케줄러의 시간 상한은 각각 운영 timeout과 run timeout·checkpoint 유예에 종료 여유를 더하며, 두 작업의 중복 억제와 연구 저장소의 writer lock을 함께 사용한다.
+
+로그는 `workspace/operator/`에 있고 최근 운영 결과는 `latest-report.json`이 가리킨다. 실행별 prompt·schema·JSONL·최종 반환·오류와 실제 전후 상태를 보존한다. 외부 운영 담당의 호출·CLI 사용량은 engine의 `operations_calls`와 별도다. 독립 담당의 역할 계약은 `계약/독립-운영.md`이며 내부 `operational_review`를 대신하지 않는다.
 
 ## 구조화 제어 JSON
 
@@ -315,6 +338,8 @@ source --file PATH [--name FILE_NAME]
 ```
 
 `kind`는 현재 종류 정의 레지스트리에 있어야 한다. `title`, `statement`, `explanation`, `summary`는 비어 있지 않아야 하고 `lean_code`가 있으면 중복 없는 `declaration_names`가 필요하다. `dependencies`는 존재하는 다른 knowledge ID만 받는다. `id`를 제공해 기존 기록을 개정할 수 있으며 revision과 history를 보존한다. 실행기 소유 필드인 검증 status·formal 결과·review·identity assessment는 candidate가 제공할 수 없다.
+
+`import`에 기존 ID를 넣는 방식은 완전한 후보 본문으로 그 기록을 대체할 때 사용한다. 필요한 필드를 모두 제출하며 생략한 선택 필드가 옛 값으로 유지된다고 가정하지 않는다. 기존 기록의 일부 필드만 바꾸려면 아래의 `operation="revise"`와 `changes`를 사용한다. 두 경로 모두 과거 판본을 보존하고 후보 상태로 돌아가며, Lean 원문이 있으면 형식·동일성 검토를 다시 받는다.
 
 수학 관계를 입증하는 형식 candidate에는 선택적으로 다음 `relation_claim`을 둔다.
 
@@ -487,7 +512,8 @@ export --destination PATH [--snapshot OID] [--all]
 2. `GLOSSARY.md`
 3. `references/공통-실행.md`
 4. `references/지식-저작과-재사용.md`
-5. 해당 `계약/<역할>.md`
+5. `references/학술자료-활용.md`
+6. 해당 `계약/<역할>.md`
 
 `references/CLI-실행-계약.md`는 운영자와 구현자를 위한 참조이며 모든 AI 역할에 자동 주입되지 않는다. 역할이 판단할 현행 필드와 단계는 자기 계약, canonical input context와 실행별 출력 schema가 소유한다.
 
@@ -521,7 +547,7 @@ export --destination PATH [--snapshot OID] [--all]
 
 ### 후보 준비 `research_preparation`
 
-주 산출 `candidates`는 새 과제와 기존 미완료 과제의 개정을 구별한다. 새 과제는 `revises_task_id=null`, 개정은 정확한 task ID를 쓴다. 각 후보는 질문·범위·기대 결과, 중복 없는 완료 기준, 정확한 입력·재사용 참조와 formal/nonformal 작업 구별을 제공해야 한다. 수신자는 기존 미완료 기준을 개정안에 합치고 새 과제를 `planned`로 만들며 독립 작업 계약 검토를 queue에 넣는다. 후보 결과가 비어 있을 수 있지만 그 경우도 실제 탐색 범위와 다음 조건을 설명한다.
+주 산출 `candidates`는 새 과제와 기존 미완료 과제의 개정을 구별한다. 새 과제는 `revises_task_id=null`, 개정은 정확한 task ID를 쓴다. 각 후보는 질문·범위·기대 결과, 중복 없는 완료 기준, 정확한 입력·재사용 참조와 formal/nonformal 작업 구별을 제공해야 한다. 개정의 완료 기준은 전체 현행 목록으로 교체하며 이전 계약은 revision_history에 보존한다. 수신자는 과제를 `planned`로 만들고 독립 작업 계약 검토를 queue에 넣는다. 후보 결과가 비어 있을 수 있지만 그 경우도 실제 탐색 범위와 다음 조건을 설명한다.
 
 ### 작업 계약 검토 `task_contract_review`
 
@@ -532,6 +558,8 @@ export --destination PATH [--snapshot OID] [--all]
 `selections`에는 현재 ready 과제의 정확한 ID만 실행 순서대로 두고, `deferred`에는 선택하지 않은 ready 과제의 ID와 이유를 둔다. `preparation_requests`는 후보 준비가 처리할 정련·탐색을, `goal_audit`는 현재 근거로 목표 감사를 열지를 표현한다. `task_assessments`는 이미 결과를 반환한 assessing·waiting 과제에만 사용한다. 각 완료 판정은 계약의 completion criterion 원문을 정확히 한 번 복사해 충족 여부와 실제 evidence를 연결한다. 수행 전 과제를 판정하거나 ready 과제를 assessment에 넣지 않는다.
 
 수신자는 ready 모집단의 모든 ID가 selections와 deferred 중 정확히 한 번 있는지 검사한다. 현재 기본 schema에는 판단 불가를 별도 후보 처분으로 표현하는 필드가 없다. 판단할 수 없는 후보를 일반 보류와 같은 의미로 숨기지 않고 `deferred.reason`, `questions`와 준비 요청에 실제 원인을 보존해야 하며, 보편 처분을 충실히 구조화하는 필드는 미완료다.
+
+입력의 `ready_task_ids`와 수신 검사는 같은 현재 모집단을 사용한다. 오류는 현재 ID 목록과 `missing`, `unexpected`, `duplicate`를 구분해 반환한다. 완료 과제의 과거 준비 표시나 이전 실패 출력으로 이 모집단을 바꾸지 않는다.
 
 ### 연구 수행 `research_work`와 과제 기반 `supplemental_research`
 
@@ -620,6 +648,8 @@ relation 항목은 `kind`, `source`, `target`, `evidence`를 가진다. source�
 
 현재 확장 파일은 후보 과제의 발생 조건·의존·최초 관찰 규칙, 부수 연구 통찰, 외부 행동 요청, 기존·신규 지식의 metadata와 관계, 검토 자리의 고정 질문, 관찰 규칙과 학술 외부 거부의 해소 근거를 전달한다. 예를 들어 새 knowledge의 `confirmed_scope`는 주 JSON의 유일한 title에 결박하고, 검토 보충 조사는 원 검토 자리의 질문 ID와 exact source references에 결박한다.
 
+`task_dispositions`는 후보 준비와 연구 계획이 AI 생성 미완료 과제를 철회하는 경로다. `{task_id, disposition:"withdraw", reason}`를 받으며 입력 스냅샷의 계약 해시·생성 계보·현재 상태·실행 부재를 검사한다. 부분 결과는 보존하고 `closed` 처분과 제거한 미시작 요청을 기록한다. 완료·닫힘·수행 중 과제나 사용자 학술 요구에는 적용하지 않는다. 전체 의미와 예시는 공통 실행 문서를 따른다.
+
 파일이 없으면 확장 없음이다. 알 수 없는 가족, 배열이 아닌 값, 역할에 없는 권한, 잘못된 ID·관계·현재성은 수신 실패다. 확장 적용 중 하나가 실패하면 주 JSON의 의미 적용도 이전 상태로 되돌리고 원 출력·파일·오류를 보존한다.
 
 ### 정지·운영 피드백 파일
@@ -630,7 +660,9 @@ relation 항목은 `kind`, `source`, `target`, `evidence`를 가진다. source�
 
 Codex 어댑터가 완료를 반환하면 실행기는 주 JSON Schema, workspace 파일 수집, goal·policy·계약·지식·source·학술 요구·grant의 현재성을 검사한다. 모두 통과해야 execution outcome을 `output_accepted`로 유지하고 역할 결과와 확장 파일을 적용한다.
 
-검사 실패 시 원 모델 output, result, 파일 manifest와 오류를 artifact에 보존하고 실행 outcome을 `execution_incomplete`, 활동을 `unresolved`로 바꾼다. `max_output_repairs`가 남아 있으면 같은 action에 `repair.error`와 `repair.previous_output`을 넣은 새 실행을 한정적으로 연다. 수리는 새 실행이므로 새 ID와 실행 시도 예산을 사용한다. 수리 한도를 넘으면 action을 waiting으로 보존하고 인스턴스를 paused로 만든다.
+검사 실패 시 원 모델 output, result, 파일 manifest와 오류를 artifact에 보존하고 실행 outcome을 `execution_incomplete`, 활동을 `unresolved`로 바꾼다. `max_output_repairs`가 남아 있으면 같은 action에 `repair.error`와 `repair.previous_output`을 넣은 새 실행을 한정적으로 연다. 수리는 새 실행이므로 새 ID와 실행 시도 예산을 사용한다. 수리 한도를 넘으면 해당 행동을 `waiting_actions`의 `output_validation`으로 보존하고 운영 점검을 연다. 다른 queue action은 계속할 수 있고, 실행할 것이 없으면 waiting이다. 이미 진단된 재시도나 운영 점검 자체의 실패를 자동 진단으로 무한히 돌리지 않는다.
+
+운영 점검의 retry는 새 action ID와 복구 근거를 만들고 소진된 repair 필드를 제거한다. 계획 재시도에는 `failure_diagnosis`를 제공하여 현재 모집단에서 새로 판단하게 한다. wait는 해당 실패 행동을 보존하고 독립 queue를 계속한다. 인스턴스 전체의 정지가 필요한 경우는 stop으로 따로 판단한다.
 
 모델 호출 자체가 실패하면 부분 파일과 checkpoint를 보존하고, 기본적으로 한 번의 operational review를 먼저 queue에 넣어 복구를 판단한다. 같은 실패를 새 ID만 바꾸어 자동 반복하지 않는다.
 
@@ -677,6 +709,8 @@ Lean source가 있는 knowledge candidate는 중앙 `formal_check` action으로 
 
 이력과 다른 큰 입력은 `input/catalog/` 원문으로 바뀔 수 있으며 source reference에서 다시 읽는다. 최근 이력의 inline window가 작다는 사실은 과거 결과가 없다는 뜻이 아니다.
 
+과거 수리 action의 previous_output 전문은 inline 이력에서 반복하지 않고 `action_source`가 가리키는 정확한 JSON으로 제공한다. 실패와 미결 사항의 원문은 계속 읽을 수 있으며, 현재 상태와 과거의 거부된 주장을 구분해 사용한다.
+
 후보 준비와 연구 계획은 현재 goal·policies, 활성 config 전문, 자원과 실행 한도를 받는다. 입력 manifest와 `input/catalog/` 사본이 실제 제공한 판본·경로·해시를 고정한다. 다른 역할은 자기 판단에 필요한 설정 필드만 받고, 입력에 없는 설정값을 추측하지 않는다.
 
 ## 표현 방식과 보증 범위의 차이
@@ -693,7 +727,7 @@ Lean source가 있는 knowledge candidate는 중앙 `formal_check` action으로 
 GLOSSARY.md의 공통 개념과 현재 CLI의 표현 차이는 각각 다음처럼 해석한다.
 
 - 연구 정본·실행 원장은 각각 두 JSON 루트의 내부 필드로 보존한다. 기록의 의미와 현재성을 판단할 때는 필드 내용과 후속 검사를 함께 확인한다. 지원하는 저장 형식은 이 문서의 `do-math-cli/1` 형식이며, 다른 계약 판본의 기록을 그대로 수입할 수 있다고 가정하지 않는다.
-- 활동 상태는 `active/finished/unresolved`, 실행 상태는 `starting/running/ended`로 압축한다. queue action, stop request, 실행 outcome과 활동 result를 함께 읽어 보편 상태의 의미를 복원한다. 상태 문자열 하나만으로 생략된 전이를 추측하지 않는다.
+- 활동 상태는 `active/finished/unresolved`, 실행 상태는 `starting/running/ended`로 저장한다. 실제 운전 국면은 queue action, stop request, 실행 outcome과 활동 result를 함께 대조한다. 보편 활동 상태를 완전히 역변환하는 인터페이스를 제공하는 것은 아니며, 상태 문자열 하나에서 생략된 전이를 추측하지 않는다.
 - 연구 계획 후보 처분에는 `not_assessable` 전용 필드가 없다. 현재는 판정 불가 원인을 deferred reason·questions·준비 요청에 보존한다. 이 표현이 판정 불가와 전략적 보류를 기계적으로 구별하지 못하는 영향은 남는다.
 - 동일성 검토는 독립 범위 계획 대신 전면 검토 고정 배정을 쓴다. 세 기본 관점을 역할 계약으로 요구하지만 전문 분야의 독립 자리 자동 선정은 없고, 동적 범위 계획과의 검토 강도 동등성은 미평가다.
 - 작업 계약 검토의 현재 주 JSON은 판정과 findings에 항목별 판단을 서술한다. 정확한 계약·goal·policy basis는 실행기가 결합하지만, 항목별 승인 유효성의 근거를 별도 구조 필드로 표현하지 않는다. 의미 전건이 실제 findings에 보존되는지는 역할 결과와 검증에서 확인해야 한다.

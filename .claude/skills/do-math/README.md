@@ -26,6 +26,10 @@ python .agents/skills/do-math/scripts/do_math.py profile
 
 초기화 때 정책, 원자료와 설정을 함께 넣을 수 있다. `--source`는 여러 번 지정할 수 있다. `--model`과 `--effort`를 주면 `--config-file`에 같은 필드가 있어도 명령행 값을 사용한다. 명령행과 설정 파일 어디에도 없는 필드는 코드의 기본값을 사용한다.
 
+독립 운영의 기본값은 `operator_enabled=true`, `operator_interval_seconds=7200`이다. 작업·운영 실행 횟수는 모두 `null`, 즉 제한 없음이다. 유한한 예산이나 수동 운영을 원하면 초기 설정 파일에 해당 값을 지정한다. `init`은 독립 운영이 활성일 때 Windows 예약 작업을 등록하며, 그 자체로 모델이나 연구 실행을 시작하지는 않는다. 첫 정기 점검은 등록 후 설정한 주기에 도래한다.
+
+scholarly는 기본 활성이다. `scholarly_server`에 `command`·`args`를 직접 지정하거나, 초기화 명령의 작업 위치에서 상위로 찾은 `.codex/config.toml`의 scholarly 항목을 사용한다. 프로젝트 설정이 없으면 Codex 사용자 설정에서 같은 항목을 찾는다. 실행에 필요한 서버 경로는 고정해 인스턴스 설정에 보존하고, 하위 실행에는 이 MCP 설정만 명시적으로 전달한다. 서버 설정을 찾지 못한 것과 외부 자료원 접근 실패는 다르다. 사용 가능한 도구는 각 실행에서 확인한다.
+
 ## 첫 인스턴스 만들기
 
 아래 예시는 새 Git 저장소와 작업 공간을 만들고 수학 목표를 시작한다. PowerShell에서 현재 디렉터리는 저장소 루트라고 가정한다.
@@ -48,11 +52,22 @@ python .agents/skills/do-math/scripts/do_math.py init `
 {"instance_id":"RI-...","snapshot":"<git-oid>","status":"ready"}
 ```
 
+독립 운영을 등록했으면 응답의 `operator_schedule`에서 실제 두 작업을 확인한다. 저장은 성공했지만 예약 등록이 실패하면 생성된 인스턴스 ID·snapshot과 실패·재조정 명령을 반환한다. 같은 연구를 다시 `init`하지 말고 해당 인스턴스의 설치 문제를 해결한다.
+
 여기서 CLI `ready`는 실행기가 다음 action을 처리할 수 있다는 구현 상태다. GLOSSARY의 보편 연구 인스턴스 상태를 새로 정의하지 않으며, 연구 목표가 준비됐거나 해결됐다는 뜻도 아니다.
 
 초기화는 입력 goal과 policy를 저장하고, 등록된 지식·관계 종류와 로컬 역할 실행 grant를 현재 CLI 형식으로 만든 뒤 첫 후보 준비 action을 queue에 넣는다. 이 로컬 grant는 do-math 역할 실행을 위한 현재 구현 기록이며 외부 전송·공개·계정 작업의 허가가 아니다.
 
 ## 정상 운영
+
+지속 연구는 다음 명령으로 별도 연구 예약 작업을 시작한다. 이 대화와 운영 담당이 끝나도 연구 프로세스는 자신의 예약 작업에서 계속된다. 즉시 운영 판단을 받으려면 `operator start-operator`로 별도 운영 작업을 시작한다.
+
+```powershell
+python .agents/skills/do-math/scripts/do_math.py operator start `
+  --repository .skill-workspace/my-math/repo --instance RI-...
+```
+
+Windows 로그인, 켜져 있고 절전하지 않는 PC, 네트워크와 유효한 Codex 인증이 필요하다. 화면 잠금과 로그아웃은 다르다. 놓친 예약은 실행 가능한 상태에서 처리하도록 등록한다. 연구 실행의 내부 관찰·점검과 2시간마다 수행하는 전체 운영 점검은 별도로 유지된다.
 
 ### 1. 현재 상태를 읽는다
 
@@ -84,6 +99,8 @@ JSON status에서 먼저 볼 필드는 다음과 같다.
 | `questions` | 사용자 입력이나 결정을 기다리는 질문 |
 | `budget` | 작업·운영 실행 시도의 설정 한도와 사용 수 |
 | `pending_controls` | inbox에 접수됐지만 아직 적용되지 않은 제어 수 |
+| `user_pause` | 명시적 사용자 재개를 기다리는 정지의 요청 ID·이유·시각 |
+| `waiting_actions` | 해소되지 않은 행동의 역할·대상·실패 종류·이유·실행 ID 요지 |
 | `external_operations` | 외부 HTTP operation의 원장 상태 |
 | `active_trust_environment` | 현재 CLI가 활성으로 기록한 신뢰 환경 ID |
 | `academic_validation` | 현재 해결 근거와 학술 요구에 상대적인 후속 상태 |
@@ -250,9 +267,19 @@ python .agents/skills/do-math/scripts/do_math.py resume `
   --reason "검사 결과와 남은 범위를 확인했습니다."
 ```
 
-`resume`은 `closed`와 `completed` 상태를 다시 열지 않는다. 재개는 종료된 실행을 되살리지 않고, 보존한 이전 결과·체크포인트·실패 원인과 남은 action을 새 실행에 연결한다.
+`resume`은 `closed`와 `completed` 상태를 다시 열지 않는다. 거부된 출력이나 진단에서 대기로 남긴 실패 행동을 일반 재개로 실행 대기열에 되살리지 않는다. 먼저 원인을 고치고 운영 점검의 재시도나 현재 입력의 새 역할 요청으로 이어 간다. 새 실행은 필요한 결과·체크포인트를 재사용하되 과거의 잘못된 판정을 현재 상태로 복사하지 않는다.
 
 `close`는 queue를 비우고 인스턴스를 종결한다. 진행 중 실행의 회수 기록은 남길 수 있지만 새 연구를 시작하지 않는다.
+
+### 독립 운영의 설정과 정지
+
+`operator status`는 실제 예약 작업을 조회한다. `operator install`은 현재 인스턴스 설정으로 등록을 다시 맞추고 `operator uninstall`은 그 인스턴스의 두 예약 작업만 제거한다. 설정을 바꾸려면 `configure`에 `operator_enabled`, `operator_interval_seconds`, `operator_timeout_seconds`, `operator_model`, `operator_effort`를 지정한다. 적용된 운영 설정 변경은 예약에 반영되며, 제어가 아직 대기 중이면 적용 뒤 설치를 재조정한다. 비활성화나 예약 제거가 이미 실행 중인 연구까지 정지했다는 뜻은 아니다.
+
+사용자가 연구와 자동 운영을 함께 멈출 때는 `operator hold`를 쓴다. 이 명령은 고유 ID의 HOLD를 만들고 사용자 정지를 요청한다. `operator release`는 그 HOLD를 해제하며, 현재 사용자 정지가 정확히 같은 HOLD에서 왔을 때만 재개한다. 이후의 다른 사용자 정지는 그대로 유지한다.
+
+독립 담당이 보내는 자동 제어는 `--origin operator`로 표시한다. 이 경로는 사용자 정지를 해제하거나 목표·정책·학술 요구·외부 행동·신뢰 판정을 만들지 못한다. 사용자 제어의 기본 출처는 `user`다. 출처 구별은 같은 사용자 권한에서의 운영 계약이며 보안 격리 장치는 아니다.
+
+설치 검사에는 `operator probe`를 사용한다. 실제 Codex 실행으로 상태·기록을 읽고 scholarly의 자료원 목록만 확인하며, 연구와 예약 상태를 변경하지 않는다. 독립 운영 보고는 `<workspace>/operator/latest-report.json`, 연구 예약 실행의 결과는 같은 `operator/` 아래 실행별 로그에 보존된다. 내부 `operations_calls`와 별도 운영 담당의 CLI 사용량은 분리해 읽는다. 이 대화로 자동 알림이 전송되지는 않는다.
 
 ## 운영 제어 명령의 용도
 
@@ -300,7 +327,7 @@ python .agents/skills/do-math/scripts/probe_codex.py --skill-only
 현재 코드의 회귀 검사는 unittest discovery로 `scripts/tests/test_*.py`를 수집해 실행한다. 일부 시험 파일은 직접 실행해도 시험을 시작하지 않으므로 파일별 종료 코드만으로 회귀 검사를 완료했다고 판단하지 않는다.
 
 ```powershell
-python -m unittest discover -s .claude/skills/do-math/scripts/tests -p "test_*.py"
+python -m unittest discover -s .agents/skills/do-math/scripts/tests -p "test_*.py"
 ```
 
 실제 Codex·Lean·HTTP·Windows 프로세스가 필요한 검사는 각 시험의 환경 조건과 실행 결과를 확인한다. 검증 결과는 검사한 판본, 사례, 통과·실패·미실행 범위와 함께 보존하고, 해석 기준은 [CLI 실행 계약](references/CLI-실행-계약.md)의 「검증 근거의 해석」을 따른다.

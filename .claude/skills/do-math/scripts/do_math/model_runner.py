@@ -26,6 +26,7 @@ class CodexModelRunner:
 
     def run(self, *, prompt: str, output_schema: dict, workspace: Path, evidence_dir: Path,
             model: str, effort: str, timeout_seconds: float,
+            scholarly_server: dict | None = None,
             should_stop: Callable[[], bool] | None = None,
             on_started: Callable[[dict], None] | None = None,
             on_observation: Callable[[dict], None] | None = None) -> dict:
@@ -43,6 +44,8 @@ class CodexModelRunner:
                    "approval_policy": "never", "windows_sandbox": self.windows_sandbox, "max_runtime_seconds": timeout_seconds,
                    "stdout_path": str(evidence_dir / "stdout.jsonl"), "stderr_path": str(evidence_dir / "stderr.txt"),
                    "final_path": str(evidence_dir / "final.txt"), "status_path": str(evidence_dir / "worker-status.json")}
+        if scholarly_server is not None:
+            request["scholarly_server"] = scholarly_server
         request_path = evidence_dir / "request.json"
         request_path.write_text(json.dumps(request, ensure_ascii=False, sort_keys=True), encoding="utf-8")
         execution = self._adapter.start(request_path, cwd=evidence_dir, env=os.environ)

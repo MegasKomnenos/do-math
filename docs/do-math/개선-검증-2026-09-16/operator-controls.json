@@ -1,0 +1,73 @@
+{
+  "scope": "actual scheduled engine HOLD, release, restart, close",
+  "instance": "RI-01M2KWMGGKET5PZVEPK764GFMK",
+  "hold_request": {
+    "hold": {
+      "id": "cfa31e5f9c884d5fb3a99166ae15c393",
+      "reason": "User validation HOLD while scheduled engine is active.",
+      "started_at": "2026-09-16T01:18:55.739930+00:00"
+    },
+    "pause": {
+      "accepted": true,
+      "effect": "pending engine processing",
+      "lock": "busy",
+      "request_id": "UC-01M2KWQ96B0YEXMRCKW4S0M9WW"
+    }
+  },
+  "hold_effect": {
+    "status": "paused",
+    "user_pause": {
+      "created_at": "2026-09-16T01:18:56.203064+00:00",
+      "reason": "User requested scheduled operator HOLD cfa31e5f9c884d5fb3a99166ae15c393",
+      "request_id": "UC-01M2KWQ96B0YEXMRCKW4S0M9WW"
+    },
+    "active_execution": null
+  },
+  "release": {
+    "released": {
+      "id": "cfa31e5f9c884d5fb3a99166ae15c393",
+      "reason": "User validation HOLD while scheduled engine is active.",
+      "started_at": "2026-09-16T01:18:55.739930+00:00"
+    },
+    "released_at": "2026-09-16T01:20:54.185449+00:00",
+    "resume": {
+      "accepted": true,
+      "config": null,
+      "effect": "applied",
+      "reason": null,
+      "request_id": "UC-01M2KWTXF43MHKY09MMZZPZQ62",
+      "snapshot": "92dca6667b8e0bea6167926befb8169bc0ec2f5d",
+      "status": "ready"
+    }
+  },
+  "new_execution": "EX-01M2KWWDD0VMDMXW2EXNTMA2BR",
+  "closed": {
+    "status": "closed",
+    "snapshot": "6d944ffd3997d888cd9e50d1ae73b1003beaded7",
+    "active_execution": null,
+    "pending_actions": 0
+  },
+  "checkpoint_limitations": {
+    "EX-01M2KWPX4ZVFNXCW0Z6NAARQ52": {
+      "checkpoint_status": "missing",
+      "kind": "observed_partial_state",
+      "limitation": "No complete worker checkpoint was received; infer no unreported result.",
+      "messages": [],
+      "workspace": "C:\\math\\.skill-workspace\\do-math-improvement-20260916\\operator-controls-live\\workspace\\runs\\EX-01M2KWPX4ZVFNXCW0Z6NAARQ52\\workspace"
+    },
+    "EX-01M2KWWDD0VMDMXW2EXNTMA2BR": {
+      "checkpoint_status": "missing",
+      "kind": "observed_partial_state",
+      "limitation": "No complete worker checkpoint was received; infer no unreported result.",
+      "messages": [],
+      "workspace": "C:\\math\\.skill-workspace\\do-math-improvement-20260916\\operator-controls-live\\workspace\\runs\\EX-01M2KWWDD0VMDMXW2EXNTMA2BR\\workspace"
+    }
+  },
+  "task_info": {
+    "TaskName": "DoMath-Engine-9dc091605e42",
+    "LastRunTime": "2026-09-16T10:20:20+09:00",
+    "LastTaskResult": 0,
+    "NextRunTime": null
+  },
+  "evidence_directory": "C:\\math\\.skill-workspace\\do-math-improvement-20260916\\operator-controls-live"
+}

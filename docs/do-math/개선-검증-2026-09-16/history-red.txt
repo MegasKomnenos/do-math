@@ -1,0 +1,23 @@
+test_rejected_history_keeps_original_output_out_of_inline_action (__main__.RecoveryRoutingTests.test_rejected_history_keeps_original_output_out_of_inline_action) ... FAIL
+test_status_failure_summary_does_not_repeat_rejected_output (__main__.RecoveryRoutingTests.test_status_failure_summary_does_not_repeat_rejected_output) ... FAIL
+
+======================================================================
+FAIL: test_rejected_history_keeps_original_output_out_of_inline_action (__main__.RecoveryRoutingTests.test_rejected_history_keeps_original_output_out_of_inline_action)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_research_recovery.py", line 212, in test_rejected_history_keeps_original_output_out_of_inline_action
+    self.assertNotIn('previous_output', row['action'].get('repair', {}))
+AssertionError: 'previous_output' unexpectedly found in {'execution_id': 'EX-earlier', 'error': 'unexpected completed task', 'previous_output': {'summary': 'Compare the current task population.', 'used_sources': [], 'questions': [], 'selections': ['TK-completed'], 'deferred': [], 'preparation_requests': [], 'goal_audit': False, 'task_assessments': []}}
+
+======================================================================
+FAIL: test_status_failure_summary_does_not_repeat_rejected_output (__main__.RecoveryRoutingTests.test_status_failure_summary_does_not_repeat_rejected_output)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_research_recovery.py", line 222, in test_status_failure_summary_does_not_repeat_rejected_output
+    self.assertNotIn('previous_output', json.dumps(failure))
+AssertionError: 'previous_output' unexpectedly found in '{"action": {"id": "AC-failed", "role": "research_plan", "repair_attempt": 1, "repair": {"execution_id": "EX-earlier", "error": "unexpected completed task", "previous_output": {"summary": "Compare the current task population.", "used_sources": [], "questions": [], "selections": ["TK-completed"], "deferred": [], "preparation_requests": [], "goal_audit": false, "task_assessments": []}}}, "kind": "output_validation", "reason": "output validation: unexpected completed task", "execution_id": "EX-failed"}'
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.134s
+
+FAILED (failures=2)

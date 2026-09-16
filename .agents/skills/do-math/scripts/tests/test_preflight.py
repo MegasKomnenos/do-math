@@ -37,6 +37,14 @@ class PreflightTests(unittest.TestCase):
         (self.root / "references/CLI-실행-계약.md").unlink()
         self.assertEqual(inspect_bundle(self.root)["status"], "incomplete")
 
+    def test_missing_independent_operator_contract_is_incomplete(self):
+        (self.root / "계약/독립-운영.md").unlink()
+        self.assertEqual(inspect_bundle(self.root)["status"], "incomplete")
+
+    def test_missing_scheduler_entrypoint_is_incomplete(self):
+        (self.root / "scripts/operator_schedule.ps1").unlink()
+        self.assertEqual(inspect_bundle(self.root)["status"], "incomplete")
+
     def test_read_only_and_observed_document_hashes(self):
         def hashes():
             return {p.relative_to(self.root).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()

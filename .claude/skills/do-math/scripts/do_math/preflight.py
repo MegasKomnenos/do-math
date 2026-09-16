@@ -22,7 +22,8 @@ def inspect_bundle(skill_root: Path | None = None) -> dict:
         roles = all_prompt_documents(skill_root=root)
         documents = {document["path"]: document["sha256"]
                      for assigned in roles.values() for document in assigned}
-        for name in ("README.md", "references/CLI-실행-계약.md", "requirements.txt"):
+        for name in ("README.md", "references/CLI-실행-계약.md", "계약/독립-운영.md",
+                     "scripts/operator_schedule.ps1", "requirements.txt"):
             path = root / name
             if not path.resolve().is_relative_to(root):
                 raise ValueError(f"document leaves the skill: {name}")

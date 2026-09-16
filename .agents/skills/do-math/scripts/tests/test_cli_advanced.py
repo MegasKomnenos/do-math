@@ -22,9 +22,11 @@ class AdvancedCliTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.root = Path(self.temp.name)
         self.repo, self.workspace = self.root / "repo", self.root / "workspace"
+        configuration = self.root / "config.json"
+        configuration.write_text(json.dumps({"operator_enabled": False}), encoding="utf-8")
         init = self.cli("init", "--create-repository", "--repository", str(self.repo),
                         "--workspace", str(self.workspace), "--goal", "Original goal",
-                        "--goal-kind", "research")
+                        "--goal-kind", "research", "--config-file", str(configuration))
         self.assertEqual(init[0], 0, init)
         self.instance_id = init[1]["instance_id"]
 

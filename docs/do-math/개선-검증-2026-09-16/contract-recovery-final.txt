@@ -1,0 +1,11 @@
+test_default_call_budgets_are_unlimited (__main__.ResearchRecoveryTests.test_default_call_budgets_are_unlimited) ... ok
+test_exhausted_output_repair_does_not_stop_unrelated_work (__main__.ResearchRecoveryTests.test_exhausted_output_repair_does_not_stop_unrelated_work) ... ok
+test_plan_input_always_has_authoritative_ready_ids (__main__.ResearchRecoveryTests.test_plan_input_always_has_authoritative_ready_ids) ... ok
+test_plan_rejection_names_missing_unexpected_and_duplicate_ids (__main__.ResearchRecoveryTests.test_plan_rejection_names_missing_unexpected_and_duplicate_ids) ... ok
+test_resume_keeps_failed_output_out_of_execution_queue (__main__.ResearchRecoveryTests.test_resume_keeps_failed_output_out_of_execution_queue) ... ok
+test_revised_contract_replaces_obsolete_criteria_and_preserves_history (__main__.ResearchRecoveryTests.test_revised_contract_replaces_obsolete_criteria_and_preserves_history) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 48.194s
+
+OK

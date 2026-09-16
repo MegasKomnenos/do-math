@@ -21,6 +21,11 @@ def contract_hash(task: dict) -> str:
     return _hash({key: task[key] for key in CONTRACT_FIELDS if key in task})
 
 
+def ready_task_ids(runtime: dict) -> list[str]:
+    """The current selection population, shared by producer input and receiver."""
+    return sorted(tid for tid, task in runtime.get("tasks", {}).items() if task.get("status") == "ready")
+
+
 def _records(instance: dict, runtime: dict) -> dict[str, tuple[str, dict]]:
     found: dict[str, tuple[str, dict]] = {}
     for family, container in (("knowledge", instance.get("knowledge", {})), ("governance", instance.get("governance", {})),

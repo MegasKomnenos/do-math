@@ -126,7 +126,7 @@ class PurposeRunner:
         self.returned = []
 
     def run(self, *, prompt, output_schema, workspace, evidence_dir, model, effort,
-            timeout_seconds, should_stop, on_started, on_observation=None):
+            timeout_seconds, should_stop, on_started, on_observation=None, scholarly_server=None):
         role = prompt.split('You are the do-math role: ', 1)[1].split('.', 1)[0]
         context = parse_context(prompt, workspace)
         action = context['action']
@@ -434,7 +434,12 @@ class PurposeEngineTests(PurposeHarness):
         self.assertEqual(reviews[0]['outcome'], 'output_accepted')
 
     def test_large_history_uses_exact_context_source_files_without_losing_work(self):
-        engine, runner = self.make('catalog', max_input_bytes=180000)
+        engine, runner = self.make('catalog')
+        # Leave a bounded evidence window above the actual installed role text.
+        # The test exercises lossless cataloging, not a historical document size.
+        engine.instance['config']['max_input_bytes'] = max(
+            len(engine._render_prompt(role, {}).encode('utf-8')) for role in engine._documents) + 32768
+        engine._save()
         self.drive(engine)
         reductions = [entry for execution in engine.runtime['executions'].values()
                       for entry in execution.get('input_reductions', [])]

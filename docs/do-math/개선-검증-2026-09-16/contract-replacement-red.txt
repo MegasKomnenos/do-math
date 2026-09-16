@@ -1,0 +1,30 @@
+test_revised_contract_replaces_obsolete_criteria_and_preserves_history (__main__.ResearchRecoveryTests.test_revised_contract_replaces_obsolete_criteria_and_preserves_history) ... FAIL
+
+======================================================================
+FAIL: test_revised_contract_replaces_obsolete_criteria_and_preserves_history (__main__.ResearchRecoveryTests.test_revised_contract_replaces_obsolete_criteria_and_preserves_history)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_research_recovery.py", line 44, in test_revised_contract_replaces_obsolete_criteria_and_preserves_history
+    self.assertEqual(current['completion_criteria'], proposal['completion_criteria'])
+AssertionError: Lists differ: ['A: report the exact argument and its doma[61 chars]ly.'] != ['Report the base construction and each pro[14 chars]ly.']
+
+First differing element 0:
+'A: report the exact argument and its domain'
+'Report the base construction and each property separately.'
+
+First list contains 1 additional elements.
+First extra element 1:
+'Report the base construction and each property separately.'
+
+- ['A: report the exact argument and its domain',
+-  'Report the base construction and each property separately.']
+? ^
+
++ ['Report the base construction and each property separately.']
+? ^
+
+
+----------------------------------------------------------------------
+Ran 1 test in 17.350s
+
+FAILED (failures=1)

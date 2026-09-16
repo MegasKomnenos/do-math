@@ -1,0 +1,15 @@
+test_probe_context_reaches_model_runner_and_preserves_structured_result (__main__.OperatorTests.test_probe_context_reaches_model_runner_and_preserves_structured_result) ... FAIL
+
+======================================================================
+FAIL: test_probe_context_reaches_model_runner_and_preserves_structured_result (__main__.OperatorTests.test_probe_context_reaches_model_runner_and_preserves_structured_result)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_operator.py", line 141, in test_probe_context_reaches_model_runner_and_preserves_structured_result
+    self.assertEqual(result, json.loads(latest), "CLI must return the compact evidence pointer too")
+AssertionError: {'out[215 chars]6', 'result': {'status': 'completed', 'usage':[100400 chars]:00'} != {'out[215 chars]6', 'output': {'summary': 'checked', 'observed[331 chars]: 3}}
+Diff is 406251 characters long. Set self.maxDiff to None to see it. : CLI must return the compact evidence pointer too
+
+----------------------------------------------------------------------
+Ran 1 test in 0.077s
+
+FAILED (failures=1)

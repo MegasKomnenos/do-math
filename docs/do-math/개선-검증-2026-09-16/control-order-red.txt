@@ -1,0 +1,21 @@
+test_control_processing_uses_acceptance_time_not_random_id_order (__main__.RecoveryRoutingTests.test_control_processing_uses_acceptance_time_not_random_id_order) ... FAIL
+
+======================================================================
+FAIL: test_control_processing_uses_acceptance_time_not_random_id_order (__main__.RecoveryRoutingTests.test_control_processing_uses_acceptance_time_not_random_id_order)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_research_recovery.py", line 118, in test_control_processing_uses_acceptance_time_not_random_id_order
+    self.assertEqual([row['action'] for row in engine._inbox()], ['pause', 'resume'])
+AssertionError: Lists differ: ['resume', 'pause'] != ['pause', 'resume']
+
+First differing element 0:
+'resume'
+'pause'
+
+- ['resume', 'pause']
++ ['pause', 'resume']
+
+----------------------------------------------------------------------
+Ran 1 test in 0.090s
+
+FAILED (failures=1)

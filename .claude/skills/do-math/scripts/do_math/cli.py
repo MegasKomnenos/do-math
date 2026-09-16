@@ -15,6 +15,7 @@ from .codex_adapter import CodexExecAdapter
 from .engine import ResearchEngine, control, initialize, json_safe
 from .git_store import GitStateStoreConflict, GitStateStoreError, GitStateStoreLockError
 from .repository import ResearchRepository
+from . import scheduled_operator
 
 
 class CliInputError(ValueError):
@@ -102,16 +103,19 @@ def build_parser() -> _Parser:
         command = commands.add_parser(name, help=f"queue and apply {name}")
         _instance_arguments(command)
         command.add_argument("--reason", default="")
+        command.add_argument("--origin", choices=("user", "operator"), default="user")
 
     input_command = commands.add_parser("input", help="submit user input")
     _instance_arguments(input_command)
     incoming = input_command.add_mutually_exclusive_group(required=True)
     incoming.add_argument("--text")
     incoming.add_argument("--file")
+    input_command.add_argument("--origin", choices=("user", "operator"), default="user")
 
     configure = commands.add_parser("configure", help="change explicit instance configuration")
     _instance_arguments(configure)
     configure.add_argument("--config-file", required=True)
+    configure.add_argument("--origin", choices=("user", "operator"), default="user")
 
     request = commands.add_parser("request", help="queue a model-free activity request")
     _instance_arguments(request)
@@ -122,16 +126,19 @@ def build_parser() -> _Parser:
     reason = request.add_mutually_exclusive_group()
     reason.add_argument("--reason")
     reason.add_argument("--text")
+    request.add_argument("--origin", choices=("user", "operator"), default="user")
 
     for name in ("decision", "knowledge", "trust", "external", "conversation"):
         command = commands.add_parser(name, help=f"apply a structured {name} control")
         _instance_arguments(command)
         command.add_argument("--file", required=True)
+        command.add_argument("--origin", choices=("user", "operator"), default="user")
 
     source = commands.add_parser("source", help="import an exact local source file")
     _instance_arguments(source)
     source.add_argument("--file", required=True)
     source.add_argument("--name")
+    source.add_argument("--origin", choices=("user", "operator"), default="user")
 
     query = commands.add_parser("query", help="query records or raw snapshot files")
     _instance_arguments(query)
@@ -164,11 +171,18 @@ def build_parser() -> _Parser:
 
     profile = commands.add_parser("profile", help="inspect the installed Codex CLI surface")
     profile.add_argument("--codex-path")
+
+    operator = commands.add_parser("operator", help="manage the independent scheduled operator")
+    operator.add_argument("mode", choices=("install", "uninstall", "status", "start", "start-operator", "check", "probe", "engine", "hold", "release"))
+    _instance_arguments(operator)
+    operator.add_argument("--workspace", type=Path)
+    operator.add_argument("--reason", default="")
     return parser
 
 
 def _control(args: argparse.Namespace, action: str, *, text: str = "", config: dict[str, Any] | None = None) -> dict[str, Any]:
-    request = control(args.repository, args.instance, action, text=text, config=config)
+    request = control(args.repository, args.instance, action, text=text, config=config,
+                      origin=getattr(args, "origin", "user"))
     engine = ResearchEngine(args.repository, args.instance)
     try:
         status = engine.process_controls()
@@ -179,6 +193,29 @@ def _control(args: argparse.Namespace, action: str, *, text: str = "", config: d
     return {**request, "effect": "rejected" if outcome["kind"] == "rejected_user_control" else "applied",
             "reason": outcome.get("reason"), "status": status["status"], "snapshot": status["snapshot"],
             "config": engine.instance["config"] if action == "configure" else None}
+
+
+def _operator_workspace(repository: Path, instance: str, supplied: Path | None = None) -> Path:
+    actual = scheduled_operator.resolve_workspace(repository, instance)
+    if supplied is not None:
+        if supplied.resolve() != actual:
+            raise CliInputError("--workspace must equal the instance workspace")
+    return actual
+
+
+def _reconcile_operator(repository: Path, instance: str, configuration: dict[str, Any]) -> dict[str, Any]:
+    workspace = scheduled_operator.resolve_workspace(repository, instance)
+    action = "install" if configuration["operator_enabled"] else "uninstall"
+    return scheduled_operator.schedule(action, repository=repository, instance=instance, workspace=workspace,
+                                       interval_seconds=configuration["operator_interval_seconds"],
+                                       operator_timeout_seconds=configuration["operator_timeout_seconds"],
+                                       engine_timeout_seconds=configuration["run_timeout_seconds"] + configuration["checkpoint_grace_seconds"])
+
+
+def _schedule_failure(result: dict[str, Any], error: RuntimeError, instance: str) -> tuple[dict[str, Any], int]:
+    result["operator_schedule"] = {"status": "failed", "error": str(error),
+                                   "reconcile": f"operator install --instance {instance}"}
+    return result, 5
 
 
 def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
@@ -195,8 +232,15 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
         for source in args.source:
             if not source.is_file():
                 raise CliInputError(f"--source is not a file: {source}")
-        return initialize(args.repository, goal=goal, workspace=args.workspace, config=config, title=args.title,
-                          goal_kind=args.goal_kind, policies=policies, sources=args.source), 0
+        result = initialize(args.repository, goal=goal, workspace=args.workspace, config=config, title=args.title,
+                            goal_kind=args.goal_kind, policies=policies, sources=args.source)
+        _, initialized, _ = ResearchRepository(args.repository, result["instance_id"]).load()
+        if initialized["config"]["operator_enabled"]:
+            try:
+                result["operator_schedule"] = _reconcile_operator(args.repository, result["instance_id"], initialized["config"])
+            except RuntimeError as error:
+                return _schedule_failure(result, error, result["instance_id"])
+        return result, 0
     if command == "run":
         return ResearchEngine(args.repository, args.instance).run(max_steps=args.max_steps, watch=args.watch), 0
     if command == "status":
@@ -209,7 +253,17 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
     if command == "input":
         return _control(args, "input", text=args.text if args.text is not None else _text_file(args.file)), 0
     if command == "configure":
-        return _control(args, "configure", config=_json_file(args.config_file)), 0
+        requested = _json_file(args.config_file)
+        result = _control(args, "configure", config=requested)
+        operator_keys = {"operator_enabled", "operator_interval_seconds", "operator_timeout_seconds", "operator_model", "operator_effort", "run_timeout_seconds", "checkpoint_grace_seconds"}
+        if result["effect"] == "applied" and operator_keys.intersection(requested):
+            try:
+                result["operator_schedule"] = _reconcile_operator(args.repository, args.instance, result["config"])
+            except RuntimeError as error:
+                return _schedule_failure(result, error, args.instance)
+        elif operator_keys.intersection(requested):
+            result["operator_schedule"] = {"status": "pending", "reason": "run operator install or uninstall after the control is applied"}
+        return result, 0
     if command == "request":
         return _control(args, "request", text=args.reason if args.reason is not None else args.text or "",
                         config={"role": args.role, "target": args.target}), 0
@@ -254,6 +308,39 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
         path = args.codex_path or shutil.which("codex") or "codex"
         result = json_safe(CodexExecAdapter(path).describe())
         return result, 0 if result.get("verified") else 1
+    if command == "operator":
+        workspace = _operator_workspace(args.repository, args.instance, args.workspace)
+        if command == "operator":
+            mode = args.mode
+            if mode in {"install", "uninstall", "status", "start", "start-operator"}:
+                _, initialized, _ = ResearchRepository(args.repository, args.instance).load()
+                configuration = initialized["config"]
+                action = {"start": "start-engine", "start-operator": "start-operator"}.get(mode, mode)
+                if action == "start-engine":
+                    guard = scheduled_operator.engine_start_guard(args.repository, args.instance, workspace)
+                    if guard["outcome"] != "startable":
+                        return guard, 0
+                return scheduled_operator.schedule(action, repository=args.repository, instance=args.instance, workspace=workspace,
+                                                   interval_seconds=configuration.get("operator_interval_seconds", 7200),
+                                                   operator_timeout_seconds=configuration.get("operator_timeout_seconds", 5400),
+                                                   engine_timeout_seconds=configuration.get("run_timeout_seconds", 7200) + configuration.get("checkpoint_grace_seconds", 10)), 0
+            if mode == "hold":
+                marker = scheduled_operator.hold(workspace, reason=args.reason)
+                pause = _control(args, "pause", text="User requested scheduled operator HOLD " + marker["id"])
+                return {"hold": marker, "pause": pause}, 0
+            if mode == "release":
+                released = scheduled_operator.release(workspace)
+                marker = released.get("released")
+                expected = "User requested scheduled operator HOLD " + marker["id"] if marker else None
+                if expected:
+                    released["resume"] = _control(args, "resume", text="User released scheduled operator HOLD " + marker["id"],
+                                                  config={"expected_user_pause_reason": expected})
+                else:
+                    released["resume"] = {"effect": "not_requested", "reason": "no HOLD was released"}
+                return released, 0
+            if mode == "engine":
+                return scheduled_operator.run_engine(args.repository, args.instance, workspace), 0
+            return scheduled_operator.check(args.repository, args.instance, workspace, probe=mode == "probe"), 0
     raise CliInputError("unknown command")
 
 
@@ -278,7 +365,7 @@ def _emit(value: dict[str, Any] | str) -> None:
     if isinstance(value, str):
         print(value)
     else:
-        print(json.dumps(value, ensure_ascii=False, sort_keys=True))
+        print(json.dumps(json_safe(value), ensure_ascii=False, sort_keys=True))
 
 
 def main(argv: list[str] | None = None) -> int:

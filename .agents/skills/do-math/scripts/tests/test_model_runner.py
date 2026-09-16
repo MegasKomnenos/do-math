@@ -12,7 +12,10 @@ class Execution:
     job=Job(); request_sha256="a"
 class Adapter:
     def __init__(self, result): self.result=result; self.done=False; self.stopped=False
-    def start(self,*a,**k): return Execution()
+    def start(self,*a,**k):
+     import json
+     self.request=json.loads(a[0].read_text(encoding='utf-8'))
+     return Execution()
     def resume(self,*a): self.resumed=True
     def wait_for_termination(self,*a): self.done=True; return True
     def stop(self,*a): self.stopped=True
@@ -43,4 +46,9 @@ class Tests(unittest.TestCase):
    root=Path(d); ws=root/'ws'; ws.mkdir(); ev=root/'e'; r=runner.CodexModelRunner('fake'); a=Adapter({'result':'incomplete','jsonl':{}}); r._adapter=a
    x=r.run(prompt='x',output_schema={},workspace=ws,evidence_dir=ev,model='m',effort='low',timeout_seconds=1,should_stop=lambda:True)
    self.assertEqual(x['status'],'stopped'); self.assertTrue(a.stopped); self.assertFalse(getattr(a,'resumed',False))
+ def test_scholarly_server_is_written_to_the_immutable_worker_request(self):
+  with tempfile.TemporaryDirectory() as d:
+   root=Path(d); ws=root/'ws'; ws.mkdir(); ev=root/'e'; r=runner.CodexModelRunner('fake'); a=Adapter({'result':'output_collected','final':{'raw':b'{}'},'jsonl':{'usage':{}}}); r._adapter=a
+   r.run(prompt='x',output_schema={'type':'object'},workspace=ws,evidence_dir=ev,model='m',effort='low',timeout_seconds=1,scholarly_server={'command':'python','args':['C:/server.py']})
+   self.assertEqual(a.request['scholarly_server'],{'command':'python','args':['C:/server.py']})
 if __name__=='__main__': unittest.main()

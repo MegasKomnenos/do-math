@@ -1,0 +1,65 @@
+test_default_call_budgets_are_unlimited (__main__.ResearchRecoveryTests.test_default_call_budgets_are_unlimited) ... FAIL
+test_exhausted_output_repair_does_not_stop_unrelated_work (__main__.ResearchRecoveryTests.test_exhausted_output_repair_does_not_stop_unrelated_work) ... FAIL
+test_plan_input_always_has_authoritative_ready_ids (__main__.ResearchRecoveryTests.test_plan_input_always_has_authoritative_ready_ids) ... FAIL
+test_plan_rejection_names_missing_unexpected_and_duplicate_ids (__main__.ResearchRecoveryTests.test_plan_rejection_names_missing_unexpected_and_duplicate_ids) ... FAIL
+test_resume_keeps_failed_output_out_of_execution_queue (__main__.ResearchRecoveryTests.test_resume_keeps_failed_output_out_of_execution_queue) ... FAIL
+test_revised_contract_replaces_obsolete_criteria_and_preserves_history (__main__.ResearchRecoveryTests.test_revised_contract_replaces_obsolete_criteria_and_preserves_history) ... ERROR
+
+======================================================================
+ERROR: test_revised_contract_replaces_obsolete_criteria_and_preserves_history (__main__.ResearchRecoveryTests.test_revised_contract_replaces_obsolete_criteria_and_preserves_history)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_research_recovery.py", line 33, in test_revised_contract_replaces_obsolete_criteria_and_preserves_history
+    engine._apply({'role': 'research_preparation'},
+  File "C:\math\.claude\skills\do-math\scripts\do_math\engine.py", line 1481, in _apply
+    for specification in self.runtime["executions"][execution_id].get("extensions", {}).get("task_conditions", []):
+                         ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+KeyError: 'EX-revision'
+
+======================================================================
+FAIL: test_default_call_budgets_are_unlimited (__main__.ResearchRecoveryTests.test_default_call_budgets_are_unlimited)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_research_recovery.py", line 23, in test_default_call_budgets_are_unlimited
+    self.assertIsNone(DEFAULT_CONFIG['work_calls'])
+AssertionError: 40 is not None
+
+======================================================================
+FAIL: test_exhausted_output_repair_does_not_stop_unrelated_work (__main__.ResearchRecoveryTests.test_exhausted_output_repair_does_not_stop_unrelated_work)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_research_recovery.py", line 79, in test_exhausted_output_repair_does_not_stop_unrelated_work
+    self.assertEqual(engine.runtime['status'], 'ready')
+AssertionError: 'paused' != 'ready'
+- paused
++ ready
+
+
+======================================================================
+FAIL: test_plan_input_always_has_authoritative_ready_ids (__main__.ResearchRecoveryTests.test_plan_input_always_has_authoritative_ready_ids)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_research_recovery.py", line 64, in test_plan_input_always_has_authoritative_ready_ids
+    self.assertEqual(context.get('ready_task_ids'), [])
+AssertionError: None != []
+
+======================================================================
+FAIL: test_plan_rejection_names_missing_unexpected_and_duplicate_ids (__main__.ResearchRecoveryTests.test_plan_rejection_names_missing_unexpected_and_duplicate_ids)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_research_recovery.py", line 51, in test_plan_rejection_names_missing_unexpected_and_duplicate_ids
+    self.assertIn('missing', message)
+AssertionError: 'missing' not found in 'plan must select or defer every ready task exactly once'
+
+======================================================================
+FAIL: test_resume_keeps_failed_output_out_of_execution_queue (__main__.ResearchRecoveryTests.test_resume_keeps_failed_output_out_of_execution_queue)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_research_recovery.py", line 97, in test_resume_keeps_failed_output_out_of_execution_queue
+    self.assertNotIn('AC-rejected', [a.get('id') for a in engine.runtime['queue']])
+AssertionError: 'AC-rejected' unexpectedly found in ['AC-other', 'AC-rejected']
+
+----------------------------------------------------------------------
+Ran 6 tests in 46.651s
+
+FAILED (failures=5, errors=1)

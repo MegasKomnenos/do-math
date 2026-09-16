@@ -98,6 +98,26 @@ class CodexWorkerTests(unittest.TestCase):
         self.assertIn("permissions.do_math.network.enabled=false", argv)
         self.assertIn('windows.sandbox="elevated"', argv)
 
+    def test_scholarly_is_the_only_explicit_mcp_and_uses_workspace_data_directory(self):
+        request = {"codex_path": "C:/Codex/codex.exe", "prompt_path": "p", "cwd": "C:/work", "model": "gpt-x",
+                   "effort": "low", "sandbox": "read-only", "approval_policy": "never", "max_runtime_seconds": 1,
+                   "stdout_path": "o", "stderr_path": "e", "final_path": "f", "status_path": "s",
+                   "scholarly_server": {"command": "python", "args": ["C:/server.py"]}}
+        argv = codex_worker.build_argv(request)
+        overrides = [argv[index + 1] for index, value in enumerate(argv[:-1]) if value == "--config"]
+        self.assertIn('mcp_servers.scholarly.command="python"', overrides)
+        args = next(value for value in overrides if value.startswith("mcp_servers.scholarly.args="))
+        self.assertIn('"C:/server.py"', args)
+        self.assertIn('"--data-dir"', args)
+        self.assertIn("scholarly-data", args)
+        self.assertFalse(any("mcp_servers." in value and "scholarly" not in value for value in overrides))
+
+    def test_worker_remains_importable_as_its_direct_job_root(self):
+        worker = Path(codex_worker.__file__)
+        result = __import__("subprocess").run([sys.executable, str(worker)], capture_output=True, timeout=10)
+        self.assertNotIn(b"No module named", result.stderr)
+        self.assertIn(b"usage: codex_worker.py REQUEST.json", result.stderr)
+
     def test_filesystem_write_root_outside_workspace_is_rejected_before_spawn(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory); workspace = root / "workspace"; workspace.mkdir(); prompt = root / "prompt"; prompt.write_bytes(b"p")
