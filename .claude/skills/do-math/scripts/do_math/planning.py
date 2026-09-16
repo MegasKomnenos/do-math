@@ -40,18 +40,25 @@ def validate_plan_submission(output: dict, tasks: dict, ready_ids: list[str]) ->
     ids = [row["task_id"] for row in assessments]
     required = {tid for tid, task in tasks.items() if task.get("status") == "assessing"}
     if len(ids) != len(set(ids)) or not required <= set(ids):
-        raise ValueError("plan must assess every returned task exactly once")
+        details = {"assessing_task_ids": sorted(required), "missing": sorted(required - set(ids)),
+                   "duplicate": sorted({tid for tid in ids if ids.count(tid) > 1})}
+        raise ValueError("plan must assess every returned task exactly once: " + json.dumps(details, ensure_ascii=False, sort_keys=True))
     for row in assessments:
         task = tasks.get(row["task_id"])
         if not task or task.get("status") not in {"assessing", "waiting"} or not task.get("results"):
-            raise ValueError("assessment requires a task with returned work")
+            raise ValueError("assessment requires a task with returned work: " + json.dumps(
+                {"task_id": row["task_id"], "status": task.get("status") if task else None}, ensure_ascii=False, sort_keys=True))
         checks = row["criteria_results"]
-        if sorted(c["criterion"] for c in checks) != sorted(task["completion_criteria"]):
-            raise ValueError("task assessment must cover the exact completion criteria")
+        named = [c["criterion"] for c in checks]
+        if sorted(named) != sorted(task["completion_criteria"]):
+            details = {"task_id": row["task_id"], "missing": sorted(set(task["completion_criteria"]) - set(named)),
+                       "unexpected": sorted(set(named) - set(task["completion_criteria"])),
+                       "duplicate": sorted({c for c in named if named.count(c) > 1})}
+            raise ValueError("task assessment must cover the exact completion criteria: " + json.dumps(details, ensure_ascii=False, sort_keys=True))
         if row["decision"] == "completed" and not all(c["satisfied"] and c["evidence"].strip() for c in checks):
-            raise ValueError("completed task requires evidence for every completion criterion")
+            raise ValueError("completed task requires evidence for every completion criterion: " + row["task_id"])
         if row["decision"] == "closed" and task.get("scope_disposition", {}).get("kind") not in {"withdraw", "transfer", "superseded_requirements"}:
-            raise ValueError("closing unfinished obligations requires an explicit scope transfer or withdrawal; use incomplete to return unfinished research")
+            raise ValueError("closing unfinished obligations requires an explicit scope transfer or withdrawal; use incomplete to return unfinished research: " + row["task_id"])
 
 
 def validate_condition(condition: dict) -> None:

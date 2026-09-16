@@ -319,6 +319,7 @@ class ResearchEngine(SchedulerMixin, ReviewEngineMixin, LifecycleEngineMixin, Ac
             raise ValueError("unsupported instance contract; explicit migration is required")
         self.instance["config"] = {**deepcopy(DEFAULT_CONFIG), "session_limits": None, **self.instance["config"]}
         self._live_execution_ids = set()
+        self._executor_running = False
         self._inline_reviewing = False
         self._calls = None
         self._slots = None
@@ -520,7 +521,7 @@ class ResearchEngine(SchedulerMixin, ReviewEngineMixin, LifecycleEngineMixin, Ac
             elif action == "configure":
                 changes_mode = "session_limits" in request["config"] and (
                     (request["config"]["session_limits"] is None) != (self.instance["config"]["session_limits"] is None))
-                if changes_mode and (self._calls is not None or self._live_execution_ids):
+                if changes_mode and (self._executor_running or self._calls is not None or self._live_execution_ids):
                     self._reject_control(request, "budget mode conversion requires a stopped executor")
                     continue
                 candidate_config = {**self.instance["config"], **request["config"]}
@@ -545,8 +546,10 @@ class ResearchEngine(SchedulerMixin, ReviewEngineMixin, LifecycleEngineMixin, Ac
                         temporary_slots.configure(self.instance["config"]["session_limits"])
                     finally:
                         if self._slots is None: temporary_slots.close()
-                    for pending in self.runtime["queue"]:
-                        if pending.get("id") not in {e.get("action", {}).get("id") for e in self.runtime["executions"].values() if e["status"] != "ended"}:
+                    live_ids = {e.get("action", {}).get("id") for e in self.runtime["executions"].values() if e["status"] != "ended"}
+                    waiting = [entry["action"] for entry in self.runtime.get("waiting_actions", {}).values()]
+                    for pending in [*self.runtime["queue"], *waiting]:
+                        if pending.get("id") not in live_ids:
                             pending.pop("model_selection", None)
                 if self.runtime["status"] in {"budget_exhausted", "capacity_waiting"}:
                     self.runtime["status"] = "ready"
@@ -654,6 +657,14 @@ class ResearchEngine(SchedulerMixin, ReviewEngineMixin, LifecycleEngineMixin, Ac
                               "review": "fresh_sessions_without_peer_results_in_inputs"}}
 
     def run(self, *, max_steps: int | None = None, watch: bool = False) -> dict:
+        # Budget-mode conversion is valid only while no executor loop can dispatch.
+        self._executor_running = True
+        try:
+            return self._run_executor(max_steps=max_steps, watch=watch)
+        finally:
+            self._executor_running = False
+
+    def _run_executor(self, *, max_steps: int | None = None, watch: bool = False) -> dict:
         if max_steps is not None and max_steps < 1:
             raise ValueError("max_steps must be positive")
         with self.store.writer_lock():
@@ -735,10 +746,9 @@ class ResearchEngine(SchedulerMixin, ReviewEngineMixin, LifecycleEngineMixin, Ac
             if self._session_mode() and identity.get("job_name"):
                 from .windows_job import named_job_empty
                 if named_job_empty(identity["job_name"]) is not True:
-                    self.runtime["status"] = "paused"
+                    # Keep this execution and its slot held; confirmed executions are still recovered and saved below.
                     self.runtime["questions"].append("Previous local Job termination is unconfirmed: " + execution["id"])
-                    self._save()
-                    return
+                    continue
             eid, bundle = execution["id"], new_id("BA")
             workspace = Path(self.instance["workspace"]) / "runs" / eid / "workspace"
             if execution["role"] == "formal_check":
@@ -1886,6 +1896,8 @@ class ResearchEngine(SchedulerMixin, ReviewEngineMixin, LifecycleEngineMixin, Ac
                 for pending in self.runtime["queue"]:
                     if pending["role"] == "task_contract_review" and pending.get("target") == tid:
                         pending["contract_basis"] = basis
+                        # A revised contract edition carries its own assessment; select the review model again.
+                        pending.pop("model_selection", None)
             self._enqueue("research_plan")
         elif role == "task_contract_review":
             task = self.runtime["tasks"][target]

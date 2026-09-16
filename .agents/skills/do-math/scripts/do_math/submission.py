@@ -124,7 +124,8 @@ def reported_references(output: dict, extensions: dict, context: dict | None = N
     if context:
         aliases.update({row["path"]: row["id"] for row in context.get("knowledge_catalog", [])})
         aliases.update({row["local_path"]: row["name"] for row in context.get("sources", [])})
-    return list(dict.fromkeys(aliases.get(ref, ref) for ref in refs if isinstance(ref, str)))
+    # A supplied input file keeps its record identity when cited as workspace:<path>.
+    return list(dict.fromkeys(aliases.get(ref.removeprefix("workspace:"), ref) for ref in refs if isinstance(ref, str)))
 
 
 def _issue(path, message):

@@ -61,8 +61,10 @@ class ConcurrentRunner:
 
 class SessionPolicyTests(unittest.TestCase):
     def test_defaults_and_max_of_difficulty_and_importance(self):
-        self.assertEqual(sum(LIMITS["work"].values()), 9)
-        self.assertEqual(sum(LIMITS["operations"].values()), 9)
+        self.assertEqual(MODELS, {"high": "gpt-6-astra", "medium": "gpt-5.6-sol", "low": "gpt-5.6-terra"})
+        per_model = {"gpt-6-astra": 3, "gpt-5.6-sol": 3, "gpt-5.6-terra": 3}
+        self.assertEqual(LIMITS, {"work": per_model, "operations": per_model})
+        self.assertEqual((DEFAULT_CONFIG["tier_models"], DEFAULT_CONFIG["session_limits"]), (MODELS, LIMITS))
         self.assertEqual(assessment_tier({"difficulty": "low", "importance": "high", "reason": "goal-wide impact"}), "high")
         config = deepcopy(DEFAULT_CONFIG)
         config["session_limits"]["work"][MODELS["high"]] = 0
