@@ -1,0 +1,52 @@
+test_assessment_only_run_preserves_user_contract_and_unblocks_independent_review (test_model_assessment_flow.AssessmentFlowTests.test_assessment_only_run_preserves_user_contract_and_unblocks_independent_review) ... FAIL
+test_missing_academic_assessments_are_batched_before_any_contract_review (test_model_assessment_flow.AssessmentFlowTests.test_missing_academic_assessments_are_batched_before_any_contract_review) ... FAIL
+test_empty_preparation_and_legacy_call_budget_contract_remain_accepted (test_model_assessment_flow.AssessmentSubmissionTests.test_empty_preparation_and_legacy_call_budget_contract_remain_accepted) ... ok
+test_exact_coverage_is_accepted_and_duplicates_and_foreign_targets_are_rejected (test_model_assessment_flow.AssessmentSubmissionTests.test_exact_coverage_is_accepted_and_duplicates_and_foreign_targets_are_rejected) ... ok
+test_missing_candidate_assessments_are_rejected_with_missing_titles (test_model_assessment_flow.AssessmentSubmissionTests.test_missing_candidate_assessments_are_rejected_with_missing_titles) ... FAIL
+test_missing_family_cannot_bypass_the_completeness_check (test_model_assessment_flow.AssessmentSubmissionTests.test_missing_family_cannot_bypass_the_completeness_check) ... FAIL
+test_revised_candidate_also_needs_a_new_assessment (test_model_assessment_flow.AssessmentSubmissionTests.test_revised_candidate_also_needs_a_new_assessment) ... FAIL
+
+======================================================================
+FAIL: test_assessment_only_run_preserves_user_contract_and_unblocks_independent_review (test_model_assessment_flow.AssessmentFlowTests.test_assessment_only_run_preserves_user_contract_and_unblocks_independent_review)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_model_assessment_flow.py", line 126, in test_assessment_only_run_preserves_user_contract_and_unblocks_independent_review
+    self.assertTrue(seen[0]["action"].get("assessment_targets"))
+AssertionError: None is not true
+
+======================================================================
+FAIL: test_missing_academic_assessments_are_batched_before_any_contract_review (test_model_assessment_flow.AssessmentFlowTests.test_missing_academic_assessments_are_batched_before_any_contract_review)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_model_assessment_flow.py", line 93, in test_missing_academic_assessments_are_batched_before_any_contract_review
+    self.assertFalse(any(a["role"] == "task_contract_review" for a in queue))
+AssertionError: True is not false
+
+======================================================================
+FAIL: test_missing_candidate_assessments_are_rejected_with_missing_titles (test_model_assessment_flow.AssessmentSubmissionTests.test_missing_candidate_assessments_are_rejected_with_missing_titles)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_model_assessment_flow.py", line 48, in test_missing_candidate_assessments_are_rejected_with_missing_titles
+    self.assertTrue(issues, "a candidate without an assessment must not pass")
+AssertionError: [] is not true : a candidate without an assessment must not pass
+
+======================================================================
+FAIL: test_missing_family_cannot_bypass_the_completeness_check (test_model_assessment_flow.AssessmentSubmissionTests.test_missing_family_cannot_bypass_the_completeness_check)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_model_assessment_flow.py", line 52, in test_missing_family_cannot_bypass_the_completeness_check
+    self.assertTrue(self.issues({}))
+AssertionError: [] is not true
+
+======================================================================
+FAIL: test_revised_candidate_also_needs_a_new_assessment (test_model_assessment_flow.AssessmentSubmissionTests.test_revised_candidate_also_needs_a_new_assessment)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_model_assessment_flow.py", line 64, in test_revised_candidate_also_needs_a_new_assessment
+    self.assertTrue(self.issues({}), "the old edition's assessment must not fill the new candidate implicitly")
+AssertionError: [] is not true : the old edition's assessment must not fill the new candidate implicitly
+
+----------------------------------------------------------------------
+Ran 7 tests in 1.459s
+
+FAILED (failures=5)

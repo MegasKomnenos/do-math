@@ -80,6 +80,15 @@ class ScriptedRunner:
             out.update(decision="satisfied", reason="basis", scope_complete=True)
         elif role == "operational_review":
             out.update(decision="stop", reason="diagnostic stop")
+        if ctx.get("budget_unit") == "concurrent_sessions" and role in {"research_preparation", "research_plan"}:
+            key = "task_title" if role == "research_preparation" else "task_id"
+            identities = [item["title"] for item in out.get("candidates", [])] if key == "task_title" else out["selections"]
+            if ctx["action"].get("assessment_targets"):
+                key, identities = "task_id", list(ctx["action"]["assessment_targets"])
+                out["candidates"] = []
+            (workspace / "activity-extensions.json").write_text(json.dumps({"model_assessments": [
+                {key: identity, "difficulty": "low", "importance": "medium", "reason": "Explicit bounded fixture task."}
+                for identity in identities]}), encoding="utf-8")
         jsonschema.validate(out, output_schema)
         return {"status": "completed", "output": out, "usage": {"calls": 1}, "error": None}
 

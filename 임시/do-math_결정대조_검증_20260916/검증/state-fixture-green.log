@@ -1,0 +1,10 @@
+test_cli1_legacy_state_remains_readable (test_state_checks.StateCheckTests.test_cli1_legacy_state_remains_readable) ... ok
+test_external_mapping_mutation_and_version_policy (test_state_checks.StateCheckTests.test_external_mapping_mutation_and_version_policy) ... ok
+test_mutated_real_purpose_state_detects_k_task_goal_source_and_supplement_errors (test_state_checks.StateCheckTests.test_mutated_real_purpose_state_detects_k_task_goal_source_and_supplement_errors) ... ok
+test_real_lifecycle_prepare_run_and_reconcile_states_are_clean (test_state_checks.StateCheckTests.test_real_lifecycle_prepare_run_and_reconcile_states_are_clean) ... ok
+test_real_purpose_harness_solved_academic_state_is_clean (test_state_checks.StateCheckTests.test_real_purpose_harness_solved_academic_state_is_clean) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 37.116s
+
+OK

@@ -218,7 +218,7 @@ def check(repository: Path, instance: str, workspace: Path, *, probe: bool = Fal
         _json(result_path, report)
         _json(_operator_dir(workspace) / "latest-report.json", _latest_report(report, result_path))
         return report
-    _, state, _ = ResearchRepository(repository, instance).load()
+    _, state, runtime = ResearchRepository(repository, instance).load()
     from .engine import DEFAULT_CONFIG
     config = {**DEFAULT_CONFIG, "session_limits": None, **state["config"]}
     scholarly = config.get("scholarly_server") if config.get("scholarly_enabled", True) else None
@@ -231,8 +231,11 @@ def check(repository: Path, instance: str, workspace: Path, *, probe: bool = Fal
         _json(run_directory / "result.json", report)
         _json(_operator_dir(workspace) / "latest-report.json", report)
         return report
-    if status.get("user_pause") or status.get("status") == "closed":
-        report = {"outcome": "user_paused" if status.get("user_pause") else "closed", "status": status,
+    # A pause required by the user's conversation-loss policy is a user stop, not an automatic failure.
+    user_stop = bool(status.get("user_pause")) or (
+        runtime.get("stop_requested") == "conversation_lost" and state.get("conversation_loss_policy") == "pause")
+    if user_stop or status.get("status") == "closed":
+        report = {"outcome": "user_paused" if user_stop else "closed", "status": status,
                   "run_directory": str(run_directory)}
         _json(run_directory / "result.json", report)
         _json(_operator_dir(workspace) / "latest-report.json", report)

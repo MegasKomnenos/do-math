@@ -29,6 +29,50 @@ def assessment_tier(assessment: dict) -> str:
     return max((assessment["difficulty"], assessment["importance"]), key=TIERS.index)
 
 
+def assessment_key(action: dict) -> str:
+    return "task_title" if action["role"] == "research_preparation" and "assessment_targets" not in action else "task_id"
+
+
+def validate_assessments(action: dict, output: dict, extensions: dict, *, required: bool) -> dict:
+    """One shared completeness check for the supplied checker and receiver."""
+    key = assessment_key(action)
+    rows = extensions.get("model_assessments", [])
+    identified = {}
+    for entry in rows:
+        identity = entry[key]
+        if identity in identified:
+            raise ValueError("duplicate model assessment: " + identity)
+        assessment = {k: entry[k] for k in ASSESSMENT_SCHEMA["properties"]}
+        assessment_tier(assessment)
+        identified[identity] = assessment
+    if "assessment_targets" in action:
+        if output.get("candidates"):
+            raise ValueError("assessment-only preparation cannot create or revise contracts")
+        if set(extensions) - {"model_assessments", "model_assessment_deferrals"}:
+            raise ValueError("assessment-only preparation may only assess or defer its assigned tasks")
+        expected = set(action["assessment_targets"])
+        deferred = [entry["task_id"] for entry in extensions.get("model_assessment_deferrals", [])]
+        if len(deferred) != len(set(deferred)) or set(deferred) & set(identified):
+            raise ValueError("assessment and deferral must identify each target exactly once")
+        supplied = set(identified) | set(deferred)
+        required = True
+    else:
+        expected = ({item["title"] for item in output.get("candidates", [])}
+                    if action["role"] == "research_preparation" else set(output.get("selections", [])))
+        supplied = set(identified)
+    missing, unexpected = expected - supplied, supplied - expected
+    if unexpected or (required and missing):
+        import json
+        raise ValueError("model assessment coverage: " + json.dumps(
+            {"missing": sorted(missing), "unexpected": sorted(unexpected)}, ensure_ascii=False))
+    return identified
+
+
+def assessment_basis(task: dict) -> dict:
+    from .planning import contract_hash
+    return {"revision": task["revision"], "contract_sha256": contract_hash(task)}
+
+
 def validate_policy(config: dict) -> None:
     models = config["tier_models"]
     if not isinstance(models, dict) or set(models) != set(TIERS) or any(

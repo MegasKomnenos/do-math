@@ -11,12 +11,13 @@ import threading
 import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.lifecycle_engine import LifecycleEngineMixin
+from do_math.scheduler import SchedulerMixin
 from do_math.planning import contract_hash
 from do_math.knowledge import register_environment
 from do_math.state_checks import state_errors
 
 
-class FakeEngine(LifecycleEngineMixin):
+class FakeEngine(LifecycleEngineMixin, SchedulerMixin):
     def __init__(self, root):
         self.root = Path(root)
         self.current_time = datetime(2026, 9, 14, 0, 0, tzinfo=timezone.utc)
@@ -24,7 +25,8 @@ class FakeEngine(LifecycleEngineMixin):
         self.instance = {'id': 'I1', 'goal': 'Prove the target', 'goal_kind': 'mathematical',
             'goal_status': 'unresolved', 'policies': 'Read all evidence', 'workspace': str(root),
             'knowledge': {}, 'relations': [], 'goal_judgments': [], 'sources': [],
-            'config': {'research_reconsider_seconds': 60, 'lean_timeout_seconds': 5, 'external_timeout_seconds': 2}}
+            'config': {'research_reconsider_seconds': 60, 'lean_timeout_seconds': 5, 'external_timeout_seconds': 2,
+                       'session_limits': None}}
         self.runtime = {'status': 'ready', 'tasks': {}, 'executions': {}, 'activities': {}, 'queue': [], 'history': [], 'questions': []}
         self.head = 'snapshot-1'
         self.store = object()

@@ -1,0 +1,37 @@
+test_installed_producer_command_and_assessment_handoff_with_actual_git (test_model_assessment_flow.ActualGitAssessmentTests.test_installed_producer_command_and_assessment_handoff_with_actual_git) ... ok
+test_assessment_only_run_preserves_user_contract_and_unblocks_independent_review (test_model_assessment_flow.AssessmentFlowTests.test_assessment_only_run_preserves_user_contract_and_unblocks_independent_review) ... ok
+test_assessment_request_does_not_absorb_an_ordinary_preparation (test_model_assessment_flow.AssessmentFlowTests.test_assessment_request_does_not_absorb_an_ordinary_preparation) ... ok
+test_completed_normal_preparation_does_not_resolve_a_failed_assessment_request (test_model_assessment_flow.AssessmentFlowTests.test_completed_normal_preparation_does_not_resolve_a_failed_assessment_request) ... ok
+test_deferred_assessment_waits_for_input_and_can_resume_without_stale_question (test_model_assessment_flow.AssessmentFlowTests.test_deferred_assessment_waits_for_input_and_can_resume_without_stale_question) ... ok
+test_late_assessment_cannot_change_a_revised_user_contract (test_model_assessment_flow.AssessmentFlowTests.test_late_assessment_cannot_change_a_revised_user_contract) ... ok
+test_missing_academic_assessments_are_batched_before_any_contract_review (test_model_assessment_flow.AssessmentFlowTests.test_missing_academic_assessments_are_batched_before_any_contract_review) ... ok
+test_real_academic_generation_enters_assessment_preparation_on_session_conversion (test_model_assessment_flow.AssessmentFlowTests.test_real_academic_generation_enters_assessment_preparation_on_session_conversion) ... ok
+test_receiver_parks_incomplete_new_candidate_assessments_without_creating_tasks (test_model_assessment_flow.AssessmentFlowTests.test_receiver_parks_incomplete_new_candidate_assessments_without_creating_tasks) ... ok
+test_assessment_only_deferrals_must_cover_targets_without_overlap (test_model_assessment_flow.AssessmentSubmissionTests.test_assessment_only_deferrals_must_cover_targets_without_overlap) ... FAIL
+test_assessment_only_payload_cannot_edit_contracts_or_use_other_extensions (test_model_assessment_flow.AssessmentSubmissionTests.test_assessment_only_payload_cannot_edit_contracts_or_use_other_extensions) ... ok
+test_empty_preparation_and_legacy_call_budget_contract_remain_accepted (test_model_assessment_flow.AssessmentSubmissionTests.test_empty_preparation_and_legacy_call_budget_contract_remain_accepted) ... ok
+test_exact_coverage_is_accepted_and_duplicates_and_foreign_targets_are_rejected (test_model_assessment_flow.AssessmentSubmissionTests.test_exact_coverage_is_accepted_and_duplicates_and_foreign_targets_are_rejected) ... ok
+test_missing_candidate_assessments_are_rejected_with_missing_titles (test_model_assessment_flow.AssessmentSubmissionTests.test_missing_candidate_assessments_are_rejected_with_missing_titles) ... ok
+test_missing_family_cannot_bypass_the_completeness_check (test_model_assessment_flow.AssessmentSubmissionTests.test_missing_family_cannot_bypass_the_completeness_check) ... ok
+test_revised_candidate_also_needs_a_new_assessment (test_model_assessment_flow.AssessmentSubmissionTests.test_revised_candidate_also_needs_a_new_assessment) ... ok
+
+======================================================================
+FAIL: test_assessment_only_deferrals_must_cover_targets_without_overlap (test_model_assessment_flow.AssessmentSubmissionTests.test_assessment_only_deferrals_must_cover_targets_without_overlap)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_model_assessment_flow.py", line 91, in test_assessment_only_deferrals_must_cover_targets_without_overlap
+    self.assertEqual(self.issues({}), [])
+AssertionError: Lists differ: [{'path': 'activity-extensions.json/model_[85 chars]ts'}] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+{'path': 'activity-extensions.json/model_assessments', 'message': 'assessment-only preparation cannot create or revise contracts'}
+
++ []
+- [{'message': 'assessment-only preparation cannot create or revise contracts',
+-   'path': 'activity-extensions.json/model_assessments'}]
+
+----------------------------------------------------------------------
+Ran 16 tests in 24.864s
+
+FAILED (failures=1)

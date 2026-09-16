@@ -1,0 +1,21 @@
+test_controls_with_identical_wall_time_preserve_acceptance_order (test_research_recovery.RecoveryRoutingTests.test_controls_with_identical_wall_time_preserve_acceptance_order) ... FAIL
+
+======================================================================
+FAIL: test_controls_with_identical_wall_time_preserve_acceptance_order (test_research_recovery.RecoveryRoutingTests.test_controls_with_identical_wall_time_preserve_acceptance_order)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_research_recovery.py", line 119, in test_controls_with_identical_wall_time_preserve_acceptance_order
+    self.assertEqual([row['config']['operation'] for row in engine._inbox()], ['attach', 'detach'])
+AssertionError: Lists differ: ['detach', 'attach'] != ['attach', 'detach']
+
+First differing element 0:
+'detach'
+'attach'
+
+- ['detach', 'attach']
++ ['attach', 'detach']
+
+----------------------------------------------------------------------
+Ran 1 test in 0.062s
+
+FAILED (failures=1)

@@ -1,0 +1,672 @@
+{
+  "repair": 2,
+  "files": 35,
+  "lines": 10951,
+  "issues": [],
+  "file_table": [
+    {
+      "file": ".claude/skills/do-math/scripts/do_math/__init__.py",
+      "lines": 1,
+      "report": [
+        [
+          "__init__.py",
+          "1",
+          "1~1",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/do_math/academic.py",
+      "lines": 143,
+      "report": [
+        [
+          "academic.py",
+          "143",
+          "1~143",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/do_math/academic_engine.py",
+      "lines": 115,
+      "report": [
+        [
+          "academic_engine.py",
+          "115",
+          "1~115",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/do_math/budget.py",
+      "lines": 412,
+      "report": [
+        [
+          "budget.py",
+          "412",
+          "1~412",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/do_math/cli.py",
+      "lines": 391,
+      "report": [
+        [
+          "cli.py",
+          "391",
+          "1~391",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/do_math/codex_adapter.py",
+      "lines": 265,
+      "report": [
+        [
+          "codex_adapter.py",
+          "265",
+          "1~265",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/do_math/codex_worker.py",
+      "lines": 188,
+      "report": [
+        [
+          "codex_worker.py",
+          "188",
+          "1~188",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/do_math/context_store.py",
+      "lines": 351,
+      "report": [
+        [
+          "context_store.py",
+          "351",
+          "1~351",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/do_math/contracts.py",
+      "lines": 160,
+      "report": [
+        [
+          "contracts.py",
+          "160",
+          "1~160",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/do_math/engine.py",
+      "lines": 2288,
+      "report": [
+        [
+          "engine.py",
+          "2288",
+          "1~2288",
+          "항목 1·3의 대조 근거(386, 682~684, 698, 1576~1577, 1808행). engine.py 자체에는 조각 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/do_math/external.py",
+      "lines": 91,
+      "report": [
+        [
+          "external.py",
+          "91",
+          "1~91",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/do_math/formal.py",
+      "lines": 123,
+      "report": [
+        [
+          "formal.py",
+          "123",
+          "1~123",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/do_math/git_store.py",
+      "lines": 334,
+      "report": [
+        [
+          "git_store.py",
+          "334",
+          "1~334",
+          "결함 없음. 항목 1의 재현 근거(126~146행)"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/do_math/governance.py",
+      "lines": 256,
+      "report": [
+        [
+          "governance.py",
+          "256",
+          "1~256",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/do_math/input_basis.py",
+      "lines": 19,
+      "report": [
+        [
+          "input_basis.py",
+          "19",
+          "1~19",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/do_math/knowledge.py",
+      "lines": 438,
+      "report": [
+        [
+          "knowledge.py",
+          "438",
+          "1~438",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/do_math/knowledge_io.py",
+      "lines": 292,
+      "report": [
+        [
+          "knowledge_io.py",
+          "292",
+          "1~292",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/do_math/lifecycle_engine.py",
+      "lines": 684,
+      "report": [
+        [
+          "lifecycle_engine.py",
+          "684",
+          "1~684",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/do_math/model_policy.py",
+      "lines": 72,
+      "report": [
+        [
+          "model_policy.py",
+          "72",
+          "1~72",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/do_math/model_runner.py",
+      "lines": 133,
+      "report": [
+        [
+          "model_runner.py",
+          "133",
+          "1~133",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/do_math/observations.py",
+      "lines": 196,
+      "report": [
+        [
+          "observations.py",
+          "196",
+          "1~196",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/do_math/parallel.py",
+      "lines": 96,
+      "report": [
+        [
+          "parallel.py",
+          "96",
+          "1~96",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/do_math/planning.py",
+      "lines": 259,
+      "report": [
+        [
+          "planning.py",
+          "259",
+          "1~259",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/do_math/preflight.py",
+      "lines": 48,
+      "report": [
+        [
+          "preflight.py",
+          "48",
+          "1~48",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/do_math/repository.py",
+      "lines": 333,
+      "report": [
+        [
+          "repository.py",
+          "333",
+          "1~333",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/do_math/review_cycle.py",
+      "lines": 613,
+      "report": [
+        [
+          "review_cycle.py",
+          "613",
+          "1~613",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/do_math/review_engine.py",
+      "lines": 544,
+      "report": [
+        [
+          "review_engine.py",
+          "544",
+          "1~544",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/do_math/scheduled_operator.py",
+      "lines": 304,
+      "report": [
+        [
+          "scheduled_operator.py",
+          "304",
+          "1~304",
+          "결함 없음. 항목 1의 재현 근거(179행)"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/do_math/scheduler.py",
+      "lines": 209,
+      "report": [
+        [
+          "scheduler.py",
+          "209",
+          "1~209",
+          "항목 1(142~144, 197~198행), 항목 3(172~174행)"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/do_math/scholarly.py",
+      "lines": 91,
+      "report": [
+        [
+          "scholarly.py",
+          "91",
+          "1~91",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/do_math/session_slots.py",
+      "lines": 150,
+      "report": [
+        [
+          "session_slots.py",
+          "150",
+          "1~150",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/do_math/state_checks.py",
+      "lines": 246,
+      "report": [
+        [
+          "state_checks.py",
+          "246",
+          "1~246",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/do_math/submission.py",
+      "lines": 465,
+      "report": [
+        [
+          "submission.py",
+          "465",
+          "1~465",
+          "항목 2(327~333행)"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/do_math/task_scope.py",
+      "lines": 91,
+      "report": [
+        [
+          "task_scope.py",
+          "91",
+          "1~91",
+          "결함 없음. 항목 2의 수신 규칙(10, 31~32행)"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/do_math/windows_job.py",
+      "lines": 550,
+      "report": [
+        [
+          "windows_job.py",
+          "550",
+          "1~550",
+          "결함 없음"
+        ]
+      ]
+    }
+  ],
+  "source_session": "C:\\Users\\wogud\\.claude\\projects\\C--math\\877a0c3f-a529-4b28-8d33-efff5ab47d8a.jsonl",
+  "completion_read_calls": [
+    {
+      "tool": "Bash",
+      "input": {
+        "command": "cd \"/c/math/임시/do-math_결정대조_검증_20260916/라운드1/사본/.claude/skills/do-math/scripts/do_math\" && cat -n academic.py academic_engine.py preflight.py",
+        "description": "Read academic, academic engine, preflight"
+      }
+    },
+    {
+      "tool": "Bash",
+      "input": {
+        "command": "cd \"/c/math/임시/do-math_결정대조_검증_20260916/라운드1/사본/.claude/skills/do-math/scripts/do_math\" && cat -n contracts.py external.py formal.py",
+        "description": "Read contracts, external, formal modules"
+      }
+    },
+    {
+      "tool": "Bash",
+      "input": {
+        "command": "cd \"/c/math/임시/do-math_결정대조_검증_20260916/라운드1/사본/.claude/skills/do-math/scripts/do_math\" && cat -n observations.py codex_adapter.py",
+        "description": "Read observations and codex adapter modules"
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\Users\\wogud\\.claude\\projects\\C--math\\877a0c3f-a529-4b28-8d33-efff5ab47d8a\\tool-results\\b47owwihe.txt"
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\임시\\do-math_결정대조_검증_20260916\\라운드1\\사본\\.claude\\skills\\do-math\\scripts\\do_math\\review_cycle.py"
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\임시\\do-math_결정대조_검증_20260916\\라운드1\\사본\\.claude\\skills\\do-math\\scripts\\do_math\\windows_job.py"
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\임시\\do-math_결정대조_검증_20260916\\라운드1\\사본\\.claude\\skills\\do-math\\scripts\\do_math\\lifecycle_engine.py",
+        "offset": 460
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\임시\\do-math_결정대조_검증_20260916\\라운드1\\사본\\.claude\\skills\\do-math\\scripts\\do_math\\knowledge.py",
+        "offset": 200
+      }
+    },
+    {
+      "tool": "Bash",
+      "input": {
+        "command": "cd \"/c/math/임시/do-math_결정대조_검증_20260916/라운드1/사본/.claude/skills/do-math/scripts/do_math\" && cat -n knowledge_io.py",
+        "description": "Read knowledge_io module"
+      }
+    },
+    {
+      "tool": "Bash",
+      "input": {
+        "command": "cd \"/c/math/임시/do-math_결정대조_검증_20260916/라운드1/사본/.claude/skills/do-math/scripts/do_math\" && cat -n repository.py",
+        "description": "Read repository module"
+      }
+    },
+    {
+      "tool": "Bash",
+      "input": {
+        "command": "cd \"/c/math/임시/do-math_결정대조_검증_20260916/라운드1/사본/.claude/skills/do-math/scripts/do_math\" && cat -n git_store.py",
+        "description": "Read git store module"
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\형식과-절차.md"
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\형식과-절차.md",
+        "offset": 263
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\임시\\parking-unimodality-analysis-20260916\\분석.md"
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\do-math\\모델-세션예산-2026-09-16\\verification.json"
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\do-math\\통합-설계.md",
+        "limit": 200
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\do-math\\통합-설계.md",
+        "offset": 200,
+        "limit": 200
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\do-math\\통합-설계.md",
+        "offset": 399,
+        "limit": 180
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\do-math\\통합-설계.md",
+        "offset": 578,
+        "limit": 170
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\do-math\\통합-설계.md",
+        "offset": 747,
+        "limit": 170
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\do-math\\통합-설계.md",
+        "offset": 916,
+        "limit": 150
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\do-math\\통합-설계.md",
+        "offset": 1065,
+        "limit": 150
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\do-math\\통합-설계.md",
+        "offset": 1214,
+        "limit": 150
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\do-math\\통합-설계.md",
+        "offset": 1363,
+        "limit": 150
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\do-math\\통합-설계.md",
+        "offset": 1512,
+        "limit": 150
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\do-math\\통합-설계.md",
+        "offset": 1661,
+        "limit": 150
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\do-math\\통합-설계.md",
+        "offset": 1810,
+        "limit": 150
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\do-math\\통합-설계.md",
+        "offset": 1959,
+        "limit": 170
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\do-math\\통합-설계.md",
+        "offset": 2128,
+        "limit": 170
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\do-math\\통합-설계.md",
+        "offset": 2297,
+        "limit": 170
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\do-math\\통합-설계.md",
+        "offset": 2466,
+        "limit": 170
+      }
+    },
+    {
+      "tool": "Bash",
+      "input": {
+        "command": "cd /c/math && for f in 기억/layer1/M-029[2-8].md; do echo \"=== $f\"; sed -n '1,5p' \"$f\"; done",
+        "description": "Read frontmatter lines of memory entries"
+      }
+    },
+    {
+      "tool": "Bash",
+      "input": {
+        "command": "python .agents/skills/verify-rounds/scripts/vr.py 수리검산 --런 임시/do-math_결정대조_검증_20260916 --라운드 1 --동결 임시/do-math_결정대조_검증_20260916/동결.md --수리 임시/do-math_결정대조_검증_20260916/라운드1/수리_2.md; echo \"exit=$?\"",
+        "description": "Run self-check for updated repair output"
+      }
+    }
+  ],
+  "limit": "표의 범위 대조와 실제 도구 호출 기록이다. 파일 내용의 이해와 결함 없음 자체를 기계적으로 증명하지 않는다."
+}

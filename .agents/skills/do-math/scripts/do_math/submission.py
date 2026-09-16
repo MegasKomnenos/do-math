@@ -19,7 +19,7 @@ import jsonschema
 from . import knowledge_io, planning, review_cycle
 from .context_store import collect_outputs, materialize_inputs, _safe_path, _excluded
 from .external import prepare_operation, validate_operation
-from .model_policy import ASSESSMENT_SCHEMA, assessment_tier
+from .model_policy import ASSESSMENT_SCHEMA, assessment_key, validate_assessments
 from .observations import read_checkpoint, validate_rules, CHECKPOINT_MAX_BYTES, RULES_MAX_BYTES
 from .repository import canonical_json, _unique_pairs, _reject_constant
 
@@ -36,7 +36,7 @@ EXTENSION_ROLES = {
     "external_requests": PRODUCERS, "knowledge_changes": {*PRODUCERS, "research_preparation"},
     "knowledge_metadata": PRODUCERS, "relations": PRODUCERS, "observation_rules": PRODUCERS,
     "research_requests": {"identity_review"}, "academic_resolutions": {"research_plan"},
-    "model_assessments": PLANNERS, "queued_requests": {"research_plan"},
+    "model_assessments": PLANNERS, "model_assessment_deferrals": {"research_preparation"}, "queued_requests": {"research_plan"},
 }
 
 
@@ -68,11 +68,16 @@ def extension_schema(action: dict, definitions: dict) -> dict:
         "observation_rules": {"type": "object"},
         "research_requests": _object({"id": TEXT, "question": TEXT, "source_refs": {**STRINGS, "minItems": 1}}),
         "academic_resolutions": _object({"id": TEXT, "decision": {"enum": ["resolved", "unresolved"]}, "evidence": TEXT}),
-        "model_assessments": _object({"task_title" if action["role"] == "research_preparation" else "task_id": TEXT,
+        "model_assessments": _object({assessment_key(action): TEXT,
             **ASSESSMENT_SCHEMA["properties"]}),
+        "model_assessment_deferrals": _object({"task_id": TEXT, "reason": TEXT}),
         "queued_requests": _object({"request_id": TEXT, "decision": {"enum": ["keep", "cancel"]}, "reason": TEXT}),
     }
     allowed = {name for name, roles in EXTENSION_ROLES.items() if action["role"] in roles}
+    if "assessment_targets" in action:
+        allowed &= {"model_assessments", "model_assessment_deferrals"}
+    else:
+        allowed.discard("model_assessment_deferrals")
     if action["role"] == "supplemental_research" and action.get("review_cycle_id"):
         allowed.clear()
     if not action.get("review_cycle_id"):
@@ -311,23 +316,24 @@ def payload_issues(output: dict, schema: dict, context: dict, extensions: dict, 
             check(f"activity-extensions.json/task_conditions/{index}/occurrence_condition", lambda entry=entry: planning.validate_condition(entry["occurrence_condition"]))
     check("activity-extensions.json/task_conditions", lambda: require(len(targeted) == len(set(targeted)), "task conditions must not repeat a target"))
     for family, key in (("task_dispositions", "task_id"), ("queued_requests", "request_id"),
-                        ("research_requests", "id"), ("academic_resolutions", "id"),
-                        ("model_assessments", "task_title" if action["role"] == "research_preparation" else "task_id")):
+                        ("research_requests", "id"), ("academic_resolutions", "id")):
         rows = extensions.get(family, [])
         check("activity-extensions.json/" + family, lambda rows=rows, key=key: require(
             len({row[key] for row in rows}) == len(rows), "entries must identify distinct targets"))
-    for entry in extensions.get("model_assessments", []):
-        key = "task_title" if action["role"] == "research_preparation" else "task_id"
-        check("activity-extensions.json/model_assessments", lambda entry=entry: assessment_tier({k: entry[k] for k in ASSESSMENT_SCHEMA["properties"]}))
-        check("activity-extensions.json/model_assessments", lambda entry=entry: require(
-            entry[key] in (new_tasks if key == "task_title" else set(output["selections"])), "assessment must identify a prepared or selected task"))
+    if action["role"] in PLANNERS:
+        check("activity-extensions.json/model_assessments", lambda: validate_assessments(
+            action, output, extensions, required=context.get("budget_unit") == "concurrent_sessions"))
     for entry in extensions.get("queued_requests", []):
         check("activity-extensions.json/queued_requests", lambda entry=entry: require(
             entry["request_id"] in {a["id"] for a in context.get("queued_work", [])}, "request was not available for planning"))
+    assessed = {row["task_id"]: row["decision"] for row in output.get("task_assessments", [])}
     for entry in extensions.get("task_dispositions", []):
         def disposition(entry=entry):
             task = tasks.get(entry["task_id"], {})
-            require(task.get("status") in {"planned", "ready", "waiting", "needs_revision", "assessing"}, "task is not withdrawable in this input")
+            # The receiver withdraws after this output's task assessments; returned work is withdrawn only after an incomplete assessment.
+            status = {"completed": "completed", "closed": "closed", "incomplete": "needs_revision"}.get(
+                assessed.get(entry["task_id"]), task.get("status"))
+            require(status in {"planned", "ready", "waiting", "needs_revision"}, "task is not withdrawable after this output's task assessments")
             require(not task.get("academic_requirement_id"), "academic requirements cannot be withdrawn autonomously")
             require(entry["task_id"] not in output.get("selections", []) and entry["task_id"] not in {c["revises_task_id"] for c in output.get("candidates", [])}, "cannot withdraw and select or revise the same task")
         check("activity-extensions.json/task_dispositions", disposition)

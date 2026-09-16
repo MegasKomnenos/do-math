@@ -372,9 +372,15 @@ class LifecycleEngineMixin:
         now = self._lifecycle_now()
         self._check_conversations()
         self._invalidate_goal_currentness()
+        missing_assessments = self._ensure_model_assessments()
         for task_id, task in self.runtime['tasks'].items():
             if task.get('status') not in _SCHEDULABLE:
                 self.runtime['task_readiness'].pop(task_id, None)
+                continue
+            if task_id in missing_assessments:
+                self.runtime['task_readiness'][task_id] = {'state': 'not_ready', 'basis': [],
+                    'errors': ['model assessment required before contract review'], 'evaluated_at': now.isoformat()}
+                if task['status'] == 'ready': task['status'] = 'waiting'
                 continue
             required = {'revision': task['revision'], 'contract_sha256': contract_hash(task),
                         'goal_revision': self.instance['goal_revision'], 'policy_revision': self.instance['policy_revision']}
@@ -437,7 +443,8 @@ class LifecycleEngineMixin:
             if role == 'research_preparation' and any(activity.get('role') == role and activity.get('status') in {'active', 'running'}
                                                      for activity in self.runtime['activities'].values()):
                 continue
-            queued = next((a for a in self.runtime['queue'] if a.get('role') == role and a.get('id') not in running_ids), None)
+            queued = next((a for a in self.runtime['queue'] if a.get('role') == role and a.get('id') not in running_ids
+                           and 'assessment_targets' not in a), None)
             opened = queued is None or 'opened_at' not in queued
             if queued is None:
                 self._enqueue(role, id=new_id('AC'), reason='Preserved research events require reconsideration',

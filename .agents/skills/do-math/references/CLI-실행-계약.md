@@ -709,7 +709,7 @@ Lean source가 있는 knowledge candidate는 중앙 `formal_check` action으로 
 
 최종 `match`, current formal source, active trust environment와 실제 dependency currentness가 있어야 현재 CLI가 K를 사용할 수 있다고 계산한다. K 편입과 목표 해결은 별도다. 목표 감사는 현재 goal basis의 독립 감사 전건을 집계하고 수학 목표는 사용할 K 없이 `mathematically_solved`가 될 수 없다.
 
-학술 요구가 없으면 학술 후속은 `not_applicable`이다. 요구가 있으면 현재 solution basis와 요구 revision에 결박된 과제를 만들고 연구 계획이 각 criterion을 평가한다. 모든 요구가 satisfied이고 필수 외부 효과마다 같은 task·requirement·solution basis에 결박된 `confirmed`이면서 `succeeded=true`인 영수증이 있어야 academic validation이 `completed`다.
+학술 요구가 없으면 학술 후속은 `not_applicable`이다. 요구가 있으면 현재 solution basis와 요구 revision에 결박된 과제를 만든다. 세션 예산에서는 후보 준비가 그 과제의 난이도·중요도만 먼저 평가하고, 평가에 따른 모델로 독립 계약 검토를 수행한다. 연구 계획은 승인된 과제를 선택하며 수행 뒤 각 criterion을 평가한다. 이 평가 보충은 사용자 학술 요구를 개정하지 않는다. 모든 요구가 satisfied이고 필수 외부 효과마다 같은 task·requirement·solution basis에 결박된 `confirmed`이면서 `succeeded=true`인 영수증이 있어야 academic validation이 `completed`다.
 
 ## 계획 이력과 현재 입력 범위
 

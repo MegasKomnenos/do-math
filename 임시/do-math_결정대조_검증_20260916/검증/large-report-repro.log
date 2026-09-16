@@ -1,0 +1,14 @@
+test_large_accepted_report_survives_revision_review_and_resumed_work (test_submission_boundaries.AcceptanceTests.test_large_accepted_report_survives_revision_review_and_resumed_work) ... FAIL
+
+======================================================================
+FAIL: test_large_accepted_report_survives_revision_review_and_resumed_work (test_submission_boundaries.AcceptanceTests.test_large_accepted_report_survives_revision_review_and_resumed_work)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_submission_boundaries.py", line 223, in test_large_accepted_report_survives_revision_review_and_resumed_work
+    self.assertEqual(len(work_calls), 2, engine.runtime["questions"])
+AssertionError: 1 != 2 : ['Invalid output for research_preparation: [{"path": "activity-extensions.json/model_assessments", "message": "model assessment coverage: {\\"missing\\": [\\"0\\"], \\"unexpected\\": []}"}]', 'Invalid output for research_plan: [{"path": "activity-extensions.json/model_assessments", "message": "model assessment coverage: {\\"missing\\": [\\"TK-01M2NEF3Y8B9W52B56CX3F6JXA\\"], \\"unexpected\\": []}"}]', 'operational_review did not finish: AssertionError: unexpected role: operational_review; partial files and checkpoint are preserved.', 'operational_review did not finish: AssertionError: unexpected role: operational_review; partial files and checkpoint are preserved.']
+
+----------------------------------------------------------------------
+Ran 1 test in 86.102s
+
+FAILED (failures=1)

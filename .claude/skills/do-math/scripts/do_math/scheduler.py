@@ -5,7 +5,7 @@ from copy import deepcopy
 from pathlib import Path
 import time
 
-from .model_policy import ASSESSMENT_SCHEMA, assessment_tier, selection
+from .model_policy import assessment_basis, selection, validate_assessments
 from .parallel import ModelCalls
 from .session_slots import SessionSlots
 
@@ -45,31 +45,67 @@ class SchedulerMixin:
         return selection(self.instance["config"], action, self.runtime["tasks"], self.instance["knowledge"])
 
     def _apply_model_metadata(self, action, output, execution_id):
-        entries = self.runtime["executions"][execution_id].get("extensions", {}).get("model_assessments", [])
-        if entries and action["role"] not in {"research_preparation", "research_plan"}:
-            raise ValueError("only preparation and planning author model assessments")
-        identified = {}
-        for entry in entries:
-            key_name = "task_title" if action["role"] == "research_preparation" else "task_id"
-            if set(entry) != {key_name, "difficulty", "importance", "reason"}:
-                raise ValueError("model assessment fields differ from the role contract")
-            key = entry[key_name]
-            if not isinstance(key, str) or key in identified:
-                raise ValueError("model assessments require distinct task identities")
-            assessment = {k: entry[k] for k in ("difficulty", "importance", "reason")}
-            assessment_tier(assessment)
-            identified[key] = assessment
+        extensions = self.runtime["executions"][execution_id].get("extensions", {})
+        if action["role"] not in {"research_preparation", "research_plan"}:
+            if extensions.get("model_assessments"):
+                raise ValueError("only preparation and planning author model assessments")
+            return
+        identified = validate_assessments(action, output, extensions, required=self._session_mode())
+        if "assessment_targets" in action:
+            for tid, basis in action["assessment_targets"].items():
+                task = self.runtime["tasks"].get(tid)
+                if not task or assessment_basis(task) != basis:
+                    raise ValueError("model assessment task edition changed: " + tid)
+            for tid, assessment in identified.items():
+                self.runtime["tasks"][tid]["model_assessment"] = assessment
+            return
         if action["role"] == "research_preparation":
-            titles = {candidate["title"] for candidate in output["candidates"]}
-            if set(identified) - titles:
-                raise ValueError("model assessment does not name a prepared task")
             for candidate in output["candidates"]:
                 if candidate["title"] in identified:
                     candidate["model_assessment"] = identified[candidate["title"]]
         elif action["role"] == "research_plan":
-            if set(identified) - set(output["selections"]):
-                raise ValueError("model assessment does not name a selected task")
             self.runtime["executions"][execution_id]["model_decisions"] = identified
+
+    def _assessment_input_version(self):
+        return {"goal": self.instance.get("goal_revision", 1), "policy": self.instance.get("policy_revision", 1),
+                "sources": [{"name": s["name"], "sha256": s["sha256"]} for s in self.instance["sources"]],
+                "inputs": [i.get("id") for i in self.runtime["inputs"]]}
+
+    def _ensure_model_assessments(self):
+        """Batch missing assessments without allowing contract review to race them."""
+        if not self._session_mode():
+            return set()
+        missing = {tid: assessment_basis(task) for tid, task in self.runtime["tasks"].items()
+                   if task.get("status") in {"planned", "ready", "waiting", "needs_revision"}
+                   and not task.get("model_assessment")}
+        for aid, entry in list(self.runtime.get("waiting_actions", {}).items()):
+            if entry.get("kind") == "model_assessment_input" and (
+                    entry.get("input_version") != self._assessment_input_version()
+                    or any(missing.get(tid) != basis for tid, basis in entry["action"]["assessment_targets"].items())):
+                self.runtime["history"].append({"kind": "assessment_inputs_changed", "action_id": aid})
+                self.runtime["questions"] = [q for q in self.runtime["questions"] if q != entry.get("question")]
+                del self.runtime["waiting_actions"][aid]
+        live = {e.get("action", {}).get("id") for e in self.runtime["executions"].values() if e["status"] != "ended"}
+        self.runtime["queue"][:] = [a for a in self.runtime["queue"] if not (
+            a["role"] == "task_contract_review" and a.get("target") in missing and a.get("id") not in live)]
+        pending = self.runtime["queue"] + [e["action"] for e in self.runtime.get("waiting_actions", {}).values()]
+        covered = {tid for a in pending for tid, basis in a.get("assessment_targets", {}).items() if missing.get(tid) == basis}
+        targets = {tid: basis for tid, basis in missing.items() if tid not in covered}
+        if targets:
+            from .repository import new_id
+            self.runtime["queue"].append({"id": new_id("AC"), "role": "research_preparation",
+                "assessment_targets": targets, "reason": "Assess these existing contracts without changing their terms before independent review."})
+        return set(missing)
+
+    def _finish_assessment_preparation(self, action, execution_id):
+        deferred = self.runtime["executions"][execution_id].get("extensions", {}).get("model_assessment_deferrals", [])
+        if deferred:
+            pending = {row["task_id"]: action["assessment_targets"][row["task_id"]] for row in deferred}
+            question = "Model assessment pending: " + "; ".join(row["task_id"] + ": " + row["reason"] for row in deferred)
+            self.runtime["questions"].append(question)
+            self.runtime.setdefault("waiting_actions", {})[action["id"]] = {
+                "action": {**action, "assessment_targets": pending}, "kind": "model_assessment_input",
+                "reason": question, "question": question, "input_version": self._assessment_input_version(), "execution_id": execution_id}
 
     def _apply_queue_plan(self, action, execution_id):
         dispositions = self.runtime["executions"][execution_id].get("extensions", {}).get("queued_requests", [])
@@ -170,7 +206,6 @@ class SchedulerMixin:
                         self.runtime["status"] = "waiting"
                     else:
                         self.runtime["queue"].append({"id": new_id("AC"), "role": "research_preparation", "reason": "use prior results and remaining research questions"})
-                        self.runtime["cycles"] += 1
                         self.runtime["status"] = "ready"
                 resources = self._slots.snapshot()
                 action = next((a for a in list(self.runtime["queue"])

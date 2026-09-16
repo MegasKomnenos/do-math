@@ -83,6 +83,14 @@ class SessionPolicyTests(unittest.TestCase):
             config["session_limits"]["work"][MODELS["high"]] = value
             with self.assertRaises(ValueError): validate_policy(config)
 
+    def test_role_floor_raises_low_assessment_and_unassessed_work_uses_high(self):
+        config = deepcopy(DEFAULT_CONFIG)
+        low = {"difficulty": "low", "importance": "low", "reason": "bounded local comparison"}
+        review = selection(config, {"role": "task_contract_review", "model_assessment": low}, {}, {})
+        self.assertEqual((review["tier"], review["model"]), ("medium", MODELS["medium"]))
+        unassessed = selection(config, {"role": "research_work"}, {}, {})
+        self.assertEqual((unassessed["tier"], unassessed["model"]), ("high", MODELS["high"]))
+
 
 class SlotTests(unittest.TestCase):
     def test_independent_operator_uses_the_same_instance_operating_slot(self):
@@ -438,6 +446,27 @@ class ParallelEngineTests(unittest.TestCase):
         engine.process_controls()
         self.assertEqual([a["role"] for a in engine.runtime["queue"]],
                          ["maintenance", "research_preparation", "intent_interpretation"])
+
+    def test_output_repair_keeps_the_original_operating_queue_position(self):
+        class InvalidPreparation:
+            def __init__(inner):
+                inner.roles = []
+            def run(inner, *, prompt, on_started, **kwargs):
+                inner.roles.append(context_from(prompt)["action"]["role"])
+                on_started({"pid": 1})
+                out = common("research_preparation")
+                out.pop("candidates")
+                return {"status": "completed", "output": out, "usage": {}, "error": None}
+        limits = deepcopy(LIMITS); limits["operations"][MODELS["medium"]] = 0
+        runner = InvalidPreparation()
+        engine = self.engine(runner, count=0, session_limits=limits)
+        engine.runtime["queue"] = [{"id": "AC-older", "role": "maintenance", "reason": "older operating request"},
+                                   {"id": "AC-preparation", "role": "research_preparation", "reason": "newer operating request"}]
+        engine._save()
+        engine.run(max_steps=1)
+        self.assertEqual(runner.roles, ["research_preparation"])
+        self.assertEqual([a["id"] for a in engine.runtime["queue"]], ["AC-older", "AC-preparation"])
+        self.assertEqual(engine.runtime["queue"][1]["repair_attempt"], 1)
 
 
 if __name__ == "__main__":

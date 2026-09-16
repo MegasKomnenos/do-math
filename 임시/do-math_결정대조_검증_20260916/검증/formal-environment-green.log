@@ -1,0 +1,13 @@
+test_actual_signatures_preserve_binders_and_unicode (test_formal.T.test_actual_signatures_preserve_binders_and_unicode) ... ok
+test_empty_declaration_list_is_rejected (test_formal.T.test_empty_declaration_list_is_rejected) ... ok
+test_fake_lean_rejects_real_sorry_even_when_source_prints_allowed_text (test_formal.T.test_fake_lean_rejects_real_sorry_even_when_source_prints_allowed_text) ... ok
+test_invalid_declaration_rejected (test_formal.T.test_invalid_declaration_rejected) ... ok
+test_missing_axiom_output_fails (test_formal.T.test_missing_axiom_output_fails) ... ok
+test_missing_lean_unavailable (test_formal.T.test_missing_lean_unavailable) ... ok
+test_project_fingerprint_excludes_unrelated_and_tracks_project_changes (test_formal.T.test_project_fingerprint_excludes_unrelated_and_tracks_project_changes) ... ok
+test_stop_is_not_a_math_failure (test_formal.T.test_stop_is_not_a_math_failure) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 24.081s
+
+OK

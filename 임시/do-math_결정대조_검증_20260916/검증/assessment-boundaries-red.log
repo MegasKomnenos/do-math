@@ -1,0 +1,40 @@
+test_assessment_only_run_preserves_user_contract_and_unblocks_independent_review (test_model_assessment_flow.AssessmentFlowTests.test_assessment_only_run_preserves_user_contract_and_unblocks_independent_review) ... ok
+test_assessment_request_does_not_absorb_an_ordinary_preparation (test_model_assessment_flow.AssessmentFlowTests.test_assessment_request_does_not_absorb_an_ordinary_preparation) ... FAIL
+test_completed_normal_preparation_does_not_resolve_a_failed_assessment_request (test_model_assessment_flow.AssessmentFlowTests.test_completed_normal_preparation_does_not_resolve_a_failed_assessment_request) ... FAIL
+test_deferred_assessment_waits_for_input_and_can_resume_without_stale_question (test_model_assessment_flow.AssessmentFlowTests.test_deferred_assessment_waits_for_input_and_can_resume_without_stale_question) ... FAIL
+test_late_assessment_cannot_change_a_revised_user_contract (test_model_assessment_flow.AssessmentFlowTests.test_late_assessment_cannot_change_a_revised_user_contract) ... ok
+test_missing_academic_assessments_are_batched_before_any_contract_review (test_model_assessment_flow.AssessmentFlowTests.test_missing_academic_assessments_are_batched_before_any_contract_review) ... ok
+test_empty_preparation_and_legacy_call_budget_contract_remain_accepted (test_model_assessment_flow.AssessmentSubmissionTests.test_empty_preparation_and_legacy_call_budget_contract_remain_accepted) ... ok
+test_exact_coverage_is_accepted_and_duplicates_and_foreign_targets_are_rejected (test_model_assessment_flow.AssessmentSubmissionTests.test_exact_coverage_is_accepted_and_duplicates_and_foreign_targets_are_rejected) ... ok
+test_missing_candidate_assessments_are_rejected_with_missing_titles (test_model_assessment_flow.AssessmentSubmissionTests.test_missing_candidate_assessments_are_rejected_with_missing_titles) ... ok
+test_missing_family_cannot_bypass_the_completeness_check (test_model_assessment_flow.AssessmentSubmissionTests.test_missing_family_cannot_bypass_the_completeness_check) ... ok
+test_revised_candidate_also_needs_a_new_assessment (test_model_assessment_flow.AssessmentSubmissionTests.test_revised_candidate_also_needs_a_new_assessment) ... ok
+
+======================================================================
+FAIL: test_assessment_request_does_not_absorb_an_ordinary_preparation (test_model_assessment_flow.AssessmentFlowTests.test_assessment_request_does_not_absorb_an_ordinary_preparation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_model_assessment_flow.py", line 141, in test_assessment_request_does_not_absorb_an_ordinary_preparation
+    self.assertEqual(len(requests), 2)
+AssertionError: 1 != 2
+
+======================================================================
+FAIL: test_completed_normal_preparation_does_not_resolve_a_failed_assessment_request (test_model_assessment_flow.AssessmentFlowTests.test_completed_normal_preparation_does_not_resolve_a_failed_assessment_request)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_model_assessment_flow.py", line 149, in test_completed_normal_preparation_does_not_resolve_a_failed_assessment_request
+    self.assertIn(action["id"], engine.runtime["waiting_actions"])
+AssertionError: 'AC-01M2NC64K396PH9MMX7XKA2WBA' not found in {}
+
+======================================================================
+FAIL: test_deferred_assessment_waits_for_input_and_can_resume_without_stale_question (test_model_assessment_flow.AssessmentFlowTests.test_deferred_assessment_waits_for_input_and_can_resume_without_stale_question)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_model_assessment_flow.py", line 173, in test_deferred_assessment_waits_for_input_and_can_resume_without_stale_question
+    self.assertNotIn(question, engine.runtime["questions"])
+AssertionError: 'Model assessment pending: TK-academic-1: Need the missing source text.; TK-academic-2: Need the missing source text.' unexpectedly found in ['Model assessment pending: TK-academic-1: Need the missing source text.; TK-academic-2: Need the missing source text.']
+
+----------------------------------------------------------------------
+Ran 11 tests in 2.710s
+
+FAILED (failures=3)

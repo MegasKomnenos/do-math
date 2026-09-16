@@ -219,7 +219,8 @@ def control(repository: Path, instance_id: str, action: str, *, text: str = "", 
         if role == "operational_review" and (config or {}).get("target") not in runtime["executions"]:
             raise ValueError("operational review requires an existing execution ID")
     request = {"id": new_id("UC"), "instance_id": instance_id, "action": action,
-               "text": text, "config": config or {}, "created_at": now(), "origin": origin}
+               "text": text, "config": config or {}, "created_at": now(), "origin": origin,
+               "accepted_order": f"{time.perf_counter_ns():020d}"}
     inbox = Path(instance["workspace"]) / "control" / instance_id
     inbox.mkdir(parents=True, exist_ok=True)
     temporary = inbox / (request["id"] + ".tmp")
@@ -398,7 +399,9 @@ class ResearchEngine(SchedulerMixin, ReviewEngineMixin, LifecycleEngineMixin, Ac
             results.append(request)
         # ULID suffixes are random within a millisecond; they do not preserve
         # the order in which a pause, release, or newer user control arrived.
-        return sorted(results, key=lambda request: (request["created_at"], request["id"]))
+        # Distinct calls can share even the complete wall-clock timestamp.
+        # Preserve their host acceptance order; old records retain the ID tie-break.
+        return sorted(results, key=lambda request: (request["created_at"], request.get("accepted_order", ""), request["id"]))
 
     def _controls(self) -> None:
         if self._calls is not None:
@@ -495,6 +498,8 @@ class ResearchEngine(SchedulerMixin, ReviewEngineMixin, LifecycleEngineMixin, Ac
                     # General resume must not restore its exhausted repair and output.
                     if waiting.get("kind") in {"output_validation", "execution_failure"}:
                         continue
+                    if waiting.get("question"):
+                        self.runtime["questions"] = [q for q in self.runtime["questions"] if q != waiting["question"]]
                     self.runtime["queue"].append(waiting["action"])
                     del self.runtime["waiting_actions"][aid]
                 if not self.runtime["queue"]:
@@ -866,7 +871,7 @@ class ResearchEngine(SchedulerMixin, ReviewEngineMixin, LifecycleEngineMixin, Ac
         if self._session_mode():
             context["model_policy"] = {"tier_models": self.instance["config"]["tier_models"],
                 "role_tiers": self.instance["config"]["role_tiers"], "assessment_schema": model_policy.ASSESSMENT_SCHEMA,
-                "selected": action.get("model_selection"), "missing_assessment": "high; assessment not yet established"}
+                "selected": action.get("model_selection"), "missing_assessment": "Existing tasks require assessment-only preparation before contract review; preparation uses its configured role floor."}
         if action["role"] == "research_plan" and self._session_mode():
             live_ids = {e.get("action", {}).get("id") for e in self.runtime["executions"].values() if e["status"] != "ended"}
             context["queued_work"] = [deepcopy(a) for a in self.runtime["queue"] if a["role"] in WORK_ROLES and a.get("id") not in live_ids]
@@ -1086,6 +1091,8 @@ class ResearchEngine(SchedulerMixin, ReviewEngineMixin, LifecycleEngineMixin, Ac
         if action["role"] == "intent_interpretation":
             return governance.interpretation_schema(action.get("stage", "interpret"))
         result = schema_for(action["role"])
+        if action["role"] == "research_preparation" and "assessment_targets" in action:
+            result["properties"]["candidates"]["maxItems"] = 0
         if action["role"] in {"research_work", "supplemental_research"}:
             result["properties"]["knowledge"]["items"]["properties"]["kind"]["enum"] = [d["token"] for d in knowledge_io.catalog_definitions(self.instance)["knowledge"]]
         if action["role"] == "operational_review" and action.get("live"):
@@ -1274,7 +1281,7 @@ class ResearchEngine(SchedulerMixin, ReviewEngineMixin, LifecycleEngineMixin, Ac
             arguments["scholarly_server"] = deepcopy(config["scholarly_server"]) if config["scholarly_enabled"] else None
 
     def _resolve_failed_actions(self, action: dict, execution_id: str) -> None:
-        keys = ("role", "target", "stage", "slot", "round", "review_cycle_id")
+        keys = ("role", "target", "stage", "slot", "round", "review_cycle_id", "assessment_targets")
         for aid, entry in list(self.runtime.get("waiting_actions", {}).items()):
             previous = entry["action"]
             if entry.get("kind") not in {"output_validation", "execution_failure"}:
@@ -1309,6 +1316,11 @@ class ResearchEngine(SchedulerMixin, ReviewEngineMixin, LifecycleEngineMixin, Ac
         raise RuntimeError("model call did not finish")
 
     def _obsolete_action_reason(self, action: dict) -> str | None:
+        if "assessment_targets" in action:
+            for tid, basis in action["assessment_targets"].items():
+                task = self.runtime["tasks"].get(tid)
+                if not task or task.get("status") in {"completed", "closed"} or model_policy.assessment_basis(task) != basis:
+                    return "Assessment target contract edition changed: " + tid
         task = self.runtime["tasks"].get(action.get("target"))
         if (task and action["role"] in {"research_work", "supplemental_research", "task_contract_review"}
                 and task.get("status") in {"completed", "closed"}):
@@ -1661,7 +1673,7 @@ class ResearchEngine(SchedulerMixin, ReviewEngineMixin, LifecycleEngineMixin, Ac
         action = {"role": role, **extra}
         if target is not None:
             action["target"] = target
-        compare_keys = ("role", "target", "stage", "slot", "round", "review_cycle_id", "basis", "transition_id")
+        compare_keys = ("role", "target", "stage", "slot", "round", "review_cycle_id", "basis", "transition_id", "assessment_targets")
         live_actions = {e.get("action", {}).get("id") for e in self.runtime["executions"].values() if e["status"] in {"starting", "running"}}
         for queued in self.runtime["queue"]:
             if queued.get("id") not in live_actions and all(queued.get(k) == action.get(k) for k in compare_keys):
@@ -1805,6 +1817,9 @@ class ResearchEngine(SchedulerMixin, ReviewEngineMixin, LifecycleEngineMixin, Ac
         if role == "supplemental_research" and action.get("review_cycle_id"):
             self._apply_review_research(action, output, execution_id)
         elif role == "research_preparation":
+            if "assessment_targets" in action:
+                self._finish_assessment_preparation(action, execution_id)
+                return
             self.runtime["cycles"] += 1
             titles = {}
             for proposal in output["candidates"]:

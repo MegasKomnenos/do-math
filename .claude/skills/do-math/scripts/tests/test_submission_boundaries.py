@@ -19,6 +19,7 @@ from do_math.engine import control
 from do_math.knowledge import assess_use, revise_knowledge
 from do_math.context_store import fit_context
 from do_math.planning import contract_hash
+from do_math.repository import canonical_json
 
 
 def note(title="Computation", **changes):
@@ -207,10 +208,15 @@ class AcceptanceTests(unittest.TestCase):
                         "criteria_results": [{"criterion": criterion, "satisfied": False, "evidence": "The partial report records unfinished work."}
                                              for criterion in task["completion_criteria"]]}
                         for task in context["tasks"] if task["status"] == "assessing"]
+                    (args["workspace"] / "activity-extensions.json").write_bytes(canonical_json({"model_assessments": [
+                        {"task_id": tid, "difficulty": "high", "importance": "medium", "reason": "Continue the explicit unresolved fixture case."}
+                        for tid in context["ready_task_ids"]]}))
                     return returned(role, selections=context["ready_task_ids"], deferred=[], task_assessments=assessments,
                         goal_audit=False, preparation_requests=["Revise the unfinished task."] if assessments else [])
                 if role == "research_preparation":
                     task = context["tasks"][0]
+                    (args["workspace"] / "activity-extensions.json").write_bytes(canonical_json({"model_assessments": [
+                        {"task_title": task["title"], "difficulty": "high", "importance": "medium", "reason": "The revised fixture retains the unresolved case."}]}))
                     return returned(role, candidates=[purpose.candidate(task["title"], formal=False, revises=task["id"])])
                 if role == "task_contract_review":
                     return returned(role, decision="approved", findings=[])

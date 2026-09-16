@@ -108,6 +108,18 @@ class ResearchRecoveryTests(PurposeHarness):
 
 
 class RecoveryRoutingTests(PurposeHarness):
+    def test_controls_with_identical_wall_time_preserve_acceptance_order(self):
+        engine, _ = self.make()
+        ids = ['UC-01M2KWMGGK0000000000000002', 'UC-01M2KWMGGK0000000000000001']
+        with patch('do_math.engine.new_id', side_effect=ids), patch('do_math.engine.now', return_value='2026-09-16T01:00:00+00:00'):
+            control(self.repo, engine.instance['id'], 'conversation', config={
+                'operation': 'attach', 'id': 'C-user', 'generation': 1, 'disconnect_policy': 'pause', 'lease_seconds': 60})
+            control(self.repo, engine.instance['id'], 'conversation', config={
+                'operation': 'detach', 'id': 'C-user', 'generation': 1})
+        self.assertEqual([row['config']['operation'] for row in engine._inbox()], ['attach', 'detach'])
+        engine.process_controls()
+        self.assertEqual(engine.runtime['status'], 'paused')
+
     def test_control_processing_uses_acceptance_time_not_random_id_order(self):
         engine, _ = self.make()
         ids = ['UC-01M2KWMGGK0000000000000002', 'UC-01M2KWMGGK0000000000000001']

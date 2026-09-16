@@ -179,6 +179,19 @@ class OperatorTests(unittest.TestCase):
         self.assertEqual(result["operator_schedule"]["status"], "failed")
         self.assertIn("operator install", result["operator_schedule"]["reconcile"])
 
+    def test_new_instance_installs_the_operator_every_two_hours_by_default(self) -> None:
+        subprocess.run(["git", "-C", str(self.repository), "init", "-q"], check=True)
+        arguments = cli.build_parser().parse_args((
+            "init", "--repository", str(self.repository), "--workspace", str(self.workspace),
+            "--goal", "use the default independent operator schedule", "--config-file", str(self._config({"scholarly_enabled": False})),
+        ))
+        with patch.object(cli.scheduled_operator, "schedule", return_value={"operator": "ready"}) as schedule:
+            result, code = cli.execute(arguments)
+        self.assertEqual(code, 0)
+        self.assertEqual(schedule.call_args.args, ("install",))
+        self.assertEqual(schedule.call_args.kwargs["interval_seconds"], 7200)
+        self.assertEqual(result["operator_schedule"], {"operator": "ready"})
+
     def test_cli_emits_byte_bearing_operator_receipt_as_json(self) -> None:
         output = io.StringIO()
         with redirect_stdout(output):

@@ -1,0 +1,589 @@
+{
+  "repair": 1,
+  "files": 26,
+  "lines": 4103,
+  "issues": [],
+  "file_table": [
+    {
+      "file": ".claude/skills/do-math/.gitattributes",
+      "lines": 2,
+      "report": [
+        [
+          ".claude/skills/do-math/.gitattributes",
+          "2",
+          "1~2",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/GLOSSARY.md",
+      "lines": 665,
+      "report": [
+        [
+          ".claude/skills/do-math/GLOSSARY.md",
+          "665",
+          "1~665",
+          "389~391행 항목 3. 그 밖 결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/README.md",
+      "lines": 353,
+      "report": [
+        [
+          ".claude/skills/do-math/README.md",
+          "353",
+          "1~353",
+          "85행 항목 2. 그 밖 결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/SKILL.md",
+      "lines": 112,
+      "report": [
+        [
+          ".claude/skills/do-math/SKILL.md",
+          "112",
+          "1~112",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/examples/nat-add-zero.txt",
+      "lines": 1,
+      "report": [
+        [
+          ".claude/skills/do-math/examples/nat-add-zero.txt",
+          "1",
+          "1",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/references/CLI-실행-계약.md",
+      "lines": 753,
+      "report": [
+        [
+          ".claude/skills/do-math/references/CLI-실행-계약.md",
+          "753",
+          "1~753",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/references/공통-실행.md",
+      "lines": 200,
+      "report": [
+        [
+          ".claude/skills/do-math/references/공통-실행.md",
+          "200",
+          "1~200",
+          "결함 없음(9행을 항목 1의 기준으로 인용)"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/references/모델과-실행예산.md",
+      "lines": 78,
+      "report": [
+        [
+          ".claude/skills/do-math/references/모델과-실행예산.md",
+          "78",
+          "1~78",
+          "33행 항목 4(상신). 그 밖 결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/references/지식-저작과-재사용.md",
+      "lines": 91,
+      "report": [
+        [
+          ".claude/skills/do-math/references/지식-저작과-재사용.md",
+          "91",
+          "1~91",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/references/학술자료-활용.md",
+      "lines": 47,
+      "report": [
+        [
+          ".claude/skills/do-math/references/학술자료-활용.md",
+          "47",
+          "1~47",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/requirements.txt",
+      "lines": 1,
+      "report": [
+        [
+          ".claude/skills/do-math/requirements.txt",
+          "1",
+          "1",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/do_math.py",
+      "lines": 7,
+      "report": [
+        [
+          ".claude/skills/do-math/scripts/do_math.py",
+          "7",
+          "1~7",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/operator_schedule.ps1",
+      "lines": 57,
+      "report": [
+        [
+          ".claude/skills/do-math/scripts/operator_schedule.ps1",
+          "57",
+          "1~57",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/probe_codex.py",
+      "lines": 189,
+      "report": [
+        [
+          ".claude/skills/do-math/scripts/probe_codex.py",
+          "189",
+          "1~189",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/probe_native_isolation.py",
+      "lines": 339,
+      "report": [
+        [
+          ".claude/skills/do-math/scripts/probe_native_isolation.py",
+          "339",
+          "1~339",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/계약/독립-운영.md",
+      "lines": 78,
+      "report": [
+        [
+          ".claude/skills/do-math/계약/독립-운영.md",
+          "78",
+          "1~78",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/계약/동일성-검토.md",
+      "lines": 91,
+      "report": [
+        [
+          ".claude/skills/do-math/계약/동일성-검토.md",
+          "91",
+          "1~91",
+          "91행 항목 1. 그 밖 결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/계약/목표-감사.md",
+      "lines": 49,
+      "report": [
+        [
+          ".claude/skills/do-math/계약/목표-감사.md",
+          "49",
+          "1~49",
+          "37행 항목 1. 그 밖 결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/계약/보충-조사.md",
+      "lines": 61,
+      "report": [
+        [
+          ".claude/skills/do-math/계약/보충-조사.md",
+          "61",
+          "1~61",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/계약/연구-계획.md",
+      "lines": 121,
+      "report": [
+        [
+          ".claude/skills/do-math/계약/연구-계획.md",
+          "121",
+          "1~121",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/계약/연구-수행.md",
+      "lines": 144,
+      "report": [
+        [
+          ".claude/skills/do-math/계약/연구-수행.md",
+          "144",
+          "1~144",
+          "11행 항목 1. 그 밖 결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/계약/운영-점검.md",
+      "lines": 139,
+      "report": [
+        [
+          ".claude/skills/do-math/계약/운영-점검.md",
+          "139",
+          "1~139",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/계약/유지보수.md",
+      "lines": 118,
+      "report": [
+        [
+          ".claude/skills/do-math/계약/유지보수.md",
+          "118",
+          "1~118",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/계약/의도-해석.md",
+      "lines": 118,
+      "report": [
+        [
+          ".claude/skills/do-math/계약/의도-해석.md",
+          "118",
+          "1~118",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/계약/작업-계약-검토.md",
+      "lines": 133,
+      "report": [
+        [
+          ".claude/skills/do-math/계약/작업-계약-검토.md",
+          "133",
+          "1~133",
+          "13행 항목 1, 133행은 항목 4의 관련 문면. 그 밖 결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/계약/후보-준비.md",
+      "lines": 156,
+      "report": [
+        [
+          ".claude/skills/do-math/계약/후보-준비.md",
+          "156",
+          "1~156",
+          "13행 항목 1. 그 밖 결함 없음"
+        ]
+      ]
+    }
+  ],
+  "source_session": "C:\\Users\\wogud\\.claude\\projects\\C--math\\f2b66bcb-156e-4235-bcd3-2469dcf3a044.jsonl",
+  "completion_read_calls": [
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\임시\\do-math_결정대조_검증_20260916\\라운드1\\사본\\.claude\\skills\\do-math\\GLOSSARY.md",
+        "limit": 230
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\임시\\do-math_결정대조_검증_20260916\\라운드1\\사본\\.claude\\skills\\do-math\\GLOSSARY.md",
+        "offset": 230,
+        "limit": 220
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\임시\\do-math_결정대조_검증_20260916\\라운드1\\사본\\.claude\\skills\\do-math\\GLOSSARY.md",
+        "offset": 450
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\임시\\do-math_결정대조_검증_20260916\\라운드1\\사본\\.claude\\skills\\do-math\\references\\CLI-실행-계약.md",
+        "offset": 260,
+        "limit": 250
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\임시\\do-math_결정대조_검증_20260916\\라운드1\\사본\\.claude\\skills\\do-math\\references\\CLI-실행-계약.md",
+        "offset": 508,
+        "limit": 250
+      }
+    },
+    {
+      "tool": "Bash",
+      "input": {
+        "command": "cd /c/math/임시/do-math_결정대조_검증_20260916/라운드1/사본/.claude/skills/do-math/scripts/do_math && grep -n \"def _recover\\|recovery=\\|\\\"recovery\\\"\\|status\\\"\\] = \\\"paused\\\"\" engine.py lifecycle_engine.py scheduler.py | head -30",
+        "description": "Locate recovery pause code"
+      }
+    },
+    {
+      "tool": "Bash",
+      "input": {
+        "command": "sed -n 723,790p engine.py",
+        "description": "Read disappeared-executor recovery"
+      }
+    },
+    {
+      "tool": "Bash",
+      "input": {
+        "command": "cd /c/math/임시/do-math_결정대조_검증_20260916/라운드1/사본/.claude/skills/do-math && cat -n references/지식-저작과-재사용.md",
+        "description": "Read knowledge authoring reference in full"
+      }
+    },
+    {
+      "tool": "Bash",
+      "input": {
+        "command": "cd /c/math/임시/do-math_결정대조_검증_20260916/라운드1/사본/.claude/skills/do-math && sed -n 30,91p 계약/동일성-검토.md | cat -n | sed 's/^ *\\([0-9]*\\)/\\1+29/'",
+        "description": "Read identity review lines 30-91"
+      }
+    },
+    {
+      "tool": "Bash",
+      "input": {
+        "command": "awk 'NR>=15 && NR<=61 {print NR\": \"$0}' 계약/보충-조사.md",
+        "description": "Read supplemental research lines 15-61"
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\임시\\do-math_결정대조_검증_20260916\\라운드1\\사본\\.claude\\skills\\do-math\\계약\\연구-수행.md",
+        "offset": 27
+      }
+    },
+    {
+      "tool": "Bash",
+      "input": {
+        "command": "cat -n 계약/운영-점검.md",
+        "description": "Read operational review contract in full"
+      }
+    },
+    {
+      "tool": "Bash",
+      "input": {
+        "command": "cat -n 계약/유지보수.md",
+        "description": "Read maintenance contract in full"
+      }
+    },
+    {
+      "tool": "Bash",
+      "input": {
+        "command": "cat -n 계약/의도-해석.md",
+        "description": "Read intent interpretation contract in full"
+      }
+    },
+    {
+      "tool": "Bash",
+      "input": {
+        "command": "awk 'NR>=20 {print NR\": \"$0}' 계약/작업-계약-검토.md",
+        "description": "Read contract review lines 20-133"
+      }
+    },
+    {
+      "tool": "Bash",
+      "input": {
+        "command": "cat -n scripts/probe_native_isolation.py",
+        "description": "Read native isolation probe in full"
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\형식과-절차.md"
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\형식과-절차.md",
+        "offset": 263
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\임시\\parking-unimodality-analysis-20260916\\분석.md",
+        "limit": 170
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\임시\\parking-unimodality-analysis-20260916\\분석.md",
+        "offset": 170
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\do-math\\모델-세션예산-2026-09-16\\verification.json"
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\do-math\\통합-설계.md",
+        "limit": 200
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\do-math\\통합-설계.md",
+        "offset": 200,
+        "limit": 200
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\do-math\\통합-설계.md",
+        "offset": 400,
+        "limit": 200
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\do-math\\통합-설계.md",
+        "offset": 599,
+        "limit": 200
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\do-math\\통합-설계.md",
+        "offset": 798,
+        "limit": 200
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\do-math\\통합-설계.md",
+        "offset": 998,
+        "limit": 200
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\do-math\\통합-설계.md",
+        "offset": 1197,
+        "limit": 200
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\do-math\\통합-설계.md",
+        "offset": 1396,
+        "limit": 200
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\do-math\\통합-설계.md",
+        "offset": 1596,
+        "limit": 200
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\do-math\\통합-설계.md",
+        "offset": 1796,
+        "limit": 210
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\do-math\\통합-설계.md",
+        "offset": 2006,
+        "limit": 220
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\do-math\\통합-설계.md",
+        "offset": 2225,
+        "limit": 210
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\do-math\\통합-설계.md",
+        "offset": 2434,
+        "limit": 210
+      }
+    },
+    {
+      "tool": "Bash",
+      "input": {
+        "command": "sed -n 91p 계약/동일성-검토.md; echo ---; sed -n 37p 계약/목표-감사.md; echo ---; sed -n 133p 계약/작업-계약-검토.md; echo; wc -l 계약/동일성-검토.md 계약/목표-감사.md",
+        "description": "Print exact lines for new patches"
+      }
+    },
+    {
+      "tool": "Bash",
+      "input": {
+        "command": "cd /c/math && python .agents/skills/verify-rounds/scripts/vr.py 수리검산 --런 임시/do-math_결정대조_검증_20260916 --라운드 1 --동결 임시/do-math_결정대조_검증_20260916/동결.md --수리 임시/do-math_결정대조_검증_20260916/라운드1/수리_1.md; echo \"exit=$?\"",
+        "description": "Run the official self-check"
+      }
+    }
+  ],
+  "limit": "표의 범위 대조와 실제 도구 호출 기록이다. 파일 내용의 이해와 결함 없음 자체를 기계적으로 증명하지 않는다."
+}

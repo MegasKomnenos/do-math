@@ -1,0 +1,17 @@
+test_automatic_pause_runs_operator_but_a_new_user_pause_stops_it (test_operator.OperatorTests.test_automatic_pause_runs_operator_but_a_new_user_pause_stops_it) ... ok
+test_cli_emits_byte_bearing_operator_receipt_as_json (test_operator.OperatorTests.test_cli_emits_byte_bearing_operator_receipt_as_json) ... ok
+test_completed_instance_is_observed_without_starting_an_operator_model (test_operator.OperatorTests.test_completed_instance_is_observed_without_starting_an_operator_model) ... ok
+test_context_records_status_and_previous_report_without_state_write (test_operator.OperatorTests.test_context_records_status_and_previous_report_without_state_write) ... ok
+test_engine_does_not_start_for_hold_or_any_pause (test_operator.OperatorTests.test_engine_does_not_start_for_hold_or_any_pause) ... ok
+test_hold_and_release_do_not_resume_or_edit_research_state (test_operator.OperatorTests.test_hold_and_release_do_not_resume_or_edit_research_state) ... ok
+test_init_keeps_created_instance_when_schedule_registration_fails (test_operator.OperatorTests.test_init_keeps_created_instance_when_schedule_registration_fails) ... ok
+test_new_instance_installs_the_operator_every_two_hours_by_default (test_operator.OperatorTests.test_new_instance_installs_the_operator_every_two_hours_by_default) ... ok
+test_probe_context_reaches_model_runner_and_preserves_structured_result (test_operator.OperatorTests.test_probe_context_reaches_model_runner_and_preserves_structured_result) ... ok
+test_release_submits_a_conditional_resume_even_before_hold_pause_is_applied (test_operator.OperatorTests.test_release_submits_a_conditional_resume_even_before_hold_pause_is_applied) ... ok
+test_schedule_request_passes_only_generic_instance_coordinates (test_operator.OperatorTests.test_schedule_request_passes_only_generic_instance_coordinates) ... ok
+test_task_names_are_repository_scoped_and_stable (test_operator.OperatorTests.test_task_names_are_repository_scoped_and_stable) ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 9.468s
+
+OK

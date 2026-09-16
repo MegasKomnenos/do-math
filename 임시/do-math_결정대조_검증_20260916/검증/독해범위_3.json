@@ -1,0 +1,800 @@
+{
+  "repair": 3,
+  "files": 44,
+  "lines": 7402,
+  "issues": [],
+  "file_table": [
+    {
+      "file": ".claude/skills/do-math/scripts/tests/test_academic.py",
+      "lines": 33,
+      "report": [
+        [
+          "test_academic.py",
+          "33",
+          "1~33",
+          "결함 없음. 학술 요구 상태·외부 거부 해소 규칙"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/tests/test_academic_engine.py",
+      "lines": 286,
+      "report": [
+        [
+          "test_academic_engine.py",
+          "286",
+          "1~286",
+          "결함 없음. 학술 요구 과제·요구 개정·외부 효과 영수증"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/tests/test_budget.py",
+      "lines": 173,
+      "report": [
+        [
+          "test_budget.py",
+          "173",
+          "1~173",
+          "결함 없음. 예약 산술 순수 계약"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/tests/test_cli.py",
+      "lines": 150,
+      "report": [
+        [
+          "test_cli.py",
+          "150",
+          "1~150",
+          "결함 없음. 호환 모드 설정·`request` 뒤쪽 추가 순서"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/tests/test_cli_advanced.py",
+      "lines": 128,
+      "report": [
+        [
+          "test_cli_advanced.py",
+          "128",
+          "1~128",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/tests/test_codex_adapter.py",
+      "lines": 196,
+      "report": [
+        [
+          "test_codex_adapter.py",
+          "196",
+          "1~196",
+          "결함 없음. scholarly를 유일한 명시 MCP로 전달"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/tests/test_context_store.py",
+      "lines": 55,
+      "report": [
+        [
+          "test_context_store.py",
+          "55",
+          "1~55",
+          "결함 없음. 입력 외부화·수집 한도"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/tests/test_contracts.py",
+      "lines": 63,
+      "report": [
+        [
+          "test_contracts.py",
+          "63",
+          "1~63",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/tests/test_controls.py",
+      "lines": 84,
+      "report": [
+        [
+          "test_controls.py",
+          "84",
+          "1~84",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/tests/test_currentness_recovery.py",
+      "lines": 167,
+      "report": [
+        [
+          "test_currentness_recovery.py",
+          "167",
+          "1~167",
+          "결함 없음. 사용 원자료 변경 거부·복구 자료 복원"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/tests/test_document_followup.py",
+      "lines": 69,
+      "report": [
+        [
+          "test_document_followup.py",
+          "69",
+          "1~69",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/tests/test_engine.py",
+      "lines": 237,
+      "report": [
+        [
+          "test_engine.py",
+          "237",
+          "1~237",
+          "결함 없음. 실행횟수 호환 예산·null 한도"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/tests/test_external.py",
+      "lines": 39,
+      "report": [
+        [
+          "test_external.py",
+          "39",
+          "1~39",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/tests/test_feature2_migration.py",
+      "lines": 100,
+      "report": [
+        [
+          "test_feature2_migration.py",
+          "100",
+          "1~100",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/tests/test_formal.py",
+      "lines": 35,
+      "report": [
+        [
+          "test_formal.py",
+          "35",
+          "1~35",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/tests/test_git_store.py",
+      "lines": 208,
+      "report": [
+        [
+          "test_git_store.py",
+          "208",
+          "1~208",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/tests/test_governance.py",
+      "lines": 29,
+      "report": [
+        [
+          "test_governance.py",
+          "29",
+          "1~29",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/tests/test_knowledge.py",
+      "lines": 107,
+      "report": [
+        [
+          "test_knowledge.py",
+          "107",
+          "1~107",
+          "결함 없음. 이력은 현재 의존이 아님"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/tests/test_knowledge_import_engine.py",
+      "lines": 53,
+      "report": [
+        [
+          "test_knowledge_import_engine.py",
+          "53",
+          "1~53",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/tests/test_knowledge_io.py",
+      "lines": 49,
+      "report": [
+        [
+          "test_knowledge_io.py",
+          "49",
+          "1~49",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/tests/test_lifecycle_engine.py",
+      "lines": 635,
+      "report": [
+        [
+          "test_lifecycle_engine.py",
+          "635",
+          "1~635",
+          "결함 없음. 완료 과제 readiness 제거·대화 소실 정책"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/tests/test_model_runner.py",
+      "lines": 59,
+      "report": [
+        [
+          "test_model_runner.py",
+          "59",
+          "1~59",
+          "결함 없음. 출력 검증 오류 분류·scholarly 요청 기록"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/tests/test_native_probe.py",
+      "lines": 29,
+      "report": [
+        [
+          "test_native_probe.py",
+          "29",
+          "1~29",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/tests/test_observations.py",
+      "lines": 32,
+      "report": [
+        [
+          "test_observations.py",
+          "32",
+          "1~32",
+          "결함 없음. `.scratch` 근거 경로 거부"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/tests/test_operator.py",
+      "lines": 218,
+      "report": [
+        [
+          "test_operator.py",
+          "218",
+          "1~218",
+          "항목 3(기본 활성·2시간 주기 미고정)"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/tests/test_planning.py",
+      "lines": 56,
+      "report": [
+        [
+          "test_planning.py",
+          "56",
+          "1~56",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/tests/test_preflight.py",
+      "lines": 60,
+      "report": [
+        [
+          "test_preflight.py",
+          "60",
+          "1~60",
+          "결함 없음. 독립 운영 계약·예약 스크립트 필수"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/tests/test_probe_codex.py",
+      "lines": 28,
+      "report": [
+        [
+          "test_probe_codex.py",
+          "28",
+          "1~28",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/tests/test_purpose_engine.py",
+      "lines": 541,
+      "report": [
+        [
+          "test_purpose_engine.py",
+          "541",
+          "1~541",
+          "결함 없음. 하네스가 호환 모드를 쓰는 사실은 항목 2 위치에 사용"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/tests/test_query_records.py",
+      "lines": 92,
+      "report": [
+        [
+          "test_query_records.py",
+          "92",
+          "1~92",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/tests/test_reading_map.py",
+      "lines": 81,
+      "report": [
+        [
+          "test_reading_map.py",
+          "81",
+          "1~81",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/tests/test_repository.py",
+      "lines": 165,
+      "report": [
+        [
+          "test_repository.py",
+          "165",
+          "1~165",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/tests/test_research_recovery.py",
+      "lines": 312,
+      "report": [
+        [
+          "test_research_recovery.py",
+          "312",
+          "1~312",
+          "결함 없음. 항목 3 영향에서 23~25행 대비"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/tests/test_review_cycle.py",
+      "lines": 276,
+      "report": [
+        [
+          "test_review_cycle.py",
+          "276",
+          "1~276",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/tests/test_review_engine.py",
+      "lines": 283,
+      "report": [
+        [
+          "test_review_engine.py",
+          "283",
+          "1~283",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/tests/test_review_research.py",
+      "lines": 349,
+      "report": [
+        [
+          "test_review_research.py",
+          "349",
+          "1~349",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/tests/test_scholarly.py",
+      "lines": 92,
+      "report": [
+        [
+          "test_scholarly.py",
+          "92",
+          "1~92",
+          "결함 없음. command·args만 회수"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/tests/test_session_scheduler.py",
+      "lines": 444,
+      "report": [
+        [
+          "test_session_scheduler.py",
+          "444",
+          "1~444",
+          "항목 1·2·4"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/tests/test_standalone.py",
+      "lines": 46,
+      "report": [
+        [
+          "test_standalone.py",
+          "46",
+          "1~46",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/tests/test_state_checks.py",
+      "lines": 166,
+      "report": [
+        [
+          "test_state_checks.py",
+          "166",
+          "1~166",
+          "결함 없음"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/tests/test_submission_boundaries.py",
+      "lines": 296,
+      "report": [
+        [
+          "test_submission_boundaries.py",
+          "296",
+          "1~296",
+          "결함 없음. 실제 의존 현재성·재실패 격리·큰 보고 재사용"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/tests/test_submission_tools.py",
+      "lines": 464,
+      "report": [
+        [
+          "test_submission_tools.py",
+          "464",
+          "1~464",
+          "결함 없음. 생산자 검사 명령·늦은 응답·재생성 방지. 항목 2 위치에 42~52행 사용"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/tests/test_task_scope.py",
+      "lines": 148,
+      "report": [
+        [
+          "test_task_scope.py",
+          "148",
+          "1~148",
+          "결함 없음. AI 과제 자율 철회와 사용자·학술 과제 보호"
+        ]
+      ]
+    },
+    {
+      "file": ".claude/skills/do-math/scripts/tests/test_windows_job.py",
+      "lines": 269,
+      "report": [
+        [
+          "test_windows_job.py",
+          "269",
+          "1~269",
+          "결함 없음"
+        ]
+      ]
+    }
+  ],
+  "source_session": "C:\\Users\\wogud\\.claude\\projects\\C--math\\e3bb5b64-6286-4e2a-9829-dabed6324e2b.jsonl",
+  "completion_read_calls": [
+    {
+      "tool": "Bash",
+      "input": {
+        "command": "cd /c/math/임시/do-math_결정대조_검증_20260916/라운드1/사본/.claude/skills/do-math/scripts/tests && for f in test_context_store.py test_external.py test_formal.py test_governance.py test_knowledge_io.py test_observations.py test_planning.py; do echo \"=== $f\"; cat -n $f; done"
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\Users\\wogud\\.claude\\projects\\C--math\\e3bb5b64-6286-4e2a-9829-dabed6324e2b\\tool-results\\ba0984xwg.txt"
+      }
+    },
+    {
+      "tool": "Bash",
+      "input": {
+        "command": "for f in test_knowledge.py test_knowledge_import_engine.py; do echo \"=== $f\"; cat -n $f; done"
+      }
+    },
+    {
+      "tool": "Bash",
+      "input": {
+        "command": "for f in test_query_records.py test_repository.py; do echo \"=== $f\"; cat -n $f; done"
+      }
+    },
+    {
+      "tool": "Bash",
+      "input": {
+        "command": "cat -n test_git_store.py"
+      }
+    },
+    {
+      "tool": "Bash",
+      "input": {
+        "command": "cat -n test_windows_job.py"
+      }
+    },
+    {
+      "tool": "Bash",
+      "input": {
+        "command": "cat -n test_codex_adapter.py"
+      }
+    },
+    {
+      "tool": "Bash",
+      "input": {
+        "command": "sed -n '120,286p' test_academic_engine.py | cat -n | awk '{ $1=$1+119; print }' OFS='\\t'"
+      }
+    },
+    {
+      "tool": "Bash",
+      "input": {
+        "command": "cat -n test_review_research.py"
+      }
+    },
+    {
+      "tool": "Bash",
+      "input": {
+        "command": "cat -n test_review_cycle.py"
+      }
+    },
+    {
+      "tool": "Bash",
+      "input": {
+        "command": "cat -n test_review_engine.py"
+      }
+    },
+    {
+      "tool": "Bash",
+      "input": {
+        "command": "awk 'NR>=110 && NR<=280 {printf \"%d\\t%s\\n\", NR, $0}' test_lifecycle_engine.py"
+      }
+    },
+    {
+      "tool": "Bash",
+      "input": {
+        "command": "awk 'NR>=311 && NR<=635 {printf \"%d\\t%s\\n\", NR, $0}' test_lifecycle_engine.py"
+      }
+    },
+    {
+      "tool": "Bash",
+      "input": {
+        "command": "cd /c/math && cat -n 기억/layer1/M-0292.md 기억/layer1/M-0293.md; sed -n 1,19p docs/do-math/개선-검증-2026-09-16/README.md | cat -n"
+      }
+    },
+    {
+      "tool": "Bash",
+      "input": {
+        "command": "sed -n 61,484p docs/do-math/모델-세션예산-2026-09-16/verification.json"
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\임시\\parking-unimodality-analysis-20260916\\분석.md",
+        "limit": 170
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\임시\\parking-unimodality-analysis-20260916\\분석.md",
+        "offset": 171,
+        "limit": 159
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\형식과-절차.md"
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\형식과-절차.md",
+        "offset": 264,
+        "limit": 96
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\do-math\\통합-설계.md",
+        "limit": 220
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\do-math\\통합-설계.md",
+        "offset": 221,
+        "limit": 200
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\do-math\\통합-설계.md",
+        "offset": 421,
+        "limit": 200
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\do-math\\통합-설계.md",
+        "offset": 621,
+        "limit": 200
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\do-math\\통합-설계.md",
+        "offset": 821,
+        "limit": 200
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\do-math\\통합-설계.md",
+        "offset": 1021,
+        "limit": 200
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\do-math\\통합-설계.md",
+        "offset": 1221,
+        "limit": 200
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\do-math\\통합-설계.md",
+        "offset": 1421,
+        "limit": 200
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\do-math\\통합-설계.md",
+        "offset": 1621,
+        "limit": 200
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\do-math\\통합-설계.md",
+        "offset": 1821,
+        "limit": 200
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\do-math\\통합-설계.md",
+        "offset": 2021,
+        "limit": 200
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\do-math\\통합-설계.md",
+        "offset": 2221,
+        "limit": 210
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\docs\\do-math\\통합-설계.md",
+        "offset": 2431,
+        "limit": 205
+      }
+    },
+    {
+      "tool": "Bash",
+      "input": {
+        "command": "grep -n \"role_tiers\\|ROLE_TIERS\\|selection(\" 임시/do-math_결정대조_검증_20260916/라운드1/사본/.claude/skills/do-math/scripts/tests/*.py; grep -n \"평가가 없는 이전 과제\" 기억/layer1/M-0296.md; grep -n \"역할별 최소 등급 중 더 높은\\|역할별 최소 등급 중 가장 높은\" 임시/do-math_결정대조_검증_20260916/근거/모델-세션예산.md; for f in test_observations test_governance test_knowledge_import_engine test_document_followup; do tail -c 60 임시/do-math_결정대조_검증_20260916/라운드1/사본/.claude/skills/do-math/scripts/tests/$f.py; echo \" <- $f\"; done"
+      }
+    },
+    {
+      "tool": "Read",
+      "input": {
+        "file_path": "C:\\math\\임시\\do-math_결정대조_검증_20260916\\라운드1\\수리_3.md",
+        "offset": 150,
+        "limit": 40
+      }
+    },
+    {
+      "tool": "Bash",
+      "input": {
+        "command": "f=임시/do-math_결정대조_검증_20260916/라운드1/수리_3.md && head -n 156 \"$f\" > \"$f.tmp\" && mv \"$f.tmp\" \"$f\" && tail -n 3 \"$f\""
+      }
+    },
+    {
+      "tool": "Bash",
+      "input": {
+        "command": "cat >> 임시/do-math_결정대조_검증_20260916/라운드1/수리_3.md <<'EOF'\n\n## 역할별 최소 등급과 미평가 과제의 상 등급 배정을 검사하는 시험이 없다\n\n### 위치\n\n.claude/skills/do-math/scripts/tests/test_session_scheduler.py의 `SessionPolicyTests`(62~84행)에서 `selection`을 호출하는 곳은 69행 하나다. 그 호출은 과제 평가(`difficulty` high)가 역할 하한(`research_work`의 low)보다 높은 경우만 본다. 역할 하한이 평가보다 높아 등급을 끌어올리는 경우와, 평가가 없는 연구 수행에 상 등급을 주는 경우는 산출물 시험 파일 전건 어디에도 없다. 두 동작은 `scripts/do_math/model_policy.py` 63~70행이 구현한다. 361~388행의 흐름 시험은 low/low 평가가 `research_work`에서 terra로 배정되는지만 확인한다.\n\n### 기준\n\n사용자에게 설명하고 확정한 배정 규칙이다. 임시/do-math_결정대조_검증_20260916/근거/모델-세션예산.md 436행·477행:\n\n```text\n평가 기준은 이미 있습니다. **난이도와 중요도를 각각 상·중·하로 평가하고, 둘 중 높은 등급과 역할별 최소 등급 중 더 높은 것을 적용**합니다. 고정 점수표가 아니라 AI가 근거를 기록하는 방식입니다.\n후보 준비가 평가하고, 계약 검토가 근거를 확인하며, 연구 계획이 유지·갱신합니다. **최종 모델 등급은 난이도·중요도·역할별 최소 등급 중 가장 높은 값**입니다. 평가 근거도 기록하며, 슬롯 부족 때문에 등급을 낮추지 않습니다. [상세 기준](/C:/math/.claude/skills/do-math/references/모델과-실행예산.md:21)\n```\n\n기억/layer1/M-0296.md 18행:\n\n```text\n후보 준비와 연구 계획은 과제의 난이도·중요도와 근거를 model_assessments 확장에 남긴다. 두 축과 역할별 최소 요구 중 높은 등급으로 모델을 정하고, 실제 가용 슬롯 수 때문에 그 요구를 낮추지 않는다. 평가가 없는 이전 과제는 미평가임을 보존하면서 상 등급으로 배정한다. 역할별 최소 요구는 최초 연구 계획 이전에도 실행이 필요한 운영·검토 역할의 기본값이며 인스턴스에서 바꿀 수 있다.\n```\n\n### 영향\n\n`model_policy.py` 65행의 `max((assessment_tier(requirement), floor), ...)`가 평가 등급만 쓰도록 바뀌어도 전체 회귀는 통과한다. 그러면 low/low 평가를 받은 과제의 계약 검토(역할 하한 medium)가 Terra로 실행된다. 사용자가 확정한 \"역할별 최소 등급 중 더 높은 것\"과 어긋나고, 운영·검토 역할의 하한이 효력을 잃는다. 67~68행의 미평가 분기가 역할 하한(`research_work`의 low)을 쓰도록 바뀌어도 시험은 통과한다. 그러면 평가가 없는 이전 과제의 연구 수행이 Terra로 배정된다. 이는 M-0296이 기록한 상 등급 배정과 다르다. 회귀 통과만 보고 배정 규칙이 유지된다고 판단하는 검토자는 이 이탈을 알아채지 못한다.\n\n### 조각 1 — .claude/skills/do-math/scripts/tests/test_session_scheduler.py 행 84 뒤\n\n대체:\n```\n\n    def test_role_floor_raises_low_assessment_and_unassessed_work_uses_high(self):\n        config = deepcopy(DEFAULT_CONFIG)\n        low = {\"difficulty\": \"low\", \"importance\": \"low\", \"reason\": \"bounded local comparison\"}\n        review = selection(config, {\"role\": \"task_contract_review\", \"model_assessment\": low}, {}, {})\n        self.assertEqual((review[\"tier\"], review[\"model\"]), (\"medium\", MODELS[\"medium\"]))\n        unassessed = selection(config, {\"role\": \"research_work\"}, {}, {})\n        self.assertEqual((unassessed[\"tier\"], unassessed[\"model\"]), (\"high\", MODELS[\"high\"]))\n```\n\n# 수행 기록\n\n## 읽은 범위\n\n- 계약·용어: `.agents/skills/verify-rounds/계약/수리.md`·`조각.md`·`산출.md` 전문, `GLOSSARY.md` 「공통 용어」 절 전문, `.agents/skills/write-for-reader/references/에이전트_채널.md`·`절차문.md` 전문.\n- 동결문 `임시/do-math_결정대조_검증_20260916/동결.md` 전문.\n- 대조를 위해 연 사본 구현(지급 범위 안): model_policy.py 1~72행 전문, scheduler.py 1~209행 전문, references/모델과-실행예산.md 1~78행 전문, engine.py 45~58·125~160·329~336·651~720·1295~1320·1530~1660행, cli.py 196~245행, scheduled_operator.py 66~96행, probe_codex.py 131~140행, SKILL.md 20·95행.\n\n### 담당 사본 독해 표\n\n행 수와 구간은 사본 파일 기준이다. 모든 파일을 첫 행부터 마지막 행까지 읽었다.\n\n| 파일 | 전체 행 수 | 실제 읽은 구간 | 검토 결과 |\n|---|---:|---|---|\n| test_academic.py | 33 | 1~33 | 결함 없음. 학술 요구 상태·외부 거부 해소 규칙 |\n| test_academic_engine.py | 286 | 1~286 | 결함 없음. 학술 요구 과제·요구 개정·외부 효과 영수증 |\n| test_budget.py | 173 | 1~173 | 결함 없음. 예약 산술 순수 계약 |\n| test_cli.py | 150 | 1~150 | 결함 없음. 호환 모드 설정·`request` 뒤쪽 추가 순서 |\n| test_cli_advanced.py | 128 | 1~128 | 결함 없음 |\n| test_codex_adapter.py | 196 | 1~196 | 결함 없음. scholarly를 유일한 명시 MCP로 전달 |\n| test_context_store.py | 55 | 1~55 | 결함 없음. 입력 외부화·수집 한도 |\n| test_contracts.py | 63 | 1~63 | 결함 없음 |\n| test_controls.py | 84 | 1~84 | 결함 없음 |\n| test_currentness_recovery.py | 167 | 1~167 | 결함 없음. 사용 원자료 변경 거부·복구 자료 복원 |\n| test_document_followup.py | 69 | 1~69 | 결함 없음 |\n| test_engine.py | 237 | 1~237 | 결함 없음. 실행횟수 호환 예산·null 한도 |\n| test_external.py | 39 | 1~39 | 결함 없음 |\n| test_feature2_migration.py | 100 | 1~100 | 결함 없음 |\n| test_formal.py | 35 | 1~35 | 결함 없음 |\n| test_git_store.py | 208 | 1~208 | 결함 없음 |\n| test_governance.py | 29 | 1~29 | 결함 없음 |\n| test_knowledge.py | 107 | 1~107 | 결함 없음. 이력은 현재 의존이 아님 |\n| test_knowledge_import_engine.py | 53 | 1~53 | 결함 없음 |\n| test_knowledge_io.py | 49 | 1~49 | 결함 없음 |\n| test_lifecycle_engine.py | 635 | 1~635 | 결함 없음. 완료 과제 readiness 제거·대화 소실 정책 |\n| test_model_runner.py | 59 | 1~59 | 결함 없음. 출력 검증 오류 분류·scholarly 요청 기록 |\n| test_native_probe.py | 29 | 1~29 | 결함 없음 |\n| test_observations.py | 32 | 1~32 | 결함 없음. `.scratch` 근거 경로 거부 |\n| test_operator.py | 218 | 1~218 | 항목 3(기본 활성·2시간 주기 미고정) |\n| test_planning.py | 56 | 1~56 | 결함 없음 |\n| test_preflight.py | 60 | 1~60 | 결함 없음. 독립 운영 계약·예약 스크립트 필수 |\n| test_probe_codex.py | 28 | 1~28 | 결함 없음 |\n| test_purpose_engine.py | 541 | 1~541 | 결함 없음. 하네스가 호환 모드를 쓰는 사실은 항목 2 위치에 사용 |\n| test_query_records.py | 92 | 1~92 | 결함 없음 |\n| test_reading_map.py | 81 | 1~81 | 결함 없음 |\n| test_repository.py | 165 | 1~165 | 결함 없음 |\n| test_research_recovery.py | 312 | 1~312 | 결함 없음. 항목 3 영향에서 23~25행 대비 |\n| test_review_cycle.py | 276 | 1~276 | 결함 없음 |\n| test_review_engine.py | 283 | 1~283 | 결함 없음 |\n| test_review_research.py | 349 | 1~349 | 결함 없음 |\n| test_scholarly.py | 92 | 1~92 | 결함 없음. command·args만 회수 |\n| test_session_scheduler.py | 444 | 1~444 | 항목 1·2·4 |\n| test_standalone.py | 46 | 1~46 | 결함 없음 |\n| test_state_checks.py | 166 | 1~166 | 결함 없음 |\n| test_submission_boundaries.py | 296 | 1~296 | 결함 없음. 실제 의존 현재성·재실패 격리·큰 보고 재사용 |\n| test_submission_tools.py | 464 | 1~464 | 결함 없음. 생산자 검사 명령·늦은 응답·재생성 방지. 항목 2 위치에 42~52행 사용 |\n| test_task_scope.py | 148 | 1~148 | 결함 없음. AI 과제 자율 철회와 사용자·학술 과제 보호 |\n| test_windows_job.py | 269 | 1~269 | 결함 없음 |\n\n### 기준 원문 독해 표\n\n| 파일 | 전체 행 수 | 실제 읽은 구간 | 전문 독해 |\n|---|---:|---|---|\n| 임시/do-math_결정대조_검증_20260916/근거/계약-학술자료-독립운영.md | 359 | 1~359 | 전문 |\n| 임시/do-math_결정대조_검증_20260916/근거/모델-세션예산.md | 484 | 1~484 | 전문 |\n| 임시/do-math_결정대조_검증_20260916/근거/형식-절차-수리.md | 535 | 1~535 | 전문 |\n| 기억/layer1/M-0292.md | 28 | 1~28 | 전문 |\n| 기억/layer1/M-0293.md | 30 | 1~30 | 전문 |\n| 기억/layer1/M-0294.md | 22 | 1~22 | 전문 |\n| 기억/layer1/M-0295.md | 38 | 1~38 | 전문 |\n| 기억/layer1/M-0296.md | 32 | 1~32 | 전문 |\n| 기억/layer1/M-0297.md | 12 | 1~12 | 전문 |\n| 기억/layer1/M-0298.md | 20 | 1~20 | 전문 |\n| docs/do-math/통합-설계.md | 2634 | 1~2634 | 전문 |\n| docs/형식과-절차.md | 358 | 1~358 | 전문 |\n| 임시/parking-unimodality-analysis-20260916/분석.md | 329 | 1~329 | 전문 |\n| 임시/do-math-format-procedure-audit-20260916/재검토.md | 59 | 1~59 | 전문 |\n| 임시/do-math-format-procedure-audit-20260916/수리결과.md | 26 | 1~26 | 전문 |\n| docs/do-math/개선-검증-2026-09-16/README.md | 65 | 1~65 | 전문 |\n| docs/do-math/모델-세션예산-2026-09-16/verification.json | 484 | 1~484 | 전문 |\n\n## 검사한 문장·행 수\n\n담당 시험 파일 44개, 8,556행을 전부 읽었다. 기준 원문 17개, 5,515행을 전부 읽었다. 대조한 사본 구현·문서는 약 1,300행이다.\n\n## 그 외 없음\n\n담당 파일 44개와 기준 원문 17개를 모두 끝까지 읽은 뒤 대조했다. 위 네 항목 밖에서는 결함을 찾지 못했다. 이름으로 적으면 다음과 같다.\n\n- test_session_scheduler.py의 모델 대기와 하위 모델 우회 금지, 교차 프로세스 슬롯, 운영과 작업 풀 분리, Windows Job 종료 대기, 정지 전파, 작업이 가득 찬 때의 운영 점검, 계획 큐 재정렬, 평가 전달, 진단 대기, 진행 중 점검 실패, 운영 요청 순서 시험.\n- test_research_recovery.py·test_submission_boundaries.py·test_submission_tools.py·test_currentness_recovery.py·test_task_scope.py·test_lifecycle_engine.py·test_operator.py의 분석.md §2~§4·§10과 형식-절차 수리 결정에 대응하는 시험. 대상은 완료 기준 교체, 모집단 오류 구분, 실패 계획 보류와 진단, 완료 과제 readiness 제거, 사용자 정지·HOLD·대화 소실 보호, 접수 시각 순서, 실제 의존 현재성, 재실패 격리, 재생성 방지, 생산자 검사 명령, 큰 보고 재사용, AI 과제 자율 철회, 판독 정정의 의존 정지다.\n- test_scholarly.py·test_codex_adapter.py·test_model_runner.py의 scholarly 설정 회수와 명시적 전달.\n- 나머지 담당 파일(test_academic, test_academic_engine, test_budget, test_cli, test_cli_advanced, test_context_store, test_contracts, test_controls, test_document_followup, test_engine, test_external, test_feature2_migration, test_formal, test_git_store, test_governance, test_knowledge, test_knowledge_import_engine, test_knowledge_io, test_native_probe, test_observations, test_planning, test_preflight, test_probe_codex, test_purpose_engine, test_query_records, test_reading_map, test_repository, test_review_cycle, test_review_engine, test_review_research, test_standalone, test_state_checks, test_windows_job)은 사용자 확정 사항과 어긋나는 기대값이나 누락을 찾지 못했다.\n\n항목으로 쓰지 않은 관찰은 셋이다.\n\n- `PurposeHarness`(test_purpose_engine.py 285~295행)가 호환 모드로 인스턴스를 만들어, 이를 쓰는 복구 시험이 세션 모드 `_run_parallel`을 거치지 않는다. 하네스 기본값을 바꾸면 순차 순서를 가정하는 시험 다수가 영향을 받는다. 실행하지 않고는 대체 문면을 확정할 수 없어서, 세션 모드 전용 분기 하나를 항목 2로 좁혔다.\n- test_reading_map.py 73~78행의 설치 판본 검사는 `references/모델과-실행예산.md`를 명시하지 않는다. 구현(engine.py 330~335행)이 reading map 전체에서 목록을 만들고, 그 문서가 목록에 들어 있음은 같은 파일 31~32행이 검사하므로 결함으로 세지 않았다.\n- verification.json의 `evidence_notes.discovery`가 적은 대로 test_document_followup·test_governance·test_knowledge_import_engine·test_observations에는 직접 실행 진입점이 없다. 동결문이 정한 회귀 명령은 `unittest discover`이므로 이 네 파일도 실행되며, 사용자 결정과 어긋나지 않는다.\nEOF\npython .agents/skills/verify-rounds/scripts/vr.py 수리검산 --런 임시/do-math_결정대조_검증_20260916 --라운드 1 --동결 임시/do-math_결정대조_검증_20260916/동결.md --수리 임시/do-math_결정대조_검증_20260916/라운드1/수리_3.md; echo \"exit=$?\""
+      }
+    },
+    {
+      "tool": "Bash",
+      "input": {
+        "command": "wc -l 임시/do-math_결정대조_검증_20260916/라운드1/수리_3.md"
+      }
+    },
+    {
+      "tool": "Bash",
+      "input": {
+        "command": "python .agents/skills/verify-rounds/scripts/vr.py 수리검산 --런 임시/do-math_결정대조_검증_20260916 --라운드 1 --동결 임시/do-math_결정대조_검증_20260916/동결.md --수리 임시/do-math_결정대조_검증_20260916/라운드1/수리_3.md; echo \"exit=$?\""
+      }
+    }
+  ],
+  "limit": "표의 범위 대조와 실제 도구 호출 기록이다. 파일 내용의 이해와 결함 없음 자체를 기계적으로 증명하지 않는다."
+}

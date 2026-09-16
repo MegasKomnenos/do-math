@@ -1,0 +1,12 @@
+test_assessment_only_run_preserves_user_contract_and_unblocks_independent_review (test_model_assessment_flow.AssessmentFlowTests.test_assessment_only_run_preserves_user_contract_and_unblocks_independent_review) ... ok
+test_missing_academic_assessments_are_batched_before_any_contract_review (test_model_assessment_flow.AssessmentFlowTests.test_missing_academic_assessments_are_batched_before_any_contract_review) ... ok
+test_empty_preparation_and_legacy_call_budget_contract_remain_accepted (test_model_assessment_flow.AssessmentSubmissionTests.test_empty_preparation_and_legacy_call_budget_contract_remain_accepted) ... ok
+test_exact_coverage_is_accepted_and_duplicates_and_foreign_targets_are_rejected (test_model_assessment_flow.AssessmentSubmissionTests.test_exact_coverage_is_accepted_and_duplicates_and_foreign_targets_are_rejected) ... ok
+test_missing_candidate_assessments_are_rejected_with_missing_titles (test_model_assessment_flow.AssessmentSubmissionTests.test_missing_candidate_assessments_are_rejected_with_missing_titles) ... ok
+test_missing_family_cannot_bypass_the_completeness_check (test_model_assessment_flow.AssessmentSubmissionTests.test_missing_family_cannot_bypass_the_completeness_check) ... ok
+test_revised_candidate_also_needs_a_new_assessment (test_model_assessment_flow.AssessmentSubmissionTests.test_revised_candidate_also_needs_a_new_assessment) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 1.760s
+
+OK

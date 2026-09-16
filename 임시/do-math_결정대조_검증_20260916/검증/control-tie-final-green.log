@@ -1,0 +1,6 @@
+test_controls_with_identical_wall_time_preserve_acceptance_order (test_research_recovery.RecoveryRoutingTests.test_controls_with_identical_wall_time_preserve_acceptance_order) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.084s
+
+OK
