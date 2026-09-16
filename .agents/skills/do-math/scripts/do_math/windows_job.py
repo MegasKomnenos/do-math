@@ -242,6 +242,7 @@ class WindowsJob:
         cwd: str | os.PathLike[str] | None = None,
         env: Mapping[str, str] | None = None,
         appcontainer_sid: int | None = None,
+        name: str | None = None,
     ) -> None:
         _require_windows_10_job_list()
         command_line = _command_line(argv)
@@ -256,6 +257,7 @@ class WindowsJob:
         ):
             raise ValueError("appcontainer_sid must be a non-null SID pointer integer")
 
+        self.name = name
         self._job: int | None = None
         self._process: int | None = None
         self._thread: int | None = None
@@ -288,7 +290,7 @@ class WindowsJob:
         return handle
 
     def _create_job(self) -> int:
-        handle = _kernel32.CreateJobObjectW(None, None)
+        handle = _kernel32.CreateJobObjectW(None, self.name)
         if not handle:
             _raise_last_error("CreateJobObjectW")
         if not _kernel32.SetHandleInformation(handle, _HANDLE_FLAG_INHERIT, 0):
@@ -525,3 +527,24 @@ class WindowsJob:
 
     def __exit__(self, exc_type, exc_value, traceback) -> None:
         self.close()
+
+
+def named_job_empty(name: str) -> bool | None:
+    """Observe a known local Job after owner loss; access failure is unknown."""
+    if os.name != "nt":
+        return None
+    open_job = _kernel32.OpenJobObjectW
+    open_job.argtypes = [_DWORD, _BOOL, ctypes.c_wchar_p]
+    open_job.restype = _HANDLE
+    handle = open_job(4, False, name)  # JOB_OBJECT_QUERY
+    if not handle:
+        return True if ctypes.get_last_error() == 2 else None
+    try:
+        accounting = _JOBOBJECT_BASIC_ACCOUNTING_INFORMATION()
+        returned = _DWORD()
+        if not _kernel32.QueryInformationJobObject(handle, _JobObjectBasicAccountingInformation,
+                ctypes.byref(accounting), ctypes.sizeof(accounting), ctypes.byref(returned)):
+            return None
+        return accounting.ActiveProcesses == 0
+    finally:
+        _kernel32.CloseHandle(handle)

@@ -1,0 +1,13 @@
+test_duplicate_json_and_nonfinite_values_are_rejected (__main__.ResearchRepositoryTests.test_duplicate_json_and_nonfinite_values_are_rejected) ... ok
+test_export_refuses_nonempty_or_reparse_destination_and_preserves_prefix (__main__.ResearchRepositoryTests.test_export_refuses_nonempty_or_reparse_destination_and_preserves_prefix) ... ok
+test_initialize_load_save_and_exact_old_snapshot_read (__main__.ResearchRepositoryTests.test_initialize_load_save_and_exact_old_snapshot_read) ... ok
+test_list_files_prefix_and_read_reject_implicit_missing_snapshot (__main__.ResearchRepositoryTests.test_list_files_prefix_and_read_reject_implicit_missing_snapshot) ... ok
+test_new_artifact_bundle_is_saved_with_state_and_existing_bundle_is_immutable (__main__.ResearchRepositoryTests.test_new_artifact_bundle_is_saved_with_state_and_existing_bundle_is_immutable) ... ok
+test_new_id_is_canonical_ulid_and_canonical_json_is_stable (__main__.ResearchRepositoryTests.test_new_id_is_canonical_ulid_and_canonical_json_is_stable) ... ok
+test_query_cursor_is_bound_to_snapshot_and_query_and_has_no_empty_page (__main__.ResearchRepositoryTests.test_query_cursor_is_bound_to_snapshot_and_query_and_has_no_empty_page) ... ok
+test_stale_save_conflict_does_not_overwrite (__main__.ResearchRepositoryTests.test_stale_save_conflict_does_not_overwrite) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 32.177s
+
+OK

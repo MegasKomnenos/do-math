@@ -14,7 +14,7 @@ CONTRACT_FIELDS = ("id", "revision", "title", "question", "scope", "excluded_sco
                    "completion_criteria", "inputs", "reuse", "dependencies", "occurrence_condition",
                    "work_class", "profile_refs", "authority_refs", "expected_research_change",
                    "academic_requirement_id", "requirements_sha256", "solution_basis", "required_external_effects",
-                   "initial_observation_rules")
+                   "initial_observation_rules", "model_assessment")
 
 def contract_hash(task: dict) -> str:
     """Hash only fields whose revision approval is intended to cover."""

@@ -1,0 +1,19 @@
+...
+----------------------------------------------------------------------
+Ran 3 tests in 2.179s
+
+OK
+usage: probe [-h] [--repository REPOSITORY] [--codex CODEX]
+             [--output-dir OUTPUT_DIR] [--duration-seconds DURATION_SECONDS]
+
+Reproduce elevated Windows sandbox read-root isolation without a model call.
+
+options:
+  -h, --help            show this help message and exit
+  --repository REPOSITORY
+                        Base directory for probe evidence
+  --codex CODEX
+  --output-dir OUTPUT_DIR
+                        New evidence directory; must not exist
+  --duration-seconds DURATION_SECONDS
+                        Concurrent A observation duration (5-30)

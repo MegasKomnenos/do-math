@@ -1,0 +1,14 @@
+test_catalog_and_overflow_history_are_lossless (__main__.ContextStoreTests.test_catalog_and_overflow_history_are_lossless) ... ok
+test_changed_during_read_is_not_success (__main__.ContextStoreTests.test_changed_during_read_is_not_success) ... ok
+test_collect_preserves_outputs_and_excludes_noise (__main__.ContextStoreTests.test_collect_preserves_outputs_and_excludes_noise) ... ok
+test_mandatory_overflow_reports_size_without_reduction (__main__.ContextStoreTests.test_mandatory_overflow_reports_size_without_reduction) ... ok
+test_materialize_and_invalid_utf8_round_trip (__main__.ContextStoreTests.test_materialize_and_invalid_utf8_round_trip) ... ok
+test_outside_symlink_is_reported_when_supported (__main__.ContextStoreTests.test_outside_symlink_is_reported_when_supported) ... skipped "[WinError 1314] 클라이언트가 필요한 권한을 가지고 있지 않습니다: 'C:\\\\Users\\\\wogud\\\\AppData\\\\Local\\\\Temp\\\\tmpa1oe83f5\\\\secret' -> 'C:\\\\Users\\\\wogud\\\\AppData\\\\Local\\\\Temp\\\\tmpda3_nb_2\\\\link'"
+test_read_source_range_missing_and_hash_error (__main__.ContextStoreTests.test_read_source_range_missing_and_hash_error) ... ok
+test_required_missing_and_limit_are_incomplete (__main__.ContextStoreTests.test_required_missing_and_limit_are_incomplete) ... ok
+test_traversal_and_absolute_paths_rejected (__main__.ContextStoreTests.test_traversal_and_absolute_paths_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.136s
+
+OK (skipped=1)

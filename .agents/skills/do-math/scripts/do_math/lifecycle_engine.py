@@ -46,7 +46,7 @@ class LifecycleEngineMixin:
         return timestamp(clock() if clock else None)
 
     def _upgrade_runtime(self):
-        if any(root.get('feature_version', 1) not in {1, 2} for root in (self.instance, self.runtime)):
+        if any(root.get('feature_version', 1) not in {1, 2, 3} for root in (self.instance, self.runtime)):
             raise ValueError('unsupported feature version; an explicit verified migration is required')
         legacy_upgrade = (self.instance.get('contract_id') == 'do-math-cli/1' and
                           min(self.instance.get('feature_version', 1), self.runtime.get('feature_version', 1)) == 1)

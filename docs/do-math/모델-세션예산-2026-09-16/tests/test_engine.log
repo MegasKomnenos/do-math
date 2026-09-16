@@ -1,0 +1,15 @@
+test_budget_config_allows_null_only_for_call_limits (__main__.EngineTests.test_budget_config_allows_null_only_for_call_limits) ... ok
+test_crash_recovery_and_artifact_immutability (__main__.EngineTests.test_crash_recovery_and_artifact_immutability) ... ok
+test_each_unlimited_pool_keeps_the_other_pool_finite (__main__.EngineTests.test_each_unlimited_pool_keeps_the_other_pool_finite) ... ok
+test_formal_requires_two_blind_reviews_and_failure_does_not_create_k (__main__.EngineTests.test_formal_requires_two_blind_reviews_and_failure_does_not_create_k) ... ok
+test_nonformal_completion_then_goal_audit (__main__.EngineTests.test_nonformal_completion_then_goal_audit) ... ok
+test_nonformal_mathematical_goal_is_not_solved (__main__.EngineTests.test_nonformal_mathematical_goal_is_not_solved) ... ok
+test_plan_rejects_missing_candidate_and_criterion (__main__.EngineTests.test_plan_rejects_missing_candidate_and_criterion) ... ok
+test_unlimited_budgets_continue_after_finite_exhaustion (__main__.EngineTests.test_unlimited_budgets_continue_after_finite_exhaustion) ... ok
+test_work_budget_exhaustion_does_not_prevent_operations (__main__.EngineTests.test_work_budget_exhaustion_does_not_prevent_operations) ... ok
+test_work_budget_pause_resume_preserves_queue (__main__.EngineTests.test_work_budget_pause_resume_preserves_queue) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 739.084s
+
+OK

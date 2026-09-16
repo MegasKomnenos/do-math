@@ -18,6 +18,8 @@ import uuid
 
 from .repository import ResearchRepository
 from .model_runner import CodexModelRunner
+from .session_slots import SessionSlots
+from .model_policy import selection
 
 
 SCRIPTS = Path(__file__).resolve().parents[1]
@@ -174,7 +176,7 @@ def run_engine(repository: Path, instance: str, workspace: Path) -> dict[str, An
     run_directory = _operator_dir(workspace) / "engine" / (datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:8])
     run_directory.mkdir(parents=True)
     _json(run_directory / "before.json", status)
-    command = [sys.executable, str(ENTRYPOINT), "run", "--repository", str(repository), "--instance", instance]
+    command = [sys.executable, str(ENTRYPOINT), "run", "--repository", str(repository), "--instance", instance, "--watch"]
     record = {"outcome": "running", "before": status, "command": command, "run_directory": str(run_directory)}
     _json(run_directory / "result.json", record)
     try:
@@ -197,7 +199,7 @@ def engine_start_guard(repository: Path, instance: str, workspace: Path) -> dict
     status = read_status(repository, instance)
     if status.get("user_pause") or status.get("status") == "paused":
         return {"outcome": "paused", "before": status}
-    if status.get("status") not in {"ready", "running"}:
+    if status.get("status") not in {"ready", "running", "capacity_waiting"}:
         return {"outcome": "not_started", "before": status}
     return {"outcome": "startable", "before": status}
 
@@ -218,7 +220,7 @@ def check(repository: Path, instance: str, workspace: Path, *, probe: bool = Fal
         return report
     _, state, _ = ResearchRepository(repository, instance).load()
     from .engine import DEFAULT_CONFIG
-    config = {**DEFAULT_CONFIG, **state["config"]}
+    config = {**DEFAULT_CONFIG, "session_limits": None, **state["config"]}
     scholarly = config.get("scholarly_server") if config.get("scholarly_enabled", True) else None
     context = invocation_context(repository, instance, workspace, status, probe=probe, scholarly_configured=isinstance(scholarly, dict))
     run_directory = Path(context["run_directory"])
@@ -259,17 +261,36 @@ def check(repository: Path, instance: str, workspace: Path, *, probe: bool = Fal
         stopped = bool(current.get("user_pause") or current.get("status") == "closed")
         return stopped
 
+    slots = None
+    slot_id = "operator-" + run_directory.name
+    model = config["operator_model"]
+    if config["session_limits"] is not None:
+        slots = SessionSlots(workspace, instance)
+        chosen = selection(config, {"role": "independent_operator"}, {}, {})
+        model = chosen["model"]
+        report["model_selection"] = chosen
+        if not slots.acquire(slot_id, "operations", model):
+            report.update(outcome="capacity_waiting", model=model, budget=slots.snapshot())
+            _json(run_directory / "result.json", report)
+            _json(_operator_dir(workspace) / "latest-report.json", _latest_report(report, run_directory / "result.json"))
+            slots.close()
+            return report
     runner = CodexModelRunner()
     (run_directory / "workspace").mkdir()
     try:
         model_result = runner.run(prompt=prompt, output_schema=OPERATOR_SCHEMA, workspace=run_directory / "workspace",
-                                  evidence_dir=run_directory / "evidence", model=config["operator_model"],
+                                  evidence_dir=run_directory / "evidence", model=model,
                                   effort=config["operator_effort"], timeout_seconds=config["operator_timeout_seconds"],
-                                  scholarly_server=scholarly if isinstance(scholarly, dict) else None, should_stop=should_stop)
+                                  scholarly_server=scholarly if isinstance(scholarly, dict) else None, should_stop=should_stop,
+                                  **({"on_started": lambda identity: slots.started(slot_id, identity)} if slots else {}))
         report.update(outcome="completed" if model_result["status"] == "completed" else model_result["status"],
                       result=model_result, output=model_result.get("output"))
     except Exception as error:
         report.update(outcome="operator_failed", error=f"{type(error).__name__}: {error}")
+    finally:
+        if slots is not None:
+            slots.release(slot_id)
+            slots.close()
     report["ended_at"] = datetime.now(timezone.utc).isoformat()
     result_path = run_directory / "result.json"
     _json(result_path, report)

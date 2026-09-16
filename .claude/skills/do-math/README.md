@@ -2,7 +2,7 @@
 
 이 문서는 do-math 연구 인스턴스를 만들고 운전하는 사람을 위한 진입점이다. do-math의 목적과 전체 연구 흐름은 [SKILL.md](SKILL.md), 공통 용어의 뜻은 [GLOSSARY.md](GLOSSARY.md), 정확한 명령·필드·상태 투영과 역할별 JSON은 [CLI 실행 계약](references/CLI-실행-계약.md)이 소유한다.
 
-현재 실행 계약은 `do-math-cli/1`, 기능 판본은 2다. 기존 Codex CLI 로그인을 사용하므로 별도의 OpenAI API 키를 요구하지 않는다. 이 구현은 수학 연구의 후보 준비, 작업 계약 검토, 연구 계획, 연구 수행, Lean 검사, 동일성 검토, 목표 감사와 학술 후속을 한 인스턴스 상태로 연결한다. 각 기능이 무엇을 보증하는지는 서로 다르다. 명령 성공이나 실행 종료는 형식 타당성·해설 동일성·목표 충족을 대신하지 않는다.
+현재 실행 계약은 `do-math-cli/1`이다. 새 세션 예산 인스턴스는 기능 판본 3을 사용하고, 기존 판본의 실행횟수 운전도 지원한다. 기존 Codex CLI 로그인을 사용하므로 별도의 OpenAI API 키를 요구하지 않는다. 이 구현은 수학 연구의 후보 준비, 작업 계약 검토, 연구 계획, 연구 수행, Lean 검사, 동일성 검토, 목표 감사와 학술 후속을 한 인스턴스 상태로 연결한다. 각 기능이 무엇을 보증하는지는 서로 다르다. 명령 성공이나 실행 종료는 형식 타당성·해설 동일성·목표 충족을 대신하지 않는다.
 
 ## 시작 전에 준비할 것
 
@@ -24,11 +24,27 @@ python .agents/skills/do-math/scripts/do_math.py profile
 - `--goal` 또는 `--goal-file`: 연구 헌장의 현재 목표가 될 원문이다. 둘 중 하나만 사용한다.
 - `--goal-kind`: `mathematical`은 형식 결과·동일성 판정·목표 감사를 요구하는 수학 목표이고, `research`는 헌장이 요구한 비형식 연구 산출로 충족될 수 있는 목표다.
 
-초기화 때 정책, 원자료와 설정을 함께 넣을 수 있다. `--source`는 여러 번 지정할 수 있다. `--model`과 `--effort`를 주면 `--config-file`에 같은 필드가 있어도 명령행 값을 사용한다. 명령행과 설정 파일 어디에도 없는 필드는 코드의 기본값을 사용한다.
+초기화 때 정책, 원자료와 설정을 함께 넣을 수 있다. `--source`는 여러 번 지정할 수 있다. 모델별 배정과 예산은 설정 파일의 `tier_models`, `role_tiers`, `session_limits`를 사용한다. `--effort`는 설정 파일의 추론 노력보다 우선한다. 구 실행횟수 호환 모드의 `--model`도 같은 필드의 파일 설정보다 우선한다. 생략한 필드는 코드의 기본값을 사용한다.
 
-독립 운영의 기본값은 `operator_enabled=true`, `operator_interval_seconds=7200`이다. 작업·운영 실행 횟수는 모두 `null`, 즉 제한 없음이다. 유한한 예산이나 수동 운영을 원하면 초기 설정 파일에 해당 값을 지정한다. `init`은 독립 운영이 활성일 때 Windows 예약 작업을 등록하며, 그 자체로 모델이나 연구 실행을 시작하지는 않는다. 첫 정기 점검은 등록 후 설정한 주기에 도래한다.
+독립 운영의 기본값은 `operator_enabled=true`, `operator_interval_seconds=7200`이다. 새 인스턴스는 상·중·하 모델마다 운영 1개와 작업 3개의 동시 세션을 사용한다. [모델과 실행예산](references/모델과-실행예산.md)의 기본 대응과 배정 기준을 확인하고, 다른 용량이나 수동 운영이 필요하면 설정 파일에 지정한다. `init`은 독립 운영이 활성일 때 연구 운전과 독립 운영 점검을 맡는 두 Windows 예약 작업을 등록하며, 그 자체로 모델이나 연구 실행을 시작하지는 않는다. 첫 정기 점검은 등록 후 설정한 주기에 도래한다. 주기 trigger는 운영 점검에만 적용한다. 연구 작업에는 고정 반복 주기를 두지 않고 운영 담당이 필요할 때 시작하며, 실행 기한으로 종료된 뒤의 재개도 다음 운영 점검에서 판단한다.
 
 scholarly는 기본 활성이다. `scholarly_server`에 `command`·`args`를 직접 지정하거나, 초기화 명령의 작업 위치에서 상위로 찾은 `.codex/config.toml`의 scholarly 항목을 사용한다. 프로젝트 설정이 없으면 Codex 사용자 설정에서 같은 항목을 찾는다. 실행에 필요한 서버 경로는 고정해 인스턴스 설정에 보존하고, 하위 실행에는 이 MCP 설정만 명시적으로 전달한다. 서버 설정을 찾지 못한 것과 외부 자료원 접근 실패는 다르다. 사용 가능한 도구는 각 실행에서 확인한다.
+
+## 모델과 동시실행 예산 설정
+
+모델의 기본 대응과 배정 기준은 [모델과 실행예산](references/모델과-실행예산.md)에 있다. 아래 JSON을 설정 파일로 저장해 `init --config-file` 또는 `configure --config-file`에 전달하면 모델별 동시 세션 수를 명시할 수 있다. 과제의 난이도·중요도에 맞춘 모델의 슬롯이 없으면 그 과제는 대기한다.
+
+```json
+{
+  "tier_models": {"high": "gpt-6-astra", "medium": "gpt-5.6-sol", "low": "gpt-5.6-terra"},
+  "session_limits": {
+    "work": {"gpt-6-astra": 3, "gpt-5.6-sol": 3, "gpt-5.6-terra": 3},
+    "operations": {"gpt-6-astra": 1, "gpt-5.6-sol": 1, "gpt-5.6-terra": 1}
+  }
+}
+```
+
+이 예시는 기본 구성과 같다. 세션은 종료 후 재사용하며 두 예산은 자동 차용하지 않는다. 모델 이름이나 수를 바꾸면 두 예산 맵에도 해당 모델을 명시한다. 기존 실행횟수 인스턴스는 위 설정으로 명시적으로 전환하기 전까지 기존 계약을 유지한다. 기존 `role_models`를 썼다면 전환 설정에 `"role_models": {}`도 넣는다. 상세 호환 조건은 CLI 실행 계약의 설정 절을 따른다.
 
 ## 첫 인스턴스 만들기
 
@@ -42,7 +58,6 @@ python .agents/skills/do-math/scripts/do_math.py init `
   --goal-file .agents/skills/do-math/examples/nat-add-zero.txt `
   --title "자연수 덧셈의 오른쪽 항등원" `
   --goal-kind mathematical `
-  --model gpt-5.6-sol `
   --effort medium
 ```
 
@@ -77,7 +92,7 @@ python .agents/skills/do-math/scripts/do_math.py status `
   --instance RI-...
 ```
 
-사람용 출력은 목표, 목표 상태, CLI 상태와 snapshot, 작업·운영 실행 시도 수, 과제 상태와 보증 범위 요지를 보여 준다. 자동 처리나 세부 진단에는 `--json`을 쓴다.
+사람용 출력은 목표, 목표 상태, CLI 상태와 snapshot, 모델별 작업·운영 세션 점유, 과제 상태와 보증 범위 요지를 보여 준다. 자동 처리나 세부 진단에는 `--json`을 쓴다.
 
 ```powershell
 python .agents/skills/do-math/scripts/do_math.py status `
@@ -97,7 +112,7 @@ JSON status에서 먼저 볼 필드는 다음과 같다.
 | `tasks` | 과제 ID·제목·현재 CLI 단계 |
 | `knowledge.K`, `knowledge.F`, `knowledge.suspended_K` | 현재 CLI가 계산한 사용 가능 K, `status!=verified` 기록, 사용 정지 K의 수. 여기서 `F` 수치는 보편 F의 완전한 의미 목록이 아니라 CLI 상태 집계다 |
 | `questions` | 사용자 입력이나 결정을 기다리는 질문 |
-| `budget` | 작업·운영 실행 시도의 설정 한도와 사용 수 |
+| `budget` | 세션 모드의 작업·운영 모델별 한도·점유·여유 또는 구 모드의 실행횟수 한도·누적 사용 |
 | `pending_controls` | inbox에 접수됐지만 아직 적용되지 않은 제어 수 |
 | `user_pause` | 명시적 사용자 재개를 기다리는 정지의 요청 ID·이유·시각 |
 | `waiting_actions` | 해소되지 않은 행동의 역할·대상·실패 종류·이유·실행 ID 요지 |
@@ -134,7 +149,8 @@ python .agents/skills/do-math/scripts/do_math.py run `
 
 - `ready`: 처리할 action이 남았거나 다음 `run`에서 계속할 수 있다.
 - `waiting`: `questions`, 대기 과제 또는 외부 사건을 확인한다. 입력·결정 없이 같은 `run`을 반복해도 조건이 바뀌지 않는다.
-- `budget_exhausted`: 작업 또는 운영 실행 시도 한도에 닿았다. 실제 결과와 실패를 검토한 뒤 필요한 경우 `configure`로 명시적으로 한도를 바꾼다.
+- `capacity_waiting`: 배정된 모델의 세션 슬롯을 기다린다. 같은 인스턴스의 점유와 설정을 확인하고, 반환 뒤 `run` 또는 `run --watch`로 이어간다.
+- `budget_exhausted`: 구 실행횟수 호환 모드에서 작업 또는 운영 실행 시도 한도에 닿았다. 실제 결과와 실패를 검토한 뒤 필요한 경우 `configure`로 명시적으로 한도를 바꾼다.
 - `paused`: 사용자 정지, 실행기 복구, 설치 문서 변경 또는 실행 실패의 원인을 확인한다. `resume` 전에 `check`, status의 questions와 최근 실행 기록을 읽는다.
 - `completed`: 현재 CLI가 목표와 적용되는 학술 요구의 완료 조건을 충족했다고 계산한 상태다. 정확한 목표 감사, K·해설·동일성 판정과 학술 근거를 별도로 읽는다.
 - `closed`: 사용자가 인스턴스를 종결했다. `resume`으로 다시 열 수 없다.
@@ -273,7 +289,7 @@ python .agents/skills/do-math/scripts/do_math.py resume `
 
 ### 독립 운영의 설정과 정지
 
-`operator status`는 실제 예약 작업을 조회한다. `operator install`은 현재 인스턴스 설정으로 등록을 다시 맞추고 `operator uninstall`은 그 인스턴스의 두 예약 작업만 제거한다. 설정을 바꾸려면 `configure`에 `operator_enabled`, `operator_interval_seconds`, `operator_timeout_seconds`, `operator_model`, `operator_effort`를 지정한다. 적용된 운영 설정 변경은 예약에 반영되며, 제어가 아직 대기 중이면 적용 뒤 설치를 재조정한다. 비활성화나 예약 제거가 이미 실행 중인 연구까지 정지했다는 뜻은 아니다.
+`operator status`는 실제 예약 작업을 조회한다. `operator install`은 현재 인스턴스 설정으로 등록을 다시 맞추고 `operator uninstall`은 그 인스턴스의 두 예약 작업만 제거한다. 운영 주기와 기한은 `configure`의 `operator_enabled`, `operator_interval_seconds`, `operator_timeout_seconds`, `operator_effort`로 바꾼다. 세션 모드의 모델은 `tier_models`와 `role_tiers.independent_operator`를 사용하고, 구 실행횟수 모드는 `operator_model`을 사용한다. 적용된 운영 설정 변경은 예약에 반영되며, 제어가 아직 대기 중이면 적용 뒤 설치를 재조정한다. 비활성화나 예약 제거가 이미 실행 중인 연구까지 정지했다는 뜻은 아니다.
 
 사용자가 연구와 자동 운영을 함께 멈출 때는 `operator hold`를 쓴다. 이 명령은 고유 ID의 HOLD를 만들고 사용자 정지를 요청한다. `operator release`는 그 HOLD를 해제하며, 현재 사용자 정지가 정확히 같은 HOLD에서 왔을 때만 재개한다. 이후의 다른 사용자 정지는 그대로 유지한다.
 
@@ -285,7 +301,7 @@ python .agents/skills/do-math/scripts/do_math.py resume `
 
 | 명령 | 사용할 때 | 중요한 경계 |
 |---|---|---|
-| `configure --config-file` | 모델, 실행 시도 한도, 시간, 검토·관찰·산출 한도를 바꿀 때 | 목표·정책·학술 요구·외부 허가는 설정이 아니다 |
+| `configure --config-file` | 모델 대응·역할 등급·세션 한도, 시간, 검토·관찰·산출 한도를 바꿀 때 | 목표·정책·학술 요구·외부 허가는 설정이 아니다 |
 | `request --role ...` | 지원하는 후보 준비·연구 계획·보충 조사·운영 점검·유지보수 action을 명시적으로 열 때 | 요청 생성은 모델 실행이나 결과 승인이 아니다 |
 | `knowledge --file` | candidate·종류 정의·관계를 수입하거나 기존 지식을 개정·무효화할 때 | candidate 수입은 K 편입이 아니다 |
 | `trust --file` | 신뢰 환경을 등록·전환·무효화할 때 | 전환 성공은 무관한 의미·의존 정지 원인을 해소하지 않는다 |
@@ -310,9 +326,9 @@ python .agents/skills/do-math/scripts/do_math.py resume `
 
 ## 현재 지원 범위
 
-현재 CLI는 인스턴스별 Git ref와 writer lock, 두 JSON 상태 루트와 불변 artifact, 순차 AI 실행, Codex CLI 구조화 출력, Lean·공리 검사, 동일성 검토의 이의 왕복, 목표·학술 후속, source·지식·관계·신뢰·외부 HTTP·대화 제어를 구현한다.
+현재 CLI는 인스턴스별 Git ref와 writer lock, 두 JSON 상태 루트와 불변 artifact, 모델별 슬롯 안의 병렬 AI 실행과 순차 결과 반영, Codex CLI 구조화 출력, Lean·공리 검사, 동일성 검토의 이의 왕복, 목표·학술 후속, source·지식·관계·신뢰·외부 HTTP·대화 제어를 구현한다.
 
-작업·운영 예산은 현재 CLI의 AI 실행 시도 수로 계산한다. Codex CLI가 보고한 turn usage는 보존하지만 공급자 내부 호출별 ID·예약·원격 종료를 보증하지 않는다. 현재 기본 Windows 실행은 `danger-full-access`와 승인 정책 `never`로 기존 사용자 권한을 쓴다. Windows Job은 로컬 프로세스 수명과 자손 종료를 관리하지만 모든 host 파일·network·credential 접근을 차단하지 않는다. 별도 세션·작업 공간, 순차 배정과 동료 결과 비제공은 입력 경계를 만들지만 통계적 독립성이나 강한 OS 격리의 증거가 아니다.
+새 인스턴스의 작업·운영 예산은 모델별 로컬 AI 실행의 동시 점유로 계산한다. 기존 실행횟수 모드는 명시적인 설정 전환 전까지 보존한다. Codex CLI가 보고한 turn usage는 보존하지만 공급자 내부 호출별 ID·예약·원격 종료를 보증하지 않는다. 현재 기본 Windows 실행은 `danger-full-access`와 승인 정책 `never`로 기존 사용자 권한을 쓴다. Windows Job은 로컬 프로세스 수명과 자손 종료를 관리하지만 모든 host 파일·network·credential 접근을 차단하지 않는다. 별도 세션·작업 공간과 동료 결과 비제공은 입력 경계를 만들지만 통계적 독립성이나 강한 OS 격리의 증거가 아니다.
 
 ## 설치본 검사
 

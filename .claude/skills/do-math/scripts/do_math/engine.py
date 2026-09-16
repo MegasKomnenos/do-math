@@ -34,11 +34,15 @@ from .state_checks import state_errors
 from .git_store import GitStateStoreError
 from .scholarly import resolve_scholarly_server, validate_scholarly_server
 from .task_scope import apply_task_dispositions
+from . import model_policy
+from .scheduler import SchedulerMixin, WORK_ROLES
+from .session_slots import SessionSlots
 
 CONTRACT = "do-math-cli/1"
 ENGINE_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
-WORK_ROLES = {"research_work", "supplemental_research", "task_contract_review", "identity_review", "goal_audit"}
 DEFAULT_CONFIG = {
+    "tier_models": deepcopy(model_policy.MODELS), "role_tiers": deepcopy(model_policy.ROLE_TIERS),
+    "session_limits": deepcopy(model_policy.LIMITS),
     "model": "gpt-5.6-sol", "effort": "medium", "role_models": {},
     "work_calls": None, "operations_calls": None, "call_timeout_seconds": 600,
     "run_timeout_seconds": 7200, "max_cycles": 5, "reviewers": 2,
@@ -78,6 +82,7 @@ def validate_config(config: dict) -> None:
     if set(config) - set(DEFAULT_CONFIG):
         raise ValueError("configuration fields differ from do-math-cli/1")
     config = {**DEFAULT_CONFIG, **config}
+    model_policy.validate_policy(config)
     if not isinstance(config["model"], str) or not config["model"].strip():
         raise ValueError("model is required")
     if config["effort"] not in {"minimal", "low", "medium", "high", "xhigh"}:
@@ -124,6 +129,10 @@ def initialize(repository: Path, *, goal: str, workspace: Path, config: dict | N
         raise ValueError("a goal and mathematical/research goal_kind are required")
     settings = deepcopy(DEFAULT_CONFIG)
     settings.update(config or {})
+    if config and "session_limits" not in config and {"work_calls", "operations_calls", "model", "role_models", "operator_model"}.intersection(config):
+        settings["session_limits"] = None
+    if settings["session_limits"] is not None and config and {"model", "operator_model"}.intersection(config):
+        raise ValueError("session mode selects models with tier_models; model is a legacy option")
     validate_config(settings)
     if settings["scholarly_enabled"]:
         settings["scholarly_server"] = resolve_scholarly_server(settings["scholarly_server"], start=Path.cwd())
@@ -141,8 +150,8 @@ def initialize(repository: Path, *, goal: str, workspace: Path, config: dict | N
                "cycles": 0, "active_execution": None, "processed_controls": [], "inputs": [],
                "questions": [], "history": [], "updated_at": now()}
     instance = knowledge_io.ensure_ontology(governance.ensure_governance(instance))
-    instance["feature_version"] = 2
-    runtime["feature_version"] = 2
+    instance["feature_version"] = 3 if settings["session_limits"] is not None else 2
+    runtime["feature_version"] = instance["feature_version"]
     store = ResearchRepository(repository, instance_id)
     with store.writer_lock():
         head = store.initialize(instance, runtime)
@@ -156,6 +165,12 @@ def initialize(repository: Path, *, goal: str, workspace: Path, config: dict | N
                 instance["sources"].append({"path": path, "name": source.name,
                                             "sha256": hashlib.sha256(raw).hexdigest()})
             head = store.save(head, instance, runtime, artifacts=artifacts)
+    if settings["session_limits"] is not None:
+        slots = SessionSlots(workspace, instance_id)
+        try:
+            slots.configure(settings["session_limits"])
+        finally:
+            slots.close()
     return {"instance_id": instance_id, "snapshot": head, "status": runtime["status"]}
 
 
@@ -171,11 +186,16 @@ def control(repository: Path, instance_id: str, action: str, *, text: str = "", 
         raise ValueError("operator controls are limited to pause, resume, request, configure, and source")
     _, instance, runtime = ResearchRepository(repository, instance_id).load()
     if action == "configure":
-        candidate = {**instance["config"], **(config or {})}
+        current_config = {**deepcopy(DEFAULT_CONFIG), "session_limits": None, **instance["config"]}
+        candidate = {**current_config, **(config or {})}
+        if candidate.get("session_limits") is not None and {"model", "operator_model"}.intersection(config or {}):
+            raise ValueError("session mode selects models with tier_models; model is a legacy option")
+        if candidate.get("session_limits") is not None and {"work_calls", "operations_calls"}.intersection(config or {}):
+            raise ValueError("session mode uses session_limits; explicitly set session_limits=null to configure legacy call budgets")
         validate_config(candidate)
-        if origin == "operator" and any(candidate[key] != instance["config"].get(key)
-                                         for key in ("work_calls", "operations_calls")):
-            raise ValueError("changing a call budget requires a user decision")
+        if origin == "operator" and any(candidate[key] != current_config.get(key)
+                                         for key in ("work_calls", "operations_calls", "session_limits", "tier_models", "role_tiers")):
+            raise ValueError("changing resource capacity or model allocation requires a user decision")
     if action == "input" and not text.strip():
         raise ValueError("input text is required")
     if action == "source":
@@ -287,7 +307,7 @@ def read_record(repository: Path, instance_id: str, record_id: str, *, snapshot:
     raise KeyError(f"record not found at {head}: {record_id}")
 
 
-class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixin):
+class ResearchEngine(SchedulerMixin, ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixin):
     def __init__(self, repository: Path, instance_id: str, *, runner: Any = None, formal_verifier: Any = None):
         self.store = ResearchRepository(repository, instance_id)
         self.runner = runner or CodexModelRunner()
@@ -295,9 +315,11 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
         self.head, self.instance, self.runtime = self.store.load()
         if self.instance.get("contract_id") != CONTRACT or self.runtime.get("contract_id") != CONTRACT:
             raise ValueError("unsupported instance contract; explicit migration is required")
-        self.instance["config"] = {**deepcopy(DEFAULT_CONFIG), **self.instance["config"]}
+        self.instance["config"] = {**deepcopy(DEFAULT_CONFIG), "session_limits": None, **self.instance["config"]}
         self._live_execution_ids = set()
         self._inline_reviewing = False
+        self._calls = None
+        self._slots = None
         self._documents = all_prompt_documents()
         self._installation = self._installation_manifest()
         self._upgrade_runtime()
@@ -309,7 +331,7 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
         documents = dict.fromkeys(relative for paths in reading_map(skill_root=root).values() for relative in paths)
         paths = [*sorted((root / "scripts" / "do_math").glob("*.py")), *(root / relative for relative in documents)]
         files = {path.relative_to(root).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest() for path in paths}
-        return {"feature_version": 2, "files": files, "sha256": hashlib.sha256(canonical_json(files)).hexdigest()}
+        return {"feature_version": 3, "files": files, "sha256": hashlib.sha256(canonical_json(files)).hexdigest()}
 
     def _render_prompt(self, role: str, context: dict, **kwargs) -> str:
         return render_prompt(role, context, documents=self._documents[role], **kwargs)
@@ -333,6 +355,10 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
         return artifacts
 
     def _save(self, artifacts: dict[str, bytes] | None = None) -> None:
+        if self._session_mode():
+            live = [eid for eid, e in self.runtime["executions"].items() if e["status"] != "ended"]
+            self.runtime["active_executions"] = live
+            self.runtime["active_execution"] = live[0] if live else None
         for task_id, task in self.runtime["tasks"].items():
             if not task.get("pending_withdrawal"):
                 continue
@@ -364,6 +390,8 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
         return sorted(results, key=lambda request: (request["created_at"], request["id"]))
 
     def _controls(self) -> None:
+        if self._calls is not None:
+            self._calls.pump()
         for request in self._inbox():
             action = request["action"]
             if action == "source":
@@ -409,7 +437,7 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
                         self.instance, self.runtime = knowledge.suspend_for_source_change(self.instance, self.runtime, kid,
                             source_name=spec["name"], reason="Required source content changed: " + spec["name"], actor_ref=request["id"])
                 self._invalidate_goal_currentness()
-                if self.runtime["status"] in {"waiting", "budget_exhausted"}: self.runtime["status"] = "ready"
+                if self.runtime["status"] in {"waiting", "budget_exhausted", "capacity_waiting"}: self.runtime["status"] = "ready"
                 self.runtime["processed_controls"].append(request["id"])
                 self.runtime["history"].append({"kind": "user_control", "request": request, "source_id": entry["id"]})
                 self._lifecycle_event("source_imported", target=entry["id"], source_ref=request["id"])
@@ -469,14 +497,42 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
                 self.runtime["questions"] = []
                 if self.runtime["status"] not in {"closed", "completed", "paused"}:
                     self.runtime["status"] = "ready"
-                self.runtime["queue"].insert(0, {"role": "intent_interpretation", "target": request["id"], "reason": "new user input"})
+                if self._session_mode():
+                    self._enqueue("intent_interpretation", request["id"], reason="new user input")
+                else:
+                    self.runtime["queue"].insert(0, {"role": "intent_interpretation", "target": request["id"], "reason": "new user input"})
             elif action == "configure":
-                self.instance["config"].update(request["config"])
-                validate_config(self.instance["config"])
+                changes_mode = "session_limits" in request["config"] and (
+                    (request["config"]["session_limits"] is None) != (self.instance["config"]["session_limits"] is None))
+                if changes_mode and (self._calls is not None or self._live_execution_ids):
+                    self._reject_control(request, "budget mode conversion requires a stopped executor")
+                    continue
+                candidate_config = {**self.instance["config"], **request["config"]}
+                if request.get("origin", "user") == "operator" and any(
+                        candidate_config[key] != self.instance["config"].get(key)
+                        for key in ("work_calls", "operations_calls", "session_limits", "tier_models", "role_tiers")):
+                    self._reject_control(request, "resource settings require a user decision at application time")
+                    continue
+                try:
+                    validate_config(candidate_config)
+                except ValueError as error:
+                    self._reject_control(request, str(error))
+                    continue
+                self.instance["config"] = candidate_config
                 if self.instance["config"]["scholarly_enabled"]:
                     self.instance["config"]["scholarly_server"] = resolve_scholarly_server(
                         self.instance["config"]["scholarly_server"], start=Path.cwd())
-                if self.runtime["status"] == "budget_exhausted":
+                if self._session_mode():
+                    self.instance["feature_version"] = self.runtime["feature_version"] = 3
+                    temporary_slots = self._slots or SessionSlots(Path(self.instance["workspace"]), self.instance["id"])
+                    try:
+                        temporary_slots.configure(self.instance["config"]["session_limits"])
+                    finally:
+                        if self._slots is None: temporary_slots.close()
+                    for pending in self.runtime["queue"]:
+                        if pending.get("id") not in {e.get("action", {}).get("id") for e in self.runtime["executions"].values() if e["status"] != "ended"}:
+                            pending.pop("model_selection", None)
+                if self.runtime["status"] in {"budget_exhausted", "capacity_waiting"}:
                     self.runtime["status"] = "ready"
             elif action == "request":
                 role, target = request["config"]["role"], request["config"].get("target")
@@ -492,8 +548,11 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
                 requested = {"role": role, "reason": request["text"], "requested_by": request["id"]}
                 if target:
                     requested["target"] = target
-                self.runtime["queue"].insert(0, requested)
-                if self.runtime["status"] in {"waiting", "budget_exhausted"}:
+                if self._session_mode():
+                    self._enqueue(requested.pop("role"), requested.pop("target", None), **requested)
+                else:
+                    self.runtime["queue"].insert(0, requested)
+                if self.runtime["status"] in {"waiting", "budget_exhausted", "capacity_waiting"}:
                     self.runtime["status"] = "ready"
             else:
                 raise ValueError("unsupported control action")
@@ -531,7 +590,7 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
         """Apply queued user controls under the sole writer lock, without AI."""
         with self.store.writer_lock():
             self.head, self.instance, self.runtime = self.store.load()
-            self.instance["config"] = {**deepcopy(DEFAULT_CONFIG), **self.instance["config"]}
+            self.instance["config"] = {**deepcopy(DEFAULT_CONFIG), "session_limits": None, **self.instance["config"]}
             self._upgrade_runtime()
             self.instance = knowledge_io.ensure_ontology(self.instance)
             self._controls()
@@ -542,6 +601,7 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
 
     def status(self) -> dict:
         self.head, self.instance, self.runtime = self.store.load()
+        self.instance["config"] = {**deepcopy(DEFAULT_CONFIG), "session_limits": None, **self.instance["config"]}
         executions = list(self.runtime["executions"].values())
         return {"instance_id": self.instance["id"], "snapshot": self.head, "title": self.instance["title"],
                 "goal": self.instance["goal"], "goal_status": self.instance["goal_status"],
@@ -551,8 +611,12 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
                 "knowledge": {"K": sum(k["status"] == "verified" and knowledge.assess_use(k, self.instance)["valid"] for k in self.instance["knowledge"].values()),
                               "F": sum(k["status"] != "verified" for k in self.instance["knowledge"].values()),
                               "suspended_K": sum(k["status"] == "verified" and not knowledge.assess_use(k, self.instance)["valid"] for k in self.instance["knowledge"].values())},
-                "budget": {pool: {"limit": self.instance["config"][pool + "_calls"],
+                "budget": self._session_resources() if self._session_mode() else {pool: {"limit": self.instance["config"][pool + "_calls"],
                                   "used": sum(e.get("budget_kind") == pool for e in executions)} for pool in ("work", "operations")},
+                "budget_unit": "concurrent_sessions" if self._session_mode() else "execution_attempts",
+                "active_executions": [e["id"] for e in executions if e["status"] != "ended"],
+                "execution_attempts": {pool: sum(e.get("budget_kind") == pool for e in executions) for pool in ("work", "operations")},
+                "capacity_waiting": [{"role": a["role"], "target": a.get("target"), "model_selection": a.get("model_selection")} for a in self.runtime["queue"] if a.get("model_selection") and a.get("id") not in {e.get("action", {}).get("id") for e in executions if e["status"] != "ended"}],
                 "usage": [e.get("usage", {}) for e in executions if e.get("usage")],
                 "latest_results": list(self.runtime["activities"].values())[-5:],
                 "questions": self.runtime["questions"], "pending_controls": len(self._inbox()),
@@ -578,7 +642,7 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
             raise ValueError("max_steps must be positive")
         with self.store.writer_lock():
             self.head, self.instance, self.runtime = self.store.load()
-            self.instance["config"] = {**deepcopy(DEFAULT_CONFIG), **self.instance["config"]}
+            self.instance["config"] = {**deepcopy(DEFAULT_CONFIG), "session_limits": None, **self.instance["config"]}
             self._upgrade_runtime()
             previous = self.runtime.get("installation")
             self.instance = knowledge_io.ensure_ontology(self.instance)
@@ -590,6 +654,9 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
             self._controls()
             self._recover_disappeared()
             self._ensure_academic_followup()
+            if self._session_mode():
+                self._run_parallel(max_steps=max_steps, watch=watch)
+                return self.status()
             deadline = time.monotonic() + self.instance["config"]["run_timeout_seconds"]
             steps = 0
             while self.runtime["status"] in {"ready", "running"} or (watch and self.runtime["status"] == "waiting"):
@@ -648,6 +715,14 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
             return
         artifacts = {}
         for execution in unfinished:
+            identity = execution.get("process", {})
+            if self._session_mode() and identity.get("job_name"):
+                from .windows_job import named_job_empty
+                if named_job_empty(identity["job_name"]) is not True:
+                    self.runtime["status"] = "paused"
+                    self.runtime["questions"].append("Previous local Job termination is unconfirmed: " + execution["id"])
+                    self._save()
+                    return
             eid, bundle = execution["id"], new_id("BA")
             workspace = Path(self.instance["workspace"]) / "runs" / eid / "workspace"
             if execution["role"] == "formal_check":
@@ -774,8 +849,16 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
                        external_operations=list(self.runtime.get("external_operations", {}).values()),
                        events=[e for e in self.runtime.get("events", []) if e["id"] in action.get("event_refs", [])],
                        available_input_refs=self.instance.get("available_input_refs", []))
-        context["resources"] = {pool: {"limit": self.instance["config"][pool+"_calls"],
+        context["resources"] = self._session_resources() if self._session_mode() else {pool: {"limit": self.instance["config"][pool+"_calls"],
             "used": sum(e.get("budget_kind") == pool for e in self.runtime["executions"].values())} for pool in ("work", "operations")}
+        context["budget_unit"] = "concurrent_sessions" if self._session_mode() else "execution_attempts"
+        if self._session_mode():
+            context["model_policy"] = {"tier_models": self.instance["config"]["tier_models"],
+                "role_tiers": self.instance["config"]["role_tiers"], "assessment_schema": model_policy.ASSESSMENT_SCHEMA,
+                "selected": action.get("model_selection"), "missing_assessment": "high; assessment not yet established"}
+        if action["role"] == "research_plan" and self._session_mode():
+            live_ids = {e.get("action", {}).get("id") for e in self.runtime["executions"].values() if e["status"] != "ended"}
+            context["queued_work"] = [deepcopy(a) for a in self.runtime["queue"] if a["role"] in WORK_ROLES and a.get("id") not in live_ids]
         context["execution_limits"] = {key: self.instance["config"][key] for key in
             ("call_timeout_seconds", "run_timeout_seconds", "checkpoint_grace_seconds", "review_rounds")}
         scholarly_enabled = self.instance["config"]["scholarly_enabled"]
@@ -1029,7 +1112,7 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
         if path.is_symlink() or not path.resolve().is_relative_to(workspace.resolve()):
             raise ValueError("extensions must stay in the execution workspace")
         value = json.loads(path.read_text(encoding="utf-8-sig"))
-        allowed = {"task_conditions", "task_dispositions", "research_insights", "external_requests", "knowledge_changes", "knowledge_metadata", "relations", "observation_rules", "research_requests", "academic_resolutions"}
+        allowed = {"task_conditions", "task_dispositions", "research_insights", "external_requests", "knowledge_changes", "knowledge_metadata", "relations", "observation_rules", "research_requests", "academic_resolutions", "model_assessments", "queued_requests"}
         if not isinstance(value, dict) or set(value) - allowed or any(not isinstance(v, list) for v in value.values()):
             raise ValueError("invalid activity extension families")
         return value
@@ -1057,6 +1140,10 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
                     self._run_inline_review(execution_id, observed, deadline)
 
     def _run_inline_review(self, parent_id: str, observation: dict, deadline: float) -> None:
+        if self._session_mode():
+            self._enqueue("operational_review", parent_id, live=True, observation=json_safe(observation))
+            self._save()
+            return
         config = self.instance["config"]
         if not self._budget_available("operations", sum(e.get("budget_kind") == "operations" for e in self.runtime["executions"].values())):
             self.runtime["executions"][parent_id]["stop_requested"] = "operating_budget_unavailable"
@@ -1155,6 +1242,8 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
         self._save(artifacts)
 
     def _budget_available(self, pool: str, used: int, required: int = 1) -> bool:
+        if self._session_mode():
+            return True  # Future sequential investigations reserve only when actually dispatched.
         limit = self.instance["config"][pool + "_calls"]
         return limit is None or used + required <= limit
 
@@ -1184,6 +1273,22 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
                     event.pop("assigned_at", None)
 
     def _call(self, action: dict, deadline: float) -> bool:
+        generator = self._call_steps(action, deadline)
+        try:
+            arguments = next(generator)
+        except StopIteration as result:
+            return result.value
+        try:
+            output = self.runner.run(**arguments)
+        except Exception as error:
+            output = {"status": "failed", "output": None, "usage": {}, "error": f"{type(error).__name__}: {error}"}
+        try:
+            generator.send(output)
+        except StopIteration as result:
+            return result.value
+        raise RuntimeError("model call did not finish")
+
+    def _call_steps(self, action: dict, deadline: float):
         action.setdefault("id", new_id("AC"))
         action = deepcopy(action)
         role = action["role"]
@@ -1262,10 +1367,14 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
             if action["basis"] != self._goal_basis_key():
                 raise ValueError("goal audit inputs changed before acceptance")
             basis_ids = [k["id"] for k in self.instance["knowledge"].values() if knowledge.assess_use(k, self.instance)["valid"]]
+        chosen_model = self._select_model(action) if self._session_mode() else None
+        if chosen_model and self._slots is not None and not self._slots.acquire(execution_id, pool, chosen_model["model"]):
+            return False
         execution = {"id": execution_id, "activity_id": activity_id, "role": role, "action": action,
                      "budget_kind": pool, "status": "starting", "created_at": now(), "input_snapshot": self.head,
                      "input_sha256": hashlib.sha256(prompt.encode()).hexdigest(), "input_bundle": input_bundle,
-                     "model": config["role_models"].get(role, config["model"]), "effort": config["effort"],
+                     "model": chosen_model["model"] if chosen_model else config["role_models"].get(role, config["model"]), "effort": config["effort"],
+                     "model_selection": chosen_model,
                      "engine_sha256": ENGINE_SHA256, "grant_id": authority["grant_id"],
                      "goal_revision": self.instance.get("goal_revision", 1), "policy_revision": self.instance.get("policy_revision", 1),
                      "validity_basis": knowledge.capture_basis(self.instance, self.runtime, basis_ids),
@@ -1291,6 +1400,8 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
         # deadline; they end by submission, stop conditions or the run deadline.
         call_deadline = deadline if pool == "work" else min(deadline, time.monotonic()+config["call_timeout_seconds"])
         def started(identity):
+            if self._session_mode() and self._slots is not None:
+                self._slots.started(execution_id, identity)
             self.runtime["executions"][execution_id].update(status="running", process=json_safe(identity))
             self._save()
         def should_stop():
@@ -1309,7 +1420,7 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
             if current.get("contract_sha256") and action.get("target") in self.runtime["tasks"]:
                 target_task = self.runtime["tasks"][action["target"]]
                 changed = changed or planning.contract_hash(target_task) != current["contract_sha256"] or target_task["status"] == "closed"
-            requested = (self.runtime["status"] in {"paused", "closed"} or self.runtime.get("stop_requested")
+            requested = (self.runtime["status"] in {"paused", "closed", "completed"} or self.runtime.get("stop_requested")
                          or current.get("stop_requested") or not allowed or changed or time.monotonic() >= call_deadline)
             if not requested:
                 return False
@@ -1318,6 +1429,9 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
             if stop_started is None:
                 stop_started = time.monotonic()
                 current["stop_reason"] = reason
+                if self._session_mode():
+                    current["status"] = "stopping"
+                    self._save()
                 request_checkpoint(workspace, str(reason), immediate=immediate,
                     deadline=(datetime.now(timezone.utc)+timedelta(seconds=0 if immediate else config["checkpoint_grace_seconds"])).isoformat())
             return immediate or time.monotonic()-stop_started >= config["checkpoint_grace_seconds"]
@@ -1328,13 +1442,16 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
         params = inspect.signature(self.runner.run).parameters
         if "on_observation" in params or any(p.kind == inspect.Parameter.VAR_KEYWORD for p in params.values()):
             arguments["on_observation"] = lambda event: self._observe_running(execution_id, tracker, event, deadline)
-        try:
-            result = self.runner.run(**arguments)
-        except Exception as error:
-            result = {"status": "failed", "output": None, "usage": {}, "error": f"{type(error).__name__}: {error}"}
+        result = yield arguments
         self._live_execution_ids.discard(execution_id)
+        if self._session_mode() and self._slots is not None:
+            if not self._slots.release(execution_id):
+                self.runtime["executions"][execution_id].update(status="stopping", outcome="termination_pending",
+                    error="Local Job termination is unconfirmed; slot and output remain held for recovery.")
+                self._save()
+                return True
         result = json_safe(result)
-        if result["status"] == "completed" and stop_started is not None and (
+        if result["status"] == "completed" and (stop_started is not None or self._session_mode()) and (
                 self.runtime["executions"][execution_id].get("after_stop") or self.runtime["status"] == "paused"):
             # The stop request already revoked general authority; keep the late output only as preserved evidence.
             result = {**result, "status": "stopped",
@@ -1369,6 +1486,9 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
         if self.runtime["status"] == "closed":
             self.runtime["executions"][execution_id]["outcome"] = "output_preserved_after_close"
             self.runtime["queue"] = []
+        elif self.runtime["status"] == "completed":
+            self.runtime["executions"][execution_id]["outcome"] = "output_preserved_after_goal_completion"
+            self._remove_action(action)
         elif result["status"] == "completed":
             try:
                 jsonschema.validate(result["output"], schema)
@@ -1391,6 +1511,7 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
                 if not governance.authorize(self.instance, action)["allowed"]:
                     raise ValueError("execution authority was revoked before result acceptance")
                 execution["extensions"] = self._read_extensions(workspace)
+                self._apply_model_metadata(action, result["output"], execution_id)
                 self._remove_action(action)
                 if not self._defer_review_for_research(action, result["output"], execution_id):
                     self._apply(action, result["output"], execution_id)
@@ -1405,16 +1526,19 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
                 self.instance, self.runtime = previous_instance, previous_runtime
                 self.runtime["executions"][execution_id].update(outcome="execution_incomplete", error=f"output validation: {error}")
                 self.runtime["activities"][activity_id]["status"] = "unresolved"
+                original_position = next((i for i, a in enumerate(self.runtime["queue"]) if a.get("id") == action["id"]), len(self.runtime["queue"]))
                 self._remove_action(action)
                 held_status = self.runtime["status"] if self.runtime["status"] in {"paused", "closed"} else None
                 if action.get("repair_attempt", 0) < config.get("max_output_repairs", 1):
-                    self.runtime["queue"].insert(0, {**action, "repair_attempt": action.get("repair_attempt", 0)+1,
+                    self.runtime["queue"].insert(original_position if self._session_mode() else 0, {**action, "repair_attempt": action.get("repair_attempt", 0)+1,
                         "repair": {"execution_id": execution_id, "error": str(error), "previous_output": result["output"]}})
                     self.runtime["status"] = "ready"
                 else:
                     self.runtime.setdefault("waiting_actions", {})[action["id"]] = {
                         "action": action, "kind": "output_validation", "reason": str(error),
                         "execution_id": execution_id, "input_snapshot": execution["input_snapshot"]}
+                    if self._session_mode() and role == "operational_review":
+                        self._failed_live_review(action, "Live operational review output remained invalid: " + str(error))
                     if role != "operational_review" and action.get("recovery_attempt", 0) < 1:
                         self._enqueue("operational_review", execution_id,
                             reason="Diagnose the rejected output and current input before choosing recovery")
@@ -1438,12 +1562,26 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
                 if after["decision"] == "revise": self._enqueue("research_preparation", reason=after["reason"])
                 self.runtime["status"] = "ready" if self.runtime["queue"] else "waiting"
                 if held_pause or after["decision"] == "stop": self.runtime["status"] = "paused"
+            elif self._session_mode() and role == "operational_review" and action.get("live"):
+                self._remove_action(action)
+                self._failed_live_review(action, "Live operational review did not finish: " + str(result.get("error")))
+                if self.runtime["status"] not in {"closed", "paused"}:
+                    self.runtime["status"] = "ready" if self.runtime["queue"] else "waiting"
             elif result["status"] == "failed" and role != "operational_review" and action.get("recovery_attempt", 0) < 1 and self.runtime["status"] != "closed":
                 # A pause applied while this execution was stopping stays in force; the diagnosis runs after resume.
                 if self.runtime["status"] != "paused":
                     self.runtime["status"] = "ready"
-                self.runtime["queue"].insert(0, {"id": new_id("AC"), "role": "operational_review", "target": execution_id,
-                                               "reason": "Diagnose the preserved failure before selecting recovery"})
+                if self._session_mode():
+                    self._remove_action(action)
+                    self.runtime.setdefault("waiting_actions", {})[action["id"]] = {
+                        "action": action, "kind": "execution_failure", "reason": result.get("error"),
+                        "execution_id": execution_id, "input_snapshot": execution["input_snapshot"]}
+                if self._session_mode():
+                    self._enqueue("operational_review", execution_id,
+                                  reason="Diagnose the preserved failure before selecting recovery")
+                else:
+                    self.runtime["queue"].insert(0, {"id": new_id("AC"), "role": "operational_review", "target": execution_id,
+                                                   "reason": "Diagnose the preserved failure before selecting recovery"})
             elif self.runtime["status"] not in {"closed", "paused"}:
                 self.runtime["status"] = "paused"
             self.runtime["questions"].append(f"{role} did not finish: {result.get('error')}; partial files and checkpoint are preserved.")
@@ -1477,6 +1615,7 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
             _, _, input_runtime = self.store.load(execution["input_snapshot"])
             self.instance, self.runtime = apply_task_dispositions(self.instance, self.runtime,
                 extension["task_dispositions"], execution_id=execution_id, input_tasks=input_runtime["tasks"])
+        self._apply_queue_plan(action, execution_id)
         self._apply_academic_resolutions(action, execution_id, extension.get("academic_resolutions", []))
         for relation in extension.get("relations", []):
             self.instance, _ = knowledge_io.import_relation(self.instance, relation, source_ref=execution_id, actor_ref=execution_id)
@@ -1770,6 +1909,18 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
                 else:
                     self.runtime["questions"].append("User intent could not be confirmed: " + "; ".join(output["findings"]))
         elif role == "operational_review":
+            if action.get("live"):
+                parent = self.runtime["executions"].get(target)
+                if parent is None or parent["status"] == "ended":
+                    return
+                self.runtime.setdefault("observations", {}).setdefault(target, {})["operational_decision"] = output
+                if output["decision"] == "checkpoint":
+                    parent_workspace = Path(self.instance["workspace"]) / "runs" / target / "workspace"
+                    (parent_workspace / "observation-feedback.json").write_bytes(canonical_json(output))
+                elif output["decision"] in {"revise", "wait", "stop"}:
+                    parent["stop_requested"] = "operational_" + output["decision"]
+                    parent["after_stop"] = {"decision": output["decision"], "reason": output["reason"]}
+                return
             if output["decision"] == "stop":
                 self.runtime["status"] = "paused"
             elif output["decision"] == "wait":
@@ -1831,7 +1982,10 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
         tasks = self.runtime["tasks"]
         selected = output["selections"]
         deferred = [d["task_id"] for d in output["deferred"]]
-        eligible = set(planning.ready_task_ids(self.runtime))
+        plan_input = self.runtime
+        if self._session_mode() and execution_id in self.runtime["executions"]:
+            _, _, plan_input = self.store.load(self.runtime["executions"][execution_id]["input_snapshot"])
+        eligible = set(planning.ready_task_ids(plan_input))
         if len(selected + deferred) != len(set(selected + deferred)) or set(selected + deferred) != eligible:
             supplied = selected + deferred
             details = {"ready_task_ids": sorted(eligible),
@@ -1841,7 +1995,7 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
             raise ValueError("plan must select or defer every ready task exactly once: " +
                              json.dumps(details, ensure_ascii=False, sort_keys=True))
         assessment_ids = [a["task_id"] for a in output["task_assessments"]]
-        required_assessments = {tid for tid, task in tasks.items() if task["status"] == "assessing"}
+        required_assessments = {tid for tid, task in plan_input["tasks"].items() if task["status"] == "assessing"}
         if len(assessment_ids) != len(set(assessment_ids)) or not required_assessments <= set(assessment_ids):
             raise ValueError("plan must assess every returned task exactly once")
         for assessment in output["task_assessments"]:
@@ -1859,11 +2013,14 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
             task["status"] = {"completed": "completed", "closed": "closed", "incomplete": "needs_revision"}[assessment["decision"]]
             self._record_academic_assessment(task, assessment, execution_id)
         for tid in selected:
+            if tasks[tid]["status"] != "ready":
+                raise ValueError("selected task is no longer ready")
             if self.instance["goal_status"] in {"mathematically_solved", "research_goal_satisfied"} and not tasks[tid].get("academic_requirement_id"):
                 raise ValueError("new research production cannot be selected after goal satisfaction")
             tasks[tid]["status"] = "performing"
             tasks[tid]["selected_by"] = execution_id
-            self._enqueue("research_work", tid)
+            requirement = self.runtime["executions"].get(execution_id, {}).get("model_decisions", {}).get(tid) or tasks[tid].get("model_assessment")
+            self._enqueue("research_work", tid, **({"model_assessment": requirement} if requirement else {}))
         for entry in output["deferred"]:
             tasks[entry["task_id"]]["deferred_reason"] = entry["reason"]
         if output["goal_audit"] and self.instance["goal_status"] not in {"mathematically_solved", "research_goal_satisfied"}:
@@ -1970,7 +2127,7 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
                 errors.append(f"{ref}: preserved artifact cannot be read: {error}")
         if instance.get("contract_id") != CONTRACT or runtime.get("contract_id") != CONTRACT:
             errors.append("unsupported instance/runtime contract")
-        if runtime["status"] not in {"ready", "running", "paused", "waiting", "budget_exhausted", "completed", "closed"}:
+        if runtime["status"] not in {"ready", "running", "paused", "waiting", "budget_exhausted", "capacity_waiting", "completed", "closed"}:
             errors.append("unknown runtime status")
         try:
             validate_config(instance["config"])
@@ -2015,12 +2172,12 @@ class ResearchEngine(ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixi
             if any(eid not in runtime["executions"] or runtime["executions"][eid].get("activity_id") != aid for eid in activity["execution_ids"]):
                 errors.append(f"{aid}: activity/execution binding is invalid")
         active = runtime["active_execution"]
-        if active is not None and runtime["executions"].get(active, {}).get("status") not in {"starting", "running"}:
+        if active is not None and runtime["executions"].get(active, {}).get("status") not in {"starting", "running", "stopping"}:
             errors.append("active execution is absent or ended")
         for eid, execution in runtime["executions"].items():
-            if execution["status"] not in {"starting", "running", "ended"}:
+            if execution["status"] not in {"starting", "running", "stopping", "ended"}:
                 errors.append(f"{eid}: unknown execution state")
-            if execution["status"] != "ended" and eid != active and execution.get("parent_execution_id") != active:
+            if execution["status"] != "ended" and eid not in runtime.get("active_executions", []) and eid != active and execution.get("parent_execution_id") != active:
                 errors.append(f"{eid}: unowned live execution")
         for relation in instance["relations"]:
             if any(relation[k] not in instance["knowledge"] for k in ("source", "target")):

@@ -77,7 +77,7 @@ class CodexModelRunner:
                 last_tick = current
                 on_observation({"type": "tick"})
         started = {"pid": execution.job.pid, "creation_filetime": execution.job.creation_filetime,
-                   "request_sha256": execution.request_sha256}
+                   "request_sha256": execution.request_sha256, "job_name": getattr(execution.job, "name", None)}
         try:
             if on_started: on_started(started)
             if should_stop and should_stop():

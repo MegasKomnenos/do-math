@@ -15,6 +15,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import uuid
 from typing import Any, Mapping
 
 from do_math.windows_job import WindowsJob
@@ -174,7 +175,7 @@ class CodexExecAdapter:
         snapshot_request = stage / "request.json"; snapshot_request.write_text(json.dumps(worker_request, ensure_ascii=False, sort_keys=True, separators=(",", ":")), encoding="utf-8")
         worker = Path(__file__).with_name("codex_worker.py")
         worker_argv = (sys.executable, str(worker), str(snapshot_request))
-        job = WindowsJob(worker_argv, cwd=cwd, env=sanitized_environment(env))
+        job = WindowsJob(worker_argv, cwd=cwd, env=sanitized_environment(env), name="Local\\DoMath-" + uuid.uuid4().hex)
         return CodexExecution(snapshot_request, snapshot_prompt, _sha256(snapshot_request.read_bytes()), _sha256(prompt_raw), worker_argv,
                               stdout_path, stderr_path, final_path, status_path, job, stage, schema_sha256)
 

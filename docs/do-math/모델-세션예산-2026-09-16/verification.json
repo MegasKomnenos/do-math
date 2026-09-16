@@ -1,0 +1,484 @@
+{
+  "verified_at": "2026-09-16T06:45:26.754969+00:00",
+  "contract": "do-math-cli/1",
+  "new_instance_feature_version": 3,
+  "requirements": {
+    "scope": "per research instance",
+    "tier_models": {
+      "high": "gpt-6-astra",
+      "medium": "gpt-5.6-sol",
+      "low": "gpt-5.6-terra"
+    },
+    "work_sessions_per_model": 3,
+    "operations_sessions_per_model": 1,
+    "selection": "difficulty and importance before capacity; wait for the assigned model",
+    "self_check_prompt_expansion": "excluded by user",
+    "existing_live_instances": "not converted or restarted"
+  },
+  "test_summary": {
+    "files": 42,
+    "tests": 351,
+    "passed": 350,
+    "skipped": 1,
+    "skip_reason": "Windows symbolic-link creation privilege unavailable (WinError 1314)"
+  },
+  "tests": [
+    {
+      "file": "test_academic.py",
+      "tests": 6,
+      "skipped": 0,
+      "result": "passed",
+      "log": "tests/test_academic.log",
+      "sha256": "c6b9b1f09add0403cc07e90bfdf272129b1ddfa2f8f7675ea8218862f2516371"
+    },
+    {
+      "file": "test_academic_engine.py",
+      "tests": 6,
+      "skipped": 0,
+      "result": "passed",
+      "log": "tests/test_academic_engine.log",
+      "sha256": "a249edf77074a8c2239a85d5662c3abbd91435ec468bcdffd35f45b9ecaea6b3"
+    },
+    {
+      "file": "test_budget.py",
+      "tests": 7,
+      "skipped": 0,
+      "result": "passed",
+      "log": "tests/test_budget.log",
+      "sha256": "7cb8e046facc8c2de62cd256b15ba607162c6749d1bdd8f2d5233a1d41ed8d3f"
+    },
+    {
+      "file": "test_cli.py",
+      "tests": 6,
+      "skipped": 0,
+      "result": "passed",
+      "log": "tests/test_cli.log",
+      "sha256": "771b440218b908a9aaf872f1f40511ccd1a18b0bbd6271eac2bee3e8c4374e30"
+    },
+    {
+      "file": "test_cli_advanced.py",
+      "tests": 7,
+      "skipped": 0,
+      "result": "passed",
+      "log": "tests/test_cli_advanced.log",
+      "sha256": "60bf678daad5fb64f7907b26b3e75c9470e35f3d56a8df4976e63498d88a77de"
+    },
+    {
+      "file": "test_codex_adapter.py",
+      "tests": 13,
+      "skipped": 0,
+      "result": "passed",
+      "log": "tests/test_codex_adapter.log",
+      "sha256": "456dca43ae8d1fee902fdd4bf708ad81a2ed8f14bd47201a4c54e07b95d9329a"
+    },
+    {
+      "file": "test_context_store.py",
+      "tests": 9,
+      "skipped": 1,
+      "result": "passed",
+      "log": "tests/test_context_store.log",
+      "sha256": "483ebde97f0615ea14f6f6e2793280655392ba10ac2edc0174e6fb7fa76976fd"
+    },
+    {
+      "file": "test_contracts.py",
+      "tests": 6,
+      "skipped": 0,
+      "result": "passed",
+      "log": "tests/test_contracts.log",
+      "sha256": "d3604f1321ce5a0d015f6905b962252374fc789adb82b66dd2bfcd8a1f6ea179"
+    },
+    {
+      "file": "test_controls.py",
+      "tests": 4,
+      "skipped": 0,
+      "result": "passed",
+      "log": "tests/test_controls.log",
+      "sha256": "01ba84d014938cf915ca526f408c4163fe60837ce503ea6e7afa57e638a616e0"
+    },
+    {
+      "file": "test_currentness_recovery.py",
+      "tests": 5,
+      "skipped": 0,
+      "result": "passed",
+      "log": "tests/test_currentness_recovery.log",
+      "sha256": "05877327858965981824aa81b1e2c201a405e94516bfb3c5feaad4ce2bba21ac"
+    },
+    {
+      "file": "test_document_followup.py",
+      "tests": 3,
+      "skipped": 0,
+      "result": "passed",
+      "log": "tests/test_document_followup.log",
+      "sha256": "297cf7dc5d5687b298fdf7ca62096140d0ea869fc434defad13e6393da297433"
+    },
+    {
+      "file": "test_engine.py",
+      "tests": 10,
+      "skipped": 0,
+      "result": "passed",
+      "log": "tests/test_engine.log",
+      "sha256": "9f1eeee84054e7bfe3a306b557bd7b67c0ccc6f5431073d7fcb718f0219f4e7c"
+    },
+    {
+      "file": "test_external.py",
+      "tests": 5,
+      "skipped": 0,
+      "result": "passed",
+      "log": "tests/test_external.log",
+      "sha256": "a549358f44a6582f6aa30e53c42960e9b2c53b56f7f3304a9f4657a0a9621d08"
+    },
+    {
+      "file": "test_feature2_migration.py",
+      "tests": 5,
+      "skipped": 0,
+      "result": "passed",
+      "log": "tests/test_feature2_migration.log",
+      "sha256": "6c261c0723e33a33f02f17f28729a089c871d21694105e1a3d6794ce67684af0"
+    },
+    {
+      "file": "test_formal.py",
+      "tests": 8,
+      "skipped": 0,
+      "result": "passed",
+      "log": "tests/test_formal.log",
+      "sha256": "2e72144cd19a8550a41ba03dc810c2ca41471713e65847188188235aea56c8e4"
+    },
+    {
+      "file": "test_git_store.py",
+      "tests": 12,
+      "skipped": 0,
+      "result": "passed",
+      "log": "tests/test_git_store.log",
+      "sha256": "5fb6cb86e8ef039d069ee7fe52b9477196eb1660719a6471edfd57f7d5a80c51"
+    },
+    {
+      "file": "test_governance.py",
+      "tests": 4,
+      "skipped": 0,
+      "result": "passed",
+      "log": "tests/test_governance.log",
+      "sha256": "c013f23386a8c60e48021d99d8518f0fc54e5518f0fe6a70574905c32ec5ded6"
+    },
+    {
+      "file": "test_knowledge.py",
+      "tests": 16,
+      "skipped": 0,
+      "result": "passed",
+      "log": "tests/test_knowledge.log",
+      "sha256": "38de35e076e8f4e0d8efed31d392a877082467a091a72c39dbdd38d922a2969a"
+    },
+    {
+      "file": "test_knowledge_import_engine.py",
+      "tests": 3,
+      "skipped": 0,
+      "result": "passed",
+      "log": "tests/test_knowledge_import_engine.log",
+      "sha256": "3bf7ce16811d56f081f9db9367ed344e9e721d770066442bfe97b18321a61021"
+    },
+    {
+      "file": "test_knowledge_io.py",
+      "tests": 8,
+      "skipped": 0,
+      "result": "passed",
+      "log": "tests/test_knowledge_io.log",
+      "sha256": "28c2cb0601788a81538d4e81f0ae4d1c4d81fcfaf05896b9daa17bf93775a151"
+    },
+    {
+      "file": "test_lifecycle_engine.py",
+      "tests": 26,
+      "skipped": 0,
+      "result": "passed",
+      "log": "tests/test_lifecycle_engine.log",
+      "sha256": "fcb9b99e0a15f90c406366de2cc4c4cbd2bf9cd44f02b254bc7ba19c25a22dea"
+    },
+    {
+      "file": "test_model_runner.py",
+      "tests": 6,
+      "skipped": 0,
+      "result": "passed",
+      "log": "tests/test_model_runner.log",
+      "sha256": "e89c0c3be406719fd7a6b09dfd35ba9a541a2aca304d74cc08d769adde5b65a3"
+    },
+    {
+      "file": "test_native_probe.py",
+      "tests": 2,
+      "skipped": 0,
+      "result": "passed",
+      "log": "tests/test_native_probe.log",
+      "sha256": "a6707d4eff38012da33ddc34bc6dc076a3b17151cfc9aef223c8790cbe64c3da"
+    },
+    {
+      "file": "test_observations.py",
+      "tests": 2,
+      "skipped": 0,
+      "result": "passed",
+      "log": "tests/test_observations.log",
+      "sha256": "9e5df0e584f986eb6e1f7ba6275093ad6dfc96c3af64c6e2f48e1e87277d209f"
+    },
+    {
+      "file": "test_operator.py",
+      "tests": 11,
+      "skipped": 0,
+      "result": "passed",
+      "log": "tests/test_operator.log",
+      "sha256": "1e85a1aee64649f2772c76d826952e466f606b483d5fae3017cbab3deb5c2989"
+    },
+    {
+      "file": "test_planning.py",
+      "tests": 6,
+      "skipped": 0,
+      "result": "passed",
+      "log": "tests/test_planning.log",
+      "sha256": "844ab8106fb700745ba67fd9b602d4b764b294a5ed653eef4aae68c5db751a46"
+    },
+    {
+      "file": "test_preflight.py",
+      "tests": 7,
+      "skipped": 0,
+      "result": "passed",
+      "log": "tests/test_preflight.log",
+      "sha256": "c08d36aaeee149522489822a46302fb5f1ac6553ae2e0424af1c8bf292f843d1"
+    },
+    {
+      "file": "test_probe_codex.py",
+      "tests": 1,
+      "skipped": 0,
+      "result": "passed",
+      "log": "tests/test_probe_codex.log",
+      "sha256": "79393ce8202f750bd93877cb95fa3f0c62a82ae558a555addfbbff134c1c6e53"
+    },
+    {
+      "file": "test_purpose_engine.py",
+      "tests": 15,
+      "skipped": 0,
+      "result": "passed",
+      "log": "tests/test_purpose_engine.log",
+      "sha256": "e70a00376a20ddcb8d255cf64d381b0e3d4badc958eabd5a945c4cd65e3ec972"
+    },
+    {
+      "file": "test_query_records.py",
+      "tests": 3,
+      "skipped": 0,
+      "result": "passed",
+      "log": "tests/test_query_records.log",
+      "sha256": "013f53877c0c94a4a457be71056fe84cee977c8d07081a4349e3ac2f3e1f22c7"
+    },
+    {
+      "file": "test_reading_map.py",
+      "tests": 6,
+      "skipped": 0,
+      "result": "passed",
+      "log": "tests/test_reading_map.log",
+      "sha256": "a4a9c8503d8edcb862556282e177922b7b3541c6b7c78e5e2194f719bb270c72"
+    },
+    {
+      "file": "test_repository.py",
+      "tests": 8,
+      "skipped": 0,
+      "result": "passed",
+      "log": "tests/test_repository.log",
+      "sha256": "ad6a648dccff2a4702ef72a4c773b3bd47d2254062c362d501b34046197cb47b"
+    },
+    {
+      "file": "test_research_recovery.py",
+      "tests": 22,
+      "skipped": 0,
+      "result": "passed",
+      "log": "tests/test_research_recovery.log",
+      "sha256": "c5006e78225a5fac143f700904738c084c87f19724d0fc66312fa8540ef28a51"
+    },
+    {
+      "file": "test_review_cycle.py",
+      "tests": 19,
+      "skipped": 0,
+      "result": "passed",
+      "log": "tests/test_review_cycle.log",
+      "sha256": "dc1c70ccd8178383f3a00e32b471823c02a985a4385a60948d0c5fe9d3aba2cb"
+    },
+    {
+      "file": "test_review_engine.py",
+      "tests": 11,
+      "skipped": 0,
+      "result": "passed",
+      "log": "tests/test_review_engine.log",
+      "sha256": "72937bfb7e14b09f9e262728e5e61605e0894f36eb1f3a8cfaa630100a9a86ea"
+    },
+    {
+      "file": "test_review_research.py",
+      "tests": 17,
+      "skipped": 0,
+      "result": "passed",
+      "log": "tests/test_review_research.log",
+      "sha256": "192f142dbf2dfb8799c6d78198d7e4929d14dc5124b5abbdd71a20e598ebf753"
+    },
+    {
+      "file": "test_scholarly.py",
+      "tests": 5,
+      "skipped": 0,
+      "result": "passed",
+      "log": "tests/test_scholarly.log",
+      "sha256": "821b8b41e3acd2b621d9cfe84b03c30cbfa24e9857eb74084e48ad8284fc8b7e"
+    },
+    {
+      "file": "test_session_scheduler.py",
+      "tests": 19,
+      "skipped": 0,
+      "result": "passed",
+      "log": "tests/test_session_scheduler.log",
+      "sha256": "09a4152dfb19a379eb738aa1c23cf2061927012fc7b42e79b14cd5538cd963cb"
+    },
+    {
+      "file": "test_standalone.py",
+      "tests": 3,
+      "skipped": 0,
+      "result": "passed",
+      "log": "tests/test_standalone.log",
+      "sha256": "2e7588ee028e93a8a8309b84d4d889202718a5de6c35562a430cce49fe188dcc"
+    },
+    {
+      "file": "test_state_checks.py",
+      "tests": 5,
+      "skipped": 0,
+      "result": "passed",
+      "log": "tests/test_state_checks.log",
+      "sha256": "3435a22204246b7d05d7b6abc6b1cca5ba6ab02222cb52f02c6da3c7b1dae32e"
+    },
+    {
+      "file": "test_task_scope.py",
+      "tests": 6,
+      "skipped": 0,
+      "result": "passed",
+      "log": "tests/test_task_scope.log",
+      "sha256": "5ea175b2d0bf721f62c1a326643498b1b6397992bf946db75f64dbf0cf3b4038"
+    },
+    {
+      "file": "test_windows_job.py",
+      "tests": 8,
+      "skipped": 0,
+      "result": "passed",
+      "log": "tests/test_windows_job.log",
+      "sha256": "f612ab212195371d47c394c325976a6ecfcaf916697a1aecb79e7b54cc542e2e"
+    }
+  ],
+  "document_readings": {
+    "roles": {
+      "reading_id": "4414246e7163493692abd524d93ededd",
+      "input_hashes": {
+        "draft": "024f73f8947f3182f1f49c546db35cac81207c2e97faaf268a68b6656f0fb7d9",
+        "brief": "8a6ef81feda534e5c5bb2fa9e2cb8d328fe0781b16e031fd853d689a328e5442",
+        "audience": "c7b27e533167a1ad97e6703542e0927a3ba435f2f8f9d60ce77f8e17eaffb293"
+      },
+      "decision": {
+        "path": "C:\\math\\.codex\\writing-flow\\do-math-model-sessions-roles\\jobs\\5285b1c1fad34a5890d9080d212809ac\\decisions\\e8233531a1ff4aeb84192ae09b7aa17c.json",
+        "sha256": "a8fa2784d01afc306019dd75f86931da73aea99c5765f52c621fe4da1937c949",
+        "verdict": "accept",
+        "reading_id": "4414246e7163493692abd524d93ededd"
+      },
+      "result": "passed"
+    },
+    "operator": {
+      "reading_id": "9085ac860a704589b545bb9a8b6f8fc8",
+      "input_hashes": {
+        "draft": "8825d14b04b1924b577b2f7833830373627ceb7c81643600cb085b0985bdd03f",
+        "brief": "8a6ef81feda534e5c5bb2fa9e2cb8d328fe0781b16e031fd853d689a328e5442",
+        "audience": "6b809f76e25074262446a97bfdac8823c3ec4d7cb102bd745008767ec0c21a6c"
+      },
+      "decision": {
+        "path": "C:\\math\\.codex\\writing-flow\\do-math-model-sessions-operator\\jobs\\62995c30c77d45d38be6179295845f83\\decisions\\f6a1c4d3ab4744f0b3866381062ebe07.json",
+        "sha256": "afb3dd4ade36cdd4f2318ca12d074db6ab02d5c1fd3f3ecb3ef772c688fe496a",
+        "verdict": "accept",
+        "reading_id": "9085ac860a704589b545bb9a8b6f8fc8"
+      },
+      "result": "passed"
+    },
+    "memory": {
+      "reading_id": "7ae8c290df734faab1b0671479439113",
+      "input_hashes": {
+        "draft": "69d66955e5b10763e554f984ea275b8973b2b6813326c73cd12468e5028e5d44",
+        "brief": "4e3ea5942f86e1c31841fe5454e10298436ca7f28722a8ec40d6adadabc15c82",
+        "audience": "7845fc9afb4268d6f2635b14dee8c7713bb68a9a10a7e6d612ca8804bf9679b2"
+      },
+      "decision": {
+        "path": "C:\\math\\.codex\\writing-flow\\do-math-model-sessions-memory\\jobs\\b0de39ab60214d8598e38c7eadd56138\\decisions\\d101aa346c7b485b8f73a70a3364759a.json",
+        "sha256": "9e14586f896e164b806580729888bc87e040808e145b341d973a9f01432239fe",
+        "verdict": "accept",
+        "reading_id": "7ae8c290df734faab1b0671479439113"
+      },
+      "result": "passed"
+    }
+  },
+  "live_models": [
+    {
+      "model": "gpt-6-astra",
+      "status": "completed",
+      "error": null,
+      "seconds": 6.03
+    },
+    {
+      "model": "gpt-5.6-sol",
+      "status": "completed",
+      "error": null,
+      "seconds": 5.22
+    },
+    {
+      "model": "gpt-5.6-terra",
+      "status": "completed",
+      "error": null,
+      "seconds": 5.03
+    }
+  ],
+  "environment": {
+    "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+    "jsonschema": "4.26.0",
+    "lean_bin": "C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin"
+  },
+  "evidence_notes": {
+    "broad_run": "final-regression; corrected CLI queue and task-identity test expectations were rerun as full affected files",
+    "discovery": "test_document_followup.py, test_governance.py, test_knowledge_import_engine.py and test_observations.py lack direct unittest entrypoints and were executed through unittest discover",
+    "source": "source.zip preserves final raw bytes; regression-evidence.zip preserves frozen inputs and earlier failures",
+    "limits": "does not establish relative mathematical model quality, general research success, provider-internal concurrency or cumulative cost limits",
+    "line_endings": "Readable JSON/log files use LF; original execution and reading bytes are retained in the ZIP archives."
+  },
+  "artifacts": {
+    "document-readings.zip": {
+      "bytes": 1964400,
+      "sha256": "3380a8fe5267029c070b639520d626f648ee874fa8371d21b267b55a362bbe60"
+    },
+    "live-model-probe.zip": {
+      "bytes": 18060,
+      "sha256": "6a46cf4fec9fd9be01f6b5eb6eefe6004b8d02f1fec098011a06d5a787fcadcf"
+    },
+    "memory-index-check.log": {
+      "bytes": 80,
+      "sha256": "d0d0d8f91aeeec9704339de2ddaea129bb64bad44cde83125e9d564a0a0620cb"
+    },
+    "mirror-final-check.log": {
+      "bytes": 42,
+      "sha256": "134d77b74a0d522ccb3da0fb73ec187005274024909acfad5529e0f72f2659a0"
+    },
+    "regression-evidence.zip": {
+      "bytes": 1336152,
+      "sha256": "b95794b488cb3a09418b253dcb72aeb9ce92faafa39534b1b82dc50eda940853"
+    },
+    "source-manifest.json": {
+      "bytes": 10574,
+      "sha256": "315b602f1eebcdcf8e749f8f4bfce9a9eed4abd0f16cc46c7b0a3b2567c8f4c2"
+    },
+    "source.zip": {
+      "bytes": 432072,
+      "sha256": "cd1016e406ad184e727d2573aa21c38a2c09747fa7e2710727e25670eb8922fa"
+    },
+    ".gitattributes": {
+      "bytes": 37,
+      "sha256": "d9f9c63b1cdf0dc2342b96f248e3e6163b56e0fa9378e2adc1e2c6df618fc018"
+    },
+    "installed-structure.json": {
+      "bytes": 2624,
+      "sha256": "0060631933eb4797adcc7946a4ec6d0c9f2cce47b76cf2cefa22ad2712f5b8e6"
+    }
+  },
+  "installed_structure": {
+    "result": "passed",
+    "scope": "installed_skill_structure"
+  }
+}

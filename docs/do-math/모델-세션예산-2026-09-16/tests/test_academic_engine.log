@@ -1,0 +1,11 @@
+test_changed_requirements_preserve_completed_academic_task (__main__.AcademicEngineTests.test_changed_requirements_preserve_completed_academic_task) ... ok
+test_changed_same_requirement_id_supersedes_old_contract_and_creates_new_criteria (__main__.AcademicEngineTests.test_changed_same_requirement_id_supersedes_old_contract_and_creates_new_criteria) ... ok
+test_explicit_requirement_blocks_runtime_completion_until_independent_assessment (__main__.AcademicEngineTests.test_explicit_requirement_blocks_runtime_completion_until_independent_assessment) ... ok
+test_external_rejection_keeps_formal_solution_and_requires_planner_evidence_to_clear (__main__.AcademicEngineTests.test_external_rejection_keeps_formal_solution_and_requires_planner_evidence_to_clear) ... ok
+test_non2xx_or_unknown_external_effect_cannot_complete_academic_requirement (__main__.AcademicEngineTests.test_non2xx_or_unknown_external_effect_cannot_complete_academic_requirement) ... ok
+test_required_external_effect_uses_confirmed_loopback_receipt_before_completion (__main__.AcademicEngineTests.test_required_external_effect_uses_confirmed_loopback_receipt_before_completion) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 49.751s
+
+OK

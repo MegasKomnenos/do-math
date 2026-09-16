@@ -1,0 +1,8 @@
+test_custom_kind_is_available_to_the_next_worker_schema (test_knowledge_import_engine.KnowledgeImportTests.test_custom_kind_is_available_to_the_next_worker_schema) ... ok
+test_imported_theorem_only_becomes_usable_after_actual_engine_gates (test_knowledge_import_engine.KnowledgeImportTests.test_imported_theorem_only_becomes_usable_after_actual_engine_gates) ... ok
+test_reimport_preserves_identity_but_requires_new_formal_and_full_review (test_knowledge_import_engine.KnowledgeImportTests.test_reimport_preserves_identity_but_requires_new_formal_and_full_review) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 2.279s
+
+OK

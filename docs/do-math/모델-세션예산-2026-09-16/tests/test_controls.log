@@ -1,0 +1,9 @@
+test_crash_marks_owning_activity_unresolved (__main__.ControlTransitionTests.test_crash_marks_owning_activity_unresolved) ... ok
+test_pause_and_resume_cannot_reopen_a_completed_instance (__main__.ControlTransitionTests.test_pause_and_resume_cannot_reopen_a_completed_instance) ... ok
+test_request_accepted_before_completion_does_not_reopen_it (__main__.ControlTransitionTests.test_request_accepted_before_completion_does_not_reopen_it) ... ok
+test_stale_request_is_consumed_and_does_not_poison_later_controls (__main__.ControlTransitionTests.test_stale_request_is_consumed_and_does_not_poison_later_controls) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 53.647s
+
+OK

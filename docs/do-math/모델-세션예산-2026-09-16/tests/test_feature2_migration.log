@@ -1,0 +1,10 @@
+test_future_version_is_not_converted (__main__.Feature2MigrationTests.test_future_version_is_not_converted) ... ok
+test_goal_dependency_detects_changed_relation_endpoint_even_when_proof_record_is_unchanged (__main__.Feature2MigrationTests.test_goal_dependency_detects_changed_relation_endpoint_even_when_proof_record_is_unchanged) ... ok
+test_known_legacy_approval_is_preserved_but_cannot_remain_usable (__main__.Feature2MigrationTests.test_known_legacy_approval_is_preserved_but_cannot_remain_usable) ... ok
+test_live_conversation_guard_expires_without_new_scheduler_activity (__main__.Feature2MigrationTests.test_live_conversation_guard_expires_without_new_scheduler_activity) ... ok
+test_no_legacy_approval_does_not_reopen_completed_instance (__main__.Feature2MigrationTests.test_no_legacy_approval_does_not_reopen_completed_instance) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.013s
+
+OK

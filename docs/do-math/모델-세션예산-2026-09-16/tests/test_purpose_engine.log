@@ -1,0 +1,20 @@
+test_actual_temp_git_full_formal_review_and_goal_flow (__main__.GitPurposeTests.test_actual_temp_git_full_formal_review_and_goal_flow) ... ok
+test_environment_revalidation_does_not_clear_independent_meaning_dispute (__main__.PurposeEngineTests.test_environment_revalidation_does_not_clear_independent_meaning_dispute) ... ok
+test_external_user_pause_is_processed_during_running_work (__main__.PurposeEngineTests.test_external_user_pause_is_processed_during_running_work) ... ok
+test_knowledge_currentness_loss_and_revision_recover_through_fresh_review (__main__.PurposeEngineTests.test_knowledge_currentness_loss_and_revision_recover_through_fresh_review) ... ok
+test_large_history_uses_exact_context_source_files_without_losing_work (__main__.PurposeEngineTests.test_large_history_uses_exact_context_source_files_without_losing_work) ... ok
+test_live_continue_preserves_checkpoint_and_uses_operating_budget (__main__.PurposeEngineTests.test_live_continue_preserves_checkpoint_and_uses_operating_budget) ... ok
+test_live_review_works_with_unlimited_operating_budget (__main__.PurposeEngineTests.test_live_review_works_with_unlimited_operating_budget) ... ok
+test_live_stop_keeps_partial_artifacts_without_publishing_a_theorem (__main__.PurposeEngineTests.test_live_stop_keeps_partial_artifacts_without_publishing_a_theorem) ... ok
+test_memory_repository_enforces_snapshot_cas_and_artifact_immutability (__main__.PurposeEngineTests.test_memory_repository_enforces_snapshot_cas_and_artifact_immutability) ... ok
+test_objection_judgment_answer_and_final_approval_use_real_engine (__main__.PurposeEngineTests.test_objection_judgment_answer_and_final_approval_use_real_engine) ... ok
+test_operating_review_runs_even_when_the_worker_used_the_last_work_call (__main__.PurposeEngineTests.test_operating_review_runs_even_when_the_worker_used_the_last_work_call) ... ok
+test_policy_control_invalidates_old_contract_approval_before_work (__main__.PurposeEngineTests.test_policy_control_invalidates_old_contract_approval_before_work) ... ok
+test_task_dependency_extension_blocks_A_until_B_completed_then_solves_goal (__main__.PurposeEngineTests.test_task_dependency_extension_blocks_A_until_B_completed_then_solves_goal) ... ok
+test_user_input_requires_distinct_interpretation_check_before_goal_change (__main__.PurposeEngineTests.test_user_input_requires_distinct_interpretation_check_before_goal_change) ... ok
+test_work_budget_execution_is_not_bounded_by_operations_call_timeout (__main__.PurposeEngineTests.test_work_budget_execution_is_not_bounded_by_operations_call_timeout) ... ok
+
+----------------------------------------------------------------------
+Ran 15 tests in 199.730s
+
+OK

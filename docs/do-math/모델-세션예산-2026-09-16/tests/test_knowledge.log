@@ -1,0 +1,21 @@
+test_basis_hash_detects_change_and_assess_use (__main__.KnowledgeTests.test_basis_hash_detects_change_and_assess_use) ... ok
+test_complete_transition_requires_all_and_updates_environment (__main__.KnowledgeTests.test_complete_transition_requires_all_and_updates_environment) ... ok
+test_environment_invalidation_propagates_only_affected_records (__main__.KnowledgeTests.test_environment_invalidation_propagates_only_affected_records) ... ok
+test_environment_recovery_preserves_dependency_on_invalid_knowledge (__main__.KnowledgeTests.test_environment_recovery_preserves_dependency_on_invalid_knowledge) ... ok
+test_environment_recovery_preserves_independent_semantic_suspension (__main__.KnowledgeTests.test_environment_recovery_preserves_independent_semantic_suspension) ... ok
+test_invalidated_active_environment_can_transition_and_recover_all_verified_k (__main__.KnowledgeTests.test_invalidated_active_environment_can_transition_and_recover_all_verified_k) ... ok
+test_invalidation_withdraws_without_deleting_and_relation_neighbor_is_preserved (__main__.KnowledgeTests.test_invalidation_withdraws_without_deleting_and_relation_neighbor_is_preserved) ... ok
+test_known_used_source_propagates_but_source_locator_does_not (__main__.KnowledgeTests.test_known_used_source_propagates_but_source_locator_does_not) ... ok
+test_recovery_transition_does_not_promote_candidate_or_withdrawn (__main__.KnowledgeTests.test_recovery_transition_does_not_promote_candidate_or_withdrawn) ... ok
+test_revision_history_is_not_a_current_dependency (__main__.KnowledgeTests.test_revision_history_is_not_a_current_dependency) ... ok
+test_revision_preserves_history_and_propagates_only_actual_dependencies (__main__.KnowledgeTests.test_revision_preserves_history_and_propagates_only_actual_dependencies) ... ok
+test_source_coordinates_are_not_missing_knowledge_but_real_ids_are (__main__.KnowledgeTests.test_source_coordinates_are_not_missing_knowledge_but_real_ids_are) ... ok
+test_task_dependencies_are_strong_reassessment_edges (__main__.KnowledgeTests.test_task_dependencies_are_strong_reassessment_edges) ... ok
+test_terminal_tasks_keep_disposition_and_unfinished_tasks_wait (__main__.KnowledgeTests.test_terminal_tasks_keep_disposition_and_unfinished_tasks_wait) ... ok
+test_transition_partial_failure_keeps_old_environment (__main__.KnowledgeTests.test_transition_partial_failure_keeps_old_environment) ... ok
+test_unknown_environment_rejected (__main__.KnowledgeTests.test_unknown_environment_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 16 tests in 0.019s
+
+OK

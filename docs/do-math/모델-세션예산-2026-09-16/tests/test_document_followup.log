@@ -1,0 +1,8 @@
+test_old_rejected_preparation_remains_readable_after_recent_history_moves (test_document_followup.FollowupDocumentTests.test_old_rejected_preparation_remains_readable_after_recent_history_moves) ... ok
+test_planning_roles_receive_the_complete_current_settings (test_document_followup.FollowupDocumentTests.test_planning_roles_receive_the_complete_current_settings) ... ok
+test_prepared_observation_rule_reaches_contract_review (test_document_followup.FollowupDocumentTests.test_prepared_observation_rule_reaches_contract_review) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.476s
+
+OK

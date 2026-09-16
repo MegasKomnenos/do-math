@@ -59,7 +59,7 @@ class Feature2MigrationTests(unittest.TestCase):
         self.assertEqual(engine.runtime['queue'], [])
 
     def test_future_version_is_not_converted(self):
-        self.engine.instance['feature_version'] = 3
+        self.engine.instance['feature_version'] = 4
         before = deepcopy((self.engine.instance, self.engine.runtime))
         with self.assertRaises(ValueError): self.engine._upgrade_runtime()
         self.assertEqual((self.engine.instance, self.engine.runtime), before)

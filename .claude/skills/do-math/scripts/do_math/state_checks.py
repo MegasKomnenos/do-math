@@ -21,7 +21,7 @@ _SUSPENSION_KINDS = {"environment", "dependency", "semantic"}
 
 
 def _is_feature2(instance: dict, runtime: dict) -> bool:
-    return instance.get("feature_version", runtime.get("feature_version", 1)) == 2
+    return instance.get("feature_version", runtime.get("feature_version", 1)) in {2, 3}
 
 
 def _sha(value: Any) -> bool:
@@ -133,7 +133,7 @@ def _task_errors(runtime: dict, errors: list[str], feature2: bool) -> None:
                 _error(errors, str(task_id), "completed task criteria evidence is incomplete")
         for execution in executions.values():
             action = execution.get("action", {}) if isinstance(execution, dict) else {}
-            if isinstance(execution, dict) and execution.get("status") in {"starting", "running"} and execution.get("role") in {"research_work", "supplemental_research"} and action.get("target") == task_id:
+            if isinstance(execution, dict) and execution.get("status") in {"starting", "running", "stopping"} and execution.get("role") in {"research_work", "supplemental_research"} and action.get("target") == task_id:
                 _error(errors, str(task_id), "completed task has a live worker")
                 break
 
@@ -164,7 +164,7 @@ def _external_errors(instance: dict, runtime: dict, errors: list[str], feature2:
         if status in _TERMINAL_OPERATION:
             status_matches = execution.get("status") == "ended" and execution.get("outcome") == status
         elif status == "running":
-            status_matches = execution.get("status") in {"starting", "running"} and execution.get("outcome") in {None, "prepared", "running"}
+            status_matches = execution.get("status") in {"starting", "running", "stopping"} and execution.get("outcome") in {None, "prepared", "running"}
         else:  # Some persisted snapshots capture the prepared transmission barrier.
             status_matches = execution.get("status") in {"prepared", "starting", "running"} and execution.get("outcome") in {None, "prepared", "running"}
         if not status_matches:
@@ -234,7 +234,7 @@ def state_errors(instance: dict, runtime: dict) -> list[str]:
         return ["state: instance and runtime must be objects"]
     errors: list[str] = []
     versions = (instance.get("feature_version", 1), runtime.get("feature_version", 1))
-    if any(value not in {1, 2} for value in versions):
+    if any(value not in {1, 2, 3} for value in versions):
         errors.append("state: unsupported feature version")
     feature2 = _is_feature2(instance, runtime)
     _source_errors(instance, errors)

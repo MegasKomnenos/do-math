@@ -346,7 +346,12 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
 
 def _human_status(status: dict[str, Any]) -> str:
     budget = status["budget"]
-    limits = {pool: "unlimited" if row["limit"] is None else row["limit"] for pool, row in budget.items()}
+    if status.get("budget_unit") == "concurrent_sessions":
+        budget_text = "sessions: " + "; ".join(pool + " " + ", ".join(
+            f"{model} {row['used']}/{row['limit']}" for model, row in values.items()) for pool, values in budget.items())
+    else:
+        limits = {pool: "unlimited" if row["limit"] is None else row["limit"] for pool, row in budget.items()}
+        budget_text = f"budget: work {budget['work']['used']}/{limits['work']}; operations {budget['operations']['used']}/{limits['operations']}"
     tasks = status["tasks"]
     assurance = status["assurance"]
     task_text = ", ".join(f"{task['id']}={task['status']}" for task in tasks) or "none"
@@ -355,7 +360,7 @@ def _human_status(status: dict[str, Any]) -> str:
         f"goal: {status['goal']}",
         f"goal_status: {status['goal_status']}",
         f"status: {status['status']}  snapshot: {status['snapshot']}",
-        f"budget: work {budget['work']['used']}/{limits['work']}; operations {budget['operations']['used']}/{limits['operations']}",
+        budget_text,
         f"tasks: {task_text}",
         f"unknown or bounded scope: {unknown}",
     ))

@@ -71,14 +71,14 @@ class CliTests(unittest.TestCase):
         self.assertEqual(json.loads(paused.stdout)["status"], "paused")
 
         config_path = self.root / "config.json"
-        config_path.write_text(json.dumps({"work_calls": 4}), encoding="utf-8")
+        config_path.write_text(json.dumps({"session_limits": None, "work_calls": 4}), encoding="utf-8")
         configured = self.run_cli("configure", *self.instance_args(), "--config-file", str(config_path))
         self.assertEqual(configured.returncode, 0, configured.stderr)
         self.assertEqual(json.loads(configured.stdout)["config"]["work_calls"], 4)
 
     def test_unlimited_budgets_round_trip_and_human_status(self) -> None:
         config_path = self.root / "unlimited.json"
-        config_path.write_text(json.dumps({"work_calls": None, "operations_calls": None}), encoding="utf-8")
+        config_path.write_text(json.dumps({"session_limits": None, "work_calls": None, "operations_calls": None}), encoding="utf-8")
         configured = self.run_cli("configure", *self.instance_args(), "--config-file", str(config_path))
         self.assertEqual(configured.returncode, 0, configured.stderr)
         status = self.run_cli("status", *self.instance_args(), "--json")
@@ -100,7 +100,7 @@ class CliTests(unittest.TestCase):
         self.assertGreaterEqual(json.loads(status.stdout)["pending_actions"], 2)
         from do_math.repository import ResearchRepository
         _, _, runtime = ResearchRepository(self.repository, self.instance).load()
-        self.assertEqual(runtime["queue"][0]["role"], "maintenance")
+        self.assertEqual([a["role"] for a in runtime["queue"][:2]], ["research_preparation", "maintenance"])
         self.assertFalse(runtime["executions"], "request must not start a model execution")
 
     def test_query_read_export_and_check_use_a_fixed_repository_snapshot(self) -> None:
