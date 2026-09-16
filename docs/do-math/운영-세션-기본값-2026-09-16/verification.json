@@ -1,0 +1,113 @@
+{
+  "base_commit": "b6fc99de00cfe34dc54f2a31ae3bb9d3fd6428c5",
+  "operations_per_model": 3,
+  "work_per_model": 3,
+  "total_operations": 9,
+  "total_work": 9,
+  "existing_explicit_instance_settings": "preserved",
+  "effort": "unchanged; internal medium, independent operator high",
+  "changes": {
+    "scripts/do_math/model_policy.py": [
+      [
+        "\"operations\": {model: 1 for model in MODELS.values()}",
+        "\"operations\": {model: 3 for model in MODELS.values()}"
+      ]
+    ],
+    "SKILL.md": [
+      [
+        "운영은 모델별 1개, 작업은 모델별 3개다.",
+        "운영과 작업은 각각 모델별 3개다."
+      ]
+    ],
+    "README.md": [
+      [
+        "운영 1개와 작업 3개의",
+        "운영 3개와 작업 3개의"
+      ],
+      [
+        "\"operations\": {\"gpt-6-astra\": 1, \"gpt-5.6-sol\": 1, \"gpt-5.6-terra\": 1}",
+        "\"operations\": {\"gpt-6-astra\": 3, \"gpt-5.6-sol\": 3, \"gpt-5.6-terra\": 3}"
+      ]
+    ],
+    "references/CLI-실행-계약.md": [
+      [
+        "각각 작업 3개·운영 1개다.",
+        "각각 작업 3개·운영 3개다."
+      ],
+      [
+        "\"operations\":{\"gpt-6-astra\":1,\"gpt-5.6-sol\":1,\"gpt-5.6-terra\":1}",
+        "\"operations\":{\"gpt-6-astra\":3,\"gpt-5.6-sol\":3,\"gpt-5.6-terra\":3}"
+      ]
+    ],
+    "references/모델과-실행예산.md": [
+      [
+        "`gpt-6-astra` | 1 | 3 |",
+        "`gpt-6-astra` | 3 | 3 |"
+      ],
+      [
+        "`gpt-5.6-sol` | 1 | 3 |",
+        "`gpt-5.6-sol` | 3 | 3 |"
+      ],
+      [
+        "`gpt-5.6-terra` | 1 | 3 |",
+        "`gpt-5.6-terra` | 3 | 3 |"
+      ],
+      [
+        "운영 3개와 작업 9개의",
+        "운영 9개와 작업 9개의"
+      ]
+    ],
+    "scripts/tests/test_session_scheduler.py": [
+      [
+        "self.assertEqual(sum(LIMITS[\"operations\"].values()), 3)",
+        "self.assertEqual(sum(LIMITS[\"operations\"].values()), 9)"
+      ],
+      [
+        "            slots.acquire(\"internal-plan\", \"operations\", MODELS[\"high\"])",
+        "            capacity = LIMITS[\"operations\"][MODELS[\"high\"]]\n            for number in range(capacity):\n                self.assertTrue(slots.acquire(f\"internal-plan-{number}\", \"operations\", MODELS[\"high\"]))"
+      ],
+      [
+        "self.assertEqual(slots.snapshot()[\"operations\"][model][\"used\"], 1)",
+        "self.assertEqual(slots.snapshot()[\"operations\"][model][\"used\"], capacity)"
+      ],
+      [
+        "slots.release(\"internal-plan\")",
+        "slots.release(\"internal-plan-0\")"
+      ],
+      [
+        "self.assertEqual(slots.snapshot()[\"operations\"][MODELS[\"high\"]][\"used\"], 0)",
+        "self.assertEqual(slots.snapshot()[\"operations\"][MODELS[\"high\"]][\"used\"], capacity - 1)"
+      ]
+    ]
+  },
+  "tests": [
+    {
+      "log": "policy-tests.log",
+      "tests": 3,
+      "result": "passed"
+    },
+    {
+      "log": "slot-tests.log",
+      "tests": 5,
+      "result": "passed"
+    }
+  ],
+  "test_count": 8,
+  "source_sha256": {
+    "scripts/do_math/model_policy.py": "b0e8fa14537d14a8e8780b57cc690939847e28b118f7ad8ce7be7a398767ba5d",
+    "SKILL.md": "1484d8ae578038d8bf34b724b77df28ce265a12a13bbdef575de0f0a51c34c97",
+    "README.md": "e781949db7ba5cc555d9930329a6bfde192cee15d4602eb892daecf8d6044090",
+    "references/CLI-실행-계약.md": "dd905b24bd9868f2e15bbdd5b6f3db5e14b4507cda4ebd13c82d0b201e930bb2",
+    "references/모델과-실행예산.md": "6a1aea8ce7a75f139ab2aa193d79f7f28e198b4022ae656c1f1bbefbf15cb273",
+    "scripts/tests/test_session_scheduler.py": "da3eb01dd73b9d4ebe0862ee072fc176cebffa2600532e061d8ac649d27fe18e"
+  },
+  "reading": {
+    "result": "passed",
+    "id": "d9cc0e4b81e34fc59893444b94d1fcfe",
+    "input_hashes": {
+      "draft": "f2b9dc25396d6040bbff563829c1685671805da19ae46d8b8753727e43e65ecc",
+      "brief": "474205e744abd38f96fed53c226e21044eb83e853a90aefbf8b04654bc2f2f17",
+      "audience": "9ecc68feaf7234c0e77653ffb246b3ff1e66222b191d98aa2b613774e9ee405c"
+    }
+  }
+}

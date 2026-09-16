@@ -1,0 +1,10 @@
+test_independent_operator_uses_the_same_instance_operating_slot (test_session_scheduler.SlotTests.test_independent_operator_uses_the_same_instance_operating_slot) ... ok
+test_lost_owner_before_start_is_reconciled_but_unknown_started_lifetime_is_held (test_session_scheduler.SlotTests.test_lost_owner_before_start_is_reconciled_but_unknown_started_lifetime_is_held) ... ok
+test_shared_capacity_separate_pools_and_instances_and_reusable_slots (test_session_scheduler.SlotTests.test_shared_capacity_separate_pools_and_instances_and_reusable_slots) ... ok
+test_slot_waits_for_actual_named_job_termination (test_session_scheduler.SlotTests.test_slot_waits_for_actual_named_job_termination) ... ok
+test_two_processes_share_the_same_capacity (test_session_scheduler.SlotTests.test_two_processes_share_the_same_capacity) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.968s
+
+OK

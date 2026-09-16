@@ -62,7 +62,7 @@ class ConcurrentRunner:
 class SessionPolicyTests(unittest.TestCase):
     def test_defaults_and_max_of_difficulty_and_importance(self):
         self.assertEqual(sum(LIMITS["work"].values()), 9)
-        self.assertEqual(sum(LIMITS["operations"].values()), 3)
+        self.assertEqual(sum(LIMITS["operations"].values()), 9)
         self.assertEqual(assessment_tier({"difficulty": "low", "importance": "high", "reason": "goal-wide impact"}), "high")
         config = deepcopy(DEFAULT_CONFIG)
         config["session_limits"]["work"][MODELS["high"]] = 0
@@ -91,12 +91,14 @@ class SlotTests(unittest.TestCase):
             workspace = Path(directory)
             slots = SessionSlots(workspace, "instance")
             slots.configure(deepcopy(LIMITS))
-            slots.acquire("internal-plan", "operations", MODELS["high"])
+            capacity = LIMITS["operations"][MODELS["high"]]
+            for number in range(capacity):
+                self.assertTrue(slots.acquire(f"internal-plan-{number}", "operations", MODELS["high"]))
             config = deepcopy(DEFAULT_CONFIG); config["scholarly_enabled"] = False
             class Runner:
                 def run(inner, *, model, on_started, **kwargs):
                     self.assertEqual(model, MODELS["high"])
-                    self.assertEqual(slots.snapshot()["operations"][model]["used"], 1)
+                    self.assertEqual(slots.snapshot()["operations"][model]["used"], capacity)
                     on_started({"pid": 1})
                     return {"status": "completed", "output": {}, "usage": {}}
             try:
@@ -107,10 +109,10 @@ class SlotTests(unittest.TestCase):
                     waiting = scheduled_operator.check(workspace, "instance", workspace)
                     self.assertEqual(waiting["outcome"], "capacity_waiting")
                     runner.assert_not_called()
-                    slots.release("internal-plan")
+                    slots.release("internal-plan-0")
                     result = scheduled_operator.check(workspace, "instance", workspace)
                     self.assertEqual(result["outcome"], "completed")
-                    self.assertEqual(slots.snapshot()["operations"][MODELS["high"]]["used"], 0)
+                    self.assertEqual(slots.snapshot()["operations"][MODELS["high"]]["used"], capacity - 1)
             finally:
                 slots.close()
 

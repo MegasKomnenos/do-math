@@ -6,7 +6,7 @@ from copy import deepcopy
 TIERS = ("low", "medium", "high")
 MODELS = {"high": "gpt-6-astra", "medium": "gpt-5.6-sol", "low": "gpt-5.6-terra"}
 LIMITS = {"work": {model: 3 for model in MODELS.values()},
-          "operations": {model: 1 for model in MODELS.values()}}
+          "operations": {model: 3 for model in MODELS.values()}}
 # Bootstrap judgments must be possible before a research planner has run.
 ROLE_TIERS = {"research_preparation": "high", "research_plan": "high",
               "research_work": "low", "supplemental_research": "low",

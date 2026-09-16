@@ -132,7 +132,7 @@ status의 `knowledge.K`, `knowledge.F`, `knowledge.suspended_K`는 각각 `verif
 허용 필드와 기본값의 기계 정본은 `scripts/do_math/engine.py`의 `DEFAULT_CONFIG`와 `validate_config`다. 인스턴스에 실제 적용된 값은 해당 snapshot의 `research/instance.json` 안 `config`가 소유한다. 이 문서는 그 목록을 따로 복제하지 않고 설정 가족이 어떤 동작을 바꾸는지 설명한다.
 
 - 실행 선택: 세션 모드는 `tier_models`의 상·중·하 모델 대응과 `role_tiers`의 역할별 최소 등급을 사용한다. 난이도·중요도·근거의 저작과 선택은 [모델과 실행예산](모델과-실행예산.md)을 따른다. `effort`는 공통 추론 노력이다. 구 실행횟수 모드에서는 `model`과 `role_models`를 사용한다.
-- 작업·운영 용량: `session_limits`의 `work`와 `operations`는 모델 이름별 동시 세션 상한이다. 값은 0 이상의 정수이며 `tier_models`의 모델은 두 예산에 모두 명시한다. 기본값은 상·중·하 각각 작업 3개·운영 1개다. `session_limits=null`인 구 호환 모드는 `work_calls`·`operations_calls`의 양의 정수 또는 null을 누적 실행 시도 한도로 사용한다. 세션 모드에서는 그 구 필드로 실행을 제한하지 않으며 실행 이력은 계속 보존한다.
+- 작업·운영 용량: `session_limits`의 `work`와 `operations`는 모델 이름별 동시 세션 상한이다. 값은 0 이상의 정수이며 `tier_models`의 모델은 두 예산에 모두 명시한다. 기본값은 상·중·하 각각 작업 3개·운영 3개다. `session_limits=null`인 구 호환 모드는 `work_calls`·`operations_calls`의 양의 정수 또는 null을 누적 실행 시도 한도로 사용한다. 세션 모드에서는 그 구 필드로 실행을 제한하지 않으며 실행 이력은 계속 보존한다.
 - 실행 시간과 반복: `call_timeout_seconds`는 운영 예산 AI 실행 하나의 기한이다. 작업 예산 AI 실행(연구 수행·보충 조사·작업 계약 검토·동일성 검토·목표 감사)에는 이 기한을 적용하지 않으며, 그 실행은 제출, `run_timeout_seconds`가 정한 `run` 호출의 기한, pause·close와 권한·입력 변경으로 끝난다. Lean timeout, 자동 후보 준비 회차, 출력 수리 횟수, 검토 회차와 보충 조사 한도는 각 대응 설정이 정한다.
 - 입력·산출: 모델 입력과 한 실행의 artifact 회수 바이트 한도를 정한다.
 - 형식 검사: `lean_command`는 argv 배열이며, 없으면 실행기가 지원 경로에서 Lean을 탐색한다. 허용 공리 목록은 중앙 공리 감사의 기준이다.
@@ -147,7 +147,7 @@ status의 `knowledge.K`, `knowledge.F`, `knowledge.suspended_K`는 각각 `verif
   "tier_models":{"high":"gpt-6-astra","medium":"gpt-5.6-sol","low":"gpt-5.6-terra"},
   "session_limits":{
     "work":{"gpt-6-astra":3,"gpt-5.6-sol":3,"gpt-5.6-terra":3},
-    "operations":{"gpt-6-astra":1,"gpt-5.6-sol":1,"gpt-5.6-terra":1}
+    "operations":{"gpt-6-astra":3,"gpt-5.6-sol":3,"gpt-5.6-terra":3}
   },
   "effort":"medium",
   "call_timeout_seconds":600,

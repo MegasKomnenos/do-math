@@ -26,7 +26,7 @@ python .agents/skills/do-math/scripts/do_math.py profile
 
 초기화 때 정책, 원자료와 설정을 함께 넣을 수 있다. `--source`는 여러 번 지정할 수 있다. 모델별 배정과 예산은 설정 파일의 `tier_models`, `role_tiers`, `session_limits`를 사용한다. `--effort`는 설정 파일의 추론 노력보다 우선한다. 구 실행횟수 호환 모드의 `--model`도 같은 필드의 파일 설정보다 우선한다. 생략한 필드는 코드의 기본값을 사용한다.
 
-독립 운영의 기본값은 `operator_enabled=true`, `operator_interval_seconds=7200`이다. 새 인스턴스는 상·중·하 모델마다 운영 1개와 작업 3개의 동시 세션을 사용한다. [모델과 실행예산](references/모델과-실행예산.md)의 기본 대응과 배정 기준을 확인하고, 다른 용량이나 수동 운영이 필요하면 설정 파일에 지정한다. `init`은 독립 운영이 활성일 때 연구 운전과 독립 운영 점검을 맡는 두 Windows 예약 작업을 등록하며, 그 자체로 모델이나 연구 실행을 시작하지는 않는다. 첫 정기 점검은 등록 후 설정한 주기에 도래한다. 주기 trigger는 운영 점검에만 적용한다. 연구 작업에는 고정 반복 주기를 두지 않고 운영 담당이 필요할 때 시작하며, 실행 기한으로 종료된 뒤의 재개도 다음 운영 점검에서 판단한다.
+독립 운영의 기본값은 `operator_enabled=true`, `operator_interval_seconds=7200`이다. 새 인스턴스는 상·중·하 모델마다 운영 3개와 작업 3개의 동시 세션을 사용한다. [모델과 실행예산](references/모델과-실행예산.md)의 기본 대응과 배정 기준을 확인하고, 다른 용량이나 수동 운영이 필요하면 설정 파일에 지정한다. `init`은 독립 운영이 활성일 때 연구 운전과 독립 운영 점검을 맡는 두 Windows 예약 작업을 등록하며, 그 자체로 모델이나 연구 실행을 시작하지는 않는다. 첫 정기 점검은 등록 후 설정한 주기에 도래한다. 주기 trigger는 운영 점검에만 적용한다. 연구 작업에는 고정 반복 주기를 두지 않고 운영 담당이 필요할 때 시작하며, 실행 기한으로 종료된 뒤의 재개도 다음 운영 점검에서 판단한다.
 
 scholarly는 기본 활성이다. `scholarly_server`에 `command`·`args`를 직접 지정하거나, 초기화 명령의 작업 위치에서 상위로 찾은 `.codex/config.toml`의 scholarly 항목을 사용한다. 프로젝트 설정이 없으면 Codex 사용자 설정에서 같은 항목을 찾는다. 실행에 필요한 서버 경로는 고정해 인스턴스 설정에 보존하고, 하위 실행에는 이 MCP 설정만 명시적으로 전달한다. 서버 설정을 찾지 못한 것과 외부 자료원 접근 실패는 다르다. 사용 가능한 도구는 각 실행에서 확인한다.
 
@@ -39,7 +39,7 @@ scholarly는 기본 활성이다. `scholarly_server`에 `command`·`args`를 직
   "tier_models": {"high": "gpt-6-astra", "medium": "gpt-5.6-sol", "low": "gpt-5.6-terra"},
   "session_limits": {
     "work": {"gpt-6-astra": 3, "gpt-5.6-sol": 3, "gpt-5.6-terra": 3},
-    "operations": {"gpt-6-astra": 1, "gpt-5.6-sol": 1, "gpt-5.6-terra": 1}
+    "operations": {"gpt-6-astra": 3, "gpt-5.6-sol": 3, "gpt-5.6-terra": 3}
   }
 }
 ```
