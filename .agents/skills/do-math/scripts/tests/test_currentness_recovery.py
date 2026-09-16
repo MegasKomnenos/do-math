@@ -64,7 +64,8 @@ class CurrentnessTests(PurposeHarness):
                 control(self.repo, engine.instance['id'], 'source', config={'path': str(source)})
                 kwargs['should_stop']()
                 (kwargs['workspace'] / 'partial.txt').write_text('The old input was read.')
-                return {'status': 'completed', 'output': {**common('Old-source response'), 'candidates': []}, 'usage': {}}
+                return {'status': 'completed', 'output': {**common('Old-source response'),
+                    'used_sources': ['basis.txt'], 'candidates': []}, 'usage': {}}
         engine.runner = ChangingRunner()
         engine.run(max_steps=1)
         execution = list(engine.runtime['executions'].values())[-1]

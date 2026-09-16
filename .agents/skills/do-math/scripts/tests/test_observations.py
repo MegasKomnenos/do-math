@@ -10,6 +10,15 @@ class Tests(unittest.TestCase):
  def setUp(self):self.temp=tempfile.TemporaryDirectory();self.ws=Path(self.temp.name);self.clock=Clock();self.t=ObservationTracker('E',self.ws,{'observation_idle_seconds':5,'observation_interval_seconds':3,'max_observation_reviews':2},clock=self.clock)
  def tearDown(self):self.temp.cleanup()
  def write(self,state='working',extra=''):(self.ws/'checkpoint.json').write_text(json.dumps({'current_claim':'c','evidence_paths':[],'attempts':[],'remaining_work':[],'next_step':'n','progress_state':state})+extra,encoding='utf-8')
+ def test_checkpoint_requires_available_preserved_evidence_paths(self):
+  value={'current_claim':'c','evidence_paths':['proof.txt'],'attempts':[],'remaining_work':[],'next_step':'n','progress_state':'working'}
+  (self.ws/'checkpoint.json').write_text(json.dumps(value),encoding='utf-8')
+  self.assertEqual(read_checkpoint(self.ws)['status'],'invalid')
+  (self.ws/'proof.txt').write_text('actual evidence',encoding='utf-8')
+  self.assertEqual(read_checkpoint(self.ws)['status'],'valid')
+  (self.ws/'.scratch').mkdir();(self.ws/'.scratch/proof.txt').write_text('disposable',encoding='utf-8')
+  value['evidence_paths']=['.scratch/proof.txt'];(self.ws/'checkpoint.json').write_text(json.dumps(value),encoding='utf-8')
+  self.assertEqual(read_checkpoint(self.ws)['status'],'invalid')
  def test_idle_is_due_not_math_failure_and_hash_change_only(self):
   self.clock.x=6;due=self.t.observe({'type':'tick'});self.assertEqual(due[-1]['reason'],'no_visible_activity');self.assertEqual(self.t.observe({'type':'tick'}),[])
   self.write();self.assertEqual([x['kind'] for x in self.t.observe({'type':'tick'})],['checkpoint']);self.assertEqual(self.t.observe({'type':'tick'}),[])

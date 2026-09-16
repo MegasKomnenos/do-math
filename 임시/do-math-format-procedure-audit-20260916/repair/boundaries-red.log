@@ -1,0 +1,137 @@
+test_exhausted_retry_does_not_stop_a_running_independent_worker (test_submission_boundaries.AcceptanceTests.test_exhausted_retry_does_not_stop_a_running_independent_worker) ... FAIL
+test_identity_review_ignores_unrelated_source_change_but_checks_required_source (test_submission_boundaries.AcceptanceTests.test_identity_review_ignores_unrelated_source_change_but_checks_required_source) ... 
+  test_identity_review_ignores_unrelated_source_change_but_checks_required_source (test_submission_boundaries.AcceptanceTests.test_identity_review_ignores_unrelated_source_change_but_checks_required_source) (required=False) ... FAIL
+test_legacy_failure_is_parked_before_diagnosis (test_submission_boundaries.AcceptanceTests.test_legacy_failure_is_parked_before_diagnosis) ... FAIL
+test_newly_reported_knowledge_dependencies_bind_the_read_snapshot (test_submission_boundaries.AcceptanceTests.test_newly_reported_knowledge_dependencies_bind_the_read_snapshot) ... 
+  test_newly_reported_knowledge_dependencies_bind_the_read_snapshot (test_submission_boundaries.AcceptanceTests.test_newly_reported_knowledge_dependencies_bind_the_read_snapshot) (declaration='used_sources') ... FAIL
+  test_newly_reported_knowledge_dependencies_bind_the_read_snapshot (test_submission_boundaries.AcceptanceTests.test_newly_reported_knowledge_dependencies_bind_the_read_snapshot) (declaration='dependencies') ... FAIL
+  test_newly_reported_knowledge_dependencies_bind_the_read_snapshot (test_submission_boundaries.AcceptanceTests.test_newly_reported_knowledge_dependencies_bind_the_read_snapshot) (declaration='both') ... FAIL
+test_same_oversized_contract_is_not_automatically_requeued (test_submission_boundaries.AcceptanceTests.test_same_oversized_contract_is_not_automatically_requeued) ... FAIL
+test_large_task_history_is_readable_without_inflating_the_current_contract (test_submission_boundaries.HistoricalInputTests.test_large_task_history_is_readable_without_inflating_the_current_contract) ... FAIL
+test_preserved_history_does_not_recreate_current_knowledge_dependencies (test_submission_boundaries.HistoricalInputTests.test_preserved_history_does_not_recreate_current_knowledge_dependencies) ... 
+  test_preserved_history_does_not_recreate_current_knowledge_dependencies (test_submission_boundaries.HistoricalInputTests.test_preserved_history_does_not_recreate_current_knowledge_dependencies) (key='use_history') ... FAIL
+  test_preserved_history_does_not_recreate_current_knowledge_dependencies (test_submission_boundaries.HistoricalInputTests.test_preserved_history_does_not_recreate_current_knowledge_dependencies) (key='review_history') ... FAIL
+  test_preserved_history_does_not_recreate_current_knowledge_dependencies (test_submission_boundaries.HistoricalInputTests.test_preserved_history_does_not_recreate_current_knowledge_dependencies) (key='revision_history') ... FAIL
+  test_preserved_history_does_not_recreate_current_knowledge_dependencies (test_submission_boundaries.HistoricalInputTests.test_preserved_history_does_not_recreate_current_knowledge_dependencies) (key='assessment_history') ... FAIL
+  test_preserved_history_does_not_recreate_current_knowledge_dependencies (test_submission_boundaries.HistoricalInputTests.test_preserved_history_does_not_recreate_current_knowledge_dependencies) (key='governance_history') ... FAIL
+
+======================================================================
+FAIL: test_exhausted_retry_does_not_stop_a_running_independent_worker (test_submission_boundaries.AcceptanceTests.test_exhausted_retry_does_not_stop_a_running_independent_worker)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_submission_boundaries.py", line 124, in test_exhausted_retry_does_not_stop_a_running_independent_worker
+    self.assertNotEqual(engine.runtime["status"], "paused")
+AssertionError: 'paused' == 'paused'
+
+======================================================================
+FAIL: test_identity_review_ignores_unrelated_source_change_but_checks_required_source (test_submission_boundaries.AcceptanceTests.test_identity_review_ignores_unrelated_source_change_but_checks_required_source) (required=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_submission_boundaries.py", line 95, in test_identity_review_ignores_unrelated_source_change_but_checks_required_source
+    self.assertEqual(execution["outcome"], "execution_incomplete" if required else "output_accepted")
+AssertionError: 'execution_incomplete' != 'output_accepted'
+- execution_incomplete
++ output_accepted
+
+
+======================================================================
+FAIL: test_legacy_failure_is_parked_before_diagnosis (test_submission_boundaries.AcceptanceTests.test_legacy_failure_is_parked_before_diagnosis)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_submission_boundaries.py", line 141, in test_legacy_failure_is_parked_before_diagnosis
+    self.assertNotIn(failed_id, [a.get("id") for a in engine.runtime["queue"]])
+AssertionError: 'AC-01M2MQQZGN2KHE90WJV389DPJQ' unexpectedly found in ['AC-01M2MQR4DYNMNDBYR68CM9RRQW', 'AC-01M2MQQZGN2KHE90WJV389DPJQ']
+
+======================================================================
+FAIL: test_newly_reported_knowledge_dependencies_bind_the_read_snapshot (test_submission_boundaries.AcceptanceTests.test_newly_reported_knowledge_dependencies_bind_the_read_snapshot) (declaration='used_sources')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_submission_boundaries.py", line 67, in test_newly_reported_knowledge_dependencies_bind_the_read_snapshot
+    self.assertEqual(execution["outcome"], "execution_incomplete")
+AssertionError: 'output_accepted' != 'execution_incomplete'
+- output_accepted
++ execution_incomplete
+
+
+======================================================================
+FAIL: test_newly_reported_knowledge_dependencies_bind_the_read_snapshot (test_submission_boundaries.AcceptanceTests.test_newly_reported_knowledge_dependencies_bind_the_read_snapshot) (declaration='dependencies')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_submission_boundaries.py", line 67, in test_newly_reported_knowledge_dependencies_bind_the_read_snapshot
+    self.assertEqual(execution["outcome"], "execution_incomplete")
+AssertionError: 'output_accepted' != 'execution_incomplete'
+- output_accepted
++ execution_incomplete
+
+
+======================================================================
+FAIL: test_newly_reported_knowledge_dependencies_bind_the_read_snapshot (test_submission_boundaries.AcceptanceTests.test_newly_reported_knowledge_dependencies_bind_the_read_snapshot) (declaration='both')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_submission_boundaries.py", line 67, in test_newly_reported_knowledge_dependencies_bind_the_read_snapshot
+    self.assertEqual(execution["outcome"], "execution_incomplete")
+AssertionError: 'output_accepted' != 'execution_incomplete'
+- output_accepted
++ execution_incomplete
+
+
+======================================================================
+FAIL: test_same_oversized_contract_is_not_automatically_requeued (test_submission_boundaries.AcceptanceTests.test_same_oversized_contract_is_not_automatically_requeued)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_submission_boundaries.py", line 156, in test_same_oversized_contract_is_not_automatically_requeued
+    self.assertEqual(len(failures), 1)
+AssertionError: 3 != 1
+
+======================================================================
+FAIL: test_large_task_history_is_readable_without_inflating_the_current_contract (test_submission_boundaries.HistoricalInputTests.test_large_task_history_is_readable_without_inflating_the_current_contract)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_submission_boundaries.py", line 180, in test_large_task_history_is_readable_without_inflating_the_current_contract
+    self.assertIsNone(result["overflow"])
+AssertionError: {'reason': 'mandatory_context_exceeds_limit', 'actual_bytes': 1200460, 'mandatory_bytes': 1200460, 'max_bytes': 20000} is not None
+
+======================================================================
+FAIL: test_preserved_history_does_not_recreate_current_knowledge_dependencies (test_submission_boundaries.HistoricalInputTests.test_preserved_history_does_not_recreate_current_knowledge_dependencies) (key='use_history')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_submission_boundaries.py", line 168, in test_preserved_history_does_not_recreate_current_knowledge_dependencies
+    self.assertFalse(changed["knowledge"]["KN-B"].get("use_suspended", False))
+AssertionError: True is not false
+
+======================================================================
+FAIL: test_preserved_history_does_not_recreate_current_knowledge_dependencies (test_submission_boundaries.HistoricalInputTests.test_preserved_history_does_not_recreate_current_knowledge_dependencies) (key='review_history')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_submission_boundaries.py", line 168, in test_preserved_history_does_not_recreate_current_knowledge_dependencies
+    self.assertFalse(changed["knowledge"]["KN-B"].get("use_suspended", False))
+AssertionError: True is not false
+
+======================================================================
+FAIL: test_preserved_history_does_not_recreate_current_knowledge_dependencies (test_submission_boundaries.HistoricalInputTests.test_preserved_history_does_not_recreate_current_knowledge_dependencies) (key='revision_history')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_submission_boundaries.py", line 168, in test_preserved_history_does_not_recreate_current_knowledge_dependencies
+    self.assertFalse(changed["knowledge"]["KN-B"].get("use_suspended", False))
+AssertionError: True is not false
+
+======================================================================
+FAIL: test_preserved_history_does_not_recreate_current_knowledge_dependencies (test_submission_boundaries.HistoricalInputTests.test_preserved_history_does_not_recreate_current_knowledge_dependencies) (key='assessment_history')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_submission_boundaries.py", line 168, in test_preserved_history_does_not_recreate_current_knowledge_dependencies
+    self.assertFalse(changed["knowledge"]["KN-B"].get("use_suspended", False))
+AssertionError: True is not false
+
+======================================================================
+FAIL: test_preserved_history_does_not_recreate_current_knowledge_dependencies (test_submission_boundaries.HistoricalInputTests.test_preserved_history_does_not_recreate_current_knowledge_dependencies) (key='governance_history')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_submission_boundaries.py", line 168, in test_preserved_history_does_not_recreate_current_knowledge_dependencies
+    self.assertFalse(changed["knowledge"]["KN-B"].get("use_suspended", False))
+AssertionError: True is not false
+
+----------------------------------------------------------------------
+Ran 7 tests in 123.736s
+
+FAILED (failures=13)

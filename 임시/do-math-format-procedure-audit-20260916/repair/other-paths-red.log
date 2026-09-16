@@ -1,0 +1,45 @@
+test_independent_operator_receives_a_working_submission_check (test_submission_tools.OperatorProducerTests.test_independent_operator_receives_a_working_submission_check) ... FAIL
+test_legacy_live_review_validates_sidecar_before_applying_continue (test_submission_tools.ProducerToolTests.test_legacy_live_review_validates_sidecar_before_applying_continue) ... FAIL
+test_producer_checks_live_checkpoint_and_observation_files (test_submission_tools.ProducerToolTests.test_producer_checks_live_checkpoint_and_observation_files) ... ok
+test_producer_checks_main_shape_and_preserves_precise_failure_coordinates (test_submission_tools.ProducerToolTests.test_producer_checks_main_shape_and_preserves_precise_failure_coordinates) ... ok
+test_producer_checks_planning_population_and_exact_completion_criteria (test_submission_tools.ProducerToolTests.test_producer_checks_planning_population_and_exact_completion_criteria) ... ok
+test_producer_checks_sidecar_kinds_references_and_self_repair (test_submission_tools.ProducerToolTests.test_producer_checks_sidecar_kinds_references_and_self_repair) ... ok
+test_producer_checks_used_sources_and_checkpoint_evidence_paths (test_submission_tools.ProducerToolTests.test_producer_checks_used_sources_and_checkpoint_evidence_paths) ... FAIL
+test_producer_receives_artifact_and_checkpoint_limits_and_excludes_disposable_scratch (test_submission_tools.ProducerToolTests.test_producer_receives_artifact_and_checkpoint_limits_and_excludes_disposable_scratch) ... ok
+test_receiver_rejects_unknown_insight_kind_and_missing_evidence (test_submission_tools.ProducerToolTests.test_receiver_rejects_unknown_insight_kind_and_missing_evidence) ... ok
+test_supplied_checker_is_standalone_and_does_not_mutate_fixed_inputs (test_submission_tools.ProducerToolTests.test_supplied_checker_is_standalone_and_does_not_mutate_fixed_inputs) ... ok
+
+======================================================================
+FAIL: test_independent_operator_receives_a_working_submission_check (test_submission_tools.OperatorProducerTests.test_independent_operator_receives_a_working_submission_check)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_submission_tools.py", line 187, in test_independent_operator_receives_a_working_submission_check
+    self.assertEqual(result["outcome"], "completed", result)
+AssertionError: 'operator_failed' != 'completed'
+- operator_failed
++ completed
+ : {'outcome': 'operator_failed', 'probe': True, 'status_before': {'status': 'ready', 'snapshot': 'fixed', 'user_pause': None}, 'run_directory': 'C:\\Users\\wogud\\AppData\\Local\\Temp\\tmp9a4zfc_1\\operator\\runs\\20260916T093431Z-bed08675', 'ended_at': '2026-09-16T09:34:31.519551+00:00', 'error': 'AssertionError: False is not true : independent operator has no supplied producer check', 'result_path': 'C:\\Users\\wogud\\AppData\\Local\\Temp\\tmp9a4zfc_1\\operator\\runs\\20260916T093431Z-bed08675\\result.json', 'evidence_dir': None, 'usage': {}}
+
+======================================================================
+FAIL: test_legacy_live_review_validates_sidecar_before_applying_continue (test_submission_tools.ProducerToolTests.test_legacy_live_review_validates_sidecar_before_applying_continue)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_submission_tools.py", line 91, in test_legacy_live_review_validates_sidecar_before_applying_continue
+    self.assertEqual(reviewed["outcome"], "execution_incomplete")
+AssertionError: 'output_accepted' != 'execution_incomplete'
+- output_accepted
++ execution_incomplete
+
+
+======================================================================
+FAIL: test_producer_checks_used_sources_and_checkpoint_evidence_paths (test_submission_tools.ProducerToolTests.test_producer_checks_used_sources_and_checkpoint_evidence_paths)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_submission_tools.py", line 71, in test_producer_checks_used_sources_and_checkpoint_evidence_paths
+    self.assertFalse(self.check_output(workspace, context, output)["passed"])
+AssertionError: True is not false
+
+----------------------------------------------------------------------
+Ran 10 tests in 26.172s
+
+FAILED (failures=3)

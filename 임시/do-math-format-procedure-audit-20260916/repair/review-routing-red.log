@@ -1,0 +1,71 @@
+test_independent_operator_receives_a_working_submission_check (test_submission_tools.OperatorProducerTests.test_independent_operator_receives_a_working_submission_check) ... ok
+test_empty_known_extension_family_remains_a_semantic_noop (test_submission_tools.ProducerToolTests.test_empty_known_extension_family_remains_a_semantic_noop) ... ok
+test_legacy_live_review_validates_sidecar_before_applying_continue (test_submission_tools.ProducerToolTests.test_legacy_live_review_validates_sidecar_before_applying_continue) ... ok
+test_local_call_timeout_parks_only_the_timed_out_request (test_submission_tools.ProducerToolTests.test_local_call_timeout_parks_only_the_timed_out_request) ... ok
+test_parsed_invalid_runner_output_uses_the_bounded_output_repair_path (test_submission_tools.ProducerToolTests.test_parsed_invalid_runner_output_uses_the_bounded_output_repair_path) ... ok
+test_producer_checks_checkpoint_evidence_paths (test_submission_tools.ProducerToolTests.test_producer_checks_checkpoint_evidence_paths) ... ok
+test_producer_checks_live_checkpoint_and_observation_files (test_submission_tools.ProducerToolTests.test_producer_checks_live_checkpoint_and_observation_files) ... ok
+test_producer_checks_main_shape_and_preserves_precise_failure_coordinates (test_submission_tools.ProducerToolTests.test_producer_checks_main_shape_and_preserves_precise_failure_coordinates) ... ok
+test_producer_checks_planning_population_and_exact_completion_criteria (test_submission_tools.ProducerToolTests.test_producer_checks_planning_population_and_exact_completion_criteria) ... ok
+test_producer_checks_sidecar_kinds_references_and_self_repair (test_submission_tools.ProducerToolTests.test_producer_checks_sidecar_kinds_references_and_self_repair) ... ok
+test_producer_checks_used_sources (test_submission_tools.ProducerToolTests.test_producer_checks_used_sources) ... ok
+test_producer_receives_artifact_and_checkpoint_limits_and_excludes_disposable_scratch (test_submission_tools.ProducerToolTests.test_producer_receives_artifact_and_checkpoint_limits_and_excludes_disposable_scratch) ... ok
+test_receiver_rejects_unknown_insight_kind_and_missing_evidence (test_submission_tools.ProducerToolTests.test_receiver_rejects_unknown_insight_kind_and_missing_evidence) ... ok
+test_supplied_checker_is_standalone_and_does_not_mutate_fixed_inputs (test_submission_tools.ProducerToolTests.test_supplied_checker_is_standalone_and_does_not_mutate_fixed_inputs) ... ok
+test_exhausted_investigation_returns_incomplete_to_its_waiting_review_slot (test_submission_tools.ReviewFailureTests.test_exhausted_investigation_returns_incomplete_to_its_waiting_review_slot) ... ok
+test_explicit_diagnosis_can_open_one_new_attempt_after_an_exhausted_retry (test_submission_tools.ReviewFailureTests.test_explicit_diagnosis_can_open_one_new_attempt_after_an_exhausted_retry) ... FAIL
+test_failed_contract_review_is_not_regenerated_while_waiting_for_diagnosis (test_submission_tools.ReviewFailureTests.test_failed_contract_review_is_not_regenerated_while_waiting_for_diagnosis) ... FAIL
+test_failed_identity_slot_is_not_regenerated_after_its_peer_finishes (test_submission_tools.ReviewFailureTests.test_failed_identity_slot_is_not_regenerated_after_its_peer_finishes) ... FAIL
+test_fixed_question_resolver_accepts_the_supplied_source_aliases (test_submission_tools.ReviewFailureTests.test_fixed_question_resolver_accepts_the_supplied_source_aliases) ... ok
+test_large_own_review_history_does_not_request_mathematical_reconstruction (test_submission_tools.ReviewFailureTests.test_large_own_review_history_does_not_request_mathematical_reconstruction) ... ok
+test_late_contract_review_cannot_reopen_a_user_closed_task (test_submission_tools.ReviewFailureTests.test_late_contract_review_cannot_reopen_a_user_closed_task) ... FAIL
+test_late_identity_result_is_preserved_without_retrying_a_superseded_slot (test_submission_tools.ReviewFailureTests.test_late_identity_result_is_preserved_without_retrying_a_superseded_slot) ... FAIL
+test_private_insight_rechecks_its_own_basis_when_published_after_peer_review (test_submission_tools.ReviewFailureTests.test_private_insight_rechecks_its_own_basis_when_published_after_peer_review) ... ok
+
+======================================================================
+FAIL: test_explicit_diagnosis_can_open_one_new_attempt_after_an_exhausted_retry (test_submission_tools.ReviewFailureTests.test_explicit_diagnosis_can_open_one_new_attempt_after_an_exhausted_retry)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_submission_tools.py", line 283, in test_explicit_diagnosis_can_open_one_new_attempt_after_an_exhausted_retry
+    self.assertEqual(len(retries), 1)
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_failed_contract_review_is_not_regenerated_while_waiting_for_diagnosis (test_submission_tools.ReviewFailureTests.test_failed_contract_review_is_not_regenerated_while_waiting_for_diagnosis)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_submission_tools.py", line 240, in test_failed_contract_review_is_not_regenerated_while_waiting_for_diagnosis
+    self.assertFalse(any(a["role"] == "task_contract_review" and a.get("target") == task_id for a in engine.runtime["queue"]))
+AssertionError: True is not false
+
+======================================================================
+FAIL: test_failed_identity_slot_is_not_regenerated_after_its_peer_finishes (test_submission_tools.ReviewFailureTests.test_failed_identity_slot_is_not_regenerated_after_its_peer_finishes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_submission_tools.py", line 258, in test_failed_identity_slot_is_not_regenerated_after_its_peer_finishes
+    self.assertFalse(any(a["role"] == "identity_review" and a.get("slot") == "initial-0" for a in engine.runtime["queue"]))
+AssertionError: True is not false
+
+======================================================================
+FAIL: test_late_contract_review_cannot_reopen_a_user_closed_task (test_submission_tools.ReviewFailureTests.test_late_contract_review_cannot_reopen_a_user_closed_task)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_submission_tools.py", line 302, in test_late_contract_review_cannot_reopen_a_user_closed_task
+    self.assertEqual(task["status"], "closed")
+AssertionError: 'ready' != 'closed'
+- ready
++ closed
+
+
+======================================================================
+FAIL: test_late_identity_result_is_preserved_without_retrying_a_superseded_slot (test_submission_tools.ReviewFailureTests.test_late_identity_result_is_preserved_without_retrying_a_superseded_slot)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_submission_tools.py", line 322, in test_late_identity_result_is_preserved_without_retrying_a_superseded_slot
+    self.assertFalse(any(a.get("review_cycle_id") == cid for a in engine.runtime["queue"]))
+AssertionError: True is not false
+
+----------------------------------------------------------------------
+Ran 23 tests in 52.094s
+
+FAILED (failures=5)

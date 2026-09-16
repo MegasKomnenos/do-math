@@ -3,7 +3,7 @@ from __future__ import annotations
 
 
 def aliases(source: dict) -> set[str]:
-    return {value for value in (source.get("id"), source.get("path"), source.get("name"),
+    return {value for value in (source.get("id"), source.get("path"), source.get("local_path"), source.get("name"),
             "source:" + source["name"] if source.get("name") else None) if value}
 
 

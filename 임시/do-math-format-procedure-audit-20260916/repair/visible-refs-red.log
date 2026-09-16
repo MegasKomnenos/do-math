@@ -1,0 +1,24 @@
+test_reference_support_includes_visible_execution_history_and_supplied_catalogs (test_submission_tools.ProducerToolTests.test_reference_support_includes_visible_execution_history_and_supplied_catalogs) ... 
+  test_reference_support_includes_visible_execution_history_and_supplied_catalogs (test_submission_tools.ProducerToolTests.test_reference_support_includes_visible_execution_history_and_supplied_catalogs) (reference='EX-01M2MX3RNXWZF4SQQ400M42DNX') ... FAIL
+  test_reference_support_includes_visible_execution_history_and_supplied_catalogs (test_submission_tools.ProducerToolTests.test_reference_support_includes_visible_execution_history_and_supplied_catalogs) (reference='input/catalog/kind_definitions.json') ... FAIL
+
+======================================================================
+FAIL: test_reference_support_includes_visible_execution_history_and_supplied_catalogs (test_submission_tools.ProducerToolTests.test_reference_support_includes_visible_execution_history_and_supplied_catalogs) (reference='EX-01M2MX3RNXWZF4SQQ400M42DNX')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_submission_tools.py", line 115, in test_reference_support_includes_visible_execution_history_and_supplied_catalogs
+    self.assertTrue(self.check_output(workspace, context, output)["passed"])
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_reference_support_includes_visible_execution_history_and_supplied_catalogs (test_submission_tools.ProducerToolTests.test_reference_support_includes_visible_execution_history_and_supplied_catalogs) (reference='input/catalog/kind_definitions.json')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_submission_tools.py", line 115, in test_reference_support_includes_visible_execution_history_and_supplied_catalogs
+    self.assertTrue(self.check_output(workspace, context, output)["passed"])
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 1 test in 3.011s
+
+FAILED (failures=2)

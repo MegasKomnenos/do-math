@@ -1,0 +1,33 @@
+test_fixed_question_resolver_accepts_the_supplied_source_aliases (test_submission_tools.ReviewFailureTests.test_fixed_question_resolver_accepts_the_supplied_source_aliases) ... 
+  test_fixed_question_resolver_accepts_the_supplied_source_aliases (test_submission_tools.ReviewFailureTests.test_fixed_question_resolver_accepts_the_supplied_source_aliases) (reference='SO-01M2MV83MZ2FQJ2SBSNN19T6D6') ... FAIL
+  test_fixed_question_resolver_accepts_the_supplied_source_aliases (test_submission_tools.ReviewFailureTests.test_fixed_question_resolver_accepts_the_supplied_source_aliases) (reference='source:paper.txt') ... FAIL
+  test_fixed_question_resolver_accepts_the_supplied_source_aliases (test_submission_tools.ReviewFailureTests.test_fixed_question_resolver_accepts_the_supplied_source_aliases) (reference='input/sources/0000-paper.txt') ... FAIL
+
+======================================================================
+FAIL: test_fixed_question_resolver_accepts_the_supplied_source_aliases (test_submission_tools.ReviewFailureTests.test_fixed_question_resolver_accepts_the_supplied_source_aliases) (reference='SO-01M2MV83MZ2FQJ2SBSNN19T6D6')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_submission_tools.py", line 249, in test_fixed_question_resolver_accepts_the_supplied_source_aliases
+    self.assertIsNone(error, "a supplied source alias was refused: " + str(error))
+AssertionError: 'research source is not in the supplied readable source set: SO-01M2MV83MZ2FQJ2SBSNN19T6D6' is not None : a supplied source alias was refused: research source is not in the supplied readable source set: SO-01M2MV83MZ2FQJ2SBSNN19T6D6
+
+======================================================================
+FAIL: test_fixed_question_resolver_accepts_the_supplied_source_aliases (test_submission_tools.ReviewFailureTests.test_fixed_question_resolver_accepts_the_supplied_source_aliases) (reference='source:paper.txt')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_submission_tools.py", line 249, in test_fixed_question_resolver_accepts_the_supplied_source_aliases
+    self.assertIsNone(error, "a supplied source alias was refused: " + str(error))
+AssertionError: 'research source is not in the supplied readable source set: source:paper.txt' is not None : a supplied source alias was refused: research source is not in the supplied readable source set: source:paper.txt
+
+======================================================================
+FAIL: test_fixed_question_resolver_accepts_the_supplied_source_aliases (test_submission_tools.ReviewFailureTests.test_fixed_question_resolver_accepts_the_supplied_source_aliases) (reference='input/sources/0000-paper.txt')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_submission_tools.py", line 249, in test_fixed_question_resolver_accepts_the_supplied_source_aliases
+    self.assertIsNone(error, "a supplied source alias was refused: " + str(error))
+AssertionError: 'research source is not in the supplied readable source set: input/sources/0000-paper.txt' is not None : a supplied source alias was refused: research source is not in the supplied readable source set: input/sources/0000-paper.txt
+
+----------------------------------------------------------------------
+Ran 1 test in 2.117s
+
+FAILED (failures=3)

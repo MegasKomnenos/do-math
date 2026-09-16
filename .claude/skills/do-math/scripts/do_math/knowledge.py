@@ -98,11 +98,10 @@ _REFERENCE_KEYS = frozenset({
     "inputs", "reuse",
 })
 # Preserved earlier versions are history, not current dependencies of the record.
-_HISTORY_KEYS = frozenset({"history", "use_history", "review_history", "revision_history", "assessment_history", "governance_history"})
+_HISTORY_KEYS = frozenset({"history", "use_history", "review_history", "revision_history",
+                           "assessment_history", "governance_history", "previous_initial_reviews"})
 _KNOWLEDGE_ID = re.compile(r"^KN-[A-Z0-9][A-Z0-9-]*$")
 _ID_KEYS = frozenset({"id", "ref", "record_id", "knowledge_id"})
-# Earlier revisions and superseded review rounds are preserved history, not current dependencies.
-_HISTORY_KEYS = frozenset({"history", "previous_initial_reviews"})
 
 
 def _field_refs(value: Any, *, strict: bool, known_ids: set[str]) -> set[str]:
@@ -139,8 +138,6 @@ def _explicit_refs(value: Any, known_ids: set[str]) -> set[str]:
                 refs.update(_field_refs(item, strict=False, known_ids=known_ids))
             elif key == "basis" and isinstance(item, list):
                 refs.update(_field_refs(item, strict=False, known_ids=known_ids))
-            elif key in _HISTORY_KEYS:
-                continue
             else:
                 refs.update(_explicit_refs(item, known_ids))
     elif isinstance(value, list):
@@ -213,7 +210,7 @@ def _propagate(instance: dict, runtime: dict, roots: set[str], reason: str) -> N
             if record_id not in affected and causes:
                 affected.add(record_id)
                 changed = True
-                if record.get("status") == "verified":
+                if record.get("status") != "withdrawn":
                     _suspend(record, {"kind": "dependency", "root_ids": sorted(causes),
                                       "reason": reason})
     tasks_changed: list[str] = []
@@ -242,9 +239,8 @@ def _propagate(instance: dict, runtime: dict, roots: set[str], reason: str) -> N
         runtime["queue"].append(action)
 
 
-def revise_knowledge(instance: dict, runtime: dict, knowledge_id: str, changes: dict,
-                     *, reason: str, actor_ref: str) -> tuple[dict, dict]:
-    _require_text(reason, "reason"); _require_text(actor_ref, "actor_ref")
+def validate_changes(changes: dict) -> None:
+    """Structural revision rules shared by author preview and application."""
     if not isinstance(changes, dict) or not changes:
         raise ValueError("changes must be a nonempty object")
     forbidden = {"id", "revision", "history", "status", "formal", "reviews", "verified_at", "use_suspended",
@@ -252,6 +248,12 @@ def revise_knowledge(instance: dict, runtime: dict, knowledge_id: str, changes: 
                  "producer_execution", "producer_execution_ids", "relation_endpoint_basis", "source_basis"}
     if forbidden & set(changes):
         raise ValueError("changes contain engine-owned fields")
+
+
+def revise_knowledge(instance: dict, runtime: dict, knowledge_id: str, changes: dict,
+                     *, reason: str, actor_ref: str) -> tuple[dict, dict]:
+    _require_text(reason, "reason"); _require_text(actor_ref, "actor_ref")
+    validate_changes(changes)
     new_instance, new_runtime = deepcopy(instance), deepcopy(runtime)
     record = new_instance.get("knowledge", {}).get(knowledge_id)
     if record is None: raise ValueError(f"unknown knowledge ID: {knowledge_id}")

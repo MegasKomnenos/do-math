@@ -1,0 +1,20 @@
+test_blocked_periodic_and_invalid_checkpoint (test_observations.Tests.test_blocked_periodic_and_invalid_checkpoint) ... ok
+test_checkpoint_requires_available_preserved_evidence_paths (test_observations.Tests.test_checkpoint_requires_available_preserved_evidence_paths) ... FAIL
+test_idle_is_due_not_math_failure_and_hash_change_only (test_observations.Tests.test_idle_is_due_not_math_failure_and_hash_change_only) ... ok
+
+======================================================================
+FAIL: test_checkpoint_requires_available_preserved_evidence_paths (test_observations.Tests.test_checkpoint_requires_available_preserved_evidence_paths)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_observations.py", line 16, in test_checkpoint_requires_available_preserved_evidence_paths
+    self.assertEqual(read_checkpoint(self.ws)['status'],'invalid')
+AssertionError: 'valid' != 'invalid'
+- valid
++ invalid
+? ++
+
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.443s
+
+FAILED (failures=1)

@@ -1,0 +1,1 @@
+2026-09-16T11:26:42.336219Z ERROR codex_core::tools::router: error=apply_patch verification failed: invalid patch: multiple operations target C:\math\임시\do-math-format-procedure-audit-20260916\repair\real-producer-smoke\work\runs\EX-01M2MZENKKM7KQYAE56T79T0JT\workspace\.scratch\submission.json

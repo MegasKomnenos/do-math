@@ -1,0 +1,14 @@
+test_invalid_output_keeps_parsed_value_and_actionable_schema_error (test_model_runner.Tests.test_invalid_output_keeps_parsed_value_and_actionable_schema_error) ... FAIL
+
+======================================================================
+FAIL: test_invalid_output_keeps_parsed_value_and_actionable_schema_error (test_model_runner.Tests.test_invalid_output_keeps_parsed_value_and_actionable_schema_error)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_model_runner.py", line 37, in test_invalid_output_keeps_parsed_value_and_actionable_schema_error
+    self.assertEqual(x.get('error_kind'),'output_validation')
+AssertionError: None != 'output_validation'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.021s
+
+FAILED (failures=1)

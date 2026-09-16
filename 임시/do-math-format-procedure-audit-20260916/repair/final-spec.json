@@ -1,0 +1,46 @@
+{
+  "scope": "installed_skill_structure",
+  "status": "verified",
+  "checks": [
+    {
+      "check": "installed_documents",
+      "status": "verified",
+      "roles": 10,
+      "documents": {
+        "SKILL.md": "fc155f0bf8a9891040b1265fba0a8508366f2c12cca98b098a8d5e84a9256092",
+        "GLOSSARY.md": "9dfd38434d07fdce4bdf6178f85ec6d52cc2bfecf54649e873a248c27b98d449",
+        "references/공통-실행.md": "112a84f8f087774707cfa353832507be145f5dea736c8029f1730051e3b008ae",
+        "references/모델과-실행예산.md": "a0872cdedd80fc9b5cce05847db8c4ceec8b54ebad074cfa5147246e0ecf29b0",
+        "references/지식-저작과-재사용.md": "0ae8bc5ec4d3da122e845baa8bf20299657ac0ab970cb28675e9002309006900",
+        "references/학술자료-활용.md": "503dfa0e0963f679a57903996b3d2c9b55e87d2558da159f3d83759c4c8beb44",
+        "계약/후보-준비.md": "e5a6180b36ad0d98476f96b3d3132c364e8cb5781a78fa9978fb1a5637fb2cee",
+        "계약/연구-계획.md": "f8f83038d0dbf3e9172c489a013f1b0e6ca4f18f7ad66e54abf43f721d8c4725",
+        "계약/연구-수행.md": "c236a23d74435451b2041d4cad9505b5c145314d1dcce0638b5f2efc7a9b4a2f",
+        "계약/작업-계약-검토.md": "c61abd1ca2592112fd24309afe13b5a22357a7b0e2f53a8b242527626ea20fa5",
+        "계약/동일성-검토.md": "acbb20f635c1f1a008a599aeefa6c5a1df747ac067bc6234398f31af44bf54cc",
+        "계약/목표-감사.md": "d1752dbc7bb76670ff9c93fe8b1e0f9be1292f3a4acf57a8292e559a0a321397",
+        "계약/보충-조사.md": "ba82daca685826ae9aee9cc0268e2ff336c8053ddccf9b1169674c1b80112e3b",
+        "계약/운영-점검.md": "c5765c32927e1399a2fd9c21d3964dbae60c62321bb2e7eab46bccd47a650809",
+        "계약/의도-해석.md": "80f91946a43bd62aad0ebc952094e558856b946dc3c5bde6cb88330a4765f5b4",
+        "계약/유지보수.md": "6f6a13499073d663bf3db1448b2f049e3bae83e3a980518a1d06dff994d384b9",
+        "README.md": "7f5e6b4edc02672627ef7c4d63f77fc8159e2044452015addbf34ea50bd1c022",
+        "references/CLI-실행-계약.md": "9f0016c6588c3fc6078ee829253646c3f1a2d414403aaa0bcc54fb5b6e528c5e",
+        "계약/독립-운영.md": "613282b57183b571533a00b8a581cfb5199573c15861dffd37b5286238b9482f",
+        "scripts/operator_schedule.ps1": "9f38f9fa138dcd3e20730b3db622c16c6ac480fb783eab19c66f26b2e02dbe0a",
+        "requirements.txt": "756cc9e506ae4ee1a6f6c0507088b5cfc0dc8ba350fb2d2d46f1ffa72033adb6"
+      }
+    },
+    {
+      "check": "role_output_schemas",
+      "status": "verified",
+      "roles": 10
+    }
+  ],
+  "not_verified": [
+    "document_semantics",
+    "runtime_execution",
+    "research_roles",
+    "Lean",
+    "research_efficacy"
+  ]
+}

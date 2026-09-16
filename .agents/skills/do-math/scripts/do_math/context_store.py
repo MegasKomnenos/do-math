@@ -13,8 +13,11 @@ from .repository import canonical_json
 
 _REPARSE_POINT = 0x400
 _CATALOG_KEYS = (
-    "recent_history", "tasks", "knowledge_catalog", "eligible_knowledge",
+    "recent_history", "action", "task", "tasks", "previous_execution", "knowledge_catalog", "eligible_knowledge",
     "relations", "sources", "user_inputs", "open_questions", "goal_judgments", "preparation_history", "blocked_actions",
+    "resume_checkpoint", "recovery_materials", "previous_output_files", "execution_to_review", "observation",
+    "kind_definitions", "task_readiness", "available_input_refs", "queued_work", "external_operations",
+    "external_rejections", "academic_requirements", "academic_validation", "events", "grants", "config",
 )
 
 
@@ -103,7 +106,7 @@ def materialize_inputs(workspace: Path, documents: dict[str, bytes]) -> dict:
 
 
 def _excluded(relative: PurePosixPath) -> bool:
-    return bool(relative.parts and (relative.parts[0] in {"input", ".git"} or "__pycache__" in relative.parts))
+    return bool(relative.parts and (relative.parts[0] in {"input", ".git", ".scratch"} or "__pycache__" in relative.parts))
 
 
 def collect_outputs(workspace: Path, *, required_paths: list[str] = [],
@@ -236,7 +239,39 @@ def fit_context(context: dict, *, max_bytes: int, workspace: Path,
     catalog = write_source_catalog(context, workspace)
     fitted = deepcopy(context)
     reductions: list[dict] = []
-    mandatory_context = {key: deepcopy(context[key]) for key in mandatory_keys}
+    if _encoded_size(fitted) > max_bytes and isinstance(context.get("action"), dict):
+        action = context["action"]
+        keys = {"id", "role", "target", "stage", "slot", "round", "review_cycle_id", "basis", "required",
+                "research_request_id", "requesting_slot", "owner_review_cycle_id", "contract_basis", "live",
+                "repair_attempt", "recovery_attempt", "model_selection", "event_refs"}
+        projection = {key: deepcopy(value) for key, value in action.items() if key in keys}
+        ref = catalog["entries"]["action"]
+        projection["source_ref"] = ref
+        if _encoded_size(projection) < _encoded_size(action):
+            fitted["action"] = projection
+            reductions.append({"key": "action", "kind": "fixed_request_reference", "source_ref": ref})
+    if _encoded_size(fitted) > max_bytes and isinstance(context.get("task"), dict):
+        from .planning import CONTRACT_FIELDS
+        task = context["task"]
+        fields = {*CONTRACT_FIELDS, "status", "producer_execution", "remaining_work",
+                  "revision_requested", "scope_disposition", "pending_withdrawal"}
+        projection = {key: deepcopy(value) for key, value in task.items() if key in fields}
+        ref = catalog["entries"]["task"]
+        projection.update(source_ref=ref, result_count=len(task.get("results", [])),
+                          review_count=len(task.get("reviews", [])))
+        if _encoded_size(projection) < _encoded_size(task):
+            fitted["task"] = projection
+            reductions.append({"key": "task", "kind": "current_contract", "source_ref": ref})
+    for key in ("execution_to_review", "observation"):
+        if key in mandatory_keys and isinstance(fitted.get(key), dict) and _encoded_size(fitted) > max_bytes:
+            original = fitted[key]
+            projection = {name: deepcopy(value) for name, value in original.items()
+                          if name in {"id", "execution_id", "role", "status", "outcome", "reason", "observed_at"}}
+            projection["source_ref"] = catalog["entries"][key]
+            if _encoded_size(projection) < _encoded_size(original):
+                fitted[key] = projection
+                reductions.append({"key": key, "kind": "fixed_evidence_reference", "source_ref": catalog["entries"][key]})
+    mandatory_context = {key: deepcopy(fitted[key]) for key in mandatory_keys}
     mandatory_bytes = _encoded_size(mandatory_context)
     if mandatory_bytes > max_bytes:
         actual = _encoded_size(fitted)

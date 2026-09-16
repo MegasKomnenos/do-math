@@ -1,0 +1,28 @@
+test_declared_role_documents_are_complete (test_contracts.ContractTests.test_declared_role_documents_are_complete) ... ok
+test_every_role_has_closed_schema (test_contracts.ContractTests.test_every_role_has_closed_schema) ... ok
+test_invalid_decisions_fail (test_contracts.ContractTests.test_invalid_decisions_fail) ... ok
+test_plan_assessment_fields_are_required (test_contracts.ContractTests.test_plan_assessment_fields_are_required) ... ok
+test_prompt_contains_actual_documents_context_and_schema (test_contracts.ContractTests.test_prompt_contains_actual_documents_context_and_schema) ... ok
+test_role_document_missing_fails (test_contracts.ContractTests.test_role_document_missing_fails) ... ok
+test_copied_skill_checks_itself_without_repository_documents (test_standalone.StandaloneTests.test_copied_skill_checks_itself_without_repository_documents) ... ok
+test_native_probe_help_does_not_require_repository_ancestors (test_standalone.StandaloneTests.test_native_probe_help_does_not_require_repository_ancestors) ... ok
+test_shallow_installation_without_lean_reports_unavailable (test_standalone.StandaloneTests.test_shallow_installation_without_lean_reports_unavailable) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 1.451s
+
+OK
+usage: probe [-h] [--repository REPOSITORY] [--codex CODEX]
+             [--output-dir OUTPUT_DIR] [--duration-seconds DURATION_SECONDS]
+
+Reproduce elevated Windows sandbox read-root isolation without a model call.
+
+options:
+  -h, --help            show this help message and exit
+  --repository REPOSITORY
+                        Base directory for probe evidence
+  --codex CODEX
+  --output-dir OUTPUT_DIR
+                        New evidence directory; must not exist
+  --duration-seconds DURATION_SECONDS
+                        Concurrent A observation duration (5-30)

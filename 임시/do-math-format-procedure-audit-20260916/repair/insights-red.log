@@ -1,0 +1,30 @@
+test_receiver_rejects_unknown_insight_kind_and_missing_evidence (test_submission_tools.ProducerToolTests.test_receiver_rejects_unknown_insight_kind_and_missing_evidence) ... 
+  test_receiver_rejects_unknown_insight_kind_and_missing_evidence (test_submission_tools.ProducerToolTests.test_receiver_rejects_unknown_insight_kind_and_missing_evidence) (changes={'kind': 'unregistered_kind'}) ... FAIL
+  test_receiver_rejects_unknown_insight_kind_and_missing_evidence (test_submission_tools.ProducerToolTests.test_receiver_rejects_unknown_insight_kind_and_missing_evidence) (changes={'evidence_ids': ['KN-missing']}) ... FAIL
+
+======================================================================
+FAIL: test_receiver_rejects_unknown_insight_kind_and_missing_evidence (test_submission_tools.ProducerToolTests.test_receiver_rejects_unknown_insight_kind_and_missing_evidence) (changes={'kind': 'unregistered_kind'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_submission_tools.py", line 31, in test_receiver_rejects_unknown_insight_kind_and_missing_evidence
+    self.assertEqual(execution["outcome"], "execution_incomplete")
+AssertionError: 'output_accepted' != 'execution_incomplete'
+- output_accepted
++ execution_incomplete
+
+
+======================================================================
+FAIL: test_receiver_rejects_unknown_insight_kind_and_missing_evidence (test_submission_tools.ProducerToolTests.test_receiver_rejects_unknown_insight_kind_and_missing_evidence) (changes={'evidence_ids': ['KN-missing']})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_submission_tools.py", line 31, in test_receiver_rejects_unknown_insight_kind_and_missing_evidence
+    self.assertEqual(execution["outcome"], "execution_incomplete")
+AssertionError: 'output_accepted' != 'execution_incomplete'
+- output_accepted
++ execution_incomplete
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.818s
+
+FAILED (failures=2)

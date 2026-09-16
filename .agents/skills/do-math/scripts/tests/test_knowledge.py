@@ -17,6 +17,12 @@ def fixture():
  return instance,runtime
 
 class KnowledgeTests(unittest.TestCase):
+ def test_candidate_dependency_change_stays_suspended_after_prerequisite_is_reverified(self):
+  ins,run=fixture();ins['knowledge']['KN-B']['status']='candidate'
+  changed,_=revise_knowledge(ins,run,'KN-A',{'statement':'new'},reason='meaning changed',actor_ref='user')
+  self.assertTrue(changed['knowledge']['KN-B'].get('use_suspended',False))
+  changed['knowledge']['KN-A']['status']='verified';changed['knowledge']['KN-B']['status']='verified'
+  self.assertFalse(assess_use(changed['knowledge']['KN-B'],changed)['valid'])
  def test_revision_preserves_history_and_propagates_only_actual_dependencies(self):
   ins,run=fixture();new,nrun=revise_knowledge(ins,run,'KN-A',{'statement':'new'},reason='correction',actor_ref='human:x')
   self.assertEqual(new['knowledge']['KN-A']['revision'],2);self.assertEqual(new['knowledge']['KN-A']['status'],'candidate');self.assertEqual(new['knowledge']['KN-A']['formal'],{});self.assertEqual(new['knowledge']['KN-A']['reviews'],[])

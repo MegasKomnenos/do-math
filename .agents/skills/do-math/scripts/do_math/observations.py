@@ -7,6 +7,10 @@ import json
 from pathlib import Path
 import time
 from typing import Any
+from .context_store import _safe_path, _excluded
+
+CHECKPOINT_MAX_BYTES = 4 * 1024 * 1024
+RULES_MAX_BYTES = 65536
 
 
 CHECKPOINT_SCHEMA = {
@@ -61,7 +65,7 @@ def read_checkpoint(workspace: Path) -> dict:
         if not resolved.is_relative_to(workspace.resolve()) or path.is_symlink():
             raise ValueError("checkpoint must stay within the execution workspace")
         before = path.stat()
-        if before.st_size > 4 * 1024 * 1024:
+        if before.st_size > CHECKPOINT_MAX_BYTES:
             raise ValueError("checkpoint exceeds the 4 MiB record limit")
         raw = path.read_bytes()
         after = path.stat()
@@ -71,6 +75,11 @@ def read_checkpoint(workspace: Path) -> dict:
         value = json.loads(raw.decode("utf-8-sig"))
         import jsonschema
         jsonschema.validate(value, CHECKPOINT_SCHEMA)
+        for reference in value["evidence_paths"]:
+            evidence = _safe_path(workspace, reference)
+            relative = Path(reference)
+            if (relative.parts[0] != "input" and _excluded(relative)) or not evidence.is_file():
+                raise ValueError("checkpoint evidence is unavailable or excluded from preservation: " + reference)
         return {"status": "valid", "value": value, "sha256": digest, "raw": raw, "observed_at": utc_now()}
     except Exception as error:
         return {"status": "invalid", "error": f"{type(error).__name__}: {error}"}
@@ -101,7 +110,7 @@ class ObservationTracker:
                 if rules_file.is_symlink() or not rules_file.resolve().is_relative_to(self.workspace.resolve()):
                     raise ValueError("observation rules must stay in workspace")
                 raw = rules_file.read_bytes()
-                if len(raw) > 65536: raise ValueError("observation rules exceed 64 KiB")
+                if len(raw) > RULES_MAX_BYTES: raise ValueError("observation rules exceed 64 KiB")
                 digest = hashlib.sha256(raw).hexdigest()
                 if digest != self.rules_digest:
                     self.rules = validate_rules(json.loads(raw.decode("utf-8-sig")))

@@ -1,0 +1,17 @@
+test_revoked_original_grant_preserves_late_output_despite_alternative_grant (test_submission_tools.ProducerToolTests.test_revoked_original_grant_preserves_late_output_despite_alternative_grant) ... FAIL
+
+======================================================================
+FAIL: test_revoked_original_grant_preserves_late_output_despite_alternative_grant (test_submission_tools.ProducerToolTests.test_revoked_original_grant_preserves_late_output_despite_alternative_grant)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_submission_tools.py", line 38, in test_revoked_original_grant_preserves_late_output_despite_alternative_grant
+    self.assertEqual(execution["outcome"], "execution_incomplete")
+AssertionError: 'output_accepted' != 'execution_incomplete'
+- output_accepted
++ execution_incomplete
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.473s
+
+FAILED (failures=1)

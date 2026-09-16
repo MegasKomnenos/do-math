@@ -1,0 +1,6 @@
+# Execution evidence keeps its original bytes for the recorded hashes.
+repair/*.log -text -diff
+repair/real-call-evidence/** -text -diff
+repair/reader-evidence/*.json -text
+repair/*-독해본.md -text -diff
+repair/real-producer-smoke-result.json -text -diff

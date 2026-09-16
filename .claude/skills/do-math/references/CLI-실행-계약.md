@@ -55,8 +55,10 @@ artifact는 기존 경로를 수정하지 않고 새 bundle에 추가한다. 대
 |---|---|
 | `runtime/artifacts/<input_bundle>/input.txt` | 모델에 전달한 전체 prompt 바이트 |
 | `runtime/artifacts/<input_bundle>/schema.json` | 그 실행의 출력 JSON Schema |
-| `runtime/artifacts/<input_bundle>/manifest.json` | catalog와 구현 문서의 입력 manifest |
+| `runtime/artifacts/<input_bundle>/manifest.json` | catalog·구현 문서·제출 검사 도구와 스키마의 입력 manifest |
 | `runtime/artifacts/<input_bundle>/input/implementation/<path>` | SKILL·GLOSSARY·공통 reference·역할 계약의 고정 사본 |
+| `runtime/artifacts/<input_bundle>/input/tools/<path>` | 제출 검사 진입점과 실행별 고정 코드 ZIP |
+| `runtime/artifacts/<input_bundle>/input/submission/<path>` | 주 JSON·확장 스키마와 작업자에게 공개된 고정 검사 입력 |
 | `runtime/artifacts/<result_bundle>/result.json` | Codex 어댑터의 완료·실패·usage를 포함한 결과 |
 | `runtime/artifacts/<result_bundle>/output.json` | schema를 통과하기 전에도 보존하는 모델 JSON 출력 |
 | `runtime/artifacts/<result_bundle>/files/<path>` | workspace에서 회수한 모델 작성 파일 |
@@ -104,8 +106,8 @@ GLOSSARY의 보편 상태가 개념의 뜻을 소유한다. 아래 값은 현재
 | `performing` | 연구 수행이 선택·배정된 보편 active 과제 |
 | `assessing` | 결과를 반환했고 지정 판정자가 완료 기준을 확인하는 보편 active 과제 |
 | `waiting` | 필수 입력·결정·권한·복구를 기다리는 보편 waiting 과제 |
-| `completed` | 완료 기준 전건과 근거 있는 독립 완료 판정을 기록한 흡수 상태여야 한다 |
-| `closed` | 철회·이전·대체의 근거와 범위 처분으로 닫은 흡수 상태여야 한다 |
+| `completed` | 완료 기준 전건과 근거 있는 독립 완료 판정을 기록하고 다시 열지 않는 종결 상태 |
+| `closed` | 철회·이전·대체의 근거와 범위 처분으로 닫고 다시 열지 않는 종결 상태 |
 
 같은 이름의 source가 갱신되거나, 과제가 참조한 지식이 개정·무효화되거나, 그 지식의 신뢰 환경이 무효화돼도 `completed`·`closed` 과제의 상태와 종결 이력은 유지한다. 현재 완료 판정은 `current=false`, `invalidated_reason`으로 사용을 정지한다. 단순 `task_disposition_is(completed)` 이력 질의는 완료 사실을 유지하지만, 실제 task dependency의 착수 검사는 낡은 완료 판정을 사용할 수 없다. 새 검증 의무는 후속 과제로 연결한다. 아직 끝나지 않은 과제가 지식 변경의 영향을 받으면 `waiting`으로 돌아가 현재 착수 검사를 다시 받는다.
 
@@ -523,17 +525,19 @@ export --destination PATH [--snapshot OID] [--all]
 
 ### 입력 크기 조정
 
-기계 실행기는 최종 prompt의 UTF-8 바이트를 `max_input_bytes` 안에 맞춘다. goal, goal_kind, policies, action, 대상 task·proposal·review context·사용자 원문처럼 action별 mandatory key는 제거하지 않는다.
+기계 실행기는 최종 prompt의 UTF-8 바이트를 `max_input_bytes` 안에 맞춘다. goal, goal_kind, policies와 action별 필수 판단 정보를 보존한다. 현재 작업 계약과 검토 제안의 전문은 필요한 역할에 제공하고, 누적 이력 때문에 같은 전문을 여러 곳에 중복하지 않는다. 검토 계보의 제안은 `role_review.proposal`에 한 번 제공한다.
 
-크기가 넘으면 recent history의 오래된 항목을 줄이고, 큰 tasks·knowledge·source 등의 상세 배열을 `input/catalog/<key>.json`의 exact source reference로 바꾼다. tasks를 바꿀 때는 `ready_universe_ids`와 가능한 `ready_listing`을 남긴다. mandatory context가 넘거나 ready 모집단을 보존하고도 입력을 맞출 수 없으면 AI 실행을 시작하지 않는다. identity review 제안 자체가 넘으면 현재 CLI는 지식 상태를 `needs_reconstruction`으로 표시하고 후보 준비에 분해 요청을 보낸다. 다른 역할은 waiting action과 질문으로 남긴다.
+크기가 넘으면 recent history의 오래된 항목을 줄이고, 큰 목록과 누적 상세를 `input/catalog/<key>.json`의 exact source reference로 바꾼다. 대상 task에는 현행 계약과 상태, 결과·검토 수, 원문 `source_ref`를 남긴다. action에는 역할·대상·검토 자리·수리 시도 등 실행 식별 정보를 남기고 큰 수리 출력·진단은 원문으로 옮긴다. 이전 실행·복구 자료·체크포인트·운영 관찰의 큰 상세도 같은 방식으로 회수할 수 있다. tasks 목록을 바꿀 때는 `ready_universe_ids`와 가능한 `ready_listing`을 보존한다. 역할은 필요한 원문을 그 경로에서 읽어야 한다.
+
+필수 판단 정보와 ready 모집단을 보존하고도 입력을 맞출 수 없으면 AI 실행을 시작하지 않는다. 동일성 검토는 제안 자체와 공통 프롬프트만으로 한도를 넘는 경우에만 지식을 `needs_reconstruction`으로 표시하고 분해 요청을 보낸다. 자기 검토 이력이나 다른 입력의 증가로 넘은 경우에는 수학 제안의 결함으로 바꾸지 않고 `input_overflow`로 보류한다. 다른 역할도 해당 요청과 오류를 보류한다. 같은 근거의 보류된 작업 계약 검토와 검토 자리를 새 ID로 자동 재생성하지 않는다.
 
 ### 입력 고정과 현재성
 
-실행 기록은 input snapshot, prompt hash, input bundle, engine hash, 모델·effort, goal·policy revision, 작업 계약 hash, 실제 지식·source basis와 grant를 고정한다. 결과 적용 직전에 다음을 다시 검사한다.
+실행 기록은 input snapshot, prompt hash, input bundle, engine hash, 모델·effort, goal·policy revision, 작업 계약 hash, 실제 지식·과제·source basis와 grant를 고정한다. 착수 전 명시된 의존에 더해, 응답의 `used_sources`, 새 지식의 dependencies와 지원되는 확장 참조에서 드러난 실제 의존도 원 입력 snapshot의 판본에 결박한다. 수신 시점의 새 판본을 대신 기록하지 않는다. 제공된 지식 파일 경로와 source ID·이름·`source:이름`·제공 경로는 원 입력의 대응표로 해석한다. 입력에 제공됐다는 이유만으로 모든 source를 사용 의존으로 잡지 않으며, 과거 산출의 고정 artifact 참조를 최신 지식 의존으로 바꾸지 않는다. 결과 적용 직전에 다음을 다시 검사한다.
 
 - goal·policy와 학술 요구 판본
 - 대상 작업 계약 hash와 closed 여부
-- 실제 사용 지식·source basis
+- 실제 사용 지식·과제·source basis
 - 현재 grant와 역할 권한
 - 실행 중 설치 코드·역할 문서의 변경
 
@@ -634,7 +638,7 @@ relation 항목은 `kind`, `source`, `target`, `evidence`를 가진다. source�
 }
 ```
 
-`progress_state`는 `working`, `blocked`, `no_progress`, `ready_to_submit`이다. iteration과 counters는 선택 필드이며 음수가 아닌 정수다. 파일은 workspace 안의 일반 파일이어야 하고 4 MiB 이하이며 완전한 JSON Schema를 만족해야 한다. 쓰는 중인 파일과 invalid 파일은 이전에 관찰한 유효 checkpoint를 대체하지 않는다.
+`progress_state`는 `working`, `blocked`, `no_progress`, `ready_to_submit`이다. iteration과 counters는 선택 필드이며 음수가 아닌 정수다. 파일은 workspace 안의 일반 파일이어야 하고 4 MiB 이하이며 완전한 JSON Schema를 만족해야 한다. `evidence_paths`에는 실제 존재하는 파일의 상대 POSIX 경로를 쓴다. `.scratch/`처럼 산출에서 제외되는 임시 파일을 근거로 삼지 않는다. 쓰는 중인 파일과 invalid 파일은 이전에 관찰한 유효 checkpoint를 대체하지 않는다.
 
 ### `observation-rules.json`
 
@@ -644,13 +648,13 @@ relation 항목은 `kind`, `source`, `target`, `evidence`를 가진다. source�
 
 ### `activity-extensions.json`
 
-주 JSON 밖의 선택적 요청·메타데이터를 담는 객체다. 허용 top-level 가족의 기계 목록은 `engine.py`의 확장 파일 parser와 적용 함수가 소유하고, 역할이 사용할 수 있는 가족과 의미는 `references/공통-실행.md`와 역할 계약이 설명한다.
+주 JSON 밖의 선택적 요청·메타데이터를 담는 객체다. `submission.py`가 역할별 확장 스키마와 공통 parser를 제공하며, 실행기는 도메인별 적용 함수에서 권한·의미·현재성을 다시 검사한다. 작업자에게도 같은 판본의 스키마와 검사 코드를 제공한다. 역할이 사용할 수 있는 가족과 의미는 `references/공통-실행.md`와 역할 계약이 설명한다.
 
 현재 확장 파일은 후보 과제의 발생 조건·의존·최초 관찰 규칙, 부수 연구 통찰, 외부 행동 요청, 기존·신규 지식의 metadata와 관계, 검토 자리의 고정 질문, 관찰 규칙과 학술 외부 거부의 해소 근거를 전달한다. 예를 들어 새 knowledge의 `confirmed_scope`는 주 JSON의 유일한 title에 결박하고, 검토 보충 조사는 원 검토 자리의 질문 ID와 exact source references에 결박한다.
 
 `task_dispositions`는 후보 준비와 연구 계획이 AI 생성 미완료 과제를 철회하는 경로다. `{task_id, disposition:"withdraw", reason}`를 받으며 입력 스냅샷의 계약 해시·생성 계보·현재 상태·실행 부재를 검사한다. 부분 결과는 보존하고 `closed` 처분과 제거한 미시작 요청을 기록한다. 완료·닫힘·수행 중 과제나 사용자 학술 요구에는 적용하지 않는다. 전체 의미와 예시는 공통 실행 문서를 따른다.
 
-파일이 없으면 확장 없음이다. 알 수 없는 가족, 배열이 아닌 값, 역할에 없는 권한, 잘못된 ID·관계·현재성은 수신 실패다. 확장 적용 중 하나가 실패하면 주 JSON의 의미 적용도 이전 상태로 되돌리고 원 출력·파일·오류를 보존한다.
+파일이 없으면 확장 없음이다. 알려진 가족의 빈 배열은 요청 없음으로 정규화하며 원 파일은 그대로 보존한다. 알 수 없는 가족, 배열이 아닌 값, 역할에 없는 비어 있지 않은 요청, 잘못된 ID·관계·현재성은 수신 실패다. 확장 적용 중 하나가 실패하면 주 JSON의 의미 적용도 이전 상태로 되돌리고 원 출력·파일·오류를 보존한다. 작업자는 정상 본문을 재사용하면서 지적된 부분을 수리할 수 있다.
 
 ### 정지·운영 피드백 파일
 
@@ -658,13 +662,17 @@ relation 항목은 `kind`, `source`, `target`, `evidence`를 가진다. source�
 
 ## 출력 수신과 한정 수리
 
-Codex 어댑터가 완료를 반환하면 실행기는 주 JSON Schema, workspace 파일 수집, goal·policy·계약·지식·source·학술 요구·grant의 현재성을 검사한다. 모두 통과해야 execution outcome을 `output_accepted`로 유지하고 역할 결과와 확장 파일을 적용한다.
+제출 전에는 작업자가 `submission_contract.command`로 주 JSON·확장·참조·계획 모집단 등 공개 입력에서 검사할 수 있는 조건과 파일·체크포인트·관찰 규칙을 직접 검사한다. 도구는 원 출력을 고치거나 중앙 상태에 쓰지 않는다. 실제 명령·수리·재검사 절차는 공통 실행 문서에 있다. 이 검사는 Lean 성공, 수학적 동일성, 최종 권한과 현재성 승인을 대신하지 않는다.
+
+Codex 어댑터가 완료를 반환하면 실행기는 같은 제출 검사와 workspace 파일 수집, goal·policy·계약·지식·과제·source·학술 요구·grant의 현재성을 검사한다. 모두 통과해야 execution outcome을 `output_accepted`로 유지하고 역할 결과와 확장 파일을 적용한다. 어댑터가 JSON 또는 스키마 오류를 찾은 경우에도 보존 가능한 원 JSON과 정확한 오류를 유지하며, 호출 장애와 구별해 아래 출력 수리로 연결한다.
 
 검사 실패 시 원 모델 output, result, 파일 manifest와 오류를 artifact에 보존하고 실행 outcome을 `execution_incomplete`, 활동을 `unresolved`로 바꾼다. `max_output_repairs`가 남아 있으면 같은 action에 `repair.error`와 `repair.previous_output`을 넣은 새 실행을 한정적으로 연다. 수리는 새 실행이므로 새 ID를 받고 해당 모델의 슬롯을 다시 예약한다. 구 호환 모드에서는 새 실행 시도로 계산한다. 수리 한도를 넘으면 해당 행동을 `waiting_actions`의 `output_validation`으로 보존하고 운영 점검을 연다. 다른 queue action은 계속할 수 있고, 실행할 것이 없으면 waiting이다. 이미 진단된 재시도나 운영 점검 자체의 실패를 자동 진단으로 무한히 돌리지 않는다.
 
-운영 점검의 retry는 새 action ID와 복구 근거를 만들고 소진된 repair 필드를 제거한다. 계획 재시도에는 `failure_diagnosis`를 제공하여 현재 모집단에서 새로 판단하게 한다. wait는 해당 실패 행동을 보존하고 독립 queue를 계속한다. 인스턴스 전체의 정지가 필요한 경우는 stop으로 따로 판단한다.
+운영 점검의 retry는 새 action ID와 복구 근거를 만들고 소진된 repair 필드를 제거한다. 계획 재시도에는 `failure_diagnosis`를 제공하여 현재 모집단에서 새로 판단하게 한다. wait는 해당 실패 행동을 보존하고 독립 queue를 계속한다. 인스턴스 전체의 정지가 필요한 경우는 stop으로 따로 판단한다. 진단 후 재시도까지 실패했으면 실제 수리 뒤 사용자나 독립 운영 담당이 `request --role operational_review --target EX-...`로 새 진단을 요청할 수 있다. `action.requested_by`가 있는 이 명시적 진단은 한 번의 새 재시도를 결정할 수 있으며, 추가 실패는 다시 보류한다. 일반 `resume`은 출력 검증·실행 실패로 보류된 요청을 재생하지 않는다.
 
-모델 호출 자체가 실패하면 부분 파일과 checkpoint를 보존하고, 기본적으로 한 번의 operational review를 먼저 queue에 넣어 복구를 판단한다. 같은 실패를 새 ID만 바꾸어 자동 반복하지 않는다.
+모델 호출 자체가 실패하거나 개별 호출 기한에 닿으면 부분 파일과 checkpoint를 보존하고 해당 요청을 보류한다. 기본적으로 한 번의 operational review를 먼저 queue에 넣어 복구를 판단하며 독립된 queued·실행 중 작업은 계속한다. 이미 진단된 재시도와 운영 점검 자체의 실패를 자동 진단으로 반복하지 않는다. 고정 질문 조사의 재시도를 끝내면 실행 미완료를 원 검토 자리에 돌려주고 그 자리의 판단을 이어간다.
+
+수신 전에 대상 과제가 닫혔거나 검토 자리·계보가 끝났으면 원 결과를 보존하고 해당 요청을 제거한다. 늦은 응답으로 과제를 다시 열거나 없어진 검토 자리를 출력 수리로 재시작하지 않는다. 사용자 정지와 인스턴스 전체의 기한·공유 상태에 따른 정지는 별도 경계를 유지한다.
 
 ## 실행 수명과 복구
 

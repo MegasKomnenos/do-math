@@ -239,6 +239,12 @@ def check(repository: Path, instance: str, workspace: Path, *, probe: bool = Fal
         return report
     if not PROMPT.is_file():
         raise RuntimeError("independent operator contract is missing")
+    from .submission import install_tools
+    execution_workspace = run_directory / "workspace"
+    execution_workspace.mkdir()
+    checking_context = {**context, "snapshot": status.get("snapshot"), "action": {"role": "independent_operator"}}
+    context["submission_contract"] = install_tools(execution_workspace, checking_context, OPERATOR_SCHEMA, None)
+    _json(run_directory / "context.json", context)
     prompt = PROMPT.read_text(encoding="utf-8") + "\n\n## Invocation context\n\n" + json.dumps(context, ensure_ascii=False, indent=2)
     if probe:
         prompt += "\n\n## Probe restriction\n\nRead status and call scholarly list_sources only when configured. Do not create controls, start the engine, modify code, or change research state."
@@ -276,9 +282,8 @@ def check(repository: Path, instance: str, workspace: Path, *, probe: bool = Fal
             slots.close()
             return report
     runner = CodexModelRunner()
-    (run_directory / "workspace").mkdir()
     try:
-        model_result = runner.run(prompt=prompt, output_schema=OPERATOR_SCHEMA, workspace=run_directory / "workspace",
+        model_result = runner.run(prompt=prompt, output_schema=OPERATOR_SCHEMA, workspace=execution_workspace,
                                   evidence_dir=run_directory / "evidence", model=model,
                                   effort=config["operator_effort"], timeout_seconds=config["operator_timeout_seconds"],
                                   scholarly_server=scholarly if isinstance(scholarly, dict) else None, should_stop=should_stop,

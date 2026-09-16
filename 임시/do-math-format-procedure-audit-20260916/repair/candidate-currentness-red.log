@@ -1,0 +1,14 @@
+test_candidate_dependency_change_stays_suspended_after_prerequisite_is_reverified (test_knowledge.KnowledgeTests.test_candidate_dependency_change_stays_suspended_after_prerequisite_is_reverified) ... FAIL
+
+======================================================================
+FAIL: test_candidate_dependency_change_stays_suspended_after_prerequisite_is_reverified (test_knowledge.KnowledgeTests.test_candidate_dependency_change_stays_suspended_after_prerequisite_is_reverified)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_knowledge.py", line 23, in test_candidate_dependency_change_stays_suspended_after_prerequisite_is_reverified
+    self.assertTrue(changed['knowledge']['KN-B'].get('use_suspended',False))
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 1 test in 0.008s
+
+FAILED (failures=1)

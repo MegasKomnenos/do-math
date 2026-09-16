@@ -143,17 +143,19 @@ class EngineTests(unittest.TestCase):
             self.assertEqual(state["status"], "paused")
             self.assertTrue(state["questions"])
 
-    def test_work_budget_pause_resume_preserves_queue(self):
+    def test_work_budget_pause_resume_preserves_failed_request_without_replay(self):
         runner = ScriptedRunner(fail_role="research_work"); engine, instance = self.make(runner, work_calls=2, operations_calls=3)
         paused = engine.run(max_steps=10)
         self.assertEqual(paused["status"], "paused")
-        before = ResearchRepository(self.repo, instance).load()[2]["queue"]
-        self.assertTrue(before and before[0]["role"] == "research_work")
+        before = ResearchRepository(self.repo, instance).load()[2]["waiting_actions"]
+        self.assertTrue(any(item["action"]["role"] == "research_work" for item in before.values()))
+        work_calls = sum(role == "research_work" for role, _ in runner.prompts)
         control(self.repo, instance, "resume")
         resumed = engine.run(max_steps=1)
-        after = ResearchRepository(self.repo, instance).load()[2]["queue"]
+        after = ResearchRepository(self.repo, instance).load()[2]["waiting_actions"]
         self.assertEqual(before, after)
-        self.assertIn(resumed["status"], {"paused", "budget_exhausted"})
+        self.assertEqual(sum(role == "research_work" for role, _ in runner.prompts), work_calls)
+        self.assertIn(resumed["status"], {"waiting", "budget_exhausted"})
 
     def test_work_budget_exhaustion_does_not_prevent_operations(self):
         runner = ScriptedRunner()

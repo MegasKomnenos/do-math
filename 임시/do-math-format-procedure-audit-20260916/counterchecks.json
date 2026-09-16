@@ -1,0 +1,14 @@
+{
+  "tests": [
+    "test_reading_map.ReadingMapTests.test_declared_shared_procedures_are_supplied_in_reading_order",
+    "test_reading_map.DocumentContextTests.test_declared_documents_have_recoverable_input_copies",
+    "test_currentness_recovery.CurrentnessTests.test_live_rules_repeat_exact_thresholds_and_preserve_last_valid_update",
+    "test_review_cycle.ReviewCycleTests.test_round_limit_split_votes_unresolved_and_last_rejection",
+    "test_research_recovery.RecoveryRoutingTests.test_exhausted_diagnosed_retry_is_parked_without_stopping_other_work",
+    "test_research_recovery.ResearchRecoveryTests.test_exhausted_output_repair_does_not_stop_unrelated_work"
+  ],
+  "tests_run": 6,
+  "successful": true,
+  "failures": [],
+  "errors": []
+}

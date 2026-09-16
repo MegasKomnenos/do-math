@@ -1,0 +1,17 @@
+test_changed_prerequisite_task_assessment_invalidates_its_running_consumer (test_submission_boundaries.AcceptanceTests.test_changed_prerequisite_task_assessment_invalidates_its_running_consumer) ... FAIL
+
+======================================================================
+FAIL: test_changed_prerequisite_task_assessment_invalidates_its_running_consumer (test_submission_boundaries.AcceptanceTests.test_changed_prerequisite_task_assessment_invalidates_its_running_consumer)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_submission_boundaries.py", line 124, in test_changed_prerequisite_task_assessment_invalidates_its_running_consumer
+    self.assertEqual(execution["outcome"], "execution_incomplete")
+AssertionError: 'output_accepted' != 'execution_incomplete'
+- output_accepted
++ execution_incomplete
+
+
+----------------------------------------------------------------------
+Ran 1 test in 20.987s
+
+FAILED (failures=1)

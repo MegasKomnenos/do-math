@@ -1,0 +1,14 @@
+test_large_repair_action_and_previous_execution_remain_readable_by_reference (test_submission_boundaries.HistoricalInputTests.test_large_repair_action_and_previous_execution_remain_readable_by_reference) ... FAIL
+
+======================================================================
+FAIL: test_large_repair_action_and_previous_execution_remain_readable_by_reference (test_submission_boundaries.HistoricalInputTests.test_large_repair_action_and_previous_execution_remain_readable_by_reference)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_submission_boundaries.py", line 172, in test_large_repair_action_and_previous_execution_remain_readable_by_reference
+    self.assertIsNone(result["overflow"])
+AssertionError: {'reason': 'mandatory_context_exceeds_limit', 'actual_bytes': 1200638, 'mandatory_bytes': 600290, 'max_bytes': 20000} is not None
+
+----------------------------------------------------------------------
+Ran 1 test in 0.466s
+
+FAILED (failures=1)

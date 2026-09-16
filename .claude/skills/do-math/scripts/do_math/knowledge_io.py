@@ -129,6 +129,26 @@ def _definition_for(instance: dict, family: str, token: str) -> dict:
     return definition
 
 
+def validate_insight(instance: dict, runtime: dict, insight: dict) -> None:
+    """An incidental candidate needs a registered kind and real evidence refs."""
+    from .input_basis import aliases
+    from .planning import _records
+    for field in ("kind", "title", "statement", "summary"):
+        _text(insight.get(field), "insight " + field)
+    _definition_for(instance, "knowledge", insight["kind"])
+    refs = insight.get("evidence_ids", [])
+    if not isinstance(refs, list) or any(not isinstance(ref, str) or not ref for ref in refs) or len(refs) != len(set(refs)):
+        raise ValueError("insight evidence must contain distinct references")
+    known = set(_records(instance, runtime))
+    for key in ("inputs", "events", "external_rejections"):
+        known.update(row["id"] for row in runtime.get(key, []) if row.get("id"))
+    for source in instance.get("sources", []):
+        known.update(aliases(source))
+    unknown = set(refs) - known
+    if unknown:
+        raise ValueError("unknown insight evidence: " + ", ".join(sorted(unknown)))
+
+
 def import_candidate(instance: dict, runtime: dict, candidate: dict, *, source_ref: str,
                      actor_ref: str) -> tuple[dict, dict, str]:
     _text(source_ref, "source_ref"); _text(actor_ref, "actor_ref")

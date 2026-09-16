@@ -32,6 +32,11 @@ class Tests(unittest.TestCase):
  def test_invalid_output_fails(self):
   x=self.run_with({'result':'output_collected','final':{'raw':b'{}'},'jsonl':{'usage':{}}})
   self.assertEqual(x['status'],'failed')
+ def test_invalid_output_keeps_parsed_value_and_actionable_schema_error(self):
+  x=self.run_with({'result':'output_collected','final':{'raw':b'{}'},'jsonl':{'usage':{}}})
+  self.assertEqual(x.get('error_kind'),'output_validation')
+  self.assertEqual(x['output'],{})
+  self.assertIn('x',x['error'])
  def test_incomplete_fails(self):
   x=self.run_with({'result':'incomplete','reasons':['tail'],'jsonl':{}})
   self.assertEqual(x['status'],'failed')

@@ -1,0 +1,121 @@
+{
+  "product_git_head": "b6fc99de00cfe34dc54f2a31ae3bb9d3fd6428c5",
+  "changed_product_files": [],
+  "initial_run": {
+    "tests_run": 15,
+    "failure_count": 1,
+    "error_count": 0,
+    "note": "11 imported scheduler counterchecks and 4 new scenarios ran. The large-report scenario had an overly exact test expectation: revision 2 versus observed revision 3; this is not a product failure."
+  },
+  "focused_rerun": {
+    "tests_run": 1,
+    "successful": true,
+    "note": "The large-report scenario now requires a revision beyond the initial one. Only this scenario was rerun."
+  },
+  "confirmed_scenarios": [
+    {
+      "case": "atomic_repair",
+      "calls": 2,
+      "main_reused_without_recomputation": true,
+      "accepted_tasks": 1,
+      "accepted_insights": 1
+    },
+    {
+      "case": "invalid_insight_next_consumer",
+      "kind": "not_a_registered_kind",
+      "status": "candidate",
+      "usable_as_k": false,
+      "state_check_passed": true,
+      "next_role": "research_plan"
+    },
+    {
+      "case": "retry_failure_live_peer",
+      "peer_stopped": true,
+      "peer_partial_preserved": true,
+      "runtime_before_resume": "paused",
+      "runtime_after_resume": "ready",
+      "resume_keeps_same_failed_action": true,
+      "execution_count": 2
+    },
+    {
+      "case": "large_report_repeated_review",
+      "executed_model_roles": [
+        "research_work",
+        "research_plan",
+        "research_preparation",
+        "research_plan",
+        "research_preparation"
+      ],
+      "report_accepted": true,
+      "revision": 3,
+      "identical_target_overflows": 2,
+      "status": "ready",
+      "overflow_details": [
+        {
+          "actual_bytes": 2428115,
+          "common_prompt_bytes": 173711,
+          "mandatory_bytes": 1203902,
+          "max_bytes": 324241,
+          "reason": "mandatory_context_exceeds_limit"
+        },
+        {
+          "actual_bytes": 2428438,
+          "common_prompt_bytes": 173711,
+          "mandatory_bytes": 1203976,
+          "max_bytes": 324241,
+          "reason": "mandatory_context_exceeds_limit"
+        }
+      ],
+      "future_review_queued": true
+    }
+  ],
+  "new_dependency_comparison": [
+    {
+      "read_statement": "The bounded computation returned one.",
+      "predeclared": false,
+      "outcome": "output_accepted",
+      "error": null,
+      "current_statement": "The corrected bounded computation returned two.",
+      "validity_basis": [],
+      "derived_count": 1,
+      "derived_suspension": [
+        false
+      ]
+    },
+    {
+      "read_statement": "The bounded computation returned one.",
+      "predeclared": true,
+      "outcome": "execution_incomplete",
+      "error": "output validation: a decision dependency changed during execution",
+      "current_statement": "The corrected bounded computation returned two.",
+      "validity_basis": [
+        {
+          "id": "KN-01M2MKJV8SE686P7TD0S02NSF6",
+          "sha256": "ac8b1ff9ebbfa474e6a62782d849b544e5744fc934d906884bb0f68c17428c70",
+          "status": "candidate"
+        }
+      ],
+      "derived_count": 0,
+      "derived_suspension": []
+    }
+  ],
+  "probe_setup_corrections": [
+    "actual_dependency_probe first omitted the required lean_code string during candidate import; corrected to an empty string before both comparisons."
+  ],
+  "historical_sample": {
+    "repository": "C:/math/.skill-workspace/parking-unimodality-20260915/repo",
+    "snapshot": "90de0170aca9547e55cdfb7e998c2ea0c280e31d",
+    "feature_version": 2,
+    "status": "paused",
+    "execution_count": 43,
+    "output_accepted": 38,
+    "execution_incomplete": 5,
+    "max_preserved_files_bytes": 185213,
+    "max_report_bytes": 2101,
+    "errors": {
+      "plan must select or defer every ready task exactly once": 4,
+      "stop requested or timeout": 1
+    },
+    "limitation": "Older execution mode and code; evidence of that historical sample only, not current failure frequency or current regressions."
+  }
+}

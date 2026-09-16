@@ -1,0 +1,12 @@
+test_producer_checks_live_checkpoint_and_observation_files (test_submission_tools.ProducerToolTests.test_producer_checks_live_checkpoint_and_observation_files) ... ok
+test_producer_checks_main_shape_and_preserves_precise_failure_coordinates (test_submission_tools.ProducerToolTests.test_producer_checks_main_shape_and_preserves_precise_failure_coordinates) ... ok
+test_producer_checks_planning_population_and_exact_completion_criteria (test_submission_tools.ProducerToolTests.test_producer_checks_planning_population_and_exact_completion_criteria) ... ok
+test_producer_checks_sidecar_kinds_references_and_self_repair (test_submission_tools.ProducerToolTests.test_producer_checks_sidecar_kinds_references_and_self_repair) ... ok
+test_producer_receives_artifact_and_checkpoint_limits_and_excludes_disposable_scratch (test_submission_tools.ProducerToolTests.test_producer_receives_artifact_and_checkpoint_limits_and_excludes_disposable_scratch) ... ok
+test_receiver_rejects_unknown_insight_kind_and_missing_evidence (test_submission_tools.ProducerToolTests.test_receiver_rejects_unknown_insight_kind_and_missing_evidence) ... ok
+test_supplied_checker_is_standalone_and_does_not_mutate_fixed_inputs (test_submission_tools.ProducerToolTests.test_supplied_checker_is_standalone_and_does_not_mutate_fixed_inputs) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 19.037s
+
+OK

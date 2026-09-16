@@ -348,6 +348,45 @@ def _judge(cycle, output):
         raise ValueError("mismatch requires an identified objection")
 
 
+def _validate_content(cycle, action, output):
+    _validate(output, stage_schema(action["stage"]))
+    if output["proposal_digest"] != cycle["proposal_digest"]:
+        raise ValueError("result belongs to another proposal")
+    stage = action["stage"]
+    if stage in ("initial", "judge") and output["decision"] == "match" and not output["scope_complete"]:
+        raise ValueError("match requires complete scope")
+    findings = output.get("findings", output.get("new_findings", []))
+    _unique([f["id"] for f in findings], "finding ID")
+    if any(f["id"].startswith("__question_") or not f["evidence"] for f in findings):
+        raise ValueError("finding requires evidence and a nonreserved ID")
+    if stage == "initial":
+        if output["decision"] == "match" and (findings or output["questions"]):
+            raise ValueError("match requires no open findings or questions")
+        if output["decision"] == "mismatch" and not findings:
+            raise ValueError("mismatch requires findings")
+
+
+def validate_visible_output(context, action, output, *, requesting_research=False):
+    """Use only the public assignment and this slot's input, never peer votes."""
+    if requesting_research:
+        _validate(output, stage_schema(action["stage"]))
+        if output["proposal_digest"] != context["proposal_digest"]:
+            raise ValueError("result belongs to another proposal")
+        if action["stage"] in {"initial", "judge"} and output["decision"] != "unresolved":
+            raise ValueError("a review requesting investigation must return unresolved provisionally")
+        return
+    _validate_content(context, action, output)
+    view = {"issues": copy.deepcopy(context["issues"]), "round": action["round"],
+            "answer_requests": list(context["answer_requests"]), "reviewer_slots": context["reviewer_slots"],
+            "pending_findings": [_digest(row["ref"]) for row in context["pending_findings"]], "history": []}
+    if action["stage"] == "organize":
+        _organize(view, output)
+    elif action["stage"] == "answer":
+        _answer(view, action, output)
+    elif action["stage"] == "judge":
+        _judge(view, output)
+
+
 def _aggregate_judges(cycle, entries):
     retry = []
     for issue_id, issue in cycle["issues"].items():
@@ -445,17 +484,7 @@ def accept_result(cycle, action, output, execution_id, input_manifest=None):
             if set(manifest[field]) - allowed:
                 raise ValueError("input contains unsealed peer results")
     stage = action["stage"]
-    if stage in ("initial", "judge") and output["decision"] == "match" and not output["scope_complete"]:
-        raise ValueError("match requires complete scope")
-    findings = output.get("findings", output.get("new_findings", []))
-    _unique([f["id"] for f in findings], "finding ID")
-    if any(f["id"].startswith("__question_") or not f["evidence"] for f in findings):
-        raise ValueError("finding requires evidence and a nonreserved ID")
-    if stage == "initial":
-        if output["decision"] == "match" and (findings or output["questions"]):
-            raise ValueError("match requires no open findings or questions")
-        if output["decision"] == "mismatch" and not findings:
-            raise ValueError("mismatch requires findings")
+    _validate_content(cycle, action, output)
     n = copy.deepcopy(cycle)
     if stage == "organize":
         _organize(n, output)
@@ -572,7 +601,8 @@ def context_for(cycle, action):
                             for r in previous.get("research", {}).values() if r.get("result") and
                             (r["action"]["slot"] == slot or _key(r["action"]) in previous["sealed"]))
     return {"proposal": copy.deepcopy(cycle["proposal"]), "proposal_digest": cycle["proposal_digest"],
-        "action": copy.deepcopy(action), "self_messages": messages, "source_refs": references,
+        "action": copy.deepcopy(action), "reviewer_slots": list(cycle["reviewer_slots"]),
+        "self_messages": messages, "source_refs": references,
         "issues": copy.deepcopy(cycle["issues"]), "completed_results": visible,
         "supplemental_results": supplemental,
         "pending_findings": [copy.deepcopy(cycle["findings"][k]) for k in cycle["pending_findings"]],

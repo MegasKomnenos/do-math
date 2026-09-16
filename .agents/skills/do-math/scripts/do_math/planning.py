@@ -26,6 +26,62 @@ def ready_task_ids(runtime: dict) -> list[str]:
     return sorted(tid for tid, task in runtime.get("tasks", {}).items() if task.get("status") == "ready")
 
 
+def validate_plan_submission(output: dict, tasks: dict, ready_ids: list[str]) -> None:
+    """Validate the supplied planning population, before applying any decision."""
+    import json
+    supplied = output["selections"] + [row["task_id"] for row in output["deferred"]]
+    eligible = set(ready_ids)
+    if len(supplied) != len(set(supplied)) or set(supplied) != eligible:
+        details = {"ready_task_ids": sorted(eligible), "missing": sorted(eligible - set(supplied)),
+                   "unexpected": sorted(set(supplied) - eligible),
+                   "duplicate": sorted({tid for tid in supplied if supplied.count(tid) > 1})}
+        raise ValueError("plan must select or defer every ready task exactly once: " + json.dumps(details, ensure_ascii=False, sort_keys=True))
+    assessments = output["task_assessments"]
+    ids = [row["task_id"] for row in assessments]
+    required = {tid for tid, task in tasks.items() if task.get("status") == "assessing"}
+    if len(ids) != len(set(ids)) or not required <= set(ids):
+        raise ValueError("plan must assess every returned task exactly once")
+    for row in assessments:
+        task = tasks.get(row["task_id"])
+        if not task or task.get("status") not in {"assessing", "waiting"} or not task.get("results"):
+            raise ValueError("assessment requires a task with returned work")
+        checks = row["criteria_results"]
+        if sorted(c["criterion"] for c in checks) != sorted(task["completion_criteria"]):
+            raise ValueError("task assessment must cover the exact completion criteria")
+        if row["decision"] == "completed" and not all(c["satisfied"] and c["evidence"].strip() for c in checks):
+            raise ValueError("completed task requires evidence for every completion criterion")
+        if row["decision"] == "closed" and task.get("scope_disposition", {}).get("kind") not in {"withdraw", "transfer", "superseded_requirements"}:
+            raise ValueError("closing unfinished obligations requires an explicit scope transfer or withdrawal; use incomplete to return unfinished research")
+
+
+def validate_condition(condition: dict) -> None:
+    """Check the expression's grammar even when its referenced record is absent."""
+    fields = {"always": set(), "all": {"args"}, "any": {"args"}, "not": {"arg"},
+              "record_exists": {"record_id", "family"}, "record_lifecycle_is": {"record_id", "value"},
+              "record_field_equals": {"record_id", "pointer", "value"},
+              "relation_exists": {"subkind", "from_id", "to_id"}, "task_disposition_is": {"task_id", "value"}}
+    if not isinstance(condition, dict) or condition.get("op") not in fields:
+        raise ValueError("unsupported condition op")
+    op = condition["op"]
+    if set(condition) != {"op", *fields[op]}:
+        raise ValueError("condition fields do not match " + op)
+    if op in {"all", "any"}:
+        if not isinstance(condition["args"], list) or not condition["args"]:
+            raise ValueError(op + " requires nonempty args")
+        for child in condition["args"]:
+            validate_condition(child)
+    elif op == "not":
+        validate_condition(condition["arg"])
+    else:
+        for name in fields[op] - {"value"}:
+            if not isinstance(condition[name], str) or not condition[name].strip():
+                raise ValueError("condition " + name + " must be nonempty text")
+        if op == "task_disposition_is" and condition["value"] not in {"completed", "closed"}:
+            raise ValueError("task disposition must be completed or closed")
+        if op == "record_field_equals" and (not condition["pointer"].startswith("/") or isinstance(condition["value"], (dict, list))):
+            raise ValueError("record comparison needs a pointer and scalar value")
+
+
 def _records(instance: dict, runtime: dict) -> dict[str, tuple[str, dict]]:
     found: dict[str, tuple[str, dict]] = {}
     for family, container in (("knowledge", instance.get("knowledge", {})), ("governance", instance.get("governance", {})),
@@ -64,6 +120,10 @@ def _pointer(record: dict, family: str, pointer: str) -> Any:
 def evaluate_condition(condition: dict, instance: dict, runtime: dict) -> dict:
     """Evaluate a closed readiness AST without treating malformed evidence as true."""
     records, basis, errors = _records(instance, runtime), [], []
+    try:
+        validate_condition(condition)
+    except (ValueError, TypeError) as error:
+        return {"state": "evaluation_error", "basis": [], "errors": [str(error)]}
     def visit(node: dict) -> str:
         try:
             if not isinstance(node, dict) or not isinstance(node.get("op"), str): raise ValueError("condition op is required")

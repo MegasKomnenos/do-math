@@ -116,8 +116,26 @@ class ReviewEngineMixin:
                          queued.get('review_cycle_id') == cycle_id and
                          all(queued.get(key) == value for key, value in action.items())
                          for queued in self.runtime['queue'])
-            if not exists:
+            held = any(entry.get('action', {}).get('role') == 'identity_review'
+                       and entry['action'].get('review_cycle_id') == cycle_id
+                       and all(entry['action'].get(key) == value for key, value in action.items())
+                       for entry in self.runtime.get('waiting_actions', {}).values())
+            if not exists and not held:
                 self._enqueue('identity_review', knowledge_id, review_cycle_id=cycle_id, **action)
+
+    def _obsolete_review_reason(self, action):
+        cycle_id = action.get('review_cycle_id')
+        if not cycle_id or action['role'] not in {'identity_review', 'supplemental_research'}:
+            return None
+        cycle = self.runtime.get('review_cycles', {}).get(cycle_id)
+        item = self.instance['knowledge'].get(action.get('target'), {})
+        if not cycle or cycle.get('status') != 'working' or item.get('review_cycle_id') != cycle_id:
+            return 'The assigned review ended or its proposal revision was superseded'
+        if action['role'] == 'identity_review' and _action(action) not in next_actions(cycle):
+            return 'The assigned review slot is no longer pending'
+        if action['role'] == 'supplemental_research' and cycle.get('research', {}).get(action.get('research_request_id'), {}).get('status') != 'pending':
+            return 'The fixed investigation is no longer pending'
+        return None
 
     def _review_cycle(self, action):
         if action.get('role') != 'identity_review':
@@ -141,7 +159,7 @@ class ReviewEngineMixin:
         schema['properties']['proposal_digest'] = {**schema['properties']['proposal_digest'], 'enum': [cycle['proposal_digest']]}
         return schema
 
-    def _review_context(self, action, workspace: Path):
+    def _review_context(self, action, workspace: Path, *, sources=None):
         cycle = self._review_cycle(action)
         context = context_for(cycle, _action(action))
         for investigation in context.get('supplemental_results', []):
@@ -197,7 +215,8 @@ class ReviewEngineMixin:
                     'request': request, 'slot': action['slot'],
                     'visible_execution_ids': [entry['execution_id'] for entry in context['completed_results'].values()] +
                                              [entry['result']['execution_id'] for entry in context.get('supplemental_results', [])],
-                    'workspace': str(workspace)}
+                    'workspace': str(workspace), 'supplied_sources': deepcopy(sources if sources is not None else self.instance.get('sources', [])),
+                    'source_snapshot': self.head}
         self.runtime.setdefault('review_inputs', {})[_pending_key(action)] = prepared
         return context
 
@@ -358,12 +377,14 @@ class ReviewEngineMixin:
                 if source.get('slot') != action['slot']: raise ValueError('another slot transcript is private')
                 value = cycle['turns'][action['slot']][source['index']]
             else:
-                supplied = next((s for s in self.instance.get('sources', []) if reference in (s.get('path'), s.get('name'))), None)
+                from .input_basis import aliases
+                supplied = next((s for s in prepared.get('supplied_sources', self.instance.get('sources', [])) if reference in aliases(s)), None)
                 if supplied:
-                    raw = self.store.read(supplied['path'], self.head)
+                    snapshot = prepared.get('source_snapshot', self.head)
+                    raw = self.store.read(supplied['path'], snapshot)
                     if supplied.get('sha256') and hashlib.sha256(raw).hexdigest() != supplied['sha256']:
                         raise ValueError('supplied research source bytes changed')
-                    return {'ref': reference, 'artifact_ref': supplied['path'], 'snapshot': self.head,
+                    return {'ref': reference, 'artifact_ref': supplied['path'], 'snapshot': snapshot,
                             'sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)}
                 record = self.instance.get('knowledge', {}).get(reference)
                 if record is None: raise ValueError('research source is not in the supplied readable source set: ' + reference)
@@ -510,4 +531,14 @@ class ReviewEngineMixin:
                                         source_records=request['source_records'], execution_status='incomplete')
         self.runtime['review_cycles'][action['review_cycle_id']] = updated
         self._queue_identity_actions(action['target'], action['review_cycle_id'])
+        return True
+
+    def _finish_failed_investigation(self, action, execution_id, reason):
+        """Close a no-longer-retried question and retain its failed handoff."""
+        if not self._abandon_review_research(action, execution_id, reason):
+            return False
+        previous = self.runtime.get('waiting_actions', {}).pop(action.get('id'), None)
+        self.runtime.setdefault('history', []).append({'kind': 'failed_investigation_returned',
+            'execution_id': execution_id, 'research_request_id': action['research_request_id'],
+            'review_cycle_id': action['review_cycle_id'], 'reason': reason, 'previous': previous})
         return True

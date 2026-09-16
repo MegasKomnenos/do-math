@@ -1,0 +1,30 @@
+[
+  {
+    "read_statement": "The bounded computation returned one.",
+    "predeclared": false,
+    "outcome": "output_accepted",
+    "error": null,
+    "current_statement": "The corrected bounded computation returned two.",
+    "validity_basis": [],
+    "derived_count": 1,
+    "derived_suspension": [
+      false
+    ]
+  },
+  {
+    "read_statement": "The bounded computation returned one.",
+    "predeclared": true,
+    "outcome": "execution_incomplete",
+    "error": "output validation: a decision dependency changed during execution",
+    "current_statement": "The corrected bounded computation returned two.",
+    "validity_basis": [
+      {
+        "id": "KN-01M2MKJV8SE686P7TD0S02NSF6",
+        "sha256": "ac8b1ff9ebbfa474e6a62782d849b544e5744fc934d906884bb0f68c17428c70",
+        "status": "candidate"
+      }
+    ],
+    "derived_count": 0,
+    "derived_suspension": []
+  }
+]

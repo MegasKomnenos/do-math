@@ -11,6 +11,7 @@ from typing import Any, Callable
 import jsonschema
 
 from do_math.codex_adapter import CodexExecAdapter
+from do_math.repository import canonical_json, _unique_pairs, _reject_constant
 
 
 class CodexModelRunner:
@@ -117,10 +118,16 @@ class CodexModelRunner:
             return result
         raw = collected["final"].get("raw")
         try:
-            output = json.loads(raw.decode("utf-8"))
+            output = json.loads(raw.decode("utf-8"), object_pairs_hook=_unique_pairs, parse_constant=_reject_constant)
+            canonical_json(output)
+            result["output"] = output
             jsonschema.validate(output, output_schema)
+        except jsonschema.ValidationError as exc:
+            path = "output" + "".join("/" + str(part) for part in exc.absolute_path)
+            result.update(error=path + ": " + exc.message, error_kind="output_validation")
+            return result
         except Exception as exc:
-            result["error"] = type(exc).__name__
+            result.update(error=f"output JSON: {type(exc).__name__}: {exc}", error_kind="output_validation")
             return result
         result.update(status="completed", output=output)
         return result

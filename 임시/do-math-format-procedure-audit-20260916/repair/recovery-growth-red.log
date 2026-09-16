@@ -1,0 +1,33 @@
+test_large_checkpoint_and_operational_evidence_use_exact_readable_references (test_submission_boundaries.HistoricalInputTests.test_large_checkpoint_and_operational_evidence_use_exact_readable_references) ... 
+  test_large_checkpoint_and_operational_evidence_use_exact_readable_references (test_submission_boundaries.HistoricalInputTests.test_large_checkpoint_and_operational_evidence_use_exact_readable_references) (fields=['resume_checkpoint']) ... FAIL
+  test_large_checkpoint_and_operational_evidence_use_exact_readable_references (test_submission_boundaries.HistoricalInputTests.test_large_checkpoint_and_operational_evidence_use_exact_readable_references) (fields=['recovery_materials']) ... FAIL
+  test_large_checkpoint_and_operational_evidence_use_exact_readable_references (test_submission_boundaries.HistoricalInputTests.test_large_checkpoint_and_operational_evidence_use_exact_readable_references) (fields=['execution_to_review', 'observation']) ... FAIL
+
+======================================================================
+FAIL: test_large_checkpoint_and_operational_evidence_use_exact_readable_references (test_submission_boundaries.HistoricalInputTests.test_large_checkpoint_and_operational_evidence_use_exact_readable_references) (fields=['resume_checkpoint'])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_submission_boundaries.py", line 206, in test_large_checkpoint_and_operational_evidence_use_exact_readable_references
+    self.assertIsNone(result["overflow"])
+AssertionError: {'reason': 'context_cannot_fit_without_losing_required_index', 'actual_bytes': 600325, 'mandatory_bytes': 70, 'max_bytes': 20000} is not None
+
+======================================================================
+FAIL: test_large_checkpoint_and_operational_evidence_use_exact_readable_references (test_submission_boundaries.HistoricalInputTests.test_large_checkpoint_and_operational_evidence_use_exact_readable_references) (fields=['recovery_materials'])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_submission_boundaries.py", line 206, in test_large_checkpoint_and_operational_evidence_use_exact_readable_references
+    self.assertIsNone(result["overflow"])
+AssertionError: {'reason': 'context_cannot_fit_without_losing_required_index', 'actual_bytes': 600298, 'mandatory_bytes': 70, 'max_bytes': 20000} is not None
+
+======================================================================
+FAIL: test_large_checkpoint_and_operational_evidence_use_exact_readable_references (test_submission_boundaries.HistoricalInputTests.test_large_checkpoint_and_operational_evidence_use_exact_readable_references) (fields=['execution_to_review', 'observation'])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\test_submission_boundaries.py", line 206, in test_large_checkpoint_and_operational_evidence_use_exact_readable_references
+    self.assertIsNone(result["overflow"])
+AssertionError: {'reason': 'mandatory_context_exceeds_limit', 'actual_bytes': 1200685, 'mandatory_bytes': 1200685, 'max_bytes': 20000} is not None
+
+----------------------------------------------------------------------
+Ran 1 test in 1.619s
+
+FAILED (failures=3)

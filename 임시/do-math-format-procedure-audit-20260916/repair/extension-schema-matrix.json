@@ -1,0 +1,142 @@
+[
+  {
+    "role": "research_preparation",
+    "families": [
+      "knowledge_changes",
+      "model_assessments",
+      "research_insights",
+      "task_conditions",
+      "task_dispositions"
+    ],
+    "schema_valid": true
+  },
+  {
+    "role": "research_plan",
+    "families": [
+      "academic_resolutions",
+      "model_assessments",
+      "queued_requests",
+      "research_insights",
+      "task_dispositions"
+    ],
+    "schema_valid": true
+  },
+  {
+    "role": "research_work",
+    "families": [
+      "external_requests",
+      "knowledge_changes",
+      "knowledge_metadata",
+      "observation_rules",
+      "relations",
+      "research_insights"
+    ],
+    "schema_valid": true
+  },
+  {
+    "role": "task_contract_review",
+    "families": [
+      "research_insights"
+    ],
+    "schema_valid": true
+  },
+  {
+    "role": "identity_review",
+    "families": [
+      "research_insights"
+    ],
+    "schema_valid": true
+  },
+  {
+    "role": "goal_audit",
+    "families": [
+      "research_insights"
+    ],
+    "schema_valid": true
+  },
+  {
+    "role": "supplemental_research",
+    "families": [
+      "external_requests",
+      "knowledge_changes",
+      "knowledge_metadata",
+      "observation_rules",
+      "relations",
+      "research_insights"
+    ],
+    "schema_valid": true
+  },
+  {
+    "role": "operational_review",
+    "families": [
+      "research_insights"
+    ],
+    "schema_valid": true
+  },
+  {
+    "role": "intent_interpretation",
+    "families": [
+      "research_insights"
+    ],
+    "schema_valid": true
+  },
+  {
+    "role": "maintenance",
+    "families": [
+      "research_insights"
+    ],
+    "schema_valid": true
+  },
+  {
+    "role": "identity_review",
+    "review_cycle_id": "RC-test",
+    "stage": "initial",
+    "families": [
+      "research_insights",
+      "research_requests"
+    ],
+    "schema_valid": true
+  },
+  {
+    "role": "identity_review",
+    "review_cycle_id": "RC-test",
+    "stage": "organize",
+    "families": [
+      "research_insights",
+      "research_requests"
+    ],
+    "schema_valid": true
+  },
+  {
+    "role": "identity_review",
+    "review_cycle_id": "RC-test",
+    "stage": "answer",
+    "families": [
+      "research_insights",
+      "research_requests"
+    ],
+    "schema_valid": true
+  },
+  {
+    "role": "identity_review",
+    "review_cycle_id": "RC-test",
+    "stage": "judge",
+    "families": [
+      "research_insights",
+      "research_requests"
+    ],
+    "schema_valid": true
+  },
+  {
+    "role": "supplemental_research",
+    "review_cycle_id": "RC-test",
+    "research_request_id": "RQ-test",
+    "families": [],
+    "schema_valid": true
+  },
+  {
+    "role": "independent_operator",
+    "families": [],
+    "schema_valid": true
+  }
+]
