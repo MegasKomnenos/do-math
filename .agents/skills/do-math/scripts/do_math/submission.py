@@ -411,6 +411,15 @@ def install_tools(workspace: Path, context: dict, schema: dict, max_artifact_byt
     files["tools/check_submission.py"] = (b"import sys\nfrom pathlib import Path\nsys.dont_write_bytecode = True\n"
         b"sys.path.insert(0, str(Path(__file__).with_name('submission-support.zip')))\n"
         b"from do_math.submission import main\nraise SystemExit(main())\n")
+    if "formal_verifier" in context:
+        files["tools/check_lean.py"] = (b"import sys\nfrom pathlib import Path\nsys.dont_write_bytecode = True\n"
+            b"sys.path.insert(0, str(Path(__file__).with_name('submission-support.zip')))\n"
+            b"from do_math.formal_preview import main\nraise SystemExit(main())\n")
+        context["formal_verifier"]["preview"] = {
+            "command": [sys.executable, "-B", "input/tools/check_lean.py"],
+            "arguments": "--source <workspace-relative .lean file> --declaration <name> (repeat for each declaration)",
+            "authoritative": False,
+            "environment": "Same verifier edition and configured command. Shared libraries and Lake caches are not isolated. Central verification is mandatory."}
     contract = {"command": [sys.executable, "-B", "input/tools/check_submission.py"],
         "workspace": str(workspace.resolve()),
         "schema_path": "input/submission/schema.json", "context_path": "input/submission/context.json",

@@ -163,7 +163,7 @@ def run(request_path: Path) -> int:
     try:
         with stdout_path.open("wb") as stdout, stderr_path.open("wb") as stderr:
             process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=stdout, stderr=stderr,
-                                       cwd=request["cwd"], env=sanitized_environment(), shell=False)
+                                       cwd=request["cwd"], env=sanitized_environment(), shell=False, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
             try:
                 process.communicate(input=prompt, timeout=float(request["max_runtime_seconds"]))
                 status.update(state="exited", cli_exit_code=process.returncode)

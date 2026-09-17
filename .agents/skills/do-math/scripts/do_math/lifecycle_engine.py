@@ -367,6 +367,11 @@ class LifecycleEngineMixin:
                 changed = True
         return changed
 
+    def _record_readiness(self, task_id, evaluation, when):
+        previous = self.runtime['task_readiness'].get(task_id, {})
+        if {k: v for k, v in previous.items() if k != 'evaluated_at'} != evaluation:
+            self.runtime['task_readiness'][task_id] = {**evaluation, 'evaluated_at': when}
+
     def _refresh_readiness(self):
         self._upgrade_runtime()
         now = self._lifecycle_now()
@@ -378,8 +383,8 @@ class LifecycleEngineMixin:
                 self.runtime['task_readiness'].pop(task_id, None)
                 continue
             if task_id in missing_assessments:
-                self.runtime['task_readiness'][task_id] = {'state': 'not_ready', 'basis': [],
-                    'errors': ['model assessment required before contract review'], 'evaluated_at': now.isoformat()}
+                self._record_readiness(task_id, {'state': 'not_ready', 'basis': [],
+                    'errors': ['model assessment required before contract review']}, now.isoformat())
                 if task['status'] == 'ready': task['status'] = 'waiting'
                 continue
             required = {'revision': task['revision'], 'contract_sha256': contract_hash(task),
@@ -406,7 +411,7 @@ class LifecycleEngineMixin:
             if not approved:
                 evaluation = {'state': 'not_ready', 'basis': [], 'errors': ['current revision lacks approved contract review']}
             previous = self.runtime['task_readiness'].get(task_id)
-            self.runtime['task_readiness'][task_id] = {**evaluation, 'evaluated_at': now.isoformat(), 'contract_basis': required}
+            self._record_readiness(task_id, {**evaluation, 'contract_basis': required}, now.isoformat())
             if evaluation['state'] == 'ready':
                 task['status'] = 'ready'
                 if not previous or previous['state'] != 'ready':
@@ -432,7 +437,7 @@ class LifecycleEngineMixin:
                    if not events[event_id].get('assigned_to')]
         if not pending: return
         running_ids = {execution.get('action', {}).get('id') for execution in self.runtime['executions'].values()
-                       if execution.get('status') in {'starting', 'running'}}
+                       if execution.get('status') != 'ended'}
         assigned = False
         for role in ('research_preparation', 'research_plan'):
             selected = [event_id for event_id in pending if

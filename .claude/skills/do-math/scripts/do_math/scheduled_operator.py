@@ -97,7 +97,7 @@ def schedule(
         "-OperatorTimeoutSeconds", str(operator_timeout_seconds),
         "-EngineTimeoutSeconds", str(engine_timeout_seconds),
     ]
-    completed = runner(command, capture_output=True, text=True, encoding="utf-8", check=False)
+    completed = runner(command, capture_output=True, text=True, encoding="utf-8", check=False, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
     if completed.returncode:
         raise RuntimeError(completed.stderr.strip() or completed.stdout.strip() or "scheduled-task operation failed")
     try:
@@ -180,7 +180,7 @@ def run_engine(repository: Path, instance: str, workspace: Path) -> dict[str, An
     record = {"outcome": "running", "before": status, "command": command, "run_directory": str(run_directory)}
     _json(run_directory / "result.json", record)
     try:
-        completed = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8", check=False)
+        completed = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8", check=False, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
         (run_directory / "stdout.json").write_text(completed.stdout, encoding="utf-8")
         (run_directory / "stderr.txt").write_text(completed.stderr, encoding="utf-8")
         after = read_status(repository, instance)

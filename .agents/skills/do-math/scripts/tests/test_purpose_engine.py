@@ -74,6 +74,9 @@ class MemoryRepository:
         data = self.databases[self.key]
         return data['snapshots'][snapshot or data['head']][2][path]
 
+    def read_many(self, paths, snapshot=None):
+        return {path: self.read(path, snapshot) for path in paths}
+
 
 def parse_context(prompt, workspace):
     value = json.loads(prompt.split('--- CANONICAL INPUT CONTEXT ---\n', 1)[1].split('\n--- OUTPUT JSON SCHEMA ---', 1)[0])

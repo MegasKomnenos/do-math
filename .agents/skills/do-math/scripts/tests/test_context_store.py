@@ -6,6 +6,13 @@ SCRIPTS=Path(__file__).resolve().parents[1];sys.path.insert(0,str(SCRIPTS))
 import do_math.context_store as store
 
 class ContextStoreTests(unittest.TestCase):
+ def test_large_ongoing_preparation_is_recoverable_without_prompt_overflow(self):
+  with tempfile.TemporaryDirectory() as d:
+   root=Path(d); entries=[{'execution_id':'E','status':'running','reason':'assigned obligation '*1000}]
+   result=store.fit_context({'goal':'g','ongoing_preparation':entries},max_bytes=1200,workspace=root,mandatory_keys=['goal'])
+   self.assertIsNone(result['overflow'])
+   ref=result['context']['ongoing_preparation']['source_ref']
+   self.assertEqual(json.loads(store.read_source(root,ref,limit=100000)['bytes']),entries)
  def test_materialize_and_invalid_utf8_round_trip(self):
   with tempfile.TemporaryDirectory() as d:
    root=Path(d); data=b'\xff\x00abc'; result=store.materialize_inputs(root,{'sources/raw.bin':data})

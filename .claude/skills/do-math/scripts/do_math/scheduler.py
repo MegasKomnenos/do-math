@@ -174,11 +174,45 @@ class SchedulerMixin:
         for position, request in zip(positions, ordered):
             self.runtime["queue"][position] = request
 
+    def _initial_plan_waits(self, action):
+        """Delay only pre-research registration, never general planning."""
+        basis = action.get("initial_preparation_wait")
+        if not basis or action.get("requested_by") or action.get("recovery"):
+            return False
+        current = {"goal_revision": self.instance.get("goal_revision"),
+                   "policy_revision": self.instance.get("policy_revision"),
+                   "requirements_sha256": self.instance.get("academic_requirements", {}).get("sha256")}
+        if basis != current or self.runtime["questions"] or self.runtime["inputs"]:
+            return False
+        for event in self.runtime.get("events", []):
+            if event["id"] not in action.get("event_refs", []):
+                continue
+            decision = self.instance.get("decisions", {}).get(event.get("decision_id"), {})
+            if event["kind"] != "user_decision_applied" or not decision.get("initial_registration"):
+                return False
+        tasks = self.runtime["tasks"].values()
+        if any(t["status"] in {"ready", "assessing", "needs_revision"} or t.get("results") for t in tasks):
+            return False
+        preparations = [e for e in self.runtime["executions"].values()
+                        if e["role"] == "research_preparation" and not e.get("action", {}).get("assessment_targets")]
+        if not preparations:
+            return any(a["role"] == "research_preparation" for a in self.runtime["queue"])
+        initial = preparations[0]
+        if initial["status"] != "ended":
+            return True
+        if initial.get("outcome") != "output_accepted" or not self.runtime["tasks"]:
+            return False
+        # Wait for the first usable contract, not for the whole review group.
+        # If all reviews end without a usable task, planning must diagnose it.
+        return any(a["role"] == "task_contract_review" for a in self.runtime["queue"])
+
     def _dispatchable(self, action, resources):
         live = [e for e in self.runtime["executions"].values() if e["status"] != "ended"]
         if any(e.get("action", {}).get("id") == action.get("id") for e in live if action.get("id")):
             return False
         role, target = action["role"], action.get("target")
+        if role == "research_plan" and self._initial_plan_waits(action):
+            return False
         identity_keys = ("role", "target", "stage", "slot", "round", "review_cycle_id", "basis")
         if any(all(e.get("action", {}).get(key) == action.get(key) for key in identity_keys) for e in live):
             return False
@@ -210,12 +244,7 @@ class SchedulerMixin:
             while True:
                 self._controls()
                 self._calls.collect()
-                if self._installation_manifest() != self._installation:
-                    self.runtime["status"] = "paused"
-                    message = "Installed code or role documents changed. Restart the executor to load one consistent version, then resume."
-                    if message not in self.runtime["questions"]:
-                        self.runtime["questions"].append(message)
-                    self._save()
+                self._check_installation()
                 stopping = self.runtime["status"] in {"paused", "closed", "completed"} or time.monotonic() >= deadline
                 if stopping:
                     if not self._calls.futures:

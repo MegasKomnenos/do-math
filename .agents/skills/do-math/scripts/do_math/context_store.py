@@ -17,7 +17,7 @@ _CATALOG_KEYS = (
     "relations", "sources", "user_inputs", "open_questions", "goal_judgments", "preparation_history", "blocked_actions",
     "resume_checkpoint", "recovery_materials", "previous_output_files", "execution_to_review", "observation",
     "kind_definitions", "task_readiness", "available_input_refs", "queued_work", "external_operations",
-    "external_rejections", "academic_requirements", "academic_validation", "events", "grants", "config",
+    "external_rejections", "academic_requirements", "academic_validation", "events", "grants", "config", "ongoing_preparation",
 )
 
 

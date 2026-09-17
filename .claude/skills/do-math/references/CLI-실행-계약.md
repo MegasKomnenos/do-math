@@ -79,6 +79,8 @@ artifact는 기존 경로를 수정하지 않고 새 bundle에 추가한다. 대
 
 control inbox는 요청 전달 통로이고 정본이 아니다. 실행별 workspace는 입력 사본과 모델 작성 파일을 두며, 파일은 수신·해시·artifact 저장을 통과해야 후속이 안정적으로 참조할 수 있다.
 
+같은 snapshot의 자료는 Git 배치 읽기로 회수하고, 한 저장의 blob은 필터 없이 묶어서 쓴다. 원자료 제공 범위·바이트와 불변 artifact, 단일 부모 및 ref의 compare-and-swap 공개는 유지한다. artifact 추가 없이 두 상태 루트의 내용이 같으면 새 commit을 만들지 않는다. `updated_at`만의 차이는 상태 변경으로 세지 않으며, `task_readiness.evaluated_at`은 현행 평가 내용·근거가 처음 기록된 시각이다. 반복 평가 때 같은 내용을 기록한 시각이나 실행기 생존 시각으로 읽지 않는다.
+
 ## CLI 상태와 보편 개념의 대응
 
 GLOSSARY의 보편 상태가 개념의 뜻을 소유한다. 아래 값은 현재 CLI가 두 JSON에 저장하는 구현 투영이다.
@@ -695,11 +697,15 @@ AI 실행을 시작할 때 현재 예산과 grant, 대상 과제의 readiness를
 
 외부 operation이 `running`이었다면 원장의 `transmitted`를 확인한다. 실행기는 요청을 보내기 직전에 `transmitted=true`를 공개하므로, 그 값이 `true`이거나 없으면 요청이 나갔을 수 있어 `unknown`으로 바꾸고 자동 재전송하지 않는다. `transmitted=false`로 남았으면 요청이 나가기 전에 멈춘 것이므로 효과 부재가 확정된 `failed`로 닫고, 같은 요청은 `external` retry 절차로만 다시 준비한다. 모든 미종료 실행을 정리한 뒤 CLI는 `paused`가 되며 운영자가 status·check·원자료를 확인하고 명시적으로 resume해야 한다.
 
-실행 중 설치 코드나 역할 문서의 hash가 바뀌면 현재 `run`은 `paused`로 전환하고 일관된 새 실행기 판본에서 재시작하도록 질문을 남긴다. 이미 고정한 과거 input·output artifact는 생성 당시 판본으로 보존한다.
+실행 중 설치 코드나 역할 문서의 hash가 바뀌면 현재 `run`은 `paused`로 전환하고 일관된 새 실행기 판본에서 재시작하도록 질문을 남긴다. 반복 순회의 전체 hash 검사는 최대 초당 한 번 수행하며, AI 실행 준비의 시작·입력 확정·결과 수신 경계에서는 간격과 관계없이 검사한다. 이는 파일 변경 즉시 감지의 보증이 아니다. 이미 고정한 과거 input·output artifact는 생성 당시 판본으로 보존한다.
+
+입력 준비 중에는 파일 처리 경계에서 새 제어 요청과 실행 기한을 확인한다. 모델을 시작하기 직전에도 제어 요청을 적용한다. 정지됐거나 사용자 제어로 입력 snapshot이 바뀌었으면 아직 공개하지 않은 해당 실행 입력 폴더를 정리하고 모델을 시작하지 않는다. pause는 요청과 사건을 보존해 이후 현재 입력으로 판단하며, close는 기존 종결 계약에 따라 대기열을 정리한다. 실행용 프로세스를 준비한 뒤 실제 모델을 시작하기 전의 최초 정지 확인에서는 체크포인트 유예 없이 중단한다. 그 최초 확인을 지나 수행 중인 모델에는 설정된 체크포인트 유예를 적용한다. 다른 모델의 콜백은 이 확인 안에서 처리하지 않아 무관한 관찰 저장 때문에 입력 준비를 반복하지 않게 한다. 실행 기록의 `input_preparation_seconds`, `input_published_at`, `stop_observed_at`, `ended_at`과 사용자 제어의 접수 시각은 각각 준비·입력 공개·정지 관찰·종료를 구별하는 측정 근거다. 이 시각만으로 공급자 내부 종료를 확정하지 않는다.
 
 ## 형식 검사, 동일성 검토와 목표
 
 Lean source가 있는 knowledge candidate는 중앙 `formal_check` action으로 간다. 실행기는 실제 실행파일, version·hash, project fingerprint, source hash, 선언 signature와 전이 공리 의존을 보존하고 `allowed_axioms` 밖 의존과 `sorryAx`를 거부한다. 형식 검사는 Lean 실행이 만든 다른 host 효과나 수학 해설의 의미를 보증하지 않는다.
+
+작업자의 `formal_verifier.preview.command`는 `input/tools/check_lean.py`를 실행한다. `--source`와 반복 가능한 `--declaration`을 받고 JSON을 반환한다. `verified`이면 exit 0, 그 밖의 `rejected`, `failed`, `unavailable`, `stopped`는 exit 1이다. `authoritative=false`이며 성공한 검사의 해시는 읽은 UTF-8 소스 바이트에 결박된다. `submission-support.zip` 안의 같은 검증 코드와 입력의 구성 명령·허용 공리·시간 한도를 사용하고, 컴파일은 별도 임시 작업 폴더와 Windows Job에서 수행한다. 공유 라이브러리·Lake 프로젝트·빌드 캐시의 불변성이나 격리는 보증하지 않는다. 중앙 `formal_check`는 사전 검사 결과를 승계하지 않고 제출된 소스를 다시 검사한다.
 
 형식 검사를 통과하면 현재 CLI는 동일성 검토 계보의 initial 결과를 서로 숨긴 채 봉인한다. 전건 complete match이고 열린 finding이 없으면 직접 집계한다. 그 밖에는 organize, 독립 judge 세 자리, 원 initial 자리의 answer와 같은 judge의 재심을 `review_rounds` 안에서 수행한다. 보충 조사, 실행 미완료와 남은 쟁점은 같은 계보에 보존한다.
 
@@ -714,6 +720,10 @@ Lean source가 있는 knowledge candidate는 중앙 `formal_check` action으로 
 ## 계획 이력과 현재 입력 범위
 
 후보 준비와 연구 계획의 `recent_history`에는 이전에 종료한 `research_plan` 실행을 제공한다. 후보 준비에만 더하는 `preparation_history`에는 이전에 종료한 `research_preparation` 실행을 제공한다. 각 행은 `execution_id`, `role`, `outcome`, `error`, `action`을 가지며 결과 artifact가 있으면 `artifact_ref`, 실행 입력에 복원한 `local_path`, `sha256`, `bytes`를 함께 가진다. 활동 상태 필드는 이 이력 행에 넣지 않는다. 반려·실행 미완료·무산출도 제외하지 않는다.
+
+두 역할의 `ongoing_preparation`은 종료되지 않은 준비의 `execution_id`, `status`, `input_snapshot`, `goal_revision`, `policy_revision`, `reason`, `target`, `assessment_targets`를 제공한다. 미공개 산출이나 동료의 추론은 제공하지 않는다. 미시작 action의 병합은 서로 다른 `reasons`, `event_refs`, 사용자 요청의 `requested_by_refs`를 보존하며, `starting`, `running`, `stopping` 실행의 입력에는 새 요청을 합치지 않는다.
+
+세션 모드의 `initial_preparation_wait`는 연구 실행·과제·지식이 없고 준비 요청이 있는 시점에 등록한 학술 요구의 계획 요청에만 붙는다. 그 요청은 최초 준비와 계약 검토를 기다리되 첫 `ready` 과제, 반환 결과, 준비 실패·빈 결과, 계약 반려·질문, 별도의 사용자 입력·결정, 목표·정책·학술 요구 판본 변경이 있으면 기다리지 않는다. 모든 계약 검토가 끝나도 사용 가능한 과제가 없으면 계획이 원인을 판단한다. 대기 동안 사건을 소비하지 않고, 수락한 계획이 실제로 받은 `event_refs`만 소비한다. 일반 계획의 빈 선택은 계속 허용한다.
 
 이력과 다른 큰 입력은 `input/catalog/` 원문으로 바뀔 수 있으며 source reference에서 다시 읽는다. 최근 이력의 inline window가 작다는 사실은 과거 결과가 없다는 뜻이 아니다.
 

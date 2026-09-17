@@ -113,11 +113,11 @@ class CodexExecAdapter:
     def describe(self) -> dict[str, Any]:
         try:
             version_result = subprocess.run([self.codex_path, "--version"], check=False, shell=False,
-                                            capture_output=True, timeout=self.describe_timeout)
+                                            capture_output=True, timeout=self.describe_timeout, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
             global_help_result = subprocess.run([self.codex_path, "--help"], check=False, shell=False,
-                                                capture_output=True, timeout=self.describe_timeout)
+                                                capture_output=True, timeout=self.describe_timeout, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
             help_result = subprocess.run([self.codex_path, "exec", "--help"], check=False, shell=False,
-                                         capture_output=True, timeout=self.describe_timeout)
+                                         capture_output=True, timeout=self.describe_timeout, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
         except (OSError, subprocess.TimeoutExpired) as exc:
             return {"cli_path": self.codex_path, "verified": False, "error_type": type(exc).__name__}
         version, help_bytes = version_result.stdout, help_result.stdout

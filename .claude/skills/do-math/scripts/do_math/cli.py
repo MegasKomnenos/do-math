@@ -58,10 +58,10 @@ def _require_git(repository: Path, create: bool = False) -> None:
         if repository.exists() and (not repository.is_dir() or any(repository.iterdir())):
             raise CliInputError("--create-repository accepts only a missing or empty directory")
         repository.mkdir(parents=True, exist_ok=True)
-        result = subprocess.run(["git", "-C", str(repository), "init", "-q"], check=False, capture_output=True)
+        result = subprocess.run(["git", "-C", str(repository), "init", "-q"], check=False, capture_output=True, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
         if result.returncode:
             raise GitStateStoreError("git init failed")
-    result = subprocess.run(["git", "-C", str(repository), "rev-parse", "--git-dir"], check=False, capture_output=True)
+    result = subprocess.run(["git", "-C", str(repository), "rev-parse", "--git-dir"], check=False, capture_output=True, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
     if result.returncode:
         raise CliInputError("--repository must name an existing Git repository; use init --create-repository explicitly")
 

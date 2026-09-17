@@ -8,6 +8,7 @@ import sys
 import tempfile
 import threading
 import unittest
+from unittest.mock import patch
 
 
 SCRIPTS = Path(__file__).resolve().parents[1]
@@ -47,6 +48,31 @@ class GitStateStoreTests(unittest.TestCase):
             "research/instance.json": b'{"revision": 1}\n',
             "runtime/state.json": b'{"state": "initializing"}\n',
         }
+
+    def test_many_blobs_use_one_hash_process_and_preserve_raw_bytes(self):
+        (self.repository / '.gitattributes').write_text('* text eol=lf\n', encoding='utf-8')
+        changes = {**self.initial_changes(), **{
+            f'runtime/artifacts/batch/자료 {i}.bin': bytes(range(256)) + b'\r\n\x00' + bytes([i])
+            for i in range(38)}}
+        with patch.object(self.store, '_git', wraps=self.store._git) as calls:
+            snapshot = self.store.publish(None, changes)
+        hashes = [c for c in calls.call_args_list if c.args[0] == 'hash-object']
+        self.assertEqual(len(hashes), 1)
+        for path, raw in changes.items():
+            self.assertEqual(self.store.read_bytes(snapshot.head, path), raw)
+
+    def test_batch_read_is_exact_and_missing_blob_is_an_error(self):
+        changes = {**self.initial_changes(), 'runtime/artifacts/batch/빈 파일': b'',
+                   'runtime/artifacts/batch/바이너리': b'\x00\xff\n\r\nblob missing\n'}
+        snapshot = self.store.publish(None, changes)
+        self.assertTrue(callable(getattr(self.store, 'read_many', None)), 'batch read is required')
+        with patch.object(self.store, '_git', wraps=self.store._git) as calls:
+            values = self.store.read_many(snapshot.head, list(changes))
+        self.assertEqual(values, changes)
+        self.assertEqual(len(calls.call_args_list), 1)
+        self.assertEqual(self.store.read_many(snapshot.head, []), {})
+        with self.assertRaises(GitStateStoreError):
+            self.store.read_many(snapshot.head, ['research/instance.json', 'runtime/absent'])
 
     def test_initial_commit_has_no_parent_and_later_commit_has_one_parent(self) -> None:
         initial = self.store.publish(None, self.initial_changes())

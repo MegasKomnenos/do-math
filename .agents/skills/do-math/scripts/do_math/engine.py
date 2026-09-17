@@ -13,6 +13,7 @@ import binascii
 import hashlib
 import json
 import inspect
+import shutil
 from pathlib import Path
 import time
 from typing import Any
@@ -40,6 +41,12 @@ from .session_slots import SessionSlots
 from . import submission
 
 CONTRACT = "do-math-cli/1"
+
+
+class InputPreparationInterrupted(Exception):
+    """An unpublished input was abandoned before any model execution."""
+
+
 ENGINE_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 DEFAULT_CONFIG = {
     "tier_models": deepcopy(model_policy.MODELS), "role_tiers": deepcopy(model_policy.ROLE_TIERS),
@@ -315,6 +322,7 @@ class ResearchEngine(SchedulerMixin, ReviewEngineMixin, LifecycleEngineMixin, Ac
         self.runner = runner or CodexModelRunner()
         self.formal_verifier = formal_verifier or verify_lean
         self.head, self.instance, self.runtime = self.store.load()
+        self._saved_state = self._state_signature()
         if self.instance.get("contract_id") != CONTRACT or self.runtime.get("contract_id") != CONTRACT:
             raise ValueError("unsupported instance contract; explicit migration is required")
         self.instance["config"] = {**deepcopy(DEFAULT_CONFIG), "session_limits": None, **self.instance["config"]}
@@ -325,6 +333,8 @@ class ResearchEngine(SchedulerMixin, ReviewEngineMixin, LifecycleEngineMixin, Ac
         self._slots = None
         self._documents = all_prompt_documents()
         self._installation = self._installation_manifest()
+        self._next_installation_check = 0.0
+        self._preparation_deadline = None
         self._upgrade_runtime()
         self.instance = knowledge_io.ensure_ontology(self.instance)
 
@@ -338,6 +348,34 @@ class ResearchEngine(SchedulerMixin, ReviewEngineMixin, LifecycleEngineMixin, Ac
 
     def _render_prompt(self, role: str, context: dict, **kwargs) -> str:
         return render_prompt(role, context, documents=self._documents[role], **kwargs)
+
+    def _check_installation(self, *, force=False):
+        current = time.monotonic()
+        if not force and current < self._next_installation_check:
+            return True
+        self._next_installation_check = current + 1.0
+        if self._installation_manifest() == self._installation:
+            return True
+        if self.runtime["status"] not in {"closed", "completed"}:
+            self.runtime["status"] = "paused"
+        message = "Installed code or role documents changed. Restart the executor to load one consistent version, then resume."
+        if message not in self.runtime["questions"]:
+            self.runtime["questions"].append(message)
+        self._save()
+        return False
+
+    def _preparation_checkpoint(self):
+        if self._preparation_deadline is not None and (
+                time.monotonic() >= self._preparation_deadline or self._inbox()):
+            raise InputPreparationInterrupted()
+
+    def _discard_prepared_input(self, base: Path, execution_id: str):
+        resolved = base.resolve(strict=True)
+        runs = (Path(self.instance["workspace"]) / "runs").resolve()
+        if (resolved.parent != runs or resolved.name != execution_id
+                or execution_id in self.runtime["executions"]):
+            raise ValueError("only this unpublished execution input may be discarded")
+        shutil.rmtree(resolved)
 
     def _input_artifacts(self, bundle: str, role: str, prompt: str, schema: dict, fitted: dict,
                          workspace: Path) -> dict[str, bytes]:
@@ -367,6 +405,10 @@ class ResearchEngine(SchedulerMixin, ReviewEngineMixin, LifecycleEngineMixin, Ac
         artifacts[f"{base}/manifest.json"] = canonical_json(manifest)
         return artifacts
 
+    def _state_signature(self):
+        return (self.head, canonical_json(self.instance),
+                canonical_json({k: v for k, v in self.runtime.items() if k != "updated_at"}))
+
     def _save(self, artifacts: dict[str, bytes] | None = None) -> None:
         if self._session_mode():
             live = [eid for eid, e in self.runtime["executions"].items() if e["status"] != "ended"]
@@ -385,8 +427,12 @@ class ResearchEngine(SchedulerMixin, ReviewEngineMixin, LifecycleEngineMixin, Ac
                 task.pop("pending_withdrawal")
                 self.runtime["queue"] = [action for action in self.runtime["queue"]
                                          if action.get("target") != task_id]
+        state = self._state_signature()
+        if not artifacts and state == self._saved_state:
+            return
         self.runtime["updated_at"] = now()
         self.head = self.store.save(self.head, self.instance, self.runtime, artifacts=artifacts)
+        self._saved_state = (self.head, state[1], state[2])
 
     def _inbox(self) -> list[dict]:
         path = Path(self.instance["workspace"]) / "control" / self.instance["id"]
@@ -404,8 +450,8 @@ class ResearchEngine(SchedulerMixin, ReviewEngineMixin, LifecycleEngineMixin, Ac
         # Preserve their host acceptance order; old records retain the ID tie-break.
         return sorted(results, key=lambda request: (request["created_at"], request.get("accepted_order", ""), request["id"]))
 
-    def _controls(self) -> None:
-        if self._calls is not None:
+    def _controls(self, *, pump=True) -> None:
+        if pump and self._calls is not None:
             self._calls.pump()
         for request in self._inbox():
             action = request["action"]
@@ -609,6 +655,7 @@ class ResearchEngine(SchedulerMixin, ReviewEngineMixin, LifecycleEngineMixin, Ac
         """Apply queued user controls under the sole writer lock, without AI."""
         with self.store.writer_lock():
             self.head, self.instance, self.runtime = self.store.load()
+            self._saved_state = self._state_signature()
             self.instance["config"] = {**deepcopy(DEFAULT_CONFIG), "session_limits": None, **self.instance["config"]}
             self._upgrade_runtime()
             self.instance = knowledge_io.ensure_ontology(self.instance)
@@ -620,6 +667,7 @@ class ResearchEngine(SchedulerMixin, ReviewEngineMixin, LifecycleEngineMixin, Ac
 
     def status(self) -> dict:
         self.head, self.instance, self.runtime = self.store.load()
+        self._saved_state = self._state_signature()
         self.instance["config"] = {**deepcopy(DEFAULT_CONFIG), "session_limits": None, **self.instance["config"]}
         executions = list(self.runtime["executions"].values())
         return {"instance_id": self.instance["id"], "snapshot": self.head, "title": self.instance["title"],
@@ -669,6 +717,7 @@ class ResearchEngine(SchedulerMixin, ReviewEngineMixin, LifecycleEngineMixin, Ac
             raise ValueError("max_steps must be positive")
         with self.store.writer_lock():
             self.head, self.instance, self.runtime = self.store.load()
+            self._saved_state = self._state_signature()
             self.instance["config"] = {**deepcopy(DEFAULT_CONFIG), "session_limits": None, **self.instance["config"]}
             self._upgrade_runtime()
             previous = self.runtime.get("installation")
@@ -688,10 +737,7 @@ class ResearchEngine(SchedulerMixin, ReviewEngineMixin, LifecycleEngineMixin, Ac
             steps = 0
             while self.runtime["status"] in {"ready", "running"} or (watch and self.runtime["status"] == "waiting"):
                 self._controls()
-                if self._installation_manifest() != self._installation:
-                    self.runtime["status"] = "paused"
-                    self.runtime["questions"].append("Installed code or role documents changed. Restart the executor to load one consistent version, then resume.")
-                    self._save()
+                if not self._check_installation():
                     break
                 self.instance["available_input_refs"] = self._available_inputs()
                 self._refresh_readiness()
@@ -810,6 +856,7 @@ class ResearchEngine(SchedulerMixin, ReviewEngineMixin, LifecycleEngineMixin, Ac
                                     for document in documents]
         catalog = []
         for kid, knowledge_record in sorted(self.instance["knowledge"].items()):
+            self._preparation_checkpoint()
             # Hide the current review group's partial results. Completed prior
             # stages are public evidence needed by planners and goal auditors.
             hidden_reviews = ((action["role"] == "identity_review" and kid == action.get("target")) or
@@ -834,8 +881,13 @@ class ResearchEngine(SchedulerMixin, ReviewEngineMixin, LifecycleEngineMixin, Ac
                 catalog[-1]["review_cycle_source"] = {"path": cycle_path.relative_to(workspace).as_posix(),
                     "sha256": hashlib.sha256(cycle_path.read_bytes()).hexdigest()}
         sources = []
+        self._preparation_checkpoint()
+        source_bytes = self.store.read_many([s["path"] for s in self.instance["sources"]], self.head)
         for i, source in enumerate(self.instance["sources"]):
-            raw = self.store.read(source["path"], self.head)
+            self._preparation_checkpoint()
+            raw = source_bytes[source["path"]]
+            if hashlib.sha256(raw).hexdigest() != source["sha256"]:
+                raise ValueError("source artifact hash changed")
             path = directory / "sources" / f"{i:04d}-{source['name']}"
             path.parent.mkdir(exist_ok=True)
             path.write_bytes(raw)
@@ -846,12 +898,17 @@ class ResearchEngine(SchedulerMixin, ReviewEngineMixin, LifecycleEngineMixin, Ac
         private_review_context = bool(action.get("review_cycle_id") or target_execution_action.get("review_cycle_id"))
         task_views = deepcopy(list(self.runtime["tasks"].values()))
         if not private_review_context:
+            result_bytes = self.store.read_many([
+                file["artifact_ref"] for view in task_views for result in view.get("results", [])
+                for file in result.get("output_files", self.runtime["executions"].get(
+                    result.get("execution_id"), {}).get("output_files", []))], self.head)
             for view in task_views:
                 for result in view.get("results", []):
                     producing = self.runtime["executions"].get(result.get("execution_id"), {})
                     restored = []
                     for file in result.get("output_files", producing.get("output_files", [])):
-                        raw = self.store.read(file["artifact_ref"], self.head)
+                        self._preparation_checkpoint()
+                        raw = result_bytes[file["artifact_ref"]]
                         if hashlib.sha256(raw).hexdigest() != file["sha256"]:
                             raise ValueError("task result artifact hash changed")
                         path = directory / "task-results" / view["id"] / result["execution_id"] / file["path"]
@@ -898,7 +955,8 @@ class ResearchEngine(SchedulerMixin, ReviewEngineMixin, LifecycleEngineMixin, Ac
             "command": self.instance["config"].get("lean_command") or discover_lean(),
             "observed_toolchain": active_environment.get("toolchain"),
             "allowed_axioms": self.instance["config"]["allowed_axioms"],
-            "instruction": "Submit self-contained lean_code and declaration_names. The executor runs the verifier after submission. A configured command is not a completed verification. Version is unknown until observed_toolchain or a recorded formal result supplies it; no worker-local Lean preview is advertised."}
+            "timeout_seconds": self.instance["config"]["lean_timeout_seconds"],
+            "instruction": "Submit self-contained lean_code and declaration_names. Use preview for non-authoritative compiler feedback when a command is supplied. It uses this verifier edition and configured command, but does not isolate shared libraries or Lake caches. The executor always verifies the submitted exact source again. A configured command is not a completed verification; report only the toolchain actually observed."}
         context["academic_requirements"] = self.instance.get("academic_requirements", {})
         context["academic_phase"] = "postsolution" if self.instance["goal_status"] == "mathematically_solved" else "deferred_until_goal_solved"
         context["kind_definitions"] = knowledge_io.catalog_definitions(self.instance)
@@ -1019,8 +1077,10 @@ class ResearchEngine(SchedulerMixin, ReviewEngineMixin, LifecycleEngineMixin, Ac
                              and e.get("status") == "ended" and e.get("artifact_bundle")), None)
         if previous:
             restored = []
+            previous_bytes = self.store.read_many([entry["artifact_ref"] for entry in previous.get("output_files", [])], self.head)
             for entry in previous.get("output_files", []):
-                raw = self.store.read(entry["artifact_ref"], self.head)
+                self._preparation_checkpoint()
+                raw = previous_bytes[entry["artifact_ref"]]
                 if (hashlib.sha256(raw).hexdigest() != entry["sha256"] or
                         len(raw) != entry["bytes"]):
                     raise ValueError("resume artifact differs from its preserved reference")
@@ -1059,6 +1119,15 @@ class ResearchEngine(SchedulerMixin, ReviewEngineMixin, LifecycleEngineMixin, Ac
                 "reason": entry.get("reason"), "execution_id": entry.get("execution_id")}
                 for aid, entry in self.runtime.get("waiting_actions", {}).items()]
             context["recent_history"] = self._planning_history("research_plan", workspace)
+            context["ongoing_preparation"] = [
+                {"execution_id": e["id"], "status": e["status"],
+                 "input_snapshot": e.get("input_snapshot"),
+                 "goal_revision": e.get("goal_revision"), "policy_revision": e.get("policy_revision"),
+                 "reason": e.get("action", {}).get("reason", ""),
+                 "target": e.get("action", {}).get("target"),
+                 "assessment_targets": deepcopy(e.get("action", {}).get("assessment_targets", {}))}
+                for e in self.runtime["executions"].values()
+                if e["role"] == "research_preparation" and e["status"] != "ended"]
             if action["role"] == "research_preparation":
                 context["preparation_history"] = self._planning_history("research_preparation", workspace)
         submission.install_tools(workspace, context, self._response_schema(action), self.instance["config"]["max_artifact_bytes"])
@@ -1067,9 +1136,16 @@ class ResearchEngine(SchedulerMixin, ReviewEngineMixin, LifecycleEngineMixin, Ac
     def _planning_history(self, role: str, workspace: Path) -> list[dict]:
         """Keep rejected and incomplete submissions readable after later events."""
         history = []
+        references = {e["id"]: self.runtime["activities"].get(e.get("activity_id"), {}).get("result_ref")
+                      or f"runtime/artifacts/{e['artifact_bundle']}/result.json"
+                      for e in self.runtime["executions"].values()
+                      if e.get("role") == role and e.get("status") == "ended" and e.get("artifact_bundle")}
+        self._preparation_checkpoint()
+        preserved = self.store.read_many(list(references.values()), self.head)
         for execution in self.runtime["executions"].values():
             if execution.get("role") != role or execution.get("status") != "ended":
                 continue
+            self._preparation_checkpoint()
             row = {"execution_id": execution["id"], "role": role, "outcome": execution.get("outcome"),
                    "error": execution.get("error"), "action": deepcopy(execution.get("action", {}))}
             if "repair" in row["action"]:
@@ -1083,9 +1159,8 @@ class ResearchEngine(SchedulerMixin, ReviewEngineMixin, LifecycleEngineMixin, Ac
                 row["action"]["repair"] = {key: value for key, value in row["action"]["repair"].items()
                                            if key != "previous_output"}
             if execution.get("artifact_bundle"):
-                activity = self.runtime["activities"].get(execution.get("activity_id"), {})
-                reference = activity.get("result_ref") or f"runtime/artifacts/{execution['artifact_bundle']}/result.json"
-                raw = self.store.read(reference, self.head)
+                reference = references[execution['id']]
+                raw = preserved[reference]
                 relative = f"planning-history/{execution['id']}.json"
                 materialize_inputs(workspace, {relative: raw})
                 row.update(artifact_ref=reference, local_path="input/" + relative,
@@ -1338,6 +1413,8 @@ class ResearchEngine(SchedulerMixin, ReviewEngineMixin, LifecycleEngineMixin, Ac
         return self._obsolete_review_reason(action)
 
     def _call_steps(self, action: dict, deadline: float):
+        if not self._check_installation(force=True):
+            return False
         action.setdefault("id", new_id("AC"))
         action = deepcopy(action)
         role = action["role"]
@@ -1386,13 +1463,33 @@ class ResearchEngine(SchedulerMixin, ReviewEngineMixin, LifecycleEngineMixin, Ac
         workspace = base / "workspace"
         workspace.mkdir(parents=True)
         self.instance["available_input_refs"] = self._available_inputs()
-        context = self._context(action, workspace)
+        preparation_started = time.monotonic()
+        input_head = self.head
+        self._preparation_deadline = deadline
+        try:
+            context = self._context(action, workspace)
+        except InputPreparationInterrupted:
+            self._controls(pump=False)
+            self._discard_prepared_input(base, execution_id)
+            return self.runtime["status"] not in {"paused", "closed", "completed"}
+        finally:
+            self._preparation_deadline = None
         schema = self._response_schema(action)
         common_prompt_bytes = len(self._render_prompt(role, {}, output_schema=schema).encode())
         overhead = common_prompt_bytes + 2048
         mandatory = [key for key in ("goal", "goal_kind", "policies", "action", "task", "proposal", "role_review", "user_request", "interpretation_to_check") if key in context]
         fitted = fit_context(context, max_bytes=max(1, config["max_input_bytes"]-overhead), workspace=workspace, mandatory_keys=mandatory)
         prompt = self._render_prompt(role, fitted["context"], output_schema=schema)
+        self._controls(pump=False)
+        if (self.runtime["status"] in {"paused", "closed", "completed"}
+                or time.monotonic() >= deadline or not self._check_installation(force=True)):
+            self._discard_prepared_input(base, execution_id)
+            return False
+        if self.head != input_head:
+            # A user control changed the input while it was materialized.
+            # Keep its obligations queued and prepare a new immutable input.
+            self._discard_prepared_input(base, execution_id)
+            return True
         if fitted["overflow"] or len(prompt.encode()) > config["max_input_bytes"]:
             detail = fitted["overflow"] or {"reason": "rendered_prompt_exceeds_limit", "actual_bytes": len(prompt.encode())}
             detail = {**detail, "common_prompt_bytes": common_prompt_bytes}
@@ -1429,6 +1526,7 @@ class ResearchEngine(SchedulerMixin, ReviewEngineMixin, LifecycleEngineMixin, Ac
             basis_ids = [k["id"] for k in self.instance["knowledge"].values() if knowledge.assess_use(k, self.instance)["valid"]]
         chosen_model = self._select_model(action) if self._session_mode() else None
         if chosen_model and self._slots is not None and not self._slots.acquire(execution_id, pool, chosen_model["model"]):
+            self._discard_prepared_input(base, execution_id)
             return False
         execution = {"id": execution_id, "activity_id": activity_id, "role": role, "action": action,
                      "budget_kind": pool, "status": "starting", "created_at": now(), "input_snapshot": self.head,
@@ -1439,6 +1537,7 @@ class ResearchEngine(SchedulerMixin, ReviewEngineMixin, LifecycleEngineMixin, Ac
                      "goal_revision": self.instance.get("goal_revision", 1), "policy_revision": self.instance.get("policy_revision", 1),
                      "validity_basis": knowledge.capture_basis(self.instance, self.runtime, basis_ids),
                      "source_basis": capture_sources(self.instance, source_refs),
+                     "input_preparation_seconds": time.monotonic() - preparation_started,
                      "input_reductions": fitted["reductions"]}
         if action.get("target") in self.runtime["tasks"]:
             execution["contract_sha256"] = planning.contract_hash(self.runtime["tasks"][action["target"]])
@@ -1452,10 +1551,12 @@ class ResearchEngine(SchedulerMixin, ReviewEngineMixin, LifecycleEngineMixin, Ac
         if role == "identity_review" and action.get("review_cycle_id"):
             self._record_review_input(action, execution_id)
         self._save(self._input_artifacts(input_bundle, role, prompt, schema, fitted, workspace))
+        execution["input_published_at"] = now()
         task = self.runtime["tasks"].get(action.get("target"), {})
         rules = self.runtime.get("task_observation_rules", {}).get(action.get("target"), task.get("initial_observation_rules", []))
         tracker = ObservationTracker(execution_id, workspace, {**config, "observation_rules": rules})
         stop_started = None
+        before_resume = True
         # Work-budget executions (research, review, audit) carry no per-execution
         # deadline; they end by submission, stop conditions or the run deadline.
         call_deadline = deadline if pool == "work" else min(deadline, time.monotonic()+config["call_timeout_seconds"])
@@ -1465,7 +1566,9 @@ class ResearchEngine(SchedulerMixin, ReviewEngineMixin, LifecycleEngineMixin, Ac
             self.runtime["executions"][execution_id].update(status="running", process=json_safe(identity))
             self._save()
         def should_stop():
-            nonlocal stop_started
+            nonlocal stop_started, before_resume
+            first_check = before_resume
+            before_resume = False
             self._controls()
             if self._check_conversations(): self._save()
             current = self.runtime["executions"][execution_id]
@@ -1485,10 +1588,13 @@ class ResearchEngine(SchedulerMixin, ReviewEngineMixin, LifecycleEngineMixin, Ac
             if not requested:
                 return False
             reason = current.get("stop_requested") or ("authority_changed" if not allowed or changed else "user_or_deadline_stop")
-            immediate = not allowed or time.monotonic() >= call_deadline or self.runtime["status"] == "closed"
+            # CodexModelRunner first checks this while its Job is suspended.
+            # There is no model work to checkpoint before that first resume.
+            immediate = first_check or not allowed or time.monotonic() >= call_deadline or self.runtime["status"] == "closed"
             if stop_started is None:
                 stop_started = time.monotonic()
                 current["stop_reason"] = reason
+                current["stop_observed_at"] = now()
                 if self._session_mode():
                     current["status"] = "stopping"
                     self._save()
@@ -1503,6 +1609,7 @@ class ResearchEngine(SchedulerMixin, ReviewEngineMixin, LifecycleEngineMixin, Ac
         if "on_observation" in params or any(p.kind == inspect.Parameter.VAR_KEYWORD for p in params.values()):
             arguments["on_observation"] = lambda event: self._observe_running(execution_id, tracker, event, deadline)
         result = yield arguments
+        self._check_installation(force=True)
         self._live_execution_ids.discard(execution_id)
         if self._session_mode() and self._slots is not None:
             if not self._slots.release(execution_id):
@@ -1684,9 +1791,20 @@ class ResearchEngine(SchedulerMixin, ReviewEngineMixin, LifecycleEngineMixin, Ac
         if target is not None:
             action["target"] = target
         compare_keys = ("role", "target", "stage", "slot", "round", "review_cycle_id", "basis", "transition_id", "assessment_targets")
-        live_actions = {e.get("action", {}).get("id") for e in self.runtime["executions"].values() if e["status"] in {"starting", "running"}}
+        live_actions = {e.get("action", {}).get("id") for e in self.runtime["executions"].values() if e["status"] != "ended"}
         for queued in self.runtime["queue"]:
             if queued.get("id") not in live_actions and all(queued.get(k) == action.get(k) for k in compare_keys):
+                if action.get("reason"):
+                    reasons = queued.setdefault("reasons", [queued["reason"]] if queued.get("reason") else [])
+                    if action["reason"] not in reasons:
+                        reasons.append(action["reason"])
+                        queued.pop("initial_preparation_wait", None)
+                    queued["reason"] = "\n".join(reasons)
+                if action.get("requested_by"):
+                    queued["requested_by_refs"] = list(dict.fromkeys([
+                        *queued.get("requested_by_refs", [queued["requested_by"]] if queued.get("requested_by") else []),
+                        action["requested_by"]]))
+                    queued["requested_by"] = action["requested_by"]
                 if action.get("event_refs"):
                     queued["event_refs"] = list(dict.fromkeys([*queued.get("event_refs", []), *action["event_refs"]]))
                 return

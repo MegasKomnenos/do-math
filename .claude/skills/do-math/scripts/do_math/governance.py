@@ -145,7 +145,22 @@ def apply_decision(instance: dict, runtime: dict, change: dict, *, source_ref: s
             if task.get("academic_requirement_id") and task["status"] not in {"completed", "closed"}:
                 task["status"] = "planned"
                 event["affected"].append(task["id"])
-        _queue(runtime, "research_plan", "academic requirements changed")
+        initial = (not runtime.get("executions") and not runtime["tasks"]
+                   and not instance.get("knowledge") and any(
+                       a["role"] == "research_preparation" for a in runtime["queue"]))
+        event["initial_registration"] = initial
+        fields = {}
+        if initial:
+            fields["initial_preparation_wait"] = {
+                "goal_revision": instance["goal_revision"],
+                "policy_revision": instance["policy_revision"],
+                "requirements_sha256": instance["academic_requirements"]["sha256"]}
+        pending = next((a for a in runtime["queue"] if initial and
+                        a.get("initial_preparation_wait") and a["role"] == "research_plan"), None)
+        if pending is not None:
+            pending.update(fields)
+        else:
+            _queue(runtime, "research_plan", "academic requirements changed", **fields)
     elif kind == "grant":
         spec = deepcopy(change.get("grant"))
         if not isinstance(spec, dict) or spec.get("kind") not in {"local", "http"}:

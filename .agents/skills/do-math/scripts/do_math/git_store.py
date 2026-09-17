@@ -10,6 +10,7 @@ from __future__ import annotations
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from dataclasses import dataclass
+import json
 import os
 from pathlib import Path
 import re
@@ -83,6 +84,54 @@ class GitStateStore:
         self._validate_path(path)
         return self._git("cat-file", "blob", f"{commit}:{path}").stdout
 
+    def read_many(self, commit: str, paths: list[str]) -> dict[str, bytes]:
+        """Read a fixed snapshot in one process, using binary lengths, not lines."""
+        self._validate_oid(commit)
+        paths = list(dict.fromkeys(paths))
+        for path in paths:
+            self._validate_path(path)
+        if not paths:
+            return {}
+        raw = self._git("cat-file", "--batch", input="".join(
+            f"{commit}:{path}\n" for path in paths).encode("utf-8")).stdout
+        result, offset = {}, 0
+        for path in paths:
+            end = raw.find(b"\n", offset)
+            header = raw[offset:end].split() if end >= 0 else []
+            if len(header) != 3 or header[1] != b"blob" or not header[2].isdigit():
+                raise GitStateStoreError("batch read did not return a blob: " + path)
+            self._validate_oid(header[0].decode("ascii"))
+            size = int(header[2])
+            start, offset = end + 1, end + 1 + size
+            if raw[offset:offset + 1] != b"\n":
+                raise GitStateStoreError("truncated batch blob: " + path)
+            result[path] = raw[start:offset]
+            offset += 1
+        if offset != len(raw):
+            raise GitStateStoreError("unexpected trailing batch output")
+        return result
+
+    def _write_blobs(self, changes: Mapping[str, bytes | None]) -> dict[str, str]:
+        values = [(path, raw) for path, raw in changes.items() if raw is not None]
+        if not values:
+            return {}
+        # Numbered private files avoid argv limits and quoting research paths.
+        # --no-filters preserves exactly the bytes previously passed to --stdin.
+        with tempfile.TemporaryDirectory(prefix="do-math-blobs-", dir=self._git_dir) as directory:
+            filenames = []
+            for number, (_, raw) in enumerate(values):
+                file = Path(directory) / str(number)
+                file.write_bytes(raw)
+                filenames.append(json.dumps(file.as_posix(), ensure_ascii=False))
+            output = self._git("hash-object", "-w", "--no-filters", "--stdin-paths",
+                               input=("\n".join(filenames) + "\n").encode("utf-8")).stdout
+        oids = output.decode("ascii").splitlines()
+        if len(oids) != len(values):
+            raise GitStateStoreError("blob writer returned an incomplete object list")
+        for oid in oids:
+            self._validate_oid(oid)
+        return {path: oid for (path, _), oid in zip(values, oids)}
+
     def publish(self, expected_head: str | None, changes: Mapping[str, bytes | None]) -> StateSnapshot:
         """Create and atomically publish one complete state commit.
 
@@ -119,12 +168,12 @@ class GitStateStore:
             else:
                 self._git("read-tree", f"{expected_head}^{{tree}}", env=index_environment)
             index_records = bytearray()
+            blobs = self._write_blobs(normalized_changes)
             for path, contents in normalized_changes.items():
                 if contents is None:
                     index_records.extend(f"0 {'0' * self.oid_length}\t{path}".encode("utf-8"))
                 else:
-                    blob = self._git("hash-object", "-w", "--stdin", input=contents).stdout.decode("ascii").strip()
-                    self._validate_oid(blob)
+                    blob = blobs[path]
                     index_records.extend(f"100644 {blob}\t{path}".encode("utf-8"))
                 index_records.append(0)
             if index_records:
@@ -327,6 +376,7 @@ class GitStateStore:
             stderr=subprocess.PIPE,
             env=environment,
             check=False,
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
         )
         if check and completed.returncode:
             detail = completed.stderr.decode("utf-8", "replace").strip()

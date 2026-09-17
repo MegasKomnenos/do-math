@@ -21,21 +21,21 @@ def _ident(x: str) -> bool:
 def project_fingerprint(project_root: Path) -> dict | None:
     """Fingerprint only the configured Lake project's tracked subtree and local inputs."""
     root=project_root.resolve()
-    gitroot=subprocess.run(['git','-C',str(root),'rev-parse','--show-toplevel'],stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,check=False).stdout.decode().strip()
+    gitroot=subprocess.run(['git','-C',str(root),'rev-parse','--show-toplevel'],stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,check=False, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0)).stdout.decode().strip()
     if not gitroot:return None
     gitroot=Path(gitroot); relative='.' if root==gitroot else root.relative_to(gitroot).as_posix()
     target='HEAD^{tree}' if relative=='.' else f'HEAD:{relative}'
-    tree=subprocess.run(['git','-C',str(gitroot),'rev-parse',target],stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,check=False).stdout.decode().strip() or None
-    diff=subprocess.run(['git','-C',str(gitroot),'diff','--no-ext-diff','HEAD','--',relative],stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,check=False).stdout
+    tree=subprocess.run(['git','-C',str(gitroot),'rev-parse',target],stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,check=False, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0)).stdout.decode().strip() or None
+    diff=subprocess.run(['git','-C',str(gitroot),'diff','--no-ext-diff','HEAD','--',relative],stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,check=False, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0)).stdout
     untracked={}
     for path in root.rglob('*'):
         if path.is_file() and (path.suffix=='.lean' or path.name in {'lean-toolchain','lake-manifest.json','lakefile.lean','lakefile.toml'}):
-            tracked=subprocess.run(['git','-C',str(gitroot),'ls-files','--error-unmatch','--',path.relative_to(gitroot).as_posix()],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,check=False).returncode==0
+            tracked=subprocess.run(['git','-C',str(gitroot),'ls-files','--error-unmatch','--',path.relative_to(gitroot).as_posix()],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,check=False, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0)).returncode==0
             if not tracked: untracked[path.relative_to(root).as_posix()]=_hash(path.read_bytes())
     return {'root':str(root),'git_tree':tree,'working_diff_hash':_hash(diff),'untracked_hashes':untracked}
 
 def _worker(request_path: Path) -> int:
-    q=json.loads(request_path.read_text()); p=subprocess.Popen(q['command'],cwd=q['cwd'],stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=False)
+    q=json.loads(request_path.read_text()); p=subprocess.Popen(q['command'],cwd=q['cwd'],stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=False, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
     try: out,err=p.communicate(timeout=q['timeout']); state='exited'
     except subprocess.TimeoutExpired:
         p.kill(); out,err=p.communicate(); state='timeout'
@@ -45,7 +45,10 @@ def _worker(request_path: Path) -> int:
 def _job_run(command: list[str], cwd: Path, timeout: float, should_stop=None) -> tuple[int | None,str,str,bool,bool]:
     root=Path(tempfile.mkdtemp(dir=cwd)); out=root/'out'; err=root/'err'; status=root/'status'; request=root/'request.json'
     request.write_text(json.dumps({'command':command,'cwd':str(cwd),'timeout':timeout,'stdout':str(out),'stderr':str(err),'status':str(status)}))
-    job=WindowsJob([sys.executable,str(Path(__file__).resolve()),'--worker',str(request)],cwd=root,env=os.environ)
+    # The worker input includes this same module inside a zip; execute through
+    # Python's import path rather than treating a zip member as a physical file.
+    worker = "import sys; from pathlib import Path; sys.path.insert(0,sys.argv[1]); from do_math.formal import _worker; raise SystemExit(_worker(Path(sys.argv[2])))"
+    job=WindowsJob([sys.executable,'-B','-c',worker,str(Path(__file__).resolve().parents[1]),str(request)],cwd=root,env=os.environ)
     try:
         job.resume(); deadline=time.monotonic()+timeout+2
         stopped=False

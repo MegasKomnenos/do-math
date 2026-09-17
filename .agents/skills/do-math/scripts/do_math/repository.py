@@ -69,10 +69,11 @@ class ResearchRepository:
     def load(self, snapshot: str | None = None) -> tuple[str, dict[str, Any], dict[str, Any]]:
         """Load both root documents from one explicit or current snapshot."""
         head = self._resolve_snapshot(snapshot)
+        roots = self._store.read_many(head, ["research/instance.json", "runtime/state.json"])
         return (
             head,
-            _decode_object(self._store.read_bytes(head, "research/instance.json")),
-            _decode_object(self._store.read_bytes(head, "runtime/state.json")),
+            _decode_object(roots["research/instance.json"]),
+            _decode_object(roots["runtime/state.json"]),
         )
 
     def save(
@@ -103,6 +104,10 @@ class ResearchRepository:
     def read(self, path: str, snapshot: str | None = None) -> bytes:
         """Read bytes from an exact or current state snapshot."""
         return self._store.read_bytes(self._resolve_snapshot(snapshot), path)
+
+    def read_many(self, paths: list[str], snapshot: str | None = None) -> dict[str, bytes]:
+        """Read exact blobs together without changing their logical paths."""
+        return self._store.read_many(self._resolve_snapshot(snapshot), paths)
 
     def list_files(self, prefix: str, snapshot: str | None = None) -> list[str]:
         """List files below one POSIX state prefix in stable lexical order."""
