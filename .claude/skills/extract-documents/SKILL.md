@@ -17,7 +17,7 @@ python .claude/skills/extract-documents/scripts/extract_all.py [--render-dir DIR
 - `--render-dir DIR`: directory where OCR-needed pages are rendered as PNG. Pass the session scratchpad directory so the agent can read them afterward. If omitted, a non-deleted temp directory is created and its path is printed to stderr.
 - `--dpi N`: render resolution (default 200). The Read tool downsamples images by long edge, so Tesseract-grade 600dpi is unnecessary; raise it only if dense small text blurs.
 
-Extracted text goes to stdout, progress/errors to stderr.
+Extracted text goes to stdout, progress/errors to stderr. The exit code is 1 if any input file is missing, raises an extraction error (including HWP conversion that produces no output), or yields empty text; the other files are still processed and printed. A zero exit code does not certify completeness (see step 4 below).
 
 ### Agent workflow (vision reading)
 

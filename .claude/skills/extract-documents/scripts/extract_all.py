@@ -280,7 +280,8 @@ def extract_hwp(path):
                 break
 
     if not xhtml_path.exists():
-        return ""
+        raise RuntimeError(
+            f"hwp5html 변환 산출 없음 (exit {result.returncode}): {result.stderr.strip()[:300]}")
 
     content = xhtml_path.read_text(encoding="utf-8", errors="replace")
     content = re.sub(r"<style[^>]*>.*?</style>", "", content, flags=re.DOTALL)
@@ -508,10 +509,12 @@ def main():
 
     paths = [Path(p).resolve() for p in files]
     any_vision = False
+    failed = False
 
     for path in paths:
         if not path.exists():
             print(f"[오류] 파일 없음: {path}", file=sys.stderr)
+            failed = True
             continue
 
         print(f"[추출] {path} ...", file=sys.stderr, flush=True)
@@ -519,6 +522,10 @@ def main():
 
         if meta["error"]:
             print(f"[오류] {meta['error']}", file=sys.stderr)
+            failed = True
+        elif not text.strip():
+            print(f"[오류] 추출 텍스트 없음: {path}", file=sys.stderr)
+            failed = True
         else:
             methods_str = ", ".join(meta["methods"])
             print(f"[완료] {meta['text_length']}자 [{methods_str}]", file=sys.stderr)
@@ -541,6 +548,8 @@ def main():
               "판독해 그 자리를 채우세요.", file=sys.stderr)
 
     shutil.rmtree(SCRATCH_DIR, ignore_errors=True)
+    if failed:
+        sys.exit(1)
 
 
 if __name__ == "__main__":
