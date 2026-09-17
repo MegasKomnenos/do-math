@@ -44,6 +44,14 @@ __pycache__/
 /임시/protoinput-research/
 /임시/windows-driver-samples-ref/
 
+# 임시/ 아래 작업 디렉터리의 내용은 기본으로 무시한다. 보존할 증거는 `git add -f`로 추적한다.
+# 이미 추적된 파일은 이 규칙의 영향을 받지 않는다. 디렉터리가 아니라 내용을 무시해야 아래 부정 규칙이 작동한다.
+# verify-rounds 런이 라운드 커밋에서 일반 `git add`로 올리는 세 파일은 추적을 허용한다.
+/임시/*/*
+!/임시/*/동결.md
+!/임시/*/장부.md
+!/임시/*/종료보고.md
+
 # 자동 회수 근거는 로컬 보존한다. 별도 백업·이관 시 경로와 해시를 확인한다.
 /research/pvsnp/literature-baseline/catalog/version-review-evidence/
 
