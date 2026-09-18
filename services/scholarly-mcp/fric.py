@@ -3,6 +3,7 @@ import csv
 import io
 import re
 from urllib.parse import parse_qs, urljoin, urlsplit
+from waits import SOURCE_WAIT_MS
 
 from bs4 import BeautifulSoup
 
@@ -54,9 +55,9 @@ class KNUFric:
         if not query.strip() or export not in (None, 'json', 'html', 'csv'):
             raise ServiceError('invalid_query', 'Use a nonempty catalogue query and json/html/csv export')
         page = self.gateway.public_page(self.source)
-        goto_source(page, self.home, self.hosts, wait_until='domcontentloaded', timeout=35000)
+        goto_source(page, self.home, self.hosts, wait_until='domcontentloaded', timeout=SOURCE_WAIT_MS)
         field = page.locator('#search_knu_item')
-        field.wait_for(timeout=20000)
+        field.wait_for(timeout=SOURCE_WAIT_MS)
         page.locator('#search_knu_sel').select_option('O' if options.get('field') == 'article' else 'S')
         field.fill(query)
         with page.expect_navigation(wait_until='domcontentloaded'):
@@ -68,7 +69,7 @@ class KNUFric:
         visited = set()
         while True:
             require_source_url(page.url, self.hosts)
-            page.locator('.list_top').wait_for(timeout=20000)
+            page.locator('.list_top').wait_for(timeout=SOURCE_WAIT_MS)
             raw = page.content()
             evidence = self.store.put(clean_html(raw, self.store.sanitizer), 'text/html', self.source, page.url, role='catalogue_page', query=query)
             pages_seen.append(evidence)
@@ -99,7 +100,7 @@ class KNUFric:
                 if not reachable:
                     raise ServiceError('pagination_missing', 'FRIC did not expose a link toward the requested page', evidence=evidence)
                 next_number = max(reachable)
-            goto_source(page, links[next_number], self.hosts, wait_until='domcontentloaded', timeout=35000)
+            goto_source(page, links[next_number], self.hosts, wait_until='domcontentloaded', timeout=SOURCE_WAIT_MS)
         records = self.store.put(encoded(rows), 'application/json', self.source, pages_seen[0]['url'], role='records', query=query, options=options, start=start, requested=limit)
         exported = records
         if export == 'html':

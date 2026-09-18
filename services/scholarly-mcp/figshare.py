@@ -4,7 +4,7 @@ import mimetypes
 import re
 from urllib.parse import unquote,urlsplit
 from api_adapters import APIAdapter,doi
-from scholarly import ServiceError,encoded
+from scholarly import ServiceError, encoded, failure_details
 
 
 def public_row(value):
@@ -281,7 +281,7 @@ class Figshare(APIAdapter):
             except ServiceError as exc:
                 files.append({**item,**exc.result})
             except Exception as exc:
-                files.append({**item,'status':'error','code':'file_retrieval_failed','error_type':type(exc).__name__})
+                files.append({**item,'status':'error','code':'file_retrieval_failed',**failure_details(exc)})
         return {'status':'available' if files and all(f['status']=='available' for f in files) else 'partial' if files else 'not_found' if file_id else 'not_offered',
                 'files':files,'received':sum(f['status']=='available' for f in files),'requested_files':len(selected),'content_kind':'record_files'}
 

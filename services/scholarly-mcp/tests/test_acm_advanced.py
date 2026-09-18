@@ -4,6 +4,7 @@ from unittest.mock import MagicMock
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT))
 from browser_adapters import ACM
 from scholarly import ServiceError
+from waits import SOURCE_WAIT_MS
 
 class ACMAdvanced(unittest.TestCase):
     def test_boolean_expression_is_explicit_and_preserved_verbatim(self):
@@ -26,7 +27,7 @@ class ACMAdvanced(unittest.TestCase):
         page.get_by_text.return_value=syntax;syntax.count.return_value=1;syntax.is_visible.return_value=True
         area.input_value.return_value=expression
         ACM.edit_boolean_query(page,expression)
-        edit.wait_for.assert_called_once_with(state='visible',timeout=30000)
+        edit.wait_for.assert_called_once_with(state='visible',timeout=SOURCE_WAIT_MS)
         syntax.click.assert_called_once_with()
         area.fill.assert_called_once_with(expression)
         submit.click.assert_called_once_with()
@@ -112,6 +113,7 @@ class ACMAdvanced(unittest.TestCase):
     def test_component_failure_preserves_the_source_page(self):
         source={'ref':'scholarly://artifact/source'}
         failure=ACM.component_failure(TimeoutError(),source,'html_retrieval_failed')
+        self.assertIn('where',failure);failure.pop('where')
         self.assertEqual(failure,{'status':'error','code':'html_retrieval_failed','error_type':'TimeoutError','artifact':source})
 
     def test_html_identity_failure_keeps_available_metadata(self):

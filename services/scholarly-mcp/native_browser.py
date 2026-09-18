@@ -1,5 +1,6 @@
 """Owned Chrome windows for publisher routes verified through native Chrome/CDP."""
 from __future__ import annotations
+from waits import BROWSER_START_S, PROBE_WAIT_MS, PROCESS_EXIT_S, SOURCE_WAIT_MS
 
 import json
 import logging
@@ -13,8 +14,8 @@ import time
 from urllib.parse import urlsplit
 from uuid import UUID
 
-from browser_adapters import KudosGateway, require_source_url
-from scholarly import ServiceError
+from browser_adapters import KudosGateway, playwright_driver, require_source_url
+from scholarly import ServiceError, failure_details
 
 
 def owns_loopback_port(port, pid):
@@ -79,9 +80,8 @@ class NativeChromeGateway(KudosGateway):
                 '--user-data-dir=' + str(self._run / 'profile'), '--no-first-run', '--no-default-browser-check',
                 '--disable-backgrounding-occluded-windows', '--window-size=1280,900', 'about:blank',
             ], stdin=subprocess.DEVNULL, stdout=self._process_log, stderr=self._process_log, cwd=self.root.parent)
-            from playwright.sync_api import sync_playwright
-            self.playwright = sync_playwright().start()
-            deadline = time.monotonic() + 20
+            self.playwright = playwright_driver()
+            deadline = time.monotonic() + BROWSER_START_S
             while time.monotonic() < deadline:
                 if self._process.poll() is not None:
                     break
@@ -90,14 +90,14 @@ class NativeChromeGateway(KudosGateway):
                     continue
                 try:
                     self.browser = self.playwright.chromium.connect_over_cdp(
-                        f'http://127.0.0.1:{port}', timeout=1000, no_defaults=True)
+                        f'http://127.0.0.1:{port}', timeout=PROBE_WAIT_MS, no_defaults=True)
                     break
                 except Exception:
                     time.sleep(0.25)
             if self.browser is None:
                 raise ServiceError('browser_start_failed', 'The owned Chrome window did not become ready')
             self.context = self.browser.contexts[0]
-            self.context.set_default_timeout(25000)
+            self.context.set_default_timeout(SOURCE_WAIT_MS)
             self._cdp = self.browser.new_browser_cdp_session()
             self._cdp.send('Browser.setDownloadBehavior', {
                 'behavior': 'allowAndName', 'downloadPath': str(self._download_dir), 'eventsEnabled': True,
@@ -118,7 +118,7 @@ class NativeChromeGateway(KudosGateway):
             if isinstance(error, ServiceError):
                 raise
             raise ServiceError('browser_start_failed', 'The owned Chrome window could not be initialized',
-                               error_type=type(error).__name__) from None
+                               **failure_details(error)) from None
 
     def _download_started(self, event):
         try:
@@ -132,8 +132,22 @@ class NativeChromeGateway(KudosGateway):
         if event['guid'] in self._downloads:
             self._downloads[event['guid']].update(event)
 
-    def native_download(self, page, action, hosts, path, *, timeout=45000, query=None):
+    def native_download(self, page, action, hosts, path, *, timeout=SOURCE_WAIT_MS, query=None):
         """Read a completed, source-bound download started by the supplied UI action."""
+        tabs = list(self.context.pages) if self.context is not None else None
+        try:
+            return self._native_download(page, action, hosts, path, timeout, query)
+        finally:
+            # 내려받기 제어가 새 탭(target=_blank)을 열면 그 탭이 앞에 남고 작업 페이지는 hidden이 된다.
+            # hidden 탭에서는 requestAnimationFrame이 돌지 않아 다음 조작의 안정성 검사가 끝나지 않는다.
+            if tabs is not None:
+                for opened in [tab for tab in self.context.pages if tab is not page and all(tab is not known for known in tabs)]:
+                    try:opened.close()
+                    except Exception:pass
+                try:page.bring_to_front()
+                except Exception:pass
+
+    def _native_download(self, page, action, hosts, path, timeout, query):
         before = set(self._downloads)
         def matching():
             return [(guid,item) for guid,item in self._downloads.items() if guid not in before
@@ -184,21 +198,16 @@ class NativeChromeGateway(KudosGateway):
                 self.browser.new_browser_cdp_session().send('Browser.close')
             except Exception:
                 pass
-        if self.playwright is not None:
-            try:
-                self.playwright.stop()
-            except Exception as error:
-                logging.getLogger('scholarly').warning('native browser driver did not disconnect cleanly: %s', type(error).__name__)
         if process is not None:
             try:
-                process.wait(timeout=15)
+                process.wait(timeout=PROCESS_EXIT_S)
             except subprocess.TimeoutExpired:
                 process.terminate()
                 try:
-                    process.wait(timeout=10)
+                    process.wait(timeout=PROCESS_EXIT_S)
                 except subprocess.TimeoutExpired:
                     process.kill()
-                    process.wait(timeout=10)
+                    process.wait(timeout=PROCESS_EXIT_S)
         if self._process_log is not None:
             self._process_log.close()
         if self._run is not None and (process is None or process.poll() is not None):

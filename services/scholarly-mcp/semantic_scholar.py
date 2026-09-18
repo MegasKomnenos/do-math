@@ -1,7 +1,7 @@
 """Credential-free Semantic Scholar records, native citations and bounded graph pages."""
 import json,re,unicodedata
 from urllib.parse import urlsplit,quote
-from scholarly import ServiceError,encoded,bibliography
+from scholarly import ServiceError, bibliography, encoded, failure_details
 
 BASE='https://api.semanticscholar.org/graph/v1/paper/'
 PAPER_FIELDS='title,authors,year,abstract,externalIds,url,openAccessPdf,publicationTypes,citationCount,referenceCount,corpusId'
@@ -62,7 +62,7 @@ def native_bibtex(adapter,rows,proof):
                 raise ServiceError('identity_mismatch','Semantic Scholar BibTeX without a DOI has another title')
             artifacts.append(artifact)
         except ServiceError as exc:errors.append({'paper_id':row.get('paperId'),**exc.result,'source_export':artifact})
-        except Exception as exc:errors.append({'paper_id':row.get('paperId'),'status':'error','code':'invalid_native_citation','error_type':type(exc).__name__,'source_export':artifact})
+        except Exception as exc:errors.append({'paper_id':row.get('paperId'),'status':'error','code':'invalid_native_citation',**failure_details(exc),'source_export':artifact})
     result={'status':'partial' if errors else 'available' if artifacts else 'not_found','artifacts':artifacts,'errors':errors}
     if artifacts:
         data=b'\n\n'.join(adapter.store.read(a['ref'])[1] for a in artifacts)

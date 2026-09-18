@@ -2,6 +2,7 @@
 import json
 import re
 from urllib.parse import quote, urljoin, urlsplit
+from waits import SOURCE_WAIT_MS
 
 from bs4 import BeautifulSoup
 
@@ -56,7 +57,7 @@ class TheoryOfComputing(Publisher):
         if start + limit > 100:
             raise ServiceError("invalid_range", "The native search widget exposes at most its first 100 result positions")
         page = self.gateway.public_page(self.source)
-        goto_source(page, "https://theoryofcomputing.org/search.html", self.profile.hosts, wait_until="domcontentloaded", timeout=45000)
+        goto_source(page, "https://theoryofcomputing.org/search.html", self.profile.hosts, wait_until="domcontentloaded", timeout=SOURCE_WAIT_MS)
         found = re.search(r"CustomSearchControl\s*\(\s*['\"]([^'\"]+)", page.content())
         if not found:
             raise ServiceError("search_configuration_missing", "The journal did not publish its search engine configuration")
@@ -64,10 +65,10 @@ class TheoryOfComputing(Publisher):
         page.evaluate("() => { window._scholarlySearchRendered = 0; window.__gcse = {searchCallbacks:{web:{rendered:() => window._scholarlySearchRendered++}}}; const node = document.createElement('div'); node.className = 'gcse-search'; document.body.appendChild(node); }")
         page.add_script_tag(url="https://cse.google.com/cse.js?cx=" + quote(found[1], safe=""))
         field = page.locator("input.gsc-input")
-        field.wait_for(timeout=30000)
+        field.wait_for(timeout=SOURCE_WAIT_MS)
         field.fill(query)
         field.press("Enter")
-        page.wait_for_function("window._scholarlySearchRendered > 0", timeout=30000)
+        page.wait_for_function("window._scholarlySearchRendered > 0", timeout=SOURCE_WAIT_MS)
         if field.input_value() != query:
             raise ServiceError("query_mismatch", "The native search widget changed the submitted query")
         first_html = page.locator(".gsc-resultsbox-visible").inner_html()
@@ -81,7 +82,7 @@ class TheoryOfComputing(Publisher):
             if number > 1:
                 before = page.evaluate("window._scholarlySearchRendered")
                 page.locator(".gsc-cursor-page").filter(has_text=re.compile("^" + str(number) + "$" )).click()
-                page.wait_for_function("previous => window._scholarlySearchRendered > previous", arg=before, timeout=30000)
+                page.wait_for_function("previous => window._scholarlySearchRendered > previous", arg=before, timeout=SOURCE_WAIT_MS)
                 page.wait_for_function("n => [...document.querySelectorAll('.gsc-cursor-current-page')].some(e => e.textContent.trim() === String(n))", arg=number)
             require_source_url(page.url, self.profile.hosts)
             html = page.locator(".gsc-resultsbox-visible").inner_html()
@@ -118,7 +119,7 @@ class TheoryOfComputing(Publisher):
         else:
             page = self.gateway.public_page(self.source)
             section = "authors" if field == "author" else "categories"
-            goto_source(page, "https://theoryofcomputing.org/" + section + "/index.html", self.profile.hosts, wait_until="domcontentloaded", timeout=45000)
+            goto_source(page, "https://theoryofcomputing.org/" + section + "/index.html", self.profile.hosts, wait_until="domcontentloaded", timeout=SOURCE_WAIT_MS)
             soup = BeautifulSoup(page.content(), "html.parser")
             choices = [{"label": re.sub(r"\s*\(\d+\)\s*$", "", a.get_text(" ", strip=True)), "url": urljoin(page.url, a["href"])}
                 for a in soup.select('a[href^="/' + section + '/"]') if not a["href"].endswith("/index.html")]
@@ -126,7 +127,7 @@ class TheoryOfComputing(Publisher):
             if len(matches) != 1:
                 rows, total, status = matches[start:start + limit], len(matches), "selection_required" if matches else "not_found"
             else:
-                goto_source(page, matches[0]["url"], self.profile.hosts, wait_until="domcontentloaded", timeout=45000)
+                goto_source(page, matches[0]["url"], self.profile.hosts, wait_until="domcontentloaded", timeout=SOURCE_WAIT_MS)
                 native = catalog_records(page.content(), page.url)
                 rows, total = native[start:start + limit], len(native)
             evidence = [self.store.put(clean_html(page.content(), self.store.sanitizer), "text/html", self.source, page.url, role="native_index", field=field, query=query)]
@@ -167,7 +168,7 @@ class TheoryOfComputing(Publisher):
         direct_file = direct_file if direct_file and direct_file[2] != "index.html" else None
         entry_url = urljoin(url, "./") if direct_file else url
         page = self.gateway.public_page(self.source)
-        response = goto_source(page, entry_url, self.profile.hosts, wait_until="domcontentloaded", timeout=45000)
+        response = goto_source(page, entry_url, self.profile.hosts, wait_until="domcontentloaded", timeout=SOURCE_WAIT_MS)
         if response and response.status >= 400:
             raise ServiceError("not_found_at_source" if response.status == 404 else "provider_error", "Theory of Computing did not return this page", status="not_found" if response.status == 404 else "error", http_status=response.status)
         raw = page.content()

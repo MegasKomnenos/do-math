@@ -2,6 +2,7 @@
 import json
 import re
 from urllib.parse import quote, unquote, urljoin, urlsplit
+from waits import SOURCE_WAIT_MS
 
 from bs4 import BeautifulSoup
 
@@ -81,7 +82,7 @@ class Numdam(NumdamOAI):
             raise ServiceError('select_document', 'Select a document URL from the title search',
                                status='selection_required' if candidates['received'] else 'not_found', candidates=candidates)
         page = self.gateway.public_page(self.source)
-        response = goto_source(page, url, self.hosts, wait_until='domcontentloaded', timeout=45000)
+        response = goto_source(page, url, self.hosts, wait_until='domcontentloaded', timeout=SOURCE_WAIT_MS)
         if response and response.status == 404:
             raise ServiceError('not_found_at_source', 'Numdam did not find this document', status='not_found')
         raw = page.content()
@@ -132,7 +133,7 @@ class Numdam(NumdamOAI):
                                for value in bounds)):
                     raise ServiceError('invalid_options', 'Date bounds are four-digit years')
         page = self.gateway.public_page(self.source)
-        goto_source(page, 'https://www.numdam.org/', self.hosts, wait_until='domcontentloaded', timeout=45000)
+        goto_source(page, 'https://www.numdam.org/', self.hosts, wait_until='domcontentloaded', timeout=SOURCE_WAIT_MS)
         for index, term in enumerate(terms):
             if index and not page.locator(f'input[name="q{index}"]').count():
                 page.locator('#add-search-field').click()
@@ -169,7 +170,7 @@ class Numdam(NumdamOAI):
                 link = numbered_page_link(second or '', number)
                 if not link:
                     raise ServiceError('pagination_missing', 'Numdam did not expose its next page link', evidence=first)
-                goto_source(page, urljoin(first['url'], link), self.hosts, wait_until='domcontentloaded', timeout=45000)
+                goto_source(page, urljoin(first['url'], link), self.hosts, wait_until='domcontentloaded', timeout=SOURCE_WAIT_MS)
                 raw = page.content()
                 current = self.store.put(clean_html(raw, self.store.sanitizer), 'text/html', self.source, page.url, role='native_search_page', page=number)
                 evidence.append(current)

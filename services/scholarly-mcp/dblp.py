@@ -2,7 +2,7 @@
 import json,re
 from urllib.parse import urlsplit,unquote
 from lxml import etree
-from scholarly import ServiceError,bibliography,xml_tree
+from scholarly import ServiceError, bibliography, failure_details, xml_tree
 
 FORMATS={'xml':('xml','application/xml'),'bibtex':('bib','application/x-bibtex'),'ris':('ris','application/x-research-info-systems'),
     'ntriples':('nt','application/n-triples'),'turtle':('ttl','text/turtle'),'rdf':('rdf','application/rdf+xml'),'plain':('txt','text/plain')}
@@ -54,7 +54,7 @@ def native_export(adapter,key,format,*,record=None,xml=None):
             if not text or not title or ' '.join(title.split()).casefold() not in text.casefold():
                 raise ServiceError('identity_mismatch','DBLP plain citation does not contain the selected title')
     except ServiceError as error:error.result['source_export']=artifact;raise
-    except Exception as error:raise ServiceError('invalid_native_citation','DBLP returned an unreadable native citation',source_export=artifact,error_type=type(error).__name__) from None
+    except Exception as error:raise ServiceError('invalid_native_citation','DBLP returned an unreadable native citation',source_export=artifact,**failure_details(error)) from None
     return artifact
 
 

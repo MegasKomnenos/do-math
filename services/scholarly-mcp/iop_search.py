@@ -3,7 +3,8 @@ import re,json,csv,io
 from urllib.parse import urljoin,urlsplit,unquote,urlencode
 from bs4 import BeautifulSoup
 from browser_adapters import clean_html,is_access_challenge,goto_source
-from scholarly import ServiceError,Sanitizer,encoded
+from scholarly import Sanitizer, ServiceError, encoded, failure_details
+from waits import SOURCE_WAIT_MS
 
 
 def applied_filters(soup):
@@ -72,7 +73,7 @@ def search(adapter,query,*,options,start=0,limit=20,cursor=None,export=None):
                 artifact=citation(adapter,page,identifier,citation_format)
                 files.append({'id':row['id'],'doi':identifier,'format':citation_format,'artifact':artifact})
             except ServiceError as error:failures.append({'id':row['id'],**error.result})
-            except Exception as error:failures.append({'id':row['id'],'status':'error','code':'citation_export_failed','error_type':type(error).__name__})
+            except Exception as error:failures.append({'id':row['id'],'status':'error','code':'citation_export_failed',**failure_details(error)})
             finally:
                 if page is not None:page.close()
         result['export']={'status':'partial' if failures else 'available','format':citation_format,'artifacts':files,'errors':failures}
@@ -107,7 +108,7 @@ def web_search(adapter,query,*,options,start=0,limit=20,cursor=None,export=None)
     selected=[];evidence=[];errors=[];available=None;total=None;facets=None
     while True:
         try:
-            response=goto_source(page,base+'/nsearch?'+urlencode(params,doseq=True),adapter.profile.hosts,wait_until='domcontentloaded',timeout=45000)
+            response=goto_source(page,base+'/nsearch?'+urlencode(params,doseq=True),adapter.profile.hosts,wait_until='domcontentloaded',timeout=SOURCE_WAIT_MS)
             if response.status in (401,403):raise ServiceError('access_restricted','IOP rejected this search request',status='restricted',http_status=response.status)
             if response.status>=400:raise ServiceError('provider_error','IOP search returned an HTTP error',http_status=response.status)
             raw=response.text();found=search_records(raw,response.url);soup=BeautifulSoup(raw,'html.parser')
@@ -138,7 +139,7 @@ def web_search(adapter,query,*,options,start=0,limit=20,cursor=None,export=None)
         except Exception as error:
             if urlsplit(page.url).hostname in ('validate.perfdrive.com','challenges.cloudflare.com'):
                 problem=ServiceError('publisher_access_challenge','IOP moved to an access verification page',status='restricted')
-            else:problem=error if isinstance(error,ServiceError) else ServiceError('search_page_failed','IOP search page retrieval or parsing failed',error_type=type(error).__name__)
+            else:problem=error if isinstance(error,ServiceError) else ServiceError('search_page_failed','IOP search page retrieval or parsing failed',**failure_details(error))
             if not selected:
                 if evidence:problem.result['evidence']=evidence
                 raise problem from None

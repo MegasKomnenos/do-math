@@ -8,6 +8,7 @@ import httpx
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from scholarly import ArtifactStore, ServiceError
+from waits import CONNECT_WAIT_S, SOURCE_WAIT_S
 
 
 class EuDMLContract(unittest.TestCase):
@@ -57,8 +58,8 @@ class EuDMLContract(unittest.TestCase):
             with httpx.Client(transport=httpx.MockTransport(serve), timeout=httpx.Timeout(45, connect=20), headers={"User-Agent":"scholarly-mcp/0.1 (local scholarly research)"}) as client:
                 result = mod.EuDML(ArtifactStore(folder), client=client).search('all="P versus NP"', options={}, start=0, limit=2, export="rss")
                 self.assertEqual(result["received"], 2)
-                self.assertEqual(observed["read"], 90)
-                self.assertEqual(observed["connect"], 20)
+                self.assertEqual(observed["read"], SOURCE_WAIT_S)
+                self.assertEqual(observed["connect"], CONNECT_WAIT_S)
                 self.assertEqual(client.timeout.read, 45)
                 self.assertEqual(observed["user_agent"], "scholarly-mcp/0.1 (local scholarly research)")
 
@@ -72,8 +73,8 @@ class EuDMLContract(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             with httpx.Client(transport=httpx.MockTransport(serve), timeout=httpx.Timeout(45, connect=20), headers={"User-Agent":"scholarly-mcp/0.1 (local scholarly research)"}) as client:
                 mod.EuDML(ArtifactStore(folder), client=client).fetch("196516", parts=["metadata"])
-                self.assertEqual(observed["read"], 120)
-                self.assertEqual(observed["connect"], 20)
+                self.assertEqual(observed["read"], SOURCE_WAIT_S)
+                self.assertEqual(observed["connect"], CONNECT_WAIT_S)
                 self.assertEqual(observed["user_agent"], f"python-httpx/{httpx.__version__}")
                 self.assertEqual(client.headers["User-Agent"], "scholarly-mcp/0.1 (local scholarly research)")
                 self.assertEqual(client.timeout.read, 45)

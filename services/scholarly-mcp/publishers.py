@@ -1,5 +1,6 @@
 """Document retrieval through each publisher's own institutional/public route."""
 from __future__ import annotations
+from waits import SOURCE_WAIT_MS, SOURCE_WAIT_S
 
 from dataclasses import dataclass
 import json
@@ -14,7 +15,7 @@ from bs4 import BeautifulSoup
 
 from api_adapters import doi
 from browser_adapters import browser_download, clean_html, goto_source, require_source_url, dismiss_cookies, is_access_challenge
-from scholarly import ServiceError, encoded, bibliography
+from scholarly import ServiceError, bibliography, encoded, failure_details
 
 
 @dataclass(frozen=True)
@@ -109,7 +110,9 @@ def primary_pdf_links(raw, base, *, identifier=None):
 def pdf_access_restricted(raw):
     soup=BeautifulSoup(raw,'html.parser')
     text=soup.get_text(' ',strip=True)
+    # Springer Nature는 구독 논문에도 citation_pdf_url을 싣고, 비구독 세션에는 그 주소로 문헌 HTML을 돌려준다.
     return bool(re.search(r'\bPreviews are depleted\b',text,re.I)
+                or re.search(r'\bThis is a preview of subscription content\b',text,re.I)
                 or soup.select_one('#core-collateral-purchase-access') and re.search(r'\bGet Access\b',text,re.I))
 
 
@@ -183,14 +186,14 @@ class Publisher:
                 if not add.count():
                     raise ServiceError('advanced_row_not_offered','Wiley did not offer another advanced-search row',status='unsupported',requested_row=index)
                 add.first.click()
-                try:area.wait_for(state='attached',timeout=10000);entry.wait_for(state='attached',timeout=10000)
+                try:area.wait_for(state='attached',timeout=SOURCE_WAIT_MS);entry.wait_for(state='attached',timeout=SOURCE_WAIT_MS)
                 except Exception:raise ServiceError('advanced_row_not_created','Wiley did not create the requested advanced-search row',requested_row=index) from None
             if area.count()!=1 or entry.count()!=1:
                 raise ServiceError('advanced_row_ambiguous','Wiley advanced-search row is not unique',requested_row=index)
             area.select_option(fields[term['field']]);entry.fill(term['query']);entry.press('Tab')
             if term['query']:
                 page.wait_for_function("i => document.getElementById('text'+i).name === 'text'+i && document.getElementById('searchArea'+i).name === 'field'+i",arg=index)
-        with page.expect_navigation(wait_until='domcontentloaded',timeout=45000):page.locator('#advanced-search-btn').click()
+        with page.expect_navigation(wait_until='domcontentloaded',timeout=SOURCE_WAIT_MS):page.locator('#advanced-search-btn').click()
         parsed=urlsplit(page.url);params=parse_qs(parsed.query,keep_blank_values=True)
         for index,term in enumerate(terms,1):
             if params.get('field'+str(index))!=[fields[term['field']]] or params.get('text'+str(index))!=[term['query']]:
@@ -201,7 +204,7 @@ class Publisher:
         if target.startswith(("10.", "doi:", "https://doi.org/", "http://doi.org/")):
             identifier = doi(target)
             url = "https://doi.org/" + quote(identifier, safe="/")
-            with httpx.Client(timeout=30, follow_redirects=False) as client:
+            with httpx.Client(timeout=SOURCE_WAIT_S, follow_redirects=False) as client:
                 for _ in range(5):
                     response = client.get(url)
                     if response.is_redirect:
@@ -222,18 +225,18 @@ class Publisher:
             self.gateway.open(self.source, self.profile.gateway_label, self.profile.hosts, "body")
             portal = self.gateway.context.new_page()
             try:
-                portal.goto("https://kudos.knu.ac.kr/pages/sub.htm?nav_code=kud1641346542", wait_until="domcontentloaded", timeout=45000)
-                with self.gateway.context.expect_page(timeout=30000) as opened:
+                portal.goto("https://kudos.knu.ac.kr/pages/sub.htm?nav_code=kud1641346542", wait_until="domcontentloaded", timeout=SOURCE_WAIT_MS)
+                with self.gateway.context.expect_page(timeout=SOURCE_WAIT_MS) as opened:
                     # Use the same authenticated KUDOS navigation function invoked by its actual DB shortcuts.
                     portal.evaluate("url => popup_gourl(url)", url)
                 page = opened.value
-                page.wait_for_url(lambda value: urlsplit(str(value)).hostname in self.profile.hosts, wait_until="domcontentloaded", timeout=55000)
+                page.wait_for_url(lambda value: urlsplit(str(value)).hostname in self.profile.hosts, wait_until="domcontentloaded", timeout=SOURCE_WAIT_MS)
                 require_source_url(page.url, self.profile.hosts)
                 return page
             finally:
                 portal.close()
         page = self.gateway.public_page(self.source)
-        goto_source(page, url, self.profile.hosts, wait_until="domcontentloaded", timeout=45000)
+        goto_source(page, url, self.profile.hosts, wait_until="domcontentloaded", timeout=SOURCE_WAIT_MS)
         return page
 
     def explicit_pdf(self,url,parts):
@@ -287,7 +290,7 @@ class Publisher:
                     if not downloads:
                         if isinstance(error,ServiceError):
                             raise
-                        raise ServiceError('pdf_navigation_failed','The requested PDF did not produce a document or download',error_type=type(error).__name__) from None
+                        raise ServiceError('pdf_navigation_failed','The requested PDF did not produce a document or download',**failure_details(error)) from None
                 if downloads:
                     if len(downloads)!=1:
                         raise ServiceError('ambiguous_download','The PDF navigation produced multiple matching downloads')
@@ -356,7 +359,7 @@ class Publisher:
         labels = {'bibtex': ('.BIB', 'application/x-bibtex'), 'ris': ('.RIS', 'application/x-research-info-systems'), 'endnote': ('.ENW', 'text/plain')}
         label, media = labels[format]
         control = page.locator('a[href*="/v2/references/"][href*="flavour=citation"]')
-        control.first.wait_for(state='attached', timeout=30000)
+        control.first.wait_for(state='attached', timeout=SOURCE_WAIT_MS)
         link = urljoin(page.url, control.first.get_attribute('href'))
         location = urlsplit(link)
         if unquote(location.path).lower() != '/v2/references/' + identifier.lower():
@@ -406,8 +409,8 @@ class Publisher:
         rows, evidence, total = [], [], None
         for number in range(start//20+1, (start+limit-1)//20+2):
             params['page'] = number
-            goto_source(page, base+'/search?'+urlencode(params, doseq=True), self.profile.hosts, wait_until='domcontentloaded', timeout=45000)
-            page.wait_for_function("() => /Showing\\s+[\\d,]+[–-][\\d,]+\\s+of\\s+[\\d,]+\\s+results|0 results|No results|No search results/i.test(document.body.innerText)", timeout=30000)
+            goto_source(page, base+'/search?'+urlencode(params, doseq=True), self.profile.hosts, wait_until='domcontentloaded', timeout=SOURCE_WAIT_MS)
+            page.wait_for_function("() => /Showing\\s+[\\d,]+[–-][\\d,]+\\s+of\\s+[\\d,]+\\s+results|0 results|No results|No search results/i.test(document.body.innerText)", timeout=SOURCE_WAIT_MS)
             raw = clean_html(page.content(), self.store.sanitizer)
             native, found, first = springer_records(raw, base)
             if found and first != (number-1)*20 or total is not None and total != found:
@@ -432,12 +435,12 @@ class Publisher:
             for row in rows:
                 document = self.gateway.context.new_page()
                 try:
-                    goto_source(document, row['url'], self.profile.hosts, wait_until='domcontentloaded', timeout=45000)
+                    goto_source(document, row['url'], self.profile.hosts, wait_until='domcontentloaded', timeout=SOURCE_WAIT_MS)
                     citations.append(self.springer_citation(document, row['doi'], export))
                 except ServiceError as error:
                     failures.append({'doi': row['doi'], **error.result})
                 except Exception as error:
-                    failures.append({'doi': row['doi'], 'status': 'error', 'code': 'citation_export_failed', 'error_type': type(error).__name__})
+                    failures.append({'doi': row['doi'], 'status': 'error', 'code': 'citation_export_failed', **failure_details(error)})
                 finally:
                     document.close()
             exported = {'status': 'partial' if failures else 'available', 'artifacts': citations, 'failures': failures}
@@ -470,8 +473,8 @@ class Publisher:
             raise ServiceError('invalid_options', 'Use sort relevance or date, as labeled by Wiley')
         page = self.gateway.open(self.source, self.profile.gateway_label, self.profile.hosts, '#searchField1')
         base = 'https://' + urlsplit(page.url).hostname
-        goto_source(page,base+'/search/advanced',self.profile.hosts,wait_until='domcontentloaded',timeout=45000)
-        page.locator('#searchArea1').wait_for(timeout=30000);dismiss_cookies(page)
+        goto_source(page,base+'/search/advanced',self.profile.hosts,wait_until='domcontentloaded',timeout=SOURCE_WAIT_MS)
+        page.locator('#searchArea1').wait_for(timeout=SOURCE_WAIT_MS);dismiss_cookies(page)
         parsed,params=self.submit_wiley_terms(page,terms,fields)
         params['Ppub']='';params['pageSize']=20
         if options.get('publication'):params['publication']=options['publication']
@@ -481,8 +484,8 @@ class Publisher:
         rows, evidence, citations, failures, total = [], [], [], [], None
         for number in range(start // 20, (start + limit - 1) // 20 + 1):
             params['startPage'] = number
-            goto_source(page, urlunsplit((parsed.scheme,parsed.netloc,parsed.path,urlencode(params,doseq=True),'')), self.profile.hosts, wait_until='domcontentloaded', timeout=45000)
-            page.locator('.result__count, .search-result__no-result').first.wait_for(timeout=30000)
+            goto_source(page, urlunsplit((parsed.scheme,parsed.netloc,parsed.path,urlencode(params,doseq=True),'')), self.profile.hosts, wait_until='domcontentloaded', timeout=SOURCE_WAIT_MS)
+            page.locator('.result__count, .search-result__no-result').first.wait_for(timeout=SOURCE_WAIT_MS)
             dismiss_cookies(page)
             actual = parse_qs(urlsplit(page.url).query)
             if actual.get('startPage') != [str(number)] or any(actual.get('field'+str(index))!=[fields[term['field']]] or
@@ -515,7 +518,7 @@ class Publisher:
                     radio = page.locator('#radio-format-' + format_name)
                     radio.focus()
                     radio.press('Space')
-                    with page.expect_download(timeout=30000) as pending:
+                    with page.expect_download(timeout=SOURCE_WAIT_MS) as pending:
                         page.get_by_role('button', name='Export', exact=True).click()
                     download = pending.value
                     from pathlib import Path
@@ -533,7 +536,7 @@ class Publisher:
                 except ServiceError as error:
                     failures.append(error.result)
                 except Exception as error:
-                    failures.append({'status': 'error', 'code': 'citation_export_failed', 'error_type': type(error).__name__})
+                    failures.append({'status': 'error', 'code': 'citation_export_failed', **failure_details(error)})
             if (number+1)*20 >= total:
                 break
         records = self.store.put(encoded(rows), 'application/json', self.source, page.url, role='records', query=query, options=options, start=start, requested=limit, total=total)
@@ -568,7 +571,7 @@ class Publisher:
         page = self.document(url)
         try:
             try:
-                page.wait_for_function("includeChallenge => [...document.querySelectorAll('meta[name],meta[property]')].some(m=>/^(citation_title|dc[.:]title)$/i.test(m.name||m.getAttribute('property')||'') && m.content?.trim()) || (document.querySelector('meta[name=publication_doi]')?.content?.trim() && document.querySelector('meta[property=\"og:title\"]')?.content?.trim() && document.querySelector('h1.banner-widget__heading')?.innerText?.trim()) || (includeChallenge && (document.querySelector('#challenge-error-text,#capInput') || /^(Access Denied|Just a moment|Attention Required|403 Forbidden)/i.test(document.title)))", arg=self.source!='siam', timeout=75000 if self.source=='siam' else 20000)
+                page.wait_for_function("includeChallenge => [...document.querySelectorAll('meta[name],meta[property]')].some(m=>/^(citation_title|dc[.:]title)$/i.test(m.name||m.getAttribute('property')||'') && m.content?.trim()) || (document.querySelector('meta[name=publication_doi]')?.content?.trim() && document.querySelector('meta[property=\"og:title\"]')?.content?.trim() && document.querySelector('h1.banner-widget__heading')?.innerText?.trim()) || (includeChallenge && (document.querySelector('#challenge-error-text,#capInput') || /^(Access Denied|Just a moment|Attention Required|403 Forbidden)/i.test(document.title)))", arg=self.source!='siam', timeout=SOURCE_WAIT_MS)
             except Exception:
                 if is_access_challenge(page.content()):
                     raise ServiceError('publisher_access_restricted','Publisher returned an access verification page',status='restricted',source=self.source) from None
@@ -607,7 +610,7 @@ class Publisher:
                 except ServiceError as error:
                     native_citation = error.result
                 except Exception as error:
-                    native_citation = {'status':'error','code':'citation_export_failed','error_type':type(error).__name__}
+                    native_citation = {'status':'error','code':'citation_export_failed',**failure_details(error)}
             components = {}
             for part in parts:
                 if part == 'export' and self.source in ('iop','project-euclid'):
@@ -624,7 +627,7 @@ class Publisher:
                         except ServiceError as error:
                             errors.append({'format':format,**error.result})
                         except Exception as error:
-                            errors.append({'format':format,'status':'error','code':'citation_export_failed','error_type':type(error).__name__})
+                            errors.append({'format':format,'status':'error','code':'citation_export_failed',**failure_details(error)})
                     components[part]={'status':'partial' if errors else 'available','artifacts':artifacts,'errors':errors}
                     if artifacts:
                         components[part]['artifact']=artifacts[0]['artifact']
@@ -693,8 +696,8 @@ class Publisher:
                         if not data.startswith(b"%PDF-") and self.source == 'wiley':
                             viewer = self.gateway.context.new_page()
                             try:
-                                goto_source(viewer, links[0], self.profile.hosts, wait_until='domcontentloaded', timeout=45000)
-                                ready = viewer.wait_for_function("() => { const src = document.querySelector('#pdf-iframe')?.getAttribute('src'); return src && new URL(src, location.href).searchParams.get('file') ? src : false; }", timeout=30000)
+                                goto_source(viewer, links[0], self.profile.hosts, wait_until='domcontentloaded', timeout=SOURCE_WAIT_MS)
+                                ready = viewer.wait_for_function("() => { const src = document.querySelector('#pdf-iframe')?.getAttribute('src'); return src && new URL(src, location.href).searchParams.get('file') ? src : false; }", timeout=SOURCE_WAIT_MS)
                                 iframe = urljoin(viewer.url, ready.json_value())
                                 require_source_url(iframe, self.profile.hosts)
                                 candidates = parse_qs(urlsplit(iframe).query).get('file', [])
@@ -705,6 +708,9 @@ class Publisher:
                             finally:
                                 viewer.close()
                         if not data.startswith(b"%PDF-"):
+                            if pdf_access_restricted(page.content()):
+                                raise ServiceError("subscription_required", "The document page shows a subscription preview; this institutional session has no PDF entitlement",
+                                                   status="restricted", retryable=False, artifact=source_page)
                             raise ServiceError("unexpected_content", "Publisher document control returned non-PDF content")
                         import pymupdf
                         with pymupdf.open(stream=data, filetype="pdf") as doc:

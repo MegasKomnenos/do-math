@@ -19,8 +19,11 @@ class BrowserContract(unittest.TestCase):
             legacy=folder/'kudos.json';legacy.write_text('{}',encoding='utf-8')
             current=folder/'kudos-chromium.json';current.write_text('{}',encoding='utf-8')
             (folder/'kudos-firefox.json').write_text('{}',encoding='utf-8')
+            import browser_adapters
+            self.addCleanup(setattr,browser_adapters,'DRIVER',None)
             for expected in (current,legacy):
-                context=SimpleNamespace(set_default_timeout=Mock())
+                browser_adapters.DRIVER=None
+                context=SimpleNamespace(set_default_timeout=Mock(),on=Mock())
                 browser=SimpleNamespace(new_context=Mock(return_value=context))
                 driver=SimpleNamespace(chromium=SimpleNamespace(launch=Mock(return_value=browser)))
                 with patch('playwright.sync_api.sync_playwright',return_value=SimpleNamespace(start=lambda:driver)):
@@ -39,11 +42,11 @@ class BrowserContract(unittest.TestCase):
             state={'cookies':[{'name':'synthetic','value':'SYNTHETIC_REFRESHED'}],'origins':[]}
             gateway=KudosGateway(root,Sanitizer(),engine='chromium')
             gateway.context=SimpleNamespace(storage_state=lambda:state)
-            gateway.browser=SimpleNamespace(close=Mock());gateway.playwright=SimpleNamespace(stop=Mock())
+            browser=SimpleNamespace(close=Mock());gateway.browser=browser
             gateway.close()
             self.assertEqual(json.loads((folder/'kudos-chromium.json').read_text('utf-8')),state)
             self.assertEqual(other.read_text('utf-8'),'{"other_engine":true}')
-            gateway.browser.close.assert_called_once()
+            browser.close.assert_called_once()
 
     def test_eccc_title_fetch_returns_native_search_candidates(self):
         from unittest.mock import Mock

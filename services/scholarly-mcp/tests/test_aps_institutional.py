@@ -8,6 +8,7 @@ from unittest.mock import Mock, patch
 
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT))
 from scholarly import ArtifactStore,ServiceError
+from waits import SOURCE_WAIT_MS
 
 
 class APSInstitutionalContract(unittest.TestCase):
@@ -148,7 +149,7 @@ class APSInstitutionalContract(unittest.TestCase):
             artifact=adapter.pdf(page,doi)
             self.assertEqual(adapter.store.read(artifact['ref'])[1],b'%PDF-1.4\n%%EOF')
             self.assertEqual(artifact['pages'],3)
-        gateway.native_download.assert_called_once_with(page,unittest.mock.ANY,profile.download_hosts,'/rmp/pdf/'+doi,timeout=45000)
+        gateway.native_download.assert_called_once_with(page,unittest.mock.ANY,profile.download_hosts,'/rmp/pdf/'+doi,timeout=SOURCE_WAIT_MS)
 
     def test_pdf_uses_exact_http_control_when_chrome_emits_no_download_event(self):
         from aps_institutional import APSInstitutional
@@ -192,7 +193,7 @@ class APSInstitutionalContract(unittest.TestCase):
             result=adapter.supplementary(page,doi,{'ref':'source'})
             self.assertEqual((result['status'],len(result['files'])),('available',1))
             self.assertEqual(adapter.store.read(result['files'][0]['artifact']['ref'])[1],b'%PDF-1.4\n%%EOF')
-        gateway.native_download.assert_called_once_with(page,unittest.mock.ANY,profile.download_hosts,'/prl/supplemental/'+doi+'/supp.pdf',timeout=45000)
+        gateway.native_download.assert_called_once_with(page,unittest.mock.ANY,profile.download_hosts,'/prl/supplemental/'+doi+'/supp.pdf',timeout=SOURCE_WAIT_MS)
 
     def test_fetch_replaces_source_metadata_export_and_pdf_with_native_components(self):
         from aps_institutional import APSInstitutional

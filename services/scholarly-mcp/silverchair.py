@@ -5,10 +5,11 @@ import io
 import json
 import re
 from urllib.parse import urljoin, urlsplit, urlunsplit, urlencode, parse_qs
+from waits import SOURCE_WAIT_MS
 
 from bs4 import BeautifulSoup
 from browser_adapters import clean_html, dismiss_cookies, goto_source, browser_download, require_source_url
-from scholarly import ServiceError, encoded, bibliography
+from scholarly import ServiceError, bibliography, encoded, failure_details
 
 
 FIELDS = {'All':'text', 'Full Text':'_text_', 'Keywords':'Keywords', 'Title':'Title', 'Author':'AuthorsAndEditors',
@@ -21,7 +22,7 @@ AIP_FIELDS = {'All':'text','Title':'Title','Author':'Authors','Author Affiliatio
 def ready_cookies(page):
     # Handle a banner that appears while Playwright is checking the next control's actionability.
     def reject(banner):
-        page.wait_for_function("typeof OneTrust !== 'undefined' && typeof OneTrust.RejectAll === 'function'",timeout=15000)
+        page.wait_for_function("typeof OneTrust !== 'undefined' && typeof OneTrust.RejectAll === 'function'",timeout=SOURCE_WAIT_MS)
         button=page.locator('#onetrust-reject-all-handler')
         if button.count() and button.is_visible():
             button.click()
@@ -58,13 +59,13 @@ def records(raw, base):
 
 def rendered_search_page(publisher, page, url):
     # Oxford can report a count in the initial HTML before its rows are ready.
-    goto_source(page,url,publisher.profile.hosts,wait_until='domcontentloaded',timeout=45000)
+    goto_source(page,url,publisher.profile.hosts,wait_until='domcontentloaded',timeout=SOURCE_WAIT_MS)
     page.wait_for_function(r"""() => {const el=document.querySelector('.sr-statistics');
       const text=el?.textContent||'';const m=text.match(/([\d,]+)\s*[–-]\s*([\d,]+)\s+of\s+([\d,]+)/);
       if(!m)return /^\s*0(?:\s+results)?\s*$/i.test(text);
       const n=x=>Number(x.replaceAll(',',''));const rows=[...document.querySelectorAll('.sr-list')];
       return rows.length===(n(m[3])?n(m[2])-n(m[1])+1:0)
-        && rows.every(row=>row.querySelector('.sri-title a'));} """,timeout=45000)
+        && rows.every(row=>row.querySelector('.sri-title a'));} """,timeout=SOURCE_WAIT_MS)
     return clean_html(page.content(),publisher.store.sanitizer),page.url
 
 
@@ -77,8 +78,8 @@ def citation(publisher, page, identifier, format='bibtex'):
         ready_cookies(page)
         page.locator('.js-cite-button').filter(visible=True).first.click()
         form=page.locator('form#citationModal')
-        form.wait_for(state='visible',timeout=30000)
-        page.wait_for_function("() => {const f=document.querySelector('form#citationModal');return f?.elements.resourceId?.value && f?.elements.resourceType?.value;}",timeout=15000)
+        form.wait_for(state='visible',timeout=SOURCE_WAIT_MS)
+        page.wait_for_function("() => {const f=document.querySelector('form#citationModal');return f?.elements.resourceId?.value && f?.elements.resourceType?.value;}",timeout=SOURCE_WAIT_MS)
         if (form.get_attribute('method') or 'get').lower()!='get':
             raise ServiceError('citation_form_changed','Publisher citation form changed its submission method')
         # Submit the observed GET form fields; visual button initialization can lag behind the form.
@@ -99,7 +100,7 @@ def citation(publisher, page, identifier, format='bibtex'):
         page.locator('.stats-get-citation').filter(visible=True).click()
         label={'bibtex':'BibTex','ris':'Ris (Zotero)','endnote':'EndNote'}[format]
         link=page.get_by_role('link',name=label,exact=True)
-        link.wait_for(state='visible',timeout=30000)
+        link.wait_for(state='visible',timeout=SOURCE_WAIT_MS)
         url=urljoin(page.url,link.get_attribute('href'))
         data,_,actual=browser_download(publisher.gateway.context,url,publisher.profile.download_hosts)
     if format in ('bibtex','ris'):
@@ -193,8 +194,8 @@ def search(publisher, query, *, options, start=0, limit=20, cursor=None, export=
         for row in rows:
             document=publisher.gateway.context.new_page()
             try:
-                goto_source(document,row['url'],profile.hosts,wait_until='domcontentloaded',timeout=45000)
-                document.locator('meta[name=citation_doi]').wait_for(state='attached',timeout=30000)
+                goto_source(document,row['url'],profile.hosts,wait_until='domcontentloaded',timeout=SOURCE_WAIT_MS)
+                document.locator('meta[name=citation_doi]').wait_for(state='attached',timeout=SOURCE_WAIT_MS)
                 metadata=publication_metadata(document.content())
                 identifiers=metadata.get('citation_doi',[])
                 if len(identifiers)!=1:
@@ -203,7 +204,7 @@ def search(publisher, query, *, options, start=0, limit=20, cursor=None, export=
             except ServiceError as error:
                 failures.append({'id':row['id'],**error.result})
             except Exception as error:
-                failures.append({'id':row['id'],'status':'error','code':'citation_export_failed','error_type':type(error).__name__})
+                failures.append({'id':row['id'],'status':'error','code':'citation_export_failed',**failure_details(error)})
             finally:
                 document.close()
         exported={'status':'partial' if failures else 'available','artifacts':artifacts,'failures':failures}

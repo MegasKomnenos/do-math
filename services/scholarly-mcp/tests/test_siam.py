@@ -1,5 +1,6 @@
 import sys,unittest
 from pathlib import Path
+from waits import SOURCE_WAIT_MS
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
@@ -386,7 +387,8 @@ class SIAMContract(unittest.TestCase):
             adapter=SIAM(ArtifactStore(temp),gateway,next(p for p in PROFILES if p.source=='siam'))
             result=adapter.search('algebra',options={'field':'Title'},limit=1,export='bibtex')
         self.assertEqual((result['status'],result['received']),('partial',1))
-        self.assertEqual(result['export']['failures'],[{'status':'error','code':'citation_export_failed','error_type':'TimeoutError'}])
+        self.assertEqual([{k:v for k,v in item.items() if k!='where'} for item in result['export']['failures']],[{'status':'error','code':'citation_export_failed','error_type':'TimeoutError'}])
+        self.assertEqual(result['export']['failures'][0]['where']['file'],'siam.py')
         self.assertNotIn('private detail',str(result))
 
     def test_cross_page_native_exports_remain_separate_source_files(self):
@@ -434,7 +436,7 @@ class SIAMContract(unittest.TestCase):
             adapter=SIAM(ArtifactStore(temp),gateway,next(p for p in PROFILES if p.source=='siam'))
             artifact=citation(adapter,page,identifiers,'https://epubs.siam.org','ris')
         actions.select_option.assert_called_once_with(label='Export Citations')
-        radio.wait_for.assert_called_once_with(state='visible',timeout=30000)
+        radio.wait_for.assert_called_once_with(state='visible',timeout=SOURCE_WAIT_MS)
         radio.check.assert_called_once_with()
         button.click.assert_called_once_with()
         self.assertEqual(artifact['requested_dois'],identifiers)

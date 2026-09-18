@@ -344,5 +344,15 @@ class PublisherContract(unittest.TestCase):
         self.assertIn('345683',' '.join(rows[0]['fields']['ur']))
 
 
+    def test_springer_nature_subscription_preview_is_a_restriction_not_an_error(self):
+        """실측: Nature 구독 논문은 citation_pdf_url 메타를 늘 싣지만 비구독 세션에는 그 주소가 문헌 HTML을 돌려준다.
+        화면에는 'This is a preview of subscription content'와 구매·기관 접속 안내가 있다. 재시도로 풀리지 않는 접근 제한이다."""
+        from publishers import pdf_access_restricted
+        wall='<html><body><article><h1>Neuromorphic computing at scale</h1><p>This is a preview of subscription content, <a>access via your institution</a></p><a>Buy this article</a></article></body></html>'
+        entitled='<html><body><article><h1>Open paper</h1><a class="c-pdf-download__link" href="/articles/x.pdf">Download PDF</a></article></body></html>'
+        self.assertTrue(pdf_access_restricted(wall))
+        self.assertFalse(pdf_access_restricted(entitled))
+
+
 if __name__ == "__main__":
     unittest.main()

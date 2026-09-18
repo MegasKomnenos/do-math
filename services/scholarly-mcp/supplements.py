@@ -4,7 +4,8 @@ from pathlib import PurePosixPath
 from urllib.parse import urljoin,urlsplit,urlunsplit,unquote,parse_qs
 from bs4 import BeautifulSoup
 from browser_adapters import browser_download,clean_html
-from scholarly import ServiceError,encoded
+from scholarly import ServiceError, encoded, failure_details
+from waits import SOURCE_WAIT_MS
 
 
 def springer_links(raw,base):
@@ -150,10 +151,10 @@ def iop_links(raw,base):
 def fetch_supplementary(adapter,page,identifier,source_page,*,download_hosts=None,native_rows=None):
     if adapter.source=='project-euclid' and page.locator('#sup').count():
         try:
-            page.locator('#sup').click(timeout=20000)
-            page.locator('#divARTICLECONTENTCITEDTop .ArticleContentAnchorRow a.ArticleContentAnchorText').first.wait_for(state='attached',timeout=20000)
+            page.locator('#sup').click(timeout=SOURCE_WAIT_MS)
+            page.locator('#divARTICLECONTENTCITEDTop .ArticleContentAnchorRow a.ArticleContentAnchorText').first.wait_for(state='attached',timeout=SOURCE_WAIT_MS)
         except Exception as error:
-            return {'status':'error','code':'supplementary_tab_not_ready','error_type':type(error).__name__,'artifact':source_page}
+            return {'status':'error','code':'supplementary_tab_not_ready',**failure_details(error),'artifact':source_page}
         source_page=adapter.store.put(clean_html(page.content(),adapter.store.sanitizer),'text/html',adapter.source,page.url,
             role='supplementary_source_page',doi=identifier,parent_ref=source_page['ref'])
     raw=page.content() if native_rows is None else ''
@@ -208,6 +209,6 @@ def fetch_supplementary(adapter,page,identifier,source_page,*,download_hosts=Non
         except ServiceError as error:
             files.append({**row,**error.result})
         except Exception as error:
-            files.append({**row,'status':'error','code':'attachment_retrieval_failed','error_type':type(error).__name__})
+            files.append({**row,'status':'error','code':'attachment_retrieval_failed',**failure_details(error)})
     return {'status':'available' if all(item['status']=='available' for item in files) else 'partial','index':index,'files':files,
             'discovered':len(rows),'received':sum(item['status']=='available' for item in files)}

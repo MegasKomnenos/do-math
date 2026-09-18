@@ -6,6 +6,7 @@ from pathlib import Path
 import struct
 import subprocess
 import tempfile
+from waits import LOCAL_TOOL_S
 
 from scholarly import ServiceError
 from setup_djvu import UPSTREAM,COMMIT,LICENSE,TOOLS
@@ -59,7 +60,7 @@ def run_decoder(tool,args,folder):
     executable=decoder_path(tool)
     try:
         result=subprocess.run([str(executable),*map(str,args)],cwd=folder,capture_output=True,
-            timeout=30,creationflags=subprocess.CREATE_NO_WINDOW if os.name=='nt' else 0)
+            timeout=LOCAL_TOOL_S,creationflags=subprocess.CREATE_NO_WINDOW if os.name=='nt' else 0)
     except subprocess.TimeoutExpired:
         raise ServiceError('document_decode_timeout','DjVu decoding exceeded the per-page time limit') from None
     except OSError:

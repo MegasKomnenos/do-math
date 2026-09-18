@@ -3,7 +3,8 @@ import csv,html,io,json,re,unicodedata,zipfile
 from urllib.parse import urlsplit,urljoin,parse_qs,urlencode,urlunsplit,unquote
 from browser_adapters import goto_source,clean_html,dismiss_cookies,is_access_challenge
 from publishers import Publisher,PROFILES
-from scholarly import ServiceError,encoded
+from scholarly import ServiceError, encoded, failure_details
+from waits import SOURCE_WAIT_MS
 
 
 def advanced_expression(expression,_nested=False):
@@ -107,7 +108,7 @@ def basic_search_request(body):
 
 
 def prepare_expression(page,expression):
-    page.wait_for_function("() => typeof showDynamic==='function' && typeof loadDynamicSearch==='function' && typeof getQueryElements==='function'",timeout=20000)
+    page.wait_for_function("() => typeof showDynamic==='function' && typeof loadDynamicSearch==='function' && typeof getQueryElements==='function'",timeout=SOURCE_WAIT_MS)
     observed=page.evaluate('''expression => {
         showDynamic(); loadDynamicSearch(JSON.stringify(expression));
         return {condition: document.querySelector('.advancedSearchGroupHeader[data-group-id="1"][data-group-parent-id="0"] button.selected')?.dataset.conditionValue,
@@ -304,7 +305,7 @@ class AMS(Publisher):
                 def matches(response):
                     parts=urlsplit(response.url)
                     return parts.hostname in self.profile.hosts and parts.path=='/product/exportproducts' and response.request.method=='POST'
-                with page.expect_response(matches,timeout=60000) as pending:
+                with page.expect_response(matches,timeout=SOURCE_WAIT_MS) as pending:
                     page.evaluate('uniqueId => initExportResults(uniqueId)','')
                 response=pending.value
                 if response.status in (401,403):
@@ -324,7 +325,7 @@ class AMS(Publisher):
             except ServiceError as error:
                 errors.append({'product_code':code,**error.result})
             except Exception as error:
-                errors.append({'product_code':code,'status':'error','code':'native_export_failed','error_type':type(error).__name__})
+                errors.append({'product_code':code,'status':'error','code':'native_export_failed',**failure_details(error)})
         status='available' if artifacts and not errors else 'partial' if artifacts else 'error'
         return {'status':status,'artifacts':artifacts,'errors':errors,'logical_products':len(selected),'available_products':len(artifacts),
                 'scope':'One provider XLSX per selected logical product; physical rows retain native ISBN variants'}
@@ -360,7 +361,7 @@ class AMS(Publisher):
             page=self.gateway.open('ams','AMS',self.profile.hosts,'body')
             search_page='https://'+urlsplit(page.url).hostname+'/AdvancedSearch'
         try:
-            response=goto_source(page,search_page,self.profile.hosts,wait_until='domcontentloaded',timeout=45000)
+            response=goto_source(page,search_page,self.profile.hosts,wait_until='domcontentloaded',timeout=SOURCE_WAIT_MS)
         except Exception as first_error:
             from playwright.sync_api import TimeoutError as BrowserTimeout
             if not isinstance(first_error,BrowserTimeout):raise
@@ -371,7 +372,7 @@ class AMS(Publisher):
                 response=None
             else:
                 try:
-                    response=goto_source(page,search_page,self.profile.hosts,wait_until='commit',timeout=20000)
+                    response=goto_source(page,search_page,self.profile.hosts,wait_until='commit',timeout=SOURCE_WAIT_MS)
                 except Exception as retry_error:
                     raise ServiceError('search_interface_not_ready','AMS advanced-search navigation did not stabilize',
                                        source=self.source,stage='search_interface_navigation',
@@ -380,10 +381,10 @@ class AMS(Publisher):
         if response is not None:
             validate_search_page(page.content(),response.status)
         try:
-            page.wait_for_function('(ids) => ids.every(id=>document.getElementById(id))',arg=[control for control,_ in self.fields.values()],timeout=20000)
+            page.wait_for_function('(ids) => ids.every(id=>document.getElementById(id))',arg=[control for control,_ in self.fields.values()],timeout=SOURCE_WAIT_MS)
         except Exception as error:
             validate_search_page(page.content())
-            raise ServiceError('search_interface_not_ready','AMS did not initialize the documented advanced-search controls',source=self.source,stage='search_interface',error_type=type(error).__name__) from None
+            raise ServiceError('search_interface_not_ready','AMS did not initialize the documented advanced-search controls',source=self.source,stage='search_interface',**failure_details(error)) from None
         if response is None:
             validate_search_page(page.content())
         okay=page.get_by_role('button',name='Okay',exact=True).filter(visible=True)
@@ -398,7 +399,7 @@ class AMS(Publisher):
                     okay.first.evaluate('node => node.click()')
                 else:
                     raise ServiceError('search_interface_not_ready','AMS cookie controls did not become actionable',
-                                       source=self.source,stage='cookie_control',error_type=type(error).__name__) from None
+                                       source=self.source,stage='cookie_control',**failure_details(error)) from None
         for control,_ in self.fields.values():
             if page.locator('#'+control).input_value():
                 page.locator('#'+control).fill('')
@@ -422,7 +423,7 @@ class AMS(Publisher):
             return urlsplit(response.url).hostname in self.profile.hosts and urlsplit(response.url).path=='/product/browseproducts' and response.request.method=='POST'
 
         try:
-            with page.expect_response(matches,timeout=60000) as pending:
+            with page.expect_response(matches,timeout=SOURCE_WAIT_MS) as pending:
                 page.locator('#advancedSearchGo').filter(visible=True).filter(has_text=re.compile(r'^Search$')).first.evaluate('node => node.click()')
                 if re.search(r'^(Just a moment|Access Denied|Attention Required)',page.title(),re.I):
                     raise ServiceError('publisher_access_challenge','AMS displayed an access verification page',status='restricted')
@@ -431,7 +432,7 @@ class AMS(Publisher):
         except Exception as error:
             validate_search_page(page.content())
             challenged=bool(re.search(r'^(Just a moment|Access Denied|Attention Required)',page.title(),re.I))
-            raise ServiceError('publisher_access_challenge' if challenged else 'search_response_not_received','AMS did not provide a native search response',status='restricted' if challenged else 'error',error_type=type(error).__name__) from None
+            raise ServiceError('publisher_access_challenge' if challenged else 'search_response_not_received','AMS did not provide a native search response',status='restricted' if challenged else 'error',**failure_details(error)) from None
         response=pending.value
         selected,evidence,html_pages=[],[],[]
         errors=[];seen=set();incomplete=False;resume_start=None;last_capacity=None
@@ -473,14 +474,14 @@ class AMS(Publisher):
             selector='#productBrowseListContainer > li.productBrowseListItem:not(.placeHolderItem) a.productBrowseTitleLink'
             try:
                 try:
-                    page.wait_for_function('(arg) => document.querySelectorAll(arg.selector).length === arg.count',arg={'selector':selector,'count':len(native)},timeout=30000)
+                    page.wait_for_function('(arg) => document.querySelectorAll(arg.selector).length === arg.count',arg={'selector':selector,'count':len(native)},timeout=SOURCE_WAIT_MS)
                 except Exception as error:
                     raise ServiceError('search_render_mismatch','AMS rendered a different number of product links',
                                        page_number=page_number,native_count=len(native),
-                                       rendered_count=page.locator(selector).count(),error_type=type(error).__name__) from None
+                                       rendered_count=page.locator(selector).count(),**failure_details(error)) from None
                 if native:
                     expected='Showing '+str(first+1)+' - '+str(first+len(native))+' of '+str(total)+' results'
-                    page.wait_for_function('(expected) => document.querySelector("#productBrowseResultCountTopOneColumn")?.textContent.replace(/\\s+/g," ").trim() === expected',arg=expected,timeout=30000)
+                    page.wait_for_function('(expected) => document.querySelector("#productBrowseResultCountTopOneColumn")?.textContent.replace(/\\s+/g," ").trim() === expected',arg=expected,timeout=SOURCE_WAIT_MS)
             except ServiceError as error:
                 if page_number==1:raise
                 resume_start=first
@@ -493,7 +494,7 @@ class AMS(Publisher):
                     observed=' '.join(count.inner_text().split()) if count.count() else None
                     failure=ServiceError('search_render_mismatch','AMS rendered a different product ordinal range',
                                          page_number=page_number,expected=expected,observed=observed,
-                                         error_type=type(error).__name__)
+                                         **failure_details(error))
                     if page_number==1:raise failure from None
                     resume_start=first
                     errors.append({**failure.result,'page_number':page_number,'resume_start':resume_start})
@@ -522,18 +523,18 @@ class AMS(Publisher):
             params=parse_qs(parsed.query)
             params['PageNumber']=[str(page_number)]
             try:
-                with page.expect_response(matches,timeout=60000) as pending:
+                with page.expect_response(matches,timeout=SOURCE_WAIT_MS) as pending:
                     if expression:
                         page.evaluate("number => clickPageBtn(number, '')",page_number)
                     else:
-                        goto_source(page,urlunsplit((parsed.scheme,parsed.netloc,parsed.path,urlencode(params,doseq=True),'')),self.profile.hosts,wait_until='domcontentloaded',timeout=45000)
+                        goto_source(page,urlunsplit((parsed.scheme,parsed.netloc,parsed.path,urlencode(params,doseq=True),'')),self.profile.hosts,wait_until='domcontentloaded',timeout=SOURCE_WAIT_MS)
                 response=pending.value
             except Exception as error:
                 resume_start=(page_number-1)*payload['RowsPerPage']
                 errors.append({'status':'error','code':'search_response_not_received',
                                'reason':'AMS did not provide the next native search page',
                                'page_number':page_number,'resume_start':resume_start,
-                               'error_type':type(error).__name__})
+                               **failure_details(error)})
                 incomplete=True
                 break
         artifact=self.store.put(encoded(selected),'application/json',self.source,search_url,role='records',query=query,options=options,start=start,total=total)
@@ -597,6 +598,6 @@ class AMS(Publisher):
             except ServiceError as error:
                 components.update({part:error.result for part in document_parts})
             except Exception as error:
-                components.update({part:{'status':'error','code':'document_retrieval_failed','error_type':type(error).__name__} for part in document_parts})
+                components.update({part:{'status':'error','code':'document_retrieval_failed',**failure_details(error)} for part in document_parts})
         return {'status':'ok' if all(part['status']=='available' for part in components.values()) else 'partial',
                 'source':self.source,'target':target,'records':artifact,'components':components,'evidence':[proof]}

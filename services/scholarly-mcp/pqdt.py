@@ -3,11 +3,12 @@ import json
 import re
 from collections import Counter
 from urllib.parse import urljoin, urlsplit, unquote
+from waits import SOURCE_WAIT_MS
 
 from bs4 import BeautifulSoup
 
 from browser_adapters import browser_download, clean_html, goto_source, require_source_url
-from scholarly import ServiceError, encoded, extract_artifact, bibliography
+from scholarly import ServiceError, bibliography, encoded, extract_artifact, failure_details
 
 SORTS={'relevance':'Relevance','oldest':'Oldest first','recent':'Most recent first'}
 FACETS={'subjects':'mainSubject','index_terms':'authkeyword','universities':'schoolName','locations':'schoollocation','languages':'language'}
@@ -230,8 +231,8 @@ def validate_filter_page(raw,options):
 
 def apply_search_options(page,options,facets):
     def navigate(action):
-        with page.expect_navigation(wait_until='load',timeout=60000):action()
-        page.locator('#pqResultsCount').wait_for(timeout=60000);page.wait_for_timeout(1000)
+        with page.expect_navigation(wait_until='load',timeout=SOURCE_WAIT_MS):action()
+        page.locator('#pqResultsCount').wait_for(timeout=SOURCE_WAIT_MS);page.wait_for_timeout(1000)
     current=' '.join(page.locator('#sortType-combo').inner_text().split())
     if current!=SORTS[options['sort']]:
         def sort_action():
@@ -250,7 +251,7 @@ def apply_search_options(page,options,facets):
         if 'expanded' not in (header.get_attribute('class') or ''):header.click()
         zone=page.locator(f'#{native}-zone');zone.get_by_text('More',exact=True).filter(visible=True).first.click()
         controls=page.locator('input[type="checkbox"][title^="Include "]:visible,input[type="checkbox"][title^="Exclude "]:visible,input[type="checkbox"][aria-label^="Include "]:visible,input[type="checkbox"][aria-label^="Exclude "]:visible')
-        controls.first.wait_for(timeout=45000)
+        controls.first.wait_for(timeout=SOURCE_WAIT_MS)
         group=next((item for item in facets if item['field']==field),None)
         if group is None:
             group={'field':field,'native_group':native,'candidates':[],'complete':False};facets.append(group)
@@ -289,8 +290,8 @@ def clear_result_filters(page):
         clear=applied.first.locator('a[title^="Clear "]').filter(visible=True).first
         if not clear.count():raise ServiceError('filter_reset_failed','PQDT retained a result filter without its clear control')
         before=page.locator('span.applied a[title^="Clear "]').count()
-        with page.expect_navigation(wait_until='load',timeout=60000):clear.click()
-        page.locator('#pqResultsCount').wait_for(timeout=60000);page.wait_for_timeout(500)
+        with page.expect_navigation(wait_until='load',timeout=SOURCE_WAIT_MS):clear.click()
+        page.locator('#pqResultsCount').wait_for(timeout=SOURCE_WAIT_MS);page.wait_for_timeout(500)
         if page.locator('span.applied a[title^="Clear "]').count()>=before:
             raise ServiceError('filter_reset_failed','PQDT filter clear action made no progress')
 
@@ -302,7 +303,7 @@ def load_visible_facets(page):
         if not zone.locator(f'a.filter_{native}').count():
             if not header.count():continue
             if 'expanded' not in (header.get_attribute('class') or ''):header.click()
-            try:zone.locator(f'a.filter_{native}').first.wait_for(timeout=10000)
+            try:zone.locator(f'a.filter_{native}').first.wait_for(timeout=SOURCE_WAIT_MS)
             except Exception:pass
     return pqdt_facets(page.content())
 
@@ -359,12 +360,12 @@ class PQDT:
 
     def page(self):
         page = self.gateway.open(self.source, "PQDT", self.hosts, "#searchTerm, #pqResultsCount")
-        page.wait_for_load_state("domcontentloaded", timeout=45000)
+        page.wait_for_load_state("domcontentloaded", timeout=SOURCE_WAIT_MS)
         if not page.evaluate("document.cookie.includes('OptanonAlertBoxClosed=')"):
-            page.wait_for_function("typeof OneTrust !== 'undefined' && typeof OneTrust.RejectAll === 'function'", timeout=30000)
-            page.locator("#onetrust-banner-sdk").wait_for(timeout=30000)
+            page.wait_for_function("typeof OneTrust !== 'undefined' && typeof OneTrust.RejectAll === 'function'", timeout=SOURCE_WAIT_MS)
+            page.locator("#onetrust-banner-sdk").wait_for(timeout=SOURCE_WAIT_MS)
             page.evaluate("OneTrust.RejectAll()")
-            page.locator(".onetrust-pc-dark-filter").wait_for(state="hidden", timeout=20000)
+            page.locator(".onetrust-pc-dark-filter").wait_for(state="hidden", timeout=SOURCE_WAIT_MS)
         return page
 
     def native_export(self,page,selected,format,content='citation_abstract_indexing'):
@@ -375,15 +376,15 @@ class PQDT:
         page.locator("#allSaveOptionsOverlay").wait_for()
         menu,mode,media,media_markers=EXPORT_FORMATS[format]
         page.locator(f'a[href*="selectformat/{menu}"]').filter(visible=True).first.click()
-        overlay=page.locator('#saveasExportLayerOverlay');overlay.wait_for(state='visible',timeout=30000)
+        overlay=page.locator('#saveasExportLayerOverlay');overlay.wait_for(state='visible',timeout=SOURCE_WAIT_MS)
         output=overlay.locator('#exportMode');output.select_option(mode)
         if output.input_value()!=mode:raise ServiceError('export_state_mismatch','PQDT did not retain the requested output format')
         scope=overlay.locator('#citationTypeSelect');scope.select_option(EXPORT_CONTENT[content])
         if scope.input_value()!=EXPORT_CONTENT[content]:raise ServiceError('export_state_mismatch','PQDT did not retain the requested export content')
         button = overlay.locator('a[id^="submitButton_"],button[type="submit"]').filter(visible=True).first
-        button.wait_for(timeout=30000)
+        button.wait_for(timeout=SOURCE_WAIT_MS)
         with self.gateway.context.expect_event("response", predicate=lambda r:urlsplit(r.url).hostname in self.hosts and r.status==200 and
-                any(marker in r.headers.get('content-type','').casefold() for marker in media_markers), timeout=60000) as pending:
+                any(marker in r.headers.get('content-type','').casefold() for marker in media_markers), timeout=SOURCE_WAIT_MS) as pending:
             button.click()
         response = pending.value
         data = response.body()
@@ -401,11 +402,11 @@ class PQDT:
         return native
 
     def native_bibtex(self,page,selected):
-        page.locator('#allSaveOptionsLink').click();page.locator('#allSaveOptionsOverlay').wait_for(state='visible',timeout=30000)
-        page.locator('#allSaveOptionsCiteLink').click();style=page.locator('#citeStyle_citethis');style.wait_for(state='visible',timeout=30000)
+        page.locator('#allSaveOptionsLink').click();page.locator('#allSaveOptionsOverlay').wait_for(state='visible',timeout=SOURCE_WAIT_MS)
+        page.locator('#allSaveOptionsCiteLink').click();style=page.locator('#citeStyle_citethis');style.wait_for(state='visible',timeout=SOURCE_WAIT_MS)
         style.select_option('BIB_TEX')
         if style.input_value()!='BIB_TEX':raise ServiceError('export_state_mismatch','PQDT Cite did not retain the BibTeX style')
-        page.wait_for_function("() => document.querySelector('#selectable_citethis')?.innerText.trim().startsWith('@')",timeout=30000)
+        page.wait_for_function("() => document.querySelector('#selectable_citethis')?.innerText.trim().startsWith('@')",timeout=SOURCE_WAIT_MS)
         data=page.locator('#selectable_citethis').inner_text().encode('utf-8')
         ensure_export_safe(data,self.store.sanitizer)
         try:context=validate_native_export(data,'bibtex',selected)
@@ -443,12 +444,12 @@ class PQDT:
             raise ServiceError("invalid_options", "PQDT uses numeric offsets and documented downloadable export formats")
         page = self.page()
         if page.locator('#pqResultsCount').count():clear_result_filters(page)
-        goto_source(page, "https://" + urlsplit(page.url).hostname + "/pqdtglobal", self.hosts, wait_until="load", timeout=45000)
+        goto_source(page, "https://" + urlsplit(page.url).hostname + "/pqdtglobal", self.hosts, wait_until="load", timeout=SOURCE_WAIT_MS)
         page.locator("#searchTerm").fill(query)
         page.locator("#searchTerm").press("Tab")
-        with page.expect_navigation(wait_until="load", timeout=60000):
+        with page.expect_navigation(wait_until="load", timeout=SOURCE_WAIT_MS):
             page.locator("#expandedSearch").click()
-        page.locator("#pqResultsCount,#searchTerm-label").wait_for(timeout=60000)
+        page.locator("#pqResultsCount,#searchTerm-label").wait_for(timeout=SOURCE_WAIT_MS)
         initial=page.content()
         if not page.locator('#pqResultsCount').count():
             if not is_zero_page(initial):raise ServiceError('invalid_response','PQDT returned no recognized result state')
@@ -499,7 +500,7 @@ class PQDT:
             next_page = page.locator('a[title="Next Page"],a[aria-label="Next Page"],a[title="Next page"],a[aria-label="Next page"],a[title="Next"],a[rel="next"]').filter(visible=True)
             if not next_page.count():
                 raise ServiceError("pagination_control_missing", "PQDT next-page control could not be identified", evidence=evidence)
-            with page.expect_navigation(wait_until="load", timeout=60000):
+            with page.expect_navigation(wait_until="load", timeout=SOURCE_WAIT_MS):
                 next_page.first.click()
         citations, exported, export_errors = [], None, []
         if rows:
@@ -515,7 +516,7 @@ class PQDT:
             elif export in EXPORT_FORMATS or export=='bibtex':
                 try:exported=self.native_bibtex(page,rows) if export=='bibtex' else self.native_export(page,rows,export,normalized['export_content'])
                 except ServiceError as error:export_errors.append(error.result)
-                except Exception as error:export_errors.append({'status':'error','code':'native_export_failed','error_type':type(error).__name__})
+                except Exception as error:export_errors.append({'status':'error','code':'native_export_failed',**failure_details(error)})
         else:native_ris=None
         artifact = self.store.put(encoded(rows), "application/json", self.source, page.url, role="records", query=query, start=start, requested=limit, total=total)
         if export in (None,'json'):exported=artifact
@@ -530,8 +531,8 @@ class PQDT:
             "preview": [{k: r[k] for k in ("id", "title")} for r in rows[:3]]}
 
     def supplementary(self,identifier,page):
-        goto_source(page,'https://'+urlsplit(page.url).hostname+'/pqdtglobal/docview/'+identifier,self.hosts,wait_until='domcontentloaded',timeout=45000)
-        page.locator('#docview-nav').wait_for(state='attached',timeout=30000)
+        goto_source(page,'https://'+urlsplit(page.url).hostname+'/pqdtglobal/docview/'+identifier,self.hosts,wait_until='domcontentloaded',timeout=SOURCE_WAIT_MS)
+        page.locator('#docview-nav').wait_for(state='attached',timeout=SOURCE_WAIT_MS)
         tab=page.locator('#addFlashPageParameterformat_supplementalFiles')
         if not tab.count():
             source=self.store.put(clean_html(page.content(),self.store.sanitizer),'text/html',self.source,page.url,role='document_page',target=identifier)
@@ -539,7 +540,7 @@ class PQDT:
         tab.click();require_source_url(page.url,self.hosts)
         if not re.search(r'/docview/'+re.escape(identifier)+r'/supplementalFiles(?:/|$)',urlsplit(page.url).path):
             raise ServiceError('identity_mismatch','PQDT supplemental tab belongs to a different document')
-        page.locator('h5').filter(has_text=re.compile(r'Document includes \d+ supplemental file')).wait_for(state='attached',timeout=30000)
+        page.locator('h5').filter(has_text=re.compile(r'Document includes \d+ supplemental file')).wait_for(state='attached',timeout=SOURCE_WAIT_MS)
         raw=page.content();rows,total=supplemental_records(raw,page.url)
         source=self.store.put(clean_html(raw,self.store.sanitizer),'text/html',self.source,page.url,role='supplementary_page',target=identifier)
         index=self.store.put(encoded([{k:v for k,v in row.items() if k!='action'} for row in rows]),'application/json',self.source,page.url,
@@ -568,7 +569,7 @@ class PQDT:
                 file=self.store.put(data,media,self.source,url,preserve_bytes=True,role='supplementary_file',target=identifier,filename=row['name'],parent_ref=index['ref'],**extra)
                 files.append({**item,'status':'available','artifact':file})
             except ServiceError as exc:files.append({**item,**exc.result})
-            except Exception as exc:files.append({**item,'status':'error','code':'supplementary_download_failed','error_type':type(exc).__name__})
+            except Exception as exc:files.append({**item,'status':'error','code':'supplementary_download_failed',**failure_details(exc)})
         return {'status':'available' if files and all(f['status']=='available' for f in files) else 'partial' if files else 'not_found',
                 'files':files,'index':index,'source_page':source,'discovered':total,'received':sum(f['status']=='available' for f in files)}
 
@@ -589,7 +590,7 @@ class PQDT:
             return result
         page = self.page()
         if identifier not in self.known:
-            goto_source(page, "https://" + urlsplit(page.url).hostname + "/pqdtglobal/docview/" + identifier, self.hosts, wait_until="domcontentloaded", timeout=45000)
+            goto_source(page, "https://" + urlsplit(page.url).hostname + "/pqdtglobal/docview/" + identifier, self.hosts, wait_until="domcontentloaded", timeout=SOURCE_WAIT_MS)
             records, native = self.citation(page)
             if len(records) != 1 or records[0]["id"] != identifier:
                 raise ServiceError("identity_mismatch", "PQDT document export did not match the target", evidence=native)
@@ -605,9 +606,9 @@ class PQDT:
                 components[part] = {"status": "available", "artifact": artifact} if record["bibliography"]["fields"].get("ab") else {"status": "not_found", "reason": "Native RIS has no abstract"}
             elif part == "fulltext":
                 try:
-                    goto_source(page, "https://" + urlsplit(page.url).hostname + "/pqdtglobal/docview/" + identifier + "/fulltextPDF", self.hosts, wait_until="domcontentloaded", timeout=45000)
+                    goto_source(page, "https://" + urlsplit(page.url).hostname + "/pqdtglobal/docview/" + identifier + "/fulltextPDF", self.hosts, wait_until="domcontentloaded", timeout=SOURCE_WAIT_MS)
                     download = page.locator("#downloadPDFLink_MSTAR_" + identifier)
-                    download.wait_for(timeout=30000)
+                    download.wait_for(timeout=SOURCE_WAIT_MS)
                     url = urljoin(page.url, download.get_attribute("href"))
                     data, _, obtained = browser_download(self.gateway.context, url, self.media_hosts)
                     if not data.startswith(b"%PDF-"):
@@ -620,10 +621,10 @@ class PQDT:
                 except ServiceError as error:
                     components[part] = error.result
                 except Exception as error:
-                    components[part]={'status':'error','code':'fulltext_retrieval_failed','error_type':type(error).__name__}
+                    components[part]={'status':'error','code':'fulltext_retrieval_failed',**failure_details(error)}
             else:
                 try:components[part]=self.supplementary(identifier,page)
                 except ServiceError as exc:components[part]=exc.result
-                except Exception as exc:components[part]={'status':'error','code':'supplementary_retrieval_failed','error_type':type(exc).__name__}
+                except Exception as exc:components[part]={'status':'error','code':'supplementary_retrieval_failed',**failure_details(exc)}
         return {"status": "ok" if all(v["status"] == "available" for v in components.values()) else "partial", "source": self.source,
             "target": identifier, "records": artifact, "native_citation": native, "components": components}

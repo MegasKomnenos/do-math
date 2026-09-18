@@ -14,6 +14,7 @@ from uuid import uuid4
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from native_browser import NativeChromeGateway, owns_loopback_port
 from scholarly import Sanitizer
+from waits import PROCESS_EXIT_S
 
 
 class NativeBrowserContract(unittest.TestCase):
@@ -78,16 +79,29 @@ class NativeBrowserContract(unittest.TestCase):
             gateway.close()
             self.assertEqual(gateway.state_path().read_text(), 'previous')
 
-    def test_driver_disconnect_failure_still_reaps_the_owned_process(self):
+    def test_browser_shutdown_failure_still_reaps_the_owned_process(self):
         with tempfile.TemporaryDirectory() as temp:
             gateway = NativeChromeGateway(temp, Sanitizer())
             wait = Mock()
             gateway._process = SimpleNamespace(wait=wait, poll=lambda: 0)
-            gateway.playwright = SimpleNamespace(stop=Mock(side_effect=RuntimeError('SYNTHETIC_PRIVATE')))
+            gateway.browser = SimpleNamespace(new_browser_cdp_session=Mock(side_effect=RuntimeError('SYNTHETIC_PRIVATE')))
+            gateway.close()
+            wait.assert_called_once_with(timeout=PROCESS_EXIT_S)
+
+    def test_state_save_failure_is_logged_without_the_private_text(self):
+        with tempfile.TemporaryDirectory() as temp:
+            gateway = NativeChromeGateway(temp, Sanitizer())
+            gateway._ready = True
+            gateway.context = SimpleNamespace(storage_state=Mock(side_effect=RuntimeError('SYNTHETIC_PRIVATE')))
             with self.assertLogs('scholarly', level='WARNING') as captured:
                 gateway.close()
-            wait.assert_called_once_with(timeout=15)
             self.assertNotIn('SYNTHETIC_PRIVATE', '\n'.join(captured.output))
+
+    def test_closing_a_gateway_never_stops_the_shared_playwright_driver(self):
+        with tempfile.TemporaryDirectory() as temp:
+            gateway = NativeChromeGateway(temp, Sanitizer())
+            gateway.playwright = SimpleNamespace(stop=Mock(side_effect=AssertionError('shared driver stopped')))
+            gateway.close()
 
     def test_close_kills_the_owned_process_when_terminate_also_times_out(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -144,6 +158,26 @@ class NativeBrowserContract(unittest.TestCase):
                                                      {'epubs.siam.org'}, '/action/downloadCitation')
             self.assertEqual((data, name, url), (b'citation', 'null.bib', endpoint))
             self.assertNotIn('../private', gateway._downloads)
+
+    def test_a_download_tab_does_not_leave_the_working_page_in_the_background(self):
+        """실측: ScienceDirect의 View PDF는 새 탭(target=_blank)을 연다. 그 탭이 앞에 남아 검색 탭이 hidden이 되었고,
+        hidden 탭에서는 requestAnimationFrame이 돌지 않아 다음 조작의 'stable' 검사가 끝나지 않았다."""
+        with tempfile.TemporaryDirectory() as temp:
+            gateway = NativeChromeGateway(temp, Sanitizer()); gateway._download_dir = Path(temp)
+            selected = str(uuid4()); endpoint = 'https://epubs.siam.org/doi/pdf/x'
+            working = SimpleNamespace(wait_for_timeout=Mock(), bring_to_front=Mock(), close=Mock())
+            opened = SimpleNamespace(close=Mock())
+            gateway.context = SimpleNamespace(pages=[working], storage_state=lambda: {})
+            def action():
+                gateway.context.pages.append(opened)
+                gateway._download_started({'guid': selected, 'url': endpoint})
+                (Path(temp) / selected).write_bytes(b'%PDF-')
+                gateway._download_progress({'guid': selected, 'state': 'completed', 'receivedBytes': 5})
+            gateway.native_download(working, action, {'epubs.siam.org'}, '/doi/pdf/x')
+            opened.close.assert_called_once()
+            working.close.assert_not_called()
+            working.bring_to_front.assert_called_once()
+            gateway.context = None
 
     def test_download_navigation_exception_is_accepted_only_with_matching_native_file(self):
         from playwright.sync_api import Error

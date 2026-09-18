@@ -3,11 +3,12 @@ import csv
 import io
 import re
 from urllib.parse import urlsplit,urljoin,urlencode,parse_qs,unquote
+from waits import SOURCE_WAIT_MS
 
 from bs4 import BeautifulSoup
 from api_adapters import doi
 from browser_adapters import browser_download,clean_html,goto_source
-from scholarly import ServiceError,encoded,bibliography
+from scholarly import ServiceError, bibliography, encoded, failure_details
 
 
 def records(raw,base):
@@ -39,7 +40,7 @@ def citation(publisher,page,row):
         if opener.count()!=1:
             raise ServiceError('document_citation_unavailable','This publication has no native citation control',status='unsupported')
         opener.first.click()
-    control.first.wait_for(state='visible',timeout=30000)
+    control.first.wait_for(state='visible',timeout=SOURCE_WAIT_MS)
     url=urljoin(page.url,control.first.get_attribute('href'))
     data,_,actual=browser_download(publisher.gateway.context,url,publisher.profile.download_hosts)
     identifier=row.get('doi')
@@ -81,9 +82,9 @@ def search(publisher,query,*,options,start=0,limit=20,cursor=None,export=None):
     rows,evidence,citations,failures,total=[],[],[],[],None
     for number in range(start//10,(start+limit-1)//10+1):
         params={'query':query,'pageSize':10,'startItem':number*10,'sortBy':options.get('sort','relevance'),'documentVisibility':options.get('visibility','all')}
-        goto_source(page,base+'/search?'+urlencode(params),profile.hosts,wait_until='domcontentloaded',timeout=45000)
-        page.locator('.searchInfo').wait_for(timeout=30000)
-        page.wait_for_function("() => {const h=document.querySelector('.searchInfo')?.textContent||'';const m=h.match(/([\\d,]+)\\s+of\\s+([\\d,]+)\\s+results/);return m && document.querySelectorAll('.searchResult .resultTitle > a').length===Number(m[1].replaceAll(',',''));}",timeout=30000)
+        goto_source(page,base+'/search?'+urlencode(params),profile.hosts,wait_until='domcontentloaded',timeout=SOURCE_WAIT_MS)
+        page.locator('.searchInfo').wait_for(timeout=SOURCE_WAIT_MS)
+        page.wait_for_function("() => {const h=document.querySelector('.searchInfo')?.textContent||'';const m=h.match(/([\\d,]+)\\s+of\\s+([\\d,]+)\\s+results/);return m && document.querySelectorAll('.searchResult .resultTitle > a').length===Number(m[1].replaceAll(',',''));}",timeout=SOURCE_WAIT_MS)
         actual=parse_qs(urlsplit(page.url).query)
         if actual.get('query')!=[query] or actual.get('startItem')!=[str(number*10)]:
             raise ServiceError('query_mismatch','Source changed the submitted query or range')
@@ -100,12 +101,12 @@ def search(publisher,query,*,options,start=0,limit=20,cursor=None,export=None):
             for row in selected:
                 document=publisher.gateway.context.new_page()
                 try:
-                    goto_source(document,row['url'],profile.hosts,wait_until='domcontentloaded',timeout=45000)
+                    goto_source(document,row['url'],profile.hosts,wait_until='domcontentloaded',timeout=SOURCE_WAIT_MS)
                     citations.append(citation(publisher,document,row))
                 except ServiceError as error:
                     failures.append({'id':row['id'],**error.result})
                 except Exception as error:
-                    failures.append({'id':row['id'],'status':'error','code':'citation_export_failed','error_type':type(error).__name__})
+                    failures.append({'id':row['id'],'status':'error','code':'citation_export_failed',**failure_details(error)})
                 finally:
                     document.close()
         if (number+1)*10>=total:

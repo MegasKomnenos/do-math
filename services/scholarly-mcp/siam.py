@@ -6,13 +6,14 @@ import re
 import unicodedata
 import time
 from urllib.parse import parse_qs,unquote,urlencode,urljoin,urlsplit
+from waits import PROBE_WAIT_S, SOURCE_WAIT_MS
 
 from bs4 import BeautifulSoup
 
 from api_adapters import doi
 from browser_adapters import clean_html,goto_source,is_access_challenge
 from publishers import Publisher
-from scholarly import ServiceError,bibliography,encoded
+from scholarly import ServiceError, bibliography, encoded, failure_details
 
 
 FIELDS={'Anywhere':'AllField','Title':'Title','Author':'Contrib','Keywords':'Keyword','Abstract':'Abstract','Affiliation':'Affiliation'}
@@ -195,7 +196,7 @@ def refworks_payload(raw):
 def _exact_suggestion(page,field,label):
     field.fill(label)
     nodes=page.locator('[role="option"]:visible, ul.ui-autocomplete:visible li, .autocomplete-suggestions:visible li')
-    deadline=time.monotonic()+5
+    deadline=time.monotonic()+PROBE_WAIT_S
     while not nodes.count() and time.monotonic()<deadline:page.wait_for_timeout(250)
     candidates=[];matches=[]
     for index in range(nodes.count()):
@@ -212,9 +213,9 @@ def _exact_suggestion(page,field,label):
 
 
 def configure_advanced(publisher,page,query,options):
-    goto_source(page,'https://'+publisher.profile.domains[0]+'/search/advanced',publisher.profile.hosts,wait_until='domcontentloaded',timeout=45000)
+    goto_source(page,'https://'+publisher.profile.domains[0]+'/search/advanced',publisher.profile.hosts,wait_until='domcontentloaded',timeout=SOURCE_WAIT_MS)
     form=page.locator('form#frmSearch').first
-    form.wait_for(state='visible',timeout=30000)
+    form.wait_for(state='visible',timeout=SOURCE_WAIT_MS)
     primary=options.get('field','Anywhere')
     form.locator('select[name=field1]').select_option(FIELDS[primary]);form.locator('input[name=text1]').fill(query)
     expected={'field1':[FIELDS[primary]],'text1':[query]}
@@ -245,7 +246,7 @@ def configure_advanced(publisher,page,query,options):
                 raise ServiceError('invalid_options','The requested date is absent from current SIAM controls',field=name,value=value)
             control.select_option(str(value))
             expected[name]=[str(value)]
-    button=form.locator('#advanced-search-btn');button.click(timeout=15000);page.wait_for_timeout(10000)
+    button=form.locator('#advanced-search-btn');button.click(timeout=SOURCE_WAIT_MS);page.wait_for_timeout(10000)
     observed=parse_qs(urlsplit(page.url).query,keep_blank_values=True)
     if any(observed.get(key)!=value for key,value in expected.items()):
         raise ServiceError('query_mismatch','SIAM advanced search changed a submitted field or date')
@@ -292,7 +293,7 @@ def citation(publisher,page,identifiers,base,format='bibtex',titles=None):
     else:
         actions.select_option(label='Export Citations')
         radio=page.locator('input[name=format][value='+format+']')
-        radio.wait_for(state='visible',timeout=30000);radio.check()
+        radio.wait_for(state='visible',timeout=SOURCE_WAIT_MS);radio.check()
         buttons=page.get_by_role('button',name=re.compile(r'download|export|save',re.I))
         button=None
         for index in range(buttons.count()):
@@ -305,7 +306,7 @@ def citation(publisher,page,identifiers,base,format='bibtex',titles=None):
     extra={}
     if format=='refworks':
         with page.expect_response(lambda response:urlsplit(response.url).hostname in publisher.profile.hosts and
-                                  urlsplit(response.url).path=='/action/downloadCitation',timeout=45000) as pending:
+                                  urlsplit(response.url).path=='/action/downloadCitation',timeout=SOURCE_WAIT_MS) as pending:
             action()
         response=pending.value;actual=response.url
         if response.status!=200:
@@ -352,7 +353,7 @@ def search(publisher,query,*,options,start=0,limit=20,cursor=None,export=None):
     for number in range(first_page,last_page+1):
         params['startPage']=number
         requested=following or base+'/action/doSearch?'+urlencode(params,doseq=True)
-        response=goto_source(page,requested,profile.hosts,wait_until='domcontentloaded',timeout=45000)
+        response=goto_source(page,requested,profile.hosts,wait_until='domcontentloaded',timeout=SOURCE_WAIT_MS)
         if response is not None and response.status>=400 and not is_access_challenge(page.content()):
             raise ServiceError('provider_error','SIAM rejected the requested native search expression',http_status=response.status)
         try:
@@ -360,7 +361,7 @@ def search(publisher,query,*,options,start=0,limit=20,cursor=None,export=None):
         except Exception as error:
             if is_access_challenge(page.content()):
                 raise ServiceError('publisher_access_challenge','SIAM displayed an access verification page',status='restricted') from None
-            raise ServiceError('search_response_not_received','SIAM did not provide a native search response',error_type=type(error).__name__,http_status=response.status if response else None) from None
+            raise ServiceError('search_response_not_received','SIAM did not provide a native search response',**failure_details(error),http_status=response.status if response else None) from None
         actual=page.url
         observed=parse_qs(urlsplit(actual).query,keep_blank_values=True)
         expected={key:[str(item) for item in value] if isinstance(value,list) else [str(value)] for key,value in params.items()}
@@ -382,7 +383,7 @@ def search(publisher,query,*,options,start=0,limit=20,cursor=None,export=None):
             except ServiceError as error:
                 failures.append(error.result)
             except Exception as error:
-                failures.append({'status':'error','code':'citation_export_failed','error_type':type(error).__name__})
+                failures.append({'status':'error','code':'citation_export_failed',**failure_details(error)})
         if (number+1)*size>=total:
             break
         if number==last_page:
@@ -438,7 +439,7 @@ class SIAM(Publisher):
                     base='https://'+(urlsplit(str(page.url)).hostname or self.profile.domains[0])
                     artifacts.append({'format':format,'artifact':citation(self,page,[identifier],base,format,titles=[matches[0]['title']])})
                 except ServiceError as error:errors.append({'format':format,**error.result})
-                except Exception as error:errors.append({'format':format,'status':'error','code':'citation_export_failed','error_type':type(error).__name__})
+                except Exception as error:errors.append({'format':format,'status':'error','code':'citation_export_failed',**failure_details(error)})
             result['components']['export']={'status':'partial' if errors else 'available','artifacts':artifacts,'errors':errors}
             if artifacts:result['components']['export']['artifact']=artifacts[0]['artifact']
         except ServiceError as error:

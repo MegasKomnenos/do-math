@@ -1,12 +1,13 @@
 """ScienceDirect institutional citation exports and document retrieval."""
 import csv,io,json,mimetypes,re
 from urllib.parse import parse_qs, urlencode, urljoin, urlsplit, urlunsplit, unquote
+from waits import PROBE_WAIT_MS, SOURCE_WAIT_MS
 
 from bs4 import BeautifulSoup
 from browser_adapters import browser_download,clean_html,goto_source,is_access_challenge
 from api_adapters import doi
 from publishers import Publisher, PROFILES, publication_metadata
-from scholarly import ServiceError, bibliography, encoded
+from scholarly import ServiceError, bibliography, encoded, failure_details
 
 FORMATS = {'ris': 'application/x-research-info-systems', 'bibtex': 'text/x-bibtex', 'plain': 'text/plain'}
 CITATION_CONTROLS = {'ris': ('Export citation to RIS','application/x-research-info-systems'),
@@ -140,7 +141,7 @@ def expand_result_facets(page):
         button.click()
         try:
             page.wait_for_function("value => document.querySelectorAll('input[id^=\"'+value.native+'-\"]').length > value.before",
-                                   arg={'native':native,'before':before},timeout=10000)
+                                   arg={'native':native,'before':before},timeout=SOURCE_WAIT_MS)
         except Exception:
             raise ServiceError('facet_expansion_failed','ScienceDirect did not expand a current result facet group',field=FACET_GROUPS[native]) from None
         expanded.append(native)
@@ -172,7 +173,7 @@ def native_supplementary(publisher,pii,source_page):
     if not links:
         try:
             page=publisher.document('https://www.sciencedirect.com/science/article/pii/'+pii)
-            try:page.locator(f'a[href*="-{pii}-mmc"]').first.wait_for(state='attached',timeout=12000)
+            try:page.locator(f'a[href*="-{pii}-mmc"]').first.wait_for(state='attached',timeout=SOURCE_WAIT_MS)
             except Exception:pass
             live=page.content()
             source_page=publisher.store.put(clean_html(live,publisher.store.sanitizer),'text/html',publisher.source,page.url,
@@ -183,7 +184,7 @@ def native_supplementary(publisher,pii,source_page):
             raise
         except Exception as error:
             if page is not None:page.close()
-            raise ServiceError('supplementary_page_failed','ScienceDirect supplementary controls could not be read',error_type=type(error).__name__) from None
+            raise ServiceError('supplementary_page_failed','ScienceDirect supplementary controls could not be read',**failure_details(error)) from None
     if not links:
         if page is not None:page.close()
         return {'status':'source_page','artifact':source_page,
@@ -204,7 +205,7 @@ def native_supplementary(publisher,pii,source_page):
                     source_control_path=link['path'])
                 files.append({'label':link['label'] or link['path'].rsplit('/',1)[-1],'artifact':artifact})
             except ServiceError as error:errors.append({'label':link['label'],**error.result})
-            except Exception as error:errors.append({'label':link['label'],'status':'error','code':'supplementary_retrieval_failed','error_type':type(error).__name__})
+            except Exception as error:errors.append({'label':link['label'],'status':'error','code':'supplementary_retrieval_failed',**failure_details(error)})
     finally:
         if page is not None:page.close()
     return {'status':'partial' if errors and files else 'error' if errors else 'available','files':files,'errors':errors,
@@ -324,7 +325,7 @@ def selected_export_choice(page,item,row,label):
             if candidate.evaluate("element => Boolean(element.closest('li.ResultItem'))"):
                 continue
             try:
-                candidate.scroll_into_view_if_needed();candidate.wait_for(state='visible',timeout=10000)
+                candidate.scroll_into_view_if_needed();candidate.wait_for(state='visible',timeout=SOURCE_WAIT_MS)
                 return candidate
             except Exception:
                 continue
@@ -357,14 +358,14 @@ def native_search_citation(publisher,page,row,index,format='ris',expected_doi=No
     selected=None
     if not choice.count() or not choice.is_visible():
         trigger=item.get_by_role('button',name='Export',exact=True)
-        try:trigger.wait_for(state='visible',timeout=10000)
+        try:trigger.wait_for(state='visible',timeout=SOURCE_WAIT_MS)
         except Exception:
             choice,selection,selected=selected_export_choice(page,item,row,label)
         else:
             trigger.click()
             choice=item.get_by_role('button',name=label,exact=True)
     if selected is None:
-        try:choice.wait_for(state='visible',timeout=10000)
+        try:choice.wait_for(state='visible',timeout=SOURCE_WAIT_MS)
         except Exception:
             choice,selection,selected=selected_export_choice(page,item,row,label)
     try:
@@ -395,14 +396,14 @@ def native_document_citation(publisher,pii,title=None,format='ris',expected_doi=
         page.wait_for_timeout(12000)
         trigger=page.get_by_text('Cite',exact=True).first
         try:
-            trigger.wait_for(state='attached',timeout=15000);trigger.scroll_into_view_if_needed();trigger.wait_for(state='visible',timeout=10000)
+            trigger.wait_for(state='attached',timeout=SOURCE_WAIT_MS);trigger.scroll_into_view_if_needed();trigger.wait_for(state='visible',timeout=SOURCE_WAIT_MS)
         except Exception:
             raise ServiceError('native_export_not_offered','This ScienceDirect publication has no native Cite control',status='not_offered') from None
         trigger.click()
         label=CITATION_CONTROLS[format][0]
         choices=page.get_by_text(label,exact=True)
         try:
-            choices.first.wait_for(state='attached',timeout=10000);page.wait_for_timeout(300)
+            choices.first.wait_for(state='attached',timeout=SOURCE_WAIT_MS);page.wait_for_timeout(300)
             choice=next(choices.nth(index) for index in range(choices.count()) if choices.nth(index).is_visible())
         except Exception:
             raise ServiceError('native_export_not_offered','This ScienceDirect publication does not offer the requested citation format',status='not_offered') from None
@@ -503,7 +504,7 @@ def native_result_pdf(publisher,page,row,index,expected_doi):
             try:
                 def selected_path(path):return row['pii'] in path and (path.endswith('/main.pdf') or path.casefold().endswith('.pdf'))
                 data,filename,actual=publisher.gateway.native_download(
-                    page,lambda:bulk.click(),publisher.profile.download_hosts,selected_path,timeout=20000)
+                    page,lambda:bulk.click(),publisher.profile.download_hosts,selected_path,timeout=SOURCE_WAIT_MS)
             except ServiceError as error:
                 if error.result.get('code')!='download_missing':raise
                 body=page.locator('body').inner_text()
@@ -548,7 +549,7 @@ def native_document_pdf(publisher,pii,title,expected_doi):
         if purchase is not None:
             raise ServiceError('fulltext_access_restricted','ScienceDirect offers this record through Purchase PDF rather than current institutional access',status='restricted')
         if control is None:
-            try:page.locator('a[href*="/pii/'+pii+'/pdfft"]').first.wait_for(state='attached',timeout=15000)
+            try:page.locator('a[href*="/pii/'+pii+'/pdfft"]').first.wait_for(state='attached',timeout=SOURCE_WAIT_MS)
             except Exception:pass
             raw=page.content();purchase,control=controls(raw)
         if purchase is not None:
@@ -563,13 +564,13 @@ def native_document_pdf(publisher,pii,title,expected_doi):
         try:
             def path_matches(path):return pii in path and path.endswith('/main.pdf')
             data,filename,actual=publisher.gateway.native_download(
-                page,lambda:live_control.click(),publisher.profile.download_hosts,path_matches,timeout=20000)
+                page,lambda:live_control.click(),publisher.profile.download_hosts,path_matches,timeout=SOURCE_WAIT_MS)
         except ServiceError as error:
             if error.result.get('code')!='download_missing':raise
             returned=False
             for opened in [item for item in publisher.gateway.context.pages if item not in before and not item.is_closed()]:
                 try:
-                    try:opened.wait_for_load_state('domcontentloaded',timeout=5000)
+                    try:opened.wait_for_load_state('domcontentloaded',timeout=PROBE_WAIT_MS)
                     except Exception:pass
                     final=opened.content();final_metadata=publication_metadata(final)
                     try:actual_pii=pii_from_url(opened.url)
@@ -589,19 +590,19 @@ def wait_for_search_results(page):
     selector='span.search-body-results-text,li.ResultItem,div.error-zero-results'
     predicate='selector => document.querySelector(selector)'
     try:
-        page.wait_for_function(predicate,arg=selector,timeout=30000)
+        page.wait_for_function(predicate,arg=selector,timeout=SOURCE_WAIT_MS)
         return
     except Exception as initial_error:
         if is_access_challenge(page.content()):
             raise ServiceError('publisher_access_challenge','ScienceDirect search reached an access challenge',status='restricted') from None
         if page.locator(selector).count():return
         try:
-            page.wait_for_function(predicate,arg=selector,timeout=5000)
+            page.wait_for_function(predicate,arg=selector,timeout=PROBE_WAIT_MS)
         except Exception as error:
             if is_access_challenge(page.content()):
                 raise ServiceError('publisher_access_challenge','ScienceDirect search reached an access challenge',status='restricted') from None
             raise ServiceError('search_interface_not_ready','ScienceDirect did not render native results',
-                               retryable=True,error_type=type(error).__name__,
+                               retryable=True,**failure_details(error),
                                initial_error_type=type(initial_error).__name__) from None
 
 
@@ -626,13 +627,13 @@ class ScienceDirect(Publisher):
         resolved_publication={}
         if exact_publication:
             entry=urlunsplit((origin.scheme,origin.netloc,'/search/entry','',''))
-            goto_source(page,entry,self.profile.hosts,wait_until='domcontentloaded',timeout=45000)
-            publication=page.locator('#pub');publication.wait_for(state='visible',timeout=30000);page.wait_for_timeout(5000)
+            goto_source(page,entry,self.profile.hosts,wait_until='domcontentloaded',timeout=SOURCE_WAIT_MS)
+            publication=page.locator('#pub');publication.wait_for(state='visible',timeout=SOURCE_WAIT_MS);page.wait_for_timeout(5000)
             publication=page.locator('#pub');publication.fill(exact_publication);page.wait_for_timeout(1500)
             if publication.input_value()!=exact_publication:
                 publication=page.locator('#pub');publication.fill(exact_publication);page.wait_for_timeout(1500)
             candidates=page.locator('[role="option"]:visible, ul.ui-autocomplete:visible li, .autocomplete-suggestions:visible li')
-            try:candidates.first.wait_for(state='visible',timeout=10000)
+            try:candidates.first.wait_for(state='visible',timeout=SOURCE_WAIT_MS)
             except Exception:pass
             labels=[];matches=[]
             for index in range(candidates.count()):
@@ -642,8 +643,8 @@ class ScienceDirect(Publisher):
             if len(matches)!=1:
                 raise ServiceError('selection_required','Select one exact publication from current ScienceDirect autocomplete candidates',
                                    status='selection_required',candidates=list(dict.fromkeys(labels)))
-            matches[0].click(timeout=10000);page.wait_for_timeout(500)
-            with page.expect_navigation(wait_until='domcontentloaded',timeout=45000):
+            matches[0].click(timeout=SOURCE_WAIT_MS);page.wait_for_timeout(500)
+            with page.expect_navigation(wait_until='domcontentloaded',timeout=SOURCE_WAIT_MS):
                 page.get_by_role('button',name='Submit advanced search',exact=True).click()
             actual=parse_qs(urlsplit(page.url).query,keep_blank_values=True)
             if urlsplit(page.url).path!='/search' or actual.get('pub')!=[exact_publication] or len(actual.get('cid',[]))!=1:
@@ -658,11 +659,11 @@ class ScienceDirect(Publisher):
             params=search_params(query,options,offset,show)
             params.update(resolved_publication)
             url=urlunsplit((origin.scheme,origin.netloc,'/search',urlencode(params),''))
-            response=goto_source(page,url,self.profile.hosts,wait_until='domcontentloaded',timeout=45000)
+            response=goto_source(page,url,self.profile.hosts,wait_until='domcontentloaded',timeout=SOURCE_WAIT_MS)
             validate_search_location(page.url,params)
             wait_for_search_results(page)
             if page.locator('li.ResultItem').count():
-                try:page.wait_for_function("() => document.querySelectorAll('input[id^=\"articleTypes-\"],input[id^=\"publicationTitles-\"],input[id^=\"subjectAreas-\"],input[id^=\"languages-\"],input[id^=\"accessTypes-\"]').length > 0",timeout=10000)
+                try:page.wait_for_function("() => document.querySelectorAll('input[id^=\"articleTypes-\"],input[id^=\"publicationTitles-\"],input[id^=\"subjectAreas-\"],input[id^=\"languages-\"],input[id^=\"accessTypes-\"]').length > 0",timeout=SOURCE_WAIT_MS)
                 except Exception:pass
             for group in expand_result_facets(page):
                 if group not in expanded_groups:expanded_groups.append(group)
@@ -695,7 +696,7 @@ class ScienceDirect(Publisher):
                 for index,row in enumerate(chunk,start=skip):
                     try:citations.append(native_search_citation(self,page,row,index,format=export))
                     except ServiceError as error:citation_errors.append({'pii':row['pii'],**error.result})
-                    except Exception as error:citation_errors.append({'pii':row['pii'],'status':'error','code':'native_citation_failed','error_type':type(error).__name__})
+                    except Exception as error:citation_errors.append({'pii':row['pii'],'status':'error','code':'native_citation_failed',**failure_details(error)})
             selected.extend(chunk);skip=0
             if not rows or offset+len(rows)>=total:break
             if current>=pages:
@@ -752,7 +753,7 @@ class ScienceDirect(Publisher):
         if 'supplementary' in parts:
             try:components['supplementary']=native_supplementary(self,pii,source['source_page'])
             except ServiceError as error:components['supplementary']=error.result
-            except Exception as error:components['supplementary']={'status':'error','code':'supplementary_retrieval_failed','error_type':type(error).__name__}
+            except Exception as error:components['supplementary']={'status':'error','code':'supplementary_retrieval_failed',**failure_details(error)}
         def exact_result():
             nonlocal selection
             if selection:return selection
@@ -804,7 +805,7 @@ class ScienceDirect(Publisher):
                         artifacts.append({'format':format,'artifact':artifact['artifact']})
                         if format=='ris':native=artifact['artifact']
                     except ServiceError as error:errors.append({'format':format,**error.result})
-                    except Exception as error:errors.append({'format':format,'status':'error','code':'native_citation_failed','error_type':type(error).__name__})
+                    except Exception as error:errors.append({'format':format,'status':'error','code':'native_citation_failed',**failure_details(error)})
             except ServiceError as error:
                 result_row_error=error.result.get('code')
                 source_rows=json.loads(self.store.read(source['records']['ref'])[1])
@@ -818,9 +819,9 @@ class ScienceDirect(Publisher):
                             artifacts.append({'format':format,'artifact':artifact['artifact']})
                             if format=='ris':native=artifact['artifact']
                         except ServiceError as detail_error:errors.append({'format':format,**detail_error.result})
-                        except Exception as detail_error:errors.append({'format':format,'status':'error','code':'native_citation_failed','error_type':type(detail_error).__name__})
+                        except Exception as detail_error:errors.append({'format':format,'status':'error','code':'native_citation_failed',**failure_details(detail_error)})
             except Exception as error:
-                components['export']={'status':'error','code':'citation_export_failed','error_type':type(error).__name__}
+                components['export']={'status':'error','code':'citation_export_failed',**failure_details(error)}
             if artifacts or errors:
                 components['export']={'status':'partial' if errors and artifacts else 'error' if errors else 'available',
                                       'artifacts':artifacts,'errors':errors,
@@ -846,7 +847,7 @@ class ScienceDirect(Publisher):
                             components['fulltext']={**detail_error.result,'result_row_error':result_error.result}
                     else:components['fulltext']['result_row_error_code']=result_error.result.get('code')
             except ServiceError as error:components['fulltext']=error.result
-            except Exception as error:components['fulltext']={'status':'error','code':'fulltext_retrieval_failed','error_type':type(error).__name__}
+            except Exception as error:components['fulltext']={'status':'error','code':'fulltext_retrieval_failed',**failure_details(error)}
         status='ok' if all(component['status']=='available' for component in components.values()) else 'partial'
         result={**source,'status':status,'source':self.source,'target':target,'pii':pii,'components':components}
         if native:result['native_citation']=native

@@ -22,6 +22,19 @@ class MCPContract(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn('SYNTHETIC-SIGNATURE',json.dumps(value))
         self.assertNotIn('SYNTHETIC-CSRF',json.dumps(value))
 
+    def test_unexpected_failures_say_where_they_happened_without_the_private_message(self):
+        """실측: 어댑터 안의 시간 초과가 전부 execution_error/TimeoutError로만 보여, 어느 단계의 실패인지 알 수 없었다.
+        예외 메시지는 인증 URL을 담을 수 있어 버리지만, 우리 코드의 파일·줄·함수는 비밀을 담을 수 없다."""
+        import server
+        def adapter_step():
+            raise TimeoutError('https://example.org/?token=SYNTHETIC-PRIVATE')
+        value=server.run_call(adapter_step).model_dump()
+        self.assertEqual((value['code'],value['error_type']),('execution_error','TimeoutError'))
+        self.assertNotIn('SYNTHETIC-PRIVATE',json.dumps(value))
+        self.assertEqual(value['where']['function'],'adapter_step')
+        self.assertEqual(value['where']['file'],'test_mcp.py')
+        self.assertIsInstance(value['where']['line'],int)
+
     async def test_stdio_client_can_discover_and_extract_without_internal_knowledge(self):
         self.assertTrue((ROOT / "server.py").exists(), "The five-tool stdio MCP entry point has not been implemented")
         with tempfile.TemporaryDirectory() as tmp:

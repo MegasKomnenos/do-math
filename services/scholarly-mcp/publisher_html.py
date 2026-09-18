@@ -3,7 +3,7 @@ from pathlib import PurePosixPath
 from urllib.parse import urljoin,urlsplit,unquote
 from bs4 import BeautifulSoup
 from browser_adapters import browser_download,clean_html
-from scholarly import ServiceError,encoded
+from scholarly import ServiceError, encoded, failure_details
 
 
 def nature_body(raw):
@@ -82,7 +82,7 @@ def fetch_html(adapter,page,identifier,source_page):
             figures.append({**item,**error.result})
         except Exception as error:
             img.attrs.pop('src',None)
-            figures.append({**item,'status':'error','code':'figure_retrieval_failed','error_type':type(error).__name__})
+            figures.append({**item,'status':'error','code':'figure_retrieval_failed',**failure_details(error)})
         img.attrs.pop('srcset',None)
     math_files=[]
     if iop:
@@ -114,7 +114,7 @@ def fetch_html(adapter,page,identifier,source_page):
                 math_files.append({**item,**error.result})
             except Exception as error:
                 for img in images:img.attrs.pop('src',None)
-                math_files.append({**item,'status':'error','code':'equation_image_retrieval_failed','error_type':type(error).__name__})
+                math_files.append({**item,'status':'error','code':'equation_image_retrieval_failed',**failure_details(error)})
             for img in images:img.attrs.pop('srcset',None)
     for node in body.select('picture source'):
         node.decompose()

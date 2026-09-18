@@ -16,6 +16,22 @@ class ServiceError(Exception):
         self.result = {"status": status, "code": code, "message": message, **details}
 
 
+def failure_details(error):
+    """삼킨 예외의 유형과, 그 예외가 난 우리 코드의 마지막 자리를 돌려준다.
+
+    예외 메시지는 인증 URL이나 요청 값을 담을 수 있어 내보내지 않는다. 파일 이름·줄·함수는 비밀을 담을 수 없다.
+    """
+    import traceback
+    root = Path(__file__).resolve().parent
+    where = None
+    for frame in reversed(traceback.extract_tb(error.__traceback__)):
+        path = Path(frame.filename).resolve()
+        if root in path.parents and ".venv" not in path.parts and path.name != "server.py":
+            where = {"file": path.name, "line": frame.lineno, "function": frame.name}
+            break
+    return {"error_type": type(error).__name__, "where": where}
+
+
 def xml_tree(data):
     from lxml import etree
     try:

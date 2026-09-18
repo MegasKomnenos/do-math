@@ -7,10 +7,11 @@ from defusedxml import ElementTree
 
 from api_adapters import APIAdapter
 from scholarly import ServiceError, encoded
+from waits import CONNECT_WAIT_S, SOURCE_WAIT_S
 
 NS = {"os": "http://a9.com/-/spec/opensearch/1.1/", "dc": "http://purl.org/dc/elements/1.1/"}
-CQL_TIMEOUT = httpx.Timeout(90, connect=20)
-NLM_TIMEOUT = httpx.Timeout(120, connect=20)
+CQL_TIMEOUT = httpx.Timeout(SOURCE_WAIT_S, connect=CONNECT_WAIT_S)
+NLM_TIMEOUT = httpx.Timeout(SOURCE_WAIT_S, connect=CONNECT_WAIT_S)
 BODY_METADATA = {"front", "article-meta", "book-meta", "book-part-meta", "toc", "book-part-id", "self-uri", "ext-link"}
 BODY_CONTAINERS = {"body", "book-body", "book-part"}
 

@@ -5,10 +5,11 @@ import json
 import re
 from pathlib import Path
 from urllib.parse import urlsplit, parse_qs
+from waits import SOURCE_WAIT_MS
 
 from bs4 import BeautifulSoup
 from browser_adapters import clean_html, dismiss_cookies, goto_source
-from scholarly import ServiceError, encoded
+from scholarly import ServiceError, encoded, failure_details
 
 SCOPUS_SORTS={
     'newest':('Date (newest)','plf-f'),'oldest':('Date (oldest)','plf-t'),
@@ -64,6 +65,56 @@ def search_options(options):
 
 def primary_request(request, query):
     return request.get("documentClassification") == "primary" and request.get("query") == query
+
+
+PARSE_PATH = "/gateway/documents/search/parsequery"
+SEARCH_PATH = "/gateway/documents/search"
+
+
+def search_settled(hosts, query, response):
+    """이 제출이 결말에 이르렀는지 본다.
+
+    Scopus는 검색식을 먼저 parsequery로 해석한 뒤에야 검색을 보낸다. 해석이 실패하면 검색 요청은
+    아예 나가지 않으므로, 그것도 기다림의 결말로 본다. 그러지 않으면 오지 않을 응답을 한도까지 기다린다.
+    """
+    parts = urlsplit(response.url)
+    if parts.hostname not in hosts:
+        return False
+    if parts.path == PARSE_PATH:
+        return response.status != 200
+    if parts.path != SEARCH_PATH or response.request.method != "POST":
+        return False
+    try:
+        return primary_request(response.request.post_data_json, query)
+    except Exception:
+        return False
+
+
+RESULT_TABLE_STATE = "primary_documents~"
+
+
+def forget_result_table_state(page):
+    """직전 검색의 결과 표 위치를 지운다.
+
+    Scopus는 표의 쪽·쪽 크기·정렬을 탭의 sessionStorage(primary_documents~activePage 등)에 기억하고 다음 검색에 복원한다.
+    그대로 두면 새 검색이 옛 쪽의 요청을 함께 보내, 첫 쪽부터 순서대로 받는다는 이 어댑터의 전제가 깨진다.
+    """
+    page.evaluate("(prefix) => Object.keys(sessionStorage).filter(key => key.startsWith(prefix))"
+                  ".forEach(key => sessionStorage.removeItem(key))", RESULT_TABLE_STATE)
+
+
+def require_accepted_query(query, response):
+    """결말이 질의 거절이면 그대로 보고한다. 검색 응답이면 그대로 돌려준다."""
+    if urlsplit(response.url).path == PARSE_PATH:
+        # 실측: 기관 프록시는 불리언 연산자 뒤에 비교 연산(> < =)이 오는 검색식을 SQL 주입으로 보고 자기 HTML 400을 돌려준다.
+        # Scopus 자신의 문법 오류는 JSON으로 온다. 막은 주체에 따라 호출자가 고칠 것이 다르다.
+        proxy = "html" in (response.headers.get("content-type") or "").lower()
+        raise ServiceError("query_rejected",
+                           "The institutional proxy blocked this query text before Scopus saw it; use PUBYEAR AFT/BEF/IS instead of > < = after AND/OR"
+                           if proxy else "Scopus did not accept the advanced query text",
+                           http_status=response.status, query=query,
+                           rejected_by="institutional_proxy" if proxy else "scopus")
+    return response
 
 def validate_primary_request(request,query,sort_by=None,facet_filters=None):
     if not isinstance(request,dict) or not primary_request(request,query):
@@ -158,7 +209,7 @@ def displayed_query(page,base_query):
             Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async value=>{window.__scholarlyCopiedQuery=value;}}});}''')
         try:
             copy.click()
-            page.wait_for_function('() => typeof window.__scholarlyCopiedQuery === "string"',timeout=15000)
+            page.wait_for_function('() => typeof window.__scholarlyCopiedQuery === "string"',timeout=SOURCE_WAIT_MS)
             value=page.evaluate('window.__scholarlyCopiedQuery')
             if isinstance(value,str) and value.strip():candidates.append(value.strip())
         finally:
@@ -264,12 +315,12 @@ class Scopus:
         try:
             native_query=displayed_query(page,query)
             trigger=page.locator('[data-testid="exportRefinement"]').filter(visible=True)
-            try:trigger.first.wait_for(state='visible',timeout=30000)
+            try:trigger.first.wait_for(state='visible',timeout=SOURCE_WAIT_MS)
             except Exception:raise ServiceError('native_export_not_offered','Scopus did not finish rendering its filter-count export',status='not_offered') from None
             if trigger.count()!=1 or not trigger.is_visible() or not trigger.is_enabled():
                 raise ServiceError('native_export_not_offered','Scopus did not offer an enabled filter-count export',status='not_offered')
             with page.expect_response(lambda response:urlsplit(response.url).hostname in self.hosts and
-                                      urlsplit(response.url).path=='/gateway/document-facet-api/facets/export' and response.request.method=='POST',timeout=45000) as event:
+                                      urlsplit(response.url).path=='/gateway/document-facet-api/facets/export' and response.request.method=='POST',timeout=SOURCE_WAIT_MS) as event:
                 trigger.click()
             response=event.value
             validate_primary_request(response.request.post_data_json,query,facet_filters=facet_filters)
@@ -311,7 +362,7 @@ class Scopus:
         except ServiceError:raise
         except Exception as error:
             raise ServiceError('export_interaction_failed','Scopus filter-count export interaction did not complete',
-                error_type=type(error).__name__,**({'source_response':source_artifact} if source_artifact else {})) from None
+                **failure_details(error),**({'source_response':source_artifact} if source_artifact else {})) from None
         finally:
             page.remove_listener('download',received)
 
@@ -327,9 +378,9 @@ class Scopus:
             control.click()
         if field=='year':
             individual=scope.locator('input[type="radio"][value="individual"]')
-            individual.first.wait_for(state='attached',timeout=15000)
+            individual.first.wait_for(state='attached',timeout=SOURCE_WAIT_MS)
             if not individual.is_checked():individual.evaluate('(node)=>node.click()')
-        scope.locator('label input[type="checkbox"]').first.wait_for(state='attached',timeout=15000)
+        scope.locator('label input[type="checkbox"]').first.wait_for(state='attached',timeout=SOURCE_WAIT_MS)
         buttons=page.get_by_role('button',name=re.compile(r'^(?:Show all|Show more|View all|View more)$',re.I)).filter(visible=True);bound=[]
         for index in range(buttons.count()):
             button=buttons.nth(index)
@@ -338,9 +389,9 @@ class Scopus:
                 return before.at(-1)?.getAttribute('aria-controls')===section; }''',section):bound.append(button)
         if len(bound)>1:raise ServiceError('invalid_response','Scopus facet group has ambiguous expansion controls',field=field)
         if bound:
-            bound[0].click();dialog=page.get_by_role('dialog').filter(visible=True);dialog.first.wait_for(state='visible',timeout=15000)
+            bound[0].click();dialog=page.get_by_role('dialog').filter(visible=True);dialog.first.wait_for(state='visible',timeout=SOURCE_WAIT_MS)
             if dialog.count()!=1:raise ServiceError('facet_selection_required','Scopus did not open the requested facet candidate panel',status='selection_required',field=field)
-            scope=dialog.first;scope.locator('label input[type="checkbox"]').first.wait_for(state='attached',timeout=15000)
+            scope=dialog.first;scope.locator('label input[type="checkbox"]').first.wait_for(state='attached',timeout=SOURCE_WAIT_MS)
         search=scope.locator('input[type="search"],input[placeholder*="Search" i]').filter(visible=True)
         if query is not None:
             if not search.count():
@@ -376,7 +427,7 @@ class Scopus:
                     action=action,scope='Exact labels from one current Scopus result facet'))
                 button=page.get_by_role('button',name='Limit to' if action=='limit-to' else 'Exclude',exact=True).filter(visible=True)
                 with page.expect_response(lambda r:urlsplit(r.url).hostname in self.hosts and urlsplit(r.url).path=='/gateway/documents/search'
-                                          and r.request.method=='POST' and primary_request(r.request.post_data_json,query),timeout=60000) as event:
+                                          and r.request.method=='POST' and primary_request(r.request.post_data_json,query),timeout=SOURCE_WAIT_MS) as event:
                     button.first.click()
                 previous_sort=response.request.post_data_json.get('sortBy')
                 response=event.value
@@ -404,7 +455,7 @@ class Scopus:
             validate_primary_request(previous_request,query,expected_sort,facets)
             return response,None,expected_sort
         with page.expect_response(lambda r:urlsplit(r.url).hostname in self.hosts and urlsplit(r.url).path=='/gateway/documents/search'
-                                  and r.request.method=='POST' and primary_request(r.request.post_data_json,query),timeout=60000) as event:
+                                  and r.request.method=='POST' and primary_request(r.request.post_data_json,query),timeout=SOURCE_WAIT_MS) as event:
             control.select_option(value)
         response=event.value
         if response.status!=200:raise ServiceError('provider_error','Scopus result sorting failed',http_status=response.status)
@@ -420,8 +471,8 @@ class Scopus:
         if not re.fullmatch(r'2-s2\.0-\d+',eid):
             raise ServiceError('invalid_target','The Scopus record has no canonical EID')
         page=self.page()
-        goto_source(page,'https://'+urlsplit(page.url).hostname+'/pages/publications/'+eid.removeprefix('2-s2.0-'),self.hosts,wait_until='domcontentloaded',timeout=45000)
-        page.locator('#references').wait_for(timeout=45000)
+        goto_source(page,'https://'+urlsplit(page.url).hostname+'/pages/publications/'+eid.removeprefix('2-s2.0-'),self.hosts,wait_until='domcontentloaded',timeout=SOURCE_WAIT_MS)
+        page.locator('#references').wait_for(timeout=SOURCE_WAIT_MS)
         dismiss_cookies(page)
         components={}
         for kind,tab,path in [('references','references','/gateway/doc-details/documents/'+eid+'/references'),('citations','citedBy','/gateway/citation-overview/documents/'+eid.removeprefix('2-s2.0-')+'/cited')]:
@@ -436,7 +487,7 @@ class Scopus:
                 if total:
                     def matches(response):
                         return urlsplit(response.url).hostname in self.hosts and urlsplit(response.url).path==path
-                    with page.expect_response(matches,timeout=45000) as event:
+                    with page.expect_response(matches,timeout=SOURCE_WAIT_MS) as event:
                         page.locator('#'+tab).click()
                     response=event.value
                     while True:
@@ -462,14 +513,14 @@ class Scopus:
                         next_button=page.locator('#references-panel').get_by_role('button',name='Next',exact=True)
                         if next_button.is_disabled():
                             raise ServiceError('incomplete_response','Scopus disabled Next before the reference list was complete')
-                        with page.expect_response(matches,timeout=45000) as event:
+                        with page.expect_response(matches,timeout=SOURCE_WAIT_MS) as event:
                             next_button.click()
                         response=event.value
                 status={'status':'available'}
             except ServiceError as error:
                 status=error.result
             except Exception as error:
-                status={'status':'error','code':'relationship_retrieval_failed','error_type':type(error).__name__}
+                status={'status':'error','code':'relationship_retrieval_failed',**failure_details(error)}
             artifact=self.store.put(encoded(records),'application/json',self.source,page.url,role='relationship_records',eid=eid,relationship=kind,total=total,received=len(records))
             components[kind]={**status,'artifact':artifact,'received':len(records),'total':total,'evidence':evidence,
                 'search_metadata_count':record.get(kind,{}).get('count')}
@@ -483,25 +534,18 @@ class Scopus:
             raise ServiceError("invalid_options", "Use the native advanced query and current result options; pagination is start/limit")
         settings=search_options(options)
         page = self.page()
-        goto_source(page, "https://" + urlsplit(page.url).hostname + "/pages/search/publications?type=advanced", self.hosts, wait_until="domcontentloaded", timeout=45000)
+        goto_source(page, "https://" + urlsplit(page.url).hostname + "/pages/search/publications?type=advanced", self.hosts, wait_until="domcontentloaded", timeout=SOURCE_WAIT_MS)
         editor = page.locator('.monaco-editor[role="code"]')
-        editor.wait_for(timeout=60000)
+        editor.wait_for(timeout=SOURCE_WAIT_MS)
         dismiss_cookies(page)
+        forget_result_table_state(page)
         editor.click(position={"x": 120, "y": 35})
         page.keyboard.press("Control+A")
         page.keyboard.insert_text(query)
 
-        def matches(response):
-            if urlsplit(response.url).hostname not in self.hosts or urlsplit(response.url).path != "/gateway/documents/search" or response.request.method != "POST":
-                return False
-            try:
-                return primary_request(response.request.post_data_json, query)
-            except Exception:
-                return False
-
-        with page.expect_response(matches, timeout=60000) as pending:
+        with page.expect_response(lambda response: search_settled(self.hosts, query, response), timeout=SOURCE_WAIT_MS) as pending:
             page.locator('[data-testid="advanced-search-button"]').click()
-        response = pending.value
+        response = require_accepted_query(query, pending.value)
         if response.status!=200:raise ServiceError('provider_error','Scopus search failed',http_status=response.status)
         initial_request=response.request.post_data_json;validate_primary_request(initial_request,query,SCOPUS_SORT_REQUESTS['plf-f'],[])
         initial_payload=response.json();initial_rows,initial_total,initial_offset=scopus_records(initial_payload)
@@ -550,9 +594,9 @@ class Scopus:
             offset += len(native)
             if offset >= min(start + limit, total) or not native:
                 break
-            with page.expect_response(matches, timeout=60000) as pending:
+            with page.expect_response(lambda response: search_settled(self.hosts, query, response), timeout=SOURCE_WAIT_MS) as pending:
                 page.get_by_role("button", name="Next", exact=True).click()
-            response = pending.value
+            response = require_accepted_query(query, pending.value)
         artifact = self.store.put(encoded(rows), "application/json", self.source, page.url,
             role="records", query=query, start=start, requested=limit, total=total)
         exported = artifact

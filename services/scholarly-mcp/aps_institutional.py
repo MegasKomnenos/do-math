@@ -6,7 +6,8 @@ from bs4 import BeautifulSoup
 from browser_adapters import browser_download,clean_html,goto_source,is_access_challenge
 from api_adapters import doi
 from publishers import Publisher
-from scholarly import ServiceError,encoded,Sanitizer,bibliography
+from scholarly import Sanitizer, ServiceError, bibliography, encoded, failure_details
+from waits import SOURCE_WAIT_MS
 
 FIELDS={'all','author','abstract','abstitle','title','refauth','affiliation','collaboration'}
 FILTERS={'journal','article_type','category','physh_concept','physh_discipline'}
@@ -138,7 +139,7 @@ def search(adapter,query,*,options,start=0,limit=20,cursor=None,export=None):
         elif reusable:
             page=cached;origin=urlsplit(page.url);requested=urlsplit(target)
             target=urlunsplit((origin.scheme,origin.netloc,requested.path,requested.query,''))
-            goto_source(page,target,adapter.profile.hosts,wait_until='domcontentloaded',timeout=45000)
+            goto_source(page,target,adapter.profile.hosts,wait_until='domcontentloaded',timeout=SOURCE_WAIT_MS)
         else:
             page=adapter.document(target)
             adapter.gateway.pages[adapter.source]=page
@@ -149,7 +150,7 @@ def search(adapter,query,*,options,start=0,limit=20,cursor=None,export=None):
                 if replay:
                     raw,response_url,old_proof,old_facets=replay['raw'],replay['url'],replay['proof'],replay['facets'];replay=None
                 else:
-                    try:page.wait_for_function("number => { if(document.querySelector('#challenge-error-text,#capInput')) return true; const main=document.querySelector('#search-main'); const current=main?.querySelector('[aria-current=page]'); return main && (current ? Number(new URL(current.href).searchParams.get('page')||1)===number : number===1); }",arg=expected_page,timeout=25000)
+                    try:page.wait_for_function("number => { if(document.querySelector('#challenge-error-text,#capInput')) return true; const main=document.querySelector('#search-main'); const current=main?.querySelector('[aria-current=page]'); return main && (current ? Number(new URL(current.href).searchParams.get('page')||1)===number : number===1); }",arg=expected_page,timeout=SOURCE_WAIT_MS)
                     except Exception:
                         if is_access_challenge(page.content()):raise ServiceError('publisher_access_challenge','APS returned an access verification page',status='restricted') from None
                         raise ServiceError('search_response_not_received','APS did not initialize its requested search page') from None
@@ -203,9 +204,9 @@ def search(adapter,query,*,options,start=0,limit=20,cursor=None,export=None):
                 location=urlsplit(found['next_url']);values=parse_qs(location.query);values['page']=[str(expected_page)]
                 target=urlunsplit((location.scheme,location.netloc,location.path,urlencode(values,doseq=True),''));responses.clear()
                 # The observed Turbo fetch is rejected while document navigation serves this native URL.
-                goto_source(page,target,adapter.profile.hosts,wait_until='domcontentloaded',timeout=45000)
+                goto_source(page,target,adapter.profile.hosts,wait_until='domcontentloaded',timeout=SOURCE_WAIT_MS)
             except Exception as error:
-                problem=error if isinstance(error,ServiceError) else ServiceError('search_page_failed','APS page retrieval or parsing failed',error_type=type(error).__name__)
+                problem=error if isinstance(error,ServiceError) else ServiceError('search_page_failed','APS page retrieval or parsing failed',**failure_details(error))
                 if not selected:
                     if proofs:problem.result['evidence']=proofs
                     raise problem from None
@@ -225,7 +226,7 @@ def search(adapter,query,*,options,start=0,limit=20,cursor=None,export=None):
             'preview':[{key:row[key] for key in ('id','title','doi','url')} for row in selected[:3]]}
     except ServiceError:raise
     except Exception as error:
-        raise ServiceError('search_navigation_failed','APS did not complete its search navigation',error_type=type(error).__name__) from None
+        raise ServiceError('search_navigation_failed','APS did not complete its search navigation',**failure_details(error)) from None
     finally:
         adapter.gateway.context.remove_listener('response',capture)
 
@@ -240,7 +241,7 @@ class APSInstitutional(Publisher):
         for row in rows:
             try:artifacts.append({'format':export,'artifact':self.citation_for_url(row['url'],row['doi'],export)})
             except ServiceError as error:failures.append({'doi':row['doi'],**error.result})
-            except Exception as error:failures.append({'doi':row['doi'],'status':'error','code':'citation_export_failed','error_type':type(error).__name__})
+            except Exception as error:failures.append({'doi':row['doi'],'status':'error','code':'citation_export_failed',**failure_details(error)})
         result['export']={'status':'partial' if failures else 'available','artifacts':artifacts,'failures':failures}
         if failures:result['status']='partial'
         return result
@@ -253,10 +254,10 @@ class APSInstitutional(Publisher):
         modal=page.locator('#export-article-dialog')
         if modal.count()==0 or not modal.is_visible():
             page.locator('button.export-article-citation').filter(visible=True).first.click()
-        radio=page.locator(f'input[name=export_format][value={format}]');radio.wait_for(state='visible',timeout=20000);radio.check()
+        radio=page.locator(f'input[name=export_format][value={format}]');radio.wait_for(state='visible',timeout=SOURCE_WAIT_MS);radio.check()
         if not hasattr(self.gateway,'native_download'):raise ServiceError('native_browser_required','APS citation requires the native Chrome gateway',status='restricted')
         try:
-            data,filename,actual=self.gateway.native_download(page,lambda:page.locator('#download-citation').click(),self.profile.hosts,expected_path,timeout=45000)
+            data,filename,actual=self.gateway.native_download(page,lambda:page.locator('#download-citation').click(),self.profile.hosts,expected_path,timeout=SOURCE_WAIT_MS)
         finally:
             try:
                 if modal.count() and modal.is_visible():
@@ -286,7 +287,7 @@ class APSInstitutional(Publisher):
         if len(matches)!=1:raise ServiceError('pdf_control_missing','APS page has no unique PDF control for the selected DOI',status='not_found')
         if not hasattr(self.gateway,'native_download'):raise ServiceError('native_browser_required','APS PDF requires the native Chrome gateway',status='restricted')
         try:
-            data,filename,actual=self.gateway.native_download(page,lambda:matches[0][0].click(),self.profile.download_hosts,expected_path,timeout=45000)
+            data,filename,actual=self.gateway.native_download(page,lambda:matches[0][0].click(),self.profile.download_hosts,expected_path,timeout=SOURCE_WAIT_MS)
         except ServiceError as error:
             if error.result.get('code')!='download_missing':raise
             origin=urlsplit(page.url);headers={'User-Agent':page.evaluate('navigator.userAgent'),'Referer':origin.scheme+'://'+origin.netloc+'/'}
@@ -298,7 +299,7 @@ class APSInstitutional(Publisher):
 
     def supplementary(self,page,identifier,source_page):
         identifier=doi(identifier)
-        try:page.locator(f'a[href*="/supplemental/{identifier}/"]').first.wait_for(state='attached',timeout=10000)
+        try:page.locator(f'a[href*="/supplemental/{identifier}/"]').first.wait_for(state='attached',timeout=SOURCE_WAIT_MS)
         except Exception:pass
         links=supplement_links(page.content(),page.url,identifier,self.profile.download_hosts)
         if not links:return {'status':'source_page','reason':'No document-bound supplemental file control was identified on this selected APS page','artifact':source_page}
@@ -312,7 +313,7 @@ class APSInstitutional(Publisher):
                 if not matches:raise ServiceError('supplement_control_missing','APS supplemental link has no visible selected-document control',status='not_found')
                 filename=''
                 if hasattr(self.gateway,'native_download'):
-                    try:data,filename,actual=self.gateway.native_download(page,lambda:matches[0].click(),self.profile.download_hosts,expected,timeout=45000)
+                    try:data,filename,actual=self.gateway.native_download(page,lambda:matches[0].click(),self.profile.download_hosts,expected,timeout=SOURCE_WAIT_MS)
                     except ServiceError as error:
                         if error.result.get('code')!='download_missing':raise
                         data,media,actual=browser_download(self.gateway.context,target,self.profile.download_hosts)
@@ -348,7 +349,7 @@ class APSInstitutional(Publisher):
                     for format in ('bibtex','ris'):
                         try:artifacts.append({'format':format,'artifact':self.citation(page,identifier,format)})
                         except ServiceError as error:errors.append({'format':format,**error.result})
-                        except Exception as error:errors.append({'format':format,'status':'error','code':'citation_export_failed','error_type':type(error).__name__})
+                        except Exception as error:errors.append({'format':format,'status':'error','code':'citation_export_failed',**failure_details(error)})
                     components['export']={'status':'partial' if errors else 'available','artifacts':artifacts,'errors':errors}
                     if artifacts:components['export']['artifact']=artifacts[0]['artifact']
                 if 'fulltext' in parts:

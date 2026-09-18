@@ -2,8 +2,9 @@
 import csv,io,json,re
 from urllib.parse import urljoin,urlsplit,parse_qs,urlencode,urlunsplit,unquote
 from bs4 import BeautifulSoup
-from scholarly import ServiceError,encoded,bibliography
+from scholarly import ServiceError, bibliography, encoded, failure_details
 from browser_adapters import clean_html,goto_source,dismiss_cookies,require_source_url,is_access_challenge
+from waits import SOURCE_WAIT_MS
 
 
 def records(raw,base):
@@ -75,7 +76,7 @@ def citation(adapter,page,identifier,format='bibtex'):
         page.get_by_text('Download Citation',exact=True).first.click()
     page.locator('label[for="downloadCitationCheckbox1-2"]').click()
     page.locator('label[for="downloadCitationCheckbox2-'+str(number)+'"]').click()
-    with page.expect_download(timeout=30000) as pending:
+    with page.expect_download(timeout=SOURCE_WAIT_MS) as pending:
         page.locator('#downloadCitation').click()
     download=pending.value
     require_source_url(download.url,adapter.profile.download_hosts)
@@ -135,14 +136,14 @@ def search(adapter,query,*,options,start=0,limit=20,cursor=None,export=None):
     # selections that are no longer reflected by native checkbox state.
     adapter.gateway.start()
     context=adapter.gateway.browser.new_context(accept_downloads=True)
-    context.set_default_timeout(25000)
+    context.set_default_timeout(SOURCE_WAIT_MS)
     page=context.new_page()
     evidence=[]
     try:
-        goto_source(page,'https://projecteuclid.org/',adapter.profile.hosts,wait_until='domcontentloaded',timeout=45000)
+        goto_source(page,'https://projecteuclid.org/',adapter.profile.hosts,wait_until='domcontentloaded',timeout=SOURCE_WAIT_MS)
         dismiss_cookies(page)
         if set(options)-{'sort','page_size'}:
-            page.locator('a').filter(has_text=re.compile(r'^Advanced Search$')).filter(visible=True).last.click(timeout=15000)
+            page.locator('a').filter(has_text=re.compile(r'^Advanced Search$')).filter(visible=True).last.click(timeout=SOURCE_WAIT_MS)
             for i,term in enumerate(terms[:10]):
                 if not page.locator('#advSearchText'+str(i)).count():
                     page.locator('#advSearchAddField:visible').last.click()
@@ -165,7 +166,7 @@ def search(adapter,query,*,options,start=0,limit=20,cursor=None,export=None):
         else:
             page.locator('#homePageSearchTerm').fill(query)
             page.locator('#homePageSearchTerm').press('Enter')
-        page.wait_for_url(lambda url:urlsplit(str(url)).path=='/search',timeout=45000)
+        page.wait_for_url(lambda url:urlsplit(str(url)).path=='/search',timeout=SOURCE_WAIT_MS)
         search_url=page.url
         request_params=parse_qs(urlsplit(search_url).query)
         if not request_params.get('term'):
@@ -198,15 +199,15 @@ def search(adapter,query,*,options,start=0,limit=20,cursor=None,export=None):
             if wanted_page!=1 or set(options)&{'sort','page_size'} or expanded_native_query:
                 parsed=urlsplit(search_url)
                 params={**request_params,'page':[str(wanted_page)],'getFacetCountOverride':['true']}
-                goto_source(page,urlunsplit((parsed.scheme,parsed.netloc,parsed.path,urlencode(params,doseq=True),'')),adapter.profile.hosts,wait_until='domcontentloaded',timeout=45000)
+                goto_source(page,urlunsplit((parsed.scheme,parsed.netloc,parsed.path,urlencode(params,doseq=True),'')),adapter.profile.hosts,wait_until='domcontentloaded',timeout=SOURCE_WAIT_MS)
             try:
-                page.wait_for_function("() => /[\\d,]+ results found/.test(document.querySelector('#searchHeaderTotalResults')?.textContent || '')",timeout=60000)
-                page.wait_for_function("() => !document.querySelector('#SearchLoadMoreWait') || getComputedStyle(document.querySelector('#SearchLoadMoreWait')).display === 'none'",timeout=60000)
+                page.wait_for_function("() => /[\\d,]+ results found/.test(document.querySelector('#searchHeaderTotalResults')?.textContent || '')",timeout=SOURCE_WAIT_MS)
+                page.wait_for_function("() => !document.querySelector('#SearchLoadMoreWait') || getComputedStyle(document.querySelector('#SearchLoadMoreWait')).display === 'none'",timeout=SOURCE_WAIT_MS)
             except Exception as error:
                 raw=page.content()
                 if is_access_challenge(raw) or 'Additional security check is required' in page.locator('body').inner_text():
                     raise ServiceError('publisher_access_challenge','Project Euclid returned an access verification page',status='restricted',page=wanted_page) from None
-                raise ServiceError('search_page_not_ready','Project Euclid requested result page did not render',page=wanted_page,error_type=type(error).__name__) from None
+                raise ServiceError('search_page_not_ready','Project Euclid requested result page did not render',page=wanted_page,**failure_details(error)) from None
             raw=clean_html(page.content(),adapter.store.sanitizer)
             proof=adapter.store.put(raw,'text/html',adapter.source,page.url,role='search_page',query=query,options=options)
             evidence.append(proof)
@@ -235,12 +236,12 @@ def search(adapter,query,*,options,start=0,limit=20,cursor=None,export=None):
             artifacts=[]
             for row in selected:
                 try:
-                    goto_source(page,row['url'],adapter.profile.hosts,wait_until='domcontentloaded',timeout=45000)
+                    goto_source(page,row['url'],adapter.profile.hosts,wait_until='domcontentloaded',timeout=SOURCE_WAIT_MS)
                     artifacts.append({'id':row['id'],'artifact':citation(adapter,page,row['doi'],export)})
                 except ServiceError as error:
                     export_errors.append({'id':row['id'],**error.result})
                 except Exception as error:
-                    export_errors.append({'id':row['id'],'status':'error','code':'citation_export_failed','error_type':type(error).__name__})
+                    export_errors.append({'id':row['id'],'status':'error','code':'citation_export_failed',**failure_details(error)})
             exported={'format':export,'artifacts':artifacts,'errors':export_errors}
         more=start+len(selected)<total
         return {'status':'partial' if export_errors else 'ok' if selected else 'not_found','source':adapter.source,'query':query,'options':options,
@@ -249,6 +250,6 @@ def search(adapter,query,*,options,start=0,limit=20,cursor=None,export=None):
                 'records':artifact,'export':exported,'evidence':evidence,'facets':filters,'preview':[{k:r[k] for k in ('id','title')} for r in selected[:3]]}
     except ServiceError:raise
     except Exception as error:
-        raise ServiceError('search_interaction_failed','Project Euclid search controls did not complete the requested interaction',error_type=type(error).__name__) from None
+        raise ServiceError('search_interaction_failed','Project Euclid search controls did not complete the requested interaction',**failure_details(error)) from None
     finally:
         context.close()

@@ -1,16 +1,17 @@
 """Native IOP citation controls on the selected institutional article."""
 from urllib.parse import parse_qs, urljoin, urlsplit, unquote
+from waits import SOURCE_WAIT_MS
 
 from api_adapters import doi
 from browser_adapters import browser_download
-from scholarly import ServiceError, bibliography
+from scholarly import ServiceError, bibliography, failure_details
 
 
 def citation(adapter,page,identifier,format='bibtex'):
     classes={'bibtex':'wd-btn-cit-abs-bib','ris':'wd-btn-cit-abs-ris'}
     media={'bibtex':'application/x-bibtex','ris':'application/x-research-info-systems'}[format]
     control=page.locator('a.'+classes[format])
-    control.first.wait_for(state='attached',timeout=20000)
+    control.first.wait_for(state='attached',timeout=SOURCE_WAIT_MS)
     url=urljoin(page.url,control.first.get_attribute('href'))
     selected=parse_qs(urlsplit(url).query).get('doi',[])
     if len(selected)!=1 or doi(selected[0]).casefold()!=identifier.casefold():
@@ -40,7 +41,7 @@ def supplementary(adapter,page,identifier,source_page):
         return {'status':'error','code':'identity_mismatch','message':'IOP supplementary control identifies no unique selected DOI'}
     viewer=adapter.gateway.context.new_page()
     try:
-        goto_source(viewer,next(iter(urls)),adapter.profile.hosts,wait_until='domcontentloaded',timeout=45000)
+        goto_source(viewer,next(iter(urls)),adapter.profile.hosts,wait_until='domcontentloaded',timeout=SOURCE_WAIT_MS)
         raw=viewer.content()
         if is_access_challenge(raw):raise ServiceError('publisher_access_challenge','IOP supplementary page requires access verification',status='restricted')
         observed=publication_dois(publication_metadata(raw))
@@ -50,5 +51,5 @@ def supplementary(adapter,page,identifier,source_page):
             role='supplementary_source_page',doi=identifier,parent_ref=source_page['ref'])
         return fetch_supplementary(adapter,viewer,identifier,proof)
     except ServiceError as error:return error.result
-    except Exception as error:return {'status':'error','code':'supplementary_page_failed','error_type':type(error).__name__}
+    except Exception as error:return {'status':'error','code':'supplementary_page_failed',**failure_details(error)}
     finally:viewer.close()

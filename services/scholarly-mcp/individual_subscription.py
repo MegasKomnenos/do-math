@@ -1,5 +1,6 @@
 """KUDOS catalogues for individually subscribed and print-and-online journals."""
 from __future__ import annotations
+from waits import SOURCE_WAIT_MS
 
 import csv
 import io
@@ -92,7 +93,7 @@ class IndividualSubscription:
             page.locator("#search_order").wait_for(state="visible")
             for catalogue_id in selected:
                 details = CATALOGUES[catalogue_id]
-                with page.expect_navigation(wait_until="domcontentloaded", timeout=45_000):
+                with page.expect_navigation(wait_until="domcontentloaded", timeout=SOURCE_WAIT_MS):
                     page.locator("#search_order").fill(details["search_term"])
                     page.locator("#search_order").press("Enter")
                 matches = []

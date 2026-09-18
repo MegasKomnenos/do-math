@@ -7,7 +7,7 @@ from rdflib.plugins.sparql.parser import parseQuery, BLANK_NODE_LABEL
 from rdflib.plugins.sparql.parserutils import CompValue
 from pyparsing import ParseResults
 from api_adapters import APIAdapter,doi
-from scholarly import ServiceError,encoded
+from scholarly import ServiceError, encoded, failure_details
 
 ENDPOINT='https://sparql.dblp.org/sparql'
 SCHEMA='https://dblp.org/rdf/schema#'
@@ -167,7 +167,7 @@ class DBLPKG(APIAdapter):
             except ServiceError as error:
                 result.update(status='partial',export=error.result)
             except Exception as error:
-                result.update(status='partial',export={'status':'error','code':'invalid_export','error_type':type(error).__name__})
+                result.update(status='partial',export={'status':'error','code':'invalid_export',**failure_details(error)})
         elif export in ('csv','tsv'):
             native=None
             try:
@@ -177,7 +177,7 @@ class DBLPKG(APIAdapter):
             except ServiceError as error:
                 result.update(status='partial',export={**error.result,**({'source_export':native} if native else {})})
             except Exception as error:
-                result.update(status='partial',export={'status':'error','code':'invalid_export','error_type':type(error).__name__,**({'source_export':native} if native else {})})
+                result.update(status='partial',export={'status':'error','code':'invalid_export',**failure_details(error),**({'source_export':native} if native else {})})
         return result
 
     def fetch(self,target,*,parts):

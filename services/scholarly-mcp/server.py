@@ -19,7 +19,7 @@ from mcp.types import CallToolResult, ImageContent, TextContent
 from pydantic import BaseModel, ConfigDict
 
 from registry import SOURCES, source_info
-from scholarly import ArtifactStore, ServiceError, extract_artifact
+from scholarly import ArtifactStore, ServiceError, extract_artifact, failure_details
 from scholarly import Sanitizer
 from api_adapters import make_adapters
 from browser_adapters import KudosGateway, MathSciNet, WebOfScience, ECCC, ACM
@@ -68,8 +68,9 @@ def run_call(function, *args, **kwargs):
         result = error.result
     except Exception as error:
         # Library exception messages may contain authenticated URLs or request values.
-        logging.getLogger("scholarly").error("operation failed: %s", type(error).__name__)
-        result = {"status": "error", "code": "execution_error", "message": "Server execution failed", "error_type": type(error).__name__}
+        details = failure_details(error)
+        logging.getLogger("scholarly").error("operation failed: %s at %s", details["error_type"], details["where"])
+        result = {"status": "error", "code": "execution_error", "message": "Server execution failed", **details}
     return ToolResult.model_validate(STORE.sanitizer.value(result))
 
 

@@ -3,6 +3,7 @@ import csv
 import io
 import re
 from urllib.parse import urlencode, urljoin, urlsplit, parse_qs
+from waits import SOURCE_WAIT_S
 
 from bs4 import BeautifulSoup
 import httpx
@@ -20,7 +21,7 @@ class CitationAPI(APIAdapter):
 def citation(store, identifiers):
     if not identifiers or any(not re.fullmatch(r'[A-Fa-f0-9]{32}', identifier) for identifier in identifiers):
         raise ServiceError('invalid_target','Use Cambridge product identifiers from the source results')
-    with httpx.Client(timeout=45,follow_redirects=False) as client:
+    with httpx.Client(timeout=SOURCE_WAIT_S,follow_redirects=False) as client:
         api=CitationAPI(store,client=client)
         data,evidence=api.request('https://www.cambridge.org/core/services/aop-easybib/export',params={
             'exportType':'ris','productIds':','.join(identifiers),'citationStyle':'apa'},accept='binary')

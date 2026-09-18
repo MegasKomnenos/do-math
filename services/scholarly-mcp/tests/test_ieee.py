@@ -102,6 +102,18 @@ class IEEEContract(unittest.TestCase):
         raw.update(records=[],totalRecords=0,startRecord=0,endRecord=0,totalPages=0)
         self.assertEqual(ieee_records(raw),([],0,0))
 
+    def test_search_hit_markers_do_not_leak_into_the_matched_identifier(self):
+        """IEEE는 검색어와 일치한 필드를 [::…::]로 감싼다. DOI로 찾으면 그 DOI가 감싸여 온다.
+        실측: "DOI":"10.1109/tpami.2024.3515454" 검색의 레코드 doi가 '[::10.1109/TPAMI.2024.3515454::]'였고,
+        fetch가 이를 DOI로 해석하지 못해 맞는 논문을 다른 논문으로 판정했다."""
+        from ieee import ieee_records
+        raw=json.loads((ROOT/'tests/fixtures/ieee-search.json').read_text('utf-8'))
+        raw['records']=[{**raw['records'][0],'doi':'[::10.1109/TPAMI.2024.3515454::]','highlightedTitle':'[::BEVFormer::]: Learning'}]
+        raw.update(totalRecords=1,startRecord=0,endRecord=1,recordsPerPage=25,totalPages=1)
+        rows,_,_=ieee_records(raw)
+        self.assertEqual(rows[0]['doi'],'10.1109/TPAMI.2024.3515454')
+        self.assertEqual(rows[0]['highlightedTitle'],'[::BEVFormer::]: Learning','the native highlight field stays as the source gave it')
+
     def test_command_query_must_be_nonempty_text(self):
         import tempfile
         from ieee import IEEE

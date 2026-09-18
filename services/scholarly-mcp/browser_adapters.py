@@ -1,8 +1,11 @@
 """Observed browser workflows, including KUDOS's academic database gateway."""
 from __future__ import annotations
+from waits import SOURCE_WAIT_MS, TRANSIENT_ATTEMPTS, TRANSIENT_PAUSE_MS
 
 import json
 import logging
+import random
+import time
 from collections import Counter
 from pathlib import Path
 import re
@@ -11,7 +14,7 @@ from urllib.parse import parse_qs, urlencode, urljoin, urlsplit, urlunsplit, quo
 
 from bs4 import BeautifulSoup
 
-from scholarly import ServiceError, encoded, bibliography
+from scholarly import ServiceError, bibliography, encoded, failure_details
 
 MSC_HOSTS = {"mathscinet.ams.org", "mathscinet-ams-org.libproxy.knu.ac.kr"}
 
@@ -85,8 +88,33 @@ def mathscinet_target(target):
     return target
 
 
+def retry_transient(action, attempts=None):
+    """제공자가 같은 요청에 간헐적으로 내는 일시 오류를 정해진 횟수까지 다시 시도한다.
+
+    retryable 표지가 없는 오류는 요청 쪽 문제이므로 곧바로 올린다. 끝까지 실패하면 시도 횟수를 함께 보고한다.
+    """
+    attempts = attempts or TRANSIENT_ATTEMPTS
+    for attempt in range(1, attempts + 1):
+        try:
+            return action()
+        except ServiceError as error:
+            # 안쪽 단계가 이미 횟수를 다 쓴 오류(attempts)는 바깥에서 곱해 다시 시도하지 않는다.
+            if not error.result.get('retryable') or 'attempts' in error.result:
+                raise
+            if attempt == attempts:
+                error.result['attempts'] = attempt
+                raise
+            # 지수 백오프에 지터를 더한다. 여러 호출이 같은 순간에 다시 몰리지 않게 한다.
+            time.sleep(TRANSIENT_PAUSE_MS / 1000 * 2 ** (attempt - 1) * (1 + random.random() / 4))
+
+
 def wos_events(raw):
     events = [json.loads(line) for line in raw.splitlines() if line.strip()]
+    failure = next((e.get("payload") for e in events if e.get("key") == "error"), None)
+    if failure is not None:
+        # WoS는 HTTP 200 스트림 안에 자기 오류를 싣는다. 같은 요청이 다음 번에는 성공하는 일시 오류가 실측되었다.
+        raise ServiceError("provider_error", "Web of Science reported an error inside its response stream",
+                           provider_message=failure, retryable=True)
     info = next((e["payload"] for e in events if e.get("key") == "searchInfo"), None)
     if info is None or type(info.get("RecordsFound")) is not int:
         raise ServiceError("invalid_response", "WOS search stream has no result count")
@@ -110,9 +138,12 @@ def wos_facet_candidates(events):
             raise ServiceError('invalid_response','WOS analyze group has an unexpected shape')
         index=group['Name']
         for item in group['Values']:
-            if not isinstance(item,dict) or not isinstance(item.get('Key'),str) or type(item.get('Value')) is not int or not item['Key'].startswith(index+'.'):
+            if not isinstance(item,dict) or not isinstance(item.get('Key'),str) or type(item.get('Value')) is not int:
                 raise ServiceError('invalid_response','WOS facet candidate has an unexpected shape')
+            # REVIEW·EARLY ACCESS 같은 빠른 필터 그룹은 키를 DT.로 시작시킨다. 쓰는 그룹에만 이름 접두를 요구한다.
             if index not in controls:continue
+            if not item['Key'].startswith(index+'.'):
+                raise ServiceError('invalid_response','WOS facet candidate has an unexpected shape')
             value=item['Key'][len(index)+1:];section,labels=controls[index]
             if labels is not None and value not in labels:continue
             candidates.append({'group':index,'value':item['Key'],'label':labels[value] if labels else value,
@@ -136,7 +167,7 @@ def wos_control_candidates(raw,field,group):
     soup=BeautifulSoup(raw,'html.parser');result=[];seen=set()
     for node in soup.select('input[type="checkbox"][name]'):
         if node.get('name')!=group:continue
-        value=node.get('value');aria=node.get('aria-label','');match=re.fullmatch(r'(.+),\s*([\d,]+)',aria)
+        value=node.get('value');aria=node.get('aria-label','');match=re.fullmatch(r'(.+?),\s*(\d{1,3}(?:,\d{3})+|\d+)',aria)
         if not isinstance(value,str) or not value.startswith(group+'.') or not match:
             raise ServiceError('invalid_response','WOS facet control has an unexpected identity or count')
         if value in seen:continue
@@ -204,9 +235,9 @@ def browser_download(context, url, hosts, *, headers=None, form=None, response_i
             raise ServiceError("source_boundary", "Observed document link left the selected source", blocked_host=parsed.hostname)
         try:
             if form is None:
-                response = context.request.get(url, max_redirects=0, timeout=45000, headers=headers or {})
+                response = context.request.get(url, max_redirects=0, timeout=SOURCE_WAIT_MS, headers=headers or {})
             else:
-                response = context.request.post(url, data=urlencode(form,doseq=True), max_redirects=0, timeout=45000,
+                response = context.request.post(url, data=urlencode(form,doseq=True), max_redirects=0, timeout=SOURCE_WAIT_MS,
                     headers={**(headers or {}),'Content-Type':'application/x-www-form-urlencoded'})
         except BrowserTimeout:
             raise ServiceError("timeout", "Source document did not respond within the download timeout", retryable=True) from None
@@ -244,9 +275,26 @@ def dismiss_cookies(page):
         return
     banner = page.locator("#onetrust-banner-sdk")
     if banner.count() and banner.is_visible():
-        page.wait_for_function("typeof OneTrust !== 'undefined' && typeof OneTrust.RejectAll === 'function'", timeout=15000)
+        page.wait_for_function("typeof OneTrust !== 'undefined' && typeof OneTrust.RejectAll === 'function'", timeout=SOURCE_WAIT_MS)
         page.evaluate("OneTrust.RejectAll()")
-        banner.wait_for(state="hidden", timeout=15000)
+        banner.wait_for(state="hidden", timeout=SOURCE_WAIT_MS)
+
+
+DRIVER = None
+
+
+def playwright_driver():
+    """이 프로세스의 sync Playwright 드라이버를 돌려준다.
+
+    한 스레드는 sync 인스턴스를 하나만 가질 수 있고 서버의 모든 게이트웨이는 한 워커 스레드를 공유한다.
+    두 번째 sync_playwright().start()는 거절당해 나중에 뜨는 자료원이 영구히 실패하므로 하나를 함께 쓴다.
+    드라이버는 프로세스가 끝날 때까지 산다. 게이트웨이 하나를 닫는다고 멈추지 않는다.
+    """
+    global DRIVER
+    if DRIVER is None:
+        from playwright.sync_api import sync_playwright
+        DRIVER = sync_playwright().start()
+    return DRIVER
 
 
 class KudosGateway:
@@ -294,19 +342,18 @@ class KudosGateway:
     def start(self):
         if self.context:
             return
-        from playwright.sync_api import sync_playwright
-        self.playwright = sync_playwright().start()
+        self.playwright = playwright_driver()
         self.browser = getattr(self.playwright, self.engine).launch(headless=True, **({"channel": "chrome"} if self.engine == "chromium" else {}))
         state = self.state_path()
         if not state.exists():state = self.root / "scholarly-mcp" / "kudos.json"
         self.context = self.browser.new_context(storage_state=str(state) if state.exists() else None, accept_downloads=True)
-        self.context.set_default_timeout(25000)
+        self.context.set_default_timeout(SOURCE_WAIT_MS)
 
     def login(self, page):
-        page.goto("https://kudos.knu.ac.kr/pages/index.htm", wait_until="domcontentloaded", timeout=45000)
+        page.goto("https://kudos.knu.ac.kr/pages/index.htm", wait_until="domcontentloaded", timeout=SOURCE_WAIT_MS)
         login = page.get_by_role("link", name="로그인", exact=True).first
         logout = page.get_by_role("link", name="로그아웃", exact=True).first
-        login.or_(logout).wait_for(timeout=20000)
+        login.or_(logout).wait_for(timeout=SOURCE_WAIT_MS)
         if logout.count() and logout.is_visible():
             return
         fields = self.credentials()
@@ -316,7 +363,7 @@ class KudosGateway:
         page.locator("#passwd").fill(fields["PW"])
         page.locator("#passwd").press("Enter")
         try:
-            page.get_by_role("link", name="로그아웃", exact=True).first.wait_for(timeout=30000)
+            page.get_by_role("link", name="로그아웃", exact=True).first.wait_for(timeout=SOURCE_WAIT_MS)
         except Exception:
             raise ServiceError("authentication_failed", "KUDOS login did not reach an authenticated page", status="restricted", provider="kudos") from None
         self.save_state()
@@ -342,13 +389,13 @@ class KudosGateway:
             stage = 'database_shortcut'
             shortcut = row.get_by_role("link", name="바로가기")
             shortcut.wait_for()
-            with self.context.expect_page(timeout=25000) as popup:
+            with self.context.expect_page(timeout=SOURCE_WAIT_MS) as popup:
                 shortcut.click()
             target = popup.value
             stage = 'publisher_redirect'
-            target.wait_for_url(lambda u: urlsplit(str(u)).hostname in hosts, wait_until="domcontentloaded", timeout=55000)
+            target.wait_for_url(lambda u: urlsplit(str(u)).hostname in hosts, wait_until="domcontentloaded", timeout=SOURCE_WAIT_MS)
             stage = 'publisher_ready'
-            target.locator(ready).filter(visible=True).first.wait_for(timeout=55000)
+            target.locator(ready).filter(visible=True).first.wait_for(timeout=SOURCE_WAIT_MS)
             require_source_url(target.url, hosts)
             self.pages[source] = target
             return target
@@ -359,7 +406,7 @@ class KudosGateway:
             challenge = observed_host in {'validate.perfdrive.com', 'challenges.cloudflare.com'}
             raise ServiceError('publisher_access_challenge' if challenge else 'gateway_navigation_failed',
                 'Publisher redirected to an access challenge' if challenge else 'KUDOS academic-DB shortcut did not reach a ready source page',
-                status='restricted' if challenge else 'error', source=source, stage=stage, error_type=type(error).__name__, observed_host=observed_host, retryable=True) from None
+                status='restricted' if challenge else 'error', source=source, stage=stage, **failure_details(error), observed_host=observed_host, retryable=True) from None
         finally:
             page.close()
 
@@ -369,8 +416,8 @@ class KudosGateway:
             except Exception as error:
                 logging.getLogger('scholarly').warning('browser state was not saved: %s',type(error).__name__)
             self.browser.close()
-        if self.playwright:
-            self.playwright.stop()
+        self.context = self.browser = self.playwright = None
+        self.pages = {}
 
     def public_page(self, source):
         self.start()
@@ -550,14 +597,14 @@ class MathSciNet:
         if close.count():
             close.first.click();page.wait_for_timeout(250)
         button=page.locator('button[name="Show filters button"]').filter(visible=True)
-        try:button.first.wait_for(state='visible',timeout=30000)
+        try:button.first.wait_for(state='visible',timeout=SOURCE_WAIT_MS)
         except Exception:
             main=page.locator('main');text=main.inner_text() if main.count() else ''
             raise ServiceError('facet_selection_required','MathSciNet did not finish rendering its current result filters',status='selection_required',
                                page_path=urlsplit(page.url).path,page_title=page.title(),main_text=' '.join(text.split())[:160]) from None
         if button.count()!=1:raise ServiceError('facet_selection_required','MathSciNet did not offer its current result filters',status='selection_required',filter_button_count=button.count())
         button.click()
-        page.get_by_text('Review Status',exact=True).filter(visible=True).first.wait_for(state='visible',timeout=15000)
+        page.get_by_text('Review Status',exact=True).filter(visible=True).first.wait_for(state='visible',timeout=SOURCE_WAIT_MS)
 
     def current_facet_candidates(self,scope,field):
         return self.facet_candidates(scope.evaluate('(node)=>node.outerHTML'),field)
@@ -568,7 +615,7 @@ class MathSciNet:
             search.fill('');page.wait_for_timeout(100)
         with page.expect_response(lambda response:urlsplit(response.url).hostname in MSC_HOSTS and urlsplit(response.url).path==route and
                                   parse_qs(urlsplit(response.url).query,keep_blank_values=True).get('query')==[effective_query] and
-                                  parse_qs(urlsplit(response.url).query,keep_blank_values=True).get(param)==[value],timeout=45000) as event:search.fill(value)
+                                  parse_qs(urlsplit(response.url).query,keep_blank_values=True).get(param)==[value],timeout=SOURCE_WAIT_MS) as event:search.fill(value)
         response=event.value
         if response.status!=200:raise ServiceError('provider_error','MathSciNet facet candidate search failed',http_status=response.status,field=field)
         searched=self.facet_source_candidates(field,response.json());existing={(item['label'].casefold(),item['source_id']):item for item in (native_catalog or {}).get(field,[])}
@@ -607,7 +654,7 @@ class MathSciNet:
 
     def apply_facets(self,page,query,size,sort,filters,preview,base_total=None,native_catalog=None):
         if not filters and preview is None:return '',[],[],None
-        page.wait_for_function("() => document.querySelectorAll('input[name=\"Select article checkbox\"]').length > 0",timeout=15000)
+        page.wait_for_function("() => document.querySelectorAll('input[name=\"Select article checkbox\"]').length > 0",timeout=SOURCE_WAIT_MS)
         self.open_facets(page);evidence=[];artifacts=[];effective=query;current_total=base_total
         for field,_,include,exclude in filters:
             self.open_facets(page)
@@ -630,7 +677,7 @@ class MathSciNet:
                 if urlsplit(response.url).hostname in MSC_HOSTS and urlsplit(response.url).path=='/mathscinet/api/publications/facets':facet_responses.append(response)
             page.on('response',captured_facet)
             try:
-                with page.expect_response(lambda response:urlsplit(response.url).hostname in MSC_HOSTS and urlsplit(response.url).path=='/mathscinet/api/publications/search',timeout=45000) as event:
+                with page.expect_response(lambda response:urlsplit(response.url).hostname in MSC_HOSTS and urlsplit(response.url).path=='/mathscinet/api/publications/search',timeout=SOURCE_WAIT_MS) as event:
                     scope.get_by_role('button',name='Apply',exact=True).filter(visible=True).first.click(no_wait_after=True)
                 response=event.value
                 if response.status!=200:raise ServiceError('provider_error','MathSciNet facet refinement failed',http_status=response.status,field=field)
@@ -733,8 +780,8 @@ class MathSciNet:
     def citation_relation(self,mr,basis='references'):
         page=self.page();host=urlsplit(page.url).hostname
         url='https://'+host+'/mathscinet/article?'+urlencode({'mr':mr})
-        goto_source(page,url,MSC_HOSTS,wait_until='domcontentloaded',timeout=45000)
-        heading=page.locator('main h1').first;heading.wait_for(timeout=45000)
+        goto_source(page,url,MSC_HOSTS,wait_until='domcontentloaded',timeout=SOURCE_WAIT_MS)
+        heading=page.locator('main h1').first;heading.wait_for(timeout=SOURCE_WAIT_MS)
         observed_mr=self.record_identity(heading.inner_text(),mr)
         relation=self.citation_control(page.locator('main').inner_html(),url,observed_mr,basis=basis)
         evidence=self.store.put(encoded(relation),'application/json',self.source,url,role='citation_relation_control',direction='incoming',basis=basis)
@@ -782,8 +829,8 @@ class MathSciNet:
     def reference_relation(self,mr):
         page=self.page();host=urlsplit(page.url).hostname
         url='https://'+host+'/mathscinet/article?'+urlencode({'mr':mr})
-        goto_source(page,url,MSC_HOSTS,wait_until='domcontentloaded',timeout=45000)
-        heading=page.locator('main h1').first;heading.wait_for(timeout=45000)
+        goto_source(page,url,MSC_HOSTS,wait_until='domcontentloaded',timeout=SOURCE_WAIT_MS)
+        heading=page.locator('main h1').first;heading.wait_for(timeout=SOURCE_WAIT_MS)
         observed_mr=self.record_identity(heading.inner_text(),mr)
         raw=page.locator('main').inner_html()
         relation=self.reference_control(raw,url,observed_mr)
@@ -898,10 +945,10 @@ class MathSciNet:
         effective_query=query;filter_evidence=[];facet_artifacts=[];facet_preview=None;zero_filter_state=None
         if settings['facet_filters'] or settings['facet_preview']:
             control_url="https://"+host+"/mathscinet/publications-search?"+urlencode({'query':query,'page':1,'size':size,'sort':sort,'facets':''})
-            with page.expect_response(lambda response:self.matches_facet_response(response,host,query),timeout=45000) as facet_event:
+            with page.expect_response(lambda response:self.matches_facet_response(response,host,query),timeout=SOURCE_WAIT_MS) as facet_event:
                 with page.expect_response(lambda response:urlsplit(response.url).hostname==host and urlsplit(response.url).path=='/mathscinet/api/publications/search'
-                                           and parse_qs(urlsplit(response.url).query).get('query')==[query],timeout=45000) as control:
-                    goto_source(page,control_url,MSC_HOSTS,wait_until='domcontentloaded',timeout=45000)
+                                           and parse_qs(urlsplit(response.url).query).get('query')==[query],timeout=SOURCE_WAIT_MS) as control:
+                    goto_source(page,control_url,MSC_HOSTS,wait_until='domcontentloaded',timeout=SOURCE_WAIT_MS)
             self.validate_search_request(control.value.url,query,1,size,sort,'')
             if facet_event.value.status!=200:raise ServiceError('provider_error','MathSciNet facet candidates failed',http_status=facet_event.value.status)
             if parse_qs(urlsplit(facet_event.value.url).query,keep_blank_values=True).get('query')!=[query]:
@@ -923,8 +970,8 @@ class MathSciNet:
                 try:self.validate_search_request(response.url,effective_query,page_number,size,sort,'');return True
                 except ServiceError:return False
             try:
-                with page.expect_response(matching, timeout=45000) as captured:
-                    goto_source(page, query_url, MSC_HOSTS, wait_until="domcontentloaded", timeout=45000)
+                with page.expect_response(matching, timeout=SOURCE_WAIT_MS) as captured:
+                    goto_source(page, query_url, MSC_HOSTS, wait_until="domcontentloaded", timeout=SOURCE_WAIT_MS)
                 response = captured.value
                 if response.status != 200:
                     raise ServiceError("provider_error", "MathSciNet search request failed", http_status=response.status)
@@ -993,8 +1040,8 @@ class MathSciNet:
         page = self.page()
         host = urlsplit(page.url).hostname
         url = "https://" + host + "/mathscinet/article?mr=" + mr
-        goto_source(page, url, MSC_HOSTS, wait_until="domcontentloaded", timeout=45000)
-        page.locator("main h1").filter(has_text="MR" + mr).wait_for(timeout=45000)
+        goto_source(page, url, MSC_HOSTS, wait_until="domcontentloaded", timeout=SOURCE_WAIT_MS)
+        page.locator("main h1").filter(has_text="MR" + mr).wait_for(timeout=SOURCE_WAIT_MS)
         raw = page.locator("main").inner_html()
         html = clean_html(raw, self.store.sanitizer)
         html_artifact = self.store.put(html, "text/html", self.source, url, role="source_page", mr="MR" + mr)
@@ -1014,7 +1061,7 @@ class MathSciNet:
                     observed = urljoin(url, link.first.get_attribute("href"))
                     if urlsplit(observed).hostname != host:
                         raise ServiceError("source_boundary", "Review PDF link left MathSciNet")
-                    response = self.gateway.context.request.get(observed, timeout=45000)
+                    response = self.gateway.context.request.get(observed, timeout=SOURCE_WAIT_MS)
                     data = response.body()
                     if response.status != 200 or not data.startswith(b"%PDF-"):
                         components[part] = {"status": "error", "code": "invalid_review_pdf"}
@@ -1037,6 +1084,34 @@ class MathSciNet:
             "target": "MR" + mr, "components": components, "records": text_artifact, "source_page": html_artifact,
             "links": [{"label": a.get_text(" ", strip=True), "url": self.store.sanitizer.url(urljoin(url, a["href"]))} for a in BeautifulSoup(html, "html.parser").select("a[href]")],
             "scope": "Only this MathSciNet record was retrieved"}
+
+
+WOS_ERROR_PREFIX = '/wos/error/'
+
+
+def wos_error_message(url):
+    """WoS가 자기 오류 화면을 띄웠으면 그 사유를 돌려주고, 아니면 None을 돌려준다.
+
+    오류 화면에는 검색 제어가 없다. 그 상태로 제어를 기다리면 나타나지 않을 것을 한도까지 기다리게 된다.
+    """
+    parts = urlsplit(url)
+    if not parts.path.startswith(WOS_ERROR_PREFIX):
+        return None
+    return parse_qs(parts.query).get('message', ['unknown'])[0]
+
+
+def wos_search_failure(response, query):
+    """검색 요청이 200이 아닐 때 막은 주체를 가려 보고할 오류를 만든다.
+
+    실측: 기관 프록시는 불리언 연산자와 필드=(…)가 결합한 검색식을 SQL 주입으로 보고 자기 HTML 400을 돌려준다.
+    그 요청은 WoS에 닿지 않았으므로 다시 시도해도 같다. 호출자가 검색식 모양을 바꿔야 한다.
+    """
+    if "html" in (response.headers.get("content-type") or "").lower():
+        return ServiceError("query_rejected",
+                            "The institutional proxy blocked this query text before Web of Science saw it; "
+                            "use one field tag per query and narrow with facet_filters",
+                            http_status=response.status, query=query, rejected_by="institutional_proxy", stage="search")
+    return ServiceError("provider_error", "WOS browser search failed", http_status=response.status, stage="search")
 
 
 class WebOfScience:
@@ -1108,6 +1183,10 @@ class WebOfScience:
 
     def result_qid(self,url):
         match=re.search(r'/wos/woscc/summary/([A-Za-z0-9-]+)/',urlsplit(url).path)
+        failure=wos_error_message(url)
+        if failure:
+            raise ServiceError('provider_error','Web of Science replaced the result page with its own error screen',
+                               stage='result_page',provider_message=failure,retryable=True)
         if not match:raise ServiceError('query_mismatch','WOS result page has no current query identity')
         return match[1]
 
@@ -1129,12 +1208,12 @@ class WebOfScience:
         try:return self.export_records(page,start,end,format),None
         except ServiceError as error:return error.result,error.result
         except Exception as error:
-            failure={'status':'error','code':'export_failed','error_type':type(error).__name__}
+            failure={'status':'error','code':'export_failed',**failure_details(error)}
             return failure,failure
 
     def select_editions(self,page,requested):
-        combo=page.get_by_role('combobox',name=re.compile(r'^selectEdition,',re.I));combo.wait_for(state='visible',timeout=30000);page.wait_for_timeout(1200);combo.click(force=True);page.wait_for_timeout(400)
-        choices=page.get_by_role('option').filter(visible=True);choices.first.wait_for(state='visible',timeout=30000);available=[]
+        combo=page.get_by_role('combobox',name=re.compile(r'^selectEdition,',re.I));combo.wait_for(state='visible',timeout=SOURCE_WAIT_MS);page.wait_for_timeout(1200);combo.click(force=True);page.wait_for_timeout(400)
+        choices=page.get_by_role('option').filter(visible=True);choices.first.wait_for(state='visible',timeout=SOURCE_WAIT_MS);available=[]
         for index in range(choices.count()):
             text=' '.join(choices.nth(index).inner_text().split())
             match=next(((label,native) for label,native in self.edition_values.items() if '('+label+')' in text),None)
@@ -1186,7 +1265,7 @@ class WebOfScience:
                 matches=[];boxes=section.locator('mat-checkbox input[type="checkbox"]')
                 if scope is not section:boxes=scope.locator('mat-checkbox input[type="checkbox"]')
                 for i in range(boxes.count()):
-                    box=boxes.nth(i);aria=box.get_attribute('aria-label') or '';match=re.fullmatch(r'(.+),\s*([\d,]+)',aria)
+                    box=boxes.nth(i);aria=box.get_attribute('aria-label') or '';match=re.fullmatch(r'(.+?),\s*(\d{1,3}(?:,\d{3})+|\d+)',aria)
                     if match and box.is_visible() and match[1].casefold()==candidate['label'].casefold() and int(match[2].replace(',',''))==candidate['count']:matches.append(box)
                 return matches
             if any(not matching_boxes(candidate) for candidate in values):
@@ -1207,7 +1286,7 @@ class WebOfScience:
                 if not box.is_checked():box.locator('xpath=ancestor::mat-checkbox[1]').locator('label').click()
                 selected.append(box)
             refine=scope.get_by_role('button',name='Refine',exact=True).filter(visible=True).first if scope is not section else selected[0].locator('xpath=ancestor::div[contains(@class,"width-wrapper")][1]').get_by_role('button',name='Refine',exact=True)
-            with page.expect_response(lambda response:urlsplit(response.url).hostname in self.hosts and urlsplit(response.url).path=='/api/wosnx/core/runQueryRefine',timeout=60000) as event:
+            with page.expect_response(lambda response:urlsplit(response.url).hostname in self.hosts and urlsplit(response.url).path=='/api/wosnx/core/runQueryRefine',timeout=SOURCE_WAIT_MS) as event:
                 refine.click()
             response=event.value
             if response.status!=200:raise ServiceError('provider_error','WOS result refinement failed',http_status=response.status)
@@ -1231,7 +1310,7 @@ class WebOfScience:
                     analyzes=response.request.post_data_json.get('retrieve',{}).get('analyzes')
                     return isinstance(analyzes,list) and len(analyzes)==1 and analyzes[0].startswith(group+'.')
                 except Exception:return False
-            with page.expect_response(matching,timeout=60000) as event:control.click()
+            with page.expect_response(matching,timeout=SOURCE_WAIT_MS) as event:control.click()
             response=event.value
             if response.status!=200:raise ServiceError('provider_error','WOS facet candidate request failed',http_status=response.status,field=field)
             if response.request.post_data_json.get('qid')!=current_qid:
@@ -1291,7 +1370,7 @@ class WebOfScience:
                                     native_group=group,query=labels,scope='Exact visible labels resolved in one current WOS facet field')
             artifacts.append(artifact)
             refine=scope.get_by_role('button',name='Refine',exact=True).filter(visible=True).first if expanded else controls[0].locator('xpath=ancestor::div[contains(@class,"width-wrapper")][1]').get_by_role('button',name='Refine',exact=True)
-            with page.expect_response(lambda response:urlsplit(response.url).hostname in self.hosts and urlsplit(response.url).path=='/api/wosnx/core/runQueryRefine',timeout=60000) as event:
+            with page.expect_response(lambda response:urlsplit(response.url).hostname in self.hosts and urlsplit(response.url).path=='/api/wosnx/core/runQueryRefine',timeout=SOURCE_WAIT_MS) as event:
                 refine.click()
             response=event.value
             if response.status!=200:raise ServiceError('provider_error','WOS result refinement failed',http_status=response.status,field=field)
@@ -1313,7 +1392,7 @@ class WebOfScience:
         return artifact,evidence
 
     def apply_sort(self,page,result,sort):
-        label,expected_native=sort;control=page.locator('#selectSortOption').filter(visible=True).first;control.wait_for(timeout=30000)
+        label,expected_native=sort;control=page.locator('#selectSortOption').filter(visible=True).first;control.wait_for(timeout=SOURCE_WAIT_MS)
         evidence=None
         if control.get_attribute('aria-label')!='Sort by '+label:
             control.click()
@@ -1322,7 +1401,7 @@ class WebOfScience:
                 citation_class=page.get_by_role('menuitem',name='Citation class',exact=True).filter(visible=True)
                 if citation_class.count():citation_class.first.click();choice=page.get_by_role('menuitem',name=label,exact=True).filter(visible=True)
             if choice.count()!=1:raise ServiceError('sort_not_offered','The current WOS result does not offer the requested sort',status='unsupported')
-            with page.expect_response(lambda response:urlsplit(response.url).hostname in self.hosts and urlsplit(response.url).path=='/api/wosnx/core/runQueryGetRecordsStream',timeout=60000) as event:
+            with page.expect_response(lambda response:urlsplit(response.url).hostname in self.hosts and urlsplit(response.url).path=='/api/wosnx/core/runQueryGetRecordsStream',timeout=SOURCE_WAIT_MS) as event:
                 choice.first.click()
             response=event.value
             if response.status!=200:raise ServiceError('provider_error','WOS result sorting failed',http_status=response.status)
@@ -1381,11 +1460,11 @@ class WebOfScience:
             raise ServiceError('identity_mismatch','WOS parent search returned another DOI')
         page=self.gateway.pages[self.source];host=urlsplit(page.url).hostname
         record_url='https://'+host+'/wos/woscc/full-record/'+accession
-        goto_source(page,record_url,self.hosts,wait_until='domcontentloaded',timeout=45000);self.cookies(page)
+        goto_source(page,record_url,self.hosts,wait_until='domcontentloaded',timeout=SOURCE_WAIT_MS);self.cookies(page)
         link=page.locator('a[href*="/citing-summary/'+accession+'"]:visible').first
         control_total=int(parent_row.get('fields',{}).get('tc',['0'])[0].replace(',',''))
         if control_total:
-            try:link.wait_for(state='visible',timeout=45000)
+            try:link.wait_for(state='visible',timeout=SOURCE_WAIT_MS)
             except Exception:raise ServiceError('citing_control_missing','WOS full record has citations but no citing-results control',source_page=record_url) from None
         if not link.count():
             if control_total==0:
@@ -1399,8 +1478,8 @@ class WebOfScience:
         if href.path!='/wos/woscc/citing-summary/'+accession:
             raise ServiceError('identity_mismatch','WOS citing control identifies another accession')
         citing_url='https://'+host+href.path
-        with page.expect_response(lambda r:urlsplit(r.url).hostname in self.hosts and urlsplit(r.url).path=='/api/wosnx/core/runQuerySearch',timeout=60000) as event:
-            goto_source(page,citing_url,self.hosts,wait_until='domcontentloaded',timeout=45000)
+        with page.expect_response(lambda r:urlsplit(r.url).hostname in self.hosts and urlsplit(r.url).path=='/api/wosnx/core/runQuerySearch',timeout=SOURCE_WAIT_MS) as event:
+            goto_source(page,citing_url,self.hosts,wait_until='domcontentloaded',timeout=SOURCE_WAIT_MS)
         response=event.value
         if response.status!=200:raise ServiceError('provider_error','WOS citing search failed',http_status=response.status)
         request=response.request.post_data_json;page_size=self.validate_citing_request(request,accession,'date-descending')
@@ -1419,7 +1498,7 @@ class WebOfScience:
                     'has_more':False,'next':None,'records':artifact,'export':artifact,'evidence':initial_evidence,'sort_evidence':sort_evidence,'native_sort':native_sort,'parent':parent['records'],
                     'relation':{'direction':'incoming','control_total':control_total,'result_total':total},
                     'scope':'Incoming WOS Core Collection records for the selected accession'}
-        page.locator('#export-trigger-btn').wait_for(timeout=45000)
+        page.locator('#export-trigger-btn').wait_for(timeout=SOURCE_WAIT_MS)
         end=min(start+limit,total);full_export=self.export_records(page,start,end,'plain')
         records=bibliography(self.store.read(full_export['ref'])[1],'application/x-wos')
         if len(records)!=end-start:
@@ -1436,18 +1515,47 @@ class WebOfScience:
                 'scope':'Incoming WOS Core Collection records for the selected accession'}
 
     def export_records(self, page, start, end, format):
+        """결과 화면의 원 내보내기를 받는다. WoS가 일시 오류로 자기 오류 화면에 가면 결과 화면으로 돌아와 다시 시도한다."""
+        origin = page.url
+        def attempt():
+            try:
+                if wos_error_message(page.url):
+                    page.goto(origin, wait_until="domcontentloaded", timeout=SOURCE_WAIT_MS)
+                    self.dialog_control(page, "#export-trigger-btn")
+                return self.export_once(page, start, end, format)
+            except ServiceError:
+                raise
+            except Exception:
+                failure = wos_error_message(page.url)
+                if failure is None:
+                    raise
+                raise ServiceError('provider_error', 'Web of Science replaced the export dialog with its own error screen',
+                                   stage='export', provider_message=failure, retryable=True) from None
+        return retry_transient(attempt)
+
+    def dialog_control(self, page, selector):
+        """대화상자의 제어를 기다리되, WoS가 그 사이 자기 오류 화면으로 가면 대기를 소진하지 않고 곧바로 알린다."""
+        page.wait_for_function("(selector) => location.pathname.startsWith('" + WOS_ERROR_PREFIX + "')"
+                               " || document.querySelector(selector) !== null", arg=selector, timeout=SOURCE_WAIT_MS)
+        failure = wos_error_message(page.url)
+        if failure:
+            raise ServiceError('provider_error', 'Web of Science replaced the export dialog with its own error screen',
+                               stage='export', provider_message=failure, retryable=True)
+        return page.locator(selector)
+
+    def export_once(self, page, start, end, format):
         label, media = self.formats[format]
         page.locator("#export-trigger-btn").click()
         page.get_by_role("menuitem", name=label, exact=True).click()
-        page.locator('input[name="markFrom"]').wait_for()
+        self.dialog_control(page, 'input[name="markFrom"]')
         page.locator("#radio3-input").focus()
         page.locator("#radio3-input").press("Space")
-        page.locator('input[name="markFrom"]').fill(str(start + 1))
+        self.dialog_control(page, 'input[name="markFrom"]').fill(str(start + 1))
         page.locator('input[name="markTo"]').fill(str(end))
         page.get_by_text("Record Content:", exact=True).locator("..").get_by_role("combobox").click()
         content = "Full Record and Cited References" if format == "plain" else "Full Record"
         page.get_by_role("option", name=content, exact=True).click()
-        with page.expect_download(timeout=60000) as event:
+        with page.expect_download(timeout=SOURCE_WAIT_MS) as event:
             page.locator("#exportButton").click()
         download = event.value
         if download.failure():
@@ -1468,6 +1576,10 @@ class WebOfScience:
             record_content=content, start=start, end=end, original_name=download.suggested_filename)
 
     def search(self, query, *, options, start=0, limit=20, cursor=None, export=None):
+        """검색 한 번을 실행한다. WoS의 일시 오류는 facet·정렬 단계에서도 나므로 흐름 전체를 다시 시도할 수 있게 감싼다."""
+        return retry_transient(lambda: self.search_once(query, options=options, start=start, limit=limit, cursor=cursor, export=export))
+
+    def search_once(self, query, *, options, start=0, limit=20, cursor=None, export=None):
         if type(start) is not int or start < 0 or type(limit) is not int or not 1 <= limit <= 1000:
             raise ServiceError("invalid_range", "WOS requires start >= 0 and limit 1..1000")
         if cursor or set(options)-{'kind','sort','editions','facets','facet_filters','facet_group','facet_query'}:
@@ -1483,21 +1595,35 @@ class WebOfScience:
         settings=self.advanced_options({key:value for key,value in options.items() if key!='kind'})
         page = self.gateway.open(self.source, "Web of Science CPCI", self.hosts, '#composeQuerySmartSearch,input[name="search-main-box"]')
         self.cookies(page)
-        page.get_by_role("link", name="Advanced Search", exact=True).first.click()
-        page.get_by_text("QUERY BUILDER", exact=True).click()
-        selected_editions=self.select_editions(page,settings['editions'])
-        area = page.locator("#advancedSearchInputArea")
-        area.fill(query)
-        with page.expect_response(lambda r: urlsplit(r.url).hostname in self.hosts and urlsplit(r.url).path == "/api/wosnx/core/runQuerySearch", timeout=60000) as event:
-            page.get_by_role("button", name="Search", exact=True).click()
-        response = event.value
-        if response.status != 200:
-            raise ServiceError("provider_error", "WOS browser search failed", http_status=response.status)
+        def submit():
+            # 실측: 같은 getHistory·runQuerySearch 요청에 WoS가 간헐적으로 Server.internalError를 낸다.
+            # 오류 화면에도 Advanced Search 링크가 있어 같은 자리에서 다시 들어갈 수 있다.
+            # 실측: 직전 호출이 facet 패널을 연 채 끝나면 그 dimmed-background가 머리글 링크의 클릭을 가로채 대기를 소진했다.
+            # Escape로는 닫히지 않고 패널의 Cancel이 닫는다.
+            if page.locator('.dimmed-background').filter(visible=True).count():
+                page.get_by_role('button', name='Cancel', exact=True).filter(visible=True).first.click()
+                page.locator('.dimmed-background').first.wait_for(state='hidden', timeout=SOURCE_WAIT_MS)
+            page.get_by_role("link", name="Advanced Search", exact=True).first.click()
+            page.get_by_text("QUERY BUILDER", exact=True).click()
+            page.wait_for_function("() => document.querySelector('#advancedSearchInputArea') !== null"
+                                   " || location.pathname.startsWith('" + WOS_ERROR_PREFIX + "')", timeout=SOURCE_WAIT_MS)
+            failure=wos_error_message(page.url)
+            if failure:
+                raise ServiceError('provider_error','Web of Science answered the query builder with its own error screen',
+                                   stage='query_builder',provider_message=failure,retryable=True)
+            editions=self.select_editions(page,settings['editions'])
+            page.locator("#advancedSearchInputArea").fill(query)
+            with page.expect_response(lambda r: urlsplit(r.url).hostname in self.hosts and urlsplit(r.url).path == "/api/wosnx/core/runQuerySearch", timeout=SOURCE_WAIT_MS) as event:
+                page.get_by_role("button", name="Search", exact=True).click()
+            answer = event.value
+            if answer.status != 200:
+                raise wos_search_failure(answer, query)
+            return editions, answer, wos_events(answer.text())
+        selected_editions, response, result = retry_transient(submit)
         request = response.request.post_data_json
         if request.get("search", {}).get("query") != [{"rowText": query}] or request["search"].get("database") != "WOSCC":
             raise ServiceError("query_mismatch", "WOS did not submit the requested query and collection")
         initial_sort=self.validate_advanced_request(request,[native for _,native in selected_editions],None)
-        result = wos_events(response.text())
         evidence = self.store.put(encoded(result["events"]), "application/json", self.source, response.url,
             role="provider_response", query=query, collection="WOSCC", editions=[label for label,_ in selected_editions],
             search_options=request["search"].get("options", {}))
@@ -1509,7 +1635,7 @@ class WebOfScience:
                     'sort_evidence':None,'facets':wos_facet_candidates(result['events']),
                     'facet_scope':'Current native analyze candidates matched to current result controls','has_more':False,'next':None,
                     'scope':'Requested WOS result window is empty'}
-        page.locator("#export-trigger-btn").wait_for(timeout=30000)
+        page.locator("#export-trigger-btn").wait_for(timeout=SOURCE_WAIT_MS)
         result,facets,filter_evidence=self.apply_facets(page,result,settings['facets'],initial_sort)
         result,named_filter_evidence,applied_facet_candidates=self.apply_named_facets(page,result,settings['facet_filters'],initial_sort)
         facets=self.final_facets(result)
@@ -1615,7 +1741,7 @@ class ECCC:
         if type(start) is not int or start < 0 or type(limit) is not int or not 1 <= limit <= 1000:
             raise ServiceError("invalid_range", "Use start >= 0 and limit 1..1000")
         page = self.gateway.public_page(self.source)
-        goto_source(page, "https://eccc.weizmann.ac.il/", self.hosts, wait_until="domcontentloaded", timeout=45000)
+        goto_source(page, "https://eccc.weizmann.ac.il/", self.hosts, wait_until="domcontentloaded", timeout=SOURCE_WAIT_MS)
         page.locator('input[name="search"]').fill(query)
         with page.expect_navigation(wait_until="domcontentloaded"):
             page.locator('input[name="search"]').press("Enter")
@@ -1662,7 +1788,7 @@ class ECCC:
             revision = int(match.group(3)) if match.group(3) else None
         url = f"https://eccc.weizmann.ac.il/report/{year}/{number:03d}/"
         page = self.gateway.public_page(self.source)
-        response = goto_source(page, url, self.hosts, wait_until="domcontentloaded", timeout=45000)
+        response = goto_source(page, url, self.hosts, wait_until="domcontentloaded", timeout=SOURCE_WAIT_MS)
         if response and response.status >= 400:
             raise ServiceError("provider_error", "ECCC report request failed", http_status=response.status)
         raw = page.content()
@@ -1727,11 +1853,11 @@ class ACM:
 
     @staticmethod
     def edit_boolean_query(page,expression):
-        edit=page.locator('#search__edit');edit.wait_for(state='visible',timeout=30000)
+        edit=page.locator('#search__edit');edit.wait_for(state='visible',timeout=SOURCE_WAIT_MS)
         with page.expect_navigation(wait_until='domcontentloaded'):edit.click()
         syntax=page.get_by_text('View Query Syntax',exact=True)
         if syntax.count() and syntax.is_visible():syntax.click()
-        area=page.locator('#editableQuery');area.wait_for(state='visible',timeout=30000);area.fill(expression)
+        area=page.locator('#editableQuery');area.wait_for(state='visible',timeout=SOURCE_WAIT_MS);area.fill(expression)
         if area.input_value()!=expression:
             raise ServiceError('query_mismatch','ACM Edit Query did not preserve the requested expression')
         with page.expect_navigation(wait_until='domcontentloaded'):
@@ -1852,7 +1978,7 @@ class ACM:
     def component_failure(error,source_page,code):
         if isinstance(error,ServiceError):
             return {**error.result,'artifact':error.result.get('artifact',source_page)}
-        return {'status':'error','code':code,'error_type':type(error).__name__,'artifact':source_page}
+        return {'status':'error','code':code,**failure_details(error),'artifact':source_page}
 
     def render_citations(self, page, payload, identifiers, format):
         items = {}
@@ -1916,7 +2042,7 @@ class ACM:
             selected=[box.get_attribute('name').casefold() for box in page.locator('li.search__item.issue-item-container input[type="checkbox"][name]:checked').all() if box.get_attribute('name')]
             if set(selected)!={value.casefold() for value in identifiers}:
                 raise ServiceError('export_identity_mismatch','ACM selected checkboxes differ from the requested records')
-        with page.expect_response(lambda r: urlsplit(r.url).path == "/action/exportCiteProcCitation", timeout=45000) as exported:
+        with page.expect_response(lambda r: urlsplit(r.url).path == "/action/exportCiteProcCitation", timeout=SOURCE_WAIT_MS) as exported:
             if record_page:
                 page.get_by_role("button", name="Export Citation", exact=True).first.click()
             else:
@@ -1925,7 +2051,7 @@ class ACM:
         selector.wait_for()
         value, media = self.formats[format]
         if selector.input_value() != value:
-            with page.expect_response(lambda r: urlsplit(r.url).path == "/action/exportCiteProcCitation", timeout=45000) as exported:
+            with page.expect_response(lambda r: urlsplit(r.url).path == "/action/exportCiteProcCitation", timeout=SOURCE_WAIT_MS) as exported:
                 selector.select_option(value)
         response = exported.value
         if response.status != 200:
@@ -1976,7 +2102,7 @@ class ACM:
             if lower>upper:raise ServiceError('invalid_options','ACM from date must not be after its to date')
         page = self.page()
         host = urlsplit(page.url).hostname
-        goto_source(page, "https://" + host + "/search/advanced", self.hosts, wait_until="domcontentloaded", timeout=45000)
+        goto_source(page, "https://" + host + "/search/advanced", self.hosts, wait_until="domcontentloaded", timeout=SOURCE_WAIT_MS)
         page.locator('select[name="expand"]').select_option(collection)
         for index, term in enumerate(terms, 1):
             if index > 1:
@@ -2043,7 +2169,7 @@ class ACM:
             if params.get('expand')!=[collection] or not retained:
                 raise ServiceError('query_mismatch','ACM facet link did not retain the submitted search')
             if step<len(facets):
-                goto_source(page,selected['url'],self.hosts,wait_until='domcontentloaded',timeout=45000);page.locator('main').wait_for()
+                goto_source(page,selected['url'],self.hosts,wait_until='domcontentloaded',timeout=SOURCE_WAIT_MS);page.locator('main').wait_for()
         if sort:
             params["sortBy"] = [sort]
         size = 50
@@ -2053,7 +2179,7 @@ class ACM:
         for page_index in range(start // size, (start + limit - 1) // size + 1):
             params["startPage"] = [str(page_index)]
             url = urlunsplit((parsed.scheme, parsed.netloc, parsed.path, urlencode(params, doseq=True), ""))
-            goto_source(page, url, self.hosts, wait_until="domcontentloaded", timeout=45000)
+            goto_source(page, url, self.hosts, wait_until="domcontentloaded", timeout=SOURCE_WAIT_MS)
             observed=parse_qs(urlsplit(page.url).query,keep_blank_values=True)
             if any(observed.get(key)!=value for key,value in base_params.items()):
                 raise ServiceError('query_mismatch','ACM pagination did not retain the submitted search and filters',page=page_index)
@@ -2141,7 +2267,7 @@ class ACM:
         record, citation_source, citation_scope = self.known_records[identifier.lower()]
         page = self.page()
         url = "https://" + urlsplit(page.url).hostname + "/doi/" + quote(identifier, safe="/")
-        goto_source(page, url, self.hosts, wait_until="domcontentloaded", timeout=45000)
+        goto_source(page, url, self.hosts, wait_until="domcontentloaded", timeout=SOURCE_WAIT_MS)
         page.get_by_role("heading", level=1).first.wait_for()
         records = [record]
         native = self.store.put(record["raw_text"], "application/x-bibtex", self.source, page.url, role="citation_export", identifiers=[identifier], parent_ref=citation_source["ref"])
@@ -2165,8 +2291,8 @@ class ACM:
                         raise ServiceError('identity_mismatch','ACM record has multiple HTML full-text controls for the selected DOI')
                     full_page=self.gateway.context.new_page()
                     try:
-                        goto_source(full_page,candidates[0],self.hosts,wait_until='commit',timeout=45000)
-                        full_page.locator('article section#bodymatter').wait_for(timeout=90000)
+                        goto_source(full_page,candidates[0],self.hosts,wait_until='commit',timeout=SOURCE_WAIT_MS)
+                        full_page.locator('article section#bodymatter').wait_for(timeout=SOURCE_WAIT_MS)
                         parsed=self.fulltext_document(full_page.content(),full_page.url,identifier)
                     finally:full_page.close()
                     expected=' '.join(str(record.get('title','')).split()).casefold();observed=' '.join(parsed['title'].split()).casefold()
@@ -2206,7 +2332,7 @@ class ACM:
                     components[part]=fetch_supplementary(self,page,identifier,source_page,download_hosts=self.hosts)
                     components[part].setdefault('artifact',source_page)
                 except ServiceError as exc:components[part]=exc.result
-                except Exception as exc:components[part]={'status':'error','code':'supplementary_retrieval_failed','error_type':type(exc).__name__,'artifact':source_page}
+                except Exception as exc:components[part]={'status':'error','code':'supplementary_retrieval_failed',**failure_details(exc),'artifact':source_page}
             else:
                 raise ServiceError("invalid_parts", "Unknown requested content", part=part)
         return {"status": "ok" if all(v["status"] == "available" for v in components.values()) else "partial", "source": self.source,

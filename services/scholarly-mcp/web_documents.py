@@ -3,13 +3,14 @@ import ipaddress
 import re
 import socket
 from urllib.parse import urljoin, urlsplit
+from waits import PROBE_WAIT_MS, SOURCE_WAIT_MS
 
 from bs4 import BeautifulSoup
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 from browser_adapters import browser_download, clean_html, require_source_url
 from publishers import publication_metadata
-from scholarly import ServiceError, encoded, bibliography
+from scholarly import ServiceError, bibliography, encoded, failure_details
 
 
 def public_document_hosts(target):
@@ -111,19 +112,19 @@ class WebDocuments:
             if not body.get_text(' ',strip=True) or LOADING_STATE.fullmatch(_text(body.get_text(' ',strip=True))):
                 page=self.context.new_page()
                 try:
-                    page.goto(target,wait_until='domcontentloaded',timeout=45000);require_source_url(page.url,hosts)
+                    page.goto(target,wait_until='domcontentloaded',timeout=SOURCE_WAIT_MS);require_source_url(page.url,hosts)
                     layout_heading=_rendered_layout_heading(page.url)
                     try:
-                        if layout_heading:page.locator(layout_heading).first.wait_for(timeout=30000)
-                        else:page.wait_for_load_state('networkidle',timeout=30000)
+                        if layout_heading:page.locator(layout_heading).first.wait_for(timeout=SOURCE_WAIT_MS)
+                        else:page.wait_for_load_state('networkidle',timeout=SOURCE_WAIT_MS)
                     except PlaywrightTimeoutError:
                         pass
                     try:
-                        page.wait_for_function("() => { const text=document.body?.innerText.trim() || ''; return text && !/^(Loading|Please wait|Working)(?:\\s*(?:\\.{3}|…))?$/i.test(text); }",timeout=5000)
+                        page.wait_for_function("() => { const text=document.body?.innerText.trim() || ''; return text && !/^(Loading|Please wait|Working)(?:\\s*(?:\\.{3}|…))?$/i.test(text); }",timeout=PROBE_WAIT_MS)
                     except PlaywrightTimeoutError:
                         pass
                     raw=page.content().encode('utf-8');actual=page.url;soup=BeautifulSoup(raw,'html.parser');body=soup.body or soup
-                    try:visible=page.locator('body:visible').first.inner_text(timeout=5000)
+                    try:visible=page.locator('body:visible').first.inner_text(timeout=PROBE_WAIT_MS)
                     except PlaywrightTimeoutError:visible=''
                     headings=page.locator(layout_heading or 'h1:visible,h2:visible').all_inner_texts()
                     try:
@@ -139,7 +140,7 @@ class WebDocuments:
                     rendered=True
                 except ServiceError:raise
                 except Exception as error:
-                    raise ServiceError('dynamic_document_not_ready','Public browser rendering did not produce a verified document',status='not_implemented',error_type=type(error).__name__) from None
+                    raise ServiceError('dynamic_document_not_ready','Public browser rendering did not produce a verified document',status='not_implemented',**failure_details(error)) from None
                 finally:page.close()
             document = self.store.put(clean_html(raw,self.store.sanitizer),'text/html',self.source,actual,role='requested_web_page',requested_target=target,
                 rendered_public_browser=rendered)

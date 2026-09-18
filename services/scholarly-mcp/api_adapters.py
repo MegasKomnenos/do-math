@@ -10,7 +10,8 @@ import httpx
 from defusedxml import ElementTree
 
 from registry import SOURCES
-from scholarly import ServiceError, encoded
+from scholarly import ServiceError, encoded, failure_details
+from waits import CONNECT_WAIT_S, SOURCE_WAIT_S
 
 
 def doi(value):
@@ -34,7 +35,7 @@ class APIAdapter:
 
     def __init__(self, store, client=None):
         self.store = store
-        self.client = client or httpx.Client(timeout=httpx.Timeout(45, connect=20), follow_redirects=False,
+        self.client = client or httpx.Client(timeout=httpx.Timeout(SOURCE_WAIT_S, connect=CONNECT_WAIT_S), follow_redirects=False,
             headers={"User-Agent": "scholarly-mcp/0.1 (local scholarly research)", "Accept": "application/json"})
         self.last_request = 0.0
 
@@ -112,7 +113,7 @@ class APIAdapter:
                     role='provider_error_response', http_status=code, request_method=response.request.method,
                     source_media_type=source_media, **rate_context)
             except (ServiceError, OSError, ValueError) as error:
-                error_context['evidence_unavailable'] = {'error_type': type(error).__name__}
+                error_context['evidence_unavailable'] = {**failure_details(error)}
         if code == 429:
             standard_retry=response.headers.get("retry-after")
             custom_retry=response.headers.get("x-ratelimit-retry-after")
@@ -1003,7 +1004,7 @@ class CORE(APIAdapter):
                 pages, metadata = len(document), document.metadata
         except Exception as error:
             raise ServiceError('invalid_pdf', 'CORE did not return a readable PDF file',
-                error_type=type(error).__name__, evidence=evidence) from None
+                **failure_details(error), evidence=evidence) from None
         record = {'id': target, 'url': target, 'core_output_id': int(identifier), 'type': 'pdf_document',
                   'title': metadata.get('title') or '', 'metadata': metadata, 'pages': pages,
                   'identity_basis': 'Exact requested CORE file/output ID and source redirect; bibliographic fields are embedded PDF metadata',
@@ -1329,6 +1330,6 @@ class SoftwareHeritage(APIAdapter):
 
 
 def make_adapters(store, client=None):
-    client = client or httpx.Client(timeout=httpx.Timeout(45, connect=20), follow_redirects=False,
+    client = client or httpx.Client(timeout=httpx.Timeout(SOURCE_WAIT_S, connect=CONNECT_WAIT_S), follow_redirects=False,
         headers={"User-Agent": "scholarly-mcp/0.1 (local scholarly research)", "Accept": "application/json"})
     return {cls.source: cls(store, client=client) for cls in (Crossref, Crossmark, Arxiv, DBLP, ZBMath, OpenAlex, SemanticScholar, OpenCitations, Numdam, CORE, Zenodo, GitHub, Mathlib, MathComp, SoftwareHeritage)}

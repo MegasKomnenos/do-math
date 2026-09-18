@@ -3,11 +3,12 @@ import json
 import re
 import time
 from urllib.parse import urljoin, urlsplit
+from waits import SOURCE_WAIT_MS, SOURCE_WAIT_S
 
 from bs4 import BeautifulSoup
 
 from browser_adapters import browser_download, clean_html, dismiss_cookies, goto_source
-from scholarly import ServiceError, encoded, bibliography
+from scholarly import ServiceError, bibliography, encoded, failure_details
 
 SORTS={
     'relevance':('Relevance',None),'newest':('Newest','newest'),'oldest':('Oldest','oldest'),
@@ -145,7 +146,7 @@ def require_search_response(response):
 def apply_search_options(page,response,matches,options,facet_catalog):
     """Apply current result controls and return the final native search response."""
     def transition(action):
-        with page.expect_response(matches,timeout=60000) as pending:action()
+        with page.expect_response(matches,timeout=SOURCE_WAIT_MS) as pending:action()
         page.wait_for_timeout(750)
         return require_search_response(pending.value)
     def candidates(payload,option):
@@ -224,6 +225,9 @@ def ieee_records(raw):
     per=raw.get('recordsPerPage');pages=raw.get('totalPages')
     if per!=25 or type(pages) is not int or pages!=(total+per-1)//per or offset<0 or offset>total or len(rows)>per:
         raise ServiceError('invalid_response','IEEE native page size or page count does not match the response')
+    # IEEE는 검색어와 일치한 필드를 [::…::]로 감싼다. DOI로 찾으면 식별자인 doi가 감싸여 와서 동일성 대조를 깨뜨린다.
+    # 강조 전용 필드(highlightedTitle)는 원 그대로 두고 식별자만 되돌린다. 원 응답은 evidence에 그대로 보존된다.
+    rows=[{**row,'doi':row['doi'].replace('[::','').replace('::]','')} if isinstance(row.get('doi'),str) else row for row in rows]
     return rows, total, offset
 
 
@@ -321,11 +325,11 @@ class IEEE:
 
     def references(self,identifier,base):
         page=self.page()
-        goto_source(page,urljoin(base,'/document/'+identifier+'/'),self.hosts,wait_until='domcontentloaded',timeout=45000)
-        page.locator('h1.document-title').wait_for(timeout=30000)
+        goto_source(page,urljoin(base,'/document/'+identifier+'/'),self.hosts,wait_until='domcontentloaded',timeout=SOURCE_WAIT_MS)
+        page.locator('h1.document-title').wait_for(timeout=SOURCE_WAIT_MS)
         dismiss_cookies(page)
         path='/rest/document/'+identifier+'/references'
-        with page.expect_response(lambda r:urlsplit(r.url).hostname in self.hosts and urlsplit(r.url).path==path,timeout=45000) as pending:
+        with page.expect_response(lambda r:urlsplit(r.url).hostname in self.hosts and urlsplit(r.url).path==path,timeout=SOURCE_WAIT_MS) as pending:
             page.locator('a.document-tab-link').filter(has_text=re.compile(r'^References$')).filter(visible=True).first.click()
         response=pending.value
         if response.status in (401,403):
@@ -348,14 +352,14 @@ class IEEE:
         if urlsplit(target).hostname not in self.hosts or urlsplit(target).path.rstrip('/')!='/document/'+identifier:
             raise ServiceError('identity_mismatch','IEEE HTML control identifies another document')
         control=page.locator(f'div.List-results-items[id="{identifier}"] a.stats_HTML_{identifier}[href="/document/{identifier}/"]').filter(visible=True)
-        try:control.wait_for(state='visible',timeout=15000)
+        try:control.wait_for(state='visible',timeout=SOURCE_WAIT_MS)
         except Exception:pass
         control_seen=control.count()==1
         if control_seen:
-            with page.expect_navigation(wait_until='domcontentloaded',timeout=45000):control.click()
-        else:goto_source(page,target,self.hosts,wait_until='domcontentloaded',timeout=45000)
-        page.locator('h1.document-title').wait_for(timeout=30000)
-        deadline=time.monotonic()+45
+            with page.expect_navigation(wait_until='domcontentloaded',timeout=SOURCE_WAIT_MS):control.click()
+        else:goto_source(page,target,self.hosts,wait_until='domcontentloaded',timeout=SOURCE_WAIT_MS)
+        page.locator('h1.document-title').wait_for(timeout=SOURCE_WAIT_MS)
+        deadline=time.monotonic()+SOURCE_WAIT_S
         while time.monotonic()<deadline:
             try:
                 body=page.locator('xpl-document-full-text #full-text-section #BodyWrapper')
@@ -387,7 +391,7 @@ class IEEE:
             page.locator('label[for="citation-abstract"] input').check()
         else:
             page.get_by_role("tab", name="Results", exact=True).click()
-        with page.expect_download(timeout=45000) as pending:
+        with page.expect_download(timeout=SOURCE_WAIT_MS) as pending:
             page.get_by_role("button", name="Download", exact=True).click()
         download = pending.value
         from pathlib import Path
@@ -415,8 +419,8 @@ class IEEE:
             raise ServiceError("invalid_options", "IEEE uses numeric result offsets; export supports json/bibtex/ris/plain/csv")
         page = self.page()
         dismiss_cookies(page)
-        goto_source(page, "https://" + urlsplit(page.url).hostname + "/search/advanced/command", self.hosts, wait_until="domcontentloaded", timeout=45000)
-        page.locator("#cmdTextArea").wait_for(timeout=45000)
+        goto_source(page, "https://" + urlsplit(page.url).hostname + "/search/advanced/command", self.hosts, wait_until="domcontentloaded", timeout=SOURCE_WAIT_MS)
+        page.locator("#cmdTextArea").wait_for(timeout=SOURCE_WAIT_MS)
         dismiss_cookies(page)
         page.locator("#cmdTextArea").fill(query)
 
@@ -428,7 +432,7 @@ class IEEE:
             except Exception:
                 return False
 
-        with page.expect_response(matches, timeout=60000) as pending:
+        with page.expect_response(matches, timeout=SOURCE_WAIT_MS) as pending:
             page.locator(".stats-Adv_Command_search").click()
         response = require_search_response(pending.value)
         initial_facets=ieee_facets(response.json())
@@ -458,19 +462,19 @@ class IEEE:
             self.known.update({row["articleNumber"]: (row, page.url) for row in selected})
             if indices and export in self.formats:
                 try:
-                    page.get_by_role("checkbox", name="Select search result", exact=True).first.wait_for(timeout=30000)
+                    page.get_by_role("checkbox", name="Select search result", exact=True).first.wait_for(timeout=SOURCE_WAIT_MS)
                     exports.append(self.citation(page, indices, export, selected))
                 except ServiceError as error:
                     errors.append({'page_start':offset,**error.result})
                 except Exception as error:
-                    errors.append({'page_start':offset,'status':'error','code':'citation_export_failed','error_type':type(error).__name__})
+                    errors.append({'page_start':offset,'status':'error','code':'citation_export_failed',**failure_details(error)})
             offset += len(native)
             if offset >= min(total, start + limit) or not native:
                 break
             next_page = page.locator('button[aria-label="Next page of search results"],a[aria-label="Next Page"],button[aria-label="Next Page"],a[title="Next Page"],button[aria-label="Next page"],a[aria-label="Next page"]')
             if not next_page.count():
                 raise ServiceError("pagination_control_missing", "IEEE next-page control could not be identified", evidence=evidence)
-            with page.expect_response(matches, timeout=60000) as pending:
+            with page.expect_response(matches, timeout=SOURCE_WAIT_MS) as pending:
                 next_page.filter(visible=True).first.click()
             response = pending.value
         artifact = self.store.put(encoded(rows), "application/json", self.source, page.url, role="records", query=query, start=start, requested=limit, total=total)
@@ -546,14 +550,14 @@ class IEEE:
             elif part=='fulltext_html':
                 try:components[part]=self.html_fulltext(self.page(),row,base,artifact)
                 except ServiceError as error:components[part]=error.result
-                except Exception as error:components[part]={'status':'error','code':'html_fulltext_retrieval_failed','error_type':type(error).__name__}
+                except Exception as error:components[part]={'status':'error','code':'html_fulltext_retrieval_failed',**failure_details(error)}
             else:
                 from ieee_media import fetch_media
                 details={}
                 for name,operation in [('references',lambda:self.references(identifier,base)),('attachments',lambda:fetch_media(self,identifier,base))]:
                     try: details[name]=operation()
                     except ServiceError as error: details[name]=error.result
-                    except Exception as error: details[name]={'status':'error','code':name+'_retrieval_failed','error_type':type(error).__name__}
+                    except Exception as error: details[name]={'status':'error','code':name+'_retrieval_failed',**failure_details(error)}
                 clean=all(item['status'] in ('available','not_found','not_offered') for item in details.values())
                 components[part]={'status':'available' if clean and any(item['status']=='available' for item in details.values()) else 'not_found' if clean else 'partial',**details}
                 if details['references'].get('artifact'): components[part]['artifact']=details['references']['artifact']

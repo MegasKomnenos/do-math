@@ -4,7 +4,8 @@ from pathlib import PurePosixPath
 from urllib.parse import urljoin,urlsplit
 from bs4 import BeautifulSoup
 from browser_adapters import browser_download,goto_source,clean_html
-from scholarly import ServiceError,encoded
+from scholarly import ServiceError, encoded, failure_details
+from waits import SOURCE_WAIT_MS
 
 
 def range_validator(headers):
@@ -116,7 +117,7 @@ def download_media(adapter,row,base,proof,*,native_files=None):
                 article_number=str(row['articleNumber']),filename=item['filename'],metadata_ref=proof['ref'],**details)
             files.append({**item,'status':'available','artifact':artifact})
         except ServiceError as exc: files.append({**item,**exc.result})
-        except Exception as exc: files.append({**item,'status':'error','code':'media_retrieval_failed','error_type':type(exc).__name__})
+        except Exception as exc: files.append({**item,'status':'error','code':'media_retrieval_failed',**failure_details(exc)})
     flag=row['sections'].get('multimedia')
     remaining=flag not in (False,'false') and native_files is None
     native_received=sum(f['status']=='available' for f in files if f['role']=='supplementary_media')
@@ -131,15 +132,15 @@ def download_media(adapter,row,base,proof,*,native_files=None):
 def fetch_media(adapter,identifier,base):
     page=adapter.page()
     if not re.match(r'/document/'+re.escape(identifier)+r'(?:/|$)',urlsplit(page.url).path):
-        goto_source(page,urljoin(base,'/document/'+identifier+'/'),adapter.hosts,wait_until='domcontentloaded',timeout=45000)
-    page.locator('h1.document-title').wait_for(timeout=30000)
+        goto_source(page,urljoin(base,'/document/'+identifier+'/'),adapter.hosts,wait_until='domcontentloaded',timeout=SOURCE_WAIT_MS)
+    page.locator('h1.document-title').wait_for(timeout=SOURCE_WAIT_MS)
     row=document_metadata(page.content(),identifier)
     proof=adapter.store.put(encoded(row),'application/json',adapter.source,page.url,role='document_media_metadata',article_number=identifier)
     native_files=native_error=native_index=None
     if row.get('sections',{}).get('multimedia') in (True,'true'):
         try:
-            goto_source(page,urljoin(page.url,'/document/'+identifier+'/media#media'),adapter.hosts,wait_until='domcontentloaded',timeout=45000)
-            page.locator('.media-tab .media-item').first.wait_for(state='attached',timeout=30000)
+            goto_source(page,urljoin(page.url,'/document/'+identifier+'/media#media'),adapter.hosts,wait_until='domcontentloaded',timeout=SOURCE_WAIT_MS)
+            page.locator('.media-tab .media-item').first.wait_for(state='attached',timeout=SOURCE_WAIT_MS)
             document_metadata(page.content(),identifier)
             native_files=media_links(page.content(),page.url,identifier)
             if not native_files:
@@ -147,7 +148,7 @@ def fetch_media(adapter,identifier,base):
             source_page=adapter.store.put(clean_html(page.content(),adapter.store.sanitizer),'text/html',adapter.source,page.url,role='media_tab_source_page',metadata_ref=proof['ref'])
             native_index=adapter.store.put(encoded(native_files),'application/json',adapter.source,page.url,role='native_media_index',parent_ref=source_page['ref'])
         except ServiceError as error:native_error=error.result
-        except Exception as error:native_error={'status':'error','code':'media_tab_not_ready','error_type':type(error).__name__}
+        except Exception as error:native_error={'status':'error','code':'media_tab_not_ready',**failure_details(error)}
     result=download_media(adapter,row,page.url,proof,native_files=native_files)
     if native_index:result['native_index']=native_index
     if native_error:result.update(status='partial',multimedia=native_error)

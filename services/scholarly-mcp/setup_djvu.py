@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+from waits import LOCAL_TOOL_S
 
 SERVICE=Path(__file__).resolve().parent
 UPSTREAM='https://git.code.sf.net/p/djvu/djvulibre-git'
@@ -18,7 +19,7 @@ LICENSE='GPL-2.0-or-later'
 
 
 def run(args,*,env=None,log=None):
-    result=subprocess.run(list(map(str,args)),cwd=SERVICE,capture_output=True,env=env,timeout=240,
+    result=subprocess.run(list(map(str,args)),cwd=SERVICE,capture_output=True,env=env,timeout=LOCAL_TOOL_S,
         creationflags=subprocess.CREATE_NO_WINDOW if os.name=='nt' else 0)
     if log:log.write_bytes(result.stdout+result.stderr)
     if result.returncode:

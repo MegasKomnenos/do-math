@@ -47,14 +47,27 @@ RTF는 선언된 문자 인코딩과 Unicode 제어를 해석한 텍스트 줄�
 | `unsupported` | 명시한 인터페이스나 공개 접근 범위에서 제공하지 않는 기능이다. 상세 이유를 함께 읽는다. |
 | `selection_required` | 대상이 모호하다. 보존한 후보를 읽고 정확한 식별자로 다시 요청한다. |
 
+오류 응답은 다음 항목으로 호출자가 할 일을 알린다. 2026-09-19 KST의 실사용에서 드러난 불일치를 고치며 정한 계약이다.
+
+| 항목 | 의미와 호출자의 다음 행동 |
+|---|---|
+| `retryable: true` | 제공자가 같은 요청에 간헐적으로 내는 일시 오류다. 검색식을 바꾸지 말고 잠시 뒤 같은 호출을 되풀이한다. `attempts`는 어댑터가 이미 시도한 횟수다. |
+| `retryable: false` | 다시 시도해도 결과가 같다. 구독 범위 밖(`subscription_required`)이 그 예다. |
+| `rejected_by: institutional_proxy` | 기관 접속 경로가 검색식의 모양을 SQL 주입으로 보고 자료원에 닿기 전에 막았다. 자료원의 `describe_source`가 적은 통과 모양으로 검색식을 바꾼다. |
+| `rejected_by: <자료원>` | 자료원 자신이 검색식을 거절했다. 문법을 고친다. |
+| `stage` | 실패한 단계(`query_builder`, `search`, `export` 등)다. |
+| `where` | 예상하지 못한 예외가 난 서버 코드의 파일·줄·함수다. 예외 메시지는 인증 주소를 담을 수 있어 내보내지 않는다. `error_type`과 함께 결함 보고에 쓴다. |
+
+대기 한도와 재시도 정책은 `waits.py`의 환경변수로 조정한다. `SCHOLARLY_SOURCE_WAIT_MS`(기본 300000), `SCHOLARLY_TRANSIENT_ATTEMPTS`(기본 5), `SCHOLARLY_TRANSIENT_PAUSE_MS`(기본 2000, 시도마다 두 배)가 있다.
+
 설치는 저장소 루트에서 다음과 같이 한다. 현재 호스트에는 전용 환경을 설치했고 `.mcp.json`과 `.codex/config.toml`의 `scholarly` 항목에 등록했다. 기존 `dag-measure` 등록은 보존했다. 새 MCP 세션이 이 설정을 읽는다.
 
 ```powershell
-python -m venv services/scholarly-mcp/.venv
-& services/scholarly-mcp/.venv/Scripts/python.exe -m pip install -r services/scholarly-mcp/requirements.txt
-& services/scholarly-mcp/.venv/Scripts/python.exe -m playwright install firefox
-& services/scholarly-mcp/.venv/Scripts/python.exe services/scholarly-mcp/setup_djvu.py
-& services/scholarly-mcp/.venv/Scripts/python.exe services/scholarly-mcp/server.py
+python -m venv output/scholarly-mcp/.venv
+& output/scholarly-mcp/.venv/Scripts/python.exe -m pip install -r output/scholarly-mcp/requirements.txt
+& output/scholarly-mcp/.venv/Scripts/python.exe -m playwright install firefox
+& output/scholarly-mcp/.venv/Scripts/python.exe output/scholarly-mcp/setup_djvu.py
+& output/scholarly-mcp/.venv/Scripts/python.exe output/scholarly-mcp/server.py
 ```
 
 DjVu 설정은 현재 호스트의 MSVC C++ 컴파일러·Windows SDK·Git으로 고정한 공식 DjVuLibre 소스를 빌드한다. 생성된 도구·라이선스·출처와 해시는 전용 data/tools/djvulibre/runtime에 보존하며 전역 설치나 PATH 변경은 하지 않는다. 현재 호스트에서 설정과 실제10쪽 문헌의 MCP 텍스트·이미지 추출을 완료했다. 원 파일·기존 OCR 텍스트를 보존하며 새로운 OCR은 하지 않는다. 외부 component 파일을 요구하는 indirect 문서는 자동 확장하지 않는다.
@@ -67,7 +80,7 @@ SIAM·AMS·APS 기관·ScienceDirect는 검증된 전용 Chrome 창을 사용한
 
 Codex 프로젝트 설정의 scholarly 호출 제한은 1,800초다. 대용량 파일의 전체 회수를 허용하는 클라이언트 제한이며 개별 HTTP 요청 제한과 다르다. 이미 실행 중인 MCP 프로세스는 Python 파일 변경을 자동으로 읽지 않는다. 현재 기능 검증은 독립된 새 SDK stdio 프로세스로 수행하며, 이를 실행 중인 Codex·MCP 연결을 조작할 권한으로 해석하지 않는다.
 
-오프라인 계약 검사는 `python -m unittest discover -s services/scholarly-mcp/tests -p 'test_*.py'`를 전용 Python으로 실행한다. `test_mcp.py`는 실제 SDK 클라이언트와 별도 서버 프로세스로 stdio·도구 조회·파일 추출·자료 읽기를 확인한다. 실서비스 흐름은 `tests/live/live_workflow.py --source <자료원>`으로 실행하며 지원하는 검증 시나리오는 그 파일에 있다. 오프라인 응답 대역의 통과는 실서비스 통과로 세지 않는다.
+오프라인 계약 검사는 `python -m unittest discover -s output/scholarly-mcp/tests -p 'test_*.py'`를 전용 Python으로 실행한다. `test_mcp.py`는 실제 SDK 클라이언트와 별도 서버 프로세스로 stdio·도구 조회·파일 추출·자료 읽기를 확인한다. 실서비스 흐름은 `tests/live/live_workflow.py --source <자료원>`으로 실행하며 지원하는 검증 시나리오는 그 파일에 있다. 오프라인 응답 대역의 통과는 실서비스 통과로 세지 않는다.
 
 현재 실서비스 근거는 로컬 `data/validation/`과 [검증 기록](history/VALIDATION.md)에 있다. MathSciNet·Web of Science·ECCC·ACM·Scopus·IEEE·PQDT·DROPS·AFP의 구현 범위에 대해 실제 MCP 흐름을 수행했다. Crossref·Crossmark·arXiv·zbMATH는 MCP 검색·추출을 수행했다. GitHub의 고정 커밋 파일, Numdam의 JATS·PDF, Software Heritage의 origin 조회·cursor 순회, Springer의 서지·초록·PDF는 어댑터 직접 호출로 확인했다. 각 기록은 해당 시점·입력·호스트의 관측이며 모든 옵션의 검증으로 확대하지 않는다.
 

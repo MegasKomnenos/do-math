@@ -1,9 +1,10 @@
 """JSTOR's publicly accessible native citation endpoint."""
 import json,re
 from urllib.parse import quote,urlsplit,unquote,urljoin,parse_qs
+from waits import SOURCE_WAIT_MS
 
 from api_adapters import APIAdapter
-from scholarly import ServiceError,encoded,bibliography
+from scholarly import ServiceError, bibliography, encoded, failure_details
 
 
 def stable_id(value):
@@ -39,9 +40,9 @@ def document_api(adapter,page,path,payload=None):
     from browser_adapters import is_access_challenge
     url='https://'+urlsplit(page.url).hostname+path
     try:
-        response=(adapter.gateway.context.request.get(url,max_redirects=0,timeout=45000) if payload is None else
-            adapter.gateway.context.request.post(url,data=json.dumps(payload),headers={'Content-Type':'application/json'},max_redirects=0,timeout=45000))
-    except Exception as error:raise ServiceError('document_api_failed','JSTOR document data could not be requested',error_type=type(error).__name__) from None
+        response=(adapter.gateway.context.request.get(url,max_redirects=0,timeout=SOURCE_WAIT_MS) if payload is None else
+            adapter.gateway.context.request.post(url,data=json.dumps(payload),headers={'Content-Type':'application/json'},max_redirects=0,timeout=SOURCE_WAIT_MS))
+    except Exception as error:raise ServiceError('document_api_failed','JSTOR document data could not be requested',**failure_details(error)) from None
     if response.status in (401,403):raise ServiceError('access_restricted','JSTOR restricted document data',status='restricted')
     if response.status==429:raise ServiceError('rate_limited','JSTOR document request limit reached')
     if response.status!=200:raise ServiceError('provider_error','JSTOR document data request failed',http_status=response.status)
@@ -72,7 +73,7 @@ def document_uuid(page):
         if attempt<120:
             try:page.wait_for_timeout(250)
             except PlaywrightError as error:
-                raise ServiceError('document_load_failed','JSTOR document loading could not be observed',retryable=True,error_type=type(error).__name__) from None
+                raise ServiceError('document_load_failed','JSTOR document loading could not be observed',retryable=True,**failure_details(error)) from None
     raise ServiceError('document_load_timeout','JSTOR document identity did not appear within the observation window',retryable=True,
                        **({'error_type':last_error} if last_error else {}))
 
@@ -159,7 +160,7 @@ def supplementary(adapter,identifier,*,page=None):
         if transcript_error:result.update(status='partial',transcript_error=transcript_error)
         return result
     except ServiceError:raise
-    except Exception as error:raise ServiceError('document_extra_failed','JSTOR document attachments could not be read',error_type=type(error).__name__) from None
+    except Exception as error:raise ServiceError('document_extra_failed','JSTOR document attachments could not be read',**failure_details(error)) from None
     finally:
         if owned:page.close()
 
@@ -194,15 +195,15 @@ def document_file(adapter,identifier,*,page=None):
                     current=current.redirected_from
             page.on('request',observe)
         downloads=[];page.on('download',lambda download:downloads.append(download))
-        with page.expect_download(timeout=60000) as pending:
+        with page.expect_download(timeout=SOURCE_WAIT_MS) as pending:
             stage='download_control'
-            page.get_by_role('button',name='Download',exact=True).first.click(timeout=45000)
+            page.get_by_role('button',name='Download',exact=True).first.click(timeout=SOURCE_WAIT_MS)
             stage='terms_or_download'
             accept=page.get_by_role('button',name='Accept and download',exact=True)
             for _ in range(40):
                 if downloads:break
                 if accept.count() and accept.is_visible():
-                    accept.click(timeout=15000);break
+                    accept.click(timeout=SOURCE_WAIT_MS);break
                 page.wait_for_timeout(250)
             stage='download_ready'
         download=pending.value
@@ -219,7 +220,7 @@ def document_file(adapter,identifier,*,page=None):
             **({'source_endpoint':audio_endpoint,'content_id':uuid} if audio_endpoint else {}),**metadata)
         return {'status':'available','artifact':artifact,'permission_evidence':permission_proof,'scope':'Native downloaded file; PDFs include publisher cover pages and images retain the original download bytes'}
     except ServiceError:raise
-    except Exception as error:raise ServiceError('document_download_failed','JSTOR did not complete the native document download',stage=stage,error_type=type(error).__name__) from None
+    except Exception as error:raise ServiceError('document_download_failed','JSTOR did not complete the native document download',stage=stage,**failure_details(error)) from None
     finally:
         if owned:page.close()
 
@@ -275,7 +276,7 @@ class JSTOR(APIAdapter):
                     _,bib=self.citation(identifier,'bibtex')
                     exports.append({'format':'bibtex','artifact':bib})
                 except ServiceError as error:errors.append({'format':'bibtex',**error.result})
-                except Exception as error:errors.append({'format':'bibtex','status':'error','code':'citation_export_failed','error_type':type(error).__name__})
+                except Exception as error:errors.append({'format':'bibtex','status':'error','code':'citation_export_failed',**failure_details(error)})
                 components[part]={'status':'partial' if errors else 'available','artifact':native,'format':'ris','artifacts':exports,'errors':errors}
             elif part=='abstract':
                 values=row['fields'].get('ab',[])
@@ -295,7 +296,7 @@ class JSTOR(APIAdapter):
             except ServiceError as error:
                 for part in wanted:components.setdefault(part,error.result)
             except Exception as error:
-                for part in wanted:components.setdefault(part,{'status':'error','code':'document_open_failed','error_type':type(error).__name__})
+                for part in wanted:components.setdefault(part,{'status':'error','code':'document_open_failed',**failure_details(error)})
             finally:
                 if page is not None:page.close()
         return {'status':'ok' if all(v['status']=='available' for v in components.values()) else 'partial','source':self.source,'target':target,

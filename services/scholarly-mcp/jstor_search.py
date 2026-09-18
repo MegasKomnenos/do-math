@@ -2,8 +2,9 @@
 import base64,csv,io,json,re
 from urllib.parse import urljoin,urlsplit
 from bs4 import BeautifulSoup
-from scholarly import ServiceError,encoded
+from scholarly import ServiceError, encoded, failure_details
 from browser_adapters import is_access_challenge,clean_html
+from waits import SOURCE_WAIT_MS
 
 FACETS={'content_types':'cty','subjects':'disc','languages':'la_str'}
 SORTS={'relevance':('rel',None),'newest':('new',None),'oldest':('old',None),
@@ -82,8 +83,8 @@ def native_request(adapter,payload,endpoint,role,request):
     hosts={'www.jstor.org','jstor.org','www-jstor-org.libproxy.knu.ac.kr','jstor-org.libproxy.knu.ac.kr'}
     page=adapter.gateway.open('jstor','JSTOR',hosts,'body')
     url='https://'+urlsplit(page.url).hostname+'/search-results/'+endpoint+'/'
-    try:response=adapter.gateway.context.request.post(url,data=json.dumps(payload),headers={'Content-Type':'application/json'},max_redirects=0,timeout=45000)
-    except Exception as error:raise ServiceError('search_connection_failed','JSTOR search API connection failed',error_type=type(error).__name__) from None
+    try:response=adapter.gateway.context.request.post(url,data=json.dumps(payload),headers={'Content-Type':'application/json'},max_redirects=0,timeout=SOURCE_WAIT_MS)
+    except Exception as error:raise ServiceError('search_connection_failed','JSTOR search API connection failed',**failure_details(error)) from None
     if response.status in (401,403):raise ServiceError('access_restricted','JSTOR restricted its search API',status='restricted')
     if response.status==429:raise ServiceError('rate_limited','JSTOR search request limit reached',retry_after=response.headers.get('retry-after'))
     if response.status!=200:raise ServiceError('provider_error','JSTOR search API did not return a successful response',http_status=response.status)

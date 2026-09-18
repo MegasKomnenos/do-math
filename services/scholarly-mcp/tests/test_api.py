@@ -55,7 +55,8 @@ class APIContract(unittest.TestCase):
             with self.assertRaises(ServiceError) as cm:
                 adapter.request('https://api.crossref.org/works')
         self.assertEqual(cm.exception.result['code'], 'rate_limited')
-        self.assertEqual(cm.exception.result['evidence_unavailable'], {'error_type': 'OSError'})
+        self.assertEqual(cm.exception.result['evidence_unavailable']['error_type'], 'OSError')
+        self.assertEqual(cm.exception.result['evidence_unavailable']['where']['file'], 'api_adapters.py')
         self.assertNotIn('private-local-path', json.dumps(cm.exception.result))
 
     def test_crossref_native_export_is_for_the_selected_doi(self):

@@ -5,6 +5,7 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 from scholarly import ServiceError
 from sciencedirect import citation_record,pii_from_url
+from waits import PROBE_WAIT_MS, SOURCE_WAIT_MS
 
 
 class StatefulCheckbox:
@@ -52,7 +53,7 @@ class ScienceDirectContract(unittest.TestCase):
         with self.assertRaises(ServiceError) as raised:wait_for_search_results(page)
         self.assertEqual(raised.exception.result['code'],'search_interface_not_ready')
         self.assertTrue(raised.exception.result['retryable'])
-        self.assertEqual([call.kwargs['timeout'] for call in page.wait_for_function.call_args_list],[30000,5000])
+        self.assertEqual([call.kwargs['timeout'] for call in page.wait_for_function.call_args_list],[SOURCE_WAIT_MS,PROBE_WAIT_MS])
         page.goto.assert_not_called()
 
     def test_native_ris_identity_title_and_full_abstract_are_preserved(self):
@@ -344,7 +345,7 @@ class ScienceDirectContract(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             found=native_search_citation(ScienceDirect(ArtifactStore(temp),gateway),page,row,0)
         self.assertEqual(found['status'],'available')
-        trigger.wait_for.assert_called_once_with(state='visible',timeout=10000)
+        trigger.wait_for.assert_called_once_with(state='visible',timeout=SOURCE_WAIT_MS)
         trigger.click.assert_called_once()
 
     def test_current_result_pdf_is_bound_to_pii_title_and_source_doi(self):
@@ -596,8 +597,8 @@ class ScienceDirectContract(unittest.TestCase):
             found=native_document_pdf(adapter,pii,title,doi)
         self.assertEqual(found['status'],'available')
         self.assertEqual(found['pages'],1)
-        wait.wait_for.assert_called_once_with(state='attached',timeout=15000)
-        self.assertEqual(gateway.native_download.call_args.kwargs['timeout'],20000)
+        wait.wait_for.assert_called_once_with(state='attached',timeout=SOURCE_WAIT_MS)
+        self.assertEqual(gateway.native_download.call_args.kwargs['timeout'],SOURCE_WAIT_MS)
         page.close.assert_called_once()
 
     def test_document_pdf_purchase_is_a_record_access_condition(self):

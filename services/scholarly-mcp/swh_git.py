@@ -4,6 +4,7 @@ from pathlib import Path,PurePosixPath
 from urllib.parse import unquote,urljoin,urlsplit
 from scholarly import ServiceError
 from software_heritage import BASE,CORE
+from waits import LOCAL_TOOL_S
 
 
 def snapshot_hash(branches):
@@ -51,7 +52,7 @@ def verify_git_archive(data,core,branches=None):
             try:
                 result=subprocess.run(['git','--git-dir='+str(repo),*args],input=input,
                     **({'stdin':subprocess.DEVNULL} if input is None else {}),stdout=subprocess.PIPE,stderr=subprocess.PIPE,
-                    env=env,cwd=root,timeout=120,creationflags=subprocess.CREATE_NO_WINDOW if os.name=='nt' else 0)
+                    env=env,cwd=root,timeout=LOCAL_TOOL_S,creationflags=subprocess.CREATE_NO_WINDOW if os.name=='nt' else 0)
             except FileNotFoundError:raise ServiceError('git_unavailable','Git is required to verify archived Git objects',status='unsupported') from None
             except subprocess.TimeoutExpired:raise ServiceError('git_verification_timeout','Git archive verification exceeded its operation timeout') from None
             operation=next((a for a in args if a in ('init','index-pack','fsck','cat-file')),args[0])

@@ -2,6 +2,7 @@
 import json
 import re
 from urllib.parse import urljoin, urlsplit, unquote
+from waits import SOURCE_WAIT_MS
 
 from bs4 import BeautifulSoup
 
@@ -37,7 +38,7 @@ class DROPS(APIAdapter):
         if cursor or export not in (None, 'json', 'html', *EXPORTS):
             raise ServiceError('invalid_options', 'DROPS uses start/limit; see describe_source for native export formats')
         page = self.gateway.public_page(self.source)
-        goto_source(page, "https://drops.dagstuhl.de/", self.hosts, wait_until="domcontentloaded", timeout=45000)
+        goto_source(page, "https://drops.dagstuhl.de/", self.hosts, wait_until="domcontentloaded", timeout=SOURCE_WAIT_MS)
         page.locator('input[name="term"]').fill(query)
         with page.expect_navigation(wait_until="domcontentloaded"):
             page.locator('input[name="term"]').press("Enter")
@@ -166,7 +167,7 @@ class DROPS(APIAdapter):
             result['components']['export'] = {'status': 'partial' if errors else 'available', 'artifact': evidence, 'artifacts': artifacts, 'errors': errors}
         if "fulltext" in parts or "supplementary" in parts:
             page = self.gateway.public_page(self.source)
-            goto_source(page, entity, self.hosts, wait_until="domcontentloaded", timeout=45000)
+            goto_source(page, entity, self.hosts, wait_until="domcontentloaded", timeout=SOURCE_WAIT_MS)
             html = page.content()
             source_page = self.store.put(clean_html(html, self.store.sanitizer), "text/html", self.source, page.url, role="source_page", entity=entity)
             if "fulltext" in parts:
