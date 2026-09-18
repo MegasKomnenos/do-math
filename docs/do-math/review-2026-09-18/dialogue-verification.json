@@ -1,0 +1,15 @@
+{
+  "checks": {
+    "35_roles": true,
+    "dependencies": true,
+    "output_repair_attempts": true,
+    "stable_goal_policy_sources": true,
+    "approval_target_unchanged": true,
+    "plan_three_unchanged_one_closed": true,
+    "local_links": true,
+    "code_unchanged": true
+  },
+  "passed": true,
+  "scope": "Counts, references, two exact-snapshot examples and code identity; not a full semantic audit of 35 responses.",
+  "draft_sha256": "098b4943ba870f5dcd3b61ddb165cfb3f8d919eecb680419075f6b6275bec83b"
+}
