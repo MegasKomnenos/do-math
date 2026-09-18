@@ -1,0 +1,45 @@
+{
+  "checked_at": "2026-09-18T20:30:35.0958028+09:00",
+  "research": {
+    "snapshot": "25ead076824102e104f2a12989e6e5143e6e90b7",
+    "status": "paused",
+    "user_pause": {
+      "created_at": "2026-09-18T20:19:17.602925+09:00",
+      "reason": "User requested scheduled operator HOLD 1243d383db4c4a4fb3f11441e9c6df5c",
+      "request_id": "UC-01M2T3W0B28YAEA6PZHP5J3DVM"
+    },
+    "active_executions": [],
+    "budget": {
+      "operations": {
+        "claude-opus-5": {
+          "available": 3,
+          "execution_ids": [],
+          "limit": 3,
+          "used": 0
+        }
+      },
+      "work": {
+        "claude-opus-5": {
+          "available": 3,
+          "execution_ids": [],
+          "limit": 3,
+          "used": 0
+        }
+      }
+    },
+    "pending_controls": 0
+  },
+  "scheduled_tasks": [
+    {
+      "TaskName": "DoMath-Engine-21614d08d967",
+      "State": 1,
+      "Enabled": false
+    },
+    {
+      "TaskName": "DoMath-Operator-21614d08d967",
+      "State": 1,
+      "Enabled": false
+    }
+  ],
+  "related_processes": []
+}

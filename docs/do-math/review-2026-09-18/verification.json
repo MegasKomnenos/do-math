@@ -1,0 +1,39 @@
+{
+  "checked_at": "2026-09-18T12:06:36.554210+00:00",
+  "checks": {
+    "historical_counts": true,
+    "quota_count": true,
+    "no_action_plans": true,
+    "historical_questions": true,
+    "stream_replay": true,
+    "stopped": true,
+    "snapshot_matches": true,
+    "canonical_code_unchanged": true,
+    "all_twelve_packages": true,
+    "all_twenty_nine_previous_findings": true,
+    "local_links": true,
+    "no_em_dash": true,
+    "reassessment_35_unique": true,
+    "reassessment_counts": true,
+    "reassessment_failures_reproduced": true,
+    "pure_task_cases_preserve_contract_results_and_openness": true,
+    "additional_currentness_cases": true
+  },
+  "passed": true,
+  "files": {
+    ".gitattributes": "c8fea51636d918d4522b22a0649263b23a921e30d75c2841c61feda206343810",
+    "currentness-reassessment.json": "b126e1efdeb4d47cd9fcaf41136299b8daa76e483b4b01cf91d1b7dfe5ccdf0c",
+    "evidence.json": "4dca8e7087c70740b9966aae52474ecde9ffc71fbff8a4a454a03d8ee970456e",
+    "operator-2002-diagnosis.md": "c6c5618b3912ff5dc3de9a86bf89afeff6d1d01659046ba0ebc7be979361f3b9",
+    "plan.md": "19430059be3b34d25c28bd079aa15560cb14f61a138711afd0457e4ccad8b544",
+    "reading-decision.json": "4888ace3afef85fa3af9c9c3794c0343e787bf62b02eccc3737f1453fb5df649",
+    "reading-provenance.json": "b1aaff20a4c7e8a087b6f9bd3089f361e8811ce5cf7d6cbc94def4bd73fa35e4",
+    "reading.json": "f4184fd8c0112639be0f7bc1f6c3f547cd989bc4e12ede5250988690fe0e8dd1",
+    "stop.json": "d818586c039cf3322ad6cfcbc160d116e8972c2ca12b04ba7654fd4409376c2c"
+  },
+  "limits": [
+    "No engine repair or repair regression performed.",
+    "No independent mathematical verification.",
+    "Document reading is separate evidence; see reading-decision.json when present."
+  ]
+}

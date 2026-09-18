@@ -25,5 +25,17 @@
   "mathematical_proofs_reverified": false,
   "source_reports_reproduced_verbatim": true,
   "rendering": "HTML structure and local links checked; browser rendering not checked",
-  "analysis_sha256": "2da90da8b86d7b03275f25e3ca8ddc73f9534056cf713945a0bc20d35e7b34e9"
+  "analysis_sha256": "717bcfc426598379850c0b6eb094356e541b8d13f232b5057c4fc5729c13adfa",
+  "original_analysis_sha256": "2da90da8b86d7b03275f25e3ca8ddc73f9534056cf713945a0bc20d35e7b34e9",
+  "correction_2026_09_18": {
+    "scope": "Currentness failure cause paragraph only",
+    "basis": "../../../docs/do-math/review-2026-09-18/currentness-reassessment.json",
+    "counts": {
+      "task_metadata_or_result_append_only": 26,
+      "task_contract_changes": 6,
+      "knowledge_approval_changes": 3
+    },
+    "overlap": "Two knowledge-change cases also include task closure.",
+    "reading": "Original whole-report independent reading remains incomplete; corrected classification is also explained in the separately reviewed improvement plan."
+  }
 }

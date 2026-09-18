@@ -1,0 +1,2 @@
+# Preserve the bytes used by the evidence hashes and independent reading.
+* -text -whitespace

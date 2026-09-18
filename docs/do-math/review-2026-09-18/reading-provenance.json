@@ -1,0 +1,70 @@
+{
+  "provider": "claude",
+  "bridge": "task-local provider bridge using writing_flow.reader_prompt, READER_SCHEMA and validate_reading; not stock Codex read command",
+  "reader_inputs": "Draft and audience only; brief and author conversation not provided. Isolated temporary working directory outside repository.",
+  "research_restarted": false,
+  "final_draft_sha256": "19430059be3b34d25c28bd079aa15560cb14f61a138711afd0457e4ccad8b544",
+  "invocations": [
+    {
+      "reading_id": "062ac40b513f4d9e884b8a2698e6ab3e",
+      "reader_session": "3bc2b77c-c4dc-4ce5-b0b8-d30c73d14527",
+      "modelUsage_keys": [
+        "claude-opus-5"
+      ],
+      "draft_sha256": "893906c58f3154f1167fd6b02e9909e4a22ec8831ce9c165fea6facd88a58352",
+      "native_sha256": "943eae55ebe907b3b9e700c34071405b262f5d2fe57e678144ee1bbd536b7e1e",
+      "receipt_serialization_recovery": false
+    },
+    {
+      "reading_id": "12ac33d535724317bde84754706d244e",
+      "reader_session": "b9b5aea0-28d5-407a-9b9d-962f7e51a5ba",
+      "modelUsage_keys": [
+        "claude-opus-5"
+      ],
+      "draft_sha256": "19430059be3b34d25c28bd079aa15560cb14f61a138711afd0457e4ccad8b544",
+      "native_sha256": "830a66db57cbebb97c3718a93f6b387db255412838aa9b93be3d162fccc7a429",
+      "receipt_serialization_recovery": false
+    },
+    {
+      "reading_id": "516c01cc41584cd7a6a3a67b717565b6",
+      "reader_session": "fe220138-4d07-4190-b7bd-0da0f5a39b85",
+      "modelUsage_keys": [
+        "claude-opus-5"
+      ],
+      "draft_sha256": "8b9197ecd9b594b12d4cd86f7219061323c91cc06c8666bfcf60de9d64eb0202",
+      "native_sha256": "e040c1506abf19c82cc568830d9a4da609d8cfc375be3aeb4dd01d72652c9619",
+      "receipt_serialization_recovery": false
+    },
+    {
+      "reading_id": "62d6f2fd4a68458f8dd0fd49ff9567b2",
+      "reader_session": "829a4bcf-eea6-4113-aa88-9bc2f0fc45d1",
+      "modelUsage_keys": [
+        "claude-opus-5"
+      ],
+      "draft_sha256": "5306111f05e18629e22efc2792acf03d281e5235c8421e1227b824735ef20817",
+      "native_sha256": "6efa1e3c4aa25318070538ead361112998aad01fd076d892de805cef6e333b31",
+      "receipt_serialization_recovery": false
+    },
+    {
+      "reading_id": "b99536ea8b23484aa0923e777b498eec",
+      "reader_session": "8201b8f0-faaf-42e7-b855-1341b9dbc28d",
+      "modelUsage_keys": [
+        "claude-opus-5"
+      ],
+      "draft_sha256": "3fe682fa80e13e6963672db32b63ba9415c538425468bf63b72ce535123f710d",
+      "native_sha256": "6762182ce23bf027e32bfd69d80b8be1588347cba50ad588af3a68d580133839",
+      "receipt_serialization_recovery": false
+    },
+    {
+      "reading_id": "f1b014cbc5d4423daa31b75cfbcd5371",
+      "reader_session": "bc04c9f1-f97f-440b-95ab-e29e893758ad",
+      "modelUsage_keys": [
+        "claude-opus-5"
+      ],
+      "draft_sha256": "89944d4fb0c2c58cf0f605805fd57bfa1efe424edf01e6ad92decc8c9f6d5521",
+      "native_sha256": "93f776a963aa4f168290e00194de7ee7515cf6a5e7773048227d9b3e78e31ba0",
+      "receipt_serialization_recovery": true
+    }
+  ],
+  "limits": "Reading checks what the reader understood. Source facts were checked separately. Local raw CLI evidence is excluded from Git."
+}
