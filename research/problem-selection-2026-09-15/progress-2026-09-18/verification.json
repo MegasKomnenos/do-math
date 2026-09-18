@@ -1,0 +1,29 @@
+{
+  "snapshot": "c2021a0f9490cb6d16cc08778ef27e5703f54423",
+  "data_checks": "passed",
+  "execution_count": 169,
+  "model_execution_count": 167,
+  "task_count": 19,
+  "accepted_research_report_count": 14,
+  "task_status_counts": {
+    "completed": 12,
+    "closed": 1,
+    "assessing": 1,
+    "ready": 2,
+    "performing": 1,
+    "needs_revision": 1,
+    "planned": 1
+  },
+  "failure_groups": {
+    "stop_or_timeout": 5,
+    "dependency_changed": 40,
+    "incomplete_cli_stream": 1,
+    "invalid_source_reference": 2,
+    "cli_failure_with_limit_response": 16
+  },
+  "independent_reading": "blocked_by_claude_session_limit",
+  "mathematical_proofs_reverified": false,
+  "source_reports_reproduced_verbatim": true,
+  "rendering": "HTML structure and local links checked; browser rendering not checked",
+  "analysis_sha256": "2da90da8b86d7b03275f25e3ca8ddc73f9534056cf713945a0bc20d35e7b34e9"
+}
