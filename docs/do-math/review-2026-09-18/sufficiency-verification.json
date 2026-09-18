@@ -1,0 +1,26 @@
+{
+  "passed": true,
+  "checks": {
+    "no_model_calls_in_probes": true,
+    "same_session_budget_mode": true,
+    "A_revision_changed": true,
+    "B_contract_unchanged": true,
+    "B_approval_preserved": true,
+    "B_remained_ready": true,
+    "approval_basis_now_differs": true,
+    "approval_basis_matches_original_input": true,
+    "actual_contract_change_distinguished": true,
+    "existing_failure_kind_resolves": true,
+    "new_kind_not_implicitly_handled": true,
+    "canonical_code_unchanged": true,
+    "local_links": true,
+    "no_em_dash": true
+  },
+  "draft_sha256": "5cb12c403ab66d5786d8fa5723217ed5c24ec20a76f9da37376d4a37a4ad2da6",
+  "limits": [
+    "Bounded tests of current code with memory storage and supplied role outputs; no actual model or Lean calls in the probes.",
+    "Not a proof that a production B approval was wrong; not a replay of all 35 rejected outputs.",
+    "No implementation repair or full regression run.",
+    "Session-budget fixture initially supplied a legacy model option; initialization failed before execution. Corrected fixture passed. This is not a product defect."
+  ]
+}

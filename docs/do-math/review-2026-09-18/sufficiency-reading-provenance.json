@@ -1,0 +1,42 @@
+{
+  "provider": "claude",
+  "bridge": "Task-local bridge using writing_flow reader prompt, schema and quotation validation; not stock Codex read.",
+  "inputs": "Draft and audience, excluding author conversation and brief. No research tools used.",
+  "draft_sha256": "5cb12c403ab66d5786d8fa5723217ed5c24ec20a76f9da37376d4a37a4ad2da6",
+  "calls": [
+    {
+      "session": "85651259-1245-4b22-bd75-e8c042f303ac",
+      "models_reported": [
+        "claude-opus-5"
+      ],
+      "draft_sha256": "5cb12c403ab66d5786d8fa5723217ed5c24ec20a76f9da37376d4a37a4ad2da6",
+      "native_sha256": "7e548df239e2f7eb215f17abff4bb8f696724409d47ee67ccc639ed77c5bf6c8"
+    },
+    {
+      "session": "fde1a9b0-8506-481c-9a35-cea25fd8cf96",
+      "models_reported": [
+        "claude-opus-5"
+      ],
+      "draft_sha256": "734fe00a38a05cf621048ee57ab305065b4e1406973d08196fbc81b4ddd35d17",
+      "native_sha256": "b031442030ea19deaa006dbdec0a64ef2404a4b0398b7d1788cb725273f6c994"
+    },
+    {
+      "session": "4691ecf0-f631-4123-be03-3691573ecd5e",
+      "models_reported": [
+        "claude-opus-5"
+      ],
+      "draft_sha256": "b00e074f1bfdb59daa1bd670679862c7d0f44f4d4c07724ef526de66c4b95cd8",
+      "native_sha256": "6b421729aff8ba9d8d262a34ef180b47fd5695e3049c9fe0fc0920c090bb0d36"
+    },
+    {
+      "session": "a133a6f5-811f-4e23-b552-a8a6513fff2b",
+      "models_reported": [
+        "claude-opus-5"
+      ],
+      "draft_sha256": "9d5e05be3f5335982cc3500bdce9cfbb19a2555fe9fd3241132f9ec9abe0385b",
+      "native_sha256": "4c1c538db1f14e54f7d61d16863b6afc64e8e3f969cf68b0f127cfafd559a55f"
+    }
+  ],
+  "raw_evidence_location": "C:\\math\\.codex\\writing-flow\\01a0b26a-0732-7393-84ed-b74e364049bb\\jobs\\93a41a6f6f7e44e8bdc2d2d6b6d73fa6\\readings",
+  "limits": "Raw native evidence is local and excluded from Git. Reading does not independently verify source facts."
+}
