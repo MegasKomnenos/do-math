@@ -12,6 +12,7 @@ import sys
 from typing import Any
 
 from .codex_adapter import CodexExecAdapter
+from .claude_adapter import ClaudePrintAdapter
 from .engine import ResearchEngine, control, initialize, json_safe
 from .git_store import GitStateStoreConflict, GitStateStoreError, GitStateStoreLockError
 from .repository import ResearchRepository
@@ -169,8 +170,10 @@ def build_parser() -> _Parser:
     check = commands.add_parser("check", help="check persisted workflow relations")
     _instance_arguments(check)
 
-    profile = commands.add_parser("profile", help="inspect the installed Codex CLI surface")
+    profile = commands.add_parser("profile", help="inspect the installed model CLI surface")
+    profile.add_argument("--provider", choices=("codex", "claude"), default="codex")
     profile.add_argument("--codex-path")
+    profile.add_argument("--claude-path")
 
     operator = commands.add_parser("operator", help="manage the independent scheduled operator")
     operator.add_argument("mode", choices=("install", "uninstall", "status", "start", "start-operator", "check", "probe", "engine", "hold", "release"))
@@ -305,8 +308,17 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
         result = ResearchEngine(args.repository, args.instance).check()
         return result, 0 if result["passed"] else 1
     if command == "profile":
-        path = args.codex_path or shutil.which("codex") or "codex"
-        result = json_safe(CodexExecAdapter(path).describe())
+        if args.provider == "claude":
+            if args.codex_path:
+                raise CliInputError("--codex-path requires --provider codex")
+            path = args.claude_path or shutil.which("claude") or "claude"
+            adapter = ClaudePrintAdapter(path)
+        else:
+            if args.claude_path:
+                raise CliInputError("--claude-path requires --provider claude")
+            path = args.codex_path or shutil.which("codex") or "codex"
+            adapter = CodexExecAdapter(path)
+        result = json_safe(adapter.describe())
         return result, 0 if result.get("verified") else 1
     if command == "operator":
         workspace = _operator_workspace(args.repository, args.instance, args.workspace)

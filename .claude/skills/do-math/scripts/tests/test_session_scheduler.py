@@ -114,7 +114,7 @@ class SlotTests(unittest.TestCase):
             try:
                 with patch.object(scheduled_operator, "read_status", return_value={"status": "ready", "user_pause": None}), \
                      patch.object(scheduled_operator, "ResearchRepository") as repository, \
-                     patch.object(scheduled_operator, "CodexModelRunner", return_value=Runner()) as runner:
+                     patch.object(scheduled_operator, "ModelRunner", return_value=Runner()) as runner:
                     repository.return_value.load.return_value = ("snapshot", {"config": config}, {})
                     waiting = scheduled_operator.check(workspace, "instance", workspace)
                     self.assertEqual(waiting["outcome"], "capacity_waiting")

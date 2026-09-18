@@ -2,11 +2,11 @@
 
 이 문서는 do-math 연구 인스턴스를 만들고 운전하는 사람을 위한 진입점이다. do-math의 목적과 전체 연구 흐름은 [SKILL.md](SKILL.md), 공통 용어의 뜻은 [GLOSSARY.md](GLOSSARY.md), 정확한 명령·필드·상태 투영과 역할별 JSON은 [CLI 실행 계약](references/CLI-실행-계약.md)이 소유한다.
 
-현재 실행 계약은 `do-math-cli/1`이다. 새 세션 예산 인스턴스는 기능 판본 3을 사용하고, 기존 판본의 실행횟수 운전도 지원한다. 기존 Codex CLI 로그인을 사용하므로 별도의 OpenAI API 키를 요구하지 않는다. 이 구현은 수학 연구의 후보 준비, 작업 계약 검토, 연구 계획, 연구 수행, Lean 검사, 동일성 검토, 목표 감사와 학술 후속을 한 인스턴스 상태로 연결한다. 각 기능이 무엇을 보증하는지는 서로 다르다. 명령 성공이나 실행 종료는 형식 타당성·해설 동일성·목표 충족을 대신하지 않는다.
+현재 실행 계약은 `do-math-cli/1`이다. 새 세션 예산 인스턴스는 기능 판본 3을 사용하고, 기존 판본의 실행횟수 운전도 지원한다. 배정된 모델의 Codex CLI 또는 Claude CLI 로그인을 사용하므로 별도의 API 키를 요구하지 않는다. 이 구현은 수학 연구의 후보 준비, 작업 계약 검토, 연구 계획, 연구 수행, Lean 검사, 동일성 검토, 목표 감사와 학술 후속을 한 인스턴스 상태로 연결한다. 각 기능이 무엇을 보증하는지는 서로 다르다. 명령 성공이나 실행 종료는 형식 타당성·해설 동일성·목표 충족을 대신하지 않는다.
 
 ## 시작 전에 준비할 것
 
-검증에 사용한 환경은 Python 3.12, Git, 로그인된 Codex CLI다. Python 의존성은 `requirements.txt`에 고정돼 있으며 현재 직접 의존성은 `jsonschema==4.26.0`이다.
+Windows에서 Python 3.12, Git과 사용할 모델의 CLI를 준비한다. Codex 모델에는 로그인된 Codex CLI, Claude 모델에는 로그인된 Claude CLI가 필요하다. Python 의존성은 `requirements.txt`에 고정돼 있으며 현재 직접 의존성은 `jsonschema==4.26.0`이다.
 
 ```powershell
 python -m pip install -r .agents/skills/do-math/requirements.txt
@@ -16,6 +16,8 @@ python .agents/skills/do-math/scripts/do_math.py profile
 ```
 
 `profile`은 설치된 Codex CLI의 명령 표면을 조사한다. 종료 코드 0과 `verified=true`는 그 조사 항목이 확인됐다는 뜻이다. 연구 역할의 품질, Lean 설치, 파일 격리나 원격 공급자 상태까지 보증하지 않는다.
+
+Claude를 사용할 때에는 `claude auth status`로 로그인 상태를 확인하고 `python .agents/skills/do-math/scripts/do_math.py profile --provider claude`로 필요한 명령 표면을 검사한다. CLI는 `PATH`에서 찾으며 `CLAUDE_CONFIG_DIR`로 지정한 로그인 설정 위치도 전달한다. API 키나 별도 API 공급자로 자동 전환하지 않는다. Claude의 `--bare` 모드는 구독 로그인을 사용하지 않으므로 이 실행 경로에서는 사용하지 않는다.
 
 연구를 시작하기 전에 다음 경로를 정한다.
 
@@ -45,6 +47,12 @@ scholarly는 기본 활성이다. `scholarly_server`에 `command`·`args`를 직
 ```
 
 이 예시는 기본 구성과 같다. 세션은 종료 후 재사용하며 두 예산은 자동 차용하지 않는다. 모델 이름이나 수를 바꾸면 두 예산 맵에도 해당 모델을 명시한다. 기존 실행횟수 인스턴스는 위 설정으로 명시적으로 전환하기 전까지 기존 계약을 유지한다. 기존 `role_models`를 썼다면 전환 설정에 `"role_models": {}`도 넣는다. 상세 호환 조건은 CLI 실행 계약의 설정 절을 따른다.
+
+Claude를 배정하려면 `claude:opus`, `claude:sonnet`, `claude:haiku`처럼 `claude:` 뒤에 CLI 모델 이름이나 별칭을 적는다. `claude-`로 시작하는 전체 모델 ID도 사용할 수 있다. 다른 이름은 Codex로 전달한다. 같은 등급·모델 선택 규칙을 연구·검토·운영 역할에 적용하며, 독립 운영 담당도 배정된 모델의 운영 슬롯을 사용한다.
+
+[Claude·Codex 혼합 설정 예시](examples/claude-codex-sessions.json)는 상 등급에 `claude:opus`, 중 등급에 `gpt-5.6-sol`, 하 등급에 `claude:haiku`를 배정하고 각 모델의 작업·운영 슬롯을 각각 3개로 둔다. `init --config-file`이나 `configure --config-file`에 이 파일을 전달할 수 있다. 예시를 적용할 때에만 해당 모델과 용량을 사용하며 기본값은 위 Codex 구성이다. 각 등급에는 모델 하나를 지정한다. 모델별 예산의 식별자는 설정 문자열이므로 `tier_models`와 두 예산 맵의 표기를 일치시키고, 같은 모델을 별칭과 전체 ID로 중복 등록하지 않는다.
+
+두 CLI를 함께 쓸 때 공통 `effort`에는 `low`, `medium`, `high`, `xhigh`를 사용할 수 있다. Claude의 `operator_effort`는 이 값들과 `max`를 지원하며 `minimal`·`ultra`는 지원하지 않는다. 지원하지 않는 노력 수준이나 사용할 수 없는 모델로 호출하면 실패로 기록하고 자동으로 다른 모델이나 수준을 선택하지 않는다. Claude 별칭은 CLI가 현재 제공하는 모델로 해석하므로 판본을 고정하려면 사용 가능한 전체 ID를 지정한다.
 
 ## 첫 인스턴스 만들기
 
@@ -82,7 +90,7 @@ python .agents/skills/do-math/scripts/do_math.py operator start `
   --repository .skill-workspace/my-math/repo --instance RI-...
 ```
 
-Windows 로그인, 켜져 있고 절전하지 않는 PC, 네트워크와 유효한 Codex 인증이 필요하다. 화면 잠금과 로그아웃은 다르다. 놓친 예약은 실행 가능한 상태에서 처리하도록 등록한다. 연구 실행의 내부 관찰·점검과 `operator_interval_seconds`의 주기(기본 2시간)마다 수행하는 전체 운영 점검은 별도로 유지된다.
+Windows 로그인, 켜져 있고 절전하지 않는 PC, 네트워크와 배정된 모델 CLI의 유효한 인증이 필요하다. 화면 잠금과 로그아웃은 다르다. 놓친 예약은 실행 가능한 상태에서 처리하도록 등록한다. 연구 실행의 내부 관찰·점검과 `operator_interval_seconds`의 주기(기본 2시간)마다 수행하는 전체 운영 점검은 별도로 유지된다.
 
 ### 1. 현재 상태를 읽는다
 
@@ -134,7 +142,7 @@ python .agents/skills/do-math/scripts/do_math.py run `
   --max-steps 5
 ```
 
-`--max-steps`는 이번 `run` 호출이 처리할 action 수의 상한이다. 수학 연구 단계나 모델 호출 수와 항상 같지는 않는다. 형식 검사·외부 행동 같은 기계 action도 한 step으로 처리될 수 있고, 하나의 AI 실행 안에서 Codex CLI가 수행한 내부 동작 수를 세지 않는다.
+`--max-steps`는 이번 `run` 호출이 처리할 action 수의 상한이다. 수학 연구 단계나 모델 호출 수와 항상 같지는 않는다. 형식 검사·외부 행동 같은 기계 action도 한 step으로 처리될 수 있고, 하나의 AI 실행 안에서 모델 CLI가 수행한 내부 동작 수를 세지 않는다.
 
 `--max-steps`를 생략하면 실행기는 queue와 현재 설정이 허용하는 동안 진행한다. `--watch`를 함께 쓰면 CLI 상태가 `waiting`이어도 `run_timeout_seconds`까지 제어 inbox, 대화 lease와 관찰 사건을 다시 확인한다. 사용자 결정을 자동으로 만들거나 waiting 과제의 조건을 임의로 해소하지 않는다.
 
@@ -301,7 +309,7 @@ python .agents/skills/do-math/scripts/do_math.py resume `
 
 독립 담당이 보내는 자동 제어는 `--origin operator`로 표시한다. 이 경로는 사용자 정지를 해제하거나 목표·정책·학술 요구·외부 행동·신뢰 판정을 만들지 못한다. 사용자 제어의 기본 출처는 `user`다. 출처 구별은 같은 사용자 권한에서의 운영 계약이며 보안 격리 장치는 아니다.
 
-설치 검사에는 `operator probe`를 사용한다. 실제 Codex 실행으로 상태·기록을 읽고 scholarly의 자료원 목록만 확인하며, 연구와 예약 상태를 변경하지 않는다. 독립 운영 보고는 `<workspace>/operator/latest-report.json`, 연구 예약 실행의 결과는 같은 `operator/` 아래 실행별 로그에 보존된다. 내부 `operations_calls`와 별도 운영 담당의 CLI 사용량은 분리해 읽는다. 이 대화로 자동 알림이 전송되지는 않는다.
+설치 검사에는 `operator probe`를 사용한다. 배정된 모델의 실제 CLI 실행으로 상태·기록을 읽고 scholarly의 자료원 목록만 확인하며, 연구와 예약 상태를 변경하지 않는다. 독립 운영 보고는 `<workspace>/operator/latest-report.json`, 연구 예약 실행의 결과는 같은 `operator/` 아래 실행별 로그에 보존된다. 내부 `operations_calls`와 별도 운영 담당의 CLI 사용량은 분리해 읽는다. 이 대화로 자동 알림이 전송되지는 않는다.
 
 ## 운영 제어 명령의 용도
 
@@ -332,9 +340,9 @@ python .agents/skills/do-math/scripts/do_math.py resume `
 
 ## 현재 지원 범위
 
-현재 CLI는 인스턴스별 Git ref와 writer lock, 두 JSON 상태 루트와 불변 artifact, 모델별 슬롯 안의 병렬 AI 실행과 순차 결과 반영, Codex CLI 구조화 출력, Lean·공리 검사, 동일성 검토의 이의 왕복, 목표·학술 후속, source·지식·관계·신뢰·외부 HTTP·대화 제어를 구현한다.
+현재 CLI는 인스턴스별 Git ref와 writer lock, 두 JSON 상태 루트와 불변 artifact, 모델별 슬롯 안의 병렬 AI 실행과 순차 결과 반영, Codex·Claude CLI 구조화 출력, Lean·공리 검사, 동일성 검토의 이의 왕복, 목표·학술 후속, source·지식·관계·신뢰·외부 HTTP·대화 제어를 구현한다.
 
-새 인스턴스의 작업·운영 예산은 모델별 로컬 AI 실행의 동시 점유로 계산한다. 기존 실행횟수 모드는 명시적인 설정 전환 전까지 보존한다. Codex CLI가 보고한 turn usage는 보존하지만 공급자 내부 호출별 ID·예약·원격 종료를 보증하지 않는다. 현재 기본 Windows 실행은 `danger-full-access`와 승인 정책 `never`로 기존 사용자 권한을 쓴다. Windows Job은 로컬 프로세스 수명과 자손 종료를 관리하지만 모든 host 파일·network·credential 접근을 차단하지 않는다. 별도 세션·작업 공간과 동료 결과 비제공은 입력 경계를 만들지만 통계적 독립성이나 강한 OS 격리의 증거가 아니다.
+새 인스턴스의 작업·운영 예산은 모델별 로컬 AI 실행의 동시 점유로 계산한다. 기존 실행횟수 모드는 명시적인 설정 전환 전까지 보존한다. Codex의 turn usage와 Claude의 최종 result usage는 보존하지만 공급자 내부 호출별 ID·예약·원격 종료를 보증하지 않는다. 현재 기본 Windows 실행은 Codex의 `danger-full-access`·승인 정책 `never`, Claude의 `bypassPermissions`로 기존 사용자 권한을 쓴다. Windows Job은 로컬 프로세스 수명과 자손 종료를 관리하지만 모든 host 파일·network·credential 접근을 차단하지 않는다. 별도 세션·작업 공간과 동료 결과 비제공은 입력 경계를 만들지만 통계적 독립성이나 강한 OS 격리의 증거가 아니다.
 
 ## 설치본 검사
 
@@ -352,4 +360,4 @@ python .agents/skills/do-math/scripts/probe_codex.py --skill-only
 python -m unittest discover -s .agents/skills/do-math/scripts/tests -p "test_*.py"
 ```
 
-실제 Codex·Lean·HTTP·Windows 프로세스가 필요한 검사는 각 시험의 환경 조건과 실행 결과를 확인한다. 검증 결과는 검사한 판본, 사례, 통과·실패·미실행 범위와 함께 보존하고, 해석 기준은 [CLI 실행 계약](references/CLI-실행-계약.md)의 「검증 근거의 해석」을 따른다.
+실제 Codex·Claude·Lean·HTTP·Windows 프로세스가 필요한 검사는 각 시험의 환경 조건과 실행 결과를 확인한다. 검증 결과는 검사한 판본, 사례, 통과·실패·미실행 범위와 함께 보존하고, 해석 기준은 [CLI 실행 계약](references/CLI-실행-계약.md)의 「검증 근거의 해석」을 따른다.

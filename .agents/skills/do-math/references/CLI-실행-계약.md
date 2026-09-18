@@ -59,7 +59,7 @@ artifact는 기존 경로를 수정하지 않고 새 bundle에 추가한다. 대
 | `runtime/artifacts/<input_bundle>/input/implementation/<path>` | SKILL·GLOSSARY·공통 reference·역할 계약의 고정 사본 |
 | `runtime/artifacts/<input_bundle>/input/tools/<path>` | 제출 검사 진입점과 실행별 고정 코드 ZIP |
 | `runtime/artifacts/<input_bundle>/input/submission/<path>` | 주 JSON·확장 스키마와 작업자에게 공개된 고정 검사 입력 |
-| `runtime/artifacts/<result_bundle>/result.json` | Codex 어댑터의 완료·실패·usage를 포함한 결과 |
+| `runtime/artifacts/<result_bundle>/result.json` | 배정된 CLI 어댑터의 완료·실패·usage를 포함한 결과 |
 | `runtime/artifacts/<result_bundle>/output.json` | schema를 통과하기 전에도 보존하는 모델 JSON 출력 |
 | `runtime/artifacts/<result_bundle>/files/<path>` | workspace에서 회수한 모델 작성 파일 |
 | `runtime/artifacts/<result_bundle>/output-manifest.json` | 회수한 파일의 경로·해시·크기 |
@@ -144,6 +144,12 @@ status의 `knowledge.K`, `knowledge.F`, `knowledge.suspended_K`는 각각 `verif
 - 독립 운영: `operator_enabled`는 기본 true, `operator_interval_seconds`는 기본 7200초다. `operator_timeout_seconds`는 한 점검 실행의 상한으로 기본 5400초이며, `operator_effort`의 기본값은 high다. 세션 모드에서는 `role_tiers.independent_operator`의 등급과 `tier_models`가 모델을 정하며 같은 모델의 운영 슬롯을 예약한다. 구 호환 모드의 `operator_model` 기본값은 gpt-5.6-sol이다. 이는 내부 `research_reconsider_seconds`가 정하는 후보 밖 탐색 주기와 별개다.
 - 학술자료: `scholarly_enabled`는 기본 true다. `scholarly_server`는 null 또는 `command`·`args` 객체이며 초기화 때 명시 설정이나 Codex 설정의 scholarly 항목에서 회수한다. command/서버 파일 경로는 실행 위치와 무관하게 사용할 수 있도록 고정한다. 다른 MCP와 사용자 훅은 하위 연구 실행에 자동 상속하지 않는다. 서버의 자료 저장 위치는 실행별 `scholarly-data/`로 지정한다.
 
+모델 이름이 `claude:`로 시작하면 그 접두어를 제거해 Claude CLI의 `--model`에 전달한다. `claude-`로 시작하는 전체 ID는 그대로 Claude에 전달하고 나머지는 Codex에 전달한다. 이 선택은 세션 모드의 `tier_models`, 구 모드의 `model`·`role_models`·`operator_model`에 동일하게 적용한다. `claude:` 뒤에는 비어 있지 않은 모델 이름이 필요하다. 별칭과 전체 ID를 포함해 동일 모델의 설정 표기를 통일한다. 슬롯은 접두어를 포함한 원래 설정 문자열별로 계산하며 CLI가 해석한 실제 모델 ID를 기준으로 합치지 않는다.
+
+Claude는 기존 CLI 로그인을 사용한다. `PATH`에서 실행 파일을 찾으며 `CLAUDE_CONFIG_DIR`와 Windows의 `CLAUDE_CODE_GIT_BASH_PATH`를 전달한다. API 키·API 공급자 변경 환경변수는 전달하지 않는다. `--setting-sources`를 비우고 사용자 훅·자동 기억·스킬 호출·내부 Agent/Task 도구를 비활성화하며, `--strict-mcp-config`로 인스턴스에 고정된 scholarly만 연결한다. Claude만 사용하는 인스턴스도 scholarly의 자동 탐색 위치는 위 Codex 설정 경로와 같고, 다른 위치의 설정은 `scholarly_server`에 직접 지정한다.
+
+공통 `effort`의 지원 값은 `minimal`, `low`, `medium`, `high`, `xhigh`다. 이 가운데 Claude는 `minimal`을 지원하지 않는다. `operator_effort`는 추가로 `max`·`ultra`를 허용하지만 Claude에는 `ultra`를 전달할 수 없다. Claude worker는 지원하지 않는 수준을 CLI 시작 전에 거부한다. 모델 접근 권한과 해당 모델의 노력 수준 지원은 실제 CLI 응답으로 확인하며, 실패를 다른 모델·수준으로 우회하지 않는다.
+
 다음은 일부 설정을 명시하는 예다. `init`에서 생략한 필드는 코드의 기본값을 사용하고, `configure`에서 생략한 최상위 필드는 기존 값을 유지한다.
 
 ```json
@@ -189,7 +195,7 @@ CLI는 초기화 뒤 독립 운영이 활성일 때 해당 인스턴스의 Windo
 - `run [--max-steps N] [--watch]`는 writer lock 안에서 control을 적용하고, 사라진 실행을 복구하며, 모델별 용량 안에서 AI action을 병렬로 실행한다. 형식·신뢰·외부 기계 action과 상태 반영은 소유 실행기가 처리한다. `N`은 새로 처리할 action 수의 양의 상한이며, 도달한 뒤에는 새 일반 action을 열지 않고 이미 시작한 모델 호출을 회수한다. 그 호출의 생존·복구에 필요한 live 운영 점검은 독립된 운영 슬롯에서 계속 처리하며 일반 step 수에 넣지 않는다.
 - `status [--json]`은 연구 snapshot의 파생 보기와 현재 로컬 슬롯 조회를 함께 반환한다. `snapshot`은 연구 기록의 판본을 식별하며 세션 모드의 `budget`까지 같은 시점에 원자적으로 고정했다는 뜻은 아니다. 실제 배정에서는 슬롯을 다시 검사하고 예약한다. JSON 필드는 README의 운영 표를 따른다.
 - `check`는 상태 관계와 보존 artifact의 해시·크기를 검사해 `{passed, errors, ...}`를 반환한다. 결함이 있으면 exit 1이다. 자연어 의미를 새로 검증하지 않는다.
-- `profile [--codex-path PATH]`은 설치된 Codex CLI 표면을 조사한다. 인스턴스 인자는 받지 않는다.
+- `profile [--provider codex|claude] [--codex-path PATH | --claude-path PATH]`은 선택한 CLI 표면을 조사한다. 기본 공급자는 `codex`이며 경로 옵션은 선택한 공급자와 일치해야 한다. 인스턴스 인자는 받지 않는다. `verified=true`는 명령 표면의 확인이며 로그인·모델 이용 가능성이나 실제 작업 성공의 증거는 아니다.
 
 ### `pause`, `resume`, `close`, `input`, `configure`, `request`
 
@@ -735,7 +741,7 @@ Lean source가 있는 knowledge candidate는 중앙 `formal_check` action으로 
 
 현재 구현이 실제로 연결하고 검사한 범위는 다음과 같다.
 
-- 기존 Codex 로그인으로 `codex exec`을 호출하고 실행별 prompt·schema·문서·입력·원 출력을 보존한다.
+- 배정된 모델에 따라 기존 CLI 로그인으로 `codex exec` 또는 `claude --print`를 호출하고 실행별 prompt·schema·문서·입력·원 출력을 보존한다.
 - 인스턴스별 Git ref와 writer lock으로 두 JSON 루트와 추가 전용 artifact를 순차 공개한다.
 - 작업·운영 모델별 동시 세션 용량을 분리해 한쪽이 다른 쪽의 설정 한도를 자동 차용하지 않는다.
 - source·지식 candidate·종류 정의·관계, goal·policy·grant·학술 요구, 신뢰 환경·대화와 외부 HTTP 제어를 현재 schema로 처리한다.
@@ -750,9 +756,11 @@ GLOSSARY.md의 공통 개념과 현재 CLI의 표현 차이는 각각 다음처�
 - 동일성 검토는 독립 범위 계획 대신 전면 검토 고정 배정을 쓴다. 세 기본 관점을 역할 계약으로 요구하지만 전문 분야의 독립 자리 자동 선정은 없고, 동적 범위 계획과의 검토 강도 동등성은 미평가다.
 - 작업 계약 검토의 현재 주 JSON은 판정과 findings에 항목별 판단을 서술한다. 정확한 계약·goal·policy basis는 실행기가 결합하지만, 항목별 승인 유효성의 근거를 별도 구조 필드로 표현하지 않는다. 의미 전건이 실제 findings에 보존되는지는 역할 결과와 검증에서 확인해야 한다.
 
-현재 기본 Windows 실행은 `danger-full-access`와 승인 정책 `never`로 기존 사용자 권한을 사용한다. Windows Job은 로컬 프로세스 수명과 자손 종료를 관리한다. 이 조합은 모든 host 파일·network·credential 접근을 차단하는 격리가 아니다. 역할 경계는 고정 문서·선별 입력, 별도 session·workspace와 같은 단계 동료 결과 비제공으로 운전하며 통계적 독립성이나 강한 OS 읽기 격리를 보증하지 않는다.
+현재 기본 Windows 실행은 Codex의 `danger-full-access`·승인 정책 `never`, Claude의 `bypassPermissions`로 기존 사용자 권한을 사용한다. Windows Job은 로컬 프로세스 수명과 자손 종료를 관리한다. 이 조합은 모든 host 파일·network·credential 접근을 차단하는 격리가 아니다. 역할 경계는 고정 문서·선별 입력, 별도 session·workspace와 같은 단계 동료 결과 비제공으로 운전하며 통계적 독립성이나 강한 OS 읽기 격리를 보증하지 않는다.
 
-세션 예산은 모델별 로컬 AI 실행의 동시 점유다. 실패·취소도 로컬 종료를 확인할 때까지 점유하며 종료 뒤 슬롯을 반환한다. 구 실행횟수 모드는 실패·취소도 누적 사용에 넣는다. Codex CLI가 반환한 turn usage를 보존하지만 공급자 내부 호출별 ID·예약·사용량·원격 종료를 관찰하지 않는다. 실행 수와 공급자 호출 수를 같다고 간주하지 않는다. 작업 공간의 `session-slots/<instance>/slots.sqlite3`는 내부 실행과 독립 운영의 슬롯 예약·시작·반환 기록을 소유하고 점유 수는 기록에서 계산한다. 예약은 SQLite 트랜잭션으로 직렬화한다. 소유 실행기가 사라졌으면 소유 잠금과 이름 있는 Windows Job의 종료를 대조한다. 종료를 확인할 수 없는 슬롯은 반환하지 않는다. 이 저장소는 연구 지식·판정을 갱신하는 두 번째 작성자가 아니다.
+세션 예산은 모델별 로컬 AI 실행의 동시 점유다. 실패·취소도 로컬 종료를 확인할 때까지 점유하며 종료 뒤 슬롯을 반환한다. 구 실행횟수 모드는 실패·취소도 누적 사용에 넣는다. Codex의 turn usage와 Claude의 최종 result usage를 보존하지만 공급자 내부 호출별 ID·예약·사용량·원격 종료를 관찰하지 않는다. 실행 수와 공급자 호출 수를 같다고 간주하지 않는다. 작업 공간의 `session-slots/<instance>/slots.sqlite3`는 내부 실행과 독립 운영의 슬롯 예약·시작·반환 기록을 소유하고 점유 수는 기록에서 계산한다. 예약은 SQLite 트랜잭션으로 직렬화한다. 소유 실행기가 사라졌으면 소유 잠금과 이름 있는 Windows Job의 종료를 대조한다. 종료를 확인할 수 없는 슬롯은 반환하지 않는다. 이 저장소는 연구 지식·판정을 갱신하는 두 번째 작성자가 아니다.
+
+Claude의 원본 `stream-json`은 그대로 보존한다. 수신자는 세션 시작과 단일 최종 `result`의 순서·세션 ID, 성공 여부, worker 영수증과 로컬 Job 종료를 함께 검사한다. `structured_output`을 주 응답으로 추출하고 원본 result와 대조한 뒤 역할 JSON 스키마를 검사한다. 텍스트 응답만 있거나 결과가 잘리거나 CLI가 오류로 종료되면 정상 제출로 인정하지 않는다. 진행 관찰은 Claude의 도구 요청·결과와 메시지도 반영한다. Claude가 보고한 `modelUsage`와 비용 추정은 원 실행 증거에 보존하며 동시 세션 예산이나 실제 청구액으로 해석하지 않는다.
 
 ## 검증 근거의 해석
 
@@ -760,4 +768,4 @@ GLOSSARY.md의 공통 개념과 현재 CLI의 표현 차이는 각각 다음처�
 
 스킬의 `scripts/tests/`는 회귀 검사를, `scripts/probe_codex.py`는 설치 문서·역할 스키마 검사와 실제 CLI 실행 검사를 제공한다. 설치 구조 검사 `--skill-only`와 모델을 호출하는 실제 검사는 보증 범위가 다르다. 실제 실행·중단·도구 호출은 해당 실행 증거에서, 수학적 결과는 형식 검사·동일성 판정·목표 감사에서 확인한다.
 
-한 작은 수학 사례와 합성 fixture의 통과를 일반 연구 성능이나 수학 판단의 무오류성으로 확대하지 않는다. 현재 source를 검증하려면 안정된 사본에서 관련 테스트를 실행하고, 실제 Codex·Lean·HTTP·Windows 프로세스가 필요한 검사는 model-double 단위 검사와 구별한다.
+한 작은 수학 사례와 합성 fixture의 통과를 일반 연구 성능이나 수학 판단의 무오류성으로 확대하지 않는다. 현재 source를 검증하려면 안정된 사본에서 관련 테스트를 실행하고, 실제 Codex·Claude·Lean·HTTP·Windows 프로세스가 필요한 검사는 model-double 단위 검사와 구별한다.

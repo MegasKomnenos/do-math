@@ -17,7 +17,7 @@ from typing import Any, Callable
 import uuid
 
 from .repository import ResearchRepository
-from .model_runner import CodexModelRunner
+from .model_runner import ModelRunner
 from .session_slots import SessionSlots
 from .model_policy import selection
 
@@ -284,7 +284,7 @@ def check(repository: Path, instance: str, workspace: Path, *, probe: bool = Fal
             _json(_operator_dir(workspace) / "latest-report.json", _latest_report(report, run_directory / "result.json"))
             slots.close()
             return report
-    runner = CodexModelRunner()
+    runner = ModelRunner()
     try:
         model_result = runner.run(prompt=prompt, output_schema=OPERATOR_SCHEMA, workspace=execution_workspace,
                                   evidence_dir=run_directory / "evidence", model=model,

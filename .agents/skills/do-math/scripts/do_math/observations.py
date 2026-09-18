@@ -133,6 +133,19 @@ class ObservationTracker:
                     self.tool_results += 1
                 if item.get("type") == "agent_message":
                     self.messages.append({"text": item.get("text", ""), "observed_at": utc_now()})
+            if event_type in {"assistant", "user"}:
+                message = event.get("message")
+                content = message.get("content", []) if isinstance(message, dict) else []
+                for block in content if isinstance(content, list) else []:
+                    if not isinstance(block, dict):
+                        continue
+                    if event_type == "assistant" and block.get("type") == "tool_use":
+                        self.pending_tools.add(block.get("id", "unknown"))
+                    elif event_type == "user" and block.get("type") == "tool_result":
+                        self.pending_tools.discard(block.get("tool_use_id", "unknown"))
+                        self.tool_results += 1
+                    elif event_type == "assistant" and block.get("type") == "text":
+                        self.messages.append({"text": block.get("text", ""), "observed_at": utc_now()})
         checkpoint = read_checkpoint(self.workspace)
         if checkpoint["status"] == "valid" and checkpoint["sha256"] != self.last_checkpoint:
             self.last_checkpoint = checkpoint["sha256"]

@@ -124,7 +124,7 @@ class OperatorTests(unittest.TestCase):
         with patch.object(operator, "PROMPT", contract), \
              patch.object(operator, "read_status", return_value={"status": "ready", "user_pause": None}), \
              patch.object(operator, "ResearchRepository") as repository, \
-             patch.object(operator, "CodexModelRunner", FakeRunner):
+             patch.object(operator, "ModelRunner", FakeRunner):
             repository.return_value.load.return_value = ("head", state, {})
             result = operator.check(self.repository, self.instance, self.workspace, probe=True)
         context = json.loads((Path(result["run_directory"]) / "context.json").read_text(encoding="utf-8"))
@@ -159,7 +159,7 @@ class OperatorTests(unittest.TestCase):
         with patch.object(operator, "PROMPT", contract), \
              patch.object(operator, "read_status", side_effect=[automatic, automatic, user]), \
              patch.object(operator, "ResearchRepository") as repository, \
-             patch.object(operator, "CodexModelRunner", FakeRunner), \
+             patch.object(operator, "ModelRunner", FakeRunner), \
              patch("time.monotonic", side_effect=[1, 1, 3, 3]):
             repository.return_value.load.return_value = ("head", state, {})
             result = operator.check(self.repository, self.instance, self.workspace)
@@ -214,7 +214,7 @@ class OperatorTests(unittest.TestCase):
     def test_completed_instance_is_observed_without_starting_an_operator_model(self) -> None:
         completed = {"status": "completed", "user_pause": None, "snapshot": "finished"}
         with patch.object(operator, "read_status", return_value=completed), \
-             patch.object(operator, "CodexModelRunner") as runner, \
+             patch.object(operator, "ModelRunner") as runner, \
              patch.object(operator, "ResearchRepository"):
             result = operator.check(self.repository, self.instance, self.workspace)
         self.assertEqual(result["outcome"], "completed")

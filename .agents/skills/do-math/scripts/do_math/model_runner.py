@@ -1,4 +1,4 @@
-"""Synchronous evidence-producing wrapper around the narrow Codex CLI adapter."""
+"""Evidence-producing CLI runners sharing validation and local lifetime handling."""
 from __future__ import annotations
 
 import json
@@ -11,6 +11,7 @@ from typing import Any, Callable
 import jsonschema
 
 from do_math.codex_adapter import CodexExecAdapter
+from do_math.claude_adapter import ClaudePrintAdapter
 from do_math.repository import canonical_json, _unique_pairs, _reject_constant
 
 
@@ -24,6 +25,10 @@ class CodexModelRunner:
             raise ValueError("unsupported CLI sandbox")
         self.sandbox = sandbox
         self._adapter = CodexExecAdapter(self.codex_path)
+
+    def worker_options(self) -> dict:
+        return {"codex_path": self.codex_path, "sandbox": self.sandbox,
+                "approval_policy": "never", "windows_sandbox": self.windows_sandbox}
 
     def run(self, *, prompt: str, output_schema: dict, workspace: Path, evidence_dir: Path,
             model: str, effort: str, timeout_seconds: float,
@@ -40,9 +45,8 @@ class CodexModelRunner:
         prompt_path, schema_path = evidence_dir / "input.txt", evidence_dir / "output.schema.json"
         prompt_path.write_text(prompt, encoding="utf-8")
         schema_path.write_text(json.dumps(output_schema, ensure_ascii=False, sort_keys=True), encoding="utf-8")
-        request = {"codex_path": self.codex_path, "prompt_path": str(prompt_path), "output_schema_path": str(schema_path),
-                   "cwd": str(workspace), "model": model, "effort": effort, "sandbox": self.sandbox,
-                   "approval_policy": "never", "windows_sandbox": self.windows_sandbox, "max_runtime_seconds": timeout_seconds,
+        request = {**self.worker_options(), "prompt_path": str(prompt_path), "output_schema_path": str(schema_path),
+                   "cwd": str(workspace), "model": model, "effort": effort, "max_runtime_seconds": timeout_seconds,
                    "stdout_path": str(evidence_dir / "stdout.jsonl"), "stderr_path": str(evidence_dir / "stderr.txt"),
                    "final_path": str(evidence_dir / "final.txt"), "status_path": str(evidence_dir / "worker-status.json")}
         if scholarly_server is not None:
@@ -131,3 +135,32 @@ class CodexModelRunner:
             return result
         result.update(status="completed", output=output)
         return result
+
+
+class ClaudeModelRunner(CodexModelRunner):
+    """Use Claude's request contract with the same result and callback interface."""
+
+    def __init__(self, claude_path: str | None = None) -> None:
+        self.claude_path = claude_path or shutil.which("claude") or "claude"
+        self._adapter = ClaudePrintAdapter(self.claude_path)
+
+    def worker_options(self) -> dict:
+        return {"claude_path": self.claude_path}
+
+
+class ModelRunner:
+    """Route a configured model; capacity remains keyed by its configured name."""
+
+    def __init__(self, codex_path: str | None = None, claude_path: str | None = None) -> None:
+        self.codex = CodexModelRunner(codex_path)
+        self.claude = ClaudeModelRunner(claude_path)
+
+    def run(self, *, model: str, **options) -> dict:
+        if model.startswith("claude:"):
+            name = model.removeprefix("claude:")
+            if not name.strip():
+                raise ValueError("claude: requires a Claude model name or alias")
+            return self.claude.run(model=name, **options)
+        if model.startswith("claude-"):
+            return self.claude.run(model=model, **options)
+        return self.codex.run(model=model, **options)

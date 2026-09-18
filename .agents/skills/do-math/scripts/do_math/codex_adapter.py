@@ -20,6 +20,7 @@ from typing import Any, Mapping
 
 from do_math.windows_job import WindowsJob
 from do_math.codex_worker import sanitized_environment
+from do_math import codex_worker
 
 
 @dataclass
@@ -103,11 +104,16 @@ def _parse_jsonl(raw: bytes | None) -> dict[str, Any]:
             "parse_complete": not unknown}
 
 
-class CodexExecAdapter:
-    """A small CLI adapter; it owns a Windows Job, not remote model lifetime."""
+class LocalCLIAdapter:
+    """Shared snapshots, receipts and Windows Job lifetime for CLI workers."""
+
+    worker_module = codex_worker
+    executable_key = "codex_path"
+    parse_output = staticmethod(_parse_jsonl)
 
     def __init__(self, codex_path: str, *, describe_timeout: float = 10.0) -> None:
         self.codex_path = codex_path
+        self.cli_path = codex_path
         self.describe_timeout = describe_timeout
 
     def describe(self) -> dict[str, Any]:
@@ -135,11 +141,10 @@ class CodexExecAdapter:
                             "per_execution_read_isolation", "cross_profile_noninterference"]}
 
     def start(self, request_path: Path, *, cwd: Path, env: Mapping[str, str]) -> CodexExecution:
-        from do_math.codex_worker import load_request
-        request = load_request(request_path)
+        request = self.worker_module.load_request(request_path)
         prompt_path, stdout_path, stderr_path, final_path, status_path = _paths(request)
-        if Path(request["codex_path"]).resolve() != Path(self.codex_path).resolve():
-            raise ValueError("request codex executable differs from adapter executable")
+        if Path(request[self.executable_key]).resolve() != Path(self.cli_path).resolve():
+            raise ValueError("request CLI executable differs from adapter executable")
         paths = [request_path, prompt_path, stdout_path, stderr_path, final_path, status_path]
         if "output_schema_path" in request:
             paths.append(Path(request["output_schema_path"]))
@@ -161,7 +166,7 @@ class CodexExecAdapter:
         if any(path.resolve().is_relative_to(workspace) for path in (stdout_path, stderr_path, final_path, status_path)):
             raise ValueError("worker outputs and status must be outside the model workspace")
         request_raw, prompt_raw = request_path.read_bytes(), prompt_path.read_bytes()
-        stage = Path(tempfile.mkdtemp(prefix="do-math-codex-", dir=workspace.parent))
+        stage = Path(tempfile.mkdtemp(prefix="do-math-cli-", dir=workspace.parent))
         if filesystem is not None and any(stage.resolve().is_relative_to(root) for root in write_roots):
             raise RuntimeError("snapshot directory would be writable by the model")
         snapshot_prompt = stage / "prompt.bin"; snapshot_prompt.write_bytes(prompt_raw)
@@ -173,9 +178,9 @@ class CodexExecAdapter:
         worker_request = dict(request); worker_request["prompt_path"] = str(snapshot_prompt)
         if snapshot_schema is not None: worker_request["output_schema_path"] = str(snapshot_schema)
         snapshot_request = stage / "request.json"; snapshot_request.write_text(json.dumps(worker_request, ensure_ascii=False, sort_keys=True, separators=(",", ":")), encoding="utf-8")
-        worker = Path(__file__).with_name("codex_worker.py")
+        worker = Path(self.worker_module.__file__)
         worker_argv = (sys.executable, str(worker), str(snapshot_request))
-        job = WindowsJob(worker_argv, cwd=cwd, env=sanitized_environment(env), name="Local\\DoMath-" + uuid.uuid4().hex)
+        job = WindowsJob(worker_argv, cwd=cwd, env=self.worker_module.sanitized_environment(env), name="Local\\DoMath-" + uuid.uuid4().hex)
         return CodexExecution(snapshot_request, snapshot_prompt, _sha256(snapshot_request.read_bytes()), _sha256(prompt_raw), worker_argv,
                               stdout_path, stderr_path, final_path, status_path, job, stage, schema_sha256)
 
@@ -192,7 +197,7 @@ class CodexExecAdapter:
         raw = _read(execution.stdout_path)
         return {"job": {"pid": execution.job.pid, "creation_filetime": execution.job.creation_filetime,
                          "active_processes": job.active_processes, "process_ids": job.process_ids,
-                         "root_signaled": job.root_signaled}, "jsonl": _parse_jsonl(raw),
+                         "root_signaled": job.root_signaled}, "jsonl": self.parse_output(raw),
                 "worker_status_present": execution.status_path.exists(), "stop_requested": execution.stop_requested}
 
     def stop(self, execution: CodexExecution) -> dict[str, Any]:
@@ -232,7 +237,7 @@ class CodexExecAdapter:
                 status = json.loads(status_raw)
             except (UnicodeDecodeError, json.JSONDecodeError):
                 status = {"state": "invalid_status_json"}
-        parsed = _parse_jsonl(stdout)
+        parsed = self.parse_output(stdout)
         reasons = []
         if request_raw is None or _sha256(request_raw) != execution.request_sha256: reasons.append("source_request_changed")
         if prompt_raw is None or _sha256(prompt_raw) != execution.prompt_sha256: reasons.append("source_prompt_changed")
@@ -247,6 +252,7 @@ class CodexExecAdapter:
         if not parsed["turn_completed"]: reasons.append("turn_completed_missing")
         if not parsed["parse_complete"]: reasons.append("jsonl_parse_incomplete")
         if final is None: reasons.append("final_message_missing")
+        reasons.extend(self.validate_final(parsed, final))
         if not barrier: reasons.append("termination_barrier_unconfirmed")
         return {"source_request": _artifact(request_raw), "source_prompt": _artifact(prompt_raw),
                 "stdout": _artifact(stdout), "stderr": _artifact(stderr), "final": _artifact(final),
@@ -258,6 +264,13 @@ class CodexExecAdapter:
                 "reasons": reasons, "termination_barrier": {"active_processes": job_state.active_processes,
                 "process_ids": job_state.process_ids, "root_signaled": job_state.root_signaled, "confirmed": barrier}, "provider_operation_ids": "unknown", "remote_termination": "unknown",
                 "provider_stop_reason": "unknown"}
+
+    def validate_final(self, parsed: dict, final: bytes | None) -> list[str]:
+        return []
+
+
+class CodexExecAdapter(LocalCLIAdapter):
+    """Codex events and command surface with the shared local Job lifecycle."""
 
 
 def _artifact(raw: bytes | None) -> dict[str, Any]:

@@ -258,7 +258,7 @@ class OperatorProducerTests(unittest.TestCase):
             root = Path(directory)
             with patch.object(operator, "read_status", return_value={"status": "ready", "snapshot": "fixed", "user_pause": None}), \
                  patch.object(operator, "ResearchRepository") as repository, \
-                 patch.object(operator, "CodexModelRunner", Runner):
+                 patch.object(operator, "ModelRunner", Runner):
                 repository.return_value.load.return_value = ("fixed", {"config": {"scholarly_enabled": False}}, {})
                 result = operator.check(root, "instance", root, probe=True)
             self.assertEqual(result["outcome"], "completed", result)

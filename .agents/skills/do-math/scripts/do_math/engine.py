@@ -29,7 +29,7 @@ from .observations import ObservationTracker, CHECKPOINT_SCHEMA, recovered_check
 from .review_engine import ReviewEngineMixin
 from .lifecycle_engine import LifecycleEngineMixin
 from .academic_engine import AcademicEngineMixin
-from .model_runner import CodexModelRunner
+from .model_runner import ModelRunner
 from .repository import ResearchRepository, canonical_json, new_id
 from .state_checks import state_errors
 from .git_store import GitStateStoreError
@@ -319,7 +319,7 @@ def read_record(repository: Path, instance_id: str, record_id: str, *, snapshot:
 class ResearchEngine(SchedulerMixin, ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixin):
     def __init__(self, repository: Path, instance_id: str, *, runner: Any = None, formal_verifier: Any = None):
         self.store = ResearchRepository(repository, instance_id)
-        self.runner = runner or CodexModelRunner()
+        self.runner = runner or ModelRunner()
         self.formal_verifier = formal_verifier or verify_lean
         self.head, self.instance, self.runtime = self.store.load()
         self._saved_state = self._state_signature()
