@@ -1,0 +1,1271 @@
+{
+  "checked_at_utc": "2026-09-18T15:05:11.885584+00:00",
+  "research_snapshot": "25ead076824102e104f2a12989e6e5143e6e90b7",
+  "user_pause": {
+    "created_at": "2026-09-18T11:19:17.602925+00:00",
+    "reason": "User requested scheduled operator HOLD 1243d383db4c4a4fb3f11441e9c6df5c",
+    "request_id": "UC-01M2T3W0B28YAEA6PZHP5J3DVM"
+  },
+  "canonical_inventory": [
+    {
+      "path": ".claude/skills/do-math/GLOSSARY.md",
+      "sha256": "324374f094adcbe5b12e074a3f8db637fc6ebc17357a4f0cb701cf39baee9486",
+      "lines": 665,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 220
+        },
+        {
+          "start": 221,
+          "end": 445
+        },
+        {
+          "start": 446,
+          "end": 665
+        },
+        {
+          "start": 653,
+          "end": 665
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/README.md",
+      "sha256": "45e6f3f73baf05b275abe88b8a5bfb638653cc4af45190597453283fa2cc4c02",
+      "lines": 363,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 115
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/references/CLI-실행-계약.md",
+      "sha256": "3d1284126a4104a09015ea5812cbad91bad1e8a6725fe31636bdb32fa836700a",
+      "lines": 771,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 260
+        },
+        {
+          "start": 261,
+          "end": 530
+        },
+        {
+          "start": 531,
+          "end": 771
+        },
+        {
+          "start": 700,
+          "end": 721
+        },
+        {
+          "start": 706,
+          "end": 715
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/references/공통-실행.md",
+      "sha256": "d0b5d033de500409087fdcc3c7ca48c44d9711acc59c6c0944bf966acfd8d51b",
+      "lines": 205,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 110
+        },
+        {
+          "start": 111,
+          "end": 205
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/references/모델과-실행예산.md",
+      "sha256": "972e43537d5bbedf63553759941d9fc0fd7714725a791fd64cbf0325f48b23f5",
+      "lines": 109,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 109
+        },
+        {
+          "start": 1,
+          "end": 13
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/references/지식-저작과-재사용.md",
+      "sha256": "0ae8bc5ec4d3da122e845baa8bf20299657ac0ab970cb28675e9002309006900",
+      "lines": 91,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 91
+        },
+        {
+          "start": 5,
+          "end": 21
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/references/학술자료-활용.md",
+      "sha256": "503dfa0e0963f679a57903996b3d2c9b55e87d2558da159f3d83759c4c8beb44",
+      "lines": 47,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 47
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/__init__.py",
+      "sha256": "a1c57a32d3d32541a69ca3b870252dd232d81960119ff051d71e502d0a8e732a",
+      "lines": 1,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/academic.py",
+      "sha256": "87ba81d3b934c549a12683ff783280ddc0fc574c440d23b7349246992038f606",
+      "lines": 143,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/academic_engine.py",
+      "sha256": "b3430efaf02c13a7c43c5121bbea3fc6453f80d1f582f58c687e082d022e8ba7",
+      "lines": 115,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 115
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/budget.py",
+      "sha256": "4d7824d1499520dbeec2965ea6312ae6271d362e71de823de30c6b5a68019332",
+      "lines": 412,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/claude_adapter.py",
+      "sha256": "0bb49065ebc45d5edafe60d4f5f038b2a8da1911eb03d198f3ec1e62c3d28807",
+      "lines": 103,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 103
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/claude_worker.py",
+      "sha256": "f9d1f74edfe4d954073693699acff6d13af006409fee5d8b96a3218a21ea526b",
+      "lines": 117,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 117
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/cli.py",
+      "sha256": "8063927f0f8ec64454be645248cb88fc8e396b9340ed953f1bcbfcf57e60a3ce",
+      "lines": 403,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 140
+        },
+        {
+          "start": 250,
+          "end": 403
+        },
+        {
+          "start": 141,
+          "end": 249
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/codex_adapter.py",
+      "sha256": "cb426d6a006eba374e12bef39a6fe14b933f9ddff9ef7815adfa0c3623288879",
+      "lines": 278,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 278
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/codex_worker.py",
+      "sha256": "d61d0a1450cc0237c9f8369eae94353c56ecf346912703d0376e0d56f53398aa",
+      "lines": 188,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/context_store.py",
+      "sha256": "44a7d127eb000ec9f0c0edd3b892b1e52fecbf78f1a4d5918abbf90ca491ad0a",
+      "lines": 351,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 225
+        },
+        {
+          "start": 226,
+          "end": 351
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/contracts.py",
+      "sha256": "e00a9a92c017c084dc877e452155e42514531f566ee321e4a7c78e30f032292a",
+      "lines": 160,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 160
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/engine.py",
+      "sha256": "3f3fcd8e1a08daab297b9fcdf29e7648bcc44513ddc044d0f33312c2bd5cc702",
+      "lines": 2447,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 360
+        },
+        {
+          "start": 361,
+          "end": 700
+        },
+        {
+          "start": 701,
+          "end": 1030
+        },
+        {
+          "start": 1031,
+          "end": 1375
+        },
+        {
+          "start": 1373,
+          "end": 1785
+        },
+        {
+          "start": 1786,
+          "end": 2150
+        },
+        {
+          "start": 2151,
+          "end": 2447
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/external.py",
+      "sha256": "d43181f25dce55039cd0f845793862775ed57913fa90ebaa9c4fb7c0df5cc1f6",
+      "lines": 91,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/formal.py",
+      "sha256": "87d08fe703d19fb4b7df5d0535bec8614e59f382a2ebeed1cbafc9ef97cffc42",
+      "lines": 126,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 126
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/formal_preview.py",
+      "sha256": "429df9fadd8c04eef22186c458907c532a56b9765d1dbaacdc2d3e5f2590dc39",
+      "lines": 40,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 40
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/git_store.py",
+      "sha256": "942eadfa1cf4c56c91b6c5100bd8803af4dc458d570b201b79eff9cf9db29d85",
+      "lines": 384,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/governance.py",
+      "sha256": "c8b6fa87354776c4d8100000fdc06c8fcd17963d2178c6617cfe73ac40dc0dc0",
+      "lines": 271,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 271
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/input_basis.py",
+      "sha256": "90f73fb5be716071f7eddc978ebcff115718c4b0663a4f60c29223741b4d722a",
+      "lines": 19,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 19
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/knowledge.py",
+      "sha256": "be7e232d67e1a6edcc216dc297d846dab6806592b4e6674306499aa8290e93c0",
+      "lines": 438,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 438
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/knowledge_io.py",
+      "sha256": "aa65c6efa4f58724ab4945a572275d4d27c9a0b4e6cddfb3a4b12b3a0ad4aa4b",
+      "lines": 292,
+      "logged_ranges": [
+        {
+          "start": 139,
+          "end": 240
+        },
+        {
+          "start": 1,
+          "end": 80
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/lifecycle_engine.py",
+      "sha256": "fa7fc2d2d91746adde74eb6112ae26e259d579cc5609ad8207a9cbd83a2ad217",
+      "lines": 696,
+      "logged_ranges": [
+        {
+          "start": 350,
+          "end": 540
+        },
+        {
+          "start": 1,
+          "end": 349
+        },
+        {
+          "start": 540,
+          "end": 696
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/model_policy.py",
+      "sha256": "1e94b50817aac651a6c28331e10bbe7b84b41386316d9acce3a772895c176aec",
+      "lines": 116,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 116
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/model_runner.py",
+      "sha256": "e9f52d0a8957d8129e10595b6f90efb5dc4fab3225843ad5360fba45b44e21f1",
+      "lines": 170,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 170
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/observations.py",
+      "sha256": "9ec297d2ae81f3a85d7a6fa60881171e08d128ec6e2e0a2a84a4e0a0c8ebaafd",
+      "lines": 209,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 209
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/parallel.py",
+      "sha256": "4480a430a0c00768c3f8ab0bae9713152b5b78fb9eb11f2ce62778d78ceb8016",
+      "lines": 96,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 96
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/planning.py",
+      "sha256": "4070e65acc7e381a8b1fa14dac9e66cef7af43d2a16023c790834f950d5f90b8",
+      "lines": 296,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 296
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/preflight.py",
+      "sha256": "001a320ab387470fdc1196780febf3d93601f0acf7ae749bf1bbbbad83ebec37",
+      "lines": 48,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 48
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/repository.py",
+      "sha256": "914db78aa910cc98308cfbd1a6c1e1c510876f8ce79bb801d46bef3b9bd1cce6",
+      "lines": 338,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/review_cycle.py",
+      "sha256": "ede4bea58d71d08edf59534b60c8a1797aef6dbe56b77efa70073eeff1a8b67d",
+      "lines": 613,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 170
+        },
+        {
+          "start": 170,
+          "end": 295
+        },
+        {
+          "start": 421,
+          "end": 613
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/review_engine.py",
+      "sha256": "988cdcc681183b01736d45047191de044c9632ad307bda84a274f2dcd308bdac",
+      "lines": 544,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 300
+        },
+        {
+          "start": 301,
+          "end": 544
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/scheduled_operator.py",
+      "sha256": "818499ae0aac479da314ee8ee4dceadd4e7c8e96b66847770aa7c5bf66efff64",
+      "lines": 308,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 308
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/scheduler.py",
+      "sha256": "96f0487e799e429cd71eef307aafdc9980d5a29f863504a3127dac07fe31f20b",
+      "lines": 302,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 302
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/scholarly.py",
+      "sha256": "ce8b3bec1ae073f066c30bb1abf211a3b26e3fe966e22f32ae55db06e8fee613",
+      "lines": 91,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/session_slots.py",
+      "sha256": "01117152bc5c29b9291b80e836235288082e427f528935a6a381ed126b6b98c2",
+      "lines": 150,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 150
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/state_checks.py",
+      "sha256": "7adc35d983b46d1fced02a3ca2acc4245ee26f698802c13e83e106536d55fd33",
+      "lines": 246,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 120
+        },
+        {
+          "start": 117,
+          "end": 246
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/submission.py",
+      "sha256": "be86da6300e2b6487dad5b9e10d5700e48f7b35766f682cf882544fb7a0cb209",
+      "lines": 481,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 270
+        },
+        {
+          "start": 271,
+          "end": 481
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/task_scope.py",
+      "sha256": "2fb64ead7c355b1138535d92b123b4a47631b4d7fbd0e0d466bb018c45b3cdc2",
+      "lines": 91,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 91
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/windows_job.py",
+      "sha256": "f705bc556e87f6b6488f9cde7af2ccdf99355b22fe5dbd8cc07948f087812b75",
+      "lines": 550,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math.py",
+      "sha256": "24403f801deb26dcad72b4fc327109223eab76fb9d373aa1f3ddd27c0510b604",
+      "lines": 7,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/operator_schedule.ps1",
+      "sha256": "9f38f9fa138dcd3e20730b3db622c16c6ac480fb783eab19c66f26b2e02dbe0a",
+      "lines": 57,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 57
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/probe_codex.py",
+      "sha256": "78e30720a102a1689c5d6818151c24677877457953630591a7d53421d008009a",
+      "lines": 189,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 189
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/probe_native_isolation.py",
+      "sha256": "f59a60beb370d57def49dea808496352f5a65e61b1ed2b5b5c6b7bf96528cf21",
+      "lines": 339,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_academic.py",
+      "sha256": "a1ace01d4add29fe4f8f6330fab4b42195fc845f0f36c70629b013db17925662",
+      "lines": 33,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_academic_engine.py",
+      "sha256": "00a191917db221f7770c9e513fb55663e1bc8a38541b2102ee629148228c6506",
+      "lines": 286,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_background_processes.py",
+      "sha256": "54892e420352586fd1e7e47d1101c4cafcae242e3efad42aa6a9a21adcbb43cc",
+      "lines": 147,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_budget.py",
+      "sha256": "4be1a5bcab49144105b51a420cf56e236dc675e2d1bd43e162e972e73faf83ba",
+      "lines": 173,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_claude_adapter.py",
+      "sha256": "53535b08d1a4a778b34babe0af8996ab6b5b5c481e68afb4c12da715fb7471a3",
+      "lines": 211,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 211
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_cli.py",
+      "sha256": "ba135353e6a03a2c821bdbefa62a2f7b197182d16c61064f1f64cd51dcaf5f8f",
+      "lines": 150,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_cli_advanced.py",
+      "sha256": "e3920e8af027f67c71cf893cc8ce4ff683532d12ceafa9074b8ddbd27912536f",
+      "lines": 128,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_codex_adapter.py",
+      "sha256": "2ba6b0f3e44a6b2e61d9b417343352d6485c203c47d66cc4da3f9d439d248bce",
+      "lines": 196,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_context_store.py",
+      "sha256": "f24979faf410c1bfe29887bd5b0c7676dbf98a42427c08b50187e7a20ab5ff2a",
+      "lines": 62,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_contracts.py",
+      "sha256": "3cce3d826426b96b207e0200e4050f1036aad0127bafe17a57396714d0f40f61",
+      "lines": 63,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_controls.py",
+      "sha256": "9bd457476613462c9c32e94697ef6497443e837e8c02ad70ecec3a0127190bfe",
+      "lines": 84,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_currentness_recovery.py",
+      "sha256": "861d823d756b1509a418e14f42eeddb73838cddebc0c5ee52b2b6c12fecdc076",
+      "lines": 194,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 194
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_document_followup.py",
+      "sha256": "cec920d4ca941341ad67313a6634680d8b0a954a010dd4798adc106442b43bb7",
+      "lines": 69,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_efficiency.py",
+      "sha256": "1e66b97f96b0f7d4d08ff2b768759822b1d7c02799d74a1ceba5d012f7e5861a",
+      "lines": 263,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_engine.py",
+      "sha256": "74d500906cbdb8eaf7501e95b38864d4f88a02af2408a83d4d1059ec782557df",
+      "lines": 246,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_external.py",
+      "sha256": "7807fdf7fca0ed937cbffdfc32a77bd5e4740fca52ac2b455fe124829524dd6f",
+      "lines": 39,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_feature2_migration.py",
+      "sha256": "37820a68e16cf5d7409c8a82aaa6d909bb0228df8390649c626711f32fb4c7a3",
+      "lines": 100,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_formal.py",
+      "sha256": "8644026d026a1f65e745472942551051fbbcebb31411e26f8beeaa9ca3e73ecb",
+      "lines": 35,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 35
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_git_store.py",
+      "sha256": "f77d0fea4c6859f6d2ccb60489e500b4415d4ad24795bf3518175559b6e4c762",
+      "lines": 234,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_governance.py",
+      "sha256": "37f5b633de37f3c60c812fdb135063cd5b2d3fff50364f3035ce05569712f4ef",
+      "lines": 29,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_knowledge.py",
+      "sha256": "7be4f3f264a687176eab2b54957f736242e581f6e8be6be9dccdd16faba932b0",
+      "lines": 107,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_knowledge_import_engine.py",
+      "sha256": "572e1a0e9b7c794320cc53b98e7784e3cd6077d118430a0265bc506495f053eb",
+      "lines": 53,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_knowledge_io.py",
+      "sha256": "bbca0d1950609b0c9755bf31a8f0c2cd2c25d9c906da770d60a27cf1190ec1b6",
+      "lines": 49,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_lean_preview.py",
+      "sha256": "0b433ed7a7679ce72e3db5f10b84475dd10e5acbe3fda80f88efd2cd86963a4f",
+      "lines": 49,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 49
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_lifecycle_engine.py",
+      "sha256": "508ad7c21fd701417ab22fed37c0e277f54c50e50596b35f934b1eb64b058699",
+      "lines": 637,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_model_assessment_flow.py",
+      "sha256": "ebf488b3c9259d50202e3dad5a09718d8bd18314f57ea21b6519162a474bebd7",
+      "lines": 381,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_model_runner.py",
+      "sha256": "356034882c0dbbeea6e3f44139c1bc8ce3389b8e73a761d6bb0288e23c434304",
+      "lines": 59,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_native_probe.py",
+      "sha256": "03a0ad3a75920f84cb698e9f02aa1a7f078fbff7c206d1b5555bd9ff3c560d65",
+      "lines": 29,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_observations.py",
+      "sha256": "cbcd762f882134bd5ade839c5d2d0dc5eae5117461f91ee36dd82785c3cca3cb",
+      "lines": 32,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 32
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_operator.py",
+      "sha256": "49097575ceff4ade710f5bd44b68c8d18a77d9d702f9c544950da1e757bbc311",
+      "lines": 234,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_planning.py",
+      "sha256": "8a7d76504d905775895da1a11fdb5be4c848e51941f9006e78c0019336c55446",
+      "lines": 65,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_preflight.py",
+      "sha256": "c6d09976bbf65ed35dbfd8d699415eb5cbc8ea91e938e0b5ea16f5fa85748905",
+      "lines": 60,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_probe_codex.py",
+      "sha256": "50e9ec30112a6f34633ccd2057397c7639f300d235dc72aeddfbd82202c5526c",
+      "lines": 28,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_purpose_engine.py",
+      "sha256": "22063d891e5032e6a87d40cf4f03ca7d1f900722c62de8651b53d4ad5daef0bd",
+      "lines": 544,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_query_records.py",
+      "sha256": "fbd25fa9ee39000f7542c8edd19df131fb83f80d23a19c1e821ada5ed7bb7924",
+      "lines": 92,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_reading_map.py",
+      "sha256": "ac422533755562781697fb8c54ae92d36b7c442bb1e1b63ecebef9dc08210f0a",
+      "lines": 81,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_repository.py",
+      "sha256": "9fabe8166da4c3e8b3432cb26e06b77e263594e20f8b0cefcd7a7280b1fa35d7",
+      "lines": 165,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_research_recovery.py",
+      "sha256": "7ed9f78b4f682c7bb55c7218993412b72ec0b2c45a97675fef7ced618f2373e7",
+      "lines": 324,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 180
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_review_cycle.py",
+      "sha256": "bd7aa0267db78c47aad94fcf2f35154eb015f95750ffe9192f642fcd961ca645",
+      "lines": 276,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_review_engine.py",
+      "sha256": "4276b57eb489480eda5c924e3d59975a042172142226f94f45cd7c25c9578938",
+      "lines": 283,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_review_research.py",
+      "sha256": "31f58a39eac600984933c71f606384a26a624166a4c759b402340c7f9bd8f7df",
+      "lines": 349,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_scholarly.py",
+      "sha256": "9f5f2f51208ce6ee35f08cc3569822804e7289cf116ab0863f628991b66751d8",
+      "lines": 92,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_session_scheduler.py",
+      "sha256": "2427fdf4e99080479770c6764075e04a352c5e27521964aa207939150c3e30ba",
+      "lines": 475,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 260
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_standalone.py",
+      "sha256": "6d3c8d00496751bd352c8c3389523fe2f92d1bc833e2c48d535ca3aae6c7d4b8",
+      "lines": 46,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_state_checks.py",
+      "sha256": "cac1ee4e6252ceca1d545c638a9f9554c0bf421067fa15038651e78a036df6ac",
+      "lines": 166,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_submission_boundaries.py",
+      "sha256": "3d75e2c49d399e6dc517e45c770d628ca3dbf78c6942c9f660cad73d89a105b8",
+      "lines": 302,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_submission_tools.py",
+      "sha256": "526c17c35314b76908f67837e2323b7280836f26f3b0f0cfdd5ee13c2c7a61b8",
+      "lines": 464,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_task_scope.py",
+      "sha256": "1b715755621fb51469d893fbf87f8ab22aa81a0793c009a542b16b4d74a3c54e",
+      "lines": 148,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_windows_job.py",
+      "sha256": "8718cbe18a82eb61e8c3723207d921d5cb8e1c0a036139a4df43eb6ab5c92312",
+      "lines": 269,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/SKILL.md",
+      "sha256": "efb7d95aa5a6ffc607ef53f69cbe240e31b5991e5fe893a90a104e355f1ccf44",
+      "lines": 116,
+      "logged_ranges": []
+    },
+    {
+      "path": ".claude/skills/do-math/계약/독립-운영.md",
+      "sha256": "2db5d163502d3cc80849e8c6bf421ab0e7d767c31bd695ef5c8083ccaa3ac459",
+      "lines": 78,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 78
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/계약/동일성-검토.md",
+      "sha256": "acbb20f635c1f1a008a599aeefa6c5a1df747ac067bc6234398f31af44bf54cc",
+      "lines": 91,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 91
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/계약/목표-감사.md",
+      "sha256": "d1752dbc7bb76670ff9c93fe8b1e0f9be1292f3a4acf57a8292e559a0a321397",
+      "lines": 49,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 49
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/계약/보충-조사.md",
+      "sha256": "ba82daca685826ae9aee9cc0268e2ff336c8053ddccf9b1169674c1b80112e3b",
+      "lines": 61,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 61
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/계약/연구-계획.md",
+      "sha256": "a30a15dd467771017eb5f075a94e79ddb353251d2c6add6ff677a0e78199e976",
+      "lines": 122,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 122
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/계약/연구-수행.md",
+      "sha256": "3e5267be18f71d3be3de1bfdaab36b221ca553fe513e9b16e46d6d06a4008a8d",
+      "lines": 144,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 144
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/계약/운영-점검.md",
+      "sha256": "c5765c32927e1399a2fd9c21d3964dbae60c62321bb2e7eab46bccd47a650809",
+      "lines": 139,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 139
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/계약/유지보수.md",
+      "sha256": "6f6a13499073d663bf3db1448b2f049e3bae83e3a980518a1d06dff994d384b9",
+      "lines": 118,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 118
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/계약/의도-해석.md",
+      "sha256": "80f91946a43bd62aad0ebc952094e558856b946dc3c5bde6cb88330a4765f5b4",
+      "lines": 118,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 118
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/계약/작업-계약-검토.md",
+      "sha256": "ff971c5576f5edeb300012971f52d4979d6458b00f17a87f8b02bc4c58cccc69",
+      "lines": 135,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 135
+        },
+        {
+          "start": 1,
+          "end": 112
+        }
+      ]
+    },
+    {
+      "path": ".claude/skills/do-math/계약/후보-준비.md",
+      "sha256": "9e0913cb409b166b07624c44e954dbe22ee60f82e6e304b0fdd7f85e3716ae46",
+      "lines": 162,
+      "logged_ranges": [
+        {
+          "start": 1,
+          "end": 162
+        },
+        {
+          "start": 148,
+          "end": 162
+        }
+      ]
+    }
+  ],
+  "claude_three_segments": {
+    "path": "C:\\math\\.skill-workspace\\parking-unimodality-opus5-20260918\\work-v2\\runs\\EX-01M2S87R0XVQ2RWBYWVHCMYDV9\\evidence\\stdout.jsonl",
+    "sha256": "5e7a0fc67e19a5a78d4d78dd2db897e44eecb44cc284ee72135862914239d8fc",
+    "results": [
+      {
+        "line": 122,
+        "session_id": "5d043aba-cf58-452d-9f10-69c6cdd58a6e",
+        "origin": null,
+        "num_turns": 17,
+        "is_error": false,
+        "usage": {
+          "input_tokens": 34,
+          "cache_creation_input_tokens": 177564,
+          "cache_read_input_tokens": 2819265,
+          "output_tokens": 19164,
+          "output_tokens_details": {
+            "thinking_tokens": 4854
+          },
+          "server_tool_use": {
+            "web_search_requests": 0,
+            "web_fetch_requests": 0
+          },
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 177564,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "inference_geo": "not_available",
+          "iterations": [
+            {
+              "input_tokens": 4,
+              "output_tokens": 5433,
+              "cache_read_input_tokens": 198697,
+              "cache_creation_input_tokens": 54,
+              "cache_creation": {
+                "ephemeral_5m_input_tokens": 0,
+                "ephemeral_1h_input_tokens": 54
+              },
+              "type": "message"
+            }
+          ],
+          "speed": "standard"
+        },
+        "modelUsage": {
+          "claude-opus-5": {
+            "inputTokens": 144846,
+            "outputTokens": 19203,
+            "cacheReadInputTokens": 2819265,
+            "cacheCreationInputTokens": 177564,
+            "webSearchRequests": 0,
+            "costUSD": 4.3895775,
+            "contextWindow": 1000000,
+            "maxOutputTokens": 64000,
+            "thinkingTokens": 4854,
+            "canonicalModel": "claude-opus-5",
+            "provider": "firstParty",
+            "costBasis": "list"
+          }
+        },
+        "total_cost_usd": 4.3895775,
+        "structured_output_present": true,
+        "summary": "부분 결과를 제출한다. S2 정리 3.7 누적 점화식을 Python 정확 정수로 구현했고(code/recurrence.py), 다음 세 가지를 확인했다. 첫째, S1 표 1의 45개 값을 모두 재현했다. 둘째, n≤7에서 선호 목록 직접 전수 순회(n=7은 823,543개 목록)와 일치했다. 셋째, n≤9에서 S1 식 (4) 순열 곱과 일치했다. 세 대조의 결과는 25개 검사로 data/verify_small.json에 있다. 예비 정확 계산에서는 n≤30의 모든 행이 부호 패턴 '+…+−…−'로 단봉이었다. 표본 행 n=80, 100, 120, 150, 200에서는 로그오목성(b_k²≥b_{k−1}b_{k+1})이 정확 정수 비교로 실패했고, 실패 위치는 k≈n/2 부근의 증가 구간이다. 하지만 N=500(데이터 저장은 N=300까지)의 전행 분석 작업(code/analyze.py)은 제출 시점까지 끝나지 않았다. 따라서 N≥150의 전행 단봉성 판정표, 봉우리 위치 표, 데이터 해시, 최종 보고서는 아직 없다. 단봉성은 n≤30 전행에서만 판정했고, 더 큰 n으로 일반화하지 않는다."
+      },
+      {
+        "line": 124,
+        "session_id": "5d043aba-cf58-452d-9f10-69c6cdd58a6e",
+        "origin": {
+          "kind": "task-notification"
+        },
+        "num_turns": 0,
+        "is_error": false,
+        "usage": {
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "input_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "output_tokens": 0,
+          "server_tool_use": {
+            "web_search_requests": 0,
+            "web_fetch_requests": 0
+          },
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 0,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "inference_geo": "",
+          "iterations": [],
+          "speed": "standard"
+        },
+        "modelUsage": {
+          "claude-opus-5": {
+            "inputTokens": 144846,
+            "outputTokens": 19203,
+            "cacheReadInputTokens": 2819265,
+            "cacheCreationInputTokens": 177564,
+            "webSearchRequests": 0,
+            "costUSD": 4.3895775,
+            "contextWindow": 1000000,
+            "maxOutputTokens": 64000,
+            "thinkingTokens": 4854,
+            "canonicalModel": "claude-opus-5",
+            "provider": "firstParty",
+            "costBasis": "list"
+          }
+        },
+        "total_cost_usd": 4.3895775,
+        "structured_output_present": false,
+        "summary": null
+      },
+      {
+        "line": 143,
+        "session_id": "5d043aba-cf58-452d-9f10-69c6cdd58a6e",
+        "origin": {
+          "kind": "task-notification"
+        },
+        "num_turns": 5,
+        "is_error": false,
+        "usage": {
+          "input_tokens": 12,
+          "cache_creation_input_tokens": 16304,
+          "cache_read_input_tokens": 838203,
+          "output_tokens": 5925,
+          "output_tokens_details": {
+            "thinking_tokens": 279
+          },
+          "server_tool_use": {
+            "web_search_requests": 0,
+            "web_fetch_requests": 0
+          },
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 16304,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "inference_geo": "not_available",
+          "iterations": [
+            {
+              "input_tokens": 4,
+              "output_tokens": 3911,
+              "cache_read_input_tokens": 214249,
+              "cache_creation_input_tokens": 806,
+              "cache_creation": {
+                "ephemeral_5m_input_tokens": 0,
+                "ephemeral_1h_input_tokens": 806
+              },
+              "type": "message"
+            }
+          ],
+          "speed": "standard"
+        },
+        "modelUsage": {
+          "claude-opus-5": {
+            "inputTokens": 144858,
+            "outputTokens": 25128,
+            "cacheReadInputTokens": 3657468,
+            "cacheCreationInputTokens": 193868,
+            "webSearchRequests": 0,
+            "costUSD": 5.119903999999999,
+            "contextWindow": 1000000,
+            "maxOutputTokens": 64000,
+            "thinkingTokens": 5133,
+            "canonicalModel": "claude-opus-5",
+            "provider": "firstParty",
+            "costBasis": "list"
+          }
+        },
+        "total_cost_usd": 5.119903999999999,
+        "structured_output_present": true,
+        "summary": "Partial result. I implemented the S2 Theorem 3.7 cumulative recurrence with exact integers (code/recurrence.py) and checked it three ways: it reproduces all 45 values of S1 Table 1, it matches direct enumeration of every preference list for n≤7 (823,543 lists at n=7), and it matches the S1 formula (4) permutation products for n≤9 (25 checks, data/verify_small.json). In the preliminary exact computation, every row with n≤30 is unimodal. In the sampled rows n=80, 100, 120, 150 and 200, log-concavity fails around k≈n/2, before the peak. The full-row analysis up to N=500 (code/analyze.py) failed: after 156.8 s of recurrence computation, gzip.open(mtime=0) raised a TypeError, so no data files or tables were produced. I have fixed the code but not rerun it. The criterion-3 table of all rows for N≥150 therefore does not exist yet. Unimodality has been checked only for n≤30."
+      }
+    ]
+  },
+  "previous_evidence": [
+    "currentness-reassessment.json",
+    "sufficiency-evidence.json",
+    "evidence.json"
+  ],
+  "scope": "Source inspection and concrete design. No new implementation, no research restart, no claim of post-change product test success.",
+  "read_log_limits": "Ranges record source emitted by the task helper; they are not proof of semantic understanding or of no tool truncation. Truncated relevant passages were retrieved separately. SKILL.md and README portions were also read directly before helper logging.",
+  "test_scope": "Existing regression sources and names were inspected for the future test matrix. The full product suite was not rerun for this document-only task.",
+  "baseline": {
+    "head": "ecde6e142402a6d812692b250bf11883328f0575",
+    "existing_repair_diff": "implementation-baseline.patch",
+    "patch_sha256": "47a92b41d190ba6b9443c1339958709bb61a63bd3280a7779cfee5fc35e64d08",
+    "scope": "Pre-existing operator repair, canonical files only. Preserved for reconstruction; not implemented or staged as code by this planning task."
+  },
+  "schedules": {
+    "checked_at_utc": "2026-09-18T15:01:08.203577+00:00",
+    "tasks": [
+      {
+        "TaskName": "DoMath-Engine-21614d08d967",
+        "State": "Disabled",
+        "Enabled": false
+      },
+      {
+        "TaskName": "DoMath-Operator-21614d08d967",
+        "State": "Disabled",
+        "Enabled": false
+      }
+    ]
+  }
+}
