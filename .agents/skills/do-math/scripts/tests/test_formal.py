@@ -1,8 +1,21 @@
 import subprocess,sys,tempfile,unittest
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-from do_math.formal import project_fingerprint, verify_lean
+from do_math.formal import project_fingerprint, verify_lean, _ident
 class T(unittest.TestCase):
+ def test_prime_names_keep_the_existing_identifier_boundary(self):
+  for value in ("sumTo_succ'", "N.foo''", "α'", "N'.foo'"):
+   self.assertTrue(_ident(value), value)
+  for value in ("'", "N.'", "x'; #eval 1", "x' y", "x\ny", "x'y", 'x"', "x()", ".x", "x."):
+   self.assertFalse(_ident(value), value)
+ def test_actual_prime_declarations_have_signatures_and_axioms(self):
+  with tempfile.TemporaryDirectory() as d:
+   names=["sumTo_succ'", "N.foo''", "α'"]
+   source="theorem sumTo_succ' (n : Nat) : n = n := rfl\nnamespace N\ntheorem foo'' : True := by trivial\nend N\ntheorem α' : True := by trivial"
+   result=verify_lean(source=source,declarations=names,workspace=Path(d))
+   self.assertEqual(result['status'],'verified',result)
+   self.assertEqual(set(result['declaration_signatures']),set(names))
+   self.assertEqual(set(result['axioms']),set(names))
  def test_invalid_declaration_rejected(self):
   with tempfile.TemporaryDirectory() as d:self.assertEqual(verify_lean(source='',declarations=['bad;'],workspace=Path(d))['status'],'rejected')
  def test_empty_declaration_list_is_rejected(self):

@@ -56,6 +56,7 @@ class SessionSlots:
         with self._db() as db:
             db.execute("CREATE TABLE IF NOT EXISTS limits (pool TEXT, model TEXT, capacity INTEGER NOT NULL, PRIMARY KEY(pool,model))")
             db.execute("CREATE TABLE IF NOT EXISTS sessions (id TEXT PRIMARY KEY, pool TEXT, model TEXT, owner TEXT, state TEXT, process TEXT, created REAL, ended REAL, reason TEXT)")
+            db.execute("CREATE TABLE IF NOT EXISTS provider_waits (provider TEXT PRIMARY KEY, generation INTEGER NOT NULL, state TEXT NOT NULL, retry_at REAL, evidence TEXT, probe_owner TEXT, probe_started_at REAL, attempts INTEGER NOT NULL)")
 
     @contextmanager
     def _db(self):
@@ -94,8 +95,10 @@ class SessionSlots:
                 ended = named_job_empty(identity["job_name"]) is True
             if ended:
                 db.execute("UPDATE sessions SET state='ended', ended=?, reason='owner disappeared; local lifetime reconciled' WHERE id=?", (time.time(), row["id"]))
+                db.execute("UPDATE provider_waits SET state='waiting', probe_owner=NULL, probe_started_at=NULL WHERE state='checking' AND probe_owner=?", (row["id"],))
 
-    def acquire(self, execution_id: str, pool: str, model: str) -> bool:
+    def acquire(self, execution_id: str, pool: str, model: str, *, provider: str | None = None,
+                enforce_capacity: bool = True, current_time: float | None = None) -> bool:
         if self.owner is None:
             raise ValueError("a read-only slot observer cannot reserve a session")
         with self._db() as db:
@@ -103,12 +106,72 @@ class SessionSlots:
             previous = db.execute("SELECT * FROM sessions WHERE id=?", (execution_id,)).fetchone()
             if previous:
                 raise ValueError("session IDs are single-use")
-            limit = db.execute("SELECT capacity FROM limits WHERE pool=? AND model=?", (pool, model)).fetchone()
-            used = db.execute("SELECT count(*) FROM sessions WHERE pool=? AND model=? AND state != 'ended'", (pool, model)).fetchone()[0]
-            if limit is None or used >= limit[0]:
+            current = time.time() if current_time is None else current_time
+            gate = db.execute("SELECT * FROM provider_waits WHERE provider=?", (provider,)).fetchone() if provider else None
+            if gate and (gate["state"] == "checking" or (gate["state"] == "waiting" and gate["retry_at"] > current)):
+                self.admission_reason = "provider_limit"
                 return False
-            db.execute("INSERT INTO sessions VALUES(?,?,?,?,?,?,?,?,?)", (execution_id, pool, model, self.owner, "starting", None, time.time(), None, None))
+            if enforce_capacity:
+                limit = db.execute("SELECT capacity FROM limits WHERE pool=? AND model=?", (pool, model)).fetchone()
+                used = db.execute("SELECT count(*) FROM sessions WHERE pool=? AND model=? AND state != 'ended'", (pool, model)).fetchone()[0]
+                if limit is None or used >= limit[0]:
+                    self.admission_reason = "capacity"
+                    return False
+            db.execute("INSERT INTO sessions VALUES(?,?,?,?,?,?,?,?,?)", (execution_id, pool, model, self.owner, "starting", None, current, None, None))
+            if gate and gate["state"] == "waiting":
+                db.execute("UPDATE provider_waits SET state='checking', probe_owner=?, probe_started_at=? WHERE provider=?",
+                           (execution_id, current, provider))
+            self.admission_reason = None
             return True
+
+    def provider_result(self, execution_id: str, provider: str, *, failure: dict | None = None,
+                        response_observed: bool = True, current_time: float | None = None,
+                        initial_seconds: float = 300, maximum_seconds: float = 7200) -> dict:
+        """Only an owned invocation can record a limit or finish its own probe."""
+        from .provider_wait import retry_time
+        current = time.time() if current_time is None else current_time
+        with self._db() as db:
+            reservation = db.execute("SELECT owner FROM sessions WHERE id=?", (execution_id,)).fetchone()
+            if not reservation or reservation[0] != self.owner:
+                raise ValueError("provider result has no owned invocation")
+            row = db.execute("SELECT * FROM provider_waits WHERE provider=?", (provider,)).fetchone()
+            if failure is not None:
+                if failure.get("kind") != "provider_limit" or failure.get("provider") != provider:
+                    raise ValueError("provider failure identity differs from admission")
+                attempts = (1 if row is None or row["state"] == "available" else
+                            row["attempts"] + int(row["state"] == "checking" and row["probe_owner"] == execution_id))
+                retry_at = retry_time(failure, attempts, current, initial_seconds, maximum_seconds)
+                if row and row["state"] == "waiting":
+                    retry_at = max(retry_at, row["retry_at"])
+                db.execute("INSERT OR REPLACE INTO provider_waits VALUES(?,?,?,?,?,?,?,?)",
+                           (provider, row["generation"] + 1 if row else 1, "waiting", retry_at,
+                            json.dumps({**failure, "execution_id": execution_id}), None, None, attempts))
+            elif row and row["state"] == "checking" and row["probe_owner"] == execution_id:
+                if response_observed:
+                    db.execute("UPDATE provider_waits SET state='available', retry_at=NULL, probe_owner=NULL, probe_started_at=NULL, attempts=0 WHERE provider=?", (provider,))
+                else:
+                    retry_at = retry_time({}, row["attempts"] + 1, current, initial_seconds, maximum_seconds)
+                    db.execute("UPDATE provider_waits SET state='waiting', retry_at=?, probe_owner=NULL, probe_started_at=NULL, attempts=attempts+1 WHERE provider=?", (retry_at, provider))
+            result = db.execute("SELECT * FROM provider_waits WHERE provider=?", (provider,)).fetchone()
+            return self._provider_view(result, current) if result else {"provider": provider, "state": "available", "generation": 0}
+
+    @staticmethod
+    def _provider_view(row, current):
+        from .provider_wait import utc
+        return {"provider": row["provider"], "generation": row["generation"], "state": row["state"],
+                "retry_at": utc(row["retry_at"]), "due": row["state"] == "waiting" and row["retry_at"] <= current,
+                "evidence": json.loads(row["evidence"]) if row["evidence"] else None,
+                "probe_owner": row["probe_owner"], "probe_started_at": utc(row["probe_started_at"]),
+                "attempts": row["attempts"]}
+
+    def provider_snapshot(self, *, current_time: float | None = None) -> dict:
+        from .provider_wait import utc
+        current = time.time() if current_time is None else current_time
+        with self._db() as db:
+            self._reconcile(db)
+            return {"observed_at": utc(current), "path": str(self.path),
+                    "providers": {row["provider"]: self._provider_view(row, current)
+                                  for row in db.execute("SELECT * FROM provider_waits")}}
 
     def started(self, execution_id: str, identity: dict):
         with self._db() as db:
@@ -120,6 +183,8 @@ class SessionSlots:
     def release(self, execution_id: str, *, reason="local runner returned after termination"):
         with self._db() as db:
             row = db.execute("SELECT process FROM sessions WHERE id=? AND owner=?", (execution_id, self.owner)).fetchone()
+            if not row:
+                return False
             identity = json.loads(row[0]) if row and row[0] else None
             if identity and identity.get("job_name"):
                 from .windows_job import named_job_empty
@@ -128,6 +193,9 @@ class SessionSlots:
                     return False
             db.execute("UPDATE sessions SET state='ended', ended=?, reason=? WHERE id=? AND owner=?",
                        (time.time(), reason, execution_id, self.owner))
+            # A probe without a classified response is retryable, never success.
+            db.execute("UPDATE provider_waits SET state='waiting', retry_at=?, probe_owner=NULL, probe_started_at=NULL WHERE state='checking' AND probe_owner=?",
+                       (time.time() + 300, execution_id))
             return True
 
     def snapshot(self) -> dict:

@@ -1,0 +1,349 @@
+{
+  "fixture_snapshot": "bd677ebfe8e38b105b18146b242f20aa5319f526",
+  "research_snapshot_unchanged": true,
+  "results": [
+    {
+      "author": {
+        "error": null,
+        "extensions": {
+          "model_assessments": [
+            {
+              "difficulty": "medium",
+              "importance": "medium",
+              "reason": "Lean 코어만으로 유한 열거 정의와 커널 계산(n≤4, 최대 256개 목록)을 허용 공리 안에서 다뤄야 하고 b와 A의 관계를 일반 n에 대해 목록 필터 분할로 증명해야 하지만, 대상은 정의와 작은 사례이며 정의 오류는 중앙 검사와 동일성 검토로 교정 가능하다. 이후 형식 결과가 공유할 정의의 토대라는 영향은 한 흐름에 국한된다.",
+              "task_title": "주차 과정·최대 변위·목표 P의 Lean 형식 정의와 작은 n 검증"
+            }
+          ],
+          "revision_resolutions": [
+            {
+              "disposition": "revised",
+              "reason": "EX-01M2S81AGNNYRBS3TJRB1VYCMV의 revision_required 두 결함을 고친 전체 현행 계약을 candidates에 revises_task_id로 제출했다: (1) 완료 판정 근거를 중앙 형식 검사 성공으로 고정하고 동일성 검토를 완료 밖 후속으로 명시, 검사 실패 시 처리 규정, (2) b를 M=ℓ 개수로 직접 정의하고 b와 A의 차이 관계를 모든 n·ℓ에 대한 덧셈형 정리(Aₙ,₋₁=0 규약 포함)로 요구하며 해설 대응 항목에 추가.",
+              "record_id": "TK-01M2S813V92Q77YY3S08KSWHNV"
+            }
+          ]
+        },
+        "id": "dec83e9a43a147ef9059315ad2552cef",
+        "model_usage_reported": {
+          "claude-opus-5": {
+            "cacheCreationInputTokens": 162371,
+            "cacheReadInputTokens": 462127,
+            "canonicalModel": "claude-opus-5",
+            "contextWindow": 1000000,
+            "costBasis": "list",
+            "costUSD": 2.7579985000000002,
+            "inputTokens": 129085,
+            "maxOutputTokens": 64000,
+            "outputTokens": 10312,
+            "provider": "firstParty",
+            "thinkingTokens": 912,
+            "webSearchRequests": 0
+          }
+        },
+        "output": {
+          "candidates": [
+            {
+              "completion_criteria": [
+                "정의 제출: 주차 과정(성공·실패 구별), PFₙ, 변위, M, Aₙ,ℓ, M=ℓ 개수로 직접 정의한 bₙ,ℓ, 단봉성 조건, 목표 P의 명제를 정의한 자기완결적 Lean 원문과 declaration_names를 제출했다.",
+                "형식 검사 통과(판정 근거: 중앙 형식 검사): 제출 원문에 대한 실행기의 중앙 형식 검사가 필수 선언 전부 — (i) 모든 n에 대한 bₙ,₀=Aₙ,₀, (ii) 모든 n과 ℓ≥1에 대한 Aₙ,ℓ₋₁+bₙ,ℓ=Aₙ,ℓ, (iii) n=1..4의 b 행이 각각 [1],[2,1],[6,7,3],[24,51,34,16]이라는 정리, (iv) n=1..4 각 행의 단봉성 정리 — 를 커널에서 받아들이고 그 공리 의존이 propext, Classical.choice, Quot.sound 안에 있다고 판정했다. 작업자의 주장이나 비권위 사전 검사 결과는 이 기준의 판정 근거가 아니다. 중앙 검사가 실패하면 이 기준은 미충족이며 과제는 완료되지 않는다. 제출은 부분 결과로 보존되고, 실패 좌표와 오류를 입력으로 받은 다음 실행이 수정 원문을 재제출한다.",
+                "n=5 처리: n=5를 시도했다면 해당 선언의 중앙 검사 결과 또는 시도 실패의 원인(커널 계산 한도, 시간 등)을 보고서에 기록했다. n=5는 선택 사항이므로 그 선언의 실패는 이 과제의 완료를 막지 않는다.",
+                "수학 해설 대응: 각 Lean 정의와 목표 문면의 정의 사이 대응을 해설에 적었다. 주차 규칙(선호 자리가 비었으면 그곳, 아니면 오른쪽 첫 빈자리, 없으면 실패), 값 범위 1..n과 Lean 표현(예: Fin n의 0..n−1)의 이동이 변위 sᵢ−aᵢ를 바꾸지 않는 이유, max의 처리, b를 직접 정의한 방식, 기준 2의 (i)·(ii)가 Aₙ,₋₁=0 규약 아래 bₙ,ℓ=Aₙ,ℓ−Aₙ,ℓ₋₁를 표현하는 이유(자연수 뺄셈 절삭을 피한 이유 포함), A₀,ℓ 규약을 정의했다면 그 처리를 포함한다. 해설 요약도 함께 제출했다.",
+                "사전 검사 보고: 사전 검사를 실행했다면 실제 관찰한 toolchain, Mathlib 사용 가능 여부와 결과를, 실행하지 못했다면 그 한계를 보고했다.",
+                "완료 범위 경계: 동일성 검토 match와 K 편입은 이 과제의 완료 조건이 아니며, 기준 1·2·4·5가 충족되면 완료 판정자(연구 계획)가 제출 결과와 중앙 검사 판정을 대조해 완료로 판정할 수 있다."
+              ],
+              "expected_result": "중앙 형식 검사를 통과한 완전한 Lean 원문과 선언명, 각 Lean 정의가 목표 문면의 어느 정의에 대응하는지 설명하는 수학 해설과 해설 요약. 목표 문면 정의의 형식화가 커널에서 확인되고 공개 수치(n≤4)와 일치함이 입증되어, 정의 오역의 불확실성을 줄이고 이후 모든 형식 결과가 공유할 정의의 토대 후보가 생긴다. 이후 동일성 검토 match와 K 편입은 이 과제의 완료와 별개인 후속 판정이다.",
+              "inputs": [
+                "source:문제와-선정-근거.md",
+                "source:published-counts.json",
+                "tool:lean"
+              ],
+              "question": "목표 P의 대상(주차 과정, 주차 함수 집합 PFₙ, 변위와 최대 변위 M, 누적 개수 Aₙ,ℓ, 정확 개수 bₙ,ℓ, 단봉성 조건)을 목표 문면과 같은 의미로 Lean 4에 자기완결적으로 정의하고, 그 정의에서 b와 A의 차이 관계(Aₙ,₋₁=0 규약)를 모든 n·ℓ에 대해, 작은 n에서 공개 수치와 단봉성을 커널 검사로 증명할 수 있는가?",
+              "reuse": [],
+              "revises_task_id": "TK-01M2S813V92Q77YY3S08KSWHNV",
+              "scope": "포함: (1) 선호 목록을 Fin n → Fin n(또는 동등한 1..n 값 목록)으로 표현한 주차 과정의 정의와 실패·성공의 구별. (2) PFₙ, 변위 dᵢ=sᵢ−aᵢ, 최대 변위 M, Aₙ,ℓ=#{α∈PFₙ: M(α)≤ℓ}의 정의. (3) bₙ,ℓ는 M(α)=ℓ인 주차 함수의 개수로 직접 정의한다(A의 차이로 정의하지 않는다). (4) 모든 n과 ℓ에 대해 bₙ,₀=Aₙ,₀ 및 ℓ≥1에서 Aₙ,ℓ₋₁+bₙ,ℓ=Aₙ,ℓ를 덧셈형 정리로 증명한다. 이는 목표 문면의 Aₙ,₋₁=0 규약 아래 bₙ,ℓ=Aₙ,ℓ−Aₙ,ℓ₋₁를 표현한 것이며, 자연수 뺄셈의 절삭을 쓰는 진술로 대체하지 않는다. (5) 단봉성 조건과 목표 P(모든 n≥1에 대해 c∈{0,…,n−1}가 존재하는 목표 문면의 양화)를 명제로 진술하는 정의(증명하지 않음). (6) n≤4에서 b 행(ℓ=0..n−1)이 [1],[2,1],[6,7,3],[24,51,34,16]임과 각 행이 단봉성 조건을 만족함을 decide/rfl 등 허용 공리(propext, Classical.choice, Quot.sound) 안에서 증명. (7) 선택: n=5 행 [120,421,377,253,125]로 확장. 필수 선언과 별도 선언으로 두어 n=5의 실패가 필수 선언의 검사를 막지 않게 한다. 방법: 제공된 사전 검사로 Mathlib 사용 가능 여부를 먼저 확인하고, 없으면 Lean 코어만 사용한다. A₀,ℓ=1 규약은 이 과제의 선언이 사용하지 않으면 정의하지 않아도 되며, 정의하면 해설에 대응을 적는다. 제외: 모든 n에 대한 P의 증명·반증, 마지막 차 분해 등 점화식 정리의 형식 증명, native_decide·ofReduceBool 등 허용 밖 공리에 의존하는 방법, 동일성 검토의 수행(후속 절차).",
+              "title": "주차 과정·최대 변위·목표 P의 Lean 형식 정의와 작은 n 검증",
+              "work_class": "formal"
+            }
+          ],
+          "questions": [],
+          "summary": "action AC-dec83e9a43a147ef9059315ad2552cef는 필수 개정 대상 TK-01M2S813V92Q77YY3S08KSWHNV(revision 1, contract_sha256 1df931fd…)의 계약 검토 EX-01M2S81AGNNYRBS3TJRB1VYCMV(revision_required)를 처리하기 위해 열렸다. 검토 원문과 source:문제와-선정-근거.md §1의 정의(b를 M=ℓ 개수로 정의, Aₙ,₋₁=0 규약 아래 bₙ,ℓ=Aₙ,ℓ−Aₙ,ℓ₋₁, A₀,ℓ=1)를 대조해 같은 질문을 유지한 전체 현행 계약을 revises_task_id로 재작성했다. 유지한 것: 질문, 포함 대상(주차 과정·성공/실패·PFₙ·M·A·b·단봉성·P의 명제 진술), n≤4의 행 값 [1],[2,1],[6,7,3],[24,51,34,16](published-counts.json과 일치)과 단봉성 증명, n=5 선택 확장, Mathlib 사전 확인 후 코어 사용 분기, native_decide 등 허용 밖 공리 제외, 제외 범위(모든 n의 P 증명, 점화식 형식 증명), 입력, reuse 없음, formal 분류. 변경 1(검토 결함 1): 완료 판정 근거를 명시했다. 완료는 작업자 제출이나 비권위 preview가 아니라, 제출한 원문의 지정 선언이 중앙 형식 검사에서 커널 통과하고 허용 공리(propext, Classical.choice, Quot.sound)만 의존한다는 판정으로 확인한다. 동일성 검토 match는 완료 조건 밖의 후속(K 편입 관문)이다. 중앙 검사가 실패하면 과제는 완료되지 않으며 제출은 부분 결과로 보존되고, 실패 좌표를 입력으로 받은 새 실행이 수정 원문을 재제출한다. n=5는 선택 사항이므로 그 선언의 실패만으로 완료를 막지 않도록 필수 선언과 분리하게 했다. 변경 2(검토 결함 2): 관계의 형태를 (a)로 정했다. b는 M=ℓ인 목록 개수로 직접 정의하고(A의 차이로 정의하지 않음), 모든 n, ℓ에 대해 bₙ,₀=Aₙ,₀ 및 Aₙ,ℓ₋₁+bₙ,ℓ=Aₙ,ℓ(ℓ≥1)를 덧셈형으로 증명하게 했다. 이는 Aₙ,₋₁=0 규약을 그대로 표현하며 자연수 뺄셈 절삭(ℓ=0에서 Aₙ,₀−Aₙ,₀=0) 오류를 피한다. 증명은 목록 필터의 서로소 분할에 대한 코어 귀납으로 가능한 수준이라 판단했고, 점화식(제외 범위)과는 다른 정의 수준의 관계다. 이 처리를 해설 대응 항목에 추가했다. 모델 평가 medium/medium은 인스턴스 정책(claude-opus-5 전용)과 충돌하지 않는다. 계약 승인·선택은 후속 독립 검토와 연구 계획이 맡는다.",
+          "used_sources": [
+            "TK-01M2S813V92Q77YY3S08KSWHNV",
+            "EX-01M2S81AGNNYRBS3TJRB1VYCMV",
+            "source:문제와-선정-근거.md",
+            "source:published-counts.json",
+            "tool:lean",
+            "context:goal",
+            "context:policy"
+          ]
+        },
+        "reported_models": [
+          "claude-opus-5"
+        ],
+        "role": "research_preparation",
+        "status": "completed",
+        "submission_issues": [],
+        "usage": {
+          "cache_creation_input_tokens": 162371,
+          "cache_read_input_tokens": 462127,
+          "input_tokens": 8,
+          "output_tokens": 10278
+        },
+        "variant": "before_role_guidance"
+      },
+      "blind_review": {
+        "error": null,
+        "extensions": {},
+        "id": "d1482d0449444f62945970553179486d",
+        "model_usage_reported": {
+          "claude-opus-5": {
+            "cacheCreationInputTokens": 154455,
+            "cacheReadInputTokens": 440646,
+            "canonicalModel": "claude-opus-5",
+            "contextWindow": 1000000,
+            "costBasis": "list",
+            "costUSD": 2.612973,
+            "inputTokens": 123390,
+            "maxOutputTokens": 64000,
+            "outputTokens": 9246,
+            "provider": "firstParty",
+            "thinkingTokens": 2335,
+            "webSearchRequests": 0
+          }
+        },
+        "output": {
+          "decision": "approved",
+          "findings": [
+            "질문·범위(question, scope, title): 통과. 질문은 목표 P의 대상 정의를 Lean에 형식화하고 그 정의에서 b–A 관계와 n≤4 수치·단봉성을 검사하는 한 의무이며, 범위 (1)–(7)과 제외 항목(모든 n에 대한 P의 증명·반증, 점화식 형식 증명, native_decide·ofReduceBool, 동일성 검토 수행)이 필수·선택·제외를 구별한다. 주차 규칙, PFₙ, dᵢ=sᵢ−aᵢ, M=max dᵢ, Aₙ,ℓ, bₙ,ℓ, 단봉성의 c∈{0,…,n−1} 양화가 문제와-선정-근거.md §1 및 context:goal과 같은 뜻으로 적혀 있다. 모든 n·ℓ에 대한 (i)(ii)는 n=0을 포함해도 목표 구간(n≥1, 0≤ℓ≤n−1)의 의미를 해치지 않는다. 다음 조치 없음.",
+            "입력·재사용(inputs, reuse, dependencies): 통과. inputs의 source:문제와-선정-근거.md, source:published-counts.json, tool:lean은 모두 available_input_refs에 있고 각각 정의 원문, 기대 수치, 형식 검사 도구로 필요하다. reuse·dependencies가 비어 있어 기존 지식 KN-01M2S813XMH6KCV770ANQY3X8E(candidate, 미검증 추론)를 전제로 삼지 않으며, 이는 해당 기록의 현재 효력과 맞다. published-counts.json의 n=1..5 행을 직접 읽어 범위 (6)(7)의 수치와 일치함을 확인했다. 이 수치는 외부 문헌 값이며 계약은 이를 커널 계산으로 독립 확인하게 하므로 문헌 값을 근거로 재사용하지 않는다.",
+            "기대 결과·완료 기준(expected_result, completion_criteria): 통과. 기대 결과는 정의 오역 불확실성 감소와 후속 형식 결과의 공통 정의 후보라는 연구 변화를 설명한다. 기준 1–6은 각각 제출 원문·선언명, 중앙 형식 검사의 필수 선언 (i)–(iv) 수락과 공리 경계, n=5 선택 처리, 해설 대응 항목(주차 규칙, 1..n과 Fin n의 이동이 변위를 바꾸지 않는 이유, max 처리, b의 직접 정의, 덧셈형 관계와 절삭 회피, A₀,ℓ 처리), 사전 검사 보고, 완료 범위 경계로 서로 중복 없이 관찰 가능하다. 판정 근거를 중앙 검사로 못박고 작업자 주장·preview를 배제했으며, 동일성 검토 match와 K 편입을 후속 판정으로 분리해 연구 계획이 대신할 수 없는 판단을 숨기지 않는다. 기준 6이 선택 기준 3을 제외한 1·2·4·5를 완료 요건으로 지정한 것도 일관된다. 참고: core-only로 목록을 명시 열거해 A·b를 정의하는 경우 그 열거가 [n]ⁿ 전체를 중복 없이 덮는다는 점은 기준 4의 '각 Lean 정의와 목표 문면의 대응' 설명에 포함되어야 하며, 이는 후속 동일성 검토의 핵심 쟁점이 될 것이다. 현재 문면으로 이 요구가 포괄되므로 수정은 요구하지 않는다.",
+            "진전·관찰(initial_observation_rules, progress 신호): 통과. 과제는 단일 형식 제출 과제이고 계약에 최초 관찰 규칙이 없지만, 진전 신호가 필수 선언별 중앙 검사 결과와 실패 좌표·오류라는 관찰 가능한 형태로 기준 2에 정해져 있고 실패 시 부분 결과 보존과 재제출 경로가 명시되어 있다. 반복 탐색형 장기 과제가 아니므로 추가 관찰 규칙 없이도 운영 점검 판단이 가능하다. 수행 위험: n=4의 256개 목록에 대한 decide/rfl 커널 계산은 정의가 구조적 재귀로 쓰이면 가능할 것으로 보이나 lean_timeout_seconds=120, preview timeout 60초 안의 성공은 아직 확인되지 않았다. 계약은 실패를 미충족으로 처리하고 재제출로 연결하므로 계약 수정 사유는 아니다.",
+            "발생 조건·의존(occurrence_condition, dependencies): 통과. occurrence_condition은 {op: always}이고 선행 과제 의존이 없다. 필요한 입력은 모두 이미 존재하는 원자료이므로 불필요한 차단이나 빠진 선행관계가 없다.",
+            "도구·권한(work_class=formal, formal_verifier): 통과. formal_verifier.mechanism=central_after_submission이고 preview는 authoritative=false로 제공되며, 계약은 작업자에게 로컬 Lean 성공을 완료 근거로 요구하지 않고 사전 검사는 관찰 결과 보고만 요구한다. 검증기 명령이 lake 없는 lean.exe이므로 Mathlib이 없을 가능성이 높은데, 계약은 사전 검사로 확인한 뒤 없으면 Lean 코어만 쓰도록 대비했다. 허용 공리 목록(propext, Classical.choice, Quot.sound)은 config.allowed_axioms와 일치한다. 외부 행동·허가가 필요하지 않다. 예산 단위는 execution_attempts이고 tier_models는 모두 claude-opus-5이므로 claude opus 5 전용 정책과 충돌하는 모델 요구가 계약에 없다.",
+            "생성 근거·인계(producer_execution, revision, 산출 인계): 통과. producer_execution dec83e9a43a147ef9059315ad2552cef는 이번 검토 실행과 다른 계보이며 저작자의 미공개 판단을 이어받지 않았다. 개정 2판은 b의 직접 정의·덧셈형 관계·n=5 분리·완료 범위 경계를 현행 전체 문면으로 담고 있어 사용자의 목표·필수조건을 보존한다. 산출은 Lean 원문, 선언명, 해설과 해설 요약, 사전 검사 보고를 공개하도록 되어 있어 후속 동일성 검토와 이후 형식 과제가 정의를 재사용할 조건과 남은 차이를 확인할 수 있다."
+          ],
+          "questions": [],
+          "summary": "TK-01M2S813V92Q77YY3S08KSWHNV 개정 2판 작업 계약을 승인한다. 목표 문면(context:goal), 문제와-선정-근거.md §1의 정의, published-counts.json의 n≤4 행, 현재 formal_verifier 구성(central_after_submission, 비권위 preview)과 계약의 질문·범위·기대 결과·완료 기준 6항을 대조했다. 질문은 '목표 대상의 Lean 정의와 그 정의에 대한 기초 검증'이라는 한 의무로 묶이고, b를 M=ℓ 개수로 직접 정의한 뒤 bₙ,₀=Aₙ,₀와 Aₙ,ℓ₋₁+bₙ,ℓ=Aₙ,ℓ를 덧셈형으로 증명하게 해 자연수 뺄셈 절삭 문제를 피한다. 필수 수치 [1],[2,1],[6,7,3],[24,51,34,16]과 선택 n=5 행 [120,421,377,253,125]는 원자료와 일치한다. 완료 기준은 중앙 형식 검사를 판정 근거로 명시하고 동일성 검토·K 편입을 후속으로 분리하므로 판정 가능하다. 반드시 고칠 결함은 발견하지 못했으며, n=4 커널 계산 비용과 core-only 열거의 완전성 설명은 수행 중 주의할 위험으로만 기록한다.",
+          "used_sources": [
+            "TK-01M2S813V92Q77YY3S08KSWHNV",
+            "context:goal",
+            "context:policy",
+            "source:문제와-선정-근거.md",
+            "source:published-counts.json",
+            "KN-01M2S813XMH6KCV770ANQY3X8E"
+          ]
+        },
+        "reported_models": [
+          "claude-opus-5"
+        ],
+        "role": "task_contract_review",
+        "status": "completed",
+        "submission_issues": [],
+        "usage": {
+          "cache_creation_input_tokens": 154455,
+          "cache_read_input_tokens": 440646,
+          "input_tokens": 8,
+          "output_tokens": 9212
+        },
+        "variant": null
+      },
+      "variant": "before_role_guidance"
+    },
+    {
+      "author": {
+        "error": null,
+        "extensions": {
+          "model_assessments": [
+            {
+              "difficulty": "medium",
+              "importance": "medium",
+              "reason": "Mathlib 없이 Lean 코어만으로 목록 열거·countP 기반 개수와 모든 n·ℓ에 대한 덧셈형 관계 정리를 증명하고 커널 계산 한도 안에서 n≤4를 decide해야 하지만, 대상은 정의·단순 귀납·작은 사례에 한정된다. 이후 형식 결과가 공유할 정의의 토대이지만 정의 오류는 후속 동일성 검토로 교정 가능하다.",
+              "task_title": "주차 과정·최대 변위·목표 P의 Lean 형식 정의와 작은 n 검증"
+            }
+          ],
+          "revision_resolutions": [
+            {
+              "disposition": "revised",
+              "reason": "작업 계약 검토 EX-01M2S81AGNNYRBS3TJRB1VYCMV의 두 결함을 고친 새 판본을 candidates에 제출했다. (1) 완료 판정 근거를 중앙 형식 검사의 허용 공리 안 통과로 명시하고, 동일성 검토를 완료 조건 밖의 후속으로 분리했으며, 중앙 검사 실패 시 처리(미완료·partial 보존·같은 과제의 재제출)를 적었다. (2) b를 M=ℓ인 PFₙ 원소의 개수로 직접 정의하고, bₙ,ℓ=Aₙ,ℓ−Aₙ,ℓ₋₁ 관계를 자연수 절삭 뺄셈 없이 모든 n·ℓ에 대한 덧셈형 정리로 요구하는 완료 기준을 추가했으며, Aₙ,₋₁=0 처리를 해설 대응 항목에 넣었다.",
+              "record_id": "TK-01M2S813V92Q77YY3S08KSWHNV"
+            }
+          ],
+          "task_conditions": [
+            {
+              "dependencies": [],
+              "occurrence_condition": {
+                "op": "always"
+              },
+              "task_id": "TK-01M2S813V92Q77YY3S08KSWHNV"
+            }
+          ]
+        },
+        "id": "fd1930225cf74d0cb78b277fbb2c54ca",
+        "model_usage_reported": {
+          "claude-opus-5": {
+            "cacheCreationInputTokens": 144079,
+            "cacheReadInputTokens": 641733,
+            "canonicalModel": "claude-opus-5",
+            "contextWindow": 1000000,
+            "costBasis": "list",
+            "costUSD": 2.7603515,
+            "inputTokens": 129679,
+            "maxOutputTokens": 64000,
+            "outputTokens": 14012,
+            "provider": "firstParty",
+            "thinkingTokens": 2731,
+            "webSearchRequests": 0
+          }
+        },
+        "output": {
+          "candidates": [
+            {
+              "completion_criteria": [
+                "자기완결적 Lean 원문과 그 원문이 내보내는 declaration_names를 제출했다. 원문에는 다음 정의가 모두 있다: 주차 과정(실패·성공 구별), PFₙ 소속, 변위와 최대 변위 M, Aₙ,ℓ(M≤ℓ인 PFₙ 원소 개수), bₙ,ℓ(M=ℓ인 PFₙ 원소 개수로 직접 정의), 목표와 같은 c∈{0,…,n−1} 양화의 단봉성 술어, 목표 P의 Prop 진술(증명하지 않음).",
+                "모든 n·ℓ에 대한 정리 A n 0 = b n 0 과 A n (ℓ+1) = A n ℓ + b n (ℓ+1)을 증명한 선언이 원문에 있고 declaration_names에 포함된다. 자연수 절삭 뺄셈을 쓰지 않는 동치 형태도 허용한다.",
+                "n=1,2,3,4 각각에 대해 ℓ=0..n−1의 b 값이 [1],[2,1],[6,7,3],[24,51,34,16]임과 각 행이 단봉 술어를 만족함을 증명한 선언이 원문에 있고 declaration_names에 포함된다. n=5를 시도했다면 성공 여부를 보고서에 기록했고, 실패했다면 실제 관찰한 원인(시간 한도, 커널 계산 한도 등)도 기록했다. n=5 성공은 완료 조건이 아니다.",
+                "실행기의 중앙 형식 검사 기록이 제출 원문의 위 선언 전건을 오류 없이 받아들였고, 각 선언의 공리 의존이 propext, Classical.choice, Quot.sound 안에 있음(sorry, native_decide, Lean.ofReduceBool 없음)을 보인다. 작업자의 주장이나 비권위 preview 결과는 이 기준의 근거가 되지 않는다. 이 기준이 충족되지 않으면 과제는 완료되지 않는다. 제출은 partial로 보존되고 실패 로그와 함께 같은 과제의 재제출로 이어진다. 동일성 검토 판정은 이 과제의 완료 조건에 포함하지 않는다.",
+                "수학 해설과 해설 요약이 각 Lean 정의와 목표 문면의 대응을 설명한다. 설명할 항목은 다음과 같다: 주차 규칙(선호 자리가 비면 그 자리, 아니면 오른쪽 첫 빈자리, 없으면 실패)과 차의 도착 순서, 1..n과 Fin n 사이의 1만큼 이동이 변위 sᵢ−aᵢ를 바꾸지 않는다는 점, sᵢ≥aᵢ이므로 자연수 뺄셈이 절삭되지 않는다는 점, max의 처리와 실패 목록의 M 값이 개수에 영향을 주지 않는다는 점, Aₙ,₋₁=0 규약이 A n 0 = b n 0 에 대응한다는 점, 정의가 n=0을 허용하면 그 값과 A₀,ℓ=1 규약의 관계(필요하면), 단봉성 술어의 c 범위와 목표 P의 n≥1 양화.",
+                "사전 검사(preview)를 실행했다면 실제 관찰한 toolchain, Mathlib 사용 가능 여부와 결과를 보고서에 기록했다. 실행하지 못했다면 그 한계를 기록했다."
+              ],
+              "expected_result": "산출물은 다음 세 가지다: 중앙 형식 검사를 허용 공리 안에서 통과한 완전한 Lean 원문과 선언명, 각 Lean 정의가 목표 문면의 어느 정의에 대응하는지 설명하는 수학 해설, 해설 요약.\n\n이 산출로 줄어드는 불확실성은 세 가지다. 목표 대상의 형식 정의가 커널이 받아들이는 형태로 확정된다. b를 직접 개수로 정의한 뒤 누적 A와의 관계가 모든 n·ℓ에서 성립함이 형식적으로 보장되어 ℓ=0 절삭 오류가 배제된다. n≤4의 공개 수치와 단봉성이 이 정의에서 재현됨이 확인된다.\n\n이후 동일성 검토를 통과하면 이 정의는 부분 결과나 최종 증명의 형식화가 공유할 토대가 된다. 그러면 정의 대응을 다시 검토하는 비용과 오역 위험이 줄어든다. 동일성 검토의 통과는 이 과제의 기대 효과이지 완료 조건이 아니다.",
+              "inputs": [
+                "source:문제와-선정-근거.md",
+                "source:published-counts.json",
+                "tool:lean"
+              ],
+              "question": "목표 P의 대상(주차 과정, 주차 함수 집합 PFₙ, 변위와 최대 변위 M, 누적 개수 Aₙ,ℓ, 정확 개수 bₙ,ℓ, 단봉성 조건)을 목표 문면과 같은 의미로 Lean 4에 자기완결적으로 정의할 수 있는가? 두 개수의 관계를 모든 n·ℓ에서 증명하고, 작은 n에서 그 정의가 공개 수치와 단봉성을 만족함을 커널 검사로 증명할 수 있는가?",
+              "reuse": [],
+              "revises_task_id": "TK-01M2S813V92Q77YY3S08KSWHNV",
+              "scope": "포함 범위는 다음과 같다.\n(1) 선호 목록을 Fin n → Fin n(또는 동등한 1..n 값 목록)으로 표현한 주차 과정의 정의와 실패·성공의 구별, PFₙ 소속, 변위 sᵢ−aᵢ와 최대 변위 M의 정의.\n(2) Aₙ,ℓ를 M(α)≤ℓ인 PFₙ 원소의 개수로, bₙ,ℓ를 M(α)=ℓ인 PFₙ 원소의 개수로 각각 직접 정의한다. b를 A의 차이로 정의하지 않는다.\n(3) 관계 bₙ,ℓ=Aₙ,ℓ−Aₙ,ℓ₋₁(Aₙ,₋₁=0)을 자연수 절삭 뺄셈 없이 덧셈형 정리로 모든 n·ℓ에 대해 증명한다: ∀n, A n 0 = b n 0 및 ∀n ℓ, A n (ℓ+1) = A n ℓ + b n (ℓ+1).\n(4) 목표의 단봉성을 술어로 정의한다: 어떤 c∈{0,…,n−1}에 대해 k<c에서 bₙ,k≤bₙ,k+1이고 c≤k<n−1에서 bₙ,k≥bₙ,k+1이다. 목표 P(모든 n≥1에 대해 단봉)는 Prop으로 진술만 하고 증명하지 않는다.\n(5) n=1..4에서 ℓ=0..n−1의 b 행이 [1],[2,1],[6,7,3],[24,51,34,16]임과 각 행이 단봉 술어를 만족함(명시적 c 제시 가능)을 증명한다. 증명은 decide/rfl 등 허용 공리(propext, Classical.choice, Quot.sound) 안에서 한다.\n\n선택: n=5 행 [120,421,377,253,125]로 확장한다.\n\n방법: 제공된 preview 검증기로 Mathlib 사용 가능 여부를 먼저 확인하고, 없으면 Lean 코어만 사용한다. native_decide, Lean.ofReduceBool, sorry 같은 허용 밖 공리와 미완성 증명은 쓰지 않는다.\n\n완료 판정 경계: 이 과제는 제출 원문이 중앙 형식 검사를 허용 공리 안에서 통과할 때 완료된다. 정의와 목표 문면의 동일성 검토와 K 편입은 완료 조건이 아닌 후속 절차다. 중앙 형식 검사가 실패하면 과제는 완료되지 않는다. 제출은 partial 결과로 보존되고, 같은 과제의 다음 수행이 실패 로그를 입력으로 수정 원문을 재제출한다.\n\n제외 범위: 모든 n에 대한 P의 증명·반증, 점화식(마지막 차 분해·S1 식 (4)·S2 정리 3.7) 자체의 형식 증명, n≥6 행의 형식 검증.",
+              "title": "주차 과정·최대 변위·목표 P의 Lean 형식 정의와 작은 n 검증",
+              "work_class": "formal"
+            }
+          ],
+          "questions": [],
+          "summary": "이번 후보 준비는 작업 계약 검토 EX-01M2S81AGNNYRBS3TJRB1VYCMV가 TK-01M2S813V92Q77YY3S08KSWHNV revision 1(contract_sha256 1df931fd…)에 내린 revision_required를 처리하려고 열렸다. action.revision_targets가 이 과제를 필수 개정 대상으로 선언했다. 검토의 findings와 questions 전건, 원 계약, source:문제와-선정-근거.md §1의 목표 정의, source:published-counts.json의 n=1..9 행을 읽었다. 질문과 목적이 같으므로 revises_task_id로 같은 과제를 개정했다.\n\n유지한 내용은 다음과 같다. 질문(목표 대상의 자기완결적 Lean 정의와 작은 n의 커널 검증), 입력(source:문제와-선정-근거.md, source:published-counts.json, tool:lean), reuse 없음, work_class formal, n≤4 필수와 n=5 선택, Mathlib 유무 사전 확인과 코어 대체, 허용 공리 제한과 native_decide 배제를 그대로 두었다. 제외 범위(모든 n에 대한 P의 증명, 점화식 정리의 형식 증명)도 유지했다. always 발생 조건과 의존 없음은 task_conditions에 다시 명시했다.\n\n변경 1(검토 결함 1): 완료 판정의 근거를 명시했다. 완료에는 작업자 제출과 함께 중앙 형식 검사(central_after_submission)의 기록이 필요하다. 그 기록은 제출 원문을 허용 공리 propext·Classical.choice·Quot.sound만으로 받아들였음을 보여야 한다. 작업자 주장이나 비권위 preview는 이 기록을 대신하지 않는다. 동일성 검토와 K 편입은 완료 조건 밖의 후속으로 분리했다. 중앙 검사가 실패하면 과제는 완료되지 않는다. 산출은 partial로 보존되고, 같은 과제의 다음 수행이 실패 로그를 입력으로 수정 원문을 재제출한다.\n\n변경 2(검토 결함 2): b를 A의 차이가 아니라 목표 문면대로 M(α)=ℓ인 PFₙ 원소의 개수로 직접 정의하게 했다. bₙ,ℓ=Aₙ,ℓ−Aₙ,ℓ₋₁(Aₙ,₋₁=0) 관계는 자연수 절삭 뺄셈 없이 덧셈형 정리로 모든 n·ℓ에 대해 증명하도록 정했다: A n 0 = b n 0, A n (ℓ+1) = A n ℓ + b n (ℓ+1). 이는 검토 질문 2의 (a)에 해당한다. 이렇게 정한 이유는 세 가지다. 정의가 목표 문면과 직접 대응해 동일성 검토의 부담이 줄고, ℓ=0에서 생기는 절삭 오류를 원천 차단하며, 목록 countP의 분리 합 귀납이라 코어만으로 증명할 수 있는 규모다. Aₙ,₋₁=0 규약이 첫 등식에 대응한다는 설명을 해설 대응 항목에 추가했다. 같은 항목에 다음 세 가지도 명시했다: sᵢ≥aᵢ이므로 변위의 자연수 뺄셈이 절삭되지 않는다는 근거, 실패 목록의 M 값이 개수에 영향을 주지 않는다는 점, 단봉성 술어의 c 범위.\n\n공개값에서는 published-counts의 n=1..4 행이 계약 수치와 일치함을 재확인했고, n=5 행 [120,421,377,253,125]를 선택 확장의 기대값으로 적었다. 계약으로 만들지 않은 새 후보는 없다. 기존 지식 KN-01M2S813XMH6KCV770ANQY3X8E(candidate, 원형 회전 대응 해싱 재표현)는 이 과제와 무관해 재사용하지 않았다. 예산 단위가 execution_attempts라 모델 평가가 필수는 아니지만, 추가된 일반 정리를 반영한 평가(medium/medium)를 확장에 함께 남겼다. 모든 등급이 claude-opus-5에 대응하므로 인스턴스 정책과 충돌하지 않는다. 제출 전 검사(check_submission.py)는 passed=true였다. 이 판본은 새 독립 작업 계약 검토를 받아야 하며, 제출이 곧 승인이나 선택을 뜻하지는 않는다.",
+          "used_sources": [
+            "TK-01M2S813V92Q77YY3S08KSWHNV",
+            "EX-01M2S81AGNNYRBS3TJRB1VYCMV",
+            "source:문제와-선정-근거.md",
+            "source:published-counts.json",
+            "tool:lean",
+            "context:goal",
+            "context:policy"
+          ]
+        },
+        "reported_models": [
+          "claude-opus-5"
+        ],
+        "role": "research_preparation",
+        "status": "completed",
+        "submission_issues": [],
+        "usage": {
+          "cache_creation_input_tokens": 144079,
+          "cache_read_input_tokens": 641733,
+          "input_tokens": 10,
+          "output_tokens": 13978
+        },
+        "variant": "after_role_guidance"
+      },
+      "blind_review": {
+        "error": null,
+        "extensions": {},
+        "id": "765a5a0f81fb4aaca0c4f9391ab9476a",
+        "model_usage_reported": {
+          "claude-opus-5": {
+            "cacheCreationInputTokens": 130808,
+            "cacheReadInputTokens": 314322,
+            "canonicalModel": "claude-opus-5",
+            "contextWindow": 1000000,
+            "costBasis": "list",
+            "costUSD": 2.259581,
+            "inputTokens": 124253,
+            "maxOutputTokens": 64000,
+            "outputTokens": 6923,
+            "provider": "firstParty",
+            "thinkingTokens": 1871,
+            "webSearchRequests": 0
+          }
+        },
+        "output": {
+          "decision": "approved",
+          "findings": [
+            "질문·범위 — 통과. question은 목표 P의 대상 정의, A·b 관계, 작은 n 검증을 하나의 형식화 의무로 묶으며, 세 부분은 같은 정의 위에서만 의미가 있으므로 한 과제로 두는 것이 적합하다. scope (1)–(5)는 목표 문면(주차 규칙, PFₙ, dᵢ=sᵢ−aᵢ, M, A는 M≤ℓ 개수, b는 M=ℓ 개수, c∈{0,…,n−1}의 단봉성, n≥1 양화)과 일치하고, 제외 범위(P의 증명·반증, 점화식 형식화, n≥6)가 명시되어 이 과제를 P의 해결로 과장할 여지가 없다.",
+            "입력·재사용 — 통과. inputs의 source:문제와-선정-근거.md, source:published-counts.json, tool:lean은 모두 available_input_refs에 있다. published-counts.json의 행 1–5가 [1],[2,1],[6,7,3],[24,51,34,16],[120,421,377,253,125]로 계약 수치와 일치하고 각 행 합이 (n+1)^{n−1}(1,3,16,125,1296)과 같음을 확인했다. reuse·dependencies가 비어 있고, 후보 상태의 KN-01M2S813XMH6KCV770ANQY3X8E(검증되지 않은 원형 회전 추론)를 전제로 삼지 않은 것도 적절하다.",
+            "기대 결과·완료 기준 — 통과. 기준 1–3은 필요한 정의·정리·수치 선언을 항목별로 지정해 원문과 declaration_names로 판정할 수 있다. 기준 4는 작업자 주장이나 preview가 아닌 중앙 형식 검사 기록과 허용 공리(propext, Classical.choice, Quot.sound) 의존을 근거로 삼아 formal_verifier.mechanism=central_after_submission과 맞는다. 동일성 검토·K 편입은 완료 조건이 아니라 후속으로 명시되어 연구 계획이 대신할 수 없는 판정을 완료 기준에 숨기지 않았다. 기준 5는 해설이 설명할 대응 항목(좌표 이동, sᵢ≥aᵢ에 따른 비절삭, 실패 목록의 M 무영향, Aₙ,₋₁=0 규약과 A n 0 = b n 0, n=0과 A₀,ℓ=1, c 범위와 n≥1)을 구체적으로 열거한다. n=5는 선택으로 두고 시도 시 결과·원인 보고만 요구해 판정이 갈리지 않는다.",
+            "진전·관찰 — 통과(참고 사항 있음). 중간 산출(정의, 관계 정리, 행별 수치·단봉 선언)이 선언 단위로 관찰 가능하고, 중앙 검사 실패 시 partial 보존과 실패 로그 기반 재제출 경로가 정해져 있다. initial_observation_rules는 없지만 단일 형식화 과제로 반복 탐색을 요구하지 않으므로 필수는 아니다. 참고: 현행 config의 run_timeout_seconds=300, lean_timeout_seconds=120, preview timeout 60초는 n=4(4⁴=256개 목록) 커널 계산에 빠듯할 수 있다. 계약은 목록 표현을 허용해 계산 가능한 정의를 고를 여지를 주므로 계약 결함은 아니며, 실행 시간 한도의 적합성은 운영·계획 판단 대상이다.",
+            "발생 조건·의존 — 통과. occurrence_condition은 always이고 선행 과제가 없으며, 과제가 필요한 입력은 모두 현재 제공되어 불필요한 대기나 빠진 의존이 없다.",
+            "도구·권한 — 통과. work_class=formal이고, 작업자에게 로컬 Lean 성공을 완료 근거로 요구하지 않고 preview를 비권위 보조 도구로만 두며, Mathlib 부재 시 코어만 사용하도록 했다. native_decide·Lean.ofReduceBool·sorry 금지가 allowed_axioms 설정과 일치한다. 외부 행동이나 허가가 필요 없다. 모델 배정은 모든 tier가 claude-opus-5인 인스턴스 정책과 충돌하지 않으며, budget_unit=execution_attempts이므로 세션 예산의 model_assessment 요구는 적용되지 않는다.",
+            "생성 근거·인계 — 통과. 계약은 후속 연구 준비의 '정의 대응' 단계와 목표의 누적/정확 개수 구별 요구에서 나왔고, 산출(Lean 원문·해설·해설 요약)이 후속 동일성 검토와 부분 결과 형식화에 재사용할 토대와 한계를 공개하게 한다. producer_execution(fd1930225cf74d0cb78b277fbb2c54ca)은 이번 검토와 별개의 실행이며, 생산자·완료 판정자·형식 검사·동일성 검토의 책임이 섞이지 않는다."
+          ],
+          "questions": [],
+          "summary": "작업 계약 TK-01M2S813V92Q77YY3S08KSWHNV(revision 2)을 승인한다. 계약 문면 전체와 입력 source:문제와-선정-근거.md(목표 정의·A₀,ℓ=1·Aₙ,₋₁=0 규약·단봉성의 c 양화), source:published-counts.json(n=1..5 행)을 대조했다. 질문·범위·완료 기준이 한 형식화 과제를 정하고, b를 직접 개수로 정의한 뒤 덧셈형 관계를 모든 n·ℓ에서 증명하게 해 절삭 뺄셈 오류를 배제하며, 중앙 형식 검사를 완료 판정 근거로 삼고 동일성 검토를 후속 절차로 분리했다. 반드시 고칠 결함은 찾지 못했다.",
+          "used_sources": [
+            "TK-01M2S813V92Q77YY3S08KSWHNV",
+            "source:문제와-선정-근거.md",
+            "source:published-counts.json",
+            "KN-01M2S813XMH6KCV770ANQY3X8E",
+            "context:goal",
+            "context:policy"
+          ]
+        },
+        "reported_models": [
+          "claude-opus-5"
+        ],
+        "role": "task_contract_review",
+        "status": "completed",
+        "submission_issues": [],
+        "usage": {
+          "cache_creation_input_tokens": 130808,
+          "cache_read_input_tokens": 314322,
+          "input_tokens": 6,
+          "output_tokens": 6890
+        },
+        "variant": null
+      },
+      "variant": "after_role_guidance"
+    }
+  ],
+  "scope": "One historical rejected contract, identical repair inputs and current common protocol; only preparation role guidance differs. Reviews receive neither variant labels nor the prior findings. This is not a general research-quality benchmark.",
+  "observed_result": "Both revised contracts passed producer checks and were approved by fresh reviewers. This sample establishes successful contract repair with the new guidance, not a measured general quality gain.",
+  "fixture_budget_note": "Direct, fixed Opus calls were used. The fixture labels execution_attempts while retaining inherited session_limits in config; scheduler and budget-mode behavior were not evaluated by this semantic comparison.",
+  "runner_sha256": "f4bd80034654bd42c5f86893043e7b8f8cc150fa57f5bcbfabc4a963bfa23326",
+  "prompt_document_hashes": {
+    "765a5a0f81fb4aaca0c4f9391ab9476a": {
+      "SKILL.md": "1ee4e2d9adeccc379ad29ec4f213cbac61419eb4b24e018452ae03d358e6259d",
+      "GLOSSARY.md": "74f673d1c0bd5763549dd99e066aace74ec274fead33c3bccf41c39bc1d969cb",
+      "references/공통-실행.md": "1d637bd50ab23d14d9805626a087f83105d819839a9c04dd9337348b60becaaf",
+      "references/모델과-실행예산.md": "38f6cbb15e0e0177b13994006cc4a0c6ae9b9ef6b9b85ac80a32f80b99fc9812",
+      "references/지식-저작과-재사용.md": "65e080ff5313d883be4df6457b53dad5c430b72647c037de61f246c11e9400e5",
+      "references/학술자료-활용.md": "c121f5f18da76fd490d322ab2134b8cc405798e9c42371c63ef993996910ba22",
+      "계약/작업-계약-검토.md": "4c535c43c76736b65df1898523561592fbd6847443ca57982a7028de005c7cc7"
+    },
+    "d1482d0449444f62945970553179486d": {
+      "SKILL.md": "1ee4e2d9adeccc379ad29ec4f213cbac61419eb4b24e018452ae03d358e6259d",
+      "GLOSSARY.md": "74f673d1c0bd5763549dd99e066aace74ec274fead33c3bccf41c39bc1d969cb",
+      "references/공통-실행.md": "1d637bd50ab23d14d9805626a087f83105d819839a9c04dd9337348b60becaaf",
+      "references/모델과-실행예산.md": "38f6cbb15e0e0177b13994006cc4a0c6ae9b9ef6b9b85ac80a32f80b99fc9812",
+      "references/지식-저작과-재사용.md": "65e080ff5313d883be4df6457b53dad5c430b72647c037de61f246c11e9400e5",
+      "references/학술자료-활용.md": "c121f5f18da76fd490d322ab2134b8cc405798e9c42371c63ef993996910ba22",
+      "계약/작업-계약-검토.md": "4c535c43c76736b65df1898523561592fbd6847443ca57982a7028de005c7cc7"
+    },
+    "dec83e9a43a147ef9059315ad2552cef": {
+      "SKILL.md": "1ee4e2d9adeccc379ad29ec4f213cbac61419eb4b24e018452ae03d358e6259d",
+      "GLOSSARY.md": "74f673d1c0bd5763549dd99e066aace74ec274fead33c3bccf41c39bc1d969cb",
+      "references/공통-실행.md": "1d637bd50ab23d14d9805626a087f83105d819839a9c04dd9337348b60becaaf",
+      "references/모델과-실행예산.md": "38f6cbb15e0e0177b13994006cc4a0c6ae9b9ef6b9b85ac80a32f80b99fc9812",
+      "references/지식-저작과-재사용.md": "65e080ff5313d883be4df6457b53dad5c430b72647c037de61f246c11e9400e5",
+      "references/학술자료-활용.md": "c121f5f18da76fd490d322ab2134b8cc405798e9c42371c63ef993996910ba22",
+      "계약/후보-준비.md": "ba83d4d42b921ef18821519d3d329b4f4d89c81e44afd6456337d7a7549f1a7e"
+    },
+    "fd1930225cf74d0cb78b277fbb2c54ca": {
+      "SKILL.md": "1ee4e2d9adeccc379ad29ec4f213cbac61419eb4b24e018452ae03d358e6259d",
+      "GLOSSARY.md": "74f673d1c0bd5763549dd99e066aace74ec274fead33c3bccf41c39bc1d969cb",
+      "references/공통-실행.md": "1d637bd50ab23d14d9805626a087f83105d819839a9c04dd9337348b60becaaf",
+      "references/모델과-실행예산.md": "38f6cbb15e0e0177b13994006cc4a0c6ae9b9ef6b9b85ac80a32f80b99fc9812",
+      "references/지식-저작과-재사용.md": "65e080ff5313d883be4df6457b53dad5c430b72647c037de61f246c11e9400e5",
+      "references/학술자료-활용.md": "c121f5f18da76fd490d322ab2134b8cc405798e9c42371c63ef993996910ba22",
+      "계약/후보-준비.md": "ece8ebdbd3bcc6037782145219d54391227ea06398f3e10ced6eb9826e651b94"
+    }
+  }
+}

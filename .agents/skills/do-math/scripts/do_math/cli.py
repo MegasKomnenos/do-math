@@ -93,6 +93,12 @@ def build_parser() -> _Parser:
 
     run = commands.add_parser("run", help="advance the workflow")
     _instance_arguments(run)
+    timeline = commands.add_parser("timeline", help="export executions from a fixed snapshot")
+    _instance_arguments(timeline)
+    timeline.add_argument("--snapshot")
+    timeline.add_argument("--format", choices=("json", "csv"), default="json")
+    timeline.add_argument("--timezone", default="Asia/Seoul")
+    timeline.add_argument("--include-operator", action="store_true", help="also read separately observed local operator logs")
     run.add_argument("--max-steps", type=int)
     run.add_argument("--watch", action="store_true")
 
@@ -112,6 +118,7 @@ def build_parser() -> _Parser:
     incoming.add_argument("--text")
     incoming.add_argument("--file")
     input_command.add_argument("--origin", choices=("user", "operator"), default="user")
+    input_command.add_argument("--responds-to", action="append", default=[], help="ID of an open user question answered by this input; repeat for multiple questions")
 
     configure = commands.add_parser("configure", help="change explicit instance configuration")
     _instance_arguments(configure)
@@ -176,7 +183,7 @@ def build_parser() -> _Parser:
     profile.add_argument("--claude-path")
 
     operator = commands.add_parser("operator", help="manage the independent scheduled operator")
-    operator.add_argument("mode", choices=("install", "uninstall", "status", "start", "start-operator", "check", "probe", "engine", "hold", "release"))
+    operator.add_argument("mode", choices=("install", "uninstall", "status", "start", "start-operator", "check", "probe", "engine", "wake", "hold", "release"))
     _instance_arguments(operator)
     operator.add_argument("--workspace", type=Path)
     operator.add_argument("--reason", default="")
@@ -223,6 +230,11 @@ def _schedule_failure(result: dict[str, Any], error: RuntimeError, instance: str
 
 def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
     command = args.command
+    if command == "timeline":
+        from .reporting import timeline, timeline_csv
+        value = timeline(args.repository, args.instance, snapshot=args.snapshot, timezone_name=args.timezone,
+                         include_operator=args.include_operator)
+        return (timeline_csv(value) if args.format == "csv" else value), 0
     if command == "init":
         _require_git(args.repository, args.create_repository)
         goal = args.goal if args.goal is not None else _text_file(args.goal_file)
@@ -254,7 +266,7 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
     if command in {"pause", "resume", "close"}:
         return _control(args, command, text=args.reason), 0
     if command == "input":
-        return _control(args, "input", text=args.text if args.text is not None else _text_file(args.file)), 0
+        return _control(args, "input", text=args.text if args.text is not None else _text_file(args.file), config={"responds_to": args.responds_to}), 0
     if command == "configure":
         requested = _json_file(args.config_file)
         result = _control(args, "configure", config=requested)
@@ -339,7 +351,12 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
             if mode == "hold":
                 marker = scheduled_operator.hold(workspace, reason=args.reason)
                 pause = _control(args, "pause", text="User requested scheduled operator HOLD " + marker["id"])
-                return {"hold": marker, "pause": pause}, 0
+                try:
+                    cleanup = scheduled_operator.schedule("cancel-wake", repository=args.repository, instance=args.instance, workspace=workspace)
+                    (workspace / "operator/wake-registration.json").unlink(missing_ok=True)
+                except (RuntimeError, OSError) as error:
+                    cleanup = {"status": "failed", "error": str(error), "hold_still_blocks_wake": True}
+                return {"hold": marker, "pause": pause, "wake_cleanup": cleanup}, 0
             if mode == "release":
                 released = scheduled_operator.release(workspace)
                 marker = released.get("released")
@@ -350,6 +367,8 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
                 else:
                     released["resume"] = {"effect": "not_requested", "reason": "no HOLD was released"}
                 return released, 0
+            if mode == "wake":
+                return scheduled_operator.wake(args.repository, args.instance, workspace), 0
             if mode == "engine":
                 return scheduled_operator.run_engine(args.repository, args.instance, workspace), 0
             return scheduled_operator.check(args.repository, args.instance, workspace, probe=mode == "probe"), 0
@@ -357,6 +376,7 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
 
 
 def _human_status(status: dict[str, Any]) -> str:
+    from .reporting import display_time
     budget = status["budget"]
     if status.get("budget_unit") == "concurrent_sessions":
         budget_text = "sessions: " + "; ".join(pool + " " + ", ".join(
@@ -368,14 +388,24 @@ def _human_status(status: dict[str, Any]) -> str:
     assurance = status["assurance"]
     task_text = ", ".join(f"{task['id']}={task['status']}" for task in tasks) or "none"
     unknown = ", ".join(f"{key}={value}" for key, value in assurance.items())
-    return "\n".join((
+    lines = [
         f"goal: {status['goal']}",
         f"goal_status: {status['goal_status']}",
         f"status: {status['status']}  snapshot: {status['snapshot']}",
         budget_text,
         f"tasks: {task_text}",
+        "observed (Asia/Seoul): " + str(display_time(status.get('research_observed_at')) or 'unknown'),
         f"unknown or bounded scope: {unknown}",
-    ))
+    ]
+    for task in tasks:
+        waits = ', '.join(row.get('kind', 'unknown') for row in task.get('waits', [])) or 'none'
+        lines.append(f"  {task['id']} revision={task.get('revision', 'unknown')} stage={task['status']} "
+                     f"active_records={','.join(task.get('active_execution_ids', [])) or 'none'} "
+                     f"queued={','.join(str(value) for value in task.get('selected_actions', [])) or 'none'} "
+                     f"waits={waits} next={task.get('next_owner') or 'none'}")
+    for name, gate in status.get('provider_waits', {}).get('providers', {}).items():
+        lines.append(f"provider {name}: {gate['state']} retry={display_time(gate.get('retry_at')) or 'unknown'} generation={gate['generation']}")
+    return '\n'.join(lines)
 
 
 def _emit(value: dict[str, Any] | str) -> None:

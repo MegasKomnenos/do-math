@@ -29,6 +29,8 @@ STRINGS = {"type": "array", "items": TEXT, "uniqueItems": True}
 PRODUCERS = {"research_work", "supplemental_research"}
 PLANNERS = {"research_preparation", "research_plan"}
 EXTENSION_ROLES = {
+    "revision_requests": {*PRODUCERS, *PLANNERS}, "revision_resolutions": {*PRODUCERS, "research_preparation"},
+    "action_resolutions": {*PLANNERS, "operational_review"},
     "task_conditions": {"research_preparation"}, "task_dispositions": PLANNERS,
     "research_insights": {"research_preparation", "research_plan", "research_work",
         "supplemental_research", "identity_review", "task_contract_review", "goal_audit",
@@ -38,6 +40,8 @@ EXTENSION_ROLES = {
     "research_requests": {"identity_review"}, "academic_resolutions": {"research_plan"},
     "model_assessments": PLANNERS, "model_assessment_deferrals": {"research_preparation"}, "queued_requests": {"research_plan"},
 }
+for _family in ("question_routes", "question_resolutions"):
+    EXTENSION_ROLES[_family] = set(EXTENSION_ROLES["research_insights"])
 
 
 def _object(properties, required=None):
@@ -54,6 +58,7 @@ def extension_schema(action: dict, definitions: dict) -> dict:
         "confirmed_scope": TEXT}, ["kind", "source", "target"])
     shapes = {
         "task_conditions": _object({"task_id": TEXT, "task_title": TEXT, "dependencies": STRINGS,
+            "knowledge_revision_targets": STRINGS,
             "occurrence_condition": {"type": "object"}, "observation_rules": {"type": "array"}}, []),
         "task_dispositions": _object({"task_id": TEXT, "disposition": {"const": "withdraw"}, "reason": TEXT}),
         "research_insights": _object({"kind": kind, "title": TEXT, "statement": TEXT, "summary": TEXT,
@@ -72,6 +77,14 @@ def extension_schema(action: dict, definitions: dict) -> dict:
             **ASSESSMENT_SCHEMA["properties"]}),
         "model_assessment_deferrals": _object({"task_id": TEXT, "reason": TEXT}),
         "queued_requests": _object({"request_id": TEXT, "decision": {"enum": ["keep", "cancel"]}, "reason": TEXT}),
+        "revision_requests": _object({"record_ids": {**STRINGS, "minItems": 1}, "reason": TEXT}),
+        "revision_resolutions": _object({"record_id": TEXT, "disposition": {"enum": ["revised", "unchanged", "deferred", "delegated"]},
+            "reason": TEXT, "task_title": TEXT}, ["record_id", "disposition", "reason"]),
+        "question_routes": _object({"question_index": {"type": "integer", "minimum": 0},
+            "owner": {"enum": ["user", "research", "operations"]}, "target_ids": STRINGS, "reason": TEXT}),
+        "question_resolutions": _object({"question_id": TEXT, "disposition": {"enum": ["resolved", "superseded"]},
+            "evidence_refs": {**STRINGS, "minItems": 1}, "reason": TEXT}),
+        "action_resolutions": _object({"action_id": TEXT, "evidence_execution_id": TEXT, "reason": TEXT}),
     }
     allowed = {name for name, roles in EXTENSION_ROLES.items() if action["role"] in roles}
     if "assessment_targets" in action:
@@ -105,7 +118,20 @@ def reported_references(output: dict, extensions: dict, context: dict | None = N
     for item in output.get("knowledge", []):
         refs.extend(item.get("dependencies", []))
     for candidate in output.get("candidates", []):
-        refs.extend([*candidate.get("inputs", []), *candidate.get("reuse", [])])
+        refs.extend([candidate.get("revises_task_id"), *candidate.get("inputs", []), *candidate.get("reuse", [])])
+    refs.extend(output.get("selections", []))
+    for row in [*output.get("deferred", []), *output.get("task_assessments", []), *extensions.get("task_dispositions", [])]:
+        refs.append(row.get("task_id"))
+    for row in extensions.get("task_conditions", []):
+        refs.extend(row.get("dependencies", []))
+        refs.extend(row.get("knowledge_revision_targets", []))
+        refs.extend(planning.condition_refs(row.get("occurrence_condition")))
+    for row in extensions.get("revision_requests", []):
+        refs.extend(row.get("record_ids", []))
+    for row in extensions.get("revision_resolutions", []):
+        refs.append(row.get("record_id"))
+    if context:
+        refs.extend(context.get("action", {}).get("revision_targets", {}))
     for relation in [*output.get("relations", []), *extensions.get("relations", [])]:
         refs.extend([relation.get("source"), relation.get("target"),
                      *relation.get("evidence_refs", []), *relation.get("formal_result_refs", [])])
@@ -120,12 +146,69 @@ def reported_references(output: dict, extensions: dict, context: dict | None = N
         refs.extend([claim.get("source"), claim.get("target")])
     for entry in extensions.get("research_requests", []):
         refs.extend(entry.get("source_refs", []))
-    aliases = {}
-    if context:
-        aliases.update({row["path"]: row["id"] for row in context.get("knowledge_catalog", [])})
-        aliases.update({row["local_path"]: row["name"] for row in context.get("sources", [])})
-    # A supplied input file keeps its record identity when cited as workspace:<path>.
-    return list(dict.fromkeys(aliases.get(ref.removeprefix("workspace:"), ref) for ref in refs if isinstance(ref, str)))
+    return list(dict.fromkeys(normalize_reference(ref, context or {}) for ref in refs if isinstance(ref, str)))
+
+
+def reference_aliases(context: dict) -> dict:
+    aliases = {row["path"]: row["id"] for row in context.get("knowledge_catalog", []) if row.get("path")}
+    for row in context.get("sources", []):
+        for value in (row.get("id"), row.get("path"), row.get("local_path"), row["name"], "source:" + row["name"]):
+            if value:
+                aliases[value] = row["name"]
+    return aliases
+
+
+def normalize_reference(reference: str, context: dict) -> str:
+    # Historical artifact paths are not aliases of the current record.
+    return reference_aliases(context).get(reference.removeprefix("workspace:"), reference)
+
+
+def _reference_locators(context):
+    locators = set()
+    def collect(value):
+        if isinstance(value, dict):
+            for key, child in value.items():
+                if key == "reference_catalog":
+                    continue  # The projection cannot grant itself authority.
+                if key in {"path", "local_path", "artifact_ref", "ref", "source_ref"} and isinstance(child, str):
+                    locators.add(child)
+                elif isinstance(child, (dict, list)):
+                    collect(child)
+        elif isinstance(value, list):
+            for child in value:
+                collect(child)
+    collect(context)
+    return locators
+
+
+def reference_catalog(context: dict, workspace: Path) -> list[dict]:
+    """Project the same reference checker used by producers and receivers."""
+    candidates = (_reference_ids(context) | set(context.get("available_input_refs", [])) |
+                  _reference_locators(context) | set(reference_aliases(context)) | {"context:goal", "context:policy"})
+    if context.get("proposal") or context.get("role_review", {}).get("proposal"):
+        candidates.add("proposal")
+    candidates.update("issue:" + key for key in context.get("role_review", {}).get("issues", {}))
+    fixed_research = context.get("action", {}).get("role") == "supplemental_research" and context.get("review_research")
+    if fixed_research:
+        candidates = {row["ref"] for row in context["review_research"].get("sources", [])}
+    records = {row["id"] for row in context.get("knowledge_catalog", [])}
+    records.update(row["id"] for row in context.get("tasks", []))
+    if context.get("task"):
+        records.add(context["task"]["id"])
+    source_names = {row["name"] for row in context.get("sources", [])}
+    rows = []
+    for ref in sorted(candidates):
+        try:
+            validate_reference(ref, context, workspace)
+        except (ValueError, OSError):
+            continue
+        identity = normalize_reference(ref, context)
+        current = identity in records or identity in source_names
+        kind = ("source" if identity in source_names else "record" if identity in records else
+                "historical_artifact" if ref.startswith("runtime/artifacts/") else "supplied_reference")
+        rows.append({"value": ref, "canonical_ref": identity, "kind": kind,
+                     "basis": "current_content" if current else "fixed_input_or_historical_evidence"})
+    return rows
 
 
 def _issue(path, message):
@@ -139,17 +222,21 @@ def _schema_issues(value, schema, path):
 
 def _reference_ids(context):
     ids = {row["id"] for row in context.get("knowledge_catalog", [])}
+    if isinstance(context.get("instance_id"), str):
+        ids.add(context["instance_id"])
     ids.update(row["id"] for row in context.get("tasks", []))
     ids.update(row["id"] for row in context.get("sources", []) if row.get("id"))
     for source in context.get("sources", []):
         ids.update((source["name"], source["path"], "source:" + source["name"]))
     ids.update(row["id"] for row in context.get("grants", []))
-    for key in ("user_inputs", "events", "external_operations", "external_rejections"):
+    for key in ("user_inputs", "events", "external_operations", "external_rejections", "question_links"):
         ids.update(row["id"] for row in context.get(key, []) if row.get("id"))
+    ids.update(row['resolution']['id'] for row in context.get('question_links', []) if isinstance(row.get('resolution'), dict) and row['resolution'].get('id'))
     for key in ("recent_history", "preparation_history"):
         ids.update(row["execution_id"] for row in context.get(key, []) if row.get("execution_id"))
     for task in context.get("tasks", []):
         ids.update(row["execution_id"] for row in task.get("results", []) if row.get("execution_id"))
+        ids.update(row["execution_id"] for row in task.get("reviews", []) if row.get("execution_id"))
     for key in ("task", "user_request", "execution_to_review", "previous_execution"):
         if isinstance(context.get(key), dict) and context[key].get("id"):
             ids.add(context[key]["id"])
@@ -172,20 +259,9 @@ def validate_reference(reference: str, context: dict, workspace: Path) -> None:
         return
     if reference.startswith("issue:") and reference.removeprefix("issue:") in context.get("role_review", {}).get("issues", {}):
         return
-    locators = set()
-    def collect(value):
-        if isinstance(value, dict):
-            for key, child in value.items():
-                if key in {"path", "local_path", "artifact_ref", "ref", "source_ref"} and isinstance(child, str):
-                    locators.add(child)
-                elif isinstance(child, (dict, list)):
-                    collect(child)
-        elif isinstance(value, list):
-            for child in value:
-                collect(child)
     # Historical artifact locators identify their original bytes, not the
     # newest knowledge revision with a similar ID.
-    collect(context)
+    locators = _reference_locators(context)
     for source in context.get("sources", []):
         locators.update((source["name"], "source:" + source["name"]))
     if reference in locators:
@@ -194,7 +270,8 @@ def validate_reference(reference: str, context: dict, workspace: Path) -> None:
     path = _safe_path(workspace, name)
     relative = Path(name)
     if (relative.parts[0] != "input" and _excluded(relative)) or not path.is_file():
-        raise ValueError("reference must identify supplied input or a preserved workspace file: " + reference)
+        raise ValueError("reference must identify supplied input or a preserved workspace file: " + reference +
+                         "; use an exact reference_catalog value or workspace:<preserved-file>")
 
 
 def validate_research_reference(reference: str, context: dict, workspace: Path) -> None:
@@ -218,6 +295,10 @@ def payload_issues(output: dict, schema: dict, context: dict, extensions: dict, 
     extension_errors = _schema_issues(extensions, extension_schema(action, context.get("kind_definitions", {})), "activity-extensions.json")
     if issues or extension_errors:
         return issues + extension_errors
+    from .revisions import submission_errors, dependency_cycles
+    issues.extend(submission_errors(output, extensions, context))
+    from .questions import validate_extensions
+    issues.extend(validate_extensions(output, extensions, context))
 
     def check(path, operation):
         try:
@@ -230,6 +311,17 @@ def payload_issues(output: dict, schema: dict, context: dict, extensions: dict, 
             raise ValueError(message)
 
     known = _reference_ids(context)
+    blocked_ids = {row["action_id"] for row in context.get("blocked_actions", [])}
+    resolutions = extensions.get("action_resolutions", [])
+    check("activity-extensions.json/action_resolutions", lambda: require(
+        len({row["action_id"] for row in resolutions}) == len(resolutions), "failed action claims must be distinct"))
+    for index, row in enumerate(resolutions):
+        check(f"activity-extensions.json/action_resolutions/{index}", lambda row=row: require(
+            row["action_id"] in blocked_ids and (row["evidence_execution_id"] == "current" or row["evidence_execution_id"] in known),
+            "action resolution requires a supplied failed action and current or supplied execution evidence"))
+    for index, row in enumerate(extensions.get("question_resolutions", [])):
+        for ref in row["evidence_refs"]:
+            check(f"activity-extensions.json/question_resolutions/{index}/evidence_refs", lambda ref=ref: validate_reference(ref, context, workspace))
     knowledge_ids = {row["id"] for row in context.get("knowledge_catalog", [])}
     tasks = {row["id"]: row for row in context.get("tasks", [])}
     if isinstance(context.get("task"), dict):
@@ -316,6 +408,17 @@ def payload_issues(output: dict, schema: dict, context: dict, extensions: dict, 
         if "occurrence_condition" in entry:
             check(f"activity-extensions.json/task_conditions/{index}/occurrence_condition", lambda entry=entry: planning.validate_condition(entry["occurrence_condition"]))
     check("activity-extensions.json/task_conditions", lambda: require(len(targeted) == len(set(targeted)), "task conditions must not repeat a target"))
+    if conditions:
+        graph = deepcopy(tasks)
+        titles = {row["title"]: row.get("revises_task_id") or row["title"] for row in output.get("candidates", [])}
+        for row in output.get("candidates", []):
+            graph[titles[row["title"]]] = {"dependencies": []}
+        for row in conditions:
+            target = row.get("task_id") or titles.get(row.get("task_title"))
+            if target in graph:
+                graph[target]["dependencies"] = [titles.get(ref, ref) for ref in row.get("dependencies", [])]
+        cycles = [cycle for cycle in dependency_cycles(graph) if set(cycle) & set(titles.values())]
+        check("activity-extensions.json/task_conditions/dependencies", lambda: require(not cycles, "explicit task dependency cycle: " + str(cycles)))
     for family, key in (("task_dispositions", "task_id"), ("queued_requests", "request_id"),
                         ("research_requests", "id"), ("academic_resolutions", "id")):
         rows = extensions.get(family, [])
@@ -400,6 +503,7 @@ def payload_issues(output: dict, schema: dict, context: dict, extensions: dict, 
 
 def install_tools(workspace: Path, context: dict, schema: dict, max_artifact_bytes: int | None) -> dict:
     """Copy one installed code edition, never the central research state."""
+    context["reference_catalog"] = reference_catalog(context, workspace)
     package = Path(__file__).resolve().parent
     archive = io.BytesIO()
     with zipfile.ZipFile(archive, "w") as bundle:

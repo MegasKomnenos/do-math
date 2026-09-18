@@ -283,9 +283,9 @@ class ReviewEngineMixin:
         if updated['status'] == 'working':
             self._queue_identity_actions(item['id'], action['review_cycle_id'])
             return
-        self._publish_identity_review_result(action, updated)
+        self._publish_identity_review_result(action, updated, execution_id)
 
-    def _publish_identity_review_result(self, action, updated):
+    def _publish_identity_review_result(self, action, updated, execution_id):
         item = self.instance['knowledge'][action['target']]
         formal = item.get('formal', {})
         source_hash = hashlib.sha256(item['lean_code'].encode('utf-8')).hexdigest()
@@ -328,18 +328,11 @@ class ReviewEngineMixin:
                       else 'Formal source or environment no longer matches the reviewed proposal')
         item['identity_assessment'] = self._identity_assessment(updated, effective=effective, reason=reason)
         item['identity_assessment']['formal_verification'] = deepcopy(_proposal(item)['formal'])
-        if updated['decision'] == 'unresolved':
-            questions = [question for entry in updated['results'].values() for question in entry['output'].get('questions', [])]
-            for investigation in updated.get('research', {}).values():
-                if investigation.get('status') in {'pending', 'unresolved'}:
-                    questions.append(investigation['question'])
-                    if investigation.get('result'):
-                        questions.extend(investigation['result']['output'].get('questions', []))
-            for followup in updated.get('followup', []):
-                questions.extend(request['question'] for request in followup.get('research_requests', []))
-            for question in dict.fromkeys(questions):
-                message = f"Identity review {updated['id']} unresolved: {question}"
-                if message not in self.runtime.setdefault('questions', []): self.runtime['questions'].append(message)
+        for entry in updated['results'].values():
+            producer_action = self.runtime['executions'].get(entry['execution_id'], {}).get('action',
+                {'role': 'identity_review', 'target': item['id'], 'review_cycle_id': action['review_cycle_id'], **entry['action']})
+            self._record_output_questions(producer_action, entry['output'], entry['execution_id'], public=True)
+        self._record_review_questions(updated, execution_id)
         if action['review_cycle_id'] not in item.setdefault('review_history', []):
             item['review_history'].append(action['review_cycle_id'])
         self.runtime['queue'][:] = [queued for queued in self.runtime['queue'] if not (
@@ -424,7 +417,7 @@ class ReviewEngineMixin:
             queued.get('role') == 'identity_review' and queued.get('review_cycle_id') == action['review_cycle_id'] and
             all(queued.get(key) == action.get(key) for key in ('stage', 'slot', 'round')))]
         if updated['status'] != 'working':
-            self._publish_identity_review_result(action, updated)
+            self._publish_identity_review_result(action, updated, execution_id)
             return True
         for request, specs in zip(requests, source_specs):
             request_id = f"{execution_id}:{request['id']}"

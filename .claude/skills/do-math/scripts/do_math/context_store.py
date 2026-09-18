@@ -14,7 +14,7 @@ from .repository import canonical_json
 _REPARSE_POINT = 0x400
 _CATALOG_KEYS = (
     "recent_history", "action", "task", "tasks", "previous_execution", "knowledge_catalog", "eligible_knowledge",
-    "relations", "sources", "user_inputs", "open_questions", "goal_judgments", "preparation_history", "blocked_actions",
+    "relations", "sources", "user_inputs", "open_questions", "goal_judgments", "preparation_history", "blocked_actions", "question_links", "pending_revisions", "reference_catalog",
     "resume_checkpoint", "recovery_materials", "previous_output_files", "execution_to_review", "observation",
     "kind_definitions", "task_readiness", "available_input_refs", "queued_work", "external_operations",
     "external_rejections", "academic_requirements", "academic_validation", "events", "grants", "config", "ongoing_preparation",
@@ -239,11 +239,31 @@ def fit_context(context: dict, *, max_bytes: int, workspace: Path,
     catalog = write_source_catalog(context, workspace)
     fitted = deepcopy(context)
     reductions: list[dict] = []
+    if _encoded_size(fitted) > max_bytes and isinstance(context.get("tasks"), list):
+        from .planning import CONTRACT_FIELDS
+        source = catalog["entries"]["tasks"]
+        projection = []
+        for index, task in enumerate(context["tasks"]):
+            row = {key: deepcopy(value) for key, value in task.items()
+                   if key not in {"results", "reviews", "revision_history", "assessment_history"}}
+            for field in ("results", "reviews", "revision_history", "assessment_history"):
+                if field in task:
+                    row[field + "_source"] = {**source, "json_pointer": f"/{index}/{field}"}
+                    row[field + "_count"] = len(task[field])
+            row["result_index"] = [{key: deepcopy(result[key]) for key in ("execution_id", "summary", "outcome", "remaining_work") if key in result}
+                                   for result in task.get("results", [])]
+            projection.append(row)
+        if _encoded_size(projection) < _encoded_size(context["tasks"]):
+            fitted["tasks"] = projection
+            reductions.append({"key": "tasks", "kind": "task_history_references", "source_ref": source,
+                               "original_bytes": _encoded_size(context["tasks"]), "projected_bytes": _encoded_size(projection)})
     if _encoded_size(fitted) > max_bytes and isinstance(context.get("action"), dict):
         action = context["action"]
         keys = {"id", "role", "target", "stage", "slot", "round", "review_cycle_id", "basis", "required",
                 "research_request_id", "requesting_slot", "owner_review_cycle_id", "contract_basis", "live",
-                "repair_attempt", "recovery_attempt", "model_selection", "event_refs"}
+                "repair_attempt", "recovery_attempt", "model_selection", "event_refs", "revision_targets",
+                "revision_request_action_id", "lineage_id", "merged_action_ids", "review_basis_key",
+                "selected_contract_sha256", "selected_review_basis_key", "refresh", "revision_parent_ids"}
         projection = {key: deepcopy(value) for key, value in action.items() if key in keys}
         ref = catalog["entries"]["action"]
         projection["source_ref"] = ref
@@ -304,7 +324,8 @@ def fit_context(context: dict, *, max_bytes: int, workspace: Path,
         if key == "tasks":
             universe, listing = _ready_projection(context[key])
             fitted[key] = {"total": len(context[key]) if isinstance(context[key], list) else None,
-                           "ready_universe_ids": universe, "ready_listing": listing, "source_ref": ref}
+                           "ready_universe_ids": universe, "ready_listing": listing, "source_ref": ref,
+                           "assessing_universe_ids": [task["id"] for task in context[key] if task.get("status") == "assessing"]}
             if _encoded_size(fitted) > max_bytes:
                 fitted[key]["ready_listing"] = []
             reductions.append({"key": key, "kind": "ready_catalog", "source_ref": ref,

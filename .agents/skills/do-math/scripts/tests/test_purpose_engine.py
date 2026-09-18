@@ -89,6 +89,17 @@ def parse_context(prompt, workspace):
                 raw = (workspace / reference['path']).read_bytes()
                 if hashlib.sha256(raw).hexdigest() != reference['sha256']: raise AssertionError('catalog bytes changed')
                 value[key] = json.loads(raw)
+    for task in value.get('tasks', []) if isinstance(value.get('tasks'), list) else []:
+        for field in ('results', 'reviews', 'revision_history', 'assessment_history'):
+            reference = task.get(field + '_source')
+            if reference:
+                raw = (workspace / reference['path']).read_bytes()
+                if hashlib.sha256(raw).hexdigest() != reference['sha256']:
+                    raise AssertionError('task history bytes changed')
+                contents = json.loads(raw)
+                for token in reference['json_pointer'].strip('/').split('/'):
+                    contents = contents[int(token)] if isinstance(contents, list) else contents[token]
+                task[field] = contents
     return value
 
 
@@ -156,6 +167,15 @@ class PurposeRunner:
                 if not (workspace / 'stop-request.json').exists(): raise AssertionError('Stop did not request a checkpoint')
                 return {'status': 'stopped', 'output': None, 'usage': {'input_tokens': 30, 'output_tokens': 4}, 'error': 'Fixture honored the stop request'}
         jsonschema.validate(output, output_schema)
+        if role == 'research_preparation' and action.get('revision_targets'):
+            path = workspace / 'activity-extensions.json'
+            extensions = json.loads(path.read_bytes()) if path.exists() else {}
+            revised = {candidate.get('revises_task_id') for candidate in output.get('candidates', [])}
+            extensions['revision_resolutions'] = [{'record_id': identifier,
+                'disposition': 'revised' if identifier in revised else 'deferred',
+                'reason': 'The fixture replaces this contract.' if identifier in revised else 'The fixture preserves this remaining obligation.'}
+                for identifier in action['revision_targets']]
+            path.write_bytes(canonical_json(extensions))
         self.returned.append({'role': role, 'action': deepcopy(action), 'output': deepcopy(output)})
         return {'status': 'completed', 'output': output, 'usage': {'input_tokens': 20, 'output_tokens': 10}, 'error': None}
 

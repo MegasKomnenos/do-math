@@ -14,11 +14,163 @@ CONTRACT_FIELDS = ("id", "revision", "title", "question", "scope", "excluded_sco
                    "completion_criteria", "inputs", "reuse", "dependencies", "occurrence_condition",
                    "work_class", "profile_refs", "authority_refs", "expected_research_change",
                    "academic_requirement_id", "requirements_sha256", "solution_basis", "required_external_effects",
-                   "initial_observation_rules", "model_assessment")
+                   "initial_observation_rules", "model_assessment", "knowledge_revision_targets")
 
 def contract_hash(task: dict) -> str:
     """Hash only fields whose revision approval is intended to cover."""
     return _hash({key: task[key] for key in CONTRACT_FIELDS if key in task})
+
+
+TERMINAL_TASK_STATUSES = frozenset({"completed", "closed"})
+
+
+def task_reference_basis(task: dict) -> dict:
+    """What a result that only cites a task relied on: its contract, the results it could read and whether it was open.
+
+    Lifecycle bookkeeping (reviews, selection, readiness, open status moves) is excluded; the receiver
+    re-checks every task that a result actually selects, assesses or revises."""
+    results = task.get("results", [])
+    return {"id": task["id"], "contract_sha256": contract_hash(task), "result_count": len(results),
+            "results_sha256": _hash(results), "terminal": task.get("status") in TERMINAL_TASK_STATUSES}
+
+
+def task_reference_changes(basis: list[dict], tasks: dict) -> list[str]:
+    reasons = []
+    for row in basis:
+        task = tasks.get(row["id"])
+        if task is None:
+            reasons.append("missing:" + row["id"])
+            continue
+        if contract_hash(task) != row["contract_sha256"]:
+            reasons.append("contract_changed:" + row["id"])
+        # Results are append-only; later returns do not change what the producer read.
+        if _hash(task.get("results", [])[:row["result_count"]]) != row["results_sha256"]:
+            reasons.append("results_changed:" + row["id"])
+    return reasons
+
+
+def condition_refs(condition) -> set[str]:
+    if not isinstance(condition, dict):
+        return set()
+    refs = {condition[key] for key in ("record_id", "task_id", "from_id", "to_id") if isinstance(condition.get(key), str)}
+    for child in condition.get("args", []):
+        refs.update(condition_refs(child))
+    refs.update(condition_refs(condition.get("arg")))
+    return refs
+
+
+def action_read_ids(action: dict, instance: dict, runtime: dict) -> set[str]:
+    records = {**runtime.get("tasks", {}), **instance.get("knowledge", {})}
+    seeds = {action.get("target"), *action.get("revision_targets", {}), *action.get("assessment_targets", {})} - {None}
+    if action.get("role") == "operational_review":
+        parent = runtime.get("executions", {}).get(action.get("target"), {})
+        seeds.update(row["id"] for row in parent.get("decision_basis", {}).get("records", []))
+        if not parent.get("action", {}).get("review_cycle_id"):
+            seeds.add(parent.get("action", {}).get("target"))
+    if action.get("role") == "research_plan":
+        seeds.update(records)
+    visited = set()
+    while seeds:
+        identifier = seeds.pop()
+        if identifier in visited or identifier not in records:
+            continue
+        visited.add(identifier)
+        record = records[identifier]
+        seeds.update(ref for key in ("inputs", "reuse", "dependencies") for ref in record.get(key, []) if isinstance(ref, str))
+        seeds.update(condition_refs(record.get("occurrence_condition")))
+        for review in record.get("reviews", []):
+            seeds.update(row["id"] for row in review.get("decision_basis", {}).get("records", []))
+        claim = record.get("relation_claim") or {}
+        seeds.update(ref for key in ("source", "target") if isinstance(ref := claim.get(key), str))
+    return visited
+
+
+def pending_revisions(runtime: dict) -> list[dict]:
+    rows = {}
+    for action in runtime.get("queue", []):
+        if action.get("revision_targets"):
+            rows[action.get("id")] = {"action": action, "state": "queued"}
+    for identifier, entry in runtime.get("waiting_actions", {}).items():
+        targets = entry.get("revision_targets", entry.get("action", {}).get("revision_targets", {}))
+        if targets and identifier not in rows:
+            rows[identifier] = {"action": {**entry["action"], "revision_targets": targets}, "state": "waiting",
+                                "delegated_to_task_id": entry.get("delegated_to_task_id"),
+                                "delegated_targets": entry.get("delegated_targets", {})}
+    for execution in runtime.get("executions", {}).values():
+        action = execution.get("action", {})
+        if execution.get("status") != "ended" and action.get("revision_targets"):
+            rows[action.get("id")] = {"action": action, "state": "running", "execution_id": execution["id"]}
+    return list(rows.values())
+
+
+def revision_waits(action: dict, instance: dict, runtime: dict) -> list[dict]:
+    """Declared writers wait for existing readers; new dependent readers wait."""
+    reads = action_read_ids(action, instance, runtime)
+    writes = set(action.get("revision_targets", {}))
+    role = action.get("role")
+    if role in {"operational_review", "intent_interpretation", "maintenance"}:
+        return []
+    own_request = runtime.get("tasks", {}).get(action.get("target"), {}).get("revision_request_action_id")
+    owners = {own_request, *action.get("revision_parent_ids", [])} - {None}
+    owned_targets = writes | set(runtime.get("tasks", {}).get(action.get("target"), {}).get("knowledge_revision_targets", []))
+    live = [e for e in runtime.get("executions", {}).values() if e.get("status") != "ended"
+            and e.get("action", {}).get("id") != action.get("id")]
+    reasons = []
+    for execution in live:
+        overlap = writes & action_read_ids(execution.get("action", {}), instance, runtime)
+        if overlap:
+            reasons.append({"kind": "contract_revision", "execution_id": execution["id"],
+                            "record_ids": sorted(overlap), "reason": "existing reader must finish before revision"})
+    for pending in pending_revisions(runtime):
+        other = pending["action"]
+        if other.get("id") == action.get("id"):
+            continue
+        # Diagnosis and planning can resolve a failed revision. Only live writers
+        # block a new global plan; their actual readers already drained above.
+        if role == "research_plan" and pending["state"] != "running":
+            continue
+        overlap = reads & set(other.get("revision_targets", {}))
+        if other.get("id") in owners:
+            overlap -= owned_targets
+        if overlap:
+            reasons.append({"kind": "contract_revision", "action_id": other.get("id"),
+                            "record_ids": sorted(overlap), "reason": "required record has an unresolved revision"})
+    return reasons
+
+
+def revision_cycles(instance: dict, runtime: dict) -> list[list[str]]:
+    from .revisions import dependency_cycles
+    rows = pending_revisions(runtime)
+    graph = {}
+    for row in rows:
+        action = row["action"]
+        if not action.get("id"):
+            continue
+        graph[action["id"]] = {"dependencies": [wait["action_id"] for wait in revision_waits(action, instance, runtime) if wait.get("action_id")]}
+    return dependency_cycles(graph)
+
+
+def contract_review_current(review: dict, task: dict, instance: dict, runtime: dict) -> dict:
+    from .input_basis import decision_basis_changes, sources_current
+    expected = {"revision": task.get("revision"), "contract_sha256": contract_hash(task),
+                "goal_revision": instance.get("goal_revision"), "policy_revision": instance.get("policy_revision")}
+    reasons = [{"field": key, "before": review.get(key), "after": value}
+               for key, value in expected.items() if review.get(key) != value]
+    if "decision_basis" in review or instance.get("feature_version", 0) >= 4:
+        reasons.extend(decision_basis_changes(review.get("decision_basis"), instance, runtime))
+    elif review.get("inputs_current") is False:
+        reasons.append({"field": "inputs_current", "after": False})
+    if not sources_current(review.get("source_basis", []), instance):
+        reasons.append({"field": "source_basis", "after": "changed"})
+    return {"valid": not reasons, "changes": reasons}
+
+
+def review_basis_key(task: dict, instance: dict, runtime: dict) -> str:
+    from .input_basis import capture_decision_basis
+    refs = action_read_ids({"role": "task_contract_review", "target": task["id"]}, instance, runtime)
+    return _hash({"contract": contract_hash(task), "goal_revision": instance.get("goal_revision"),
+                  "policy_revision": instance.get("policy_revision"),
+                  "decision_basis": capture_decision_basis(instance, runtime, refs)})
 
 
 def ready_task_ids(runtime: dict) -> list[str]:
@@ -192,7 +344,11 @@ def evaluate_condition(condition: dict, instance: dict, runtime: dict) -> dict:
     return {"state": state, "basis": basis, "errors": errors}
 
 
-def task_ready(task: dict, instance: dict, runtime: dict) -> dict:
+def task_ready(task: dict, instance: dict, runtime: dict, *, include_scheduling_waits=True) -> dict:
+    from .questions import user_waits
+    waits = user_waits({"role": "research_work", "target": task["id"]}, instance, runtime)
+    if waits and include_scheduling_waits:
+        return {"state": "not_ready", "basis": [], "errors": ["an explicit user decision is required"], "waits": waits}
     if instance.get("goal_status") in {"mathematically_solved", "research_goal_satisfied"} and not task.get("academic_requirement_id"):
         return {"state": "not_ready", "basis": [], "errors": ["research production stopped after goal satisfaction"]}
     if task.get("status") not in {"planned", "waiting", "needs_revision", "ready"}:
@@ -205,7 +361,12 @@ def task_ready(task: dict, instance: dict, runtime: dict) -> dict:
     approved = [r for r in reviews if r.get("revision") == revision and r.get("decision") == "approved" and r.get("inputs_current", True)]
     if task.get("feature_version",0)>=2:
         approved=[r for r in approved if r.get("contract_sha256")==contract_hash(task) and r.get("goal_revision")==instance.get("goal_revision") and r.get("policy_revision")==instance.get("policy_revision")]
+    if instance.get("feature_version", 0) >= 4 or any("decision_basis" in r for r in approved):
+        approved = [r for r in approved if contract_review_current(r, task, instance, runtime)["valid"]]
     if not approved: return {"state": "not_ready", "basis": [], "errors": ["current revision lacks approved contract review"]}
+    waits = revision_waits({"role": "research_work", "target": task["id"]}, instance, runtime)
+    if waits and include_scheduling_waits:
+        return {"state": "not_ready", "basis": [], "errors": ["required record has an unresolved revision"], "waits": waits}
     records = _records(instance, runtime); missing = []
     available=set(instance.get("available_input_refs",[]))
     for source in [*task.get("inputs",[]),*task.get("reuse",[])]:

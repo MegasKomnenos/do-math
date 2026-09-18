@@ -2,7 +2,7 @@ from __future__ import annotations
 import copy,sys, unittest
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-from do_math.planning import apply_event_schedule, collect_due_events, contract_hash, evaluate_condition, task_ready
+from do_math.planning import apply_event_schedule, collect_due_events, contract_hash, evaluate_condition, task_ready, task_reference_basis, task_reference_changes
 
 class PlanningTests(unittest.TestCase):
  def setUp(self):
@@ -53,4 +53,13 @@ class PlanningTests(unittest.TestCase):
   self.assertEqual(evaluate_condition(condition, instance, runtime)['state'], 'ready')
   instance, runtime = invalidate_knowledge(instance, runtime, 'KN-P', reason='proof withdrawn', actor_ref='user')
   self.assertEqual(evaluate_condition(condition, instance, runtime)['state'], 'not_ready')
+ def test_cited_task_basis_ignores_lifecycle_and_appended_results_but_not_contract_rewrites(self):
+  task=self.runtime['tasks']['T']; task['results']=[{'execution_id':'EX-1','summary':'first'}]
+  basis=[task_reference_basis(task)]; tasks={'T':copy.deepcopy(task)}
+  tasks['T'].update(status='performing',selected_by='EX-2',reviews=[]); tasks['T']['results'].append({'execution_id':'EX-3','summary':'later'})
+  self.assertEqual(task_reference_changes(basis,tasks),[])
+  changed=copy.deepcopy(tasks); changed['T']['scope']='new'; changed['T']['results'][0]['summary']='rewritten'; changed['T']['status']='closed'
+  self.assertEqual(task_reference_changes(basis,changed),['contract_changed:T','results_changed:T'])
+  self.assertEqual(task_reference_changes(basis,{}),['missing:T'])
+
 if __name__=='__main__': unittest.main()

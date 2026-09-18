@@ -19,6 +19,7 @@ from do_math.engine import control
 from do_math.knowledge import assess_use, revise_knowledge
 from do_math.context_store import fit_context
 from do_math.planning import contract_hash
+from do_math.input_basis import capture_decision_basis
 from do_math.repository import canonical_json
 
 
@@ -68,7 +69,8 @@ class AcceptanceTests(unittest.TestCase):
                 engine.run(max_steps=1)
                 execution = next(e for e in engine.runtime["executions"].values() if e["role"] == "research_work")
                 self.assertEqual(execution["outcome"], "execution_incomplete")
-                self.assertIn("dependency", execution["error"])
+                self.assertEqual(execution['error_kind'], 'currentness_changed')
+                self.assertTrue(any(row.get('id') == kid and row['field'] in {'revision', 'content_sha256'} for row in execution['currentness_changes']))
                 self.assertFalse(any(k["title"] == "Derived" for k in engine.instance["knowledge"].values()))
 
     def test_identity_review_ignores_unrelated_source_change_but_checks_required_source(self):
@@ -117,6 +119,7 @@ class AcceptanceTests(unittest.TestCase):
         engine.runtime["tasks"][prerequisite["id"]] = prerequisite
         task["dependencies"] = [prerequisite["id"]]
         task["reviews"][0]["contract_sha256"] = contract_hash(task)
+        task["reviews"][0]["decision_basis"] = capture_decision_basis(engine.instance, engine.runtime, [task['id'], prerequisite['id']])
         engine.runtime["queue"] = [a for a in engine.runtime["queue"] if a["role"] == "research_work"]
         engine._save()
         engine.run(max_steps=1)
@@ -210,13 +213,15 @@ class AcceptanceTests(unittest.TestCase):
                         for task in context["tasks"] if task["status"] == "assessing"]
                     (args["workspace"] / "activity-extensions.json").write_bytes(canonical_json({"model_assessments": [
                         {"task_id": tid, "difficulty": "high", "importance": "medium", "reason": "Continue the explicit unresolved fixture case."}
-                        for tid in context["ready_task_ids"]]}))
+                        for tid in context["ready_task_ids"]], "revision_requests": [
+                            {"record_ids": [assessment["task_id"]], "reason": "Revise the explicit unfinished case."} for assessment in assessments]}))
                     return returned(role, selections=context["ready_task_ids"], deferred=[], task_assessments=assessments,
-                        goal_audit=False, preparation_requests=["Revise the unfinished task."] if assessments else [])
+                        goal_audit=False, preparation_requests=[])
                 if role == "research_preparation":
                     task = context["tasks"][0]
                     (args["workspace"] / "activity-extensions.json").write_bytes(canonical_json({"model_assessments": [
-                        {"task_title": task["title"], "difficulty": "high", "importance": "medium", "reason": "The revised fixture retains the unresolved case."}]}))
+                        {"task_title": task["title"], "difficulty": "high", "importance": "medium", "reason": "The revised fixture retains the unresolved case."}],
+                        "revision_resolutions": [{"record_id": task["id"], "disposition": "revised", "reason": "The remaining case is the new contract."}]}))
                     return returned(role, candidates=[purpose.candidate(task["title"], formal=False, revises=task["id"])])
                 if role == "task_contract_review":
                     return returned(role, decision="approved", findings=[])

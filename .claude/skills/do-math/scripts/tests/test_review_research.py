@@ -157,7 +157,7 @@ class ReviewResearchEngineTests(PurposeHarness):
         self.assertTrue(cycle['followup'])
         self.assertEqual(next(iter(engine.instance['knowledge'].values()))['status'], 'unresolved')
         self.assertFalse(any(a.get('review_cycle_id') == cycle['id'] for a in engine.runtime['queue']))
-        self.assertTrue(any('external textbook definition' in question for question in engine.runtime['questions']))
+        self.assertTrue(any('external textbook definition' in (question.get('text') or '') for question in engine._question_view()))
 
     def test_optional_investigation_cannot_consume_reserved_final_review_calls(self):
         engine, runner = self.make_research(work_calls=6)

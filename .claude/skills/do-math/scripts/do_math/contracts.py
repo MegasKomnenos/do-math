@@ -77,6 +77,18 @@ def schema_for(role: str) -> dict[str, Any]:
     return copy.deepcopy(SCHEMAS[role])
 
 
+def action_schema(action: dict, definitions: dict) -> dict:
+    """Context-free action variants shared by runtime and installed preflight."""
+    result = schema_for(action['role'])
+    if action['role'] == 'research_preparation' and 'assessment_targets' in action:
+        result['properties']['candidates']['maxItems'] = 0
+    if action['role'] in {'research_work', 'supplemental_research'}:
+        result['properties']['knowledge']['items']['properties']['kind']['enum'] = [row['token'] for row in definitions['knowledge']]
+    if action['role'] == 'operational_review' and action.get('live'):
+        result['properties']['decision']['enum'] = ['continue', 'checkpoint', 'revise', 'wait', 'stop']
+    return result
+
+
 def _root(skill_root: Path | None) -> Path:
     return (skill_root or Path(__file__).resolve().parents[2]).resolve()
 
@@ -158,3 +170,14 @@ def render_prompt(role: str, context: dict[str, Any], *, skill_root: Path | None
         parts.extend(["\n--- DOCUMENT " + document["path"] + " SHA256 " + document["sha256"] + " ---", document["content"]])
     parts.extend(["\n--- CANONICAL INPUT CONTEXT ---", payload, "\n--- OUTPUT JSON SCHEMA ---", output])
     return "\n".join(parts)
+
+
+def prompt_metrics(prompt: str, context: dict, schema: dict, documents: list[dict]) -> dict:
+    size = lambda value: len(json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8"))
+    document_bytes = {row["path"]: len(row["content"].encode("utf-8")) for row in documents}
+    context_bytes, schema_bytes = size(context), size(schema)
+    return {"unit": "UTF-8_bytes", "prompt_bytes": len(prompt.encode("utf-8")), "context_bytes": context_bytes,
+            "schema_bytes": schema_bytes, "document_bytes": document_bytes,
+            "context_component_value_bytes": {key: size(value) for key, value in context.items()},
+            "framing_bytes": len(prompt.encode("utf-8")) - context_bytes - schema_bytes - sum(document_bytes.values()),
+            "token_estimate": None}

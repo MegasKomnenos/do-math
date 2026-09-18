@@ -8,6 +8,8 @@ import time
 from .model_policy import assessment_basis, selection, validate_assessments
 from .parallel import ModelCalls
 from .session_slots import SessionSlots
+from .provider_wait import provider_for
+from .execution_window import notice_seconds
 
 MACHINE_ROLES = {"formal_check", "trust_check", "trust_activate", "external_action"}
 WORK_ROLES = {"research_work", "supplemental_research", "task_contract_review", "identity_review", "goal_audit"}
@@ -182,7 +184,7 @@ class SchedulerMixin:
         current = {"goal_revision": self.instance.get("goal_revision"),
                    "policy_revision": self.instance.get("policy_revision"),
                    "requirements_sha256": self.instance.get("academic_requirements", {}).get("sha256")}
-        if basis != current or self.runtime["questions"] or self.runtime["inputs"]:
+        if basis != current or self._has_global_user_question() or self.runtime["inputs"]:
             return False
         for event in self.runtime.get("events", []):
             if event["id"] not in action.get("event_refs", []):
@@ -211,9 +213,15 @@ class SchedulerMixin:
         if any(e.get("action", {}).get("id") == action.get("id") for e in live if action.get("id")):
             return False
         role, target = action["role"], action.get("target")
+        waits = self._revision_dispatch_waits(action)
+        if waits:
+            action["dispatch_wait"] = {"kind": "contract_revision", "blockers": waits}
+            return False
+        if not self._selected_action_current(action):
+            return False
         if role == "research_plan" and self._initial_plan_waits(action):
             return False
-        identity_keys = ("role", "target", "stage", "slot", "round", "review_cycle_id", "basis")
+        identity_keys = ("role", "target", "stage", "slot", "round", "review_cycle_id", "basis", "review_basis_key", "live")
         if any(all(e.get("action", {}).get(key) == action.get(key) for key in identity_keys) for e in live):
             return False
         if role in {"research_preparation", "research_plan"} and any(e["role"] == role for e in live):
@@ -229,6 +237,12 @@ class SchedulerMixin:
             return False
         chosen = self._select_model(action)
         action["model_selection"] = chosen
+        provider = provider_for(chosen["model"])
+        gate = self._provider_status()["providers"].get(provider)
+        if gate and (gate["state"] == "checking" or (gate["state"] == "waiting" and not gate["due"])):
+            action["dispatch_wait"] = {"kind": "provider_limit", "provider": provider, "retry_at": gate.get("retry_at")}
+            return False
+        action.pop("dispatch_wait", None)
         pool = "work" if role in WORK_ROLES else "operations"
         cell = resources[pool].get(chosen["model"], {"available": 0})
         return cell["available"] > 0
@@ -239,6 +253,7 @@ class SchedulerMixin:
         self._slots.configure(self.instance["config"]["session_limits"])
         self._calls = ModelCalls()
         deadline = time.monotonic() + self.instance["config"]["run_timeout_seconds"]
+        self._run_deadline = deadline
         steps = 0
         try:
             while True:
@@ -251,23 +266,26 @@ class SchedulerMixin:
                         break
                     time.sleep(.02)
                     continue
-                draining = max_steps is not None and steps >= max_steps
+                finishing = deadline - time.monotonic() <= notice_seconds(self.instance["config"])
+                draining = finishing or (max_steps is not None and steps >= max_steps)
                 if draining:
                     if not self._calls.futures:
                         break
                 self.instance["available_input_refs"] = self._available_inputs()
+                self._retry_provider_actions()
                 self._refresh_readiness()
                 if self.runtime["status"] in {"paused", "closed", "completed"}:
                     continue
                 if not self.runtime["queue"] and not self._calls.futures:
-                    if self.runtime["questions"] or self.runtime["cycles"] >= self.instance["config"]["max_cycles"]:
+                    from .questions import open_links
+                    if self._has_global_user_question() or self.runtime.get("waiting_actions") or open_links(self.runtime) or self.runtime["cycles"] >= self.instance["config"]["max_cycles"]:
                         self.runtime["status"] = "waiting"
                     else:
                         self.runtime["queue"].append({"id": new_id("AC"), "role": "research_preparation", "reason": "use prior results and remaining research questions"})
                         self.runtime["status"] = "ready"
                 resources = self._slots.snapshot()
                 action = next((a for a in list(self.runtime["queue"])
-                               if (not draining or a.get("live")) and self._dispatchable(a, resources)), None)
+                               if (not finishing and (not draining or a.get("live"))) and self._dispatchable(a, resources)), None)
                 if action is not None:
                     if action["role"] == "formal_check":
                         self._formal(action)
@@ -287,7 +305,8 @@ class SchedulerMixin:
                 if self._calls.futures:
                     time.sleep(.02)
                     continue
-                self.runtime["status"] = "waiting" if not self.runtime["queue"] else "capacity_waiting"
+                noncapacity = any(a.get("dispatch_wait", {}).get("kind") not in {None, "capacity"} for a in self.runtime["queue"])
+                self.runtime["status"] = "waiting" if not self.runtime["queue"] or noncapacity else "capacity_waiting"
                 self._save()
                 if not watch:
                     break

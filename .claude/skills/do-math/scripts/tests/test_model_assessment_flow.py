@@ -286,6 +286,11 @@ class RejectedAcademicAssessmentTests(PurposeHarness):
         task["model_assessment"] = rating()
         engine.runtime["queue"] = []
         original = deepcopy(task)
+        from do_math.input_basis import capture_decision_basis
+        engine._save()
+        engine.runtime['executions']['EX-rejected'] = {'id': 'EX-rejected', 'role': 'task_contract_review',
+            'status': 'ended', 'input_snapshot': engine.head, 'action': {'role': 'task_contract_review', 'target': tid},
+            'decision_basis': capture_decision_basis(engine.instance, engine.runtime, [tid])}
         engine._apply({"role": "task_contract_review", "target": tid}, {
             **common("task_contract_review"), "decision": decision,
             "findings": ["model_assessment.reason: explain the impact on later verification."],

@@ -11,13 +11,14 @@ import threading
 import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.lifecycle_engine import LifecycleEngineMixin
+from do_math.revision_engine import RevisionEngineMixin
 from do_math.scheduler import SchedulerMixin
 from do_math.planning import contract_hash
 from do_math.knowledge import register_environment
 from do_math.state_checks import state_errors
 
 
-class FakeEngine(LifecycleEngineMixin, SchedulerMixin):
+class FakeEngine(RevisionEngineMixin, LifecycleEngineMixin, SchedulerMixin):
     def __init__(self, root):
         self.root = Path(root)
         self.current_time = datetime(2026, 9, 14, 0, 0, tzinfo=timezone.utc)

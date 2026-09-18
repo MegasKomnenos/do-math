@@ -18,6 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.engine import ResearchEngine, initialize, control, DEFAULT_CONFIG
 from do_math.model_policy import LIMITS, MODELS, assessment_tier, selection, validate_policy
 from do_math.planning import contract_hash
+from do_math.input_basis import capture_decision_basis
 from do_math.repository import new_id
 from do_math.session_slots import SessionSlots
 from test_engine import ScriptedRunner, common, context_from
@@ -238,6 +239,7 @@ class ParallelEngineTests(unittest.TestCase):
             task["reviews"] = [{"id": new_id("CR"), "revision": 1, "decision": "approved", "contract_sha256": contract_hash(task),
                                 "goal_revision": engine.instance["goal_revision"], "policy_revision": engine.instance["policy_revision"]}]
             engine.runtime["tasks"][tid] = task
+            task["reviews"][0]["decision_basis"] = capture_decision_basis(engine.instance, engine.runtime, [tid])
             engine._enqueue("research_work", tid)
         engine._save()
         return engine
@@ -281,6 +283,7 @@ class ParallelEngineTests(unittest.TestCase):
         task = engine.runtime["tasks"][engine.runtime["queue"][1]["target"]]
         task["model_assessment"] = {"difficulty": "low", "importance": "low", "reason": "bounded local transcription"}
         task["reviews"][0]["contract_sha256"] = contract_hash(task)
+        task["reviews"][0]["decision_basis"] = capture_decision_basis(engine.instance, engine.runtime, [task["id"]])
         engine._save()
         engine.run(max_steps=1)
         self.assertEqual(runner.models, [MODELS["low"]])
@@ -295,7 +298,7 @@ class ParallelEngineTests(unittest.TestCase):
         state = engine.process_controls()
         self.assertEqual(state["budget_unit"], "concurrent_sessions")
         self.assertEqual(engine.runtime["executions"], before)
-        self.assertEqual(engine.instance["feature_version"], 3)
+        self.assertEqual(engine.instance["feature_version"], 4)
 
     def test_pause_reaches_all_parallel_calls_and_releases_their_slots(self):
         runner = ConcurrentRunner(expected=99)
@@ -352,7 +355,9 @@ class ParallelEngineTests(unittest.TestCase):
         self.assertTrue(operating)
         self.assertEqual(operating[0]["budget_kind"], "operations")
         self.assertEqual(operating[0]["model"], MODELS["high"])
-        self.assertEqual(operating[0]["outcome"], "output_accepted")
+        self.assertIn(operating[0]["outcome"], {"output_accepted", "output_preserved_after_target_change"})
+        if operating[0]['outcome'] == 'output_preserved_after_target_change':
+            self.assertEqual(engine.runtime['executions'][operating[0]['action']['target']]['status'], 'ended')
 
     def test_planner_queue_order_cancels_only_unstarted_requests_and_preserves_obligations(self):
         engine = self.engine(ConcurrentRunner(), count=3)

@@ -91,6 +91,34 @@ def validate_basis(basis: list[dict], instance: dict, runtime: dict) -> dict:
     return {"valid": not reasons, "reasons": reasons}
 
 
+# Bookkeeping has no authored mathematical meaning. Unknown fields remain in
+# the projection, so adding a new author field cannot silently weaken checks.
+_DECISION_BOOKKEEPING = frozenset({
+    "id", "revision", "status", "lifecycle", "history", "reviews", "review_history",
+    "use_history", "verified_at", "created_at", "updated_at", "formal", "identity_assessment",
+    "review_cycle_id", "previous_review_cycle_id", "producer_execution", "producer_execution_ids",
+    "source_ref", "actor_ref", "task_id", "required_reviews", "use_suspended", "use_suspensions",
+    "use_suspension_reasons", "source_basis", "relation_endpoint_basis",
+})
+
+
+def content_hash(record: dict) -> str:
+    return _hash({key: value for key, value in record.items() if key not in _DECISION_BOOKKEEPING})
+
+
+def decision_reference(record: dict, instance: dict) -> dict:
+    formal = record.get("formal") or {}
+    environment = formal.get("trust_environment_id")
+    return {"id": record["id"], "revision": record.get("revision", 1),
+            "content_sha256": content_hash(record), "status": _status(record),
+            "use_suspended": bool(record.get("use_suspended")),
+            "usable": assess_use(record, instance)["valid"],
+            "trust_environment_id": formal.get("trust_environment_id"),
+            "trust_environment_state": ({"status": instance.get("trust_environments", {}).get(environment, {}).get("status"),
+                                          "active": instance.get("active_trust_environment") == environment} if environment else None),
+            "source_basis": deepcopy(record.get("source_basis", []))}
+
+
 _STRICT_REFERENCE_KEYS = frozenset({"dependencies"})
 _REFERENCE_KEYS = frozenset({
     "used_sources", "exact_refs", "record_refs", "knowledge_refs",
@@ -243,9 +271,7 @@ def validate_changes(changes: dict) -> None:
     """Structural revision rules shared by author preview and application."""
     if not isinstance(changes, dict) or not changes:
         raise ValueError("changes must be a nonempty object")
-    forbidden = {"id", "revision", "history", "status", "formal", "reviews", "verified_at", "use_suspended",
-                 "use_suspensions", "identity_assessment", "review_cycle_id", "previous_review_cycle_id",
-                 "producer_execution", "producer_execution_ids", "relation_endpoint_basis", "source_basis"}
+    forbidden = _DECISION_BOOKKEEPING
     if forbidden & set(changes):
         raise ValueError("changes contain engine-owned fields")
 

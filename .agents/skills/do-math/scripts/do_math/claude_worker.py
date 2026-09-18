@@ -12,9 +12,11 @@ import sys
 try:
     from do_math.codex_worker import _ENV_ALLOWLIST, _pairs, _write_status
     from do_math.scholarly import validate_scholarly_server
+    from do_math.claude_stream import parse_stream
 except ModuleNotFoundError:  # Direct Python worker inside the Windows Job.
     from codex_worker import _ENV_ALLOWLIST, _pairs, _write_status
     from scholarly import validate_scholarly_server
+    from claude_stream import parse_stream
 
 
 def sanitized_environment(source=None):
@@ -100,11 +102,12 @@ def run(request_path: Path) -> int:
                 process.kill()
                 process.communicate()
                 status.update(state="timeout", cli_exit_code=process.returncode, runner_stop_required=True)
-        # The collector separately validates stream order, completion and schema.
         if status["state"] == "exited" and status["cli_exit_code"] == 0:
-            events = [json.loads(line) for line in stdout_path.read_bytes().splitlines() if line.strip()]
-            if events and isinstance(events[-1], dict) and "structured_output" in events[-1]:
-                Path(request["final_path"]).write_text(json.dumps(events[-1]["structured_output"], ensure_ascii=False), encoding="utf-8")
+            parsed = parse_stream(stdout_path.read_bytes())
+            if parsed["parse_complete"] and parsed["turn_completed"]:
+                Path(request["final_path"]).write_text(
+                    json.dumps(parsed["structured_output"], ensure_ascii=False, allow_nan=False), encoding="utf-8")
+                status["selected_result"] = parsed["selected_result"]
     except Exception as exc:
         status.update(state="worker_error", error_type=type(exc).__name__, error=str(exc))
     _write_status(Path(request["status_path"]), status)

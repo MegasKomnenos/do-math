@@ -9,59 +9,7 @@ from .codex_adapter import LocalCLIAdapter, _sha256
 from .repository import canonical_json, _reject_constant
 
 
-def parse_jsonl(raw: bytes | None) -> dict:
-    parsed = {"parsed_bytes": 0, "unparsed_tail_bytes": 0, "events": [], "thread_id": None,
-              "turn_completed": False, "turn_failed": False, "usage": [], "unknown_events": [],
-              "parse_complete": False}
-    if raw is None:
-        parsed["unknown_events"].append("stdout_missing")
-        return parsed
-    events = []
-    for line in raw.splitlines(keepends=True):
-        if line.strip():
-            try:
-                event = json.loads(line, object_pairs_hook=claude_worker._pairs)
-                if not isinstance(event, dict) or not isinstance(event.get("type"), str):
-                    raise ValueError("event requires a type")
-            except (ValueError, UnicodeError):
-                parsed["unknown_events"].append("invalid_jsonl")
-                parsed["unparsed_tail_bytes"] = len(raw) - parsed["parsed_bytes"]
-                return parsed
-            events.append(event)
-            parsed["events"].append(event["type"])
-        parsed["parsed_bytes"] += len(line)
-    starts = [i for i, e in enumerate(events) if e["type"] == "system" and e.get("subtype") == "init"]
-    terminals = [i for i, e in enumerate(events) if e["type"] == "result"]
-    if len(starts) != 1:
-        parsed["unknown_events"].append("invalid_session_start")
-    else:
-        start = starts[0]
-        session_id = events[start].get("session_id")
-        if not isinstance(session_id, str) or not session_id:
-            parsed["unknown_events"].append("invalid_session_id")
-        else:
-            parsed["thread_id"] = session_id
-        if any(e["type"] != "rate_limit_event" for e in events[:start]):
-            parsed["unknown_events"].append("work_before_session_start")
-        if any("session_id" in e and e["session_id"] != session_id for e in events):
-            parsed["unknown_events"].append("session_mismatch")
-    if len(terminals) != 1 or terminals[0] != len(events) - 1:
-        parsed["unknown_events"].append("invalid_terminal_count_or_position")
-    else:
-        result = events[-1]
-        if result.get("session_id") != parsed["thread_id"]:
-            parsed["unknown_events"].append("session_mismatch")
-        parsed["turn_completed"] = result.get("subtype") == "success" and result.get("is_error") is False
-        parsed["turn_failed"] = not parsed["turn_completed"]
-        if "structured_output" in result:
-            parsed["structured_output"] = result["structured_output"]
-        if isinstance(result.get("usage"), dict):
-            parsed["usage"].append(result["usage"])
-        for key in ("subtype", "stop_reason", "modelUsage", "total_cost_usd", "permission_denials"):
-            if key in result:
-                parsed[key] = result[key]
-    parsed["parse_complete"] = not parsed["unknown_events"]
-    return parsed
+from .claude_stream import parse_stream as parse_jsonl
 
 
 class ClaudePrintAdapter(LocalCLIAdapter):

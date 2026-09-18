@@ -1,0 +1,515 @@
+{
+  "status": "complete",
+  "understanding": [
+    {
+      "statement": "이 문서는 do-math-cli/1 기능 판본 4의 명령행·저장 형식·상태 투영·AI 입출력 경로를 다루는 인터페이스 참조다. 목적·흐름·개념 정의·역할 의무는 SKILL.md, GLOSSARY.md, 계약/ 문서가 소유하고, 이 문서는 그것을 구현하는 필드와 절차를 설명한다.",
+      "evidence": [
+        {
+          "line": 3,
+          "quote": "이 문서는 `do-math-cli/1`, 기능 판본 4의 운전과 과거 기록의 읽기 호환을 설명하는 구체 인터페이스 참조다."
+        },
+        {
+          "line": 3,
+          "quote": "역할별 판단·산출·실패 행동은 `계약/` 문서가 소유한다."
+        }
+      ]
+    },
+    {
+      "statement": "진입점은 do_math.py 스크립트 하나다. profile을 뺀 명령은 저장소와 인스턴스를 지정해야 하고, init만 인스턴스 대신 목표와 workspace를 받는다. 제어 요청의 origin은 기본이 user이고 독립 운영 담당은 operator를 쓴다.",
+      "evidence": [
+        {
+          "line": 12,
+          "quote": "python .agents/skills/do-math/scripts/do_math.py <command> [options]"
+        },
+        {
+          "line": 17,
+          "quote": "`profile`을 제외한 모든 명령은 `--repository`와 `--instance`를 요구한다."
+        },
+        {
+          "line": 17,
+          "quote": "제어의 `--origin`은 `user`가 기본이며 독립 운영 담당은 `operator`를 사용한다."
+        }
+      ]
+    },
+    {
+      "statement": "종료 코드 0은 명령 처리가 정상 종료됐다는 뜻일 뿐, 요청 적용이나 수학적 승인, 완료를 뜻하지 않는다. 제어 요청은 inbox 접수(accepted)와 실제 처리 결과(effect)를 따로 반환한다. writer lock이 busy이면 pending으로 남고, 나중에 전제가 바뀌었으면 rejected로 소비될 수 있다.",
+      "evidence": [
+        {
+          "line": 23,
+          "quote": "제어 명령은 `effect`를 따로 확인한다"
+        },
+        {
+          "line": 28,
+          "quote": "exit 0은 요청이 수학적으로 승인됐거나 과제·활동·실행이 완료됐다는 뜻이 아니다."
+        },
+        {
+          "line": 38,
+          "quote": "접수 사실은 적용·실행·성공을 뜻하지 않는다."
+        }
+      ]
+    },
+    {
+      "statement": "인스턴스의 정본은 Git ref 하나에 쌓이는 상태 commit이다. commit은 research/instance.json(목표·정책·지식·grant 등)과 runtime/state.json(운전 상태·과제·활동·실행·queue 등)의 두 JSON 루트와 추가 전용 artifact로 이뤄진다. control inbox와 로컬 workspace는 정본이 아니다.",
+      "evidence": [
+        {
+          "line": 42,
+          "quote": "인스턴스의 권위 있는 머리는 `refs/heads/do-math/<instance_id>`다."
+        },
+        {
+          "line": 50,
+          "quote": "`research/instance.json`은 goal·policy·config, 지식·관계·source, grant·결정·신뢰 환경과 목표 판정을 한 객체에 보존한다."
+        },
+        {
+          "line": 52,
+          "quote": "artifact는 기존 경로를 수정하지 않고 새 bundle에 추가한다."
+        },
+        {
+          "line": 80,
+          "quote": "control inbox는 요청 전달 통로이고 정본이 아니다."
+        }
+      ]
+    },
+    {
+      "statement": "runtime.status 값은 CLI가 운전 상태를 보여 주는 투영이다. budget_exhausted는 자원 조건이고, completed와 closed는 queue 종결 상태다. 어느 값도 수학적 해결을 뜻하지 않는다. 목표 상태(goal_status)와 학술 검증 상태(academic_validation.status)도 서로 따로 읽는다.",
+      "evidence": [
+        {
+          "line": 97,
+          "quote": "자원 조건이다. 연구 완료나 보편 일시 정지의 동의어가 아니다"
+        },
+        {
+          "line": 99,
+          "quote": "사용자 종결의 CLI terminal 상태다. 수학적 해결을 뜻하지 않는다"
+        },
+        {
+          "line": 118,
+          "quote": "첫 값은 해결 불가능 판정이 아니다."
+        },
+        {
+          "line": 120,
+          "quote": "수학적 해결과 학술 검증 완료는 별도다."
+        }
+      ]
+    },
+    {
+      "statement": "과제는 planned, ready, needs_revision, performing, assessing, waiting, completed, closed 상태를 거친다. ready는 계약 검토와 착수 검사를 통과한 planned 과제다. 참조 지식이 나중에 무효화돼도 종결된 과제의 상태는 그대로 두고, 완료 판정에 current=false를 붙여 사용만 정지한다.",
+      "evidence": [
+        {
+          "line": 106,
+          "quote": "계약 검토와 현재 착수 검사를 통과해 배정 후보가 된 planned 과제의 CLI 표시"
+        },
+        {
+          "line": 114,
+          "quote": "현재 완료 판정은 `current=false`, `invalidated_reason`으로 사용을 정지한다."
+        }
+      ]
+    },
+    {
+      "statement": "status의 knowledge.K, F, suspended_K는 검증 상태와 현재 사용 가능 여부로 record 수를 센 CLI 보기다. F는 GLOSSARY의 프런티어 개념과 같지 않다.",
+      "evidence": [
+        {
+          "line": 122,
+          "quote": "특히 `knowledge.F`라는 필드명은 GLOSSARY의 가시 연구 프런티어를 완전히 분류한 목록이 아니다."
+        }
+      ]
+    },
+    {
+      "statement": "설정 필드와 기본값의 정본은 engine.py 코드다. 예산은 두 방식이 있다. 기본인 세션 모드는 모델 이름별 동시 세션 상한이고, session_limits=null인 구 호환 모드는 누적 실행 시도 횟수 한도다. 예산 모드를 바꾸려면 operator hold, 미종료 실행 없음 확인, configure 순서를 따른다.",
+      "evidence": [
+        {
+          "line": 136,
+          "quote": "허용 필드와 기본값의 기계 정본은 `scripts/do_math/engine.py`의 `DEFAULT_CONFIG`와 `validate_config`다."
+        },
+        {
+          "line": 139,
+          "quote": "`session_limits`의 `work`와 `operations`는 모델 이름별 동시 세션 상한이다."
+        },
+        {
+          "line": 139,
+          "quote": "`session_limits=null`인 구 호환 모드는 `work_calls`·`operations_calls`의 양의 정수 또는 null을 누적 실행 시도 한도로 사용한다."
+        },
+        {
+          "line": 176,
+          "quote": "예산 모드를 전환하기 전에는 `operator hold`로 정지를 요청하고, status의 미종료 실행이 없으며 operator status의 연구 예약 작업이 Running이 아닌지 확인한다."
+        }
+      ]
+    },
+    {
+      "statement": "모델 이름의 접두어가 provider를 정한다. claude: 접두어나 claude- 전체 ID는 Claude로, 나머지는 Codex로 보낸다. 슬롯은 해석된 실제 모델 ID가 아니라 설정 문자열 그대로를 기준으로 센다. configure는 기존 설정 위에 제공한 필드를 덮어쓰고 전체를 다시 검사한다.",
+      "evidence": [
+        {
+          "line": 147,
+          "quote": "모델 이름이 `claude:`로 시작하면 그 접두어를 제거해 Claude CLI의 `--model`에 전달한다."
+        },
+        {
+          "line": 147,
+          "quote": "슬롯은 접두어를 포함한 원래 설정 문자열별로 계산하며 CLI가 해석한 실제 모델 ID를 기준으로 합치지 않는다."
+        },
+        {
+          "line": 170,
+          "quote": "`configure`는 기존 설정 위에 제공 필드를 덮어쓴 뒤 전체 설정을 다시 검사한다."
+        }
+      ]
+    },
+    {
+      "statement": "run은 lock 안에서 제어를 적용하고 N개까지 새 action을 처리한다. status의 snapshot과 슬롯 조회는 같은 시점의 원자적 자료가 아니다. check는 구조와 해시만 검사하고, profile의 verified는 CLI 명령 표면을 확인했다는 뜻일 뿐이다.",
+      "evidence": [
+        {
+          "line": 195,
+          "quote": "`N`은 새로 처리할 action 수의 양의 상한이며"
+        },
+        {
+          "line": 196,
+          "quote": "`snapshot`은 연구 기록의 판본을 식별하며 세션 모드의 `budget`까지 같은 시점에 원자적으로 고정했다는 뜻은 아니다."
+        },
+        {
+          "line": 197,
+          "quote": "자연어 의미를 새로 검증하지 않는다."
+        },
+        {
+          "line": 198,
+          "quote": "`verified=true`는 명령 표면의 확인이며 로그인·모델 이용 가능성이나 실제 작업 성공의 증거는 아니다."
+        }
+      ]
+    },
+    {
+      "statement": "사용자 pause는 user_pause 표시로 남아 operator의 resume을 막는다. resume은 closed·completed 인스턴스를 다시 열지 않는다. operator hold는 HOLD와 사용자 pause를 함께 만들고, release는 그 HOLD가 만든 정지만 푼다. Windows 예약 작업 등록은 인스턴스 저장과 원자적이지 않다.",
+      "evidence": [
+        {
+          "line": 202,
+          "quote": "`resume`은 CLI `closed`와 `completed`를 열지 않는다."
+        },
+        {
+          "line": 209,
+          "quote": "operator 출처의 resume은 유효한 user_pause가 있으면 거부한다."
+        },
+        {
+          "line": 220,
+          "quote": "`hold`는 고유 ID의 HOLD와 사용자 pause를 만들고, `release`는 같은 HOLD가 만든 현재 사용자 정지에만 재개를 적용한다."
+        },
+        {
+          "line": 191,
+          "quote": "저장과 운영체제의 효과가 하나의 원자적 트랜잭션이라고 가정하지 않는다."
+        }
+      ]
+    },
+    {
+      "statement": "decision은 목표·정책·grant·철회·과제 범위·학술 요구·외부 거부를 구조화 JSON으로 바꾼다. 목표나 정책을 바꾸면 미완료 과제가 재검토로 돌아간다. HTTP grant는 origin·method·path를 모두 만족해야 쓸 수 있고, grant를 철회하면 미종료 실행에 정지를 요청한다.",
+      "evidence": [
+        {
+          "line": 238,
+          "quote": "목표 변경은 미완료 과제를 `needs_revision`으로 보내고 목표 상태를 다시 판단하게 한다."
+        },
+        {
+          "line": 278,
+          "quote": "grant의 origin·method·path prefix를 모두 만족해야 외부 operation을 준비할 수 있다."
+        },
+        {
+          "line": 284,
+          "quote": "철회는 해당 grant를 쓰는 미종료 실행에 정지 요청을 남기고 새 queue 요청을 제거한다."
+        },
+        {
+          "line": 292,
+          "quote": "`withdraw`와 `transfer`는 원 과제를 `closed`로 만든다."
+        }
+      ]
+    },
+    {
+      "statement": "knowledge 제어는 다섯 operation을 받는다. ID를 넣은 import는 기록 전체를 대체하고, 일부 필드만 바꿀 때는 revise를 쓴다. relation_claim을 제출해도 관계가 곧바로 승인되지는 않는다. trust transition은 verified K 전부가 재검사를 통과해야 활성 환경을 바꾼다.",
+      "evidence": [
+        {
+          "line": 359,
+          "quote": "`import`에 기존 ID를 넣는 방식은 완전한 후보 본문으로 그 기록을 대체할 때 사용한다."
+        },
+        {
+          "line": 367,
+          "quote": "이 claim의 제출은 관계 승인이 아니며 중앙 Lean 검사와 전체 동일성 검토 뒤 실제 관계 수입에서 다시 대조한다."
+        },
+        {
+          "line": 432,
+          "quote": "현재 verified K 전건을 같은 source와 basis에서 재검사하고 모두 verified일 때만 활성 환경을 바꾼다."
+        }
+      ]
+    },
+    {
+      "statement": "외부 HTTP operation은 prepare로 준비한 뒤 전송한다. 결과를 확정할 수 없으면 unknown이 된다. unknown은 reconcile로 확정한 뒤에야 retry할 수 있고, retry는 failed·cancelled만 받는다.",
+      "evidence": [
+        {
+          "line": 459,
+          "quote": "reconcile은 현재 `unknown` operation에만 적용하고 result는 `confirmed`, `failed`, `cancelled`다."
+        },
+        {
+          "line": 465,
+          "quote": "`unknown`은 retry 전에 reconcile한다."
+        }
+      ]
+    },
+    {
+      "statement": "conversation은 generation과 lease로 연결을 추적한다. 연결이 끊겼을 때 정책이 pause이면 CLI를 paused로 만든다.",
+      "evidence": [
+        {
+          "line": 483,
+          "quote": "`pause` 정책의 연결 소실은 CLI를 paused로 만들고 미종료 실행에 정지를 요청한다."
+        }
+      ]
+    },
+    {
+      "statement": "query, read, export는 고정 snapshot을 읽기만 한다. cursor는 조회 조건과 snapshot에 묶이고, export 결과는 새 정본이 아닌 사본이다.",
+      "evidence": [
+        {
+          "line": 497,
+          "quote": "cursor는 query 인자와 snapshot에 결박되며 조건을 바꾸어 재사용할 수 없다."
+        },
+        {
+          "line": 522,
+          "quote": "export 결과는 snapshot 사본이며 새 정본이나 쓰기 작업 공간이 아니다."
+        }
+      ]
+    },
+    {
+      "statement": "AI 실행에 넣는 문서와 순서는 SKILL.md의 대응표가 정한다. 이 문서 자체는 AI 역할에 주입되지 않는다. 입력이 크기 한도를 넘으면 catalog 참조로 바꿔 줄이고, 필수 정보를 지킨 채 맞출 수 없으면 실행을 시작하지 않는다.",
+      "evidence": [
+        {
+          "line": 526,
+          "quote": "자동 제공 문서와 순서의 정본은 `SKILL.md`의 역할 읽기 대응표다."
+        },
+        {
+          "line": 528,
+          "quote": "`references/CLI-실행-계약.md`는 CLI를 운전하거나 구현을 고치는 독자를 위한 참조이며 모든 AI 역할에 자동 주입되지 않는다."
+        },
+        {
+          "line": 540,
+          "quote": "필수 판단 정보와 ready 모집단을 보존하고도 입력을 맞출 수 없으면 AI 실행을 시작하지 않는다."
+        }
+      ]
+    },
+    {
+      "statement": "실행 입력은 판본과 실제 의존에 고정된다. 결과를 적용하기 직전에 목표·계약·지식·grant·설치 코드의 현재성을 다시 검사하고, 전제가 바뀌었으면 결과를 적용하지 않고 보존만 한다.",
+      "evidence": [
+        {
+          "line": 552,
+          "quote": "전제가 바뀌면 결과를 정본에 적용하지 않고 원 출력과 부분 파일을 보존한다."
+        }
+      ]
+    },
+    {
+      "statement": "역할 응답 JSON의 정본은 실행별 schema와 수신 검사 코드다. 연구 계획은 ready 과제 모두를 selections나 deferred 중 한 곳에 정확히 한 번 넣어야 한다. 작업 계약 검토의 approved는 실행 개시가 아니다.",
+      "evidence": [
+        {
+          "line": 556,
+          "quote": "이 실행별 schema와 수신 검사 코드가 필드·자료형·필수 여부·닫힌 값의 기계 정본이다."
+        },
+        {
+          "line": 572,
+          "quote": "수신자는 ready 모집단의 모든 ID가 selections와 deferred 중 정확히 한 번 있는지 검사한다."
+        },
+        {
+          "line": 566,
+          "quote": "`approved`는 task를 곧바로 실행하지 않고 다음 착수 검사와 연구 계획의 입력으로 보낸다."
+        }
+      ]
+    },
+    {
+      "statement": "Lean 형식 검사는 중앙 formal_check가 소스를 다시 검사한다. 그 뒤 동일성 검토 계보가 initial, organize, answer, judge 단계를 거친다. K로 쓰이려면 최종 match, 현재 형식 소스, 활성 신뢰 환경, 의존의 현재성이 모두 필요하다. 목표 해결과 학술 검증 완료는 각각 따로 판정한다.",
+      "evidence": [
+        {
+          "line": 714,
+          "quote": "중앙 `formal_check`는 사전 검사 결과를 승계하지 않고 제출된 소스를 다시 검사한다."
+        },
+        {
+          "line": 716,
+          "quote": "그 밖에는 organize, 독립 judge 세 자리, 원 initial 자리의 answer와 같은 judge의 재심을 `review_rounds` 안에서 수행한다."
+        },
+        {
+          "line": 722,
+          "quote": "최종 `match`, current formal source, active trust environment와 실제 dependency currentness가 있어야 현재 CLI가 K를 사용할 수 있다고 계산한다."
+        },
+        {
+          "line": 724,
+          "quote": "모든 요구가 satisfied이고 필수 외부 효과마다 같은 task·requirement·solution basis에 결박된 `confirmed`이면서 `succeeded=true`인 영수증이 있어야 academic validation이 `completed`다."
+        }
+      ]
+    },
+    {
+      "statement": "출력 검사가 실패하면 한도 안에서 새 실행으로 수리한다. 한도를 넘으면 waiting_actions에 보류하고 운영 점검을 연다. 일반 resume은 이런 보류 요청을 다시 실행하지 않으므로 명시적 진단 요청이 필요하다.",
+      "evidence": [
+        {
+          "line": 677,
+          "quote": "수리 한도를 넘으면 해당 행동을 `waiting_actions`의 `output_validation`으로 보존하고 운영 점검을 연다."
+        },
+        {
+          "line": 679,
+          "quote": "일반 `resume`은 출력 검증·실행 실패로 보류된 요청을 재생하지 않는다."
+        }
+      ]
+    },
+    {
+      "statement": "run은 먼저 판본을 확인하고 1~3판은 거부한다. 이어 제어 적용, 미종료 실행 회수, 슬롯 안에서 병렬 실행 순으로 운전한다. 실행기가 사라졌다가 재개하면 미종료 실행을 incomplete로 닫고 전송 여부가 불확실한 외부 요청을 unknown으로 둔 뒤 paused가 되므로, 명시적 resume이 필요하다. 로컬 종료는 확인하지만 공급자 쪽 원격 종료는 보증하지 않는다.",
+      "evidence": [
+        {
+          "line": 689,
+          "quote": "판본 1~3이면 자동 변환·재개를 거부하고 원 기록을 보존한다."
+        },
+        {
+          "line": 704,
+          "quote": "그 값이 `true`이거나 없으면 요청이 나갔을 수 있어 `unknown`으로 바꾸고 자동 재전송하지 않는다."
+        },
+        {
+          "line": 704,
+          "quote": "모든 미종료 실행을 정리한 뒤 CLI는 `paused`가 되며 운영자가 status·check·원자료를 확인하고 명시적으로 resume해야 한다."
+        },
+        {
+          "line": 698,
+          "quote": "현재 실행의 실제 Job 종료와 output 수집을 확인하지만 공급자 내부 원격 호출 종료는 보증하지 않는다."
+        }
+      ]
+    },
+    {
+      "statement": "기본 실행은 기존 사용자 권한으로 돈다. host 접근을 격리하지 않는다. 세션 슬롯은 SQLite 원장에서 계산하고, 종료를 확인하지 못한 슬롯은 반환하지 않는다.",
+      "evidence": [
+        {
+          "line": 759,
+          "quote": "이 조합은 모든 host 파일·network·credential 접근을 차단하는 격리가 아니다."
+        },
+        {
+          "line": 761,
+          "quote": "종료를 확인할 수 없는 슬롯은 반환하지 않는다."
+        }
+      ]
+    },
+    {
+      "statement": "기능 판본 4에서 과거 판본은 읽기·조회·내보내기만 된다. 실행 실패는 error_kind별로 다른 후속 경로를 탄다. timeline은 고정 snapshot의 실행 이력을 보여 준다.",
+      "evidence": [
+        {
+          "line": 776,
+          "quote": "과거 판본의 읽기·조회·내보내기는 유지하지만 무검증 자동 재개는 거부한다."
+        },
+        {
+          "line": 787,
+          "quote": "원인 미확정 호출 실패를 기존 운영 진단으로 연결한다"
+        },
+        {
+          "line": 809,
+          "quote": "status의 연구 snapshot, 슬롯·공급자 관측은 같은 시점의 원자적 자료가 아니므로 각 조회 시각을 확인한다."
+        }
+      ]
+    }
+  ],
+  "difficulties": [
+    {
+      "line": 17,
+      "quote": "자동 출처는 `pause`, `resume`, `request`, `configure`, `source`만 사용할 수 있고 예산·모델 대응·역할 등급을 변경할 수 없다.",
+      "reason": "바로 앞 문장은 origin 값으로 user와 operator만 소개한다. '자동 출처'가 operator를 가리키는지, 다른 origin 값을 가리키는지 알 수 없다."
+    },
+    {
+      "line": 82,
+      "quote": "원자료 제공 범위·바이트와 불변 artifact, 단일 부모 및 ref의 compare-and-swap 공개는 유지한다.",
+      "reason": "무엇과 비교해 '유지한다'는지 기준이 없어 변경 이력처럼 읽힌다. 앞 문장의 '필터 없이 묶어서 쓴다'도 무엇을 필터링하지 않는다는지 짐작해야 한다."
+    },
+    {
+      "line": 131,
+      "quote": "구 모드는 stop request로 정지 국면을 표현한다.",
+      "reason": "문서의 다른 곳에서 '구 모드'는 실행횟수 예산 모드를 가리킨다. 예산 방식과 실행 정지 상태 표현이 왜 연결되는지, 여기의 '구 모드'가 같은 뜻인지 확정할 수 없다."
+    },
+    {
+      "line": 453,
+      "quote": "실행기는 `prepared`, `running`, `transmitted`를 저장한 뒤 전송한다.",
+      "reason": "132행 외부 operation 상태 목록에는 transmitted가 없어서 여기서는 상태값처럼 읽힌다. 704행에 가서야 불리언 필드(transmitted=true/false)로 드러난다."
+    },
+    {
+      "line": 144,
+      "quote": "이는 내부 `research_reconsider_seconds`가 정하는 후보 밖 탐색 주기와 별개다.",
+      "reason": "'이는'이 바로 앞의 operator_model인지, 문단 앞쪽의 operator_interval_seconds인지 불분명하다. '후보 밖 탐색'의 뜻도 설명이 없다."
+    },
+    {
+      "line": 149,
+      "quote": "Claude만 사용하는 인스턴스도 scholarly의 자동 탐색 위치는 위 Codex 설정 경로와 같고",
+      "reason": "'위 Codex 설정 경로'라고 하지만 앞의 145행을 포함해 문서 어디에도 구체적인 경로가 나오지 않는다."
+    },
+    {
+      "line": 147,
+      "quote": "별칭과 전체 ID를 포함해 동일 모델의 설정 표기를 통일한다.",
+      "reason": "주어가 빠져 있다. CLI가 표기를 자동으로 정규화한다는 뜻인지, 사용자가 표기를 통일해야 한다는 지시인지 알 수 없다. 뒤 문장이 원 문자열별로 슬롯을 센다고 하므로 후자로 짐작할 수밖에 없다."
+    },
+    {
+      "line": 170,
+      "quote": "역할 최소 등급은 지정한 `role_tiers` 항목을 사용하고 생략한 역할에는 기본값을 적용한다.",
+      "reason": "153행은 configure에서 생략한 최상위 필드는 기존 값을 유지한다고 한다. role_tiers 안에서 생략한 역할이 기존에 바꿔 둔 값을 잃고 기본값으로 돌아가는지 판단하기 어렵다."
+    },
+    {
+      "line": 261,
+      "quote": "로컬 grant의 `roles`는 지원 역할의 비어 있지 않은 목록이고, `task_ids`가 비어 있으면 그 role의 모든 과제를 대상으로 한다.",
+      "reason": "로컬 grant가 실제로 무엇을 허가하는지(어떤 행동이나 자원인지)와 checkpoint_allowed 필드의 뜻이 설명되지 않는다."
+    },
+    {
+      "line": 114,
+      "quote": "아직 끝나지 않은 과제가 지식 변경의 영향을 받으면 `waiting`으로 돌아가 현재 착수 검사를 다시 받는다.",
+      "reason": "110행은 waiting을 입력·결정·권한·복구 대기로, 107행은 needs_revision을 범위 변화로 인한 재정련 대기로 정의한다. 한 번도 waiting이 아니었던 planned 과제가 waiting으로 '돌아가는' 것이 어떤 전이인지 짐작해야 한다."
+    },
+    {
+      "line": 388,
+      "quote": "이 `knowledge` family는 현재 CLI 레지스트리의 구현 이름이며 GLOSSARY.md의 F 객체 의미를 새로 정의하지 않는다.",
+      "reason": "knowledge family가 왜 K가 아니라 'F 객체'와 연결되는지, F 객체가 무엇인지 원고만으로는 알 수 없다."
+    },
+    {
+      "line": 540,
+      "quote": "다른 역할도 해당 요청과 오류를 보류한다.",
+      "reason": "'해당 요청과 오류'가 어느 상황의 요청과 오류인지 지시 대상이 모호하다. 동일성 검토 외 역할도 input_overflow로 보류한다는 뜻인지 짐작해야 한다."
+    },
+    {
+      "line": 634,
+      "quote": "연구 수행 주 JSON의 문자열 `checkpoint`와 다른 자료다.",
+      "reason": "578행 연구 수행 schema 설명에는 checkpoint 문자열 필드가 나오지 않는다. 소개되지 않은 필드와 대비하고 있다."
+    },
+    {
+      "line": 732,
+      "quote": "세션 모드의 `initial_preparation_wait`는 연구 실행·과제·지식이 없고 준비 요청이 있는 시점에 등록한 학술 요구의 계획 요청에만 붙는다.",
+      "reason": "수식 관계가 길게 겹쳐 무엇이 무엇을 꾸미는지 다시 읽어야 한다. 게다가 312·724행은 학술 요구가 현재 해결 근거에 묶인 과제를 만든다고 하는데, 지식이 없는 시점의 학술 요구가 어떻게 가능한지 연결되지 않는다."
+    },
+    {
+      "line": 780,
+      "quote": "일반 내용 인용에서는 진행 표시·검토 기록 추가·기존 결과를 바꾸지 않은 결과 추가를 허용한다.",
+      "reason": "무엇을 '허용'하는지가 빠져 있다. decision_basis를 비교할 때 이런 변화는 전제 변경으로 보지 않는다는 뜻인지 짐작해야 한다."
+    },
+    {
+      "line": 788,
+      "quote": "잠금과 다른 실제 모델이 보고되어 후속을 정지한다",
+      "reason": "모델 '잠금'이라는 개념이 794행의 claude_only_assigned_model 설명보다 먼저 정의 없이 나온다."
+    },
+    {
+      "line": 794,
+      "quote": "`claude_only_assigned_model=false`가 기본이다.",
+      "reason": "필드 이름은 'Claude만 사용'처럼 읽히지만 본문은 그런 옵션이 아니라고 한다. 실제 효과인 '내부 보조·fallback 설정에도 고정'이 무엇을 가리키는지도 설명이 없다."
+    },
+    {
+      "line": 796,
+      "quote": "공급자 한도는 `session-slots/<instance>/slots.sqlite3`의 원장을 두 호출 입구가 공유한다.",
+      "reason": "'두 호출 입구'가 내부 실행기와 독립 운영 담당인지 다른 무엇인지 명시되지 않는다."
+    },
+    {
+      "line": 802,
+      "quote": "Claude 수집은 지원되는 같은 세션의 알림 후속 구간에서 최종 완결 구조화 응답을 고르고 선택 행·구간·해시를 남긴다.",
+      "reason": "'알림 후속 구간'이 무엇인지 정의가 없어 어떤 응답이 선택 대상인지 파악하기 어렵다."
+    },
+    {
+      "line": 811,
+      "quote": "`probe_cli.py --skill-only`는 문서와 정적·동적 역할·확장 스키마의 구조 검사다.",
+      "reason": "769행은 같은 검사 도구를 `scripts/probe_codex.py`라고 부른다. 둘이 같은 스크립트인지 다른 스크립트인지 알 수 없다."
+    },
+    {
+      "line": 224,
+      "quote": "외부 운영 담당의 호출·CLI 사용량은 engine의 `operations_calls`와 별도다.",
+      "reason": "문서 전반에서 쓰는 '독립 운영 담당'과 여기의 '외부 운영 담당'이 같은 대상인지 용어가 흔들린다."
+    }
+  ],
+  "uncertainties": [
+    "status JSON 필드는 'README의 운영 표를 따른다'고만 되어 있다(196행). README가 원고에 없어 실제 필드 구성은 확인하지 못했다.",
+    "query·read·export 명령의 synopsis(490·502·511·519행)에는 --repository·--instance가 없다. 17행 규칙에 따라 필요하다고 추정했지만 원고로 확정할 수 없다.",
+    "task_scope의 disposition=revise가 과제를 어떤 상태로 보내는지(needs_revision인지 등)는 원고에 나오지 않는다.",
+    "K, F, 연구 정본, 실행 원장, 보편 상태 같은 개념의 정확한 의미는 GLOSSARY.md 소관이다. 여기서는 원고의 CLI 투영 설명에만 기대어 해석했다.",
+    "'검토 계보 action이 아닌 이전 단순 검토 경로'(586행)가 현재 어떤 경우에 쓰이는지는 원고로 확정할 수 없다.",
+    "종료 코드 표에는 0·1·2·5만 있다. 3·4 같은 다른 코드가 존재하는지는 원고만으로 알 수 없다.",
+    "792행의 input 명령 옵션 --responds-to는 203행의 input synopsis에 없다. 같은 명령의 추가 옵션으로 읽었지만 확정할 수 없다.",
+    "scholarly 자동 탐색이 실제로 읽는 Codex 설정 파일의 위치는 원고에 없다.",
+    "'자동 출처'(17행)가 operator origin을 뜻하는지는 추정일 뿐 확정할 수 없다."
+  ]
+}

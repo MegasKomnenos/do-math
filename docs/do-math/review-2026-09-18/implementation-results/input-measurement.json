@@ -1,0 +1,17 @@
+{
+  "scope": "One fixed historical planning context with current prompt documents; byte reduction and exact recovery only, no token/cost/research-quality claim.",
+  "execution_id": "EX-01M2S9F9W81YT1RV0HVM15SKQH",
+  "snapshot": "25ead076824102e104f2a12989e6e5143e6e90b7",
+  "original_context_bytes": 280759,
+  "fitted_context_bytes": 280759,
+  "context_limit_bytes": 287727,
+  "rendered_prompt_bytes": 455416,
+  "reductions": [],
+  "overflow": null,
+  "all_catalog_files_readable": true,
+  "exact_task_population_and_content_restored": true,
+  "ready_task_ids": [],
+  "assessing_task_ids": [
+    "TK-01M2S813V91SSKYNQ7EGTBH6FS"
+  ]
+}

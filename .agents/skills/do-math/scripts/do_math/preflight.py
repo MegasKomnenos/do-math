@@ -11,7 +11,7 @@ from pathlib import Path
 from jsonschema import Draft202012Validator
 from jsonschema.exceptions import SchemaError
 
-from .contracts import ROLES, all_prompt_documents, schema_for
+from .contracts import ROLES, all_prompt_documents, schema_for, action_schema
 
 
 def inspect_bundle(skill_root: Path | None = None) -> dict:
@@ -36,9 +36,32 @@ def inspect_bundle(skill_root: Path | None = None) -> dict:
     except (OSError, ValueError) as exc:
         checks.append({"check": "installed_documents", "status": "incomplete", "reason": str(exc)})
     try:
+        from .review_cycle import stage_schema, research_schema
+        from .governance import interpretation_schema
+        from .scheduled_operator import OPERATOR_SCHEMA
+        from .submission import extension_schema
+        from .knowledge_io import catalog_definitions
+        from .repository import canonical_json
+        from jsonschema import Draft7Validator
+        schemas = {role: schema_for(role) for role in ROLES}
+        schemas.update({"identity_review:" + stage: stage_schema(stage) for stage in ("initial", "organize", "answer", "judge")})
+        schemas.update({"intent_interpretation:" + stage: interpretation_schema(stage) for stage in ("interpret", "check")})
+        schemas.update(review_research=research_schema(), independent_operator=OPERATOR_SCHEMA)
+        definitions = catalog_definitions({})
+        schemas.update({role + ':bound_action': action_schema({'role': role}, definitions) for role in ROLES})
+        schemas['assessment:main'] = action_schema({'role': 'research_preparation', 'assessment_targets': {}}, definitions)
+        schemas['live_operations:main'] = action_schema({'role': 'operational_review', 'live': True}, definitions)
         for role in ROLES:
-            Draft202012Validator.check_schema(schema_for(role))
-        checks.append({"check": "role_output_schemas", "status": "verified", "roles": len(ROLES)})
+            schemas[role + ":extensions"] = extension_schema({"role": role}, definitions)
+        schemas["assessment:extensions"] = extension_schema({"role": "research_preparation", "assessment_targets": {}}, definitions)
+        schemas["fixed_research:extensions"] = extension_schema({"role": "supplemental_research", "review_cycle_id": "fixed"}, definitions)
+        schemas['identity:extensions'] = extension_schema({'role': 'identity_review', 'review_cycle_id': 'fixed'}, definitions)
+        for schema in schemas.values():
+            Draft202012Validator.check_schema(schema)
+            Draft7Validator.check_schema({key: value for key, value in schema.items() if key not in {"$schema", "x-contract-id"}})
+        checks.append({"check": "role_output_schemas", "status": "verified", "roles": len(ROLES),
+                       "schemas": {name: hashlib.sha256(canonical_json(schema)).hexdigest() for name, schema in schemas.items()},
+                       "claude_conversion": "Only top-level $schema and x-contract-id are removed; constraints are preserved."})
     except (ValueError, SchemaError) as exc:
         checks.append({"check": "role_output_schemas", "status": "incomplete", "reason": str(exc)})
     return {"scope": "installed_skill_structure",

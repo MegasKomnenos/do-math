@@ -1,0 +1,384 @@
+{
+  "scope": "Replay only decision content/source/effect checks and the specified planning target checks over original input and rejection snapshots; never retroactive acceptance.",
+  "not_replayed": [
+    "Dispatch revision intent was not recorded by the old implementation.",
+    "The complete new contract-approval basis was absent historically.",
+    "All new role/schema/authority gates and semantic judgments are not rerun."
+  ],
+  "counts": {
+    "executions": 35,
+    "passes_replayed_checks": 28,
+    "content_change": 6,
+    "target_change": 1
+  },
+  "executions": [
+    {
+      "execution_id": "EX-01M2S84J1J4VR5KZ9SWWBC61VE",
+      "role": "task_contract_review",
+      "input_snapshot": "01e3dd4ff3ff244734f39527950409ba0021e193",
+      "rejected_in": "c240cef36ad18c1dd010922fd049620e82a35b82",
+      "content_changes": [],
+      "target_issues": [],
+      "passes_replayed_checks": true
+    },
+    {
+      "execution_id": "EX-01M2S87ERXZVYQXE3KGA4Q3RGJ",
+      "role": "research_plan",
+      "input_snapshot": "b554b22dcab5553f367c36cfc9aa9086b9309759",
+      "rejected_in": "c77594086a69912e00fc63bcff47e8dbde5440e3",
+      "content_changes": [
+        {
+          "id": "TK-01M2S813V92Q77YY3S08KSWHNV",
+          "field": "contract_sha256",
+          "before": "1df931fdc94a66a14a7438a6a6ca54718b6775b703a6ab9163dcd227c2deef49",
+          "after": "0b205ea44be021a6817e795b712ce6da2d48cb085abe00c170ba5721e487b7f2",
+          "next": "refresh_decision"
+        }
+      ],
+      "target_issues": [],
+      "passes_replayed_checks": false
+    },
+    {
+      "execution_id": "EX-01M2S8BYNTGX91YEHANBYD465G",
+      "role": "research_plan",
+      "input_snapshot": "c84cbd82a12a7f678f3085f651b43376d252e8ae",
+      "rejected_in": "bdca44a040710cfa2e9629eaf24901465b028ec9",
+      "content_changes": [],
+      "target_issues": [],
+      "passes_replayed_checks": true
+    },
+    {
+      "execution_id": "EX-01M2S8FPBRJ36VQR778B8H48SF",
+      "role": "research_plan",
+      "input_snapshot": "1045e937088f276f1fa2bf388df7ac9ba96b587b",
+      "rejected_in": "d040b38e9f1bbe566f90e4f9cac44d43877257fa",
+      "content_changes": [],
+      "target_issues": [],
+      "passes_replayed_checks": true
+    },
+    {
+      "execution_id": "EX-01M2S9F9W81YT1RV0HVM15SKQH",
+      "role": "research_plan",
+      "input_snapshot": "55c56cf3204117eb3162c728b22e32d46e1c805f",
+      "rejected_in": "67747e523b5d20035c2a42de24e9a3db117262db",
+      "content_changes": [],
+      "target_issues": [],
+      "passes_replayed_checks": true
+    },
+    {
+      "execution_id": "EX-01M2S9NVW5QYJ8RZ6A5V799W7Q",
+      "role": "research_plan",
+      "input_snapshot": "67747e523b5d20035c2a42de24e9a3db117262db",
+      "rejected_in": "0f065f70a48436c55d267f11c69e7c823b53ec1b",
+      "content_changes": [],
+      "target_issues": [],
+      "passes_replayed_checks": true
+    },
+    {
+      "execution_id": "EX-01M2S9YHES10FK1WJ8ABXDR0SY",
+      "role": "research_plan",
+      "input_snapshot": "0f065f70a48436c55d267f11c69e7c823b53ec1b",
+      "rejected_in": "a0ccdeb52eb10213b294562d2d8b75f3c57fb3cd",
+      "content_changes": [],
+      "target_issues": [],
+      "passes_replayed_checks": true
+    },
+    {
+      "execution_id": "EX-01M2SA7MMBTTFA6MB4MND31DG0",
+      "role": "research_plan",
+      "input_snapshot": "a0ccdeb52eb10213b294562d2d8b75f3c57fb3cd",
+      "rejected_in": "ae4d533937c1976e9280c897fb0d1100ede544e2",
+      "content_changes": [],
+      "target_issues": [],
+      "passes_replayed_checks": true
+    },
+    {
+      "execution_id": "EX-01M2SBK1KRAKJ6DC7AN7J8DVM0",
+      "role": "task_contract_review",
+      "input_snapshot": "51d4f609213b28b8f89031733125ff63122dfd77",
+      "rejected_in": "3bbd6aa5a3e9c997bfb1f034dd6f7d009d139014",
+      "content_changes": [],
+      "target_issues": [],
+      "passes_replayed_checks": true
+    },
+    {
+      "execution_id": "EX-01M2SBK6DBY7HCTSAZJ47RSYTM",
+      "role": "task_contract_review",
+      "input_snapshot": "dcfb5d16f8a8b08603eb83a3e610313fa2549868",
+      "rejected_in": "e7b9eba9f3c62681de49de5a4ce109812f0cf28a",
+      "content_changes": [],
+      "target_issues": [],
+      "passes_replayed_checks": true
+    },
+    {
+      "execution_id": "EX-01M2SBR18DBN5SXFP74HC5PDJP",
+      "role": "research_plan",
+      "input_snapshot": "cb59ff6ddaff7412f85154b2da90d9b226937a49",
+      "rejected_in": "cd256e5e5a3301b70f6b3a89d3d27c3ea7105ab4",
+      "content_changes": [],
+      "target_issues": [],
+      "passes_replayed_checks": true
+    },
+    {
+      "execution_id": "EX-01M2SBR60Q64TDP89CX62ARMCG",
+      "role": "research_preparation",
+      "input_snapshot": "5db7375174b80c32f773df201447eb9a2d063847",
+      "rejected_in": "599c5fe9dc3132012b48bfb976e20bdf709ddddb",
+      "content_changes": [],
+      "target_issues": [],
+      "passes_replayed_checks": true
+    },
+    {
+      "execution_id": "EX-01M2SBS46XNZ6M9KD80R32MBVF",
+      "role": "task_contract_review",
+      "input_snapshot": "3bbd6aa5a3e9c997bfb1f034dd6f7d009d139014",
+      "rejected_in": "6e3560658d35c186aec18dca9132ac699a8c8aff",
+      "content_changes": [],
+      "target_issues": [],
+      "passes_replayed_checks": true
+    },
+    {
+      "execution_id": "EX-01M2SBVED7SDTAB0GKKTQD5KC9",
+      "role": "research_plan",
+      "input_snapshot": "cd256e5e5a3301b70f6b3a89d3d27c3ea7105ab4",
+      "rejected_in": "2d8ca8fec46040d240958851e684353f5e0b2a0d",
+      "content_changes": [],
+      "target_issues": [],
+      "passes_replayed_checks": true
+    },
+    {
+      "execution_id": "EX-01M2SBY1TZ6ZZWHXKASG11TS2H",
+      "role": "operational_review",
+      "input_snapshot": "2d8ca8fec46040d240958851e684353f5e0b2a0d",
+      "rejected_in": "427b5ef76ad64857d5c4fffefb762262b08801d5",
+      "content_changes": [
+        {
+          "id": "TK-01M2SBJK5NBRR3TC1WYEWRVDXX",
+          "field": "contract_sha256",
+          "before": "49631286108a94ef2b9357df995cd5d5af2a3ee1a5f9cceef22365a063f4b0aa",
+          "after": "7fccf9c8b4cb3ece2dccf7905dc59fac8559e8a5bd24277131284293f7946675",
+          "next": "refresh_decision"
+        }
+      ],
+      "target_issues": [],
+      "passes_replayed_checks": false
+    },
+    {
+      "execution_id": "EX-01M2SBYE973NWBY67YFYQ7VZ81",
+      "role": "operational_review",
+      "input_snapshot": "8228f22768063d8dd80e3ede500fbb8291a3f287",
+      "rejected_in": "971b64ba190690f0a60a9441e2e93e6ec2c5f6a1",
+      "content_changes": [
+        {
+          "id": "TK-01M2SBJK5NBRR3TC1WYEWRVDXX",
+          "field": "contract_sha256",
+          "before": "49631286108a94ef2b9357df995cd5d5af2a3ee1a5f9cceef22365a063f4b0aa",
+          "after": "7fccf9c8b4cb3ece2dccf7905dc59fac8559e8a5bd24277131284293f7946675",
+          "next": "refresh_decision"
+        }
+      ],
+      "target_issues": [],
+      "passes_replayed_checks": false
+    },
+    {
+      "execution_id": "EX-01M2SC2T79R2FH4GQFRTTE0ZBG",
+      "role": "operational_review",
+      "input_snapshot": "971b64ba190690f0a60a9441e2e93e6ec2c5f6a1",
+      "rejected_in": "1e469531e17b290b2913be47c765ad2115b25ab5",
+      "content_changes": [],
+      "target_issues": [],
+      "passes_replayed_checks": true
+    },
+    {
+      "execution_id": "EX-01M2SC3B4X1WSW34ZHXY1Y28C1",
+      "role": "operational_review",
+      "input_snapshot": "427b5ef76ad64857d5c4fffefb762262b08801d5",
+      "rejected_in": "e524c6b57302ed7a443df715a161f7dd855f5937",
+      "content_changes": [],
+      "target_issues": [],
+      "passes_replayed_checks": true
+    },
+    {
+      "execution_id": "EX-01M2SC5PB35AJFXYSZ4C9K9E55",
+      "role": "research_plan",
+      "input_snapshot": "1e469531e17b290b2913be47c765ad2115b25ab5",
+      "rejected_in": "76f21708107007f1aeb57591d5998962065924e3",
+      "content_changes": [
+        {
+          "id": "TK-01M2SBJK5NSN76DE06M6SZMB5C",
+          "field": "contract_sha256",
+          "before": "22f5e6415da7b0b2af26ef70f22d56de917eda15d0e75283658b29156b368f6f",
+          "after": "a794c40d80d2fe43a6cd46a7cb9a73ea42d420b6850540a454e075cfad9ab642",
+          "next": "refresh_decision"
+        }
+      ],
+      "target_issues": [],
+      "passes_replayed_checks": false
+    },
+    {
+      "execution_id": "EX-01M2SC8W8MFZ3SH6ECKS52QXEB",
+      "role": "research_preparation",
+      "input_snapshot": "c79b51f6cbe77897ddf61b8a67cf0ec810802d2b",
+      "rejected_in": "86d84bfe40db3f8b76609c99e27acd08f9826f21",
+      "content_changes": [],
+      "target_issues": [],
+      "passes_replayed_checks": true
+    },
+    {
+      "execution_id": "EX-01M2SCC6Q0EAY5T5JK9S0FJ25G",
+      "role": "research_plan",
+      "input_snapshot": "91fc6c5104387e84f9b700b68b045e29681a6e91",
+      "rejected_in": "cdedbe4b6a733a065981f74c259162775a7b03f9",
+      "content_changes": [],
+      "target_issues": [],
+      "passes_replayed_checks": true
+    },
+    {
+      "execution_id": "EX-01M2SCEYXDR8HQBSAQ5EFQ1ST0",
+      "role": "research_plan",
+      "input_snapshot": "cdedbe4b6a733a065981f74c259162775a7b03f9",
+      "rejected_in": "d332999c2bbf792a1c1cd72bf005996ccf017b63",
+      "content_changes": [
+        {
+          "id": "TK-01M2SBJK5NZAHV5CEQ9SK2S9VF",
+          "field": "contract_sha256",
+          "before": "e3a237f41dc7edb761dd05b5f37d69be609358f7bf709b68e0929d8f13ef1d5c",
+          "after": "f497c3b798be22cf0efda9e076bed8833671c6f3dd964b2eb9a062e2cbd2a919",
+          "next": "refresh_decision"
+        }
+      ],
+      "target_issues": [],
+      "passes_replayed_checks": false
+    },
+    {
+      "execution_id": "EX-01M2SCHE479WK2J4RK0HAY435C",
+      "role": "research_plan",
+      "input_snapshot": "d332999c2bbf792a1c1cd72bf005996ccf017b63",
+      "rejected_in": "a2a9443ff529585b589ea540074c932659a4dd50",
+      "content_changes": [],
+      "target_issues": [],
+      "passes_replayed_checks": true
+    },
+    {
+      "execution_id": "EX-01M2SCHKY272PVMQ1AR42S60XG",
+      "role": "operational_review",
+      "input_snapshot": "499cb4bc2c43a490b3baef3e2152887922941080",
+      "rejected_in": "58bfb98cf27e7539a07b305b7c5b3900587d673b",
+      "content_changes": [],
+      "target_issues": [],
+      "passes_replayed_checks": true
+    },
+    {
+      "execution_id": "EX-01M2SCP62NXA89355B1MTPJ4G3",
+      "role": "operational_review",
+      "input_snapshot": "ce45445bda9bd9cc7cf2937819a5c0eb7cdc3e8d",
+      "rejected_in": "476c902946d971ecfe4c3e72ca26f8940145d952",
+      "content_changes": [],
+      "target_issues": [],
+      "passes_replayed_checks": true
+    },
+    {
+      "execution_id": "EX-01M2SDC0JN2QJ883E4B3KYZPVA",
+      "role": "research_preparation",
+      "input_snapshot": "2bddfa71a537757cb2a7001a941b9d921fc53ba1",
+      "rejected_in": "0d2624f3f9797565d79ef71d7758465253bae913",
+      "content_changes": [],
+      "target_issues": [],
+      "passes_replayed_checks": true
+    },
+    {
+      "execution_id": "EX-01M2SDC84XCAPQBK2SP0W530H2",
+      "role": "research_plan",
+      "input_snapshot": "17bedb91ad40d0ebb2e242d4607dba8ff16a79d9",
+      "rejected_in": "ca08b89478be17beeb7acc88a437c217a7044d82",
+      "content_changes": [],
+      "target_issues": [],
+      "passes_replayed_checks": true
+    },
+    {
+      "execution_id": "EX-01M2SDEXKDT0VXB2R5KYJD8CBW",
+      "role": "research_plan",
+      "input_snapshot": "ca08b89478be17beeb7acc88a437c217a7044d82",
+      "rejected_in": "5cd16f87a86e4dfd1524eac22f084aa27b139705",
+      "content_changes": [],
+      "target_issues": [],
+      "passes_replayed_checks": true
+    },
+    {
+      "execution_id": "EX-01M2SDQ2GH174XGW32PVCT2633",
+      "role": "research_plan",
+      "input_snapshot": "5cd16f87a86e4dfd1524eac22f084aa27b139705",
+      "rejected_in": "b1d2a5ddb805078e41ac0d1904a038a9bbc14acc",
+      "content_changes": [],
+      "target_issues": [
+        {
+          "id": "TK-01M2SBJK5NZAHV5CEQ9SK2S9VF",
+          "field": "target_ended"
+        }
+      ],
+      "passes_replayed_checks": false
+    },
+    {
+      "execution_id": "EX-01M2SDQ9DR0J96HFZZ58SJ1590",
+      "role": "operational_review",
+      "input_snapshot": "2ffdc038655247968467cd1e73779ede4c8a7d0f",
+      "rejected_in": "0079e4a810f28c6ff91aeb1bef73bef3af8ecf36",
+      "content_changes": [],
+      "target_issues": [],
+      "passes_replayed_checks": true
+    },
+    {
+      "execution_id": "EX-01M2SDT8VRV5SVR59314WBPV6C",
+      "role": "task_contract_review",
+      "input_snapshot": "c1e271e6dc5954a8f7b30474d5078ce5c69cbd49",
+      "rejected_in": "263228786494eb3a0ce543b2ab4a642ff217d6ae",
+      "content_changes": [],
+      "target_issues": [],
+      "passes_replayed_checks": true
+    },
+    {
+      "execution_id": "EX-01M2SDV56TH66YHCQTJ9GWNKDS",
+      "role": "operational_review",
+      "input_snapshot": "0079e4a810f28c6ff91aeb1bef73bef3af8ecf36",
+      "rejected_in": "8c8d179ef3010503c6bbb076da2b0c533b3b8f49",
+      "content_changes": [],
+      "target_issues": [],
+      "passes_replayed_checks": true
+    },
+    {
+      "execution_id": "EX-01M2SDYZ1ZSWBF3SMPQ8BF2PWC",
+      "role": "research_preparation",
+      "input_snapshot": "4943054ae88a79926122ae63c62ff1358eedb7bd",
+      "rejected_in": "db5d9d9bac488f08946f4237b6e8883c2bd43420",
+      "content_changes": [],
+      "target_issues": [],
+      "passes_replayed_checks": true
+    },
+    {
+      "execution_id": "EX-01M2SE69VE9RX9CESA4MA02B2D",
+      "role": "research_plan",
+      "input_snapshot": "b1d2a5ddb805078e41ac0d1904a038a9bbc14acc",
+      "rejected_in": "44eb4b7fa39718310a49ad05022537112f95bf1d",
+      "content_changes": [
+        {
+          "id": "TK-01M2SDSYPTMAP49K999RYV3GRM",
+          "field": "contract_sha256",
+          "before": "bede22f0293f31373127b83e34c748d619be83bdf5aac3e09726edc75e3d1487",
+          "after": "e795b4ea44b02c7af49d464635afae3292a97172bb0d215114c32b3362c64287",
+          "next": "refresh_decision"
+        }
+      ],
+      "target_issues": [],
+      "passes_replayed_checks": false
+    },
+    {
+      "execution_id": "EX-01M2SE7038RMG911G1RP330J4J",
+      "role": "research_preparation",
+      "input_snapshot": "ef1f9cef7be0f9bb2241a751e0ff41926ed94ab4",
+      "rejected_in": "82ee21643d6797b3b015cbf152e72d19e515d22c",
+      "content_changes": [],
+      "target_issues": [],
+      "passes_replayed_checks": true
+    }
+  ]
+}

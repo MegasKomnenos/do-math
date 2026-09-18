@@ -150,7 +150,7 @@ class EngineTests(unittest.TestCase):
             engine, _ = self.make(ScriptedRunner(invalid_plan=invalid))
             state = engine.run(max_steps=10)
             self.assertEqual(state["status"], "paused")
-            self.assertTrue(state["questions"])
+            self.assertTrue(state["waiting_actions"])
 
     def test_work_budget_pause_resume_preserves_failed_request_without_replay(self):
         runner = ScriptedRunner(fail_role="research_work"); engine, instance = self.make(runner, work_calls=2, operations_calls=3)

@@ -8,7 +8,8 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.engine import control
 from do_math.observations import ObservationTracker, validate_rules
-from do_math.planning import task_ready
+from do_math.planning import task_ready, contract_hash
+from do_math.input_basis import capture_decision_basis
 from test_purpose_engine import PurposeHarness, common
 
 
@@ -33,6 +34,9 @@ class CurrentnessTests(PurposeHarness):
                       'occurrence_condition': {'op': 'always'}}
         unfinished_instance = deepcopy(engine.instance)
         unfinished_instance['goal_status'] = 'unsolved'
+        downstream['reviews'][0].update(contract_sha256=contract_hash(downstream),
+            goal_revision=unfinished_instance['goal_revision'], policy_revision=unfinished_instance['policy_revision'],
+            decision_basis=capture_decision_basis(unfinished_instance, engine.runtime, [task['id']]))
         self.assertEqual(task_ready(downstream, unfinished_instance, engine.runtime)['state'], 'ready')
         engine._save()
         source.write_text('new', encoding='utf-8')
@@ -70,10 +74,39 @@ class CurrentnessTests(PurposeHarness):
         engine.run(max_steps=1)
         execution = list(engine.runtime['executions'].values())[-1]
         self.assertEqual(execution['outcome'], 'execution_incomplete')
-        self.assertIn('source content changed', execution['error'])
+        self.assertEqual(execution['error_kind'], 'currentness_changed')
+        self.assertTrue(any(row['field'] == 'sources' for row in execution['currentness_changes']))
         self.assertEqual(engine.runtime['cycles'], 0)
         entry = next(f for f in execution['output_files'] if f['path'] == 'partial.txt')
         self.assertEqual(engine.store.read(entry['artifact_ref']), b'The old input was read.')
+
+    def _plan_citing_task_while(self, change):
+        engine, runner = self.make()
+        self.drive(engine, predicate=lambda e: e.runtime['queue'] and e.runtime['queue'][0]['role'] == 'research_plan'
+                   and any(t['status'] == 'ready' for t in e.runtime['tasks'].values()))
+        task_id = next(tid for tid, t in engine.runtime['tasks'].items() if t['status'] == 'ready')
+        class ConcurrentChange:
+            def run(inner, **kwargs):
+                result = runner.run(**kwargs)
+                change(engine.runtime['tasks'][task_id])
+                result['output']['used_sources'] = [*result['output'].get('used_sources', []), task_id]
+                return result
+        engine.runner = ConcurrentChange()
+        engine.run(max_steps=1)
+        return engine, task_id, next(e for e in reversed(list(engine.runtime['executions'].values())) if e['role'] == 'research_plan')
+
+    def test_cited_task_lifecycle_change_during_plan_does_not_reject_the_plan(self):
+        engine, task_id, plan = self._plan_citing_task_while(
+            lambda task: task.update(deferred_reason='Concurrent planner note', reviews=[*task['reviews'], {'note': 'concurrent'}]))
+        self.assertEqual(plan['outcome'], 'output_accepted', plan.get('error'))
+        self.assertEqual([row['id'] for row in plan['decision_basis']['records']], [task_id])
+        self.assertEqual(engine.runtime['tasks'][task_id]['status'], 'performing')
+
+    def test_cited_task_contract_change_during_plan_rejects_the_plan(self):
+        engine, task_id, plan = self._plan_citing_task_while(lambda task: task.update(scope=task['scope'] + ' (revised)'))
+        self.assertEqual(plan['outcome'], 'execution_incomplete')
+        self.assertEqual(plan['error_kind'], 'currentness_changed')
+        self.assertTrue(any(row.get('id') == task_id and row['field'] == 'contract_sha256' for row in plan['currentness_changes']))
 
     def test_failed_execution_materials_are_restored_for_its_operational_review(self):
         engine, _ = self.make()

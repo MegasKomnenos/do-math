@@ -22,6 +22,21 @@ class Tests(unittest.TestCase):
  def test_idle_is_due_not_math_failure_and_hash_change_only(self):
   self.clock.x=6;due=self.t.observe({'type':'tick'});self.assertEqual(due[-1]['reason'],'no_visible_activity');self.assertEqual(self.t.observe({'type':'tick'}),[])
   self.write();self.assertEqual([x['kind'] for x in self.t.observe({'type':'tick'})],['checkpoint']);self.assertEqual(self.t.observe({'type':'tick'}),[])
+ def test_transport_and_tool_wait_are_bounded_without_becoming_math_progress(self):
+  self.t.config.update(observation_idle_seconds=5,observation_interval_seconds=20)
+  self.clock.x=4;self.assertEqual(self.t.observe({'type':'transport_bytes_received','bytes':100}),[])
+  self.clock.x=7;self.assertEqual(self.t.observe({'type':'transport_bytes_received','bytes':50}),[])
+  self.assertEqual(self.t.last_activity,0)
+  self.clock.x=21;due=self.t.observe({'type':'transport_bytes_received','bytes':10})[-1]
+  self.assertEqual(due['reason'],'output_streaming_review');self.assertEqual(due['sample']['transport_bytes'],160)
+  self.assertEqual(due['sample']['tool_results'],0)
+  self.clock.x=22;self.t.observe({'type':'assistant','message':{'content':[{'type':'tool_use','id':'tool','name':'Bash','input':{'timeout':10000}}]}})
+  self.clock.x=28;self.assertEqual(self.t.observe({'type':'tick'}),[])
+  self.clock.x=33;due=self.t.observe({'type':'tick'})[-1]
+  self.assertEqual(due['reason'],'tool_timeout_observed')
+ def test_ping_does_not_hide_idle(self):
+  self.clock.x=6;due=self.t.observe({'type':'ping'})[-1]
+  self.assertEqual(due['reason'],'no_visible_activity')
  def test_blocked_periodic_and_invalid_checkpoint(self):
   self.write('blocked');self.assertTrue(any(x.get('reason')=='worker_reported_obstacle' for x in self.t.observe({'type':'tick'})))
   self.t.config['observation_mode']='periodic';self.clock.x=10;self.write('working');due=[x for x in self.t.observe({'type':'tick'}) if x['kind']=='operational_review_due'];self.assertEqual([x['reason'] for x in due],['periodic_review']);self.assertEqual(self.t.review_count,2)

@@ -2,7 +2,7 @@
 
 이 문서는 do-math 연구 인스턴스를 만들고 운전하는 사람을 위한 진입점이다. do-math의 목적과 전체 연구 흐름은 [SKILL.md](SKILL.md), 공통 용어의 뜻은 [GLOSSARY.md](GLOSSARY.md), 정확한 명령·필드·상태 투영과 역할별 JSON은 [CLI 실행 계약](references/CLI-실행-계약.md)이 소유한다.
 
-현재 실행 계약은 `do-math-cli/1`이다. 새 세션 예산 인스턴스는 기능 판본 3을 사용하고, 기존 판본의 실행횟수 운전도 지원한다. 배정된 모델의 Codex CLI 또는 Claude CLI 로그인을 사용하므로 별도의 API 키를 요구하지 않는다. 이 구현은 수학 연구의 후보 준비, 작업 계약 검토, 연구 계획, 연구 수행, Lean 검사, 동일성 검토, 목표 감사와 학술 후속을 한 인스턴스 상태로 연결한다. 각 기능이 무엇을 보증하는지는 서로 다르다. 명령 성공이나 실행 종료는 형식 타당성·해설 동일성·목표 충족을 대신하지 않는다.
+현재 실행 계약은 `do-math-cli/1`이다. 새 인스턴스는 기능 판본 4를 사용하며 모델별 동시 세션 모드와 누적 실행횟수 모드를 지원한다. 판본 1~3은 읽기·내보내기를 유지하지만 검증된 별도 변환 없이 재개하지 않는다. 배정된 모델의 Codex CLI 또는 Claude CLI 로그인을 사용하므로 별도의 API 키를 요구하지 않는다. 이 구현은 수학 연구의 후보 준비, 작업 계약 검토, 연구 계획, 연구 수행, Lean 검사, 동일성 검토, 목표 감사와 학술 후속을 한 인스턴스 상태로 연결한다. 각 기능이 무엇을 보증하는지는 서로 다르다. 명령 성공이나 실행 종료는 형식 타당성·해설 동일성·목표 충족을 대신하지 않는다.
 
 ## 시작 전에 준비할 것
 
@@ -46,7 +46,7 @@ scholarly는 기본 활성이다. `scholarly_server`에 `command`·`args`를 직
 }
 ```
 
-이 예시는 기본 구성과 같다. 세션은 종료 후 재사용하며 두 예산은 자동 차용하지 않는다. 모델 이름이나 수를 바꾸면 두 예산 맵에도 해당 모델을 명시한다. 기존 실행횟수 인스턴스는 위 설정으로 명시적으로 전환하기 전까지 기존 계약을 유지한다. 기존 `role_models`를 썼다면 전환 설정에 `"role_models": {}`도 넣는다. 상세 호환 조건은 CLI 실행 계약의 설정 절을 따른다.
+이 예시는 기본 구성과 같다. 세션은 종료 후 재사용하며 두 예산은 자동 차용하지 않는다. 모델 이름이나 수를 바꾸면 두 예산 맵에도 해당 모델을 명시한다. 판본 4에서 실행횟수 모드로 만든 인스턴스는 위 설정으로 명시적으로 전환하기 전까지 그 예산 방식을 유지한다. 판본 1~3의 기록은 예산 설정 변경만으로 재개 가능한 판본이 되지 않는다. 예산 모드 전환 전에는 operator hold로 정지를 요청하고 미종료 실행이 없으며 연구 예약 작업이 Running이 아닌지 확인한다. 기존 `role_models`를 썼다면 전환 설정에 `"role_models": {}`도 넣는다. 상세 호환 조건은 CLI 실행 계약의 설정 절을 따른다.
 
 Claude를 배정하려면 `claude:opus`, `claude:sonnet`, `claude:haiku`처럼 `claude:` 뒤에 CLI 모델 이름이나 별칭을 적는다. `claude-`로 시작하는 전체 모델 ID도 사용할 수 있다. 다른 이름은 Codex로 전달한다. 같은 등급·모델 선택 규칙을 연구·검토·운영 역할에 적용하며, 독립 운영 담당도 배정된 모델의 운영 슬롯을 사용한다.
 
@@ -303,7 +303,7 @@ python .agents/skills/do-math/scripts/do_math.py resume `
 
 ### 독립 운영의 설정과 정지
 
-`operator status`는 실제 예약 작업을 조회한다. `operator install`은 현재 인스턴스 설정으로 등록을 다시 맞추고 `operator uninstall`은 그 인스턴스의 두 예약 작업만 제거한다. 운영 주기와 기한은 `configure`의 `operator_enabled`, `operator_interval_seconds`, `operator_timeout_seconds`, `operator_effort`로 바꾼다. 세션 모드의 모델은 `tier_models`와 `role_tiers.independent_operator`를 사용하고, 구 실행횟수 모드는 `operator_model`을 사용한다. 적용된 운영 설정 변경은 예약에 반영되며, 제어가 아직 대기 중이면 적용 뒤 설치를 재조정한다. 비활성화나 예약 제거가 이미 실행 중인 연구까지 정지했다는 뜻은 아니다.
+`operator status`는 실제 예약 작업을 조회한다. `operator install`은 현재 인스턴스 설정으로 등록을 다시 맞추고 `operator uninstall`은 그 인스턴스의 연구·정기 운영·일회성 wake 예약을 제거한다. 운영 주기와 기한은 `configure`의 `operator_enabled`, `operator_interval_seconds`, `operator_timeout_seconds`, `operator_effort`로 바꾼다. 세션 모드의 모델은 `tier_models`와 `role_tiers.independent_operator`를 사용하고, 구 실행횟수 모드는 `operator_model`을 사용한다. 적용된 운영 설정 변경은 예약에 반영되며, 제어가 아직 대기 중이면 적용 뒤 설치를 재조정한다. 비활성화나 예약 제거가 이미 실행 중인 연구까지 정지했다는 뜻은 아니다.
 
 사용자가 연구와 자동 운영을 함께 멈출 때는 `operator hold`를 쓴다. 이 명령은 고유 ID의 HOLD를 만들고 사용자 정지를 요청한다. `operator release`는 그 HOLD를 해제하며, 현재 사용자 정지가 정확히 같은 HOLD에서 왔을 때만 재개한다. 이후의 다른 사용자 정지는 그대로 유지한다.
 
@@ -344,15 +344,29 @@ python .agents/skills/do-math/scripts/do_math.py resume `
 
 새 인스턴스의 작업·운영 예산은 모델별 로컬 AI 실행의 동시 점유로 계산한다. 기존 실행횟수 모드는 명시적인 설정 전환 전까지 보존한다. Codex의 turn usage와 Claude의 최종 result usage는 보존하지만 공급자 내부 호출별 ID·예약·원격 종료를 보증하지 않는다. 현재 기본 Windows 실행은 Codex의 `danger-full-access`·승인 정책 `never`, Claude의 `bypassPermissions`로 기존 사용자 권한을 쓴다. Windows Job은 로컬 프로세스 수명과 자손 종료를 관리하지만 모든 host 파일·network·credential 접근을 차단하지 않는다. 별도 세션·작업 공간과 동료 결과 비제공은 입력 경계를 만들지만 통계적 독립성이나 강한 OS 격리의 증거가 아니다.
 
+## 기능 판본과 결과의 시각을 확인한다
+
+새 인스턴스는 기능 판본 4를 사용한다. 판본 1~3의 기록은 읽기·조회·내보내기가 가능하지만 이 설치본은 그 queue·승인·질문을 새 의미로 자동 변환해 재개하지 않는다. 검증된 별도 변환이 없으면 새 인스턴스를 만들고 필요한 수학 산출을 정확한 출처와 확인 범위를 가진 입력으로 제공한다. 과거 runtime을 새 연구에 복사하거나 옛 거부를 소급 수락하지 않는다. 설치본 수리는 기존 HOLD를 해제하지 않는다.
+
+`status --json`은 과제 단계와 선택된 미시작 요청·실제 활성 실행·마지막 수락 결과·미해소 의무·대기 이유를 함께 보여 준다. `provider_waits`와 슬롯 예산은 로컬 원장에서 별도로 관측한 값이며 연구 snapshot과 원자적으로 같은 시각의 자료가 아니다. 열린 사용자 질문은 `questions`, 출처·소유·대상·해소는 `question_links`, 실패 의무는 `waiting_actions`에서 확인한다.
+
+고정 snapshot의 실행 시각과 계보는 다음 명령으로 내보낸다. JSON은 원시 UTC와 현지 날짜·UTC offset을 함께 보존하고 CSV도 같은 실행 행을 사용한다. 과거에 기록하지 않은 시각은 null 또는 빈 셀이다.
+
+```powershell
+python .agents/skills/do-math/scripts/do_math.py timeline --repository <repo> --instance <RI-ID> --snapshot <OID> --format json --timezone Asia/Seoul
+```
+
+`--include-operator`는 현재 로컬 운영 로그도 별도 집계 단위로 포함한다. 각 파일의 해시와 관측 시각이 붙으며 그 내용이 해당 연구 snapshot에 포함됐다는 뜻은 아니다. 겹친 실행 시간의 합계를 실제 경과 시간으로 사용하지 않는다.
+
 ## 설치본 검사
 
 스킬 폴더 전체를 설치한 뒤 다음 명령으로 역할별 필수 문서와 출력 스키마를 확인한다. 경로는 실제 설치 위치에 맞춘다.
 
 ```powershell
-python .agents/skills/do-math/scripts/probe_codex.py --skill-only
+python .agents/skills/do-math/scripts/probe_cli.py --skill-only
 ```
 
-이 검사는 스킬 폴더 안의 문서와 코드만 읽으며 모델을 호출하지 않는다. `scope="installed_skill_structure"`, `status="verified"`는 역할 읽기 대응표의 문서와 운영 문서를 읽었고 역할 출력 스키마의 형식 검사를 통과했다는 뜻이다. 문서 내용의 정확성, 실행 환경이나 연구 성능까지 검증한 결과는 아니다. `--spec-only`는 같은 검사의 호환 별칭이다.
+이 검사는 스킬 폴더 안의 문서와 코드만 읽으며 모델을 호출하지 않는다. 기존 `probe_codex.py --skill-only`도 같은 구조 검사기를 호출하는 호환 진입점이다. `scope="installed_skill_structure"`, `status="verified"`는 역할 읽기 대응표의 문서와 운영 문서를 읽었고 역할 출력 스키마의 형식 검사를 통과했다는 뜻이다. 문서 내용의 정확성, 실행 환경이나 연구 성능까지 검증한 결과는 아니다. `--spec-only`는 같은 검사의 호환 별칭이다.
 
 현재 코드의 회귀 검사는 unittest discovery로 `scripts/tests/test_*.py`를 수집해 실행한다. 일부 시험 파일은 직접 실행해도 시험을 시작하지 않으므로 파일별 종료 코드만으로 회귀 검사를 완료했다고 판단하지 않는다.
 
@@ -361,3 +375,21 @@ python -m unittest discover -s .agents/skills/do-math/scripts/tests -p "test_*.p
 ```
 
 실제 Codex·Claude·Lean·HTTP·Windows 프로세스가 필요한 검사는 각 시험의 환경 조건과 실행 결과를 확인한다. 검증 결과는 검사한 판본, 사례, 통과·실패·미실행 범위와 함께 보존하고, 해석 기준은 [CLI 실행 계약](references/CLI-실행-계약.md)의 「검증 근거의 해석」을 따른다.
+
+### Claude 전용 검사와 실행 제한
+
+특정 연구를 Opus 5만으로 운영하려면 모든 등급·실제 역할·독립 운영 배정을 `claude-opus-5`로 맞추고 그 인스턴스의 `claude_only_assigned_model=true`를 사용한다. 옵션 기본값은 false이며 다른 연구의 모델 정책은 바뀌지 않는다. 모델 잠금은 내부 보조 모델을 제한하고 보고 모델을 대조하며, 모든 역할을 자동으로 Claude로 바꾸는 옵션은 아니다.
+
+`probe_cli.py --skill-only`는 정적·동적 역할 스키마와 문서 구조만 검사한다. 대표 실호출은 provider와 모델, 새 증거 경로를 명시한다. 이 명령은 실제 모델 예산을 사용하므로 해당 인스턴스의 모델 정책을 따른다.
+
+```powershell
+python .agents/skills/do-math/scripts/probe_cli.py --provider claude --model claude-opus-5 --only-assigned-model --cases structured files background stop --scholarly --output-dir <새-증거-경로>
+```
+
+### 공급자 한도와 재관찰
+
+공급자 한도는 Claude 등 모델 공급자가 새 호출을 제한하는 상태다. 확정된 한도는 작업·운영 호출 양쪽에서 기다린다. 일회성 `operator wake` 예약은 모델을 부르지 않고 연구 진입점을 깨운다. 실제 재관찰은 허가된 action 하나로 수행한다. HOLD·사용자 정지가 있으면 이 예약으로 연구나 모델을 시작하지 않는다. `operator status`는 wake 예약도 보여 주고 `uninstall`은 그 인스턴스의 wake를 함께 제거한다. 자동 등록 실패는 운영 원장에 남으며 정기 Python 진입부가 다시 맞춘다.
+
+### 사용자 질문에 답하기
+
+사용자 질문에 답하는 자유 입력에는 `input --responds-to <QU-ID>`를 반복 지정할 수 있다. 그 원문은 독립 의도 대조를 거친 뒤 대응 질문만 해소한다. 구조화 결정은 `resolves_questions`에 해당 ID를 넣는다. 일반 재개는 공급자 실패나 개정 위임의 보류 의무를 무조건 queue로 되살리지 않는다.

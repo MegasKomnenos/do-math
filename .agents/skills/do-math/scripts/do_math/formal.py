@@ -16,7 +16,10 @@ def discover_lean() -> list[str] | None:
     portable=parents[5]/'.skill-workspace/do-math-toolchains/lean-4.32.0/lean-4.32.0-windows/bin/lean.exe'
     return [str(portable)] if portable.is_file() else None
 def _ident(x: str) -> bool:
-    return isinstance(x,str) and x and all(part and part.replace('_','a').isalnum() and part[0].isalpha() for part in x.split('.'))
+    if not isinstance(x, str) or not x:
+        return False
+    parts = [part.rstrip("'") for part in x.split('.')]
+    return all(part and part.replace('_', 'a').isalnum() and part[0].isalpha() for part in parts)
 
 def project_fingerprint(project_root: Path) -> dict | None:
     """Fingerprint only the configured Lake project's tracked subtree and local inputs."""

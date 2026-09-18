@@ -20,6 +20,8 @@ from .repository import ResearchRepository
 from .model_runner import ModelRunner
 from .session_slots import SessionSlots
 from .model_policy import selection
+from .provider_wait import provider_for, timestamp
+from . import execution_window
 
 
 SCRIPTS = Path(__file__).resolve().parents[1]
@@ -60,7 +62,7 @@ def _load_json(path: Path) -> dict[str, Any] | None:
 def task_names(repository: Path, instance: str) -> dict[str, str]:
     """Return stable task names scoped to the exact repository and instance."""
     digest = hashlib.sha256((str(repository.resolve()) + "\0" + instance).encode("utf-8")).hexdigest()[:12]
-    return {"operator": f"DoMath-Operator-{digest}", "engine": f"DoMath-Engine-{digest}"}
+    return {"operator": f"DoMath-Operator-{digest}", "engine": f"DoMath-Engine-{digest}", "wake": f"DoMath-Wake-{digest}"}
 
 
 def schedule(
@@ -72,10 +74,12 @@ def schedule(
     interval_seconds: int = 7200,
     operator_timeout_seconds: int = 5400,
     engine_timeout_seconds: int = 7510,
+    wake_at: str | None = None,
+    wake_key: str | None = None,
     runner: Runner = subprocess.run,
 ) -> dict[str, Any]:
     """Call the narrow PowerShell scheduler adapter and decode its JSON result."""
-    if action not in {"install", "uninstall", "status", "start-engine", "start-operator"}:
+    if action not in {"install", "uninstall", "status", "start-engine", "start-operator", "schedule-wake", "cancel-wake"}:
         raise ValueError("unsupported schedule action")
     if isinstance(interval_seconds, bool) or not isinstance(interval_seconds, int) or interval_seconds < 1:
         raise ValueError("operator interval must be a positive integer")
@@ -93,10 +97,15 @@ def schedule(
         "-Entrypoint", str(ENTRYPOINT),
         "-OperatorTask", names["operator"],
         "-EngineTask", names["engine"],
+        "-WakeTask", names["wake"],
         "-IntervalSeconds", str(interval_seconds),
         "-OperatorTimeoutSeconds", str(operator_timeout_seconds),
         "-EngineTimeoutSeconds", str(engine_timeout_seconds),
     ]
+    if action == "schedule-wake":
+        if timestamp(wake_at) is None or not wake_key:
+            raise ValueError("wake requires a timezone-aware retry time and generation key")
+        command.extend(["-WakeAt", wake_at, "-WakeKey", wake_key])
     completed = runner(command, capture_output=True, text=True, encoding="utf-8", check=False, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
     if completed.returncode:
         raise RuntimeError(completed.stderr.strip() or completed.stdout.strip() or "scheduled-task operation failed")
@@ -197,16 +206,66 @@ def engine_start_guard(repository: Path, instance: str, workspace: Path) -> dict
     if (_operator_dir(workspace) / "HOLD.json").exists():
         return {"outcome": "held"}
     status = read_status(repository, instance)
+    if status.get("model_policy_violation"):
+        return {"outcome": "model_policy_waiting", "status": status, "reason": "Reported model violated the instance lock; no further operator model was called."}
     if status.get("user_pause") or status.get("status") == "paused":
         return {"outcome": "paused", "before": status}
+    providers = status.get("provider_waits", {}).get("providers", {})
+    provider_due = any(row.get("due") for row in providers.values())
+    resumable = status.get("pending_actions") or any(row.get("failure_kind") == "provider_limit"
+                      for row in status.get("waiting_actions", {}).values())
+    if status.get("status") == "waiting" and provider_due and resumable:
+        return {"outcome": "startable", "before": status, "reason": "provider re-observation due"}
     if status.get("status") not in {"ready", "running", "capacity_waiting"}:
         return {"outcome": "not_started", "before": status}
     return {"outcome": "startable", "before": status}
 
 
+def reconcile_wake(repository: Path, instance: str, workspace: Path, *, config: dict, status: dict) -> dict:
+    """Repair a missing/stale one-shot reservation before invoking any model."""
+    marker = _operator_dir(workspace) / "wake-registration.json"
+    previous = _load_json(marker)
+    held = (_operator_dir(workspace) / "HOLD.json").exists() or status.get("user_pause") or status.get("status") in {"paused", "closed", "completed"}
+    slots = SessionSlots(workspace, instance, observer=True)
+    try:
+        providers = slots.provider_snapshot()["providers"]
+    finally:
+        slots.close()
+    waits = [row for row in providers.values() if row["state"] == "waiting"]
+    if held or not config.get("operator_enabled", True) or not waits:
+        if previous:
+            schedule("cancel-wake", repository=repository, instance=instance, workspace=workspace)
+            marker.unlink(missing_ok=True)
+        return {"status": "held" if held else "not_needed"}
+    row = min(waits, key=lambda value: timestamp(value["retry_at"]))
+    key = row["provider"] + ":" + str(row["generation"])
+    wanted = {"key": key, "retry_at": row["retry_at"]}
+    observed = schedule("status", repository=repository, instance=instance, workspace=workspace)
+    actual = observed.get("wake")
+    future_trigger = actual and (timestamp(actual.get("next_run")) or 0) > datetime.now(timezone.utc).timestamp()
+    running = (observed.get("engine") or {}).get("state") == "Running" or (actual or {}).get("state") == "Running"
+    if previous == wanted and actual and actual.get("description") == key and (future_trigger or running):
+        return {"status": "scheduled", **wanted}
+    schedule("schedule-wake", repository=repository, instance=instance, workspace=workspace,
+             wake_at=row["retry_at"], wake_key=key)
+    _json(marker, wanted)
+    return {"status": "scheduled", **wanted}
+
+
+def wake(repository: Path, instance: str, workspace: Path) -> dict:
+    """No model ping: wake only the engine entry point with its usual guards."""
+    guard = engine_start_guard(repository, instance, workspace)
+    if guard["outcome"] != "startable":
+        return guard
+    scheduled = schedule("start-engine", repository=repository, instance=instance, workspace=workspace)
+    return {"outcome": "engine_requested", "schedule": scheduled, "before": guard["before"]}
+
+
 def check(repository: Path, instance: str, workspace: Path, *, probe: bool = False) -> dict[str, Any]:
     """Run an independent Codex operator and preserve its evidence outside Git state."""
     status = read_status(repository, instance)
+    if status.get("model_policy_violation"):
+        return {"outcome": "model_policy_waiting", "status": status, "reason": "Reported model violated the instance lock; no operator model was called."}
     if status.get("status") == "completed" and not probe:
         context = invocation_context(repository, instance, workspace, status)
         run_directory = Path(context["run_directory"])
@@ -240,6 +299,11 @@ def check(repository: Path, instance: str, workspace: Path, *, probe: bool = Fal
         _json(run_directory / "result.json", report)
         _json(_operator_dir(workspace) / "latest-report.json", report)
         return report
+    try:
+        wake_status = reconcile_wake(repository, instance, workspace, config=config, status=status)
+    except (OSError, RuntimeError, ValueError) as error:
+        wake_status = {"status": "failed", "error": str(error)}
+    context["provider_wake"] = wake_status
     if not PROMPT.is_file():
         raise RuntimeError("independent operator contract is missing")
     from .submission import install_tools
@@ -247,6 +311,8 @@ def check(repository: Path, instance: str, workspace: Path, *, probe: bool = Fal
     execution_workspace.mkdir()
     checking_context = {**context, "snapshot": status.get("snapshot"), "action": {"role": "independent_operator"}}
     context["submission_contract"] = install_tools(execution_workspace, checking_context, OPERATOR_SCHEMA, None)
+    context["execution_window"] = {"path": str(execution_workspace / "execution-window.json"),
+                                   "finish_request_path": str(execution_workspace / "finish-request.json")}
     _json(run_directory / "context.json", context)
     prompt = PROMPT.read_text(encoding="utf-8") + "\n\n## Invocation context\n\n" + json.dumps(context, ensure_ascii=False, indent=2)
     if probe:
@@ -256,6 +322,9 @@ def check(repository: Path, instance: str, workspace: Path, *, probe: bool = Fal
     _json(run_directory / "result.json", report)
     last_status_check = 0.0
     stopped = False
+    execution_deadline = None
+    window_config = {**config, "run_timeout_seconds": config["operator_timeout_seconds"],
+                     "call_timeout_seconds": config["operator_timeout_seconds"]}
 
     def should_stop() -> bool:
         nonlocal last_status_check, stopped
@@ -263,6 +332,11 @@ def check(repository: Path, instance: str, workspace: Path, *, probe: bool = Fal
             stopped = True
             return True
         import time
+        if execution_deadline is not None:
+            execution_window.request_finish(execution_workspace, execution_deadline, window_config, "operations")
+            if time.monotonic() >= execution_deadline:
+                stopped = True
+                return True
         if time.monotonic() - last_status_check < 1:
             return stopped
         last_status_check = time.monotonic()
@@ -270,30 +344,51 @@ def check(repository: Path, instance: str, workspace: Path, *, probe: bool = Fal
         stopped = bool(current.get("user_pause") or current.get("status") == "closed")
         return stopped
 
-    slots = None
+    slots = SessionSlots(workspace, instance)
     slot_id = "operator-" + run_directory.name
     model = config["operator_model"]
     if config["session_limits"] is not None:
-        slots = SessionSlots(workspace, instance)
         chosen = selection(config, {"role": "independent_operator"}, {}, {})
         model = chosen["model"]
         report["model_selection"] = chosen
-        if not slots.acquire(slot_id, "operations", model):
-            report.update(outcome="capacity_waiting", model=model, budget=slots.snapshot())
-            _json(run_directory / "result.json", report)
-            _json(_operator_dir(workspace) / "latest-report.json", _latest_report(report, run_directory / "result.json"))
-            slots.close()
-            return report
+    provider = provider_for(model)
+    if not slots.acquire(slot_id, "operations", model, provider=provider, enforce_capacity=config["session_limits"] is not None):
+        report.update(outcome="provider_waiting" if slots.admission_reason == "provider_limit" else "capacity_waiting",
+                      model=model, budget=slots.snapshot(), provider_waits=slots.provider_snapshot())
+        _json(run_directory / "result.json", report)
+        _json(_operator_dir(workspace) / "latest-report.json", _latest_report(report, run_directory / "result.json"))
+        slots.close()
+        return report
     runner = ModelRunner()
+    def on_started(identity):
+        nonlocal execution_deadline
+        import time
+        slots.started(slot_id, identity)
+        execution_deadline = time.monotonic() + config["operator_timeout_seconds"]
+        report["started_at"] = datetime.now(timezone.utc).isoformat()
+        report["execution_window"] = execution_window.publish(execution_workspace, slot_id, execution_deadline,
+            window_config, "operations", deadline_source="independent_operator")
+        _json(run_directory / "result.json", report)
     try:
         model_result = runner.run(prompt=prompt, output_schema=OPERATOR_SCHEMA, workspace=execution_workspace,
                                   evidence_dir=run_directory / "evidence", model=model,
                                   effort=config["operator_effort"], timeout_seconds=config["operator_timeout_seconds"],
                                   scholarly_server=scholarly if isinstance(scholarly, dict) else None, should_stop=should_stop,
                                   **({"claude_only_assigned_model": True} if config.get("claude_only_assigned_model", False) else {}),
-                                  **({"on_started": lambda identity: slots.started(slot_id, identity)} if slots else {}))
+                                  on_started=on_started)
         report.update(outcome="completed" if model_result["status"] == "completed" else model_result["status"],
                       result=model_result, output=model_result.get("output"))
+        parsed = model_result.get("execution", {}).get("collect", {}).get("jsonl", {})
+        report["provider_wait"] = slots.provider_result(slot_id, provider,
+            failure=model_result.get("failure") if model_result.get("error_kind") == "provider_limit" else None,
+            response_observed=model_result["status"] == "completed" or bool(parsed.get("turn_completed") or parsed.get("turn_failed")),
+            initial_seconds=config["provider_retry_initial_seconds"], maximum_seconds=config["provider_retry_max_seconds"])
+        if model_result.get("error_kind") == "model_policy":
+            from .engine import control, ResearchEngine
+            control(repository, instance, "pause", text="Reported model differed from the locked assignment", origin="operator",
+                    config={"model_policy_violation": {"operator_run": str(run_directory), "assigned_model": model,
+                                                       "reported_models": model_result.get("reported_models")}})
+            ResearchEngine(repository, instance).process_controls()
     except Exception as error:
         report.update(outcome="operator_failed", error=f"{type(error).__name__}: {error}")
     finally:
@@ -301,6 +396,10 @@ def check(repository: Path, instance: str, workspace: Path, *, probe: bool = Fal
             slots.release(slot_id)
             slots.close()
     report["ended_at"] = datetime.now(timezone.utc).isoformat()
+    try:
+        report["provider_wake"] = reconcile_wake(repository, instance, workspace, config=config, status=read_status(repository, instance) if report.get("provider_wait", {}).get("state") == "waiting" else status)
+    except (OSError, RuntimeError, ValueError) as error:
+        report["provider_wake"] = {"status": "failed", "error": str(error)}
     result_path = run_directory / "result.json"
     _json(result_path, report)
     latest = _latest_report(report, result_path)

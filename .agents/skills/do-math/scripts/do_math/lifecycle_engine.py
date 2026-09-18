@@ -11,7 +11,7 @@ from .governance import ensure_governance, apply_decision, timestamp
 from .knowledge import (revise_knowledge, invalidate_knowledge, register_environment,
     begin_transition, record_transition_result, activate_transition, invalidate_environment,
     validate_basis, assess_use)
-from .planning import task_ready, contract_hash, apply_event_schedule
+from .planning import task_ready, contract_hash, apply_event_schedule, contract_review_current, review_basis_key
 from .input_basis import sources_current
 from .repository import canonical_json, new_id
 
@@ -46,7 +46,7 @@ class LifecycleEngineMixin:
         return timestamp(clock() if clock else None)
 
     def _upgrade_runtime(self):
-        if any(root.get('feature_version', 1) not in {1, 2, 3} for root in (self.instance, self.runtime)):
+        if any(type(root.get('feature_version', 1)) is not int or root.get('feature_version', 1) not in {1, 2, 3, 4} for root in (self.instance, self.runtime)):
             raise ValueError('unsupported feature version; an explicit verified migration is required')
         legacy_upgrade = (self.instance.get('contract_id') == 'do-math-cli/1' and
                           min(self.instance.get('feature_version', 1), self.runtime.get('feature_version', 1)) == 1)
@@ -57,7 +57,7 @@ class LifecycleEngineMixin:
             'external_operations': {}, 'trust_transitions': {}, 'conversations': {},
             'checkpoints': {}, 'observations': {}, 'condition_states': {}, 'task_readiness': {},
             'extended_controls': {}, 'tasks': {}, 'executions': {}, 'activities': {},
-            'queue': [], 'history': [], 'questions': []}.items():
+            'queue': [], 'history': [], 'questions': [], 'question_links': []}.items():
             self.runtime.setdefault(name, deepcopy(value))
         self.instance.setdefault('trust_environments', {})
         self.instance.setdefault('active_trust_environment', None)
@@ -374,6 +374,21 @@ class LifecycleEngineMixin:
 
     def _refresh_readiness(self):
         self._upgrade_runtime()
+        self._retire_closed_revision_targets()
+        self._reconcile_revision_delegations()
+        live_actions = {execution.get('action', {}).get('id') for execution in self.runtime['executions'].values()
+                        if execution.get('status') != 'ended'}
+        for action in list(self.runtime['queue']):
+            if action.get('id') in live_actions:
+                continue
+            self._bind_revision_action(action)
+            self._cancel_selected_revision_targets(action)
+        from .planning import revision_cycles
+        cycles = revision_cycles(self.instance, self.runtime)
+        if cycles != self.runtime.get('revision_cycles', []):
+            self.runtime['revision_cycles'] = cycles
+            if cycles:
+                self._enqueue('research_plan', reason='Explicit revision dependencies form a cycle; combine or redesign the recorded obligations', revision_cycles=cycles)
         now = self._lifecycle_now()
         self._check_conversations()
         self._invalidate_goal_currentness()
@@ -389,21 +404,34 @@ class LifecycleEngineMixin:
                 continue
             required = {'revision': task['revision'], 'contract_sha256': contract_hash(task),
                         'goal_revision': self.instance['goal_revision'], 'policy_revision': self.instance['policy_revision']}
-            approved = any(review.get('decision') == 'approved' and review.get('inputs_current', True) and all(review.get(key) == value for key, value in required.items())
+            review_key = review_basis_key(task, self.instance, self.runtime)
+            for review in task.get('reviews', []):
+                if 'decision_basis' in review or self.instance.get('feature_version', 0) >= 4:
+                    currentness = contract_review_current(review, task, self.instance, self.runtime)
+                    review['inputs_current'] = currentness['valid']
+                    if currentness['changes']:
+                        review['currentness_changes'] = currentness['changes']
+                    else:
+                        review.pop('currentness_changes', None)
+            approved = any(review.get('decision') == 'approved'  and review.get('inputs_current', True) and all(review.get(key) == value for key, value in required.items())
                            for review in task.get('reviews', []))
             reviewed = any(review.get('inputs_current', True) and all(review.get(key) == value for key, value in required.items()) for review in task.get('reviews', []))
             blocked_review = any(entry.get('action', {}).get('role') == 'task_contract_review'
                 and entry['action'].get('target') == task_id
                 and entry['action'].get('contract_basis') == required
+                and entry['action'].get('review_basis_key') == review_key
                 for entry in self.runtime.get('waiting_actions', {}).values())
             if not approved and not reviewed and not blocked_review:
                 # Older queues may have an unbound review from governance. Bind it
                 # to the current contract rather than adding a duplicate request.
                 candidates = [a for a in self.runtime['queue'] if a.get('role') == 'task_contract_review' and a.get('target') == task_id]
-                same = next((a for a in candidates if a.get('contract_basis') == required), None)
+                for candidate in candidates:
+                    if candidate.get('id') not in live_actions and candidate.get('contract_basis') == required and 'review_basis_key' not in candidate:
+                        candidate['review_basis_key'] = review_key
+                same = next((a for a in candidates if a.get('contract_basis') == required and a.get('review_basis_key') == review_key), None)
                 if same is None:
                     self.runtime['queue'][:] = [a for a in self.runtime['queue'] if a not in candidates]
-                    self._enqueue('task_contract_review', task_id, contract_basis=required,
+                    self._enqueue('task_contract_review', task_id, contract_basis=required, review_basis_key=review_key,
                                   reason='Current contract and policy require independent approval')
             # The source API supports legacy tasks; this integration deliberately
             # requires the stronger current-contract basis for migrated tasks.

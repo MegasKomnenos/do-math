@@ -12,6 +12,8 @@ import jsonschema
 
 from do_math.codex_adapter import CodexExecAdapter
 from do_math.claude_adapter import ClaudePrintAdapter
+from do_math.claude_stream import provider_limit
+from datetime import datetime, timezone
 from do_math.repository import canonical_json, _unique_pairs, _reject_constant
 
 
@@ -71,6 +73,8 @@ class CodexModelRunner:
                     stream.seek(offset)
                     chunk = stream.read()
                     offset = stream.tell()
+                if chunk:
+                    on_observation({"type": "transport_bytes_received", "bytes": len(chunk)})
                 buffer += chunk
                 while b"\n" in buffer:
                     line, buffer = buffer.split(b"\n", 1)
@@ -112,16 +116,29 @@ class CodexModelRunner:
             raise
         finally:
             execution.job.close()
-        usage = collected.get("jsonl", {}).get("usage", [])
-        usage = usage[-1] if isinstance(usage, list) and usage else {}
+        parsed = collected.get("jsonl", {})
+        usage = parsed.get("usage", [])
+        usage = parsed.get("usage_total", usage[-1] if isinstance(usage, list) and usage else {})
         result = {"status": "stopped" if stopped else "failed", "output": None,
                   "usage": usage if isinstance(usage, dict) else {}, "evidence_dir": str(evidence_dir),
-                  "execution": {"started": started, "collect": collected}, "error": None}
+                  "execution": {"started": started, "collect": collected}, "error": None,
+                  "error_kind": "execution_failure", "assigned_model": model}
+        for key in ("usage_segments", "model_usage_reported", "usage_scope", "reported_models", "selected_result", "post_result_events", "background_events"):
+            if key in parsed:
+                result[key] = parsed[key]
+        if claude_only_assigned_model and any(name != model for name in parsed.get("reported_models", [])):
+            result.update(error="reported model differs from the locked assignment", error_kind="model_policy")
+            return result
         if stopped:
             result["error"] = "stop requested or timeout"
             return result
         if collected.get("result") != "output_collected":
             result["error"] = "; ".join(collected.get("reasons", ["collection incomplete"]))
+            limit = provider_limit(parsed)
+            if limit:
+                result.update(error_kind="provider_limit", failure={**limit,
+                    "observed_at": datetime.now(timezone.utc).isoformat(),
+                    "evidence_ref": str(evidence_dir / "stdout.jsonl")})
             return result
         raw = collected["final"].get("raw")
         try:
@@ -137,6 +154,7 @@ class CodexModelRunner:
             result.update(error=f"output JSON: {type(exc).__name__}: {exc}", error_kind="output_validation")
             return result
         result.update(status="completed", output=output)
+        result.pop("error_kind", None)
         return result
 
 

@@ -119,8 +119,10 @@ def apply_decision(instance: dict, runtime: dict, change: dict, *, source_ref: s
         # Only actions that consume the replaced goal are cancelled; machine transitions, identity review
         # slots (including their fixed-question research), intent checks and recovery actions continue.
         runtime["queue"] = [a for a in runtime["queue"] if a["role"] not in goal_dependent or a.get("review_cycle_id")]
-        _queue(runtime, "research_preparation", "goal changed", decision_id=decision_id)
-        runtime["questions"] = []
+        from .revisions import capture_targets
+        targets = [identifier for identifier in event["affected"] if not runtime["tasks"][identifier].get("academic_requirement_id")]
+        _queue(runtime, "research_preparation", "goal changed", decision_id=decision_id,
+               revision_targets=capture_targets(instance, runtime, targets, required=True, source_ref=decision_id))
         if runtime["status"] in {"waiting", "completed", "budget_exhausted"}:
             runtime["status"] = "ready"
     elif kind == "policy":
@@ -198,6 +200,16 @@ def apply_decision(instance: dict, runtime: dict, change: dict, *, source_ref: s
                 execution["stop_requested"] = "grant_revoked"
                 event["affected"].append(eid)
         runtime["queue"] = [a for a in runtime["queue"] if a.get("grant_id") != gid]
+    elif kind == "question_answer":
+        _require_text(change.get("text"), "answer text")
+        identifiers = change.get("resolves_questions", [])
+        if not identifiers:
+            raise ValueError("a question answer must identify its questions")
+        by_id = {row["id"]: row for row in runtime.get("question_links", [])}
+        for identifier in identifiers:
+            if identifier not in by_id:
+                raise ValueError("unknown question: " + str(identifier))
+            event["affected"].extend(by_id[identifier]["target_ids"])
     elif kind == "task_scope":
         tid = change.get("task_id")
         task = runtime["tasks"].get(tid)
@@ -246,9 +258,21 @@ def apply_decision(instance: dict, runtime: dict, change: dict, *, source_ref: s
         event["affected"].append(tid)
         runtime["queue"] = [a for a in runtime["queue"] if a.get("target") != tid]
         if disposition == "revise":
-            _queue(runtime, "research_preparation", reason, target=tid)
+            from .revisions import capture_targets
+            _queue(runtime, "research_preparation", reason, target=tid,
+                   revision_targets=capture_targets(instance, runtime, [tid], required=True, source_ref=decision_id))
     else:
         raise ValueError(f"unsupported governance decision: {kind}")
+    if change.get("resolves_questions"):
+        from .questions import resolve_user
+        affected = set(event["affected"])
+        if kind in {"goal", "policy"}:
+            affected.add(instance["id"])
+        if kind == "grant":
+            granted = instance["grants"][event["grant_id"]]
+            affected.update(granted.get("task_ids") or [instance["id"]])
+            affected.add(event["grant_id"])
+        resolve_user(runtime, change["resolves_questions"], resolution_ref=decision_id, affected_ids=affected)
     instance["decisions"][decision_id] = event
     runtime.setdefault("history", []).append({"kind": "governance_decision", "decision_id": decision_id, "source_ref": source_ref})
     return instance, runtime, event
@@ -268,4 +292,7 @@ def interpretation_schema(stage: str) -> dict:
                       findings={"type": "array", "items": string}, scope_complete={"type": "boolean"})
     else:
         raise ValueError("unknown interpretation stage")
-    return {"type": "object", "additionalProperties": False, "properties": fields, "required": list(fields)}
+    required = list(fields)
+    fields["answered_questions" if stage == "interpret" else "confirmed_question_ids"] = {
+        "type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": True}
+    return {"type": "object", "additionalProperties": False, "properties": fields, "required": required}

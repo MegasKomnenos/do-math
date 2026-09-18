@@ -25,12 +25,13 @@ class LeanPreviewTests(unittest.TestCase):
             install_tools(workspace, context, schema_for('research_work'), 1000000)
             preview = context['formal_verifier'].get('preview')
             self.assertIsNotNone(preview, 'worker must receive the compiler preview command')
-            for source, expected in [('theorem good : True := by trivial', 'verified'),
-                                     ('theorem good : True := by\r\n  trivial\r\n', 'verified'),
-                                     ('theorem good : False := by sorry', 'rejected'),
-                                     ('theorem good : False := by trivial', 'failed')]:
+            for source, expected, name in [('theorem good : True := by trivial', 'verified', 'good'),
+                                     ('theorem good : True := by\r\n  trivial\r\n', 'verified', 'good'),
+                                     ('theorem good : False := by sorry', 'rejected', 'good'),
+                                     ('theorem good : False := by trivial', 'failed', 'good'),
+                                     ("theorem good' : True := by trivial", 'verified', "good'")]:
                 (workspace / 'draft.lean').write_bytes(source.encode('utf-8'))
-                result = subprocess.run([*preview['command'], '--source', 'draft.lean', '--declaration', 'good'],
+                result = subprocess.run([*preview['command'], '--source', 'draft.lean', '--declaration', name],
                     cwd=workspace, capture_output=True, text=True, encoding='utf-8',
                     creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0), timeout=60)
                 data = json.loads(result.stdout)

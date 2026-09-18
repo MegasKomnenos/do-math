@@ -8,9 +8,10 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.review_cycle import record_turn
 from do_math.review_engine import ReviewEngineMixin
+from do_math.question_engine import QuestionEngineMixin
 
 
-class FakeEngine(ReviewEngineMixin):
+class FakeEngine(QuestionEngineMixin, ReviewEngineMixin):
     def __init__(self, root, rounds=2):
         source = 'theorem sample : 1 = 1 := rfl'
         self.instance = {'config': {'reviewers': 2, 'objection_round_limit': rounds},

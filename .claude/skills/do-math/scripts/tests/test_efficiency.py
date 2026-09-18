@@ -14,6 +14,7 @@ from do_math.engine import ResearchEngine, initialize, control
 from do_math.governance import apply_decision
 from do_math.model_policy import MODELS
 from do_math.planning import contract_hash
+from do_math.input_basis import capture_decision_basis
 from test_engine import ScriptedRunner, context_from
 
 
@@ -253,7 +254,8 @@ class EfficiencyTests(unittest.TestCase):
         self.assertEqual(e.head, head)
         task = e.runtime["tasks"]["T"]
         task["reviews"].append({"id": "CR", "decision": "approved", "revision": 1,
-            "contract_sha256": contract_hash(task), "goal_revision": 1, "policy_revision": 1})
+            "contract_sha256": contract_hash(task), "goal_revision": 1, "policy_revision": 1,
+            "decision_basis": capture_decision_basis(e.instance, e.runtime, [task['id']])})
         e._refresh_readiness()
         self.assertEqual(e.runtime["task_readiness"]["T"]["state"], "ready")
         self.assertNotEqual(e.runtime["task_readiness"]["T"]["evaluated_at"], before["evaluated_at"])

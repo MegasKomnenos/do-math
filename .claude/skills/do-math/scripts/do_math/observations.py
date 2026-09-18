@@ -94,7 +94,9 @@ class ObservationTracker:
         self.events_seen = 0
         self.tool_results = 0
         self.messages = []
-        self.pending_tools = set()
+        self.pending_tools = {}
+        self.last_transport = None
+        self.transport_bytes = 0
         self.review_count = 0
         self.checkpoint_count = 0
         self.rules = validate_rules(config.get("observation_rules", []))
@@ -121,14 +123,23 @@ class ObservationTracker:
                 # A partially written or invalid update leaves the last valid rules active.
                 pass
         event_type = event.get("type")
-        if event_type != "tick":
+        if event_type == "transport_bytes_received":
+            self.last_transport = when
+            self.transport_bytes += event.get("bytes", 0)
+        if event_type == "system" and event.get("subtype") == "task_started" and event.get("is_backgrounded"):
+            self.pending_tools["background:" + str(event.get("task_id"))] = {"started": when, "name": event.get("task_type"), "timeout_seconds": None}
+            self.last_activity = when
+        if event_type == "system" and event.get("subtype") == "task_notification":
+            self.pending_tools.pop("background:" + str(event.get("task_id")), None)
+            self.last_activity = when
+        if event_type in {"item.started", "item.completed", "assistant", "user", "stream_event"}:
             self.events_seen += 1
             self.last_activity = when
             item = event.get("item", {})
             if event_type == "item.started" and item.get("type") in {"command_execution", "mcp_tool_call"}:
-                self.pending_tools.add(item.get("id", "unknown"))
+                self.pending_tools[item.get("id", "unknown")] = {"started": when, "name": item.get("type"), "timeout_seconds": None}
             if event_type == "item.completed":
-                self.pending_tools.discard(item.get("id", "unknown"))
+                self.pending_tools.pop(item.get("id", "unknown"), None)
                 if item.get("type") in {"command_execution", "mcp_tool_call"}:
                     self.tool_results += 1
                 if item.get("type") == "agent_message":
@@ -140,9 +151,11 @@ class ObservationTracker:
                     if not isinstance(block, dict):
                         continue
                     if event_type == "assistant" and block.get("type") == "tool_use":
-                        self.pending_tools.add(block.get("id", "unknown"))
+                        timeout = block.get("input", {}).get("timeout") if isinstance(block.get("input"), dict) else None
+                        seconds = timeout / 1000 if block.get("name") == "Bash" and type(timeout) in (int, float) and timeout > 0 else None
+                        self.pending_tools[block.get("id", "unknown")] = {"started": when, "name": block.get("name"), "timeout_seconds": seconds}
                     elif event_type == "user" and block.get("type") == "tool_result":
-                        self.pending_tools.discard(block.get("tool_use_id", "unknown"))
+                        self.pending_tools.pop(block.get("tool_use_id", "unknown"), None)
                         self.tool_results += 1
                     elif event_type == "assistant" and block.get("type") == "text":
                         self.messages.append({"text": block.get("text", ""), "observed_at": utc_now()})
@@ -156,11 +169,27 @@ class ObservationTracker:
                   "events_seen": self.events_seen, "tool_results": self.tool_results,
                   "pending_tools": sorted(self.pending_tools), "checkpoint_status": checkpoint["status"],
                   "checkpoint": checkpoint.get("value"), "recent_messages": self.messages[-4:]}
+        idle = self.config.get("observation_idle_seconds", 120)
+        interval = self.config.get("observation_interval_seconds", 300)
+        transport_recent = self.last_transport is not None and when - self.last_transport < idle
+        state = "tool_wait" if self.pending_tools else "output_streaming" if transport_recent else "active" if when - self.last_activity < idle else "idle"
+        sample.update(activity_state=state, transport_bytes=self.transport_bytes,
+                      last_transport_seconds=None if self.last_transport is None else self.last_transport - self.started,
+                      last_work_event_seconds=self.last_activity - self.started,
+                      next_review_seconds=max(0, interval - (when - self.last_review)),
+                      tool_details=[{"id": key, "elapsed_seconds": when - value["started"],
+                                     "timeout_seconds": value["timeout_seconds"], "name": value["name"]}
+                                    for key, value in self.pending_tools.items()])
         reason = None
         rule_basis = None
         if checkpoint.get("value", {}).get("progress_state") in {"blocked", "no_progress"}:
             reason = "worker_reported_obstacle"
-        elif sample["inactive_seconds"] >= self.config.get("observation_idle_seconds", 120):
+        elif state in {"tool_wait", "output_streaming"}:
+            overdue = any(value["timeout_seconds"] is not None and when - value["started"] >= value["timeout_seconds"]
+                          for value in self.pending_tools.values())
+            if when - self.last_review >= interval or overdue:
+                reason = "tool_timeout_observed" if overdue else state + "_review"
+        elif sample["inactive_seconds"] >= idle:
             reason = "no_visible_activity"
         elif self.config.get("observation_mode", "event_driven") == "periodic" and when - self.last_review >= self.config.get("observation_interval_seconds", 300):
             reason = "periodic_review"

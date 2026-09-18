@@ -1,0 +1,463 @@
+{
+  "readings": [
+    {
+      "provider": "claude",
+      "bridge": "task-local read_skill.py (StructuredOutput only)",
+      "model": "claude-opus-5",
+      "reader_session": "1fcf1da7-d110-4cdf-b438-6025ee432d79",
+      "modelUsage": {
+        "claude-opus-5": {
+          "inputTokens": 233668,
+          "outputTokens": 25260,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 235116,
+          "webSearchRequests": 0,
+          "costUSD": 4.151,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 64000,
+          "thinkingTokens": 16639,
+          "canonicalModel": "claude-opus-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "elapsed_seconds": 203.0470000000205,
+      "status": "read",
+      "scope": "whole",
+      "tools": "No research, shell or file tools; StructuredOutput allowed for final JSON.",
+      "reading_id": "07bd31e6b120459aa6b060f1c2d5f76f",
+      "job_id": "5d4f2ff5d7f042acb6f8006130142375",
+      "report": "reading-07bd31e6b120459aa6b060f1c2d5f76f.json",
+      "draft_sha256": "64bb5adae59df9df6a263eb461adf993e2dff7643a3dc12972abbc3e8c18bb7a",
+      "native_stdout_sha256": "35a0a55587aee26ed6b6fa171714959d2e679e71e5cb99e301b3d7a07da09578"
+    },
+    {
+      "provider": "claude",
+      "bridge": "task-local read_skill.py (StructuredOutput only)",
+      "model": "claude-opus-5",
+      "reader_session": "f013822f-2905-4eb9-9acc-304e98c909b9",
+      "modelUsage": {
+        "claude-opus-5": {
+          "inputTokens": 234481,
+          "outputTokens": 23259,
+          "cacheReadInputTokens": 2129,
+          "cacheCreationInputTokens": 233802,
+          "webSearchRequests": 0,
+          "costUSD": 4.0929645,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 64000,
+          "thinkingTokens": 14577,
+          "canonicalModel": "claude-opus-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "elapsed_seconds": 187.18800000008196,
+      "status": "read",
+      "scope": "whole",
+      "tools": "No research, shell or file tools; StructuredOutput allowed for final JSON.",
+      "reading_id": "3089df6c92f84c13a97212e7bd80e020",
+      "job_id": "5d4f2ff5d7f042acb6f8006130142375",
+      "report": "reading-3089df6c92f84c13a97212e7bd80e020.json",
+      "draft_sha256": "f29468e7a88ff97aabd2fe000ef77a668c524e7f5b706e37ddf4ce6f38b5d0e3",
+      "native_stdout_sha256": "0013dd2319a8f96acf72e41c1cdfc415dbde7a2105e4f8c214131495fe15595e"
+    },
+    {
+      "provider": "claude",
+      "bridge": "task-local read_skill.py (StructuredOutput only)",
+      "model": "claude-opus-5",
+      "reader_session": "46523147-e1a0-444c-9065-5a9aaaa19e41",
+      "modelUsage": {
+        "claude-opus-5": {
+          "inputTokens": 231437,
+          "outputTokens": 17708,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 232887,
+          "webSearchRequests": 0,
+          "costUSD": 3.9287550000000007,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 64000,
+          "thinkingTokens": 8707,
+          "canonicalModel": "claude-opus-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "elapsed_seconds": 149.3279999999795,
+      "status": "read",
+      "scope": "whole",
+      "tools": "No research, shell or file tools; StructuredOutput allowed for final JSON.",
+      "reading_id": "888e68dbe20c4a7f813f3298a0118584",
+      "job_id": "5d4f2ff5d7f042acb6f8006130142375",
+      "report": "reading-888e68dbe20c4a7f813f3298a0118584.json",
+      "draft_sha256": "0b7a7e811c66e4f326de61b4abd3cab785e239242c1fc1ccff94d53e98a785c4",
+      "native_stdout_sha256": "d83486e7046153423fe65f1f5c89416814f812a47fa5d5eca99fc690a0cf735b"
+    },
+    {
+      "provider": "claude",
+      "bridge": "task-local read_skill.py (StructuredOutput only)",
+      "model": "claude-opus-5",
+      "reader_session": "25578afa-096a-452c-a981-b03062b8392c",
+      "modelUsage": {
+        "claude-opus-5": {
+          "inputTokens": 234081,
+          "outputTokens": 19616,
+          "cacheReadInputTokens": 2129,
+          "cacheCreationInputTokens": 233402,
+          "webSearchRequests": 0,
+          "costUSD": 3.9958894999999997,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 64000,
+          "thinkingTokens": 11561,
+          "canonicalModel": "claude-opus-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "elapsed_seconds": 157.81299999984913,
+      "status": "read",
+      "scope": "whole",
+      "tools": "No research, shell or file tools; StructuredOutput allowed for final JSON.",
+      "reading_id": "da8f649f9a8b4da7a88502eaf22c9bc0",
+      "job_id": "5d4f2ff5d7f042acb6f8006130142375",
+      "report": "reading-da8f649f9a8b4da7a88502eaf22c9bc0.json",
+      "draft_sha256": "7f2862f0528c0f21a7ce55a8f9218a7f424c1eef7929b7a6ea67718738a4803b",
+      "native_stdout_sha256": "8e6aafbf7e7648d6dd231383d855e443d4dce3b92a8bb3208885eff53ec94a05"
+    },
+    {
+      "provider": "claude",
+      "bridge": "task-local read_skill.py (StructuredOutput only)",
+      "model": "claude-opus-5",
+      "reader_session": "2cb65364-b9a2-4130-b59b-79bc99467ce3",
+      "modelUsage": {
+        "claude-opus-5": {
+          "inputTokens": 234955,
+          "outputTokens": 21874,
+          "cacheReadInputTokens": 2129,
+          "cacheCreationInputTokens": 234276,
+          "webSearchRequests": 0,
+          "costUSD": 4.0654495,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 64000,
+          "thinkingTokens": 14015,
+          "canonicalModel": "claude-opus-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "elapsed_seconds": 178.0930000001099,
+      "status": "read",
+      "scope": "whole",
+      "tools": "No research, shell or file tools; StructuredOutput allowed for final JSON.",
+      "reading_id": "f96a76474ea149a78148a2e2eb03d218",
+      "job_id": "5d4f2ff5d7f042acb6f8006130142375",
+      "report": "reading-f96a76474ea149a78148a2e2eb03d218.json",
+      "draft_sha256": "e2142478dfe1bf88a9fff5b0791868a7e9cd17fc73731a31d90c4ac10308fc6c",
+      "native_stdout_sha256": "e048dd226a28fa1b62020ae8adb6b469507e7a55a988a65ce054043b32491080"
+    },
+    {
+      "provider": "claude",
+      "bridge": "task-local read_skill.py (StructuredOutput only)",
+      "model": "claude-opus-5",
+      "reader_session": "57f3609b-83c4-426a-9934-acf6a1b0fc4e",
+      "modelUsage": {
+        "claude-opus-5": {
+          "inputTokens": 42690,
+          "outputTokens": 22802,
+          "cacheReadInputTokens": 2129,
+          "cacheCreationInputTokens": 42012,
+          "webSearchRequests": 0,
+          "costUSD": 1.2046845,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 64000,
+          "thinkingTokens": 11917,
+          "canonicalModel": "claude-opus-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "elapsed_seconds": 194.98399999993853,
+      "status": "read",
+      "scope": "whole",
+      "tools": "No research, shell or file tools; StructuredOutput allowed for final JSON.",
+      "reading_id": "4099c1849a004ebd98419e229c4317b3",
+      "job_id": "c0444333ae3741fda5bc38c6d24f0be7",
+      "report": "reading-4099c1849a004ebd98419e229c4317b3.json",
+      "draft_sha256": "22473086783601cbab27fd0aaf8e41cc71306a5642f1262bcec82a18e2a577ef",
+      "native_stdout_sha256": "9b0c1afa6f21e8e7fcbc4a1b48f74ee22b0bc99bb57f0ef1dab75ce10540418f"
+    },
+    {
+      "provider": "claude",
+      "bridge": "task-local read_skill.py (StructuredOutput only)",
+      "model": "claude-opus-5",
+      "reader_session": "3575fe9e-f13b-42ed-acba-5163190d42b7",
+      "modelUsage": {
+        "claude-opus-5": {
+          "inputTokens": 42921,
+          "outputTokens": 24545,
+          "cacheReadInputTokens": 2129,
+          "cacheCreationInputTokens": 42241,
+          "webSearchRequests": 0,
+          "costUSD": 1.2517045,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 64000,
+          "thinkingTokens": 12710,
+          "canonicalModel": "claude-opus-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "elapsed_seconds": 204.3430000001099,
+      "status": "read",
+      "scope": "whole",
+      "tools": "No research, shell or file tools; StructuredOutput allowed for final JSON.",
+      "reading_id": "6b4d2146ec0d499e8ebbb0be8787ec41",
+      "job_id": "c0444333ae3741fda5bc38c6d24f0be7",
+      "report": "reading-6b4d2146ec0d499e8ebbb0be8787ec41.json",
+      "draft_sha256": "2d9f7a6705997d17e6615c79e1ca37026ffba6ec1b8ae252a9f7329b06fa6b04",
+      "native_stdout_sha256": "a35c245f0595462cd0bdedea88b9895cdc1671fb8b1de214388b5acc7f04d8d5"
+    },
+    {
+      "provider": "claude",
+      "bridge": "task-local read_skill.py (StructuredOutput only)",
+      "model": "claude-opus-5",
+      "reader_session": "eb78fb31-6407-46d2-a2e9-d57388dff046",
+      "modelUsage": {
+        "claude-opus-5": {
+          "inputTokens": 5856,
+          "outputTokens": 10134,
+          "cacheReadInputTokens": 2129,
+          "cacheCreationInputTokens": 5177,
+          "webSearchRequests": 0,
+          "costUSD": 0.3354645,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 64000,
+          "thinkingTokens": 4325,
+          "canonicalModel": "claude-opus-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "elapsed_seconds": 83.96900000004098,
+      "status": "read",
+      "scope": "whole",
+      "tools": "No research, shell or file tools; StructuredOutput allowed for final JSON.",
+      "reading_id": "0b950a95f6ce44998e6d475c3e34630d",
+      "job_id": "260ebde6685843bdb4013d6e17bbb405",
+      "report": "reading-0b950a95f6ce44998e6d475c3e34630d.json",
+      "draft_sha256": "507d347ecafde468c466aa9fc6ab6384f6884763940ec04774cd6e225403553f",
+      "native_stdout_sha256": "a05d761fe75f70264eb57ec47835969ed76722792d660a52e569d79c6aca778a"
+    },
+    {
+      "provider": "claude",
+      "bridge": "task-local read_skill.py (StructuredOutput only)",
+      "model": "claude-opus-5",
+      "reader_session": "df3ab932-1543-4cb5-8e8d-7753080da988",
+      "modelUsage": {
+        "claude-opus-5": {
+          "inputTokens": 5362,
+          "outputTokens": 9617,
+          "cacheReadInputTokens": 2129,
+          "cacheCreationInputTokens": 4684,
+          "webSearchRequests": 0,
+          "costUSD": 0.3151395,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 64000,
+          "thinkingTokens": 3127,
+          "canonicalModel": "claude-opus-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "elapsed_seconds": 83.81200000015087,
+      "status": "read",
+      "scope": "whole",
+      "tools": "No research, shell or file tools; StructuredOutput allowed for final JSON.",
+      "reading_id": "3eccf1c2b76a480e833d49a2c73dc301",
+      "job_id": "260ebde6685843bdb4013d6e17bbb405",
+      "report": "reading-3eccf1c2b76a480e833d49a2c73dc301.json",
+      "draft_sha256": "f82aebb2da20461a3951f713cd6599a0de70a936502a2f09138976322a3691ae",
+      "native_stdout_sha256": "2a0407e534e6344df50a19fbdc2ebdc62903dc4a8fb66a552e061ef8e6d84238"
+    },
+    {
+      "provider": "claude",
+      "bridge": "task-local read_skill.py (StructuredOutput only)",
+      "model": "claude-opus-5",
+      "reader_session": "28323fed-a5f5-4403-87b8-a17fa649d293",
+      "modelUsage": {
+        "claude-opus-5": {
+          "inputTokens": 5990,
+          "outputTokens": 11779,
+          "cacheReadInputTokens": 2129,
+          "cacheCreationInputTokens": 5310,
+          "webSearchRequests": 0,
+          "costUSD": 0.3785895,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 64000,
+          "thinkingTokens": 4884,
+          "canonicalModel": "claude-opus-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "elapsed_seconds": 96.32799999997951,
+      "status": "read",
+      "scope": "whole",
+      "tools": "No research, shell or file tools; StructuredOutput allowed for final JSON.",
+      "reading_id": "7fda10e86a074743ad98dea087665806",
+      "job_id": "260ebde6685843bdb4013d6e17bbb405",
+      "report": "reading-7fda10e86a074743ad98dea087665806.json",
+      "draft_sha256": "fbdd2a9ad2d21e6ef847c74074350c9c45c9e9b37e3735022c96a1b1af1401a0",
+      "native_stdout_sha256": "4f4a99083e61f5d08ac1f05eb29b4d088f9a0851ccab770f343c81a07cd1dbce"
+    },
+    {
+      "provider": "claude",
+      "bridge": "task-local read_skill.py (StructuredOutput only)",
+      "model": "claude-opus-5",
+      "reader_session": "f0687b99-dc19-404c-b665-75e5b7a81c98",
+      "modelUsage": {
+        "claude-opus-5": {
+          "inputTokens": 4554,
+          "outputTokens": 9154,
+          "cacheReadInputTokens": 2129,
+          "cacheCreationInputTokens": 3874,
+          "webSearchRequests": 0,
+          "costUSD": 0.2914245,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 64000,
+          "thinkingTokens": 2274,
+          "canonicalModel": "claude-opus-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "elapsed_seconds": 70.25,
+      "status": "read",
+      "scope": "whole",
+      "tools": "No research, shell or file tools; StructuredOutput allowed for final JSON.",
+      "reading_id": "8463091f57c84620bb50528e797558ff",
+      "job_id": "260ebde6685843bdb4013d6e17bbb405",
+      "report": "reading-8463091f57c84620bb50528e797558ff.json",
+      "draft_sha256": "4215efade4e2aaecbba107f889e227bbdd1138541cadd92fc2e308fda579cc28",
+      "native_stdout_sha256": "0c813956a23ce76f2681dffdf4495c033325a38ab3ebbfef106b65e4547444a8"
+    }
+  ],
+  "document_coverage": [
+    {
+      "path": "SKILL.md",
+      "same_as_whole_bundle_reading": true,
+      "sha256": "8d9066b833d6e1c90c71724848f4fd9fa3ffcd8fa8c5a84f769c9945731c6bd3"
+    },
+    {
+      "path": "GLOSSARY.md",
+      "same_as_whole_bundle_reading": true,
+      "sha256": "063f0ff3c933c3fae115c471f7a6fe5ac848233a90ac3e8cf93e7dc008a28c13"
+    },
+    {
+      "path": "README.md",
+      "same_as_whole_bundle_reading": true,
+      "sha256": "cb316d5d4568a167a8ada2102cb166c62001ca11e8d4d4f3343e2f91f4369030"
+    },
+    {
+      "path": "references/CLI-실행-계약.md",
+      "same_as_whole_bundle_reading": false,
+      "sha256": "2d9f7a6705997d17e6615c79e1ca37026ffba6ec1b8ae252a9f7329b06fa6b04",
+      "final_whole_reading": "6b4d2146ec0d499e8ebbb0be8787ec41",
+      "adjudication": "cli-decision-02.json"
+    },
+    {
+      "path": "references/공통-실행.md",
+      "same_as_whole_bundle_reading": true,
+      "sha256": "792f27ae9b388343c3996ed8779df90997e8d89c1cdd071aa9b7569529d66633"
+    },
+    {
+      "path": "references/과제-착수조건.md",
+      "same_as_whole_bundle_reading": false,
+      "sha256": "6cdf24a3de058504f9460a59e1cedd27d2c7329cdd4b7ff97c2e528ab08e8f0b",
+      "read_sha256": "4957550c1387b256cc9c214d23330aa97949787f76f43538409a9c9581582a56",
+      "content_identical_except_terminal_blank_line": true
+    },
+    {
+      "path": "references/모델과-실행예산.md",
+      "same_as_whole_bundle_reading": true,
+      "sha256": "5ce40dbc56198df92c43d50d68bdf269e921c2d0236987429d7eab13b9142445"
+    },
+    {
+      "path": "references/지식-저작과-재사용.md",
+      "same_as_whole_bundle_reading": true,
+      "sha256": "2683822d9e1afee2a2e2729dbd559247b14df013678900d3dcc2a9ab2c31a0d6"
+    },
+    {
+      "path": "references/학술자료-활용.md",
+      "same_as_whole_bundle_reading": true,
+      "sha256": "2ee3e60169745aa89b9912ad57d6ac56da676dd04becde0de7e641ece39529d2"
+    },
+    {
+      "path": "계약/독립-운영.md",
+      "same_as_whole_bundle_reading": true,
+      "sha256": "4097e380ea31cd1f4538f897de7cb62f65b6593de00774ca1aee52747f14d575"
+    },
+    {
+      "path": "계약/동일성-검토.md",
+      "same_as_whole_bundle_reading": true,
+      "sha256": "d8d7605959c23daf20e3a8c5b07a975dce29c161e608b1b19906f6b73fda2740"
+    },
+    {
+      "path": "계약/목표-감사.md",
+      "same_as_whole_bundle_reading": true,
+      "sha256": "d1752dbc7bb76670ff9c93fe8b1e0f9be1292f3a4acf57a8292e559a0a321397"
+    },
+    {
+      "path": "계약/보충-조사.md",
+      "same_as_whole_bundle_reading": true,
+      "sha256": "b0699c89bf457f9867066aacd46e82af3a17c152d1a53fccac114d0dc546e56d"
+    },
+    {
+      "path": "계약/연구-계획.md",
+      "same_as_whole_bundle_reading": true,
+      "sha256": "6a4cb2608d2420e2143b85aacfad894ba685b7c159430abd98a5a82e0681711a"
+    },
+    {
+      "path": "계약/연구-수행.md",
+      "same_as_whole_bundle_reading": true,
+      "sha256": "1a8339c7681289bb6211febf66e3807137d801045f30c7dee0ebdc4b1bdd0d15"
+    },
+    {
+      "path": "계약/운영-점검.md",
+      "same_as_whole_bundle_reading": true,
+      "sha256": "fb0b390767c58e8bd82783ee3347f88bbdb13649ba52463f437eae09daaf16e7"
+    },
+    {
+      "path": "계약/유지보수.md",
+      "same_as_whole_bundle_reading": true,
+      "sha256": "6f6a13499073d663bf3db1448b2f049e3bae83e3a980518a1d06dff994d384b9"
+    },
+    {
+      "path": "계약/의도-해석.md",
+      "same_as_whole_bundle_reading": true,
+      "sha256": "0e5b1c39f29cb8ec173b2e39759580fb7a83a1c87807710b4a00d18a04decb14"
+    },
+    {
+      "path": "계약/작업-계약-검토.md",
+      "same_as_whole_bundle_reading": true,
+      "sha256": "7fbe6f7a93494b9f07560995da1db6d10d01ac129841f7800516a45553f13f4e"
+    },
+    {
+      "path": "계약/후보-준비.md",
+      "same_as_whole_bundle_reading": true,
+      "sha256": "fe6d008d59be99d7fbd87dcf18a7341169dfb93ca4b7e99b88351e045ef27874"
+    }
+  ],
+  "method": "Fresh Claude Opus 5 sessions with only StructuredOutput enabled; source quotes checked mechanically and findings adjudicated by the author.",
+  "composition": "The corrected CLI document has its own accepted whole reading. The other 19 documents retain the last whole-bundle reading; one subsequently lost a redundant terminal blank line with all other bytes unchanged.",
+  "memory_review": {
+    "status": "accepted",
+    "job_id": "260ebde6685843bdb4013d6e17bbb405",
+    "reading_id": "7fda10e86a074743ad98dea087665806",
+    "document": "기억/layer1/M-0315.md",
+    "sha256": "fbdd2a9ad2d21e6ef847c74074350c9c45c9e9b37e3735022c96a1b1af1401a0",
+    "decision": "memory-decision-04.json",
+    "finding_count": 8,
+    "findings_adjudicated": "All kept with item-specific context and scope reasons; not a claim of zero reader findings."
+  }
+}

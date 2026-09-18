@@ -21,7 +21,7 @@ _SUSPENSION_KINDS = {"environment", "dependency", "semantic"}
 
 
 def _is_feature2(instance: dict, runtime: dict) -> bool:
-    return instance.get("feature_version", runtime.get("feature_version", 1)) in {2, 3}
+    return instance.get("feature_version", runtime.get("feature_version", 1)) in {2, 3, 4}
 
 
 def _sha(value: Any) -> bool:
@@ -234,7 +234,8 @@ def state_errors(instance: dict, runtime: dict) -> list[str]:
         return ["state: instance and runtime must be objects"]
     errors: list[str] = []
     versions = (instance.get("feature_version", 1), runtime.get("feature_version", 1))
-    if any(value not in {1, 2, 3} for value in versions):
+    supported_versions = all(type(value) is int and value in {1, 2, 3, 4} for value in versions)
+    if not supported_versions:
         errors.append("state: unsupported feature version")
     feature2 = _is_feature2(instance, runtime)
     _source_errors(instance, errors)
@@ -243,4 +244,24 @@ def state_errors(instance: dict, runtime: dict) -> list[str]:
     _external_errors(instance, runtime, errors, feature2)
     _supplement_errors(instance, runtime, errors, feature2)
     _goal_errors(instance, runtime, errors, feature2)
+    if supported_versions and min(versions) >= 4:
+        questions = runtime.get("question_links")
+        if not isinstance(questions, list):
+            _error(errors, "questions", "feature 4 requires question_links")
+        else:
+            seen = set()
+            for row in questions:
+                if not isinstance(row, dict) or not row.get("id") or row["id"] in seen:
+                    _error(errors, "questions", "question link IDs must be distinct")
+                    continue
+                seen.add(row["id"])
+                if row.get("owner") not in {"user", "research", "operations", "unclassified"} or row.get("status") not in {"open", "resolved", "superseded"}:
+                    _error(errors, row["id"], "invalid question owner or status")
+                if row.get("owner") == "user" and not row.get("target_ids"):
+                    _error(errors, row["id"], "user question requires affected targets")
+                if row.get("status") != "open" and not row.get("resolution_ref"):
+                    _error(errors, row["id"], "closed question requires a resolution source")
+        for entry in runtime.get("waiting_actions", {}).values():
+            if entry.get("kind") == "revision_dependency" and not entry.get("revision_targets"):
+                _error(errors, "revision_dependency", "unresolved revision targets are required")
     return errors

@@ -34,11 +34,13 @@ class ResearchRecoveryTests(PurposeHarness):
         class RevisionRunner:
             def run(inner, **kwargs):
                 kwargs['on_started']({'fixture': True})
+                (kwargs['workspace'] / 'activity-extensions.json').write_text(json.dumps({'revision_resolutions': [
+                    {'record_id': old['id'], 'disposition': 'revised', 'reason': 'Replace the stated obsolete criteria.'}]}), encoding='utf-8')
                 return {'status': 'completed', 'output':
                         {**common('Replace the exploratory scope after contract review.'),
                          'candidates': [proposal]}, 'usage': {}, 'error': None}
         engine.runner = RevisionRunner()
-        engine.runtime['queue'] = [{'id': 'AC-revision', 'role': 'research_preparation'}]
+        engine.runtime['queue'] = [{'id': 'AC-revision', 'role': 'research_preparation', 'target': old['id']}]
         engine._save()
         engine.run(max_steps=1)
         current = engine.runtime['tasks'][old['id']]
@@ -197,6 +199,8 @@ class RecoveryRoutingTests(PurposeHarness):
         class ValidPlan:
             def run(inner, **kwargs):
                 kwargs['on_started']({'fixture': True})
+                (kwargs['workspace'] / 'activity-extensions.json').write_text(json.dumps({'action_resolutions': [
+                    {'action_id': 'AC-failed', 'evidence_execution_id': 'current', 'reason': 'This current complete plan explicitly supersedes the old population judgment.'}]}), encoding='utf-8')
                 return {'status': 'completed', 'output': empty_plan(), 'usage': {}, 'error': None}
         engine.runner = ValidPlan()
         engine.runtime['queue'] = [{'id': 'AC-fresh', 'role': 'research_plan'}]
@@ -204,7 +208,7 @@ class RecoveryRoutingTests(PurposeHarness):
         engine.run(max_steps=1)
         self.assertNotIn('AC-failed', engine.runtime['waiting_actions'])
         self.assertEqual(engine.runtime['executions'][failed['id']]['outcome'], 'execution_incomplete')
-        self.assertTrue(any(row.get('kind') == 'failed_action_resolved' for row in engine.runtime['history']))
+        self.assertTrue(any(row.get('kind') == 'failed_action_explicitly_resolved' for row in engine.runtime['history']))
 
     def test_diagnosis_wait_does_not_block_independent_actions(self):
         engine, _ = self.make()
