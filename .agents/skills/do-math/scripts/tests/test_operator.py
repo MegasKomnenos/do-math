@@ -109,8 +109,9 @@ class OperatorTests(unittest.TestCase):
     def test_probe_context_reaches_model_runner_and_preserves_structured_result(self) -> None:
         contract = self.root / "operator-contract.md"
         contract.write_text("operator instructions", encoding="utf-8")
-        state = {"config": {"operator_model": "gpt-5.6-sol", "operator_effort": "high",
-                             "operator_timeout_seconds": 10, "scholarly_enabled": False}}
+        state = {"config": {"operator_model": "claude-opus-5", "operator_effort": "high",
+                             "operator_timeout_seconds": 10, "scholarly_enabled": False,
+                             "claude_only_assigned_model": True}}
 
         class FakeRunner:
             calls: list[dict] = []
@@ -129,6 +130,8 @@ class OperatorTests(unittest.TestCase):
             result = operator.check(self.repository, self.instance, self.workspace, probe=True)
         context = json.loads((Path(result["run_directory"]) / "context.json").read_text(encoding="utf-8"))
         self.assertTrue(context["probe"])
+        self.assertEqual(FakeRunner.calls[0]["model"], "claude-opus-5")
+        self.assertTrue(FakeRunner.calls[0]["claude_only_assigned_model"])
         self.assertFalse(context["scholarly_configured"])
         self.assertEqual(result["outcome"], "completed")
         self.assertEqual(result["output"]["summary"], "checked")

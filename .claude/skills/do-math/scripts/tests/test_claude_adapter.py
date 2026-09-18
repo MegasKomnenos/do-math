@@ -30,6 +30,62 @@ RESULT = {"type": "result", "subtype": "success", "is_error": False,
 
 
 class ClaudeTests(unittest.TestCase):
+    def test_model_lock_is_opt_in_and_reaches_only_claude(self):
+        from do_math.engine import ResearchEngine
+        from types import SimpleNamespace
+        arguments = {}
+        runner_context = SimpleNamespace(runner=Mock(), instance={"config": {
+            **DEFAULT_CONFIG, "claude_only_assigned_model": True, "scholarly_enabled": False}})
+        ResearchEngine._runner_tools(runner_context, arguments)
+        self.assertTrue(arguments["claude_only_assigned_model"])
+        self.assertFalse(DEFAULT_CONFIG["claude_only_assigned_model"])
+        with self.assertRaises(ValueError):
+            validate_config({"claude_only_assigned_model": "true"})
+        runner = model_runner.ModelRunner()
+        runner.claude = Mock()
+        runner.codex = Mock()
+        runner.run(model="claude-opus-5", claude_only_assigned_model=True)
+        runner.claude.run.assert_called_once_with(model="claude-opus-5", claude_only_assigned_model=True)
+        runner.run(model="gpt-5.6-sol", claude_only_assigned_model=True)
+        runner.codex.run.assert_called_once_with(model="gpt-5.6-sol")
+        worker = self.module("claude_worker")
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "schema.json"
+            path.write_text('{"type":"object"}', encoding="utf-8")
+            request = {"claude_path": "claude.exe", "model": "claude-opus-5", "effort": "high",
+                       "cwd": d, "output_schema_path": str(path)}
+            argv = worker.build_argv(request)
+            settings = json.loads(argv[argv.index("--settings") + 1])
+            self.assertNotIn("availableModels", settings)
+            request["claude_only_assigned_model"] = True
+            argv = worker.build_argv(request)
+            settings = json.loads(argv[argv.index("--settings") + 1])
+            self.assertEqual(settings["availableModels"], ["claude-opus-5"])
+            self.assertEqual(settings["fallbackModel"], [])
+            self.assertFalse(settings["switchModelsOnFlag"])
+            self.assertEqual(settings["env"]["CLAUDE_CODE_SUBAGENT_MODEL"], "claude-opus-5")
+            self.assertEqual(settings["env"]["CLAUDE_CODE_SUBAGENT_MODEL_FORCE"], "1")
+            self.assertEqual(settings["env"]["ANTHROPIC_DEFAULT_HAIKU_MODEL"], "claude-opus-5")
+
+    def test_role_schemas_reach_claude_without_unsupported_meta_schema(self):
+        from do_math.contracts import ROLES, schema_for
+        from jsonschema import Draft7Validator
+        worker = self.module("claude_worker")
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "schema.json"
+            for role in ROLES:
+                with self.subTest(role=role):
+                    original = schema_for(role)
+                    raw = json.dumps(original)
+                    path.write_text(raw, encoding="utf-8")
+                    args = worker.build_argv({"claude_path": "claude.exe", "model": "claude-opus-5",
+                        "effort": "high", "cwd": d, "output_schema_path": str(path)})
+                    sent = json.loads(args[args.index("--json-schema") + 1])
+                    self.assertEqual(sent, {k: v for k, v in original.items() if k not in {"$schema", "x-contract-id"}})
+                    Draft7Validator.check_schema(sent)
+                    self.assertFalse(Draft7Validator(sent).is_valid({}))
+                    self.assertEqual(path.read_text(encoding="utf-8"), raw)
+
     def test_claude_tools_and_messages_feed_progress_observation(self):
         with tempfile.TemporaryDirectory() as d:
             tracker = ObservationTracker("one", Path(d), {})

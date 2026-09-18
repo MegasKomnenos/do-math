@@ -26,13 +26,17 @@ def load_request(path: Path) -> dict:
     request = json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=_pairs)
     required = {"claude_path", "prompt_path", "cwd", "model", "effort", "output_schema_path",
                 "max_runtime_seconds", "stdout_path", "stderr_path", "final_path", "status_path"}
-    if not isinstance(request, dict) or set(request) - required - {"scholarly_server"} or required - set(request):
+    if not isinstance(request, dict) or set(request) - required - {"scholarly_server", "claude_only_assigned_model"} or required - set(request):
         raise ValueError("Claude worker request fields differ from the execution contract")
     for key in required - {"max_runtime_seconds"}:
         if not isinstance(request[key], str) or not request[key].strip() or "\0" in request[key]:
             raise ValueError(key + " must be a nonempty NUL-free string")
     if request["effort"] not in {"low", "medium", "high", "xhigh", "max"}:
         raise ValueError("Claude effort must be low, medium, high, xhigh or max")
+    if not isinstance(request.get("claude_only_assigned_model", False), bool):
+        raise ValueError("claude_only_assigned_model must be a boolean")
+    if request.get("claude_only_assigned_model") and not request["model"].startswith("claude-"):
+        raise ValueError("claude_only_assigned_model requires a full Claude model ID")
     timeout = request["max_runtime_seconds"]
     if isinstance(timeout, bool) or not isinstance(timeout, (int, float)) or not math.isfinite(timeout) or timeout <= 0:
         raise ValueError("max_runtime_seconds must be positive and finite")
@@ -42,6 +46,20 @@ def load_request(path: Path) -> dict:
 
 
 def build_argv(request: dict) -> list[str]:
+    schema = json.loads(Path(request["output_schema_path"]).read_text(encoding="utf-8"), object_pairs_hook=_pairs)
+    # Claude CLI does not register the 2020-12 meta-schema or x-contract-id. Our role schemas
+    # use the shared keyword subset; keep every constraint and retain the
+    # original schema file for the authoritative submission validation.
+    if schema.get("$schema") == "https://json-schema.org/draft/2020-12/schema":
+        schema.pop("$schema")
+    schema.pop("x-contract-id", None)
+    settings = {"disableAllHooks": True, "autoMemoryEnabled": False}
+    if request.get("claude_only_assigned_model", False):
+        model = request["model"]
+        settings.update(availableModels=[model], fallbackModel=[], switchModelsOnFlag=False,
+                        env={"ANTHROPIC_DEFAULT_HAIKU_MODEL": model,
+                             "CLAUDE_CODE_SUBAGENT_MODEL": model,
+                             "CLAUDE_CODE_SUBAGENT_MODEL_FORCE": "1"})
     servers = {}
     if request.get("scholarly_server") is not None:
         server = validate_scholarly_server(request["scholarly_server"])
@@ -51,11 +69,11 @@ def build_argv(request: dict) -> list[str]:
     return [request["claude_path"], "--print", "--output-format", "stream-json", "--verbose",
             "--model", request["model"], "--effort", request["effort"],
             "--no-session-persistence", "--setting-sources", "",
-            "--settings", json.dumps({"disableAllHooks": True, "autoMemoryEnabled": False}),
+            "--settings", json.dumps(settings),
             "--disable-slash-commands", "--disallowedTools", "Agent,Task",
             "--strict-mcp-config", "--mcp-config", json.dumps({"mcpServers": servers}, ensure_ascii=False),
             "--permission-mode", "bypassPermissions",
-            "--json-schema", Path(request["output_schema_path"]).read_text(encoding="utf-8")]
+            "--json-schema", json.dumps(schema, ensure_ascii=False)]
 
 
 def run(request_path: Path) -> int:

@@ -64,6 +64,7 @@ DEFAULT_CONFIG = {
     "operator_enabled": True, "operator_interval_seconds": 7200,
     "operator_timeout_seconds": 5400, "operator_model": "gpt-5.6-sol", "operator_effort": "high",
     "scholarly_enabled": True, "scholarly_server": None,
+    "claude_only_assigned_model": False,
 }
 
 
@@ -99,7 +100,7 @@ def validate_config(config: dict) -> None:
         raise ValueError("role_models must map roles to model names")
     for role in config["role_models"]:
         schema_for(role)
-    for key in ("operator_enabled", "scholarly_enabled"):
+    for key in ("operator_enabled", "scholarly_enabled", "claude_only_assigned_model"):
         if not isinstance(config[key], bool):
             raise ValueError(f"{key} must be a boolean")
     if not isinstance(config["operator_model"], str) or not config["operator_model"].strip():
@@ -202,7 +203,7 @@ def control(repository: Path, instance_id: str, action: str, *, text: str = "", 
             raise ValueError("session mode uses session_limits; explicitly set session_limits=null to configure legacy call budgets")
         validate_config(candidate)
         if origin == "operator" and any(candidate[key] != current_config.get(key)
-                                         for key in ("work_calls", "operations_calls", "session_limits", "tier_models", "role_tiers")):
+                                         for key in ("work_calls", "operations_calls", "session_limits", "tier_models", "role_tiers", "claude_only_assigned_model")):
             raise ValueError("changing resource capacity or model allocation requires a user decision")
     if action == "input" and not text.strip():
         raise ValueError("input text is required")
@@ -573,7 +574,7 @@ class ResearchEngine(SchedulerMixin, ReviewEngineMixin, LifecycleEngineMixin, Ac
                 candidate_config = {**self.instance["config"], **request["config"]}
                 if request.get("origin", "user") == "operator" and any(
                         candidate_config[key] != self.instance["config"].get(key)
-                        for key in ("work_calls", "operations_calls", "session_limits", "tier_models", "role_tiers")):
+                        for key in ("work_calls", "operations_calls", "session_limits", "tier_models", "role_tiers", "claude_only_assigned_model")):
                     self._reject_control(request, "resource settings require a user decision at application time")
                     continue
                 try:
@@ -1361,6 +1362,10 @@ class ResearchEngine(SchedulerMixin, ReviewEngineMixin, LifecycleEngineMixin, Ac
 
     def _runner_tools(self, arguments: dict) -> None:
         parameters = inspect.signature(self.runner.run).parameters
+        if self.instance["config"].get("claude_only_assigned_model", False):
+            if "claude_only_assigned_model" not in parameters and not any(p.kind == inspect.Parameter.VAR_KEYWORD for p in parameters.values()):
+                raise ValueError("runner cannot enforce claude_only_assigned_model")
+            arguments["claude_only_assigned_model"] = True
         if "scholarly_server" in parameters or any(p.kind == inspect.Parameter.VAR_KEYWORD for p in parameters.values()):
             config = self.instance["config"]
             arguments["scholarly_server"] = deepcopy(config["scholarly_server"]) if config["scholarly_enabled"] else None

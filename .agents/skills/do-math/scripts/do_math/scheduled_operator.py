@@ -290,6 +290,7 @@ def check(repository: Path, instance: str, workspace: Path, *, probe: bool = Fal
                                   evidence_dir=run_directory / "evidence", model=model,
                                   effort=config["operator_effort"], timeout_seconds=config["operator_timeout_seconds"],
                                   scholarly_server=scholarly if isinstance(scholarly, dict) else None, should_stop=should_stop,
+                                  **({"claude_only_assigned_model": True} if config.get("claude_only_assigned_model", False) else {}),
                                   **({"on_started": lambda identity: slots.started(slot_id, identity)} if slots else {}))
         report.update(outcome="completed" if model_result["status"] == "completed" else model_result["status"],
                       result=model_result, output=model_result.get("output"))

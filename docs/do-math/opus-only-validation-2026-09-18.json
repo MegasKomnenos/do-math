@@ -1,0 +1,90 @@
+{
+  "date": "2026-09-18",
+  "instance": "RI-01M2S7DEH95FK8DEC0H0R4QMM8",
+  "config": {
+    "tier_models": {
+      "high": "claude-opus-5",
+      "medium": "claude-opus-5",
+      "low": "claude-opus-5"
+    },
+    "session_limits": {
+      "work": {
+        "claude-opus-5": 3
+      },
+      "operations": {
+        "claude-opus-5": 3
+      }
+    },
+    "role_models": {},
+    "effort": "high",
+    "claude_only_assigned_model": true
+  },
+  "source_sha256": {
+    "claude_worker.py": "f9d1f74edfe4d954073693699acff6d13af006409fee5d8b96a3218a21ea526b",
+    "engine.py": "c3f30f3a44576cfbecabedb97aa804360f81e71345269357cd2b2dfadacc093b",
+    "model_runner.py": "e9f52d0a8957d8129e10595b6f90efb5dc4fab3225843ad5360fba45b44e21f1",
+    "scheduled_operator.py": "818499ae0aac479da314ee8ee4dceadd4e7c8e96b66847770aa7c5bf66efff64"
+  },
+  "initial_errors": [
+    "no schema with key or ref https://json-schema.org/draft/2020-12/schema",
+    "strict mode: unknown keyword: x-contract-id"
+  ],
+  "before_model_lock": {
+    "subtype": "success",
+    "models": [
+      "claude-haiku-4-5-20251001",
+      "claude-opus-5"
+    ]
+  },
+  "after_model_lock": {
+    "subtype": "success",
+    "models": [
+      "claude-opus-5"
+    ]
+  },
+  "research_plan": {
+    "execution": "EX-01M2S7PM8VCXXMCY6FEPNCCC9P",
+    "subtype": "success",
+    "models": [
+      "claude-opus-5"
+    ]
+  },
+  "regression_runs": [
+    {
+      "files": [
+        "test_claude_adapter",
+        "test_model_runner",
+        "test_operator",
+        "test_contracts",
+        "test_controls"
+      ],
+      "tests": 40,
+      "result": "passed"
+    },
+    {
+      "files": [
+        "test_claude_adapter",
+        "test_operator"
+      ],
+      "tests": 23,
+      "result": "passed_after_added_coverage"
+    },
+    {
+      "files": [
+        "test_claude_adapter"
+      ],
+      "tests": 11,
+      "result": "passed_after_force_flag_correction"
+    }
+  ],
+  "full_regression_run": false,
+  "local_raw_evidence": ".skill-workspace\\parking-unimodality-opus5-20260918",
+  "raw_evidence_git_tracked": false,
+  "final_regression": {
+    "tests": 40,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0,
+    "passed": true
+  }
+}
