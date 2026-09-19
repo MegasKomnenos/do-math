@@ -33,6 +33,22 @@ BibTeX·RIS 파서는 `bibliography_parsers.py`에 있습니다. 서비스는 �
 
 구현 모듈은 서비스 루트의 동일한 import 경로를 사용합니다. 새 자료원이나 인자를 변경할 때는 실제 구현과 `registry.py`의 사용 계약, 지원표를 함께 대조합니다. 구체적인 과거 실서비스 관측은 `docs/history/`에 보존합니다.
 
+## 정본과 사본
+
+이 디렉터리(`C:\math\services\scholarly-mcp`)가 서비스의 정본입니다(2026-09-19 사용자 결정). 소스·테스트·문서의 변경은 이곳에 먼저 반영하고 이 저장소에서 커밋합니다.
+
+파생 사본이 하나 있습니다. `C:\agent-semantic-layer\output\scholarly-mcp`는 이 디렉터리의 소스·테스트·문서를 가져온 사본이며, 그 저장소의 `.mcp.json`과 `.codex/config.toml`이 사본의 `server.py`를 사본 전용 `.venv`로 실행합니다. 사본에는 `data/`가 없고, 기본 자격 경로는 그 저장소의 `.credentials/`입니다. 사본의 `README.md`와 `docs/DEVELOPMENT.md`는 경로를 그 저장소 기준(`output/scholarly-mcp`, `C:\agent-semantic-layer`)으로 바꾸고 사본임을 밝히는 문단을 더한 현지화본입니다.
+
+사본으로 변경을 옮길 때에는 다음을 지킵니다.
+
+1. 옮기기 전에 두 디렉터리의 차이가 이번 변경분과 아래의 알려진 차이뿐인지 확인합니다. Git Bash에서 `diff -rq services/scholarly-mcp /c/agent-semantic-layer/output/scholarly-mcp -x __pycache__ -x "*.pyc" -x .pytest_cache -x data -x .venv`를 실행합니다.
+2. 현지화된 두 문서는 파일째 덮어쓰지 않고 변경된 부분만 옮깁니다.
+3. 옮긴 뒤 사본의 환경에서 전체 회귀 검사를 실행하고, 그 저장소의 절차에 따라 따로 커밋합니다.
+
+사본의 실사용에서 결함이 드러나면 수정은 이 정본에 반영한 뒤 같은 방법으로 사본에 옮깁니다. 한쪽에서만 고치면 두 사본이 오류 없이 갈라집니다.
+
+2026-09-19 기준으로 두 디렉터리의 코드와 테스트는 같습니다. 알려진 차이는 현지화된 두 문서와, 정본에만 있는 `docs/history/dispatch/remaining-20260913/latest.json`입니다. 사본을 없애고 이 정본을 설치해 쓰도록 바꿀지는 정해지지 않았습니다. 그렇게 바꾸려면 그 저장소의 MCP 실행 구성 두 곳과 전용 `.venv`, 자격 경로의 기준을 함께 바꿔야 합니다.
+
 ## 검증 실행
 
 저장소 루트에서 README의 회귀 검사 명령을 실행합니다. `test_mcp.py`는 별도 서버 프로세스를 띄워 다섯 도구의 스키마와 파일 추출·자료 읽기를 검증합니다. `fixtures/`는 재현 입력이므로 임시 파일로 삭제하지 않습니다.
