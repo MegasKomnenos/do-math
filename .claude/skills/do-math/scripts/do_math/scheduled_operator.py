@@ -314,7 +314,7 @@ def check(repository: Path, instance: str, workspace: Path, *, probe: bool = Fal
     context["execution_window"] = {"path": str(execution_workspace / "execution-window.json"),
                                    "finish_request_path": str(execution_workspace / "finish-request.json")}
     _json(run_directory / "context.json", context)
-    prompt = PROMPT.read_text(encoding="utf-8") + "\n\n## Invocation context\n\n" + json.dumps(context, ensure_ascii=False, indent=2)
+    prompt = PROMPT.read_text(encoding="utf-8") + "\n\n## Invocation context\n\n" + json.dumps(context, ensure_ascii=False, separators=(",", ":"))
     if probe:
         prompt += "\n\n## Probe restriction\n\nRead status and call scholarly list_sources only when configured. Do not create controls, start the engine, modify code, or change research state."
     (run_directory / "prompt.md").write_text(prompt, encoding="utf-8")

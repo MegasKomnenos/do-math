@@ -127,6 +127,32 @@ class SlotTests(unittest.TestCase):
             finally:
                 slots.close()
 
+    def test_independent_operator_prompt_carries_the_saved_context_compactly(self):
+        import json
+        from do_math import scheduled_operator
+        with tempfile.TemporaryDirectory() as directory:
+            workspace = Path(directory)
+            slots = SessionSlots(workspace, "instance")
+            slots.configure(deepcopy(LIMITS))
+            config = deepcopy(DEFAULT_CONFIG); config["scholarly_enabled"] = False
+            class Runner:
+                def run(inner, *, on_started, **kwargs):
+                    on_started({"pid": 1})
+                    return {"status": "completed", "output": {}, "usage": {}}
+            try:
+                with patch.object(scheduled_operator, "read_status", return_value={"status": "ready", "user_pause": None}), \
+                     patch.object(scheduled_operator, "ResearchRepository") as repository, \
+                     patch.object(scheduled_operator, "ModelRunner", return_value=Runner()):
+                    repository.return_value.load.return_value = ("snapshot", {"config": config}, {})
+                    scheduled_operator.check(workspace, "instance", workspace)
+            finally:
+                slots.close()
+            prompt, = workspace.rglob("prompt.md")
+            carried = prompt.read_text(encoding="utf-8").split("\n\n## Invocation context\n\n", 1)[1]
+            saved = json.loads((prompt.parent / "context.json").read_text(encoding="utf-8"))
+            self.assertEqual(json.loads(carried), saved)
+            self.assertNotIn("\n", carried)
+
     def test_two_processes_share_the_same_capacity(self):
         with tempfile.TemporaryDirectory() as directory:
             slots = SessionSlots(Path(directory), "one")
