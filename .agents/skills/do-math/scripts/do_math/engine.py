@@ -1182,6 +1182,14 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 "target": entry["action"].get("target"), "kind": entry.get("kind"), "reason": entry.get("reason"),
                 "execution_id": entry.get("execution_id")} for aid, entry in self.runtime.get("waiting_actions", {}).items()
                 if entry.get("execution_id") == action.get("target")]
+        if action["role"] == "maintenance":
+            # Queue repairs are checked against the engine's own revision state.
+            context["pending_revisions"] = deepcopy(planning.pending_revisions(self.runtime))
+            context["revision_cycles"] = deepcopy(self.runtime.get("revision_cycles", []))
+            context["blocked_actions"] = [{"action_id": aid, "role": entry["action"].get("role"),
+                "target": entry["action"].get("target"), "kind": entry.get("kind"),
+                "reason": entry.get("reason"), "execution_id": entry.get("execution_id")}
+                for aid, entry in self.runtime.get("waiting_actions", {}).items()]
         if action["role"] in {"research_preparation", "research_plan"}:
             context["config"] = deepcopy(self.instance["config"])
             context["ready_task_ids"] = planning.ready_task_ids(self.runtime)

@@ -162,6 +162,17 @@ class RevisionObligationTests(PurposeHarness):
         self.assertNotIn(parent_id, engine.runtime['waiting_actions'])
         self.assertEqual(engine.runtime['tasks'][task['id']]['status'], 'assessing')
 
+    def test_maintenance_reads_the_revision_queue_it_is_asked_to_check(self):
+        engine, _ = self.make(operator_enabled=False, scholarly_enabled=False)
+        engine.runtime['queue'] = []
+        engine.runtime['tasks']['A'] = {**candidate('A', formal=False), 'id': 'A',
+            'revision': 1, 'status': 'planned', 'results': [], 'reviews': [], 'producer_execution': 'prior'}
+        engine._enqueue('research_preparation', reason='Revise A', revision_targets=revisions.capture_targets(engine.instance, engine.runtime, ['A']))
+        context = engine._context({'id': 'AC-check', 'role': 'maintenance', 'reason': 'Check the revision queue'}, self.root / 'maintenance')
+        self.assertEqual([(row['state'], set(row['action']['revision_targets'])) for row in context['pending_revisions']], [('queued', {'A'})])
+        self.assertEqual(context['revision_cycles'], [])
+        self.assertEqual(context['blocked_actions'], [])
+
     def test_closed_delegate_keeps_the_obligation_and_a_new_request_can_adopt_it(self):
         engine, parent_id, _ = self.prepare()
         engine.run(max_steps=1)
