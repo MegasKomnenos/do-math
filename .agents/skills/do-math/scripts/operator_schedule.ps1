@@ -31,7 +31,7 @@ function Task-View([string]$Name) {
         name = $Name; state = [string]$task.State; action = [string]$action.Execute + ' ' + [string]$action.Arguments
         interval = if ($null -eq $trigger) { $null } else { [string]$trigger.Repetition.Interval }; multiple_instances = [string]$task.Settings.MultipleInstances
         execution_limit = [string]$task.Settings.ExecutionTimeLimit
-        next_run = $info.NextRunTime.ToUniversalTime().ToString('o'); last_result = $info.LastTaskResult; description = [string]$task.Description
+        next_run = if ($null -eq $info.NextRunTime) { $null } else { $info.NextRunTime.ToUniversalTime().ToString('o') }; last_result = $info.LastTaskResult; description = [string]$task.Description
     }
 }
 
