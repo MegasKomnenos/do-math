@@ -52,7 +52,9 @@ class AssessmentSubmissionTests(unittest.TestCase):
         self.assertTrue(self.issues({}))
 
     def test_exact_coverage_is_accepted_and_duplicates_and_foreign_targets_are_rejected(self):
-        self.assertEqual(self.issues({"model_assessments": [rating(task_title="one"), rating(task_title="two")]}), [])
+        from test_engine import contract_checks
+        self.assertEqual(self.issues({"model_assessments": [rating(task_title="one"), rating(task_title="two")],
+                                      "contract_checks": contract_checks(self.output["candidates"])}), [])
         for titles in (("one", "one"), ("one", "foreign")):
             with self.subTest(titles=titles):
                 self.assertTrue(self.issues({"model_assessments": [rating(task_title=x) for x in titles]}))

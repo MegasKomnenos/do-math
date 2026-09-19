@@ -387,8 +387,10 @@ class ParallelEngineTests(unittest.TestCase):
                 elif role == "research_plan":
                     entries = [{"task_id": tid, **assessment} for tid in result["output"]["selections"]]
                 if entries:
+                    from test_engine import contract_checks
+                    checks = contract_checks(result["output"]["candidates"]) if role == "research_preparation" else []
                     (arguments["workspace"] / "activity-extensions.json").write_text(
-                        json.dumps({"model_assessments": entries}), encoding="utf-8")
+                        json.dumps({"model_assessments": entries, **({"contract_checks": checks} if checks else {})}), encoding="utf-8")
                 return result
         result = initialize(self.repo, goal="bounded research", goal_kind="research", workspace=self.root / "work",
                             config={"operator_enabled": False, "scholarly_enabled": False})

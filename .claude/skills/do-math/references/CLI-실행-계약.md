@@ -140,7 +140,8 @@ status의 `knowledge.K`, `knowledge.F`, `knowledge.suspended_K`는 각각 `verif
 - 실행 시간과 반복: `call_timeout_seconds`는 운영 예산 AI 실행 하나의 기한이다. 작업 예산 AI 실행(연구 수행·보충 조사·작업 계약 검토·동일성 검토·목표 감사)에는 이 기한을 적용하지 않으며, 그 실행은 제출, `run_timeout_seconds`가 정한 `run` 호출의 기한, pause·close와 권한·입력 변경으로 끝난다. Lean timeout, 자동 후보 준비 회차, 출력 수리 횟수, 검토 회차와 보충 조사 한도는 각 대응 설정이 정한다.
 - 입력·산출: 모델 입력과 한 실행의 artifact 회수 바이트 한도를 정한다.
 - 형식 검사: `lean_command`는 argv 배열이며, 없으면 실행기가 지원 경로에서 Lean을 탐색한다. 허용 공리 목록은 중앙 공리 감사의 기준이다.
-- 관찰: event-driven·periodic 모드, 관찰·idle 간격, 한 실행의 점검 수와 checkpoint 유예를 정한다.
+- 관찰: event-driven·periodic 모드, 관찰·idle 간격, 한 실행의 점검 수와 checkpoint 유예를 정한다. `observation_unbounded_wait_seconds`(기본 600)는 event-driven 모드에서 timeout 없는 도구 대기나 작업 사건 없는 출력 전송을 점검으로 넘기는 시간이다. 선언한 timeout 안의 도구 대기는 시간만으로 점검을 열지 않는다. 연구 수행·보충 조사가 관찰 간격 안에 첫 유효 checkpoint를 남기지 않으면 실행기가 모델 호출 없이 `observation-feedback.json`에 알림을 한 번 쓴다.
+- 계획과 착수: `plan_settle_seconds`(기본 300)는 연구 계획이 대기·실행 중인 작업 계약 검토의 종료를 기다리는 상한이며, 기다리는 계획의 `dispatch_wait.kind`는 `plan_settle`이다. 사용자·독립 운영이 요청한 계획에는 적용하지 않는다. `dispatch_reserve_seconds`(기본 300)는 run 기한 직전에 일반 실행을 새로 시작하지 않는 구간이다. 실제 구간은 이 값과 run 기한의 1/10 중 작은 것이며, 이 구간에는 실행 중 운영 점검만 시작한다.
 - 독립 운영: `operator_enabled`는 기본 true, `operator_interval_seconds`는 기본 7200초다. `operator_timeout_seconds`는 한 점검 실행의 상한으로 기본 5400초이며, `operator_effort`의 기본값은 high다. 세션 모드에서는 `role_tiers.independent_operator`의 등급과 `tier_models`가 모델을 정하며 같은 모델의 운영 슬롯을 예약한다. 구 호환 모드의 `operator_model` 기본값은 gpt-5.6-sol이다. 이는 내부 `research_reconsider_seconds`가 정하는 후보 밖 탐색 주기와 별개다.
 - 학술자료: `scholarly_enabled`는 기본 true다. `scholarly_server`는 null 또는 `command`·`args` 객체이며 초기화 때 명시 설정이나 Codex 설정의 scholarly 항목에서 회수한다. command/서버 파일 경로는 실행 위치와 무관하게 사용할 수 있도록 고정한다. 다른 MCP와 사용자 훅은 하위 연구 실행에 자동 상속하지 않는다. 서버의 자료 저장 위치는 실행별 `scholarly-data/`로 지정한다.
 
@@ -658,7 +659,9 @@ relation 항목은 `kind`, `source`, `target`, `evidence`를 가진다. source�
 
 주 JSON 밖의 선택적 요청·메타데이터를 담는 객체다. `submission.py`가 역할별 확장 스키마와 공통 parser를 제공하며, 실행기는 도메인별 적용 함수에서 권한·의미·현재성을 다시 검사한다. 작업자에게도 같은 판본의 스키마와 검사 코드를 제공한다. 역할이 사용할 수 있는 가족과 의미는 `references/공통-실행.md`와 역할 계약이 설명한다.
 
-현재 확장 파일은 후보 과제의 발생 조건·의존·최초 관찰 규칙, 부수 연구 통찰, 외부 행동 요청, 기존·신규 지식의 metadata와 관계, 검토 자리의 고정 질문, 관찰 규칙과 학술 외부 거부의 해소 근거를 전달한다. 예를 들어 새 knowledge의 `confirmed_scope`는 주 JSON의 유일한 title에 결박하고, 검토 보충 조사는 원 검토 자리의 질문 ID와 exact source references에 결박한다.
+현재 확장 파일은 후보 과제의 발생 조건·의존·최초 관찰 규칙과 후보별 계약 자기점검 `contract_checks`, 부수 연구 통찰, 외부 행동 요청, 기존·신규 지식의 metadata와 관계, 검토 자리의 고정 질문, 관찰 규칙과 학술 외부 거부의 해소 근거를 전달한다. 예를 들어 새 knowledge의 `confirmed_scope`는 주 JSON의 유일한 title에 결박하고, 검토 보충 조사는 원 검토 자리의 질문 ID와 exact source references에 결박한다.
+
+`contract_checks`는 후보 준비가 후보마다 하나씩 제출하는 `{task_title, symbols, outcome_branches, sibling_boundaries}`다. 생산자 검사와 수신 검사는 같은 함수로 선언과 계약 문면을 대조한다. 대조 항목은 기호의 중복 선언과 문면 부재, 서로 다른 결과 갈래 둘 이상과 의존 과제의 언급, 문면에 인용한 `TK-`·`KN-` 기록의 실재, 인용한 과제의 경계 선언과 현행 revision 일치, 개정 중인 과제에 달린 경계다. `budget_unit=concurrent_sessions`에서는 후보 전건에 필요하고 `execution_attempts` 호환 운전에서는 선택이다. 실행기는 이 선언을 생산 실행의 확장 기록으로 보존하며 과제 계약과 계약 검토 입력에는 넣지 않는다. 필드의 의미와 점검 순서는 후보 준비 계약을 따른다.
 
 `task_dispositions`는 후보 준비와 연구 계획이 AI 생성 미완료 과제를 철회하는 경로다. `{task_id, disposition:"withdraw", reason}`를 받으며 입력 스냅샷의 계약 해시·생성 계보·현재 상태·실행 부재를 검사한다. 부분 결과는 보존하고 `closed` 처분과 제거한 미시작 요청을 기록한다. 완료·닫힘·수행 중 과제나 사용자 학술 요구에는 적용하지 않는다. 전체 의미와 예시는 공통 실행 문서를 따른다.
 

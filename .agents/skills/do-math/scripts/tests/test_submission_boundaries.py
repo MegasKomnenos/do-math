@@ -14,7 +14,7 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import test_session_scheduler as scheduling
 import test_purpose_engine as purpose
-from test_engine import common, formal_ok
+from test_engine import common, contract_checks, formal_ok
 from do_math.engine import control
 from do_math.knowledge import assess_use, revise_knowledge
 from do_math.context_store import fit_context
@@ -221,6 +221,7 @@ class AcceptanceTests(unittest.TestCase):
                     task = context["tasks"][0]
                     (args["workspace"] / "activity-extensions.json").write_bytes(canonical_json({"model_assessments": [
                         {"task_title": task["title"], "difficulty": "high", "importance": "medium", "reason": "The revised fixture retains the unresolved case."}],
+                        "contract_checks": contract_checks([task]),
                         "revision_resolutions": [{"record_id": task["id"], "disposition": "revised", "reason": "The remaining case is the new contract."}]}))
                     return returned(role, candidates=[purpose.candidate(task["title"], formal=False, revises=task["id"])])
                 if role == "task_contract_review":

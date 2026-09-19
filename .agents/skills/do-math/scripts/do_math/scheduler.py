@@ -9,7 +9,7 @@ from .model_policy import assessment_basis, selection, validate_assessments
 from .parallel import ModelCalls
 from .session_slots import SessionSlots
 from .provider_wait import provider_for
-from .execution_window import notice_seconds
+from .execution_window import dispatch_reserve_seconds, notice_seconds
 
 MACHINE_ROLES = {"formal_check", "trust_check", "trust_activate", "external_action"}
 WORK_ROLES = {"research_work", "supplemental_research", "task_contract_review", "identity_review", "goal_audit"}
@@ -208,6 +208,20 @@ class SchedulerMixin:
         # If all reviews end without a usable task, planning must diagnose it.
         return any(a["role"] == "task_contract_review" for a in self.runtime["queue"])
 
+    def _plan_settle_waits(self, action):
+        """Approvals arriving minutes apart are decided by one plan; a slow review delays it only up to the limit."""
+        from .governance import timestamp
+        limit = self.instance["config"].get("plan_settle_seconds", 300)
+        if action.get("requested_by") or action.get("recovery"):
+            return False
+        if not any(a["role"] == "task_contract_review" for a in self.runtime["queue"]):
+            return False
+        started = timestamp(action.setdefault("settle_started_at", timestamp().isoformat()))
+        if (timestamp() - started).total_seconds() >= limit:
+            return False
+        action["dispatch_wait"] = {"kind": "plan_settle", "since": action["settle_started_at"], "limit_seconds": limit}
+        return True
+
     def _dispatchable(self, action, resources):
         live = [e for e in self.runtime["executions"].values() if e["status"] != "ended"]
         if any(e.get("action", {}).get("id") == action.get("id") for e in live if action.get("id")):
@@ -219,7 +233,7 @@ class SchedulerMixin:
             return False
         if not self._selected_action_current(action):
             return False
-        if role == "research_plan" and self._initial_plan_waits(action):
+        if role == "research_plan" and (self._initial_plan_waits(action) or self._plan_settle_waits(action)):
             return False
         identity_keys = ("role", "target", "stage", "slot", "round", "review_cycle_id", "basis", "review_basis_key", "live")
         if any(all(e.get("action", {}).get(key) == action.get(key) for key in identity_keys) for e in live):
@@ -267,7 +281,8 @@ class SchedulerMixin:
                     time.sleep(.02)
                     continue
                 finishing = deadline - time.monotonic() <= notice_seconds(self.instance["config"])
-                draining = finishing or (max_steps is not None and steps >= max_steps)
+                reserved = deadline - time.monotonic() <= dispatch_reserve_seconds(self.instance["config"])
+                draining = finishing or reserved or (max_steps is not None and steps >= max_steps)
                 if draining:
                     if not self._calls.futures:
                         break

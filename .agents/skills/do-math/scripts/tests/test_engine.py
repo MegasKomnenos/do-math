@@ -23,6 +23,14 @@ def context_from(prompt: str) -> dict:
     return json.loads(prompt.split(marker, 1)[1].split("\n--- OUTPUT JSON SCHEMA ---", 1)[0])
 
 
+def contract_checks(candidates: list[dict]) -> list[dict]:
+    """The smallest self-check a fixture contract needs: no symbols, no cited sibling, two outcomes."""
+    return [{"task_title": item["title"], "symbols": [], "sibling_boundaries": [], "outcome_branches": [
+        {"outcome": "The fixture obligation is met", "completion": "Every criterion is judged from the report"},
+        {"outcome": "The fixture obligation is not met", "completion": "The report records the unmet criterion"}]}
+        for item in candidates]
+
+
 def common(role: str) -> dict:
     schema = schema_for(role)
     value = {"summary": role, "used_sources": [], "questions": []}
@@ -88,7 +96,8 @@ class ScriptedRunner:
                 out["candidates"] = []
             (workspace / "activity-extensions.json").write_text(json.dumps({"model_assessments": [
                 {key: identity, "difficulty": "low", "importance": "medium", "reason": "Explicit bounded fixture task."}
-                for identity in identities]}), encoding="utf-8")
+                for identity in identities], **({"contract_checks": contract_checks(out["candidates"])}
+                                                if role == "research_preparation" and out.get("candidates") else {})}), encoding="utf-8")
         jsonschema.validate(out, output_schema)
         return {"status": "completed", "output": out, "usage": {"calls": 1}, "error": None}
 

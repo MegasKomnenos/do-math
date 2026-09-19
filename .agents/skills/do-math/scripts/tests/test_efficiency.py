@@ -91,7 +91,7 @@ class EfficiencyTests(unittest.TestCase):
     def test_regular_empty_plan_can_still_dispatch(self):
         self.assertTrue(self.engine._dispatchable({"role": "research_plan", "reason": "assess failed approach"}, self.resources))
 
-    def test_initial_plan_uses_first_ready_task_without_waiting_for_other_reviews(self):
+    def test_initial_plan_waits_for_other_reviews_only_up_to_the_settle_limit(self):
         action = self.startup()
         e = self.engine
         e.runtime["executions"]["E"] = {"id": "E", "role": "research_preparation",
@@ -100,6 +100,11 @@ class EfficiencyTests(unittest.TestCase):
         e.runtime["queue"].extend([{"role": "task_contract_review", "target": tid} for tid in e.runtime["tasks"]])
         self.assertFalse(e._dispatchable(action, self.resources))
         e.runtime["tasks"]["first"]["status"] = "ready"
+        # The remaining reviews are awaited only up to plan_settle_seconds, never indefinitely.
+        self.assertFalse(e._dispatchable(action, self.resources))
+        self.assertEqual(action["dispatch_wait"]["kind"], "plan_settle")
+        from datetime import datetime, timedelta, timezone
+        action["settle_started_at"] = (datetime.now(timezone.utc) - timedelta(seconds=301)).isoformat()
         self.assertTrue(e._dispatchable(action, self.resources))
 
     def test_pause_received_during_input_preparation_prevents_model_start(self):

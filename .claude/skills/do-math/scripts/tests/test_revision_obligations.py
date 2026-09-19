@@ -9,7 +9,7 @@ from do_math import planning, revisions
 from do_math.repository import canonical_json
 from do_math.input_basis import capture_decision_basis
 from do_math.model_policy import LIMITS
-from test_engine import common as role_output
+from test_engine import common as role_output, contract_checks
 from test_purpose_engine import PurposeHarness, candidate, common, parse_context
 
 
@@ -83,7 +83,7 @@ class RevisionObligationTests(PurposeHarness):
                     revised = candidate('A', formal=False, revises='A')
                     revised['scope'] = 'The revised supplied premise.'
                     (args['workspace'] / 'activity-extensions.json').write_bytes(canonical_json({
-                        'model_assessments': [{'task_title': 'A', **rating}],
+                        'model_assessments': [{'task_title': 'A', **rating}], 'contract_checks': contract_checks([revised]),
                         'revision_resolutions': [{'record_id': 'A', 'disposition': 'revised', 'reason': 'Premise updated.'}]}))
                     return {'status': 'completed', 'output': {**common('Revised A.'), 'candidates': [revised]}, 'usage': {}}
                 self.assertEqual(action['target'], 'C', 'Dependent B started before A was revised')

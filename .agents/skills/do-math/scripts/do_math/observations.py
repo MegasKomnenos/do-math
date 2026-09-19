@@ -99,6 +99,7 @@ class ObservationTracker:
         self.transport_bytes = 0
         self.review_count = 0
         self.checkpoint_count = 0
+        self.checkpoint_reminded = False
         self.rules = validate_rules(config.get("observation_rules", []))
         self.rules_digest = None
         self.consumed_rules = {}
@@ -182,17 +183,33 @@ class ObservationTracker:
                                     for key, value in self.pending_tools.items()])
         reason = None
         rule_basis = None
+        periodic = self.config.get("observation_mode", "event_driven") == "periodic"
+        # Waiting on a tool or a stream is normal work. Outside periodic mode it is reviewed
+        # only when nothing bounds the wait: a tool without a timeout, or output without work events.
+        unbounded = self.config.get("observation_unbounded_wait_seconds", 600)
         if checkpoint.get("value", {}).get("progress_state") in {"blocked", "no_progress"}:
             reason = "worker_reported_obstacle"
         elif state in {"tool_wait", "output_streaming"}:
             overdue = any(value["timeout_seconds"] is not None and when - value["started"] >= value["timeout_seconds"]
                           for value in self.pending_tools.values())
-            if when - self.last_review >= interval or overdue:
-                reason = "tool_timeout_observed" if overdue else state + "_review"
+            untimed = any(value["timeout_seconds"] is None and when - value["started"] >= unbounded
+                          for value in self.pending_tools.values())
+            if overdue:
+                reason = "tool_timeout_observed"
+            elif periodic and when - self.last_review >= interval:
+                reason = state + "_review"
+            elif when - self.last_review >= unbounded and (untimed or (state == "output_streaming" and sample["inactive_seconds"] >= unbounded)):
+                reason = "untimed_tool_wait_review" if untimed else "output_streaming_review"
         elif sample["inactive_seconds"] >= idle:
             reason = "no_visible_activity"
-        elif self.config.get("observation_mode", "event_driven") == "periodic" and when - self.last_review >= self.config.get("observation_interval_seconds", 300):
+        elif periodic and when - self.last_review >= interval:
             reason = "periodic_review"
+        if (self.config.get("checkpoint_expected") and not self.checkpoint_reminded and self.checkpoint_count == 0
+                and when - self.started >= interval):
+            # The executor reminds once itself; a model review is not needed to ask for a first checkpoint.
+            self.checkpoint_reminded = True
+            emitted.append({"kind": "checkpoint_reminder_due", "execution_id": self.execution_id,
+                            "checkpoint_status": checkpoint["status"], "observed_at": utc_now()})
         if reason is None:
             progress = checkpoint.get("value", {})
             for rule in self.rules:
@@ -217,6 +234,22 @@ class ObservationTracker:
                                 "reason": reason, "sample": sample, "observed_at": utc_now()})
                 if rule_basis: emitted[-1]["rule_basis"] = rule_basis
         return emitted
+
+
+def write_checkpoint_reminder(workspace: Path) -> bool:
+    """The executor's own first-checkpoint reminder; a reviewer's feedback is never replaced."""
+    destination = workspace / "observation-feedback.json"
+    if destination.exists():
+        return False
+    reminder = {"source": "executor", "decision": "checkpoint",
+                "reason": "실행 시작 뒤 관찰 간격이 지나도록 유효한 checkpoint.json이 관찰되지 않았다. 다음 연구 행동 전에 "
+                          "「공통 실행」의 체크포인트 형식(current_claim, evidence_paths, attempts, remaining_work, next_step, "
+                          "progress_state)으로 지금까지 확인한 사실과 그 근거 파일, 남은 작업을 기록한다. "
+                          "이 알림은 실행기가 기계적으로 보낸 것이며 진전이나 실패의 판정이 아니다."}
+    temporary = destination.with_suffix(".tmp")
+    temporary.write_text(json.dumps(reminder, ensure_ascii=False), encoding="utf-8")
+    temporary.replace(destination)
+    return True
 
 
 def request_checkpoint(workspace: Path, reason: str, *, immediate: bool, deadline: str) -> dict:

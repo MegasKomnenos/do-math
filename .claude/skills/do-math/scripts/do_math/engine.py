@@ -25,7 +25,7 @@ from .formal import verify_lean, discover_lean
 from . import governance, knowledge, planning, knowledge_io
 from .input_basis import capture_sources, sources_current, capture_decision_basis, decision_basis_changes, CurrentnessChanged
 from .context_store import collect_outputs, fit_context, materialize_inputs, read_source
-from .observations import ObservationTracker, CHECKPOINT_SCHEMA, recovered_checkpoint, request_checkpoint, validate_rules
+from .observations import ObservationTracker, CHECKPOINT_SCHEMA, recovered_checkpoint, request_checkpoint, validate_rules, write_checkpoint_reminder
 from .review_engine import ReviewEngineMixin
 from .lifecycle_engine import LifecycleEngineMixin
 from .academic_engine import AcademicEngineMixin
@@ -65,6 +65,7 @@ DEFAULT_CONFIG = {
     "review_rounds": 3, "review_research_limit": 3, "research_reconsider_seconds": 86400,
     "observation_mode": "event_driven", "observation_interval_seconds": 300,
     "observation_idle_seconds": 120, "max_observation_reviews": 3,
+    "observation_unbounded_wait_seconds": 600, "plan_settle_seconds": 300, "dispatch_reserve_seconds": 300,
     "checkpoint_grace_seconds": 10, "max_artifact_bytes": 268435456,
     "allowed_axioms": ["propext", "Classical.choice", "Quot.sound"],
     "operator_enabled": True, "operator_interval_seconds": 7200,
@@ -125,7 +126,8 @@ def validate_config(config: dict) -> None:
                 "review_rounds", "review_research_limit", "research_reconsider_seconds", "observation_interval_seconds",
                 "observation_idle_seconds", "max_observation_reviews", "checkpoint_grace_seconds", "max_artifact_bytes",
                 "operator_interval_seconds", "operator_timeout_seconds",
-                "provider_retry_initial_seconds", "provider_retry_max_seconds", "finish_notice_seconds"):
+                "provider_retry_initial_seconds", "provider_retry_max_seconds", "finish_notice_seconds",
+                "observation_unbounded_wait_seconds", "plan_settle_seconds", "dispatch_reserve_seconds"):
         if isinstance(config[key], bool) or not isinstance(config[key], int) or config[key] < 1:
             raise ValueError(f"{key} must be a positive integer")
     if isinstance(config.get("max_output_repairs", 1), bool) or not isinstance(config.get("max_output_repairs", 1), int) or config.get("max_output_repairs", 1) < 0:
@@ -1305,6 +1307,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                     "kind": "worker_checkpoint", "value": observed["value"], "sha256": observed["sha256"],
                     "artifact_ref": ref, "observed_at": observed["observed_at"]}
                 self._save({ref: observed["raw"]})
+            elif observed["kind"] == "checkpoint_reminder_due":
+                write_checkpoint_reminder(Path(self.instance["workspace"]) / "runs" / execution_id / "workspace")
             elif observed["kind"] == "operational_review_due":
                 self.runtime.setdefault("observations", {})[execution_id] = json_safe(observed)
                 self._save()
@@ -1694,7 +1698,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         execution["input_published_at"] = now()
         task = self.runtime["tasks"].get(action.get("target"), {})
         rules = self.runtime.get("task_observation_rules", {}).get(action.get("target"), task.get("initial_observation_rules", []))
-        tracker = ObservationTracker(execution_id, workspace, {**config, "observation_rules": rules})
+        tracker = ObservationTracker(execution_id, workspace, {**config, "observation_rules": rules,
+                                                               "checkpoint_expected": role in {"research_work", "supplemental_research"}})
         stop_started = None
         before_resume = True
         # Work-budget executions (research, review, audit) carry no per-execution
@@ -2208,7 +2213,11 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                         self.runtime["history"].append({"kind": "obsolete_contract_review_request", "action": deepcopy(pending),
                                                         "replaced_by_revision": task["revision"]})
                 self._enqueue("task_contract_review", tid, contract_basis=basis, review_basis_key=review_key)
-            self._enqueue("research_plan")
+            # A plan decides over ready and assessing tasks. With neither, and a contract review
+            # still pending, that review's approval event or returned revision brings the next decision.
+            decidable = any(task["status"] in {"ready", "assessing"} for task in self.runtime["tasks"].values())
+            if decidable or not any(a["role"] == "task_contract_review" for a in self.runtime["queue"]):
+                self._enqueue("research_plan")
         elif role == "task_contract_review":
             task = self.runtime["tasks"][target]
             if task["producer_execution"] == execution_id:

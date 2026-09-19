@@ -421,7 +421,12 @@ class LifecycleEngineMixin:
                 and entry['action'].get('contract_basis') == required
                 and entry['action'].get('review_basis_key') == review_key
                 for entry in self.runtime.get('waiting_actions', {}).values())
-            if not approved and not reviewed and not blocked_review:
+            # A review already running on this contract is not doubled when only its outside premises
+            # moved; once it ends, its own currentness check above decides whether another is needed.
+            live_review = any(execution.get('status') != 'ended' and execution.get('action', {}).get('role') == 'task_contract_review'
+                and execution['action'].get('target') == task_id and execution['action'].get('contract_basis') == required
+                for execution in self.runtime['executions'].values())
+            if not approved and not reviewed and not blocked_review and not live_review:
                 # Older queues may have an unbound review from governance. Bind it
                 # to the current contract rather than adding a duplicate request.
                 candidates = [a for a in self.runtime['queue'] if a.get('role') == 'task_contract_review' and a.get('target') == task_id]

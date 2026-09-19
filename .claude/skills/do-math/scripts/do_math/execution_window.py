@@ -12,6 +12,11 @@ def notice_seconds(config, pool=None):
     return min(values)
 
 
+def dispatch_reserve_seconds(config):
+    """Ordinary executions are not started this close to the run deadline; they could not finish."""
+    return min(config.get("dispatch_reserve_seconds", 300), config["run_timeout_seconds"] / 10)
+
+
 def _write(path, value):
     temporary = path.with_suffix(path.suffix + ".tmp")
     temporary.write_text(json.dumps(value, ensure_ascii=False, indent=2), encoding="utf-8")

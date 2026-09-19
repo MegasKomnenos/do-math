@@ -11,6 +11,7 @@ import hashlib
 import io
 import json
 from pathlib import Path
+import re
 import sys
 import zipfile
 
@@ -31,7 +32,7 @@ PLANNERS = {"research_preparation", "research_plan"}
 EXTENSION_ROLES = {
     "revision_requests": {*PRODUCERS, *PLANNERS}, "revision_resolutions": {*PRODUCERS, "research_preparation"},
     "action_resolutions": {*PLANNERS, "operational_review"},
-    "task_conditions": {"research_preparation"}, "task_dispositions": PLANNERS,
+    "task_conditions": {"research_preparation"}, "contract_checks": {"research_preparation"}, "task_dispositions": PLANNERS,
     "research_insights": {"research_preparation", "research_plan", "research_work",
         "supplemental_research", "identity_review", "task_contract_review", "goal_audit",
         "operational_review", "intent_interpretation", "maintenance"},
@@ -60,6 +61,11 @@ def extension_schema(action: dict, definitions: dict) -> dict:
         "task_conditions": _object({"task_id": TEXT, "task_title": TEXT, "dependencies": STRINGS,
             "knowledge_revision_targets": STRINGS,
             "occurrence_condition": {"type": "object"}, "observation_rules": {"type": "array"}}, []),
+        "contract_checks": _object({"task_title": TEXT,
+            "symbols": {"type": "array", "items": _object({"symbol": TEXT, "meaning": TEXT})},
+            "outcome_branches": {"type": "array", "minItems": 2, "items": _object({"outcome": TEXT, "completion": TEXT})},
+            "sibling_boundaries": {"type": "array", "items": _object({"task_id": TEXT, "revision": {"type": "integer", "minimum": 1},
+                "boundary": TEXT, "independent_of_next_revision": {"type": "boolean"}})}}),
         "task_dispositions": _object({"task_id": TEXT, "disposition": {"const": "withdraw"}, "reason": TEXT}),
         "research_insights": _object({"kind": kind, "title": TEXT, "statement": TEXT, "summary": TEXT,
             "explanation": TEXT, "information_state": TEXT, "evidence_ids": STRINGS},
@@ -211,6 +217,43 @@ def reference_catalog(context: dict, workspace: Path) -> list[dict]:
     return rows
 
 
+RECORD_ID = re.compile(r"(?<![0-9A-Za-z])(?:TK|KN)-[0-9A-Za-z]+(?:-[0-9A-Za-z]+)*")
+
+
+def contract_check_errors(item: dict, entry: dict, dependencies: list[str], tasks: dict, known: set, revising: set) -> list[str]:
+    """The mechanically decidable part of contract review, run by the producer before submission."""
+    text = "\n".join([item["title"], item["question"], item["scope"], item["expected_result"], *item["completion_criteria"]])
+    errors = []
+    cited = set(RECORD_ID.findall(text)) - {item["revises_task_id"]}
+    errors += ["cited record does not exist in the supplied input: " + ref for ref in sorted(cited - known - set(tasks))]
+    symbols = [row["symbol"] for row in entry["symbols"]]
+    errors += ["symbol has more than one declared meaning: " + symbol for symbol in sorted({x for x in symbols if symbols.count(x) > 1})]
+    errors += ["declared symbol is absent from the contract text: " + symbol for symbol in symbols if symbol not in text]
+    outcomes = "\n".join(row["outcome"] for row in entry["outcome_branches"])
+    if len({row["outcome"] for row in entry["outcome_branches"]}) < 2:
+        errors.append("outcome branches must state at least two distinct outcomes")
+    for dependency in dependencies:
+        names = {dependency, tasks.get(dependency, {}).get("title", dependency)}
+        if not any(name in outcomes for name in names):
+            errors.append("no outcome branch names the normal outcomes of the dependency: " + dependency)
+    declared = {row["task_id"]: row for row in entry["sibling_boundaries"]}
+    if len(declared) != len(entry["sibling_boundaries"]):
+        errors.append("sibling boundaries must name distinct tasks")
+    siblings = {ref for ref in cited if ref.startswith("TK-")}
+    errors += ["cited sibling contract has no declared boundary: " + ref for ref in sorted(siblings - set(declared))]
+    for ref, row in declared.items():
+        sibling = tasks.get(ref)
+        if sibling is None:
+            errors.append("sibling boundary names a task outside the supplied input: " + ref)
+        elif row["revision"] != sibling.get("revision"):
+            errors.append(f"sibling boundary was not read from the current revision {sibling.get('revision')} of {ref}")
+        elif ((sibling.get("status") == "needs_revision" or ref in revising)
+              and not row["independent_of_next_revision"] and ref not in dependencies):
+            errors.append("sibling contract is under revision: state a boundary that its next revision cannot move, "
+                          "or wait for it through task_conditions dependencies: " + ref)
+    return errors
+
+
 def _issue(path, message):
     return {"path": path, "message": message}
 
@@ -348,6 +391,25 @@ def payload_issues(output: dict, schema: dict, context: dict, extensions: dict, 
                     require(bool(old) and old.get("status") not in {"completed", "closed", "performing"}, "revision requires an existing unfinished task")
                     require(not old.get("academic_requirement_id"), "user academic requirements have a separate decision path")
             check(f"output/candidates/{index}", candidate)
+        if "assessment_targets" not in action:
+            entries = extensions.get("contract_checks", [])
+            titles = [entry["task_title"] for entry in entries]
+            expected = [item["title"] for item in output["candidates"]]
+            required = context.get("budget_unit") == "concurrent_sessions"
+            check("activity-extensions.json/contract_checks", lambda: require(
+                len(titles) == len(set(titles)) and not set(titles) - set(expected) and (not required or set(titles) == set(expected)),
+                "contract self-check coverage: every candidate needs exactly one entry; missing " +
+                json.dumps(sorted(set(expected) - set(titles)), ensure_ascii=False)))
+            revising = {target for row in context.get("pending_revisions", []) if row["action"].get("id") != action.get("id")
+                        for target in row["action"].get("revision_targets", {})}
+            by_target = {row.get("task_title", row.get("task_id")): row.get("dependencies", []) for row in extensions.get("task_conditions", [])}
+            for index, entry in enumerate(entries):
+                item = next((x for x in output["candidates"] if x["title"] == entry["task_title"]), None)
+                if item is None:
+                    continue
+                dependencies = by_target.get(item["title"], by_target.get(item["revises_task_id"], []))
+                for message in contract_check_errors(item, entry, dependencies, tasks, known, revising):
+                    issues.append(_issue(f"activity-extensions.json/contract_checks/{index}", message))
     if action["role"] == "research_plan":
         check("output", lambda: planning.validate_plan_submission(output, tasks, context.get("ready_task_ids", [])))
     if action["role"] in PRODUCERS and not action.get("review_cycle_id"):
