@@ -27,6 +27,28 @@ class RevisionObligationTests(PurposeHarness):
         self.assertEqual(set(action['revision_targets']), {'B'})
         self.assertEqual(engine.runtime['queue'], [action])
 
+    def test_a_merged_new_request_survives_when_all_revision_targets_close(self):
+        engine, _ = self.make(operator_enabled=False, scholarly_enabled=False)
+        engine.runtime['queue'] = []
+        engine.runtime['tasks']['A'] = {**candidate('A', formal=False), 'id': 'A',
+            'revision': 1, 'status': 'planned', 'results': [], 'reviews': [], 'producer_execution': 'prior'}
+        engine._enqueue('research_preparation', reason='Revise A', revision_targets=revisions.capture_targets(engine.instance, engine.runtime, ['A']))
+        engine._enqueue('research_preparation', reason='Author a new task')
+        action = engine.runtime['queue'][0]
+        engine.runtime['tasks']['A']['status'] = 'closed'
+        engine._retire_closed_revision_targets()
+        self.assertEqual(engine.runtime['queue'], [action])
+        self.assertEqual(action['revision_targets'], {})
+        self.assertIn('Author a new task', action['reason'])
+        engine.runtime['queue'] = []
+        engine.runtime['tasks']['C'] = {**candidate('C', formal=False), 'id': 'C',
+            'revision': 1, 'status': 'planned', 'results': [], 'reviews': [], 'producer_execution': 'prior'}
+        engine._enqueue('research_preparation', reason='Revise C', revision_targets=revisions.capture_targets(engine.instance, engine.runtime, ['C']))
+        engine._enqueue('research_preparation', reason='Revise C again', revision_targets=revisions.capture_targets(engine.instance, engine.runtime, ['C']))
+        engine.runtime['tasks']['C']['status'] = 'closed'
+        engine._retire_closed_revision_targets()
+        self.assertEqual(engine.runtime['queue'], [])
+
     def test_revision_blocks_its_consumer_but_independent_work_overlaps(self):
         engine, _ = self.make(operator_enabled=False, scholarly_enabled=False, session_limits=deepcopy(LIMITS))
         engine.runtime['queue'] = []

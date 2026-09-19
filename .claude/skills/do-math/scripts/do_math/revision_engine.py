@@ -36,11 +36,12 @@ class RevisionEngineMixin:
             action['revision_targets'] = remaining
             if action.get('target') in retired:
                 action.pop('target', None)
+            # Merged requests without targets stay queued; only a pure revision retires whole.
             if entry:
                 entry['revision_targets'] = deepcopy(remaining)
-                if not remaining:
+                if not remaining and not action.get('unbound_request'):
                     del self.runtime['waiting_actions'][identifier]
-            elif not remaining:
+            elif not remaining and not action.get('unbound_request'):
                 self._remove_action(action)
 
     def _selected_action_current(self, action):

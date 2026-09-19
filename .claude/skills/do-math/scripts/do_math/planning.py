@@ -104,7 +104,7 @@ def pending_revisions(runtime: dict) -> list[dict]:
 
 
 def revision_waits(action: dict, instance: dict, runtime: dict) -> list[dict]:
-    """Declared writers wait for existing readers; new dependent readers wait."""
+    """Declared writers wait for existing readers and older writers; new dependent readers wait."""
     reads = action_read_ids(action, instance, runtime)
     writes = set(action.get("revision_targets", {}))
     role = action.get("role")
@@ -128,6 +128,10 @@ def revision_waits(action: dict, instance: dict, runtime: dict) -> list[dict]:
         # Diagnosis and planning can resolve a failed revision. Only live writers
         # block a new global plan; their actual readers already drained above.
         if role == "research_plan" and pending["state"] != "running":
+            continue
+        # Unstarted writers drain oldest first. A declared writer waits only for
+        # older ones, so writers reading each other's targets cannot deadlock.
+        if writes and pending["state"] != "running" and other.get("id", "") > action.get("id", ""):
             continue
         overlap = reads & set(other.get("revision_targets", {}))
         if other.get("id") in owners:

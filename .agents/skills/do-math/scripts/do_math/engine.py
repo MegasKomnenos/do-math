@@ -1949,6 +1949,9 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         live_actions = {e.get("action", {}).get("id") for e in self.runtime["executions"].values() if e["status"] != "ended"}
         for queued in self.runtime["queue"]:
             if queued.get("id") not in live_actions and all(queued.get(k) == action.get(k) for k in compare_keys):
+                # A request without revision targets must outlive the retirement of merged targets.
+                if not queued.get("revision_targets") or not action.get("revision_targets"):
+                    queued["unbound_request"] = True
                 if action.get("reason"):
                     reasons = queued.setdefault("reasons", [queued["reason"]] if queued.get("reason") else [])
                     if action["reason"] not in reasons:

@@ -64,6 +64,23 @@ class BasisTests(unittest.TestCase):
         self.runtime["queue"].append({"id": "write-K", "role": "research_preparation", "revision_targets": revisions.capture_targets(self.instance, self.runtime, ["K"])})
         self.assertFalse(planning.revision_waits({"id": "D-review", "role": "task_contract_review", "target": "D"}, self.instance, self.runtime))
 
+    def test_unstarted_writers_reading_each_others_targets_drain_oldest_first(self):
+        self.runtime["tasks"]["B"] = {"id": "B", "revision": 1, "inputs": ["A"]}
+        self.runtime["tasks"]["A"]["inputs"] = ["B"]
+        first = {"id": "AC-1", "role": "research_preparation", "target": "A", "revision_targets": revisions.capture_targets(self.instance, self.runtime, ["A"])}
+        second = {"id": "AC-2", "role": "research_preparation", "target": "B", "revision_targets": revisions.capture_targets(self.instance, self.runtime, ["B"])}
+        both = {"id": "AC-3", "role": "research_preparation", "target": "A", "revision_targets": revisions.capture_targets(self.instance, self.runtime, ["A", "B"])}
+        self.runtime["queue"] = [second, both, first]
+        self.assertEqual(planning.revision_waits(first, self.instance, self.runtime), [])
+        self.assertEqual([w["action_id"] for w in planning.revision_waits(second, self.instance, self.runtime)], ["AC-1"])
+        self.assertEqual(sorted(w["action_id"] for w in planning.revision_waits(both, self.instance, self.runtime)), ["AC-1", "AC-2"])
+        self.assertEqual(planning.revision_cycles(self.instance, self.runtime), [])
+        self.assertTrue(planning.revision_waits({"id": "A-work", "role": "research_work", "target": "A"}, self.instance, self.runtime))
+        self.runtime["executions"]["E"] = {"id": "E", "status": "running", "action": second}
+        waits = planning.revision_waits(first, self.instance, self.runtime)
+        self.assertEqual([w["action_id"] for w in waits if "action_id" in w], ["AC-2"])
+        self.assertEqual([w["execution_id"] for w in waits if "execution_id" in w], ["E"])
+
     def test_writer_drains_a_running_plan_but_failed_writer_does_not_block_diagnosis(self):
         writer = {"id": "write", "role": "research_preparation", "revision_targets": revisions.capture_targets(self.instance, self.runtime, ["A"])}
         self.runtime["executions"]["E"] = {"id": "E", "status": "running", "action": {"id": "plan", "role": "research_plan"}}
