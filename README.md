@@ -7,6 +7,7 @@
 - [연구 공간과 보존 입력](research/README.md)
 - [do-math 사용 안내](.claude/skills/do-math/README.md)
 - [학술자료 MCP](services/scholarly-mcp/README.md)
+- [Jev CLI 사용 안내](services/jev-cli/README.md)
 - [do-math 교육 자료](docs/learning/do-math/MISSION.md)
 - [보편 연구 개념](CONTEXT.md)과 [도구 통합 설계](docs/do-math/통합-설계.md)
 - [작업 기억 색인](기억/색인.md)
