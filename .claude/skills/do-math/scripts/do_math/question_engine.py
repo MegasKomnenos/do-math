@@ -111,7 +111,3 @@ class QuestionEngineMixin:
 
     def _user_questions(self):
         return [row["text"] for row in self._question_view() if row["owner"] == "user" and row["status"] == "open" and row.get("text")]
-
-    def _has_global_user_question(self):
-        return any(row.get("blocks", False) and self.instance["id"] in row.get("unresolved_target_ids", row["target_ids"])
-                   for row in questions.open_links(self.runtime, "user"))

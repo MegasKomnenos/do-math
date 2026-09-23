@@ -83,7 +83,6 @@ class PlanSettleTests(ActiveStateHarness):
         from do_math.model_policy import MODELS
         self.engine, _ = self.make(scholarly_enabled=False, operator_enabled=False, session_limits=deepcopy(LIMITS))
         self.engine.runtime["queue"] = []
-        self.resources = {pool: {model: {"available": 3} for model in MODELS.values()} for pool in ("work", "operations")}
 
     def queue(self, plan, review=True):
         self.engine.runtime["queue"] = [plan, *([{"id": "AC-review", "role": "task_contract_review", "target": "TK-x"}] if review else [])]
@@ -91,21 +90,21 @@ class PlanSettleTests(ActiveStateHarness):
 
     def test_a_plan_waits_for_pending_contract_reviews_so_nearby_approvals_share_one_decision(self):
         plan = self.queue({"id": "AC-plan", "role": "research_plan"})
-        self.assertFalse(self.engine._dispatchable(plan, self.resources))
+        self.assertFalse(self.engine._dispatchable(plan))
         self.assertEqual(plan["dispatch_wait"]["kind"], "plan_settle")
         self.queue(plan, review=False)
-        self.assertTrue(self.engine._dispatchable(plan, self.resources))
+        self.assertTrue(self.engine._dispatchable(plan))
 
     def test_the_settle_wait_ends_at_its_configured_limit(self):
         from datetime import datetime, timedelta, timezone
         self.assertEqual(self.engine.instance["config"]["plan_settle_seconds"], 300)
         started = (datetime.now(timezone.utc) - timedelta(seconds=301)).isoformat()
         plan = self.queue({"id": "AC-plan", "role": "research_plan", "settle_started_at": started})
-        self.assertTrue(self.engine._dispatchable(plan, self.resources), "a slow review must not hold the first ready task for long")
+        self.assertTrue(self.engine._dispatchable(plan), "a slow review must not hold the first ready task for long")
 
     def test_an_explicitly_requested_plan_does_not_settle(self):
         plan = self.queue({"id": "AC-plan", "role": "research_plan", "requested_by": "UC-user"})
-        self.assertTrue(self.engine._dispatchable(plan, self.resources))
+        self.assertTrue(self.engine._dispatchable(plan))
 
 
 class RunWithoutDeadlineTests(ActiveStateHarness):

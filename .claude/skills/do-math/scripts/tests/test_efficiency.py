@@ -58,8 +58,6 @@ class EfficiencyTests(unittest.TestCase):
         (self.root / "work" / "runs").mkdir(exist_ok=True)
         self.engine._enqueue("research_preparation", reason="Prepare the bounded efficiency fixture")
         self.engine._save()
-        self.resources = {pool: {model: {"available": 3} for model in MODELS.values()}
-                          for pool in ("work", "operations")}
 
     def startup(self):
         e = self.engine
@@ -96,7 +94,7 @@ class EfficiencyTests(unittest.TestCase):
         action = self.startup()
         before = deepcopy(self.engine.runtime["events"])
         self.assertNotIn('initial_preparation_wait', action)
-        self.assertTrue(self.engine._dispatchable(action, self.resources))
+        self.assertTrue(self.engine._dispatchable(action))
         self.assertEqual(self.engine.runtime["events"], before)
         self.assertTrue(self.engine.runtime["pending_events"])
 
@@ -117,16 +115,16 @@ class EfficiencyTests(unittest.TestCase):
         self.assertNotIn(event['id'], e.runtime['pending_events'])
 
     def test_regular_empty_plan_can_still_dispatch(self):
-        self.assertTrue(self.engine._dispatchable({"role": "research_plan", "reason": "assess failed approach"}, self.resources))
+        self.assertTrue(self.engine._dispatchable({"role": "research_plan", "reason": "assess failed approach"}))
 
-    def test_initial_plan_waits_for_other_reviews_only_up_to_the_settle_limit(self):
+    def test_plan_settle_waits_only_up_to_limit(self):
         action = self.startup()
         e = self.engine
         e.runtime["executions"]["E"] = {"id": "E", "role": "research_preparation",
             "status": "ended", "outcome": "output_accepted", "action": {"role": "research_preparation"}}
         e.runtime["tasks"] = {"first": {"status": "planned"}, "slow": {"status": "planned"}}
         e.runtime["queue"].extend([{"role": "task_contract_review", "target": tid} for tid in e.runtime["tasks"]])
-        self.assertFalse(e._dispatchable(action, self.resources))
+        self.assertFalse(e._dispatchable(action))
         e.runtime["tasks"] = {}
         original_queue = deepcopy(e.runtime["queue"])
         e.runtime["queue"] = []
@@ -141,11 +139,11 @@ class EfficiencyTests(unittest.TestCase):
         self.assertTrue(any(row["state"] == "ready" for row in e._task_readiness.values()))
         e.runtime["queue"] = original_queue
         # The remaining reviews are awaited only up to plan_settle_seconds, never indefinitely.
-        self.assertFalse(e._dispatchable(action, self.resources))
+        self.assertFalse(e._dispatchable(action))
         self.assertEqual(action["dispatch_wait"]["kind"], "plan_settle")
         from datetime import datetime, timedelta, timezone
         action["settle_started_at"] = (datetime.now(timezone.utc) - timedelta(seconds=301)).isoformat()
-        self.assertTrue(e._dispatchable(action, self.resources))
+        self.assertTrue(e._dispatchable(action))
 
     def test_pause_received_during_input_preparation_prevents_model_start(self):
         e = self.engine
@@ -223,7 +221,7 @@ class EfficiencyTests(unittest.TestCase):
         action = self.startup()
         event = self.engine._lifecycle_event("user_decision_applied", decision_id="new-policy")
         action["event_refs"].append(event["id"])
-        self.assertTrue(self.engine._dispatchable(action, self.resources))
+        self.assertTrue(self.engine._dispatchable(action))
 
     def test_empty_or_failed_initial_preparation_does_not_wait_forever(self):
         action = self.startup()
@@ -231,7 +229,7 @@ class EfficiencyTests(unittest.TestCase):
             with self.subTest(outcome=outcome):
                 self.engine.runtime["executions"]["E"] = {"id": "E", "role": "research_preparation",
                     "status": "ended", "outcome": outcome, "action": {"role": "research_preparation"}}
-                self.assertTrue(self.engine._dispatchable(action, self.resources))
+                self.assertTrue(self.engine._dispatchable(action))
 
     def test_plan_receives_public_running_preparation_without_private_output(self):
         e = self.engine

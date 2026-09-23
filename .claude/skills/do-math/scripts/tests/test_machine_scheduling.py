@@ -60,7 +60,7 @@ class MachineSchedulingTests(unittest.TestCase):
         queue=[{'id':'AC-big','role':'formal_check','profile_ref':profiles.profile_ref(big)},
                {'id':'AC-small','role':'trust_check','profile_ref':profiles.profile_ref(small)}]
         before=deepcopy(runtime)
-        choose=lambda:next((a for a in queue if SchedulerMixin._dispatchable(scheduler,a,{})),None)
+        choose=lambda:next((a for a in queue if SchedulerMixin._dispatchable(scheduler,a)),None)
         self.assertEqual(choose()['id'],'AC-small')
         self.assertEqual(runtime,before,'readiness must not reserve or create an execution')
         self.assertEqual(queue[0]['dispatch_wait']['kind'],'host_capacity')

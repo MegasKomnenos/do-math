@@ -266,7 +266,7 @@ class ProducerToolTests(purpose.PurposeHarness):
         workspace = self.root / (role + "-producer-" + str(len(list(self.root.glob(role + "-producer-*")))))
         workspace.mkdir(exist_ok=True)
         context = {"action": {"id": "AC-producer", "role": role}, "execution_id": "EX-producer",
-            "snapshot": "fixed-producer-input", "budget_unit": "concurrent_sessions",
+            "snapshot": "fixed-producer-input", "observed_at": "2026-09-23T00:00:00Z", "budget_unit": "concurrent_sessions",
             "tasks": [], "ready_task_ids": [], "knowledge_catalog": [], "sources": [],
             "kind_definitions": knowledge_io.catalog_definitions(knowledge_io.ensure_ontology({}))}
         context.update(context_values or {})

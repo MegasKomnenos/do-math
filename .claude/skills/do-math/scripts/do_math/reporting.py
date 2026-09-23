@@ -1,5 +1,6 @@
 """Projections of research snapshots and separately observed local evidence."""
 import csv
+from copy import deepcopy
 from datetime import datetime, timezone, timedelta
 import hashlib
 import io
@@ -37,9 +38,19 @@ def display_time(value, timezone_name='Asia/Seoul'):
     return _display(value, _zone(timezone_name))
 
 
+def dispatch_waits(runtime):
+    """Project preserved queue reasons without performing a new admission check."""
+    live = {e.get('action', {}).get('id') for e in runtime.get('executions', {}).values()
+            if e.get('status') != 'ended'}
+    return [deepcopy({'action_id': a.get('id'), 'role': a['role'], 'target': a.get('target'),
+                      'model_selection': a.get('model_selection'), 'wait': a['dispatch_wait']})
+            for a in runtime.get('queue', []) if a.get('dispatch_wait') and a.get('id') not in live]
+
+
 def task_status(instance, runtime):
     from . import planning, questions, task_contracts
     rows = []
+    pending_assessments = set(task_contracts.returned_task_ids(runtime.get('tasks', {})))
     live = [e for e in runtime.get("executions", {}).values() if e.get("status") != "ended"]
     for identifier, task in runtime.get("tasks", {}).items():
         queued = [action for action in runtime.get("queue", []) if action.get("target") == identifier]
@@ -54,7 +65,8 @@ def task_status(instance, runtime):
                 continue
             waiting.extend(questions.user_waits(action, instance, runtime))
             waiting.extend(planning.revision_waits(action, instance, runtime))
-            if action.get('dispatch_wait', {}).get('kind') in {'capacity', 'provider_limit'}:
+            if action.get('dispatch_wait', {}).get('kind') in {
+                    'capacity', 'provider_limit', 'budget_exhausted', 'host_capacity', 'budget_window', 'resource_unclassified'}:
                 waiting.append(action['dispatch_wait'])
         readiness = None
         if not executions and task.get('status') not in planning.TERMINAL_TASK_STATUSES:
@@ -63,12 +75,14 @@ def task_status(instance, runtime):
                 waiting.append({'kind': 'contract_review' if 'current revision lacks approved contract review' in readiness['errors'] else 'required_input',
                                 'errors': readiness['errors']})
         waiting = list({json.dumps(row, sort_keys=True): row for row in waiting}.values())
-        next_owner = ('user' if any(row.get('kind') == 'user_decision' for row in waiting) else
+        next_owner = ('user' if any(row.get('kind') == 'user_decision' or row.get('next_owner') == 'user' for row in waiting) else
                       'task_contract_review' if any(row.get('kind') == 'contract_review' for row in waiting) else
-                      queued[0]['role'] if queued else None)
+                      next((row['next_owner'] for row in waiting if row.get('next_owner')),
+                           queued[0]['role'] if queued else None))
         rows.append({"id": identifier, "title": task.get("title", task.get('question')), "status": task["status"], "revision": task.get("revision"),
                      "selected_actions": [a.get("id") for a in queued if a.get("id") not in running_ids],
                      "active_execution_ids": [e["id"] for e in executions],
+                     "assessment_pending": identifier in pending_assessments,
                      "last_accepted_result": task.get("results", [])[-1].get("execution_id") if task.get("results") else None,
                      "unresolved_action_ids": obligations, "waits": waiting,
                      "readiness": readiness, "next_owner": next_owner,
@@ -96,7 +110,7 @@ def snapshot_report(repository: Path, instance_id: str, *, snapshot: str | None 
     return {"instance_id": instance_id, "snapshot": head, "goal": goal, "goal_status": instance.get("goal_status"), "status": runtime.get('status'),
             "pending_actions": len(runtime.get('queue', [])),
             "installation_repair": pending_installation_repair(runtime),
-            "tasks": task_status(instance, runtime), "inspection": inspection,
+            "tasks": task_status(instance, runtime), "dispatch_waits": dispatch_waits(runtime), "inspection": inspection,
             "cleanup_failures": pending_cleanup_failures(runtime),
             "assurance": runtime.get("assurance", {}), "host_observation": observation,
             "research_effectiveness": {"status": "not_evaluated",
@@ -122,11 +136,22 @@ def render_human_report(report: dict) -> str:
     for finding in inspection["findings"]:
         lines.append(f"  {finding['area']}: {finding['status']} — {finding['message']} (next: {finding['next_owner']})")
     for task in report["tasks"]:
-        lines.append(f"task {task['id']}: {task['status']} next={task.get('next_owner') or 'none'}")
+        waits = ', '.join(row.get('kind', 'unknown') for row in task.get('waits', [])) or 'none'
+        lines.append(f"task {task['id']}: {task['status']} assessment_pending={str(task.get('assessment_pending', False)).lower()} "
+                     f"waits={waits} next={task.get('next_owner') or 'none'}")
+    lines.extend(render_dispatch_waits(report))
     if report.get("host_observation") is not None:
         lines.append("host observation: " + str(report["host_observation"].get("observed_at") or "time not supplied"))
     lines.append("research effectiveness: not evaluated")
     return "\n".join(lines)
+
+
+def render_dispatch_waits(report):
+    task_ids = {task['id'] for task in report.get('tasks', [])}
+    return [f"action {row['action_id']}: {row['role']} wait={row['wait']['kind']} "
+            f"constraint={row['wait'].get('constraint_id') or row['wait'].get('provider') or 'none'} "
+            f"next={row['wait'].get('next_owner') or 'none'}"
+            for row in report.get('dispatch_waits', []) if row.get('target') not in task_ids]
 
 
 def timeline(repository: Path, instance_id: str, *, snapshot=None, timezone_name="Asia/Seoul", include_operator=False):

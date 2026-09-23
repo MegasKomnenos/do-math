@@ -8,7 +8,6 @@ import time
 from .model_policy import assessment_basis, selection, validate_assessments, preparation_only
 from .parallel import ModelCalls
 from .session_slots import SessionSlots
-from .provider_wait import provider_for
 
 MACHINE_ROLES = {"formal_check", "trust_check", "trust_activate", "external_action"}
 WORK_ROLES = {"research_work", "supplemental_research", "task_contract_review", "identity_review", "goal_audit"}
@@ -417,44 +416,6 @@ class SchedulerMixin:
         for position, request in zip(positions, ordered):
             self.runtime["queue"][position] = request
 
-    def _initial_plan_waits(self, action):
-        """Delay only pre-research registration, never general planning."""
-        basis = action.get("initial_preparation_wait")
-        if not basis or action.get("requested_by") or action.get("recovery"):
-            return False
-        from .initialization import governance_working_view
-        view = governance_working_view(self.instance)
-        current = {"goal_revision": view['goal_revision'],
-                   "policy_revision": view['policy_revision'],
-                   "requirements_sha256": view.get('academic_requirements', {}).get('sha256')}
-        if basis != current or self._has_global_user_question() or self.runtime["inputs"]:
-            return False
-        for event in self.runtime.get("events", []):
-            if event["id"] not in action.get("event_refs", []):
-                continue
-            decision = self.instance.get("decisions", {}).get(event.get("decision_id"), {})
-            if event["kind"] != "user_decision_applied" or not decision.get("initial_registration"):
-                return False
-        tasks = self.runtime["tasks"].values()
-        from .planning import task_ready
-        if any(t.get('revision_requested') or t.get('results') or
-               task_ready(t, view, self.runtime, action={'role': 'research_work', 'target': t['id'],
-                    'budget_kind': 'work', 'actor_kind': 'ai'}, evaluation_context={**self._evaluation_context(), 'now': self._lifecycle_now().isoformat()})['state'] == 'ready'
-               for t in tasks):
-            return False
-        preparations = [e for e in self.runtime["executions"].values()
-                        if e["role"] == "research_preparation" and not preparation_only(e.get('action', {}))]
-        if not preparations:
-            return any(a["role"] == "research_preparation" for a in self.runtime["queue"])
-        initial = preparations[0]
-        if initial["status"] != "ended":
-            return True
-        if initial.get("outcome") != "output_accepted" or not self.runtime["tasks"]:
-            return False
-        # Wait for the first usable contract, not for the whole review group.
-        # If all reviews end without a usable task, planning must diagnose it.
-        return any(a["role"] == "task_contract_review" for a in self.runtime["queue"])
-
     def _plan_settle_waits(self, action):
         """Approvals arriving minutes apart are decided by one plan; a slow review delays it only up to the limit."""
         from .governance import timestamp
@@ -469,7 +430,8 @@ class SchedulerMixin:
         action["dispatch_wait"] = {"kind": "plan_settle", "since": action["settle_started_at"], "limit_seconds": limit}
         return True
 
-    def _dispatchable(self, action, resources):
+    def _dispatchable(self, action):
+        action.pop("dispatch_wait", None)
         try:
             self._action_lifecycle_gate(action)
         except ValueError as error:
@@ -496,7 +458,7 @@ class SchedulerMixin:
             return False
         if not self._selected_action_current(action, evaluation_context=self._evaluation_context()):
             return False
-        if role == "research_plan" and (self._initial_plan_waits(action) or self._plan_settle_waits(action)):
+        if role == "research_plan" and self._plan_settle_waits(action):
             return False
         identity_keys = ("role", "target", "stage", "slot", "round", "review_cycle_id", "basis", "review_basis_key", "live")
         if any(all(e.get("action", {}).get(key) == action.get(key) for key in identity_keys) for e in live):
@@ -513,12 +475,10 @@ class SchedulerMixin:
                 return False
             from .session_slots import GitSessionSlots
             profile = self._execution_profile(action)
-            if profile.get("host_capacity_refs") and not GitSessionSlots(
-                    self.runtime, self.instance, observer=True).admission_available(profile):
-                action["dispatch_wait"] = {"kind": "host_capacity"}
-                return False
-            action.pop("dispatch_wait", None)
-            return True
+            admission = GitSessionSlots(self.runtime, self.instance, observer=True).admission_check(profile)
+            if not admission['allowed']:
+                action['dispatch_wait'] = admission['wait']
+            return admission['allowed']
         if action.get("live") and self.runtime["executions"].get(target, {}).get("status") == "ended":
             self._remove_action(action)
             return False
@@ -532,19 +492,12 @@ class SchedulerMixin:
         if not capability["satisfied"]:
             action["dispatch_wait"] = {"kind": "capability_evidence", **capability}
             return False
-        provider = provider_for(chosen["model"])
-        gate = self._provider_status()["providers"].get(provider)
-        if gate and (gate["state"] == "checking" or (gate["state"] == "waiting" and not gate["due"])):
-            action["dispatch_wait"] = {"kind": "provider_limit", "provider": provider, "retry_at": gate.get("retry_at")}
-            return False
-        action.pop("dispatch_wait", None)
-        pool = self._execution_profile(action)['budget_kind']
-        if not self._session_mode():
-            from .session_slots import GitSessionSlots
-            capacity = GitSessionSlots(self.runtime, self.instance, observer=True).usage_snapshot().get(pool)
-            return bool(capacity) and (capacity['available'] is None or capacity['available'] > 0)
-        cell = resources[pool].get(chosen["model"], {"available": 0})
-        return cell["available"] > 0
+        from .session_slots import GitSessionSlots
+        profile = self._execution_profile(action)
+        admission = GitSessionSlots(self.runtime, self.instance, observer=True).admission_check(profile)
+        if not admission['allowed']:
+            action['dispatch_wait'] = admission['wait']
+        return admission['allowed']
 
     def _run_parallel(self, *, max_steps=None, watch=False):
         from .repository import new_id
@@ -589,9 +542,8 @@ class SchedulerMixin:
                     # exhaustion and repetition lineage. An empty queue or an
                     # old cycle counter is not authority to generate new work.
                     self.runtime["status"] = "waiting"
-                resources = self._slots.snapshot()
                 action = next((a for a in list(self.runtime["queue"])
-                               if (not draining or a.get("live")) and self._dispatchable(a, resources)), None)
+                               if (not draining or a.get("live")) and self._dispatchable(a)), None)
                 if action is not None:
                     if action["role"] == "formal_check":
                         self._formal(action)
@@ -611,9 +563,11 @@ class SchedulerMixin:
                 if self._calls.futures:
                     time.sleep(.02)
                     continue
-                noncapacity = any(a.get("dispatch_wait", {}).get("kind") not in {None, "capacity"} for a in self.runtime["queue"])
+                only_capacity = bool(self.runtime["queue"]) and all(
+                    a.get("dispatch_wait", {}).get("kind") in {"capacity", "host_capacity"}
+                    for a in self.runtime["queue"])
                 if self.runtime['status'] != 'paused':
-                    self.runtime["status"] = "waiting" if not self.runtime["queue"] or noncapacity else "capacity_waiting"
+                    self.runtime["status"] = "capacity_waiting" if only_capacity else "waiting"
                 self._save()
                 if not watch:
                     break

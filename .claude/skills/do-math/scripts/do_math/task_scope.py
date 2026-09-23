@@ -25,11 +25,9 @@ def _task_execution(execution: dict, task_id: str) -> bool:
     return isinstance(execution, dict) and execution.get("action", {}).get("target") == task_id
 
 
-def _validate(task: dict, snapshot_task: dict, runtime: dict, task_id: str, instance=None) -> None:
+def _validate(task: dict, snapshot_task: dict, runtime: dict, task_id: str, instance=None, *, actor_execution_id) -> None:
     if not isinstance(snapshot_task, dict) or contract_hash(task) != contract_hash(snapshot_task):
         raise ValueError("task contract changed since the execution input snapshot: " + task_id)
-    if task.get("status") not in _WITHDRAWABLE_STATES:
-        raise ValueError("task is not an unfinished, unperformed task: " + task_id)
     validate_withdrawal_scope(task, snapshot_task)
     if task.get('results'):
         if not assessment_current(task, instance or {}, runtime):
@@ -40,7 +38,9 @@ def _validate(task: dict, snapshot_task: dict, runtime: dict, task_id: str, inst
     producer = runtime.get("executions", {}).get(producer_id)
     if not isinstance(producer_id, str) or not isinstance(producer, dict) or producer.get("role") != "research_preparation":
         raise ValueError("task is not attributable to a research preparation execution: " + task_id)
-    for execution in runtime.get("executions", {}).values():
+    for identifier, execution in runtime.get("executions", {}).items():
+        if identifier == actor_execution_id and execution.get('role') in {'research_preparation', 'research_plan'}:
+            continue
         if not _task_execution(execution, task_id):
             continue
         if execution.get("status") != "ended":
@@ -51,6 +51,10 @@ def validate_withdrawal_scope(task, snapshot_task, *, proposed_assessment=None):
     """Shared producer/receiver scope check, before live provenance checks."""
     from .planning import _hash
     from .task_contracts import validate_item_dispositions
+    if task.get('status') not in _WITHDRAWABLE_STATES:
+        raise ValueError('withdrawal requires an unfinished task')
+    if proposed_assessment is not None and proposed_assessment.get('decision') != 'incomplete':
+        raise ValueError('withdrawal cannot follow a terminal task assessment')
     if task.get('transferred_obligations') or task.get('user_required') or task.get('academic_requirement_id'):
         raise ValueError('protected obligations require authoritative item dispositions')
     if not task.get('results'):
@@ -86,7 +90,8 @@ def apply_task_dispositions(instance: dict, runtime: dict, dispositions: list[di
         task = tasks.get(task_id)
         if not isinstance(task, dict):
             raise ValueError("unknown task: " + task_id)
-        _validate(task, input_tasks.get(task_id), new_runtime, task_id, new_instance)
+        _validate(task, input_tasks.get(task_id), new_runtime, task_id, new_instance,
+                  actor_execution_id=execution_id)
 
     for task_id, reason in requested:
         task = tasks[task_id]
@@ -288,10 +293,15 @@ def designated_judgment(task, obligation, disposition, instance, runtime):
                 if link['assessment_id'] in cited:
                     return link['assessment_id']
     if 'goal_audit' in judges:
+        from .planning import governance_revisions
+        from .input_basis import sources_current
+        editions = governance_revisions(instance)
         owned = {row['id'] for row in records}
         for judgment in instance.get('goal_judgments', []):
             if (judgment.get('id') in cited and judgment.get('decision') == 'satisfied'
                     and judgment.get('scope_complete') is True and judgment.get('current') is True
+                    and all(judgment.get(key) == value for key, value in editions.items())
+                    and sources_current(judgment.get('source_basis', []), instance)
                     and owned.intersection(judgment.get('dependencies', []))
                     and validate_basis(judgment.get('record_basis', []), instance, runtime)['valid']
                     and all(usable_links(instance, kid) for kid in judgment.get('dependencies', [])

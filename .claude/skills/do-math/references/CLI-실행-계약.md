@@ -91,24 +91,24 @@ GLOSSARY의 보편 상태가 개념의 뜻을 소유한다. 아래 값은 CLI가
 | `ready` | 다음 action을 처리할 수 있거나 다음 `run`을 기다린다 | 보편 인스턴스 `active` 안의 실행 가능 국면으로 볼 수 있다. 활동 `ready`와 같은 값이 아니다 |
 | `running` | `run`이 한 action을 실제 처리 중이다 | 인스턴스가 active이고 현재 실행이 있을 수 있다는 CLI 국면이다 |
 | `paused` | 일반 배정을 닫고 명시적 재개를 기다린다 | 보편 일시 정지에 대응한다. 모든 프로세스·원격 호출·정산 완료를 뜻하지 않는다 |
-| `waiting` | queue를 진행하려면 질문·입력·권한·사건 또는 명시적 재개가 필요하다 | 보편 인스턴스 상태를 새로 만든 값이 아니라 과제·활동 대기와 실행 루프 정지를 합쳐 보여 주는 CLI 상태다 |
-| `capacity_waiting` | 선택된 모델의 로컬 동시 세션 슬롯을 기다림 | 점유 반환·허용된 설정 변경 뒤 재검사하며 모델을 자동 대체하지 않음 |
-| `budget_exhausted` | 작업 또는 운영 AI 실행 시도 한도에 닿았다 | 자원 조건이다. 연구 완료나 보편 일시 정지의 동의어가 아니다 |
+| `capacity_waiting` | 모든 미처리 요청이 동시 슬롯 또는 호스트 용량을 기다림 | 점유 반환·허용된 설정 변경 뒤 재검사하며 모델을 자동 대체하지 않음 |
+| `waiting` | 지금 배정 가능한 action이 없고 용량 이외의 대기 사유가 있다 | 각 요청의 `dispatch_waits`에서 누적 예산 `budget_exhausted`, 공급자·입력·권한 등의 원인과 다음 소유자를 확인한다 |
 | `completed` | 현재 CLI가 목표 상태와 적용 학술 요구의 완료를 계산해 queue를 닫았다 | 보편 과제·활동 completed가 아니다. 정확한 목표 감사와 학술 상태를 함께 읽는다 |
 | `closed` | 사용자 close가 queue를 비우고 새 일반 연구를 막았다 | 사용자 종결의 CLI terminal 상태다. 수학적 해결을 뜻하지 않는다 |
 
 ### 과제 `task.status`
 
-| CLI 값 | 대응 |
+| 저장·공개 값 | 뜻 |
 |---|---|
-| `planned` | 작업 계약을 저작했지만 현재 독립 검토·착수 검사를 마치지 않은 보편 planned 과제 |
-| `ready` | 계약 검토와 현재 착수 검사를 통과해 배정 후보가 된 planned 과제의 CLI 표시 |
-| `needs_revision` | 계약·목표·정책·범위 변화 때문에 새 정련 또는 계약 검토가 필요한 planned 과제 |
-| `performing` | 연구 수행이 선택·배정된 보편 active 과제 |
-| `assessing` | 결과를 반환했고 지정 판정자가 완료 기준을 확인하는 보편 active 과제 |
-| `waiting` | 필수 입력·결정·권한·복구를 기다리는 보편 waiting 과제 |
-| `completed` | 완료 기준 전건과 근거 있는 독립 완료 판정을 기록하고 다시 열지 않는 종결 상태 |
-| `closed` | 철회·이전·대체의 근거와 범위 처분으로 닫고 다시 열지 않는 종결 상태 |
+| `planned` | 계약을 준비하거나 독립 검토·착수 조건을 확인할 과제 |
+| `active` | 선택됐거나 실행 중인 과제. 실제 실행 여부는 `active_execution_ids`로 확인한다 |
+| `waiting` | 입력·후속 계획·판정을 기다리는 미완료 과제 |
+| `completed` | 독립 완료 판정을 기록한 종결 과제 |
+| `closed` | 범위 처분 근거로 닫은 종결 과제 |
+
+`readiness`는 배정 대기를 제외한 계약·근거 평가다. 이것만으로 현재 선택 모집단이라고 판단하지 않는다. 결과 판정이 필요하면 `assessment_pending=true`이며 계획 입력의 `returned_task_ids`가 전건을 지정한다. `ready`, `performing`, `assessing`, `needs_revision`은 이 API가 반환하는 과제 상태값이 아니다.
+
+`dispatch_waits`는 미시작 queue 요청의 보존된 대기 사유다. `capacity`는 동시 슬롯, `host_capacity`는 호스트 자원, `budget_exhausted`는 누적 예산, `budget_window`는 고정 구간 예산이다. `resource_unclassified`는 제약 좌표가 없는 예약 실패다. 각 행의 `next_owner`, `profile_ref`, `constraint_id` 또는 `provider`로 후속을 확인한다. `status.budget`은 현행 설정의 요약이며 요청의 사유는 그 요청에 고정된 프로필·제약 판본을 따른다. 한도 변경은 재평가를 열지만 고정 프로필을 자동 교체하지 않는다. 과거 snapshot 조회는 새 예약 검사를 실행하지 않는다.
 
 같은 이름의 source가 갱신되거나, 과제가 참조한 지식이 개정·무효화되거나, 그 지식의 신뢰 환경이 무효화돼도 `completed`·`closed` 과제의 상태와 종결 이력은 유지한다. 현재 완료 판정은 `current=false`, `invalidated_reason`으로 사용을 정지한다. 단순 `task_disposition_is(completed)` 이력 질의는 완료 사실을 유지하지만, 실제 task dependency의 착수 검사는 낡은 완료 판정을 사용할 수 없다. 새 검증 의무는 후속 과제로 연결한다. 아직 끝나지 않은 과제가 지식 변경의 영향을 받으면 `waiting`으로 돌아가 현재 착수 검사를 다시 받는다.
 
@@ -304,7 +304,7 @@ CLI는 파일을 한 번 읽어 payload와 그 정확한 원문을 함께 전달
 {"kind":"goal","goal":"새 목표 원문","goal_kind":"mathematical","expected_revision":1}
 ```
 
-`goal_kind`를 생략하면 현재 값을 유지한다. `expected_revision`을 생략하면 적용 시점의 현재 revision을 사용하지만, 동시 변경을 명시적으로 방지하려면 현재 값을 제공한다. 목표 변경은 미완료 과제를 `needs_revision`으로 보내고 목표 상태를 다시 판단하게 한다.
+`goal_kind`를 생략하면 현재 값을 유지한다. `expected_revision`을 생략하면 적용 시점의 현재 revision을 사용하지만, 동시 변경을 명시적으로 방지하려면 현재 값을 제공한다. 판본 5의 목표 변경은 구조화된 charter 결정으로 적용하며, 영향받은 미완료 과제는 `governance_revision_required`와 후속 준비·계획을 통해 현행 근거를 다시 확인한다.
 
 ```json
 {"kind":"policy","text":"정책 원문","expected_revision":1}
@@ -843,7 +843,7 @@ initial 결과는 서로 숨긴 채 봉인한다. 열린 finding이 있으면 or
 
 두 역할의 `task_catalog`는 현재 과제 전건의 요약과 각 과제의 고정 `source_ref`를 제공한다. `tasks`는 후보 준비나 계획의 현재 처분 모집단으로 제한된다. 종료 과제의 `results[].report`와 미종결 과제의 현행 계약이 필요하면 `task_catalog`에서 원문을 연다. `ongoing_work`는 미종결 실행과 대기 행동의 대상·단계·이유·공개 참조를 직접 제공한다. 이 두 조회 경로는 `ready_task_ids`의 선택 권한을 늘리지 않는다.
 
-세션 모드의 `initial_preparation_wait`는 연구 실행·과제·지식이 없고 준비 요청이 있는 시점에 등록한 학술 요구의 계획 요청에만 붙는다. 그 요청은 최초 준비와 계약 검토를 기다리되 첫 `ready` 과제, 반환 결과, 준비 실패·빈 결과, 계약 반려·질문, 별도의 사용자 입력·결정, 목표·정책·학술 요구 판본 변경이 있으면 기다리지 않는다. 모든 계약 검토가 끝나도 사용 가능한 과제가 없으면 계획이 원인을 판단한다. 대기 동안 사건을 소비하지 않고, 수락한 계획이 실제로 받은 `event_refs`만 소비한다. 일반 계획의 빈 선택은 계속 허용한다.
+초기화 관문을 모두 통과하면, 현재 지식 기록이 있는 경우 최초 연구 계획을, 없는 경우 최초 후보 준비를 연다. 활성 인스턴스에서 학술 요구를 포함한 헌장 변경이 적용되면 그 결정의 사건과 현재 기록을 다음 계획·준비에 전달한다. 일반 계획은 배정 후보가 없어도 변경된 요구와 부족한 입력을 판단할 수 있다. 기존 기록을 개정하지 않는 준비와 계획은 병렬로 진행할 수 있으며, 실제 개정 중인 기록의 독자는 해당 개정의 종료를 기다린다. 과거 입력에 남은 `initial_preparation_wait`는 현행 배정 조건으로 사용하지 않는다.
 
 이력과 다른 큰 입력은 `input/catalog/` 원문으로 바뀔 수 있으며 source reference에서 다시 읽는다. 최근 이력의 inline window가 작다는 사실은 과거 결과가 없다는 뜻이 아니다.
 
@@ -924,4 +924,4 @@ timeline --repository PATH --instance RI-ID [--snapshot OID]
 
 타임라인은 고정 snapshot의 내부 실행별 배정·보고 모델, 시작·종료·기한, 결과·실패, 계보·입력 snapshot·보존 자료·후속을 제공한다. UTC 원문과 날짜·offset을 가진 현지 시각을 함께 제공하며 과거에 기록하지 않은 시각은 null이다. 별도 운영 로그를 포함하면 파일 해시·관측 시각을 가진 다른 집계 단위로 추가한다. 연구 상태·예산 예약·공급자 대기는 같은 Git snapshot에 속한다. 별도 운영 로그와 현장 프로세스 관측은 그 snapshot 바깥의 자료이므로 각각의 해시·관측 시각·확인 범위를 구별한다.
 
-`input_metrics`는 UTF-8 바이트로 센 문서·스키마·문맥 구성과 프롬프트 크기다. 토큰이나 실제 청구액으로 환산해 확정하지 않는다. 축소된 과제 이력은 source_ref와 JSON Pointer로 회수하고 ready·assessing 전건과 제출 검사기의 원 집합을 유지한다. `probe_cli.py --skill-only`는 문서와 정적·동적 역할·확장 스키마의 구조 검사다. 실호출은 명시한 provider·모델의 대표 프로토콜·파일·도구·정지 경계를 확인하며 연구 성능을 인증하지 않는다.
+`input_metrics`는 UTF-8 바이트로 센 문서·스키마·문맥 구성과 프롬프트 크기다. 토큰이나 실제 청구액으로 환산해 확정하지 않는다. 축소된 과제 이력은 source_ref와 JSON Pointer로 회수하고 ready·returned 전건과 제출 검사기의 원 집합을 유지한다. `probe_cli.py --skill-only`는 문서와 정적·동적 역할·확장 스키마의 구조 검사다. 실호출은 명시한 provider·모델의 대표 프로토콜·파일·도구·정지 경계를 확인하며 연구 성능을 인증하지 않는다.

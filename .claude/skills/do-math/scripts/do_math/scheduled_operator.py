@@ -493,7 +493,8 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict)
                 execution_lifecycle.transition_execution(execution, "starting", at=at)
                 slots = GitSessionSlots(runtime, state)
                 if not slots.acquire(eid, "operations", chosen["model"], profile=profile, execution=execution):
-                    return {"outcome": "recovery_waiting", "reason": slots.admission_reason}
+                    return {"outcome": "recovery_waiting", "reason": slots.admission_reason,
+                            "wait": deepcopy(slots.admission_wait)}
                 activities.assign_execution(runtime, aid, execution)
                 head = repo.save(head, state, runtime)
                 def on_started(identity):

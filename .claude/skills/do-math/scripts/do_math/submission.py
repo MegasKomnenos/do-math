@@ -806,17 +806,17 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
         from .input_recovery import validate_resolutions
         check('activity-extensions.json/input_overflow_resolutions', lambda: validate_resolutions(
             extensions['input_overflow_resolutions'], context.get('input_overflow_requests', [])))
-    assessed = {row["task_id"]: row["decision"] for row in output.get("task_assessments", [])}
     for entry in extensions.get("task_dispositions", []):
         def disposition(entry=entry):
             task = tasks.get(entry["task_id"], {})
             from .task_scope import validate_withdrawal_scope
             proposed = next((a for a in output.get('task_assessments', []) if a['task_id'] == entry['task_id']), None)
             validate_withdrawal_scope(task, task, proposed_assessment=proposed)
-            # The receiver withdraws after this output's task assessments; returned work is withdrawn only after an incomplete assessment.
-            status = {"completed": "completed", "closed": "closed", "incomplete": "needs_revision"}.get(
-                assessed.get(entry["task_id"]), task.get("status"))
-            require(status in {"planned", "ready", "waiting", "needs_revision"}, "task is not withdrawable after this output's task assessments")
+            live = [row for row in context.get('ongoing_work', [])
+                    if row.get('target') == entry['task_id']
+                    and row.get('status') in {'queued', 'starting', 'running', 'stopping'}
+                    and row.get('execution_id') != context.get('execution_id')]
+            require(not live, 'task has another live execution')
             require(not task.get("academic_requirement_id"), "academic requirements cannot be withdrawn autonomously")
             require(entry["task_id"] not in {row["task_id"] for row in output.get("dispositions", []) if row["kind"] == "selected"} and entry["task_id"] not in {c["revises_task_id"] for c in output.get("candidates", [])}, "cannot withdraw and select or revise the same task")
         check("activity-extensions.json/task_dispositions", disposition)
