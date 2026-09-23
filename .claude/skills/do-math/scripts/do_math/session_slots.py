@@ -142,7 +142,42 @@ class GitSessionSlots:
         # editions of the same model. Limits are not independent resource pools.
         constraints = self.instance["capacity_constraints"]
         reservations = deepcopy(self.runtime.get("reservations", {}))
-        refs = ai.get("capacity_refs", []) + ai.get("usage_constraint_ids", [])
+        capacity_refs = list(ai.get("capacity_refs", []))
+        usage_refs = list(ai.get("usage_constraint_ids", []))
+        adopted = self.instance.get("role_profile_refs")
+        if adopted and ai:
+            # An execution keeps its immutable profile, but a new reservation
+            # must obey the currently adopted limit for the same resource.
+            active_constraints = set()
+            for role_refs in adopted.values():
+                for reference in role_refs:
+                    active_profile = self.instance["execution_profiles"][reference["id"] if isinstance(reference, dict) else reference]
+                    active_ai = active_profile.get("ai", {})
+                    active_constraints.update(active_ai.get("capacity_refs", []))
+                    # Cumulative call budgets remain bound to their explicit
+                    # immutable edition; only live session slots are rebased.
+
+            def current_ref(reference):
+                previous = constraints[reference]
+                if previous["kind"] == "concurrency":
+                    matches = [cid for cid in active_constraints if constraints[cid]["kind"] == "concurrency"
+                               and constraints[cid]["model"] == previous["model"]]
+                else:
+                    matches = [reference]
+                return matches[0] if len(matches) == 1 else None
+
+            capacity_refs = [current_ref(ref) for ref in capacity_refs]
+            usage_refs = [current_ref(ref) for ref in usage_refs]
+            if None in capacity_refs + usage_refs:
+                self.admission_wait = {"kind": "capacity", "budget_kind": pool, "model": model,
+                    "profile_ref": profile_ref(profile), "reason": "pinned profile has no current adopted accounting constraint",
+                    "next_owner": "user"}
+                return False
+        refs = capacity_refs + usage_refs
+        accounting_profile = deepcopy(profile)
+        if ai:
+            accounting_profile["ai"]["capacity_refs"] = capacity_refs
+            accounting_profile["ai"]["usage_constraint_ids"] = usage_refs
         host_refs = profile.get("host_capacity_refs", [])
         for ref in host_refs:
             validate_host_constraint(constraints[ref])
@@ -174,7 +209,7 @@ class GitSessionSlots:
                    "reobserve": {"on": "local_termination_barrier"}, "demands": demands}
         try:
             plan = (plan_reservations({"reservations": reservations},
-                                     {"constraints": list(constraints.values())}, profile, request)
+                                     {"constraints": list(constraints.values())}, accounting_profile, request)
                     if demands else ReservationPlan((), False, ()))
         except BudgetConflict as error:
             kind, owner = {'cumulative': ('budget_exhausted', 'user'),

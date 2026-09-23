@@ -73,7 +73,7 @@ def engine_fixture(goal='Establish P', *, academic_requirements=None):
     e.instance.update(execution_profiles.build_profiles(e.instance['config']))
     e.runtime = {'feature_version': 5, 'last_observed_utc': TIME, 'tasks': {}, 'activities': {}, 'executions': {}, 'queue': [],
         'waiting_actions': {}, 'history': [], 'inputs': [], 'questions': [], 'question_links': [],
-        'interpretations': {}, 'events': [], 'status': 'ready'}
+        'interpretations': {}, 'events': [], 'pending_events': [], 'status': 'ready'}
     e.head, e._slots = 'input-snapshot', None
     e._task_readiness = {}
     e.lifecycle_clock = lambda: TIME

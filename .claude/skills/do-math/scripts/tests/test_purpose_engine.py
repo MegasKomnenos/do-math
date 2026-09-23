@@ -575,7 +575,7 @@ class PurposeEngineTests(PurposeHarness):
         self.drive(engine, predicate=lambda current: any(role == 'research_work' for role, _ in seen))
         work = [timeout for role, timeout in seen if role in {'research_work', 'task_contract_review'}]
         operations = [timeout for role, timeout in seen if role in {'research_preparation', 'research_plan'}]
-        self.assertTrue(work and all(timeout > 1 for timeout in work))
+        self.assertTrue(work and all(timeout is None for timeout in work))
         self.assertTrue(operations and all(timeout <= 1 for timeout in operations))
 
     def test_live_continue_preserves_checkpoint_and_uses_operating_budget(self):
@@ -659,6 +659,7 @@ class PurposeEngineTests(PurposeHarness):
 
     def test_environment_revalidation_does_not_clear_independent_meaning_dispute(self):
         from do_math.knowledge_records import usable_links
+        from do_math import knowledge
         engine, _ = self.make(plan_settle_seconds=1)
         self.drive(engine, predicate=lambda e: any(usable_links(e.instance, kid) for kid in e.instance['knowledge']))
         kid = next(iter(engine.instance['knowledge']))
@@ -667,7 +668,8 @@ class PurposeEngineTests(PurposeHarness):
         engine.process_controls()
         from v5_fixtures import send_control, trust_fixture
         send_control(engine, 'knowledge', config={'operation': 'invalidate', 'id': kid,
-            'reason': 'Meaning dispute remains open'})
+            'reason': 'Meaning dispute remains open',
+            'declared_impact': knowledge.plan_impact(engine.instance, engine.runtime, [kid], [])['computed_impact']})
         before_assessments = deepcopy(engine.instance['identity_assessments'])
         self.assertEqual(usable_links(engine.instance, kid), [])
         send_control(engine, 'trust', config=trust_fixture(self.root / 'replacement-environment',

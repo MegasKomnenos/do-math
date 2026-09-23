@@ -608,7 +608,6 @@ class SurfaceRedesignTests(unittest.TestCase):
         profile = next(p for p in instance['execution_profiles'].values() if p['role'] == 'research_preparation')
         with tempfile.TemporaryDirectory() as d:
             context = context_engine(instance, runtime)._context({'role': 'research_preparation'}, Path(d))
-            context['tasks'].append({'id': 'stale'})
             result = prepare_role_input(context,
                 instance=instance, runtime=runtime, role='research_preparation', profile=profile,
                 snapshot='a'*40, workspace=Path(d), activity_id='AC-1')

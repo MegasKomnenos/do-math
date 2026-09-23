@@ -316,7 +316,7 @@ class PortableFormalBoundaryTests(unittest.TestCase):
             e, kid, observed, result = self.run_formal(Path(d), change)
             self.assertEqual(observed[0]['status'], 'verified')
             self.assertEqual(result['status'], 'stopped')
-            self.assertEqual(result['reason'], 'formal authority changed')
+            self.assertEqual(result['reason'], 'trust_environment_changed')
             self.assertEqual(e.instance['formal_results'][e.instance['knowledge'][kid]['formal_result_id']]['verification'], {})
             execution = next(iter(e.runtime['executions'].values()))
             self.assertEqual((execution['status'], execution['outcome']), ('ended', 'execution_incomplete'))

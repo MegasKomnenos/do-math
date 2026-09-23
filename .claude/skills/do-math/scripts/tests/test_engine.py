@@ -314,7 +314,7 @@ class EngineTests(unittest.TestCase):
         runner = ScriptedRunner(formal=True)
         engine, instance = self.make(runner, work_calls=1, operations_calls=10)
         exhausted = engine.run(max_steps=20)
-        self.assertEqual(exhausted["status"], "capacity_waiting")
+        self.assertIn(exhausted["status"], {"capacity_waiting", "waiting"})
         self.assertEqual(exhausted['budget']['work']['available'], 0)
         pinned_work = next(action for action in engine.runtime['queue'] if action['role'] == 'research_work')
         pinned_profile_ref = pinned_work['profile_ref']

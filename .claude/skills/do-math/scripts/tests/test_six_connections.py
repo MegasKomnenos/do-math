@@ -82,7 +82,7 @@ class InputConnections(unittest.TestCase):
         instance, runtime = surface_state()
         runtime['tasks'] = {'TK': {'id': 'TK', 'status': 'waiting', 'results': [{'report': 'evidence'}]}}
         profile = next(p for p in instance['execution_profiles'].values() if p['role'] == 'research_plan')
-        with tempfile.TemporaryDirectory() as directory, self.assertRaisesRegex(ValueError, 'read.*task'):
+        with tempfile.TemporaryDirectory() as directory, self.assertRaisesRegex(ValueError, 'preserve every current task'):
             prepare_role_input({'action': {'role': 'research_plan'}, 'ready_task_ids': [],
                 'tasks': [], 'resources': {}, 'knowledge_catalog': []}, instance=instance,
                 runtime=runtime, role='research_plan', profile=profile, snapshot='a'*40,

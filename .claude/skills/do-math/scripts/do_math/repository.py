@@ -297,11 +297,16 @@ class ResearchRepository:
 
         needle = text.encode("utf-8")
         matches: list[dict[str, Any]] = []
-        for path in self.list_files(normalized_prefix, head):
-            content = self._store.read_bytes(head, path)
-            if text and text not in path and needle not in content:
-                continue
-            matches.append({"path": path, "size": len(content), "sha256": hashlib.sha256(content).hexdigest()})
+        paths = self.list_files(normalized_prefix, head)
+        # Batch Git reads without retaining the entire snapshot's contents.
+        for offset in range(0, len(paths), 16):
+            batch = paths[offset:offset + 16]
+            contents = self._store.read_many(head, batch)
+            for path in batch:
+                content = contents[path]
+                if text and text not in path and needle not in content:
+                    continue
+                matches.append({"path": path, "size": len(content), "sha256": hashlib.sha256(content).hexdigest()})
         total = len(matches)
         start = 0
         if last_path is not None:

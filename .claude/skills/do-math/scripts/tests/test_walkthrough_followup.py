@@ -20,7 +20,8 @@ from do_math.repository import new_id
 from test_categories import test_group
 from test_knowledge import candidate
 from test_purpose_engine import ActiveStateHarness, theorem
-from test_redesign_ENGINE import routing_engine, IntentConnections
+import test_redesign_ENGINE
+from test_redesign_ENGINE import routing_engine
 
 
 @test_group('unit')
@@ -141,7 +142,7 @@ class RepetitionReceiptTests(unittest.TestCase):
 
     def test_real_intent_rework_producer_keeps_original_lineage(self):
         engine = routing_engine()
-        helper = IntentConnections()
+        helper = test_redesign_ENGINE.IntentConnections()
         bundle, check_action = helper.make_import(engine)
         engine._apply(check_action, helper.verdict(bundle, 'revision_required', False), 'EX-check')
         rework = next(a for a in engine.runtime['queue'] if a.get('stage') == 'interpret')

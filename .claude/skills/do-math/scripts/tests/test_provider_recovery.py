@@ -48,7 +48,7 @@ class RecoveryTests(unittest.TestCase):
                 config={"tier_models": {tier: "claude-opus-5" for tier in ("high", "medium", "low")},
                         "scholarly_enabled": False, "operator_enabled": False,
                         "tool_review_window_seconds": 60, "self_check_response_window_seconds": 5,
-                        "run_timeout_seconds": 120, "max_cycles": 1,
+                        "run_timeout_seconds": 120, "max_cycles": 1, "plan_settle_seconds": 1,
                         "session_limits": {pool: {"claude-opus-5": 1} for pool in ("work", "operations")}, "lean_command": ["test-lean"]})
             runner = QuotaRunner()
             engine = ResearchEngine(repository, instance["instance_id"], runner=runner)

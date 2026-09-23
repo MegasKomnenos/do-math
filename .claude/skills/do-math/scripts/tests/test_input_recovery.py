@@ -198,7 +198,7 @@ class InputRecoveryPublicTests(unittest.TestCase):
         engine = ResearchEngine(self.repo, identifier, runner=ScriptedRunner(), formal_verifier=formal_ok)
 
         def defer(action, *_args, **_kwargs):
-            action["dispatch_wait"] = {"kind": "capacity", "provider": "test-double"}
+            action["dispatch_wait"] = {"kind": "capacity", "provider": "test-double", "next_owner": "scheduler"}
             return False
 
         with patch.object(engine, "_provider_admit", side_effect=defer):
