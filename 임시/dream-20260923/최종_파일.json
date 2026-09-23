@@ -1,0 +1,19 @@
+{
+  "basis_head": "6f52a10",
+  "sha256": {
+    "기억\\layer2\\D-0008.md": "8346f77f7811e7d5d4b9dee096ede971b99d787b0a087f32ec3fec760ca39b10",
+    "기억\\색인.md": "9eb7d09902883b4de958d7a0ee2303fadde5877fae85dac8b447d51360fcea6b",
+    "기억\\색인_아카이브.md": "550ca539125c939907ef6dd63bc5e8398db10c7ace5ecd6608e1cecc3477444a",
+    "기억\\layer3\\L-0001.md": "fa3fc6517daa25350d942317b768ba6e4bd72c3df3d3aa1e71553bc45d51e26d",
+    "기억\\layer3\\L-0005.md": "ccf7d60af8021c27631a8ed1f38db7845591c12e9d87835923cc9dca3ac9af6d",
+    "기억\\layer3\\L-0006.md": "65783400569f547b5ae7b860cfa6f3f52c83d34551af79d349055b33137cdb5d",
+    "기억\\layer3\\L-0009.md": "906f10e570f5c9b1e0a8c589c3786a30584ec13041a4f3d347e5be4cec98c78d",
+    "기억\\layer3\\L-0012.md": "9b583d9d7e7742845eda3745c69722b18c5cc074483fcff4d093356e3be9a72e",
+    "기억\\layer3\\L-0016.md": "5830dc61336cbf620525bc07b25fe9e513a8f272c1bda17875ffaba065929a83",
+    "기억\\layer3\\L-0020.md": "196847c1fe5cd40d87c7ef2158ff085c53b0eea40c70fdf0487d288f46809fba"
+  },
+  "watermark": "M-0330 · D-0008",
+  "index_validation": "347 files = 10 current index + 337 archive entries; exit 0",
+  "reference_validation": "changed-node inline references and D top-level section skeleton passed",
+  "scope": "Memory-only dream changes; existing and concurrent source/configuration changes excluded"
+}
