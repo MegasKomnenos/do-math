@@ -17,6 +17,7 @@ Claude Code와 Codex는 모두 `.claude/skills/graphify/`의 지침·도구와 `
 python .claude/skills/graphify/scripts/graph.py status
 python .claude/skills/graphify/scripts/graph.py query "작업 계약 완료 의무"
 python .claude/skills/graphify/scripts/graph.py query "contracts.py" --budget 4000
+python .claude/skills/graphify/scripts/graph.py query "scripts_do_math_engine_researchengine_controls" --exact --relation calls
 python .claude/skills/graphify/scripts/graph.py explain "계약/연구-수행.md"
 python .claude/skills/graphify/scripts/graph.py path "SKILL.md" "계약/연구-수행.md"
 python .claude/skills/graphify/scripts/graph.py affected "scripts/do_math/contracts.py"
@@ -24,7 +25,7 @@ python .claude/skills/graphify/scripts/graph.py affected "scripts/do_math/contra
 
 조회 명령은 먼저 원본 파일의 내용 해시를 비교하고 `current`, `stale`, `missing` 상태와 추가·변경·삭제 목록을 표시한다. 그래프·캐시·답변을 저장하지 않으며 모델을 호출하지 않는다. `stale`이어도 위치를 찾는 데 사용할 수 있지만, 찾은 `source_file`과 `source_location`은 갱신 당시 좌표다. `.claude/skills/do-math/` 아래 현재 원문에서 해당 개념을 다시 찾아 판단 근거를 확인한다. 삭제된 파일은 현행 근거로 사용하지 않는다.
 
-검색은 graphify의 문자열 매칭을 사용하므로 긴 자연어 질문보다 실제 파일명·함수명·문서 용어를 고른다. 한국어와 영어 사이의 자동 의미 검색은 보장되지 않는다. 결과가 없거나 관계가 충분하지 않으면 원문을 직접 조사한다. 그래프가 없으면 원문으로 작업을 계속할 수 있으며, 명시적 업데이트 요청 없이 생성하지 않는다.
+검색은 graphify의 문자열 매칭을 사용하므로 긴 자연어 질문보다 실제 파일명·함수명·문서 용어를 고른다. `query --exact`는 정확한 노드 ID 또는 파일 경로의 직접 관계만 반환하며, `--relation calls`처럼 관계 종류를 반복 지정해 좁힐 수 있다. 한국어와 영어 사이의 자동 의미 검색은 보장되지 않는다. 결과가 없거나 관계가 충분하지 않으면 원문을 직접 조사한다. 그래프가 없으면 원문으로 작업을 계속할 수 있으며, 명시적 업데이트 요청 없이 생성하지 않는다.
 
 ## 명시적인 업데이트
 
@@ -60,6 +61,6 @@ python .claude/skills/graphify/scripts/graph.py update
 | `semantic/` | 문서별 의미 추출 캐시와 실제 사용량 |
 | `runs/` | Codex 입력·응답·실행 인자·이벤트·오류 기록 |
 
-`EXTRACTED`는 원문에 명시되거나 정적 구조에서 추출한 관계, `INFERRED`는 추론, `AMBIGUOUS`는 불확실한 관계다. 문서가 요구한 동작과 구현이 실제로 수행하는 동작은 원문·코드·필요한 실행 검증으로 대조한다. 외부 의존성의 내용은 분석하지 않으며, 끝점을 내부 노드에 연결하지 못한 구조 참조는 JSON의 `graph.unresolved_references`에 남는다. 이는 누락·외부 참조·정적 분석 한계를 포함하므로 곧바로 결함 목록으로 해석하지 않는다.
+`EXTRACTED`는 원문에 명시되거나 정적 구조에서 추출한 관계, `INFERRED`는 추론, `AMBIGUOUS`는 불확실한 관계다. 문서가 요구한 동작과 구현이 실제로 수행하는 동작은 원문·코드·필요한 실행 검증으로 대조한다. 내부 모듈명이 유일한 import, 명시적 import 별칭으로 찾은 내부 심볼, 선언된 상속 관계를 따라 찾은 `self`·`super()` 호출은 `INFERRED`로 표시한다. 외부 의존성의 내용은 분석하지 않는다. 내부 노드에 연결되지 않은 import 중 내부 모듈명이 없는 것은 JSON의 `graph.out_of_scope_imports`에, 외부에서 가져온 심볼과 내장 심볼은 `graph.out_of_scope_symbols`에, 나머지 연결되지 않은 구조 참조는 `graph.unresolved_references`에 남는다. 어느 쪽도 곧바로 결함 목록으로 해석하지 않는다.
 
 완료 보고에는 파일·노드·관계 수와 의미 추출 성공 여부를 포함한다. 사용량은 실제 Codex 이벤트에서 읽으며, 확인하지 못한 값은 0으로 추정하지 않는다. graphify 일반 명령으로 루트 그래프를 만들거나 자동 훅·watch·답변 재수집을 설치하지 않는다.
