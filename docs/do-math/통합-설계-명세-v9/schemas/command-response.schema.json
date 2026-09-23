@@ -2255,6 +2255,12 @@
               "acknowledged": {
                 "const": true
               },
+              "candidate_ref": {
+                "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/artifact_ref"
+              },
+              "check_ref": {
+                "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+              },
               "snapshot_commit": {
                 "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/oid"
               },
@@ -2265,6 +2271,8 @@
             "required": [
               "acknowledged",
               "state",
+              "candidate_ref",
+              "check_ref",
               "snapshot_commit"
             ],
             "type": "object"

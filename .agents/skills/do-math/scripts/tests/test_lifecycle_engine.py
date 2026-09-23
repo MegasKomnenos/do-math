@@ -1,638 +1,1163 @@
+"""Feature-five lifecycle integration; CLI/Lean probes are explicit test doubles."""
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
-import os
-import hashlib
-from http.server import BaseHTTPRequestHandler, HTTPServer
-import json
 from pathlib import Path
+from unittest.mock import patch
+import hashlib
 import sys
 import tempfile
-import threading
 import unittest
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
+from do_math.engine import ResearchEngine, DEFAULT_CONFIG
 from do_math.lifecycle_engine import LifecycleEngineMixin
 from do_math.revision_engine import RevisionEngineMixin
 from do_math.scheduler import SchedulerMixin
-from do_math.planning import contract_hash
-from do_math.knowledge import register_environment
-from do_math.state_checks import state_errors
+from do_math.review_engine import ReviewEngineMixin
+from do_math.initialization import initialize_state, FOUNDATION_AXIOMS, governance_working_view
+from do_math import execution_profiles as profiles, knowledge_records as kr, planning
+from do_math.governance import WORK_ROLES, OPERATING_ROLES
 
+IDENTITY={'host':'fixture','adapter_sha256':'a'*64}
+class AdapterDouble:
+    def capability_identity(self): return deepcopy(IDENTITY)
+    def describe(self):
+        return {'identity':self.capability_identity(),'verified':True,'scope':'cli_command_surface_only',
+                'supported':{'jsonl':True,'model':True,'structured_output':True}}
 
-class FakeEngine(RevisionEngineMixin, LifecycleEngineMixin, SchedulerMixin):
-    def __init__(self, root):
-        self.root = Path(root)
-        self.current_time = datetime(2026, 9, 14, 0, 0, tzinfo=timezone.utc)
-        self.lifecycle_clock = lambda: self.current_time.isoformat()
-        self.instance = {'id': 'I1', 'goal': 'Prove the target', 'goal_kind': 'mathematical',
-            'goal_status': 'unresolved', 'policies': 'Read all evidence', 'workspace': str(root),
-            'knowledge': {}, 'relations': [], 'goal_judgments': [], 'sources': [],
-            'config': {'research_reconsider_seconds': 60, 'lean_timeout_seconds': 5, 'external_timeout_seconds': 2,
-                       'session_limits': None}}
-        self.runtime = {'status': 'ready', 'tasks': {}, 'executions': {}, 'activities': {}, 'queue': [], 'history': [], 'questions': []}
-        self.head = 'snapshot-1'
-        self.store = object()
-        self.saves = []
-        self.formal_calls = []
-        self.formal_behavior = None
-        self.formal_verifier = self.verify
-        self._upgrade_runtime()
-
-    def _enqueue(self, role, target=None, **extra):
-        action = {'role': role, **extra}
-        if target is not None: action['target'] = target
-        if action not in self.runtime['queue']: self.runtime['queue'].append(action)
-
-    def _start_identity_review(self, knowledge_id, previous_cycle_id=None):
-        cycle_id = 'RC-' + str(len(self.runtime.setdefault('review_cycles', {})) + 1)
-        self.runtime['review_cycles'][cycle_id] = {'id': cycle_id, 'knowledge_id': knowledge_id, 'status': 'working', 'previous_cycle_id': previous_cycle_id}
-        self.instance['knowledge'][knowledge_id]['review_cycle_id'] = cycle_id
-        self._enqueue('identity_review', knowledge_id, review_cycle_id=cycle_id, stage='initial', slot='initial-0', round=1)
-        return cycle_id
-
-    def _controls(self):
-        pass
-
-    def _save(self, artifacts=None):
-        self.saves.append({'instance': deepcopy(self.instance), 'runtime': deepcopy(self.runtime), 'artifacts': artifacts})
-        self.head = f'snapshot-{len(self.saves)+1}'
-
-    def verify(self, **kwargs):
-        self.formal_calls.append(kwargs)
-        if self.formal_behavior: return self.formal_behavior(kwargs)
-        environment = next(env for env in self.instance['trust_environments'].values()
-            if env['toolchain'].get('executable') == kwargs['lean_command'][0])
-        return {'status': 'verified', 'source_sha256': hashlib.sha256(kwargs['source'].encode()).hexdigest(),
-                'declarations': kwargs['declarations'], 'axioms': {}, 'toolchain': deepcopy(environment['toolchain'])}
-
-    def task(self, task_id='T1', *, approved=True, condition=None, inputs=None):
-        task = {'id': task_id, 'feature_version': 2, 'revision': 1, 'status': 'planned',
-            'title': task_id, 'objective': 'Do the required work', 'completion_criteria': ['Deliver evidence'],
-            'inputs': inputs or [], 'reuse': [], 'dependencies': [], 'reviews': [],
-            'occurrence_condition': condition or {'op': 'always'}}
-        self.runtime['tasks'][task_id] = task
-        if approved:
-            task['reviews'].append({'id': 'CR-' + task_id, 'decision': 'approved', 'revision': 1,
-                'contract_sha256': contract_hash(task), 'goal_revision': self.instance['goal_revision'],
-                'policy_revision': self.instance['policy_revision']})
-        return task
-
-    def control(self, action, config, request_id=None):
-        request_id = request_id or 'user-' + str(len(self.runtime['extended_controls']))
-        return self._apply_extended_control({'id': request_id, 'action': action, 'config': config})
-
-    def knowledge(self, kid, env_id=None, dependencies=None):
-        source = f'theorem {kid.lower()} : 1 = 1 := rfl'
-        item = {'id': kid, 'revision': 1, 'status': 'verified', 'statement': 'One equals one',
-                'summary': 'Reflexivity', 'lean_code': source, 'declaration_names': [kid.lower()],
-                'dependencies': dependencies or [], 'reviews': [],
-                'formal': {'status': 'verified', 'source_sha256': hashlib.sha256(source.encode()).hexdigest(),
-                           'trust_environment_id': env_id}}
-        self.instance['knowledge'][kid] = item
-        return item
-
-    def environment(self, name, active=False):
-        chain = {'executable': name, 'sha256': hashlib.sha256(name.encode()).hexdigest(), 'version': 'fixture-' + name}
-        self.instance, env_id = register_environment(self.instance, chain, ['propext'])
+class FakeEngine(RevisionEngineMixin,LifecycleEngineMixin,SchedulerMixin,ReviewEngineMixin):
+    _register_execution=ResearchEngine._register_execution
+    _activity_for_action=ResearchEngine._activity_for_action
+    _provider_slots=ResearchEngine._provider_slots
+    _release_call_slot=ResearchEngine._release_call_slot
+    _resume_input_overflow_action=ResearchEngine._resume_input_overflow_action
+    def _evaluation_context(self, snapshot=None):
+        from do_math.engine import _evaluation_context_for
+        return _evaluation_context_for(getattr(self,'store',None), snapshot or self.head)
+    def __init__(self,root,config=None):
+        self.root=Path(root); self.current_time=datetime.now(timezone.utc)
+        self.lifecycle_clock=lambda:self.current_time.isoformat()
+        self.lifecycle_monotonic=lambda:0.
+        config={**deepcopy(DEFAULT_CONFIG), 'tool_review_window_seconds':60,
+                'self_check_response_window_seconds':5, **(config or {})}
+        config.update(research_reconsider_seconds=60)
+        self.instance,self.runtime=initialize_state(instance_id='RI-test',goal='Prove the target',
+            goal_kind='mathematical',workspace=root,config=config,source_input='Original user request',
+            created_at=self.current_time.isoformat())
+        self.instance.update(profiles.build_profiles(config))
+        self.runtime.update(cycles=0,waiting_actions={})
+        self.head='fixture-head'; self.saves=[]; self.formal_calls=[]; self.formal_behavior=None; self._slots=None
+        self.formal_verifier=self.verify; self._upgrade_runtime()
+    def _enqueue(self,role,target=None,**fields):
+        row={'role':role,**fields}
+        if target is not None: row['target']=target
+        if row not in self.runtime['queue']: self.runtime['queue'].append(row)
+    def _execution_profile(self,action):
+        refs=self.runtime['tasks'].get(action.get('target'),{}).get('profile_refs')
+        if refs and not action.get('profile_ref'):
+            return profiles.resolve_profile(self.instance['execution_profiles'],refs[0])
+        return profiles.resolve_profile(self.instance['execution_profiles'],
+            action.get('profile_ref') or self.instance['role_profile_refs'][action['role']][0])
+    def _controls(self): pass
+    def _save(self,artifacts=None):
+        self.saves.append({'instance':deepcopy(self.instance),'runtime':deepcopy(self.runtime),'artifacts':deepcopy(artifacts or {})})
+    def _ensure_model_assessments(self): return set()
+    def control(self,action,config,request_id=None):
+        return self._apply_extended_control({'id':request_id or 'UI-'+str(len(self.runtime['extended_controls'])),
+                                            'action':action,'config':config})
+    def grant(self,identifier,initial=False,http=None):
+        grant=http or {'kind':'local','roles':['intent_interpretation'] if initial else sorted(WORK_ROLES|OPERATING_ROLES),
+            'budget_kind':'operations' if initial else 'work','reuse':'reusable',
+            'expires_at':(self.current_time+timedelta(days=1)).isoformat()}
+        if not initial and not http:
+            grant.pop('budget_kind')  # This fixture explicitly grants both research pools.
+        self.control('decision',{'change':{'kind':'grant','grant':{'id':identifier,**grant}}})
+    def environment(self,name,active=False):
+        files=[]
+        for role in ['lean_binary','lean_source','lake_binary','mathlib_source','mathlib_build','checker']:
+            path=self.root/(name+'-'+role); path.write_bytes((name+role).encode())
+            files.append({'path':str(path.resolve()),'role':role,'sha256':hashlib.sha256(path.read_bytes()).hexdigest()})
+        chain={'executable':files[0]['path'],'sha256':files[0]['sha256'],'version':name,
+               'configured_command':[files[2]['path'],'env',files[0]['path']],
+               'version_exit':0, 'project':None, 'executables':{}, 'verifier_sha256':'f'*64}
+        manifest={'files':files,'command':chain['configured_command'],
+            'foundation_profile':{'allowed_axioms':sorted(FOUNDATION_AXIOMS),
+                                 'forbidden':['sorryAx','Lean.trustCompiler','additional_axioms']},
+            'build_kind':'clean',
+            'validation':{'status':'verified','evidence_refs':['fixture-build-evidence']}}
+        self._trust_control({'operation':'register','toolchain':chain,'manifest':manifest,
+                             'allowed_axioms':sorted(FOUNDATION_AXIOMS)},'UI-env-'+name)
+        eid=next(eid for eid,e in self.instance['trust_environments'].items() if e['toolchain']==chain)
+        # Explicit synthetic profile edition for this synthetic toolchain.
+        configured = profiles.build_profiles({**self.instance['config'], 'lean_command':chain['configured_command']})
+        for profile in configured['execution_profiles'].values():
+            if profile['role'] == 'trust_check':
+                self.instance['execution_profiles'][profile['id']] = profile
+                self.instance['role_profile_refs']['trust_check'] = [profiles.profile_ref(profile)]
         if active:
-            self.instance['active_trust_environment'] = env_id
-            self.instance['trust_environments'][env_id]['status'] = 'active'
-        return env_id
+            self._trust_control({'operation':'transition','env_id':eid},'UI-transition-'+name)
+            self._finish_trust_transition(next(reversed(self.runtime['trust_transitions'])))
+        return eid
+    def activate(self):
+        self.grant('GR-init',True); self.grant('GR-research')
+        charter={'id':'CH-test','kind':'charter','revision':1,'supersedes':[],
+            'content':{'rationale':'Research the stated target','goal':'Prove the target','desired_result':'A proof',
+                'success_criteria':['Target proved'],'partial_success_criteria':['Cases settled'],
+                'included_scope':['Target'],'excluded_scope':[],'priorities':['Proof'],'preferences':[],
+                'evidence_boundary':'Proof evidence','academic_requirements':[],
+                'decision_authority':'user','stop_conditions':[]}}
+        self.control('decision',{'change':{'kind':'initialization','operation':'governance','records':[charter]}})
+        for p in self.instance['execution_profiles'].values():
+            if p['actor_kind']=='ai':
+                row=profiles.capability_evidence(p,AdapterDouble().describe(),observed_at=self.current_time.isoformat())
+                self.instance.setdefault('capability_evidence',{})[row['id']]=row
+        self.control('decision',{'change':{'kind':'initialization','adopt_current_config':True,
+            'adopt_current_governance':True,'conversation_loss_policy':'continue_authorized',
+            'external_policy':'explicit_grants','adopt_default_review_policy':True,
+            'profile_refs':[profiles.profile_ref(p) for p in self.instance['execution_profiles'].values()],
+            'initial_grant_ids':['GR-init'],'research_grant_ids':['GR-research']}})
+        self.environment('base',True)
+        iid=self.instance['lifecycle']['input_id']
+        from do_math import governance
+        from v5_fixtures import intent_response
+        source = governance.import_input_source(self.instance, self.runtime, iid)
+        author_action = {'id':'AC-interpret', 'role':'intent_interpretation', 'target':iid, 'stage':'interpret'}
+        author = self._register_execution(author_action, {'id':'EX-interpret','role':'intent_interpretation','status':'running'})
+        output = intent_response({'action':author_action,'user_request':source,
+                                  'governance':governance.governance_view(self.instance)})
+        bundle = governance.prepare_import(self.instance, self.runtime, source, output,
+                                           execution_id=author['id'], input_ref=iid)
+        checker_action = {'id':'AC-check','role':'intent_interpretation','target':iid,'stage':'check','import_id':bundle['id']}
+        checker = self._register_execution(checker_action, {'id':'EX-check','role':'intent_interpretation','status':'running',
+                                                          'intent_import_sha256':bundle['sha256']})
+        verdict = intent_response({'action':checker_action,'interpretation_to_check':bundle,
+                                   'governance':governance.governance_view(self.instance)})
+        governance.check_import(self.instance, self.runtime, bundle['id'], verdict, execution_id=checker['id'])
+        self.instance, self.runtime, _ = governance.apply_import(self.instance, self.runtime, bundle['id'])
+        for eid in (author['id'], checker['id']):
+            self._end_machine_execution(self.runtime['executions'][eid], outcome='execution_incomplete', disposition={'kind':'test_fixture'})
+        self._complete_initial_intent(iid)
+        result=self._activate_initialization()
+        if not result['activated']: raise AssertionError(result)
+        self.runtime['queue'].clear(); self.runtime['pending_events'].clear()
+    def verification(self,source,declarations,chain):
+        return {'status':'verified','source_sha256':hashlib.sha256(source.encode()).hexdigest(),
+            'declarations':declarations,'toolchain':deepcopy(chain),'allowed_axioms':sorted(FOUNDATION_AXIOMS),
+            'axioms':{d:[] for d in declarations},'declaration_evidence':{d:{'type':'Eq Nat 1 1'} for d in declarations},
+            'dependency_closure':{d:[] for d in declarations},'dependency_evidence':{d:{} for d in declarations}}
+    def verify(self,**args):
+        self.formal_calls.append(args)
+        if self.formal_behavior: return self.formal_behavior(args)
+        return self.verification(args['source'],args['declarations'],args['expected_toolchain'])
+    def knowledge(self,kid,env_id=None,dependencies=None):
+        env_id=env_id or self.instance['active_trust_environment']; source='theorem '+kid.lower()+' : 1 = 1 := rfl'
+        self.instance,_=kr.create_candidate(self.instance,{'id':kid,'kind':'lemma','statement':'One equals one',
+            'summary':'Reflexivity','lean_code':source,'declaration_names':[kid.lower()],'dependencies':dependencies or []},
+            source_ref='UI-source',actor_ref='EX-author')
+        result=self.verification(source,[kid.lower()],self.instance['trust_environments'][env_id]['toolchain'])
+        self.instance=kr.record_formal_result(self.instance,kid,result,env_id,runtime=self.runtime)
+        self.instance,_=kr.record_identity_assessment(self.instance,kid,
+            {'decision':'match','basis':kr.identity_basis(self.instance,kid)},'review-policy',runtime=self.runtime)
+        return self.instance['knowledge'][kid]
+    def task(self,task_id='T1',approved=True,condition=None,inputs=None):
+        t={'id':task_id,'revision':1,'status':'planned','question':'Derive result',
+           'scope':{'included':['derive'],'excluded':['publish']},
+           'expected':{'outputs':['proof'],'research_change':'resolve target'},
+           'progress_criteria':[{'id':'PG-'+task_id,'claim':'advance','evidence_required':[]}],
+           'completion_obligations':[{'id':'OB-'+task_id,'claim':'derive','judges':['task_assessor'],'evidence_required':[]}],
+           'work_class':'nonformal','inputs':inputs or [],'reuse':[],'dependencies':[],
+           'occurrence_condition':condition or {'op':'always'},'results':[],'producer_execution':'EX-author',
+           'profile_refs':[profiles.profile_ref(next(p for p in self.instance['execution_profiles'].values() if p['role']=='research_work' and p['ai']['tier']=='high'))],
+           'authority_refs':['GR-research'],'basis_refs':['context:goal'],'reviews':[]}
+        self.runtime['tasks'][task_id]=t
+        if approved: self.approve(t)
+        return t
+    def approve(self,t,decision='approved'):
+        output={'item_reviews':[{'item_id':a,'decision':decision,'evidence_refs':['context:goal'],
+            'findings':[],'missing_inputs':[],'next_owner':'research_plan'} for a in
+            ('question_scope','inputs_reuse','outputs_obligations_judges','stage_boundaries','tools_authority_profiles')]}
+        t['reviews']=[planning.seal_contract_review(t,output,governance_working_view(self.instance),self.runtime,execution_id='EX-review')]
+    def machine(self,role):
+        a=next(a for a in self.runtime['queue'] if a['role']==role)
+        self._process_machine_action(a); return a
 
-    def machine(self, role):
-        action = next(action for action in self.runtime['queue'] if action['role'] == role)
-        self.assert_machine = self._process_machine_action(action)
-        return action
+class PublicInitializationRunner:
+    """Synthetic independent author/checker outputs; real producer/receiver paths."""
+    def run(self, *, workspace, on_started, should_stop, control_binding, **kwargs):
+        import json
+        from do_math import submission
+        from do_math.repository import canonical_json
+        from v5_fixtures import intent_response, seal_response
+        context = json.loads((workspace/'input/submission/context.json').read_bytes())
+        if context['action']['role'] != 'intent_interpretation':
+            raise AssertionError('No research is authorized by the initialization fixture')
+        on_started({'job_name':'LIFECYCLE-synthetic-provider-job'})
+        output = seal_response(intent_response(context), context, workspace)
+        (workspace/'draft.json').write_bytes(canonical_json(output))
+        submission.request_control(workspace, 'draft.json', kind='submit_intent', wait_seconds=0, binding=control_binding)
+        # Pump the real receipt. submit_intent closes further research authority;
+        # a true stop signal here is the expected barrier, not a failed result.
+        should_stop()
+        return {'status':'completed','output':output,'usage':{},'error':None}
+
+
+class PublicLifecycleTests(unittest.TestCase):
+    def test_public_utc_watermark_is_published_only_with_normal_change(self):
+        import subprocess
+        from do_math.engine import initialize
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            subprocess.run(['git','init','-q',str(root)],check=True)
+            initialized = initialize(root,goal='Observe clock durability',workspace=root/'work',
+                                     config={'scholarly_enabled':False})
+            engine = ResearchEngine(root,initialized['instance_id'])
+            engine._save()  # Establish any ordinary derived runtime fields first.
+            head = engine.head
+            initial = datetime.fromisoformat(engine.runtime['last_observed_utc'])
+            observed = initial + timedelta(hours=2)
+            engine.lifecycle_clock = lambda: observed.isoformat()
+            engine.lifecycle_monotonic = lambda: 0.
+            engine._require_action_clock()
+            engine._save()
+            self.assertEqual(engine.head,head,'clock observation alone created a commit')
+            engine.instance['title'] = 'Ordinary state update'
+            engine._save()
+            self.assertEqual(engine.runtime['last_observed_utc'],observed.isoformat())
+            restarted = ResearchEngine(root,initialized['instance_id'])
+            restarted.lifecycle_clock = lambda: (observed-timedelta(microseconds=1)).isoformat()
+            restarted.lifecycle_monotonic = lambda: 0.
+            self.assertEqual(restarted._clock_guard()['reason'],'persisted_utc_regression')
+            # A later rejected sample does not revoke the prior trusted sample.
+            engine.lifecycle_clock = lambda: (observed+timedelta(hours=1)).isoformat()
+            trusted = engine._require_action_clock()
+            engine.lifecycle_clock = lambda: (observed+timedelta(minutes=30)).isoformat()
+            self.assertFalse(engine._clock_guard()['usable'])
+            engine._pause_lifecycle('clock_regression')
+            engine._save()
+            self.assertEqual(engine.store.load()[2]['last_observed_utc'],trusted)
+
+    def test_public_unicode_original_survives_restart(self):
+        import subprocess
+        from do_math.engine import initialize
+        from do_math.initialization import original_input_bytes
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory); source = 'Cafe\u0301'
+            subprocess.run(['git','init','-q',str(root)],check=True)
+            initialized = initialize(root,goal=source,workspace=root/'work',config={'scholarly_enabled':False})
+            restarted = ResearchEngine(root,initialized['instance_id'])
+            self.assertEqual(original_input_bytes(restarted.instance['lifecycle']['immutable_input']),source.encode())
+
+    def test_public_initializing_pause_resume_preserves_source_and_missing(self):
+        import subprocess
+        from do_math.engine import initialize
+        from v5_fixtures import send_control
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)
+            subprocess.run(['git','init','-q',str(root)],check=True)
+            initialized=initialize(root,goal='Preserve this original input',workspace=root/'work',
+                                   config={'scholarly_enabled':False})
+            engine=ResearchEngine(root,initialized['instance_id'])
+            source=deepcopy(engine.runtime['inputs'])
+            send_control(engine,'pause',config={})
+            self.assertEqual(engine.runtime['resume_lifecycle'],'initializing')
+            send_control(engine,'resume',config={})
+            resumed=ResearchEngine(root,initialized['instance_id'])
+            self.assertEqual(resumed.instance['lifecycle']['state'],'initializing')
+            self.assertEqual(resumed.runtime['inputs'],source)
+            self.assertIn('independent_intent',resumed.instance['lifecycle']['activation']['missing'])
+            self.assertNotIn('missing',resumed.runtime['availability'])
+            send_control(resumed,'close',config={})
+            self.assertTrue(resumed.instance['lifecycle']['permanently_closed'])
+            send_control(resumed,'pause',config={})
+            send_control(resumed,'resume',config={})
+            terminal=ResearchEngine(root,initialized['instance_id'])
+            self.assertEqual(terminal.runtime['status'],'closed')
+            self.assertTrue(terminal.instance['lifecycle']['permanently_closed'])
+
+    def test_public_call_mode_init_activate_pause_resume_and_persistence(self):
+        import subprocess
+        from do_math.engine import initialize
+        from v5_fixtures import activate, install_adapter_fixture, send_control
+        install_adapter_fixture(self)
+        with tempfile.TemporaryDirectory() as directory, patch('do_math.windows_job.named_job_empty',return_value=True):
+            root = Path(directory)
+            subprocess.run(['git','init','-q',str(root)],check=True)
+            initialized = initialize(root,goal='Prove n + 0 = n',workspace=root/'work',config={
+                'session_limits':None,'operations_calls':50,'work_calls':10,'scholarly_enabled':False,
+                'lean_command':['synthetic-lean'],'run_timeout_seconds':7200})
+            engine = ResearchEngine(root,initialized['instance_id'],runner=PublicInitializationRunner())
+            activate(engine,root,initialization_runner=engine.runner)
+            self.assertEqual(engine.instance['lifecycle']['state'],'active')
+            self.assertEqual(len(engine.runtime['intent_imports']),1)
+            self.assertTrue(engine.instance['active_trust_environment'])
+            send_control(engine,'pause',config={})
+            self.assertEqual(engine.runtime['resume_lifecycle'],'active')
+            send_control(engine,'resume',config={})
+            self.assertEqual(engine.instance['lifecycle']['state'],'active')
+            resumed = ResearchEngine(root,initialized['instance_id'])
+            self.assertEqual(resumed.instance['lifecycle']['state'],'active')
+            self.assertNotIn('task_readiness',resumed.runtime)
+            self.assertNotIn('initial_request',resumed.instance['lifecycle'])
+
+    def test_public_external_once_credential_resume_persists_attempts(self):
+        import os, subprocess, threading
+        from http.server import HTTPServer
+        from do_math.engine import initialize
+        from v5_fixtures import activate, install_adapter_fixture, send_control
+        from test_external import H
+        class Handler(H):
+            count=0
+            def do_POST(self):
+                Handler.count+=1
+                super().do_POST()
+        install_adapter_fixture(self)
+        server=HTTPServer(('127.0.0.1',0),Handler)
+        threading.Thread(target=server.serve_forever,daemon=True).start()
+        self.addCleanup(server.server_close); self.addCleanup(server.shutdown)
+        origin=f'http://127.0.0.1:{server.server_port}'
+        with tempfile.TemporaryDirectory() as directory, patch('do_math.windows_job.named_job_empty',return_value=True):
+            root=Path(directory)
+            subprocess.run(['git','init','-q',str(root)],check=True)
+            initialized=initialize(root,goal='Prove n + 0 = n',workspace=root/'work',config={
+                'session_limits':None,'operations_calls':50,'work_calls':10,'scholarly_enabled':False,
+                'lean_command':['synthetic-lean'],'run_timeout_seconds':7200})
+            engine=ResearchEngine(root,initialized['instance_id'],runner=PublicInitializationRunner())
+            activate(engine,root,initialization_runner=engine.runner,external_policy='explicit_grants')
+            send_control(engine,'decision',config={'change':{'kind':'grant','grant':{
+                'id':'GR-public-http','kind':'http','reuse':'once','allowed_origins':[origin],
+                'allowed_methods':['POST'],'allowed_path_prefixes':['/effect'],
+                'credential_env':{'X-Test':'LIFECYCLE_AUDIT_TEST_TOKEN'}}}})
+            config={'operation':'prepare','id':'OP-public','grant_id':'GR-public-http',
+                'request':{'method':'POST','url':origin+'/effect','body':'synthetic local request'}}
+            send_control(engine,'external',config=config)
+            action=next(a for a in engine.runtime['queue'] if a['role']=='external_action')
+            with patch.dict(os.environ):
+                os.environ.pop('LIFECYCLE_AUDIT_TEST_TOKEN',None)
+                engine._process_machine_action(action)
+            before=deepcopy(engine.runtime['external_operations']['OP-public'])
+            first=deepcopy(engine.runtime['executions'][before['execution_id']])
+            self.assertEqual(first['status'],'ended'); self.assertEqual(Handler.count,0)
+            resumed=ResearchEngine(root,initialized['instance_id'])
+            send_control(resumed,'external',config=config,request_id='UC-public-external-credential-resume')
+            action=next(a for a in resumed.runtime['queue'] if a['role']=='external_action')
+            with patch.dict(os.environ,{'LIFECYCLE_AUDIT_TEST_TOKEN':'synthetic-local-token'}):
+                resumed._process_machine_action(action)
+            saved=ResearchEngine(root,initialized['instance_id'])
+            op=saved.runtime['external_operations']['OP-public']
+            current=saved.runtime['executions'][op['execution_id']]
+            self.assertEqual(Handler.count,1); self.assertEqual(op['status'],'confirmed')
+            self.assertNotIn('waiting_reason',op)
+            for key in ('id','request_sha256','idempotency_key'):
+                self.assertEqual(op[key],before[key])
+            self.assertEqual(saved.runtime['executions'][first['id']],first)
+            self.assertEqual(current['continuation_of'],first['id'])
+            self.assertEqual(current['owner_activity_id'],first['owner_activity_id'])
+            self.assertEqual(current['submission_receipt']['kind'],'machine_output')
+            self.assertEqual(current['outcome'],'output_accepted')
+            for execution in (first,current):
+                times=[datetime.fromisoformat(row['at']) for row in execution['transitions']]
+                self.assertEqual(times,sorted(times))
 
 
 class LifecycleTests(unittest.TestCase):
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory()
-        self.addCleanup(self.temp.cleanup)
-        self.engine = FakeEngine(self.temp.name)
+        temp=tempfile.TemporaryDirectory(); self.addCleanup(temp.cleanup)
+        mock=patch('do_math.initialization.adapter_for',return_value=AdapterDouble())
+        mock.start(); self.addCleanup(mock.stop)
+        self.engine=FakeEngine(temp.name); self.engine.activate()
+    def test_controls_reach_active_and_separate_initial_authority(self):
+        e=self.engine; self.assertEqual(e.instance['lifecycle']['state'],'active')
+        self.assertEqual(set(e.instance['grants']),{'GR-init','GR-research'})
+        with self.assertRaises(ValueError): e._action_lifecycle_gate({'role':'intent_interpretation','grant_id':'GR-init'})
+        chosen=e.instance['lifecycle']['adoption']['initial_profile_ref']
+        actual=ResearchEngine._execution_profile(e,{'role':'intent_interpretation','profile_ref':chosen})
+        self.assertEqual(profiles.profile_ref(actual),chosen)
+    def test_upgrade_idempotent_and_no_legacy_promotion(self):
+        e=self.engine; before=deepcopy((e.instance,e.runtime)); e._upgrade_runtime()
+        self.assertEqual((e.instance,e.runtime),before); e.runtime['feature_version']=4
+        with self.assertRaises(ValueError): e._upgrade_runtime()
+    def test_review_currentness_and_no_persisted_readiness(self):
+        e=self.engine; t=e.task(approved=False); e._refresh_readiness(); e._refresh_readiness()
+        self.assertEqual(len([a for a in e.runtime['queue'] if a['role']=='task_contract_review']),1)
+        e.approve(e.runtime['tasks'][t['id']]); e.runtime['queue'].clear(); e._refresh_readiness()
+        self.assertEqual(e._task_readiness[t['id']]['state'],'ready')
+        from jsonschema import Draft202012Validator
+        from do_math.record_schemas import RECORDS
+        readiness_event = next(row for row in e.runtime['events'] if row['kind'] == 'task_became_ready')
+        Draft202012Validator(RECORDS['events']).validate(readiness_event)
+        self.assertEqual(readiness_event['basis']['records'], e._task_readiness[t['id']]['basis'])
+        self.assertEqual(e.runtime['tasks'][t['id']]['status'],'planned'); self.assertNotIn('task_readiness',e.runtime)
+        e.control('decision',{'change':{'kind':'policy','record':{'id':'PO-new','kind':'policy','revision':1,'supersedes':[],
+            'content':{'rule_id':'new','text':'New evidence requirement','scope':['Target'],
+                'reason_refs':['CH-test'],'audit_refs':[]}}}})
+        e._refresh_readiness()
+        self.assertEqual(e._task_readiness[t['id']]['state'],'not_ready')
+        for event in e.runtime['events']:
+            Draft202012Validator(RECORDS['events']).validate(event)
+    def test_rejected_current_review_not_repeated(self):
+        e=self.engine; t=e.task(approved=False); e.approve(t,'rejected'); e._refresh_readiness()
+        self.assertFalse(any(a['role']=='task_contract_review' for a in e.runtime['queue']))
+    def test_missing_input_and_bad_condition_distinct(self):
+        e=self.engine; a=e.task(inputs=['absent']); b=e.task('T2',condition={'op':'unsupported'}); e._refresh_readiness()
+        self.assertEqual(e._task_readiness[a['id']]['state'],'not_ready')
+        self.assertEqual(e._task_readiness[b['id']]['state'],'evaluation_error')
+    def test_completed_removes_readiness_projection(self):
+        e=self.engine; t=e.task(); e._refresh_readiness(); e.runtime['tasks'][t['id']]['status']='completed'
+        e._refresh_readiness(); self.assertNotIn(t['id'],e._task_readiness)
+    def test_pause_returns_to_original_phase_and_preserves_events(self):
+        e=self.engine; ev=e._lifecycle_event('user_input_available')
+        e.control('pause',{}); e._refresh_readiness(); self.assertIn(ev['id'],e.runtime['pending_events'])
+        e.control('pause',{},'UI-again'); e.control('resume',{})
+        self.assertEqual(e.instance['lifecycle']['state'],'active')
+    def test_published_event_is_not_mutated_when_assigned(self):
+        e=self.engine
+        event=e._lifecycle_event('user_input_available'); event['event_seq']=1
+        original=deepcopy(event)
+        e._refresh_readiness()
+        self.assertEqual(next(row for row in e.runtime['events'] if row['id']==event['id']),original)
+        self.assertIn(event['id'],e.runtime['pending_events'])
+        self.assertTrue(any(event['id'] in a.get('event_refs',[]) for a in e.runtime['queue']))
+        other=e._lifecycle_event('user_input_available')
+        ResearchEngine._consume_action_events(e,{'event_refs':[event['id']]},'EX-accepted-plan')
+        self.assertNotIn(event['id'],e.runtime['pending_events'])
+        self.assertIn(other['id'],e.runtime['pending_events'])
+        self.assertEqual(next(row for row in e.runtime['events'] if row['id']==event['id']),original)
+    def test_empty_queue_uses_goal_exhaustion_not_legacy_cycle_limit(self):
+        e=self.engine; e.runtime['cycles']=1000
+        e._refresh_readiness()
+        preparation=next((a for a in e.runtime['queue'] if a['role']=='research_preparation'),None)
+        self.assertIsNotNone(preparation)
+        self.assertIn('exhaustion_basis',preparation)
+        self.assertTrue(preparation['exhaustion_basis']['exhausted'])
+    def test_conversation_requires_new_live_generation(self):
+        e=self.engine; e.control('conversation',{'operation':'attach','id':'chat','generation':1,'lease_seconds':10,'disconnect_policy':'pause'})
+        e.current_time+=timedelta(seconds=11); e._check_conversations()
+        with self.assertRaises(ValueError): e.control('resume',{})
+        with self.assertRaises(ValueError): e.control('conversation',{'operation':'heartbeat','id':'chat','generation':1})
+        e.control('conversation',{'operation':'attach','id':'chat','generation':2,'lease_seconds':10})
+        e.control('resume',{}); self.assertEqual(e.instance['lifecycle']['state'],'active')
+    def test_continue_policy_does_not_pause(self):
+        e=self.engine; e.control('conversation',{'operation':'attach','id':'chat','generation':1,'lease_seconds':1,'disconnect_policy':'continue_authorized'})
+        e.current_time+=timedelta(seconds=2); e._check_conversations()
+        self.assertEqual(e.runtime['conversations']['chat']['status'],'lost')
+        self.assertEqual(e.instance['lifecycle']['state'],'active')
+    def test_control_replay_and_atomic_rejection(self):
+        e=self.engine; q={'operation':'attach','id':'chat','generation':1,'lease_seconds':60,'disconnect_policy':'continue_authorized'}
+        e.control('conversation',q,'UI-fixed'); before=deepcopy((e.instance,e.runtime))
+        e.control('conversation',q,'UI-fixed'); self.assertEqual((e.instance,e.runtime),before)
+        with self.assertRaises(ValueError): e.control('conversation',{**q,'generation':2},'UI-fixed')
+        self.assertEqual((e.instance,e.runtime),before)
+    def test_empty_trust_activation_records_profile_bound_machine_execution(self):
+        e=self.engine; environment=e.environment('empty-transition')
+        e.control('trust',{'operation':'transition','env_id':environment})
+        e.machine('trust_activate')
+        attempts=[row for row in e.runtime['executions'].values() if row['role']=='trust_activate']
+        self.assertEqual(len(attempts),1)
+        self.assertEqual(attempts[0]['status'],'ended')
+        self.assertEqual(attempts[0]['outcome'],'output_accepted')
+        self.assertEqual(attempts[0]['submission_receipt']['kind'],'machine_output')
+        self.assertIn('execution_profile_ref',attempts[0])
+        self.assertEqual(e.runtime['activities'][attempts[0]['owner_activity_id']]['status'],'finished')
 
-    def test_trust_check_pause_preserves_target_until_explicit_resume(self):
-        engine = self.engine
-        old_environment = engine.environment('old', active=True)
-        new_environment = engine.environment('new')
-        engine.knowledge('K1', old_environment)
-        engine.control('trust', {'operation': 'transition', 'env_id': new_environment})
-        transition_id = next(iter(engine.runtime['trust_transitions']))
-        def pause_during_check(arguments):
-            engine.runtime['status'] = 'paused'
-            self.assertTrue(arguments['should_stop']())
-            return {'status': 'stopped', 'reason': 'user pause'}
-        engine.formal_behavior = pause_during_check
-        engine.machine('trust_check')
-        stopped_id = next(iter(engine.runtime['executions']))
-        self.assertEqual(engine.runtime['executions'][stopped_id]['status'], 'ended')
-        self.assertEqual(engine.runtime['executions'][stopped_id]['outcome'], 'stopped')
-        self.assertEqual(engine.runtime['status'], 'paused')
-        self.assertEqual(engine.instance['active_trust_environment'], old_environment)
-        self.assertNotIn('K1', engine.runtime['trust_transitions'][transition_id]['results'])
-        self.assertTrue(any(a['role'] == 'trust_check' and a['target'] == 'K1' for a in engine.runtime['queue']))
-        engine.formal_behavior = None
-        engine.runtime['status'] = 'ready'  # Explicit resume, as performed by the host executor.
-        engine.machine('trust_check')
-        self.assertEqual(len(engine.runtime['executions']), 2)
-        self.assertEqual(engine.runtime['executions'][stopped_id]['outcome'], 'stopped')
-        self.assertEqual(engine.instance['active_trust_environment'], new_environment)
+    def test_trust_transition_uses_current_storage_contract(self):
+        import jsonschema
+        from do_math.record_schemas import RECORDS
+        e=self.engine; environment=e.environment('schema-transition')
+        e.control('trust',{'operation':'transition','env_id':environment})
+        transition=next(reversed(e.runtime['trust_transitions'].values()))
+        jsonschema.validate(transition,RECORDS['trust_transitions'])
 
-    def test_upgrade_is_idempotent_and_does_not_invent_toolchain(self):
-        engine = self.engine
-        engine.instance['knowledge']['legacy'] = {'formal': {'status': 'verified', 'toolchain': None}}
-        before = deepcopy((engine.instance, engine.runtime))
-        engine._upgrade_runtime()
-        self.assertEqual((engine.instance, engine.runtime), before)
-        self.assertEqual(engine.runtime['feature_version'], 2)
-        self.assertIsNone(engine.instance['active_trust_environment'])
-        self.assertFalse(engine.instance['trust_environments'])
-        self.assertFalse(engine.runtime['conversations'])
+    def test_call_mode_scheduler_consumes_usage_capacity(self):
+        with tempfile.TemporaryDirectory() as root:
+            e=FakeEngine(root,config={'session_limits':None,'operations_calls':5})
+            e.activate()
+            action={'id':'AC-call','role':'research_preparation'}
+            with patch.object(e,'_revision_dispatch_waits',return_value=[]), patch.object(e,'_selected_action_current',return_value=True), patch.object(e,'_provider_status',return_value={'providers':{}},create=True):
+                self.assertTrue(e._dispatchable(action,e._session_resources()))
 
-    def test_current_contract_review_is_queued_once_and_policy_change_reopens(self):
-        engine = self.engine
-        task = engine.task(approved=False)
-        engine._refresh_readiness()
-        engine._refresh_readiness()
-        reviews = [a for a in engine.runtime['queue'] if a['role'] == 'task_contract_review']
-        self.assertEqual(len(reviews), 1)
-        basis = reviews[0]['contract_basis']
-        engine.runtime['tasks']['T1']['reviews'].append({'decision': 'approved', **basis})
-        engine.runtime['queue'].remove(reviews[0])
-        engine._refresh_readiness()
-        self.assertEqual(engine.runtime['tasks']['T1']['status'], 'ready')
-        engine.control('decision', {'change': {'kind': 'policy', 'text': 'Updated evidence policy'}})
-        reviews = [a for a in engine.runtime['queue'] if a['role'] == 'task_contract_review']
-        self.assertEqual(len(reviews), 1)
-        self.assertEqual(reviews[0]['contract_basis']['policy_revision'], 2)
+    def test_initial_grant_does_not_queue_research_before_activation(self):
+        with tempfile.TemporaryDirectory() as root:
+            e=FakeEngine(root)
+            e.grant('GR-initial',True)
+            self.assertIn('GR-initial', e.instance['grants'])
+            self.assertEqual(e.runtime['queue'], [])
 
-    def test_rejected_current_contract_is_not_repeated_without_change(self):
-        engine = self.engine
-        task = engine.task(approved=False)
-        engine._refresh_readiness()
-        action = next(a for a in engine.runtime['queue'] if a['role'] == 'task_contract_review')
-        engine.runtime['tasks']['T1']['reviews'].append({'decision': 'rejected', **action['contract_basis']})
-        engine.runtime['queue'].remove(action)
-        engine._refresh_readiness()
-        self.assertFalse(any(a['role'] == 'task_contract_review' for a in engine.runtime['queue']))
-        self.assertEqual(engine.runtime['task_readiness']['T1']['state'], 'not_ready')
+    def test_initial_intent_receipt_cannot_replace_import_evidence(self):
+        e=self.engine; original=deepcopy(e.runtime['intent_imports'])
+        for field in ('check','application','source'):
+            with self.subTest(field=field):
+                e.runtime['intent_imports']=deepcopy(original)
+                bundle=next(iter(e.runtime['intent_imports'].values()))
+                if field=='check': bundle['check']['bundle_sha256']='0'*64
+                elif field=='application': bundle['application']['status']='awaiting_decision'
+                else: bundle['source']['text']='different original'
+                with self.assertRaises(ValueError):
+                    e._complete_initial_intent(e.instance['lifecycle']['input_id'])
 
-    def test_missing_inputs_and_bad_conditions_remain_distinct(self):
-        engine = self.engine
-        engine.task(inputs=['missing-source'])
-        engine.task('T2', condition={'op': 'unsupported_condition'})
-        engine._refresh_readiness()
-        self.assertEqual(engine.runtime['task_readiness']['T1']['state'], 'not_ready')
-        self.assertEqual(engine.runtime['task_readiness']['T2']['state'], 'evaluation_error')
-        engine.instance['available_input_refs'] = ['missing-source']
-        engine._refresh_readiness()
-        self.assertEqual(engine.runtime['tasks']['T1']['status'], 'ready')
-        plan = next(a for a in engine.runtime['queue'] if a['role'] == 'research_plan')
-        self.assertTrue(plan['event_refs'])
+    def test_formal_requires_preapproved_environment(self):
+        e=self.engine; env=e._formal_environment(); result=e.verification('x',['x'],env['toolchain'])
+        self.assertEqual(e._bind_formal_environment(result)['trust_environment_id'],env['id'])
+        e.instance['active_trust_environment']=None
+        with self.assertRaises(ValueError): e._bind_formal_environment(result)
+    def transition(self):
+        e=self.engine; old=e.instance['active_trust_environment']; e.knowledge('K1'); e.knowledge('K2')
+        new=e.environment('next'); e.control('trust',{'operation':'transition','env_id':new})
+        return old,new,next(reversed(e.runtime['trust_transitions']))
+    def test_full_transition_preserves_old_formal_records_and_full_command(self):
+        e=self.engine; old,new,tid=self.transition(); prior=deepcopy(e.instance['formal_results'])
+        with self.assertRaises(ValueError): e._formal_environment()
+        e.machine('trust_check'); self.assertEqual(e.instance['active_trust_environment'],old)
+        e.machine('trust_check'); self.assertEqual(e.instance['active_trust_environment'],new)
+        for fid,row in prior.items(): self.assertEqual(e.instance['formal_results'][fid],row)
+        for args in e.formal_calls: self.assertEqual(args['lean_command'],args['expected_toolchain']['configured_command'])
+        for row in e.runtime['executions'].values():
+            self.assertIn('execution_profile_ref',row); self.assertIn('owner_activity_id',row)
+            if row['role']=='trust_check':
+                self.assertEqual(row['outcome'],'output_accepted')
+                self.assertEqual(row['submission_receipt']['kind'],'machine_output')
+    def test_partial_failure_cannot_activate(self):
+        e=self.engine; old,new,tid=self.transition()
+        e.formal_behavior=lambda args:{'status':'failed','reason':'fixture'}
+        e.machine('trust_check'); e.machine('trust_check')
+        self.assertEqual(e.instance['active_trust_environment'],old); self.assertEqual(e.runtime['trust_transitions'][tid]['status'],'failed')
+    def test_wrong_compiler_is_rejected(self):
+        e=self.engine; old,new,tid=self.transition()
+        e.formal_behavior=lambda a:{**e.verification(a['source'],a['declarations'],a['expected_toolchain']),'toolchain':{'sha256':'wrong'}}
+        e.machine('trust_check'); self.assertEqual(e.runtime['trust_transitions'][tid]['results']['K1']['status'],'rejected')
+    def test_changed_semantics_requires_independent_review(self):
+        e=self.engine; old,new,tid=self.transition()
+        def changed(a):
+            r=e.verification(a['source'],a['declarations'],a['expected_toolchain'])
+            r['declaration_evidence']={d:{'type':'changed'} for d in a['declarations']}; return r
+        e.formal_behavior=changed; e.machine('trust_check'); e.machine('trust_check')
+        self.assertEqual(e.instance['active_trust_environment'],old)
+        self.assertEqual(e.runtime['trust_transitions'][tid]['status'],'ready')
+        self.assertEqual(len([c for c in e.runtime['review_cycles'].values() if c.get('transition_id')==tid]),2)
+    def test_completed_target_not_repeated_on_recovery(self):
+        e=self.engine; old,new,tid=self.transition(); a=e.machine('trust_check')
+        calls=len(e.formal_calls); e._run_trust_check(a); self.assertEqual(len(e.formal_calls),calls)
+        e.machine('trust_check'); self.assertEqual(e.instance['active_trust_environment'],new)
+    def test_manifest_change_blocks_trust_check(self):
+        e=self.engine; old,new,tid=self.transition()
+        Path(e.instance['trust_environments'][new]['manifest']['files'][0]['path']).write_bytes(b'changed')
+        e.machine('trust_check'); self.assertEqual(e.runtime['trust_transitions'][tid]['results']['K1']['status'],'failed')
+    def test_clock_regression_precedes_authority(self):
+        e=self.engine; e.runtime['last_observed_utc']=(e.current_time+timedelta(seconds=1)).isoformat()
+        before=deepcopy(e.instance['grants'])
+        with self.assertRaisesRegex(ValueError,'clock'): e.grant('GR-bad')
+        self.assertEqual(e.instance['grants'],before)
+        with self.assertRaisesRegex(ValueError,'clock'): e._action_lifecycle_gate({'role':'external_action'})
 
-    def test_completed_task_does_not_retain_ready_projection(self):
-        engine = self.engine
-        engine.task()
-        engine._refresh_readiness()
-        self.assertEqual(engine.runtime['task_readiness']['T1']['state'], 'ready')
+    def test_dispatch_uses_current_task_predicate(self):
+        e=self.engine; t=e.task(); a={'id':'AC-work','role':'research_work','target':t['id']}
+        e.runtime['queue']=[a]
+        with patch.object(e,'_revision_dispatch_waits',return_value=[]), patch.object(e,'_selected_action_current',return_value=True), patch.object(e,'_provider_status',return_value={'providers':{}},create=True):
+            resources={'work':{p['ai']['model']:{'available':1} for p in e.instance['execution_profiles'].values() if p['actor_kind']=='ai'},'operations':{}}
+            self.assertTrue(e._dispatchable(a,resources))
+            e.runtime['tasks'][t['id']]['inputs'].append('absent')
+            self.assertFalse(e._dispatchable(a,resources))
+            e.runtime['tasks'][t['id']]['inputs']=[]
+            e.runtime['tasks'][t['id']]['status']='ready'
+            e.runtime['task_readiness']={t['id']:{'state':'ready'}}
+            self.assertFalse(e._dispatchable(a,resources))
+            self.assertEqual(a['dispatch_wait']['kind'],'task_readiness')
 
-        engine.runtime['tasks']['T1']['status'] = 'completed'
-        engine._refresh_readiness()
+    def test_task_artifact_context_reaches_refresh_schedule_and_dispatch(self):
+        from types import SimpleNamespace
+        from unittest.mock import Mock
+        e=self.engine; raw=b'{"valid":true}'
+        path='runtime/artifacts/EX-evidence/result.json'
+        e.store=SimpleNamespace(read=Mock(return_value=raw))
+        condition={'op':'artifact_valid','artifact_ref':{'snapshot':'sealed-evidence',
+            'path':path,'sha256':hashlib.sha256(raw).hexdigest()}}
+        t=e.task(condition=condition); t['due_conditions']=[condition]; e.approve(t)
+        e._refresh_readiness()
+        self.assertEqual(e._task_readiness[t['id']]['state'],'ready')
+        self.assertTrue(any(row['kind']=='task_condition_due' for row in e.runtime['events']))
+        a={'id':'AC-artifact','role':'research_work','target':t['id']}
+        e.runtime['queue']=[a]
+        with patch.object(e,'_revision_dispatch_waits',return_value=[]), patch.object(e,'_selected_action_current',return_value=True) as selected, patch.object(e,'_provider_status',return_value={'providers':{}},create=True):
+            resources={'work':{p['ai']['model']:{'available':1} for p in e.instance['execution_profiles'].values() if p['actor_kind']=='ai'},'operations':{}}
+            self.assertTrue(e._dispatchable(a,resources))
+            context=selected.call_args.kwargs['evaluation_context']
+            self.assertTrue(callable(context['validate_artifact']))
+            self.assertEqual(context['read_artifact']('sealed-evidence',path),raw)
+        self.assertTrue(all(call.args==(path,'sealed-evidence') for call in e.store.read.call_args_list))
 
-        self.assertNotIn('T1', engine.runtime['task_readiness'])
+    def test_stop_and_resume_trust_check_preserves_attempt_lineage(self):
+        e=self.engine; old,new,tid=self.transition()
+        def stop(args):
+            e._pause_lifecycle('test_pause'); return {'status':'stopped'}
+        e.formal_behavior=stop; e.machine('trust_check')
+        first=next(row for row in e.runtime['executions'].values() if row['role']=='trust_check')
+        self.assertEqual(first['status'],'ended'); self.assertNotIn('K1',e.runtime['trust_transitions'][tid]['results'])
+        e.formal_behavior=None; e.control('resume',{}); e.machine('trust_check')
+        attempts=[row for row in e.runtime['executions'].values() if row['role']=='trust_check']
+        self.assertEqual(attempts[1]['owner_activity_id'],first['owner_activity_id'])
+        self.assertEqual(attempts[1]['continuation_of'],first['id'])
 
-    def test_paused_events_survive_and_opened_at_sets_the_next_tick(self):
-        engine = self.engine
-        engine.runtime['status'] = 'paused'
-        engine.runtime['next_research_reconsider_at'] = engine.current_time.isoformat()
-        task = engine.task()
-        task['newinput'] = True
-        engine._refresh_readiness()
-        pending = list(engine.runtime['pending_events'])
-        engine.current_time += timedelta(seconds=5)
-        engine._refresh_readiness()
-        self.assertEqual(engine.runtime['pending_events'], pending)
-        self.assertFalse(any(a['role'] == 'research_preparation' for a in engine.runtime['queue']))
-        engine.runtime['status'] = 'ready'
-        engine._refresh_readiness()
-        action = next(a for a in engine.runtime['queue'] if a['role'] == 'research_preparation')
-        opened_at = action['opened_at']
-        next_at = engine.runtime['next_research_reconsider_at']
-        self.assertEqual(datetime.fromisoformat(next_at), datetime.fromisoformat(opened_at) + timedelta(seconds=60))
-        engine.current_time += timedelta(seconds=70)
-        engine.runtime['activities']['A'] = {'id': 'A', 'role': 'research_preparation', 'status': 'active', 'opened_at': opened_at}
-        engine._refresh_readiness()
-        self.assertTrue(engine.runtime['pending_events'])
-        self.assertEqual(engine.runtime['next_research_reconsider_at'], next_at)
-        self.assertEqual(action['opened_at'], opened_at)
+    def test_assigned_events_survive_and_live_input_is_not_changed(self):
+        e=self.engine; first=e._lifecycle_event('user_input_available'); e._refresh_readiness()
+        a=next(a for a in e.runtime['queue'] if a['role']=='research_plan'); original=deepcopy(a)
+        e.runtime['executions']['EX-live']={'id':'EX-live','role':'research_plan','status':'running','action':deepcopy(a)}
+        second=e._lifecycle_event('user_input_available'); e._refresh_readiness()
+        self.assertEqual(next(a for a in e.runtime['queue'] if a.get('id')==original['id']),original)
+        self.assertTrue({first['id'],second['id']} <= set(e.runtime['pending_events']))
 
-    def test_assignment_keeps_events_pending_on_failure_and_never_changes_live_input(self):
-        engine = self.engine
-        first = engine._lifecycle_event('user_input_available', source_ref='user-first')
-        engine._refresh_readiness()
-        action = next(a for a in engine.runtime['queue'] if a['role'] == 'research_plan')
-        original = deepcopy(action)
-        self.assertIn(first['id'], engine.runtime['pending_events'])
-        event = next(e for e in engine.runtime['events'] if e['id'] == first['id'])
-        self.assertEqual(event['assigned_to'], action['id'])
-        self.assertNotIn('consumed_at', event)
-        engine.runtime['executions']['E'] = {'id': 'E', 'status': 'running', 'role': 'research_plan', 'action': deepcopy(action)}
-        second = engine._lifecycle_event('user_input_available', source_ref='user-second')
-        engine._refresh_readiness()
-        live = next(a for a in engine.runtime['queue'] if a.get('id') == original['id'])
-        self.assertEqual(live, original)
-        following = next(a for a in engine.runtime['queue'] if a['role'] == 'research_plan' and a.get('id') != original['id'])
-        self.assertEqual(following['event_refs'], [second['id']])
-        engine.runtime['executions']['E'].update(status='ended', outcome='execution_incomplete')
-        engine._refresh_readiness()
-        self.assertEqual(set(engine.runtime['pending_events']), {first['id'], second['id']})
-        self.assertEqual(len([a for a in engine.runtime['queue'] if a['role'] == 'research_plan']), 2)
+    def http(self,url):
+        from urllib.parse import urlsplit
+        e=self.engine; parsed=urlsplit(url)
+        e.grant('GR-http',http={'kind':'http','allowed_origins':[parsed.scheme+'://'+parsed.netloc],
+            'allowed_methods':['POST'],'allowed_path_prefixes':['/'],'reuse':'reusable'})
+        e.control('external',{'operation':'prepare','id':'EO-test','grant_id':'GR-http',
+            'request':{'method':'POST','url':url,'body':'test'}})
+        return e.runtime['external_operations']['EO-test']
 
-    def test_knowledge_revision_and_invalidation_reset_dependent_goal(self):
-        engine = self.engine
-        engine.knowledge('K1')
-        engine.knowledge('K2', dependencies=['K1'])
-        engine.instance['goal_judgments'] = [{'id': 'G1', 'decision': 'satisfied', 'current': True, 'used_sources': ['K2']}]
-        engine.instance['goal_status'] = 'mathematically_solved'
-        engine.runtime['status'] = 'completed'
-        engine.control('knowledge', {'operation': 'revise', 'id': 'K1', 'changes': {'statement': 'Corrected statement'}, 'reason': 'User corrected the claim'})
-        self.assertEqual(engine.instance['knowledge']['K1']['revision'], 2)
-        self.assertEqual(engine.instance['knowledge']['K1']['status'], 'candidate')
-        self.assertTrue(engine.instance['knowledge']['K2']['use_suspended'])
-        self.assertFalse(engine.instance['goal_judgments'][0]['current'])
-        self.assertEqual(engine.instance['goal_status'], 'unresolved')
-        self.assertEqual(engine.runtime['status'], 'ready')
-        self.assertTrue(any(a['role'] == 'formal_check' for a in engine.runtime['queue']))
-        engine.control('knowledge', {'operation': 'invalidate', 'id': 'K1', 'reason': 'Withdrawal'})
-        self.assertEqual(engine.instance['knowledge']['K1']['status'], 'withdrawn')
-        self.assertFalse(any(a['role'] == 'formal_check' and a.get('target') == 'K1' for a in engine.runtime['queue']))
-
-    def test_control_idempotence_and_atomic_rejection(self):
-        engine = self.engine
-        config = {'change': {'kind': 'goal', 'goal': 'A new exact goal'}}
-        engine.control('decision', config, 'command-one')
-        state = deepcopy((engine.instance, engine.runtime))
-        engine.control('decision', config, 'command-one')
-        self.assertEqual((engine.instance, engine.runtime), state)
-        with self.assertRaises(ValueError):
-            engine.control('decision', {'change': {'kind': 'goal', 'goal': 'Another goal'}}, 'command-one')
-        self.assertEqual((engine.instance, engine.runtime), state)
-        with self.assertRaises(ValueError):
-            engine.control('conversation', {'operation': 'attach', 'id': 'C', 'generation': 1, 'lease_seconds': 5})
-        self.assertEqual((engine.instance, engine.runtime), state)
-        self.assertFalse(engine._apply_extended_control({'action': 'pause'}))
-
-    def test_conversation_lease_only_follows_real_signals(self):
-        engine = self.engine
-        engine.control('conversation', {'operation': 'attach', 'id': 'C', 'generation': 1, 'disconnect_policy': 'pause', 'lease_seconds': 10})
-        engine.runtime['executions']['E'] = {'id': 'E', 'role': 'research_work', 'status': 'running'}
-        engine.current_time += timedelta(seconds=5)
-        engine.control('conversation', {'operation': 'heartbeat', 'id': 'C', 'generation': 1})
-        engine.current_time += timedelta(seconds=11)
-        engine._refresh_readiness()
-        self.assertEqual(engine.runtime['status'], 'paused')
-        self.assertEqual(engine.runtime['stop_requested'], 'conversation_lost')
-        self.assertEqual(engine.runtime['executions']['E']['stop_requested'], 'conversation_lost')
-        with self.assertRaises(ValueError):
-            engine.control('conversation', {'operation': 'heartbeat', 'id': 'C', 'generation': 1})
-        engine.control('conversation', {'operation': 'attach', 'id': 'C', 'generation': 2, 'disconnect_policy': 'pause', 'lease_seconds': 10})
-        self.assertEqual(engine.runtime['status'], 'paused')
-        with self.assertRaises(ValueError):
-            engine.control('conversation', {'operation': 'heartbeat', 'id': 'C', 'generation': 1})
-
-    def test_continue_policy_records_loss_without_stopping(self):
-        engine = self.engine
-        engine.control('conversation', {'operation': 'attach', 'id': 'C', 'generation': 1, 'disconnect_policy': 'continue_authorized', 'lease_seconds': 2})
-        engine.current_time += timedelta(seconds=3)
-        engine._refresh_readiness()
-        self.assertEqual(engine.runtime['status'], 'ready')
-        self.assertEqual(engine.runtime['conversations']['C']['status'], 'lost')
-        count = len([e for e in engine.runtime['events'] if e['kind'] == 'conversation_lost'])
-        engine._refresh_readiness()
-        self.assertEqual(len([e for e in engine.runtime['events'] if e['kind'] == 'conversation_lost']), count)
-
-    def test_formal_binding_requires_actual_fingerprint_and_never_implicitly_transitions(self):
-        engine = self.engine
-        unknown = engine._bind_formal_environment({'status': 'verified', 'toolchain': None})
-        self.assertEqual(unknown['trust_environment_status'], 'unknown')
-        self.assertFalse(engine.instance['trust_environments'])
-        first = engine._bind_formal_environment({'status': 'verified', 'toolchain': {'sha256': 'a' * 64, 'version': 'fixture-a', 'executable': 'lean-a'}})
-        second = engine._bind_formal_environment({'status': 'verified', 'toolchain': {'sha256': 'b' * 64, 'version': 'fixture-b', 'executable': 'lean-b'}})
-        self.assertEqual(first['trust_environment_status'], 'active')
-        self.assertEqual(second['trust_environment_status'], 'registered')
-        self.assertEqual(engine.instance['active_trust_environment'], first['trust_environment_id'])
-
-    def prepare_transition(self):
-        engine = self.engine
-        old = engine.environment('lean-old', active=True)
-        engine.knowledge('K1', old)
-        engine.knowledge('K2', old)
-        new = engine.environment('lean-new')
-        engine.control('trust', {'operation': 'transition', 'env_id': new})
-        transition_id = next(iter(engine.runtime['trust_transitions']))
-        return old, new, transition_id
-
-    def test_full_trust_transition_runs_every_source_and_preserves_formal_artifacts(self):
-        old, new, transition_id = self.prepare_transition()
-        engine = self.engine
-        engine.machine('trust_check')
-        self.assertEqual(engine.instance['active_trust_environment'], old)
-        engine.machine('trust_check')
-        self.assertEqual(engine.instance['active_trust_environment'], new)
-        self.assertEqual(engine.runtime['trust_transitions'][transition_id]['status'], 'active')
-        self.assertEqual(len(engine.formal_calls), 2)
-        self.assertTrue(all(call['lean_command'] == ['lean-new'] and call['allowed_axioms'] == ('propext',) for call in engine.formal_calls))
-        artifacts = [s['artifacts'] for s in engine.saves if s['artifacts']]
-        self.assertEqual(len(artifacts), 2)
-        self.assertTrue(all(item['formal']['trust_environment_id'] == new for item in engine.instance['knowledge'].values()))
-
-    def test_partial_failed_or_changed_trust_basis_never_activates(self):
-        old, new, transition_id = self.prepare_transition()
-        engine = self.engine
-        engine.machine('trust_check')
-        engine.instance['knowledge']['K2']['summary'] = 'Changed after transition began'
-        engine.machine('trust_check')
-        self.assertEqual(engine.instance['active_trust_environment'], old)
-        self.assertEqual(engine.runtime['trust_transitions'][transition_id]['status'], 'failed')
-        self.assertEqual(len(engine.formal_calls), 1)
-        self.assertTrue(any(e['kind'] == 'trust_transition_failed' for e in engine.runtime['events']))
-
-    def test_wrong_compiler_fingerprint_is_not_transition_evidence(self):
-        old, _, transition_id = self.prepare_transition()
-        engine = self.engine
-        engine.formal_behavior = lambda call: {'status': 'verified', 'source_sha256': hashlib.sha256(call['source'].encode()).hexdigest(),
-            'toolchain': {'sha256': 'wrong', 'version': 'fixture-lean-new'}}
-        engine.machine('trust_check')
-        engine.machine('trust_check')
-        self.assertEqual(engine.instance['active_trust_environment'], old)
-        self.assertEqual(engine.runtime['trust_transitions'][transition_id]['status'], 'failed')
-
-    def test_trust_signature_change_queues_full_review_and_preserves_other_suspension(self):
-        engine = self.engine
-        old = engine.environment('lean-old', active=True)
-        engine.knowledge('K1', old)
-        engine.instance['knowledge']['K1']['formal'].update(signature_hash='old', declaration_signatures={'k1': 'k1 : True'})
-        engine.control('trust', {'operation': 'invalidate', 'env_id': old, 'reason': 'old invalid'})
-        engine.instance['knowledge']['K1'].setdefault('use_suspensions', []).append({'kind': 'dependency', 'reason': 'independent dependency'})
-        engine.instance['knowledge']['K1']['use_suspended'] = True
-        new = engine.environment('lean-new')
-        engine.control('trust', {'operation': 'transition', 'env_id': new})
-        def changed(call):
-            environment = next(env for env in engine.instance['trust_environments'].values() if env['toolchain'].get('executable') == call['lean_command'][0])
-            return {'status': 'verified', 'source_sha256': hashlib.sha256(call['source'].encode()).hexdigest(),
-                    'toolchain': deepcopy(environment['toolchain']), 'signature_hash': 'new', 'declaration_signatures': {'k1': 'k1 : Nat'}}
-        engine.formal_behavior = changed
-        engine.machine('trust_check')
-        item = engine.instance['knowledge']['K1']
-        self.assertTrue(item['use_suspended'])
-        self.assertTrue(any(cause['kind'] == 'dependency' for cause in item['use_suspensions']))
-        self.assertTrue(any(cause['kind'] == 'semantic' for cause in item['use_suspensions']))
-        self.assertTrue(any(action['role'] == 'identity_review' and action['target'] == 'K1' for action in engine.runtime['queue']))
-
-    def test_new_goal_approval_is_not_invalidated_by_historical_stale_audit(self):
-        engine = self.engine
-        engine.instance['goal_status'] = 'mathematically_solved'
-        engine.runtime['status'] = 'completed'
-        engine.instance['goal_judgments'] = [{'id': 'old', 'basis': 'old-basis', 'current': False},
-                                              {'id': 'new', 'basis': 'new-basis', 'current': True}]
-        engine._refresh_readiness()
-        self.assertEqual(engine.instance['goal_status'], 'mathematically_solved')
-        self.assertEqual(engine.runtime['status'], 'completed')
-
-    def test_trust_result_recovery_activates_without_repeating_compiler(self):
-        old, new, transition_id = self.prepare_transition()
-        engine = self.engine
-        engine.machine('trust_check')
-        last_action = next(a for a in engine.runtime['queue'] if a['role'] == 'trust_check')
-        engine.machine('trust_check')
-        # Reopen the persisted snapshot immediately after the last result was
-        # sealed, before the subsequent activation publication.
-        snapshot = next(s for s in reversed(engine.saves) if s['artifacts'])
-        engine.instance, engine.runtime = deepcopy(snapshot['instance']), deepcopy(snapshot['runtime'])
-        self.assertEqual(engine.instance['active_trust_environment'], old)
-        self.assertEqual(engine.runtime['trust_transitions'][transition_id]['status'], 'ready')
-        engine._process_machine_action(last_action)
-        self.assertEqual(engine.instance['active_trust_environment'], new)
-        self.assertEqual(len(engine.formal_calls), 2)
-
-    def test_invalid_environment_recovers_only_after_explicit_complete_transition(self):
-        engine = self.engine
-        old = engine.environment('lean-old', active=True)
-        engine.knowledge('K1', old)
-        task = engine.task()
-        task['dependencies'] = ['K1']
-        task['reviews'][0]['contract_sha256'] = contract_hash(task)
-        engine.instance['goal_judgments'] = [{'id': 'G1', 'basis': 'goal-v1', 'current': True, 'used_sources': ['K1']}]
-        engine.instance['goal_assessment_basis'] = 'goal-v1'
-        engine.instance['goal_status'] = 'mathematically_solved'
-        engine.runtime['status'] = 'completed'
-        engine.control('trust', {'operation': 'invalidate', 'env_id': old, 'reason': 'Compiler bug confirmed'})
-        self.assertIsNone(engine.instance['active_trust_environment'])
-        self.assertTrue(engine.instance['knowledge']['K1']['use_suspended'])
-        self.assertEqual(engine.runtime['task_readiness']['T1']['state'], 'not_ready')
-        self.assertEqual(engine.instance['goal_status'], 'unresolved')
-        new = engine.environment('lean-fixed')
-        engine.control('trust', {'operation': 'transition', 'env_id': new})
-        transition = next(t for t in engine.runtime['trust_transitions'].values() if t['to_environment'] == new)
-        self.assertIsNone(transition['from_environment'])
-        self.assertEqual([target['id'] for target in transition['targets']], ['K1'])
-        self.assertIsNone(engine.instance['active_trust_environment'])
-        engine.machine('trust_check')
-        self.assertEqual(engine.instance['active_trust_environment'], new)
-        self.assertFalse(engine.instance['knowledge']['K1']['use_suspended'])
-        self.assertEqual(engine.runtime['tasks']['T1']['status'], 'ready')
-        self.assertEqual(engine.instance['goal_status'], 'unresolved')
-        self.assertFalse(engine.instance['goal_judgments'][0]['current'])
-
-    def test_active_review_is_closed_before_explicit_knowledge_revision(self):
-        engine = self.engine
-        item = engine.knowledge('K1')
-        item['review_cycle_id'] = 'RC1'
-        item['identity_assessment'] = {'effective': False, 'status': 'working'}
-        engine.runtime['review_cycles']['RC1'] = {'id': 'RC1', 'status': 'working', 'decision': None,
-                                                'phase': 'initial', 'history': []}
-        engine.runtime['executions']['review-ex'] = {'id': 'review-ex', 'role': 'identity_review',
-            'status': 'running', 'action': {'target': 'K1'}}
-        engine._enqueue('identity_review', 'K1', review_cycle_id='RC1')
-        engine.control('knowledge', {'operation': 'revise', 'id': 'K1', 'changes': {'statement': 'New claim'}, 'reason': 'Explicit revision'})
-        self.assertEqual(engine.runtime['review_cycles']['RC1']['status'], 'unresolved')
-        self.assertEqual(engine.runtime['executions']['review-ex']['stop_requested'], 'knowledge_revise')
-        self.assertFalse(any(a['role'] == 'identity_review' for a in engine.runtime['queue']))
-        formal = next(a for a in engine.runtime['queue'] if a['role'] == 'formal_check')
-        self.assertEqual(formal['previous_cycle_id'], 'RC1')
-
-    def test_external_real_loopback_ledger_and_reconciliation_wake_waiting_task(self):
-        engine = self.engine
-        received = []
+    def test_real_loopback_unknown_reconcile_and_retry_share_activity(self):
+        from http.server import BaseHTTPRequestHandler,HTTPServer
+        import threading
         class Handler(BaseHTTPRequestHandler):
-            def do_GET(self):
-                received.append(self.path)
-                body = b'confirmed local response'
-                self.send_response(409 if self.path == '/reject' else 200)
-                self.send_header('Content-Length', str(len(body)))
-                self.end_headers(); self.wfile.write(body)
+            count=0
             def do_POST(self):
-                self.rfile.read(int(self.headers.get('Content-Length', '0')))
-                received.append(self.path)
-                self.close_connection = True
-            def log_message(self, *args): pass
-        server = HTTPServer(('127.0.0.1', 0), Handler)
-        worker = threading.Thread(target=server.serve_forever, daemon=True)
-        worker.start()
-        self.addCleanup(server.server_close)
-        self.addCleanup(server.shutdown)
-        origin = f'http://127.0.0.1:{server.server_port}'
-        engine.instance['grants']['HTTP'] = {'id': 'HTTP', 'kind': 'http', 'status': 'active',
-            'allowed_origins': [origin], 'allowed_methods': ['GET', 'POST'], 'allowed_path_prefixes': ['/']}
-        engine.control('external', {'operation': 'prepare', 'grant_id': 'HTTP', 'id': 'OP1', 'request': {'method': 'GET', 'url': origin + '/read'}})
-        engine.machine('external_action')
-        self.assertEqual(engine.runtime['external_operations']['OP1']['status'], 'confirmed')
-        execution_id = engine.runtime['external_operations']['OP1']['execution_id']
-        self.assertTrue(execution_id.startswith('EX-'))
-        self.assertNotEqual(execution_id, 'OP1')
-        self.assertEqual(engine.runtime['executions'][execution_id]['operation_id'], 'OP1')
-        self.assertTrue(engine.runtime['external_operations']['OP1']['succeeded'])
-        states = [s['runtime']['external_operations'].get('OP1', {}).get('status') for s in engine.saves]
-        self.assertEqual({s['runtime']['external_operations']['OP1']['execution_id'] for s in engine.saves
-                          if 'OP1' in s['runtime']['external_operations']}, {execution_id})
-        self.assertIn('prepared', states)
-        self.assertIn('running', states)
-        self.assertIn('confirmed', states)
-        engine.control('external', {'operation': 'prepare', 'grant_id': 'HTTP', 'id': 'OP-rejected', 'request': {'method': 'GET', 'url': origin + '/reject'}})
-        engine.machine('external_action')
-        self.assertEqual(engine.runtime['external_operations']['OP-rejected']['status'], 'confirmed')
-        self.assertEqual(engine.runtime['external_operations']['OP-rejected']['http_status'], 409)
-        self.assertFalse(engine.runtime['external_operations']['OP-rejected']['succeeded'])
-        engine.control('external', {'operation': 'prepare', 'grant_id': 'HTTP', 'id': 'OP2', 'request': {'method': 'POST', 'url': origin + '/uncertain', 'body': 'local test'}})
-        engine.task(condition={'op': 'record_field_equals', 'record_id': 'OP2', 'pointer': '/status', 'value': 'confirmed'})
-        engine.machine('external_action')
-        self.assertEqual(engine.runtime['external_operations']['OP2']['status'], 'unknown')
-        unknown_execution_id = engine.runtime['external_operations']['OP2']['execution_id']
-        self.assertNotEqual(engine.runtime['tasks']['T1']['status'], 'ready')
-        engine._enqueue('external_action', 'OP2')
-        engine.machine('external_action')
-        self.assertEqual(received, ['/read', '/reject', '/uncertain'])
-        engine.control('external', {'operation': 'reconcile', 'id': 'OP2', 'result': 'confirmed', 'succeeded': True,
-                                    'evidence': 'Operator compared the local server receipt'})
-        self.assertEqual(engine.runtime['tasks']['T1']['status'], 'ready')
-        self.assertEqual(engine.runtime['external_operations']['OP2']['execution_id'], unknown_execution_id)
-        self.assertTrue(engine.runtime['external_operations']['OP2']['succeeded'])
-        self.assertEqual(engine.runtime['external_operations']['OP2']['reconciliation']['source'], 'user')
-        self.assertTrue(engine.runtime['external_operations']['OP2']['reconciliation']['source_ref'].startswith('user-'))
-        self.assertEqual(state_errors(engine.instance, engine.runtime), [])
+                self.rfile.read(int(self.headers.get('Content-Length','0')))
+                type(self).count+=1; self.send_response(503); self.end_headers(); self.wfile.write(b'uncertain')
+            def log_message(self,*args): pass
+        server=HTTPServer(('127.0.0.1',0),Handler)
+        thread=threading.Thread(target=server.serve_forever,daemon=True); thread.start()
+        self.addCleanup(server.server_close); self.addCleanup(server.shutdown)
+        e=self.engine; op=self.http('http://127.0.0.1:'+str(server.server_port)+'/effect')
+        e.machine('external_action'); op=e.runtime['external_operations'][op['id']]
+        self.assertEqual(op['http_status'],503)
+        self.assertEqual(op['status'],'unknown'); self.assertIsNone(op['succeeded'])
+        with self.assertRaises(ValueError): e.control('external',{'operation':'retry','id':op['id'],'grant_id':'GR-http'})
+        with self.assertRaises(ValueError): e.control('external',{'operation':'reconcile','id':op['id'],'result':'failed','evidence':'string'})
+        e.control('external',{'operation':'reconcile','id':op['id'],'result':'failed','evidence':{
+            'evidence_ref':'remote-admin-log','operation_id':op['id'],'request_sha256':op['request_sha256'],
+            'idempotency_key':op['idempotency_key'],'fact':'effect_absent','observed_at':e.current_time.isoformat()}})
+        e.control('external',{'operation':'retry','id':op['id'],'grant_id':'GR-http'})
+        e.machine('external_action'); self.assertEqual(Handler.count,2)
+        attempts=[row for row in e.runtime['executions'].values() if row['role']=='external_action']
+        self.assertEqual(attempts[0]['owner_activity_id'],attempts[1]['owner_activity_id'])
+        self.assertEqual(attempts[1]['continuation_of'],attempts[0]['id'])
 
-    def test_external_retry_reuses_operation_identity_only_after_known_failure(self):
-        engine = self.engine
-        received = []
-        class Handler(BaseHTTPRequestHandler):
-            def do_POST(self):
-                self.rfile.read(int(self.headers.get('Content-Length', '0')))
-                received.append(self.path)
-                body = b'retried receipt'
-                self.send_response(200)
-                self.send_header('Content-Length', str(len(body)))
-                self.end_headers(); self.wfile.write(body)
-            def log_message(self, *args): pass
-        server = HTTPServer(('127.0.0.1', 0), Handler)
-        worker = threading.Thread(target=server.serve_forever, daemon=True)
-        worker.start(); self.addCleanup(server.server_close); self.addCleanup(server.shutdown)
-        origin = f'http://127.0.0.1:{server.server_port}'
-        variable = 'DO_MATH_RETRY_TEST_TOKEN'
-        os.environ.pop(variable, None)
-        self.addCleanup(lambda: os.environ.pop(variable, None))
-        engine.instance['grants']['HTTP'] = {'id': 'HTTP', 'kind': 'http', 'status': 'active',
-            'allowed_origins': [origin], 'allowed_methods': ['POST'], 'allowed_path_prefixes': ['/'],
-            'credential_env': {'X-Test-Token': variable}, 'allow_idempotent_retry': False}
-        request = {'operation': 'prepare', 'grant_id': 'HTTP', 'id': 'OP-retry',
-                   'request': {'method': 'POST', 'url': origin + '/retry', 'body': 'fixed bytes'}}
-        engine.control('external', request, 'prepare-retry')
-        engine.machine('external_action')
-        failed = deepcopy(engine.runtime['external_operations']['OP-retry'])
-        self.assertEqual((failed['status'], failed['transmitted']), ('failed', False))
-        self.assertEqual(received, [])
-        os.environ[variable] = 'available-now'
-        engine.control('external', {'operation': 'retry', 'id': 'OP-retry', 'grant_id': 'HTTP'}, 'retry-known-failure')
-        prepared = engine.runtime['external_operations']['OP-retry']
-        self.assertEqual((prepared['id'], prepared['request_sha256'], prepared['idempotency_key']),
-                         (failed['id'], failed['request_sha256'], failed['idempotency_key']))
-        self.assertNotEqual(prepared['execution_id'], failed['execution_id'])
-        self.assertEqual(prepared['history'][-1]['previous_status'], 'failed')
-        self.assertEqual(prepared['attempts'][-1]['outcome'], 'failed')
-        engine.machine('external_action')
-        confirmed = engine.runtime['external_operations']['OP-retry']
-        self.assertEqual((confirmed['status'], confirmed['succeeded']), ('confirmed', True))
-        self.assertEqual(received, ['/retry'])
+    def test_revocation_before_transport_cancels(self):
+        e=self.engine; op=self.http('http://127.0.0.1:1/effect')
+        e.control('decision',{'change':{'kind':'revoke','grant_id':'GR-http'}})
+        self.assertEqual(e.runtime['external_operations'][op['id']]['status'],'cancelled')
+        with patch('do_math.external._http') as transport:
+            e._run_external_action({'role':'external_action','target':op['id'],'grant_id':'GR-http'})
+            transport.assert_not_called()
+
+    def test_prepare_replay_preserves_unknown_ledger(self):
+        e=self.engine; op=self.http('http://127.0.0.1:1/effect')
+        e.runtime['external_operations'][op['id']].update(status='unknown',transmitted=True)
+        before=deepcopy(e.runtime['external_operations'][op['id']])
+        e.control('external',{'operation':'prepare','id':op['id'],'grant_id':'GR-http','request':op['request']})
+        self.assertEqual(e.runtime['external_operations'][op['id']],before)
+
+    def test_capability_evidence_rejects_changed_host_or_forged_record(self):
+        e=self.engine; ref=e.instance['role_profile_refs']['intent_interpretation'][0]
+        self.assertTrue(e._capability_requirements(ref)['satisfied'])
+        with patch.object(AdapterDouble,'capability_identity',return_value={'host':'different'}):
+            self.assertFalse(e._capability_requirements(ref)['satisfied'])
+        for row in e.instance['capability_evidence'].values(): row['identity']={'forged':True}
+        self.assertFalse(e._capability_requirements(ref)['satisfied'])
+
+    def test_changed_fixed_source_never_activates_transition(self):
+        e=self.engine; old,new,tid=self.transition()
+        formal=e.instance['formal_results'][e.instance['knowledge']['K1']['formal_result_id']]
+        formal['lean_code']+='\n-- changed'
+        e.machine('trust_check'); e.machine('trust_check')
+        self.assertEqual(e.instance['active_trust_environment'],old)
+
+    def test_http_success_finishes_activity_without_changing_effect_fact(self):
+        e=self.engine; op=self.http('http://127.0.0.1:1/effect')
+        with patch('do_math.external._http',return_value={'http_status':201,'body':b'created'}):
+            e.machine('external_action')
+        op=e.runtime['external_operations'][op['id']]
+        self.assertEqual(op['status'],'confirmed'); self.assertIs(op['succeeded'],True)
+        ex=e.runtime['executions'][op['execution_id']]
+        self.assertEqual(e.runtime['activities'][ex['owner_activity_id']]['status'],'finished')
+        self.assertEqual(ex['outcome'],'output_accepted')
+        self.assertEqual(ex['submission_receipt']['kind'],'machine_output')
+
+    def test_authority_revoked_at_send_gate_prevents_transport(self):
+        e=self.engine; op=self.http('http://127.0.0.1:1/effect'); count=[0]
+        def controls():
+            count[0]+=1
+            if count[0]==4: e.instance['grants']['GR-http']['status']='revoked'
+        e._controls=controls
+        with patch('do_math.external._http') as transport:
+            e.machine('external_action'); transport.assert_not_called()
+        self.assertEqual(e.runtime['external_operations'][op['id']]['status'],'cancelled')
+
+    def test_session_capacity_reads_git_reservations_not_sqlite(self):
+        e=self.engine; resources=e._session_resources()
+        self.assertTrue(resources['operations'])
+        self.assertFalse((e.root/'session-slots').exists())
+
+    def test_invalidated_split_knowledge_invalidates_dependent_goal(self):
+        from do_math.knowledge import plan_impact, capture_basis
+        e=self.engine; e.knowledge('K1')
+        e.instance['goal_status']='mathematically_solved'
+        e.instance['goal_judgments']=[{'id':'G1','dependencies':['K1'],'current':True,
+            'record_basis':capture_basis(e.instance,e.runtime,['K1'])}]
+        impact=plan_impact(e.instance,e.runtime,['K1'],[])
+        e.control('knowledge',{'operation':'invalidate','id':'K1','reason':'User withdrew this result',
+            'declared_impact':impact['computed_impact']})
+        self.assertEqual(e.instance['goal_status'],'unsolved')
+        self.assertFalse(e.instance['goal_judgments'][0]['current'])
+
+class Audit2LifecycleTests(unittest.TestCase):
+    def test_event_uses_the_clock_sample_that_passed_the_guard(self):
+        with tempfile.TemporaryDirectory() as root:
+            e = FakeEngine(root)
+            approved = e.current_time+timedelta(seconds=2)
+            samples = iter([approved.isoformat(),(approved-timedelta(seconds=1)).isoformat()])
+            e.lifecycle_clock = lambda:next(samples)
+            event=e._lifecycle_event('test_clock_observation',schedule=False)
+            self.assertEqual(event['at'],approved.isoformat())
+            self.assertEqual(e.runtime['last_observed_utc'],approved.isoformat())
+
+    def test_scheduler_scopes_maintenance_dispatch_with_executor_double(self):
+        with tempfile.TemporaryDirectory() as root, patch('do_math.initialization.adapter_for', return_value=AdapterDouble()):
+            e = FakeEngine(root); e.activate(); e._pause_lifecycle('user_pause')
+            e.grant('GR-repair',http={'kind':'local','roles':['maintenance'],
+                'budget_kind':'operations','reuse':'once','included_targets':['RI-test']})
+            e.runtime['queue'] = [{'id':'AC-repair','role':'maintenance','target':'RI-test'},
+                                  {'id':'AC-general','role':'research_preparation'}]
+            action = e.runtime['queue'][0]
+            e.control('decision',{'change':{'kind':'limited_recovery','action_id':'AC-repair',
+                'grant_id':'GR-repair','profile_ref':e._select_model(action)['profile_ref'],
+                'purpose':'inspect the exact recovery target','procedure':'Inspect this target only; do not resume research',
+                'expires_at':(e.current_time+timedelta(minutes=5)).isoformat()}})
+            dispatched=[]
+            def executor_double(action):
+                e._action_lifecycle_gate(action)
+                execution=e._register_execution(action,{'id':'EX-repair','role':action['role'],'status':'running'})
+                dispatched.append(deepcopy(execution))
+                e._end_machine_execution(execution,outcome='execution_incomplete',disposition={'kind':'executor_double'})
+                e.runtime['queue'][:]=[row for row in e.runtime['queue'] if row['id']!=action['id']]
+                if False: yield
+            e._call_steps=executor_double
+            e._check_installation=lambda:None
+            e._retry_provider_actions=lambda:None
+            e._available_inputs=lambda:[]
+            e._provider_status=lambda:{'providers':{}}
+            e._selected_action_current=lambda *a,**kw:True
+            e._revision_dispatch_waits=lambda *a:[]
+            e._run_parallel(max_steps=1)
+            self.assertEqual([row['role'] for row in dispatched],['maintenance'])
+            self.assertEqual(e.runtime['status'],'paused')
+            self.assertEqual(e.runtime['queue'][0]['id'],'AC-general')
+
+    def test_wrong_pinned_trust_command_ends_attempt_without_verifier(self):
+        with tempfile.TemporaryDirectory() as root, patch('do_math.initialization.adapter_for', return_value=AdapterDouble()):
+            e = FakeEngine(root); e.activate(); e.knowledge('K1')
+            old_ref = profiles.profile_ref(e._execution_profile({'role':'trust_check'}))
+            env = e.environment('next')
+            e.control('trust', {'operation':'transition','env_id':env})
+            action = next(a for a in e.runtime['queue'] if a['role']=='trust_check')
+            action['profile_ref'] = old_ref
+            e._process_machine_action(action)
+            self.assertEqual(e.formal_calls,[])
+            execution = next(x for x in e.runtime['executions'].values() if x['role']=='trust_check')
+            self.assertEqual(execution['status'],'ended')
+            self.assertEqual(execution['outcome'],'execution_incomplete')
+            self.assertIsNone(e.runtime['active_execution'])
+
+    def test_terminal_marker_cannot_have_live_projection(self):
+        from do_math.preflight import inspect_current_state
+        with tempfile.TemporaryDirectory() as root:
+            e = FakeEngine(root)
+            e.instance['lifecycle']['permanently_closed'] = True
+            self.assertFalse(inspect_current_state(e.instance,e.runtime)['valid'])
+            e.runtime['status'] = 'closed'
+            self.assertTrue(inspect_current_state(e.instance,e.runtime)['valid'])
+
+    def test_scheduler_runs_only_approved_machine_recovery_and_stays_paused(self):
+        with tempfile.TemporaryDirectory() as root, patch('do_math.initialization.adapter_for', return_value=AdapterDouble()):
+            e = FakeEngine(root); e.activate()
+            env = e.environment('repair')
+            e.control('trust', {'operation':'transition','env_id':env})
+            e._pause_lifecycle('user_pause')
+            e.grant('GR-repair',http={'kind':'local','roles':['trust_activate'],
+                'budget_kind':'operations','reuse':'once','purposes':['activate empty verified environment']})
+            action = next(a for a in e.runtime['queue'] if a['role']=='trust_activate')
+            e.control('decision',{'change':{'kind':'limited_recovery','action_id':action['id'],
+                'grant_id':'GR-repair','profile_ref':profiles.profile_ref(e._execution_profile(action)),
+                'purpose':'activate empty verified environment','procedure':'Activate this empty target transition only',
+                'expires_at':(e.current_time+timedelta(minutes=5)).isoformat()}})
+            e.runtime['queue'].insert(0,{'id':'AC-general','role':'research_preparation'})
+            e._check_installation=lambda:None
+            e._retry_provider_actions=lambda:None
+            e._available_inputs=lambda:[]
+            e._selected_action_current=lambda *a,**kw:True
+            e._revision_dispatch_waits=lambda *a:[]
+            e._run_parallel(max_steps=1)
+            self.assertEqual(e.instance['active_trust_environment'],env)
+            self.assertEqual(e.runtime['status'],'paused')
+            self.assertEqual(e.instance['lifecycle']['state'],'paused')
+            self.assertTrue(any(a['id']=='AC-general' for a in e.runtime['queue']))
+            repair = [x for x in e.runtime['executions'].values() if x['role']=='trust_activate'][-1]
+            self.assertEqual(repair['status'],'ended')
+            self.assertEqual(repair['submission_receipt']['state'],'accepted')
+
+    def test_changed_transition_opens_real_review_without_live_publication(self):
+        with tempfile.TemporaryDirectory() as root, patch('do_math.initialization.adapter_for', return_value=AdapterDouble()):
+            e = FakeEngine(root); e.activate(); e.knowledge('K1')
+            new = e.environment('next')
+            before = deepcopy(e.instance)
+            e.control('trust', {'operation':'transition','env_id':new})
+            def changed(args):
+                result = e.verification(args['source'],args['declarations'],args['expected_toolchain'])
+                result['declaration_evidence'] = {d:{'type':'Changed proposition'} for d in args['declarations']}
+                return result
+            e.formal_behavior = changed
+            e.machine('trust_check')
+            transition = next(reversed(e.runtime['trust_transitions'].values()))
+            self.assertEqual(transition['status'],'ready')
+            cycles = [r for r in e.runtime['review_cycles'].values() if r.get('transition_id')==transition['id']]
+            self.assertEqual(len(cycles),1)
+            self.assertTrue(any(a.get('review_cycle_id')==cycles[0]['id'] for a in e.runtime['queue']))
+            for family in ('knowledge','formal_results','identity_assessments','assessment_uses'):
+                self.assertEqual(e.instance.get(family), before.get(family))
+
+    def test_trust_verifier_uses_registered_command_without_deadline(self):
+        with tempfile.TemporaryDirectory() as root, patch('do_math.initialization.adapter_for', return_value=AdapterDouble()):
+            e = FakeEngine(root); e.activate(); e.knowledge('K1')
+            new = e.environment('next')
+            command = e.instance['trust_environments'][new]['toolchain']['configured_command']
+            fixed = profiles.build_profiles({**e.instance['config'], 'lean_command':command, 'lean_timeout_seconds':37})
+            p = next(p for p in fixed['execution_profiles'].values() if p['role']=='trust_check')
+            e.instance['execution_profiles'][p['id']] = p
+            e.instance['role_profile_refs']['trust_check'] = [profiles.profile_ref(p)]
+            e.control('trust', {'operation':'transition','env_id':new})
+            e.machine('trust_check')
+            self.assertEqual(len(e.formal_calls),1)
+            self.assertIsNone(e.formal_calls[0]['timeout_seconds'])
+            self.assertEqual(e.formal_calls[0]['lean_command'],command)
+
+    def test_paused_recovery_is_exact_authorized_and_revocable(self):
+        with tempfile.TemporaryDirectory() as root, patch('do_math.initialization.adapter_for', return_value=AdapterDouble()):
+            e = FakeEngine(root); e.activate(); e._pause_lifecycle('user_pause')
+            e.grant('GR-repair', http={'kind':'local','roles':['maintenance'],'included_targets':['RI-test'],
+                'purposes':['restore sealed input'],'budget_kind':'operations','reuse':'once'})
+            action = {'id':'AC-repair','role':'maintenance','target':'RI-test','purpose':'restore sealed input'}
+            e.runtime['queue'].append(action)
+            ref = e._select_model(action)['profile_ref']
+            e.control('decision', {'change': {'kind':'limited_recovery','action_id':'AC-repair',
+                'grant_id':'GR-repair','profile_ref':ref,'purpose':'restore sealed input',
+                'procedure':'Restore the specified sealed input and verify its digest',
+                'expires_at':(e.current_time+timedelta(minutes=5)).isoformat()}})
+            action = next(a for a in e.runtime['queue'] if a['id'] == 'AC-repair')
+            e._check_limited_recovery(action)
+            e._action_lifecycle_gate(action)
+            self.assertTrue(e._limited_recovery_allowed(action))
+            self.assertFalse(e._execution_stop_requested(action))
+            self.assertEqual(e.runtime['status'],'paused')
+            prior_stop = e.runtime['stop_requested']
+            e.runtime['stop_requested'] = 'new_emergency_stop'
+            self.assertFalse(e._limited_recovery_allowed(action))
+            e.runtime['stop_requested'] = prior_stop
+            with self.assertRaises(ValueError): e._action_lifecycle_gate({**action,'target':'RI-other'})
+            with self.assertRaises(ValueError): e._action_lifecycle_gate({'role':'research_preparation'})
+            e._pause_lifecycle('new_pause')
+            self.assertFalse(e._limited_recovery_allowed(action))
+            self.assertTrue(e._execution_stop_requested(action))
+
+    def test_closed_pause_cannot_reopen(self):
+        with tempfile.TemporaryDirectory() as root:
+            e = FakeEngine(root)
+            e.runtime['status'] = 'closed'
+            before = deepcopy((e.instance, e.runtime))
+            with self.assertRaises(ValueError):
+                e._pause_lifecycle('user_pause')
+            self.assertEqual((e.instance, e.runtime), before)
+            with self.assertRaises(ValueError):
+                e._resume_lifecycle({'origin': 'user'})
+
+    def test_close_control_seals_terminal_marker(self):
+        with tempfile.TemporaryDirectory() as root:
+            e = FakeEngine(root)
+            self.assertTrue(e.control('close', {}))
+            self.assertTrue(e.instance['lifecycle']['permanently_closed'])
+            self.assertEqual(e.runtime['status'], 'closed')
+            self.assertEqual(e.runtime['queue'], [])
+            with self.assertRaises(ValueError): e.control('pause', {})
+            with self.assertRaises(ValueError): e.control('resume', {})
+
+    def test_original_unicode_bytes_survive_canonical_roundtrip(self):
+        import json
+        from do_math.repository import canonical_json
+        from do_math.initialization import original_input_bytes
+        with tempfile.TemporaryDirectory() as root:
+            source = 'Cafe\u0301'
+            instance, runtime = initialize_state(instance_id='RI-unicode', goal=source,
+                goal_kind='research', workspace=root, config=DEFAULT_CONFIG, source_input=source)
+            restored = json.loads(canonical_json(instance))
+            original = restored['lifecycle']['immutable_input']
+            self.assertEqual(original_input_bytes(original), source.encode())
+            self.assertEqual(original['text'], source)
+            self.assertEqual(runtime['inputs'][0]['sha256'], original['sha256'])
+            original['text'] = 'wrong'
+            with self.assertRaises(ValueError): original_input_bytes(original)
+
+    def test_negative_job_is_not_cleared_by_later_help_probe(self):
+        from do_math.initialization import capability_requirements
+        with tempfile.TemporaryDirectory() as root:
+            e = FakeEngine(root)
+            p = e._execution_profile({'role': 'maintenance'})
+            negative = profiles.structural_failure_evidence(p, IDENTITY,
+                observed_at=e.current_time.isoformat(), execution_id='EX-failed', evidence_ref='failure.json')
+            positive = profiles.capability_evidence(p, AdapterDouble().describe(),
+                observed_at=(e.current_time + timedelta(seconds=1)).isoformat())
+            e.instance['capability_evidence'] = {r['id']: r for r in (negative, positive)}
+            outcome = capability_requirements(e.instance, profiles.profile_ref(p), current_identity=IDENTITY,
+                at=(e.current_time + timedelta(seconds=2)).isoformat())
+            self.assertFalse(outcome['satisfied'])
+            self.assertIn('atomic_local_job', outcome['missing'])
+
+class AuditRepairTests(unittest.TestCase):
+    setUp = LifecycleTests.setUp
+
+    def test_machine_records_use_registered_schema_and_existing_source_provenance(self):
+        import jsonschema
+        from do_math.record_schemas import RECORDS
+        e=self.engine
+        config=self.prepare_http()
+        e.control('external',config)
+        op=e.runtime['external_operations'][config['id']]
+        validate=lambda record,family: self.assertEqual(
+            [error.message for error in jsonschema.Draft202012Validator(RECORDS[family]).iter_errors(record)],[])
+        validate(op,'external_operations')
+        event=next(row for row in e.runtime['events']
+                   if row['kind']=='external_operation_prepared' and row['target']==op['id'])
+        self.assertIn(event['source_ref'],e.instance['governance_sources'])
+        with patch('do_math.external._http',return_value={'http_status':201,'body':b'ok'}):
+            e.machine('external_action')
+        validate(e.runtime['external_operations'][op['id']],'external_operations')
+        environment=e.environment('audit-schema')
+        e.control('trust',{'operation':'transition','env_id':environment})
+        e.machine('trust_activate')
+        LifecycleTests.transition(self)
+        e.machine('trust_check'); e.machine('trust_check')
+        for execution in e.runtime['executions'].values():
+            if execution['role'] in {'external_action','trust_activate','trust_check'}:
+                validate(execution,'executions')
+                self.assertTrue(execution['action']['source_ref'])
+                if execution['role'].startswith('trust_'):
+                    self.assertEqual(execution['result_ref'],execution['submission_receipt']['evidence_ref'])
+
+    def test_11_ambiguous_adopted_grants_are_not_selected_by_order(self):
+        e=self.engine; e.grant('GR-other')
+        e.instance['lifecycle']['adoption']['research_grant_ids']=['GR-other','GR-research']
+        action={'id':'AC-ambiguous','role':'research_preparation'}
+        with self.assertRaisesRegex(ValueError,'ambiguous'):
+            e._action_lifecycle_gate(action)
+        self.assertNotIn('grant_id',action)
+        selected={**action,'grant_id':'GR-research'}
+        e._action_lifecycle_gate(selected)
+        self.assertEqual(selected['grant_id'],'GR-research')
+
+    def test_11_initial_queue_does_not_manufacture_explicit_grant_choice(self):
+        e=self.engine; e.grant('GR-init-other',True)
+        lifecycle=e.instance['lifecycle']
+        lifecycle.update(state='initializing'); lifecycle.pop('intent_check',None)
+        lifecycle['adoption']['initial_grant_ids']=['GR-init-other','GR-init']
+        e.runtime['queue'].clear()
+        e._queue_initial_intent()
+        action=next(a for a in e.runtime['queue'] if a['role']=='intent_interpretation')
+        self.assertNotIn('grant_id',action)
+        with self.assertRaisesRegex(ValueError,'ambiguous'):
+            e._action_lifecycle_gate(action)
+        lifecycle['adoption']['initial_grant_ids']=['GR-init']
+        e._action_lifecycle_gate(action)
+        self.assertEqual(action['grant_id'],'GR-init')
+
+    def test_11_initial_queue_treats_held_input_overflow_as_the_same_request(self):
+        e=self.engine
+        lifecycle=e.instance['lifecycle']
+        lifecycle.update(state='initializing'); lifecycle.pop('intent_check',None)
+        input_id=lifecycle['input_id']
+        held={'id':'AC-held-overflow','role':'intent_interpretation','target':input_id,
+              'stage':'interpret','initialization':True}
+        e.runtime['queue'].clear()
+        e.runtime['waiting_actions']={held['id']:{'action':held,'kind':'input_overflow',
+            'reason':'input_overflow','next_owner':'user'}}
+        e._queue_initial_intent()
+        self.assertEqual(e.runtime['queue'],[],
+            'a held initial request must not be regenerated under a new action ID')
+
+    def test_11_retry_reuses_the_exact_held_action_and_current_authority(self):
+        from do_math import activities, questions
+        e=self.engine
+        action={'id':'AC-held-overflow','role':'research_preparation'}
+        e._action_lifecycle_gate(action)
+        activity=e._activity_for_action(action)
+        condition={'kind':'input_overflow','action_ids':[action['id']]}
+        activities.wait_for(e.runtime,activity['id'],reason='input_overflow',
+                            condition=condition,next_owner='user',at=e.current_time.isoformat())
+        question=questions.link(e.runtime,execution_id='EX-overflow',
+            field='resolution_question/question',owner='user',targets=[action['id']],blocks=True)
+        e.runtime['queue'].clear()
+        e.runtime['waiting_actions'][action['id']]={'action':deepcopy(action),'kind':'input_overflow',
+            'reason':'input_overflow','question_id':question['id'],'next_owner':'user'}
+        prior_profile=deepcopy(action['profile_ref'])
+        retried=ResearchEngine._retry_input_overflow_action(e,{'id':'UC-retry','config':{
+            'retry_action':action['id']}})
+        self.assertEqual(retried['id'],action['id'])
+        self.assertEqual(retried['owner_activity_id'],activity['id'])
+        self.assertEqual(retried['profile_ref'],prior_profile)
+        self.assertEqual(e.runtime['activities'][activity['id']]['status'],'ready')
+        self.assertNotIn(action['id'],e.runtime['waiting_actions'])
+        self.assertEqual(question['status'],'open','a request does not prove that packing now fits')
+        e.runtime['status']='closed'
+        with self.assertRaisesRegex(ValueError,'closed/completed'):
+            ResearchEngine._retry_input_overflow_action(e,{'id':'UC-closed','config':{
+                'retry_action':action['id']}})
+
+    def test_adoption_preserves_approved_grants_and_disjoint_initial_scope(self):
+        from do_math.governance import validate_grant_source
+        e=self.engine
+        for grant in e.instance['grants'].values():
+            approved=e.instance['decisions'][grant['decision_id']]['change']['grant']
+            self.assertEqual(grant.get('initialization_only'),approved.get('initialization_only'))
+            validate_grant_source(e.instance,grant)
         with self.assertRaises(ValueError):
-            engine.control('external', {'operation': 'retry', 'id': 'OP-retry', 'grant_id': 'HTTP'}, 'retry-confirmed')
-        self.assertEqual(received, ['/retry'])
+            e._action_lifecycle_gate({'role':'intent_interpretation','grant_id':'GR-init'})
+        with tempfile.TemporaryDirectory() as root:
+            initial=FakeEngine(root); initial.grant('GR-narrow',True)
+            before=deepcopy(initial.instance['grants'])
+            with self.assertRaisesRegex(ValueError,'distinct grants'):
+                initial.control('decision',{'change':{'kind':'initialization','operation':'adopt',
+                    'initial_grant_ids':['GR-narrow'],'research_grant_ids':['GR-narrow']}})
+            self.assertEqual(initial.instance['grants'],before)
 
-    def test_unknown_requires_reconciliation_before_explicit_authorized_retry(self):
-        engine = self.engine
-        received = []
-        class Handler(BaseHTTPRequestHandler):
-            def do_POST(self):
-                self.rfile.read(int(self.headers.get('Content-Length', '0')))
-                received.append(self.path)
-                if len(received) == 1:
-                    self.close_connection = True
-                else:
-                    body = b'retried'
-                    self.send_response(200)
-                    self.send_header('Content-Length', str(len(body)))
-                    self.end_headers()
-                    self.wfile.write(body)
-            def log_message(self, *args): pass
-        server = HTTPServer(('127.0.0.1', 0), Handler)
-        worker = threading.Thread(target=server.serve_forever, daemon=True)
-        worker.start(); self.addCleanup(server.server_close); self.addCleanup(server.shutdown)
-        origin = f'http://127.0.0.1:{server.server_port}'
-        engine.instance['grants']['HTTP'] = {'id': 'HTTP', 'kind': 'http', 'status': 'active',
-            'allowed_origins': [origin], 'allowed_methods': ['POST'], 'allowed_path_prefixes': ['/'], 'allow_idempotent_retry': True}
-        engine.control('external', {'operation': 'prepare', 'grant_id': 'HTTP', 'id': 'OP-unknown-retry',
-                                    'request': {'method': 'POST', 'url': origin + '/unknown', 'body': 'fixed'}}, 'prepare-unknown')
-        engine.machine('external_action')
-        self.assertEqual(engine.runtime['external_operations']['OP-unknown-retry']['status'], 'unknown')
+    def test_11_unique_eligible_grant_within_adoption_and_explicit_denial(self):
+        e=self.engine; e.grant('GR-other')
+        e.instance['grants']['GR-other']['included_targets']=['different']
+        e.instance['lifecycle']['adoption']['research_grant_ids']=['GR-other','GR-research']
+        action={'id':'AC-unique','role':'research_preparation'}
+        e._action_lifecycle_gate(action)
+        self.assertEqual(action['grant_id'],'GR-research')
         with self.assertRaises(ValueError):
-            engine.control('external', {'operation': 'retry', 'id': 'OP-unknown-retry', 'grant_id': 'HTTP'}, 'retry-unknown')
-        engine.control('external', {'operation': 'reconcile', 'id': 'OP-unknown-retry', 'result': 'failed',
-                                    'evidence': 'User determined the remote outcome was a failure'}, 'reconcile-unknown-failed')
-        engine.control('external', {'operation': 'retry', 'id': 'OP-unknown-retry', 'grant_id': 'HTTP'}, 'retry-reconciled-failure')
-        engine.machine('external_action')
-        self.assertEqual((engine.runtime['external_operations']['OP-unknown-retry']['status'], received), ('confirmed', ['/unknown', '/unknown']))
+            e._action_lifecycle_gate({**action,'grant_id':'GR-other'})
 
+    def prepare_http(self, *, once=False, credentials=False, scope=None, origin='http://127.0.0.1:1'):
+        e=self.engine
+        grant={'id':'GR-http-audit','kind':'http','reuse':'once' if once else 'reusable',
+            'allowed_origins':[origin],'allowed_methods':['POST'],'allowed_path_prefixes':['/effect']}
+        if credentials: grant['credential_env']={'X-Test':'LIFECYCLE_AUDIT_TEST_TOKEN'}
+        if scope: grant.update(scope)
+        e.control('decision',{'change':{'kind':'grant','grant':grant}})
+        config={'operation':'prepare','id':'OP-audit','grant_id':grant['id'],
+                'request':{'method':'POST','url':origin+'/effect','body':'test'}}
+        return config
 
-    def test_external_prepare_replay_preserves_ledger_states(self):
-        engine = FakeEngine(self.temp.name)
-        engine.control('decision', {'change': {'kind': 'grant', 'decision_id': 'grant-http', 'grant': {
-            'id': 'HTTP', 'kind': 'http', 'allowed_origins': ['http://127.0.0.1:1'],
-            'allowed_methods': ['GET'], 'allowed_path_prefixes': ['/'], 'credential_env': {}}}}, 'grant-control')
-        payload = {'operation': 'prepare', 'grant_id': 'HTTP', 'id': 'OP',
-                   'request': {'method': 'GET', 'url': 'http://127.0.0.1:1/', 'body': ''}}
-        engine.control('external', payload, 'prepare-control')
-        original = deepcopy(engine.runtime['external_operations']['OP'])
-        for state in ('prepared', 'running', 'unknown', 'confirmed'):
-            engine.runtime['external_operations']['OP']['status'] = state
-            engine.runtime['queue'] = []
-            engine.control('external', payload, 'replay-' + state)
-            self.assertEqual(engine.runtime['external_operations']['OP']['execution_id'], original['execution_id'])
-            self.assertEqual(engine.runtime['external_operations']['OP']['status'], state)
-            self.assertEqual(bool(engine.runtime['queue']), state == 'prepared')
-        changed = deepcopy(payload); changed['request']['body'] = 'different'
-        with self.assertRaises(ValueError): engine.control('external', changed, 'changed-payload')
+    def test_12_scoped_http_control_preserves_exact_envelope(self):
+        e=self.engine
+        scope={'included_targets':['TARGET'],'purposes':['publish'],'subjects':['publisher'],
+               'budget_kind':'operations','execution_kinds':['machine']}
+        config=self.prepare_http(scope=scope)
+        fields={'target_id':'TARGET','purpose':'publish','subject':'publisher',
+                'budget_kind':'operations','actor_kind':'machine'}
+        e.control('external',{**config,**fields})
+        op=e.runtime['external_operations'][config['id']]
+        self.assertEqual({k:op[k] for k in fields},fields)
+        with patch('do_math.external._http',return_value={'http_status':201,'body':b'ok'}) as send:
+            e.machine('external_action'); self.assertEqual(send.call_count,1)
+        with self.assertRaises(ValueError):
+            e.control('external',{**config,**fields,'purpose':'different'})
 
+    def test_13_once_http_first_send_and_distinct_request(self):
+        e=self.engine; config=self.prepare_http(once=True)
+        e.control('external',config)
+        with patch('do_math.external._http',return_value={'http_status':201,'body':b'ok'}) as send:
+            e.machine('external_action'); self.assertEqual(send.call_count,1)
+        self.assertEqual(e.runtime['external_operations'][config['id']]['status'],'confirmed')
+        with self.assertRaises(ValueError): e.control('external',{**config,'id':'OP-other'})
 
-class TrustCommandTests(unittest.TestCase):
-    def test_transition_uses_the_full_recorded_verifier_command(self):
-        with tempfile.TemporaryDirectory() as directory:
-            engine = FakeEngine(directory)
-            old = engine.environment('lean-old', active=True)
-            engine.knowledge('K1', old)
-            new = engine.environment('lake-new')
-            command = ['lake-new', '--dir', 'project', 'env', 'lean']
-            engine.instance['trust_environments'][new]['toolchain']['configured_command'] = command
-            engine.control('trust', {'operation': 'transition', 'env_id': new})
-            engine.machine('trust_check')
-            self.assertEqual(engine.formal_calls[0]['lean_command'], command)
+    def test_13_once_unknown_send_cannot_be_replayed_without_evidence(self):
+        e=self.engine; config=self.prepare_http(once=True)
+        e.control('external',config)
+        action=next(a for a in e.runtime['queue'] if a['role']=='external_action')
+        with patch('do_math.external._http',side_effect=TimeoutError) as send:
+            e.machine('external_action'); self.assertEqual(send.call_count,1)
+        before=deepcopy(e.runtime['external_operations'][config['id']])
+        self.assertEqual(before['status'],'unknown')
+        with self.assertRaises(ValueError):
+            e.control('external',{'operation':'retry','id':config['id'],'grant_id':config['grant_id']})
+        with patch('do_math.external._http') as send:
+            e._run_external_action(action); send.assert_not_called()
+        self.assertEqual(e.runtime['external_operations'][config['id']]['execution_id'],before['execution_id'])
 
+    def test_12_academic_control_binds_current_real_prerequisite(self):
+        from do_math.academic import current_requirements, solution_basis
+        e=self.engine; config=self.prepare_http(scope={'requires_academic':True})
+        e._solution_basis=lambda: solution_basis('synthetic-goal-evidence',
+            list(e.instance['formal_results'].values())) if e.instance['goal_status']=='mathematically_solved' else None
+        with self.assertRaises(ValueError): e.control('external',config)
+        # Synthetic upstream proof result; actual binding and academic prerequisite consumers.
+        e.knowledge('K-academic')
+        e.instance['goal_status']='mathematically_solved'
+        basis=e._solution_basis(); self.assertIsNotNone(basis)
+        e.control('external',config)
+        op=e.runtime['external_operations'][config['id']]
+        self.assertEqual(op['academic_basis'],{'solution_basis':basis,
+            'requirements_sha256':current_requirements(e.instance)['sha256']})
+        e.instance['goal_status']='unsolved'
+        with patch('do_math.external._http') as send:
+            e.machine('external_action'); send.assert_not_called()
+        self.assertEqual(e.runtime['external_operations'][config['id']]['status'],'cancelled')
 
-if __name__ == '__main__':
-    unittest.main()
+    def test_16_credential_resume_has_new_attempt_receipt_and_cleared_wait(self):
+        import os,time,threading
+        from http.server import HTTPServer
+        from test_external import H
+        class Handler(H):
+            count=0
+            def do_POST(self):
+                Handler.count+=1
+                super().do_POST()
+        server=HTTPServer(('127.0.0.1',0),Handler)
+        threading.Thread(target=server.serve_forever,daemon=True).start()
+        self.addCleanup(server.server_close); self.addCleanup(server.shutdown)
+        e=self.engine; config=self.prepare_http(credentials=True,origin=f'http://127.0.0.1:{server.server_port}')
+        # Real host clock on both registration and completion; no frozen fixture time.
+        e.lifecycle_clock=None; e.lifecycle_monotonic=time.monotonic
+        e.__dict__.pop('_clock_anchor',None)
+        e.control('external',config)
+        with patch.dict(os.environ), patch('do_math.external._http') as send:
+            os.environ.pop('LIFECYCLE_AUDIT_TEST_TOKEN',None)
+            e.machine('external_action'); send.assert_not_called()
+        before=deepcopy(e.runtime['external_operations'][config['id']])
+        first=deepcopy(e.runtime['executions'][before['execution_id']])
+        self.assertEqual(first['status'],'ended')
+        e.control('external',config)
+        with patch.dict(os.environ,{'LIFECYCLE_AUDIT_TEST_TOKEN':'synthetic-local-token'}):
+            e.machine('external_action')
+        self.assertEqual(Handler.count,1)
+        op=e.runtime['external_operations'][config['id']]
+        self.assertNotEqual(op['execution_id'],first['id'])
+        self.assertEqual(e.runtime['executions'][first['id']],first)
+        current=e.runtime['executions'][op['execution_id']]
+        self.assertEqual(current['continuation_of'],first['id'])
+        self.assertEqual(current['owner_activity_id'],first['owner_activity_id'])
+        self.assertEqual(current['outcome'],'output_accepted')
+        self.assertEqual(current['submission_receipt']['kind'],'machine_output')
+        self.assertNotIn('waiting_reason',op)
+        for key in ('id','request_sha256','idempotency_key'):
+            self.assertEqual(op[key],before[key])
+        for execution in (first,current):
+            transitions = execution['transitions']
+            # Wall-clock registration and guarded lifecycle samples are diagnostic.
+            # The preserved transition sequence records causal state order.
+            self.assertEqual(transitions[0]['from'], 'queued')
+            self.assertEqual(transitions[-1]['to'], 'ended')
+            for previous, following in zip(transitions, transitions[1:]):
+                self.assertEqual(previous['to'], following['from'])
+            self.assertTrue(all(datetime.fromisoformat(row['at']).utcoffset() == timedelta(0)
+                                for row in transitions))
+            self.assertEqual(execution['ended_at'], transitions[-1]['at'])
+
+if __name__=='__main__': unittest.main()

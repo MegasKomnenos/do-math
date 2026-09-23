@@ -77,7 +77,7 @@
       "owner_section": "16.3,19.7",
       "path": "schemas/command-request.schema.json",
       "schema_id": "https://do-math.invalid/schemas/draft/9/command-request",
-      "sha256": "d38c0669d448cf4ce768160d429e65de505c4cd4c10394592ebde3f1bd72c629",
+      "sha256": "617229b4145d0569b9cab9bfa2dbae164848cdf92575b53686f1950e22fcd95b",
       "storage": "transport"
     },
     {
@@ -87,7 +87,7 @@
       "owner_section": "16.3,19.7",
       "path": "schemas/command-response.schema.json",
       "schema_id": "https://do-math.invalid/schemas/draft/9/command-response",
-      "sha256": "fa50d056b2b2c2d8077fabee4ef030d39971fcbd0417e2a7775f974a84d119bd",
+      "sha256": "a9c21db63a9bf6c57b00f3ff60f6c429da8ccce18c536f4b36b9ae382a12634e",
       "storage": "transport"
     },
     {
@@ -137,7 +137,7 @@
       "owner_section": "6.1,6.4.1,12.1,16.1,16.2,19.4",
       "path": "schemas/execution-profile.schema.json",
       "schema_id": "https://do-math.invalid/schemas/draft/9/execution-profile",
-      "sha256": "245d95d7e531458a6d93f1799b6ec225b246f2d30569e56c7814e91092140471",
+      "sha256": "4d748bea0ff187d9f0287a61799fb23000c4fbeb6331e334d7851fccb33b92fa",
       "storage": "research/governance/profiles/{id}.json"
     },
     {
@@ -217,7 +217,7 @@
       "owner_section": "10,19.6",
       "path": "schemas/integration.schema.json",
       "schema_id": "https://do-math.invalid/schemas/draft/9/integration",
-      "sha256": "8f38efb99db672b1892dc240a4867c868b00293691b2abe88d5d2298949793d6",
+      "sha256": "ac381813a600e3a49cfff787fdcee87a62657ef9c9e2a836da02aae098beca78",
       "storage": "research/integrations/{id}.json"
     },
     {

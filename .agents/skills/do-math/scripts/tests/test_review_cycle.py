@@ -7,9 +7,29 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.review_cycle import start_review, next_actions, stage_schema, accept_result, context_for, record_turn
 
 
+def scoped_start(proposal, reviewers, judges=3, max_rounds=3, previous=None):
+    slots = [f"initial-{index}" for index in range(reviewers)] if isinstance(reviewers, int) else list(reviewers)
+    judge_slots = [f"judge-{index}" for index in range(judges)] if isinstance(judges, int) else list(judges)
+    policy = {"id": "test-policy-v5", "version": 5, "required_perspectives": [],
+              "minimum_initial_slots": len(slots), "judge_slots": judge_slots, "round_limit": max_rounds,
+              "activity_execution_limit": len(slots) + max_rounds * (len(slots) + 4), "overflow_disposition": "unresolved"}
+    assessment = {"assessment_id": "test-scope", "policy_id": policy["id"], "policy_version": 5,
+                  "required_perspectives": [], "initial_slots": [
+                      {"id": slot, "perspective": slot, "required_source_refs": ["proposal"]} for slot in slots],
+                  "selected_profile_ref": None, "activity_execution_limit": policy["activity_execution_limit"],
+                  "overflow_disposition": "unresolved"}
+    return start_review(proposal, reviewers, judges, max_rounds, previous, policy=policy, scope_assessment=assessment)
+
+
 class ReviewCycleTests(unittest.TestCase):
+    def test_incomplete_transcript_manifest_is_a_local_restoration_error(self):
+        cycle = record_turn(self.start(), 'initial-0', [{'role': 'user', 'content': 'sealed', 'message_id': 'm'}])
+        cycle['transcript_manifest']['initial-0'][0].pop('sha256')
+        with self.assertRaisesRegex(ValueError, 'transcript'):
+            context_for(cycle, next_actions(cycle)[0])
+
     def start(self, **kw):
-        return start_review({'revision': 'r1', 'proof': 'original', 'producer_execution_ids': ['author']}, reviewers=2, **kw)
+        return scoped_start({'revision': 'r1', 'proof': 'original', 'producer_execution_ids': ['author']}, reviewers=2, **kw)
 
     def output(self, cycle, stage, **changes):
         result = dict(proposal_digest=cycle['proposal_digest'], summary='Complete review evidence', used_sources=['proposal:1'], questions=[])
@@ -207,7 +227,7 @@ class ReviewCycleTests(unittest.TestCase):
 
     def test_revision_full_restart_and_old_output_blocked(self):
         old = self.submit(self.submit(self.start()))
-        cycle = start_review({'revision': 'r2', 'proof': 'changed'}, reviewers=2, previous=old)
+        cycle = scoped_start({'revision': 'r2', 'proof': 'changed'}, reviewers=2, previous=old)
         self.assertEqual(cycle['status'], 'working')
         self.assertEqual(cycle['decision'], None)
         self.assertEqual(len(next_actions(cycle)), 2)
@@ -216,9 +236,9 @@ class ReviewCycleTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'another proposal'):
             accept_result(cycle, next_actions(cycle)[0], self.output(old, 'initial'), 'fresh')
         with self.assertRaises(ValueError):
-            start_review({'revision': 'r2'}, reviewers=1, previous=old)
+            scoped_start({'revision': 'r2'}, reviewers=1, previous=old)
         with self.assertRaises(ValueError):
-            start_review({'revision': 'r1'}, reviewers=2, previous=old)
+            scoped_start({'revision': 'r1'}, reviewers=2, previous=old)
 
     def test_proposal_mutation_and_execution_identity(self):
         cycle = self.start()
@@ -241,7 +261,7 @@ class ReviewCycleTests(unittest.TestCase):
         cycle = record_turn(cycle, 'initial-0', messages)
         self.assertEqual(record_turn(cycle, 'initial-0', messages), cycle)
         cycle = self.submit(self.submit(cycle))
-        restored = start_review({'revision': 'r2'}, reviewers=2, previous=cycle)
+        restored = scoped_start({'revision': 'r2'}, reviewers=2, previous=cycle)
         context = context_for(restored, next_actions(restored)[0])
         self.assertEqual(len(context['source_refs']), 2)
         self.assertNotIn('large exact source body', json.dumps(context))

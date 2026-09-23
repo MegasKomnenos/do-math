@@ -13,8 +13,10 @@ from typing import Any, Mapping
 
 try:  # This module is also the direct ``python codex_worker.py`` Job root.
     from do_math.scholarly import validate_scholarly_server
+    from do_math.control_transport import ControlTransport
 except ModuleNotFoundError:  # pragma: no cover - exercised by the direct-script regression.
     from scholarly import validate_scholarly_server
+    from control_transport import ControlTransport
 
 
 _REMOVED_ENV = frozenset({
@@ -45,6 +47,46 @@ def _pairs(pairs):
     return value
 
 
+def validate_execution_binding(request):
+    fields = {"execution_id", "profile_ref", "control_binding", "resource_limits"}
+    if not fields.intersection(request):
+        return
+    ref = request.get("profile_ref")
+    if (not isinstance(request.get("execution_id"), str) or not request["execution_id"].strip()
+            or not isinstance(ref, dict) or set(ref) != {"id", "revision", "sha256"}
+            or not isinstance(ref["id"], str) or not ref["id"]
+            or type(ref["revision"]) is not int or ref["revision"] < 1
+            or not isinstance(ref["sha256"], str) or len(ref["sha256"]) != 64
+            or any(c not in "0123456789abcdef" for c in ref["sha256"])):
+        raise ValueError("worker execution binding requires exact execution_id and profile_ref")
+    if "resource_limits" in request:
+        try:
+            from do_math.windows_job import validate_resource_limits
+        except ModuleNotFoundError:
+            from windows_job import validate_resource_limits
+        if request["resource_limits"] is None:
+            raise ValueError("explicit resource limits cannot be null")
+        validate_resource_limits(request["resource_limits"])
+    if "control_binding" in request:
+        binding = request["control_binding"]
+        names = {"endpoint", "transport_id", "capability", "execution_id", "grant_id"}
+        if (not isinstance(binding, dict) or names - set(binding) or set(binding) - names - {"workspace"}
+                or any(not isinstance(binding[key], str) or not binding[key].strip() or "\0" in binding[key] for key in names)
+                or binding["execution_id"] != request["execution_id"]
+                or not Path(binding["endpoint"]).is_absolute()):
+            raise ValueError("control binding must identify this execution and an absolute local endpoint")
+        if "workspace" in binding:
+            workspace = binding["workspace"]
+            if (not isinstance(workspace, str) or not workspace.strip() or "\0" in workspace
+                    or not Path(workspace).is_absolute()):
+                raise ValueError("control binding workspace must be an absolute local path")
+            if "cwd" in request:
+                cwd = request["cwd"]
+                if (not isinstance(cwd, str) or not cwd.strip() or "\0" in cwd
+                        or not Path(cwd).is_absolute() or Path(workspace).resolve() != Path(cwd).resolve()):
+                    raise ValueError("control binding workspace differs from execution cwd")
+
+
 def load_request(path: Path) -> dict[str, Any]:
     value = json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=_pairs)
     if not isinstance(value, dict):
@@ -58,9 +100,10 @@ def load_request(path: Path) -> dict[str, Any]:
         raise ValueError("codex_path must be one NUL-free executable string")
     if "codex_argv" in value:
         raise ValueError("codex_argv is forbidden; production accepts one executable only")
-    unknown = set(value) - set(required) - {"sandbox", "filesystem", "windows_sandbox", "output_schema_path", "scholarly_server"}
+    unknown = set(value) - set(required) - {"sandbox", "filesystem", "windows_sandbox", "output_schema_path", "scholarly_server", "execution_id", "profile_ref", "control_binding", "resource_limits"}
     if unknown:
         raise ValueError("unknown worker request fields: " + ", ".join(sorted(unknown)))
+    validate_execution_binding(value)
     if not isinstance(value["effort"], str) or value["effort"] not in _EFFORTS or value["approval_policy"] != "never":
         raise ValueError("unsupported effort or approval policy")
     if "filesystem" in value:
@@ -70,9 +113,10 @@ def load_request(path: Path) -> dict[str, Any]:
         raise ValueError("a supported legacy sandbox or filesystem profile is required")
     if not isinstance(value["model"], str) or not value["model"]:
         raise ValueError("model must be non-empty")
-    if (not isinstance(value["max_runtime_seconds"], (int, float)) or isinstance(value["max_runtime_seconds"], bool)
-            or not math.isfinite(value["max_runtime_seconds"]) or value["max_runtime_seconds"] <= 0):
-        raise ValueError("max_runtime_seconds must be positive")
+    timeout = value["max_runtime_seconds"]
+    if timeout is not None and (not isinstance(timeout, (int, float)) or isinstance(timeout, bool)
+            or not math.isfinite(timeout) or timeout <= 0):
+        raise ValueError("max_runtime_seconds must be positive and finite or null")
     for name in ("prompt_path", "cwd", "stdout_path", "stderr_path", "final_path", "status_path"):
         if not isinstance(value[name], str) or not value[name] or "\x00" in value[name]:
             raise ValueError(name + " must be a non-empty path")
@@ -108,6 +152,7 @@ def load_request(path: Path) -> dict[str, Any]:
 
 def build_argv(request: Mapping[str, Any]) -> list[str]:
     """Use only documented non-interactive flags and a stdin prompt sentinel."""
+    validate_execution_binding(request)
     argv = [request["codex_path"], "--ask-for-approval", request["approval_policy"], "exec",
             "--json", "--color", "never", "--output-last-message", request["final_path"],
             "--model", request["model"], "--cd", request["cwd"],
@@ -118,6 +163,10 @@ def build_argv(request: Mapping[str, Any]) -> list[str]:
         argv.extend(["--output-schema", request["output_schema_path"]])
     if "windows_sandbox" in request:
         argv.extend(["--config", 'windows.sandbox="' + request["windows_sandbox"] + '"'])
+    if "control_binding" in request:
+        control = ControlTransport.mcp_server_config(request["control_binding"])
+        argv.extend(["--config", "mcp_servers.execution_control.command=" + json.dumps(control["command"], ensure_ascii=False),
+                     "--config", "mcp_servers.execution_control.args=" + json.dumps(control["args"], ensure_ascii=False)])
     scholarly = request.get("scholarly_server")
     if scholarly is not None:
         server = validate_scholarly_server(scholarly)
@@ -160,12 +209,17 @@ def run(request_path: Path) -> int:
                               "request_sha256": hashlib.sha256(request_bytes).hexdigest(),
                               "stdin_sha256": hashlib.sha256(prompt).hexdigest(),
                               "schema_sha256": None if schema is None else hashlib.sha256(schema).hexdigest()}
+    status.update({key: request[key] for key in ("execution_id", "profile_ref") if key in request})
+    environment = sanitized_environment()
+    temporary = Path(request["cwd"]) / ".scratch" / ".execution-temp"
+    temporary.mkdir(parents=True, exist_ok=True)
+    environment.update(TEMP=str(temporary.resolve()), TMP=str(temporary.resolve()))
     try:
         with stdout_path.open("wb") as stdout, stderr_path.open("wb") as stderr:
             process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=stdout, stderr=stderr,
-                                       cwd=request["cwd"], env=sanitized_environment(), shell=False, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+                                       cwd=request["cwd"], env=environment, shell=False, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
             try:
-                process.communicate(input=prompt, timeout=float(request["max_runtime_seconds"]))
+                process.communicate(input=prompt, timeout=request["max_runtime_seconds"])
                 status.update(state="exited", cli_exit_code=process.returncode)
             except subprocess.TimeoutExpired:
                 process.kill()

@@ -8,6 +8,7 @@ from typing import Any
 
 from .repository import canonical_json, new_id
 from .knowledge import assess_use, _propagate, capture_basis
+from . import knowledge_records
 
 
 _TOKEN = re.compile(r"^[a-z][a-z0-9_]*$")
@@ -15,7 +16,7 @@ _KNOWLEDGE_FIELDS = {
     "id", "kind", "title", "statement", "explanation", "summary", "lean_code",
     "declaration_names", "dependencies", "origin_refs", "source_refs", "confirmed_scope",
     "epistemic_status", "selection_relevance", "uncertainty_assessment",
-    "relation_claim",
+    "relation_claim", "definitions", "assumptions", "formal_result_ref",
 }
 _RELATION_FIELDS = {
     "id", "kind", "source", "target", "evidence", "evidence_refs",
@@ -73,6 +74,15 @@ def _key(family: str, token: str) -> str:
     return family + ":" + token
 
 
+def _lookup_definition(instance, family, token):
+    matches = [row for row in instance.get("kind_definitions", {}).values()
+               if row.get("family") == family and row.get("token") == token]
+    current = [row for row in matches if row.get("status") != "withdrawn"]
+    if len(current) > 1:
+        raise ValueError("multiple current definitions of one kind")
+    return current[0] if current else next((row for row in reversed(matches)), None)
+
+
 def _text(value: Any, label: str) -> str:
     if not isinstance(value, str) or not value.strip():
         raise ValueError(f"{label} must be nonempty text")
@@ -82,17 +92,25 @@ def _text(value: Any, label: str) -> str:
 def ensure_ontology(instance: dict) -> dict:
     output = deepcopy(instance)
     registry = output.setdefault("kind_definitions", {})
-    for definition in _BUILTINS:
-        registry.setdefault(_key(definition["family"], definition["token"]), deepcopy(definition))
+    for index, definition in enumerate(_BUILTINS):
+        if definition["family"] == "knowledge":
+            value = deepcopy(definition)
+            value["id"] = "KD-" + str(index + 1).zfill(26)
+            registry.setdefault(value["id"], value)
     return output
+
+
+def relation_templates():
+    return [{key: deepcopy(value) for key, value in row.items() if key not in {"status", "builtin"}}
+            for row in _BUILTINS if row["family"] == "relation"]
 
 
 def catalog_definitions(instance: dict) -> dict:
     current = ensure_ontology(instance)["kind_definitions"]
     return {"knowledge": [deepcopy(value) for key, value in sorted(current.items())
-                          if key.startswith("knowledge:") and value.get("status") == "active"],
+                          if value.get("family") == "knowledge" and value.get("status") == "active"],
             "relations": [deepcopy(value) for key, value in sorted(current.items())
-                          if key.startswith("relation:") and value.get("status") == "active"]}
+                          if value.get("family") == "relation" and value.get("status") == "active"]}
 
 
 def register_kind_definition(instance: dict, definition: dict, *, source_ref: str,
@@ -106,24 +124,79 @@ def register_kind_definition(instance: dict, definition: dict, *, source_ref: st
     _text(definition["meaning"], "meaning")
     constraints = definition["constraints"]
     if not isinstance(constraints, dict) or set(constraints) - {
-            "mathematical_claim", "requires_evidence", "requires_formal_results", "requires_assessments"}:
+            "mathematical_claim", "requires_evidence", "requires_formal_results", "requires_assessments",
+            "allowed_epistemic_statuses", "required_fields"}:
         raise ValueError("kind definition has unsupported constraints")
-    if any(not isinstance(value, bool) for value in constraints.values()):
-        raise ValueError("kind constraints must be booleans")
+    for key, value in constraints.items():
+        if key in {"allowed_epistemic_statuses", "required_fields"}:
+            if not isinstance(value, list) or not value or any(not isinstance(v, str) or not v for v in value) or len(value) != len(set(value)):
+                raise ValueError("kind list constraints require distinct nonempty strings")
+            if key == "required_fields" and set(value) - _KNOWLEDGE_FIELDS:
+                raise ValueError("required fields may not grant authority or add unknown fields")
+        elif not isinstance(value, bool):
+            raise ValueError("kind boolean constraint expected")
     if constraints.get("mathematical_claim"):
         definition = deepcopy(definition)
         definition["constraints"].update(requires_formal_results=True, requires_assessments=True)
-    output = ensure_ontology(instance); key = _key(family, token)
-    if key in output["kind_definitions"]:
+    output = ensure_ontology(instance)
+    previous = _lookup_definition(output, family, token)
+    if previous and previous["status"] != "withdrawn":
         raise ValueError("kind token is already defined")
-    output["kind_definitions"][key] = {**deepcopy(definition), "status": "active", "builtin": False,
+    identifier = new_id("KD")
+    output["kind_definitions"][identifier] = {**deepcopy(definition), "id": identifier, "status": "candidate", "builtin": False,
         "source_ref": source_ref, "actor_ref": actor_ref,
         "created_at": datetime.now(timezone.utc).isoformat()}
+    if previous:
+        output["kind_definitions"][identifier]["supersedes"] = previous["id"]
     return output, token
 
 
+def check_kind_definition(instance, family, token, *, check_ref, actor_ref):
+    _text(check_ref, "check_ref"); _text(actor_ref, "actor_ref")
+    output = deepcopy(instance)
+    record = _lookup_definition(output, family, token)
+    if record is None:
+        raise ValueError("unknown kind definition")
+    if record["status"] not in {"candidate", "checked"}:
+        raise ValueError("only candidate definitions can be checked")
+    record.update(status="checked", check_ref=check_ref, checked_by=actor_ref)
+    return output
+
+
+def activate_kind_definition(instance, family, token, *, approval_ref, actor_ref):
+    _text(approval_ref, "approval_ref"); _text(actor_ref, "actor_ref")
+    output = deepcopy(instance)
+    record = _lookup_definition(output, family, token)
+    if record is None:
+        raise ValueError("unknown kind definition")
+    if record["status"] != "checked" or not record.get("check_ref"):
+        raise ValueError("kind definition must be checked before activation")
+    record.update(status="active", approval_ref=approval_ref, activated_by=actor_ref)
+    return output
+
+
+def withdraw_kind_definition(instance, runtime, family, token, *, reason, actor_ref):
+    _text(reason, "reason"); _text(actor_ref, "actor_ref")
+    output, new_runtime = deepcopy(instance), deepcopy(runtime)
+    definition = _lookup_definition(output, family, token)
+    if definition is None:
+        raise ValueError("unknown kind definition")
+    definition.update(status="withdrawn", withdrawn_reason=reason, withdrawn_by=actor_ref)
+    roots = set()
+    for row in output.get("knowledge", {}).values() if family == "knowledge" else output.get("relations", []):
+        if row.get("kind_definition_id") == definition["id"]:
+            roots.add(row["id"])
+            if family == "relation":
+                row["status"] = "suspended"
+            else:
+                row["kind_use_suspended"] = True
+    if roots:
+        _propagate(output, new_runtime, roots, reason)
+    return output, new_runtime
+
+
 def _definition_for(instance: dict, family: str, token: str) -> dict:
-    definition = ensure_ontology(instance)["kind_definitions"].get(_key(family, token))
+    definition = _lookup_definition(ensure_ontology(instance), family, token)
     if not definition or definition.get("status") != "active":
         raise ValueError(f"unknown {family} kind: {token}")
     return definition
@@ -150,15 +223,28 @@ def validate_insight(instance: dict, runtime: dict, insight: dict) -> None:
 
 
 def import_candidate(instance: dict, runtime: dict, candidate: dict, *, source_ref: str,
-                     actor_ref: str) -> tuple[dict, dict, str]:
+                     actor_ref: str, reserved_dependency_ids=(), plan_nonformal=True) -> tuple[dict, dict, str]:
     _text(source_ref, "source_ref"); _text(actor_ref, "actor_ref")
     if not isinstance(candidate, dict) or set(candidate) - _KNOWLEDGE_FIELDS:
         raise ValueError("candidate has unsupported fields")
+    if "uncertainty_assessment" in candidate and not isinstance(candidate["uncertainty_assessment"], (str, dict)):
+        raise ValueError("uncertainty_assessment must be text or an object")
     for field in ("kind", "title", "statement", "explanation", "summary", "lean_code"):
         if not isinstance(candidate.get(field), str) or (field != "lean_code" and not candidate[field].strip()):
             raise ValueError(f"candidate {field} is invalid")
     output, new_runtime = ensure_ontology(instance), deepcopy(runtime)
     _definition_for(output, "knowledge", candidate["kind"])
+    candidate = deepcopy(candidate)
+    reuse_formal = candidate.get("formal_result_ref")
+    if reuse_formal:
+        formal = output.get("formal_results", {}).get(reuse_formal)
+        if not formal or not knowledge_records.formal_usable(output, formal):
+            raise ValueError("reused formal result must be current and accepted")
+        if candidate["lean_code"] and candidate["lean_code"] != formal["lean_code"]:
+            raise ValueError("reused formal source differs")
+        if candidate.get("declaration_names") and candidate["declaration_names"] != formal["declaration_names"]:
+            raise ValueError("reused formal declarations differ")
+        candidate.update(lean_code=formal["lean_code"], declaration_names=deepcopy(formal["declaration_names"]))
     declarations, dependencies = candidate.get("declaration_names", []), candidate.get("dependencies", [])
     if (not isinstance(declarations, list) or any(not isinstance(value, str) or not value for value in declarations)
             or len(declarations) != len(set(declarations))):
@@ -167,52 +253,64 @@ def import_candidate(instance: dict, runtime: dict, candidate: dict, *, source_r
             or len(dependencies) != len(set(dependencies))):
         raise ValueError("dependencies must contain distinct knowledge IDs")
     record_id = candidate.get("id") or new_id("KN")
+    if not isinstance(record_id, str) or not re.fullmatch(r"KN-[0-7][0-9A-HJKMNP-TV-Z]{25}", record_id):
+        raise ValueError("knowledge ID must be a canonical KN-prefixed ULID")
     if record_id in dependencies:
         raise ValueError("candidate cannot depend on itself")
-    missing = [value for value in dependencies if value not in output.get("knowledge", {})]
+    reserved = set(reserved_dependency_ids)
+    missing = [value for value in dependencies
+               if value not in output.get("knowledge", {}) and value not in reserved]
     if missing:
         raise ValueError("candidate dependencies do not exist: " + ", ".join(missing))
-    old = output.setdefault("knowledge", {}).get(record_id)
+    if record_id in knowledge_records.all_records(output):
+        raise ValueError("record ID already exists; revisions require a new ID")
     if candidate["lean_code"] and not declarations:
         raise ValueError("a formal candidate requires exported declaration names")
+    definition = _definition_for(output, "knowledge", candidate["kind"])
+    constraints = definition.get("constraints", {})
+    allowed = constraints.get("allowed_epistemic_statuses")
+    if allowed is not None and candidate.get("epistemic_status") not in allowed:
+        raise ValueError("epistemic_status is not allowed by the kind definition")
+    if any(not candidate.get(field) for field in constraints.get("required_fields", [])):
+        raise ValueError("candidate is missing kind-required fields")
     claim = candidate.get("relation_claim")
     if claim is not None:
         if not isinstance(claim, dict) or set(claim) != {"kind", "source", "target", "confirmed_scope"}:
             raise ValueError("relation_claim needs kind, source, target and confirmed_scope")
         _definition_for(output, "relation", claim["kind"])
-        if any(claim[key] not in output["knowledge"] for key in ("source", "target")) or not isinstance(claim["confirmed_scope"], str) or not claim["confirmed_scope"].strip():
-            raise ValueError("relation claim needs exact existing endpoints and scope")
-    engine_fields = {"status", "formal", "reviews", "identity_assessment", "verified_at"}
-    if engine_fields & set(candidate):
-        raise ValueError("candidate cannot supply engine-owned verification fields")
-    origin_refs = list(dict.fromkeys([*deepcopy(candidate.get("origin_refs", [])), source_ref]))
-    record = {key: deepcopy(value) for key, value in candidate.items() if key != "id"}
-    record.update(id=record_id, revision=int(old.get("revision", 0)) + 1 if old else 1,
-                  status="candidate", formal={}, reviews=[], dependencies=list(dependencies),
-                  declaration_names=list(declarations), origin_refs=origin_refs,
-                  source_ref=source_ref, imported_by=actor_ref,
-                  producer_execution=actor_ref,
-                  imported_at=datetime.now(timezone.utc).isoformat(),
-                  required_reviews=(old or {}).get("required_reviews",
-                      output.get("config", {}).get("reviewers", 2)))
-    if old:
-        record["history"] = [*deepcopy(old.get("history", [])),
-                             {key: deepcopy(value) for key, value in old.items() if key != "history"}]
-        record["previous_review_cycle_id"] = old.get("review_cycle_id")
-        previous = new_runtime.get("review_cycles", {}).get(old.get("review_cycle_id"))
-        if previous and previous["status"] == "working": previous.update(status="unresolved", decision="unresolved", phase="ended")
-    output["knowledge"][record_id] = record
-    if claim is not None:
+        if any(claim[key] not in output.get("knowledge", {}) for key in ("source", "target")):
+            raise ValueError("relation claim requires exact existing endpoints")
+        _text(claim["confirmed_scope"], "confirmed_scope")
+    from .input_basis import aliases, capture_sources
+    source_refs = candidate.get("source_refs", [])
+    if not isinstance(source_refs, list) or any(not isinstance(ref, str) for ref in source_refs):
+        raise ValueError("source_refs must be a list of source references")
+    known_sources = set().union(*(aliases(source) for source in output.get("sources", [])))
+    if set(source_refs) - known_sources:
+        raise ValueError("required source does not exist")
+    output, record_id = knowledge_records.create_candidate(output, {**candidate, "id": record_id},
+        source_ref=source_ref, actor_ref=actor_ref)
+    record = output["knowledge"][record_id]
+    if actor_ref not in new_runtime.get('executions', {}):
+        # User/import provenance is not an execution identity. Review author
+        # exclusion links must resolve to real executions in this instance.
+        authored = [record, output['expositions'][record['exposition_id']]]
+        if record['formal_result_id'] and not reuse_formal:
+            authored.append(output['formal_results'][record['formal_result_id']])
+        for authored_record in authored:
+            authored_record.pop('producer_execution', None)
+            authored_record['origin_refs'] = list(dict.fromkeys([*authored_record.get('origin_refs', []), actor_ref]))
+    record["kind_definition_id"] = definition["id"]
+    record["source_basis"] = capture_sources(output, source_refs)
+    if claim:
         record["relation_endpoint_basis"] = capture_basis(output, new_runtime, list(dict.fromkeys([claim["source"], claim["target"]])))
-    if old: _propagate(output, new_runtime, {record_id}, "Imported knowledge revision changed its meaning basis")
     new_runtime.setdefault("history", []).append({"kind": "knowledge_candidate_imported",
-        "knowledge_id": record_id, "revision": record["revision"], "source_ref": source_ref})
-    new_runtime.setdefault("queue", [])[:] = [action for action in new_runtime.get("queue", [])
-                                               if action.get("target") != record_id]
-    next_action = {"role": "formal_check" if record["lean_code"] else "research_plan",
-                   "target": record_id, "reason": "imported candidate requires verification",
-                   "source_ref": source_ref}
-    new_runtime["queue"].append(next_action)
+        "knowledge_id": record_id, "source_ref": source_ref})
+    next_role = "identity_review" if reuse_formal else "formal_check" if record["formal_result_id"] else "research_plan"
+    if next_role != 'research_plan' or plan_nonformal:
+        action_id = new_id("AC")
+        new_runtime.setdefault("queue", []).append({"id": action_id, "lineage_id": action_id, "role": next_role,
+            "target": record_id, "reason": "imported candidate requires verification", "source_ref": source_ref})
     return output, new_runtime, record_id
 
 
@@ -242,12 +340,13 @@ def validate_relation(instance: dict, relation: dict) -> dict:
             reasons.append("formal_result_refs_required")
         else:
             for ref in refs:
-                record = knowledge.get(ref)
-                formal = record.get("formal", {}) if isinstance(record, dict) else {}
-                if (not record or not assess_use(record, instance)["valid"] or formal.get("status") != "verified"):
+                record = instance.get("formal_results", {}).get(ref)
+                if not record or not knowledge_records.formal_usable(instance, record):
                     reasons.append(f"formal_result_not_usable:{ref}")
-                claim = (record or {}).get("relation_claim", {})
-                if not isinstance(claim, dict) or any(claim.get(key) != relation.get(key) for key in ("kind", "source", "target", "confirmed_scope")):
+                claims = [assessment.get("relation_claim", {}) for assessment in instance.get("identity_assessments", {}).values()
+                          if assessment.get("formal_result_id") == ref and assess_use(assessment, instance)["valid"]]
+                if not any(isinstance(claim, dict) and all(claim.get(key) == relation.get(key)
+                        for key in ("kind", "source", "target", "confirmed_scope")) for claim in claims):
                     reasons.append(f"formal_result_does_not_establish_this_relation:{ref}")
     if constraints.get("requires_assessments"):
         assessment_refs = relation.get("assessment_refs", [])
@@ -255,12 +354,13 @@ def validate_relation(instance: dict, relation: dict) -> dict:
             reasons.append("assessment_refs_required")
         else:
             effective = set()
-            for proof_id in relation.get("formal_result_refs", []):
-                record = knowledge.get(proof_id, {})
-                assessment = record.get("identity_assessment")
-                if isinstance(assessment, dict) and assessment.get("effective"):
-                    effective.update(value for value in (assessment.get("cycle_id"),
-                        assessment.get("id"), record.get("review_cycle_id")) if isinstance(value, str))
+            for assessment_id, assessment in instance.get("identity_assessments", {}).items():
+                if assessment.get("formal_result_id") not in relation.get("formal_result_refs", []):
+                    continue
+                claim = assessment.get("relation_claim", {})
+                if (assess_use(assessment, instance)["valid"] and isinstance(claim, dict)
+                        and all(claim.get(key) == relation.get(key) for key in ("kind", "source", "target", "confirmed_scope"))):
+                    effective.add(assessment_id)
             for ref in assessment_refs:
                 if ref not in effective:
                     reasons.append(f"assessment_not_effective:{ref}")
@@ -275,11 +375,14 @@ def import_relation(instance: dict, relation: dict, *, source_ref: str,
         raise ValueError("invalid relation: " + ", ".join(result["reasons"]))
     output = ensure_ontology(instance)
     relation_id = relation.get("id") or new_id("RL")
+    if not isinstance(relation_id, str) or not re.fullmatch(r"RL-[0-7][0-9A-HJKMNP-TV-Z]{25}", relation_id):
+        raise ValueError("relation ID must be a canonical RL-prefixed ULID")
     old = next((value for value in output.setdefault("relations", []) if value.get("id") == relation_id), None)
     record = {key: deepcopy(value) for key, value in relation.items() if key != "id"}
     mathematical = result["definition"]["constraints"].get("mathematical_claim", False)
     record.update(id=relation_id, revision=int(old.get("revision", 0)) + 1 if old else 1,
                   status="active", source_ref=source_ref, imported_by=actor_ref,
+                  kind_definition_id=result["definition"]["id"],
                   authority="mathematical_connection" if mathematical else "research_connection",
                   imported_at=datetime.now(timezone.utc).isoformat())
     if old:

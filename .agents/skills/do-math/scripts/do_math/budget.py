@@ -13,6 +13,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 import json
 from typing import Any
+from .state_contract import STATE_FORMAT_VERSION
 
 
 class BudgetInputError(ValueError):
@@ -249,6 +250,11 @@ def _request_parts(
         supplied = {unit for constraint_id, unit in pairs if constraint_id == host_id}
         if supplied != set(_HOST_LIMITS):
             raise BudgetInputError("each host capacity needs jobs, memory_bytes, and cpu_rate_basis_points demands")
+        if profile.get("host_resources") is not None:
+            pinned = profile["host_resources"]
+            amounts = {d["unit"]: d["amount"] for d in demands if d["constraint_id"] == host_id}
+            if pinned.get("constraint_id") != host_id or pinned.get("demands") != amounts:
+                raise BudgetInputError("host reservation demands differ from the pinned profile")
     for constraint_id, constraint in constraints.items():
         if constraint_id not in expected:
             continue
@@ -275,7 +281,7 @@ def _request_parts(
 
 def _new_record(demand: Mapping[str, Any], common: Mapping[str, Any]) -> dict[str, Any]:
     return {
-        "schema_version": "do-math-draft/resource-reservation/9",
+        "schema_version": STATE_FORMAT_VERSION,
         "id": demand["id"],
         "constraint_id": demand["constraint_id"],
         "unit": demand["unit"],
@@ -318,8 +324,17 @@ def _check_host(
         if limit_key is None:
             raise BudgetInputError("host demand has an unsupported unit")
         _nonnegative(limit_key, constraint.get(limit_key))
+        reserve = constraint.get("control_reserve")
+        headroom = 0
+        if reserve is not None:
+            if not isinstance(reserve, Mapping) or set(reserve) != set(_HOST_LIMITS):
+                raise BudgetInputError("control reserve requires all three explicit host units")
+            headroom = reserve[demand["unit"]]
+            _nonnegative("control reserve", headroom)
+            if headroom > constraint[limit_key]:
+                raise BudgetInputError("control reserve exceeds the approved host limit")
         used = _outstanding_sum(reservations, constraint["id"], demand["unit"])
-        if used + demand["amount"] > constraint[limit_key]:
+        if used + demand["amount"] > constraint[limit_key] - headroom:
             raise BudgetConflict(f"host capacity unavailable: {constraint['id']}/{demand['unit']}")
 
 

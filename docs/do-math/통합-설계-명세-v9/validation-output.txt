@@ -4,6 +4,7 @@ test_ast_absence_vs_corruption (__main__.SpecificationTests.test_ast_absence_vs_
 test_ast_cannot_read_prose_or_coerce_boolean (__main__.SpecificationTests.test_ast_cannot_read_prose_or_coerce_boolean) ... ok
 test_ast_error_dominates_true (__main__.SpecificationTests.test_ast_error_dominates_true) ... ok
 test_current_summary_issue_and_repeat_contracts (__main__.SpecificationTests.test_current_summary_issue_and_repeat_contracts) ... ok
+test_current_supported_stop_and_boundary_contract (__main__.SpecificationTests.test_current_supported_stop_and_boundary_contract) ... ok
 test_disagreement_is_unresolved (__main__.SpecificationTests.test_disagreement_is_unresolved) ... ok
 test_draft_schema_table_and_owner_sections (__main__.SpecificationTests.test_draft_schema_table_and_owner_sections) ... ok
 test_duration_positive_and_fixed_units (__main__.SpecificationTests.test_duration_positive_and_fixed_units) ... ok
@@ -13,12 +14,15 @@ test_every_command_branch (__main__.SpecificationTests.test_every_command_branch
 test_exact_ref_rejects_tree_input (__main__.SpecificationTests.test_exact_ref_rejects_tree_input) ... ok
 test_exact_reference_bytes (__main__.SpecificationTests.test_exact_reference_bytes) ... ok
 test_execution_output_schema_binding (__main__.SpecificationTests.test_execution_output_schema_binding) ... ok
+test_execution_profile_rule_bindings_are_closed (__main__.SpecificationTests.test_execution_profile_rule_bindings_are_closed) ... ok
 test_execution_transition_barrier (__main__.SpecificationTests.test_execution_transition_barrier) ... ok
 test_generated_schema_matches_authoring_source (__main__.SpecificationTests.test_generated_schema_matches_authoring_source) ... ok
 test_initializing_pause_resume (__main__.SpecificationTests.test_initializing_pause_resume) ... ok
-test_json_duplicate_and_normalization_collision (__main__.SpecificationTests.test_json_duplicate_and_normalization_collision) ... ok
+test_integration_binds_same_snapshot_impact_contract (__main__.SpecificationTests.test_integration_binds_same_snapshot_impact_contract) ... ok
+test_json_duplicate_and_exact_code_points (__main__.SpecificationTests.test_json_duplicate_and_exact_code_points) ... ok
 test_json_forbidden_numbers_and_bom (__main__.SpecificationTests.test_json_forbidden_numbers_and_bom) ... ok
 test_json_golden_unicode_and_controls (__main__.SpecificationTests.test_json_golden_unicode_and_controls) ... ok
+test_json_nfd_values_and_valid_utf8_are_preserved (__main__.SpecificationTests.test_json_nfd_values_and_valid_utf8_are_preserved) ... ok
 test_listings_fit_or_escalate_without_permission (__main__.SpecificationTests.test_listings_fit_or_escalate_without_permission) ... ok
 test_machine_has_no_ai_budget (__main__.SpecificationTests.test_machine_has_no_ai_budget) ... ok
 test_objection_round_boundary (__main__.SpecificationTests.test_objection_round_boundary) ... ok
@@ -66,6 +70,7 @@ test_self_check_retransmission_and_new_anchor (__main__.SpecificationTests.test_
 test_shared_capacity_overcommit (__main__.SpecificationTests.test_shared_capacity_overcommit) ... ok
 test_single_round_review_budget_and_resolved_policy (__main__.SpecificationTests.test_single_round_review_budget_and_resolved_policy) ... ok
 test_source_vectors_and_quality_bijection (__main__.SpecificationTests.test_source_vectors_and_quality_bijection) ... ok
+test_submission_uses_one_draft_and_machine_receipt (__main__.SpecificationTests.test_submission_uses_one_draft_and_machine_receipt) ... ok
 test_task_cannot_complete_with_live_execution (__main__.SpecificationTests.test_task_cannot_complete_with_live_execution) ... ok
 test_task_cannot_hide_remaining_scope (__main__.SpecificationTests.test_task_cannot_hide_remaining_scope) ... ok
 test_toolchain_lock (__main__.SpecificationTests.test_toolchain_lock) ... ok
@@ -80,6 +85,6 @@ test_yaml_golden_empty_typed_and_body (__main__.SpecificationTests.test_yaml_gol
 test_yaml_nested_duplicate_tags_and_aliases (__main__.SpecificationTests.test_yaml_nested_duplicate_tags_and_aliases) ... ok
 
 ----------------------------------------------------------------------
-Ran 80 tests in 2.572s
+Ran 85 tests in 2.792s
 
 OK

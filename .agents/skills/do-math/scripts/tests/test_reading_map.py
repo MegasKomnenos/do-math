@@ -8,7 +8,7 @@ import unittest
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from do_math.contracts import prompt_documents, render_prompt
-from test_purpose_engine import PurposeHarness
+from test_purpose_engine import ActiveStateHarness
 
 
 class ReadingMapTests(unittest.TestCase):
@@ -57,7 +57,7 @@ class ReadingMapTests(unittest.TestCase):
                 with self.assertRaises(ValueError): prompt_documents('research_work',skill_root=self.root)
 
 
-class DocumentContextTests(PurposeHarness):
+class DocumentContextTests(ActiveStateHarness):
     def test_declared_documents_have_recoverable_input_copies(self):
         engine,_=self.make()
         workspace=self.root/'preview';workspace.mkdir()

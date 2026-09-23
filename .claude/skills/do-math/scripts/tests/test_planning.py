@@ -1,65 +1,107 @@
-from __future__ import annotations
-import copy,sys, unittest
+"""Feature-five condition and planning regressions; no persisted-ready fixtures."""
+from copy import deepcopy
+import sys
+import unittest
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-from do_math.planning import apply_event_schedule, collect_due_events, contract_hash, evaluate_condition, task_ready, task_reference_basis, task_reference_changes
+from do_math import planning
+from test_redesign_TASKS import approved_fixture, approve
+
 
 class PlanningTests(unittest.TestCase):
- def setUp(self):
-  self.instance={'knowledge':{'K':{'id':'K','status':'active','value':1}},'relations':[{'id':'R','kind':'supports','source':'K','target':'F'}],'sources':[{'name':'src','path':'p'}],'goal_status':'unresolved'}
-  self.runtime={'tasks':{'T':{'id':'T','status':'planned','revision':1,'reviews':[{'id':'RV','revision':1,'decision':'approved'}],'inputs':['K','src'],'dependencies':[]}},'activities':{},'executions':{},'events':[],'next_research_reconsider_at':'2026-01-01T00:00:00Z'}
- def test_conditions_and_errors_preserve_basis(self):
-  x=evaluate_condition({'op':'all','args':[{'op':'record_exists','record_id':'K','family':'knowledge'},{'op':'record_field_equals','record_id':'K','pointer':'/value','value':1}]},self.instance,self.runtime); self.assertEqual(x['state'],'ready'); self.assertEqual(len(x['basis']),2)
-  old=x['basis'][0]['sha256']; self.instance['knowledge']['K']['value']=2; changed=evaluate_condition({'op':'record_exists','record_id':'K','family':'knowledge'},self.instance,self.runtime); self.assertNotEqual(old,changed['basis'][0]['sha256']); self.instance['knowledge']['K']['value']=1
-  self.assertEqual(evaluate_condition({'op':'unknown','record_id':'none'},self.instance,self.runtime)['state'],'evaluation_error')
-  self.assertEqual(evaluate_condition({'op':'record_field_equals','record_id':'K','pointer':'/question','value':1},self.instance,self.runtime)['state'],'evaluation_error')
-  self.instance['knowledge']['K']['value']=True; self.assertEqual(evaluate_condition({'op':'record_field_equals','record_id':'K','pointer':'/value','value':1},self.instance,self.runtime)['state'],'not_ready'); self.instance['knowledge']['K']['value']=1
-  self.assertEqual(evaluate_condition({'op':'record_exists','record_id':'none','family':'knowledge'},self.instance,self.runtime)['state'],'not_ready')
-  before=copy.deepcopy(self.instance);evaluate_condition({'op':'record_field_equals','record_id':'K','pointer':'/value','value':1},self.instance,self.runtime);self.assertEqual(self.instance,before)
- def test_task_ready_rechecks_reviews_inputs_and_conditions(self):
-  self.assertEqual(task_ready(self.runtime['tasks']['T'],self.instance,self.runtime)['state'],'ready')
-  self.runtime['tasks']['T']['reviews'][0]['revision']=2; self.assertEqual(task_ready(self.runtime['tasks']['T'],self.instance,self.runtime)['state'],'not_ready')
-  self.runtime['tasks']['T']['reviews'][0]['revision']=1; self.runtime['tasks']['T']['occurrence_condition']={'op':'record_lifecycle_is','record_id':'K','value':'withdrawn'}; self.assertEqual(task_ready(self.runtime['tasks']['T'],self.instance,self.runtime)['state'],'not_ready')
- def test_contract_hash_only_changes_for_contract_fields(self):
-  task={'id':'T','revision':1,'title':'t','question':'q','scope':'s','expected_result':'r','completion_criteria':['c'],'inputs':['i'],'reuse':[],'dependencies':[],'occurrence_condition':{'op':'always'},'work_class':'nonformal','profile_refs':['p'],'status':'ready','reviews':[],'history':['x']}
-  baseline=contract_hash(task);task['status']='waiting';task['history'].append('y');task['readiness']={'state':'ready'};self.assertEqual(contract_hash(task),baseline)
-  task['question']='changed';self.assertNotEqual(contract_hash(task),baseline)
- def test_due_events_are_unique_and_paused_preserves_pending(self):
-  self.runtime['tasks']['T'].update(wake_at='2026-01-01T00:00:00Z',due_conditions=[{'op':'always'}],newinput=True)
-  events=collect_due_events(self.instance,self.runtime,'2026-01-02T00:00:00Z'); self.assertEqual(sorted(e['kind'] for e in events),['research_reconsider_due','task_condition_due','task_new_input','task_wake_due']); self.assertEqual(len({e['id'] for e in events}),len(events))
-  self.runtime['status']='paused'; applied=apply_event_schedule(self.instance,self.runtime,'2026-01-02T00:00:00Z'); self.assertTrue(applied['runtime'].get('pending_events',[]))
-  again=apply_event_schedule(applied['instance'],applied['runtime'],'2026-01-02T00:00:00Z'); self.assertEqual(again['events'],[])
- def test_source_arrival_and_trust_transition_are_machine_conditions(self):
-  condition={'op':'all','args':[{'op':'record_exists','record_id':'SO-1','family':'source'},{'op':'record_lifecycle_is','record_id':'TE-1','value':'active'}]}
-  self.assertEqual(evaluate_condition(condition,self.instance,self.runtime)['state'],'not_ready')
-  self.instance['sources'].append({'id':'SO-1','name':'new','path':'artifact','sha256':'a'*64,'status':'active'})
-  self.instance['trust_environments']={'TE-1':{'id':'TE-1','status':'active'}}
-  self.assertEqual(evaluate_condition(condition,self.instance,self.runtime)['state'],'ready')
-  self.instance['trust_environments']['TE-1']['status']='invalid'
-  self.assertEqual(evaluate_condition(condition,self.instance,self.runtime)['state'],'not_ready')
- def test_relation_condition_rechecks_its_proof_after_import(self):
-  from do_math.knowledge_io import import_candidate, import_relation
-  from do_math.knowledge import invalidate_knowledge
-  base = dict(kind='theorem', title='T', statement='P', explanation='E', summary='S', lean_code='theorem t : True := by trivial', declaration_names=['t'], dependencies=[])
-  instance, runtime = dict(config={'reviewers':2}, knowledge={}, relations=[]), dict(queue=[], history=[])
-  for kid in ('KN-A', 'KN-B'):
-   instance, runtime, _ = import_candidate(instance, runtime, dict(base, id=kid), source_ref='input', actor_ref='user')
-  claim = dict(kind='formally_implies', source='KN-A', target='KN-B', confirmed_scope='P implies Q')
-  instance, runtime, _ = import_candidate(instance, runtime, dict(base, id='KN-P', relation_claim=claim), source_ref='input', actor_ref='user')
-  instance['knowledge']['KN-P'].update(status='verified', formal={'status':'verified'}, identity_assessment={'effective':True, 'cycle_id':'RC-P'})
-  relation = dict(claim, evidence='proof', formal_result_refs=['KN-P'], assessment_refs=['RC-P'])
-  instance, _ = import_relation(instance, relation, source_ref='input', actor_ref='user')
-  condition = dict(op='relation_exists', subkind='formally_implies', from_id='KN-A', to_id='KN-B')
-  self.assertEqual(evaluate_condition(condition, instance, runtime)['state'], 'ready')
-  instance, runtime = invalidate_knowledge(instance, runtime, 'KN-P', reason='proof withdrawn', actor_ref='user')
-  self.assertEqual(evaluate_condition(condition, instance, runtime)['state'], 'not_ready')
- def test_cited_task_basis_ignores_lifecycle_and_appended_results_but_not_contract_rewrites(self):
-  task=self.runtime['tasks']['T']; task['results']=[{'execution_id':'EX-1','summary':'first'}]
-  basis=[task_reference_basis(task)]; tasks={'T':copy.deepcopy(task)}
-  tasks['T'].update(status='performing',selected_by='EX-2',reviews=[]); tasks['T']['results'].append({'execution_id':'EX-3','summary':'later'})
-  self.assertEqual(task_reference_changes(basis,tasks),[])
-  changed=copy.deepcopy(tasks); changed['T']['scope']='new'; changed['T']['results'][0]['summary']='rewritten'; changed['T']['status']='closed'
-  self.assertEqual(task_reference_changes(basis,changed),['contract_changed:T','results_changed:T'])
-  self.assertEqual(task_reference_changes(basis,{}),['missing:T'])
+    def setUp(self):
+        self.task,self.instance,self.runtime=approved_fixture()
+        self.instance['knowledge']={'K':{'id':'K','lifecycle':'active','value':1}}
 
-if __name__=='__main__': unittest.main()
+    def condition(self,op='record_exists',**changes):
+        return dict(op=op,space='research',family='knowledge',record_id='K',**changes)
+
+    def test_conditions_and_errors_preserve_basis(self):
+        condition={'op':'all','args':[self.condition(),self.condition('record_field_equals',pointer='/value',value=1)]}
+        before=deepcopy(self.instance)
+        result=planning.evaluate_condition(condition,self.instance,self.runtime)
+        self.assertEqual(result['state'],'ready');self.assertEqual(len(result['basis']),2)
+        self.assertEqual(before,self.instance)
+        self.instance['knowledge']['K']['value']=True
+        self.assertEqual(planning.evaluate_condition(condition,self.instance,self.runtime)['state'],'not_ready')
+        changed=planning.evaluate_condition(self.condition(),self.instance,self.runtime)
+        self.assertNotEqual(changed['basis'][0]['sha256'],result['basis'][0]['sha256'])
+        for invalid in [{'op':'unknown'},self.condition('record_field_equals',pointer='/question',value=1),
+                        {'op':'any','args':[{'op':'always'},{'op':'unknown'}]}]:
+            self.assertEqual(planning.evaluate_condition(invalid,self.instance,self.runtime)['state'],'evaluation_error')
+        self.instance['knowledge'].clear()
+        result=planning.evaluate_condition(self.condition(),self.instance,self.runtime)
+        self.assertEqual(result['state'],'not_ready');self.assertIn('absencequery',result['basis'][0])
+
+    def test_task_ready_rechecks_reviews_inputs_and_conditions(self):
+        self.assertEqual(planning.task_ready(self.task,self.instance,self.runtime)['state'],'ready')
+        self.task['reviews'][0]['revision']=2
+        self.assertEqual(planning.task_ready(self.task,self.instance,self.runtime)['state'],'not_ready')
+        self.task['occurrence_condition']=self.condition('record_lifecycle_is',value='withdrawn')
+        approve(self.task,self.instance,self.runtime)
+        self.assertEqual(planning.task_ready(self.task,self.instance,self.runtime)['state'],'not_ready')
+
+    def test_contract_hash_only_changes_for_contract_fields(self):
+        baseline=planning.contract_hash(self.task)
+        self.task.update(status='waiting',waiting={'kind':'external_event'},history=['bookkeeping'])
+        self.assertEqual(planning.contract_hash(self.task),baseline)
+        self.task['question']='changed'
+        self.assertNotEqual(planning.contract_hash(self.task),baseline)
+
+    def test_due_events_are_unique_and_paused_preserves_pending(self):
+        self.runtime['next_research_reconsider_at']='2026-01-01T00:00:00Z'
+        self.task.update(wake_at='2026-01-01T00:00:00Z',due_conditions=[{'op':'always'}],newinput=True)
+        events=planning.collect_due_events(self.instance,self.runtime,'2026-01-02T00:00:00Z')
+        self.assertEqual(sorted(e['kind'] for e in events),['research_reconsider_due','task_condition_due','task_new_input','task_wake_due'])
+        self.assertEqual(len(events),len({e['id'] for e in events}))
+        self.runtime['status']='paused'
+        result=planning.apply_event_schedule(self.instance,self.runtime,'2026-01-02T00:00:00Z')
+        self.assertTrue(result['runtime']['pending_events'])
+        self.assertFalse(planning.apply_event_schedule(result['instance'],result['runtime'],'2026-01-02T00:00:00Z')['events'])
+
+    def test_source_arrival_and_trust_transition_are_machine_conditions(self):
+        condition={'op':'all','args':[
+            {'op':'record_exists','space':'research','family':'source','record_id':'SO-new'},
+            {'op':'record_lifecycle_is','space':'research','family':'trust-environment','record_id':'TE-1','value':'active'}]}
+        self.assertEqual(planning.evaluate_condition(condition,self.instance,self.runtime)['state'],'not_ready')
+        self.instance['sources'].append({'id':'SO-new','sha256':'a'*64})
+        self.instance['trust_environments']={'TE-1':{'id':'TE-1','status':'active'}}
+        self.assertEqual(planning.evaluate_condition(condition,self.instance,self.runtime)['state'],'ready')
+        self.instance['trust_environments']['TE-1']['status']='invalid'
+        self.assertEqual(planning.evaluate_condition(condition,self.instance,self.runtime)['state'],'not_ready')
+
+    def test_relation_condition_rechecks_its_proof_after_import(self):
+        from do_math import knowledge_io
+        from test_redesign_KNOWLEDGE import KnowledgeRedesign
+        from do_math import knowledge_records as kr
+        i,r,kid,aid=KnowledgeRedesign().verified()
+        template=next(t for t in knowledge_io.relation_templates() if t['token']=='formally_implies')
+        i,_=knowledge_io.register_kind_definition(i,template,source_ref='source',actor_ref='producer')
+        i=knowledge_io.check_kind_definition(i,'relation','formally_implies',check_ref='check',actor_ref='reviewer')
+        i=knowledge_io.activate_kind_definition(i,'relation','formally_implies',approval_ref='approved',actor_ref='reviewer')
+        fid=i['knowledge'][kid]['formal_result_id'];xid=i['knowledge'][kid]['exposition_id']
+        claim={'kind':'formally_implies','source':kid,'target':kid,'confirmed_scope':'True implies True'}
+        i['expositions'][xid]['relation_claim']=claim
+        i,aid=kr.record_identity_assessment(i,kid,{'decision':'match','basis':kr.identity_basis(i,kid),'cycle_id':'RC-relation'},'policy:1',runtime=r)
+        relation={'id':'RL-1','kind':'formally_implies','source':kid,'target':kid,
+            'confirmed_scope':'True implies True','evidence':'reflexivity',
+            'formal_result_refs':[fid],'assessment_refs':[aid]}
+        i['relations']=[relation]
+        condition={'op':'relation_exists','subkind':'formally_implies','from_id':kid,'to_id':kid}
+        actual=planning.evaluate_condition(condition,i,r)
+        self.assertEqual(actual['state'],'ready',actual)
+        i['formal_results'][fid]['formal_use']='suspended'
+        self.assertNotEqual(planning.evaluate_condition(condition,i,r)['state'],'ready')
+
+    def test_cited_task_basis_ignores_lifecycle_and_appended_results_but_not_contract_rewrites(self):
+        t=self.task;t['results']=[{'execution_id':'EX-1','summary':'first'}]
+        basis=[planning.task_reference_basis(t)];tasks={t['id']:deepcopy(t)}
+        tasks[t['id']].update(status='active',selected_by='EX-2',reviews=[])
+        tasks[t['id']]['results'].append({'execution_id':'EX-3','summary':'later'})
+        self.assertEqual(planning.task_reference_changes(basis,tasks),[])
+        tasks[t['id']]['scope']['included'].append('new');tasks[t['id']]['results'][0]['summary']='rewritten'
+        self.assertEqual(planning.task_reference_changes(basis,tasks),['contract_changed:TK-1','results_changed:TK-1'])
+        self.assertEqual(planning.task_reference_changes(basis,{}),['missing:TK-1'])
+
+
+if __name__=='__main__':unittest.main(verbosity=2)

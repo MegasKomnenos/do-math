@@ -5,18 +5,94 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.input_basis import capture_decision_basis, decision_basis_changes
-from do_math import planning, revisions
+from do_math import integration, planning, revisions
+from v5_fixtures import candidate, contract_review, charter_record
+from do_math.governance import initialize_governance, preserve_source, digest
+from do_math.knowledge_records import create_candidate
 
 
 class BasisTests(unittest.TestCase):
+    def test_current_resolution_commits_only_with_its_complete_bundle(self):
+        from do_math.decision_engine import DecisionEngineMixin
+        owner = DecisionEngineMixin()
+        action = {'id': 'AC-current', 'role': 'research_plan', 'target': 'A'}
+        output = {'summary': 'Resolve the prior failure', 'used_sources': [], 'questions': [],
+                  'dispositions': [], 'task_assessments': [], 'preparation_requests': [], 'goal_audit': False}
+        context = {'action': action, 'execution_id': 'EX-current', 'snapshot': 'a' * 40}
+        claim = {'action_id': 'AC-failed', 'evidence_execution_id': 'current',
+                 'reason': 'The current accepted judgment covers the failed request'}
+        runtime = {'history': [], 'integrations': {}, 'waiting_actions': {'AC-failed': {
+            'kind': 'execution_failure', 'execution_id': 'EX-failed',
+            'action': {'role': 'research_plan', 'target': 'A'}}},
+            'executions': {'EX-current': {'action': action, 'extensions': {'action_resolutions': [claim]}}}}
+        def apply(instance, candidate, bundle):
+            owner.runtime = candidate
+            owner.instance = instance
+            owner._apply_action_resolutions('EX-current', accepting_current=True)
+        def run(state, validate, publish=lambda *_: None):
+            return integration.apply_bundles({}, state, output, {}, context, execution_id='EX-current',
+                apply_bundle=apply, validate_current=lambda *_: None,
+                validate_candidate=validate, publish=publish)
+        before = deepcopy(runtime)
+        failed = run(runtime, lambda *_: (_ for _ in ()).throw(ValueError('later candidate failure')))
+        self.assertEqual(failed['status'], 'partial')
+        self.assertEqual(runtime, before)
+        unpublished = run(runtime, lambda *_: None,
+            publish=lambda *_: (_ for _ in ()).throw(OSError('Git publication failed')))
+        self.assertEqual(unpublished['status'], 'partial')
+        self.assertEqual(runtime, before)
+        accepted = run(runtime, lambda *_: None)
+        self.assertEqual(accepted['status'], 'accepted')
+        self.assertEqual(accepted['runtime']['waiting_actions'], {})
+        self.assertEqual(len(accepted['runtime']['history']), 1)
+        replay = run(accepted['runtime'], lambda *_: None)
+        self.assertEqual(replay['runtime']['history'], accepted['runtime']['history'])
+
+    def test_current_resolution_requires_its_validated_bundle_and_same_scope(self):
+        from do_math.decision_engine import DecisionEngineMixin
+        for accepting, evidence_id, target, allowed in (
+            (False, 'current', 'A', False),
+            (True, 'current', 'A', True),
+            (True, 'current', 'B', False),
+            (True, 'EX-other', 'A', False),
+        ):
+            with self.subTest(accepting=accepting, evidence=evidence_id, target=target):
+                owner = DecisionEngineMixin()
+                owner.instance = {}
+                claim = {'action_id': 'AC-failed', 'evidence_execution_id': evidence_id,
+                         'reason': 'The validated current judgment discharges the same obligation'}
+                owner.runtime = {'history': [], 'waiting_actions': {'AC-failed': {
+                    'kind': 'execution_failure', 'execution_id': 'EX-failed',
+                    'action': {'role': 'research_plan', 'target': 'A'}}}, 'executions': {
+                    'EX-current': {'action': {'role': 'research_plan', 'target': target},
+                                   'extensions': {'action_resolutions': [claim]}},
+                    'EX-other': {'action': {'role': 'research_plan', 'target': 'A'}}}}
+                if allowed:
+                    owner._apply_action_resolutions('EX-current', accepting_current=accepting)
+                    self.assertEqual(owner.runtime['waiting_actions'], {})
+                    self.assertEqual(owner.runtime['history'][0]['resolved_by'], 'EX-current')
+                else:
+                    before = deepcopy(owner.runtime)
+                    with self.assertRaisesRegex(ValueError, 'accepted execution'):
+                        owner._apply_action_resolutions('EX-current', accepting_current=accepting)
+                    self.assertEqual(owner.runtime, before)
+
     def setUp(self):
-        self.instance = {"goal_revision": 1, "policy_revision": 1, "knowledge": {}, "sources": []}
-        self.runtime = {"tasks": {"A": {"id": "A", "revision": 1, "question": "original", "status": "ready", "results": [{"report": "first"}], "inputs": []}}, "queue": [], "executions": {}, "waiting_actions": {}}
+        # Explicit synthetic approval is an input to this domain-level test.
+        # No engine lifecycle or activation evidence is injected.
+        source = preserve_source("UI-basis-fixture", "Preserve approved task premises", origin="user")
+        charter = charter_record(source["text"])
+        self.instance = initialize_governance(
+            {"feature_version": 5, "knowledge": {}, "sources": []}, source,
+            {"id": "DC-basis-fixture", "actor": "user", "source_ref": source["id"],
+             "source_sha256": source["sha256"], "record_hashes": {charter["id"]: digest(charter)}},
+            [charter])
+        self.runtime = {"tasks": {"A": {**candidate("A"), "id": "A", "revision": 1, "question": "original", "status": "planned", "results": [{"report": "first"}], "inputs": []}}, "queue": [], "executions": {}, "waiting_actions": {}}
 
     def test_task_bookkeeping_and_appended_results_are_not_content_changes(self):
         basis = capture_decision_basis(self.instance, self.runtime, ["A"])
         task = self.runtime["tasks"]["A"]
-        task.update(status="performing", reviews=[{"decision": "approved"}], deferred_reason="later")
+        task.update(status="active", reviews=[{"decision": "approved"}], deferred_reason="later")
         task["results"].append({"report": "second"})
         self.assertEqual(decision_basis_changes(basis, self.instance, self.runtime), [])
         task["status"] = "completed"
@@ -29,23 +105,23 @@ class BasisTests(unittest.TestCase):
         self.runtime["tasks"]["A"].update(question="different", results=[])
         self.assertEqual({row["field"] for row in decision_basis_changes(basis, self.instance, self.runtime)}, {"contract_sha256", "results_sha256"})
 
-    def test_verified_upgrade_keeps_identical_content_but_not_unknown_author_fields(self):
-        record = {"id": "K", "revision": 1, "status": "reviewing", "statement": "P", "dependencies": [], "reviews": []}
-        self.instance["knowledge"]["K"] = record
-        basis = capture_decision_basis(self.instance, self.runtime, ["K"])
-        record.update(status="verified", reviews=[{"match": True}], verified_at="now", identity_assessment={"effective": True})
+    def test_split_knowledge_bookkeeping_is_stable_but_authored_reference_change_is_detected(self):
+        self.instance, kid = create_candidate(self.instance, {
+            "id": "K", "kind": "observation", "title": "P", "statement": "P", "explanation": "P",
+            "summary": "P", "lean_code": "", "declaration_names": [], "dependencies": []},
+            source_ref="explicit-fixture", actor_ref="fixture-producer")
+        record = self.instance['knowledge'][kid]
+        basis = capture_decision_basis(self.instance, self.runtime, [kid])
+        record.update(review_cycle_id="RC-new", history=[{"reason": "administrative review scheduling"}])
         self.assertEqual(decision_basis_changes(basis, self.instance, self.runtime), [])
-        record["new_authored_condition"] = "H"
-        self.assertIn("content_sha256", {row["field"] for row in decision_basis_changes(basis, self.instance, self.runtime)})
-        record.pop("new_authored_condition")
-        record["use_suspended"] = True
-        self.assertIn("use_suspended", {row["field"] for row in decision_basis_changes(basis, self.instance, self.runtime)})
+        record['exposition_id'] = 'XP-replaced'
+        self.assertIn('content_sha256', {row['field'] for row in decision_basis_changes(basis, self.instance, self.runtime)})
 
     def test_a_previous_approval_is_invalid_after_its_external_premise_changes(self):
-        task = {"id": "B", "revision": 1, "question": "use A", "inputs": ["A"], "results": []}
+        task = {**candidate("B"), "id": "B", "revision": 1, "question": "use A", "inputs": ["A"], "results": []}
         self.runtime["tasks"]["B"] = task
-        review = {"revision": 1, "contract_sha256": planning.contract_hash(task), "goal_revision": 1, "policy_revision": 1,
-                  "decision_basis": capture_decision_basis(self.instance, self.runtime, ["A", "B"])}
+        review = planning.seal_contract_review(task, contract_review({"task": task}),
+            self.instance, self.runtime, execution_id="EX-independent-review")
         self.assertTrue(planning.contract_review_current(review, task, self.instance, self.runtime)["valid"])
         self.runtime["tasks"]["A"]["deferred_reason"] = "bookkeeping"
         self.assertTrue(planning.contract_review_current(review, task, self.instance, self.runtime)["valid"])

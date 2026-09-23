@@ -269,10 +269,20 @@ stop_policy = {"oneOf": [
     obj({"kind": {"const": "bounded"}, "window": DURATION, "allowed_tools": STRINGS,
          "allowed_paths": array(PATH, 1, True),
          "max_usage": array(obj({"constraint_id": S, "amount": POS}), 1)})]}
+observation_binding = obj({
+    "source": enum("checkpoint", "execution_events", "adapter_calls", "control_receipts",
+                   "adapter_active_intervals", "clock"),
+    "operator": enum("event_recorded", "counter_gte", "iteration_gte", "checkpoint_count_gte",
+                     "active_duration_gte", "wall_time_reached", "tool_call_completed",
+                     "safe_boundary_recorded"),
+    "subject_kind": enum("execution", "checkpoint", "iteration", "counter", "event",
+                         "tool_call", "safe_boundary", "clock"),
+    "unit": S})
 observation = obj({"operational_review_mode": enum("event_driven", "periodic"),
                    "max_interval": DURATION, "self_check_response_window": DURATION,
                    "tool_review_window": DURATION, "allowed_operators": STRINGS,
-                   "allowed_target_refs": REFS, "periodic_interval": DURATION})
+                   "allowed_target_refs": REFS, "periodic_interval": DURATION,
+                   "rule_bindings": array(observation_binding, 1)})
 register("execution-profile", "6.1,6.4.1,12.1,16.1,16.2,19.4",
          "research/governance/profiles/{id}.json", {
     "id": ID, "revision": POS, "actor_kind": enum("ai", "machine"),
@@ -600,13 +610,18 @@ register("plan", "9,19.5", "runtime/artifacts/{bundle_id}/plan.json", {
     "expectation_actual_comparison_ref": ARTIFACT, "exploration_consideration": S,
     "next_reconsideration": common("wake"), "consumed_event_ids": IDS}, prefix="PN")
 
+integration_change = optional({"operation": enum("create", "revise", "withdraw", "delete"),
+    "record_id": ID, "prior": common("prior_hash"), "candidate_ref": ARTIFACT,
+    "replacement_id": ID}, "replacement_id")
+impact_disposition = obj({"target_ref": EXACT, "reason": S, "disposition": S,
+    "provenance_refs": REFS, "dependency_refs": REFS,
+    "requires_independent_review": BOOL, "approval_refs": NONEMPTY_REFS})
 register("integration", "10,19.6", "research/integrations/{id}.json", {
     "id": ID, "base_snapshot_commit": OID, "author_execution_ids": array(ID, 1, True),
-    "changes": array(obj({"operation": enum("create", "revise", "withdraw", "delete"),
-        "record_id": ID, "prior": common("prior_hash"), "candidate_ref": ARTIFACT}), 1),
+    "changes": array(integration_change, 1),
     "authority_refs": NONEMPTY_REFS, "assessment_refs": REFS, "check_refs": NONEMPTY_REFS,
-    "impact": array(obj({"target_ref": EXACT, "reason": S, "disposition": S,
-                         "requires_independent_review": BOOL, "approval_refs": REFS})),
+    "impact_plan_refs": NONEMPTY_REFS, "impact_review_ref": EXACT,
+    "impact": array(impact_disposition),
     "followups": FOLLOWUPS}, prefix="IN")
 common_defs["prior_hash"] = {"oneOf": [obj({"kind": {"const": "absent"}}),
     obj({"kind": {"const": "present"}, "sha256": HASH})]}
@@ -817,13 +832,12 @@ COMMANDS = {
         "state", "readiness", "observation", "identity", "integration_preview", "contract"),
         "input_refs": NONEMPTY_REFS, "snapshot_commit": OID}),
         "declared_check_scope", "machine_check_only"),
-    "checkpoint": ("running_or_checkpointing_producer", "6.4.1,6.5", optional({
+    "checkpoint": ("running_or_verified_bounded_profile_producer", "6.4.1,6.5", optional({
         "execution_id": ID, "files": array(FILE, 1), "progress_ref": ARTIFACT,
         "self_check": self_check, "next_rules": array(common("observation_rule"), 1)}, "self_check", "next_rules"),
-        "running_or_bounded_write_scope", "immutable_checkpoint"),
-    "submit": ("running_producer", "6.5", obj({"execution_id": ID, "files": array(FILE),
-        "result_ref": ARTIFACT, "wait_request": common("optional_wait")}),
-        "running_and_manifest_binding", "stopping_acknowledgement"),
+        "running_or_verified_future_bounded_write_scope", "immutable_checkpoint"),
+    "submit": ("running_producer_optional_early_delivery", "6.5", obj({"execution_id": ID, "draft_path": PATH}),
+        "running_authority_and_draft_path_binding", "sealed_candidate_receipt_or_structured_rejection"),
     "decide": ("conversation_adapter", "13.1", obj({"question_ref": ARTIFACT,
         "answer_ref": ARTIFACT, "conversation_refs": NONEMPTY_REFS}),
         "authenticated_user_answer", "decision_or_interpretation_activity"),
@@ -865,7 +879,7 @@ response_results = {
                         "self_check_disposition": enum("received", "missed", "not_submitted"),
                         "rule_disposition": enum("accepted", "rejected", "not_submitted", "not_activated")}),
     "submit": obj({"acknowledged": {"const": True}, "state": {"const": "stopping"},
-                    "snapshot_commit": OID}),
+                    "candidate_ref": ARTIFACT, "check_ref": EXACT, "snapshot_commit": OID}),
     "decide": {"oneOf": [obj({"kind": {"const": "decision"}, "decision_ref": EXACT}),
                           obj({"kind": {"const": "interpretation"}, "activity_id": ID})]},
     "apply": obj({"integration_id": ID, "snapshot_commit": OID}),
@@ -1072,10 +1086,10 @@ RULES = [
     ("R04", "5.3", "At most one non-ended research_work request per task, including queued; completed/closed require all owned research executions ended.", ["V45", "V46"], "task"),
     ("R05", "5.5,12.4", "A contract revision applies only after previous research executions ended and independent approval exists; remaining_scope cannot waive contract obligations. Termination without changing the contract preserves its revision and requires the designated completion or closure basis, scope disposition and ended research executions; operational review does not replace these judgments with contract rewriting.", ["V55", "V69", "V70", "V224"], "task"),
     ("R06", "5.7", "Evaluate all AST branches at one snapshot; errors dominate true/false; missing dynamic records are false, broken declared artifact refs are errors.", ["V163", "V164", "V165"], "occurrence"),
-    ("R07", "6.2", "Only documented execution transitions; stopping phases only checkpointing -> terminating; ended is immutable.", ["V07", "V11", "V39"], "execution"),
-    ("R08", "6.3", "No substantive action before running authority; all startup reservations including bounded finishing usage are present.", ["V08", "V09", "V13", "V167"], "execution"),
-    ("R09", "6.4.1", "Stopping checkpoint authority is bounded in time/tools/paths/usage; immediate stop, expiry or integrity loss skips it.", ["V155", "V156", "V157", "V158", "V185"], "execution"),
-    ("R10", "6.5", "Submission acknowledgement is not output acceptance; bytes are collected after the termination barrier and compared to the announced manifest.", ["V43", "V11"], "execution"),
+    ("R07", "6.2", "Only documented execution transitions; the current supported profile stops directly in terminating. Checkpointing -> terminating remains only for a separately verified future bounded profile; ended is immutable.", ["V07", "V11", "V39"], "execution"),
+    ("R08", "6.3", "No substantive action before running authority; normal startup reservations are present, with no separate finishing reservation in the current supported profile.", ["V08", "V09", "V13", "V167"], "execution"),
+    ("R09", "6.4.1", "A finish notice requests normal partial submission without revoking authority. An actual stop revokes new model/tool/external work and begins immediate local termination and recovery of already accepted drafts, valid checkpoints and recoverable files. Unobserved remote termination, usage and billing remain unknown; a future bounded checkpointing profile requires separate enforcement evidence.", ["V155", "V156", "V157", "V158", "V185", "V230"], "execution"),
+    ("R10", "6.5", "A verified normal native JSON final is the default delivery; an explicit draft-path submit is optional early delivery. Both use one central byte-capture, check, seal and apply path. A previously accepted early seal has absolute precedence and is never replaced or repaired by another final. Failed, incomplete, stopped, stale or unauthorized streams are preserve-only. Checks, hashes and manifests come from captured bytes, and neither normal completion nor receipt is output acceptance, task completion, mathematical approval or integration.", ["V43", "V11", "V185"], "execution"),
     ("R11", "7.1", "The initial state commit has no parent; every later state commit has exactly its preceding state as parent and contains research/runtime; runtime-only changes preserve research tree; artifacts cannot change or disappear.", ["V14", "V15", "V42", "V65", "V67", "V197"], "state"),
     ("R12", "7.2", "Exact refs resolve to preserved bytes at the named snapshot/bundle; tree refs are same-space structural only and never judgment/permission inputs.", ["V41", "V54"], "reference"),
     ("R13", "7.2.1", "Clock rollback or restart never grants a fresh deadline; expired events are merged once and permissions rechecked.", ["V66", "V79"], "time"),
@@ -1087,7 +1101,7 @@ RULES = [
     ("R19", "9.2.1", "Selector is not in candidate author_execution_ids and does not resume/fork author context; prepared tasks do not wait for unrelated reviews.", ["V123", "V125"], "independence"),
     ("R20", "9.3", "Exactly one disposition per supplied candidate; dispositions name a listed task_id/revision and the engine binds exact refs in the activity result without editing plan bytes; a plan cut at max output is a receipt failure that escalates without retry and is not a selection failure; sum requests per shared execution constraint respects its cap.", ["V120", "V183", "V205"], "plan"),
     ("R21", "9.4", "Academic state uses exact current solution/requirements and unresolved external rejection; old completed work never silently carries to changed bases.", ["V97", "V98", "V99", "V100"], "academic"),
-    ("R22", "10.3", "Apply only declared changes to latest research and latest runtime; semantic merge is AI-owned; long checks rerun if their input closure changes.", ["V42", "V67", "V181"], "integration"),
+    ("R22", "10.3", "For a response with no existing-record mutation and no partial acceptance to preserve, omission of integration bundles deterministically creates one atomic bundle over all current output and extension members; it never guesses independence or splits the response. Explicit splits, revisions and partial retries preserve declared members, impacts and previous bases. Reject explicit impact without a mutation member before central acceptance and never silently erase it. Bind every actual revision impact plan and independent review to one base snapshot S0, distinguish provenance citations from effective dependencies, reduce the reviewed union into one candidate, validate once and attempt one conditional publication. Apply only declared changes; semantic merge is AI-owned; long checks rerun if their input closure changes.", ["V42", "V67", "V181", "V255", "V256"], "integration"),
     ('R23', '11.3', 'Three basic perspectives plus required domains and source fidelity; every reviewer reads the full proposal. Only the proposal-overflow branch defined in 8.3 closes unresolved for restructuring; restored dialogue is never omitted from actual review input. Restructure an ongoing same obligation by contract revision, or create a new task after a completed/closed author task. Planners never split proposals.', ['V19', 'V44', 'V47', 'V90', 'V177', 'V219', 'V222'], 'review'),
     ("R24", "11.4", "New proposal versions receive all new semantic judgments; same version/scope/input may retain other completed slots.", ["V62", "V139", "V142", "V143"], "review"),
     ("R25", "11.4.1", "Unanimous approved establishes an objection; final split/unresolved stays unresolved; last unanimous rejected closes without new response.", ["V136", "V147", "V149", "V170"], "review"),
@@ -1104,8 +1118,8 @@ RULES = [
     ("R36", "13.5", "Pause preserves resume_lifecycle including initializing; queued ends without reservation and stopping remains visible until barrier.", ["V04", "V32", "V39", "V40"], "lifecycle"),
     ("R37", "14.2", "Read-only integrity check precedes new engine_id; reconcile actual local/remote effects without new model inference.", ["V49", "V57", "V75"], "recovery"),
     ("R38", "15", "One active trust environment; transition freezes new K, validates full target set, and preserves old valid environment on failure.", ["V34", "V110"], "trust"),
-    ('R39', '16.1,16.1.1', 'Actual capability evidence is mandatory; fixture success is not proof of input injection, isolation or remote termination. Transcript-restoring adapters must disable and report compaction and preserve outputs. A Windows root is suspended and already a Job member at creation, before identity persistence; engine loss in that gap must still terminate it. Authority precedes resume and termination is observed. Unsupported creation paths cannot activate.', ['V33', 'V61', 'V106', 'V140', 'V194', 'V203'], 'adapter'),
-    ("R40", "16.3", "Same request ID and canonical input => previous result; different input => rejection; identical checker/input disagreement is tool failure. Repair aggregation selects the latest history_window sealed role outputs by event_seq, breaking same-event ties by bundle ID and path bytes, and deduplicates their check records regardless of integration success. A zero window does not suppress mandatory current failures.", ["V12", "V104", "V182", "V221"], "command"),
+    ('R39', '3.4,16.1,16.1.1', 'Actual capability evidence is mandatory; fixture success is not proof of input injection, strong same-user isolation or remote termination. The current boundary is instruction compliance, selected input and a private workspace plus central authority, exact execution binding, public-record writes and publication-scope checks. A Windows root is suspended and already a Job member at creation, before identity persistence; the Job governs local process/descendant lifetime and adopted resource limits, not file/network/secret/IPC isolation. Unobserved provider operations, remote termination and billing stay unknown. Unsupported claimed capabilities cannot activate.', ['V33', 'V61', 'V106', 'V140', 'V194', 'V203'], 'adapter'),
+    ("R40", "16.3", "Same request ID and canonical input => previous result; different input => rejection; identical checker/input disagreement is tool failure. Repair aggregation selects the latest history_window centrally captured submission attempts in submission order, including rejected, corrected and accepted native-final or explicit-submit attempts regardless of later integration, and deduplicates request replay. It derives history from existing central snapshots, events and artifacts, not from optional local check or preview coverage and not from a mandatory producer report. A zero window disables frequency aggregation but does not suppress mandatory current unresolved failures.", ["V12", "V104", "V182", "V221"], "command"),
     ("R41", "14.1", "initializing -> active requires complete activation evidence: approved governance, valid references, operations capacity, active trust and recovery.", ["V08", "V49"], "lifecycle"),
     ("R42", "3.2.1,5.3", "waiting may resume only after its recorded wake condition resolves; a task additionally requires a committed new research request.", ["V04", "V45", "V112"], "waiting"),
     ("R43", "11.3.2,16.5", "The assigned execution fixes review-result phase and role slot; validate the output against that exact assignment as well as its schema. Organize/answer never authorize a semantic verdict.", ["V192"], "review"),

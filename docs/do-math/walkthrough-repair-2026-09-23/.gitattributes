@@ -1,0 +1,2 @@
+# Patch context preserves original source bytes and whitespace.
+source-changes.patch -text -whitespace

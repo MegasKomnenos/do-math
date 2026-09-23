@@ -5,17 +5,125 @@ from copy import deepcopy
 from pathlib import Path
 import time
 
-from .model_policy import assessment_basis, selection, validate_assessments
+from .model_policy import assessment_basis, selection, validate_assessments, preparation_only
 from .parallel import ModelCalls
 from .session_slots import SessionSlots
 from .provider_wait import provider_for
-from .execution_window import dispatch_reserve_seconds, notice_seconds
 
 MACHINE_ROLES = {"formal_check", "trust_check", "trust_activate", "external_action"}
 WORK_ROLES = {"research_work", "supplemental_research", "task_contract_review", "identity_review", "goal_audit"}
 
 
 class SchedulerMixin:
+    def _run_machine_steps(self, generator):
+        """Start only the blocking calculation; resume its owner continuation once."""
+        try:
+            execution_id, arguments = next(generator)
+        except StopIteration as completed:
+            return completed.value
+        if not hasattr(self, '_live_execution_ids'):
+            self._live_execution_ids = set()
+        self._live_execution_ids.add(execution_id)
+        if getattr(self, '_calls', None) is not None:
+            self._calls.start_call(generator, self.formal_verifier, arguments, execution_id=execution_id)
+            return False  # The queued request remains owned until completion.
+        try:
+            result = self.formal_verifier(**arguments)
+        except Exception as error:
+            result = {'status': 'failed', 'reason': f'{type(error).__name__}: {error}'}
+        try:
+            generator.send(result)
+        except StopIteration as completed:
+            return completed.value
+        finally:
+            self._live_execution_ids.discard(execution_id)
+        raise RuntimeError('machine execution yielded more than one calculation')
+
+    def _abort_parallel_calls(self):
+        """Preserve returned evidence and reconcile confirmed Jobs after owner failure."""
+        from .repository import lossless_json, new_id
+        from .governance import timestamp
+        returned = []
+        for future, generator in self._calls.futures.items():
+            execution_id = future.execution_id
+            try:
+                result = future.result()
+            except BaseException as error:
+                result = {'status': 'failed', 'reason': f'{type(error).__name__}: {error}'}
+            if execution_id:
+                raw = lossless_json(result)
+                # This local copy remains available even if publication itself failed.
+                path = Path(self.instance['workspace']) / 'execution-recovery' / execution_id / 'returned-result.json'
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(raw)
+                returned.append((execution_id, raw, str(path)))
+            generator.close()
+        self.head, self.instance, self.runtime = self.store.load()
+        self._saved_state = self._state_signature()
+        artifacts = {}
+        for execution_id, raw, local_path in returned:
+            execution = self.runtime['executions'].get(execution_id)
+            if not execution or execution['status'] == 'ended':
+                continue
+            reference = f'runtime/artifacts/{new_id("BA")}/interrupted-result.json'
+            artifacts[reference] = raw
+            execution['result_ref'] = reference
+            execution['stop_requested'] = 'engine_error'
+            execution['error'] = 'executor failed while this call was pending; returned evidence was preserved'
+            if self._settle_recovered_execution(execution_id, at=timestamp().isoformat(),
+                    disposition={'kind': 'engine_error', 'result_ref': reference, 'local_result': local_path}):
+                action = execution['action']
+                self._remove_action(action)
+                if action.get('id') and self.runtime['status'] not in {'closed', 'completed'}:
+                    self.runtime.setdefault('waiting_actions', {})[action['id']] = {
+                        'action': deepcopy(action), 'kind': 'execution_failure', 'execution_id': execution_id,
+                        'reason': execution['error'], 'next_owner': 'operational_review'}
+                    from .repair_execution import route_failed_action
+                    route_failed_action(self, action, execution_id,
+                        reason='Assess the interrupted execution using its preserved result and remaining obligation')
+                self._settle_activity(execution_id)
+        self._live_execution_ids.clear()
+        for execution_id, binding in list(self._transport_bindings.items()):
+            self._transport.close(binding, reason='engine shutdown after error')
+            self._transport_bindings.pop(execution_id, None)
+        self._save(artifacts)
+
+    def _schedule_reconsideration(self, observed_at):
+        """Adapt runtime availability to TASKS' active-research query contract.
+
+        Assignment lives in request event_refs. The owner's working event
+        annotations are a query projection and never rewrite published facts.
+        """
+        from .initialization import governance_working_view
+        from .planning import schedule_reconsideration
+        if self.instance['lifecycle']['state'] != 'active' or self.runtime['status'] in {
+                'paused', 'closed', 'completed', 'budget_exhausted'}:
+            return
+        original_events = {e['id']: deepcopy(e) for e in self.runtime.get('events', [])}
+        candidate = deepcopy(self.runtime)
+        status = candidate['status']
+        candidate['status'] = 'active'
+        requests = candidate['queue'] + [e.get('action', {}) for e in candidate['executions'].values()
+                                       if e.get('status') != 'ended']
+        requests += [w['action'] for w in candidate.get('waiting_actions', {}).values() if 'action' in w]
+        assigned = {ref: a.get('id') for a in requests for ref in a.get('event_refs', [])}
+        for event in candidate.get('events', []):
+            event.pop('assigned_to', None)
+            event.pop('assigned_at', None)
+            if event['id'] in assigned:
+                event['assigned_to'] = assigned[event['id']]
+        state = schedule_reconsideration(governance_working_view(self.instance), candidate,
+            now=observed_at, evaluation_context={**self._evaluation_context(), 'now': observed_at})
+        candidate['status'] = status
+        for index, event in enumerate(candidate.get('events', [])):
+            if event['id'] in original_events:
+                candidate['events'][index] = original_events[event['id']]
+            else:
+                event.pop('assigned_to', None)
+                event.pop('assigned_at', None)
+        self.runtime = candidate
+        return state
+
     def _failed_live_review(self, action, reason):
         parent = self.runtime["executions"].get(action.get("target"))
         if action.get("live") and parent and parent["status"] != "ended":
@@ -28,7 +136,8 @@ class SchedulerMixin:
     def _session_resources(self):
         if getattr(self, "_slots", None) is not None:
             return self._slots.snapshot()
-        slots = SessionSlots(Path(self.instance["workspace"]), self.instance["id"], observer=True)
+        slots = SessionSlots(Path(self.instance["workspace"]), self.instance["id"], observer=True,
+                             runtime=self.runtime, instance=self.instance)
         try:
             return slots.snapshot()
         finally:
@@ -44,7 +153,15 @@ class SchedulerMixin:
             action["model_assessment"] = chosen.get("assessment") or {
                 "difficulty": chosen["tier"], "importance": chosen["tier"],
                 "reason": "Preserve the reviewed execution's model requirement."}
-        return selection(self.instance["config"], action, self.runtime["tasks"], self.instance["knowledge"])
+        # TASKS stores profile IDs; PROFILES selection accepts sealed references.
+        # Adapt the query view without changing the authoritative task contract.
+        from .execution_profiles import profile_ref
+        tasks = deepcopy(self.runtime['tasks'])
+        for task in tasks.values():
+            task['execution_profile_refs'] = [profile_ref(self.instance['execution_profiles'][ref])
+                if isinstance(ref, str) else ref for ref in task.get('profile_refs', [])]
+        return selection(self.instance["config"], action, tasks, self.instance["knowledge"],
+                         profiles=self.instance["execution_profiles"])
 
     def _apply_model_metadata(self, action, output, execution_id):
         extensions = self.runtime["executions"][execution_id].get("extensions", {})
@@ -53,89 +170,213 @@ class SchedulerMixin:
                 raise ValueError("only preparation and planning author model assessments")
             return
         identified = validate_assessments(action, output, extensions, required=self._session_mode())
-        if "assessment_targets" in action:
-            for tid, basis in action["assessment_targets"].items():
-                task = self.runtime["tasks"].get(tid)
-                if not task or assessment_basis(task) != basis:
-                    raise ValueError("model assessment task edition changed: " + tid)
-            for tid, assessment in identified.items():
-                self.runtime["tasks"][tid]["model_assessment"] = assessment
+        if preparation_only(action):
+            for field in ('assessment_targets', 'observation_rule_targets'):
+                for tid, basis in action.get(field, {}).items():
+                    task = self.runtime['tasks'].get(tid)
+                    if not task or task.get('status') in {'completed', 'closed'} or assessment_basis(task) != basis:
+                        raise ValueError(field + ' task edition changed: ' + tid)
+                    if any(e.get('status') != 'ended' and e.get('action', {}).get('target') == tid
+                           for e in self.runtime['executions'].values()):
+                        raise ValueError('preparation target has a live execution: ' + tid)
+            from .observations import validate_rule_preparation
+            validate_rule_preparation(action, extensions, self.runtime['tasks'])
+            self.runtime['executions'][execution_id]['model_decisions'] = identified
             return
-        if action["role"] == "research_preparation":
-            for candidate in output["candidates"]:
-                if candidate["title"] in identified:
-                    candidate["model_assessment"] = identified[candidate["title"]]
-        elif action["role"] == "research_plan":
-            self.runtime["executions"][execution_id]["model_decisions"] = identified
+        # Keep the authored wire candidate unchanged. The task constructor's
+        # caller installs these assessed values in the resulting task record.
+        self.runtime["executions"][execution_id]["model_decisions"] = identified
 
     def _assessment_input_version(self):
-        return {"goal": self.instance.get("goal_revision", 1), "policy": self.instance.get("policy_revision", 1),
+        from .initialization import governance_working_view
+        view = governance_working_view(self.instance)
+        return {"goal": view['goal_revision'], "policy": view['policy_revision'],
                 "sources": [{"name": s["name"], "sha256": s["sha256"]} for s in self.instance["sources"]],
                 "inputs": [i.get("id") for i in self.runtime["inputs"]]}
 
+    def _retry_observation_configuration(self):
+        from .observations import observation_settings_errors
+        for aid, entry in list(self.runtime.get('waiting_actions', {}).items()):
+            if entry.get('kind') != 'observation_configuration':
+                continue
+            action = entry['action']
+            task = self.runtime['tasks'].get(action.get('target'))
+            if task and action['role'] in {'research_work', 'supplemental_research'}:
+                from .execution_profiles import resolve_profile
+                current = [resolve_profile(self.instance['execution_profiles'], ref)
+                           for ref in self.instance['role_profile_refs'].get(action['role'], [])]
+                if current and all(not observation_settings_errors(p) for p in current) and not task.get('academic_requirement_id'):
+                    self._enqueue('research_preparation', task['id'],
+                        reason='Reprepare the task with valid current observation profiles; preserve its old profile references in revision history')
+                continue
+            fresh = deepcopy(action)
+            for key in ('profile_ref', 'model_selection', 'actor_kind', 'budget_kind', 'dispatch_wait'):
+                fresh.pop(key, None)
+            try:
+                profile = self._execution_profile(fresh)
+            except ValueError:
+                continue
+            if observation_settings_errors(profile) or fresh['profile_ref'] == action.get('profile_ref'):
+                continue
+            self.runtime['history'].append({'kind': 'observation_configuration_reprepared',
+                'action_id': aid, 'previous': deepcopy(entry), 'profile_ref': deepcopy(fresh['profile_ref'])})
+            self.runtime['queue'].append(fresh)
+            del self.runtime['waiting_actions'][aid]
+
+    def _resolve_task_observation_waits(self, task_id, execution_id):
+        for aid, entry in list(self.runtime.get('waiting_actions', {}).items()):
+            if (entry.get('kind') in {'observation_rules', 'observation_configuration'}
+                    and entry.get('action', {}).get('target') == task_id
+                    and entry['action']['role'] in {'research_work', 'supplemental_research'}):
+                self.runtime['history'].append({'kind': entry['kind'] + '_resolved', 'action_id': aid,
+                    'failed_execution_id': entry.get('execution_id'), 'resolved_by': execution_id,
+                    'previous': deepcopy(entry)})
+                del self.runtime['waiting_actions'][aid]
+                activity_id = entry['action'].get('owner_activity_id')
+                activity = self.runtime.get('activities', {}).get(activity_id)
+                pending = [*self.runtime['queue'], *(w['action'] for w in self.runtime['waiting_actions'].values())]
+                if (activity and activity['status'] != 'finished'
+                        and not any(a.get('owner_activity_id') == activity_id for a in pending)
+                        and all(self.runtime['executions'][eid]['status'] == 'ended' for eid in activity['assigned_execution_ids'])):
+                    from .activities import finish_activity
+                    finish_activity(self.runtime, activity_id, result_refs=[execution_id], unresolved=[],
+                        followups=[task_id], at=self._lifecycle_now().isoformat())
+
+    def _rule_deferral_inputs(self, deferrals):
+        from .input_basis import aliases
+        from .planning import _records, _hash
+        records = _records(self.instance, self.runtime)
+        values = {}
+        for ref in {ref for row in deferrals for ref in row['missing_inputs']}:
+            if ref == 'user_input':
+                values[ref] = [row.get('id') for row in self.runtime['inputs']]
+            elif ref in records:
+                values[ref] = _hash(records[ref][1])
+            else:
+                source = next((s for s in self.instance['sources'] if ref in aliases(s)), None)
+                values[ref] = source['sha256'] if source else None
+        return values
+
     def _ensure_model_assessments(self):
-        """Prepare missing or rejected academic assessments before review."""
-        if not self._session_mode():
-            return set()
+        """Prepare ratings and academic observation rules before contract review."""
+        from .observations import validate_task_rules
         live = {e.get("action", {}).get("id") for e in self.runtime["executions"].values() if e["status"] != "ended"}
         for tid, task in self.runtime["tasks"].items():
-            if (not task.get("academic_requirement_id") or task.get("status") != "needs_revision"
-                    or not task.get("model_assessment")):
+            if (not task.get('academic_requirement_id') or not task.get('revision_requested')
+                    or task.get('status') in {'completed', 'closed'}):
                 continue
             basis = assessment_basis(task)
             review = next((r for r in reversed(task.get("reviews", []))
                            if all(r.get(k) == v for k, v in basis.items())), None)
             if not review or review.get("decision") == "approved":
                 continue
-            task.setdefault("model_assessment_history", []).append({
-                **basis, "assessment": task.pop("model_assessment"),
-                "contract_review_execution": review["execution_id"]})
+            if any(row.get('contract_review_execution') == review['execution_id']
+                   for row in task.get('observation_rule_history', [])):
+                # A fresh assessment may legitimately keep the same value.
+                # Its pending independent review, not an already-consumed
+                # rejection, owns the next judgment.
+                continue
+            if self._session_mode() and task.get('model_assessment'):
+                task.setdefault('model_assessment_history', []).append({
+                    **basis, 'assessment': task.pop('model_assessment'),
+                    'contract_review_execution': review['execution_id']})
+            task.setdefault('observation_rule_history', []).append({
+                **basis, 'rules': task.pop('initial_observation_rules', []),
+                'contract_review_execution': review['execution_id']})
+            self.runtime.get('task_observation_rules', {}).pop(tid, None)
             # Retire the old implementation's unstarted, general revision request.
             self.runtime["queue"][:] = [a for a in self.runtime["queue"] if not (
                 a.get("role") == "research_preparation" and a.get("target") == tid
                 and a.get("contract_review_execution") == review["execution_id"]
                 and a.get("id") not in live)]
         missing = {tid: assessment_basis(task) for tid, task in self.runtime["tasks"].items()
-                   if task.get("status") in {"planned", "ready", "waiting", "needs_revision"}
-                   and not task.get("model_assessment")}
+                   if task.get("status") in {"planned", "active", "waiting"}
+                   and self._session_mode() and not task.get("model_assessment")}
+        missing_rules = {}
+        for tid, task in self.runtime['tasks'].items():
+            if not task.get('academic_requirement_id') or task.get('status') in {'completed', 'closed'}:
+                continue
+            try:
+                validate_task_rules(task.get('initial_observation_rules', []))
+            except ValueError:
+                missing_rules[tid] = assessment_basis(task)
+        missing_by_field = {'assessment_targets': missing, 'observation_rule_targets': missing_rules}
         for aid, entry in list(self.runtime.get("waiting_actions", {}).items()):
-            if entry.get("kind") == "model_assessment_input" and (
-                    entry.get("input_version") != self._assessment_input_version()
-                    or any(missing.get(tid) != basis for tid, basis in entry["action"]["assessment_targets"].items())):
+            if entry.get('kind') not in {'model_assessment_input', 'observation_rule_input'}:
+                continue
+            inputs_changed = (entry.get('rule_input_version') != self._rule_deferral_inputs(entry.get('observation_rule_deferrals', []))
+                if entry.get('kind') == 'observation_rule_input' and not entry['action'].get('assessment_targets')
+                else entry.get('input_version') != self._assessment_input_version())
+            if (inputs_changed
+                    or any(missing_by_field[field].get(tid) != basis for field in missing_by_field
+                           for tid, basis in entry['action'].get(field, {}).items())):
                 self.runtime["history"].append({"kind": "assessment_inputs_changed", "action_id": aid})
                 self.runtime["questions"] = [q for q in self.runtime["questions"] if q != entry.get("question")]
                 del self.runtime["waiting_actions"][aid]
         self.runtime["queue"][:] = [a for a in self.runtime["queue"] if not (
-            a["role"] == "task_contract_review" and a.get("target") in missing and a.get("id") not in live)]
-        pending = self.runtime["queue"] + [e["action"] for e in self.runtime.get("waiting_actions", {}).values()]
-        covered = {tid for a in pending for tid, basis in a.get("assessment_targets", {}).items() if missing.get(tid) == basis}
-        targets = {tid: basis for tid, basis in missing.items() if tid not in covered}
+            a["role"] == "task_contract_review" and a.get("target") in missing.keys() | missing_rules.keys() and a.get("id") not in live)]
+        pending = (self.runtime['queue'] + [e['action'] for e in self.runtime.get('waiting_actions', {}).values()]
+                   + [e['action'] for e in self.runtime['executions'].values() if e['status'] != 'ended'])
+        targets = {}
+        for field, needed in missing_by_field.items():
+            covered = {tid for a in pending for tid, basis in a.get(field, {}).items() if needed.get(tid) == basis}
+            uncovered = {tid: basis for tid, basis in needed.items() if tid not in covered}
+            if uncovered:
+                targets[field] = uncovered
         if targets:
             from .repository import new_id
             self.runtime["queue"].append({"id": new_id("AC"), "role": "research_preparation",
-                "assessment_targets": targets, "reason": "Assess these existing contracts without changing their terms before independent review. Read their reviews and model_assessment_history when repairing a rejected assessment."})
-        return set(missing)
+                **targets, 'reason': 'Prepare the assigned ratings and observation rules before independent review. '
+                'Preserve the user contract. Read prior reviews and preparation histories when repairing rejected preparation.'})
+        return set(missing) | set(missing_rules)
 
     def _finish_assessment_preparation(self, action, execution_id):
-        deferred = self.runtime["executions"][execution_id].get("extensions", {}).get("model_assessment_deferrals", [])
-        deferred_ids = {row["task_id"] for row in deferred}
-        for tid in action["assessment_targets"]:
-            if tid in deferred_ids:
+        from .initialization import governance_working_view
+        from .observations import validate_rule_preparation, validate_task_rules
+        from .planning import review_basis_key
+        view = governance_working_view(self.instance)
+        execution = self.runtime['executions'][execution_id]
+        extensions = execution.get('extensions', {})
+        rules = validate_rule_preparation(action, extensions, self.runtime['tasks'])
+        ratings = execution.get('model_decisions', {})
+        self._cancel_selected_revision_targets(action)
+        for tid in set(rules) | set(ratings):
+            task = self.runtime['tasks'][tid]
+            if tid in rules and task.get('initial_observation_rules') != rules[tid]:
+                previous = deepcopy(task)
+                previous.pop('revision_history', None)
+                task.setdefault('revision_history', []).append(previous)
+                task.update(revision=task['revision'] + 1, initial_observation_rules=deepcopy(rules[tid]),
+                            status='planned', producer_execution=execution_id)
+                self.runtime.get('task_observation_rules', {}).pop(tid, None)
+                task.pop('selected_by', None)
+                task.pop('selection_disposition', None)
+            if tid in ratings:
+                task['model_assessment'] = deepcopy(ratings[tid])
+            try:
+                validate_task_rules(task.get('initial_observation_rules', []))
+            except ValueError:
                 continue
-            task = self.runtime["tasks"][tid]
-            if task.get("academic_requirement_id") and task.get("status") == "needs_revision":
-                task["status"] = "planned"
-                # Even an unchanged rating needs a fresh judgment after new input.
-                self._enqueue("task_contract_review", tid, contract_basis={
-                    **assessment_basis(task), "goal_revision": self.instance.get("goal_revision", 1),
-                    "policy_revision": self.instance.get("policy_revision", 1)},
-                    reason="Reassessed academic contract requires independent review")
-        if deferred:
-            pending = {row["task_id"]: action["assessment_targets"][row["task_id"]] for row in deferred}
-            question = "Model assessment pending: " + "; ".join(row["task_id"] + ": " + row["reason"] for row in deferred)
+            if self._session_mode() and not task.get('model_assessment'):
+                continue
+            basis = {**assessment_basis(task), 'goal_revision': view['goal_revision'], 'policy_revision': view['policy_revision']}
+            self._enqueue('task_contract_review', tid, contract_basis=basis,
+                review_basis_key=review_basis_key(task, self.instance, self.runtime),
+                reason='Prepared execution settings require independent contract review')
+            if tid in rules:
+                self._resolve_task_observation_waits(tid, execution_id)
+        deferred = extensions.get('model_assessment_deferrals', [])
+        deferred_rules = extensions.get('observation_rule_deferrals', [])
+        if deferred or deferred_rules:
+            pending = {field: {row['task_id']: assessment_basis(self.runtime['tasks'][row['task_id']]) for row in rows}
+                       for field, rows in (('assessment_targets', deferred), ('observation_rule_targets', deferred_rules)) if rows}
+            question = 'Task preparation pending: ' + '; '.join(row['task_id'] + ': ' + row['reason'] for row in [*deferred, *deferred_rules])
             self.runtime["questions"].append(question)
+            held_action = {key: value for key, value in action.items() if key not in {'assessment_targets', 'observation_rule_targets'}}
             self.runtime.setdefault("waiting_actions", {})[action["id"]] = {
-                "action": {**action, "assessment_targets": pending}, "kind": "model_assessment_input",
+                "action": {**held_action, **pending}, "kind": 'observation_rule_input' if deferred_rules else 'model_assessment_input',
+                'observation_rule_deferrals': deepcopy(deferred_rules),
+                'rule_input_version': self._rule_deferral_inputs(deferred_rules),
                 "reason": question, "question": question, "input_version": self._assessment_input_version(), "execution_id": execution_id}
 
     def _apply_queue_plan(self, action, execution_id):
@@ -164,8 +405,8 @@ class SchedulerMixin:
             if row["decision"] == "cancel":
                 self._remove_action(request)
                 task = self.runtime["tasks"].get(request.get("target"))
-                if task and request["role"] in {"research_work", "supplemental_research"} and not request.get("review_cycle_id") and task["status"] == "performing":
-                    task.update(status="ready", deferred_reason=row["reason"])
+                if task and request["role"] in {"research_work", "supplemental_research"} and not request.get("review_cycle_id") and task["status"] == "active":
+                    task.update(status="planned", deferred_reason=row["reason"])
             else:
                 ordered.append(request)
             self.runtime["history"].append({"kind": "queue_plan_applied", "execution_id": execution_id, **row})
@@ -181,9 +422,11 @@ class SchedulerMixin:
         basis = action.get("initial_preparation_wait")
         if not basis or action.get("requested_by") or action.get("recovery"):
             return False
-        current = {"goal_revision": self.instance.get("goal_revision"),
-                   "policy_revision": self.instance.get("policy_revision"),
-                   "requirements_sha256": self.instance.get("academic_requirements", {}).get("sha256")}
+        from .initialization import governance_working_view
+        view = governance_working_view(self.instance)
+        current = {"goal_revision": view['goal_revision'],
+                   "policy_revision": view['policy_revision'],
+                   "requirements_sha256": view.get('academic_requirements', {}).get('sha256')}
         if basis != current or self._has_global_user_question() or self.runtime["inputs"]:
             return False
         for event in self.runtime.get("events", []):
@@ -193,10 +436,14 @@ class SchedulerMixin:
             if event["kind"] != "user_decision_applied" or not decision.get("initial_registration"):
                 return False
         tasks = self.runtime["tasks"].values()
-        if any(t["status"] in {"ready", "assessing", "needs_revision"} or t.get("results") for t in tasks):
+        from .planning import task_ready
+        if any(t.get('revision_requested') or t.get('results') or
+               task_ready(t, view, self.runtime, action={'role': 'research_work', 'target': t['id'],
+                    'budget_kind': 'work', 'actor_kind': 'ai'}, evaluation_context={**self._evaluation_context(), 'now': self._lifecycle_now().isoformat()})['state'] == 'ready'
+               for t in tasks):
             return False
         preparations = [e for e in self.runtime["executions"].values()
-                        if e["role"] == "research_preparation" and not e.get("action", {}).get("assessment_targets")]
+                        if e["role"] == "research_preparation" and not preparation_only(e.get('action', {}))]
         if not preparations:
             return any(a["role"] == "research_preparation" for a in self.runtime["queue"])
         initial = preparations[0]
@@ -223,15 +470,31 @@ class SchedulerMixin:
         return True
 
     def _dispatchable(self, action, resources):
+        try:
+            self._action_lifecycle_gate(action)
+        except ValueError as error:
+            action["dispatch_wait"] = {"kind": "lifecycle", "reason": str(error)}
+            return False
         live = [e for e in self.runtime["executions"].values() if e["status"] != "ended"]
         if any(e.get("action", {}).get("id") == action.get("id") for e in live if action.get("id")):
             return False
         role, target = action["role"], action.get("target")
+        if role in {"research_work", "supplemental_research"} and not action.get("review_cycle_id"):
+            from .planning import task_ready
+            task = self.runtime["tasks"].get(target)
+            from .initialization import governance_working_view
+            evaluation = task_ready(task, governance_working_view(self.instance), self.runtime, action=action,
+                evaluation_context={**self._evaluation_context(), "now": self._lifecycle_now().isoformat()}) if task else {
+                    "state": "not_ready", "errors": ["task is absent"], "basis": []}
+            self._record_readiness(target, evaluation, self._lifecycle_now().isoformat())
+            if evaluation["state"] != "ready":
+                action["dispatch_wait"] = {"kind": "task_readiness", **evaluation}
+                return False
         waits = self._revision_dispatch_waits(action)
         if waits:
             action["dispatch_wait"] = {"kind": "contract_revision", "blockers": waits}
             return False
-        if not self._selected_action_current(action):
+        if not self._selected_action_current(action, evaluation_context=self._evaluation_context()):
             return False
         if role == "research_plan" and (self._initial_plan_waits(action) or self._plan_settle_waits(action)):
             return False
@@ -245,75 +508,103 @@ class SchedulerMixin:
                 and not e.get("action", {}).get("review_cycle_id") for e in live):
             return False
         if role in MACHINE_ROLES:
+            if role in {'formal_check', 'trust_check'} and any(e['role'] in {'formal_check', 'trust_check'} for e in live):
+                action['dispatch_wait'] = {'kind': 'formal_execution'}
+                return False
+            from .session_slots import GitSessionSlots
+            profile = self._execution_profile(action)
+            if profile.get("host_capacity_refs") and not GitSessionSlots(
+                    self.runtime, self.instance, observer=True).admission_available(profile):
+                action["dispatch_wait"] = {"kind": "host_capacity"}
+                return False
+            action.pop("dispatch_wait", None)
             return True
         if action.get("live") and self.runtime["executions"].get(target, {}).get("status") == "ended":
             self._remove_action(action)
             return False
         chosen = self._select_model(action)
         action["model_selection"] = chosen
+        reference = action.get("profile_ref") or chosen.get("execution_profile_ref")
+        if reference is None:
+            from .execution_profiles import profile_ref
+            reference = profile_ref(self._execution_profile(action))
+        capability = self._capability_requirements(reference)
+        if not capability["satisfied"]:
+            action["dispatch_wait"] = {"kind": "capability_evidence", **capability}
+            return False
         provider = provider_for(chosen["model"])
         gate = self._provider_status()["providers"].get(provider)
         if gate and (gate["state"] == "checking" or (gate["state"] == "waiting" and not gate["due"])):
             action["dispatch_wait"] = {"kind": "provider_limit", "provider": provider, "retry_at": gate.get("retry_at")}
             return False
         action.pop("dispatch_wait", None)
-        pool = "work" if role in WORK_ROLES else "operations"
+        pool = self._execution_profile(action)['budget_kind']
+        if not self._session_mode():
+            from .session_slots import GitSessionSlots
+            capacity = GitSessionSlots(self.runtime, self.instance, observer=True).usage_snapshot().get(pool)
+            return bool(capacity) and (capacity['available'] is None or capacity['available'] > 0)
         cell = resources[pool].get(chosen["model"], {"available": 0})
         return cell["available"] > 0
 
     def _run_parallel(self, *, max_steps=None, watch=False):
         from .repository import new_id
-        self._slots = SessionSlots(Path(self.instance["workspace"]), self.instance["id"])
-        self._slots.configure(self.instance["config"]["session_limits"])
+        self._slots = SessionSlots(Path(self.instance["workspace"]), self.instance["id"],
+                                   runtime=self.runtime, instance=self.instance)
         self._calls = ModelCalls()
-        deadline = time.monotonic() + self.instance["config"]["run_timeout_seconds"]
-        self._run_deadline = deadline
         steps = 0
         try:
             while True:
                 self._controls()
                 self._calls.collect()
                 self._check_installation()
-                stopping = self.runtime["status"] in {"paused", "closed", "completed"} or time.monotonic() >= deadline
+                limited = self.runtime['status'] == 'paused' and any(
+                    self._limited_recovery_allowed(a) for a in self.runtime['queue'])
+                stopping = (self.runtime["status"] in {"closed", "completed"}
+                            or (self.runtime['status'] == 'paused' and not limited))
+                from .repair_execution import pending_installation_repair
+                stopping = stopping or pending_installation_repair(self.runtime) is not None
                 if stopping:
                     if not self._calls.futures:
                         break
                     time.sleep(.02)
                     continue
-                finishing = deadline - time.monotonic() <= notice_seconds(self.instance["config"])
-                reserved = deadline - time.monotonic() <= dispatch_reserve_seconds(self.instance["config"])
-                draining = finishing or reserved or (max_steps is not None and steps >= max_steps)
+                draining = max_steps is not None and steps >= max_steps
                 if draining:
                     if not self._calls.futures:
                         break
                 self.instance["available_input_refs"] = self._available_inputs()
                 self._retry_provider_actions()
                 self._refresh_readiness()
-                if self.runtime["status"] in {"paused", "closed", "completed"}:
+                if self.runtime["status"] in {"closed", "completed"} or (self.runtime['status'] == 'paused' and not limited):
                     continue
                 if not self.runtime["queue"] and not self._calls.futures:
+                    if self.instance["lifecycle"]["state"] == "initializing":
+                        self._save()
+                        if not watch:
+                            break
+                        time.sleep(.2)
+                        continue
                     from .questions import open_links
-                    if self._has_global_user_question() or self.runtime.get("waiting_actions") or open_links(self.runtime) or self.runtime["cycles"] >= self.instance["config"]["max_cycles"]:
-                        self.runtime["status"] = "waiting"
-                    else:
-                        self.runtime["queue"].append({"id": new_id("AC"), "role": "research_preparation", "reason": "use prior results and remaining research questions"})
-                        self.runtime["status"] = "ready"
+                    # _refresh_readiness already asks TASKS about obligations,
+                    # exhaustion and repetition lineage. An empty queue or an
+                    # old cycle counter is not authority to generate new work.
+                    self.runtime["status"] = "waiting"
                 resources = self._slots.snapshot()
                 action = next((a for a in list(self.runtime["queue"])
-                               if (not finishing and (not draining or a.get("live"))) and self._dispatchable(a, resources)), None)
+                               if (not draining or a.get("live")) and self._dispatchable(a, resources)), None)
                 if action is not None:
                     if action["role"] == "formal_check":
                         self._formal(action)
                     elif self._process_machine_action(action):
                         pass
                     else:
-                        generator = self._call_steps(action, deadline)
+                        generator = self._call_steps(action)
                         try:
                             arguments = next(generator)
                         except StopIteration:
                             pass
                         else:
-                            self._calls.start(generator, self.runner, arguments)
+                            self._calls.start(generator, self.runner, arguments, execution_id=arguments.get('execution_id'))
                     if not action.get("live"):
                         steps += 1
                     continue
@@ -321,14 +612,25 @@ class SchedulerMixin:
                     time.sleep(.02)
                     continue
                 noncapacity = any(a.get("dispatch_wait", {}).get("kind") not in {None, "capacity"} for a in self.runtime["queue"])
-                self.runtime["status"] = "waiting" if not self.runtime["queue"] or noncapacity else "capacity_waiting"
+                if self.runtime['status'] != 'paused':
+                    self.runtime["status"] = "waiting" if not self.runtime["queue"] or noncapacity else "capacity_waiting"
                 self._save()
                 if not watch:
                     break
                 time.sleep(.2)
-            if self.runtime["status"] not in {"paused", "closed", "completed", "waiting", "capacity_waiting"}:
+            if self.runtime["status"] not in {"initializing", "paused", "closed", "completed", "waiting", "capacity_waiting"}:
                 self.runtime["status"] = "ready"
+            if (pending_installation_repair(self.runtime) is not None
+                    and self.runtime['status'] not in {'paused', 'closed', 'completed'}):
+                self.runtime['status'] = 'waiting'
             self._save()
+        except BaseException as error:
+            self._calls.close()
+            try:
+                self._abort_parallel_calls()
+            except BaseException as cleanup_error:
+                error.add_note('Execution cleanup incomplete; preserved state requires recovery: ' + str(cleanup_error))
+            raise
         finally:
             self._calls.close()
             self._calls = None

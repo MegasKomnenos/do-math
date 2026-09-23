@@ -312,6 +312,63 @@
         "periodic_interval": {
           "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/duration"
         },
+        "rule_bindings": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "operator": {
+                "enum": [
+                  "event_recorded",
+                  "counter_gte",
+                  "iteration_gte",
+                  "checkpoint_count_gte",
+                  "active_duration_gte",
+                  "wall_time_reached",
+                  "tool_call_completed",
+                  "safe_boundary_recorded"
+                ],
+                "type": "string"
+              },
+              "source": {
+                "enum": [
+                  "checkpoint",
+                  "execution_events",
+                  "adapter_calls",
+                  "control_receipts",
+                  "adapter_active_intervals",
+                  "clock"
+                ],
+                "type": "string"
+              },
+              "subject_kind": {
+                "enum": [
+                  "execution",
+                  "checkpoint",
+                  "iteration",
+                  "counter",
+                  "event",
+                  "tool_call",
+                  "safe_boundary",
+                  "clock"
+                ],
+                "type": "string"
+              },
+              "unit": {
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": [
+              "source",
+              "operator",
+              "subject_kind",
+              "unit"
+            ],
+            "type": "object"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
         "self_check_response_window": {
           "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/duration"
         },
@@ -325,7 +382,8 @@
         "self_check_response_window",
         "tool_review_window",
         "allowed_operators",
-        "allowed_target_refs"
+        "allowed_target_refs",
+        "rule_bindings"
       ],
       "type": "object"
     },

@@ -12,7 +12,7 @@ from unittest.mock import Mock, patch
 SCRIPTS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SCRIPTS))
 from do_math import cli as cli_module
-from do_math.repository import ResearchRepository
+from do_math.engine import _repository as ResearchRepository
 
 ENTRY = SCRIPTS / "do_math.py"
 
@@ -26,7 +26,7 @@ class AdvancedCliTests(unittest.TestCase):
         configuration.write_text(json.dumps({"operator_enabled": False}), encoding="utf-8")
         init = self.cli("init", "--create-repository", "--repository", str(self.repo),
                         "--workspace", str(self.workspace), "--goal", "Original goal",
-                        "--goal-kind", "research", "--config-file", str(configuration))
+                        "--goal-kind", "mathematical", "--config-file", str(configuration))
         self.assertEqual(init[0], 0, init)
         self.instance_id = init[1]["instance_id"]
 
@@ -37,21 +37,40 @@ class AdvancedCliTests(unittest.TestCase):
         result = subprocess.run([sys.executable, str(ENTRY), *arguments], cwd=self.root,
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
         text = result.stdout.decode("utf-8", errors="replace").strip()
-        return result.returncode, json.loads(text) if text else None, result.stderr.decode("utf-8", errors="replace")
+        envelope = json.loads(text) if text else None
+        if envelope is not None:
+            self.assertEqual(envelope['schema_version'], 5)
+            self.assertEqual(envelope['exit_code'], result.returncode)
+            self.assertNotEqual('result' in envelope, 'error' in envelope)
+        return result.returncode, (envelope.get('result', envelope.get('error')) if envelope else None), result.stderr.decode("utf-8", errors="replace")
 
     def control(self, command, payload):
         path = self.root / f"{command}-{len(list(self.root.glob(command + '-*.json')))}.json"
         path.write_text(json.dumps(payload), encoding="utf-8")
-        return self.cli(command, "--repository", str(self.repo), "--instance", self.instance_id,
-                        "--file", str(path))
+        result = self.cli(command, "--repository", str(self.repo), "--instance", self.instance_id,
+                          "--file", str(path))
+        self.assertEqual(result[0], 0, result)
+        return result
 
     def load(self):
         return ResearchRepository(self.repo, self.instance_id).load()
 
+    def charter(self, identifier='CH-1', supersedes=(), goal='New goal'):
+        from test_redesign_SURFACE import surface_state
+        instance, _ = surface_state()
+        record = instance['governance']['CH-1']
+        record = {k: record[k] for k in ('id', 'kind', 'revision', 'supersedes', 'content')}
+        record.update(id=identifier, supersedes=list(supersedes), revision=1 if not supersedes else 2)
+        record['content']['goal'] = goal
+        return {'kind': 'charter', 'record': record}
+
     def test_goal_policy_grant_query_and_revoke(self):
-        code, result, _ = self.control("decision", {"kind": "goal", "goal": "New goal", "expected_revision": 1})
+        code, result, _ = self.control("decision", {'kind':'initialization','operation':'governance',
+                                                   'records':[self.charter()['record']]})
         self.assertEqual((code, result["effect"]), (0, "applied"))
-        code, result, _ = self.control("decision", {"kind": "policy", "text": "New policy", "expected_revision": 1})
+        code, result, _ = self.control("decision", {'kind': 'policy', 'record': {'id': 'PO-1', 'kind': 'policy',
+            'revision': 1, 'supersedes': [], 'content': {'rule_id': 'no_publish', 'scope': ['P'],
+            'text': 'New policy', 'reason_refs': ['CH-1'], 'audit_refs': []}}})
         self.assertEqual((code, result["effect"]), (0, "applied"))
         grant = {"kind": "grant", "grant": {"id": "HTTP", "kind": "http",
                  "allowed_origins": ["https://example.com"], "allowed_methods": ["GET"],
@@ -60,31 +79,43 @@ class AdvancedCliTests(unittest.TestCase):
         query = self.cli("query", "--repository", str(self.repo), "--instance", self.instance_id, "--kind", "grant")
         self.assertEqual(query[0], 0); self.assertTrue(any(item["record"]["id"] == "HTTP" for item in query[1]["items"]))
         self.assertEqual(self.control("decision", {"kind": "revoke", "grant_id": "HTTP"})[1]["effect"], "applied")
-        _, instance, _ = self.load(); self.assertEqual(instance["goal_revision"], 2); self.assertEqual(instance["policy_revision"], 2); self.assertEqual(instance["grants"]["HTTP"]["status"], "revoked")
+        from do_math.governance import governance_view
+        _, instance, _ = self.load(); self.assertEqual(governance_view(instance)['goal'], 'New goal'); self.assertEqual(governance_view(instance)['policy_records'][0]['content']['text'], 'New policy'); self.assertEqual(instance["grants"]["HTTP"]["status"], "revoked")
 
     def test_changed_decision_precondition_is_a_consumed_rejection(self):
-        self.assertEqual(self.control("decision", {"kind": "goal", "goal": "First", "expected_revision": 1})[1]["effect"], "applied")
-        code, result, _ = self.control("decision", {"kind": "goal", "goal": "Stale", "expected_revision": 1})
-        self.assertEqual(code, 0); self.assertEqual(result["effect"], "rejected"); self.assertIn("revision", result["reason"])
+        initial={'kind':'initialization','operation':'governance','records':[self.charter()['record']]}
+        self.assertEqual(self.control('decision', initial)[1]['effect'], 'applied')
+        self.assertEqual(self.control('decision', self.charter('CH-2', ['CH-1']))[1]['effect'], 'applied')
+        code, result, _ = self.control('decision', self.charter('CH-stale', ['CH-1']))
+        self.assertEqual(code, 0); self.assertEqual(result['effect'], 'rejected'); self.assertIn('active', result['reason'])
 
     def test_knowledge_invalidation_and_trust_registration(self):
+        from do_math.knowledge_records import create_candidate
+        from do_math.knowledge import plan_impact
         store = ResearchRepository(self.repo, self.instance_id); head, instance, runtime = store.load()
-        base = {"kind": "theorem", "title": "K", "statement": "s", "explanation": "e", "summary": "s",
-                "lean_code": "", "declaration_names": [], "reviews": [], "formal": {}, "status": "verified"}
-        instance["knowledge"] = {"KN-1": {**base, "id": "KN-1", "dependencies": []},
-                                 "KN-2": {**base, "id": "KN-2", "dependencies": ["KN-1"]}}
-        runtime["tasks"]["TK-1"] = {"id": "TK-1", "title": "t", "status": "completed",
-            "dependencies": ["KN-2"], "inputs": [], "reuse": [], "results": [],
-            "assessment": {"decision": "completed", "current": True}, "revision": 1, "completion_criteria": []}
+        base = {"kind": "conjecture", "title": "K", "statement": "s", "explanation": "e", "summary": "s",
+                "lean_code": "", "declaration_names": [], "dependencies": []}
+        instance, kid = create_candidate(instance, {**base, "id": "KN-1"}, source_ref="input-source", actor_ref="EX-author")
+        instance, child = create_candidate(instance, {**base, "id": "KN-2", "dependencies": [kid]}, source_ref="input-source", actor_ref="EX-author")
         store.save(head, instance, runtime)
-        invalid = self.control("knowledge", {"operation": "invalidate", "id": "KN-1", "reason": "withdrawn"})
-        self.assertEqual((invalid[0], invalid[1]["effect"]), (0, "applied"))
-        _, instance, runtime = self.load(); self.assertEqual(instance["knowledge"]["KN-1"]["status"], "withdrawn"); self.assertTrue(instance["knowledge"]["KN-2"]["use_suspended"])
-        self.assertEqual(runtime["tasks"]["TK-1"]["status"], "completed"); self.assertFalse(runtime["tasks"]["TK-1"]["assessment"]["current"]); self.assertEqual(runtime["tasks"]["TK-1"]["assessment"]["invalidated_reason"], "withdrawn")
+        plan = plan_impact(instance, runtime, [kid], [])
+        confirmation = {"plan_digest": plan["digest"], "decision": "approve", "review_ref": "review",
+            "reviewer_ref": "reviewer", "producer_ref": "producer",
+            "affected_ids": sorted(set(plan["computed_impact"]) | set(plan["declared_impact"]))}
+        invalid = self.control("knowledge", {"operation": "invalidate", "id": kid, "reason": "withdrawn",
+                                             "independent_confirmation": confirmation})
+        self.assertEqual((invalid[0], invalid[1]["effect"]), (0, "applied"), invalid)
+        _, instance, runtime = self.load()
+        self.assertEqual(instance["knowledge"][kid]["lifecycle"], "withdrawn")
+        self.assertIn(child, plan["computed_impact"])
+        self.assertNotIn("formal", instance["knowledge"][kid])
         trust = self.control("trust", {"operation": "register", "toolchain": {"executable": "lean", "sha256": "abc"}, "allowed_axioms": []})
-        self.assertEqual((trust[0], trust[1]["effect"]), (0, "applied")); self.assertTrue(self.load()[1]["trust_environments"])
+        self.assertEqual((trust[0], trust[1]["effect"]), (0, "rejected"), trust)
+        self.assertIsNone(self.load()[1].get("active_trust_environment"))
 
     def test_external_prepare_is_model_free_and_conversation_lifecycle(self):
+        policy=self.control('decision',{'kind':'initialization','operation':'adopt','external_policy':'explicit_grants'})
+        self.assertEqual(policy[1]['effect'],'applied',policy)
         grant = {"kind": "grant", "grant": {"id": "HTTP", "kind": "http",
                  "allowed_origins": ["https://example.com"], "allowed_methods": ["GET"],
                  "allowed_path_prefixes": ["/"], "credential_env": {}}}

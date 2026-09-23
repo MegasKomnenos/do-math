@@ -6,20 +6,24 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from do_math.engine import ResearchEngine, control, initialize
+from do_math.engine import ResearchEngine, control, initialize, _repository
+from test_engine import ScriptedRunner
+from v5_fixtures import activate, install_adapter_fixture
 from do_math.repository import ResearchRepository
 
 
 class ControlTransitionTests(unittest.TestCase):
     def setUp(self):
+        install_adapter_fixture(self)
         self.temp = tempfile.TemporaryDirectory()
         self.root = Path(self.temp.name)
         self.repo = self.root / "repo"
         self.repo.mkdir()
         subprocess.run(["git", "-C", str(self.repo), "init", "-q"], check=True)
-        value = initialize(self.repo, goal="control transition fixture", workspace=self.root / "work")
+        value = initialize(self.repo, goal="control transition fixture", workspace=self.root / "work",
+                           config={"scholarly_enabled": False, "operator_enabled": False, "lean_command": ["test-lean"]})
         self.iid = value["instance_id"]
-        self.store = ResearchRepository(self.repo, self.iid)
+        self.store = _repository(self.repo, self.iid)
 
     def tearDown(self):
         self.temp.cleanup()
@@ -29,14 +33,15 @@ class ControlTransitionTests(unittest.TestCase):
         change(instance, runtime)
         self.store.save(head, instance, runtime)
 
-    def test_pause_and_resume_cannot_reopen_a_completed_instance(self):
-        self.update(lambda i, r: r.update(status="completed", queue=[]))
-        control(self.repo, self.iid, "pause")
+    def test_pause_and_resume_cannot_reopen_a_publicly_closed_instance(self):
+        control(self.repo, self.iid, "close")
         engine = ResearchEngine(self.repo, self.iid)
-        self.assertEqual(engine.process_controls()["status"], "completed")
+        self.assertEqual(engine.process_controls()["status"], "closed")
+        control(self.repo, self.iid, "pause")
+        self.assertEqual(engine.process_controls()["status"], "closed")
         rejected = control(self.repo, self.iid, "resume")
         status = engine.process_controls()
-        self.assertEqual(status["status"], "completed")
+        self.assertEqual(status["status"], "closed")
         self.assertEqual(status["pending_controls"], 0)
         _, _, runtime = self.store.load()
         self.assertEqual(runtime["history"][-1]["kind"], "rejected_user_control")
@@ -44,40 +49,65 @@ class ControlTransitionTests(unittest.TestCase):
         cli = Path(__file__).resolve().parents[1] / "do_math.py"
         response = subprocess.run([sys.executable, str(cli), "resume", "--repository", str(self.repo),
                                    "--instance", self.iid], check=True, capture_output=True, text=True, encoding="utf-8")
-        self.assertEqual(json.loads(response.stdout)["effect"], "rejected")
+        self.assertEqual(json.loads(response.stdout)["result"]["effect"], "rejected")
 
     def test_stale_request_is_consumed_and_does_not_poison_later_controls(self):
-        self.update(lambda i, r: r["tasks"].update({"TK-ready": {"id": "TK-ready", "title": "fixture", "status": "ready"}}))
-        request = control(self.repo, self.iid, "request", config={"role": "supplemental_research", "target": "TK-ready"})
-        self.update(lambda i, r: r["tasks"]["TK-ready"].update(status="performing"))
+        engine = ResearchEngine(self.repo, self.iid, runner=ScriptedRunner())
+        activate(engine, self.root, initialization_runner=ScriptedRunner())
+        from do_math.planning import task_ready
+        for _ in range(8):
+            engine.run(max_steps=1)
+            ready = [task['id'] for task in engine.runtime['tasks'].values()
+                     if task_ready(task, engine.instance, engine.runtime,
+                                   evaluation_context=engine._evaluation_context())['state'] == 'ready']
+            if ready:
+                break
+        self.assertTrue(ready, engine.runtime['history'][-3:])
+        task_id = ready[0]
+        request = control(self.repo, self.iid, "request", config={"role": "supplemental_research", "target": task_id})
+        self.update(lambda i, r: r["tasks"][task_id].update(status="active"))
         control(self.repo, self.iid, "pause")
         status = ResearchEngine(self.repo, self.iid).process_controls()
         self.assertEqual(status["status"], "paused")
         self.assertEqual(status["pending_controls"], 0)
         _, _, runtime = self.store.load()
         self.assertIn(request["request_id"], runtime["processed_controls"])
-        self.assertEqual(runtime["tasks"]["TK-ready"]["status"], "performing")
-        self.assertTrue(any(h["kind"] == "rejected_user_control" for h in runtime["history"]))
+        self.assertEqual(runtime["tasks"][task_id]["status"], "active")
+        self.assertTrue(any(h.get("kind") == "rejected_user_control"
+                            and h["request"]["id"] == request["request_id"] for h in runtime["history"]))
 
-    def test_request_accepted_before_completion_does_not_reopen_it(self):
+    def test_request_accepted_before_public_close_does_not_reopen_it(self):
         control(self.repo, self.iid, "request", config={"role": "maintenance"})
-        self.update(lambda i, r: r.update(status="completed", queue=[]))
+        control(self.repo, self.iid, "close")
         status = ResearchEngine(self.repo, self.iid).process_controls()
-        self.assertEqual(status["status"], "completed")
+        self.assertEqual(status["status"], "closed")
         self.assertEqual(status["pending_actions"], 0)
         self.assertEqual(status["pending_controls"], 0)
 
     def test_crash_marks_owning_activity_unresolved(self):
-        def crashed(instance, runtime):
-            runtime["activities"]["AY-crashed"] = {"id": "AY-crashed", "role": "research_preparation", "status": "active", "execution_ids": ["EX-crashed"]}
-            runtime["executions"]["EX-crashed"] = {"id": "EX-crashed", "activity_id": "AY-crashed", "role": "research_preparation", "status": "running"}
-            runtime["active_execution"] = "EX-crashed"
-        self.update(crashed)
-        status = ResearchEngine(self.repo, self.iid).run(max_steps=1)
-        self.assertEqual(status["status"], "paused")
+        engine = ResearchEngine(self.repo, self.iid, runner=ScriptedRunner())
+        activate(engine, self.root, initialization_runner=ScriptedRunner())
+        action = engine.runtime['queue'][0]
+        execution = engine._register_execution(action, {'id': 'EX-crashed', 'role': action['role'],
+            'status': 'running', 'input_snapshot': engine.head, 'input_manifest': []})
+        engine.runtime['active_execution'] = execution['id']
+        engine._save()
+        ResearchEngine(self.repo, self.iid, runner=ScriptedRunner()).run(max_steps=1)
         _, _, runtime = self.store.load()
-        self.assertEqual(runtime["activities"]["AY-crashed"]["status"], "unresolved")
-        self.assertEqual(runtime["executions"]["EX-crashed"]["outcome"], "execution_incomplete")
+        recovered = runtime['executions']['EX-crashed']
+        self.assertEqual(recovered['status'], 'stopping')
+        self.assertEqual(recovered['stop_phase'], 'terminating')
+        self.assertNotIn('outcome', recovered)
+        self.assertEqual(recovered['recovery_disposition'], 'reconcile_local_and_remote')
+        owner = runtime['activities'][recovered['owner_activity_id']]
+        self.assertIn('EX-crashed', owner['assigned_execution_ids'])
+        self.assertTrue(runtime['recoveries'])
+        disposition = next(row for recovery in runtime['recoveries'].values()
+                           for row in recovery['dispositions'] if row['execution_id'] == 'EX-crashed')
+        self.assertFalse(disposition['local_termination_confirmed'])
+        self.assertEqual(disposition['remote_termination'], 'unknown')
+        self.assertEqual(disposition['next_owner'], 'operator')
+
 
 
 if __name__ == "__main__":

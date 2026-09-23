@@ -11,14 +11,15 @@ param(
     [string]$WakeAt,
     [string]$WakeKey,
     [Parameter(Mandatory=$true)][ValidateRange(1,2147483647)][int]$IntervalSeconds,
-    [Parameter(Mandatory=$true)][ValidateRange(1,2147483647)][int]$OperatorTimeoutSeconds,
-    [Parameter(Mandatory=$true)][ValidateRange(1,2147483647)][int]$EngineTimeoutSeconds
+    [Parameter(Mandatory=$true)][ValidateRange(1,2147483647)][int]$OperatorTimeoutSeconds
 )
 
 $ErrorActionPreference = 'Stop'
 
 function Task-Arguments([string]$Mode) {
-    return '"' + $Entrypoint + '" operator ' + $Mode + ' --repository "' + $Repository + '" --instance "' + $Instance + '" --workspace "' + $Workspace + '"'
+    $bootstrap = Join-Path (Split-Path -Parent $Entrypoint) 'operator_bootstrap.py'
+    $bootstrapMode = if ($Mode -eq 'engine') { 'run-engine' } else { $Mode }
+    return '"' + $bootstrap + '" ' + $bootstrapMode + ' --repository "' + $Repository + '" --instance "' + $Instance + '" --workspace "' + $Workspace + '"'
 }
 
 function Task-View([string]$Name) {
@@ -36,13 +37,23 @@ function Task-View([string]$Name) {
 }
 
 if ($Action -eq 'install') {
+    $liveBootstrap = Join-Path (Split-Path -Parent $Entrypoint) 'operator_bootstrap.py'
+    $installationRoot = Split-Path -Parent (Split-Path -Parent $Entrypoint)
+    $frozenText = & $Python $liveBootstrap --freeze --installation-root $installationRoot --workspace $Workspace
+    if ($LASTEXITCODE -ne 0) { throw 'Could not freeze the supervisor installation.' }
+    $frozen = $frozenText | ConvertFrom-Json
+    $Entrypoint = [string]$frozen.entrypoint
     $principal = New-ScheduledTaskPrincipal -UserId ([System.Security.Principal.WindowsIdentity]::GetCurrent().Name) -LogonType Interactive -RunLevel Limited
     $operatorSettings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -Hidden -ExecutionTimeLimit (New-TimeSpan -Seconds ($OperatorTimeoutSeconds + 300))
-    $engineSettings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -Hidden -ExecutionTimeLimit (New-TimeSpan -Seconds ($EngineTimeoutSeconds + 300))
+    $engineSettings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -Hidden -ExecutionTimeLimit ([TimeSpan]::Zero)
+    $previousOperator = Get-ScheduledTask -TaskName $OperatorTask -ErrorAction SilentlyContinue
+    $previousEngine = Get-ScheduledTask -TaskName $EngineTask -ErrorAction SilentlyContinue
+    if ($null -ne $previousOperator) { $operatorSettings.Enabled = $previousOperator.Settings.Enabled }
+    if ($null -ne $previousEngine) { $engineSettings.Enabled = $previousEngine.Settings.Enabled }
     $trigger = New-ScheduledTaskTrigger -Once -At ((Get-Date).AddSeconds($IntervalSeconds)) -RepetitionInterval (New-TimeSpan -Seconds $IntervalSeconds)
     $operatorAction = New-ScheduledTaskAction -Execute $Python -Argument (Task-Arguments 'check') -WorkingDirectory $Workspace
     $engineAction = New-ScheduledTaskAction -Execute $Python -Argument (Task-Arguments 'engine') -WorkingDirectory $Workspace
-    Register-ScheduledTask -TaskName $OperatorTask -InputObject (New-ScheduledTask -Action $operatorAction -Trigger $trigger -Settings $operatorSettings -Principal $principal -Description 'Independent periodic do-math operator.') -Force | Out-Null
+    Register-ScheduledTask -TaskName $OperatorTask -InputObject (New-ScheduledTask -Action $operatorAction -Trigger $trigger -Settings $operatorSettings -Principal $principal -Description 'Model-free do-math supervisor with failure-only recovery.') -Force | Out-Null
     Register-ScheduledTask -TaskName $EngineTask -InputObject (New-ScheduledTask -Action $engineAction -Settings $engineSettings -Principal $principal -Description 'Independent do-math engine started by its operator.') -Force | Out-Null
 }
 elseif ($Action -eq 'uninstall') {

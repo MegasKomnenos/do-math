@@ -1,6 +1,10 @@
 """Exact source dependencies without invalidating unrelated repository changes."""
 from __future__ import annotations
 
+from copy import deepcopy
+import hashlib
+import json
+
 
 def aliases(source: dict) -> set[str]:
     return {value for value in (source.get("id"), source.get("path"), source.get("local_path"), source.get("name"),
@@ -24,6 +28,40 @@ class CurrentnessChanged(ValueError):
         import json
         self.changes = changes
         super().__init__("decision premises changed: " + json.dumps(changes, ensure_ascii=False, sort_keys=True))
+
+
+def _review_basis_digest(value):
+    return hashlib.sha256(json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"),
+                                     allow_nan=False).encode("utf-8")).hexdigest()
+
+
+def capture_review_input_basis(cycle: dict) -> dict:
+    """Freeze the non-proposal inputs that make a review result interpretable."""
+    fields = ("review_policy", "scope_assessment", "owner_activity_id", "activity_execution_limit",
+              "identity_basis", "policy_ref", "publication_premises")
+    values = {field: deepcopy(cycle.get(field)) for field in fields}
+    return {"version": 5, "values": values, "sha256": _review_basis_digest(values)}
+
+
+def review_input_basis_changes(basis: dict, cycle: dict) -> list[dict]:
+    """Report precise policy/scope/profile drift; do not infer semantic equivalence."""
+    if not isinstance(basis, dict) or basis.get("version") != 5 or not isinstance(basis.get("values"), dict):
+        return [{"field": "review_input_basis", "reason": "missing_or_unsupported_basis", "next": "refresh_review"}]
+    if basis.get('sha256') != _review_basis_digest(basis['values']):
+        return [{'field': 'review_input_basis', 'reason': 'basis_digest_changed', 'next': 'refresh_review'}]
+    current = capture_review_input_basis(cycle)["values"]
+    changes = []
+    for field in current:
+        before, after = basis["values"].get(field), current.get(field)
+        if before == after:
+            continue
+        if field == "scope_assessment" and isinstance(before, dict) and isinstance(after, dict) and \
+                before.get("selected_profile_ref") != after.get("selected_profile_ref"):
+            changes.append({"field": "selected_profile_ref", "before": before.get("selected_profile_ref"),
+                            "after": after.get("selected_profile_ref"), "next": "refresh_review"})
+        else:
+            changes.append({"field": field, "before": before, "after": after, "next": "refresh_review"})
+    return changes
 
 
 def capture_decision_basis(instance: dict, runtime: dict, refs) -> dict:

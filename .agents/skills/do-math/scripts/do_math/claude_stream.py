@@ -64,7 +64,7 @@ def provider_limit(parsed):
             "limit_windows": windows, "evidence_line": record["line"], "native_info": info}
 
 
-def parse_stream(raw: bytes | None) -> dict:
+def parse_stream(raw: bytes | None, *, require_structured_output: bool = True) -> dict:
     parsed = {"parsed_bytes": 0, "unparsed_tail_bytes": 0, "events": [], "thread_id": None,
               "turn_completed": False, "turn_failed": False, "usage": [], "unknown_events": [],
               "parse_complete": False, "result_segments": [], "usage_segments": [],
@@ -166,7 +166,10 @@ def parse_stream(raw: bytes | None) -> dict:
             selected = None
             parsed["turn_failed"] = True
         elif "structured_output" in event:
-            selected = (summary, event["structured_output"])
+            selected = (summary, "structured_output", event["structured_output"])
+        elif not require_structured_output and isinstance(event.get("result"), str):
+            summary["output_sha256"] = _hash(event["result"])
+            selected = (summary, "final_text", event["result"])
         elif not (segment["index"] and not segment["work"] and event.get("num_turns") == 0
                   and all(value == 0 for value in usage_total(parsed["usage_segments"][-1:]).values())):
             selected = None
@@ -182,7 +185,8 @@ def parse_stream(raw: bytes | None) -> dict:
     parsed["reported_models"] = sorted(models)
     parsed["usage_total"] = usage_total(parsed["usage_segments"])
     if selected is not None and parsed["parse_complete"] and not parsed["turn_failed"]:
-        parsed["selected_result"], parsed["structured_output"] = selected
+        parsed["selected_result"] = selected[0]
+        parsed[selected[1]] = selected[2]
         parsed["superseded_results"] = [row for row in parsed["result_segments"]
                                         if "output_sha256" in row and row != selected[0]]
         parsed["turn_completed"] = True

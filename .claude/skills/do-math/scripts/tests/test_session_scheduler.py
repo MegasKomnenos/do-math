@@ -22,6 +22,8 @@ from do_math.input_basis import capture_decision_basis
 from do_math.repository import new_id
 from do_math.session_slots import SessionSlots
 from test_engine import ScriptedRunner, common, context_from
+from v5_fixtures import local_job_runner
+from v5_fixtures import activate, install_adapter_fixture, candidate, producer_result
 
 
 class ConcurrentRunner:
@@ -34,6 +36,7 @@ class ConcurrentRunner:
         self.models = []
         self.workspaces = []
 
+    @local_job_runner
     def run(self, *, prompt, workspace, model, on_started, should_stop, **kwargs):
         ctx = context_from(prompt)
         with self.lock:
@@ -44,7 +47,7 @@ class ConcurrentRunner:
             if self.active == self.expected:
                 self.release.set()
         try:
-            on_started({"pid": 1})
+            on_started()
             deadline = time.monotonic() + 8
             while not self.release.wait(.01):
                 if should_stop():
@@ -54,7 +57,7 @@ class ConcurrentRunner:
             (workspace / "same-name.txt").write_text(ctx["action"]["target"], encoding="utf-8")
             out = common("research_work")
             out.update(outcome="submitted", report="Completed the assigned bounded task.", checkpoint="done")
-            return {"status": "completed", "output": out, "usage": {}, "error": None}
+            return producer_result({"status": "completed", "output": out, "usage": {}, "error": None}, {**kwargs, 'prompt': prompt, 'workspace': workspace, 'model': model, 'on_started': on_started, 'should_stop': should_stop})
         finally:
             with self.lock:
                 self.active -= 1
@@ -96,152 +99,147 @@ class SessionPolicyTests(unittest.TestCase):
 
 
 class SlotTests(unittest.TestCase):
-    def test_independent_operator_uses_the_same_instance_operating_slot(self):
-        from do_math import scheduled_operator
-        with tempfile.TemporaryDirectory() as directory:
-            workspace = Path(directory)
-            slots = SessionSlots(workspace, "instance")
-            slots.configure(deepcopy(LIMITS))
-            capacity = LIMITS["operations"][MODELS["high"]]
-            for number in range(capacity):
-                self.assertTrue(slots.acquire(f"internal-plan-{number}", "operations", MODELS["high"]))
-            config = deepcopy(DEFAULT_CONFIG); config["scholarly_enabled"] = False
-            class Runner:
-                def run(inner, *, model, on_started, **kwargs):
-                    self.assertEqual(model, MODELS["high"])
-                    self.assertEqual(slots.snapshot()["operations"][model]["used"], capacity)
-                    on_started({"pid": 1})
-                    return {"status": "completed", "output": {}, "usage": {}}
-            try:
-                with patch.object(scheduled_operator, "read_status", return_value={"status": "ready", "user_pause": None}), \
-                     patch.object(scheduled_operator, "ResearchRepository") as repository, \
-                     patch.object(scheduled_operator, "ModelRunner", return_value=Runner()) as runner:
-                    repository.return_value.load.return_value = ("snapshot", {"config": config}, {})
-                    waiting = scheduled_operator.check(workspace, "instance", workspace)
-                    self.assertEqual(waiting["outcome"], "capacity_waiting")
-                    runner.assert_not_called()
-                    slots.release("internal-plan-0")
-                    result = scheduled_operator.check(workspace, "instance", workspace)
-                    self.assertEqual(result["outcome"], "completed")
-                    self.assertEqual(slots.snapshot()["operations"][MODELS["high"]]["used"], capacity - 1)
-            finally:
-                slots.close()
+    """The Git writer owns admission; observers never reconcile reservations."""
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.repo = self.root / 'repo'
+        subprocess.run(['git', 'init', '-q', str(self.repo)], check=True)
+        limits = {pool: {model: 1 for model in MODELS.values()} for pool in ('work', 'operations')}
+        initialized = initialize(self.repo, goal='Reservation boundary fixture', workspace=self.root / 'work',
+            config={'operator_enabled': True, 'scholarly_enabled': False, 'session_limits': limits})
+        self.engine = ResearchEngine(self.repo, initialized['instance_id'], runner=ScriptedRunner())
 
-    def test_independent_operator_prompt_carries_the_saved_context_compactly(self):
-        import json
-        from do_math import scheduled_operator
-        with tempfile.TemporaryDirectory() as directory:
-            workspace = Path(directory)
-            slots = SessionSlots(workspace, "instance")
-            slots.configure(deepcopy(LIMITS))
-            config = deepcopy(DEFAULT_CONFIG); config["scholarly_enabled"] = False
-            class Runner:
-                def run(inner, *, on_started, **kwargs):
-                    on_started({"pid": 1})
-                    return {"status": "completed", "output": {}, "usage": {}}
-            try:
-                with patch.object(scheduled_operator, "read_status", return_value={"status": "ready", "user_pause": None}), \
-                     patch.object(scheduled_operator, "ResearchRepository") as repository, \
-                     patch.object(scheduled_operator, "ModelRunner", return_value=Runner()):
-                    repository.return_value.load.return_value = ("snapshot", {"config": config}, {})
-                    scheduled_operator.check(workspace, "instance", workspace)
-            finally:
-                slots.close()
-            prompt, = workspace.rglob("prompt.md")
-            carried = prompt.read_text(encoding="utf-8").split("\n\n## Invocation context\n\n", 1)[1]
-            saved = json.loads((prompt.parent / "context.json").read_text(encoding="utf-8"))
-            self.assertEqual(json.loads(carried), saved)
-            self.assertNotIn("\n", carried)
+    def slots(self, *, observer=False):
+        e = self.engine
+        return SessionSlots(self.root / 'work', e.instance['id'], runtime=e.runtime,
+                            instance=e.instance, observer=observer)
 
-    def test_two_processes_share_the_same_capacity(self):
-        with tempfile.TemporaryDirectory() as directory:
-            slots = SessionSlots(Path(directory), "one")
-            slots.configure({"work": {"model": 1}, "operations": {"model": 1}})
-            program = "\n".join([
-                "import sys", "from pathlib import Path",
-                "sys.path.insert(0, sys.argv[1])",
-                "from do_math.session_slots import SessionSlots",
-                "s=SessionSlots(Path(sys.argv[2]), 'one')",
-                "print(s.acquire('child', 'work', 'model'), flush=True)",
-                "sys.stdin.readline()", "s.release('child'); s.close()",
-            ])
-            child = subprocess.Popen([sys.executable, "-c", program, str(Path(__file__).resolve().parents[1]), directory],
-                                     stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-            try:
-                self.assertEqual(child.stdout.readline().strip(), "True")
-                self.assertFalse(slots.acquire("parent", "work", "model"))
-                child.communicate("release\n", timeout=10)
-                self.assertEqual(child.returncode, 0)
-                self.assertTrue(slots.acquire("parent", "work", "model"))
-                slots.release("parent")
-            finally:
-                if child.poll() is None:
-                    child.kill(); child.communicate(timeout=10)
-                slots.close()
+    def reserve(self, eid, pool='work'):
+        e = self.engine
+        role = 'task_contract_review' if pool == 'work' else 'research_plan'
+        profile = next(p for p in e.instance['execution_profiles'].values()
+                       if p['role'] == role and p['ai']['model'] == MODELS['high'])
+        from do_math.execution_profiles import profile_ref
+        from do_math.execution_lifecycle import create_execution, transition_execution
+        from do_math.activities import open_activity, assign_execution
+        from do_math.engine import now
+        action = {'id': 'AC-' + eid, 'role': role, 'profile_ref': profile_ref(profile)}
+        activity = open_activity(e.runtime, activity_id='AY-' + eid, activity_kind=role,
+            owner_ref=e.instance['id'], input_refs=[], opened_at=now())
+        execution = create_execution(execution_id=eid, owner_activity_id=activity['id'], actor_kind='ai',
+            input_manifest=[], profile_ref=profile_ref(profile), created_at=now())
+        execution.update(role=role, action=action, input_snapshot=e.head)
+        transition_execution(execution, 'starting', at=now())
+        assign_execution(e.runtime, activity['id'], execution)
+        accepted = self.slots().acquire(eid, pool, MODELS['high'], profile=profile, execution=execution)
+        return accepted, execution
 
-    @unittest.skipUnless(os.name == "nt", "requires a Windows Job")
+    def test_shared_capacity_separate_pools_and_reusable_slots_are_published_together(self):
+        with self.engine.store.writer_lock():
+            self.assertTrue(self.reserve('EX-work')[0])
+            self.assertFalse(self.reserve('EX-blocked')[0])
+            self.assertTrue(self.reserve('EX-operation', 'operations')[0])
+            self.engine._save()
+            head, state, runtime = self.engine.store.load()
+            self.assertEqual(head, self.engine.head)
+            self.assertTrue(runtime['reservations'])
+            self.assertTrue(all(row['owner_id'] in runtime['executions'] for row in runtime['reservations'].values()))
+            self.assertTrue(self.slots().release('EX-work'))
+            self.assertTrue(self.reserve('EX-next')[0])
+            self.engine._save()
+        self.assertFalse(list((self.root / 'work').rglob('*.sqlite*')))
+
+    def test_saved_reservations_survive_reopen_until_explicit_release(self):
+        with self.engine.store.writer_lock():
+            self.assertTrue(self.reserve('EX-held')[0])
+            self.engine._save()
+        saved = deepcopy(self.engine.runtime['reservations'])
+        self.engine = ResearchEngine(self.repo, self.engine.instance['id'], runner=ScriptedRunner())
+        self.assertEqual(self.engine.runtime['reservations'], saved)
+        self.assertEqual(self.slots(observer=True).snapshot()['work'][MODELS['high']]['used'], 1)
+        with self.engine.store.writer_lock():
+            self.assertTrue(self.slots().release('EX-held'))
+            self.engine._save()
+        self.assertEqual(self.slots(observer=True).snapshot()['work'][MODELS['high']]['used'], 0)
+
+    def test_distinct_instances_have_distinct_reservation_ledgers(self):
+        with self.engine.store.writer_lock():
+            self.assertTrue(self.reserve('EX-first-instance')[0])
+            self.engine._save()
+        other_workspace = self.root / 'other-work'
+        created = initialize(self.repo, goal='Separate reservation ledger', workspace=other_workspace,
+            config={'session_limits': deepcopy(self.engine.instance['config']['session_limits']),
+                    'operator_enabled': False, 'scholarly_enabled': False})
+        other = ResearchEngine(self.repo, created['instance_id'], runner=ScriptedRunner())
+        self.assertNotEqual(other.instance['id'], self.engine.instance['id'])
+        observer = SessionSlots(other_workspace, other.instance['id'], runtime=other.runtime,
+                                instance=other.instance, observer=True)
+        self.assertEqual(observer.snapshot()['work'][MODELS['high']]['used'], 0)
+        self.assertEqual(self.slots(observer=True).snapshot()['work'][MODELS['high']]['used'], 1)
+        self.assertEqual(other.store.load()[2]['reservations'], {})
+
+    def test_observer_cannot_acquire_or_reconcile_an_unknown_lifetime(self):
+        with self.engine.store.writer_lock():
+            self.reserve('EX-held')
+            self.engine._save()
+        before = deepcopy(self.engine.runtime)
+        observer = self.slots(observer=True)
+        with self.assertRaisesRegex(ValueError, 'read-only'):
+            observer.release('EX-held')
+        observer.snapshot()
+        self.assertEqual(self.engine.runtime, before)
+
+    def test_two_processes_cannot_both_own_the_git_writer(self):
+        program = "\n".join([
+            'import sys', 'from pathlib import Path',
+            'sys.path.insert(0, sys.argv[1])',
+            'from do_math.engine import _repository',
+            'try:',
+            ' with _repository(Path(sys.argv[2]),sys.argv[3]).writer_lock(): print("acquired")',
+            'except Exception as error: print(type(error).__name__)'])
+        with self.engine.store.writer_lock():
+            child = subprocess.run([sys.executable, '-c', program, str(Path(__file__).resolve().parents[1]),
+                str(self.repo), self.engine.instance['id']], capture_output=True, text=True, timeout=30)
+        self.assertEqual(child.returncode, 0, child.stderr)
+        self.assertIn('LockError', child.stdout)
+        self.assertNotIn('acquired', child.stdout)
+
+    @unittest.skipUnless(os.name == 'nt', 'requires a Windows Job')
     def test_slot_waits_for_actual_named_job_termination(self):
         from do_math.windows_job import WindowsJob, named_job_empty
-        with tempfile.TemporaryDirectory() as directory:
-            slots = SessionSlots(Path(directory), "one")
-            slots.configure({"work": {"model": 1}, "operations": {"model": 1}})
-            name = "Local\\DoMath-test-" + uuid.uuid4().hex
-            try:
-                with WindowsJob([sys.executable, "-c", "import time; time.sleep(30)"], name=name) as job:
-                    self.assertTrue(slots.acquire("session", "work", "model"))
-                    slots.started("session", {"pid": job.pid, "job_name": name})
-                    job.resume()
-                    self.assertFalse(named_job_empty(name))
-                    self.assertFalse(slots.release("session"))
-                    self.assertFalse(slots.acquire("next", "work", "model"))
-                    job.terminate()
-                    self.assertTrue(job.wait(10))
-                    deadline = time.monotonic() + 10
-                    while not named_job_empty(name) and time.monotonic() < deadline:
-                        time.sleep(.01)
-                    self.assertTrue(slots.release("session"))
-                    self.assertTrue(slots.acquire("next", "work", "model"))
-                    slots.release("next")
-            finally:
-                slots.close()
+        name = 'Local\\DoMath-test-' + uuid.uuid4().hex
+        with self.engine.store.writer_lock():
+            self.assertTrue(self.reserve('EX-job')[0])
+            with WindowsJob([sys.executable, '-c', 'import time; time.sleep(30)'], name=name) as job:
+                self.slots().started('EX-job', {'pid': job.pid, 'job_name': name})
+                self.engine._save()
+                job.resume()
+                self.assertFalse(self.slots().release('EX-job'))
+                job.terminate()
+                self.assertTrue(job.wait(10))
+                self.assertTrue(named_job_empty(name))
+                self.assertTrue(self.slots().release('EX-job'))
+            self.engine._save()
 
-    def test_shared_capacity_separate_pools_and_instances_and_reusable_slots(self):
-        with tempfile.TemporaryDirectory() as directory:
-            a, b = SessionSlots(Path(directory), "one"), SessionSlots(Path(directory), "one")
-            other = SessionSlots(Path(directory), "two")
-            try:
-                a.configure({"work": {"model": 1}, "operations": {"model": 1}})
-                other.configure({"work": {"model": 1}, "operations": {"model": 1}})
-                self.assertTrue(a.acquire("work-1", "work", "model"))
-                self.assertFalse(b.acquire("work-2", "work", "model"))
-                self.assertTrue(b.acquire("op-1", "operations", "model"))
-                self.assertTrue(other.acquire("other", "work", "model"))
-                a.release("work-1")
-                self.assertTrue(b.acquire("work-2", "work", "model"))
-                a.configure({"work": {"model": 0}, "operations": {"model": 1}})
-                self.assertEqual(a.snapshot()["work"]["model"]["used"], 1)
-                self.assertFalse(a.acquire("work-3", "work", "model"))
-                b.release("work-2"); b.release("op-1"); other.release("other")
-            finally:
-                a.close(); b.close(); other.close()
+    def test_regular_supervision_observes_without_creating_an_ai_execution(self):
+        from do_math import scheduled_operator
+        with patch.object(scheduled_operator, 'ModelRunner', side_effect=AssertionError('unexpected model')):
+            outcome = scheduled_operator.check(self.repo, self.engine.instance['id'], self.root / 'work', probe=True)
+        self.assertEqual(outcome['outcome'], 'observed')
+        self.assertFalse(outcome['model_called'])
+        self.assertEqual(self.engine.store.load()[2]['executions'], {})
 
-    def test_lost_owner_before_start_is_reconciled_but_unknown_started_lifetime_is_held(self):
-        with tempfile.TemporaryDirectory() as directory:
-            a = SessionSlots(Path(directory), "one")
-            a.configure({"work": {"model": 2}, "operations": {"model": 1}})
-            a.acquire("before-start", "work", "model")
-            a.acquire("started", "work", "model")
-            a.started("started", {"pid": 100})
-            a.close()
-            b = SessionSlots(Path(directory), "one")
-            try:
-                self.assertEqual(b.snapshot()["work"]["model"]["execution_ids"], ["started"])
-            finally:
-                b.close()
+    def test_recovery_requires_actual_failure_evidence(self):
+        from do_math import scheduled_operator
+        with self.assertRaisesRegex(ValueError, 'failure evidence'):
+            scheduled_operator.recovery(self.repo, self.engine.instance['id'], self.root / 'work', failure={})
 
 
 class ParallelEngineTests(unittest.TestCase):
     def setUp(self):
+        install_adapter_fixture(self)
         self.temp = tempfile.TemporaryDirectory()
         self.root = Path(self.temp.name)
         self.repo = self.root / "repo"; self.repo.mkdir()
@@ -251,24 +249,34 @@ class ParallelEngineTests(unittest.TestCase):
         self.temp.cleanup()
 
     def engine(self, runner, count=3, **config):
-        result = initialize(self.repo, goal="bounded research", goal_kind="research", workspace=self.root / "work",
-                            config={"operator_enabled": False, "scholarly_enabled": False, **config})
+        desired_limits = config.pop("session_limits", None)
+        result = initialize(self.repo, goal="bounded research", workspace=self.root / "work",
+                            config={"operator_enabled": False, "scholarly_enabled": False, "lean_command": ["test-lean"], **config})
         engine = ResearchEngine(self.repo, result["instance_id"], runner=runner)
+        activate(engine, self.root, initialization_runner=ScriptedRunner())
+        if count:
+            engine.runner = ScriptedRunner(preparation_candidates=[candidate(str(i)) for i in range(count)],
+                model_rating={"difficulty": "high", "importance": "medium", "reason": "Independent novel fixture approaches"})
+            engine.run(max_steps=1)
+            engine.run(max_steps=count)
+            self.assertEqual(len(engine.runtime["tasks"]), count)
+            self.assertTrue(all(row["state"] == "ready" for row in engine._task_readiness.values()))
+        engine.runner = runner
         engine.runtime["queue"] = []
-        for i in range(count):
-            tid = new_id("TK")
-            task = {"id": tid, "revision": 1, "status": "performing", "title": str(i), "question": "q",
-                    "scope": "bounded", "expected_result": "report", "completion_criteria": ["report"],
-                    "inputs": [], "reuse": [], "dependencies": [], "work_class": "nonformal", "results": [],
-                    "model_assessment": {"difficulty": "high", "importance": "medium", "reason": "novel approach"},
-                    "occurrence_condition": {"op": "always"}, "initial_observation_rules": [], "feature_version": 2}
-            task["reviews"] = [{"id": new_id("CR"), "revision": 1, "decision": "approved", "contract_sha256": contract_hash(task),
-                                "goal_revision": engine.instance["goal_revision"], "policy_revision": engine.instance["policy_revision"]}]
-            engine.runtime["tasks"][tid] = task
-            task["reviews"][0]["decision_basis"] = capture_decision_basis(engine.instance, engine.runtime, [tid])
+        for tid in engine.runtime["tasks"]:
             engine._enqueue("research_work", tid)
         engine._save()
+        if desired_limits is not None:
+            self.configure_limits(engine, desired_limits)
         return engine
+
+    def configure_limits(self, engine, limits):
+        from v5_fixtures import send_control
+        send_control(engine, "configure", config={"session_limits":limits})
+        refs = [ref for rows in engine.instance['role_profile_refs'].values() for ref in rows
+                if engine.instance['execution_profiles'][ref['id']]['actor_kind']=='ai']
+        send_control(engine, 'decision', config={'change':{'kind':'initialization',
+            'operation':'probe', 'profile_refs':refs}})
 
     def test_three_calls_overlap_and_apply_serially_to_distinct_workspaces(self):
         runner = ConcurrentRunner()
@@ -284,7 +292,7 @@ class ParallelEngineTests(unittest.TestCase):
         self.assertEqual(len(set(runner.workspaces)), 3)
         self.assertEqual(runner.models, [MODELS["high"]] * 3)
         self.assertEqual(len({(p / "same-name.txt").read_text(encoding="utf-8") for p in runner.workspaces}), 3)
-        self.assertEqual(len([e for e in engine.runtime["executions"].values() if e["outcome"] == "output_accepted"]), 3)
+        self.assertEqual(len([e for e in engine.runtime["executions"].values() if e["role"] == "research_work" and e.get("outcome") == "output_accepted"]), 3)
         self.assertEqual(state["budget"]["work"][MODELS["high"]]["used"], 0)
         self.assertTrue(engine.check()["passed"], engine.check())
 
@@ -297,7 +305,7 @@ class ParallelEngineTests(unittest.TestCase):
         self.assertEqual(runner.models, [])
         self.assertEqual(state["capacity_waiting"][0]["model_selection"]["model"], MODELS["high"])
         limits["work"][MODELS["high"]] = 1
-        control(self.repo, engine.instance["id"], "configure", config={"session_limits": limits})
+        self.configure_limits(engine, limits)
         engine.run(max_steps=1)
         self.assertEqual(runner.models, [MODELS["high"]])
 
@@ -308,8 +316,15 @@ class ParallelEngineTests(unittest.TestCase):
         high = engine.runtime["queue"][0]["target"]
         task = engine.runtime["tasks"][engine.runtime["queue"][1]["target"]]
         task["model_assessment"] = {"difficulty": "low", "importance": "low", "reason": "bounded local transcription"}
-        task["reviews"][0]["contract_sha256"] = contract_hash(task)
-        task["reviews"][0]["decision_basis"] = capture_decision_basis(engine.instance, engine.runtime, [task["id"]])
+        # Complete another real contract review after the model judgment changes.
+        pending = deepcopy(engine.runtime["queue"])
+        engine.runtime["queue"] = []
+        engine._enqueue("task_contract_review", task["id"])
+        engine.runner = ScriptedRunner()
+        engine._save()
+        engine.run(max_steps=1)
+        engine.runner = runner
+        engine.runtime["queue"] = pending
         engine._save()
         engine.run(max_steps=1)
         self.assertEqual(runner.models, [MODELS["low"]])
@@ -324,7 +339,7 @@ class ParallelEngineTests(unittest.TestCase):
         state = engine.process_controls()
         self.assertEqual(state["budget_unit"], "concurrent_sessions")
         self.assertEqual(engine.runtime["executions"], before)
-        self.assertEqual(engine.instance["feature_version"], 4)
+        self.assertEqual(engine.instance["feature_version"], 5)
 
     def test_pause_reaches_all_parallel_calls_and_releases_their_slots(self):
         runner = ConcurrentRunner(expected=99)
@@ -344,23 +359,25 @@ class ParallelEngineTests(unittest.TestCase):
         self.assertEqual(state["status"], "paused")
         self.assertEqual(state["active_executions"], [])
         self.assertEqual(state["budget"]["work"][MODELS["high"]]["used"], 0)
-        self.assertEqual(len(engine.runtime["executions"]), 3)
+        self.assertEqual(len([e for e in engine.runtime["executions"].values() if e["role"] == "research_work"]), 3)
 
     def test_live_operations_can_run_when_work_is_full_and_step_limit_is_reached(self):
         release = threading.Event()
         class ObservedRunner(ConcurrentRunner):
+            @local_job_runner
             def run(inner, *, prompt, workspace, model, on_started, should_stop, on_observation=None, **kwargs):
                 context = context_from(prompt)
                 if context["action"]["role"] == "operational_review":
-                    on_started({"pid": 1})
+                    on_started()
                     out = common("operational_review")
-                    out.update(decision="continue", reason="progress is supported by current evidence")
+                    out["disposition"] = {"kind": "continue", "basis_refs": [context["action"]["target"]],
+                        "next_owner": "research_work", "reason": "The running target supplied progress evidence", "next_review": None}
                     release.set()
-                    return {"status": "completed", "output": out, "usage": {}, "error": None}
+                    return producer_result({"status": "completed", "output": out, "usage": {}, "error": None}, {**kwargs, 'prompt': prompt, 'workspace': workspace, 'model': model, 'on_started': on_started, 'should_stop': should_stop, 'on_observation': on_observation})
                 with inner.lock:
                     inner.active += 1; inner.peak = max(inner.peak, inner.active)
                 try:
-                    on_started({"pid": 1})
+                    on_started()
                     deadline = time.monotonic() + 20
                     while not release.is_set():
                         on_observation({"type": "tick"})
@@ -371,7 +388,7 @@ class ParallelEngineTests(unittest.TestCase):
                         time.sleep(.1)
                     out = common("research_work")
                     out.update(outcome="submitted", report="work completed", checkpoint="done")
-                    return {"status": "completed", "output": out, "usage": {}, "error": None}
+                    return producer_result({"status": "completed", "output": out, "usage": {}, "error": None}, {**kwargs, 'prompt': prompt, 'workspace': workspace, 'model': model, 'on_started': on_started, 'should_stop': should_stop, 'on_observation': on_observation})
                 finally:
                     with inner.lock: inner.active -= 1
         runner = ObservedRunner(expected=99)
@@ -396,8 +413,8 @@ class ParallelEngineTests(unittest.TestCase):
         engine._apply_queue_plan({"role": "research_plan"}, eid)
         self.assertEqual([a["id"] for a in engine.runtime["queue"]], [third["id"], first["id"]])
         task = engine.runtime["tasks"][second["target"]]
-        self.assertEqual(task["status"], "ready")
-        self.assertEqual(task["completion_criteria"], ["report"])
+        self.assertEqual(task["status"], "planned")
+        self.assertEqual([row["id"] for row in task["completion_obligations"]], ["OB-argument"])
 
     def test_model_assessments_flow_from_preparation_through_review_and_planning_to_execution(self):
         assessment = {"difficulty": "low", "importance": "low", "reason": "a local bounded comparison with an explicit method"}
@@ -411,16 +428,19 @@ class ParallelEngineTests(unittest.TestCase):
                 if role == "research_preparation":
                     entries = [{"task_title": c["title"], **assessment} for c in result["output"]["candidates"]]
                 elif role == "research_plan":
-                    entries = [{"task_id": tid, **assessment} for tid in result["output"]["selections"]]
+                    entries = [{"task_id": tid, **assessment} for tid in [row["task_id"] for row in result["output"]["dispositions"] if row["kind"] == "selected"]]
                 if entries:
                     from test_engine import contract_checks
                     checks = contract_checks(result["output"]["candidates"]) if role == "research_preparation" else []
                     (arguments["workspace"] / "activity-extensions.json").write_text(
                         json.dumps({"model_assessments": entries, **({"contract_checks": checks} if checks else {})}), encoding="utf-8")
+                from v5_fixtures import seal_response
+                seal_response(result["output"], context, arguments["workspace"])
                 return result
         result = initialize(self.repo, goal="bounded research", goal_kind="research", workspace=self.root / "work",
-                            config={"operator_enabled": False, "scholarly_enabled": False})
+                            config={"operator_enabled": False, "scholarly_enabled": False, "lean_command": ["test-lean"]})
         engine = ResearchEngine(self.repo, result["instance_id"], runner=AssessedRunner())
+        activate(engine, self.root, initialization_runner=ScriptedRunner())
         engine.run(max_steps=12)
         tasks = list(engine.runtime["tasks"].values())
         self.assertEqual(tasks[0]["model_assessment"], assessment)
@@ -433,9 +453,10 @@ class ParallelEngineTests(unittest.TestCase):
     def test_failed_work_waits_for_diagnosis_when_its_operating_model_is_full(self):
         class FailingRunner:
             def __init__(inner): inner.calls = 0
+            @local_job_runner
             def run(inner, *, on_started, **kwargs):
                 inner.calls += 1
-                on_started({"pid": 1})
+                on_started()
                 return {"status": "failed", "output": None, "usage": {}, "error": "preserved tool failure"}
         limits = deepcopy(LIMITS); limits["operations"][MODELS["high"]] = 0
         runner = FailingRunner()
@@ -448,9 +469,10 @@ class ParallelEngineTests(unittest.TestCase):
 
     def test_failed_live_review_stops_its_parent_and_preserves_independent_work(self):
         class Runner:
+            @local_job_runner
             def run(inner, *, prompt, on_started, should_stop, on_observation=None, **kwargs):
                 ctx = context_from(prompt)
-                on_started({"pid": 1})
+                on_started()
                 if ctx["action"]["role"] == "operational_review":
                     return {"status": "failed", "output": None, "usage": {}, "error": "operating model unavailable"}
                 started = time.monotonic()
@@ -460,7 +482,7 @@ class ParallelEngineTests(unittest.TestCase):
                     elif time.monotonic() - started > 2:
                         out = common("research_work")
                         out.update(outcome="submitted", report="independent work finished", checkpoint="done")
-                        return {"status": "completed", "output": out, "usage": {}, "error": None}
+                        return producer_result({"status": "completed", "output": out, "usage": {}, "error": None}, {**kwargs, 'prompt': prompt, 'on_started': on_started, 'should_stop': should_stop, 'on_observation': on_observation, 'workspace': kwargs['workspace']})
                     if should_stop():
                         return {"status": "stopped", "output": None, "usage": {}, "error": "parent stopped"}
                     time.sleep(.1)
@@ -486,9 +508,10 @@ class ParallelEngineTests(unittest.TestCase):
         class InvalidPreparation:
             def __init__(inner):
                 inner.roles = []
+            @local_job_runner
             def run(inner, *, prompt, on_started, **kwargs):
                 inner.roles.append(context_from(prompt)["action"]["role"])
-                on_started({"pid": 1})
+                on_started()
                 out = common("research_preparation")
                 out.pop("candidates")
                 return {"status": "completed", "output": out, "usage": {}, "error": None}

@@ -788,52 +788,16 @@
           "payload": {
             "additionalProperties": false,
             "properties": {
+              "draft_path": {
+                "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/path"
+              },
               "execution_id": {
                 "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/id_E"
-              },
-              "files": {
-                "items": {
-                  "additionalProperties": false,
-                  "properties": {
-                    "media_type": {
-                      "minLength": 1,
-                      "type": "string"
-                    },
-                    "path": {
-                      "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/path"
-                    },
-                    "sha256": {
-                      "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/sha256"
-                    },
-                    "size_bytes": {
-                      "maximum": 9007199254740991,
-                      "minimum": 0,
-                      "type": "integer"
-                    }
-                  },
-                  "required": [
-                    "path",
-                    "sha256",
-                    "media_type",
-                    "size_bytes"
-                  ],
-                  "type": "object"
-                },
-                "minItems": 0,
-                "type": "array"
-              },
-              "result_ref": {
-                "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/artifact_ref"
-              },
-              "wait_request": {
-                "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/optional_wait"
               }
             },
             "required": [
               "execution_id",
-              "files",
-              "result_ref",
-              "wait_request"
+              "draft_path"
             ],
             "type": "object"
           }

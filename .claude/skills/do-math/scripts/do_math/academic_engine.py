@@ -1,31 +1,59 @@
 """Connect explicit academic requirements to ordinary reviewed research tasks."""
 from copy import deepcopy
 
-from . import academic
+from . import academic, governance
 from .repository import new_id
 
 
 class AcademicEngineMixin:
+    def _academic_evidence(self, ref):
+        return self.store.read_many([ref], self.head).get(ref)
+
     def _solution_basis(self):
         if self.instance.get("goal_status") != "mathematically_solved": return None
         group = self.instance.get("goal_assessment_basis")
         judgments = [j for j in self.instance.get("goal_judgments", []) if j.get("basis") == group]
         if not judgments or any(not j.get("current", True) for j in judgments): return None
+        from . import knowledge
+        if any(not knowledge.validate_basis(j.get("record_basis", []), self.instance, self.runtime)["valid"] for j in judgments): return None
         ids = sorted({ref for j in judgments for ref in j.get("dependencies", []) if ref in self.instance["knowledge"]})
         records = [self.instance["knowledge"][kid] for kid in ids]
+        if self.instance.get("feature_version", 0) >= 5:
+            from .knowledge_records import usable_links, all_records
+            if not ids or any(not usable_links(self.instance,kid) for kid in ids): return None
+            support = all_records(self.instance)
+            pending = list(ids); visited=set(); support_ids=set()
+            while pending:
+                kid=pending.pop()
+                if kid in visited: continue
+                visited.add(kid)
+                record=self.instance["knowledge"][kid]
+                support_ids.add(record["kind_definition_id"])
+                pending.extend(record.get("dependencies", []))
+                for link in usable_links(self.instance,kid): support_ids.update(link.values())
+            for ref in list(support_ids):
+                env=support.get(ref,{}).get("trust_environment_id")
+                if env: support_ids.add(env)
+            records=[support[ref] for ref in sorted(visited | support_ids)]
         records += [{"id": j["execution_id"], **j} for j in judgments]
-        return academic.solution_basis(str(self.instance.get("goal_revision", 1)) + ":" + str(group), records)
+        charter = governance.governance_view(self.instance).get("charter")
+        goal_ref = (governance.digest({"content": {key: value for key, value in charter["content"].items()
+                                                  if key != "academic_requirements"}, "document": charter.get("document")})
+                    if charter else str(self.instance.get("goal_revision", 1)))
+        # Academic requirements have their own edition binding; changing them
+        # alone cannot retroactively change the mathematical solution evidence.
+        return academic.solution_basis(goal_ref + ":" + str(group), records)
 
     def _academic_status(self):
-        return academic.academic_status(self.instance, self.runtime, self._solution_basis())
+        return academic.academic_status(self.instance, self.runtime, self._solution_basis(), resolve_evidence=self._academic_evidence)
 
     def _ensure_academic_followup(self):
         basis = self._solution_basis()
-        requirements = self.instance.get("academic_requirements", {})
+        requirements = academic.current_requirements(self.instance)
         if basis is None or self.runtime["status"] in {"paused", "closed", "budget_exhausted"}: return
         if not requirements.get("items"):
             rejections = [r for r in self.runtime.get("external_rejections", []) if r["solution_basis"] == basis]
-            if rejections and all(r.get("resolved") and r.get("resolution_evidence") for r in rejections):
+            if rejections and not academic.unresolved_rejections(self.instance, self.runtime, basis, resolve_evidence=self._academic_evidence):
                 self.runtime["status"] = "completed"
                 self.runtime["queue"] = []
             return
@@ -50,17 +78,38 @@ class AcademicEngineMixin:
                    for t in self.runtime["tasks"].values()): continue
             tid = new_id("TK")
             refs = [r["id"] for r in basis["records"] if r["id"] in self.instance["knowledge"]]
-            inputs = list(dict.fromkeys([*refs, *requirement["required_inputs"]]))
-            self.runtime["tasks"][tid] = {"id": tid, "revision": 1, "feature_version": 2,
+            inputs = list(dict.fromkeys([*(row["id"] for row in basis["records"]), *requirement["required_inputs"]]))
+            from .execution_profiles import profile_ref, resolve_profile
+            from .task_contracts import validate_task_contract
+            view = governance.governance_view(self.instance)
+            profiles = [resolve_profile(self.instance.get("execution_profiles", {}), ref)
+                        for ref in self.instance.get("role_profile_refs", {}).get("research_work", [])]
+            if any(p["role"] != "research_work" for p in profiles):
+                raise ValueError("academic work profile has a different role")
+            obligations = academic.criterion_obligations(tid, requirement)
+            task = {"id": tid, "revision": 1, "feature_version": 5,
                 "title": "Academic validation: " + requirement["id"], "question": requirement["scope"],
-                "scope": requirement["scope"], "expected_result": "Evidence for the user-defined academic criteria",
-                "completion_criteria": deepcopy(requirement["criteria"]), "inputs": inputs, "reuse": refs,
-                "work_class": "nonformal", "status": "planned", "producer_execution": "user-requirement:" + requirement["id"],
+                "scope": {"included": [requirement["scope"]], "excluded": []},
+                "expected": {"outputs": deepcopy(requirement["criteria"]),
+                             "research_change": "Assess the explicit academic requirement: " + requirement["scope"]},
+                "completion_obligations": obligations,
+                "progress_criteria": [{"id": tid + ":progress", "claim": "Produce evidence for the stated academic criteria",
+                                       "evidence_required": []}],
+                "profile_refs": [profile_ref(p) for p in profiles],
+                "authority_refs": [g["id"] for g in self.instance.get("grants", {}).values()
+                                   if g.get("kind") == "local" and "research_work" in g.get("roles", [])],
+                "basis_refs": [view["charter"]["id"], view["charter"]["approval_ref"]],
+                "inputs": inputs, "reuse": refs,
+                "work_class": "nonformal", "status": "planned",
                 "results": [], "reviews": [], "dependencies": refs, "occurrence_condition": {"op": "always"},
+                "initial_observation_rules": [],
                 "academic_requirement_id": requirement["id"], "requirements_sha256": current_hash,
                 "solution_basis": deepcopy(basis), "required_external_effects": deepcopy(requirement["external_effects"])}
-            self._enqueue("task_contract_review", tid, reason="Independently review the concrete academic requirement contract")
+            validate_task_contract(task)
+            self.runtime["tasks"][tid] = task
             created = True
+        if created:
+            self._ensure_model_assessments()
         status = self._academic_status()["status"]
         if status == "completed":
             self.runtime["status"] = "completed"
@@ -85,31 +134,48 @@ class AcademicEngineMixin:
 
     def _record_academic_assessment(self, task, assessment, execution_id):
         if not task.get("academic_requirement_id"): return
-        if task.get("solution_basis") != self._solution_basis() or task.get("requirements_sha256") != self.instance["academic_requirements"]["sha256"]:
+        if task.get("solution_basis") != self._solution_basis() or task.get("requirements_sha256") != academic.current_requirements(self.instance)["sha256"]:
             raise ValueError("academic assessment basis changed")
-        decision = "satisfied" if assessment["decision"] == "completed" else "not_satisfied"
-        requirement = next(item for item in self.instance["academic_requirements"]["items"]
+        from .task_scope import assessment_current
+        from .task_contracts import validate_item_dispositions
+        applied = task.get("assessment", {})
+        actor = self.runtime.get("executions", {}).get(execution_id, {})
+        if (actor.get("role") != "research_plan" or actor.get("input_solution_basis") != task["solution_basis"]
+                or applied.get("execution_id") != execution_id
+                or any(applied.get(key) != value for key, value in assessment.items())
+                or not assessment_current(task, self.instance, self.runtime)):
+            raise ValueError("academic result requires the current applied independent TASKS assessment")
+        validate_item_dispositions(task, assessment, require_complete=assessment["decision"] in {"completed", "closed"})
+        requirement = next(item for item in academic.current_requirements(self.instance)["items"]
                            if item["id"] == task["academic_requirement_id"])
+        expected = academic.criterion_obligations(task["id"], requirement)
+        actual = {row["id"]: row for row in task["completion_obligations"]}
+        if any(actual.get(row["id"]) != row for row in expected):
+            raise ValueError("academic criteria differ from the approved requirement obligations")
+        dispositions = {row["obligation_id"]: row for row in assessment["item_dispositions"]}
+        evidence = [{"criterion": row["claim"],
+                     "satisfied": dispositions.get(row["id"], {}).get("kind") == "fulfilled",
+                     "evidence": ", ".join(dispositions.get(row["id"], {}).get("evidence_refs", []))}
+                    for row in expected]
+        decision = ("satisfied" if assessment["decision"] == "completed" and all(row["satisfied"] for row in evidence)
+                    else "unresolved" if assessment.get("unresolved") else "not_satisfied")
         receipts_ok, receipts = academic.effect_receipts(requirement, task_id=task["id"],
             requirements_sha256=task["requirements_sha256"], solution_basis_value=task["solution_basis"], runtime=self.runtime)
         if decision == "satisfied" and not receipts_ok:
             raise ValueError("satisfied academic assessment lacks confirmed successful required external effects")
-        result = academic.assess(task["academic_requirement_id"], task["solution_basis"], self.instance["academic_requirements"],
-                                 decision, assessment["criteria_results"])
-        result.update(execution_id=execution_id, task_id=task["id"], external_effect_receipts=receipts)
-        self.runtime.setdefault("academic_assessments", []).append(result)
+        result = academic.assess(task["academic_requirement_id"], task["solution_basis"], academic.current_requirements(self.instance),
+                                 decision, evidence)
+        result.update(execution_id=execution_id, task_id=task["id"], external_effect_receipts=receipts,
+                      task_assessment_sha256=academic._hash(applied))
+        records = self.runtime.setdefault("academic_assessments", [])
+        if result not in records: records.append(result)
 
     def _apply_academic_resolutions(self, action, execution_id, resolutions):
-        if resolutions and action["role"] != "research_plan": raise ValueError("academic resolutions require the designated research planner")
+        if resolutions and action["role"] != "research_plan":
+            raise ValueError("academic resolutions require designated planner")
+        if len({r.get("id") for r in resolutions}) != len(resolutions):
+            raise ValueError("rejection resolution IDs must be distinct")
+        state = deepcopy(self.runtime)
         for resolution in resolutions:
-            entry = next((r for r in self.runtime.get("external_rejections", []) if r["id"] == resolution.get("id")), None)
-            if entry is None or entry["solution_basis"] != self._solution_basis(): raise ValueError("rejection does not bind the current solution")
-            if resolution.get("decision") not in {"resolved", "unresolved"} or not isinstance(resolution.get("evidence"), str) or not resolution["evidence"].strip():
-                raise ValueError("resolution requires a decision and explicit evidence")
-            entry.setdefault("assessment_history", []).append({"execution_id": execution_id, **deepcopy(resolution)})
-            if resolution["decision"] == "resolved":
-                entry.update(resolved=True, resolution_evidence=resolution["evidence"], resolution_execution_id=execution_id)
-            else:
-                entry["resolved"] = False
-                entry.pop("resolution_evidence", None)
-                entry.pop("resolution_execution_id", None)
+            academic.record_resolution(self.instance, state, self._solution_basis(), resolution, execution_id=execution_id, resolve_evidence=self._academic_evidence)
+        self.runtime = state

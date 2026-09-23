@@ -29,8 +29,12 @@ def assessment_tier(assessment: dict) -> str:
     return max((assessment["difficulty"], assessment["importance"]), key=TIERS.index)
 
 
+def preparation_only(action: dict) -> bool:
+    return 'assessment_targets' in action or 'observation_rule_targets' in action
+
+
 def assessment_key(action: dict) -> str:
-    return "task_title" if action["role"] == "research_preparation" and "assessment_targets" not in action else "task_id"
+    return "task_title" if action["role"] == "research_preparation" and not preparation_only(action) else "task_id"
 
 
 def validate_assessments(action: dict, output: dict, extensions: dict, *, required: bool) -> dict:
@@ -45,20 +49,24 @@ def validate_assessments(action: dict, output: dict, extensions: dict, *, requir
         assessment = {k: entry[k] for k in ASSESSMENT_SCHEMA["properties"]}
         assessment_tier(assessment)
         identified[identity] = assessment
-    if "assessment_targets" in action:
+    if preparation_only(action):
         if output.get("candidates"):
             raise ValueError("assessment-only preparation cannot create or revise contracts")
-        if set(extensions) - {"model_assessments", "model_assessment_deferrals"}:
+        allowed = {'model_assessments', 'model_assessment_deferrals'}
+        if 'observation_rule_targets' in action:
+            allowed.update({'task_conditions', 'observation_rule_deferrals'})
+        if set(extensions) - allowed:
             raise ValueError("assessment-only preparation may only assess or defer its assigned tasks")
-        expected = set(action["assessment_targets"])
+        expected = set(action.get("assessment_targets", {}))
         deferred = [entry["task_id"] for entry in extensions.get("model_assessment_deferrals", [])]
         if len(deferred) != len(set(deferred)) or set(deferred) & set(identified):
             raise ValueError("assessment and deferral must identify each target exactly once")
         supplied = set(identified) | set(deferred)
         required = True
     else:
+        from .task_contracts import selected_task_ids
         expected = ({item["title"] for item in output.get("candidates", [])}
-                    if action["role"] == "research_preparation" else set(output.get("selections", [])))
+                    if action["role"] == "research_preparation" else set(selected_task_ids(output)))
         supplied = set(identified)
     missing, unexpected = expected - supplied, supplied - expected
     if unexpected or (required and missing):
@@ -96,7 +104,7 @@ def validate_policy(config: dict) -> None:
         raise ValueError("session mode uses tier_models and role_tiers; clear legacy role_models on conversion")
 
 
-def selection(config: dict, action: dict, tasks: dict, knowledge: dict) -> dict:
+def selection(config: dict, action: dict, tasks: dict, knowledge: dict, *, profiles: dict | None = None) -> dict:
     """Bind a requirement to a model without inspecting current slot availability."""
     role, target = action["role"], action.get("target")
     requirement = action.get("model_assessment")
@@ -112,5 +120,33 @@ def selection(config: dict, action: dict, tasks: dict, knowledge: dict) -> dict:
         tier, reason = "high", "No preserved difficulty/importance assessment; use high until explicitly assessed."
     else:
         tier, reason = floor, "Configured role requirement; raise when task difficulty or importance requires it."
-    return {"tier": tier, "model": config["tier_models"][tier],
-            "assessment": deepcopy(requirement), "reason": reason}
+    result = {"tier": tier, "model": config["tier_models"][tier],
+              "assessment": deepcopy(requirement), "reason": reason}
+    if config.get("session_limits") is None:
+        result["model"] = (config["operator_model"] if role in {"recovery", "independent_operator"}
+                           else config.get("role_models", {}).get(role, config["model"]))
+        result["reason"] = "Preserve the adopted call-budget model assignment."
+    if profiles is not None:
+        from .execution_profiles import build_profiles, select_profile, profile_ref, resolve_profile
+        # A task's allowlist governs its work attempts. Reviewers and other
+        # decision roles use their own adopted role profiles, while still
+        # inheriting the task's difficulty/importance requirement above.
+        allowed = (task.get("execution_profile_refs", task.get("profile_refs"))
+                   if role in {"research_work", "supplemental_research"}
+                   and not action.get("review_cycle_id") else None)
+        if action.get("profile_ref"):
+            explicit = resolve_profile(profiles, action["profile_ref"])
+            if explicit["actor_kind"] == "ai":
+                pinned = explicit["ai"]
+                if config.get("session_limits") is not None and (
+                        pinned.get("tier") not in TIERS or TIERS.index(pinned["tier"]) < TIERS.index(tier)):
+                    raise ValueError("explicit profile does not meet the role/task model requirement")
+                result.update(model=pinned["model"], tier=pinned.get("tier"),
+                              reason="Explicit immutable profile meeting the role/task requirement.")
+        if allowed is None and not action.get("profile_ref"):
+            # The registry retains old editions for running executions. New
+            # default assignments use only the current adopted configuration.
+            allowed = build_profiles(config)["role_profile_refs"].get(role, [])
+        selected = select_profile(profiles, action, result, allowed_refs=allowed)
+        result["profile_ref"] = profile_ref(selected)
+    return result

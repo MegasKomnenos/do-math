@@ -1,0 +1,87 @@
+[
+  {
+    "path": ".claude/skills/do-math/SKILL.md",
+    "sha256": "708c6b3dd181aceabf6a97d5b09d31ef3544d1302dee4c9179cc8cb0d399f692",
+    "changed_since_previous_hash": false
+  },
+  {
+    "path": ".claude/skills/do-math/README.md",
+    "sha256": "60a304c6a57653146d205d2aaf2e107f0b7ea42565e21fc2f0d4b01cdf90acc6",
+    "changed_since_previous_hash": false
+  },
+  {
+    "path": ".claude/skills/do-math/GLOSSARY.md",
+    "sha256": "c03bd55c65bc85f2756e0dedcd91282f5ee22b64b9fb0d8aebd9999e9faaff28",
+    "changed_since_previous_hash": false
+  },
+  {
+    "path": ".claude/skills/do-math/references/공통-실행.md",
+    "sha256": "d85cbaf0377a9b6f50e172756852405f22875a7b618be3c7b9ad47c353b01cc0",
+    "changed_since_previous_hash": false
+  },
+  {
+    "path": ".claude/skills/do-math/계약/연구-수행.md",
+    "sha256": "981fb5ccdb553bef136f0f946b9a979e22eae874793c1f4d5f6296e4338cc9b3",
+    "changed_since_previous_hash": false
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/do_math/engine.py",
+    "sha256": "875f8bfee45a76a9ffdd888a3b32696ccf2c162588729ba42cd4d7f52f169baa",
+    "changed_since_previous_hash": false
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/do_math/lifecycle_engine.py",
+    "sha256": "e549035e86d556145eef8760fba8e6787bd261bb8b7d0ff56329513e9247e962",
+    "changed_since_previous_hash": false
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/do_math/review_policy.py",
+    "sha256": "096d85c9b933266683654c8ac9ad10170b095dab076eb34baaf832b4dec16a5c",
+    "changed_since_previous_hash": false
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/do_math/review_engine.py",
+    "sha256": "fce68d4941846bf011da91f5fbaefec9ba67c0f908c8317bfd4f94e63680e7a7",
+    "changed_since_previous_hash": false
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/do_math/context_store.py",
+    "sha256": "392661efa741e22d8ea086df108b6b57028ff136edfffa54933a0b77dd50d1ba",
+    "changed_since_previous_hash": false
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/do_math/task_scope.py",
+    "sha256": "c5f4bf53d9201230fe618f492092c03b7b439c1feb38ceac599f8cd3ce7777d3",
+    "changed_since_previous_hash": false
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/do_math/governance.py",
+    "sha256": "9e37d36b0e392fb77c938bfcb1762b88362f514a2e70590c4873873a6aa58cac",
+    "changed_since_previous_hash": false
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/do_math/submission.py",
+    "sha256": "5dc29a5ce29465532cb38157773d57a81abd71b6d0dac568147c89fdcc143a64",
+    "changed_since_previous_hash": false
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/do_math/integration.py",
+    "sha256": "2d00f88ea637e81b5bcd452b16f74633f56be7ade0d6519b44aa63b1c300df2b",
+    "changed_since_previous_hash": false
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/do_math/execution_profiles.py",
+    "sha256": "aee959e0e101cefb07092afeb86512dcbbcf349de0ed8650ed218c4f070aaf2b",
+    "changed_since_previous_hash": false
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/do_math/record_schemas/__init__.py",
+    "sha256": "18e58d535a92552e25544760fd0ac4cdfb74d58d434998e4602efaab9f38cf40",
+    "changed_since_previous_hash": false
+  },
+  {
+    "path": "docs/do-math/통합-설계.md",
+    "sha256": "60587eded9d78a2747c4e62455680578a10f08daa5bbff8d087515881df92394",
+    "changed_since_previous_hash": false
+  }
+]

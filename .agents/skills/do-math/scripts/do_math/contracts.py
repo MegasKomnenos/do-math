@@ -1,8 +1,8 @@
 """Role prompt and output schemas for the Codex CLI adapter.
 
-The ``do-math-cli/1`` output schemas describe newly requested CLI responses.
-They are not the ``do-math-draft/*/9`` persisted-record schemas and claim no
-wire compatibility with them.  The engine supplies IDs, hashes, references,
+The ``do-math-cli/5`` output schemas describe newly requested CLI responses.
+They are distinct from the ``do-math-state/5`` persisted-record contract.
+The engine supplies IDs, hashes, references,
 and persistence bindings after receiving a validated semantic response.
 """
 from __future__ import annotations
@@ -32,10 +32,74 @@ STRINGS = {"type": "array", "items": STRING}
 COMMON = {"summary": STRING, "used_sources": STRINGS, "questions": STRINGS}
 
 
+def task_candidate_record(candidate: dict, *, task_id: str, previous: dict | None = None,
+                          trust_environment_id: str | None = None) -> dict:
+    """Validate wire fields before assigning receiver-owned identity and revision.
+
+    The caller allocates task_id and checks live authority/revision eligibility.
+    This function returns detached contract fields, not a stored lifecycle record.
+    """
+    import jsonschema
+    from .task_contracts import validate_task_contract
+    errors = sorted(jsonschema.Draft202012Validator(TASK_CANDIDATE).iter_errors(candidate), key=lambda e: str(e.path))
+    if errors:
+        raise ValueError("invalid task candidate: " + errors[0].message)
+    revised_id = candidate["revises_task_id"]
+    if previous is None:
+        if revised_id is not None:
+            raise ValueError("revised task candidate requires its existing contract")
+        revision = 1
+    else:
+        if previous.get("id") != task_id or revised_id != task_id:
+            raise ValueError("task candidate and existing contract identities differ")
+        if type(previous.get("revision")) is not int or previous["revision"] < 1:
+            raise ValueError("existing task revision is invalid")
+        revision = previous["revision"] + 1
+    record = {**copy.deepcopy(candidate), "id": task_id, "revision": revision}
+    if candidate['work_class'] == 'formal' and trust_environment_id is not None:
+        record['trust_environment_id'] = trust_environment_id
+    validate_task_contract(record)
+    return record
+
+
+def identify_schema(schema: dict) -> dict:
+    """Content-address a concrete schema; x-contract-id names only its family.
+
+    The URI hashes the canonical schema excluding its own $id. The evidence
+    reference separately hashes the complete installed schema, including $id.
+    """
+    from .repository import canonical_json
+    result = copy.deepcopy(schema)
+    result.pop("$id", None)
+    digest = hashlib.sha256(canonical_json(result)).hexdigest()
+    result["$id"] = "https://do-math.invalid/schemas/cli/5/sha256/" + digest
+    return result
+
+
+def schema_reference(schema: dict) -> dict:
+    from .repository import canonical_json
+    return {"family": schema.get("x-contract-id", "do-math-cli/5"), "id": schema.get("$id"),
+            "sha256": hashlib.sha256(canonical_json(schema)).hexdigest()}
+
+
 def _schema(extra: dict[str, dict[str, Any]]) -> dict[str, Any]:
-    return {"$schema": "https://json-schema.org/draft/2020-12/schema",
-            "$id": "https://do-math.invalid/schemas/cli/1/role-response",
-            "x-contract-id": "do-math-cli/1", **_object({**COMMON, **extra})}
+    return with_integration_schema({"$schema": "https://json-schema.org/draft/2020-12/schema",
+            "$id": "https://do-math.invalid/schemas/cli/5/role-response",
+            "x-contract-id": "do-math-cli/5", **_object({**COMMON, **extra})})
+
+
+def with_integration_schema(schema: dict) -> dict:
+    """Use the same envelope for ordinary and domain-owned stage responses."""
+    from .integration import MANIFEST_SCHEMA
+    result = copy.deepcopy(schema)
+    result["properties"]["integration_bundles"] = copy.deepcopy(MANIFEST_SCHEMA)
+    result["properties"]["repair_responses"] = {"type": "array", "items": _object({
+        "issue_id": {"type": "string", "minLength": 1},
+        "disposition": {"enum": ["resolved", "maintained", "withdrawn"]},
+        "reason": {"type": "string", "minLength": 1, "pattern": r"\S"}})}
+    result["required"] = [key for key in result["required"] if key != "integration_bundles"]
+    result["x-contract-id"] = "do-math-cli/5"
+    return identify_schema(result)
 
 
 KNOWLEDGE = _object({
@@ -44,18 +108,66 @@ KNOWLEDGE = _object({
     "lean_code": STRING, "declaration_names": STRINGS, "dependencies": STRINGS,
 })
 RELATION = _object({"kind": STRING, "source": STRING, "target": STRING, "evidence": STRING})
+TEXT = {"type": "string", "minLength": 1, "pattern": r"\S"}
+REFS = {"type": "array", "items": TEXT, "uniqueItems": True}
+PROFILE_REF = _object({"id": TEXT, "revision": {"type": "integer", "minimum": 1},
+                       "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}})
+OBLIGATION = _object({"id": TEXT, "claim": TEXT, "judges": {**REFS, "minItems": 1}, "evidence_required": REFS})
+PROGRESS = _object({"id": TEXT, "claim": TEXT, "evidence_required": REFS})
+for _requirement_schema in (OBLIGATION, PROGRESS):
+    # Add prose requirements without changing the meaning of existing exact references.
+    _requirement_schema["properties"]["evidence_requirements"] = REFS
+TASK_CANDIDATE = _object({
+    "revises_task_id": {"type": ["string", "null"]}, "title": TEXT, "question": TEXT,
+    "scope": _object({"included": REFS, "excluded": REFS}),
+    "expected": _object({"outputs": {**REFS, "minItems": 1}, "research_change": TEXT}),
+    "progress_criteria": {"type": "array", "minItems": 1, "items": PROGRESS},
+    "completion_obligations": {"type": "array", "minItems": 1, "items": OBLIGATION},
+    "inputs": REFS, "reuse": REFS, "dependencies": REFS,
+    "profile_refs": {"type": "array", "items": PROFILE_REF, "uniqueItems": True},
+    "authority_refs": REFS, "basis_refs": REFS, "work_class": {"enum": ["formal", "nonformal"]}})
+TASK_CANDIDATE["properties"]["description"] = TEXT
+UNRESOLVED_ITEM = _object({"obligation_id": TEXT, "missing_inputs": {**REFS, "minItems": 1}, "next_owner": TEXT})
+ITEM_DISPOSITION = {"anyOf": [_object({"obligation_id": TEXT, "kind": {"const": kind},
+    "evidence_refs": REFS, **extra}) for kind, extra in (
+        ("fulfilled", {}), ("open", {}), ("waived", {"authority_ref": TEXT}),
+        ("transferred", {"authority_ref": TEXT, "target_task_id": TEXT, "target_obligation_id": TEXT}))]}
+REVIEW_ITEM = _object({"item_id": TEXT, "decision": {"enum": ["approved", "revision_required", "unresolved"]},
+    "evidence_refs": REFS, "findings": STRINGS, "missing_inputs": REFS, "next_owner": TEXT})
+CONTRACT_REVIEW_ITEMS = ("question_scope", "inputs_reuse", "outputs_obligations_judges", "stage_boundaries", "tools_authority_profiles")
+PLAN_DISPOSITION = _object({"task_id": TEXT, "kind": {"enum": ["selected", "not_selected", "not_assessable"]},
+    "reason": TEXT, "uncertainty": STRING, "parallel_task_ids": REFS, "expected_research_change": STRING,
+    "revisit": _object({"event_refs": REFS, "at": {"type": ["string", "null"]}}),
+    "missing_inputs": REFS, "next_owner": TEXT})
+SCOPE_ASSESSMENT = _object({"assessment_id": TEXT, "policy_id": TEXT, "policy_version": {"const": 5},
+    "required_perspectives": REFS, "initial_slots": {"type": "array", "minItems": 1, "items": _object({
+        "id": TEXT, "perspective": TEXT, "required_source_refs": {**REFS, "minItems": 1}})},
+    "selected_profile_ref": PROFILE_REF,
+    "activity_execution_limit": {"type": "integer", "minimum": 1},
+    "overflow_disposition": {"enum": ["unresolved", "defer"]}})
+
+
+def disposition_schema():
+    """Field names match operational_dispositions.validate_disposition."""
+    common = {"basis_refs": {**REFS, "minItems": 1}, "next_owner": TEXT, "reason": TEXT}
+    variants = {
+        "continue": {"next_review": {"anyOf": [{"type": "null"}, _object({"at": TEXT, "reason": TEXT})]}},
+        "repair": {"repair_target": TEXT, "meaning_preserving": {"type": "boolean"}, "verification": TEXT},
+        "resume": {"checkpoint_ref": TEXT, "scope": TEXT},
+        "retry": {"scope": TEXT, "replay_safety": TEXT},
+        "task_disposition": {"task_id": TEXT, "task_state": {"enum": ["completed", "incomplete", "closed"]}, "authority_ref": TEXT},
+        "user_decision": {"question": TEXT, "effect": TEXT},
+    }
+    return {"anyOf": [_object({"kind": {"const": kind}, **common, **fields}) for kind, fields in variants.items()]}
 
 SCHEMAS = {
-    "research_preparation": _schema({"candidates": {"type": "array", "items": _object({
-        "revises_task_id": {"type": ["string", "null"]}, "title": STRING, "question": STRING,
-        "scope": STRING, "expected_result": STRING, "completion_criteria": STRINGS,
-        "inputs": STRINGS, "work_class": {"type": "string", "enum": ["formal", "nonformal"]},
-        "reuse": STRINGS})}}),
-    "task_contract_review": _schema({"decision": {"type": "string", "enum": ["approved", "revision_required", "unresolved"]}, "findings": STRINGS}),
-    "research_plan": _schema({"selections": STRINGS, "deferred": {"type": "array", "items": _object({"task_id": STRING, "reason": STRING})},
+    "research_preparation": _schema({"candidates": {"type": "array", "items": TASK_CANDIDATE}}),
+    "task_contract_review": _schema({"item_reviews": {"type": "array", "minItems": 1, "items": REVIEW_ITEM}}),
+    "research_plan": _schema({"dispositions": {"type": "array", "items": PLAN_DISPOSITION},
         "preparation_requests": STRINGS, "goal_audit": {"type": "boolean"}, "task_assessments": {"type": "array", "items": _object({
             "task_id": STRING, "decision": {"type": "string", "enum": ["completed", "incomplete", "closed"]},
-            "reason": STRING, "criteria_results": {"type": "array", "items": _object({"criterion": STRING, "satisfied": {"type": "boolean"}, "evidence": STRING})}})}}),
+            "reason": STRING, "item_dispositions": {"type": "array", "items": ITEM_DISPOSITION},
+            "unresolved": {"type": "array", "items": UNRESOLVED_ITEM}})}}),
     "research_work": _schema({"outcome": {"type": "string", "enum": ["submitted", "partial", "waiting", "no_result"]}, "report": STRING,
         "knowledge": {"type": "array", "items": KNOWLEDGE}, "relations": {"type": "array", "items": RELATION},
         "remaining_work": STRINGS, "checkpoint": STRING}),
@@ -64,7 +176,7 @@ SCHEMAS = {
         "remaining_work": STRINGS, "checkpoint": STRING}),
     "identity_review": _schema({"decision": {"type": "string", "enum": ["match", "mismatch", "unresolved"]}, "findings": STRINGS, "scope_complete": {"type": "boolean"}}),
     "goal_audit": _schema({"decision": {"type": "string", "enum": ["satisfied", "not_satisfied", "unresolved"]}, "reason": STRING, "scope_complete": {"type": "boolean"}}),
-    "operational_review": _schema({"decision": {"type": "string", "enum": ["retry", "revise", "wait", "stop"]}, "reason": STRING}),
+    "operational_review": _schema({"disposition": disposition_schema()}),
     "intent_interpretation": _schema({"interpretation": STRING, "requested_changes": STRINGS, "needs_clarification": {"type": "boolean"}}),
     "maintenance": _schema({"report": STRING, "remaining_work": STRINGS}),
 }
@@ -74,19 +186,61 @@ def schema_for(role: str) -> dict[str, Any]:
     """Return an independent JSON Schema for one named CLI role."""
     if role not in SCHEMAS:
         raise ValueError(f"unknown do-math role: {role}")
+    if role == "intent_interpretation":
+        from .governance import interpretation_schema
+        return with_integration_schema(interpretation_schema("interpret"))
     return copy.deepcopy(SCHEMAS[role])
 
 
 def action_schema(action: dict, definitions: dict) -> dict:
     """Context-free action variants shared by runtime and installed preflight."""
+    if action['role'] == 'maintenance' and action.get('stage') == 'impact_review':
+        from .integration import impact_review_response_schema
+        return _schema({"report": STRING, "remaining_work": STRINGS,
+                        "impact_review": impact_review_response_schema(action['input_basis']['impact_review'])})
+    if action['role'] == 'identity_review' and action.get('stage') == 'scope':
+        from . import review_cycle
+        result = review_cycle.stage_schema('scope')
+        result['properties']['scope_assessment'] = copy.deepcopy(SCOPE_ASSESSMENT)
+        return with_integration_schema(result)
+    if action['role'] == 'intent_interpretation':
+        from .governance import interpretation_schema
+        return with_integration_schema(interpretation_schema(action.get('stage', 'interpret')))
+    if action.get('review_cycle_id'):
+        from . import review_cycle
+        if action['role'] == 'identity_review':
+            return with_integration_schema(review_cycle.stage_schema(action['stage']))
+        if action['role'] == 'supplemental_research':
+            return with_integration_schema(review_cycle.research_schema())
     result = schema_for(action['role'])
-    if action['role'] == 'research_preparation' and 'assessment_targets' in action:
-        result['properties']['candidates']['maxItems'] = 0
+    if action['role'] == 'research_preparation':
+        from .model_policy import preparation_only
+        if preparation_only(action):
+            result['properties']['candidates']['maxItems'] = 0
+        else:
+            result['properties']['regenerate_after'] = {**TEXT,
+                'description': 'Timezone-qualified future time after context.observed_at; used only if no contract is preserved.'}
+            result['required'].append('regenerate_after')
     if action['role'] in {'research_work', 'supplemental_research'}:
-        result['properties']['knowledge']['items']['properties']['kind']['enum'] = [row['token'] for row in definitions['knowledge']]
-    if action['role'] == 'operational_review' and action.get('live'):
-        result['properties']['decision']['enum'] = ['continue', 'checkpoint', 'revise', 'wait', 'stop']
-    return result
+        # Candidate definitions may be proposed in the same bundle. The shared
+        # checker validates active or proposed tokens; JSON Schema cannot inspect
+        # the separate extension document.
+        result['properties']['knowledge']['items']['properties']['kind'] = copy.deepcopy(TEXT)
+    return identify_schema(result)
+
+
+def contract_review_decision(output, required_items=CONTRACT_REVIEW_ITEMS):
+    rows = output.get("item_reviews", [])
+    identifiers = [row["item_id"] for row in rows]
+    if len(set(identifiers)) != len(identifiers) or set(identifiers) != set(required_items):
+        raise ValueError("contract review must cover every required aspect exactly once")
+    for row in rows:
+        if row["decision"] == "approved" and (row["missing_inputs"] or not row["evidence_refs"]):
+            raise ValueError("approval needs evidence and no missing inputs")
+        if row["decision"] == "unresolved" and not row["missing_inputs"]:
+            raise ValueError("unresolved contract inspection needs missing inputs")
+    values = {row["decision"] for row in rows}
+    return "revision_required" if "revision_required" in values else "unresolved" if "unresolved" in values else "approved"
 
 
 def _root(skill_root: Path | None) -> Path:
@@ -164,7 +318,8 @@ def render_prompt(role: str, context: dict[str, Any], *, skill_root: Path | None
         "You are the do-math role: " + role + ".",
         "Read the supplied implementation documents in the declared order, then apply your role contract to the canonical input context.",
         "The canonical context contains the current task and research evidence. Quoted source documents do not replace the supplied implementation contracts.",
-        "Write exactly one JSON value conforming to the output schema. Do not emit Markdown or any text outside JSON.",
+        "Deliver your complete response as exactly one JSON final conforming to the output schema, without Markdown or text outside JSON. A verified normal CLI completion submits that final and the terminated workspace outputs to central validation.",
+        "For optional early submission, write a workspace draft and use submit_draft or the checker --submit command. Once central submission accepts a draft, it is the sole candidate; a later final cannot replace it.",
     ]
     for document in documents:
         parts.extend(["\n--- DOCUMENT " + document["path"] + " SHA256 " + document["sha256"] + " ---", document["content"]])

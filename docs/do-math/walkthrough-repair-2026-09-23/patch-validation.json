@@ -1,0 +1,10 @@
+{
+  "status": "verified",
+  "files": 25,
+  "git_options": [
+    "-c",
+    "core.autocrlf=false"
+  ],
+  "comparison": "exact SHA-256 against every final changed file",
+  "patch_sha256": "60986383d34eca44a485a11f3132fc122e4461d7d2dba06d76a5ec8bcf029542"
+}

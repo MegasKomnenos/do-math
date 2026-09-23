@@ -8,10 +8,10 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math import planning
 from do_math.repository import canonical_json
-from test_purpose_engine import PurposeHarness, candidate, common
+from test_purpose_engine import ActiveStateHarness, candidate, common
 
 
-class FollowupDocumentTests(PurposeHarness):
+class FollowupDocumentTests(ActiveStateHarness):
     def test_planning_roles_receive_the_complete_current_settings(self):
         engine, _ = self.make(observation_interval_seconds=417, review_research_limit=4)
         for role in ("research_preparation", "research_plan"):
@@ -20,9 +20,11 @@ class FollowupDocumentTests(PurposeHarness):
 
     def test_prepared_observation_rule_reaches_contract_review(self):
         engine, _ = self.make()
-        rule = {"id": "branches", "op": "iteration_gte", "threshold": 3,
-                "reason": "Compare actual branch evidence before repeating the method"}
-        engine.runtime["executions"]["EX-preparation"] = {"status": "ended", "extensions": {"task_conditions": [
+        rule = {"id": "branches", "operator": "counter_gte", "threshold": 3,
+                "subject": {"kind": "counter", "id": "branches"},
+                "basis": {"source": "execution_events", "unit": "count"},
+                "repeat_interval": 3, "required_evidence": ["EV-branch"]}
+        engine.runtime["executions"]["EX-preparation"] = {"status": "ended", "input_snapshot": engine.head, "extensions": {"task_conditions": [
             {"task_title": "Bounded branch investigation", "observation_rules": [rule]}]}}
         engine._apply({"role": "research_preparation"},
                       {**common("Prepare an observable investigation"), "candidates": [candidate("Bounded branch investigation")]},
@@ -38,7 +40,7 @@ class FollowupDocumentTests(PurposeHarness):
 
         engine.runtime["task_observation_rules"] = {task["id"]: [rule]}
         revised_rule = {**rule, "threshold": 5}
-        engine.runtime["executions"]["EX-revision"] = {"status": "ended", "extensions": {"task_conditions": [
+        engine.runtime["executions"]["EX-revision"] = {"status": "ended", "input_snapshot": engine.head, "extensions": {"task_conditions": [
             {"task_title": task["title"], "observation_rules": [revised_rule]}]}}
         engine._apply({"role": "research_preparation"},
                       {**common("Revise the observation boundary"), "candidates": [candidate(task["title"], revises=task["id"])]},
@@ -52,9 +54,15 @@ class FollowupDocumentTests(PurposeHarness):
         output = {**common("Investigated the earlier approach"), "candidates": [candidate("Earlier proposal")]}
         result = canonical_json({"status": "completed", "output": output, "error": None})
         reference = "runtime/artifacts/BA-old/result.json"
-        engine.runtime["executions"]["EX-old"] = {"id": "EX-old", "role": "research_preparation",
-            "status": "ended", "outcome": "execution_incomplete", "artifact_bundle": "BA-old",
-            "error": "output validation: earlier proposal omitted its required source", "action": {"role": "research_preparation"}}
+        from do_math.execution_lifecycle import transition_execution
+        action = {"id": "AC-old", "role": "research_preparation"}
+        engine._action_lifecycle_gate(action)
+        old = engine._register_execution(action, {"id": "EX-old", "role": "research_preparation", "status": "running"})
+        # Synthetic historical result, with actual actor/activity record shape.
+        old.update(artifact_bundle="BA-old", error="output validation: earlier proposal omitted its required source")
+        at = engine._lifecycle_now().isoformat()
+        transition_execution(old, "stopping", at=at, stop_phase="terminating")
+        transition_execution(old, "ended", at=at, outcome="execution_incomplete")
         engine.runtime["history"] = [{"role": "maintenance", "summary": "Unrelated later event"} for _ in range(20)]
         engine._save({reference: result})
         workspace = self.root / "later-preparation"

@@ -16,9 +16,11 @@ import sys
 import tempfile
 import time
 import uuid
+import platform
+import shutil
 from typing import Any, Mapping
 
-from do_math.windows_job import WindowsJob
+from do_math.windows_job import WindowsJob, process_identity
 from do_math.codex_worker import sanitized_environment
 from do_math import codex_worker
 
@@ -116,6 +118,20 @@ class LocalCLIAdapter:
         self.cli_path = codex_path
         self.describe_timeout = describe_timeout
 
+    def capability_identity(self) -> dict:
+        """Current local identity, without claiming any behavioral capability."""
+        path = Path(shutil.which(self.cli_path) or self.cli_path).resolve()
+        worker = Path(self.worker_module.__file__).resolve()
+        from . import control_transport, windows_job
+        return {"cli_path": str(path), "cli_sha256": _sha256(path.read_bytes()) if path.is_file() else None,
+                "worker_sha256": _sha256(worker.read_bytes()),
+                "windows_job_sha256": _sha256(Path(windows_job.__file__).read_bytes()),
+                "control_transport_sha256": _sha256(Path(control_transport.__file__).read_bytes()),
+                "adapter_sha256": _sha256(Path(__file__).read_bytes()),
+                "provider_adapter_sha256": _sha256(Path(sys.modules[type(self).__module__].__file__).read_bytes()),
+                "host": {"system": platform.system(), "release": platform.release(), "version": platform.version(),
+                         "machine": platform.machine(), "node": platform.node(), "python": platform.python_version()}}
+
     def describe(self) -> dict[str, Any]:
         try:
             version_result = subprocess.run([self.codex_path, "--version"], check=False, shell=False,
@@ -131,10 +147,10 @@ class LocalCLIAdapter:
                     b"--ignore-user-config", b"--ignore-rules", b"--skip-git-repo-check", b"--output-schema", b"--config")
         verified = (version_result.returncode == 0 and global_help_result.returncode == 0 and help_result.returncode == 0
                     and b"--ask-for-approval" in global_help_result.stdout and all(flag in help_bytes for flag in required))
-        return {"scope": "cli_command_surface_only",
+        return {"scope": "cli_command_surface_only", "identity": self.capability_identity(),
                 "cli_path": self.codex_path, "version_bytes": version, "version_sha256": _sha256(version),
                 "exec_help_bytes": help_bytes, "exec_help_sha256": _sha256(help_bytes),
-                "verified": verified, "supported": {"jsonl": verified, "model": verified,
+                "verified": verified, "supported": {"jsonl": verified, "model": verified, "structured_output": verified,
                               "effort_via_config": verified, "sandbox": verified, "local_job_stop": True},
                 "unknown": ["actual_input_bytes", "provider_operation_ids", "remote_termination", "per_call_usage",
                             "provider_stop_reason", "automatic_compaction_control",
@@ -180,7 +196,8 @@ class LocalCLIAdapter:
         snapshot_request = stage / "request.json"; snapshot_request.write_text(json.dumps(worker_request, ensure_ascii=False, sort_keys=True, separators=(",", ":")), encoding="utf-8")
         worker = Path(self.worker_module.__file__)
         worker_argv = (sys.executable, str(worker), str(snapshot_request))
-        job = WindowsJob(worker_argv, cwd=cwd, env=self.worker_module.sanitized_environment(env), name="Local\\DoMath-" + uuid.uuid4().hex)
+        job = WindowsJob(worker_argv, cwd=cwd, env=self.worker_module.sanitized_environment(env),
+                         name="Local\\DoMath-" + uuid.uuid4().hex, resource_limits=request.get("resource_limits"))
         return CodexExecution(snapshot_request, snapshot_prompt, _sha256(snapshot_request.read_bytes()), _sha256(prompt_raw), worker_argv,
                               stdout_path, stderr_path, final_path, status_path, job, stage, schema_sha256)
 
@@ -195,7 +212,7 @@ class LocalCLIAdapter:
     def inspect(self, execution: CodexExecution) -> dict[str, Any]:
         job = execution.job.inspect()
         raw = _read(execution.stdout_path)
-        return {"job": {"pid": execution.job.pid, "creation_filetime": execution.job.creation_filetime,
+        return {"job": {**process_identity(execution.job),
                          "active_processes": job.active_processes, "process_ids": job.process_ids,
                          "root_signaled": job.root_signaled}, "jsonl": self.parse_output(raw),
                 "worker_status_present": execution.status_path.exists(), "stop_requested": execution.stop_requested}
@@ -205,18 +222,18 @@ class LocalCLIAdapter:
         execution.job.terminate()
         receipt = {"accepted": True, "operation": "TerminateJobObject",
                    "observed_at": datetime.now(timezone.utc).isoformat(),
-                   "pid": execution.job.pid, "creation_filetime": execution.job.creation_filetime}
+                   **process_identity(execution.job)}
         execution.stop_receipts.append(receipt)
         return receipt
 
-    def wait_for_termination(self, execution: CodexExecution, timeout: float) -> bool:
+    def wait_for_termination(self, execution: CodexExecution, timeout: float | None) -> bool:
         """Observe the Job barrier; a signaled root alone is insufficient."""
-        deadline = time.monotonic() + timeout
+        deadline = None if timeout is None else time.monotonic() + timeout
         while True:
             state = execution.job.inspect()
             if state.root_signaled and state.active_processes == 0 and state.process_ids == ():
                 return True
-            if time.monotonic() >= deadline:
+            if deadline is not None and time.monotonic() >= deadline:
                 return False
             time.sleep(0.02)
 
@@ -237,7 +254,13 @@ class LocalCLIAdapter:
                 status = json.loads(status_raw)
             except (UnicodeDecodeError, json.JSONDecodeError):
                 status = {"state": "invalid_status_json"}
-        parsed = self.parse_output(stdout)
+        try:
+            request = json.loads(request_raw) if request_raw is not None else {}
+            if not isinstance(request, dict):
+                request = {}
+        except (ValueError, UnicodeError):
+            request = {}
+        parsed = self.parse_response(stdout, request)
         reasons = []
         if request_raw is None or _sha256(request_raw) != execution.request_sha256: reasons.append("source_request_changed")
         if prompt_raw is None or _sha256(prompt_raw) != execution.prompt_sha256: reasons.append("source_prompt_changed")
@@ -248,6 +271,10 @@ class LocalCLIAdapter:
         elif status.get("stdin_sha256") != execution.prompt_sha256: reasons.append("worker_stdin_hash_mismatch")
         elif status.get("request_sha256") != execution.request_sha256: reasons.append("worker_request_hash_mismatch")
         elif status.get("schema_sha256") != execution.schema_sha256: reasons.append("worker_schema_hash_mismatch")
+        if isinstance(status, dict):
+            for key in ("execution_id", "profile_ref"):
+                if key in request and status.get(key) != request[key]:
+                    reasons.append("worker_" + key + "_mismatch")
         if parsed["turn_failed"]: reasons.append("turn_failed")
         if not parsed["turn_completed"]: reasons.append("turn_completed_missing")
         if not parsed["parse_complete"]: reasons.append("jsonl_parse_incomplete")
@@ -255,15 +282,27 @@ class LocalCLIAdapter:
         reasons.extend(self.validate_final(parsed, final))
         if not barrier: reasons.append("termination_barrier_unconfirmed")
         return {"source_request": _artifact(request_raw), "source_prompt": _artifact(prompt_raw),
+                "host_resources": execution.job.resource_usage() if request.get("resource_limits") is not None else None,
                 "stdout": _artifact(stdout), "stderr": _artifact(stderr), "final": _artifact(final),
                 "worker_status": status, "jsonl": parsed, "worker_argv": execution.worker_argv,
-                "process_identity": {"pid": getattr(execution.job, "pid", None),
-                                     "creation_filetime": getattr(execution.job, "creation_filetime", None)},
+                "process_identity": process_identity(execution.job),
                 "stop_receipts": execution.stop_receipts,
                 "result": "output_collected" if not reasons else "incomplete",
                 "reasons": reasons, "termination_barrier": {"active_processes": job_state.active_processes,
                 "process_ids": job_state.process_ids, "root_signaled": job_state.root_signaled, "confirmed": barrier}, "provider_operation_ids": "unknown", "remote_termination": "unknown",
-                "provider_stop_reason": "unknown"}
+                "provider_stop_reason": parsed.get("stop_reason", "unknown"),
+                "execution_id": request.get("execution_id"), "profile_ref": request.get("profile_ref"),
+                "provider_observation": {
+                    "execution_id": request.get("execution_id"), "operation_ids": "unknown", "operation_count": "unknown",
+                    "remote_termination": "unknown", "stop_reason": parsed.get("stop_reason", "unknown"),
+                    "usage": parsed.get("usage_total", parsed.get("usage", [])[-1] if parsed.get("usage") else {}),
+                    "usage_scope": "reported_execution_counters_not_invoice",
+                    "model_usage_reported": parsed.get("model_usage_reported", {}),
+                    "model_usage_scope": "last_reported_cumulative_not_added_to_segment_usage",
+                    "evidence_sha256": _sha256(stdout) if stdout is not None else None}}
+
+    def parse_response(self, raw: bytes | None, request: dict) -> dict:
+        return self.parse_output(raw)
 
     def validate_final(self, parsed: dict, final: bytes | None) -> list[str]:
         return []

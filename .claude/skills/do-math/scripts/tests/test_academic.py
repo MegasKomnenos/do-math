@@ -10,7 +10,14 @@ class Tests(unittest.TestCase):
   self.assertEqual(academic_status(self.i,self.r,self.b)['status'],'pending');self.r['academic_assessments']=[assess('paper',self.b,self.i['academic_requirements'],'satisfied',[{'criterion':'draft','satisfied':True,'evidence':'e'}])];self.assertEqual(academic_status(self.i,self.r,self.b)['status'],'completed')
   changed=set_requirements(self.i,[{'id':'paper','scope':'solution','criteria':['publish'],'assessor':'research_plan'}]);self.assertTrue(requirements_changed(self.i,changed));self.assertEqual(academic_status(changed,self.r,self.b)['status'],'pending')
  def test_rejection_and_resolution(self):
-  self.r['external_rejections']=[{'solution_basis':self.b,'resolved':False,'source_ref':'planner-evidence'}];self.assertEqual(academic_status(self.i,self.r,self.b)['status'],'externally_rejected');self.r['external_rejections'][0]['resolved']=True;self.assertEqual(academic_status(self.i,self.r,self.b)['status'],'externally_rejected');self.r['external_rejections'][0]['resolution_evidence']=['planner-assessment'];self.assertEqual(academic_status(self.i,self.r,self.b)['status'],'pending')
+  self.r['external_rejections']=[{'id':'RJ','solution_basis':self.b,'resolved':False,'source_ref':'planner-evidence'}]
+  self.assertEqual(academic_status(self.i,self.r,self.b)['status'],'externally_rejected')
+  self.r['external_rejections'][0].update(resolved=True,resolution_evidence=['planner-assessment'])
+  self.assertEqual(academic_status(self.i,self.r,self.b)['status'],'externally_rejected')
+  self.r['executions']={'E':{'role':'research_plan','input_solution_basis':self.b}}
+  self.r['artifacts']={'EV':{'text':'Planner evidence'}}
+  record_resolution(self.i,self.r,self.b,{'id':'RJ','decision':'resolved','evidence':'Addresses objection','evidence_refs':['EV']},execution_id='E')
+  self.assertEqual(academic_status(self.i,self.r,self.b)['status'],'pending')
  def test_invalid_requirement_shape_is_rejected(self):
   with self.assertRaises(ValueError):set_requirements({},[{'id':'x'}])
   with self.assertRaises(ValueError):set_requirements({},[{'id':'x','scope':'s','criteria':[],'assessor':'other'}])

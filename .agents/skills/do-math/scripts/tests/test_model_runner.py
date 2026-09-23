@@ -56,4 +56,42 @@ class Tests(unittest.TestCase):
    root=Path(d); ws=root/'ws'; ws.mkdir(); ev=root/'e'; r=runner.CodexModelRunner('fake'); a=Adapter({'result':'output_collected','final':{'raw':b'{}'},'jsonl':{'usage':{}}}); r._adapter=a
    r.run(prompt='x',output_schema={'type':'object'},workspace=ws,evidence_dir=ev,model='m',effort='low',timeout_seconds=1,scholarly_server={'command':'python','args':['C:/server.py']})
    self.assertEqual(a.request['scholarly_server'],{'command':'python','args':['C:/server.py']})
+class WithoutDeadlineTests(unittest.TestCase):
+    def run_observed(self, *, timeout=None, stop=False):
+        from unittest.mock import patch
+        clock = [0.0]
+        class LiveAdapter(Adapter):
+            polls = 0
+            def wait_for_termination(self, *args):
+                self.polls += 1
+                clock[0] += 10000
+                return self.stopped or self.polls >= 9
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            worker = runner.CodexModelRunner('fake')
+            adapter = LiveAdapter({'result': 'output_collected', 'final': {'raw': b'{}'}, 'jsonl': {}})
+            worker._adapter = adapter
+            with patch.object(runner.time, 'monotonic', side_effect=lambda: clock[0]), patch.object(runner.time, 'sleep'):
+                result = worker.run(prompt='x', output_schema={}, workspace=root, evidence_dir=root / 'evidence',
+                    model='m', effort='low', timeout_seconds=timeout,
+                    should_stop=lambda: stop and adapter.polls >= 4)
+            return result, adapter
+
+    def test_long_running_work_keeps_running_until_its_normal_return(self):
+        result, adapter = self.run_observed()
+        self.assertEqual(result['status'], 'completed')
+        self.assertFalse(adapter.stopped)
+        self.assertIsNone(adapter.request['max_runtime_seconds'])
+
+    def test_work_without_a_deadline_still_obeys_stop(self):
+        result, adapter = self.run_observed(stop=True)
+        self.assertEqual(result['status'], 'stopped')
+        self.assertTrue(adapter.stopped)
+
+    def test_a_finite_call_deadline_still_stops_the_runner(self):
+        result, adapter = self.run_observed(timeout=1)
+        self.assertEqual(result['status'], 'stopped')
+        self.assertTrue(adapter.stopped)
+
+
 if __name__=='__main__': unittest.main()

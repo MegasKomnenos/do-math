@@ -20,6 +20,7 @@ import spec_checks as checks
 import build_spec
 
 ROOT = Path(__file__).resolve().parent
+REPOSITORY_ROOT = next(parent for parent in ROOT.parents if (parent / ".git").exists())
 BASE = "https://do-math.invalid/schemas/draft/9/"
 SCHEMAS = {p.name.removesuffix(".schema.json"): checks.parse_json(p.read_bytes())
            for p in sorted((ROOT / "schemas").glob("*.schema.json"))}
@@ -558,6 +559,58 @@ class SpecificationTests(unittest.TestCase):
             with self.subTest(path=path.name):
                 validate(family, checks.parse_json(path.read_bytes()))
 
+    def test_submission_uses_one_draft_and_machine_receipt(self):
+        request = checks.parse_json((ROOT / "fixtures" / "commands" / "submit.request.json").read_bytes())
+        response = checks.parse_json((ROOT / "fixtures" / "commands" / "submit.response.json").read_bytes())
+        self.assertEqual(set(request["payload"]), {"execution_id", "draft_path"})
+        self.assertEqual(set(response["result"]),
+                         {"acknowledged", "state", "candidate_ref", "check_ref", "snapshot_commit"})
+        changed = copy.deepcopy(request)
+        changed["payload"]["files"] = []
+        with self.assertRaises(checks.ContractError):
+            validate("command-request", changed)
+
+    def test_execution_profile_rule_bindings_are_closed(self):
+        binding = SCHEMAS["execution-profile"]["properties"]["observation"]["properties"]["rule_bindings"]["items"]
+        self.assertEqual(set(binding["properties"]["source"]["enum"]),
+                         {"checkpoint", "execution_events", "adapter_calls", "control_receipts",
+                          "adapter_active_intervals", "clock"})
+        value = read_example("execution-profile")
+        value["observation"] = sample(SCHEMAS["execution-profile"]["properties"]["observation"])
+        validate("execution-profile", value)
+        value["observation"]["rule_bindings"][0]["source"] = "unobserved_global_state"
+        with self.assertRaises(checks.ContractError):
+            validate("execution-profile", value)
+
+    def test_current_supported_stop_and_boundary_contract(self):
+        profile = read_example("execution-profile")
+        self.assertEqual(profile["stop_checkpoint"], {"kind": "disabled"})
+        rules = {rule_id: contract for rule_id, _, contract, _, _ in build_spec.RULES}
+        self.assertIn("no separate finishing reservation", rules["R08"])
+        self.assertIn("immediate local termination", rules["R09"])
+        self.assertNotIn("bounded finishing usage", rules["R08"])
+        source = build_spec.DOC.read_text(encoding="utf-8-sig")
+        expected = {}
+        for line in source.splitlines():
+            match = re.match(r"\| (V61|V156|V167|Q06) \| (.*?) \| (.*?) \|$", line)
+            if match:
+                expected[match.group(1)] = match.group(3)
+        self.assertEqual(set(expected), {"V61", "V156", "V167", "Q06"})
+        self.assertIn("강한 차단·인증 보증 없음", expected["V61"])
+        self.assertIn("새 모델 작업 거부", expected["V156"])
+        self.assertIn("별도 마무리 예약 없이 시작", expected["V167"])
+        self.assertIn("즉시 로컬 종료·회수", expected["Q06"])
+
+    def test_integration_binds_same_snapshot_impact_contract(self):
+        value = read_example("integration")
+        value["impact"] = [sample(SCHEMAS["integration"]["properties"]["impact"]["items"])]
+        validate("integration", value)
+        self.assertIn("provenance_refs", value["impact"][0])
+        self.assertIn("dependency_refs", value["impact"][0])
+        value.pop("impact_review_ref")
+        with self.assertRaises(checks.ContractError):
+            validate("integration", value)
+
     def test_unknown_record_fields_rejected(self):
         value = read_example("task")
         value["silent_permission"] = True
@@ -597,14 +650,24 @@ class SpecificationTests(unittest.TestCase):
 
     def test_json_golden_unicode_and_controls(self):
         value = checks.parse_json('{"z":-0,"e\\u0301":"a\\nb","a":[]}')
-        expected = '{\n  "a": [],\n  "z": 0,\n  "é": "a\\nb"\n}\n'.encode("utf-8")
+        expected = '{\n  "a": [],\n  "e\u0301": "a\\nb",\n  "z": 0\n}\n'.encode("utf-8")
         self.assertEqual(checks.canonical_json(value), expected)
         self.assertEqual(checks.canonical_json(checks.parse_json(expected)), expected)
 
-    def test_json_duplicate_and_normalization_collision(self):
-        for raw in ('{"x":1,"x":2}', '{"é":1,"e\\u0301":2}', '{"a":{"x":1,"x":2}}'):
+    def test_json_duplicate_and_exact_code_points(self):
+        for raw in ('{"x":1,"x":2}', '{"a":{"x":1,"x":2}}'):
             with self.subTest(raw=raw), self.assertRaises(checks.ContractError):
                 checks.parse_json(raw)
+        value = checks.parse_json('{"K":1,"K":2,"é":3,"e\\u0301":4}')
+        self.assertEqual(value, {"K": 1, "K": 2, "é": 3, "e\u0301": 4})
+        self.assertEqual(checks.parse_json(checks.canonical_json(value)), value)
+
+    def test_json_nfd_values_and_valid_utf8_are_preserved(self):
+        nfd = "e\u0301"
+        raw = ('{"text":"' + nfd + '"}').encode("utf-8")
+        self.assertEqual(checks.parse_json(raw)["text"], nfd)
+        with self.assertRaisesRegex(checks.ContractError, "invalid UTF-8"):
+            checks.parse_json(b'{"text":"\xff"}')
 
     def test_json_forbidden_numbers_and_bom(self):
         for raw in ('{"n":1.0}', '{"n":NaN}', '{"n":9007199254740992}', '\ufeff{}'):
@@ -623,9 +686,13 @@ class SpecificationTests(unittest.TestCase):
 
     def test_yaml_nested_duplicate_tags_and_aliases(self):
         for raw in ("a: 1\na: 2", "a: &x 1\nb: *x", "a: !!str 1",
-                    "a:\n  é: 1\n  e\u0301: 2", "a: {x: 1, x: 2}", "a: 1.2"):
+                    "a: {x: 1, x: 2}", "a: 1.2"):
             with self.subTest(raw=raw), self.assertRaises((checks.ContractError, ValueError)):
                 checks.canonical_knowledge("---\n" + raw + "\n---\n\nbody\n")
+        raw = "---\na:\n  K: 1\n  K: 2\n  é: 3\n  e\u0301: 4\n---\n\nbody e\u0301\n"
+        front, body = checks.parse_knowledge(checks.canonical_knowledge(raw))
+        self.assertEqual(front["a"], {"K": 1, "K": 2, "é": 3, "e\u0301": 4})
+        self.assertEqual(body, "body e\u0301\n")
 
     def test_windows_lexical_paths(self):
         for value in ("../x", "/x", "a\\b", "a//b", "a/./b", "x:ads", "CON.txt", "a/b."):
@@ -1059,8 +1126,8 @@ class SpecificationTests(unittest.TestCase):
     def test_source_vectors_and_quality_bijection(self):
         mapping = checks.parse_json((ROOT / "source-vector-map.json").read_bytes())
         ids = [v["id"] for v in mapping["vectors"]]
-        self.assertEqual(set(ids), {"V" + str(i).zfill(2) for i in range(1, 255)})
-        self.assertEqual(len(ids), 254)
+        self.assertEqual(set(ids), {"V" + str(i).zfill(2) for i in range(1, 257)})
+        self.assertEqual(len(ids), 256)
         retired = {v["id"] for v in mapping["vectors"] if v["expected"].startswith("번호 미재사용")}
         self.assertEqual(retired, {"V159", "V162", "V189"})
         rules = checks.parse_json((ROOT / "semantic-rules.json").read_bytes())["rules"]
@@ -1397,15 +1464,19 @@ class SpecificationTests(unittest.TestCase):
 
 
 def validation_basis():
-    paths = [build_spec.DOC, ROOT.parent.parent / "형식과-절차.md"]
-    paths.extend(ROOT / name for name in ("build_spec.py", "spec_checks.py", "verify_spec.py",
+    paths = [(build_spec.DOC, "do-math/통합-설계.md"),
+             (REPOSITORY_ROOT / "docs" / "형식과-절차.md", "docs/형식과-절차.md")]
+    paths.extend((ROOT / name, "do-math/통합-설계-명세-v9/" + name)
+                 for name in ("build_spec.py", "spec_checks.py", "verify_spec.py",
         "schema-registry.json", "command-contracts.json", "role-contracts.json",
         "semantic-rules.json", "transitions.json", "source-vector-map.json",
         "relation-templates.json", "toolchain-lock.json"))
-    paths.extend(sorted((ROOT / "schemas").glob("*.json")))
-    paths.extend(sorted((ROOT / "fixtures").rglob("*.json")))
-    return [{"path": str(path.relative_to(ROOT.parent.parent)).replace("\\", "/"),
-             "sha256": hashlib.sha256(path.read_bytes()).hexdigest()} for path in paths]
+    paths.extend((path, "do-math/통합-설계-명세-v9/" + path.relative_to(ROOT).as_posix())
+                 for path in sorted((ROOT / "schemas").glob("*.json")))
+    paths.extend((path, "do-math/통합-설계-명세-v9/" + path.relative_to(ROOT).as_posix())
+                 for path in sorted((ROOT / "fixtures").rglob("*.json")))
+    return [{"path": label, "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
+            for path, label in paths]
 
 
 def main():
@@ -1429,7 +1500,8 @@ def main():
         "input_basis": validation_basis(),
         "not_verified": ["actual_adapter", "adapter_compaction_control", "OS_isolation", "remote_termination", "provider_limits",
                          "all_runtime_domain_gates", "Lean_execution", "research_efficacy",
-                         "external_definition_synchronization"],
+                         "external_definition_synchronization", "source_semantic_alignment",
+                         "runtime_integration"],
         "python_dependencies": {name: importlib.metadata.version(name) for name in ("jsonschema", "referencing", "PyYAML")},
         "failed_cases": [{"test": str(test), "detail": detail} for test, detail in result.failures + result.errors]}
     (ROOT / "validation-report.json").write_bytes(checks.canonical_json(report))

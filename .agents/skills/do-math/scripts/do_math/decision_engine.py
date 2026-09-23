@@ -7,7 +7,7 @@ from .repository import new_id
 
 
 class DecisionEngineMixin:
-    def _apply_action_resolutions(self, execution_id):
+    def _apply_action_resolutions(self, execution_id, *, accepting_current=False):
         execution = self.runtime["executions"][execution_id]
         for claim in execution.get("extensions", {}).get("action_resolutions", []):
             identifier = claim["action_id"]
@@ -17,9 +17,10 @@ class DecisionEngineMixin:
             evidence_id = execution_id if claim["evidence_execution_id"] == "current" else claim["evidence_execution_id"]
             evidence = self.runtime["executions"].get(evidence_id, {})
             previous, current = entry["action"], evidence.get("action", {})
-            keys = ("role", "stage", "slot", "round", "review_cycle_id", "assessment_targets", "live")
+            keys = ("role", "stage", "slot", "round", "review_cycle_id", "assessment_targets", "observation_rule_targets", "live")
             same_target = previous.get("target") == current.get("target") or previous.get("target") in current.get("revision_targets", {})
-            if evidence.get("outcome") != "output_accepted" or not same_target or not all(previous.get(key) == current.get(key) for key in keys):
+            accepted = evidence.get("outcome") == "output_accepted" or (accepting_current and evidence_id == execution_id)
+            if not accepted or not same_target or not all(previous.get(key) == current.get(key) for key in keys):
                 raise ValueError("resolution evidence must be an accepted execution of the same judgment scope")
             # Current output was validated immediately before this atomic apply;
             # its own accepted edits are not concurrent premise changes.
@@ -38,14 +39,14 @@ class DecisionEngineMixin:
                     event.pop("assigned_to", None)
                     event.pop("assigned_at", None)
 
-    def _execution_requirement_changes(self, action):
+    def _execution_requirement_changes(self, action, *, evaluation_context=None):
         if action.get("role") not in {"research_work", "supplemental_research"} or action.get("review_cycle_id"):
             return []
         task = self.runtime["tasks"].get(action.get("target"))
         if not task or task.get("status") in planning.TERMINAL_TASK_STATUSES:
             return []
-        result = planning.task_ready({**task, "status": "ready"}, self.instance, self.runtime,
-                                     include_scheduling_waits=False)
+        result = planning.task_ready(task, self.instance, self.runtime,
+                                     include_scheduling_waits=False, action=action,evaluation_context=evaluation_context)
         return ([] if result["state"] == "ready" else [{"id": task["id"], "field": "required_use_conditions",
                                                          "reason": result["errors"]}])
 
@@ -61,7 +62,7 @@ class DecisionEngineMixin:
         refs.update(ref for key in ("inputs", "reuse") for ref in task.get(key, []))
         return sorted(refs)
 
-    def _validate_decision_acceptance(self, action, output, execution, context):
+    def _validate_decision_acceptance(self, action, output, execution, context, *, evaluation_context=None):
         _, original_instance, original_runtime = self.store.load(execution["input_snapshot"])
         refs = {row["id"] for row in execution.get("decision_basis", {}).get("records", [])}
         refs.update(row["name"] for row in execution.get("decision_basis", {}).get("sources", []))
@@ -70,7 +71,7 @@ class DecisionEngineMixin:
             refs.discard(action.get("target"))
         execution["decision_basis"] = capture_decision_basis(original_instance, original_runtime, refs)
         changes = decision_basis_changes(execution["decision_basis"], self.instance, self.runtime)
-        changes.extend(self._execution_requirement_changes(action))
+        changes.extend(self._execution_requirement_changes(action,evaluation_context=evaluation_context))
         from .questions import user_waits
         changes.extend({"field": "user_decision", **row} for row in user_waits(action, self.instance, self.runtime))
         if output.get("confirmed_question_ids"):
@@ -79,14 +80,20 @@ class DecisionEngineMixin:
                            for identifier in output["confirmed_question_ids"] if identifier not in open_questions)
         if action["role"] == "goal_audit" and action.get("basis") != self._goal_basis_key():
             changes.append({"field": "goal_audit_basis", "reason": "the complete goal judgment basis changed"})
-        if execution["goal_revision"] != self.instance.get("goal_revision", 1) or execution["policy_revision"] != self.instance.get("policy_revision", 1):
+        governance = planning.governance_revisions(self.instance)
+        if any(execution[key] != value for key, value in governance.items()):
             changes.append({"field": "goal_or_policy_revision", "reason": "decision input changed"})
         current = self.runtime["tasks"].get(action.get("target"))
         if current and execution.get("contract_sha256") != planning.contract_hash(current):
             changes.append({"id": current["id"], "field": "contract_sha256", "reason": "action contract changed"})
+        if current and action.get('role')=='task_contract_review':
+            previous=original_runtime['tasks'].get(current['id'])
+            if previous is None or planning.capture_task_basis(previous,original_instance,original_runtime)!=planning.capture_task_basis(current,self.instance,self.runtime):
+                changes.append({'id':current['id'],'field':'task_basis','reason':'review source, decision, knowledge, trust or profile premise changed'})
         if action["role"] == "research_plan":
-            target_ids = [*output["selections"], *(row["task_id"] for row in output["deferred"]),
+            target_ids = [*(row['task_id'] for row in output['dispositions']),
                           *(row["task_id"] for row in output["task_assessments"])]
+            from .task_contracts import selected_task_ids
             for identifier in target_ids:
                 before = original_runtime["tasks"].get(identifier)
                 after = self.runtime["tasks"].get(identifier)
@@ -95,8 +102,8 @@ class DecisionEngineMixin:
                     continue
                 if planning.contract_hash(before) != planning.contract_hash(after):
                     changes.append({"id": identifier, "field": "contract_sha256", "reason": "planning target contract changed"})
-                if identifier in output["selections"]:
-                    ready = planning.task_ready(after, self.instance, self.runtime)
+                if identifier in selected_task_ids(output):
+                    ready = planning.task_ready(after, self.instance, self.runtime,evaluation_context=evaluation_context)
                     if ready["state"] != "ready":
                         changes.append({"id": identifier, "field": "selection_applicability", "reason": ready["errors"]})
             for assessment in output["task_assessments"]:
@@ -108,29 +115,73 @@ class DecisionEngineMixin:
         if changes:
             raise CurrentnessChanged(changes)
 
+    def _apply_task_plan(self, output, execution_id, input_tasks, ready_ids, *, reference_tasks=None, evaluation_context=None):
+        """Owner application for one indivisible planning response."""
+        from .task_scope import apply_task_assessments
+        planning.validate_plan_submission(output, input_tasks, ready_ids)
+        for row in output['dispositions']:
+            current=self.runtime['tasks'].get(row['task_id'])
+            before=input_tasks.get(row['task_id'])
+            if not current or not before or planning.contract_hash(current)!=planning.contract_hash(before):
+                raise ValueError('candidate contract changed before plan application')
+            if row['kind']=='selected' and planning.task_ready(current,self.instance,self.runtime,evaluation_context=evaluation_context)['state']!='ready':
+                raise ValueError('selected task is no longer ready')
+        instance,runtime=apply_task_assessments(self.instance,self.runtime,output.get('task_assessments',[]),
+            execution_id=execution_id,input_tasks=input_tasks,reference_tasks=reference_tasks,evaluation_context=evaluation_context)
+        for row in output['dispositions']:
+            task=runtime['tasks'][row['task_id']]
+            if row['kind']=='selected' and planning.contract_hash(task)!=planning.contract_hash(input_tasks[task['id']]):
+                raise ValueError('assessment changed a selected recipient contract; replan after review')
+            task['selection_disposition']={**deepcopy(row),'execution_id':execution_id,'contract_sha256':planning.contract_hash(task)}
+            if row['kind']=='selected':
+                action = {'id':new_id('AC'),'role':'research_work','target':task['id'],
+                    'selected_contract_sha256':planning.contract_hash(task),'selection_execution_id':execution_id}
+                assessment = runtime['executions'][execution_id].get('model_decisions', {}).get(task['id'])
+                if assessment is not None:
+                    from .model_policy import selection
+                    action['model_assessment'] = deepcopy(assessment)
+                    try:
+                        selection(instance['config'], action, runtime['tasks'], instance['knowledge'],
+                                  profiles=instance['execution_profiles'])
+                    except ValueError as error:
+                        raise ValueError('Selected task ' + task['id'] + ' cannot meet the plan model requirement '
+                            'with its allowed profiles; defer or revise its contract: ' + str(error)) from error
+                task['status']='active';task['selected_by']=execution_id
+                task.pop('waiting',None)
+                runtime.setdefault('queue',[]).append(action)
+        runtime.setdefault('history',[]).append({'kind':'task_plan_applied','execution_id':execution_id,
+            'dispositions':deepcopy(output['dispositions']),'task_assessments':deepcopy(output.get('task_assessments',[]))})
+        for reason in output.get('preparation_requests',[]):
+            runtime.setdefault('queue',[]).append({'id':new_id('AC'),'role':'research_preparation','reason':reason,'requested_by':execution_id})
+        self.instance,self.runtime=instance,runtime
+        # Bind exact semantic repetition premises to requests created by this plan.
+        from .revisions import bind_repetition_bases
+        for action in self.runtime.get('queue',[]):
+            if action.get('requested_by')==execution_id:
+                bind_repetition_bases(self.instance,self.runtime,action)
+
     def _refresh_changed_decision(self, action, execution_id, changes, original_position=0):
         self._remove_action(action)
         execution = self.runtime["executions"][execution_id]
         execution.update(outcome="execution_incomplete", error_kind="currentness_changed", currentness_changes=deepcopy(changes),
                          error="Decision premises changed; see currentness_changes")
+        from .revisions import record_execution_outcome
+        record_execution_outcome(self.instance,self.runtime,action,{},execution_id,accepted=False)
         if action.get("refresh", {}).get("attempt", 0) < 1:
             refreshed = {**deepcopy(action), "refresh": {"execution_id": execution_id, "changes": deepcopy(changes), "attempt": 1}}
             refreshed.pop("model_selection", None)
             if action["role"] == "task_contract_review":
                 task = self.runtime["tasks"][action["target"]]
                 refreshed["contract_basis"] = {"revision": task["revision"], "contract_sha256": planning.contract_hash(task),
-                    "goal_revision": self.instance["goal_revision"], "policy_revision": self.instance["policy_revision"]}
+                    **planning.governance_revisions(self.instance)}
                 refreshed["review_basis_key"] = planning.review_basis_key(task, self.instance, self.runtime)
             self.runtime["queue"].insert(original_position, refreshed)
-            if self.runtime["status"] not in {"paused", "closed"}:
-                self.runtime["status"] = "ready"
         else:
             self.runtime.setdefault("waiting_actions", {})[action["id"]] = {"action": deepcopy(action),
                 "kind": "execution_failure", "failure_kind": "currentness_changed", "changes": deepcopy(changes),
                 "reason": "decision premises changed again after one refresh", "execution_id": execution_id}
-            if action["role"] != "operational_review" and action.get("recovery_attempt", 0) < 1:
+            if action["role"] != "operational_review":
                 self._enqueue("operational_review", execution_id, reason="Resolve repeated decision premise conflicts")
-            elif action.get("recovery_attempt", 0) >= 1:
-                self._finish_failed_investigation(action, execution_id, "Repeated premise conflict")
-            if self.runtime["status"] not in {"paused", "closed"}:
-                self.runtime["status"] = "ready" if self.runtime["queue"] else "waiting"
+            else:
+                self.runtime['waiting_actions'][action['id']].update(next_owner='operations',
+                    release_condition='new consistent decision input', owner='ai')

@@ -1,0 +1,493 @@
+"""Central governance hooks; Git tests distinguish assembly from live wiring."""
+from copy import deepcopy
+import importlib.util
+from pathlib import Path
+import sys
+import unittest
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+
+class CentralGovernanceTests(unittest.TestCase):
+    def mixin(self):
+        self.assertIsNotNone(importlib.util.find_spec('do_math.governance_engine'),
+                             'No central governance consumer exists')
+        from do_math.governance_engine import GovernanceEngineMixin
+        return GovernanceEngineMixin
+
+    def host(self):
+        from test_redesign_GOVERNANCE import AuditRepairTests
+        from do_math.engine import DEFAULT_CONFIG
+        i, rt, bundle, request = AuditRepairTests().checked_import()
+        class Host(self.mixin()):
+            _executor_running = False
+            _calls = None
+            _live_execution_ids = set()
+            _slots = None
+            def _enqueue(self, role, target=None, **kw):
+                from do_math.repository import new_id
+                identifier = new_id('AC')
+                self.runtime['queue'].append({'id': identifier, 'role': role, 'target': target, **kw})
+            def _complete_initial_intent(self, target): self.completed_input = target
+            def _activate_initialization(self): self.activation_attempted = True
+        h = Host(); h.instance = i; h.runtime = rt
+        for execution in rt['executions'].values(): execution.setdefault('status', 'queued')
+        i['config'] = {**deepcopy(DEFAULT_CONFIG), 'session_limits': None, 'scholarly_enabled': False}
+        # Config addition is not a premise of this charter import.
+        return h, bundle, request
+
+    def test_exact_later_control_applies_once_and_queues_followup(self):
+        h, bundle, request = self.host()
+        self.assertTrue(h._governance_control(request))
+        self.assertEqual(h.instance['governance']['CH2']['content']['goal'], 'Prove Q')
+        queue = deepcopy(h.runtime['queue'])
+        self.assertTrue(h._governance_control(request))
+        self.assertEqual(h.runtime['queue'], queue)
+        self.assertTrue(any(a.get('import_id') == bundle['id'] for a in queue))
+
+    def test_initial_later_control_completes_initialization_without_new_check(self):
+        h, bundle, request = self.host()
+        h.instance['lifecycle'] = {'input_id': bundle['source']['id']}
+        h._governance_control(request)
+        self.assertEqual(h.completed_input, bundle['source']['id'])
+        self.assertTrue(h.activation_attempted)
+        self.assertFalse(any(a['role'] == 'intent_interpretation' for a in h.runtime['queue']))
+
+    def test_stale_approval_rejects_and_routes_to_reauthor(self):
+        h, bundle, request = self.host()
+        h.instance['decisions']['D']['revoked'] = True
+        with self.assertRaises(ValueError): h._governance_control(request)
+        self.assertNotIn('CH2', h.instance['governance'])
+        self.assertTrue(any(a.get('previous_import_id') == bundle['id'] for a in h.runtime['queue']))
+
+    def test_corrected_exact_approval_cancels_unstarted_recheck_of_same_seal(self):
+        h, bundle, request = self.host()
+        wrong = deepcopy(request); wrong['config']['check_sha256'] = '0' * 64
+        with self.assertRaises(ValueError): h._governance_control(wrong)
+        self.assertTrue(any(a.get('previous_import_id') == bundle['id'] for a in h.runtime['queue']))
+        h._governance_control(request)
+        self.assertFalse(any(a['role'] == 'intent_interpretation' and a.get('previous_import_id') == bundle['id']
+                             for a in h.runtime['queue']))
+
+    def test_original_changed_before_later_approval_is_not_applied(self):
+        h, bundle, request = self.host()
+        h.runtime['inputs'] = [{'id': bundle['source']['id'], 'text': 'A different user original', 'config': {}}]
+        with self.assertRaises(ValueError): h._governance_control(request)
+        self.assertNotIn('CH2', h.instance['governance'])
+
+    def test_failed_initial_followup_does_not_publish_partial_control_effect(self):
+        h, bundle, request = self.host()
+        h.instance['lifecycle'] = {'input_id': bundle['source']['id']}
+        def fail(target): raise ValueError('missing initial evidence')
+        h._complete_initial_intent = fail
+        with self.assertRaises(ValueError): h._governance_control(request)
+        self.assertNotIn('CH2', h.instance['governance'])
+        self.assertNotIn('application', h.runtime['intent_imports'][bundle['id']])
+
+    def test_import_configuration_uses_same_profile_and_slot_transition(self):
+        import tempfile
+        from do_math.engine import DEFAULT_CONFIG
+        from do_math import governance as gov
+        h, _, _ = self.host()
+        with tempfile.TemporaryDirectory() as directory:
+            h.instance['workspace'] = directory
+            h.runtime['reservations'] = {}
+            patch = {'session_limits': deepcopy(DEFAULT_CONFIG['session_limits'])}
+            public_i, public_r = h._configure_candidate(h.instance, h.runtime, {'action': 'configure', 'origin': 'user', 'config': patch})
+            source = gov.preserve_source('CONF', 'Adopt these exact concurrent capacities', origin='user')
+            payload = {'kind': 'configuration', 'config': patch}
+            output = {'questions': [], 'question_details': [], 'needs_clarification': False, 'import_units': [{
+                'unit_id': 'U', 'source_range': {'start': 0, 'end': len(source['text'])}, 'interpretation': 'Configure capacities',
+                'owner_kind': 'configuration', 'owner_ref': 'I', 'payload': payload, 'decision_refs': [], 'question_refs': []}]}
+            handlers = h._governance_owner_handlers()
+            bundle = gov.prepare_import(h.instance, h.runtime, source, output, execution_id='AUTHOR', owner_handlers=handlers)
+            h.runtime['executions']['CHECK'] = {'role': 'intent_interpretation', 'status': 'queued', 'intent_import_sha256': bundle['sha256']}
+            bundle = gov.check_import(h.instance, h.runtime, bundle['id'], {'decision': 'approved', 'bundle_sha256': bundle['sha256'],
+                'scope_complete': True, 'unit_ids': ['U'], 'question_ids': [], 'findings': []}, execution_id='CHECK', owner_handlers=handlers)
+            request = {'id': 'CONF-APPROVE', 'action': 'decision', 'origin': 'user', 'text': 'Approve exact capacities', 'config': {
+                'kind': 'import_approval', 'import_id': bundle['id'], 'bundle_sha256': bundle['sha256'],
+                'check_sha256': bundle['check']['sha256'], 'unit_hashes': {'U': gov.digest(payload)}}}
+            h._governance_control(request)
+            for field in ('config', 'execution_profiles', 'capacity_constraints', 'role_profile_refs'):
+                self.assertEqual(h.instance[field], public_i[field])
+            self.assertEqual(h.runtime['reservations'], public_r['reservations'])
+
+    def test_configuration_rejects_operator_resources_and_running_mode_conversion(self):
+        h, _, _ = self.host()
+        before = deepcopy(h.instance)
+        with self.assertRaises(ValueError): h._governance_control({'action': 'configure', 'origin': 'operator',
+            'config': {'work_calls': 999}})
+        self.assertEqual(h.instance, before)
+        h._executor_running = True
+        with self.assertRaises(ValueError): h._governance_control({'action': 'configure', 'origin': 'user',
+            'config': {'session_limits': {'work': {'x': 1}, 'operations': {'x': 1}}}})
+
+    def test_nfd_original_reaches_actual_context_and_coverage(self):
+        import hashlib, unicodedata
+        from do_math import governance as gov
+        h, _, _ = self.host()
+        text = 'Prove that e\u0301 has two code points.'
+        raw = text.encode(); working = unicodedata.normalize('NFC', text).encode()
+        h.instance['lifecycle'] = {'input_id': 'RAW', 'immutable_input': {
+            'text': text, 'sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)}}
+        h.runtime['inputs'] = [{'id': 'RAW', 'text': text, 'config': {}}]
+        context = h._governance_context({'role': 'intent_interpretation', 'target': 'RAW'}, {})
+        self.assertEqual(context['user_request']['text'], text)
+        source = h._governance_input_source('RAW')
+        self.assertEqual(source['sha256'], hashlib.sha256(raw).hexdigest())
+        output = {'questions': [], 'question_details': [], 'needs_clarification': False, 'import_units': [{
+            'unit_id': 'U', 'source_range': {'start': 0, 'end': len(text)}, 'interpretation': 'Exact codepoint assertion',
+            'owner_kind': 'charter', 'owner_ref': 'CH1', 'payload': {}, 'decision_refs': [], 'question_refs': []}]}
+        gov.prepare_import(h.instance, h.runtime, source, output, execution_id='AUTHOR')
+        output['import_units'][0]['source_range']['end'] = len(working.decode())
+        with self.assertRaises(ValueError): gov.prepare_import(h.instance, h.runtime, source, output, execution_id='AUTHOR')
+
+    def test_audit_context_schema_binding_and_rejected_missing_results(self):
+        from test_redesign_GOVERNANCE import AuditRepairTests
+        h, _, _ = self.host()
+        h.instance, h.runtime = AuditRepairTests().audited()
+        action = {'role': 'goal_audit'}
+        context = h._governance_context(action, {})
+        self.assertEqual(context['additional_audit_input'][0]['audit']['id'], 'AU')
+        schema = h._governance_schema(action, {'type': 'object', 'properties': {}, 'required': []})
+        self.assertIn('additional_audits', schema['required'])
+        execution = {'id': 'AUDITOR', 'role': 'goal_audit'}
+        h._bind_governance_input(action, execution, context)
+        h.runtime['executions']['AUDITOR'] = execution
+        from do_math.governance import evaluate_goal_audits
+        with self.assertRaises(ValueError): evaluate_goal_audits(h.instance, h.runtime, 'AUDITOR', [])
+
+    def test_original_literal_changes_are_not_equal_approval_hashes(self):
+        from do_math import governance as gov
+        self.assertNotEqual(gov.digest({'statement': 'e\u0301 has two codepoints'}),
+                            gov.digest({'statement': '\u00e9 has two codepoints'}))
+
+    def test_import_source_and_public_input_have_distinct_global_identity(self):
+        h, bundle, _ = self.host()
+        source = bundle['source']
+        h.runtime['inputs'] = [{'id': source['id'], 'text': source['text'], 'origin': source['origin'], 'config': {}}]
+        created = h._apply_governance_intent({'id': 'AC-NEW', 'role': 'intent_interpretation',
+            'target': source['id']}, bundle['output'], 'AUTHOR')
+        self.assertEqual(created['input_ref'], source['id'])
+        self.assertNotEqual(created['source']['id'], source['id'])
+        self.assertEqual(created['source']['sha256'], source['sha256'])
+
+    def audit_host(self):
+        from test_redesign_GOVERNANCE import AuditRepairTests
+        h, _, _ = self.host()
+        h.instance, h.runtime = AuditRepairTests().audited()
+        h.instance.update(knowledge={}, goal_judgments=[])
+        h._goal_basis_key = lambda: 'B'
+        action = {'role': 'goal_audit', 'basis': 'B', 'slot': 0, 'required': 1}
+        execution = {'id': 'AUDITOR', 'role': 'goal_audit'}
+        h._bind_governance_input(action, execution, h._governance_context(action, {}))
+        h.runtime['executions']['AUDITOR'] = execution
+        output = {'decision': 'satisfied', 'scope_complete': True, 'used_sources': [],
+            'summary': 'Ordinary goal verdict cannot override audit', 'questions': [], 'findings': [],
+            'additional_audits': [{'audit_ref': 'AU', 'assessor': 'goal_audit', 'verdict': 'partial',
+                'reason': 'Only part of the approved scope has evidence',
+                'input_hashes': execution['additional_audit_input'][0]['input_hashes']}]}
+        return h, action, output
+
+    def test_actual_goal_consumer_stores_mapping_not_generic_satisfied(self):
+        h, action, output = self.audit_host()
+        judgment = h._apply_governance_goal_audit(action, output, 'AUDITOR')
+        self.assertEqual(judgment['decision'], 'satisfied')
+        self.assertEqual(judgment['additional_audits'][0]['decision'], 'not_satisfied')
+        self.assertNotEqual(h.runtime['status'], 'completed')
+        self.assertEqual(h.instance['goal_judgments'], [judgment])
+        from do_math.academic import apply_goal_assurance
+        with self.assertRaises(ValueError):
+            apply_goal_assurance(h.instance, decision='mathematically_solved', basis='B',
+                                 judgments=[judgment], runtime=h.runtime)
+
+    def test_actual_goal_consumer_rejects_missing_wrong_and_stale_audit_before_append(self):
+        for mutation in ('missing', 'wrong_hash', 'wrong_assessor', 'stale'):
+            with self.subTest(mutation=mutation):
+                h, action, output = self.audit_host()
+                if mutation == 'missing': output.pop('additional_audits')
+                elif mutation == 'wrong_hash': output['additional_audits'][0]['input_hashes'] = {'CH1': '0' * 64}
+                elif mutation == 'wrong_assessor': output['additional_audits'][0]['assessor'] = 'producer-claim'
+                else: h.instance['governance']['CH1']['content']['goal'] += ' changed'
+                with self.assertRaises(ValueError): h._apply_governance_goal_audit(action, output, 'AUDITOR')
+                self.assertEqual(h.instance['goal_judgments'], [])
+
+    def test_goal_consumer_and_final_assurance_with_explicit_formal_double(self):
+        from unittest.mock import patch
+        import tempfile
+        from v5_fixtures import trust_fixture
+        from do_math.initialization import digest
+        for verdict, expected in [('partial', False), ('pass', True)]:
+            with self.subTest(verdict=verdict):
+                h, action, output = self.audit_host()
+                h.instance['knowledge'] = {'K': {'id': 'K', 'statement': 'fixture only'}}
+                h.instance['formal_results'] = {'FR': {'id': 'FR'}}
+                temporary = tempfile.TemporaryDirectory()
+                self.addCleanup(temporary.cleanup)
+                trusted = trust_fixture(Path(temporary.name), ['synthetic-audit-lean'])
+                trusted.pop('operation')
+                trusted.update(id='TE-audit', status='active', source_ref='synthetic-audit-approval',
+                               manifest_sha256=digest(trusted['manifest']))
+                h.instance.update(active_trust_environment='TE-audit', trust_environments={'TE-audit':trusted})
+                h.runtime.update(questions=[], history=[])
+                h._ensure_academic_followup = lambda: setattr(h, 'academic_followup', True)
+                output['additional_audits'][0]['verdict'] = verdict
+                # Only proof availability is a double; mapping, judgment and
+                # final assurance are the actual production consumers.
+                with patch('do_math.knowledge.assess_use', return_value={'valid': True}), \
+                     patch('do_math.knowledge_records.usable_links', return_value=[{'formal_result_id': 'FR', 'assessment_id': 'AS'}]), \
+                     patch('do_math.knowledge_records.formal_usable', return_value=True):
+                    h._apply_governance_goal_audit(action, output, 'AUDITOR')
+                import jsonschema
+                from do_math.record_schemas.schemas import RECORDS
+                basis_schema = RECORDS['goal_judgments']['properties']['record_basis']
+                record_basis = h.instance['goal_judgments'][-1]['record_basis']
+                self.assertTrue(record_basis)
+                jsonschema.validate(record_basis, basis_schema)
+                self.assertEqual(h.instance.get('goal_status') == 'mathematically_solved', expected)
+                self.assertEqual(getattr(h, 'academic_followup', False), expected)
+
+    def test_raw_initial_charter_compares_lossless_input_not_nfc_projection(self):
+        import hashlib, unicodedata
+        from do_math import governance as gov
+        from test_redesign_GOVERNANCE import charter
+        text = 'e\u0301 has two codepoints'; raw = text.encode(); work = unicodedata.normalize('NFC', text).encode()
+        source = gov.preserve_source('S', text, origin='user')
+        record = charter()
+        instance = {'id': 'I', 'feature_version': 5, 'lifecycle': {'immutable_input': {
+            'text': text, 'sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)}}}
+        approval = {'id': 'D', 'actor': 'user', 'source_ref': 'S', 'source_sha256': source['sha256'],
+                    'record_hashes': {'CH1': gov.digest(record)}}
+        result = gov.initialize_governance(instance, source, approval, [record])
+        self.assertEqual(result['governance_sources']['S']['text'], text)
+        changed = gov.preserve_source('S', work.decode(), origin='user')
+        with self.assertRaisesRegex(ValueError, 'initial charter source differs'):
+            gov.initialize_governance(instance, changed, approval, [record])
+
+
+class PublicGitGovernanceTests(unittest.TestCase):
+    def engine_type(self):
+        from do_math.engine import ResearchEngine
+        from do_math.governance_engine import GovernanceEngineMixin
+        if issubclass(ResearchEngine, GovernanceEngineMixin): return ResearchEngine
+        # Assemble the exact documented control hook until ENGINE lands its
+        # inheritance edit. Real public control(), writer lock and Git CAS run.
+        class AssembledEngine(GovernanceEngineMixin, ResearchEngine):
+            def _apply_extended_control(self, request):
+                return self._governance_control(request) or super()._apply_extended_control(request)
+        return AssembledEngine
+
+    def initialized(self, root, goal='User approves P', *, session_mode=False):
+        import subprocess
+        from do_math.engine import initialize, DEFAULT_CONFIG
+        subprocess.run(['git', 'init', '-q', str(root)], check=True)
+        result = initialize(root, goal=goal, workspace=root/'work', config={
+            'scholarly_enabled': False, 'session_limits': deepcopy(DEFAULT_CONFIG['session_limits']) if session_mode else None,
+            'operations_calls': None if session_mode else 50, 'work_calls': None if session_mode else 10})
+        return self.engine_type()(root, result['instance_id'])
+
+    def execution_fixture(self, engine, eid, role, target=None):
+        aid = 'ACT-' + eid
+        engine.runtime['activities'][aid] = {'id': aid, 'activity_kind': role, 'owner_ref': target,
+            'opened_at': engine.instance['created_at'], 'input_refs': [], 'status': 'ready',
+            'assigned_execution_ids': [eid], 'result_refs': [], 'unresolved': [], 'followups': []}
+        engine.runtime['executions'][eid] = {'id': eid, 'role': role, 'status': 'queued',
+            'owner_activity_id': aid, 'actor_kind': 'ai', 'input_manifest': [],
+            'execution_profile_ref': engine.instance['role_profile_refs'][role][0],
+            'created_at': engine.instance['created_at'], 'context_origin': [],
+            'action': {'id': 'AC-' + eid, 'role': role, 'target': target}}
+
+    def test_public_configure_preserves_original_result_after_other_control_and_reload(self):
+        import tempfile
+        from do_math.engine import control
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory); engine = self.initialized(root)
+            iid = engine.instance['id']
+            first = control(root, iid, 'configure', config={'work_calls': 12}, request_id='configure-first')
+            engine.process_controls()
+            original = engine.control_result(first['request_id'])
+            self.assertEqual(original['effect'], 'applied')
+            self.assertEqual(original['config']['work_calls'], 12)
+            control(root, iid, 'configure', config={'work_calls': 14}, request_id='configure-second')
+            engine.process_controls()
+            restarted = self.engine_type()(root, iid)
+            replay = control(root, iid, 'configure', config={'work_calls': 12}, request_id='configure-first')
+            self.assertEqual(replay['snapshot'], original['snapshot'])
+            self.assertEqual(replay['config']['work_calls'], 12)
+            self.assertEqual(restarted.instance['config']['work_calls'], 14)
+            with self.assertRaises(ValueError): control(root, iid, 'configure', config={'work_calls': 99}, origin='operator')
+            with self.assertRaises(ValueError): control(root, iid, 'configure', config={'work_calls': 13}, request_id='configure-first')
+
+    def test_git_sealed_import_later_control_and_restart(self):
+        self.run_sealed_import_case('exact')
+
+    def test_git_changed_premise_rejects_later_approval_and_preserves_seal(self):
+        self.run_sealed_import_case('changed_premise')
+
+    def test_git_configuration_import_uses_public_transition_and_profiles(self):
+        self.run_sealed_import_case('configuration')
+
+    def run_sealed_import_case(self, scenario):
+        import tempfile
+        from do_math import governance as gov
+        from do_math.engine import control
+        from test_redesign_GOVERNANCE import charter
+        from do_math.repository import new_id
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory); engine = self.initialized(root, session_mode=True)
+            iid = engine.instance['id']
+            control(root, iid, 'decision', config={'change': {'kind': 'initialization', 'operation': 'governance',
+                'records': [charter()]}}, text='Adopt the exact charter', request_id='adopt-charter')
+            engine.process_controls()
+            self.assertEqual(engine.control_result('adopt-charter')['effect'], 'applied')
+            input_text = 'Set call timeout to 901 seconds' if scenario == 'configuration' else 'Change the goal to Q'
+            control(root, iid, 'input', text=input_text, request_id='input-Q')
+            engine.process_controls()
+            # Provider-free execution records preserve real identity/profile/
+            # activity relations; no provider success or formal proof is asserted.
+            for eid in ('AUTHOR', 'CHECKER'):
+                self.execution_fixture(engine, eid, 'intent_interpretation', 'input-Q')
+            record = charter('CH2', 'Prove Q'); record['supersedes'] = ['CH1']
+            output = {'summary': 'User changes P to Q', 'used_sources': [], 'questions': [], 'question_details': [],
+                'needs_clarification': False, 'import_units': [{
+                    'unit_id': 'U', 'source_range': {'start': 0, 'end': len(input_text)},
+                    'interpretation': 'Adopt Q as goal', 'owner_kind': 'charter', 'owner_ref': 'CH2',
+                    'payload': {'kind': 'charter', 'record': record}, 'decision_refs': [], 'question_refs': []}]}
+            if scenario == 'configuration':
+                output['summary'] = 'Change the configured execution timeout'
+                output['import_units'][0].update(interpretation='Set the exact approved timeout',
+                    owner_kind='configuration', owner_ref=iid,
+                    payload={'kind': 'configuration', 'config': {'call_timeout_seconds': 901}})
+                expected_instance, _ = engine._configure_candidate(engine.instance, engine.runtime,
+                    {'action': 'configure', 'origin': 'user', 'config': {'call_timeout_seconds': 901}})
+            bundle = engine._apply_governance_intent({'id': 'AC-AUTHOR', 'role': 'intent_interpretation',
+                'target': 'input-Q'}, output, 'AUTHOR')
+            engine.runtime['executions']['CHECKER']['intent_import_sha256'] = bundle['sha256']
+            check = {'summary': 'Complete comparison', 'used_sources': [], 'questions': [], 'decision': 'approved',
+                'bundle_sha256': bundle['sha256'], 'scope_complete': True, 'unit_ids': ['U'], 'question_ids': [], 'findings': []}
+            engine._apply_governance_intent({'id': 'AC-CHECKER', 'role': 'intent_interpretation', 'stage': 'check',
+                'target': 'input-Q', 'import_id': bundle['id']}, check, 'CHECKER')
+            engine._save()
+            engine = self.engine_type()(root, iid)
+            sealed = deepcopy(engine.runtime['intent_imports'][bundle['id']]['check'])
+            spec = {'kind': 'import_approval', 'import_id': bundle['id'], 'bundle_sha256': bundle['sha256'],
+                'check_sha256': sealed['sha256'], 'unit_hashes': {'U': gov.digest(output['import_units'][0]['payload'])}}
+            if scenario == 'changed_premise':
+                audit = {'id': 'AU-LATER', 'kind': 'additional_audit', 'revision': 1, 'supersedes': [], 'content': {
+                    'scope': ['P'], 'required_inputs': ['CH1'], 'assessor': 'goal_audit',
+                    'verdict_mapping': {'pass': 'satisfied', 'unknown': 'unresolved'}}}
+                control(root, iid, 'decision', config={'change': {'kind': 'additional_audit', 'record': audit}},
+                        text='Adopt a new premise before application', request_id='new-premise')
+                engine.process_controls()
+                self.assertEqual(engine.control_result('new-premise')['effect'], 'applied')
+                control(root, iid, 'decision', text='Approval of the old checked premise',
+                        config={'change': spec}, request_id='stale-premise-approval')
+                engine.process_controls()
+                self.assertEqual(engine.control_result('stale-premise-approval')['effect'], 'rejected')
+                restarted = self.engine_type()(root, iid)
+                self.assertNotIn('CH2', restarted.instance['governance'])
+                self.assertEqual(restarted.runtime['intent_imports'][bundle['id']]['check'], sealed)
+                self.assertTrue(any(a.get('previous_import_id') == bundle['id'] for a in restarted.runtime['queue']))
+                return
+            wrong = {**spec, 'check_sha256': '0' * 64}
+            control(root, iid, 'decision', text='Wrong sealed reference', config={'change': wrong}, request_id='wrong-approval')
+            engine.process_controls()
+            rejected = engine.control_result('wrong-approval')
+            self.assertEqual(rejected['effect'], 'rejected')
+            rejected_replay = control(root, iid, 'decision', text='Wrong sealed reference',
+                                      config={'change': wrong}, request_id='wrong-approval')
+            self.assertEqual(rejected_replay['snapshot'], rejected['snapshot'])
+            engine = self.engine_type()(root, iid)
+            import io, json
+            from contextlib import redirect_stdout
+            from do_math import cli
+            approval_text = json.dumps(spec, ensure_ascii=False, indent=2).replace('\n', '\r\n') + '\r\n'
+            approval_path = root/'exact-approval.json'
+            approval_path.write_bytes(approval_text.encode('utf-8'))
+            response = io.StringIO()
+            with redirect_stdout(response):
+                code = cli.main(['decision', '--repository', str(root), '--instance', iid,
+                    '--file', str(approval_path), '--request-id', 'approve-Q'])
+            self.assertEqual(code, 0, response.getvalue())
+            result = json.loads(response.getvalue())['result']
+            self.assertEqual(result['effect'], 'applied')
+            restarted = self.engine_type()(root, iid)
+            self.assertTrue(any(row['text'] == approval_text
+                for row in restarted.instance['governance_sources'].values()))
+            if scenario == 'configuration':
+                for field in ('config', 'role_profile_refs', 'execution_profiles', 'capacity_constraints'):
+                    self.assertEqual(restarted.instance[field], expected_instance[field])
+            else:
+                self.assertEqual(gov.governance_view(restarted.instance)['goal'], 'Prove Q')
+            self.assertEqual(restarted.runtime['intent_imports'][bundle['id']]['check'], sealed)
+            self.assertFalse(any(a.get('previous_import_id') == bundle['id'] for a in restarted.runtime['queue']))
+            replay = control(root, iid, 'decision', text=approval_text, config={'change': spec}, request_id='approve-Q')
+            self.assertEqual(replay['snapshot'], result['snapshot'])
+
+    def test_public_audit_contract_and_actual_goal_judgment_survive_git_reload(self):
+        import tempfile
+        from do_math.engine import control
+        from test_redesign_GOVERNANCE import charter
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory); engine = self.initialized(root, session_mode=True)
+            iid = engine.instance['id']
+            control(root, iid, 'decision', config={'change': {'kind': 'initialization', 'operation': 'governance',
+                'records': [charter()]}}, text='Adopt charter', request_id='charter')
+            engine.process_controls()
+            audit = {'id': 'AU', 'kind': 'additional_audit', 'revision': 1, 'supersedes': [], 'content': {
+                'scope': ['P'], 'required_inputs': ['CH1'], 'assessor': 'goal_audit',
+                'verdict_mapping': {'pass': 'satisfied', 'partial': 'not_satisfied'}}}
+            control(root, iid, 'decision', config={'change': {'kind': 'additional_audit', 'record': audit}},
+                    text='Require this exact audit and mapping', request_id='audit')
+            engine.process_controls()
+            self.assertEqual(engine.control_result('audit')['effect'], 'applied')
+            action = {'id': 'AC-AUDITOR', 'role': 'goal_audit', 'target': None,
+                      'basis': engine._goal_basis_key(), 'slot': 0, 'required': 1}
+            self.execution_fixture(engine, 'AUDITOR', 'goal_audit', iid)
+            context = engine._context(action, Path(engine.instance['workspace']), execution_id='AUDITOR')
+            self.assertEqual(context['additional_audit_input'][0]['audit']['id'], 'AU')
+            self.assertIn('additional_audits', engine._response_schema(action)['required'])
+            engine._bind_governance_input(action, engine.runtime['executions']['AUDITOR'], context)
+            output = {'decision': 'satisfied', 'scope_complete': True, 'used_sources': [],
+                'summary': 'Audit has only partial evidence', 'questions': [], 'findings': [],
+                'reason': 'Preserve the actual goal judgment explanation',
+                'additional_audits': [{'audit_ref': 'AU', 'assessor': 'goal_audit', 'verdict': 'partial',
+                    'reason': 'Only part of the scope has evidence',
+                    'input_hashes': context['additional_audit_input'][0]['input_hashes']}]}
+            for invalid in ([], [{**output['additional_audits'][0], 'verdict': 'invented'}]):
+                with self.assertRaises(ValueError): engine._apply(action, {**output, 'additional_audits': invalid}, 'AUDITOR')
+                self.assertEqual(engine.instance['goal_judgments'], [])
+            engine._apply(action, output, 'AUDITOR')
+            engine._save()
+            restarted = self.engine_type()(root, iid)
+            self.assertEqual(restarted.instance['goal_judgments'][0]['additional_audits'][0]['decision'], 'not_satisfied')
+            self.assertNotEqual(restarted.runtime['status'], 'completed')
+            self.assertEqual(restarted.runtime['executions']['AUDITOR']['additional_audit_input'], context['additional_audit_input'])
+
+    def test_exact_initial_input_context_survives_actual_git_restart(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as directory:
+            text = 'Prove that e\u0301 contains two Unicode codepoints.'
+            root = Path(directory); engine = self.initialized(root, goal=text)
+            engine = self.engine_type()(root, engine.instance['id'])
+            context = engine._governance_context({'role': 'intent_interpretation',
+                'target': engine.instance['lifecycle']['input_id']}, {})
+            self.assertEqual(context['user_request']['text'], text)
+            self.assertEqual(context['original_source']['text'], text)
+
+    def test_exact_public_input_and_replay_preserve_codepoints_after_git_restart(self):
+        import tempfile
+        from do_math.engine import control
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory); engine = self.initialized(root, session_mode=True)
+            iid = engine.instance['id']; text = 'e\u0301 is a two-codepoint literal'
+            control(root, iid, 'input', text=text, request_id='literal-input')
+            engine.process_controls()
+            restarted = self.engine_type()(root, iid)
+            context = restarted._governance_context({'role': 'intent_interpretation', 'target': 'literal-input'}, {})
+            self.assertEqual(context['original_source']['text'], text)
+            self.assertEqual(context['user_request']['text'], text)
+            with self.assertRaises(ValueError):
+                control(root, iid, 'input', text='\u00e9 is a two-codepoint literal', request_id='literal-input')
+
+
+if __name__ == '__main__': unittest.main()

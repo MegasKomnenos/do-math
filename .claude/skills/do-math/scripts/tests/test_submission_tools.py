@@ -5,17 +5,181 @@ import json
 from pathlib import Path
 import subprocess
 import sys
+import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import test_purpose_engine as purpose
 from do_math.repository import canonical_json
+from do_math import contracts, submission, knowledge_io
+from v5_fixtures import local_job_runner, seal_response
+from test_submission_boundaries import CheckedRunner
+
+
+class LocalControlProtocolTests(unittest.TestCase):
+    def test_a_corrected_draft_at_the_same_path_gets_a_new_submission_attempt(self):
+        original = self.draft.read_bytes()
+        self.draft.write_bytes(b'{invalid json')
+        first = submission.request_control(self.workspace, '.scratch/draft.json', kind='submit_intent', wait_seconds=0)
+        self.transport.pump(self.publish_intent)
+        self.assertEqual(self.transport.worker_receipt(self.binding, first['request_id'])['state'], 'rejected')
+        self.draft.write_bytes(original)
+        second = submission.request_control(self.workspace, '.scratch/draft.json', kind='submit_intent', wait_seconds=0)
+        self.assertNotEqual(first['request_id'], second['request_id'])
+        self.transport.pump(self.publish_intent)
+        self.assertEqual(self.transport.worker_receipt(self.binding, second['request_id'])['state'], 'accepted')
+
+    def test_supplied_tool_generates_fresh_sibling_ids_without_publishing(self):
+        identifiers = []
+        before = sorted(str(path.relative_to(self.workspace)) for path in self.workspace.rglob('*'))
+        for _ in range(2):
+            result = subprocess.run([sys.executable, '-B', 'input/tools/check_submission.py',
+                '--new-knowledge-id'], cwd=self.workspace, text=True, capture_output=True, timeout=30)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            identifier = json.loads(result.stdout)['replacement_id']
+            self.assertRegex(identifier, r'^KN-[0-7][0-9A-HJKMNP-TV-Z]{25}$')
+            identifiers.append(identifier)
+        self.assertNotEqual(*identifiers)
+        self.assertIsNone(self.head)
+        self.assertEqual(before, sorted(str(path.relative_to(self.workspace)) for path in self.workspace.rglob('*')))
+
+    def setUp(self):
+        from do_math.control_transport import ControlTransport
+        from do_math.git_store import GitStateStore
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.workspace = self.root / "worker"
+        self.workspace.mkdir()
+        self.repo = self.root / "repo"
+        self.repo.mkdir()
+        subprocess.run(["git", "-C", str(self.repo), "init", "-q"], check=True)
+        self.store = GitStateStore(self.repo, "RI-01ARZ3NDEKTSV4RRFFQ69G5FAV")
+        self.head = None
+        self.transport = ControlTransport(self.root / "delivery")
+        self.binding = self.transport.issue("EX-worker", "GR-worker", workspace=self.workspace)
+        self.context = {"action": {"role": "maintenance", "id": "AC-worker"}, "execution_id": "EX-worker",
+            "control_binding": self.binding, "snapshot": "fixed", "tasks": [], "knowledge_catalog": [],
+            "sources": [], "kind_definitions": {}}
+        self.schema = contracts.schema_for("maintenance")
+        submission.install_tools(self.workspace, self.context, self.schema, None)
+        self.output = {"summary": "Inspect only", "used_sources": [], "questions": [], "report": "Inspected", "remaining_work": []}
+        seal_response(self.output, self.context, self.workspace)
+        self.draft = self.workspace / ".scratch/draft.json"
+        self.draft.parent.mkdir()
+        self.draft.write_bytes(canonical_json(self.output))
+
+    def mcp(self, name, arguments):
+        from do_math.control_transport import ControlTransport
+        server = ControlTransport.mcp_server_config(self.binding)
+        request = {"jsonrpc": "2.0", "id": 1, "method": "tools/call",
+                   "params": {"name": name, "arguments": arguments}}
+        process = subprocess.run([server["command"], *server["args"]],
+            input=json.dumps(request) + "\n", text=True, capture_output=True, timeout=30)
+        self.assertEqual(0, process.returncode, process.stderr)
+        envelope = json.loads(process.stdout)
+        self.assertNotIn("error", envelope)
+        return json.loads(envelope["result"]["content"][0]["text"])
+
+    def publish_intent(self, request):
+        sealed = submission.seal_submission(self.workspace, request["payload"]["draft_path"],
+            execution_id="EX-worker", context=self.context, schema=self.schema, max_artifact_bytes=1024 * 1024)
+        changes = {"runtime/artifacts/" + request["request_id"] + "/" + name: data
+                   for name, data in sealed["artifacts"].items()}
+        if self.head is None:
+            changes["research/transport-fixture.json"] = canonical_json({"scope": "transport evidence only"})
+        changes["runtime/artifacts/" + request["request_id"] + "/receipt-check.json"] = canonical_json(sealed["check"])
+        snapshot = self.store.publish(self.head, changes)
+        self.head = snapshot.head
+        return ({"state": "rejected", "reason": "Draft validation failed", "result": sealed["check"]} if not sealed["passed"] else
+                 {"state": "accepted", "published": True, "snapshot": self.head})
+
+    def test_real_mcp_intent_and_receipt_share_preserved_git_evidence(self):
+        check = submission.producer_check(self.workspace, self.draft)
+        request = {"request_id": "CT-local", "kind": "submit_intent",
+                   "payload": {"draft_path": check["raw_output_path"]}}
+        self.assertEqual("submitted", self.mcp("control_submit", request)["state"])
+        receipts = self.transport.pump(self.publish_intent)
+        self.assertTrue(receipts and all(row["state"] == "accepted" for row in receipts), receipts)
+        receipt = self.mcp("control_receipt", {"request_id": "CT-local", "wait_seconds": 0})
+        self.assertEqual("accepted", receipt["state"])
+        self.assertEqual(self.head, receipt["snapshot"])
+        self.assertEqual(self.draft.read_bytes(), self.store.read_bytes(self.head, "runtime/artifacts/CT-local/output.json"))
+        previous_head = self.head
+        self.transport.pump(lambda _: self.fail("A replay must not publish twice"))
+        self.assertEqual(previous_head, self.head)
+
+    def test_mcp_configuration_preserves_leading_hyphen_tokens(self):
+        from unittest.mock import patch
+        with patch("do_math.control_transport.token_urlsafe", side_effect=["-transport-token", "-capability-token"]):
+            self.binding = self.transport.issue("EX-worker", "GR-worker")
+        result = self.mcp("control_receipt", {"request_id": "CT-not-submitted", "wait_seconds": 0})
+        self.assertIsNone(result)
+
+    def test_submit_draft_mcp_derives_internal_evidence_from_one_path(self):
+        result = self.mcp("submit_draft", {"draft_path": ".scratch/draft.json", "wait_seconds": 0})
+        self.assertEqual({"draft_path": ".scratch/draft.json"},
+                         json.loads(next((self.root / "delivery" / self.binding["transport_id"] / "inbox").glob("*.json")).read_text())["payload"])
+        self.assertEqual("submitted", result["delivery"]["state"])
+        receipt = self.transport.pump(self.publish_intent)[0]
+        self.assertEqual("accepted", receipt["state"])
+
+    def test_installed_submit_command_waits_for_real_central_receipt(self):
+        import time
+        command = [*self.context["submission_contract"]["command"], "--output", str(self.draft), "--submit", "--wait-seconds", "20"]
+        process = subprocess.Popen(command, cwd=self.workspace, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        try:
+            until = time.monotonic() + 25
+            while process.poll() is None and time.monotonic() < until:
+                self.transport.pump(self.publish_intent)
+                time.sleep(.02)
+            stdout, stderr = process.communicate(timeout=5)
+        finally:
+            if process.poll() is None:
+                process.kill()
+                process.communicate()
+        self.assertEqual(0, process.returncode, stderr.decode("utf-8", "replace") + stdout.decode("utf-8", "replace"))
+        result = json.loads(stdout)
+        self.assertEqual("accepted", result["delivery"]["state"])
+        self.assertEqual(self.head, result["delivery"]["snapshot"])
+
+    def test_accepted_submission_is_unchanged_when_original_draft_changes_later(self):
+        check = submission.producer_check(self.workspace, self.draft)
+        original = self.draft.read_bytes()
+        self.mcp("control_submit", {"request_id": "CT-changed", "kind": "submit_intent",
+                                     "payload": {"draft_path": check["raw_output_path"]}})
+        self.transport.pump(self.publish_intent)
+        receipt = self.mcp("control_receipt", {"request_id": "CT-changed", "wait_seconds": 0})
+        self.assertEqual("accepted", receipt["state"])
+        self.draft.write_bytes(canonical_json({"changed": True}))
+        self.assertEqual(original, self.store.read_bytes(self.head,
+            "runtime/artifacts/CT-changed/output.json"))
+
+    def test_invalid_wait_budget_does_not_queue_a_request(self):
+        for budget in (-1, float("nan"), float("inf"), True):
+            with self.subTest(budget=budget), self.assertRaises(ValueError):
+                submission.request_control(self.workspace, ".scratch/draft.json", kind="submit_intent", wait_seconds=budget)
+        self.transport.pump(lambda _: self.fail("Invalid budget queued a request"))
+
+    def test_preview_is_an_explicit_nonpublication_control_request(self):
+        delivery = submission.request_control(self.workspace, ".scratch/draft.json",
+            kind="submission_preview", wait_seconds=0)
+        self.assertEqual("submitted", delivery["state"])
+        # This tests transport semantics only; actual domain preview is tested separately.
+        result = {"contract_id": "do-math-candidate-preview/5", "passed": False, "authoritative": False,
+                  "issues": [{"rule_id": "integration.candidate", "message": "Visible candidate issue"}]}
+        self.transport.pump(lambda request: {"state": "previewed", "result": result})
+        receipt = self.mcp("control_receipt", {"request_id": delivery["request_id"], "wait_seconds": 0})
+        self.assertEqual("previewed", receipt["state"])
+        self.assertEqual(result, receipt["result"])
+        self.assertIsNone(self.head)
 
 
 class ProducerToolTests(purpose.PurposeHarness):
     def test_revoked_original_grant_preserves_late_output_despite_alternative_grant(self):
         from do_math import governance
-        engine, _ = self.make(scholarly_enabled=False)
+        from do_math.engine import control
+        engine, _ = purpose.ActiveStateHarness.make(self, **self.fixture_config(scholarly_enabled=False))
         engine.runtime["queue"] = [{"id": "AC-revoked", "role": "maintenance"}]
         grant = next(value for value in engine.instance["grants"].values() if "maintenance" in value.get("roles", []))
         alternative = {**deepcopy(grant), "id": "ZZ-alternative"}
@@ -25,31 +189,39 @@ class ProducerToolTests(purpose.PurposeHarness):
             def run(inner, **args):
                 args["on_started"]({"pid": 1})
                 execution = next(value for value in engine.runtime["executions"].values() if value["status"] == "running")
-                engine.instance, engine.runtime, _ = governance.apply_decision(engine.instance, engine.runtime,
-                    {"kind": "revoke", "grant_id": execution["grant_id"]}, source_ref="UC-revoke")
-                engine._save()
-                self.assertTrue(governance.authorize(engine.instance, execution["action"])["allowed"])
+                control(self.repo, engine.instance['id'], 'decision', config={'change': {
+                    'kind': 'revoke', 'grant_id': execution['grant_id']}})
                 args["should_stop"]()
+                unbound = {key: value for key, value in execution['action'].items() if key != 'grant_id'}
+                self.assertTrue(governance.authorize(engine.instance, unbound)['allowed'])
                 return {"status": "completed", "output": {**purpose.common("Completed before revocation."),
                     "report": "Preserve the completed portion.", "remaining_work": []}, "usage": {}}
-        engine.runner = Runner()
+        engine.runner = CheckedRunner(Runner())
         engine.run(max_steps=1)
-        execution = next(iter(engine.runtime["executions"].values()))
-        self.assertEqual(execution["outcome"], "execution_incomplete")
-        self.assertIn("grant_revoked", execution["error"])
+        execution = next(e for e in engine.runtime['executions'].values() if e['action']['id'] == 'AC-revoked')
+        self.assertEqual(execution['status'], 'ended')
+        self.assertNotEqual(execution['outcome'], 'output_accepted')
+        self.assertEqual(execution.get('stop_requested'), 'grant_revoked')
+        preserved = json.loads(engine.store.read(execution['result_ref']))
+        self.assertEqual(preserved['output']['report'], 'Preserve the completed portion.')
         self.assertIn("AC-revoked", engine.runtime["waiting_actions"])
 
-    def test_parsed_invalid_runner_output_uses_the_bounded_output_repair_path(self):
-        engine, _ = self.make(scholarly_enabled=False)
+    def test_unsealed_invalid_runner_output_is_preserved_for_operational_review(self):
+        engine, _ = purpose.ActiveStateHarness.make(self, **self.fixture_config(scholarly_enabled=False, max_output_repairs=0))
+        before = set(engine.runtime["executions"])
         class Runner:
             def run(inner, **args):
                 args["on_started"]({"pid": 1})
                 return {"status": "failed", "output": {}, "usage": {}, "error_kind": "output_validation",
                         "error": "output/candidates: required property is missing"}
-        engine.runner = Runner()
+        engine.runner = CheckedRunner(Runner())
         engine.run(max_steps=1)
-        self.assertTrue(any(a.get("repair") for a in engine.runtime["queue"]))
-        self.assertFalse(any(a["role"] == "operational_review" for a in engine.runtime["queue"]))
+        execution = next(value for key, value in engine.runtime["executions"].items() if key not in before)
+        self.assertEqual(execution["outcome"], "execution_incomplete")
+        self.assertIn(execution["action"]["id"], engine.runtime["waiting_actions"])
+        self.assertTrue(any(a["role"] == "operational_review" and a.get("target") == execution["id"]
+                            for a in engine.runtime["queue"]))
+        self.assertFalse(any(a.get("repair") for a in engine.runtime["queue"]))
 
     def test_local_call_timeout_parks_only_the_timed_out_request(self):
         import time
@@ -63,7 +235,7 @@ class ProducerToolTests(purpose.PurposeHarness):
                 time.sleep(1.05)
                 self.assertTrue(args["should_stop"]())
                 return {"status": "stopped", "output": None, "usage": {}, "error": "local call deadline"}
-        engine.runner = Runner()
+        engine.runner = CheckedRunner(Runner())
         engine.run(max_steps=1)
         self.assertNotEqual(engine.runtime["status"], "paused")
         self.assertIn("AC-timeout", engine.runtime["waiting_actions"])
@@ -72,7 +244,8 @@ class ProducerToolTests(purpose.PurposeHarness):
     def test_receiver_rejects_unknown_insight_kind_and_missing_evidence(self):
         for changes in ({"kind": "unregistered_kind"}, {"evidence_ids": ["KN-missing"]}):
             with self.subTest(changes=changes):
-                engine, _ = self.make(scholarly_enabled=False, max_output_repairs=0)
+                engine, _ = purpose.ActiveStateHarness.make(self, **self.fixture_config(scholarly_enabled=False, max_output_repairs=0))
+                before = set(engine.runtime['executions'])
                 output = {**purpose.common("Preserve a candidate."), "candidates": []}
                 insight = {"kind": "question", "title": "Question", "statement": "What remains?",
                            "summary": "An open question.", "evidence_ids": [], **changes}
@@ -81,29 +254,38 @@ class ProducerToolTests(purpose.PurposeHarness):
                         args["on_started"]({"pid": 1})
                         (args["workspace"] / "activity-extensions.json").write_bytes(canonical_json({"research_insights": [insight]}))
                         return {"status": "completed", "output": output, "usage": {}}
-                engine.runner = Runner()
+                engine.runner = CheckedRunner(Runner())
                 engine.run(max_steps=1)
-                execution = next(iter(engine.runtime["executions"].values()))
+                execution = next(e for eid, e in engine.runtime['executions'].items() if eid not in before)
                 self.assertEqual(execution["outcome"], "execution_incomplete")
                 self.assertEqual(engine.instance["knowledge"], {})
-                saved = engine.store.read(f"runtime/artifacts/{execution['artifact_bundle']}/output.json")
+                saved = engine.store.read(execution['submitted_output_ref'])
                 self.assertEqual(json.loads(saved), output)
 
-    def prepare(self, role="research_preparation", **configuration):
-        engine, _ = self.make(scholarly_enabled=False, **configuration)
-        workspace = self.root / (role + "-producer")
-        context = engine._context({"role": role}, workspace)
+    def prepare(self, role="research_preparation", *, context_values=None, **configuration):
+        workspace = self.root / (role + "-producer-" + str(len(list(self.root.glob(role + "-producer-*")))))
+        workspace.mkdir(exist_ok=True)
+        context = {"action": {"id": "AC-producer", "role": role}, "execution_id": "EX-producer",
+            "snapshot": "fixed-producer-input", "budget_unit": "concurrent_sessions",
+            "tasks": [], "ready_task_ids": [], "knowledge_catalog": [], "sources": [],
+            "kind_definitions": knowledge_io.catalog_definitions(knowledge_io.ensure_ontology({}))}
+        context.update(context_values or {})
+        submission.install_tools(workspace, context, contracts.action_schema(context["action"], context["kind_definitions"]),
+                                 configuration.get("max_artifact_bytes"))
         self.assertIn("submission_contract", context,
                       "the producer needs an executable check, fixed inputs and limits")
         self.assertTrue(context["submission_contract"]["command"])
-        return engine, workspace, context
+        return None, workspace, context
 
     def check_output(self, workspace, context, output, extension=None):
+        output = deepcopy(output)
         draft = workspace / ".scratch/submission.json"
         draft.parent.mkdir(exist_ok=True)
-        draft.write_bytes(canonical_json(output))
         if extension is not None:
             (workspace / "activity-extensions.json").write_bytes(canonical_json(extension))
+        if "integration_bundles" not in output:
+            seal_response(output, context, workspace)
+        draft.write_bytes(canonical_json(output))
         command = [*context["submission_contract"]["command"], "--output", str(draft)]
         process = subprocess.run(command, cwd=workspace, capture_output=True, timeout=30)
         self.assertIn(process.returncode, (0, 1), process.stderr.decode("utf-8", "replace"))
@@ -128,11 +310,10 @@ class ProducerToolTests(purpose.PurposeHarness):
 
     def test_reference_support_includes_visible_execution_history_and_supplied_catalogs(self):
         from do_math.context_store import fit_context
-        engine, _ = self.make(scholarly_enabled=False)
-        engine.run(max_steps=1)
-        workspace = self.root / "history-reference-producer"
-        context = engine._context({"role": "research_preparation"}, workspace)
-        previous = context["preparation_history"][0]["execution_id"]
+        previous = "EX-earlier"
+        _, workspace, context = self.prepare(context_values={
+            "preparation_history": [{"execution_id": previous, "report": "Earlier preparation result"}],
+            "goal": "g", "large_optional_evidence": {"text": "x" * 30000}})
         fitted = fit_context(context, max_bytes=20000, workspace=workspace, mandatory_keys=["goal", "action"])
         catalog = next(row["path"] for row in fitted["manifest"] if row["key"] == "kind_definitions")
         for reference in (previous, catalog):
@@ -150,7 +331,7 @@ class ProducerToolTests(purpose.PurposeHarness):
         self.assertIn("missing-proof.txt", json.dumps(result["issues"]))
 
     def test_legacy_live_review_validates_sidecar_before_applying_continue(self):
-        engine, runner = self.make(observation="continue", scholarly_enabled=False)
+        engine, runner = self.make(observation="continue", scholarly_enabled=False, session_limits=None)
         original = runner.answer
         def answer(role, context, workspace):
             if role == "operational_review":
@@ -161,7 +342,10 @@ class ProducerToolTests(purpose.PurposeHarness):
         self.drive(engine, predicate=lambda e: any(x["role"] == "operational_review" and x["status"] == "ended" for x in e.runtime["executions"].values()))
         reviewed = next(x for x in engine.runtime["executions"].values() if x["role"] == "operational_review")
         self.assertEqual(reviewed["outcome"], "execution_incomplete")
-        self.assertNotIn("operational_decision", engine.runtime["observations"][reviewed["parent_execution_id"]])
+        target = engine.runtime["executions"][reviewed["action"]["target"]]
+        self.assertNotIn("operational_continuation", target)
+        self.assertFalse(any(row.get("execution_id") == reviewed["id"]
+                             for row in engine.runtime.get("operational_dispositions", {}).values()))
 
     def test_producer_checks_sidecar_kinds_references_and_self_repair(self):
         _, workspace, context = self.prepare()
@@ -206,22 +390,33 @@ class ProducerToolTests(purpose.PurposeHarness):
         self.assertIn("observation-rules.json", issues)
 
     def test_producer_checks_planning_population_and_exact_completion_criteria(self):
-        engine, _ = self.make(scholarly_enabled=False)
-        engine.run(max_steps=2)
-        workspace = self.root / "plan-producer"
-        context = engine._context({"role": "research_plan"}, workspace)
+        from v5_fixtures import candidate, disposition
+        tid = "TK-ready"
+        task = {**candidate(), "id": tid, "revision": 1, "status": "planned", "results": []}
+        _, workspace, context = self.prepare("research_plan", context_values={"tasks": [task], "ready_task_ids": [tid]})
         self.assertIn("submission_contract", context)
-        tid = next(iter(engine.runtime["tasks"]))
-        output = {**purpose.common("Current population."), "selections": [], "deferred": [],
+        output = {**purpose.common("Current population."), "dispositions": [],
                   "preparation_requests": [], "goal_audit": False, "task_assessments": []}
         result = self.check_output(workspace, context, output)
         self.assertFalse(result["passed"])
-        self.assertIn(tid, json.dumps(result["issues"]))
-        output["selections"] = [tid]
-        self.assertTrue(self.check_output(workspace, context, output)["passed"])
+        self.assertIn("every derived-ready task", json.dumps(result["issues"]))
+        output["dispositions"] = [{**disposition(tid), "uncertainty": ""}]
+        extension = {"model_assessments": [{"task_id": tid, "difficulty": "low", "importance": "low", "reason": "Bounded task"}]}
+        self.assertTrue(self.check_output(workspace, context, output, extension)["passed"])
+        task.update(status="waiting", results=[{"execution_id": "EX-work", "report": "Partial argument"}])
+        _, workspace, context = self.prepare("research_plan", context_values={"tasks": [task], "ready_task_ids": []})
+        output["dispositions"] = []
+        output["task_assessments"] = [{"task_id": tid, "decision": "completed", "reason": "Claimed complete",
+                                       "item_dispositions": [], "unresolved": []}]
+        self.assertFalse(self.check_output(workspace, context, output, {})["passed"])
 
     def test_supplied_checker_is_standalone_and_does_not_mutate_fixed_inputs(self):
+        import zipfile
         _, workspace, context = self.prepare()
+        with zipfile.ZipFile(workspace / "input/tools/submission-support.zip") as archive:
+            self.assertNotIn("do_math/engine.py", archive.namelist())
+            self.assertFalse(any(name.endswith("_engine.py") for name in archive.namelist()))
+            self.assertIn("do_math/record_schemas/__init__.py", archive.namelist())
         before = {p.relative_to(workspace).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
                   for p in (workspace / "input").rglob("*") if p.is_file()}
         self.assertTrue(self.check_output(workspace, context,
@@ -235,34 +430,41 @@ class ProducerToolTests(purpose.PurposeHarness):
 
 
 class OperatorProducerTests(unittest.TestCase):
-    def test_independent_operator_receives_a_working_submission_check(self):
-        import tempfile
+    def test_failure_recovery_preserves_a_structured_nonresearch_report(self):
         from unittest.mock import patch
         from do_math import scheduled_operator as operator
+        fixture = purpose.PurposeHarness()
+        fixture.setUp()
+        self.addCleanup(fixture.tearDown)
+        engine, _ = fixture.make(scholarly_enabled=False, operator_enabled=True)
         observed = []
         class Runner:
+            @local_job_runner
             def run(inner, **args):
-                context_path = args["workspace"] / "input/submission/context.json"
-                self.assertTrue(context_path.is_file(), "independent operator has no supplied producer check")
-                context = json.loads(context_path.read_bytes())
+                args["on_started"]()
+                self.assertEqual(args["output_schema"], operator.OPERATOR_SCHEMA)
+                self.assertIn("Synthetic launcher failure", args["prompt"])
+                self.assertFalse((args["workspace"] / "input/submission/context.json").exists(),
+                                 "installation recovery must not acquire the research submission path")
                 output = {"summary": "Observed current status.", "observed_status": "ready", "actions": [],
                           "evidence_paths": [], "user_questions": [], "next_step": "Return the recorded observation."}
-                draft = args["workspace"] / "submission.json"
-                draft.write_bytes(canonical_json(output))
-                result = subprocess.run([*context["submission_contract"]["command"], "--output", str(draft)],
-                                        cwd=args["workspace"], capture_output=True, timeout=30)
-                self.assertEqual(result.returncode, 0, result.stdout.decode("utf-8", "replace"))
-                observed.append(json.loads(result.stdout))
-                return {"status": "completed", "output": output, "usage": {}}
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            with patch.object(operator, "read_status", return_value={"status": "ready", "snapshot": "fixed", "user_pause": None}), \
-                 patch.object(operator, "ResearchRepository") as repository, \
-                 patch.object(operator, "ModelRunner", Runner):
-                repository.return_value.load.return_value = ("fixed", {"config": {"scholarly_enabled": False}}, {})
-                result = operator.check(root, "instance", root, probe=True)
-            self.assertEqual(result["outcome"], "completed", result)
-            self.assertEqual(len(observed), 1)
+                observed.append(output)
+                # ModelRunner owns schema validation; this fixture reports the
+                # corresponding failed execution without granting repair success.
+                return {"status": "failed", "output": output, "usage": {}, "error_kind": "output_validation",
+                        "error": "Scripted diagnosis remains incomplete"}
+        with patch.object(operator, "ModelRunner", Runner):
+            result = operator.recovery(fixture.repo, engine.instance["id"], fixture.root,
+                failure={"kind": "engine_unavailable", "error": "Synthetic launcher failure"})
+        self.assertEqual(result["outcome"], "recovery_failed", result)
+        self.assertEqual(len(observed), 1)
+        _, state, runtime = operator.ResearchRepository(fixture.repo, engine.instance["id"]).load()
+        execution = runtime["executions"][result["execution_id"]]
+        self.assertEqual(execution["output"], observed[0])
+        self.assertEqual(execution["outcome"], "execution_incomplete")
+        self.assertNotIn("submission_receipt", execution)
+        self.assertEqual(runtime["activities"][execution["owner_activity_id"]]["waiting"]["reason"], "recovery_failed")
+        self.assertEqual(state["knowledge"], engine.instance["knowledge"])
 
 
 class ReviewFailureTests(purpose.PurposeHarness):
@@ -274,7 +476,7 @@ class ReviewFailureTests(purpose.PurposeHarness):
             def run(inner, **args):
                 args["on_started"]({"pid": 1})
                 return {"status": "failed", "output": None, "usage": {}, "error": "reviewer unavailable"}
-        engine.runner = Runner()
+        engine.runner = CheckedRunner(Runner())
         engine.run(max_steps=1)
         self.assertTrue(any(e["action"].get("target") == task_id for e in engine.runtime["waiting_actions"].values()))
         self.assertFalse(any(a["role"] == "task_contract_review" and a.get("target") == task_id for a in engine.runtime["queue"]))
@@ -291,7 +493,10 @@ class ReviewFailureTests(purpose.PurposeHarness):
             return original_run(**args)
         def answer(role, context, workspace):
             if role == "operational_review":
-                return {**purpose.common("Preserved failure needs repair."), "decision": "wait", "reason": "Repair the execution environment."}
+                return {**purpose.common("Preserved failure needs repair."), "disposition": {
+                    "kind": "repair", "basis_refs": [context["action"]["target"]], "next_owner": "operations",
+                    "reason": "Repair the execution environment.", "repair_target": "execution environment",
+                    "meaning_preserving": True, "verification": "Repeat the failed environment check"}}
             return original_answer(role, context, workspace)
         runner.run, runner.answer = run, answer
         engine.run(max_steps=3)
@@ -300,7 +505,7 @@ class ReviewFailureTests(purpose.PurposeHarness):
 
     def test_explicit_diagnosis_can_open_one_new_attempt_after_an_exhausted_retry(self):
         from do_math.engine import control
-        engine, _ = self.make(scholarly_enabled=False)
+        engine, _ = purpose.ActiveStateHarness.make(self, **self.fixture_config(scholarly_enabled=False))
         engine.runtime["queue"] = [{"id": "AC-failed", "role": "maintenance", "recovery_attempt": 1}]
         engine._save()
         class Runner:
@@ -310,39 +515,29 @@ class ReviewFailureTests(purpose.PurposeHarness):
                 if context["action"]["role"] == "maintenance":
                     return {"status": "failed", "output": None, "usage": {}, "error": "configuration failure"}
                 return {"status": "completed", "usage": {}, "output": {
-                    **purpose.common("The explicit repair diagnosis is complete."), "decision": "retry",
-                    "reason": "The independent operator repaired the execution configuration and requested this diagnosis."}}
-        engine.runner = Runner()
+                    **purpose.common("The explicit repair diagnosis is complete."), "disposition": {
+                        "kind": "retry", "basis_refs": [context["action"]["target"]], "next_owner": "engine",
+                        "reason": "The independent operator repaired the execution configuration and requested this diagnosis.",
+                        "scope": "One new attempt of the failed action", "replay_safety": "The failed local action produced no external effects"}}}
+        engine.runner = CheckedRunner(Runner())
         engine.run(max_steps=1)
-        failed = next(iter(engine.runtime["executions"]))
+        failed = next(eid for eid, e in engine.runtime['executions'].items() if e['action']['id'] == 'AC-failed')
         control(self.repo, engine.instance["id"], "request", origin="operator", config={"role": "operational_review", "target": failed},
                 text="Inspect the repaired execution configuration before one new attempt.")
         engine.process_controls()
+        diagnosis = next(a for a in engine.runtime['queue'] if a['role'] == 'operational_review' and a.get('target') == failed)
+        engine.runtime['queue'] = [diagnosis]
+        engine._save()
         engine.run(max_steps=1)
         retries = [a for a in engine.runtime["queue"] if a["role"] == "maintenance"]
         self.assertEqual(len(retries), 1)
-        self.assertNotEqual(retries[0]["id"], "AC-failed")
+        self.assertEqual(retries[0]["id"], "AC-failed")
+        self.assertEqual(retries[0]['continuation_of'], failed)
         self.assertEqual(retries[0]["recovery_attempt"], 1)
 
-    def test_late_contract_review_cannot_reopen_a_user_closed_task(self):
-        from do_math.engine import control
-        engine, runner = self.make(scholarly_enabled=False)
-        engine.run(max_steps=1)
-        original = runner.run
-        def run(**args):
-            result = original(**args)
-            context = purpose.parse_context(args["prompt"], args["workspace"])
-            control(self.repo, engine.instance["id"], "decision", config={"change": {
-                "kind": "task_scope", "task_id": context["task"]["id"], "disposition": "withdraw", "reason": "Withdraw this task."}})
-            args["should_stop"]()
-            return result
-        runner.run = run
-        engine.run(max_steps=1)
-        task = next(iter(engine.runtime["tasks"].values()))
-        self.assertEqual(task["status"], "closed")
-        review = next(e for e in engine.runtime["executions"].values() if e["role"] == "task_contract_review")
-        self.assertNotEqual(review["outcome"], "output_accepted")
-        self.assertFalse(any(a.get("target") == task["id"] for a in engine.runtime["queue"]))
+    # v5 task_scope decisions authorize named obligations; they do not directly
+    # withdraw a live task. test_task_scope's live/terminal withdrawal regression
+    # covers both research_work and task_contract_review at the owning boundary.
 
     def test_late_identity_result_is_preserved_without_retrying_a_superseded_slot(self):
         from do_math.engine import control
@@ -353,8 +548,12 @@ class ReviewFailureTests(purpose.PurposeHarness):
         def run(**args):
             result = original(**args)
             context = purpose.parse_context(args["prompt"], args["workspace"])
+            from do_math.knowledge import plan_impact, revision_roots
+            changes = {'explanation': 'A replacement explanation of the same domain.'}
+            roots = revision_roots(engine.instance, context['action']['target'], changes)
             control(self.repo, engine.instance["id"], "knowledge", config={"operation": "revise", "id": context["action"]["target"],
-                "changes": {"explanation": "A replacement explanation of the same domain."}, "reason": "Revise the sealed proposal."})
+                'changes': changes, 'declared_impact': plan_impact(engine.instance, engine.runtime, roots, [])['computed_impact'],
+                "reason": "Revise the sealed proposal."})
             args["should_stop"]()
             return result
         runner.run = run
@@ -362,7 +561,7 @@ class ReviewFailureTests(purpose.PurposeHarness):
         self.assertFalse(any(a.get("review_cycle_id") == cid for a in engine.runtime["queue"]))
         review = next(e for e in engine.runtime["executions"].values() if e["role"] == "identity_review")
         self.assertNotEqual(review["outcome"], "output_accepted")
-        self.assertIsNotNone(engine.store.read(f"runtime/artifacts/{review['artifact_bundle']}/output.json"))
+        self.assertIsNotNone(engine.store.read(review['submission_intent']['output_ref']))
 
     def test_large_own_review_history_does_not_request_mathematical_reconstruction(self):
         from do_math.review_cycle import record_turn
@@ -413,39 +612,47 @@ class ReviewFailureTests(purpose.PurposeHarness):
         kid = next(iter(engine.instance["knowledge"]))
         engine.runtime["queue"] = [a for a in engine.runtime["queue"] if a["role"] == "research_preparation"]
         engine._save()
-        original = runner.run
-        def run(**args):
-            context = purpose.parse_context(args["prompt"], args["workspace"])
-            result = original(**args)
+        original_run, original_answer = runner.run, runner.answer
+        def answer(role, context, workspace):
             action = context["action"]
-            if action["role"] == "identity_review" and action["stage"] == "initial":
-                if action["slot"] == "initial-0":
-                    (args["workspace"] / "activity-extensions.json").write_bytes(canonical_json({"research_insights": [{
-                        "kind": "question", "title": "Private followup", "statement": "What follows from the old computation?",
-                        "summary": "A possible followup.", "evidence_ids": [kid]}]}))
-                else:
-                    control(self.repo, engine.instance["id"], "knowledge", config={"operation": "revise", "id": kid,
-                        "changes": {"statement": "The corrected answer is two."}, "reason": "Correct a computation."})
-                    args["should_stop"]()
+            if role == 'identity_review' and action.get('stage') == 'initial' and action.get('slot') == 'initial-0':
+                (workspace / 'activity-extensions.json').write_bytes(canonical_json({'research_insights': [{
+                    'kind': 'question', 'title': 'Private followup', 'statement': 'What follows from the old computation?',
+                    'summary': 'A possible followup.', 'evidence_ids': [kid]}]}))
+            return original_answer(role, context, workspace)
+        def run(**args):
+            context = purpose.parse_context(args['prompt'], args['workspace'])
+            result = original_run(**args)
+            action = context['action']
+            if action['role'] == 'identity_review' and action.get('stage') == 'initial' and action.get('slot') == 'initial-1':
+                from do_math.knowledge import plan_impact, revision_roots
+                changes = {'statement': 'The corrected answer is two.'}
+                roots = revision_roots(engine.instance, kid, changes)
+                control(self.repo, engine.instance['id'], 'knowledge', config={'operation': 'revise', 'id': kid,
+                    'changes': changes, 'declared_impact': plan_impact(engine.instance, engine.runtime, roots, [])['computed_impact'],
+                    'reason': 'Correct a computation.'})
+                args['should_stop']()
             return result
-        runner.run = run
+        runner.run, runner.answer = run, answer
         self.drive(engine, predicate=lambda e: any(k["title"] == "Private followup" for k in e.instance["knowledge"].values()))
         insight = next(k for k in engine.instance["knowledge"].values() if k["title"] == "Private followup")
         self.assertTrue(insight.get("use_suspended", False))
-        self.assertEqual(insight["status"], "candidate")
+        self.assertEqual(insight["lifecycle"], "active")
+        from do_math.knowledge import assess_use
+        self.assertFalse(assess_use(insight, engine.instance)["valid"])
         self.assertEqual(insight["dependencies"], [kid])
 
     def test_exhausted_investigation_returns_incomplete_to_its_waiting_review_slot(self):
-        from test_review_research import InvestigationRunner, signed_formal_fixture
+        from test_review_research import InvestigationRunner, signed_formal_fixture, ReviewResearchEngineTests
         from do_math.review_cycle import next_actions
-        engine, _ = self.make(scholarly_enabled=False)
+        engine, _ = ReviewResearchEngineTests.make_research(self, scholarly_enabled=False)
         class Runner(InvestigationRunner):
             def run(inner, **args):
                 if "role: supplemental_research." in args["prompt"]:
                     args["on_started"]({"pid": 1})
                     return {"status": "failed", "output": None, "usage": {}, "error": "diagnosed investigation failed"}
                 return super().run(**args)
-        engine.runner = Runner()
+        engine.runner = CheckedRunner(Runner())
         engine.formal_verifier = signed_formal_fixture
         self.drive(engine, predicate=lambda e: any(a["role"] == "supplemental_research" for a in e.runtime["queue"]))
         request = next(a for a in engine.runtime["queue"] if a["role"] == "supplemental_research")

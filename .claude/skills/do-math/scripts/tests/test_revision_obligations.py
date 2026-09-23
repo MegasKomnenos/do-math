@@ -1,200 +1,130 @@
-"""Revision ownership survives work delegation, failure and a new preparer."""
+"""Actual TASKS mixins retain revision ownership through delegation and retry.
+
+The harness supplies only queue storage; no provider or Git behavior is mocked as
+an end-to-end result. Central dispatch/serialization remains the MAIN regression.
+"""
 from copy import deepcopy
 from pathlib import Path
 import sys
-import threading
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from do_math import planning, revisions
-from do_math.repository import canonical_json
-from do_math.input_basis import capture_decision_basis
-from do_math.model_policy import LIMITS
-from test_engine import common as role_output, contract_checks
-from test_purpose_engine import PurposeHarness, candidate, common, parse_context
+import unittest
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
+from do_math import planning,revisions
+from do_math.revision_engine import RevisionEngineMixin
+from do_math.decision_engine import DecisionEngineMixin
+from test_redesign_TASKS import approved_fixture,approve,disposition
 
 
-class RevisionObligationTests(PurposeHarness):
-    def test_a_closed_target_does_not_erase_other_targets_in_the_same_request(self):
-        engine, _ = self.make(operator_enabled=False, scholarly_enabled=False)
-        engine.runtime['queue'] = []
-        for identifier in ('A', 'B'):
-            engine.runtime['tasks'][identifier] = {**candidate(identifier, formal=False), 'id': identifier,
-                'revision': 1, 'status': 'planned', 'results': [], 'reviews': [], 'producer_execution': 'prior'}
-        engine._enqueue('research_preparation', revision_targets=revisions.capture_targets(engine.instance, engine.runtime, ['A', 'B']))
-        action = engine.runtime['queue'][0]
-        engine.runtime['tasks']['A']['status'] = 'closed'
-        engine._retire_closed_revision_targets()
-        self.assertEqual(set(action['revision_targets']), {'B'})
-        self.assertEqual(engine.runtime['queue'], [action])
+class OwnerHarness(RevisionEngineMixin,DecisionEngineMixin):
+    def __init__(self):
+        task,self.instance,self.runtime=approved_fixture()
+        self.runtime['waiting_actions']={}
+        self.counter=0
 
-    def test_a_merged_new_request_survives_when_all_revision_targets_close(self):
-        engine, _ = self.make(operator_enabled=False, scholarly_enabled=False)
-        engine.runtime['queue'] = []
-        engine.runtime['tasks']['A'] = {**candidate('A', formal=False), 'id': 'A',
-            'revision': 1, 'status': 'planned', 'results': [], 'reviews': [], 'producer_execution': 'prior'}
-        engine._enqueue('research_preparation', reason='Revise A', revision_targets=revisions.capture_targets(engine.instance, engine.runtime, ['A']))
-        engine._enqueue('research_preparation', reason='Author a new task')
-        action = engine.runtime['queue'][0]
-        engine.runtime['tasks']['A']['status'] = 'closed'
-        engine._retire_closed_revision_targets()
-        self.assertEqual(engine.runtime['queue'], [action])
-        self.assertEqual(action['revision_targets'], {})
-        self.assertIn('Author a new task', action['reason'])
-        engine.runtime['queue'] = []
-        engine.runtime['tasks']['C'] = {**candidate('C', formal=False), 'id': 'C',
-            'revision': 1, 'status': 'planned', 'results': [], 'reviews': [], 'producer_execution': 'prior'}
-        engine._enqueue('research_preparation', reason='Revise C', revision_targets=revisions.capture_targets(engine.instance, engine.runtime, ['C']))
-        engine._enqueue('research_preparation', reason='Revise C again', revision_targets=revisions.capture_targets(engine.instance, engine.runtime, ['C']))
-        engine.runtime['tasks']['C']['status'] = 'closed'
-        engine._retire_closed_revision_targets()
-        self.assertEqual(engine.runtime['queue'], [])
+    def _remove_action(self,action):
+        self.runtime['queue'][:]=[a for a in self.runtime['queue'] if a.get('id')!=action.get('id')]
 
-    def test_revision_blocks_its_consumer_but_independent_work_overlaps(self):
-        engine, _ = self.make(operator_enabled=False, scholarly_enabled=False, session_limits=deepcopy(LIMITS))
-        engine.runtime['queue'] = []
-        rating = {'difficulty': 'medium', 'importance': 'medium', 'reason': 'Bounded fixture contract.'}
-        for identifier in ('A', 'B', 'C'):
-            task = {**candidate(identifier, formal=False), 'id': identifier, 'revision': 1, 'feature_version': 2,
-                'status': 'ready' if identifier == 'A' else 'performing', 'results': [], 'reviews': [],
-                'producer_execution': 'prior-author', 'dependencies': [], 'occurrence_condition': {'op': 'always'},
-                'model_assessment': deepcopy(rating), 'initial_observation_rules': []}
-            if identifier == 'B':
-                task['inputs'] = ['A']
-            engine.runtime['tasks'][identifier] = task
-        for identifier, task in engine.runtime['tasks'].items():
-            task['reviews'] = [{'id': 'review-' + identifier, 'revision': 1, 'decision': 'approved',
-                'contract_sha256': planning.contract_hash(task), 'goal_revision': 1, 'policy_revision': 1,
-                'decision_basis': capture_decision_basis(engine.instance, engine.runtime, [identifier, *task['inputs']])}]
-        engine._enqueue('research_work', 'B')
-        engine._enqueue('research_work', 'C')
-        engine._enqueue('research_preparation', 'A', reason='Revise A before B uses it')
-        writer_started, independent_started = threading.Event(), threading.Event()
-        calls = []
-        class Runner:
-            def run(inner, **args):
-                context = parse_context(args['prompt'], args['workspace'])
-                action = context['action']
-                calls.append((action['role'], action.get('target')))
-                args['on_started']({'fixture': True})
-                if action['role'] == 'research_preparation':
-                    writer_started.set()
-                    if not independent_started.wait(15):
-                        raise AssertionError('Independent C did not overlap the writer')
-                    revised = candidate('A', formal=False, revises='A')
-                    revised['scope'] = 'The revised supplied premise.'
-                    (args['workspace'] / 'activity-extensions.json').write_bytes(canonical_json({
-                        'model_assessments': [{'task_title': 'A', **rating}], 'contract_checks': contract_checks([revised]),
-                        'revision_resolutions': [{'record_id': 'A', 'disposition': 'revised', 'reason': 'Premise updated.'}]}))
-                    return {'status': 'completed', 'output': {**common('Revised A.'), 'candidates': [revised]}, 'usage': {}}
-                self.assertEqual(action['target'], 'C', 'Dependent B started before A was revised')
-                independent_started.set()
-                if not writer_started.wait(15):
-                    raise AssertionError('Writer could not run alongside independent C')
-                output = role_output('research_work')
-                output.update(outcome='submitted', report='Independent C finished.', checkpoint='done')
-                return {'status': 'completed', 'output': output, 'usage': {}}
-        engine.runner = Runner()
-        engine._save()
-        engine.run(max_steps=2)
-        self.assertEqual(set(calls), {('research_preparation', 'A'), ('research_work', 'C')})
-        self.assertEqual(engine.runtime['tasks']['A']['revision'], 2)
-        b = engine.runtime['tasks']['B']
-        self.assertFalse(planning.contract_review_current(b['reviews'][0], b, engine.instance, engine.runtime)['valid'])
-        self.assertEqual(sum(row['outcome'] == 'output_accepted' for row in engine.runtime['executions'].values()), 2)
-        self.assertEqual(sum(cell['used'] for pool in engine.status()['budget'].values() for cell in pool.values()), 0)
-
-    def prepare(self):
-        engine, _ = self.make(operator_enabled=False, scholarly_enabled=False)
-        engine.runtime['queue'] = []
-        engine.instance['knowledge']['KN-source'] = {'id': 'KN-source', 'revision': 1, 'kind': 'observation',
-            'title': 'Source to correct', 'statement': 'old', 'summary': 'old', 'explanation': 'old',
-            'lean_code': '', 'declaration_names': [], 'dependencies': [], 'status': 'candidate', 'reviews': []}
-        engine._enqueue('research_preparation', reason='Correct the supplied source',
-            revision_targets=revisions.capture_targets(engine.instance, engine.runtime, ['KN-source']))
-        parent_id = engine.runtime['queue'][0]['id']
-        calls = []
-        class Runner:
-            def run(inner, **args):
-                args['on_started']({'fixture': True})
-                context = parse_context(args['prompt'], args['workspace'])
-                calls.append(context)
-                role = context['action']['role']
-                extensions = {}
-                if role == 'research_preparation':
-                    task = candidate('Correct source', formal=False, refs=['KN-source'])
-                    task['reuse'] = []
-                    output = {**common('Delegate the actual research to work budget.'), 'candidates': [task]}
-                    extensions = {'task_conditions': [{'task_title': task['title'], 'knowledge_revision_targets': ['KN-source']}],
-                        'revision_resolutions': [{'record_id': 'KN-source', 'disposition': 'delegated',
-                                                 'task_title': task['title'], 'reason': 'Work must establish the replacement.'}]}
-                elif role == 'task_contract_review':
-                    output = {**common('This is a bounded correction of supplied material.'), 'decision': 'approved', 'findings': []}
-                elif role == 'research_plan':
-                    output = {**common('Select the approved correction.'), 'selections': context['ready_task_ids'],
-                        'deferred': [], 'preparation_requests': [], 'goal_audit': False, 'task_assessments': []}
-                else:
-                    self.assertEqual(role, 'research_work')
-                    self.assertIn('KN-source', context['action']['revision_targets'])
-                    output = {**common('Authored the replacement.'), 'outcome': 'submitted', 'report': 'The replacement is established.',
-                        'knowledge': [], 'relations': [], 'remaining_work': [], 'checkpoint': 'Replacement submitted.'}
-                    extensions = {'knowledge_changes': [{'id': 'KN-source', 'changes': {'statement': 'new'}, 'reason': 'Established correction.'}],
-                        'revision_resolutions': [{'record_id': 'KN-source', 'disposition': 'revised', 'reason': 'The declared correction is authored.'}]}
-                if extensions:
-                    (args['workspace'] / 'activity-extensions.json').write_bytes(canonical_json(extensions))
-                return {'status': 'completed', 'output': output, 'usage': {}}
-        engine.runner = Runner()
-        engine._save()
-        return engine, parent_id, calls
-
-    def test_delegated_work_and_its_review_do_not_block_on_their_own_obligation(self):
-        engine, parent_id, calls = self.prepare()
-        engine.run(max_steps=1)
-        entry = engine.runtime['waiting_actions'][parent_id]
-        self.assertEqual(entry['kind'], 'revision_dependency')
-        task = engine.runtime['tasks'][entry['delegated_targets']['KN-source']]
-        review = next(action for action in engine.runtime['queue'] if action['role'] == 'task_contract_review')
-        self.assertEqual(planning.revision_waits(review, engine.instance, engine.runtime), [])
-        for _ in range(3):
-            engine.run(max_steps=1)
-        self.assertEqual([context['action']['role'] for context in calls],
-            ['research_preparation', 'task_contract_review', 'research_plan', 'research_work'])
-        self.assertEqual(engine.instance['knowledge']['KN-source']['statement'], 'new')
-        self.assertNotIn(parent_id, engine.runtime['waiting_actions'])
-        self.assertEqual(engine.runtime['tasks'][task['id']]['status'], 'assessing')
-
-    def test_maintenance_reads_the_revision_queue_it_is_asked_to_check(self):
-        engine, _ = self.make(operator_enabled=False, scholarly_enabled=False)
-        engine.runtime['queue'] = []
-        engine.runtime['tasks']['A'] = {**candidate('A', formal=False), 'id': 'A',
-            'revision': 1, 'status': 'planned', 'results': [], 'reviews': [], 'producer_execution': 'prior'}
-        engine._enqueue('research_preparation', reason='Revise A', revision_targets=revisions.capture_targets(engine.instance, engine.runtime, ['A']))
-        context = engine._context({'id': 'AC-check', 'role': 'maintenance', 'reason': 'Check the revision queue'}, self.root / 'maintenance')
-        self.assertEqual([(row['state'], set(row['action']['revision_targets'])) for row in context['pending_revisions']], [('queued', {'A'})])
-        self.assertEqual(context['revision_cycles'], [])
-        self.assertEqual(context['blocked_actions'], [])
-
-    def test_closed_delegate_keeps_the_obligation_and_a_new_request_can_adopt_it(self):
-        engine, parent_id, _ = self.prepare()
-        engine.run(max_steps=1)
-        entry = engine.runtime['waiting_actions'][parent_id]
-        task_id = entry['delegated_targets']['KN-source']
-        engine.runtime['waiting_actions']['failed-child'] = {'kind': 'execution_failure', 'execution_id': 'failed-execution',
-            'action': {'id': 'failed-child', 'role': 'research_work', 'target': task_id,
-                       'revision_targets': revisions.capture_targets(engine.instance, engine.runtime, ['KN-source'])}}
-        engine.runtime['tasks'][task_id]['status'] = 'closed'
-        engine.runtime['queue'] = []
-        engine._refresh_readiness()
-        self.assertNotIn('failed-child', engine.runtime['waiting_actions'])
-        self.assertIn('KN-source', entry['revision_targets'])
-        self.assertFalse(entry['delegated_targets'])
-        engine._enqueue('research_preparation', reason='Assign the remaining correction again',
-            revision_targets=revisions.capture_targets(engine.instance, engine.runtime, ['KN-source']))
-        next_request = next(action for action in engine.runtime['queue'] if action['role'] == 'research_preparation')
-        self.assertIn(parent_id, next_request['revision_parent_ids'])
-        self.assertEqual(planning.revision_waits(next_request, engine.instance, engine.runtime), [])
-        self.assertEqual(planning.revision_cycles(engine.instance, engine.runtime), [])
+    def _enqueue(self,role,target=None,**fields):
+        self.counter+=1
+        action={'id':'AC-'+str(self.counter),'role':role,**fields}
+        if target:action['target']=target
+        self._bind_revision_action(action)
+        self.runtime['queue'].append(action)
+        return action
 
 
-if __name__ == '__main__':
-    import unittest
-    unittest.main()
+class RevisionObligationTests(unittest.TestCase):
+    def test_closed_target_does_not_erase_other_targets_or_merged_new_request(self):
+        h=OwnerHarness();other=deepcopy(h.runtime['tasks']['TK-1']);other['id']='TK-2'
+        h.runtime['tasks']['TK-2']=other
+        a=h._enqueue('research_preparation',revision_targets=revisions.capture_targets(h.instance,h.runtime,['TK-1','TK-2']))
+        h.runtime['tasks']['TK-1']['status']='closed';h._retire_closed_revision_targets()
+        self.assertEqual(set(a['revision_targets']),{'TK-2'})
+        a['unbound_request']=True
+        h.runtime['tasks']['TK-2']['status']='closed';h._retire_closed_revision_targets()
+        self.assertEqual(h.runtime['queue'],[a]);self.assertEqual(a['revision_targets'],{})
+        a['revision_targets']={'TK-2':{}};a['unbound_request']=False
+        h._retire_closed_revision_targets();self.assertEqual(h.runtime['queue'],[])
+
+    def test_revision_blocks_consumer_but_independent_work_can_overlap(self):
+        h=OwnerHarness();a=h.runtime['tasks']['TK-1']
+        b=deepcopy(a);b.update(id='TK-B',inputs=['TK-1'],reviews=[]);h.runtime['tasks']['TK-B']=b
+        c=deepcopy(a);c.update(id='TK-C',reviews=[]);h.runtime['tasks']['TK-C']=c
+        writer=h._enqueue('research_preparation','TK-1')
+        read={'id':'AC-B','role':'research_work','target':'TK-B'}
+        independent={'id':'AC-C','role':'research_work','target':'TK-C'}
+        self.assertTrue(planning.revision_waits(read,h.instance,h.runtime))
+        self.assertEqual(planning.revision_waits(independent,h.instance,h.runtime),[])
+        h.runtime['executions']['EX-reader']={'id':'EX-reader','status':'running','action':read}
+        self.assertTrue(planning.revision_waits(writer,h.instance,h.runtime))
+        h.runtime['executions']['EX-reader']['status']='ended'
+        self.assertEqual(planning.revision_waits(writer,h.instance,h.runtime),[])
+
+    def delegated(self):
+        h=OwnerHarness();h.instance['knowledge']={'KN-source':{'id':'KN-source','revision':1,'statement':'old'}}
+        parent=h._enqueue('research_preparation',revision_targets=revisions.capture_targets(h.instance,h.runtime,['KN-source'],required=True))
+        task=h.runtime['tasks']['TK-1'];task.update(title='Correct source',producer_execution='EX-prep',knowledge_revision_targets=['KN-source'])
+        h.runtime['executions']['EX-prep']={'id':'EX-prep','role':'research_preparation','status':'ended',
+            'extensions':{'revision_resolutions':[{'record_id':'KN-source','disposition':'delegated','task_title':'Correct source','reason':'research replacement'}]}}
+        h._apply_revision_followup(parent,{'summary':'delegate research'},'EX-prep');h._remove_action(parent)
+        return h,parent
+
+    def test_delegated_work_and_review_do_not_block_on_own_obligation(self):
+        h,parent=self.delegated();entry=h.runtime['waiting_actions'][parent['id']]
+        self.assertEqual(entry['delegated_targets'],{'KN-source':'TK-1'})
+        review={'id':'AC-review','role':'task_contract_review','target':'TK-1'}
+        self.assertEqual(planning.revision_waits(review,h.instance,h.runtime),[])
+        work=h._enqueue('research_work','TK-1')
+        self.assertIn('KN-source',work['revision_targets'])
+        self.assertEqual(planning.revision_waits(work,h.instance,h.runtime),[])
+        h.runtime['executions']['EX-work']={'id':'EX-work','role':'research_work','status':'ended','extensions':{
+            'knowledge_changes':[{'id':'KN-source'}],
+            'revision_resolutions':[{'record_id':'KN-source','disposition':'revised','reason':'authored correction'}]}}
+        h.instance['knowledge']['KN-source']['revision']=2
+        h._apply_revision_followup(work,{'summary':'correction','outcome':'submitted'},'EX-work')
+        self.assertNotIn(parent['id'],h.runtime['waiting_actions'])
+        self.assertEqual(h.runtime['tasks']['TK-1']['status'],'waiting')
+        self.assertEqual(h.runtime['tasks']['TK-1']['waiting']['next_owner'],'research_plan')
+
+    def test_maintenance_can_read_pending_revisions_and_cycles(self):
+        h,parent=self.delegated()
+        maintenance={'role':'maintenance','id':'AC-check','target':'KN-source'}
+        self.assertEqual(planning.revision_waits(maintenance,h.instance,h.runtime),[])
+        self.assertEqual([(row['state'],set(row['action']['revision_targets'])) for row in planning.pending_revisions(h.runtime)],[('waiting',{'KN-source'})])
+        self.assertEqual(planning.revision_cycles(h.instance,h.runtime),[])
+
+    def test_closed_delegate_keeps_obligation_for_new_preparer(self):
+        h,parent=self.delegated();h.runtime['tasks']['TK-1']['status']='closed';h.runtime['queue']=[]
+        h.runtime['waiting_actions']['failed-child']={'kind':'execution_failure','action':{
+            'id':'failed-child','role':'research_work','target':'TK-1','revision_targets':revisions.capture_targets(h.instance,h.runtime,['KN-source'])}}
+        h._retire_closed_revision_targets();h._reconcile_revision_delegations()
+        self.assertNotIn('failed-child',h.runtime['waiting_actions'])
+        entry=h.runtime['waiting_actions'][parent['id']]
+        self.assertEqual(set(entry['revision_targets']),{'KN-source'});self.assertFalse(entry['delegated_targets'])
+        new=h._enqueue('research_preparation',revision_targets=revisions.capture_targets(h.instance,h.runtime,['KN-source']))
+        self.assertIn(parent['id'],new['revision_parent_ids'])
+        self.assertEqual(planning.revision_waits(new,h.instance,h.runtime),[])
+        self.assertEqual(planning.revision_cycles(h.instance,h.runtime),[])
+
+    def test_plan_selection_and_predispatch_use_actual_current_input(self):
+        h=OwnerHarness();h.runtime['executions']['EX-plan']={'id':'EX-plan','role':'research_plan','status':'ended'}
+        plan={'dispositions':[disposition('TK-1')],'task_assessments':[],'preparation_requests':[]}
+        h._apply_task_plan(plan,'EX-plan',deepcopy(h.runtime['tasks']),['TK-1'])
+        action=next(a for a in h.runtime['queue'] if a['role']=='research_work')
+        self.assertTrue(h._selected_action_current(action))
+        h.instance['sources'][0]['sha256']='b'*64
+        self.assertFalse(h._selected_action_current(action))
+        self.assertFalse(any(a['role']=='research_work' for a in h.runtime['queue']))
+        self.assertTrue(any(a['role']=='research_plan' for a in h.runtime['queue']))
+
+    def test_revision_cannot_omit_target_or_cancel_required_repair_as_unchanged(self):
+        h=OwnerHarness();task=h.runtime['tasks']['TK-1']
+        action={'role':'research_preparation','revision_targets':revisions.capture_targets(h.instance,h.runtime,['TK-1'],required=True)}
+        context={'action':action,'tasks':[task]}
+        self.assertTrue(revisions.submission_errors({}, {},context))
+        extension={'revision_resolutions':[{'record_id':'TK-1','disposition':'unchanged','reason':'skip'}]}
+        self.assertTrue(revisions.submission_errors({},extension,context))
+        extension['revision_resolutions'][0]['disposition']='revised'
+        self.assertEqual(revisions.submission_errors({'candidates':[{'title':'revision','revises_task_id':'TK-1'}]},extension,context),[])
+
+
+if __name__=='__main__':unittest.main(verbosity=2)

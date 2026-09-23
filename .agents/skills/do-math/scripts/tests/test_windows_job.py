@@ -95,23 +95,35 @@ class WindowsJobTests(unittest.TestCase):
             self.assertTrue(completed.root_signaled)
 
     def test_wait_timeout_keeps_job_owned_until_explicit_close(self) -> None:
-        survived_marker = self.path / "survived-timeout"
-        code = (
-            "import time; "
-            "time.sleep(1); "
-            f"open({str(survived_marker)!r}, 'w').write('alive')"
-        )
-        job = WindowsJob([sys.executable, "-c", code])
+        kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel.OpenProcess.argtypes = [ctypes.c_uint32, ctypes.c_int, ctypes.c_uint32]
+        kernel.OpenProcess.restype = ctypes.c_void_p
+        kernel.WaitForSingleObject.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+        kernel.WaitForSingleObject.restype = ctypes.c_uint32
+        kernel.TerminateProcess.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+        kernel.CloseHandle.argtypes = [ctypes.c_void_p]
+        job = WindowsJob([sys.executable, "-c", "import time; time.sleep(60)"])
+        # Retain the process, not the Job: close must release the last Job handle.
+        root_handle = kernel.OpenProcess(0x00100001, False, job.pid)
         try:
+            self.assertTrue(root_handle, f"OpenProcess failed: {ctypes.get_last_error()}")
             job.resume()
             self.assertFalse(job.wait(0.01))
             inspection = job.inspect()
             self.assertGreaterEqual(inspection.active_processes, 1)
             self.assertIn(job.pid, inspection.process_ids)
+            job.close()
+            self.assertEqual(kernel.WaitForSingleObject(root_handle, 5000), 0,
+                             "a timed-out wait leaked a live root after close")
         finally:
             job.close()
-        time.sleep(1.2)
-        self.assertFalse(survived_marker.exists(), "a timed-out wait leaked a live root after close")
+            if root_handle:
+                try:
+                    if kernel.WaitForSingleObject(root_handle, 0) == 258:
+                        kernel.TerminateProcess(root_handle, 1)
+                        kernel.WaitForSingleObject(root_handle, 5000)
+                finally:
+                    kernel.CloseHandle(root_handle)
 
     def test_direct_createprocess_receives_requested_cwd_and_environment(self) -> None:
         marker = self.path / "environment"

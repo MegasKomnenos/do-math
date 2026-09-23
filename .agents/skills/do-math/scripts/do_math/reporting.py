@@ -8,7 +8,13 @@ from pathlib import Path
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from .provider_wait import timestamp
-from .repository import ResearchRepository
+from .state_checks import inspect_state, inspection_exit_code
+
+
+def _repository(repository, instance_id):
+    # Use the same installed domain-family registry as the central executor.
+    from .engine import _repository
+    return _repository(repository, instance_id)
 
 
 def _zone(name):
@@ -32,7 +38,7 @@ def display_time(value, timezone_name='Asia/Seoul'):
 
 
 def task_status(instance, runtime):
-    from . import planning, questions
+    from . import planning, questions, task_contracts
     rows = []
     live = [e for e in runtime.get("executions", {}).values() if e.get("status") != "ended"]
     for identifier, task in runtime.get("tasks", {}).items():
@@ -50,9 +56,9 @@ def task_status(instance, runtime):
             waiting.extend(planning.revision_waits(action, instance, runtime))
             if action.get('dispatch_wait', {}).get('kind') in {'capacity', 'provider_limit'}:
                 waiting.append(action['dispatch_wait'])
-        readiness = None if task.get('status') in planning.TERMINAL_TASK_STATUSES else runtime.get('task_readiness', {}).get(identifier)
+        readiness = None
         if not executions and task.get('status') not in planning.TERMINAL_TASK_STATUSES:
-            readiness = planning.task_ready({**task, 'status': 'ready'}, instance, runtime, include_scheduling_waits=False)
+            readiness = task_contracts.readiness_for_task(task, instance, runtime, include_scheduling_waits=False)
             if readiness['state'] != 'ready':
                 waiting.append({'kind': 'contract_review' if 'current revision lacks approved contract review' in readiness['errors'] else 'required_input',
                                 'errors': readiness['errors']})
@@ -60,7 +66,7 @@ def task_status(instance, runtime):
         next_owner = ('user' if any(row.get('kind') == 'user_decision' for row in waiting) else
                       'task_contract_review' if any(row.get('kind') == 'contract_review' for row in waiting) else
                       queued[0]['role'] if queued else None)
-        rows.append({"id": identifier, "title": task["title"], "status": task["status"], "revision": task.get("revision"),
+        rows.append({"id": identifier, "title": task.get("title", task.get('question')), "status": task["status"], "revision": task.get("revision"),
                      "selected_actions": [a.get("id") for a in queued if a.get("id") not in running_ids],
                      "active_execution_ids": [e["id"] for e in executions],
                      "last_accepted_result": task.get("results", [])[-1].get("execution_id") if task.get("results") else None,
@@ -70,8 +76,61 @@ def task_status(instance, runtime):
     return rows
 
 
+def snapshot_report(repository: Path, instance_id: str, *, snapshot: str | None = None,
+                    host_observation: dict | None = None, requested_areas=None) -> dict:
+    """Build the JSON status projection from exactly one persisted snapshot.
+
+    Host observations are deliberately caller-supplied and separately dated:
+    a live slot count cannot truthfully be represented as historical snapshot
+    state.
+    """
+    store = _repository(repository, instance_id)
+    head, instance, runtime = store.load(snapshot)
+    inspection = inspect_state(instance, runtime, snapshot=head, requested_areas=requested_areas,
+                               read_artifact=lambda path: store.read(path, head))
+    observation = host_observation if isinstance(host_observation, dict) else None
+    from .governance import governance_view
+    goal = governance_view(instance).get('goal') if instance.get('governance') else instance.get('goal')
+    from .retention import pending_cleanup_failures
+    from .repair_execution import pending_installation_repair
+    return {"instance_id": instance_id, "snapshot": head, "goal": goal, "goal_status": instance.get("goal_status"), "status": runtime.get('status'),
+            "pending_actions": len(runtime.get('queue', [])),
+            "installation_repair": pending_installation_repair(runtime),
+            "tasks": task_status(instance, runtime), "inspection": inspection,
+            "cleanup_failures": pending_cleanup_failures(runtime),
+            "assurance": runtime.get("assurance", {}), "host_observation": observation,
+            "research_effectiveness": {"status": "not_evaluated",
+                                         "reason": "implementation checks do not measure research effectiveness"}}
+
+
+def snapshot_check(repository, instance_id, *, snapshot=None, requested_areas=None):
+    report = snapshot_report(repository, instance_id, snapshot=snapshot, requested_areas=requested_areas)
+    inspection = report['inspection']
+    code = inspection_exit_code(inspection)
+    return {'snapshot': report['snapshot'], 'inspection': inspection, 'exit_code': code,
+            'passed': code == 0,
+            'errors': [row['message'] for row in inspection['findings'] if row['status'] == 'blocked'],
+            'research_effectiveness': report['research_effectiveness']}
+
+
+def render_human_report(report: dict) -> str:
+    """Render a snapshot_report without reopening state or deriving new facts."""
+    inspection = report["inspection"]
+    lines = [f"snapshot: {report['snapshot']}", f"goal: {report.get('goal') or 'unknown'}",
+             f"goal_status: {report.get('goal_status') or 'unknown'}",
+             f"inspection: {inspection['status']} ({inspection['checked_scope']})"]
+    for finding in inspection["findings"]:
+        lines.append(f"  {finding['area']}: {finding['status']} — {finding['message']} (next: {finding['next_owner']})")
+    for task in report["tasks"]:
+        lines.append(f"task {task['id']}: {task['status']} next={task.get('next_owner') or 'none'}")
+    if report.get("host_observation") is not None:
+        lines.append("host observation: " + str(report["host_observation"].get("observed_at") or "time not supplied"))
+    lines.append("research effectiveness: not evaluated")
+    return "\n".join(lines)
+
+
 def timeline(repository: Path, instance_id: str, *, snapshot=None, timezone_name="Asia/Seoul", include_operator=False):
-    store = ResearchRepository(repository, instance_id)
+    store = _repository(repository, instance_id)
     head, instance, runtime = store.load(snapshot)
     zone = _zone(timezone_name)
     rows = []

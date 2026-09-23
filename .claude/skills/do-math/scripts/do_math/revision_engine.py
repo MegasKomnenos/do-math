@@ -17,6 +17,22 @@ class RevisionEngineMixin:
         for identifier, action, entry in containers:
             if identifier in live:
                 continue
+            prepared_retired = set()
+            for field in ('assessment_targets', 'observation_rule_targets'):
+                targets = action.get(field, {})
+                retired = set(targets) & closed
+                if retired:
+                    action[field] = {key: value for key, value in targets.items() if key not in retired}
+                    prepared_retired.update(retired)
+            if prepared_retired:
+                self.runtime['history'].append({'kind': 'preparation_targets_retired_after_disposition',
+                    'action_id': identifier, 'targets': sorted(prepared_retired)})
+                if not action.get('assessment_targets') and not action.get('observation_rule_targets'):
+                    if entry:
+                        del self.runtime['waiting_actions'][identifier]
+                    else:
+                        self._remove_action(action)
+                    continue
             if (action.get('target') in closed and action.get('role') in {'research_work', 'supplemental_research', 'task_contract_review'}
                     and (not entry or entry.get('kind') != 'revision_dependency')):
                 self.runtime['history'].append({'kind': 'action_retired_after_target_disposition', 'action': deepcopy(action),
@@ -44,15 +60,14 @@ class RevisionEngineMixin:
             elif not remaining and not action.get('unbound_request'):
                 self._remove_action(action)
 
-    def _selected_action_current(self, action):
+    def _selected_action_current(self, action, *, evaluation_context=None):
         if action.get("role") not in {"research_work", "supplemental_research"} or action.get("review_cycle_id"):
             return True
         task = self.runtime["tasks"].get(action.get("target"))
         if not task:
             return True  # The existing obsolete/structural path owns missing tasks.
         contract_changed = action.get("selected_contract_sha256") not in {None, planning.contract_hash(task)}
-        ready_task = {**task, "status": "ready"}
-        result = planning.task_ready(ready_task, self.instance, self.runtime, include_scheduling_waits=False)
+        result = planning.task_ready(task, self.instance, self.runtime, action=action,evaluation_context=evaluation_context)
         if not contract_changed and result["state"] == "ready":
             return True
         if result.get("waits"):
@@ -62,14 +77,17 @@ class RevisionEngineMixin:
                                         "reason": "selected contract or its approval is no longer current", "readiness": result})
         if task["status"] not in planning.TERMINAL_TASK_STATUSES:
             task["status"] = "waiting"
+            task['waiting']={'kind':'contract_review','target_refs':[task['id']],'next_owner':'research_preparation','reason':result['errors']}
             task.pop("selected_by", None)
         self._enqueue("research_plan", reason="A selected contract or its approval changed before dispatch")
         return False
 
     def _bind_revision_action(self, action):
+        from .model_policy import preparation_only
+        revisions.bind_repetition_bases(self.instance,self.runtime,action)
         action.setdefault("revision_targets", {})
         target = action.get("target")
-        if action.get("role") == "research_preparation" and "assessment_targets" not in action and not action["revision_targets"] and target in self.runtime["tasks"]:
+        if action.get("role") == "research_preparation" and not preparation_only(action) and not action["revision_targets"] and target in self.runtime["tasks"]:
             task = self.runtime["tasks"][target]
             if task.get("status") not in planning.TERMINAL_TASK_STATUSES:
                 required = bool(task.get("revision_requested")) or any(r.get("revision") == task.get("revision") and r.get("decision") != "approved" for r in task.get("reviews", []))
@@ -115,9 +133,9 @@ class RevisionEngineMixin:
 
     def _cancel_selected_revision_targets(self, action):
         live_ids = {e.get("action", {}).get("id") for e in self.runtime["executions"].values() if e["status"] != "ended"}
-        for identifier in action.get("revision_targets", {}):
+        for identifier in planning.action_write_ids(action):
             task = self.runtime["tasks"].get(identifier)
-            if not task or task.get("status") != "performing":
+            if not task or task.get("status") != "active":
                 continue
             selected = [a for a in self.runtime["queue"] if a.get("target") == identifier and a["role"] in {"research_work", "supplemental_research"}
                         and not a.get("review_cycle_id") and a.get("id") not in live_ids]
@@ -127,13 +145,21 @@ class RevisionEngineMixin:
                 self._remove_action(previous)
                 self.runtime["history"].append({"kind": "selection_cancelled_for_revision", "action": deepcopy(previous),
                                                 "revision_action_id": action.get("id")})
-            task["status"] = "needs_revision"
+            from .model_policy import preparation_only
+            if preparation_only(action):
+                task['status'] = 'planned'
+                task.pop('selected_by', None)
+                continue
+            task["status"] = "waiting"
+            task['waiting']={'kind':'contract_revision','target_refs':[identifier],'next_owner':'research_preparation','basis_ref':action['id']}
+            task['revision_requested']={'revision':task['revision'],'source':action['id'],'reason':'contract revision requested'}
             task.pop("selected_by", None)
 
     def _revision_dispatch_waits(self, action):
         self._bind_revision_action(action)
-        if action.get("revision_targets"):
+        if planning.action_write_ids(action):
             self._cancel_selected_revision_targets(action)
+        if action.get("revision_targets"):
             changes = revisions.target_changes(action["revision_targets"], self.instance, self.runtime)
             if changes:
                 previous = deepcopy(action["revision_targets"])
@@ -146,7 +172,8 @@ class RevisionEngineMixin:
                     action["revision_targets"][identifier] = {**old, **{k: v for k, v in current.items() if k != "required"}}
                 action.setdefault("superseded_revision_bases", []).append(previous)
         from .questions import user_waits
-        return [*user_waits(action, self.instance, self.runtime), *planning.revision_waits(action, self.instance, self.runtime)]
+        return [*user_waits(action, self.instance, self.runtime), *planning.revision_waits(action, self.instance, self.runtime),
+                *revisions.action_repetition_waits(self.instance,self.runtime,action)]
 
     def _apply_revision_followup(self, action, output, execution_id):
         execution = self.runtime["executions"][execution_id]
@@ -162,7 +189,8 @@ class RevisionEngineMixin:
             if task and task.get("status") not in planning.TERMINAL_TASK_STATUSES and output.get("outcome") != "waiting":
                 # Dependency propagation must not hide this writer's newly
                 # submitted result from the completion assessor.
-                task["status"] = "assessing"
+                task["status"] = "waiting"
+                task['waiting']={'kind':'assessment','target_refs':[execution_id],'next_owner':'research_plan'}
                 task.pop("status_before_reassessment", None)
         resolutions = {row["record_id"]: row for row in extension.get("revision_resolutions", [])}
         withdrawals = {row["task_id"] for row in extension.get("task_dispositions", [])}
@@ -193,6 +221,9 @@ class RevisionEngineMixin:
                 for identifier in declared:
                     if identifier not in remaining:
                         continue
+                    if identifier in withdrawals:
+                        remaining.pop(identifier, None)
+                        continue
                     disposition = resolutions[identifier]["disposition"]
                     if disposition in {"revised", "delegated"} or (disposition == "unchanged" and not remaining[identifier].get("required")):
                         remaining.pop(identifier, None)
@@ -220,3 +251,7 @@ class RevisionEngineMixin:
                 self.runtime["history"].append({"kind": "revision_obligation_resolved", "action_id": action["id"],
                     "execution_id": execution_id, "previous": deepcopy(previous)})
                 del self.runtime["waiting_actions"][action["id"]]
+
+    def _record_task_receipt(self, action, output, execution_id, *, accepted):
+        """Receiver hook for rejected output and non-revision accepted output."""
+        return revisions.record_execution_outcome(self.instance,self.runtime,action,output,execution_id,accepted=accepted)

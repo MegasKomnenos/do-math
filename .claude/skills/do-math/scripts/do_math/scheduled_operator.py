@@ -1,7 +1,7 @@
-"""Generic Windows scheduled operator for one do-math research instance.
+"""Model-free supervision and engine-exclusive installation recovery.
 
-The operator writes only local operational evidence.  Research state changes
-remain commands through the CLI, which in turn uses the engine's writer lock.
+Normal supervision keeps local evidence; failure-only repair uses the same Git
+execution/reservation families while holding the repository writer lock.
 """
 
 from __future__ import annotations
@@ -15,17 +15,22 @@ import subprocess
 import sys
 from typing import Any, Callable
 import uuid
+from copy import deepcopy
+
+if __package__ in {None, ""}:  # Direct launcher survives engine/CLI import failures.
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    __package__ = "do_math"
 
 from .repository import ResearchRepository
 from .model_runner import ModelRunner
-from .session_slots import SessionSlots
 from .model_policy import selection
-from .provider_wait import provider_for, timestamp
-from . import execution_window
+from .provider_wait import timestamp
 
 
 SCRIPTS = Path(__file__).resolve().parents[1]
 SKILL_ROOT = SCRIPTS.parent
+# Frozen bootstrap overrides this after importing the verified supervisor.
+LIVE_INSTALLATION_ROOT = SKILL_ROOT
 ENTRYPOINT = SCRIPTS / "do_math.py"
 SCHEDULE_SCRIPT = SCRIPTS / "operator_schedule.ps1"
 PROMPT = SKILL_ROOT / "계약" / "독립-운영.md"
@@ -44,11 +49,46 @@ OPERATOR_SCHEMA = {
 }
 
 
+def repair_report_schema(*, diagnosed=False):
+    schema = deepcopy(OPERATOR_SCHEMA)
+    if diagnosed:
+        schema['properties'].update(repair_outcome={'enum':['repaired','unresolved']},
+            verification_evidence={'type':'array','items':{'type':'string','minLength':1}})
+        schema['required'].extend(['repair_outcome','verification_evidence'])
+    return schema
+
+
+def collect_repair_verification(output, workspace):
+    """Preserve actual regression evidence; a completed model call is insufficient."""
+    if not output or output.get('repair_outcome') != 'repaired' or not output.get('verification_evidence'):
+        raise ValueError('diagnosed repair requires repaired outcome and regression evidence files')
+    rows = []
+    workspace = Path(workspace).resolve()
+    for name in output['verification_evidence']:
+        path = (workspace / name).resolve()
+        if not path.is_relative_to(workspace) or not path.is_file():
+            raise ValueError('repair verification evidence must be a real file in its workspace')
+        raw = path.read_bytes()
+        if not raw:
+            raise ValueError('repair verification evidence is empty')
+        rows.append({'path': path.relative_to(workspace).as_posix(), 'sha256': hashlib.sha256(raw).hexdigest(),
+                     'bytes': len(raw)})
+    return rows
+
+
 def _json(path: Path, value: dict[str, Any]) -> None:
-    from .engine import json_safe
+    def evidence_default(item):
+        if isinstance(item, bytes):
+            import base64
+            return {"sha256": hashlib.sha256(item).hexdigest(), "text": item.decode("utf-8", "replace"),
+                    "base64": base64.b64encode(item).decode("ascii")}
+        if isinstance(item, Path):
+            return str(item)
+        raise TypeError("unsupported supervisor evidence: " + type(item).__name__)
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(path.suffix + ".tmp")
-    temporary.write_text(json.dumps(json_safe(value), ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    temporary.write_text(json.dumps(value, default=evidence_default, allow_nan=False,
+                                    ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     temporary.replace(path)
 
 
@@ -73,7 +113,6 @@ def schedule(
     workspace: Path,
     interval_seconds: int = 7200,
     operator_timeout_seconds: int = 5400,
-    engine_timeout_seconds: int = 7510,
     wake_at: str | None = None,
     wake_key: str | None = None,
     runner: Runner = subprocess.run,
@@ -100,7 +139,6 @@ def schedule(
         "-WakeTask", names["wake"],
         "-IntervalSeconds", str(interval_seconds),
         "-OperatorTimeoutSeconds", str(operator_timeout_seconds),
-        "-EngineTimeoutSeconds", str(engine_timeout_seconds),
     ]
     if action == "schedule-wake":
         if timestamp(wake_at) is None or not wake_key:
@@ -178,44 +216,59 @@ def invocation_context(repository: Path, instance: str, workspace: Path, status:
 
 
 def run_engine(repository: Path, instance: str, workspace: Path) -> dict[str, Any]:
-    guard = engine_start_guard(repository, instance, workspace)
+    try:
+        guard = engine_start_guard(repository, instance, workspace)
+    except Exception as error:
+        record = {"outcome": "engine_failed", "kind": "engine_unavailable",
+                  "error_type": type(error).__name__, "error": str(error)}
+        _json(_operator_dir(workspace) / "latest-engine.json", record)
+        return record
     if guard["outcome"] != "startable":
         return guard
     status = guard["before"]
     run_directory = _operator_dir(workspace) / "engine" / (datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:8])
     run_directory.mkdir(parents=True)
     _json(run_directory / "before.json", status)
-    command = [sys.executable, str(ENTRYPOINT), "run", "--repository", str(repository), "--instance", instance, "--watch"]
+    command = [sys.executable, str(Path(LIVE_INSTALLATION_ROOT) / "scripts/do_math.py"),
+               "run", "--repository", str(repository), "--instance", instance, "--watch"]
     record = {"outcome": "running", "before": status, "command": command, "run_directory": str(run_directory)}
     _json(run_directory / "result.json", record)
     try:
         completed = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8", check=False, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
         (run_directory / "stdout.json").write_text(completed.stdout, encoding="utf-8")
         (run_directory / "stderr.txt").write_text(completed.stderr, encoding="utf-8")
-        after = read_status(repository, instance)
-        record.update(outcome="completed" if completed.returncode == 0 else "engine_failed", exit_code=completed.returncode, after=after)
-    except OSError as error:
+        record.update(outcome="completed" if completed.returncode == 0 else "engine_failed", exit_code=completed.returncode)
+        record["after"] = read_status(repository, instance)
+    except Exception as error:
         record.update(outcome="engine_failed", error=f"{type(error).__name__}: {error}")
     _json(run_directory / "result.json", record)
     _json(_operator_dir(workspace) / "latest-engine.json", record)
     return record
 
 
-def engine_start_guard(repository: Path, instance: str, workspace: Path) -> dict[str, Any]:
+def engine_start_guard(repository: Path, instance: str, workspace: Path, *, status=None) -> dict[str, Any]:
     """Read the conditions that must hold before either task starts an engine."""
     if (_operator_dir(workspace) / "HOLD.json").exists():
         return {"outcome": "held"}
-    status = read_status(repository, instance)
+    if status is None:
+        status = read_status(repository, instance)
     if status.get("model_policy_violation"):
         return {"outcome": "model_policy_waiting", "status": status, "reason": "Reported model violated the instance lock; no further operator model was called."}
     if status.get("user_pause") or status.get("status") == "paused":
         return {"outcome": "paused", "before": status}
+    if status.get('conversation_lost'):
+        return {'outcome': 'user_paused', 'before': status}
+    if status.get('installation_repair'):
+        return {'outcome': 'installation_repair_waiting', 'before': status}
     providers = status.get("provider_waits", {}).get("providers", {})
     provider_due = any(row.get("due") for row in providers.values())
     resumable = status.get("pending_actions") or any(row.get("failure_kind") == "provider_limit"
                       for row in status.get("waiting_actions", {}).values())
     if status.get("status") == "waiting" and provider_due and resumable:
         return {"outcome": "startable", "before": status, "reason": "provider re-observation due"}
+    if status.get("status") == "waiting" and status.get("research_wake_reasons"):
+        return {"outcome": "startable", "before": status, "reason": "research reconsideration due",
+                "research_wake_reasons": status["research_wake_reasons"]}
     if status.get("status") not in {"ready", "running", "capacity_waiting"}:
         return {"outcome": "not_started", "before": status}
     return {"outcome": "startable", "before": status}
@@ -226,11 +279,9 @@ def reconcile_wake(repository: Path, instance: str, workspace: Path, *, config: 
     marker = _operator_dir(workspace) / "wake-registration.json"
     previous = _load_json(marker)
     held = (_operator_dir(workspace) / "HOLD.json").exists() or status.get("user_pause") or status.get("status") in {"paused", "closed", "completed"}
-    slots = SessionSlots(workspace, instance, observer=True)
-    try:
-        providers = slots.provider_snapshot()["providers"]
-    finally:
-        slots.close()
+    _, state, runtime = ResearchRepository(repository, instance).load()
+    from .session_slots import GitSessionSlots
+    providers = GitSessionSlots(runtime, state, observer=True).provider_snapshot()["providers"]
     waits = [row for row in providers.values() if row["state"] == "waiting"]
     if held or not config.get("operator_enabled", True) or not waits:
         if previous:
@@ -262,146 +313,307 @@ def wake(repository: Path, instance: str, workspace: Path) -> dict:
 
 
 def check(repository: Path, instance: str, workspace: Path, *, probe: bool = False) -> dict[str, Any]:
-    """Run an independent Codex operator and preserve its evidence outside Git state."""
-    status = read_status(repository, instance)
-    if status.get("model_policy_violation"):
-        return {"outcome": "model_policy_waiting", "status": status, "reason": "Reported model violated the instance lock; no operator model was called."}
-    if status.get("status") == "completed" and not probe:
-        context = invocation_context(repository, instance, workspace, status)
-        run_directory = Path(context["run_directory"])
-        run_directory.mkdir(parents=True)
-        _json(run_directory / "context.json", context)
-        report = {"outcome": "completed", "status": status, "run_directory": str(run_directory),
-                  "reason": "current CLI completed state is observed; no periodic operator model was started"}
-        result_path = run_directory / "result.json"
-        _json(result_path, report)
-        _json(_operator_dir(workspace) / "latest-report.json", _latest_report(report, result_path))
-        return report
-    _, state, runtime = ResearchRepository(repository, instance).load()
-    from .engine import DEFAULT_CONFIG
-    config = {**DEFAULT_CONFIG, "session_limits": None, **state["config"]}
-    scholarly = config.get("scholarly_server") if config.get("scholarly_enabled", True) else None
-    context = invocation_context(repository, instance, workspace, status, probe=probe, scholarly_configured=isinstance(scholarly, dict))
-    run_directory = Path(context["run_directory"])
-    run_directory.mkdir(parents=True)
-    _json(run_directory / "context.json", context)
+    """Model-free supervision; preserved engine failure or accepted defect diagnosis opens recovery."""
     if (_operator_dir(workspace) / "HOLD.json").exists():
-        report = {"outcome": "held", "status": status, "run_directory": str(run_directory)}
-        _json(run_directory / "result.json", report)
-        _json(_operator_dir(workspace) / "latest-report.json", report)
-        return report
-    # A pause required by the user's conversation-loss policy is a user stop, not an automatic failure.
-    user_stop = bool(status.get("user_pause")) or (
-        runtime.get("stop_requested") == "conversation_lost" and state.get("conversation_loss_policy") == "pause")
-    if user_stop or status.get("status") == "closed":
-        report = {"outcome": "user_paused" if user_stop else "closed", "status": status,
-                  "run_directory": str(run_directory)}
-        _json(run_directory / "result.json", report)
-        _json(_operator_dir(workspace) / "latest-report.json", report)
-        return report
+        return {"outcome": "held"}
     try:
-        wake_status = reconcile_wake(repository, instance, workspace, config=config, status=status)
-    except (OSError, RuntimeError, ValueError) as error:
-        wake_status = {"status": "failed", "error": str(error)}
-    context["provider_wake"] = wake_status
-    if not PROMPT.is_file():
-        raise RuntimeError("independent operator contract is missing")
-    from .submission import install_tools
-    execution_workspace = run_directory / "workspace"
-    execution_workspace.mkdir()
-    checking_context = {**context, "snapshot": status.get("snapshot"), "action": {"role": "independent_operator"}}
-    context["submission_contract"] = install_tools(execution_workspace, checking_context, OPERATOR_SCHEMA, None)
-    context["execution_window"] = {"path": str(execution_workspace / "execution-window.json"),
-                                   "finish_request_path": str(execution_workspace / "finish-request.json")}
-    _json(run_directory / "context.json", context)
-    prompt = PROMPT.read_text(encoding="utf-8") + "\n\n## Invocation context\n\n" + json.dumps(context, ensure_ascii=False, separators=(",", ":"))
-    if probe:
-        prompt += "\n\n## Probe restriction\n\nRead status and call scholarly list_sources only when configured. Do not create controls, start the engine, modify code, or change research state."
-    (run_directory / "prompt.md").write_text(prompt, encoding="utf-8")
-    report = {"outcome": "running", "probe": probe, "status_before": status, "run_directory": str(run_directory)}
-    _json(run_directory / "result.json", report)
-    last_status_check = 0.0
-    stopped = False
-    execution_deadline = None
-    window_config = {**config, "run_timeout_seconds": config["operator_timeout_seconds"],
-                     "call_timeout_seconds": config["operator_timeout_seconds"]}
-
-    def should_stop() -> bool:
-        nonlocal last_status_check, stopped
-        if (_operator_dir(workspace) / "HOLD.json").exists():
-            stopped = True
-            return True
-        import time
-        if execution_deadline is not None:
-            execution_window.request_finish(execution_workspace, execution_deadline, window_config, "operations")
-            if time.monotonic() >= execution_deadline:
-                stopped = True
-                return True
-        if time.monotonic() - last_status_check < 1:
-            return stopped
-        last_status_check = time.monotonic()
-        current = read_status(repository, instance)
-        stopped = bool(current.get("user_pause") or current.get("status") == "closed")
-        return stopped
-
-    slots = SessionSlots(workspace, instance)
-    slot_id = "operator-" + run_directory.name
-    model = config["operator_model"]
-    if config["session_limits"] is not None:
-        chosen = selection(config, {"role": "independent_operator"}, {}, {})
-        model = chosen["model"]
-        report["model_selection"] = chosen
-    provider = provider_for(model)
-    if not slots.acquire(slot_id, "operations", model, provider=provider, enforce_capacity=config["session_limits"] is not None):
-        report.update(outcome="provider_waiting" if slots.admission_reason == "provider_limit" else "capacity_waiting",
-                      model=model, budget=slots.snapshot(), provider_waits=slots.provider_snapshot())
-        _json(run_directory / "result.json", report)
-        _json(_operator_dir(workspace) / "latest-report.json", _latest_report(report, run_directory / "result.json"))
-        slots.close()
-        return report
-    runner = ModelRunner()
-    def on_started(identity):
-        nonlocal execution_deadline
-        import time
-        slots.started(slot_id, identity)
-        execution_deadline = time.monotonic() + config["operator_timeout_seconds"]
-        report["started_at"] = datetime.now(timezone.utc).isoformat()
-        report["execution_window"] = execution_window.publish(execution_workspace, slot_id, execution_deadline,
-            window_config, "operations", deadline_source="independent_operator")
-        _json(run_directory / "result.json", report)
-    try:
-        model_result = runner.run(prompt=prompt, output_schema=OPERATOR_SCHEMA, workspace=execution_workspace,
-                                  evidence_dir=run_directory / "evidence", model=model,
-                                  effort=config["operator_effort"], timeout_seconds=config["operator_timeout_seconds"],
-                                  scholarly_server=scholarly if isinstance(scholarly, dict) else None, should_stop=should_stop,
-                                  **({"claude_only_assigned_model": True} if config.get("claude_only_assigned_model", False) else {}),
-                                  on_started=on_started)
-        report.update(outcome="completed" if model_result["status"] == "completed" else model_result["status"],
-                      result=model_result, output=model_result.get("output"))
-        parsed = model_result.get("execution", {}).get("collect", {}).get("jsonl", {})
-        report["provider_wait"] = slots.provider_result(slot_id, provider,
-            failure=model_result.get("failure") if model_result.get("error_kind") == "provider_limit" else None,
-            response_observed=model_result["status"] == "completed" or bool(parsed.get("turn_completed") or parsed.get("turn_failed")),
-            initial_seconds=config["provider_retry_initial_seconds"], maximum_seconds=config["provider_retry_max_seconds"])
-        if model_result.get("error_kind") == "model_policy":
-            from .engine import control, ResearchEngine
-            control(repository, instance, "pause", text="Reported model differed from the locked assignment", origin="operator",
-                    config={"model_policy_violation": {"operator_run": str(run_directory), "assigned_model": model,
-                                                       "reported_models": model_result.get("reported_models")}})
-            ResearchEngine(repository, instance).process_controls()
+        status = read_status(repository, instance)
     except Exception as error:
-        report.update(outcome="operator_failed", error=f"{type(error).__name__}: {error}")
-    finally:
-        if slots is not None:
-            slots.release(slot_id)
-            slots.close()
-    report["ended_at"] = datetime.now(timezone.utc).isoformat()
+        failure = {"outcome": "recovery_required", "kind": "engine_unavailable",
+                   "error_type": type(error).__name__, "error": str(error),
+                   "observed_at": datetime.now(timezone.utc).isoformat()}
+        _json(_operator_dir(workspace) / "engine-failure.json", failure)
+        if probe:
+            return failure
+        return recovery(repository, instance, workspace, failure=failure)
+    _, state, runtime = ResearchRepository(repository, instance).load()
+    config = state["config"]
+    if not config.get("operator_enabled", True):
+        return {"outcome": "disabled"}
+    if status.get("user_pause") or status.get("status") in {"paused", "closed", "completed"}:
+        return {"outcome": status.get("status", "paused"), "status": status}
+    if status.get("model_policy_violation"):
+        return {"outcome": "model_policy_waiting", "status": status}
+    if runtime.get("stop_requested") == "conversation_lost" and state.get("conversation_loss_policy") == "pause":
+        return {"outcome": "user_paused", "status": status}
+    from .repair_execution import pending_installation_repair, installation_failure
+    pending = pending_installation_repair(runtime)
+    if pending:
+        failure = installation_failure(runtime, pending)
+        if probe:
+            return {'outcome': 'installation_repair_pending', 'failure': failure, 'model_called': False}
+        return recovery(repository, instance, workspace, failure=failure)
+    if probe:
+        return {"outcome": "observed", "status": status, "model_called": False,
+                "engine_start": engine_start_guard(repository, instance, workspace, status=status)}
+    engine_failure = _load_json(_operator_dir(workspace) / "latest-engine.json")
+    if engine_failure and engine_failure.get("outcome") == "engine_failed":
+        return recovery(repository, instance, workspace, failure={
+            "kind": "engine_unavailable", "error": engine_failure.get("error") or
+                "engine process failed with exit code " + str(engine_failure.get("exit_code")),
+            "evidence_path": str(_operator_dir(workspace) / "latest-engine.json"),
+            "engine_run_directory": engine_failure.get("run_directory")})
+    wake_status = reconcile_wake(repository, instance, workspace, config=config, status=status)
+    guard = engine_start_guard(repository, instance, workspace, status=status)
+    if guard["outcome"] != "startable":
+        return {**guard, "provider_wake": wake_status, "model_called": False}
+    observed = schedule("status", repository=repository, instance=instance, workspace=workspace)
+    if (observed.get("engine") or {}).get("state") == "Running":
+        return {"outcome": "engine_running", "model_called": False}
+    started = schedule("start-engine", repository=repository, instance=instance, workspace=workspace)
+    return {"outcome": "engine_requested", "schedule": started, "provider_wake": wake_status, "model_called": False}
+
+
+def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict) -> dict:
+    """Failure-only installation repair under the engine's writer lock.
+
+    Repair retains the already adopted operator authority. Instruction scope is
+    explicit; it is not an OS sandbox. Research and user decisions are unchanged.
+    """
+    from .execution_profiles import (select_profile, profile_ref, capability_evidence, prepare_prompt,
+                                     prompt_seal, execution_observation)
+    from .session_slots import GitSessionSlots, _lock, _unlock
+    from .repository import new_id
+    from .git_store import GitStateStoreLockError
+    from . import activities, execution_lifecycle
+    if failure.get("kind") not in {"engine_unavailable", "installation_defect"} or not failure.get("error"):
+        raise ValueError("recovery requires preserved engine failure evidence")
+    if (_operator_dir(workspace) / "HOLD.json").exists():
+        return {"outcome": "held"}
+    repo = ResearchRepository(repository, instance)
+    register_profile_families(repo)
     try:
-        report["provider_wake"] = reconcile_wake(repository, instance, workspace, config=config, status=read_status(repository, instance) if report.get("provider_wait", {}).get("state") == "waiting" else status)
-    except (OSError, RuntimeError, ValueError) as error:
-        report["provider_wake"] = {"status": "failed", "error": str(error)}
-    result_path = run_directory / "result.json"
-    _json(result_path, report)
-    latest = _latest_report(report, result_path)
-    _json(_operator_dir(workspace) / "latest-report.json", latest)
-    return latest
+        with repo.writer_lock():
+            head, state, runtime = repo.load()
+            config = state["config"]
+            if not config.get("operator_enabled", True):
+                return {"outcome": "recovery_disabled", "failure": failure}
+            if (runtime.get("user_pause") or runtime.get("status") in {"paused", "closed", "completed"}
+                    or (_operator_dir(workspace) / "HOLD.json").exists()):
+                return {"outcome": "held"}
+            from .repair_execution import installation_failure, installation_fingerprint, resume_installation_repair
+            diagnosis = None
+            if failure['kind'] == 'installation_defect':
+                diagnosis = runtime.get('operational_dispositions', {}).get(failure.get('diagnosis_id'))
+                if diagnosis is None or installation_failure(runtime, diagnosis) != failure:
+                    raise ValueError('installation diagnosis is missing or differs from its published record')
+            from .windows_job import named_job_empty
+            for execution in runtime.get("executions", {}).values():
+                if execution.get("status") == "ended":
+                    continue
+                process = execution.get("capacity", {}).get("process") or execution.get("process")
+                if not process or not process.get("job_name") or named_job_empty(process["job_name"]) is not True:
+                    return {"outcome": "recovery_waiting", "reason": "existing execution termination is unconfirmed",
+                            "execution_id": execution["id"]}
+            maintenance = _lock(repo._store._git_dir / "do-math-installation-maintenance.lock")
+            if maintenance is None:
+                return {"outcome": "recovery_waiting", "reason": "installation maintenance is already active"}
+            try:
+                installation_sha256 = installation_fingerprint(LIVE_INSTALLATION_ROOT)
+                identity_fields = ('kind', 'diagnosis_id', 'error', 'repair_target', 'verification',
+                    'target_execution_id', 'evidence_refs', 'installation_sha256', 'evidence_path', 'engine_run_directory')
+                failure_identity = hashlib.sha256(json.dumps({key: failure[key] for key in identity_fields if key in failure},
+                    ensure_ascii=False, sort_keys=True).encode('utf-8')).hexdigest()
+                if diagnosis:
+                    failure_identity = failure['failure_sha256']
+                # One automatic attempt per actual failure and installation edition.
+                if any(e.get('role') == 'recovery'
+                        and e.get('input_manifest', {}).get('repair_identity') == {
+                            'failure_sha256': failure_identity, 'installation_sha256': installation_sha256}
+                        for e in runtime.get('executions', {}).values()):
+                    return {'outcome': 'recovery_waiting', 'reason': 'same failure and installation already attempted'}
+                chosen = selection(config, {"role": "independent_operator"}, {}, {})
+                profile = select_profile(state["execution_profiles"], {"role": "recovery"}, chosen,
+                                         allowed_refs=state["role_profile_refs"]["recovery"])
+                from .initialization import adapter_for, capability_requirements
+                adapter = adapter_for(profile)
+                reference = profile_ref(profile)
+                checked_at = datetime.now(timezone.utc).isoformat()
+                capability = capability_requirements(state, reference,
+                    current_identity=adapter.capability_identity(), at=checked_at)
+                if not capability["satisfied"]:
+                    description = adapter.describe()  # CLI version/help only; never a model call.
+                    description.setdefault("identity", adapter.capability_identity())
+                    evidence = capability_evidence(profile, description, observed_at=checked_at)
+                    state.setdefault("capability_evidence", {})[evidence["id"]] = evidence
+                    head = repo.save(head, state, runtime)
+                    capability = capability_requirements(state, reference,
+                        current_identity=adapter.capability_identity(), at=datetime.now(timezone.utc).isoformat())
+                if not capability["satisfied"]:
+                    return {"outcome": "recovery_waiting", "reason": "profile_capability_unavailable",
+                            "capability": capability}
+                eid = new_id("EX")
+                owner = {"kind": "installation_recovery", "failure_sha256": hashlib.sha256(
+                    json.dumps(failure, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()}
+                activity = next((a for a in runtime.get("activities", {}).values()
+                                 if a.get("owner_ref") == owner and a.get("status") != "finished"), None)
+                at = datetime.now(timezone.utc).isoformat()
+                if activity is None:
+                    activity = activities.open_activity(runtime, activity_id=new_id("AY"), activity_kind="recovery",
+                        owner_ref=owner, input_refs=[failure], opened_at=at)
+                elif activity["status"] == "waiting":
+                    activities.resume_activity(runtime, activity["id"], condition=activity["waiting"]["condition"], at=at)
+                aid = activity["id"]
+                run_directory = _operator_dir(workspace) / "recovery" / eid
+                execution_workspace = run_directory / "workspace"
+                execution_workspace.mkdir(parents=True)
+                failure_inputs = []
+                for index, reference in enumerate(failure.get('evidence_refs', [])):
+                    raw = repo.read(reference, head)
+                    local = execution_workspace / 'input' / f'failure-{index}.json'
+                    local.parent.mkdir(exist_ok=True)
+                    local.write_bytes(raw)
+                    failure_inputs.append({'artifact_ref': reference, 'local_path': str(local),
+                        'sha256': hashlib.sha256(raw).hexdigest()})
+                prompt = (
+                    ("Repair only the independently diagnosed do-math installation defect that blocks the preserved submission. "
+                     if diagnosis else "Repair only the do-math installation defect that prevents this engine from starting. ")
+                    + "Reproduce the recorded failure, make the smallest code repair, and run relevant checks. "
+                    "Preserve failure evidence, verification commands and changed file paths in your report. "
+                    "For a diagnosed submission defect, report repair_outcome=repaired only after reproducing and fixing it; "
+                    "otherwise report unresolved. Write regression logs inside this workspace and list their relative paths in verification_evidence. "
+                    "Do not change research records, goals, budgets, grants, user configuration or scheduled tasks. "
+                    "Do not start the engine or wait for research: the launcher owns restart after releasing its lock. "
+                    "Existing installation-repair approval applies; a new research or external-action authority does not.\n"
+                    + json.dumps({"failure": failure, "failure_inputs": failure_inputs,
+                                  "installation": str(LIVE_INSTALLATION_ROOT), "repository": str(repository),
+                                  "instance": instance, "execution_id": eid, "profile_ref": profile_ref(profile)}, ensure_ascii=False))
+                prompt = prepare_prompt(prompt, profile)
+                sealed_input = prompt_seal(prompt)
+                if sealed_input["bytes"] > profile["input"]["max_input_bytes"]:
+                    return {"outcome": "recovery_waiting", "reason": "input_overflow", "prompt": sealed_input}
+                (run_directory / "input.txt").write_bytes(prompt.encode("utf-8"))
+                execution = execution_lifecycle.create_execution(execution_id=eid, owner_activity_id=aid,
+                    actor_kind="ai", input_manifest={"failure": failure, "prompt": sealed_input,
+                        'repair_identity': {'failure_sha256': failure_identity, 'installation_sha256': installation_sha256},
+                        "repair_authority": {"source": "adopted_operator_repair_scope", "boundary": "instructions"}},
+                    profile_ref=profile_ref(profile), created_at=at,
+                    context_origin=activity["assigned_execution_ids"][-1:])
+                execution.update(role="recovery", budget_kind="operations")
+                execution_lifecycle.transition_execution(execution, "starting", at=at)
+                slots = GitSessionSlots(runtime, state)
+                if not slots.acquire(eid, "operations", chosen["model"], profile=profile, execution=execution):
+                    return {"outcome": "recovery_waiting", "reason": slots.admission_reason}
+                activities.assign_execution(runtime, aid, execution)
+                head = repo.save(head, state, runtime)
+                def on_started(identity):
+                    nonlocal head
+                    slots.started(eid, identity)
+                    execution_lifecycle.transition_execution(runtime["executions"][eid], "running",
+                        at=datetime.now(timezone.utc).isoformat())
+                    head = repo.save(head, state, runtime)
+                try:
+                    result = ModelRunner().run(prompt=prompt, output_schema=repair_report_schema(diagnosed=diagnosis is not None),
+                        workspace=execution_workspace, evidence_dir=run_directory / "evidence",
+                        model=chosen["model"], effort=profile["ai"]["effort"],
+                        timeout_seconds=profile["window"]["call_timeout_seconds"],
+                        execution_id=eid, profile=profile, input_seal=sealed_input, on_started=on_started,
+                        should_stop=lambda: (_operator_dir(workspace) / "HOLD.json").exists())
+                    execution = runtime["executions"][eid]
+                    _json(run_directory / "runner-result.json", result)
+                    # Opaque provider decimals stay in transport JSON, never
+                    # silently rounded into the integer-only state contract.
+                    execution["runner"] = {"status": result["status"], "evidence_ref": str(run_directory / "runner-result.json")}
+                    if result.get("output") is not None:
+                        execution["output"] = result["output"]
+                    execution["error"] = result.get("error")
+                    observation = execution_observation(result)
+                    if observation is not None:
+                        execution["provider_observation"] = observation
+                    if result.get("capability_evidence"):
+                        evidence = result["capability_evidence"]
+                        state.setdefault("capability_evidence", {})[evidence["id"]] = evidence
+                    outcome = "repaired" if result.get("status") == "completed" else "recovery_failed"
+                    if outcome == 'repaired' and diagnosis:
+                        regression = collect_repair_verification(result.get('output'), execution_workspace)
+                        _json(run_directory / 'regression-evidence.json', {'files': regression})
+                    if outcome == "repaired":
+                        execution["submission_receipt"] = {
+                            "kind": "recovery_report", "state": "accepted", "execution_id": eid,
+                            "receiver": "recovery_launcher", "observed_at": datetime.now(timezone.utc).isoformat(),
+                            "evidence_ref": str(run_directory / "evidence"),
+                            "scope": "structured_recovery_report_not_research_integration"}
+                        verified = subprocess.run([sys.executable, str(Path(LIVE_INSTALLATION_ROOT) / "scripts/probe_cli.py"), "--skill-only"],
+                            capture_output=True, text=True, encoding="utf-8", check=False,
+                            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+                        _json(run_directory / "verification.json", {"exit_code": verified.returncode,
+                              "stdout": verified.stdout, "stderr": verified.stderr})
+                        if verified.returncode != 0:
+                            outcome = "recovery_verification_failed"
+                    if ((_operator_dir(workspace) / 'HOLD.json').exists()
+                            or runtime.get('user_pause') or runtime.get('status') in {'paused', 'closed', 'completed'}):
+                        outcome = 'recovery_held'
+                except Exception as error:
+                    outcome = "recovery_failed"
+                    execution = runtime["executions"][eid]
+                    execution["error"] = {"type": type(error).__name__, "message": str(error)}
+                finally:
+                    # save() may rebuild dictionary objects; always update the loaded view.
+                    execution = runtime["executions"][eid]
+                    released = slots.release(eid)
+                    if not released:
+                        outcome = "recovery_termination_unknown"
+                    ended_at = datetime.now(timezone.utc).isoformat()
+                    execution_lifecycle.transition_execution(execution, "stopping", at=ended_at,
+                        stop_phase="terminating", reason=outcome)
+                    if released:
+                        execution_lifecycle.transition_execution(execution, "ended", at=ended_at,
+                            outcome="output_accepted" if execution.get("submission_receipt") else "execution_incomplete",
+                            disposition={"recovery": outcome})
+                        if outcome == "repaired":
+                            activities.finish_activity(runtime, aid, result_refs=[eid], unresolved=[], followups=[], at=ended_at)
+                        else:
+                            activities.wait_for(runtime, aid, reason=outcome,
+                                condition={"kind": "installation_repair_retry", "failure": owner},
+                                next_owner="recovery", at=ended_at)
+                        if diagnosis:
+                            current_diagnosis = runtime['operational_dispositions'][diagnosis['id']]
+                            if outcome == 'repaired':
+                                resume_installation_repair(runtime, current_diagnosis, repaired_by=eid, at=ended_at)
+                            else:
+                                current_diagnosis['status'] = 'installation_repair_waiting'
+                                current_diagnosis.setdefault('result', {})['installation_repair'].update(
+                                    status=outcome, attempted_by=eid)
+                    head = repo.save(head, state, runtime)
+                report = {"outcome": outcome, "execution_id": eid, "snapshot": head,
+                          "run_directory": str(run_directory)}
+                _json(run_directory / "result.json", report)
+            finally:
+                _unlock(maintenance)
+    except GitStateStoreLockError:
+        return {"outcome": "engine_running", "model_called": False}
+    if report["outcome"] == "repaired":
+        # Restart only after both locks have been released; never wait holding capacity.
+        _json(_operator_dir(workspace) / "latest-engine.json", {
+            "outcome": "recovery_verified", "recovery_report": str(Path(report["run_directory"]) / "result.json")})
+        report["restart"] = wake(repository, instance, workspace)
+    return report
+
+
+def register_profile_families(repository):
+    from .execution_profiles import register_families
+    register_families(repository.contract)
+
+
+def main(argv=None):
+    """Stable scheduling surface without importing engine through the CLI."""
+    import argparse
+    parser = argparse.ArgumentParser(description="Model-free do-math supervisor and failure-only recovery")
+    parser.add_argument("action", choices=("check", "run-engine", "wake"))
+    parser.add_argument("--repository", type=Path, required=True)
+    parser.add_argument("--instance", required=True)
+    parser.add_argument("--workspace", type=Path, required=True)
+    parser.add_argument("--probe", action="store_true")
+    args = parser.parse_args(argv)
+    if args.action == "check":
+        result = check(args.repository, args.instance, args.workspace, probe=args.probe)
+    elif args.action == "wake":
+        result = wake(args.repository, args.instance, args.workspace)
+    else:
+        result = run_engine(args.repository, args.instance, args.workspace)
+    print(json.dumps(result, ensure_ascii=False))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

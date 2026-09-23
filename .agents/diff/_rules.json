@@ -13,6 +13,8 @@
     {"key": "effort", "label": "권장 추론 수준"}
   ],
   "verbatim": [
+    "do-math/scripts/check_coverage.py",
+    "do-math/scripts/tests/test_redesign_EVIDENCE_binding.py",
     "*/references/원본_대조.md",
     "skill-creator/scripts/run_eval.py",
     "writing-skills/examples/CLAUDE_MD_TESTING.md",

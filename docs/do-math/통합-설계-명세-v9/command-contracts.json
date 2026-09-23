@@ -92,21 +92,21 @@
       "retry": "Same request_id and the SHA-256 of the entire canonical request (schema_version, request_id, command, caller, payload) return the recorded result; changed input is rejected. External action replay additionally requires R35."
     },
     {
-      "caller": "running_or_checkpointing_producer",
+      "caller": "running_or_verified_bounded_profile_producer",
       "command": "checkpoint",
       "owner_section": "6.4.1,6.5",
       "postcondition": "immutable_checkpoint",
-      "precondition": "running_or_bounded_write_scope",
+      "precondition": "running_or_verified_future_bounded_write_scope",
       "request_schema": "https://do-math.invalid/schemas/draft/9/command-request",
       "response_schema": "https://do-math.invalid/schemas/draft/9/command-response",
       "retry": "Same request_id and the SHA-256 of the entire canonical request (schema_version, request_id, command, caller, payload) return the recorded result; changed input is rejected. External action replay additionally requires R35."
     },
     {
-      "caller": "running_producer",
+      "caller": "running_producer_optional_early_delivery",
       "command": "submit",
       "owner_section": "6.5",
-      "postcondition": "stopping_acknowledgement",
-      "precondition": "running_and_manifest_binding",
+      "postcondition": "sealed_candidate_receipt_or_structured_rejection",
+      "precondition": "running_authority_and_draft_path_binding",
       "request_schema": "https://do-math.invalid/schemas/draft/9/command-request",
       "response_schema": "https://do-math.invalid/schemas/draft/9/command-response",
       "retry": "Same request_id and the SHA-256 of the entire canonical request (schema_version, request_id, command, caller, payload) return the recorded result; changed input is rejected. External action replay additionally requires R35."

@@ -33,9 +33,12 @@ class ClaudeTests(unittest.TestCase):
     def test_model_lock_is_opt_in_and_reaches_only_claude(self):
         from do_math.engine import ResearchEngine
         from types import SimpleNamespace
-        arguments = {}
+        from do_math.execution_profiles import build_profiles
+        pinned = {**DEFAULT_CONFIG, "claude_only_assigned_model": True, "scholarly_enabled": False}
+        profile = next(p for p in build_profiles(pinned)["execution_profiles"].values() if p["role"] == "maintenance")
+        arguments = {"profile": profile}
         runner_context = SimpleNamespace(runner=Mock(), instance={"config": {
-            **DEFAULT_CONFIG, "claude_only_assigned_model": True, "scholarly_enabled": False}})
+            **DEFAULT_CONFIG, "claude_only_assigned_model": False, "scholarly_enabled": True}})
         ResearchEngine._runner_tools(runner_context, arguments)
         self.assertTrue(arguments["claude_only_assigned_model"])
         self.assertFalse(DEFAULT_CONFIG["claude_only_assigned_model"])
@@ -88,16 +91,17 @@ class ClaudeTests(unittest.TestCase):
 
     def test_claude_tools_and_messages_feed_progress_observation(self):
         with tempfile.TemporaryDirectory() as d:
-            tracker = ObservationTracker("one", Path(d), {})
-            tracker.observe({"type": "assistant", "message": {"content": [
+            tracker = ObservationTracker("one", Path(d), {"observation_mode": "periodic", "research_self_checks": False})
+            facts = tracker.observe({"type": "assistant", "message": {"content": [
                 {"type": "text", "text": "Checking the computation."},
                 {"type": "tool_use", "id": "tool-one", "name": "Bash", "input": {"command": "python proof.py"}}]}})
             self.assertIn("tool-one", tracker.pending_tools)
             tracker.observe({"type": "user", "message": {"content": [
                 {"type": "tool_result", "tool_use_id": "tool-one", "content": "verified"}]}})
-            self.assertEqual(tracker.tool_results, 1)
+            self.assertEqual(tracker.completed_call_ids, {"tool-one"})
             self.assertFalse(tracker.pending_tools)
-            self.assertEqual(tracker.messages[-1]["text"], "Checking the computation.")
+            fact = next(row for row in facts if row["kind"] == "observation_fact")
+            self.assertIn("Checking the computation.", json.dumps(fact))
 
     def test_profile_accepts_claude_provider(self):
         from do_math.cli import build_parser, CliInputError
@@ -193,18 +197,24 @@ class ClaudeTests(unittest.TestCase):
         validate_config(config)
         self.assertEqual(selection(config, {"role": "research_plan"}, {}, {})["model"], "claude:opus")
         self.assertEqual(selection(config, {"role": "task_contract_review"}, {}, {})["model"], "gpt-5.6-sol")
+        from do_math.execution_profiles import build_profiles
+        state = {**build_profiles(config), "config": config}
+        runtime = {"executions": {}, "reservations": {}}
         with tempfile.TemporaryDirectory() as d:
-            slots = SessionSlots(Path(d), "mixed")
-            try:
-                slots.configure(config["session_limits"])
-                self.assertTrue(slots.acquire("one", "work", "claude:opus"))
-                self.assertFalse(slots.acquire("two", "work", "claude:opus"))
-                self.assertTrue(slots.acquire("three", "operations", "claude:opus"))
-                self.assertTrue(slots.acquire("four", "work", "gpt-5.6-sol"))
-                self.assertTrue(slots.release("one"))
-                self.assertTrue(slots.acquire("two", "work", "claude:opus"))
-            finally:
-                slots.close()
+            slots = SessionSlots(Path(d), "mixed", runtime=runtime, instance=state)
+            def acquire(eid, pool, model):
+                role = "research_work" if pool == "work" else "research_plan"
+                profile = next(p for p in state["execution_profiles"].values()
+                               if p["role"] == role and p.get("ai", {}).get("model") == model)
+                return slots.acquire(eid, pool, model, profile=profile, execution={"id": eid, "role": role})
+            self.assertTrue(acquire("one", "work", "claude:opus"))
+            self.assertFalse(acquire("two", "work", "claude:opus"))
+            self.assertTrue(acquire("three", "operations", "claude:opus"))
+            self.assertTrue(acquire("four", "work", "gpt-5.6-sol"))
+            self.assertTrue(slots.release("one"))
+            self.assertTrue(acquire("two", "work", "claude:opus"))
+            slots.close()
+
 
 
 if __name__ == "__main__":

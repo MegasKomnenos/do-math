@@ -2,9 +2,13 @@
 
 이 문서는 do-math 연구 인스턴스를 만들고 운전하는 사람을 위한 진입점이다. do-math의 목적과 전체 연구 흐름은 [SKILL.md](SKILL.md), 공통 용어의 뜻은 [GLOSSARY.md](GLOSSARY.md), 정확한 명령·필드·상태 투영과 역할별 JSON은 [CLI 실행 계약](references/CLI-실행-계약.md)이 소유한다.
 
-현재 실행 계약은 `do-math-cli/1`이다. 새 인스턴스는 기능 판본 4를 사용하며 모델별 동시 세션 모드와 누적 실행횟수 모드를 지원한다. 판본 1~3은 읽기·내보내기를 유지하지만 검증된 별도 변환 없이 재개하지 않는다. 배정된 모델의 Codex CLI 또는 Claude CLI 로그인을 사용하므로 별도의 API 키를 요구하지 않는다. 이 구현은 수학 연구의 후보 준비, 작업 계약 검토, 연구 계획, 연구 수행, Lean 검사, 동일성 검토, 목표 감사와 학술 후속을 한 인스턴스 상태로 연결한다. 각 기능이 무엇을 보증하는지는 서로 다르다. 명령 성공이나 실행 종료는 형식 타당성·해설 동일성·목표 충족을 대신하지 않는다.
+역할 응답 스키마는 `do-math-cli/5`, 저장 계약은 `do-math-state/5`다. 중앙 실행기, 설치 manifest와 역할별 소비자는 이 판본을 함께 사용하며 다른 판본의 필드를 섞지 않는다.
+
+역할 응답 계약은 후보 준비, 항목별 작업 계약 검토, 연구 계획의 전건 처분, 생산자 선언 편입 묶음과 독립 동일성 검토의 범위 계획을 정의한다. 각 기능이 무엇을 보증하는지는 서로 다르며, 명령 성공·스키마 통과·실행 종료는 형식 타당성·해설 동일성·목표 충족을 대신하지 않는다.
 
 ## 시작 전에 준비할 것
+
+아래 명령 예시는 Codex 설치 경로인 `.agents/skills/do-math/`를 사용한다. 이 저장소에서 Codex로 운전할 때는 이 경로를 쓴다. 다른 위치에 설치한 경우에는 예시의 스킬 경로를 실제 설치 폴더로 바꾸고, 그 폴더의 문서와 코드를 함께 사용한다.
 
 Windows에서 Python 3.12, Git과 사용할 모델의 CLI를 준비한다. Codex 모델에는 로그인된 Codex CLI, Claude 모델에는 로그인된 Claude CLI가 필요하다. Python 의존성은 `requirements.txt`에 고정돼 있으며 현재 직접 의존성은 `jsonschema==4.26.0`이다.
 
@@ -19,16 +23,35 @@ python .agents/skills/do-math/scripts/do_math.py profile
 
 Claude를 사용할 때에는 `claude auth status`로 로그인 상태를 확인하고 `python .agents/skills/do-math/scripts/do_math.py profile --provider claude`로 필요한 명령 표면을 검사한다. CLI는 `PATH`에서 찾으며 `CLAUDE_CONFIG_DIR`로 지정한 로그인 설정 위치도 전달한다. API 키나 별도 API 공급자로 자동 전환하지 않는다. Claude의 `--bare` 모드는 구독 로그인을 사용하지 않으므로 이 실행 경로에서는 사용하지 않는다.
 
+형식 검사에는 Lean이 필요하다. `setup_lean.py`는 이 머신의 인스턴스들이 함께 쓰는 Lean 4.32.0 툴체인과, 같은 판본의 Mathlib 태그에 고정한 Lake 프로젝트를 저장소 루트의 `.skill-workspace/do-math-toolchains/`에 준비한다.
+
+```powershell
+python .agents/skills/do-math/scripts/setup_lean.py
+```
+
+툴체인이 없으면 Lean 배포본을 내려받고, Mathlib을 복제한 뒤 미리 빌드된 캐시를 받는다. 수 GB의 디스크와 네트워크를 사용하며, 이미 끝난 단계는 다시 실행해도 건너뛴다. 마지막에 검사기가 실제로 쓸 명령으로 `import Mathlib` 파일을 컴파일하고, 성공했을 때에만 준비 표지를 남기고 그 명령을 JSON의 `lean_command`로 출력한다. 컴파일이 끝날 때까지 기다리며 실행 시간으로 중단하지 않는다. 컴파일이 실패하면 표지를 지우고 종료 코드 1로 끝나며, 이때 실행기는 이 프로젝트를 선택하지 않는다.
+
+준비 표지가 있으면 `lean_command`를 생략한 인스턴스는 이 프로젝트를 거쳐 Lean을 실행하므로 제출 소스에서 Mathlib을 import할 수 있다. 설정에 명시한 `lean_command`는 언제나 이 탐색보다 우선한다. 준비 전과 후에는 탐색되는 명령이 다르므로 검사 결과에 기록되는 toolchain도 달라진다.
+
+준비 완료 출력에는 등록에 사용할 완전한 `toolchain`도 들어간다. 이미 설치된 환경은 `setup_lean.py --inspect-only`로 도구 정보만 관측할 수 있으며, 별도 명령은 `--command-file`로 지정한다. 이 관측은 환경 채택이나 깨끗한 Mathlib 빌드 검증이 아니다. 실제 등록과 증거의 결합은 [초기화 운전](references/초기화-운전.md)을 따른다.
+
 연구를 시작하기 전에 다음 경로를 정한다.
 
 - `--repository`: 인스턴스의 권위 있는 상태와 산출 묶음을 저장할 Git 저장소다. `--create-repository`를 쓰려면 경로가 없거나 빈 디렉터리여야 한다.
 - `--workspace`: 실행별 작업 공간, 제어 inbox와 복구 자료를 둘 로컬 경로다. Git 정본과 다른 역할을 하며, 작업 공간 파일만으로 공용 기록이 되지는 않는다.
 - `--goal` 또는 `--goal-file`: 연구 헌장의 현재 목표가 될 원문이다. 둘 중 하나만 사용한다.
-- `--goal-kind`: `mathematical`은 형식 결과·동일성 판정·목표 감사를 요구하는 수학 목표이고, `research`는 헌장이 요구한 비형식 연구 산출로 충족될 수 있는 목표다.
+- `--goal-kind`: 현재 지원하는 진입값은 `mathematical`이다. 형식 결과·동일성 판정·목표 감사를 거쳐 `mathematically_solved`를 판단한다. `research` 진입값은 현재 `unsupported`로 거부하며 저장소·작업 공간·예약 작업을 만들지 않는다. 관련 내부 분기와 기록은 후속 작업을 위해 유지한다. 수학 목표 안의 문헌 조사·계산·비형식 과제는 계속 사용할 수 있다.
 
-초기화 때 정책, 원자료와 설정을 함께 넣을 수 있다. `--source`는 여러 번 지정할 수 있다. 모델별 배정과 예산은 설정 파일의 `tier_models`, `role_tiers`, `session_limits`를 사용한다. `--effort`는 설정 파일의 추론 노력보다 우선한다. `--model`은 구 실행횟수 호환 모드의 인자다. 설정 파일에 `session_limits`가 없는 상태에서 `--model`을 주면 새 인스턴스는 세션 예산이 아니라 호환 모드로 초기화된다. 세션 용량을 명시한 `session_limits`와 함께 주면 초기화가 거부된다. 호환 모드에서는 `--model`이 같은 필드의 파일 설정보다 우선한다. 생략한 필드는 코드의 기본값을 사용한다.
+초기화 때 정책, 원자료와 설정을 함께 넣을 수 있다. `--source`는 여러 번 지정할 수 있다. `--effort`는 설정 파일의 추론 노력보다 우선하며, 생략한 필드는 코드의 기본값을 사용한다.
 
-독립 운영의 기본값은 `operator_enabled=true`, `operator_interval_seconds=7200`이다. 새 인스턴스는 상·중·하 모델마다 운영 3개와 작업 3개의 동시 세션을 사용한다. [모델과 실행예산](references/모델과-실행예산.md)의 기본 대응과 배정 기준을 확인하고, 다른 용량이나 수동 운영이 필요하면 설정 파일에 지정한다. `init`은 독립 운영이 활성일 때 연구 운전과 독립 운영 점검을 맡는 두 Windows 예약 작업을 등록하며, 그 자체로 모델이나 연구 실행을 시작하지는 않는다. 첫 정기 점검은 등록 후 설정한 주기에 도래한다. 주기 trigger는 운영 점검에만 적용한다. 연구 작업에는 고정 반복 주기를 두지 않고 운영 담당이 필요할 때 시작하며, 실행 기한으로 종료된 뒤의 재개도 다음 운영 점검에서 판단한다.
+관찰 설정의 `tool_review_window_seconds`와 `self_check_response_window_seconds`에는 제품 기본값이 없다. 프로필을 채택하기 전에 사용할 두 값을 확정하여 `init --config-file`이나 `configure --config-file`로 전달한다. 이미 승인된 설정에 있으면 그대로 사용한다. 주기·사건 관찰에는 도구 검토 window와 관찰 주기가 필요하고, 연구 수행에는 자기 점검 응답 window도 필요하다. 누락되거나 유효하지 않은 값은 역할·프로필 ID·필드와 함께 반환되며 연구 활성화가 완료되지 않는다. 구체적인 설정 보충과 프로필 재조회는 [초기화 운전](references/초기화-운전.md)의 1단계와 4단계를 따른다.
+
+모델과 예산은 다음 두 모드를 구별한다.
+
+- 모델별 동시 세션 예산에는 설정 파일의 `tier_models`, `role_tiers`, `session_limits`를 사용한다. 세션 용량을 명시한 `session_limits`와 `--model`을 함께 주면 초기화가 거부된다.
+- 구 실행횟수 호환 모드에는 `--model`을 쓸 수 있다. 설정 파일에 `session_limits`가 없는 상태에서 이 인자를 주면 호환 모드로 초기화되며, `--model`이 같은 필드의 파일 설정보다 우선한다.
+
+독립 운영의 기본값은 `operator_enabled=true`, `operator_interval_seconds=7200`이다. 새 인스턴스는 상·중·하 모델마다 운영 3개와 작업 3개의 동시 세션을 사용한다. [모델과 실행예산](references/모델과-실행예산.md)의 기본 대응과 배정 기준을 확인하고, 다른 용량이나 수동 운영이 필요하면 설정 파일에 지정한다. `init`은 독립 운영이 활성일 때 정상 감독과 연구 엔진을 맡는 두 숨김 Windows 예약 작업을 등록하며, 그 자체로 모델이나 연구 실행을 시작하지는 않는다. 첫 정기 감독은 등록 후 설정한 주기에 도래한다. 정상 감독은 저장 상태와 예약 상태를 모델 없이 검사하고 필요할 때 연구 엔진 작업만 요청한다. 연구 작업에는 고정 반복 주기를 두지 않는다. 엔진을 읽을 수 없는 실제 실패가 보존됐거나 운영 점검의 설치 결함 진단이 수락됐을 때 별도 설치 복구 AI 경로를 열 수 있다.
 
 scholarly는 기본 활성이다. `scholarly_server`에 `command`·`args`를 직접 지정하거나, 초기화 명령의 작업 위치에서 상위로 찾은 `.codex/config.toml`의 scholarly 항목을 사용한다. 프로젝트 설정이 없으면 Codex 사용자 설정에서 같은 항목을 찾는다. 실행에 필요한 서버 경로는 고정해 인스턴스 설정에 보존하고, 하위 실행에는 이 MCP 설정만 명시적으로 전달한다. 서버 설정을 찾지 못한 것과 외부 자료원 접근 실패는 다르다. 사용 가능한 도구는 각 실행에서 확인한다.
 
@@ -46,9 +69,9 @@ scholarly는 기본 활성이다. `scholarly_server`에 `command`·`args`를 직
 }
 ```
 
-이 예시는 기본 구성과 같다. 세션은 종료 후 재사용하며 두 예산은 자동 차용하지 않는다. 모델 이름이나 수를 바꾸면 두 예산 맵에도 해당 모델을 명시한다. 판본 4에서 실행횟수 모드로 만든 인스턴스는 위 설정으로 명시적으로 전환하기 전까지 그 예산 방식을 유지한다. 판본 1~3의 기록은 예산 설정 변경만으로 재개 가능한 판본이 되지 않는다. 예산 모드 전환 전에는 operator hold로 정지를 요청하고 미종료 실행이 없으며 연구 예약 작업이 Running이 아닌지 확인한다. 기존 `role_models`를 썼다면 전환 설정에 `"role_models": {}`도 넣는다. 상세 호환 조건은 CLI 실행 계약의 설정 절을 따른다.
+이 예시는 기본 구성과 같다. 세션은 종료 후 재사용하며 작업·운영 예산은 자동 차용하지 않는다. 모델 이름이나 수를 바꾸면 두 예산 맵에도 해당 모델을 명시한다. 판본 5 안에서는 동시 세션 모드와 실행횟수 모드를 구별한다. 예산 모드를 바꾸기 전에는 `operator hold`로 정지를 요청하고 미종료 실행·예약 점유·실행 중 연구 예약 작업이 없는지 확인한다. 실행횟수 모드의 `role_models`를 해제해야 하면 전환 설정에 `"role_models": {}`를 넣는다. 판본 1~4의 기록은 자동 변환하거나 재개하지 않으며, 예산 설정 변경도 그 지원 범위를 바꾸지 않는다.
 
-Claude를 배정하려면 `claude:opus`, `claude:sonnet`, `claude:haiku`처럼 `claude:` 뒤에 CLI 모델 이름이나 별칭을 적는다. `claude-`로 시작하는 전체 모델 ID도 사용할 수 있다. 다른 이름은 Codex로 전달한다. 같은 등급·모델 선택 규칙을 연구·검토·운영 역할에 적용하며, 독립 운영 담당도 배정된 모델의 운영 슬롯을 사용한다.
+Claude를 배정하려면 `claude:opus`, `claude:sonnet`, `claude:haiku`처럼 `claude:` 뒤에 CLI 모델 이름이나 별칭을 적는다. `claude-`로 시작하는 전체 모델 ID도 사용할 수 있다. 다른 이름은 Codex로 전달한다. 같은 등급·모델 선택 규칙을 연구·검토·운영 역할에 적용한다. 정상 예약 감독은 모델 슬롯을 쓰지 않으며, 엔진 실패 뒤 허용된 live 설치 수리를 수행하는 복구 AI만 배정된 운영 슬롯을 사용한다.
 
 [Claude·Codex 혼합 설정 예시](examples/claude-codex-sessions.json)는 상 등급에 `claude:opus`, 중 등급에 `gpt-5.6-sol`, 하 등급에 `claude:haiku`를 배정하고 각 모델의 작업·운영 슬롯을 각각 3개로 둔다. `init --config-file`이나 `configure --config-file`에 이 파일을 전달할 수 있다. 예시를 적용할 때에만 해당 모델과 용량을 사용하며 기본값은 위 Codex 구성이다. 각 등급에는 모델 하나를 지정한다. 모델별 예산의 식별자는 설정 문자열이므로 `tier_models`와 두 예산 맵의 표기를 일치시키고, 같은 모델을 별칭과 전체 ID로 중복 등록하지 않는다.
 
@@ -69,28 +92,30 @@ python .agents/skills/do-math/scripts/do_math.py init `
   --effort medium
 ```
 
-성공 응답은 `instance_id`, 첫 `snapshot`, CLI `status`를 가진 JSON 객체다. 이후 명령에는 같은 `--repository`와 `--instance`를 사용한다.
+성공 응답은 `instance_id`, 첫 `snapshot`, CLI `status`를 가진 JSON 객체다. 이후 명령에는 같은 `--repository`와 `--instance`를 사용한다. 생성 성공은 초기화 완료가 아니다.
 
 ```json
-{"instance_id":"RI-...","snapshot":"<git-oid>","status":"ready"}
+{"instance_id":"RI-...","snapshot":"<git-oid>","status":"initializing"}
 ```
 
 독립 운영을 등록했으면 응답의 `operator_schedule`에서 실제 두 작업을 확인한다. 저장은 성공했지만 예약 등록이 실패하면 생성된 인스턴스 ID·snapshot과 실패·재조정 명령을 반환한다. 같은 연구를 다시 `init`하지 말고 해당 인스턴스의 설치 문제를 해결한다.
 
-여기서 CLI `ready`는 실행기가 다음 action을 처리할 수 있다는 구현 상태다. GLOSSARY의 보편 연구 인스턴스 상태를 새로 정의하지 않으며, 연구 목표가 준비됐거나 해결됐다는 뜻도 아니다.
+`init`은 입력 문자열의 코드 포인트열과 그 UTF-8 바이트 해시·크기를 `immutable_input.text/sha256/bytes`에 한 번만 보존하고 설정·초기 source를 고정한다. 이름과 원문을 정규화하거나 별도 원문 사본으로 바꾸지 않는다. 첫 commit에는 실행 grant나 연구 queue가 없다. 이후 [초기화 운전](references/초기화-운전.md)의 공개 명령과 요청 예시를 순서대로 따른다. 그 문서는 통치·권한 채택, 실제 프로필 참조 조회, 능력 증거, 신뢰 환경과 최초 의도 해석·검사·적용을 설명한다. 이미 채택한 기본값은 같은 승인 근거를 재사용한다.
 
-초기화는 입력 goal과 policy를 저장하고, 등록된 지식·관계 종류와 로컬 역할 실행 grant를 현재 CLI 형식으로 만든 뒤 첫 후보 준비 action을 queue에 넣는다. 이 로컬 grant는 do-math 역할 실행을 위한 현재 구현 기록이며 외부 전송·공개·계정 작업의 허가가 아니다.
+초기화의 독립 검사와 실제 적용, 현재 능력·신뢰·용량·복구 관문이 모두 충족된 경우에만 연구가 활성화된다. 초기화 운전의 마지막 절에 따라 현재 인스턴스의 승인 원문, 독립 검사와 수입 적용 기록을 확인한다. 미완료 관문을 내부 함수 호출이나 저장 파일 편집으로 우회하지 않는다.
 
 ## 정상 운영
 
-지속 연구는 다음 명령으로 별도 연구 예약 작업을 시작한다. 이 대화와 운영 담당이 끝나도 연구 프로세스는 자신의 예약 작업에서 계속된다. 즉시 운영 판단을 받으려면 `operator start-operator`로 별도 운영 작업을 시작한다.
+활성화된 인스턴스의 지속 연구는 다음 명령으로 별도 연구 예약 작업을 시작한다. 이 대화가 끝나도 연구 프로세스는 자신의 예약 작업에서 계속된다. `operator start-operator`는 별도 정상 감독 작업을 즉시 요청하며, 정상 경로에서는 모델을 호출하지 않는다.
+
+`run`에는 전체 실행 시간 제한이 없다. 실행기는 현재 권한·입력·자원이 허용하는 연구와 검토를 배정하고 결과를 회수한다. 작업 예산 AI와 이미 시작한 Lean 계산은 경과 시간만으로 종료하지 않는다. 운영 예산 AI에는 `call_timeout_seconds`가 정하는 개별 호출 기한을 적용한다. 중앙의 일반 형식 검사와 신뢰 환경 전환 검사는 두 종류의 동시 실행 수를 합해 인스턴스당 최대 한 건으로 제한한다. 사용자 정지·종결·권한 회수·필수 전제 변경과 수락된 운영 처분은 해당 실행의 종료·회수 경로를 따른다.
 
 ```powershell
 python .agents/skills/do-math/scripts/do_math.py operator start `
   --repository .skill-workspace/my-math/repo --instance RI-...
 ```
 
-Windows 로그인, 켜져 있고 절전하지 않는 PC, 네트워크와 배정된 모델 CLI의 유효한 인증이 필요하다. 화면 잠금과 로그아웃은 다르다. 놓친 예약은 실행 가능한 상태에서 처리하도록 등록한다. 연구 실행의 내부 관찰·점검과 `operator_interval_seconds`의 주기(기본 2시간)마다 수행하는 전체 운영 점검은 별도로 유지된다.
+Windows 로그인, 켜져 있고 절전하지 않는 PC, 네트워크와 배정된 모델 CLI의 유효한 인증이 필요하다. 화면 잠금과 로그아웃은 다르다. 놓친 예약은 실행 가능한 상태에서 처리하도록 등록한다. 연구 실행의 내부 관찰·점검과 `operator_interval_seconds`의 주기(기본 2시간)마다 수행하는 모델 없는 예약 감독은 별도로 유지된다. 감독은 HOLD·정지·종결·완료·모델 정책 위반과 엔진 작업 상태를 읽고, 실행 가능할 때 엔진 작업을 요청한다.
 
 ### 1. 현재 상태를 읽는다
 
@@ -118,7 +143,7 @@ JSON status에서 먼저 볼 필드는 다음과 같다.
 | `goal_status` | 현재 목표 감사 근거에 대한 CLI 목표 상태 |
 | `pending_actions` | 실행기가 아직 처리하지 않은 action 수 |
 | `tasks` | 과제 ID·제목·현재 CLI 단계 |
-| `knowledge.K`, `knowledge.F`, `knowledge.suspended_K` | 현재 CLI가 계산한 사용 가능 K, `status!=verified` 기록, 사용 정지 K의 수. 여기서 `F` 수치는 보편 F의 완전한 의미 목록이 아니라 CLI 상태 집계다 |
+| `knowledge` | 현재 사용 가능한 `K` 수와 `formal_results`, `expositions`, `identity_assessments`의 기록 수. 기록 수를 성공 판정 수로 읽지 않는다 |
 | `questions` | 사용자 입력이나 결정을 기다리는 질문 |
 | `budget` | 세션 모드의 작업·운영 모델별 한도·점유·여유 또는 구 모드의 실행횟수 한도·누적 사용 |
 | `pending_controls` | inbox에 접수됐지만 아직 적용되지 않은 제어 수 |
@@ -144,7 +169,7 @@ python .agents/skills/do-math/scripts/do_math.py run `
 
 `--max-steps`는 이번 `run` 호출이 처리할 action 수의 상한이다. 수학 연구 단계나 모델 호출 수와 항상 같지는 않는다. 형식 검사·외부 행동 같은 기계 action도 한 step으로 처리될 수 있고, 하나의 AI 실행 안에서 모델 CLI가 수행한 내부 동작 수를 세지 않는다.
 
-`--max-steps`를 생략하면 실행기는 queue와 현재 설정이 허용하는 동안 진행한다. `--watch`를 함께 쓰면 CLI 상태가 `waiting`이어도 `run_timeout_seconds`까지 제어 inbox, 대화 lease와 관찰 사건을 다시 확인한다. 사용자 결정을 자동으로 만들거나 waiting 과제의 조건을 임의로 해소하지 않는다.
+`--max-steps`는 새 action 시작 수의 상한이며 이미 시작한 실행을 시간으로 끊지 않는다. 생략하면 실행기는 queue와 현재 설정이 허용하는 동안 진행한다. `--watch`를 함께 쓰면 CLI 상태가 `waiting`이어도 제어 inbox, 대화 lease와 관찰 사건을 계속 확인한다. 사용자 정지·종결·목표 완료 또는 지정한 시작 수에 따른 회수가 끝나면 반환한다. 사용자 결정을 자동으로 만들거나 waiting 과제의 조건을 임의로 해소하지 않는다. 과거 설정의 `run_timeout_seconds`와 `dispatch_reserve_seconds`는 호환성을 위해 읽지만 배정·종료에는 사용하지 않는다.
 
 ```powershell
 python .agents/skills/do-math/scripts/do_math.py run `
@@ -165,9 +190,15 @@ python .agents/skills/do-math/scripts/do_math.py run `
 - `completed`: 현재 CLI가 목표와 적용되는 학술 요구의 완료 조건을 충족했다고 계산한 상태다. 정확한 목표 감사, K·해설·동일성 판정과 학술 근거를 별도로 읽는다.
 - `closed`: 사용자가 인스턴스를 종결했다. `resume`으로 다시 열 수 없다.
 
-모든 내부 작업자에게 실행별 주 JSON·확장 스키마, 고정 입력과 `submission_contract.command`를 제공한다. 작업자는 최종 응답을 `.scratch/submission.json`에 작성하고 제공된 명령으로 직접 검사한 뒤, 오류를 고쳐 다시 검사해야 한다. `.scratch/`는 버릴 중간 파일용이며 산출·근거로 수집하지 않는다. 검사 범위, 파일 한도와 정확한 제출 절차는 [공통 실행](references/공통-실행.md)을 따른다. 검사 통과는 수학적 승인이나 수신 시점의 현재성 승인이 아니다. 세션 예산의 신규·개정 후보에는 평가가 하나씩 있어야 하며, 미평가 학술 과제와 기존 과제는 후보 준비의 평가 보충 뒤 계약 검토를 받는다. 평가에 필요한 입력이 없으면 사유를 보존해 대기한다. 구체적인 반환 필드와 재개 조건은 [모델과 실행예산](references/모델과-실행예산.md)의 평가 보충 절을 따른다.
+모든 내부 작업자에게 실행별 주 JSON·확장 스키마, 고정 입력과 `submission_contract.command`를 제공한다. 작업자는 스키마를 만족하는 완전한 JSON 값 하나를 최종 응답으로 반환한다. 중앙은 정상 완료한 native stream의 정확한 최종 바이트와 로컬 종료 뒤 작업 공간 산출을 같은 접수 절차로 포착해 검사·봉인한다. 실행 중 결과를 먼저 봉인하려면 `.scratch/submission.json` 같은 초안 경로를 `--submit` 또는 `submit_draft`에 넘길 수 있다. 이 명시 제출은 선택적 조기 전달이며, 이미 접수된 봉인 후보가 있으면 뒤의 다른 최종 응답으로 대체하지 않는다. 명령의 무옵션 로컬 검사와 preview도 오류를 미리 찾는 선택적 진단이며, 그 결과를 최종 접수 증거로 제출하지 않는다. `.scratch/`와 그 아래 `.scratch/.execution-temp/`는 버릴 중간 파일용이며 산출·근거로 수집하지 않는다. 검사 범위, 파일 한도와 정확한 제출 절차는 [공통 실행](references/공통-실행.md)을 따른다. 검사 통과나 정상 CLI 완료는 수학적 승인, 과제 완료 또는 수신 시점의 현재성 승인이 아니다.
 
-출력 수리나 진단 후 재시도까지 실패한 요청은 원 출력·오류·체크포인트와 함께 보류한다. 일반 `resume`은 이를 다시 실행하지 않는다. 실제 원인을 수리한 뒤 `request --role operational_review --target EX-...`로 해당 실패 실행의 진단을 명시적으로 요청할 수 있다. 이 진단이 `retry`를 선택하면 새 입력에서 한 번 더 실행하며, 다시 실패하면 재차 보류한다.
+세션 예산의 신규·개정 후보에는 모델 평가가 하나씩 있어야 한다. 기존 미평가 과제는 평가를 보충하고, 학술 과제는 예산 모드와 관계없이 관찰 규칙도 준비한 뒤 독립 계약 검토를 받는다. 필요한 입력이 없으면 해당 보충을 보류한다. 평가와 규칙을 같은 실행에 배정할 수 있지만 사용자 질문·범위·완료 의무는 바꾸지 않는다. 구체적인 반환과 재개 조건은 [후보 준비 계약](계약/후보-준비.md)의 기존 과제 보충 절과 [모델과 실행예산](references/모델과-실행예산.md)을 따른다.
+
+출력 수리나 진단 후 재시도까지 실패한 요청은 원 출력·오류·체크포인트와 함께 보류한다. 일반 `resume`은 이를 다시 실행하지 않는다. 연구가 활성화된 인스턴스에서는 실제 원인을 수리한 뒤 `request --role operational_review --target EX-...`로 해당 실패 실행의 진단을 명시적으로 요청할 수 있다. 이 진단이 `retry`를 선택하면 새 입력에서 한 번 더 실행하며, 다시 실패하면 재차 보류한다.
+
+초기화 중 최초 원입력의 의도 해석이 기술적 실행 실패로 끝났다면 원인을 고친 뒤 `request --retry-action AC-... --request-id UC-...`로 그 해석을 다시 요청한다. 실행기는 전 실행의 로컬 종료와 예약 회수, 불변 원입력, 현재 채택 프로필과 초기 운영 권한을 확인한다. 같은 action과 활동을 이어 간다. 정상 종료한 native 최종 응답이 정확한 실행 근거와 함께 보존돼 있으면 새 모델 실행 없이 그 응답을 중앙에서 다시 처리하며, 원 실행의 종료 시각·결과 참조·실패 이력을 보존한다. 재사용할 정상 응답이 없으면 실패 실행을 선행 기록으로 연결한 새 실행을 배정한다. 아직 시작하지 않은 해당 실패의 운영 진단은 재시도로 대체한 이력에 남긴다. 이 요청은 새로운 연구를 열거나 의미를 승인하지 않는다.
+
+`input_overflow`로 보류된 입력은 설치나 필수 입력을 수리했거나 사용자가 현재 설정을 적법하게 바꾼 뒤 `request --retry-action AC-... --request-id UC-...`로 정확한 action 하나를 명시적으로 다시 포장할 수 있다. 이 요청은 원 activity와 action ID를 유지하면서 현재 grant와 현재 채택 프로필을 다시 검사할 뿐, 입력 초과가 해소됐다고 선언하거나 새 권한을 만들지 않는다. 재시도에 따른 자동 질문 해소는 실제 포장이 현재 한도 안에 들어온 사실에 근거한다. 이미 적법한 결정으로 해소된 질문은 그 해소 근거를 유지한다. 다시 넘치면 원 실패와 질문은 이력으로 보존되고 새 실패와 새 질문이 같은 activity를 이어받는다. 같은 `request-id`의 재전송은 최초 효과만 재생한다.
 
 ## 입력과 결정을 제공하는 법
 
@@ -284,7 +315,7 @@ python .agents/skills/do-math/scripts/do_math.py pause `
 
 제어 명령은 먼저 workspace의 inbox에 요청을 기록한다. 같은 인스턴스의 writer lock을 얻을 수 있으면 즉시 적용하고, 다른 실행기가 lock을 보유하면 `effect="pending engine processing"`, `lock="busy"`를 반환한다. 이 경우 현재 실행기나 다음 `run`이 요청을 적용한다.
 
-실행 중 pause·close, grant 철회, 필수 입력·목표·정책의 현재성 변경 또는 기한 도래가 확인되면 실행기는 `stop-request.json`을 기록한다. 허용된 짧은 checkpoint 구간 뒤 로컬 Job의 종료를 확인하고 부분 산출과 체크포인트를 회수한다. 현재 구현이 관찰하지 못한 원격 종료와 공급자 내부 호출은 `unknown` 범위로 남는다.
+AI 실행 중 pause·close, grant 철회, 필수 입력·목표·정책의 현재성 변경 또는 그 AI 실행에 적용된 기한 도래가 확인되면 실행기는 관리 디렉터리 `.control/`에 정지 요청을 기록한다. 작업자는 새 연구나 외부 행동을 시작하지 않고 이미 얻은 사실과 가능한 제출·체크포인트를 남긴다. 중앙은 정지 전에 미리 접수한 봉인 후보가 있으면 그 원문만 회수한다. 정지 뒤 도착한 native final이나 파일은 보존 자료일 수 있지만 새 의미 후보로 승인하지 않는다. 실행기는 로컬 Job의 종료를 확인한 뒤 예약을 반환한다. 현재 구현이 관찰하지 못한 원격 종료와 공급자 내부 호출은 `unknown` 범위로 남는다.
 
 ```powershell
 python .agents/skills/do-math/scripts/do_math.py check `
@@ -297,19 +328,23 @@ python .agents/skills/do-math/scripts/do_math.py resume `
   --reason "검사 결과와 남은 범위를 확인했습니다."
 ```
 
-`resume`은 `closed`와 `completed` 상태를 다시 열지 않는다. 거부된 출력이나 진단에서 대기로 남긴 실패 행동을 일반 재개로 실행 대기열에 되살리지 않는다. 먼저 원인을 고치고 운영 점검의 재시도나 현재 입력의 새 역할 요청으로 이어 간다. 새 실행은 필요한 결과·체크포인트를 재사용하되 과거의 잘못된 판정을 현재 상태로 복사하지 않는다.
+`resume`은 `closed`와 `completed` 상태를 다시 열지 않는다. 거부된 출력이나 진단에서 대기로 남긴 실패 행동과 `input_overflow`를 일반 재개로 실행 대기열에 되살리지 않는다. 먼저 원인을 고치고 운영 점검의 재시도, `request --retry-action`, 또는 현재 입력의 새 역할 요청으로 이어 간다. 새 실행은 필요한 결과·체크포인트를 재사용하되 과거의 잘못된 판정을 현재 상태로 복사하지 않는다.
 
 `close`는 queue를 비우고 인스턴스를 종결한다. 진행 중 실행의 회수 기록은 남길 수 있지만 새 연구를 시작하지 않는다.
 
 ### 독립 운영의 설정과 정지
 
-`operator status`는 실제 예약 작업을 조회한다. `operator install`은 현재 인스턴스 설정으로 등록을 다시 맞추고 `operator uninstall`은 그 인스턴스의 연구·정기 운영·일회성 wake 예약을 제거한다. 운영 주기와 기한은 `configure`의 `operator_enabled`, `operator_interval_seconds`, `operator_timeout_seconds`, `operator_effort`로 바꾼다. 세션 모드의 모델은 `tier_models`와 `role_tiers.independent_operator`를 사용하고, 구 실행횟수 모드는 `operator_model`을 사용한다. 적용된 운영 설정 변경은 예약에 반영되며, 제어가 아직 대기 중이면 적용 뒤 설치를 재조정한다. 비활성화나 예약 제거가 이미 실행 중인 연구까지 정지했다는 뜻은 아니다.
+`operator status`는 실제 예약 작업을 조회한다. `operator install`은 현재 인스턴스 설정으로 정상 감독·연구 엔진 작업을 다시 맞추고 `operator uninstall`은 그 인스턴스의 연구·정기 감독·일회성 wake 예약을 제거한다. 운영 주기와 기한은 `configure`의 `operator_enabled`, `operator_interval_seconds`, `operator_timeout_seconds`, `operator_effort`로 바꾼다. `operator_effort`, 세션 모드의 `tier_models`와 `role_tiers.independent_operator`, 구 실행횟수 모드의 `operator_model`은 실패 시 설치 복구 AI에 적용된다. 정상 감독에는 모델 배정이 없다. 즉시 적용된 운영 설정 변경은 CLI가 예약에 반영한다. 제어가 아직 대기 중이면 운전자는 적용을 확인한 뒤 같은 인스턴스에서 `operator install`로 예약을 재조정한다. 비활성화나 예약 제거가 이미 실행 중인 연구까지 정지했다는 뜻은 아니다.
+
+연구 예약의 Windows 실행 제한은 무제한을 뜻하는 `PT0S`다. 운영 담당 예약에는 `operator_timeout_seconds`에 종료 여유 300초를 더한 유한 제한을 적용한다. 기존 설치를 갱신할 때는 같은 인스턴스에서 `operator install`을 사용하고 `operator status`의 `execution_limit`을 확인한다. 재설치는 기존 예약의 Disabled 상태를 보존하며 HOLD나 사용자 정지를 해제하지 않는다.
 
 사용자가 연구와 자동 운영을 함께 멈출 때는 `operator hold`를 쓴다. 이 명령은 고유 ID의 HOLD를 만들고 사용자 정지를 요청한다. `operator release`는 그 HOLD를 해제하며, 현재 사용자 정지가 정확히 같은 HOLD에서 왔을 때만 재개한다. 이후의 다른 사용자 정지는 그대로 유지한다.
 
-독립 담당이 보내는 자동 제어는 `--origin operator`로 표시한다. 이 경로는 사용자 정지를 해제하거나 목표·정책·학술 요구·외부 행동·신뢰 판정을 만들지 못한다. 사용자 제어의 기본 출처는 `user`다. 출처 구별은 같은 사용자 권한에서의 운영 계약이며 보안 격리 장치는 아니다.
+독립 운영 경로가 보내는 자동 제어는 `--origin operator`로 표시한다. 이 경로는 사용자 정지를 해제하거나 목표·정책·학술 요구·외부 행동·신뢰 판정을 만들지 못한다. 사용자 제어의 기본 출처는 `user`다. 출처 구별과 복구 지시는 같은 사용자 OS 권한 안의 실행 계약이며 인증된 호출자 경계나 보안 격리 장치가 아니다.
 
-설치 검사에는 `operator probe`를 사용한다. 배정된 모델의 실제 CLI 실행으로 상태·기록을 읽고 scholarly의 자료원 목록만 확인하며, 연구와 예약 상태를 변경하지 않는다. 독립 운영 보고는 `<workspace>/operator/latest-report.json`, 연구 예약 실행의 결과는 같은 `operator/` 아래 실행별 로그에 보존된다. 내부 `operations_calls`와 별도 운영 담당의 CLI 사용량은 분리해 읽는다. 이 대화로 자동 알림이 전송되지는 않는다.
+설치 감독을 읽기 전용으로 시험하려면 `operator probe`를 사용한다. 이 명령은 상태·기록을 모델 없이 읽고 연구나 예약 상태를 변경하지 않으며, 엔진 읽기 실패가 있어도 복구 AI를 시작하지 않고 실패 증거만 반환한다. 정상 `operator check`는 같은 감독 뒤 실행 가능한 엔진 작업을 요청할 수 있고, 엔진 시작 실패의 실제 증거나 수락된 설치 결함 진단이 있을 때 복구 AI를 연다.
+
+예약 작업이 실행하는 bootstrap은 설치 시점의 파일 manifest와 해시에 고정된 복사본이다. bootstrap은 재분석 지점·파일 해시와 경로를 검사하고, 실행 중인 live 설치와 구별된다. 복구 AI는 writer lock과 별도 설치 유지보수 lock, 종료된 선행 실행, 고정 복구 프로필과 현재 능력 증거, 운영 용량을 모두 확인한 뒤 live 설치만 수리할 수 있다. 연구 기록·사용자 전역 설정·예약 작업·사용자 결정을 고치지 않는다. 수리 뒤 설치본의 `probe_cli.py --skill-only`가 통과한 경우에만 두 lock을 놓고 엔진 재시작을 요청한다. 이는 지시 기반 경계이며 다른 사용자 권한·파일·네트워크·자격 증명 접근을 OS가 차단한다는 뜻이 아니다. 실행별 근거와 결과는 `<workspace>/operator/` 아래에 보존되며 이 대화로 자동 알림이 전송되지는 않는다.
 
 ## 운영 제어 명령의 용도
 
@@ -317,6 +352,7 @@ python .agents/skills/do-math/scripts/do_math.py resume `
 |---|---|---|
 | `configure --config-file` | 모델 대응·역할 등급·세션 한도, 시간, 검토·관찰·산출 한도를 바꿀 때 | 목표·정책·학술 요구·외부 허가는 설정이 아니다 |
 | `request --role ...` | 지원하는 후보 준비·연구 계획·보충 조사·운영 점검·유지보수 action을 명시적으로 열 때 | 요청 생성은 모델 실행이나 결과 승인이 아니다 |
+| `request --retry-action AC-...` | 수리 뒤 입력 초과를 다시 포장하거나, 기술적 실패로 끝난 초기 원입력의 의도 해석을 다시 시도할 때 | 같은 action·활동과 원 실패를 보존하며, 해소 선언이나 새 승인·범위 변경을 만들지 않는다 |
 | `knowledge --file` | candidate·종류 정의·관계를 수입하거나 기존 지식을 개정·무효화할 때 | candidate 수입은 K 편입이 아니다 |
 | `trust --file` | 신뢰 환경을 등록·전환·무효화할 때 | 전환 성공은 무관한 의미·의존 정지 원인을 해소하지 않는다 |
 | `external --file` | grant에 결박된 HTTP 행동을 준비하거나 unknown을 대조하고 알려진 실패를 재시도할 때 | `confirmed`와 HTTP 성공 여부는 별도다 |
@@ -340,15 +376,15 @@ python .agents/skills/do-math/scripts/do_math.py resume `
 
 ## 현재 지원 범위
 
-현재 CLI는 인스턴스별 Git ref와 writer lock, 두 JSON 상태 루트와 불변 artifact, 모델별 슬롯 안의 병렬 AI 실행과 순차 결과 반영, Codex·Claude CLI 구조화 출력, Lean·공리 검사, 동일성 검토의 이의 왕복, 목표·학술 후속, source·지식·관계·신뢰·외부 HTTP·대화 제어를 구현한다.
+판본 5는 인스턴스별 Git ref와 writer lock, 기록군 저장, 활동·다중 실행 수명, 불변 프로필, 구조화 작업 의무·처분, 편입 묶음, 독립 동일성 검토의 범위 계획과 자기 점검 규칙을 정의한다. 각 명령과 역할의 성공은 그 소비자가 실제로 검사·적용한 범위에만 효력이 있다. 스키마 적합, 로컬 생산자 검사, 중앙 미리보기, 제출 의도 접수, 저장 적용, 형식 검사와 독립 의미 판정은 서로 다른 증거다.
 
 새 인스턴스의 작업·운영 예산은 모델별 로컬 AI 실행의 동시 점유로 계산한다. 기존 실행횟수 모드는 명시적인 설정 전환 전까지 보존한다. Codex의 turn usage와 Claude의 최종 result usage는 보존하지만 공급자 내부 호출별 ID·예약·원격 종료를 보증하지 않는다. 현재 기본 Windows 실행은 Codex의 `danger-full-access`·승인 정책 `never`, Claude의 `bypassPermissions`로 기존 사용자 권한을 쓴다. Windows Job은 로컬 프로세스 수명과 자손 종료를 관리하지만 모든 host 파일·network·credential 접근을 차단하지 않는다. 별도 세션·작업 공간과 동료 결과 비제공은 입력 경계를 만들지만 통계적 독립성이나 강한 OS 격리의 증거가 아니다.
 
 ## 기능 판본과 결과의 시각을 확인한다
 
-새 인스턴스는 기능 판본 4를 사용한다. 판본 1~3의 기록은 읽기·조회·내보내기가 가능하지만 이 설치본은 그 queue·승인·질문을 새 의미로 자동 변환해 재개하지 않는다. 검증된 별도 변환이 없으면 새 인스턴스를 만들고 필요한 수학 산출을 정확한 출처와 확인 범위를 가진 입력으로 제공한다. 과거 runtime을 새 연구에 복사하거나 옛 거부를 소급 수락하지 않는다. 설치본 수리는 기존 HOLD를 해제하지 않는다.
+판본 5 저장소는 세분된 기록군과 사건을 권위 있는 Git 상태로 공개하며, 알려진 옛 두 JSON 루트를 자동 수입하지 않는다. 검증된 별도 변환 없이는 과거 runtime을 복사하거나 옛 queue·승인·질문을 새 의미로 변환해 재개하지 않으며, 옛 거부를 소급 수락하거나 설치본 수리로 기존 HOLD를 해제하지 않는다.
 
-`status --json`은 과제 단계와 선택된 미시작 요청·실제 활성 실행·마지막 수락 결과·미해소 의무·대기 이유를 함께 보여 준다. `provider_waits`와 슬롯 예산은 로컬 원장에서 별도로 관측한 값이며 연구 snapshot과 원자적으로 같은 시각의 자료가 아니다. 열린 사용자 질문은 `questions`, 출처·소유·대상·해소는 `question_links`, 실패 의무는 `waiting_actions`에서 확인한다.
+`status --json`은 한 Git snapshot에서 과제 단계, 선택된 미시작 요청, 저장된 실행·예약·슬롯 예산·`provider_waits`, 마지막 수락 결과, 미해소 의무와 대기 이유를 함께 재구성한다. 이 snapshot은 저장된 원장 상태를 일관되게 보여 주지만 조회 순간의 호스트 프로세스나 공급자의 현재 상태를 원자적으로 관찰한 값은 아니다. 실제 프로세스·예약 작업·별도 운영 로그를 함께 볼 때에는 각 관측 시각과 범위를 구별한다. 열린 사용자 질문은 `questions`, 출처·소유·대상·해소는 `question_links`, 실패 의무는 `waiting_actions`에서 확인한다.
 
 고정 snapshot의 실행 시각과 계보는 다음 명령으로 내보낸다. JSON은 원시 UTC와 현지 날짜·UTC offset을 함께 보존하고 CSV도 같은 실행 행을 사용한다. 과거에 기록하지 않은 시각은 null 또는 빈 셀이다.
 
@@ -368,11 +404,23 @@ python .agents/skills/do-math/scripts/probe_cli.py --skill-only
 
 이 검사는 스킬 폴더 안의 문서와 코드만 읽으며 모델을 호출하지 않는다. 기존 `probe_codex.py --skill-only`도 같은 구조 검사기를 호출하는 호환 진입점이다. `scope="installed_skill_structure"`, `status="verified"`는 역할 읽기 대응표의 문서와 운영 문서를 읽었고 역할 출력 스키마의 형식 검사를 통과했다는 뜻이다. 문서 내용의 정확성, 실행 환경이나 연구 성능까지 검증한 결과는 아니다. `--spec-only`는 같은 검사의 호환 별칭이다.
 
-현재 코드의 회귀 검사는 unittest discovery로 `scripts/tests/test_*.py`를 수집해 실행한다. 일부 시험 파일은 직접 실행해도 시험을 시작하지 않으므로 파일별 종료 코드만으로 회귀 검사를 완료했다고 판단하지 않는다.
+회귀 검사는 `run_tests.py`로 실행한다. 실행기는 unittest discovery로 `scripts/tests/test_*.py`를 수집하고 기본으로 전체를 순차 실행한다. 실제 Lean·부하 검사는 Windows Job이 소유한 별도 프로세스에서 실행한다. 별도 프로세스에서 실행하는 검사는 같은 클래스의 공통 준비를 한 번 수행하며, 각 검사와 그 준비·종료 단계의 제한 시간은 기본 300초다. `--timeout`으로 초 단위 상한을 바꿀 수 있다. 이 값은 테스트 실행기의 운영 기본값이며 제품 Lean의 무제한 계산 계약을 바꾸지 않는다.
 
 ```powershell
-python -m unittest discover -s .agents/skills/do-math/scripts/tests -p "test_*.py"
+python .agents/skills/do-math/scripts/run_tests.py --output 임시/do-math-tests-all
 ```
+
+`--group unit`은 순수 규칙과 임시 파일 중심의 검사, `integration`은 실제 저장·프로세스 등 통합 검사, `lean`은 실제 컴파일러 검사, `resource`는 CPU·메모리·큰 출력 부하 검사, `archive`는 과거 실행 증거의 전체 무결성 검사다. `--group`을 반복해 조합할 수 있으며 생략하면 모두 실행한다. `--match`는 테스트 ID의 glob으로 선택하고 `--list`는 수집 결과만 표시한다. 선택 결과가 없으면 실패로 끝난다.
+
+```powershell
+python .agents/skills/do-math/scripts/run_tests.py --group unit --output 임시/do-math-tests-unit
+python .agents/skills/do-math/scripts/run_tests.py --group lean --timeout 600 --output 임시/do-math-tests-lean
+python .agents/skills/do-math/scripts/run_tests.py --match "*test_performance_save*" --list
+```
+
+결과 디렉터리는 새 경로나 빈 디렉터리를 지정한다. 생략하면 고유한 임시 디렉터리를 만든다. `report.json`은 테스트별 결과·시간, 느린 검사 목록, 코드 판본과 실행 중 변경 여부를 기록한다. 격리 실행의 stdout·stderr와 진행 기록도 남긴다. 격리 작업자의 임시 파일은 해당 결과 디렉터리의 `scratch/` 아래에 만들므로, 강제 종료로 정리되지 않은 Lean 입력·출력도 그곳에서 찾을 수 있다. 시간 초과 때에는 해당 Job의 자식까지 종료하고, 같은 작업자에서 끝내지 못한 검사는 미실행으로 기록하며 다른 검사 그룹을 계속한다. 부분 실행을 전체 통과로 표시하지 않는다. 일반 `integration`·`unit`·`archive` 그룹에는 이 프로세스 시간 상한을 적용하지 않는다.
+
+기존 `python -m unittest discover -s .agents/skills/do-math/scripts/tests -p "test_*.py"`도 사용할 수 있지만, 그룹 선택·시간 보고·외부 프로세스 종료 관리는 제공하지 않는다. 새 실제 Lean·부하 테스트에는 `test_categories.test_group`으로 그룹을 명시한다. 분류하지 않은 새 테스트는 보수적으로 `integration`에 들어간다. 일부 시험 파일은 직접 실행해도 시험을 시작하지 않으므로 파일별 종료 코드만으로 회귀 검사를 완료했다고 판단하지 않는다.
 
 실제 Codex·Claude·Lean·HTTP·Windows 프로세스가 필요한 검사는 각 시험의 환경 조건과 실행 결과를 확인한다. 검증 결과는 검사한 판본, 사례, 통과·실패·미실행 범위와 함께 보존하고, 해석 기준은 [CLI 실행 계약](references/CLI-실행-계약.md)의 「검증 근거의 해석」을 따른다.
 

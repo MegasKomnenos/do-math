@@ -1,166 +1,158 @@
-"""State checker tests against states produced by the real local harnesses."""
-from __future__ import annotations
+"""Persisted v5 checks use actual domain producers and adversarial mutations.
 
+These replace the v4 FakeEngine academic end-to-end fixture: the checker tests
+record invariants, not the retired nonformal final-assurance workflow.
+"""
 from copy import deepcopy
-from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 import sys
-import threading
 import unittest
-
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from do_math.engine import control
-from do_math.state_checks import state_errors
-from test_academic_engine import AcademicRunner
-from test_lifecycle_engine import FakeEngine
-from test_purpose_engine import PurposeHarness
+from do_math import knowledge_records, external, execution_lifecycle
+from do_math.state_checks import inspect_state, state_errors
+from test_redesign_SURFACE import surface_state
 
 
-def academic_requirement(criteria):
-    return {"id": "writeup", "scope": "A reader-facing account of the solved theorem.",
-            "criteria": criteria, "assessor": "research_plan"}
+class StateCheckTests(unittest.TestCase):
+    def test_valid_rule_payload_is_not_an_error_list(self):
+        from v5_fixtures import supply_observation_rules
+        instance, runtime = surface_state()
+        extensions = {}
+        supply_observation_rules([{'title': 'fixture'}], extensions)
+        rules = extensions['task_conditions'][0]['observation_rules']
+        runtime['executions']['EX-1']['observation_rules'] = deepcopy(rules)
+        runtime['task_observation_rules'] = {'TK-fixture': deepcopy(rules)}
+        self.assertEqual(self.area(instance, runtime, 'self_check_stop')['status'], 'healthy')
+        runtime['executions']['EX-1']['observation_rules'][0]['threshold'] = 0
+        self.assertError(instance, runtime, 'positive integer', 'self_check_stop')
+
+    def area(self, instance, runtime, name):
+        return inspect_state(instance, runtime, requested_areas=[name])
+
+    def assertError(self, instance, runtime, text, area):
+        errors = self.area(instance, runtime, area)['findings']
+        self.assertTrue(any(text in row['message'] for row in errors), errors)
+
+    def test_domain_created_activity_execution_profiles_are_clean(self):
+        instance, runtime = surface_state()
+        report = self.area(instance, runtime, 'tasks_activities_executions')
+        self.assertEqual(report['status'], 'healthy', report)
+        self.assertIn('activity ownership and continuation', report['areas'][0]['checked_invariants'])
+        before = deepcopy(runtime)
+        self.area(instance, runtime, 'tasks_activities_executions')
+        self.assertEqual(runtime, before)
+
+    def test_execution_state_lineage_profile_and_activity_mutations(self):
+        for field, value, message in (
+            ('status', 'teleporting', 'status'),
+            ('owner_activity_id', 'absent', 'activity'),
+            ('continuation_of', 'EX-missing', 'continuation'),
+            ('execution_profile_ref', {'id': 'missing'}, 'profile'),
+        ):
+            with self.subTest(field=field):
+                instance, runtime = surface_state()
+                runtime['executions']['EX-1'][field] = value
+                self.assertError(instance, runtime, message, 'tasks_activities_executions')
+        instance, runtime = surface_state()
+        profile = next(iter(instance['execution_profiles'].values()))
+        profile['role'] = 'changed'
+        self.assertEqual(self.area(instance, runtime, 'tasks_activities_executions')['status'], 'blocked')
+
+    def test_separated_knowledge_and_source_mutations(self):
+        instance, runtime = surface_state()
+        candidate = {'kind': 'theorem', 'title': 'P', 'statement': 'P', 'explanation': 'Argument',
+                     'summary': 'P follows', 'lean_code': 'theorem p : True := True.intro',
+                     'declaration_names': ['p'], 'dependencies': []}
+        instance, kid = knowledge_records.create_candidate(instance, candidate, source_ref='SRC', actor_ref='EX-1')
+        self.assertEqual(self.area(instance, runtime, 'mathematical_effect')['status'], 'healthy')
+        formal = instance['formal_results'][instance['knowledge'][kid]['formal_result_id']]
+        formal.update(publication_state='accepted', formal_use='active')
+        self.assertError(instance, runtime, 'stale verification', 'mathematical_effect')
+        instance['knowledge'][kid]['exposition_id'] = 'missing'
+        self.assertEqual(self.area(instance, runtime, 'mathematical_effect')['status'], 'blocked')
+        instance['sources'] = [{'name': 'broken', 'path': 'runtime/broken', 'sha256': 'bad', 'bytes': -1}]
+        self.assertError(instance, runtime, 'invalid sha256', 'record_storage')
+        self.assertError(instance, runtime, 'invalid byte count', 'record_storage')
+
+    def test_completion_requires_all_obligations_and_authoritative_waiver(self):
+        from test_redesign_TASKS import task
+        instance, runtime = surface_state()
+        value = task()
+        value['status'] = 'completed'
+        from do_math.execution_profiles import profile_ref
+        value['profile_refs'] = [profile_ref(next(p for p in instance['execution_profiles'].values() if p['role']=='research_work'))]
+        value['assessment'] = {'task_id':value['id'],'decision':'completed','reason':'Obligations assessed', 'item_dispositions': [
+            {'obligation_id': 'OB-1', 'kind': 'fulfilled', 'evidence_refs': ['EV-1']}], 'unresolved': []}
+        runtime['tasks'][value['id']] = value
+        self.assertError(instance, runtime, 'every obligation', 'tasks_activities_executions')
+        value['assessment']['item_dispositions'].append(
+            {'obligation_id': 'OB-2', 'kind': 'waived', 'authority_ref': 'missing', 'evidence_refs': []})
+        self.assertError(instance, runtime, 'authority', 'tasks_activities_executions')
+
+    def test_solved_goal_requires_current_complete_audits(self):
+        instance, runtime = surface_state()
+        instance.update(goal_status='mathematically_solved', goal_assessment_basis='GB')
+        instance['goal_judgments'] = [{'id': 'GJ-1', 'execution_id': 'EX-1', 'basis': 'GB', 'required': 1, 'slot': 'one',
+                                     'decision': 'satisfied', 'scope_complete': True}]
+        self.assertEqual(self.area(instance, runtime, 'mathematical_effect')['status'], 'healthy')
+        instance['goal_judgments'][0]['current'] = False
+        self.assertError(instance, runtime, 'current agreeing audits', 'mathematical_effect')
+
+    def test_supplement_request_must_match_pending_review_owner(self):
+        instance, runtime = surface_state()
+        runtime['review_cycles'] = {'RC': {'id': 'RC', 'status': 'working', 'knowledge_id': 'KN',
+            'research': {'RQ': {'status': 'pending', 'action': {'slot': 'initial-0'}}}}}
+        runtime['queue'] = [{'role': 'supplemental_research', 'target': 'KN',
+            'review_cycle_id': 'RC', 'research_request_id': 'RQ', 'requesting_slot': 'wrong'}]
+        self.assertError(instance, runtime, 'queued investigation is not linked', 'preparation_selection')
+
+    def test_external_error_http_remains_unknown_and_reconciliation_is_distinct(self):
+        instance, runtime = surface_state()
+        operation = external.prepare_operation({'method': 'POST', 'url': 'https://example.test/', 'body': ''}, 'GR', 'SRC', 'OP')
+        operation['producer_executions'] = ['EX-1']
+        import jsonschema
+        from do_math.record_schemas import RECORDS, REFERENCES
+        jsonschema.validate(operation, RECORDS['external_operations'])
+        self.assertIn(('EX-1', 'executions'), list(REFERENCES['external_operations'](operation)))
+        with self.assertRaises(jsonschema.ValidationError):
+            jsonschema.validate({**operation, 'producer_executions': [1]}, RECORDS['external_operations'])
+        # An actual domain transport response, not a fabricated successful receipt.
+        grant = {'id': 'GR', 'status': 'active', 'allowed_origins': ['https://example.test'],
+                 'allowed_methods': ['POST'], 'allowed_path_prefixes': ['/'], 'credential_env': {}}
+        operation = external.execute_operation(operation, grant,
+            transport=lambda *_: {'http_status': 500, 'body': b'uncertain'}, persist=lambda row: row)
+        runtime['external_operations'] = {'OP': operation}
+        self.assertEqual(operation['status'], 'unknown')
+        self.assertEqual(self.area(instance, runtime, 'tasks_activities_executions')['status'], 'healthy')
+        operation['succeeded'] = False
+        self.assertError(instance, runtime, 'definitive success', 'tasks_activities_executions')
+        operation['succeeded'] = None
+        operation['handling'] = 'reconciled'
+        self.assertError(instance, runtime, 'reconciled handling', 'tasks_activities_executions')
+
+    def test_reservation_requires_balanced_settlement_and_existing_owner(self):
+        instance, runtime = surface_state()
+        runtime['reservations']['R'] = {'id': 'R', 'constraint_id': 'missing', 'unit': 'session',
+            'budget_kind': 'work', 'state': 'settled', 'reserved': 1, 'confirmed_consumed': 0,
+            'returned': 0, 'owner_kind': 'execution', 'owner_id': 'missing', 'evidence_refs': []}
+        self.assertError(instance, runtime, 'reservation', 'tasks_activities_executions')
+
+    def test_requested_area_never_reuses_other_domain_findings(self):
+        instance, runtime = surface_state()
+        runtime['executions']['EX-1']['status'] = 'teleporting'
+        self.assertEqual(self.area(instance, runtime, 'governance_trust')['status'], 'healthy')
+        report = self.area(instance, runtime, 'start_import_input')
+        self.assertEqual(report['status'], 'incomplete')
+        self.assertTrue(report['areas'][0]['not_checked'])
+
+    def test_unknown_version_and_old_state_are_not_new_contract_success(self):
+        instance, runtime = surface_state()
+        instance['feature_version'] = 99
+        self.assertError(instance, runtime, 'feature_version 5', 'record_storage')
+        instance['feature_version'] = runtime['feature_version'] = 99
+        self.assertIn('state: unsupported feature version', state_errors(instance, runtime))
 
 
-class PurposeStateHarness(PurposeHarness):
-    def make(self, *args, **kwargs):
-        engine, _ = super().make(*args, **kwargs)
-        runner = AcademicRunner()
-        engine.runner = runner
-        self.runners[-1] = runner
-        return engine, runner
-
-    def complete_academic_state(self):
-        engine, _ = self.make()
-        control(self.repo, engine.instance["id"], "decision", config={"change": {
-            "kind": "academic_requirements", "decision_id": "academic-v1",
-            "requirements": [academic_requirement(["draft account"])],
-        }})
-        engine.process_controls()
-        self.drive(engine, predicate=lambda current: current.runtime["status"] == "completed", limit=40)
-        return engine
-
-
-class StateCheckTests(PurposeStateHarness):
-    def assertError(self, instance, runtime, text):
-        errors = state_errors(instance, runtime)
-        self.assertTrue(any(text in error for error in errors), errors)
-
-    def test_real_purpose_harness_solved_academic_state_is_clean(self):
-        engine = self.complete_academic_state()
-        self.assertEqual(engine.instance["goal_status"], "mathematically_solved")
-        self.assertEqual(engine.runtime["status"], "completed")
-        self.assertEqual(state_errors(engine.instance, engine.runtime), [])
-
-    def test_mutated_real_purpose_state_detects_k_task_goal_source_and_supplement_errors(self):
-        engine = self.complete_academic_state()
-        instance, runtime = deepcopy(engine.instance), deepcopy(engine.runtime)
-        knowledge_id = next(iter(instance["knowledge"]))
-        instance["knowledge"][knowledge_id]["formal"]["source_sha256"] = "0" * 64
-        self.assertError(instance, runtime, "formal source is stale")
-
-        instance, runtime = deepcopy(engine.instance), deepcopy(engine.runtime)
-        task = next(task for task in runtime["tasks"].values() if task.get("academic_requirement_id"))
-        task["assessment"]["current"] = False
-        runtime["executions"]["EX-live-work"] = {"id": "EX-live-work", "role": "research_work", "status": "running",
-                                                     "action": {"target": task["id"]}}
-        self.assertError(instance, runtime, "suspended completed task assessment lacks an invalidation reason")
-        self.assertError(instance, runtime, "has a live worker")
-
-        instance, runtime = deepcopy(engine.instance), deepcopy(engine.runtime)
-        instance["goal_judgments"][0]["current"] = False
-        self.assertError(instance, runtime, "complete current agreeing audits")
-
-        instance, runtime = deepcopy(engine.instance), deepcopy(engine.runtime)
-        instance["sources"].append({"name": "broken", "path": "runtime/broken", "sha256": "not-a-hash", "bytes": -1})
-        self.assertError(instance, runtime, "invalid sha256")
-        self.assertError(instance, runtime, "invalid byte count")
-
-        instance, runtime = deepcopy(engine.instance), deepcopy(engine.runtime)
-        knowledge_id = next(iter(instance["knowledge"]))
-        runtime["review_cycles"]["RC-pending"] = {"id": "RC-pending", "knowledge_id": knowledge_id, "status": "working",
-            "research": {"request": {"status": "pending", "action": {"slot": "initial-0"}}}}
-        runtime["queue"].append({"role": "supplemental_research", "target": knowledge_id, "review_cycle_id": "RC-pending",
-                                 "research_request_id": "request", "requesting_slot": "wrong"})
-        self.assertError(instance, runtime, "queued investigation is not linked")
-
-    def test_real_lifecycle_prepare_run_and_reconcile_states_are_clean(self):
-        engine = FakeEngine(self.root)
-        received = []
-
-        class Handler(BaseHTTPRequestHandler):
-            def do_GET(self):
-                received.append(self.path)
-                body = b"local receipt"
-                self.send_response(200)
-                self.send_header("Content-Length", str(len(body)))
-                self.end_headers(); self.wfile.write(body)
-            def do_POST(self):
-                self.rfile.read(int(self.headers.get("Content-Length", "0")))
-                received.append(self.path)
-                self.close_connection = True
-            def log_message(self, *args):
-                pass
-
-        server = HTTPServer(("127.0.0.1", 0), Handler)
-        worker = threading.Thread(target=server.serve_forever, daemon=True)
-        worker.start()
-        self.addCleanup(server.server_close)
-        self.addCleanup(server.shutdown)
-        origin = f"http://127.0.0.1:{server.server_port}"
-        engine.instance["grants"]["HTTP"] = {"id": "HTTP", "kind": "http", "status": "active",
-            "allowed_origins": [origin], "allowed_methods": ["GET", "POST"], "allowed_path_prefixes": ["/"]}
-
-        engine.control("external", {"operation": "prepare", "grant_id": "HTTP", "id": "OP-ready",
-                                     "request": {"method": "GET", "url": origin + "/read"}})
-        # Preparation has a reserved EX ID but intentionally no execution row.
-        self.assertEqual(state_errors(engine.instance, engine.runtime), [])
-        engine.machine("external_action")
-        self.assertEqual(engine.runtime["external_operations"]["OP-ready"]["status"], "confirmed")
-        self.assertEqual(state_errors(engine.instance, engine.runtime), [])
-
-        engine.control("external", {"operation": "prepare", "grant_id": "HTTP", "id": "OP-unknown",
-                                     "request": {"method": "POST", "url": origin + "/uncertain", "body": "x"}})
-        engine.machine("external_action")
-        self.assertEqual(engine.runtime["external_operations"]["OP-unknown"]["status"], "unknown")
-        self.assertEqual(state_errors(engine.instance, engine.runtime), [])
-        engine.control("external", {"operation": "reconcile", "id": "OP-unknown", "result": "confirmed",
-                                     "evidence": "Operator matched the preserved local receipt"})
-        self.assertEqual(state_errors(engine.instance, engine.runtime), [])
-        self.assertEqual(received, ["/read", "/uncertain"])
-
-    def test_external_mapping_mutation_and_version_policy(self):
-        engine = FakeEngine(self.root)
-        engine.instance["feature_version"] = engine.runtime["feature_version"] = 2
-        engine.instance["grants"]["HTTP"] = {"id": "HTTP", "kind": "http", "status": "active",
-            "allowed_origins": ["http://127.0.0.1:1"], "allowed_methods": ["GET"], "allowed_path_prefixes": ["/"]}
-        engine.control("external", {"operation": "prepare", "grant_id": "HTTP", "id": "OP",
-                                     "request": {"method": "GET", "url": "http://127.0.0.1:1/"}})
-        operation = engine.runtime["external_operations"]["OP"]
-        # A false execution row for an unstarted ledger is not the valid prepared state.
-        engine.runtime["executions"][operation["execution_id"]] = {"id": operation["execution_id"], "role": "external_action",
-            "operation_id": "different", "status": "running", "outcome": "prepared"}
-        self.assertError(engine.instance, engine.runtime, "missing EX execution mapping")
-
-        engine = self.complete_academic_state()
-        instance, runtime = deepcopy(engine.instance), deepcopy(engine.runtime)
-        instance["feature_version"] = runtime["feature_version"] = 99
-        self.assertError(instance, runtime, "unsupported feature version")
-
-    def test_cli1_legacy_state_remains_readable(self):
-        engine = self.complete_academic_state()
-        instance, runtime = deepcopy(engine.instance), deepcopy(engine.runtime)
-        instance["feature_version"] = runtime["feature_version"] = 1
-        for record in instance["knowledge"].values():
-            record.pop("use_suspensions", None)
-            record.pop("review_cycle_id", None)
-            record.pop("identity_assessment", None)
-            record.get("formal", {}).pop("trust_environment_id", None)
-            record.get("formal", {}).pop("trust_environment_status", None)
-        # CLI-1 has no feature-2 currentness metadata. Its persisted structure
-        # is still readable rather than being rejected as an unknown contract.
-        self.assertEqual(state_errors(instance, runtime), [])
-
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main(verbosity=2)

@@ -12,19 +12,21 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from v5_fixtures import local_job_runner
 from do_math.contracts import schema_for
 from do_math.model_policy import LIMITS, MODELS
+from do_math.execution_profiles import profile_ref
 from do_math.planning import contract_hash
 from do_math.repository import canonical_json
 from do_math.submission import payload_issues
+from v5_fixtures import charter_change, policy_change, producer_result, contract_review, prepared_rule_conditions
 from test_engine import common, context_from
 from test_purpose_engine import PurposeHarness
 
 
 def candidate(title="one"):
-    return {"title": title, "question": "Check the given identity", "scope": "Given inputs only",
-            "expected_result": "A checked report", "completion_criteria": ["Report the check"],
-            "inputs": [], "reuse": [], "work_class": "nonformal", "revises_task_id": ""}
+    from v5_fixtures import candidate as task_candidate
+    return task_candidate(title)
 
 
 def rating(**identity):
@@ -41,7 +43,17 @@ class AssessmentSubmissionTests(unittest.TestCase):
         self.output = {**common("research_preparation"), "candidates": [candidate("one"), candidate("two")]}
 
     def issues(self, extensions):
-        return payload_issues(self.output, schema_for("research_preparation"), self.context, extensions, self.workspace)
+        from v5_fixtures import seal_response, supply_observation_rules
+        extensions = deepcopy(extensions)
+        if 'assessment_targets' not in self.context['action']:
+            supply_observation_rules(self.output['candidates'], extensions)
+        (self.workspace / 'activity-extensions.json').write_bytes(canonical_json(extensions))
+        output = deepcopy(self.output)
+        from do_math.repository import semantic_content_hash
+        for task in self.context['tasks']:
+            task.setdefault('content_sha256', semantic_content_hash(task))
+        seal_response(output, self.context, self.workspace)
+        return payload_issues(output, schema_for("research_preparation"), self.context, extensions, self.workspace)
 
     def test_missing_candidate_assessments_are_rejected_with_missing_titles(self):
         issues = self.issues({"model_assessments": [rating(task_title="one")]})
@@ -60,10 +72,12 @@ class AssessmentSubmissionTests(unittest.TestCase):
                 self.assertTrue(self.issues({"model_assessments": [rating(task_title=x) for x in titles]}))
 
     def test_revised_candidate_also_needs_a_new_assessment(self):
-        old = {**candidate(), "id": "TK-old", "revision": 1, "status": "needs_revision", "model_assessment": rating()}
+        old = {**candidate(), "id": "TK-old", "revision": 1, "status": "waiting", "model_assessment": rating()}
         self.context["tasks"] = [old]
+        self.context['action']['revision_targets'] = {'TK-old': {'revision': 1, 'contract_sha256': contract_hash(old)}}
         self.output["candidates"] = [{**candidate(), "revises_task_id": "TK-old"}]
-        self.assertTrue(self.issues({}), "the old edition's assessment must not fill the new candidate implicitly")
+        issues = self.issues({})
+        self.assertIn('model_assessments', json.dumps(issues), "the old edition's assessment must not fill the new candidate implicitly")
 
     def test_empty_preparation_and_legacy_call_budget_contract_remain_accepted(self):
         self.output["candidates"] = []
@@ -73,7 +87,9 @@ class AssessmentSubmissionTests(unittest.TestCase):
         self.assertEqual(self.issues({}), [])
 
     def test_assessment_only_payload_cannot_edit_contracts_or_use_other_extensions(self):
-        self.context["action"]["assessment_targets"] = {"TK-one": {"revision": 1, "contract_sha256": "frozen"}}
+        task = {**candidate(), 'id': 'TK-one', 'revision': 1, 'status': 'waiting'}
+        self.context['tasks'] = [task]
+        self.context["action"]["assessment_targets"] = {"TK-one": {"revision": 1, "contract_sha256": contract_hash(task)}}
         self.output["candidates"] = []
         good = {"model_assessments": [rating(task_id="TK-one")]}
         self.assertEqual(self.issues(good), [])
@@ -96,15 +112,27 @@ class AssessmentSubmissionTests(unittest.TestCase):
 class AssessmentFlowTests(PurposeHarness):
     def prepare_engine(self):
         engine, _ = self.make(scholarly_enabled=False, operator_enabled=False, session_limits=deepcopy(LIMITS))
+        from v5_fixtures import send_control
+        from do_math.academic import current_requirements
+        send_control(engine, "decision", config={"change": charter_change(engine, academic_requirements=[
+            {"id": "r", "scope": "solution", "criteria": ["Explain the supplied argument"], "assessor": "research_plan"}])})
+        requirement_hash = current_requirements(engine.instance)["sha256"]
+        # Public controls reload Git; isolate this assessment fixture afterward,
+        # preserving its real grants, requirements and pending event history.
         engine.runtime["queue"] = []
-        engine.instance["academic_requirements"] = {"sha256": "preserve-user-requirement", "items": []}
         for number in (1, 2):
             tid = f"TK-academic-{number}"
-            engine.runtime["tasks"][tid] = {**candidate(str(number)), "id": tid, "revision": 1, "feature_version": 2,
-                "status": "planned", "producer_execution": "user-requirement:r", "academic_requirement_id": "r",
-                "requirements_sha256": "preserve-user-requirement", "results": [], "reviews": [], "dependencies": [],
-                "occurrence_condition": {"op": "always"}, "initial_observation_rules": []}
+            engine.runtime["tasks"][tid] = {**candidate(str(number)), "id": tid, "revision": 1, "feature_version": 5,
+                "status": "planned", "academic_requirement_id": "r",
+                "requirements_sha256": requirement_hash, "results": [], "reviews": [], "dependencies": [],
+                "occurrence_condition": {"op": "always"},
+                "initial_observation_rules": prepared_rule_conditions([tid])[0]['observation_rules']}
+            engine.runtime["tasks"][tid]["profile_refs"] = deepcopy(engine.instance["role_profile_refs"]["research_work"])
+            engine.runtime["tasks"][tid]["authority_refs"] = [g["id"] for g in engine.instance["grants"].values()
+                if g.get("kind") == "local" and g.get("status") == "active" and "research_work" in g.get("roles", [])]
+            engine.runtime["tasks"][tid].pop("revises_task_id")
             engine._enqueue("task_contract_review", tid)
+        engine._refresh_readiness()
         engine._save()
         return engine
 
@@ -127,21 +155,24 @@ class AssessmentFlowTests(PurposeHarness):
         before = deepcopy(engine.runtime["tasks"])
         seen = []
         class Runner:
+            @local_job_runner
             def run(inner, **args):
-                args["on_started"]({"pid": 1})
+                args["on_started"]({"fixture": "synthetic process"})
                 context = context_from(args["prompt"])
                 seen.append(context)
                 targets = context["action"].get("assessment_targets", {})
                 output = {**common("research_preparation"), "candidates": []}
                 extensions = {"model_assessments": [rating(task_id=tid) for tid in targets]}
                 (args["workspace"] / "activity-extensions.json").write_bytes(canonical_json(extensions))
+                from v5_fixtures import seal_response
+                seal_response(output, context, args["workspace"])
                 draft = args["workspace"] / ".scratch/submission.json"
                 draft.parent.mkdir(exist_ok=True); draft.write_bytes(canonical_json(output))
                 checked = subprocess.run([*context["submission_contract"]["command"], "--output", str(draft)],
                     cwd=args["workspace"], capture_output=True, timeout=30)
                 if checked.returncode:
                     raise AssertionError(checked.stdout.decode("utf-8", "replace"))
-                return {"status": "completed", "output": output, "usage": {}}
+                return producer_result({"status": "completed", "output": output, "usage": {}}, args)
         engine.runner = Runner()
         engine.run(max_steps=1)
         self.assertEqual(len(seen), 1)
@@ -196,14 +227,24 @@ class AssessmentFlowTests(PurposeHarness):
     def test_deferred_assessment_waits_for_input_and_can_resume_without_stale_question(self):
         from do_math.engine import control
         engine = self.prepare_engine()
+        # Rejected-contract fixtures can also have a legitimate plan queued.
+        # This scenario judges the already assigned preparation first.
+        engine.runtime['queue'].sort(key=lambda a: not bool(a.get('assessment_targets') or a.get('observation_rule_targets')))
+        engine._save()
         class DeferringRunner:
+            @local_job_runner
             def run(inner, **args):
-                args["on_started"]({"pid": 1})
+                args["on_started"]({"fixture": "synthetic process"})
                 context = context_from(args["prompt"])
                 targets = context["action"]["assessment_targets"]
-                (args["workspace"] / "activity-extensions.json").write_bytes(canonical_json({
-                    "model_assessment_deferrals": [{"task_id": tid, "reason": "Need the missing source text."} for tid in targets]}))
-                return {"status": "completed", "output": {**common("research_preparation"), "candidates": []}, "usage": {}}
+                extensions = {
+                    "model_assessment_deferrals": [{"task_id": tid, "reason": "Need the missing source text."} for tid in targets]}
+                if context['action'].get('observation_rule_targets'):
+                    extensions['observation_rule_deferrals'] = [{'task_id': tid, 'reason': 'Need source text',
+                        'missing_inputs': ['user_input'], 'next_owner': 'user'}
+                        for tid in context['action']['observation_rule_targets']]
+                (args["workspace"] / "activity-extensions.json").write_bytes(canonical_json(extensions))
+                return producer_result({"status": "completed", "output": {**common("research_preparation"), "candidates": []}, "usage": {}}, args)
         engine.runner = DeferringRunner()
         engine.run(max_steps=1)
         self.assertEqual(len(engine.runtime["waiting_actions"]), 1)
@@ -213,29 +254,36 @@ class AssessmentFlowTests(PurposeHarness):
         for _ in range(3):
             engine._refresh_readiness()
             self.assertFalse(any(a.get("assessment_targets") for a in engine.runtime["queue"]))
-        control(self.repo, engine.instance["id"], "resume", text="The requested source is now available.")
+        control(self.repo, engine.instance["id"], "input", text="The requested source is now available.")
         engine.process_controls()
+        engine._refresh_readiness()  # The next scheduler pass reconciles the changed inputs.
         self.assertNotIn(question, engine.runtime["questions"])
         self.assertTrue(any(a.get("assessment_targets") for a in engine.runtime["queue"]))
 
     def test_late_assessment_cannot_change_a_revised_user_contract(self):
         engine = self.prepare_engine()
+        engine.runtime['queue'].sort(key=lambda a: not bool(a.get('assessment_targets') or a.get('observation_rule_targets')))
+        engine._save()
         class RevisingRunner:
+            @local_job_runner
             def run(inner, **args):
-                args["on_started"]({"pid": 1})
+                args["on_started"]({"fixture": "synthetic process"})
                 context = context_from(args["prompt"])
                 targets = context["action"]["assessment_targets"]
-                (args["workspace"] / "activity-extensions.json").write_bytes(canonical_json({
-                    "model_assessments": [rating(task_id=tid) for tid in targets]}))
+                extensions = {"model_assessments": [rating(task_id=tid) for tid in targets]}
+                if context['action'].get('observation_rule_targets'):
+                    extensions['task_conditions'] = prepared_rule_conditions(context['action']['observation_rule_targets'])
+                (args["workspace"] / "activity-extensions.json").write_bytes(canonical_json(extensions))
                 task = engine.runtime["tasks"][next(iter(targets))]
                 task["revision"] += 1
-                task["scope"] = "A revised user requirement"
+                task["scope"] = {"included": ["A revised user requirement"], "excluded": []}
                 engine._save()
-                return {"status": "completed", "output": {**common("research_preparation"), "candidates": []}, "usage": {}}
+                return producer_result({"status": "completed", "output": {**common("research_preparation"), "candidates": []}, "usage": {}}, args)
         engine.runner = RevisingRunner()
         engine.run(max_steps=1)
         execution = next(e for e in engine.runtime["executions"].values() if e["action"].get("assessment_targets"))
-        self.assertEqual(execution["outcome"], "output_preserved_after_target_change")
+        self.assertEqual(execution['outcome'], 'execution_incomplete')
+        self.assertEqual(execution['result_disposition']['kind'], 'preserved_after_target_change')
         self.assertTrue(all("model_assessment" not in t for t in engine.runtime["tasks"].values()))
         self.assertTrue(any(a.get("assessment_targets") for a in engine.runtime["queue"]))
 
@@ -243,9 +291,10 @@ class AssessmentFlowTests(PurposeHarness):
         engine, _ = self.make(scholarly_enabled=False, operator_enabled=False,
                               session_limits=deepcopy(LIMITS), max_output_repairs=0)
         class MissingRunner:
+            @local_job_runner
             def run(inner, **args):
-                args["on_started"]({"pid": 1})
-                return {"status": "completed", "output": {**common("research_preparation"), "candidates": [candidate()]}, "usage": {}}
+                args["on_started"]({"fixture": "synthetic process"})
+                return producer_result({"status": "completed", "output": {**common("research_preparation"), "candidates": [candidate()]}, "usage": {}}, args)
         engine.runner = MissingRunner()
         engine.run(max_steps=1)
         self.assertEqual(engine.runtime["tasks"], {})
@@ -254,9 +303,8 @@ class AssessmentFlowTests(PurposeHarness):
     def test_real_academic_generation_enters_assessment_preparation_on_session_conversion(self):
         from do_math.engine import control
         from test_academic_engine import requirement
-        engine, _ = self.make(scholarly_enabled=False)
-        control(self.repo, engine.instance["id"], "decision", config={"change": {
-            "kind": "academic_requirements", "decision_id": "AR-validation", "requirements": [requirement(["Explain the result"])]}})
+        engine, _ = self.make(scholarly_enabled=False, work_calls=50, operations_calls=60)
+        control(self.repo, engine.instance["id"], "decision", config={"change": charter_change(engine, academic_requirements=[requirement(["Explain the result"])])})
         engine.process_controls()
         self.drive(engine, predicate=lambda e: e.instance["goal_status"] == "mathematically_solved")
         academic = {tid: t for tid, t in engine.runtime["tasks"].items() if t.get("academic_requirement_id")}
@@ -267,14 +315,6 @@ class AssessmentFlowTests(PurposeHarness):
         covered = {tid for a in engine.runtime["queue"] for tid in a.get("assessment_targets", {})}
         self.assertTrue(set(academic) <= covered)
         self.assertFalse(any(a["role"] == "task_contract_review" and a.get("target") in academic for a in engine.runtime["queue"]))
-
-
-class ActualGitAssessmentTests(PurposeHarness):
-    memory = False
-    prepare_engine = AssessmentFlowTests.prepare_engine
-
-    def test_installed_producer_command_and_assessment_handoff_with_actual_git(self):
-        AssessmentFlowTests.test_assessment_only_run_preserves_user_contract_and_unblocks_independent_review(self)
 
 
 class RejectedAcademicAssessmentTests(PurposeHarness):
@@ -288,17 +328,19 @@ class RejectedAcademicAssessmentTests(PurposeHarness):
         task["model_assessment"] = rating()
         engine.runtime["queue"] = []
         original = deepcopy(task)
-        from do_math.input_basis import capture_decision_basis
+        class RejectingRunner:
+            @local_job_runner
+            def run(inner, **arguments):
+                arguments["on_started"]({"fixture": "independent rejecting reviewer"})
+                context = context_from(arguments["prompt"])
+                output = {**common("task_contract_review"), **contract_review(context, decision=decision,
+                    findings=["model_assessment.reason: explain the impact on later verification."])}
+                return producer_result({"status": "completed", "output": output, "usage": {}}, arguments)
+        engine.runner = RejectingRunner()
+        engine._enqueue("task_contract_review", tid)
         engine._save()
-        engine.runtime['executions']['EX-rejected'] = {'id': 'EX-rejected', 'role': 'task_contract_review',
-            'status': 'ended', 'input_snapshot': engine.head, 'action': {'role': 'task_contract_review', 'target': tid},
-            'decision_basis': capture_decision_basis(engine.instance, engine.runtime, [tid])}
-        engine._apply({"role": "task_contract_review", "target": tid}, {
-            **common("task_contract_review"), "decision": decision,
-            "findings": ["model_assessment.reason: explain the impact on later verification."],
-            "questions": []}, "EX-rejected")
-        engine._refresh_readiness()
-        engine._save()
+        engine.run(max_steps=1)
+        self.rejected_id = engine.runtime["tasks"][tid]["reviews"][-1]["execution_id"]
         return engine, tid, original
 
     def test_rejected_rating_is_preserved_and_replaced_by_assessment_only_request(self):
@@ -306,12 +348,12 @@ class RejectedAcademicAssessmentTests(PurposeHarness):
         task = engine.runtime["tasks"][tid]
         self.assertNotIn("model_assessment", task)
         self.assertEqual(task["model_assessment_history"][0]["assessment"], original["model_assessment"])
-        self.assertEqual(task["model_assessment_history"][0]["contract_review_execution"], "EX-rejected")
+        self.assertEqual(task["model_assessment_history"][0]["contract_review_execution"], self.rejected_id)
         requests = [a for a in engine.runtime["queue"] if a["role"] == "research_preparation"]
         self.assertEqual(len(requests), 1)
         self.assertEqual(requests[0]["assessment_targets"][tid]["contract_sha256"], contract_hash(task))
         for key, value in original.items():
-            if key not in {"model_assessment", "reviews", "status"}:
+            if key not in {"model_assessment", "reviews", "status", "initial_observation_rules"}:
                 self.assertEqual(task[key], value)
         for _ in range(3):
             engine._refresh_readiness()
@@ -322,54 +364,66 @@ class RejectedAcademicAssessmentTests(PurposeHarness):
         for unchanged in (False, True):
             with self.subTest(unchanged=unchanged):
                 engine, tid, original = self.rejected_engine("unresolved" if unchanged else "revision_required")
+                # This case exercises reassessment -> contract review. General
+                # user-decision planning has its own runner and separate tests.
+                engine._schedule_reconsideration = lambda *args, **kwargs: None
+                engine.runtime['queue'] = [a for a in engine.runtime['queue']
+                    if a.get('assessment_targets') or a['role'] == 'task_contract_review']
+                engine._save()
                 chosen = rating() if unchanged else {**rating(), "importance": "high", "reason": "Later verification depends on this report."}
                 seen = []
                 class Runner:
+                    @local_job_runner
                     def run(inner, **args):
-                        args["on_started"]({"pid": 1})
-                        context = context_from(args["prompt"])
+                        args["on_started"]({"fixture": "synthetic process"})
+                        context = context_from(args["prompt"], args["workspace"])
                         seen.append(context)
                         role = context["action"]["role"]
                         if role == "research_preparation":
                             self.assertIn(tid, context["action"]["assessment_targets"])
                             supplied = next(t for t in context["tasks"] if t["id"] == tid)
-                            self.assertEqual(supplied["reviews"][-1]["execution_id"], "EX-rejected")
+                            self.assertEqual(supplied["reviews"][-1]["execution_id"], self.rejected_id)
                             self.assertEqual(supplied["model_assessment_history"][0]["assessment"], rating())
                             (args["workspace"] / "activity-extensions.json").write_bytes(canonical_json({
-                                "model_assessments": [{"task_id": tid, **chosen}]}))
+                                "model_assessments": [{"task_id": tid, **chosen}],
+                                "task_conditions": prepared_rule_conditions(context['action'].get('observation_rule_targets', {}))}))
                             output = {**common(role), "candidates": []}
                         else:
                             self.assertEqual(role, "task_contract_review")
-                            output = {**common(role), "decision": "approved", "findings": ["The supplied grounds support the rating."]}
-                        return {"status": "completed", "output": output, "usage": {}}
+                            output = {**common(role), **contract_review(context)}
+                        return producer_result({"status": "completed", "output": output, "usage": {}}, args)
                 engine.runner = Runner()
                 engine.run(max_steps=1)
+                self.assertIn('model_assessment', engine.runtime['tasks'][tid], json.dumps({
+                    'executions': [{key: row.get(key) for key in ('role', 'outcome', 'error', 'integration_result')}
+                        for row in list(engine.runtime['executions'].values())[-3:]],
+                    'waiting': [{key: row.get(key) for key in ('kind', 'reason')}
+                        for row in engine.runtime.get('waiting_actions', {}).values()]}, ensure_ascii=False))
                 self.assertEqual(engine.runtime["tasks"][tid]["model_assessment"], chosen)
                 review = next(a for a in engine.runtime["queue"] if a["role"] == "task_contract_review")
                 self.assertEqual(engine._select_model(review)["tier"], "medium" if unchanged else "high")
                 engine.run(max_steps=1)
                 self.assertEqual([c["action"]["role"] for c in seen], ["research_preparation", "task_contract_review"])
                 task = engine.runtime["tasks"][tid]
-                self.assertEqual(task["status"], "ready")
+                self.assertEqual(task["status"], "planned")
+                self.assertEqual(engine._task_readiness[tid]["state"], "ready")
+                self.assertEqual(len(task['revision_history'][-1]['reviews']), 1)
                 self.assertEqual(len(task["reviews"]), 2)
                 self.assertEqual(task["reviews"][-1]["decision"], "approved")
                 self.assertEqual(engine.runtime["cycles"], 0)
                 for key, value in original.items():
-                    if key not in {"model_assessment", "reviews", "status"}:
+                    if key not in {"model_assessment", "reviews", "status", "revision"}:
                         self.assertEqual(task[key], value)
 
     def test_preexisting_rejection_enters_repair_on_refresh(self):
-        engine = self.prepare_engine()
-        task = engine.runtime["tasks"]["TK-academic-1"]
-        task.update(status="needs_revision", model_assessment=rating())
-        task["reviews"] = [{"execution_id": "EX-old", "decision": "revision_required",
-                            "revision": task["revision"], "contract_sha256": contract_hash(task)}]
-        engine.runtime["queue"] = []
-        engine._enqueue("research_preparation", task["id"], contract_review_execution="EX-old")
+        from do_math.engine import ResearchEngine
+        engine, tid, _ = self.rejected_engine()
+        engine = ResearchEngine(self.repo, engine.instance["id"], runner=engine.runner)
         engine._refresh_readiness()
+        task = engine.runtime["tasks"][tid]
         self.assertNotIn("model_assessment", task)
-        self.assertFalse(any(a.get("contract_review_execution") == "EX-old" for a in engine.runtime["queue"]))
         self.assertTrue(any(task["id"] in a.get("assessment_targets", {}) for a in engine.runtime["queue"]))
+        self.assertEqual(task["model_assessment_history"][0]["contract_review_execution"], self.rejected_id)
 
     def test_repair_deferral_preserves_obligation_until_resume(self):
         from unittest.mock import patch

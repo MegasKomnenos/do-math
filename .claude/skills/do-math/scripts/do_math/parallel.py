@@ -1,4 +1,4 @@
-"""Run blocking model adapters concurrently; all engine callbacks stay on owner thread."""
+"""Run blocking adapters or machine calls; engine callbacks stay on the owner thread."""
 from __future__ import annotations
 
 from concurrent.futures import Future
@@ -23,25 +23,35 @@ class ModelCalls:
                     if stop:
                         return True
                     raise RuntimeError("executor is shutting down")
-                self.events.put((function, args, response))
+                self.events.put((function, args, response, stop))
             return response.result()
         return call
 
-    def start(self, generator, runner, arguments):
+    def start(self, generator, runner, arguments, *, execution_id=None):
+        return self.start_call(generator, runner.run, arguments, execution_id=execution_id)
+
+    def start_call(self, generator, function, arguments, *, execution_id=None):
         arguments = dict(arguments)
-        for key in ("on_started", "on_observation", "should_stop"):
+        if execution_id is not None:
+            if not isinstance(execution_id, str) or not execution_id:
+                raise ValueError("execution_id must be a nonempty string")
+            if any(getattr(future, "execution_id", None) == execution_id for future in self.futures):
+                raise ValueError("an execution already has an active call")
+        for key in ("on_started", "on_observation", "should_stop", "on_control"):
             if key in arguments:
                 arguments[key] = self._callback(arguments[key], stop=key == "should_stop")
         future = Future()
+        future.execution_id = execution_id
         self.futures[future] = generator
         def run():
             try:
-                future.set_result(runner.run(**arguments))
+                future.set_result(function(**arguments))
             except BaseException as error:
                 future.set_exception(error)
-        thread = Thread(target=run, name="do-math-model")
+        thread = Thread(target=run, name="do-math-call")
         self.threads.append(thread)
         thread.start()
+        return future
 
     def pump(self):
         if self.pumping:
@@ -50,7 +60,7 @@ class ModelCalls:
         try:
             for _ in range(self.events.qsize()):
                 try:
-                    function, args, response = self.events.get_nowait()
+                    function, args, response, _ = self.events.get_nowait()
                 except Empty:
                     break
                 try:
@@ -66,7 +76,7 @@ class ModelCalls:
         for future in list(self.futures):
             if not future.done():
                 continue
-            generator = self.futures.pop(future)
+            generator = self.futures[future]
             try:
                 result = future.result()
             except Exception as error:
@@ -77,7 +87,8 @@ class ModelCalls:
             except StopIteration:
                 pass
             else:
-                raise RuntimeError("a model execution yielded more than one call")
+                raise RuntimeError("an execution yielded more than one call")
+            self.futures.pop(future)
             finished += 1
         return finished
 
@@ -88,9 +99,12 @@ class ModelCalls:
             self.stopping = True
         while True:
             try:
-                _, _, response = self.events.get_nowait()
+                _, _, response, stop = self.events.get_nowait()
             except Empty:
                 break
-            response.set_exception(RuntimeError("executor is shutting down"))
+            if stop:
+                response.set_result(True)
+            else:
+                response.set_exception(RuntimeError("executor is shutting down"))
         for thread in self.threads:
             thread.join()

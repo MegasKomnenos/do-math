@@ -106,68 +106,75 @@ class OperatorTests(unittest.TestCase):
         self.assertEqual(context["previous_report"], str(report))
         self.assertEqual(context["control_policy"]["user_pause"], "never resume")
 
-    def test_probe_context_reaches_model_runner_and_preserves_structured_result(self) -> None:
-        contract = self.root / "operator-contract.md"
-        contract.write_text("operator instructions", encoding="utf-8")
-        state = {"config": {"operator_model": "claude-opus-5", "operator_effort": "high",
-                             "operator_timeout_seconds": 10, "scholarly_enabled": False,
-                             "claude_only_assigned_model": True}}
-
-        class FakeRunner:
-            calls: list[dict] = []
-            def run(self, **kwargs):
-                self.calls.append(kwargs)
-                return {"status": "completed", "usage": {"input_tokens": 3},
-                        "execution": {"collect": {"final": {"raw": b"x" * 100_000}}}, "output": {
-                    "summary": "checked", "observed_status": "ready", "actions": [], "evidence_paths": [],
-                    "user_questions": [], "next_step": "none"}}
-
-        with patch.object(operator, "PROMPT", contract), \
-             patch.object(operator, "read_status", return_value={"status": "ready", "user_pause": None}), \
+    def test_probe_observes_without_starting_a_model_or_engine(self) -> None:
+        status = {"status": "ready", "user_pause": None}
+        with patch.object(operator, "read_status", return_value=status), \
              patch.object(operator, "ResearchRepository") as repository, \
-             patch.object(operator, "ModelRunner", FakeRunner):
-            repository.return_value.load.return_value = ("head", state, {})
+             patch.object(operator, "ModelRunner") as runner, \
+             patch.object(operator, "schedule") as schedule, \
+             patch.object(operator, "recovery") as recovery:
+            repository.return_value.load.return_value = ("head", {"config": {}}, {})
             result = operator.check(self.repository, self.instance, self.workspace, probe=True)
-        context = json.loads((Path(result["run_directory"]) / "context.json").read_text(encoding="utf-8"))
-        self.assertTrue(context["probe"])
-        self.assertEqual(FakeRunner.calls[0]["model"], "claude-opus-5")
-        self.assertTrue(FakeRunner.calls[0]["claude_only_assigned_model"])
-        self.assertFalse(context["scholarly_configured"])
-        self.assertEqual(result["outcome"], "completed")
-        self.assertEqual(result["output"]["summary"], "checked")
-        persisted = json.loads((Path(result["run_directory"]) / "result.json").read_text(encoding="utf-8"))
-        raw = persisted["result"]["execution"]["collect"]["final"]["raw"]
-        self.assertEqual(raw["sha256"], hashlib.sha256(b"x" * 100_000).hexdigest())
-        latest = (self.workspace / "operator" / "latest-report.json").read_text(encoding="utf-8")
-        self.assertNotIn('"collect"', latest)
-        self.assertLess(len(latest.encode("utf-8")), 20_000)
-        self.assertEqual(result, json.loads(latest), "CLI must return the compact evidence pointer too")
+        self.assertEqual(result, {"outcome": "observed", "status": status, "model_called": False,
+            "engine_start": {"outcome": "startable", "before": status}})
+        runner.assert_not_called()
+        schedule.assert_not_called()
+        recovery.assert_not_called()
 
-    def test_automatic_pause_runs_operator_but_a_new_user_pause_stops_it(self) -> None:
-        contract = self.root / "operator-contract.md"
-        contract.write_text("operator instructions", encoding="utf-8")
-        state = {"config": {"operator_model": "gpt-5.6-sol", "operator_effort": "high",
-                             "operator_timeout_seconds": 10, "scholarly_enabled": False}}
+    def test_automatic_and_user_pause_do_not_trigger_external_recovery(self) -> None:
+        for pause in (None, {"reason": "user stop"}):
+            with self.subTest(pause=pause), \
+                 patch.object(operator, "read_status", return_value={"status": "paused", "user_pause": pause}), \
+                 patch.object(operator, "ResearchRepository") as repository, \
+                 patch.object(operator, "ModelRunner") as runner, \
+                 patch.object(operator, "schedule") as schedule, \
+                 patch.object(operator, "recovery") as recovery:
+                repository.return_value.load.return_value = ("head", {"config": {}}, {})
+                result = operator.check(self.repository, self.instance, self.workspace)
+                self.assertEqual(result["outcome"], "paused")
+                runner.assert_not_called()
+                schedule.assert_not_called()
+                recovery.assert_not_called()
 
-        class FakeRunner:
-            stops: list[bool] = []
-            def run(self, **kwargs):
-                type(self).stops = [kwargs["should_stop"](), kwargs["should_stop"]()]
-                return {"status": "completed", "usage": {}, "output": {
-                    "summary": "checked", "observed_status": "paused", "actions": [], "evidence_paths": [],
-                    "user_questions": [], "next_step": "repair"}}
-
-        automatic = {"status": "paused", "user_pause": None}
-        user = {"status": "paused", "user_pause": {"reason": "user stop"}}
-        with patch.object(operator, "PROMPT", contract), \
-             patch.object(operator, "read_status", side_effect=[automatic, automatic, user]), \
-             patch.object(operator, "ResearchRepository") as repository, \
-             patch.object(operator, "ModelRunner", FakeRunner), \
-             patch("time.monotonic", side_effect=[1, 1, 3, 3]):
-            repository.return_value.load.return_value = ("head", state, {})
+    def test_engine_import_failure_is_preserved_before_recovery(self) -> None:
+        with patch.object(operator, "read_status", side_effect=SyntaxError("engine broken")), \
+             patch.object(operator, "recovery", return_value={"outcome": "fixture-recovered"}) as recover:
             result = operator.check(self.repository, self.instance, self.workspace)
+        self.assertEqual(result["outcome"], "fixture-recovered")
+        failure = recover.call_args.kwargs["failure"]
+        self.assertEqual(failure["error_type"], "SyntaxError")
+        self.assertEqual(failure["kind"], "engine_unavailable")
+        self.assertEqual(json.loads((self.workspace / "operator" / "engine-failure.json").read_text(encoding="utf-8")), failure)
+        with patch.object(operator, "read_status", side_effect=SyntaxError("engine broken")), \
+             patch.object(operator, "recovery") as recover:
+            result = operator.check(self.repository, self.instance, self.workspace, probe=True)
+            self.assertEqual(result["outcome"], "recovery_required")
+            recover.assert_not_called()
+
+    def test_engine_child_targets_live_installation_from_frozen_supervisor(self) -> None:
+        live = self.root / "live-installation"
+        status = {"status": "ready", "user_pause": False}
+        with patch.object(operator, "LIVE_INSTALLATION_ROOT", live, create=True), \
+             patch.object(operator, "read_status", return_value=status), \
+             patch.object(operator.subprocess, "run", return_value=subprocess.CompletedProcess([], 0, "{}", "")) as run:
+            result = operator.run_engine(self.repository, self.instance, self.workspace)
         self.assertEqual(result["outcome"], "completed")
-        self.assertEqual(FakeRunner.stops, [False, True])
+        self.assertEqual(Path(run.call_args.args[0][1]), live / "scripts/do_math.py")
+
+    def test_real_probe_persists_failure_when_engine_has_syntax_error(self) -> None:
+        import shutil
+        isolated = self.root / "isolated-skill"
+        shutil.copytree(SCRIPTS.parent, isolated, ignore=shutil.ignore_patterns("__pycache__", "*.pyc", ".lake"))
+        (isolated / "scripts/do_math/engine.py").write_text("broken engine syntax !!!\n", encoding="utf-8")
+        result = subprocess.run([sys.executable, str(isolated / "scripts/operator_bootstrap.py"), "check",
+            "--repository", str(self.repository), "--instance", self.instance,
+            "--workspace", str(self.workspace), "--probe"], capture_output=True, text=True, encoding="utf-8", timeout=30,
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        failure = json.loads(result.stdout)
+        self.assertEqual(failure["error_type"], "SyntaxError")
+        self.assertEqual(failure["outcome"], "recovery_required")
+        self.assertEqual(json.loads((self.workspace / "operator/engine-failure.json").read_text(encoding="utf-8")), failure)
 
     def test_init_keeps_created_instance_when_schedule_registration_fails(self) -> None:
         subprocess.run(["git", "-C", str(self.repository), "init", "-q"], check=True)
@@ -198,7 +205,7 @@ class OperatorTests(unittest.TestCase):
     def test_cli_emits_byte_bearing_operator_receipt_as_json(self) -> None:
         output = io.StringIO()
         with redirect_stdout(output):
-            cli._emit({"result": {"raw": b"preserved bytes"}})
+            cli._emit({"raw": b"preserved bytes"}, command="operator check", request_id="QR-receipt")
         self.assertEqual(json.loads(output.getvalue())["result"]["raw"]["base64"], "cHJlc2VydmVkIGJ5dGVz")
 
     def test_release_submits_a_conditional_resume_even_before_hold_pause_is_applied(self) -> None:
@@ -218,7 +225,8 @@ class OperatorTests(unittest.TestCase):
         completed = {"status": "completed", "user_pause": None, "snapshot": "finished"}
         with patch.object(operator, "read_status", return_value=completed), \
              patch.object(operator, "ModelRunner") as runner, \
-             patch.object(operator, "ResearchRepository"):
+             patch.object(operator, "ResearchRepository") as repository:
+            repository.return_value.load.return_value = ("head", {"config": {}}, {})
             result = operator.check(self.repository, self.instance, self.workspace)
         self.assertEqual(result["outcome"], "completed")
         self.assertEqual(result["status"], completed)

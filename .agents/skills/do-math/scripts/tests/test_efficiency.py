@@ -1,5 +1,6 @@
 """Efficiency changes must preserve obligations, inputs and published state."""
 from copy import deepcopy
+from contextlib import contextmanager
 import hashlib
 from pathlib import Path
 import subprocess
@@ -7,11 +8,14 @@ import sys
 import tempfile
 import unittest
 import time
+import uuid
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from do_math.engine import ResearchEngine, initialize, control
-from do_math.governance import apply_decision
+from do_math.engine import ResearchEngine, control
+from v5_fixtures import charter_change, policy_change, send_control, candidate
+from state_fixtures import active_engine
+from test_lifecycle_engine import AdapterDouble
 from do_math.model_policy import MODELS
 from do_math.planning import contract_hash
 from do_math.input_basis import capture_decision_basis
@@ -19,7 +23,26 @@ from test_engine import ScriptedRunner, context_from
 
 
 class EfficiencyTests(unittest.TestCase):
+    @contextmanager
+    def model_process(self, arguments, *, resume):
+        from do_math.windows_job import WindowsJob, process_identity
+        job = WindowsJob([sys.executable, '-c', 'import time; time.sleep(600)'],
+                         cwd=arguments['workspace'], name='EFFICIENCY-' + uuid.uuid4().hex)
+        try:
+            arguments['on_started']({**process_identity(job), 'job_name': job.name})
+            if resume:
+                job.resume()
+            yield
+        finally:
+            try:
+                job.terminate()
+                self.assertTrue(job.wait(10))
+                self.assertEqual(job.inspect().active_processes, 0)
+            finally:
+                job.close()
+
     def setUp(self):
+        self.enterContext(patch('do_math.initialization.adapter_for', return_value=AdapterDouble()))
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
@@ -27,20 +50,23 @@ class EfficiencyTests(unittest.TestCase):
         repo.mkdir()
         subprocess.run(["git", "init", "-q", str(repo)], check=True,
                        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
-        result = initialize(repo, goal="bounded research", workspace=self.root / "work",
-                            config={"operator_enabled": False, "scholarly_enabled": False})
-        self.engine = ResearchEngine(repo, result["instance_id"])
+        self.engine = active_engine(repo, self.root / "work", runner=ScriptedRunner(),
+            config={"operator_enabled": False, "scholarly_enabled": False, "lean_command": ["test-lean"],
+                    "tool_review_window_seconds": 60, "self_check_response_window_seconds": 5})
+        # These tests start after activation. Keep real state publication and
+        # the preparation request they exercise, without replaying input approval.
+        (self.root / "work" / "runs").mkdir(exist_ok=True)
+        self.engine._enqueue("research_preparation", reason="Prepare the bounded efficiency fixture")
+        self.engine._save()
         self.resources = {pool: {model: {"available": 3} for model in MODELS.values()}
                           for pool in ("work", "operations")}
 
     def startup(self):
         e = self.engine
-        e.instance, e.runtime, decision = apply_decision(e.instance, e.runtime,
-            {"kind": "academic_requirements", "requirements": [
+        send_control(e, "decision", config={"change":
+            charter_change(e, academic_requirements=[
                 {"id": "explain", "scope": "solution", "criteria": ["explain structure"],
-                 "assessor": "research_plan"}]}, source_ref="initial-user-decision")
-        e._lifecycle_event("user_decision_applied", source_ref="initial-user-decision",
-                           decision_id=decision["id"])
+                 "assessor": "research_plan"}])})
         e._refresh_readiness()
         return next(a for a in e.runtime["queue"] if a["role"] == "research_plan")
 
@@ -66,14 +92,15 @@ class EfficiencyTests(unittest.TestCase):
         self.assertEqual(e.runtime["queue"][0]["reason"], "old")
         self.assertNotIn("event_refs", e.runtime["queue"][0])
 
-    def test_initial_registration_waits_but_preserves_its_event(self):
+    def test_active_charter_update_can_plan_and_preserves_its_event(self):
         action = self.startup()
         before = deepcopy(self.engine.runtime["events"])
-        self.assertFalse(self.engine._dispatchable(action, self.resources))
+        self.assertNotIn('initial_preparation_wait', action)
+        self.assertTrue(self.engine._dispatchable(action, self.resources))
         self.assertEqual(self.engine.runtime["events"], before)
         self.assertTrue(self.engine.runtime["pending_events"])
 
-    def test_scheduler_first_plan_receives_an_approved_candidate_and_consumes_registration(self):
+    def test_charter_replanning_preserves_ongoing_preparation_and_consumes_its_event(self):
         self.startup()
         e = self.engine
         e.runner = ScriptedRunner()
@@ -81,11 +108,12 @@ class EfficiencyTests(unittest.TestCase):
         e.run(max_steps=3)
         plans = [context_from(prompt) for role, prompt in e.runner.prompts if role == 'research_plan']
         self.assertEqual(len(plans), 1)
-        self.assertEqual(len(plans[0]['ready_task_ids']), 1)
-        self.assertEqual([role for role, _ in e.runner.prompts],
+        self.assertEqual(plans[0]['ready_task_ids'], [])
+        self.assertCountEqual([role for role, _ in e.runner.prompts],
                          ['research_preparation', 'task_contract_review', 'research_plan'])
-        event = next(row for row in e.runtime['events'] if row['kind'] == 'user_decision_applied')
-        self.assertTrue(event.get('consumed_by'))
+        event = next(row for row in reversed(e.runtime['events']) if row['kind'] == 'user_decision_applied')
+        self.assertTrue(any(row.get('kind') == 'event_consumption' and event['id'] in row['event_ids']
+                            for row in e.runtime['history']))
         self.assertNotIn(event['id'], e.runtime['pending_events'])
 
     def test_regular_empty_plan_can_still_dispatch(self):
@@ -99,7 +127,19 @@ class EfficiencyTests(unittest.TestCase):
         e.runtime["tasks"] = {"first": {"status": "planned"}, "slow": {"status": "planned"}}
         e.runtime["queue"].extend([{"role": "task_contract_review", "target": tid} for tid in e.runtime["tasks"]])
         self.assertFalse(e._dispatchable(action, self.resources))
-        e.runtime["tasks"]["first"]["status"] = "ready"
+        e.runtime["tasks"] = {}
+        original_queue = deepcopy(e.runtime["queue"])
+        e.runtime["queue"] = []
+        e._enqueue("research_preparation", reason="Create a candidate for the settle regression")
+        e.runtime["executions"].pop("E")  # The scheduler-only probe above is not a saved execution.
+        e.runner = ScriptedRunner()
+        e._save()  # Public run reloads the Git head, so publish the actual preparation request.
+        for _ in range(8):
+            e.run(max_steps=1)
+            if any(row["state"] == "ready" for row in e._task_readiness.values()):
+                break
+        self.assertTrue(any(row["state"] == "ready" for row in e._task_readiness.values()))
+        e.runtime["queue"] = original_queue
         # The remaining reviews are awaited only up to plan_settle_seconds, never indefinitely.
         self.assertFalse(e._dispatchable(action, self.resources))
         self.assertEqual(action["dispatch_wait"]["kind"], "plan_settle")
@@ -109,43 +149,55 @@ class EfficiencyTests(unittest.TestCase):
 
     def test_pause_received_during_input_preparation_prevents_model_start(self):
         e = self.engine
+        before_executions = set(e.runtime["executions"])
+        before_calls = len(e.runner.prompts)
+        before_runs = set((self.root / "work" / "runs").iterdir())
         original = e._context
-        def prepare(action, workspace):
-            context = original(action, workspace)
+        def prepare(action, workspace, **kwargs):
+            context = original(action, workspace, **kwargs)
             control(e.store._store.repository, e.instance["id"], "pause", text="stop during materialization")
             return context
         with patch.object(e, '_context', side_effect=prepare):
-            generator = e._call_steps(e.runtime["queue"][0], time.monotonic() + 30)
+            generator = e._call_steps(e.runtime["queue"][0])
             with self.assertRaises(StopIteration):
                 next(generator)
         self.assertEqual(e.runtime["status"], "paused")
-        self.assertEqual(e.runtime["executions"], {})
-        self.assertEqual(list((self.root / 'work' / 'runs').iterdir()), [])
+        self.assertEqual(len(e.runner.prompts), before_calls)
+        added = set(e.runtime['executions']) - before_executions
+        self.assertEqual(len(added), 1)
+        execution = e.runtime['executions'][added.pop()]
+        self.assertEqual((execution['status'], execution['outcome']), ('ended', 'cancelled'))
+        self.assertIsNone(execution.get('started_at'))
+        self.assertNotIn('capacity', execution)
+        self.assertEqual(set((self.root / "work" / "runs").iterdir()), before_runs)
 
     def test_pause_before_model_resume_has_no_checkpoint_grace(self):
         e = self.engine
-        steps = e._call_steps(e.runtime['queue'][0], time.monotonic() + 60)
+        steps = e._call_steps(e.runtime['queue'][0])
         arguments = next(steps)
-        arguments['on_started']({'pid': 1})
-        control(e.store._store.repository, e.instance['id'], 'pause', text='stop before model resume')
         try:
-            self.assertTrue(arguments['should_stop'](), 'a suspended model must not resume for checkpoint grace')
+            with self.model_process(arguments, resume=False):
+                control(e.store._store.repository, e.instance['id'], 'pause', text='stop before model resume')
+                self.assertTrue(arguments['should_stop'](), 'a suspended model must not resume for checkpoint grace')
         finally:
             with self.assertRaises(StopIteration):
                 steps.send({'status': 'stopped', 'output': None, 'usage': {}, 'error': 'stopped before resume'})
 
-    def test_running_model_keeps_checkpoint_grace_after_initial_check(self):
+    def test_running_model_stops_immediately_after_public_pause(self):
         e = self.engine
-        steps = e._call_steps(e.runtime['queue'][0], time.monotonic() + 60)
+        steps = e._call_steps(e.runtime['queue'][0])
         arguments = next(steps)
-        arguments['on_started']({'pid': 1})
-        self.assertFalse(arguments['should_stop']())
-        control(e.store._store.repository, e.instance['id'], 'pause', text='checkpoint running work')
         try:
-            self.assertFalse(arguments['should_stop']())
+            with self.model_process(arguments, resume=True):
+                self.assertFalse(arguments['should_stop']())
+                control(e.store._store.repository, e.instance['id'], 'pause', text='stop running work')
+                self.assertTrue(arguments['should_stop']())
+                execution = e.runtime['executions'][e.runtime['active_execution']]
+                self.assertEqual(execution['status'], 'stopping')
+                self.assertEqual(execution['stop_phase'], 'terminating')
         finally:
             with self.assertRaises(StopIteration):
-                steps.send({'status': 'stopped', 'output': None, 'usage': {}, 'error': 'checkpoint collected'})
+                steps.send({'status': 'stopped', 'output': None, 'usage': {}, 'error': 'local stop requested'})
 
     def test_installation_polling_is_bounded_and_forced_checks_still_detect_edits(self):
         e = self.engine
@@ -199,8 +251,9 @@ class EfficiencyTests(unittest.TestCase):
         files = {f'runtime/artifacts/results/{i}.bin': bytes(range(256)) + bytes([i]) for i in range(12)}
         entries = [{'artifact_ref': path, 'path': Path(path).name,
                     'sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)} for path, raw in files.items()]
-        e.runtime['tasks']['T'] = {'id': 'T', 'status': 'assessing', 'results': [
+        e.runtime['tasks']['T'] = {**candidate('materialization'), 'id': 'T', 'revision': 1, 'feature_version': 5, 'status': 'active', 'reviews': [], 'results': [
             {'execution_id': 'E', 'output_files': entries}]}
+        e.runtime['tasks']['T'].pop('revises_task_id')
         e._save(files)
         with patch.object(e.store._store, '_git', wraps=e.store._store._git) as calls:
             context = e._context({'role': 'research_plan'}, self.root / 'results-plan')
@@ -217,7 +270,7 @@ class EfficiencyTests(unittest.TestCase):
         first = e.head
         e._save()
         self.assertEqual(e.head, first)
-        e.runtime["questions"].append("real change with same status")
+        e.runtime["cycles"] += 1
         e._save()
         self.assertNotEqual(e.head, first)
         second = e.head
@@ -240,30 +293,24 @@ class EfficiencyTests(unittest.TestCase):
         e._enqueue('research_plan', reason='second instruction', requested_by='UC-second')
         self.assertEqual(e.runtime['queue'][0].get('requested_by_refs'), ['UC-first', 'UC-second'])
 
-    def test_readiness_timestamp_changes_only_with_its_evidence(self):
+    def test_readiness_is_derived_and_changes_with_contract_review_evidence(self):
         e = self.engine
-        task = {"id": "T", "revision": 1, "status": "planned", "title": "bounded",
-            "question": "q", "scope": "s", "expected_result": "r", "completion_criteria": ["c"],
-            "inputs": [], "reuse": [], "dependencies": [], "results": [], "reviews": [],
-            "work_class": "nonformal", "model_assessment": {"difficulty": "low", "importance": "low", "reason": "bounded"}}
-        e.runtime["tasks"]["T"] = task
-        e.lifecycle_clock = lambda: "2026-09-17T00:00:00+00:00"
-        e._refresh_readiness()
-        before = deepcopy(e.runtime["task_readiness"]["T"])
+        e.runner = ScriptedRunner()
+        e.run(max_steps=1)
+        tid = next(iter(e.runtime["tasks"]))
+        before = deepcopy(e._task_readiness[tid])
+        self.assertNotEqual(before["state"], "ready")
         e._save()
         head = e.head
-        e.lifecycle_clock = lambda: "2026-09-17T00:00:01+00:00"
         e._refresh_readiness()
-        self.assertEqual(e.runtime["task_readiness"]["T"], before)
+        self.assertEqual(e._task_readiness[tid], before)
         e._save()
         self.assertEqual(e.head, head)
-        task = e.runtime["tasks"]["T"]
-        task["reviews"].append({"id": "CR", "decision": "approved", "revision": 1,
-            "contract_sha256": contract_hash(task), "goal_revision": 1, "policy_revision": 1,
-            "decision_basis": capture_decision_basis(e.instance, e.runtime, [task['id']])})
-        e._refresh_readiness()
-        self.assertEqual(e.runtime["task_readiness"]["T"]["state"], "ready")
-        self.assertNotEqual(e.runtime["task_readiness"]["T"]["evaluated_at"], before["evaluated_at"])
+        e.run(max_steps=1)
+        self.assertEqual(e.runtime["tasks"][tid]["status"], "planned")
+        self.assertEqual(e._task_readiness[tid]["state"], "ready")
+        self.assertNotEqual(e._task_readiness[tid], before)
+        self.assertNotIn("task_readiness", e.store.load()[2])
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 """Integration checks for postsolution academic requirements.
 
-These tests use the in-memory CAS repository and scripted runner from the
+These tests use the temporary Git repository and scripted runner from the
 purpose-engine suite.  They verify engine orchestration, not a model judgment
 or a Lean invocation.
 """
@@ -19,6 +19,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.engine import control
 from do_math import external as external_module
 from do_math.repository import canonical_json
+from v5_fixtures import charter_change, policy_change, send_control, assessment
 from test_purpose_engine import PurposeHarness, PurposeRunner
 
 
@@ -47,6 +48,7 @@ class AcademicRunner(PurposeRunner):
                 "academic_resolutions": [{
                     "id": action["rejection_id"], "decision": "resolved",
                     "evidence": "The planner compared the preserved objection with the completed reviewed task report.",
+                    "evidence_refs": [row['id'] for row in context['knowledge_catalog'] if row.get('usable_as_k')],
                 }],
             }))
         if role == "research_work" and context["task"].get("academic_requirement_id"):
@@ -71,6 +73,7 @@ class AcademicRunner(PurposeRunner):
 
 class AcademicEngineTests(PurposeHarness):
     def make(self, *args, **kwargs):
+        kwargs.setdefault('plan_settle_seconds', 1)  # This suite tests academic obligations, not review batching latency.
         engine, _ = super().make(*args, **kwargs)
         runner = AcademicRunner(**getattr(self, "runner_options", {}))
         engine.runner = runner
@@ -78,14 +81,40 @@ class AcademicEngineTests(PurposeHarness):
         return engine, runner
 
     def _set_requirements(self, engine, criteria, decision_id, **extra):
-        control(self.repo, engine.instance["id"], "decision", config={"change": {
-            "kind": "academic_requirements", "decision_id": decision_id,
-            "requirements": [requirement(criteria, **extra)],
-        }})
-        engine.process_controls()
+        send_control(engine, "decision", config={"change": charter_change(engine, academic_requirements=[requirement(criteria, **extra)])})
 
     def _academic_tasks(self, engine):
         return [task for task in engine.runtime["tasks"].values() if task.get("academic_requirement_id") == "writeup"]
+
+    def _requirement_change_fixture(self, *, completed=False):
+        from state_fixtures import active_engine, complete_academic_task
+        engine = active_engine(self.repo, self.root / "academic-change")
+        self.engines.append(engine)
+        # Mathematical proof construction is covered by the end-to-end test.
+        # Only that premise is synthetic; controls, followup and storage are real.
+        basis = {"goal_ref": "synthetic-solution", "records": []}
+        self.enterContext(patch.object(engine, "_solution_basis", return_value=basis))
+        engine.instance["goal_status"] = "mathematically_solved"
+        engine._save()
+        requirements = [requirement(["draft account"])]
+        if completed:
+            # The whole instance must remain open for public requirement changes.
+            requirements.append({**requirement(["Independent remaining account"]), "id": "remaining"})
+        send_control(engine, "decision", config={"change": charter_change(engine,
+            academic_requirements=requirements)})
+        engine._ensure_academic_followup()
+        engine._save()
+        if completed:
+            complete_academic_task(engine, self._academic_tasks(engine)[0], basis)
+            self.assertEqual(engine.runtime["status"], "ready")
+            self.assertTrue(self._academic_tasks(engine)[0]["assessment"]["current"])
+        engine.head, engine.instance, engine.runtime = engine.store.load()
+        return engine
+
+    def _publish_followup(self, engine):
+        engine._ensure_academic_followup()
+        engine._save()
+        engine.head, engine.instance, engine.runtime = engine.store.load()
 
     def test_explicit_requirement_blocks_runtime_completion_until_independent_assessment(self):
         engine, runner = self.make()
@@ -95,7 +124,7 @@ class AcademicEngineTests(PurposeHarness):
         tasks = self._academic_tasks(engine)
         self.assertEqual(len(tasks), 1)
         task = tasks[0]
-        self.assertEqual(task["completion_criteria"], ["draft account", "cite reviewed equality"])
+        self.assertEqual([row["claim"] for row in task["completion_obligations"]], ["draft account", "cite reviewed equality"])
         self.assertNotEqual(engine.runtime["status"], "completed")
         self.assertNotEqual(task["status"], "completed")
 
@@ -104,7 +133,7 @@ class AcademicEngineTests(PurposeHarness):
         self.assertEqual(task["status"], "completed")
         self.assertTrue(any(review["decision"] == "approved" for review in task["reviews"]))
         self.assertNotEqual(task["assessment"]["execution_id"], task["results"][0]["execution_id"])
-        self.assertEqual([item["criterion"] for item in task["assessment"]["criteria_results"]], task["completion_criteria"])
+        self.assertEqual([item["obligation_id"] for item in task["assessment"]["item_dispositions"]], [row["id"] for row in task["completion_obligations"]])
         recorded = [entry for entry in engine.runtime["academic_assessments"] if entry["task_id"] == task["id"]]
         self.assertEqual(len(recorded), 1)
         self.assertEqual(recorded[0]["decision"], "satisfied")
@@ -112,15 +141,13 @@ class AcademicEngineTests(PurposeHarness):
         self.assertIn(task["title"], runner.work_order)
 
     def test_changed_same_requirement_id_supersedes_old_contract_and_creates_new_criteria(self):
-        engine, _ = self.make()
-        self._set_requirements(engine, ["draft account"], "academic-v1")
-        self.drive(engine, predicate=lambda current: current.instance["goal_status"] == "mathematically_solved")
+        engine = self._requirement_change_fixture()
         old = self._academic_tasks(engine)[0]
         old_basis = deepcopy(old["solution_basis"])
         old_hash = old["requirements_sha256"]
 
         self._set_requirements(engine, ["draft account", "archival supplement"], "academic-v2")
-        engine.run(max_steps=1)
+        self._publish_followup(engine)
         tasks = self._academic_tasks(engine)
         self.assertEqual(len(tasks), 2)
         superseded = next(task for task in tasks if task["id"] == old["id"])
@@ -128,21 +155,18 @@ class AcademicEngineTests(PurposeHarness):
         self.assertEqual(superseded["status"], "closed")
         self.assertEqual(superseded["scope_disposition"]["kind"], "superseded_requirements")
         self.assertEqual(current["academic_requirement_id"], "writeup")
-        self.assertEqual(current["completion_criteria"], ["draft account", "archival supplement"])
+        self.assertEqual([row["claim"] for row in current["completion_obligations"]], ["draft account", "archival supplement"])
         self.assertEqual(current["solution_basis"], old_basis)
         self.assertNotEqual(current["requirements_sha256"], old_hash)
         self.assertNotEqual(engine.runtime["status"], "completed")
 
     def test_changed_requirements_preserve_completed_academic_task(self):
-        engine, _ = self.make()
-        self._set_requirements(engine, ["draft account"], "academic-v1")
-        self.drive(engine, predicate=lambda current: current.instance["goal_status"] == "mathematically_solved")
-        self.drive(engine, predicate=lambda current: current.runtime["status"] == "completed", limit=30)
+        engine = self._requirement_change_fixture(completed=True)
         old = self._academic_tasks(engine)[0]
         self.assertEqual(old["status"], "completed")
 
         self._set_requirements(engine, ["draft account", "archival supplement"], "academic-v2")
-        engine.run(max_steps=1)
+        self._publish_followup(engine)
         tasks = self._academic_tasks(engine)
         preserved = next(task for task in tasks if task["id"] == old["id"])
         current = next(task for task in tasks if task["id"] != old["id"])
@@ -150,14 +174,31 @@ class AcademicEngineTests(PurposeHarness):
         self.assertNotIn("scope_disposition", preserved)
         self.assertFalse(preserved["assessment"]["current"])
         self.assertTrue(preserved["assessment"]["invalidated_reason"].strip())
-        self.assertEqual(current["completion_criteria"], ["draft account", "archival supplement"])
+        self.assertEqual([row["claim"] for row in current["completion_obligations"]], ["draft account", "archival supplement"])
         self.assertNotEqual(engine.runtime["status"], "completed")
+
+    def test_completed_instance_rejects_requirement_changes(self):
+        engine = self._requirement_change_fixture()
+        from state_fixtures import complete_academic_task
+        complete_academic_task(engine, self._academic_tasks(engine)[0], engine._solution_basis())
+        self.assertEqual(engine.runtime["status"], "completed")
+        before = deepcopy(engine.runtime["tasks"])
+        request = control(self.repo, engine.instance["id"], "decision", config={
+            "change": charter_change(engine, academic_requirements=[requirement(["New requirement"])])})
+        engine.process_controls()
+        rejected = [row for row in engine.runtime["history"]
+                    if row.get("kind") == "rejected_user_control"
+                    and row.get("request", {}).get("id") == request["request_id"]]
+        self.assertEqual(len(rejected), 1)
+        self.assertIn("closed/completed", rejected[0]["reason"])
+        self.assertEqual(engine.runtime["status"], "completed")
+        self.assertEqual(engine.store.load()[2]["tasks"], before)
 
     def test_external_rejection_keeps_formal_solution_and_requires_planner_evidence_to_clear(self):
         engine, _ = self.make()
         self.drive(engine)
         knowledge = next(iter(engine.instance["knowledge"].values()))
-        formal_before = deepcopy(knowledge["formal"])
+        formal_before = deepcopy(engine.instance["formal_results"][knowledge["formal_result_id"]])
         self.assertEqual(engine.runtime["status"], "completed")
 
         control(self.repo, engine.instance["id"], "decision", config={"change": {
@@ -166,19 +207,26 @@ class AcademicEngineTests(PurposeHarness):
         }})
         engine.process_controls()
         rejection = engine.runtime["external_rejections"][-1]
+        rejection_before = deepcopy(rejection)
         self.assertFalse(rejection["resolved"])
         self.assertEqual(engine.instance["goal_status"], "mathematically_solved")
-        self.assertEqual(engine.instance["knowledge"][knowledge["id"]]["formal"], formal_before)
+        self.assertEqual(engine.instance["formal_results"][knowledge["formal_result_id"]], formal_before)
         self.assertNotEqual(engine.runtime["status"], "completed")
 
         self.drive(engine, predicate=lambda current: current.runtime["status"] == "completed", limit=12)
         rejection = next(item for item in engine.runtime["external_rejections"] if item["id"] == rejection["id"])
-        self.assertTrue(rejection["resolved"])
-        self.assertTrue(rejection["resolution_evidence"].strip())
-        resolution_execution = engine.runtime["executions"][rejection["resolution_execution_id"]]
+        self.assertEqual(rejection, rejection_before)
+        resolution = next(row for row in engine.runtime['academic_resolution_records']
+                          if row['rejection_id'] == rejection['id'])
+        self.assertEqual(resolution['decision'], 'resolved')
+        self.assertTrue(resolution['evidence'].strip())
+        from do_math import academic
+        self.assertEqual(academic.unresolved_rejections(engine.instance, engine.runtime, engine._solution_basis(),
+                                                       resolve_evidence=engine._academic_evidence), [])
+        resolution_execution = engine.runtime["executions"][resolution['execution_id']]
         self.assertEqual(resolution_execution["action"]["role"], "research_plan")
         self.assertEqual(engine.instance["goal_status"], "mathematically_solved")
-        self.assertEqual(engine.instance["knowledge"][knowledge["id"]]["formal"], formal_before)
+        self.assertEqual(engine.instance["formal_results"][knowledge["formal_result_id"]], formal_before)
 
     def test_required_external_effect_uses_confirmed_loopback_receipt_before_completion(self):
         received = []
@@ -206,10 +254,11 @@ class AcademicEngineTests(PurposeHarness):
         worker.start(); self.addCleanup(server.server_close); self.addCleanup(server.shutdown)
         origin = f"http://127.0.0.1:{server.server_port}"
         self.runner_options = {"effect_request": {"grant_id": "HTTP", "request": {"method": "POST", "url": origin + "/submit", "body": "proof"}}}
-        engine, _ = self.make()
-        engine.instance["grants"]["HTTP"] = {"id": "HTTP", "kind": "http", "status": "active", "allowed_origins": [origin],
-            "allowed_methods": ["POST"], "allowed_path_prefixes": ["/"]}
-        engine._save()
+        engine, _ = self.make(external_policy="explicit_grants")
+        send_control(engine, "decision", text="Explicit test-only permission for this loopback endpoint",
+            config={"change": {"kind": "grant", "grant": {"id": "HTTP", "kind": "http",
+                "allowed_origins": [origin], "allowed_methods": ["POST"], "allowed_path_prefixes": ["/"],
+                "reuse": "reusable"}}})
         self._set_requirements(engine, ["send manuscript"], "academic-effect-v1", required_inputs=["context:goal"],
             external_effects=[{"id": "submit", "scope": "send manuscript", "grant_id": "HTTP"}])
         transport_errors = []
@@ -252,14 +301,24 @@ class AcademicEngineTests(PurposeHarness):
         worker.start(); self.addCleanup(server.server_close); self.addCleanup(server.shutdown)
         origin = f"http://127.0.0.1:{server.server_port}"
 
-        for suffix, expected in (("/reject", ("confirmed", False)), ("/unknown", ("unknown", None))):
+        for suffix in ('/reject', '/unknown'):
             self.runner_options = {"effect_request": {"grant_id": "HTTP", "request": {"method": "POST", "url": origin + suffix, "body": "proof"}}}
-            engine, _ = self.make()
-            engine.instance["grants"]["HTTP"] = {"id": "HTTP", "kind": "http", "status": "active", "allowed_origins": [origin],
-                "allowed_methods": ["POST"], "allowed_path_prefixes": ["/"]}
-            engine._save()
+            engine, _ = self.make(external_policy="explicit_grants")
+            send_control(engine, "decision", text="Explicit test-only permission for this loopback endpoint",
+                config={"change": {"kind": "grant", "grant": {"id": "HTTP", "kind": "http",
+                    "allowed_origins": [origin], "allowed_methods": ["POST"], "allowed_path_prefixes": ["/"],
+                    "reuse": "reusable"}}})
             self._set_requirements(engine, ["send manuscript"], "academic-effect" + suffix.replace("/", "-"),
                 external_effects=[{"id": "submit", "scope": "send manuscript", "grant_id": "HTTP"}])
+            # The successful loopback test covers the full mathematical path.
+            # Here only that premise is synthetic; preparation, external Job,
+            # actual HTTP outcome, receipt gate and typed storage remain real.
+            basis = {'goal_ref': 'synthetic-solution', 'records': []}
+            self.enterContext(patch.object(engine, '_solution_basis', return_value=basis))
+            engine.instance['goal_status'] = 'mathematically_solved'
+            engine.runtime['queue'] = []
+            engine._ensure_academic_followup()
+            engine._save()
             operation = None
             for _ in range(30):
                 engine.run(max_steps=1)
@@ -267,15 +326,23 @@ class AcademicEngineTests(PurposeHarness):
                 if operation and operation.get("status") in {"confirmed", "unknown"}:
                     break
             self.assertIsNotNone(operation)
-            self.assertEqual((operation["status"], operation.get("succeeded")), expected)
+            self.assertEqual((operation["status"], operation.get("succeeded")), ('unknown', None))
             task = self._academic_tasks(engine)[0]
             # The loop stops before any planner assessment exists, so the status checks below hold even without the
             # receipt gate. Submit the planner's completed assessment to that gate against the actual ledger state.
-            completed = {"task_id": task["id"], "decision": "completed", "reason": "The returned report says the manuscript was sent.",
-                         "criteria_results": [{"criterion": "send manuscript", "satisfied": True,
-                                               "evidence": "The worker report states that the manuscript request was sent."}]}
-            with self.assertRaisesRegex(ValueError, "lacks confirmed successful required external effects"):
-                engine._record_academic_assessment(task, completed, "EX-planner-fixture")
+            completed = assessment(task)
+            from do_math.task_scope import apply_task_assessments
+            original_instance, original_runtime = engine.instance, engine.runtime
+            try:
+                engine.instance, engine.runtime = deepcopy(original_instance), deepcopy(original_runtime)
+                engine.runtime['executions']['EX-planner-fixture'] = {'id': 'EX-planner-fixture',
+                    'role': 'research_plan', 'status': 'ended', 'input_solution_basis': deepcopy(task['solution_basis'])}
+                engine.instance, engine.runtime = apply_task_assessments(engine.instance, engine.runtime, [completed],
+                    execution_id='EX-planner-fixture', input_tasks=deepcopy(engine.runtime['tasks']))
+                with self.assertRaisesRegex(ValueError, "lacks confirmed successful required external effects"):
+                    engine._record_academic_assessment(engine.runtime['tasks'][task['id']], completed, 'EX-planner-fixture')
+            finally:
+                engine.instance, engine.runtime = original_instance, original_runtime
             self.assertFalse([entry for entry in engine.runtime.get("academic_assessments", []) if entry.get("task_id") == task["id"]])
             self.assertNotEqual(engine.status()["academic_validation"]["status"], "completed")
             self.assertNotEqual(engine.runtime["status"], "completed")
@@ -284,3 +351,34 @@ class AcademicEngineTests(PurposeHarness):
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+
+
+class AcademicTaskPersistenceTests(unittest.TestCase):
+    def setUp(self):
+        from test_input_recovery import InputRecoveryPublicTests
+        InputRecoveryPublicTests.setUp(self)
+
+    def test_user_requirement_task_keeps_charter_provenance_without_invented_execution(self):
+        from do_math.engine import ResearchEngine
+        from do_math.governance import governance_view
+        engine = ResearchEngine(self.repo, self.identifier)
+        send_control(engine, "decision", config={"change": charter_change(engine,
+            academic_requirements=[requirement(["Explain the supplied result"])])})
+        # Only the mathematical solution basis is synthetic; generation, approval,
+        # record/reference validation and Git publication are real.
+        basis = {"goal_ref": "synthetic-solution", "records": []}
+        with patch.object(engine, "_solution_basis", return_value=basis):
+            engine._ensure_academic_followup()
+            engine._save()
+        task = next(t for t in engine.runtime["tasks"].values() if t.get("academic_requirement_id"))
+        charter = governance_view(engine.instance)["charter"]
+        self.assertNotIn("producer_execution", task)
+        self.assertEqual(task["basis_refs"], [charter["id"], charter["approval_ref"]])
+        self.assertEqual(task["academic_requirement_id"], "writeup")
+        self.assertEqual(task["requirements_sha256"], governance_view(engine.instance)["academic_requirements"]["sha256"])
+        preparation = next(a for a in engine.runtime['queue'] if task['id'] in a.get('observation_rule_targets', {}))
+        self.assertEqual(preparation['role'], 'research_preparation')
+        self.assertFalse(any(a['role'] == 'task_contract_review' and a.get('target') == task['id']
+                             for a in engine.runtime['queue']))
+        _, _, saved = engine.store.load()
+        self.assertEqual(saved["tasks"][task["id"]], task)

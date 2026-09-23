@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import hashlib
 import json
 from pathlib import Path
 import shutil
@@ -15,8 +16,9 @@ from .codex_adapter import CodexExecAdapter
 from .claude_adapter import ClaudePrintAdapter
 from .engine import ResearchEngine, control, initialize, json_safe
 from .git_store import GitStateStoreConflict, GitStateStoreError, GitStateStoreLockError
-from .repository import ResearchRepository
+from .engine import _repository as ResearchRepository
 from . import scheduled_operator
+from .repository import canonical_json
 
 
 class CliInputError(ValueError):
@@ -37,19 +39,24 @@ def _pairs(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
     return value
 
 
-def _json_file(path: str) -> dict[str, Any]:
+def _json_document(path: str) -> tuple[dict[str, Any], str]:
     try:
-        value = json.loads(Path(path).read_text(encoding="utf-8"), object_pairs_hook=_pairs)
+        text = Path(path).read_bytes().decode("utf-8")
+        value = json.loads(text, object_pairs_hook=_pairs)
     except (OSError, UnicodeDecodeError, json.JSONDecodeError, ValueError) as error:
         raise CliInputError(f"cannot read JSON file {path}: {error}") from error
     if not isinstance(value, dict):
         raise CliInputError("JSON configuration must be an object")
-    return value
+    return value, text
+
+
+def _json_file(path: str) -> dict[str, Any]:
+    return _json_document(path)[0]
 
 
 def _text_file(path: str) -> str:
     try:
-        return Path(path).read_text(encoding="utf-8")
+        return Path(path).read_bytes().decode("utf-8")
     except (OSError, UnicodeDecodeError) as error:
         raise CliInputError(f"cannot read text file {path}: {error}") from error
 
@@ -74,6 +81,8 @@ def _instance_arguments(parser: argparse.ArgumentParser) -> None:
 
 def build_parser() -> _Parser:
     parser = _Parser(prog="do-math")
+    parser.add_argument('--describe', action='store_true', help='describe the code-defined JSON command contract')
+    parser.add_argument('--request-file', help='execute one schema-version-5 JSON command request')
     commands = parser.add_subparsers(dest="command", required=True)
 
     init = commands.add_parser("init", help="create a research instance")
@@ -84,7 +93,8 @@ def build_parser() -> _Parser:
     goal.add_argument("--goal")
     goal.add_argument("--goal-file")
     init.add_argument("--title", default="")
-    init.add_argument("--goal-kind", choices=("mathematical", "research"), default="mathematical")
+    init.add_argument("--goal-kind", choices=("mathematical", "research"), default="mathematical",
+                      help="mathematical is supported; research is reserved and currently unsupported")
     init.add_argument("--policies-file")
     init.add_argument("--source", action="append", default=[], type=Path)
     init.add_argument("--config-file")
@@ -105,12 +115,14 @@ def build_parser() -> _Parser:
     status = commands.add_parser("status", help="show current status")
     _instance_arguments(status)
     status.add_argument("--json", action="store_true")
+    status.add_argument('--snapshot')
 
     for name in ("pause", "resume", "close"):
         command = commands.add_parser(name, help=f"queue and apply {name}")
         _instance_arguments(command)
         command.add_argument("--reason", default="")
         command.add_argument("--origin", choices=("user", "operator"), default="user")
+        command.add_argument("--request-id", help="stable retry identity; changed payloads are rejected")
 
     input_command = commands.add_parser("input", help="submit user input")
     _instance_arguments(input_command)
@@ -118,6 +130,7 @@ def build_parser() -> _Parser:
     incoming.add_argument("--text")
     incoming.add_argument("--file")
     input_command.add_argument("--origin", choices=("user", "operator"), default="user")
+    input_command.add_argument("--request-id", help="stable retry identity; changed payloads are rejected")
     input_command.add_argument("--responds-to", action="append", default=[], help="ID of an open user question answered by this input; repeat for multiple questions")
 
     configure = commands.add_parser("configure", help="change explicit instance configuration")
@@ -127,9 +140,11 @@ def build_parser() -> _Parser:
 
     request = commands.add_parser("request", help="queue a model-free activity request")
     _instance_arguments(request)
-    request.add_argument("--role", required=True, choices=(
+    request_mode = request.add_mutually_exclusive_group(required=True)
+    request_mode.add_argument("--role", choices=(
         "research_preparation", "research_plan", "supplemental_research", "operational_review", "maintenance",
     ))
+    request_mode.add_argument("--retry-action", help="retry one held input overflow or failed initial interpretation; reuse a verified preserved native final when available")
     request.add_argument("--target")
     reason = request.add_mutually_exclusive_group()
     reason.add_argument("--reason")
@@ -176,6 +191,8 @@ def build_parser() -> _Parser:
 
     check = commands.add_parser("check", help="check persisted workflow relations")
     _instance_arguments(check)
+    check.add_argument('--snapshot')
+    check.add_argument('--kinds', nargs='+', help='inspection area names; default all registered areas')
 
     profile = commands.add_parser("profile", help="inspect the installed model CLI surface")
     profile.add_argument("--provider", choices=("codex", "claude"), default="codex")
@@ -187,22 +204,46 @@ def build_parser() -> _Parser:
     _instance_arguments(operator)
     operator.add_argument("--workspace", type=Path)
     operator.add_argument("--reason", default="")
+    for name in ('configure', 'request', 'decision', 'knowledge', 'trust', 'external', 'conversation', 'source'):
+        commands.choices[name].add_argument('--request-id', help='stable retry identity; changed payloads are rejected')
+    for name in ('pause','resume','close','input','configure','request','decision','knowledge','trust','external','conversation','source'):
+        commands.choices[name].add_argument('--idempotency-key', help='explicit key for an intentional new application of the same content')
     return parser
 
 
 def _control(args: argparse.Namespace, action: str, *, text: str = "", config: dict[str, Any] | None = None) -> dict[str, Any]:
-    request = control(args.repository, args.instance, action, text=text, config=config,
-                      origin=getattr(args, "origin", "user"))
+    explicit, key = getattr(args, 'request_id', None), getattr(args, 'idempotency_key', None)
+    if explicit is not None and key is not None:
+        raise CliInputError('request_id and idempotency_key are mutually exclusive')
+    identity_config = config or {}
+    if action == 'source':
+        path = Path(identity_config['path'])
+        raw = path.read_bytes()
+        identity_config = {'name': identity_config.get('name') or path.name,
+            'body_base64': base64.b64encode(raw).decode('ascii'), 'sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)}
+    identifier = explicit if explicit is not None else control_request_id(args.instance, action, text=text, config=identity_config,
+                                               origin=getattr(args,'origin','user'), idempotency_key=key)
+    args._resolved_request_id = identifier
+    extra = {'request_id': identifier}
+    request = control(args.repository, args.instance, action, text=text, config=identity_config,
+                      origin=getattr(args, "origin", "user"), **extra)
+    # ENGINE's replay receipt is tied to the original publication. Do not run
+    # unrelated pending controls or replace that receipt with current state.
+    if request.get('effect') in {'applied', 'rejected'} and request.get('snapshot'):
+        return request
     engine = ResearchEngine(args.repository, args.instance)
     try:
-        status = engine.process_controls()
+        engine.process_controls()
+        outcome = engine.control_result(request['request_id'])
     except GitStateStoreLockError:
         return {**request, "effect": "pending engine processing", "lock": "busy"}
-    outcome = next(h for h in reversed(engine.runtime["history"]) if
-                   request["request_id"] in {h.get("request", {}).get("id"), h.get("request_id")})
-    return {**request, "effect": "rejected" if outcome["kind"] == "rejected_user_control" else "applied",
-            "reason": outcome.get("reason"), "status": status["status"], "snapshot": status["snapshot"],
-            "config": engine.instance["config"] if action == "configure" else None}
+    except (ValueError, TypeError, KeyError) as error:
+        # Admission already produced a receipt. Failure applying that accepted
+        # control belongs to the implementation, not to the user's JSON parser.
+        raise RuntimeError(f"accepted request {request['request_id']} could not be processed: {error}") from error
+    if outcome is None:
+        return {**request, 'effect': 'pending engine processing', 'next_owner': 'engine'}
+    return {**request, **outcome}
 
 
 def _operator_workspace(repository: Path, instance: str, supplied: Path | None = None) -> Path:
@@ -218,8 +259,7 @@ def _reconcile_operator(repository: Path, instance: str, configuration: dict[str
     action = "install" if configuration["operator_enabled"] else "uninstall"
     return scheduled_operator.schedule(action, repository=repository, instance=instance, workspace=workspace,
                                        interval_seconds=configuration["operator_interval_seconds"],
-                                       operator_timeout_seconds=configuration["operator_timeout_seconds"],
-                                       engine_timeout_seconds=configuration["run_timeout_seconds"] + configuration["checkpoint_grace_seconds"])
+                                       operator_timeout_seconds=configuration["operator_timeout_seconds"])
 
 
 def _schedule_failure(result: dict[str, Any], error: RuntimeError, instance: str) -> tuple[dict[str, Any], int]:
@@ -236,6 +276,8 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
                          include_operator=args.include_operator)
         return (timeline_csv(value) if args.format == "csv" else value), 0
     if command == "init":
+        if args.goal_kind != "mathematical":
+            raise CliInputError("unsupported goal_kind: research; this entrypoint currently supports mathematical only")
         _require_git(args.repository, args.create_repository)
         goal = args.goal if args.goal is not None else _text_file(args.goal_file)
         policies = "" if args.policies_file is None else _text_file(args.policies_file)
@@ -259,10 +301,14 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
     if command == "run":
         return ResearchEngine(args.repository, args.instance).run(max_steps=args.max_steps, watch=args.watch), 0
     if command == "status":
-        status = ResearchEngine(args.repository, args.instance).status()
+        from .reporting import snapshot_report, render_human_report
+        if args.snapshot is None:
+            status = ResearchEngine(args.repository, args.instance).status()
+            return (status if args.json else _human_status(status)), 0
+        status = snapshot_report(args.repository, args.instance, snapshot=args.snapshot)
         if args.json:
             return status, 0
-        return _human_status(status), 0
+        return render_human_report(status), 0
     if command in {"pause", "resume", "close"}:
         return _control(args, command, text=args.reason), 0
     if command == "input":
@@ -270,8 +316,13 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
     if command == "configure":
         requested = _json_file(args.config_file)
         result = _control(args, "configure", config=requested)
-        operator_keys = {"operator_enabled", "operator_interval_seconds", "operator_timeout_seconds", "operator_model", "operator_effort", "run_timeout_seconds", "checkpoint_grace_seconds"}
-        if result["effect"] == "applied" and operator_keys.intersection(requested):
+        operator_keys = {"operator_enabled", "operator_interval_seconds", "operator_timeout_seconds", "operator_model", "operator_effort", "checkpoint_grace_seconds"}
+        if operator_keys.intersection(requested) and result['effect'] == 'rejected':
+            result['operator_schedule'] = {'status': 'not_applied', 'reason': 'configuration was rejected'}
+        elif operator_keys.intersection(requested) and result.get('replayed') and result['effect'] == 'applied':
+            result['operator_schedule'] = {'status': 'not_reapplied',
+                'reason': 'original control receipt replayed; explicit operator install or uninstall reconciles current configuration'}
+        elif result["effect"] == "applied" and operator_keys.intersection(requested):
             try:
                 result["operator_schedule"] = _reconcile_operator(args.repository, args.instance, result["config"])
             except RuntimeError as error:
@@ -280,11 +331,15 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
             result["operator_schedule"] = {"status": "pending", "reason": "run operator install or uninstall after the control is applied"}
         return result, 0
     if command == "request":
+        if args.retry_action is not None:
+            if args.target is not None or args.reason is not None or args.text is not None:
+                raise CliInputError("--retry-action cannot be combined with target or request text")
+            return _control(args, "request", config={"retry_action": args.retry_action}), 0
         return _control(args, "request", text=args.reason if args.reason is not None else args.text or "",
                         config={"role": args.role, "target": args.target}), 0
     if command in {"decision", "knowledge", "trust", "external", "conversation"}:
-        payload = _json_file(args.file)
-        return _control(args, command,
+        payload, original = _json_document(args.file)
+        return _control(args, command, text=original,
                         config={"change": payload} if command == "decision" else payload), 0
     if command == "source":
         path = Path(args.file).resolve()
@@ -293,32 +348,48 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
         return _control(args, "source", config={"path": str(path), "name": args.name or path.name}), 0
     if command == "query":
         if args.files:
-            return ResearchRepository(args.repository, args.instance).query(snapshot=args.snapshot, prefix=args.prefix,
-                                                                              text=args.text, limit=args.limit, cursor=args.cursor), 0
+            value = ResearchRepository(args.repository, args.instance).query(snapshot=args.snapshot, prefix=args.prefix,
+                                                                               text=args.text, limit=args.limit, cursor=args.cursor)
+            value["provenance"] = {"snapshot": value["snapshot"],
+                                   "filters": {"prefix": args.prefix, "text": args.text, "limit": args.limit,
+                                               "cursor": args.cursor},
+                                   "page": {"loaded": len(value["items"]), "total": value["total"],
+                                            "next_cursor": value["next_cursor"], "truncated": value["truncated"]}}
+            return value, 0
         from .engine import query_records
         return query_records(args.repository, args.instance, snapshot=args.snapshot, kind=args.kind, text=args.text,
                              limit=args.limit, cursor=args.cursor, related_to=args.related_to, direction=args.direction), 0
     if command == "read":
         if args.path is not None:
-            raw = ResearchRepository(args.repository, args.instance).read(args.path, args.snapshot)
+            store = ResearchRepository(args.repository, args.instance)
+            resolved_snapshot = store._resolve_snapshot(args.snapshot)
+            raw = store.read(args.path, resolved_snapshot)
+            provenance = {"snapshot": resolved_snapshot, "path": args.path, "sha256": hashlib.sha256(raw).hexdigest(),
+                          "range": {"start": 0, "end": len(raw), "total": len(raw)}}
             if args.output is not None:
                 args.output.parent.mkdir(parents=True, exist_ok=True)
                 args.output.write_bytes(raw)
-                return {"path": args.path, "snapshot": args.snapshot, "size": len(raw), "output": str(args.output)}, 0
+                return {"path": args.path, "snapshot": resolved_snapshot, "size": len(raw), "output": str(args.output),
+                        "sha256": provenance["sha256"], "provenance": provenance}, 0
             try:
                 text = raw.decode("utf-8")
-                return {"path": args.path, "snapshot": args.snapshot, "size": len(raw), "text": text}, 0
+                return {"path": args.path, "snapshot": resolved_snapshot, "size": len(raw), "text": text,
+                        "sha256": provenance["sha256"], "provenance": provenance}, 0
             except UnicodeDecodeError:
-                return {"path": args.path, "snapshot": args.snapshot, "size": len(raw),
-                        "base64": base64.b64encode(raw).decode("ascii")}, 0
+                return {"path": args.path, "snapshot": resolved_snapshot, "size": len(raw),
+                        "base64": base64.b64encode(raw).decode("ascii"), "sha256": provenance["sha256"],
+                        "provenance": provenance}, 0
         from .engine import read_record
         return read_record(args.repository, args.instance, args.id, snapshot=args.snapshot), 0
     if command == "export":
         prefixes = ("research/", "runtime/") if args.all else ("research/",)
         return ResearchRepository(args.repository, args.instance).export(args.destination, args.snapshot, prefixes), 0
     if command == "check":
-        result = ResearchEngine(args.repository, args.instance).check()
-        return result, 0 if result["passed"] else 1
+        from .state_checks import inspection_exit_code
+        result = ResearchEngine(args.repository, args.instance).check(snapshot=args.snapshot, requested_areas=args.kinds)
+        code = inspection_exit_code(result['inspection'])
+        result.update(exit_code=code, passed=code == 0)
+        return result, code
     if command == "profile":
         if args.provider == "claude":
             if args.codex_path:
@@ -346,8 +417,7 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
                         return guard, 0
                 return scheduled_operator.schedule(action, repository=args.repository, instance=args.instance, workspace=workspace,
                                                    interval_seconds=configuration.get("operator_interval_seconds", 7200),
-                                                   operator_timeout_seconds=configuration.get("operator_timeout_seconds", 5400),
-                                                   engine_timeout_seconds=configuration.get("run_timeout_seconds", 7200) + configuration.get("checkpoint_grace_seconds", 10)), 0
+                                                   operator_timeout_seconds=configuration.get("operator_timeout_seconds", 5400)), 0
             if mode == "hold":
                 marker = scheduled_operator.hold(workspace, reason=args.reason)
                 pause = _control(args, "pause", text="User requested scheduled operator HOLD " + marker["id"])
@@ -405,29 +475,180 @@ def _human_status(status: dict[str, Any]) -> str:
                      f"waits={waits} next={task.get('next_owner') or 'none'}")
     for name, gate in status.get('provider_waits', {}).get('providers', {}).items():
         lines.append(f"provider {name}: {gate['state']} retry={display_time(gate.get('retry_at')) or 'unknown'} generation={gate['generation']}")
+    if status.get('inspection'):
+        from .reporting import render_human_report
+        lines.append(render_human_report(status))
+    else:
+        lines.append('inspection: not supplied; research effectiveness: not evaluated')
     return '\n'.join(lines)
 
 
-def _emit(value: dict[str, Any] | str) -> None:
-    if isinstance(value, str):
+def control_request_id(instance_id, action, *, text='', config=None, origin='user', idempotency_key=None):
+    """Hash normalized content, not mutable admission state or delivery time.
+
+    Source controls must pass their normalized name/body/hash/size payload.
+    ENGINE may call this after resolving source bytes, before inbox admission.
+    """
+    if idempotency_key is not None and (not isinstance(idempotency_key,str) or not idempotency_key):
+        raise CliInputError('idempotency_key must be a nonempty string')
+    value = {'schema_version':5,'command':action,'caller':origin,
+             'payload':{'instance_id':instance_id,'text':text,'config':config or {}},
+             'idempotency_key':idempotency_key}
+    return 'UC-' + hashlib.sha256(canonical_json(value)).hexdigest()
+
+
+def _command_parsers(parser):
+    return next(action.choices for action in parser._actions if isinstance(action,argparse._SubParsersAction))
+
+
+def _request_schema(parser):
+    return {'type':'object','required':['schema_version','command','payload'],'additionalProperties':False,
+        'properties':{'schema_version':{'type':'integer','const':5},
+            'command':{'type':'string','enum':list(_command_parsers(parser))},
+            'caller':{'type':'string','enum':['user','operator']},'payload':{'type':'object'},
+            'request_id':{'type':'string','minLength':1,'maxLength':128,'pattern':'^[A-Za-z0-9_-]+$'},
+            'idempotency_key':{'type':'string','minLength':1}}}
+
+
+def describe_commands(parser, command=None):
+    commands = {}
+    for name, subparser in _command_parsers(parser).items():
+        if command is not None and name != command:
+            continue
+        properties, required = {}, []
+        for action in subparser._actions:
+            if action.dest == 'help':
+                continue
+            scalar = {'type':'integer' if action.type is int else 'string'}
+            if action.choices is not None:
+                scalar['enum'] = list(action.choices)
+            definition = ({'type':'boolean'} if isinstance(action,argparse._StoreTrueAction) else
+                          {'type':'array','items':scalar} if isinstance(action,argparse._AppendAction) or action.nargs in ('+','*') else scalar)
+            if action.default is not None and action.default != argparse.SUPPRESS:
+                definition['default'] = action.default
+            if action.help:
+                definition['description'] = action.help
+            properties[action.dest] = definition
+            if action.required:
+                required.append(action.dest)
+        schema = {'type':'object','properties':properties,'required':required,'additionalProperties':False}
+        groups = []
+        for group in subparser._mutually_exclusive_groups:
+            names = [action.dest for action in group._group_actions]
+            groups.append({'names':names,'required':group.required})
+        commands[name] = {'payload_schema':schema,'exclusive_groups':groups}
+    if command is not None and not commands:
+        raise CliInputError('unknown command for --describe')
+    return {'schema_version':5,'commands':commands,'request_schema':_request_schema(parser),
+        'request_fields':['schema_version','command','caller','payload','request_id','idempotency_key'],
+        'response_fields':['schema_version','request_id','command','exit_code','result OR error'],
+        'inspection_exit_codes':{'healthy':0,'degraded':1,'blocked':1,'incomplete':1},
+        'error_exit_codes':{'input_error':2,'tool_error':5,'contract_error':5},
+        'caller_authority':'caller is a declared origin, not strong authentication'}
+
+
+def _json_arguments(parser, request):
+    from jsonschema import Draft202012Validator
+    errors = list(Draft202012Validator(_request_schema(parser)).iter_errors(request))
+    if errors:
+        raise CliInputError('invalid command request: ' + errors[0].message)
+    command = request.get('command')
+    description = describe_commands(parser, command)
+    if command not in description['commands']:
+        raise CliInputError('command request requires a command')
+    payload = request.get('payload')
+    errors = list(Draft202012Validator(description['commands'][command]['payload_schema']).iter_errors(payload))
+    if errors:
+        raise CliInputError('invalid command payload: ' + errors[0].message)
+    payload = dict(payload)
+    subparser = _command_parsers(parser)[command]
+    known = {action.dest:action for action in subparser._actions}
+    if 'caller' in request:
+        if request['caller'] not in {'user','operator'}:
+            raise CliInputError('caller must be user or operator')
+        if 'origin' in known:
+            if 'origin' in payload and payload['origin'] != request['caller']:
+                raise CliInputError('caller differs from payload origin')
+            payload['origin'] = request['caller']
+    for key in ('request_id','idempotency_key'):
+        if key in request:
+            if key not in known or key in payload:
+                raise CliInputError('unexpected or duplicate ' + key)
+            payload[key] = request[key]
+    argv = [command]
+    for name, value in payload.items():
+        action = known[name]
+        flag = next((flag for flag in action.option_strings if flag.startswith('--')),None)
+        if isinstance(action,argparse._StoreTrueAction):
+            if value:
+                argv.append(flag)
+        elif isinstance(action,argparse._AppendAction):
+            for item in value:
+                argv.extend([flag,str(item)])
+        elif action.nargs in ('+','*'):
+            argv.extend([flag,*map(str,value)])
+        else:
+            argv.extend(([flag] if flag else []) + [str(value)])
+    args = parser.parse_args(argv)
+    if command == 'status':
+        args.json = True
+    return args
+
+
+def _emit(value, *, command=None, request_id=None, code=0, error=False, force_json=False) -> None:
+    if isinstance(value, str) and not force_json:
         print(value)
     else:
-        print(json.dumps(json_safe(value), ensure_ascii=False, sort_keys=True))
+        envelope = {'schema_version':5,'response_contract':'do-math-cli/5','request_id':request_id,
+                    'command':command,'exit_code':code,'error' if error else 'result':value}
+        print(json.dumps(json_safe(envelope), ensure_ascii=False, sort_keys=True))
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
+    argv = list(sys.argv[1:] if argv is None else argv)
+    command, identifier = None, None
+    force_json = bool(argv and argv[0] == '--request-file')
     try:
-        args = parser.parse_args(argv)
-        result, code = execute(args)
+        if argv and argv[0] == '--describe':
+            if len(argv) > 2:
+                raise CliInputError('--describe accepts at most one command name')
+            result = describe_commands(parser,argv[1] if len(argv)==2 else None)
+            _emit(result,command='describe',request_id='QR-'+hashlib.sha256(canonical_json(argv)).hexdigest())
+            return 0
+        if force_json:
+            if len(argv) != 2:
+                raise CliInputError('--request-file accepts exactly one path')
+            request = _json_file(argv[1])
+            command = request.get('command')
+            args = _json_arguments(parser,request)
+        else:
+            args = parser.parse_args(argv)
+        command = args.command
+        normalized = {key:(str(value) if isinstance(value,Path) else value) for key,value in vars(args).items()
+                      if key not in {'describe','request_file','json'}}
+        identifier = 'QR-' + hashlib.sha256(canonical_json(json_safe(normalized))).hexdigest()
+        try:
+            result, code = execute(args)
+        finally:
+            identifier = getattr(args, '_resolved_request_id', identifier)
     except CliInputError as error:
-        _emit({"kind": "input_error", "error": str(error)})
+        _emit({"kind": "input_error", "message": str(error), 'next_owner': 'user', 'retryable': False}, command=command,request_id=identifier,code=2,error=True)
         return 2
-    except (ValueError, TypeError, KeyError) as error:
-        _emit({"kind": "input_error", "error": str(error)})
+    except ValueError as error:
+        _emit({"kind": "input_error", "message": str(error), 'next_owner': 'user', 'retryable': False}, command=command,request_id=identifier,code=2,error=True)
         return 2
-    except (GitStateStoreConflict, GitStateStoreError, OSError, subprocess.SubprocessError) as error:
-        _emit({"kind": "tool_error", "error": str(error)})
+    except (TypeError, KeyError) as error:
+        _emit({'kind': 'contract_error', 'message': str(error), 'next_owner': 'maintenance', 'retryable': False}, command=command,request_id=identifier,code=5,error=True)
         return 5
-    _emit(result)
+    except (GitStateStoreConflict, GitStateStoreError, OSError, subprocess.SubprocessError) as error:
+        _emit({"kind": "tool_error", "message": str(error), 'next_owner': 'operator',
+               'retryable': isinstance(error, (GitStateStoreConflict, GitStateStoreLockError))}, command=command,request_id=identifier,code=5,error=True)
+        return 5
+    except RuntimeError as error:
+        _emit({'kind': 'contract_error', 'message': str(error), 'next_owner': 'maintenance', 'retryable': False}, command=command,request_id=identifier,code=5,error=True)
+        return 5
+    if isinstance(result,dict):
+        identifier = result.get('request_id',identifier)
+    _emit(result,command=command,request_id=identifier,code=code,force_json=force_json)
     return code

@@ -19,7 +19,7 @@ def main(argv=None):
         context = load_json((workspace / 'input/submission/context.json').read_bytes())
         settings = context['formal_verifier']
         source = _safe_path(workspace, args.source).read_bytes().decode('utf-8')
-        stopped = lambda: (workspace / 'stop-request.json').exists()
+        stopped = lambda: (workspace / '.control' / 'stop-request.json').exists()
         if stopped():
             result = {'status': 'stopped', 'reason': 'stop requested before compilation'}
         elif not settings.get('command'):
@@ -31,7 +31,8 @@ def main(argv=None):
                 result = verify_lean(source=source, declarations=args.declaration,
                     workspace=Path(directory), lean_command=settings['command'],
                     allowed_axioms=tuple(settings['allowed_axioms']),
-                    timeout_seconds=settings['timeout_seconds'], should_stop=stopped)
+                    timeout_seconds=settings['timeout_seconds'], should_stop=stopped,
+                    expected_toolchain=settings.get('expected_toolchain'))
         result.update(authoritative=False, input_snapshot=context.get('snapshot'),
             assurance='Same supplied verifier code and configured command; central verification of the submitted source is still required. Shared compiler libraries and Lake caches are not isolated by this preview.')
     except (ValueError, KeyError, OSError) as error:

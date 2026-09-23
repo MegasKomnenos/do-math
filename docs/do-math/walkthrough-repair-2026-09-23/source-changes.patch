@@ -1,0 +1,1654 @@
+--- a/.claude/skills/do-math/GLOSSARY.md
++++ b/.claude/skills/do-math/GLOSSARY.md
+@@ -364,7 +364,9 @@
+ 
+ ### 반복 교정 문턱
+ 
+-이미 수입한 자료를 같은 내용으로 거듭 저작하거나 선택 실패, 무산출 준비, 제안·계약 개정을 반복할 때 동일 시도 전에 원인과 후속을 다시 판단하는 경계다. 실행기 안의 운영 점검과 연구 계획은 원 출력·저장 결과·수신 조건을 대조하고, 입력·환경 수리나 현재 상태에 근거한 새 계획으로 연결한다. 예약 감독은 이 의미 판단을 대신하지 않는다. 사용자 목표·필수조건·권한을 바꾸어야 하는 결정은 연구 책임자에게 돌린다. 새 ID나 이름만 바꾸어 같은 실패를 반복하지 않으며, 다른 독립 작업을 함께 중단시키지 않는다.
++이미 수입한 자료의 재저작, 선택 실패, 무산출 준비, 제안·계약 개정을 반복할 때 동일 시도의 후속을 다시 판단하는 경계다. 채택된 각 계보의 횟수 한도에 도달하면 그 계보의 보류 소유자는 `user`이며, 공개 `repetition_continue` 결정이 현재 보류와 정확한 후속 범위를 승인해야 계속할 수 있다. 이 결정은 기존 실패를 삭제하지 않고 새 집계 구간을 연다. 새 ID나 이름만 바꾸어 같은 문턱을 우회하지 않으며, 다른 독립 작업은 계속할 수 있다.
++
++입력·환경의 기술적 실패는 기존 운영 점검과 수리 요청으로 처리한다. 수락된 `retry`·`resume` 처분의 후속 요청은 원 action ID를 재사용한다. 실제 재실행에는 새 execution ID를 부여하고 `continuation_of`에 종료된 선행 execution ID를 기록한다. 같은 처분을 다시 처리해도 후속을 중복 생성하지 않는다. 기술 수리로 후속 요청을 만들었다는 사실은 반복 횟수를 초기화하거나 사용자 계속 승인을 대신하지 않는다. 반복 한도 보류가 남으면 그 요청도 착수를 기다린다. `repetition_hold`의 `owner`는 원 요청의 작성자가 아니라 해소 권한자인 사용자다. 과거 원문에 `owner=ai`가 남아 있어도 현행 판단에서는 사용자 소유로 해석한다.
+ 
+ 반복 여부를 판단할 때는 현재 action에 연결된 실행 결과와 실패 기록을 먼저 읽는다. 그다음 해당 역할의 입력 계약과 아래 표에서 그 절차에 해당하는 근거를 확인한다. 반복 문턱은 이 모든 절차에 공통인 정수 설정 하나가 아니다.
+ 
+@@ -375,7 +377,7 @@
+ | 계약 수정 | 계약 검토의 `item_reviews`와 revision 기록 |
+ | 연구 재판단 | 현재 계획 입력의 사건·전제·과제 조건 |
+ 
+-`CLI-실행-계약.md`는 자동 후보 준비 회차, 출력 수리 횟수, 검토 회차, 보충 조사 한도를 서로 다른 설정으로 둔다. 한 절차의 횟수를 다른 절차의 반복 교정 한도로 옮기지 않는다.
++`import_rework`는 최초 해석 뒤 같은 원입력을 다시 저작하려고 등록한 실행을 센다. 별도 독립 검사와 검사 응답만의 수리는 제외한다. `selection_failure`는 정상 최종 응답의 파싱·스키마·계약 검사 실패를 실행별로 한 번 세고 정상 수신으로 연속 구간을 끝낸다. 전제 변경·자원 대기·입력 한도·공급자 실패·저장 공개 대기는 이 실패 횟수에 넣지 않는다. `exhaustion_empty`는 일반 후보 준비가 계약을 보존하지 못한 회차를 세며, 평가·관찰 규칙만 보충하는 실행은 횟수를 늘리거나 초기화하지 않는다. 제안·계약 판본과 출력 수리 횟수도 각각의 이력을 사용한다.
+ 
+ ## 실행, 입력과 인계
+ 
+--- a/.claude/skills/do-math/references/CLI-실행-계약.md
++++ b/.claude/skills/do-math/references/CLI-실행-계약.md
+@@ -291,7 +291,17 @@
+ 
+ 정책 변경은 미완료 과제를 다시 계약 검토하고 연구 계획을 열게 한다.
+ 
+-#### 로컬·HTTP grant
++#### 반복 보류의 계속 결정
++
++채택된 반복 한도 뒤의 계속은 `decision --file`에 `kind=repetition_continue`인 JSON을 제출한다. 필수 값은 `lineage`, `lineage_id`, `hold_event_ref`, `allowed_action`이다. `lineage`는 `import_rework`, `selection_failure`, `exhaustion_empty`, `proposal_version`, `contract_revision` 중 하나다. 현행 `repetition_hold`의 계보와 근거 사건을 그대로 사용한다. 제안·계약 판본 계보에서는 현재 집계 이력의 마지막 판본을 `baseline_revision`으로 함께 지정한다.
++
++`allowed_action`은 승인할 현재 큐 또는 대기 action의 범위 객체다. 그 action에 존재하는 `id`, `role`, `target`, `stage`, `owner_activity_id`, `continuation_of`, `revision_targets`, `repetition_bases`, `import_id`, `previous_import_id`, `intent_repair`, `review_cycle_id`, `grant_id`, `assessment_targets`, `observation_rule_targets`만 값 그대로 복사한다. 없는 필드는 추가하지 않는다. `reason`과 배정 캐시처럼 범위를 바꾸지 않는 나머지 필드는 복사하지 않는다. 실행기는 이 객체를 현재 요청과 정확히 대조하고 다른 계보·과거 보류·넓어진 범위·이미 실행 중인 시도를 거부한다.
++
++수락한 결정은 과거 이력을 보존한 채 해당 보류를 해소하고 새 집계 구간을 연다. 같은 `decision_id`·보존 원문 참조·결정 내용의 재처리는 중복 적용하지 않는다. 사용자 정지·grant·입력 복원 등 다른 대기는 그대로 검사한다. AI의 기술 수리 처분은 반복 한도 보류를 해제하거나 이 사용자 결정을 대신하지 않는다.
++
++정상 수신된 무산출 준비가 `exhaustion_empty` 문턱에 도달했고 같은 계보의 다음 요청이 아직 없으면, 계속 결정과 새 요청을 함께 만들 수 있다. 이 경우의 `allowed_action`은 `{"id":"아직 사용하지 않은 AC 식별자","role":"research_preparation","repetition_bases":{"exhaustion_empty":"현재 lineage_id"},"revision_targets":{}}` 형식이다. 같은 계보에 큐 또는 대기 요청이 이미 있으면 그 기존 요청의 범위를 승인한다. 무산출 준비 실행이 수신 실패로 끝났다면 현재 큐 또는 대기에 보존된 수리 요청의 정확한 범위를 승인한다. 이 경우 계속 결정으로 새 일반 준비 요청을 만들 수 없다. 이 결정은 사용자가 명시적으로 요청한 준비이며 자동 고갈 재생성 시각만으로 열린 준비와 구별한다.
++
++#### 로컬·HTTP grant
+ 
+ ```json
+ {
+--- a/.claude/skills/do-math/scripts/do_math/contracts.py
++++ b/.claude/skills/do-math/scripts/do_math/contracts.py
+@@ -212,9 +212,15 @@
+             return with_integration_schema(review_cycle.stage_schema(action['stage']))
+         if action['role'] == 'supplemental_research':
+             return with_integration_schema(review_cycle.research_schema())
+-    result = schema_for(action['role'])
+-    if action['role'] == 'research_preparation' and any(key in action for key in ('assessment_targets', 'observation_rule_targets')):
+-        result['properties']['candidates']['maxItems'] = 0
++    result = schema_for(action['role'])
++    if action['role'] == 'research_preparation':
++        from .model_policy import preparation_only
++        if preparation_only(action):
++            result['properties']['candidates']['maxItems'] = 0
++        else:
++            result['properties']['regenerate_after'] = {**TEXT,
++                'description': 'Timezone-qualified future time after context.observed_at; used only if no contract is preserved.'}
++            result['required'].append('regenerate_after')
+     if action['role'] in {'research_work', 'supplemental_research'}:
+         # Candidate definitions may be proposed in the same bundle. The shared
+         # checker validates active or proposed tokens; JSON Schema cannot inspect
+--- a/.claude/skills/do-math/scripts/do_math/engine.py
++++ b/.claude/skills/do-math/scripts/do_math/engine.py
+@@ -611,8 +611,9 @@
+                 queued.update(deepcopy(action))
+         return activity
+ 
+-    def _register_execution(self, action, execution):
+-        """Shared binding used by AI, formal, trust and external creation sites."""
++    def _register_execution(self, action, execution):
++        """Shared binding used by AI, formal, trust and external creation sites."""
++        revisions.bind_repetition_bases(self.instance, self.runtime, action)
+         profile = self._execution_profile(action)
+         activity = self._activity_for_action(action)
+         requested_state = execution.get("status", "queued")
+@@ -656,8 +657,9 @@
+             execution_lifecycle.transition_execution(execution, "starting", at=now())
+         if requested_state == "running" and not (machine_admission and profile.get("host_resources")):
+             execution_lifecycle.transition_execution(execution, "running", at=now())
+-        activities.assign_execution(self.runtime, activity["id"], execution)
+-        return execution
++        activities.assign_execution(self.runtime, activity["id"], execution)
++        revisions.record_import_rework(self.instance, self.runtime, action, execution['id'])
++        return execution
+ 
+     def _machine_started(self, execution_id, identity):
+         """Publish the admitted machine Job identity before its root resumes."""
+@@ -697,8 +699,11 @@
+         activity["result_refs"] = list(dict.fromkeys(references))
+         if pending:
+             return
+-        if waiting:
+-            activities.wait_for(self.runtime, aid, reason=waiting[0].get("reason") or waiting[0]["kind"],
++        if waiting:
++            wait = waiting[0]
++            reason = (wait['kind'] if wait.get('kind') in {'review_input_restoration', 'review_recovery', 'review_authority'}
++                      else wait.get('reason') or wait['kind'])
++            activities.wait_for(self.runtime, aid, reason=reason,
+                 condition={"action_ids": [row["action"]["id"] for row in waiting]},
+                 next_owner=waiting[0].get("next_owner", "engine"), at=now())
+             return
+@@ -1617,9 +1622,12 @@
+                 entries.append({"path": path, "artifact_ref": ref, "sha256": hashlib.sha256(raw).hexdigest(), "bytes": len(raw)})
+             for path, raw in control_files["files"].items():
+                 artifacts[f"runtime/artifacts/{bundle}/control/{path}"] = raw
+-            execution.update(result_ref=reference, artifact_bundle=bundle, output_files=entries,
+-                             outputs_complete=files["complete"], error="previous executor disappeared")
+-            self.runtime.setdefault("checkpoints", {})[eid] = checkpoint
++            execution.update(result_ref=reference, artifact_bundle=bundle, output_files=entries,
++                             outputs_complete=files["complete"], error="previous executor disappeared")
++            from .observations import bind_checkpoint_artifact
++            checkpoint = bind_checkpoint_artifact(checkpoint, entries, self.runtime.get('checkpoints', {}).get(eid))
++            artifacts[reference] = lossless_json(checkpoint)
++            self.runtime.setdefault("checkpoints", {})[eid] = checkpoint
+             if not self._settle_recovered_execution(eid, at=now(), disposition={
+                     "local_process": "terminated", "remote_state": "unknown", "artifact_ref": reference}):
+                 self.runtime["recoveries"][recovery_id]["dispositions"].append({**disposition,
+@@ -1805,7 +1813,8 @@
+         context["execution_profiles"] = deepcopy(list(self.instance.get("execution_profiles", {}).values()))
+         context["role_profile_refs"] = deepcopy(self.instance.get("role_profile_refs", {}))
+         context["observed_at"] = evaluation_context["now"]
+-        context["repetition_lineages"] = task_contracts.repetition_lineages(self.instance, self.runtime, target)
++        context["repetition_lineages"] = task_contracts.repetition_lineages(self.instance, self.runtime, target)
++        context['repetition_holds'] = list(revisions.active_repetition_holds(self.runtime).values())
+         if action.get("profile_ref"):
+             profile = execution_profiles.resolve_profile(self.instance["execution_profiles"], action["profile_ref"])
+             context["execution_profile"] = profile
+@@ -2250,7 +2259,8 @@
+             check = submission.load_json(self.store.read(rejected['check_ref'], self.head))
+             received = {'status': 'returned', 'bundles': [], 'retry_bundle_ids': [], 'issues': check['issues']}
+             execution = self.runtime['executions'][execution_id]
+-            execution.update(error_kind='output_validation', error='native final failed central structural validation')
++            execution.update(error_kind=integration.failure_kind(check['issues']),
++                             error='native final failed central structural validation')
+             execution_lifecycle.transition_execution(execution, 'ended', at=now(), outcome='execution_incomplete',
+                 disposition={'kind': 'submission_returned', 'check_ref': rejected['check_ref']})
+             self._remove_action(action)
+@@ -2341,7 +2351,8 @@
+             if not any(row.get("next_owner") == "engine" for row in received["bundles"]):
+                 execution_lifecycle.transition_execution(execution, "ended", at=now(), outcome="execution_incomplete",
+                     disposition={"kind": "submission_returned", "retry_bundle_ids": received["retry_bundle_ids"]})
+-            execution.update(error_kind="output_validation", error="one or more integration bundles were returned")
++            execution.update(error_kind=integration.failure_kind(received['issues']),
++                             error="one or more integration bundles were returned")
+             # This remains an AI-owned repair; a counter never creates user authority.
+             if any(row.get("next_owner") == "engine" for row in received["bundles"]):
+                 self.runtime.setdefault("waiting_actions", {})[action["id"]] = {
+@@ -3127,18 +3138,16 @@
+         self._preparing_input = True
+         try:
+             context = self._context(action, workspace, execution_id=execution_id)
+-        except ReviewPreparationDeferred as error:
++        except ReviewPreparationDeferred as error:
+             recovery = error.outcome["recovery"]
+             reason = "review_authority" if error.outcome["disposition"] == "authorization_denied" else "review_input_restoration"
+-            next_owner = recovery.get("next_owner", "governance" if recovery.get("disposition") == "replacement_authorization_required" else "review_recovery")
+-            activities.wait_for(self.runtime, activity_id, reason=reason,
+-                condition={"kind": reason, "recovery": recovery}, next_owner=next_owner, at=now())
++            next_owner = recovery["next_owner"]
+             self.runtime.setdefault("waiting_actions", {})[action["id"]] = {
+                 "action": deepcopy(action), "kind": reason, "next_owner": next_owner,
+                 "reason": "review input or authority requires resolution", "detail": deepcopy(recovery)}
+-            self._remove_action(action)
+-            self._save()
+-            self._discard_prepared_input(base, execution_id)
++            self._remove_action(action)
++            self._discard_prepared_input(base, execution_id,
++                reason="review input or authority requires resolution", cancelled=False)
+             return True
+         except InputPreparationInterrupted:
+             self._controls(pump=False)
+@@ -3460,7 +3469,9 @@
+         if checkpoint["kind"] != "worker_checkpoint" and isinstance(observed, dict) and observed.get("kind") == "worker_checkpoint":
+             # An unreadable final checkpoint file never replaces the last valid checkpoint observed during execution.
+             checkpoint = {**observed, "final_observation": checkpoint}
+-        self.runtime.setdefault("checkpoints", {})[execution_id] = checkpoint
++        from .observations import bind_checkpoint_artifact
++        checkpoint = bind_checkpoint_artifact(checkpoint, output_files, observed)
++        self.runtime.setdefault("checkpoints", {})[execution_id] = checkpoint
+         artifacts[f"runtime/artifacts/{bundle}/checkpoint-recovery.json"] = lossless_json(checkpoint)
+         execution = self.runtime["executions"][execution_id]
+         if execution["status"] != "stopping":
+@@ -3590,7 +3601,7 @@
+                     queued["requested_by"] = action["requested_by"]
+                 if action.get("event_refs"):
+                     queued["event_refs"] = list(dict.fromkeys([*queued.get("event_refs", []), *action["event_refs"]]))
+-                for key in ("obligation_ids", "observation_refs"):
++                for key in ("obligation_ids", "observation_refs", "receipt_refs", "evidence_refs"):
+                     if action.get(key):
+                         queued[key] = list(dict.fromkeys([*queued.get(key, []), *action[key]]))
+                 if action.get("observation"):
+@@ -3687,7 +3698,8 @@
+             if cycle["status"] not in {"completed", "unresolved"}:
+                 return
+             insights = self.runtime["private_insights"].pop(cycle_id, [])
+-        for insight in insights:
++        imported_insights = []
++        for insight in insights:
+             producer = insight.get("source_execution", execution_id)
+             try:
+                 knowledge_io.validate_insight(self.instance, self.runtime, insight)
+@@ -3717,16 +3729,18 @@
+             candidate = {key: deepcopy(insight[key]) for key in ("kind", "title", "statement", "summary")}
+             candidate.update(explanation=insight.get("explanation", insight["statement"]), lean_code="",
+                 declaration_names=[], dependencies=[ref for ref in insight.get("evidence_ids", []) if ref in self.instance["knowledge"]])
+-            self.instance, self.runtime, kid = knowledge_io.import_candidate(self.instance, self.runtime,
+-                candidate, source_ref=producer, actor_ref=producer)
++            self.instance, self.runtime, kid = knowledge_io.import_candidate(self.instance, self.runtime,
++                candidate, source_ref=producer, actor_ref=producer, plan_nonformal=False)
++            imported_insights.append(kid)
+             self.instance["knowledge"][kid].update(source_basis=source_basis, created_at=now())
+             if changed:
+                 self.instance["knowledge"][kid].update(use_suspended=True, use_suspensions=[{
+                     "kind": "dependency", "root_ids": list(refs), "reason": "Incidental evidence changed before publication: " + "; ".join(changed)}])
+-        if insights:
+-            self._enqueue("research_plan", reason="Incidental research knowledge is now available")
+-
+-    def _import_research_records(self, action: dict, output: dict, execution_id: str) -> None:
++        if imported_insights:
++            self._enqueue("research_plan", reason="Incidental research knowledge is now available",
++                receipt_refs=[execution_id], evidence_refs=imported_insights)
++
++    def _import_research_records(self, action: dict, output: dict, execution_id: str) -> list[str]:
+         """Create domain-owned records from one producer-declared bundle."""
+         entries = self.runtime["executions"][execution_id].get("extensions", {}).get("knowledge_metadata", [])
+         metadata = {entry["title"]: entry for entry in entries}
+@@ -3756,15 +3770,16 @@
+                                                          for key in ("source", "target")))), None)
+             if ready is None:
+                 raise ValueError("knowledge dependencies are missing or cyclic within the declared bundle")
+-            self.instance, self.runtime, kid = knowledge_io.import_candidate(
+-                self.instance, self.runtime, ready, source_ref=execution_id, actor_ref=execution_id)
++            self.instance, self.runtime, kid = knowledge_io.import_candidate(
++                self.instance, self.runtime, ready, source_ref=execution_id, actor_ref=execution_id, plan_nonformal=False)
+             self.instance["knowledge"][kid].update(task_id=action.get("target"), created_at=now(),
+                 source_basis=deepcopy(self.runtime["executions"][execution_id].get("source_basis", [])))
+             pending.remove(ready)
+         for relation in output.get("relations", []):
+             row = {**relation, **{key: identifiers.get(relation[key], relation[key]) for key in ("source", "target")}}
+-            self.instance, _ = knowledge_io.import_relation(self.instance, row,
+-                                                            source_ref=execution_id, actor_ref=execution_id)
++            self.instance, _ = knowledge_io.import_relation(self.instance, row,
++                                                            source_ref=execution_id, actor_ref=execution_id)
++        return list(identifiers.values())
+ 
+     def _apply(self, action: dict, output: dict, execution_id: str, *, owns_response: bool = True,
+                question_source_ref=None) -> None:
+@@ -3911,8 +3926,10 @@
+                     "output_files": deepcopy(self.runtime["executions"][execution_id].get("output_files", []))})
+                 task["status"] = "waiting"
+                 task["remaining_work"] = deepcopy(output["remaining_work"])
+-            self._import_research_records(action, output, execution_id)
+-            self._enqueue("research_plan")
++            imported = self._import_research_records(action, output, execution_id)
++            if owns_response or imported or output.get('relations'):
++                self._enqueue("research_plan", reason="Assess accepted research report and knowledge",
++                              receipt_refs=[execution_id], evidence_refs=imported)
+         elif role == "identity_review" and action.get("review_cycle_id"):
+             self._apply_identity_review(action, output, execution_id)
+             cycle = self.runtime["review_cycles"][action["review_cycle_id"]]
+@@ -4112,7 +4129,9 @@
+             raise ValueError("operational disposition has no execution target")
+         current_refs = {target["id"]}
+         current_refs.update(action.get("observation_refs", []))
+-        current_refs.update(action.get("obligation_ids", []))
++        current_refs.update(action.get("obligation_ids", []))
++        current_refs.update(hold['event_ref'] for hold in revisions.action_repetition_waits(
++            self.instance, self.runtime, target.get('action', {})))
+         current_refs.update(ref for ref in (target.get("result_ref"),
+             self.runtime.get("checkpoints", {}).get(target["id"], {}).get("artifact_ref")) if ref)
+         if not operational_dispositions.disposition_is_current(disposition, current_refs):
+@@ -4137,9 +4156,9 @@
+             target["pending_operational_disposition"] = record_id
+             record["status"] = "awaiting_termination"
+             return
+-        if kind == "repair":
+-            return  # Candidate application is pure; the published judgment owns the later local effect.
+-        self._complete_operational_disposition(record)
++        if kind == "repair":
++            return  # Candidate application is pure; the published judgment owns the later local effect.
++        self._complete_operational_disposition(record)
+ 
+     def _complete_operational_disposition(self, record):
+         disposition = record["disposition"]
+@@ -4150,8 +4169,8 @@
+             if self.runtime["executions"][record["execution_id"]]["status"] != "ended":
+                 record["status"] = "repair_required"
+                 return record
+-            result = repair_execution.complete_repair(self, record)
+-            target = self.runtime["executions"][record["target_execution_id"]]
++            result = repair_execution.complete_repair(self, record)
++            target = self.runtime["executions"][record["target_execution_id"]]
+             if result["status"] in {"applied", "repair_verification_failed", "repair_deferred"}:
+                 if target.get("pending_operational_disposition") == record["id"]:
+                     target.pop("pending_operational_disposition")
+@@ -4173,8 +4192,21 @@
+             if ((target.get('capacity') or target.get('process'))
+                     and target.get('capacity', {}).get('local_termination') != 'confirmed'):
+                 raise ValueError('recovery requires confirmed local termination')
+-            if kind == "resume" and disposition["checkpoint_ref"] != self.runtime.get("checkpoints", {}).get(target["id"], {}).get("artifact_ref"):
+-                raise ValueError("resume must name the preserved current checkpoint")
++            if kind == "resume" and disposition["checkpoint_ref"] != self.runtime.get("checkpoints", {}).get(target["id"], {}).get("artifact_ref"):
++                raise ValueError("resume must name the preserved current checkpoint")
++            if kind == 'resume':
++                checkpoint = self.runtime['checkpoints'][target['id']]
++                raw = self.store.read(disposition['checkpoint_ref'], self.head)
++                if hashlib.sha256(raw).hexdigest() != checkpoint.get('sha256'):
++                    raise ValueError('resume checkpoint bytes differ from the preserved checkpoint')
++            predecessors, predecessor = set(), target
++            while predecessor and predecessor['id'] not in predecessors:
++                predecessors.add(predecessor['id'])
++                predecessor = self.runtime['executions'].get(predecessor.get('continuation_of'))
++            if any(op.get('status') == 'unknown' and predecessors &
++                   {*op.get('producer_executions', []), op.get('execution_id')}
++                   for op in self.runtime.get('external_operations', {}).values()):
++                raise ValueError('recovery requires reconciliation of unknown external effects')
+             if target.get('input_bundle'):
+                 from .context_store import verify_manifest_artifacts
+                 base = 'runtime/artifacts/' + target['input_bundle']
+--- a/.claude/skills/do-math/scripts/do_math/governance.py
++++ b/.claude/skills/do-math/scripts/do_math/governance.py
+@@ -710,6 +710,10 @@
+         if delegation is None: raise ValueError("delegation not found")
+         delegation.update(status="revoked", revoked_by=decision_id, revoked_at=when)
+         event["delegation_id"] = delegation["id"]
++    elif kind == 'repetition_continue':
++        from .revisions import continue_repetition
++        instance['decisions'][decision_id] = event
++        continue_repetition(instance, runtime, change, event)
+     elif kind == "question_answer":
+         _require_text(change.get("text"), "answer text")
+         identifiers = change.get("resolves_questions", [])
+--- a/.claude/skills/do-math/scripts/do_math/integration.py
++++ b/.claude/skills/do-math/scripts/do_math/integration.py
+@@ -42,13 +42,29 @@
+     return hashlib.sha256(canonical_json(value)).hexdigest()
+ 
+ 
+-def issue(rule_id, path, message, integration_id=None):
++def issue(rule_id, path, message, integration_id=None):
+     identity = [rule_id, integration_id, path]
+     return {"issue_id": "SI-" + digest(identity)[:24], "rule_id": rule_id,
+-            "integration_id": integration_id, "path": path, "message": message}
+-
+-
+-class ImpactReviewRequired(ValueError):
++            "integration_id": integration_id, "path": path, "message": message}
++
++
++def failure_kind(issues):
++    """Classify at the recorded validation boundary, never from error prose."""
++    rules = {row.get('rule_id', '') for row in issues}
++    if 'integration.publication' in rules:
++        return 'publication_failure'
++    if 'integration.currentness' in rules:
++        return 'currentness_changed'
++    if any(rule.startswith('schema.') for rule in rules):
++        return 'output_schema'
++    if 'submission.parse' in rules:
++        return 'output_parse'
++    if 'submission.read' in rules:
++        return 'input_failure'
++    return 'output_contract'
++
++
++class ImpactReviewRequired(ValueError):
+     """A current mutation needs a designated judgment, not a rewritten declaration."""
+     def __init__(self, request):
+         super().__init__("designated independent impact review required")
+--- a/.claude/skills/do-math/scripts/do_math/knowledge.py
++++ b/.claude/skills/do-math/scripts/do_math/knowledge.py
+@@ -326,9 +326,14 @@
+             record["status"] = "suspended"
+         elif record in output.get("goal_judgments", []):
+             record["current"] = False
+-        elif family in {"knowledge", "expositions"}:
+-            # Currentness is derived from the actual premise/use, not a duplicate lifecycle.
+-            continue
++        elif family in {"knowledge", "expositions"}:
++            # Currentness is derived from the actual premise/use, not a duplicate lifecycle.
++            continue
++        elif rid in new_runtime.get('executions', {}) or rid in new_runtime.get('activities', {}):
++            # Preserve historical attempts and activity results. Their input
++            # snapshots and execution currentness checks own validity; the
++            # affected IDs remain in the reassessment event below.
++            continue
+         else:
+             record["input_current"] = False
+         record.setdefault("use_history", []).append({"reason": reason, "impact_digest": impact_digest})
+--- a/.claude/skills/do-math/scripts/do_math/knowledge_io.py
++++ b/.claude/skills/do-math/scripts/do_math/knowledge_io.py
+@@ -223,7 +223,7 @@
+ 
+ 
+ def import_candidate(instance: dict, runtime: dict, candidate: dict, *, source_ref: str,
+-                     actor_ref: str, reserved_dependency_ids=()) -> tuple[dict, dict, str]:
++                     actor_ref: str, reserved_dependency_ids=(), plan_nonformal=True) -> tuple[dict, dict, str]:
+     _text(source_ref, "source_ref"); _text(actor_ref, "actor_ref")
+     if not isinstance(candidate, dict) or set(candidate) - _KNOWLEDGE_FIELDS:
+         raise ValueError("candidate has unsupported fields")
+@@ -307,9 +307,10 @@
+     new_runtime.setdefault("history", []).append({"kind": "knowledge_candidate_imported",
+         "knowledge_id": record_id, "source_ref": source_ref})
+     next_role = "identity_review" if reuse_formal else "formal_check" if record["formal_result_id"] else "research_plan"
+-    action_id = new_id("AC")
+-    new_runtime.setdefault("queue", []).append({"id": action_id, "lineage_id": action_id, "role": next_role,
+-        "target": record_id, "reason": "imported candidate requires verification", "source_ref": source_ref})
++    if next_role != 'research_plan' or plan_nonformal:
++        action_id = new_id("AC")
++        new_runtime.setdefault("queue", []).append({"id": action_id, "lineage_id": action_id, "role": next_role,
++            "target": record_id, "reason": "imported candidate requires verification", "source_ref": source_ref})
+     return output, new_runtime, record_id
+ 
+ 
+--- a/.claude/skills/do-math/scripts/do_math/lifecycle_engine.py
++++ b/.claude/skills/do-math/scripts/do_math/lifecycle_engine.py
+@@ -584,8 +584,10 @@
+                 if request.get('origin', 'user') != 'user':
+                     raise ValueError('limited recovery requires explicit user authority')
+                 self._limited_recovery_control(config['change'], source_ref)
+-            elif action == 'decision':
+-                self.instance, self.runtime, result = apply_decision(self.instance, self.runtime,
++            elif action == 'decision':
++                if config.get('change', {}).get('kind') == 'repetition_continue' and request.get('origin', 'user') != 'user':
++                    raise ValueError('repetition continuation requires explicit user authority')
++                self.instance, self.runtime, result = apply_decision(self.instance, self.runtime,
+                     config.get('change', {}), source_ref=source_ref, actor='user', at=self._lifecycle_now().isoformat())
+                 self._lifecycle_event('user_decision_applied', source_ref=source_ref, decision_id=result['id'])
+             elif action == 'knowledge':
+--- a/.claude/skills/do-math/scripts/do_math/observations.py
++++ b/.claude/skills/do-math/scripts/do_math/observations.py
+@@ -1100,3 +1100,17 @@
+     return {"kind": "observed_partial_state", "checkpoint_status": checkpoint["status"],
+             "messages": messages or [], "workspace": str(workspace),
+             "limitation": "No complete worker checkpoint was received; infer no unreported result."}
++
++
++def bind_checkpoint_artifact(checkpoint, output_files, previous=None):
++    """Connect a valid checkpoint to the exact bytes that were preserved."""
++    result = deepcopy(checkpoint)
++    if result.get('kind') != 'worker_checkpoint':
++        return result
++    entry = next((row for row in output_files if row.get('path') == 'checkpoint.json'
++                  and row.get('sha256') == result['sha256']), None)
++    if entry:
++        result['artifact_ref'] = entry['artifact_ref']
++    elif previous and previous.get('sha256') == result['sha256'] and previous.get('artifact_ref'):
++        result['artifact_ref'] = previous['artifact_ref']
++    return result
+--- a/.claude/skills/do-math/scripts/do_math/planning.py
++++ b/.claude/skills/do-math/scripts/do_math/planning.py
+@@ -663,8 +663,9 @@
+     if receipts and receipts[-1].get('outcome')=='empty':
+         receipt=receipts[-1]
+         from .revisions import repetition_hold
+-        if repetition_hold(instance,runtime,'exhaustion_empty',receipt['lineage_id']):
+-            answer.update(reasons=['exhaustion_lineage_hold'],next_owner='operational_review');return answer
++        hold = repetition_hold(instance,runtime,'exhaustion_empty',receipt['lineage_id'])
++        if hold:
++            answer.update(reasons=['exhaustion_lineage_hold'],next_owner=hold['next_owner']);return answer
+         if not receipt.get('regenerate_after'):
+             answer.update(reasons=['regeneration_condition_missing'],next_owner='research_plan');return answer
+         instant=_utc(now) if now else datetime.now(timezone.utc)
+--- a/.claude/skills/do-math/scripts/do_math/review_engine.py
++++ b/.claude/skills/do-math/scripts/do_math/review_engine.py
+@@ -671,7 +671,7 @@
+         released = []
+         for identifier, entry in list(waits.items()):
+             held = entry.get('action', {})
+-            if (entry.get('kind') in {'review_input_restoration', 'review_recovery'} and
++            if (entry.get('kind') in {'review_input_restoration', 'review_recovery', 'review_authority'} and
+                     all(held.get(key) == action.get(key) for key in ('review_cycle_id', 'stage', 'round', 'slot'))):
+                 released.append(identifier)
+                 del waits[identifier]
+@@ -686,7 +686,7 @@
+             matching = (recovery.get('review_cycle_id') == action['review_cycle_id'] and
+                         all(held.get(k) == action.get(k) for k in ('stage', 'round', 'slot')))
+             action_ids = condition.get('action_ids', []) if isinstance(condition, dict) else []
+-            matching = matching or (bool(action_ids) and set(action_ids).issubset(released))
++            matching = matching or bool(set(action_ids) & set(released))
+             if matching:
+                 activities.resume_activity(self.runtime, owner, condition=deepcopy(condition), at=at)
+         self.runtime.setdefault('history', []).append({'kind': 'review_wait_resolved',
+--- a/.claude/skills/do-math/scripts/do_math/revisions.py
++++ b/.claude/skills/do-math/scripts/do_math/revisions.py
+@@ -111,22 +111,35 @@
+     return cycles
+ 
+ 
++def active_repetition_holds(runtime):
++    """Derive configured repetition holds without rewriting historical ownership."""
++    history = runtime.get('history', [])
++    holds = {}
++    for row in history:
++        key = row.get('lineage'), row.get('lineage_id')
++        if row.get('kind') == 'repetition_hold':
++            # Every producer of this record represents a configured count limit.
++            holds[key] = {**row, 'owner': 'user', 'next_owner': 'user'}
++        elif row.get('kind') == 'task_repetition':
++            if row.get('outcome') == 'continued':
++                holds.pop(key, None)
++    return deepcopy(holds)
++
++
+ def repetition_hold(instance, runtime, lineage, lineage_id):
+-    """Return the latest unreleased local hold, not an instance lifecycle state."""
+-    hold=None
+-    for row in runtime.get('history',[]):
+-        if row.get('lineage')!=lineage or row.get('lineage_id')!=lineage_id:
+-            continue
+-        if row.get('kind')=='repetition_hold': hold=row
+-        elif row.get('kind')=='task_repetition' and row.get('outcome')=='continued': hold=None
+-    return deepcopy(hold)
++    return active_repetition_holds(runtime).get((lineage, lineage_id))
+ 
+ 
+ def action_repetition_waits(instance, runtime, action):
+-    if action.get('role') in {'operational_review','intent_interpretation','maintenance'}:
++    if action.get('role') in {'operational_review','maintenance'}:
++        return []
++    if action.get('role') == 'intent_interpretation' and not import_rework(runtime, action):
+         return []
+     keys=list(action.get('repetition_bases',{}).items())
+-    for identifier,basis in action.get('revision_targets',{}).items():
++    from .model_policy import preparation_only
++    if action.get('role') == 'research_preparation' and preparation_only(action):
++        keys = [(lineage, key) for lineage, key in keys if lineage != 'exhaustion_empty']
++    for identifier in action.get('revision_targets', {}).keys() | action.get('observation_rule_targets', {}).keys():
+         lineage='contract_revision' if identifier in runtime.get('tasks',{}) else 'proposal_version'
+         keys.append((lineage,identifier if lineage=='contract_revision' else proposal_lineage(instance,identifier)[0]))
+     waits=[]
+@@ -134,36 +147,34 @@
+         hold=repetition_hold(instance,runtime,lineage,key)
+         if not hold or (lineage=='exhaustion_empty' and action.get('periodic_reconsideration')):
+             continue
+-        permits=[r for r in runtime.get('history',[]) if r.get('kind')=='repetition_repair_authorized' and
+-                 (r.get('lineage'),r.get('lineage_id'),r.get('action_id'))==(lineage,key,action.get('id'))]
+-        used=any(e.get('action',{}).get('id')==action.get('id') for e in runtime.get('executions',{}).values())
+-        if not permits or used:waits.append(hold)
++        waits.append(hold)
+     return waits
+ 
+ 
+-def authorize_repetition_repair(instance,runtime,*,lineage,lineage_id,disposition_id,next_action):
+-    """An applied independent AI repair permits one identified retry, not a reset."""
+-    from .operational_dispositions import validate_disposition
+-    hold=repetition_hold(instance,runtime,lineage,lineage_id)
+-    record=runtime.get('operational_dispositions',{}).get(disposition_id,{})
+-    actor=runtime.get('executions',{}).get(record.get('execution_id'),{})
+-    if not hold or hold['owner']!='ai' or record.get('status')!='applied' or actor.get('role')!='operational_review':
+-        raise ValueError('AI repair requires an applied independent operational disposition')
+-    disposition=validate_disposition(record.get('disposition',{}))
+-    if disposition['kind'] not in {'repair','retry','resume'} or hold['event_ref'] not in disposition['basis_refs']:
+-        raise ValueError('operational disposition does not repair this held receipt')
+-    if record['execution_id']==hold['event_ref'] or not next_action.get('id') or any(
+-        e.get('action',{}).get('id')==next_action['id'] for e in runtime.get('executions',{}).values()):
+-        raise ValueError('repair needs an independent assessor and a new unstarted action')
+-    if lineage in {'contract_revision','proposal_version'} and lineage_id not in {
+-        key if key in runtime.get('tasks',{}) else proposal_lineage(instance,key)[0] for key in next_action.get('revision_targets',{})}:
+-        raise ValueError('repair action is outside the held revision scope')
+-    if lineage not in {'contract_revision','proposal_version'} and next_action.get('repetition_bases',{}).get(lineage)!=lineage_id:
+-        raise ValueError('repair action is outside the held semantic premises')
+-    row={'kind':'repetition_repair_authorized','lineage':lineage,'lineage_id':lineage_id,
+-         'disposition_id':disposition_id,'execution_id':record['execution_id'],'action_id':next_action['id']}
+-    if row not in runtime.setdefault('history',[]):runtime['history'].append(row)
+-    return deepcopy(row)
++def action_scope(action):
++    """Bind authored scope, excluding scheduling caches and explanatory prose."""
++    return {key: deepcopy(action[key]) for key in (
++        'id', 'role', 'target', 'stage', 'owner_activity_id', 'continuation_of',
++        'revision_targets', 'repetition_bases', 'import_id', 'previous_import_id',
++        'intent_repair', 'review_cycle_id', 'grant_id', 'assessment_targets', 'observation_rule_targets') if key in action}
++
++
++def record_import_rework(instance, runtime, action, execution_id):
++    """Count an actual reauthor attempt in the execution registration publication."""
++    if import_rework(runtime, action):
++        record_repetition(instance, runtime, lineage='import_rework',
++            lineage_id=action['repetition_bases']['import_rework'], event_ref=execution_id,
++            outcome='reauthored', owner='ai', reason='Registered interpretation reauthor attempt')
++
++
++def import_rework(runtime, action):
++    if action.get('role') != 'intent_interpretation' or action.get('stage', 'interpret') != 'interpret':
++        return False
++    if action.get('intent_repair') or action.get('previous_import_id'):
++        return True
++    predecessor = runtime.get('executions', {}).get(action.get('continuation_of'), {})
++    return (predecessor.get('role') == 'intent_interpretation'
++            and predecessor.get('action', {}).get('stage', 'interpret') == 'interpret')
+ 
+ 
+ def record_repetition(instance, runtime, *, lineage, lineage_id, event_ref, outcome, owner, reason,
+@@ -220,15 +231,21 @@
+     count=repetition_lineages(instance,runtime)[lineage].get('by_lineage',{}).get(lineage_id,0)
+     if limit is not None and count>=limit and not repetition_hold(instance,runtime,lineage,lineage_id):
+         history.append({'kind':'repetition_hold','lineage':lineage,'lineage_id':lineage_id,'event_ref':event_ref,
+-            'count':count,'limit':limit,'owner':owner,'next_owner':'user' if owner=='user' else 'operational_review',
++            'count':count,'limit':limit,'owner':'user','next_owner':'user',
+             'release_condition':'explicit scoped continuation or replacement strategy', 'reason':reason})
++        from .questions import link
++        link(runtime, execution_id=event_ref, field='repetition/' + lineage + '/' + lineage_id,
++             owner='user', targets=[event_ref], reason='Configured repetition limit reached; scoped continuation required')
+     no_followup={'accepted','contracts_preserved','continued','premises_changed','capacity_wait','input_overflow','waiting',
+                  'transport_failure','parse_failure'}
+-    if outcome in {'revised','authored'} and not repetition_hold(instance,runtime,lineage,lineage_id):
++    if outcome in {'revised','authored','reauthored'} and not repetition_hold(instance,runtime,lineage,lineage_id):
+         no_followup.add('revised')
+         no_followup.add('authored')
++        no_followup.add('reauthored')
+     if outcome not in no_followup:
+-        role = 'intent_interpretation' if owner=='user' else 'research_plan' if lineage=='exhaustion_empty' else 'operational_review'
++        if repetition_hold(instance, runtime, lineage, lineage_id):
++            return deepcopy(row)
++        role = 'research_plan' if lineage=='exhaustion_empty' else 'operational_review'
+         queue=runtime.setdefault('queue',[])
+         pending=next((a for a in queue if a.get('role')==role and a.get('repetition_lineage')==[lineage,lineage_id]),None)
+         if pending:
+@@ -252,8 +269,62 @@
+         identifier=parent
+ 
+ 
++def continue_repetition(instance, runtime, change, decision):
++    """Apply a user decision to an existing exact queued/waiting obligation."""
++    lineage, key = change.get('lineage'), change.get('lineage_id')
++    hold = repetition_hold(instance, runtime, lineage, key)
++    if not hold or hold['event_ref'] != change.get('hold_event_ref'):
++        raise ValueError('continuation must name the current repetition hold')
++    allowed = change.get('allowed_action')
++    if not isinstance(allowed, dict) or not isinstance(allowed.get('id'), str) or not allowed['id'].strip():
++        raise ValueError('allowed_action requires the exact action_scope object')
++    candidates = list(runtime.get('queue', [])) + [r['action'] for r in runtime.get('waiting_actions', {}).values()]
++    action = next((a for a in candidates if a.get('id') == allowed['id']), None)
++    create = False
++    if action is None and lineage == 'exhaustion_empty':
++        predecessor = runtime.get('executions', {}).get(hold['event_ref'], {})
++        expected = {'id': allowed['id'], 'role': 'research_preparation',
++                    'repetition_bases': {'exhaustion_empty': key}, 'revision_targets': {}}
++        if (allowed == expected and predecessor.get('outcome') == 'output_accepted'
++                and not any(e.get('action', {}).get('id') == allowed['id'] for e in runtime.get('executions', {}).values())
++                and not any(a.get('repetition_bases', {}).get(lineage) == key for a in candidates)):
++            action, create = deepcopy(expected), True
++    if action is None or action_scope(action) != allowed:
++        raise ValueError('continuation scope differs from the current queued or waiting action')
++    if hold not in action_repetition_waits(instance, runtime, action):
++        raise ValueError('continued action is outside this held lineage')
++    if any(e.get('action', {}).get('id') == action['id'] and e.get('status') != 'ended'
++           for e in runtime.get('executions', {}).values()):
++        raise ValueError('continuation cannot overlap a live attempt')
++    record_repetition(instance, runtime, lineage=lineage, lineage_id=key,
++        event_ref=decision['id'], outcome='continued', owner='user',
++        reason=change.get('reason') or 'User authorized the scoped continuation', decision_ref=decision['id'])
++    if create:
++        action['reason'] = 'User continued the held empty preparation'
++        action['receipt_refs'] = [hold['event_ref']]
++        runtime.setdefault('queue', []).append(action)
++    wait = runtime.get('waiting_actions', {}).get(action['id'])
++    # Release only repetition waits; input, authority and publication waits retain their owners.
++    if wait and wait.get('kind') == 'repetition_hold':
++        del runtime['waiting_actions'][action['id']]
++        if not any(a.get('id') == action['id'] for a in runtime.setdefault('queue', [])):
++            runtime['queue'].append(deepcopy(action))
++    from .questions import resolve_user
++    questions = [q['id'] for q in runtime.get('question_links', []) if q.get('status') == 'open'
++        and q.get('owner') == 'user' and q.get('origin_execution_id') == hold['event_ref']
++        and q.get('origin_field') == 'repetition/' + lineage + '/' + key]
++    if questions:
++        resolve_user(runtime, questions, resolution_ref=decision['id'], affected_ids=[hold['event_ref']])
++    decision['affected'] = [hold['event_ref'], action['id']]
++    if runtime.get('status') == 'waiting' and not runtime.get('user_pause'):
++        runtime['status'] = 'ready'
++
++
+ def bind_repetition_bases(instance,runtime,action):
+     """Bind semantic premises before starting, keeping retry request identity out."""
++    from .model_policy import preparation_only
++    if action.get('role') == 'research_preparation' and preparation_only(action):
++        return
+     if action.get('repetition_bases'):
+         return
+     role=action.get('role')
+@@ -268,7 +339,8 @@
+         common['population']={key:planning.contract_hash(value) for key,value in runtime.get('tasks',{}).items()}
+         lineage='exhaustion_empty'
+     else:
+-        common.update(import_id=action.get('import_id') or action.get('target'),source_basis=action.get('source_basis',[]))
++        # The preserved original input survives new import/action IDs.
++        common = {'instance': instance.get('id'), 'input_id': action.get('target')}
+         lineage='import_rework'
+     action['repetition_bases']={lineage:planning._hash(common)}
+ 
+@@ -283,27 +355,33 @@
+     if role=='research_plan':
+         failure=execution.get('error_kind')
+         result='accepted' if accepted else {'currentness_changed':'premises_changed','input_overflow':'input_overflow','capacity_wait':'capacity_wait',
+-            'output_validation':'parse_failure','provider_failure':'transport_failure','provider_error':'transport_failure',
++            'output_validation':'parse_failure','output_parse':'rejected','output_schema':'rejected',
++            'output_contract':'rejected','publication_failure':'waiting',
++            'provider_failure':'transport_failure','provider_error':'transport_failure',
+             'semantic_rejection':'rejected','plan_disposition_invalid':'rejected','submission_semantic':'rejected'}.get(failure,'unclassified_failure')
+         basis=action.get('repetition_bases',{}).get('selection_failure') or planning._hash({
+             'instance':instance['id'],'population':execution.get('ready_task_ids',[]),'basis':execution.get('decision_basis',{})})
+         record_repetition(instance,runtime,lineage='selection_failure',lineage_id=basis,event_ref=execution_id,
+                           outcome=result,owner='ai',reason=reason)
+-    if role=='research_preparation':
++    from .model_policy import preparation_only
++    if role=='research_preparation' and not preparation_only(action):
+         preserved=[t for t in runtime.get('tasks',{}).values() if t.get('producer_execution')==execution_id or
+                    any(h.get('execution_id')==execution_id for h in t.get('revision_history',[]))]
+         basis=action.get('repetition_bases',{}).get('exhaustion_empty') or planning._hash({
+             'instance':instance['id'],'governance':instance.get('governance', {}),
+             'sources':instance.get('sources',[])})
++        observed_at = execution.get('observed_at') or execution.get('started_at')
++        regenerate_after = output.get('regenerate_after') if not preserved else None
++        if regenerate_after:
++            from .governance import timestamp
++            try:
++                if not observed_at or timestamp(regenerate_after) <= timestamp(observed_at):
++                    regenerate_after = None
++            except (ValueError, TypeError, AttributeError):
++                regenerate_after = None
+         record_repetition(instance,runtime,lineage='exhaustion_empty',lineage_id=basis,event_ref=execution_id,
+                           outcome='contracts_preserved' if preserved else 'empty',owner='ai',reason=reason,
+-                          observed_at=execution.get('observed_at') or execution.get('started_at'),regenerate_after=output.get('regenerate_after'))
+-    if role=='intent_interpretation' and action.get('stage') in {'interpret','rewrite'} and action.get('rework_of'):
+-        import_basis=action.get('repetition_bases',{}).get('import_rework') or planning._hash({
+-            'import':action.get('import_id') or action.get('target'),'source':execution.get('source_basis',[])})
+-        outcome='reauthored' if accepted or execution.get('error_kind')=='semantic_rejection' else 'unclassified_failure'
+-        record_repetition(instance,runtime,lineage='import_rework',lineage_id=import_basis,
+-                          event_ref=execution_id,outcome=outcome,owner='ai',reason=reason)
++                          observed_at=observed_at, regenerate_after=regenerate_after)
+     for identifier,current in runtime.get('tasks',{}).items():
+         previous=action.get('revision_targets',{}).get(identifier,{})
+         authored=current.get('producer_execution')==execution_id or any(h.get('execution_id')==execution_id for h in current.get('revision_history',[]))
+--- a/.claude/skills/do-math/scripts/do_math/submission.py
++++ b/.claude/skills/do-math/scripts/do_math/submission.py
+@@ -522,10 +522,16 @@
+         except (ValueError, TypeError, KeyError, OSError) as error:
+             issues.append(_issue(path, str(error), rule_id))
+ 
+-    def require(condition, message):
+-        if not condition:
+-            raise ValueError(message)
+-
++    def require(condition, message):
++        if not condition:
++            raise ValueError(message)
++
++    if action['role'] == 'research_preparation' and 'regenerate_after' in schema.get('properties', {}):
++        from .governance import timestamp
++        check('output/regenerate_after', lambda: require(
++            timestamp(output['regenerate_after']) > timestamp(context['observed_at']),
++            'regenerate_after must follow the machine observed_at'), 'submission.regeneration_time')
++
+     if action["role"] == "maintenance" and action.get("stage") == "impact_review":
+         check("output/impact_review", lambda: integration.validate_impact_review_response(action["input_basis"]["impact_review"], output),
+               "submission.impact_review")
+@@ -1082,7 +1088,8 @@
+         rule = failure["rule_id"]
+         skipped = result.get("not_checked", [])
+         checked = ("schema" not in skipped if rule.startswith("schema.") else
+-                   "read_or_parse" not in result.get("check_order", []) if rule == "submission.read_or_parse" else
++                   "read_or_parse" not in result.get("check_order", []) if rule in {
++                       'submission.read_or_parse', 'submission.parse', 'submission.read'} else
+                    "payload_semantics" not in skipped)
+         if checked:
+             links.append({key: failure[key] for key in ("issue_id", "rule_id", "path")})
+@@ -1271,13 +1278,14 @@
+         lock.unlink()
+ 
+ 
+-def _producer_check(workspace, draft, history):
++def _producer_check(workspace, draft, history):
+     """Read exact local bytes and seal a check, including malformed drafts."""
+     workspace = Path(workspace).resolve()
+     raw = None
+     context = {}
+     schema = None
+-    relative = None
++    relative = None
++    phase = 'read'
+     try:
+         context = load_json((workspace / "input/submission/context.json").read_bytes())
+         schema = load_json((workspace / "input/submission/schema.json").read_bytes())
+@@ -1285,9 +1293,11 @@
+         if not draft.is_relative_to(workspace):
+             raise ValueError("submission draft must be inside this workspace")
+         relative = draft.relative_to(workspace).as_posix()
+-        raw = _read_stable(_safe_path(workspace, relative))
+-        output = load_json(raw)
+-        extensions = read_extensions(workspace)
++        raw = _read_stable(_safe_path(workspace, relative))
++        phase = 'parse'
++        output = load_json(raw)
++        extensions = read_extensions(workspace)
++        phase = 'check'
+         contract = context["submission_contract"]
+         tool_hash = hashlib.sha256(_read_stable(_safe_path(workspace, "input/tools/submission-support.zip"))).hexdigest()
+         if tool_hash != contract["tool_sha256"]:
+@@ -1304,7 +1314,8 @@
+             "tool_sha256": context.get("submission_contract", {}).get("tool_sha256"),
+             "input_snapshot": context.get("snapshot"),
+             "input_hashes": {"raw_output": hashlib.sha256(raw).hexdigest()} if raw is not None else {},
+-            "issues": [_issue("submission", str(error), "submission.read_or_parse")], "repairs": [],
++            "issues": [_issue("submission", str(error), 'submission.parse'
++                if phase == 'parse' and isinstance(error, (ValueError, TypeError)) else 'submission.read')], "repairs": [],
+             "check_order": ["read_or_parse"], "comparison": {"status": "no_previous_check"},
+             "not_checked": ["schema", "payload_semantics", "integration_structure", "artifact_preservation",
+                             "mathematical_meaning", "Lean", "application_time_currentness", "final_authority_and_provenance"]}
+@@ -1371,7 +1382,8 @@
+                               ("id", "role", "target", "stage", "slot", "review_cycle_id")},
+             "input_snapshot": context.get("snapshot"),
+             "input_hashes": {"raw_output": hashlib.sha256(raw).hexdigest()} if raw is not None else {},
+-            "issues": [_issue("submission", str(error), "submission.read_or_parse")], "repairs": [],
++            "issues": [_issue("submission", str(error), 'submission.parse'
++                if phase == 'parse' and isinstance(error, (ValueError, TypeError)) else 'submission.read')], "repairs": [],
+             "check_order": ["read_or_parse"], "comparison": {"status": "no_previous_check"},
+             "not_checked": ["schema", "payload_semantics", "integration_structure", "artifact_preservation",
+                             "mathematical_meaning", "Lean", "application_time_currentness", "final_authority_and_provenance"],
+--- a/.claude/skills/do-math/scripts/tests/test_currentness_recovery.py
++++ b/.claude/skills/do-math/scripts/tests/test_currentness_recovery.py
+@@ -93,7 +93,7 @@
+         execution = next(row for row in engine.runtime['executions'].values()
+                          if row['role'] == 'research_preparation')
+         self.assertEqual(execution['outcome'], 'execution_incomplete')
+-        self.assertEqual(execution['error_kind'], 'output_validation')
++        self.assertEqual(execution['error_kind'], 'currentness_changed')
+         issues = execution['integration_result']['issues']
+         self.assertTrue(any(row['rule_id'] == 'integration.currentness' and 'source' in row['message']
+                             for row in issues), issues)
+@@ -135,7 +135,7 @@
+     def test_cited_task_contract_change_during_plan_rejects_the_plan(self):
+         engine, task_id, plan = self._plan_citing_task_while(lambda task: task.update(scope={**task['scope'], 'included': [*task['scope']['included'], 'A revised domain']}))
+         self.assertEqual(plan['outcome'], 'execution_incomplete')
+-        self.assertEqual(plan['error_kind'], 'output_validation')
++        self.assertEqual(plan['error_kind'], 'currentness_changed')
+         issues = plan['integration_result']['issues']
+         self.assertTrue(any(row['rule_id'] == 'integration.currentness' and
+             task_id in row['message'] and 'contract_sha256' in row['message'] for row in issues), issues)
+--- a/.claude/skills/do-math/scripts/tests/test_model_assessment_flow.py
++++ b/.claude/skills/do-math/scripts/tests/test_model_assessment_flow.py
+@@ -47,9 +47,12 @@
+         extensions = deepcopy(extensions)
+         if 'assessment_targets' not in self.context['action']:
+             supply_observation_rules(self.output['candidates'], extensions)
+-        (self.workspace / 'activity-extensions.json').write_bytes(canonical_json(extensions))
+-        output = deepcopy(self.output)
+-        seal_response(output, self.context, self.workspace)
++        (self.workspace / 'activity-extensions.json').write_bytes(canonical_json(extensions))
++        output = deepcopy(self.output)
++        from do_math.repository import semantic_content_hash
++        for task in self.context['tasks']:
++            task.setdefault('content_sha256', semantic_content_hash(task))
++        seal_response(output, self.context, self.workspace)
+         return payload_issues(output, schema_for("research_preparation"), self.context, extensions, self.workspace)
+ 
+     def test_missing_candidate_assessments_are_rejected_with_missing_titles(self):
+@@ -70,9 +73,11 @@
+ 
+     def test_revised_candidate_also_needs_a_new_assessment(self):
+         old = {**candidate(), "id": "TK-old", "revision": 1, "status": "waiting", "model_assessment": rating()}
+-        self.context["tasks"] = [old]
+-        self.output["candidates"] = [{**candidate(), "revises_task_id": "TK-old"}]
+-        self.assertTrue(self.issues({}), "the old edition's assessment must not fill the new candidate implicitly")
++        self.context["tasks"] = [old]
++        self.context['action']['revision_targets'] = {'TK-old': {'revision': 1, 'contract_sha256': contract_hash(old)}}
++        self.output["candidates"] = [{**candidate(), "revises_task_id": "TK-old"}]
++        issues = self.issues({})
++        self.assertIn('model_assessments', json.dumps(issues), "the old edition's assessment must not fill the new candidate implicitly")
+ 
+     def test_empty_preparation_and_legacy_call_budget_contract_remain_accepted(self):
+         self.output["candidates"] = []
+@@ -81,8 +86,10 @@
+         self.context["budget_unit"] = "execution_attempts"
+         self.assertEqual(self.issues({}), [])
+ 
+-    def test_assessment_only_payload_cannot_edit_contracts_or_use_other_extensions(self):
+-        self.context["action"]["assessment_targets"] = {"TK-one": {"revision": 1, "contract_sha256": "frozen"}}
++    def test_assessment_only_payload_cannot_edit_contracts_or_use_other_extensions(self):
++        task = {**candidate(), 'id': 'TK-one', 'revision': 1, 'status': 'waiting'}
++        self.context['tasks'] = [task]
++        self.context["action"]["assessment_targets"] = {"TK-one": {"revision": 1, "contract_sha256": contract_hash(task)}}
+         self.output["candidates"] = []
+         good = {"model_assessments": [rating(task_id="TK-one")]}
+         self.assertEqual(self.issues(good), [])
+--- a/.claude/skills/do-math/scripts/tests/test_redesign_CONTRACTS.py
++++ b/.claude/skills/do-math/scripts/tests/test_redesign_CONTRACTS.py
+@@ -171,7 +171,27 @@
+             submission.summarize_snapshot_checks(seals,snapshot=head,
+                 read_artifact=lambda snapshot,path:b'{}' if path.endswith('/output.json') else reader(snapshot,path),history_window=1)
+ 
+-class ImpactReviewTests(unittest.TestCase):
++class ImpactReviewTests(unittest.TestCase):
++    def seal_review_fixture(self, execution, output, fixed, workspace):
++        """Use the actual central capture format before testing its consumer."""
++        from types import SimpleNamespace
++        from do_math.engine import ResearchEngine
++        from do_math.execution_lifecycle import transition_execution
++        from do_math.repository import canonical_json, new_id
++        schema = contracts.action_schema(fixed['action'], {})
++        submission.install_tools(workspace, fixed, schema, None)
++        (workspace / 'draft.json').write_bytes(canonical_json(output))
++        sealed = submission.seal_submission(workspace, 'draft.json', execution_id=execution['id'],
++            context=fixed, schema=schema, max_artifact_bytes=1024 * 1024)
++        self.assertTrue(sealed['passed'], sealed['check']['issues'])
++        host = SimpleNamespace(_lifecycle_event=lambda *args, **kwargs: None)
++        artifacts = ResearchEngine._stage_submission_capture(host, execution, sealed,
++            {'id': new_id('CT'), 'kind': 'submit_intent', 'state': 'accepted', 'execution_id': execution['id'],
++             'received_at': '2026-09-20T00:00:01Z'}, origin='explicit_tool')
++        transition_execution(execution, 'ended', at='2026-09-20T00:00:02Z', outcome='output_accepted')
++        execution['submitted_output_ref'] = execution['submission_intent']['output_ref']
++        return artifacts
++
+     def setUp(self):
+         from do_math import integration, knowledge_io
+         self.api = integration
+@@ -273,19 +293,21 @@
+         output = self.review_output(request)
+         fixed = {"action": action, "execution_id": "EX-review"}
+         review_bundle = next(self.api.split_bundles(output, {}, fixed))
+-        self.runtime["executions"]["EX-review"] = {"id": "EX-review", "role": "maintenance", "actor_kind": "ai", "status": "ended",
+-            "outcome": "output_accepted", "action": action, "output": output, "input_bundle": "BA-review-input",
+-            "submitted_output_ref": "runtime/artifacts/BA-review-output/output.json"}
++        self.runtime["executions"]["EX-review"] = {"id": "EX-review", "role": "maintenance", "actor_kind": "ai", "status": "running",
++            "action": action, "output": output, "input_bundle": "BA-review-input"}
+         self.runtime["integrations"] = {"IN-review": {"id": "IN-review", "execution_id": "EX-review",
+             "payload_sha256": review_bundle["payload_sha256"],
+             "response_sha256": self.api.digest(self.api.member_values(output, {}, fixed)["output"])}}
+         with tempfile.TemporaryDirectory() as directory:
+             root = Path(directory)
+-            subprocess.run(["git", "-C", str(root), "init", "-q"], check=True)
+-            store = GitStateStore(root, "RI-01ARZ3NDEKTSV4RRFFQ69G5FAV")
+-            head = store.publish(None, {"research/fixture.json": b"{}",
+-                "runtime/artifacts/BA-review-input/input/submission/context.json": canonical_json(fixed),
+-                "runtime/artifacts/BA-review-output/output.json": canonical_json(output)}).head
++            subprocess.run(["git", "-C", str(root), "init", "-q"], check=True)
++            store = GitStateStore(root, "RI-01ARZ3NDEKTSV4RRFFQ69G5FAV")
++            workspace = root / 'review-workspace'
++            workspace.mkdir()
++            artifacts = self.seal_review_fixture(self.runtime['executions']['EX-review'], output, fixed, workspace)
++            head = store.publish(None, {"research/fixture.json": b"{}",
++                "runtime/artifacts/BA-review-input/input/submission/context.json": canonical_json(fixed),
++                **artifacts}).head
+             args = {"producer_execution_id": "EX-producer", "input_snapshot": "fixed-input",
+                 "review_execution_id": "EX-review", "snapshot": head,
+                 "read_artifact": lambda snapshot, path: store.read_bytes(snapshot, path)}
+@@ -306,14 +328,20 @@
+             with self.assertRaises(ValueError):
+                 self.api.require_bundle_impact_review(self.instance, retry_runtime, self.bundle,
+                     receiving_execution_id="EX-retry", **args)
+-            for case in ("same_producer", "other_bundle", "stale", "unsealed", "altered_output", "shared_conversation", "machine"):
++            cached = deepcopy(self.runtime)
++            cached['executions']['EX-review']['output']['summary'] = 'Untrusted cached projection'
++            self.assertEqual(confirmations, self.api.require_bundle_impact_review(self.instance, cached, self.bundle, **args))
++            for case in ("same_producer", "other_bundle", "stale", "unsealed", "tampered_output", "shared_conversation", "machine"):
+                 with self.subTest(case=case), self.assertRaises(ValueError):
+                     i, r, b, a = deepcopy(self.instance), deepcopy(self.runtime), deepcopy(self.bundle), dict(args)
+                     if case == "same_producer": a["review_execution_id"] = "EX-producer"
+                     if case == "other_bundle": b["integration_id"] = "IN-other"
+                     if case == "stale": i["knowledge"][self.ids[1]]["summary"] = "Changed premise"
+                     if case == "unsealed": r["integrations"].clear()
+-                    if case == "altered_output": r["executions"]["EX-review"]["output"]["summary"] = "Altered"
++                    if case == 'tampered_output':
++                        output_ref = r['executions']['EX-review']['submission_intent']['output_ref']
++                        a['read_artifact'] = lambda selected, path: (canonical_json({**output, 'summary': 'Altered'})
++                            if path == output_ref else store.read_bytes(selected, path))
+                     if case == "machine": r["executions"]["EX-review"]["actor_kind"] = "machine"
+                     if case == "shared_conversation":
+                         for identifier in ("EX-producer", "EX-review"):
+@@ -325,18 +353,26 @@
+                 negative = deepcopy(output)
+                 negative["impact_review"]["plan_decisions"][0]["decision"] = decision
+                 self.api.validate_impact_review_response(request, negative)
+-                rejected_runtime = deepcopy(self.runtime)
+-                rejected_runtime["executions"]["EX-review"]["output"] = negative
+-                negative_ref = "runtime/artifacts/BA-review-" + decision + "/output.json"
+-                rejected_runtime["executions"]["EX-review"]["submitted_output_ref"] = negative_ref
+-                rejected_bundle = next(self.api.split_bundles(negative, {}, fixed))
+-                rejected_runtime["integrations"]["IN-review"].update(
+-                    payload_sha256=rejected_bundle["payload_sha256"],
+-                    response_sha256=self.api.digest(self.api.member_values(negative, {}, fixed)["output"]))
+-                negative_head = store.publish(saved, {negative_ref: canonical_json(negative)}).head
++                rejected_runtime = deepcopy(self.runtime)
++                negative_id = 'EX-review-' + decision
++                negative_input = 'BA-review-input-' + decision
++                negative_fixed = {**deepcopy(fixed), 'execution_id': negative_id}
++                negative_execution = {'id': negative_id, 'role': 'maintenance', 'actor_kind': 'ai',
++                    'status': 'running', 'action': deepcopy(action), 'output': negative, 'input_bundle': negative_input}
++                rejected_runtime['executions'][negative_id] = negative_execution
++                negative_workspace = root / decision
++                negative_workspace.mkdir()
++                negative_artifacts = self.seal_review_fixture(negative_execution, negative, negative_fixed, negative_workspace)
++                rejected_bundle = next(self.api.split_bundles(negative, {}, negative_fixed))
++                rejected_runtime["integrations"]["IN-review"].update(
++                    execution_id=negative_id,
++                    payload_sha256=rejected_bundle["payload_sha256"],
++                    response_sha256=self.api.digest(self.api.member_values(negative, {}, negative_fixed)["output"]))
++                negative_head = store.publish(saved, {**negative_artifacts,
++                    'runtime/artifacts/' + negative_input + '/input/submission/context.json': canonical_json(negative_fixed)}).head
+                 with self.subTest(decision=decision), self.assertRaisesRegex(ValueError, "did not approve"):
+                     self.api.require_bundle_impact_review(self.instance, rejected_runtime, self.bundle,
+-                        **{**args, "snapshot": negative_head})
++                        **{**args, "snapshot": negative_head, 'review_execution_id': negative_id})
+                 saved = negative_head
+ 
+     def test_sealed_review_allows_real_domain_git_retry_and_rejects_wrong_evidence(self):
+@@ -395,12 +431,17 @@
+                 head = repo.save(head, i, r)
+             def validate(i, r, bundle):
+                 repo.validate_candidate(i, r, head)
+-            def accept_review(i, r, bundle):
++            def accept_review(i, r, bundle):
+                 from do_math.execution_lifecycle import record_submission_intent, transition_execution
+                 self.api.validate_impact_review_response(request, bundle["output"])
+-                record_submission_intent(r["executions"]["EX-review"],
+-                    {**sealed["intent"], "output_ref": reviewer["submitted_output_ref"]},
+-                    {"id": "CT-review", "kind": "submit_intent", "state": "accepted", "execution_id": "EX-review"},
++                record_submission_intent(r["executions"]["EX-review"],
++                    {**sealed["intent"], "output_ref": reviewer["submitted_output_ref"],
++                     'extensions_ref': 'runtime/artifacts/BA-review-output/extensions.json',
++                     'check_ref': 'runtime/artifacts/BA-review-output/check.json'},
++                    {"id": "CT-review", "kind": "submit_intent", "state": "accepted", "execution_id": "EX-review",
++                     'payload': {'submission_check': {'artifacts': [
++                         {'path': path, 'sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)}
++                         for path, raw in artifacts.items()]}}},
+                     at="2026-09-20T00:00:01Z")
+                 transition_execution(r["executions"]["EX-review"], "ended", at="2026-09-20T00:00:02Z",
+                     outcome="output_accepted", disposition={"kind": "submission_integrated"})
+@@ -500,7 +541,7 @@
+             self.assertFalse(sealed['passed'])
+             self.assertEqual(sealed['artifacts']['output.json'],raw)
+             self.assertEqual(sealed['artifacts']['extensions.json'],sidecar)
+-            self.assertEqual(sealed['check']['issues'][0]['rule_id'],'submission.read_or_parse')
++            self.assertEqual(sealed['check']['issues'][0]['rule_id'],'submission.parse')
+ 
+     def test_producer_check_binds_exact_schema_and_raw_output_on_parse_failure(self):
+         with tempfile.TemporaryDirectory() as directory:
+--- a/.claude/skills/do-math/scripts/tests/test_redesign_TASKS.py
++++ b/.claude/skills/do-math/scripts/tests/test_redesign_TASKS.py
+@@ -711,10 +711,12 @@
+         for identifier,action,output,accepted in [
+             ('EX-prep',{'role':'research_preparation'},{'summary':'preserved one contract'},True),
+             ('EX-plan',{'role':'research_plan'},{'summary':'semantic rejection'},False),
+-            ('EX-import',{'role':'intent_interpretation','stage':'rewrite','rework_of':'EX-import-first','import_id':'IM-1'}, {'summary':'reauthor interpretation'},True),
++            ('EX-import',{'role':'intent_interpretation','stage':'interpret','previous_import_id':'IM-1','target':'UI-original'}, {'summary':'reauthor interpretation'},True),
+             ('EX-work',{'role':'research_work'},{'summary':'first proposal'},True),
+             ('EX-revise',{'role':'research_work'},{'summary':'replacement proposal'},True)]:
+             r['executions'][identifier]={'id':identifier,'role':action['role'],'status':'ended'}
++            revisions.bind_repetition_bases(i,r,action)
++            revisions.record_import_rework(i,r,action,identifier)
+             revisions.record_execution_outcome(i,r,action,output,identifier,accepted=accepted)
+         counts=task_contracts.repetition_lineages(i,r)
+         self.assertTrue(all(row['events'] for row in counts.values()))
+@@ -722,22 +724,20 @@
+         self.assertEqual(counts['contract_revision']['count'],1)
+         self.assertEqual(counts['exhaustion_empty']['count'],0)
+ 
+-    def test_ai_repair_permits_one_scoped_retry_without_user_or_counter_reset(self):
++    def test_a_technical_retry_does_not_reset_the_configured_user_limit(self):
+         from do_math import revisions
+         i={'config':{'selection_failure_limit':1}};r={'history':[],'queue':[],'executions':{}}
+         revisions.record_repetition(i,r,lineage='selection_failure',lineage_id='population',event_ref='EX-bad',outcome='rejected',owner='ai',reason='missing dispositions')
+-        action={'id':'AC-retry','role':'research_plan','repetition_bases':{'selection_failure':'population'}}
++        action={'id':'AC-retry','role':'research_plan','continuation_of':'EX-bad','repetition_bases':{'selection_failure':'population'}}
++        r['executions']['EX-bad']={'id':'EX-bad','role':'research_plan','action':{'id':'AC-retry'},'status':'ended'}
+         self.assertTrue(revisions.action_repetition_waits(i,r,action))
+-        r['executions']['EX-op']={'id':'EX-op','role':'operational_review','status':'ended'}
+-        r['operational_dispositions']={'OD-1':{'id':'OD-1','execution_id':'EX-op','status':'applied',
++        r['executions']['EX-op']={'id':'EX-op','role':'operational_review','status':'ended','outcome':'output_accepted'}
++        r['operational_dispositions']={'OD-1':{'id':'OD-1','execution_id':'EX-op','target_execution_id':'EX-bad','status':'applied',
+             'disposition':{'kind':'retry','basis_refs':['EX-bad'],'next_owner':'research_plan','reason':'fixed input manifest',
+                            'scope':'repeat only the held plan','replay_safety':'no external effects'}}}
+-        revisions.authorize_repetition_repair(i,r,lineage='selection_failure',lineage_id='population',disposition_id='OD-1',next_action=action)
+-        self.assertFalse(revisions.action_repetition_waits(i,r,action))
++        self.assertTrue(revisions.action_repetition_waits(i,r,action))
+         self.assertEqual(task_contracts.repetition_lineages(i,r)['selection_failure']['count'],1)
+-        r['executions']['EX-retry']={'id':'EX-retry','role':'research_plan','action':action,'status':'ended'}
+-        self.assertTrue(revisions.action_repetition_waits(i,r,action))
+-        self.assertNotIn('question_links',r)
++        self.assertEqual(revisions.repetition_hold(i,r,'selection_failure','population')['owner'],'user')
+ 
+     def test_new_request_ids_do_not_reset_semantic_lineage_and_user_owner_needs_question(self):
+         from do_math import revisions
+--- a/.claude/skills/do-math/scripts/tests/test_submission_boundaries.py
++++ b/.claude/skills/do-math/scripts/tests/test_submission_boundaries.py
+@@ -129,7 +129,7 @@
+                 engine.run(max_steps=1)
+                 execution = next(e for e in engine.runtime["executions"].values() if e["role"] == "research_work")
+                 self.assertEqual(execution["outcome"], "execution_incomplete")
+-                self.assertEqual(execution['error_kind'], 'output_validation')
++                self.assertEqual(execution['error_kind'], 'currentness_changed')
+                 self.assertTrue(any(row['rule_id'] == 'integration.currentness'
+                                     for row in execution['integration_result']['issues']))
+                 self.assertFalse(any(k["title"] == "Derived" for k in engine.instance["knowledge"].values()))
+--- a/.claude/skills/do-math/scripts/tests/test_submission_flow.py
++++ b/.claude/skills/do-math/scripts/tests/test_submission_flow.py
+@@ -229,7 +229,7 @@
+             self.workspace, "../outside.json", execution_id="EX-flow",
+             context=self.context, schema=self.schema, max_artifact_bytes=1024 * 1024)
+         self.assertFalse(sealed["passed"])
+-        self.assertTrue(any(row["rule_id"] == "submission.read_or_parse"
++        self.assertTrue(any(row["rule_id"] == "submission.read"
+                             for row in sealed["check"]["issues"]))
+ 
+     def test_central_candidate_rejects_missing_workspace_reference(self):
+@@ -249,7 +249,7 @@
+             self.workspace, ".scratch/draft.json", execution_id="EX-flow",
+             context=self.context, schema=self.schema, max_artifact_bytes=1024 * 1024)
+         self.assertFalse(sealed["passed"])
+-        self.assertTrue(any(row["rule_id"] == "submission.read_or_parse"
++        self.assertTrue(any(row["rule_id"] == "submission.parse"
+                             for row in sealed["check"]["issues"]))
+ 
+ 
+--- /dev/null
++++ b/.claude/skills/do-math/scripts/tests/test_walkthrough_followup.py
+@@ -0,0 +1,468 @@
++"""Regression paths for the 2026-09-23 static walkthrough.
++
++Model answers and compiler evidence are fixtures. Git, receipt application,
++registration, activity transitions and queued followups use their real owners.
++"""
++from copy import deepcopy
++from datetime import datetime, timedelta
++import errno
++import hashlib
++import json
++from pathlib import Path
++import tempfile
++import threading
++import unittest
++from unittest.mock import Mock, patch
++
++from do_math import activities, contracts, governance, integration, knowledge_io, planning, revisions, submission, task_contracts
++from do_math.engine import ResearchEngine, control, now
++from do_math.repository import new_id
++from test_categories import test_group
++from test_knowledge import candidate
++from test_purpose_engine import ActiveStateHarness, theorem
++from test_redesign_ENGINE import routing_engine, IntentConnections
++
++
++@test_group('unit')
++class RepetitionReceiptTests(unittest.TestCase):
++    def test_dependency_impact_keeps_execution_and_activity_receipts_unchanged(self):
++        from do_math import knowledge
++        instance = {'knowledge': {'KN': {'id': 'KN', 'family': 'knowledge'}}}
++        runtime = {'executions': {'EX': {'id': 'EX', 'status': 'ended', 'outcome': 'output_accepted'}},
++                   'activities': {'AY': {'id': 'AY', 'status': 'finished'}}, 'queue': []}
++        _, changed = knowledge._apply_impact_effects(instance, runtime, {'EX', 'AY'}, {'KN'},
++                                                    reason='Source changed', impact_digest='a' * 64)
++        self.assertEqual(changed['executions'], runtime['executions'])
++        self.assertEqual(changed['activities'], runtime['activities'])
++        self.assertEqual(changed['history'][-1]['affected_ids'], ['AY', 'EX'])
++
++    def test_released_incidental_insights_plan_only_preserved_items(self):
++        for valid in (True, False):
++            engine = routing_engine()
++            engine.instance = knowledge_io.ensure_ontology(engine.instance)
++            engine._apply_queue_plan = Mock()
++            engine._apply_academic_resolutions = Mock()
++            engine.runtime['executions'] = {'EX-old': {'id': 'EX-old', 'status': 'ended'},
++                'EX-current': {'id': 'EX-current', 'status': 'ended', 'extensions': {}}}
++            engine.runtime['review_cycles'] = {'RC': {'status': 'completed'}}
++            engine.runtime['private_insights'] = {'RC': [{'source_execution': 'EX-old',
++                'kind': 'question' if valid else 'unregistered', 'title': 'Question ' + str(i),
++                'statement': 'What remains?', 'summary': 'A retained question', 'evidence_ids': []} for i in range(3)]}
++            engine._apply_extensions({'role': 'identity_review', 'review_cycle_id': 'RC'}, 'EX-current')
++            plans = [a for a in engine.runtime['queue'] if a['role'] == 'research_plan']
++            self.assertEqual(len(plans), int(valid))
++            if valid:
++                self.assertEqual(set(plans[0]['evidence_refs']), set(engine.instance['knowledge']))
++                self.assertEqual(len(plans[0]['evidence_refs']), 3)
++            else:
++                self.assertEqual(engine.instance['knowledge'], {})
++
++    def test_collected_checkpoint_keeps_exact_resume_reference(self):
++        from do_math.observations import recovered_checkpoint, bind_checkpoint_artifact
++        value = {'current_claim': 'Partial claim', 'evidence_paths': [], 'attempts': ['Compared the definitions'],
++                 'remaining_work': ['Finish the argument'], 'next_step': 'Check the remaining case',
++                 'progress_state': 'working', 'counters': {}}
++        with tempfile.TemporaryDirectory() as directory:
++            workspace = Path(directory)
++            raw = json.dumps(value).encode()
++            (workspace / 'checkpoint.json').write_bytes(raw)
++            checkpoint = recovered_checkpoint(workspace)
++        self.assertEqual(checkpoint['kind'], 'worker_checkpoint')
++        entry = {'path': 'checkpoint.json', 'artifact_ref': 'runtime/artifacts/BA/files/checkpoint.json',
++                 'sha256': hashlib.sha256(raw).hexdigest()}
++        bound = bind_checkpoint_artifact(checkpoint, [entry])
++        self.assertEqual(bound['artifact_ref'], entry['artifact_ref'])
++        self.assertNotIn('artifact_ref', bind_checkpoint_artifact(checkpoint, [{**entry, 'sha256': 'wrong'}]))
++        self.assertEqual(bind_checkpoint_artifact(checkpoint, [], bound)['artifact_ref'], entry['artifact_ref'])
++
++    def test_retry_waits_for_unknown_effect_from_an_ancestor(self):
++        engine = routing_engine()
++        engine.runtime['executions'] = {
++            'EX-original': {'id': 'EX-original', 'status': 'ended', 'action': {}},
++            'EX-later': {'id': 'EX-later', 'status': 'ended', 'continuation_of': 'EX-original', 'action': {}}}
++        engine.runtime['external_operations'] = {'EO-one': {
++            'status': 'unknown', 'producer_executions': ['EX-original']}}
++        record = {'id': 'OD', 'execution_id': 'EX-review', 'target_execution_id': 'EX-later',
++                  'disposition': {'kind': 'retry'}}
++        with self.assertRaisesRegex(ValueError, 'reconciliation'):
++            engine._complete_operational_disposition(record)
++        self.assertEqual(engine.runtime['queue'], [])
++
++    def test_legacy_threshold_keeps_user_authority_without_rewriting_history(self):
++        historical = {'kind': 'repetition_hold', 'lineage': 'selection_failure', 'lineage_id': 'basis',
++                      'event_ref': 'EX-failed', 'owner': 'ai', 'next_owner': 'operational_review', 'count': 2, 'limit': 2}
++        runtime = {'history': [deepcopy(historical)]}
++        current = revisions.repetition_hold({}, runtime, 'selection_failure', 'basis')
++        self.assertEqual((current['owner'], current['next_owner']), ('user', 'user'))
++        self.assertEqual(runtime['history'], [historical])
++
++    def test_continue_after_successful_empty_preparation_creates_its_missing_request(self):
++        engine = routing_engine()
++        engine.instance['config']['exhaustion_empty_limit'] = 1
++        engine.instance['governance_sources'] = {'UI-source': governance.preserve_source(
++            'UI-source', 'Continue the held empty preparation.', origin='user')}
++        original = {'id': 'AC-original', 'role': 'research_preparation'}
++        revisions.bind_repetition_bases(engine.instance, engine.runtime, original)
++        engine.runtime['executions']['EX-empty'] = {'id': 'EX-empty', 'role': 'research_preparation',
++            'status': 'ended', 'outcome': 'output_accepted', 'action': original}
++        revisions.record_execution_outcome(engine.instance, engine.runtime, original,
++            {'summary': 'No candidate'}, 'EX-empty', accepted=True)
++        key = original['repetition_bases']['exhaustion_empty']
++        allowed = {'id': 'AC-next', 'role': 'research_preparation', 'revision_targets': {},
++                   'repetition_bases': {'exhaustion_empty': key}}
++        change = {'kind': 'repetition_continue', 'decision_id': 'DC-continue', 'lineage': 'exhaustion_empty',
++                  'lineage_id': key, 'hold_event_ref': 'EX-empty', 'allowed_action': allowed}
++        instance, runtime, _ = governance.apply_decision(engine.instance, engine.runtime, change, source_ref='UI-source')
++        self.assertEqual([a['id'] for a in runtime['queue']], ['AC-next'])
++        self.assertFalse(revisions.action_repetition_waits(instance, runtime, runtime['queue'][0]))
++        self.assertEqual(revisions.action_scope(runtime['queue'][0]), allowed)
++
++    def test_supplement_does_not_increment_or_reset_empty_generation(self):
++        instance = {'id': 'RI', 'config': {}}
++        runtime = {'tasks': {}, 'queue': [], 'history': [], 'executions': {}}
++        revisions.record_repetition(instance, runtime, lineage='exhaustion_empty', lineage_id='basis',
++            event_ref='EX-empty', outcome='empty', owner='ai', reason='No candidates')
++        before = deepcopy(runtime['history'])
++        for field in ('assessment_targets', 'observation_rule_targets'):
++            action = {'role': 'research_preparation', field: {'TK': {}}}
++            runtime['executions']['EX-supplement'] = {'role': action['role']}
++            revisions.record_execution_outcome(instance, runtime, action, {'summary': 'Supplement applied'},
++                                               'EX-supplement', accepted=True)
++        self.assertEqual(runtime['history'], before)
++        runtime['history'].append({'kind': 'repetition_hold', 'lineage': 'exhaustion_empty',
++            'lineage_id': 'basis', 'event_ref': 'EX-empty', 'owner': 'user'})
++        action.update(repetition_bases={'exhaustion_empty': 'basis'}, observation_rule_targets={})
++        self.assertFalse(revisions.action_repetition_waits(instance, runtime, action))
++        runtime['tasks']['TK'] = {'id': 'TK'}
++        runtime['history'].append({'kind': 'repetition_hold', 'lineage': 'contract_revision',
++            'lineage_id': 'TK', 'event_ref': 'EX-revision', 'owner': 'user'})
++        action['observation_rule_targets'] = {'TK': {}}
++        self.assertEqual([row['lineage'] for row in revisions.action_repetition_waits(instance, runtime, action)], ['contract_revision'])
++
++    def test_real_intent_rework_producer_keeps_original_lineage(self):
++        engine = routing_engine()
++        helper = IntentConnections()
++        bundle, check_action = helper.make_import(engine)
++        engine._apply(check_action, helper.verdict(bundle, 'revision_required', False), 'EX-check')
++        rework = next(a for a in engine.runtime['queue'] if a.get('stage') == 'interpret')
++        revisions.bind_repetition_bases(engine.instance, engine.runtime, rework)
++        engine.runtime['executions']['EX-rework'] = {'role': rework['role'], 'action': deepcopy(rework)}
++        revisions.record_import_rework(engine.instance, engine.runtime, rework, 'EX-rework')
++        revisions.record_import_rework(engine.instance, engine.runtime, rework, 'EX-rework')
++        counts = task_contracts.repetition_lineages(engine.instance, engine.runtime)
++        self.assertEqual(counts['import_rework']['count'], 1)
++        retry = {**deepcopy(rework), 'id': 'AC-next', 'previous_import_id': 'IM-next'}
++        retry.pop('repetition_bases')
++        revisions.bind_repetition_bases(engine.instance, engine.runtime, retry)
++        self.assertEqual(retry['repetition_bases'], rework['repetition_bases'])
++        check = {**rework, 'stage': 'check', 'continuation_of': 'EX-check'}
++        self.assertFalse(revisions.import_rework(engine.runtime, check))
++        engine.instance['config']['import_rework_limit'] = 1
++        later = deepcopy(rework)
++        revisions.record_repetition(engine.instance, engine.runtime, lineage='import_rework',
++            lineage_id=rework['repetition_bases']['import_rework'], event_ref='EX-rework-2',
++            outcome='reauthored', owner='ai', reason='Second registered reauthor')
++        self.assertTrue(revisions.action_repetition_waits(engine.instance, engine.runtime, later))
++        self.assertFalse(revisions.action_repetition_waits(engine.instance, engine.runtime, check))
++        other = {**later, 'target': 'UC-unrelated'}
++        other.pop('repetition_bases')
++        revisions.bind_repetition_bases(engine.instance, engine.runtime, other)
++        self.assertFalse(revisions.action_repetition_waits(engine.instance, engine.runtime, other))
++
++    def test_receiver_failure_categories_count_once_and_success_ends_streak(self):
++        instance = {'id': 'RI', 'config': {}}
++        runtime = {'queue': [], 'executions': {}, 'history': []}
++        action = {'role': 'research_plan', 'repetition_bases': {'selection_failure': 'basis'}}
++        for index, rule in enumerate(('schema.required', 'submission.parse', 'integration.application')):
++            eid = 'EX-' + str(index)
++            runtime['executions'][eid] = {'role': action['role'], 'error_kind': integration.failure_kind([
++                integration.issue(rule, 'output', 'message deliberately contains no classification hints')])}
++            for _ in range(2):
++                revisions.record_execution_outcome(instance, runtime, action, {}, eid, accepted=False)
++        self.assertEqual(task_contracts.repetition_lineages(instance, runtime)['selection_failure']['count'], 3)
++        for kind in ('currentness_changed', 'capacity_wait', 'input_overflow', 'provider_failure', 'publication_failure'):
++            runtime['executions'][kind] = {'role': action['role'], 'error_kind': kind}
++            revisions.record_execution_outcome(instance, runtime, action, {}, kind, accepted=False)
++        self.assertEqual(task_contracts.repetition_lineages(instance, runtime)['selection_failure']['count'], 3)
++        runtime['executions']['EX-good'] = {'role': action['role']}
++        revisions.record_execution_outcome(instance, runtime, action, {}, 'EX-good', accepted=True)
++        self.assertEqual(task_contracts.repetition_lineages(instance, runtime)['selection_failure']['count'], 0)
++
++    def test_generation_time_uses_fixed_machine_observation_and_excludes_supplement(self):
++        action = {'role': 'research_preparation'}
++        schema = contracts.action_schema(action, {})
++        self.assertIn('regenerate_after', schema['required'])
++        supplemental = contracts.action_schema({**action, 'assessment_targets': {}}, {})
++        self.assertNotIn('regenerate_after', supplemental['properties'])
++        context = {'action': action, 'observed_at': '2026-09-23T00:00:00Z',
++                   'tasks': [], 'kind_definitions': {}, 'knowledge_catalog': [], 'available_input_refs': []}
++        output = {'summary': 'No candidates', 'used_sources': [], 'questions': [], 'candidates': []}
++        with tempfile.TemporaryDirectory() as directory:
++            for time, invalid in (('2026-09-23T01:00:00Z', False), ('2026-09-22T23:00:00Z', True),
++                                  ('2026-09-23T01:00:00', True)):
++                issues = submission._payload_issues({**output, 'regenerate_after': time}, schema, context, {}, Path(directory))
++                self.assertEqual(any(i.get('rule_id') == 'submission.regeneration_time' for i in issues), invalid, issues)
++
++    def test_accepted_batch_opens_one_plan_and_preserves_all_evidence(self):
++        for count in (3, 1, 0):
++            engine = routing_engine()
++            engine.instance = knowledge_io.ensure_ontology(engine.instance)
++            engine.runtime['tasks']['TK'] = {'id': 'TK', 'results': [], 'status': 'active'}
++            engine.runtime['executions']['EX'] = {'id': 'EX', 'role': 'research_work', 'status': 'running', 'extensions': {}}
++            output = {'summary': 'Report', 'questions': [], 'used_sources': [], 'outcome': 'partial', 'report': 'Actual report',
++                'remaining_work': ['Open obligation'], 'checkpoint': '', 'relations': [],
++                'knowledge': [candidate(title='K' + str(i), lean_code='', declaration_names=[]) for i in range(count)]}
++            engine._apply({'id': 'AC', 'role': 'research_work', 'target': 'TK'}, output, 'EX')
++            plans = [a for a in engine.runtime['queue'] if a['role'] == 'research_plan']
++            self.assertEqual(len(plans), 1, plans)
++            self.assertEqual(set(plans[0]['evidence_refs']), set(engine.instance['knowledge']))
++            self.assertEqual(plans[0]['receipt_refs'], ['EX'])
++        _, runtime, _ = knowledge_io.import_candidate({}, {}, candidate(lean_code='', declaration_names=[]),
++            source_ref='source', actor_ref='user')
++        self.assertEqual([a['role'] for a in runtime['queue']], ['research_plan'])
++        _, runtime, _ = knowledge_io.import_candidate({}, {}, candidate(), source_ref='source', actor_ref='user', plan_nonformal=False)
++        self.assertEqual([a['role'] for a in runtime['queue']], ['formal_check'])
++
++
++class WalkthroughEngineTests(ActiveStateHarness):
++    def test_failed_review_slot_keeps_its_live_sibling_running(self):
++        engine, runner = self.make()
++        engine.runtime['queue'] = []
++        engine._knowledge_io_control({'action': 'knowledge', 'id': new_id('UC'),
++            'config': {'operation': 'import', 'candidate': theorem()}})
++        formal = next(a for a in engine.runtime['queue'] if a['role'] == 'formal_check')
++        engine._save()
++        engine._formal(formal)
++        engine._start_identity_review(formal['target'])
++        scope = next(a for a in engine.runtime['queue'] if a['role'] == 'identity_review')
++        engine._call(scope)
++        engine.runtime['queue'] = [a for a in engine.runtime['queue'] if a['role'] == 'identity_review']
++        self.assertEqual({a['slot'] for a in engine.runtime['queue']}, {'initial-0', 'initial-1'})
++        release = threading.Event()
++        answer = runner.answer
++        def wait_for_sibling(role, context, workspace):
++            if role == 'identity_review' and context['action']['slot'] == 'initial-0':
++                self.assertTrue(release.wait(60), 'Sibling preparation never reached its restoration failure')
++            return answer(role, context, workspace)
++        runner.answer = wait_for_sibling
++        prepare = engine._prepare_review_context
++        mkdir = Path.mkdir
++        observed = []
++        def busy(path, *args, **kwargs):
++            if 'review-sources' in path.parts:
++                raise OSError(errno.EBUSY, 'Only this review slot cannot materialize its input')
++            return mkdir(path, *args, **kwargs)
++        def prepare_slot(action, workspace, **kwargs):
++            if action.get('slot') != 'initial-1':
++                return prepare(action, workspace, **kwargs)
++            observed.append(any(e.get('action', {}).get('slot') == 'initial-0' and e['status'] != 'ended'
++                                for e in engine.runtime['executions'].values()))
++            try:
++                with patch.object(Path, 'mkdir', busy):
++                    return prepare(action, workspace, **kwargs)
++            finally:
++                release.set()
++        with patch.object(engine, '_prepare_review_context', side_effect=prepare_slot):
++            engine._save()
++            engine.run(max_steps=2)
++        self.assertEqual(observed, [True])
++        first = next(e for e in engine.runtime['executions'].values() if e.get('action', {}).get('slot') == 'initial-0')
++        self.assertEqual(first['outcome'], 'output_accepted', first.get('error'))
++        held = next(w for w in engine.runtime['waiting_actions'].values() if w['action'].get('slot') == 'initial-1')
++        self.assertEqual(held['kind'], 'review_input_restoration')
++
++    def test_empty_preparation_preserves_machine_time_and_opens_one_due_regeneration(self):
++        from test_engine import ScriptedRunner
++        engine, _ = self.make()
++        engine.runtime['queue'] = []
++        engine._enqueue('research_preparation', reason='No usable candidate in this fixture')
++        engine.runner = ScriptedRunner(preparation_candidates=[])
++        engine._save()
++        engine.run(max_steps=1)
++        receipt = next(r for r in engine.runtime['history'] if r.get('kind') == 'task_repetition'
++                       and r.get('lineage') == 'exhaustion_empty')
++        execution = engine.runtime['executions'][receipt['event_ref']]
++        self.assertEqual(execution['outcome'], 'output_accepted', execution.get('error'))
++        self.assertEqual(receipt['observed_at'], execution['observed_at'])
++        due = datetime.fromisoformat(receipt['regenerate_after'])
++        state = deepcopy(engine.runtime)
++        state.update(queue=[], status='active')
++        early = planning.exhaustion_state(engine.instance, state, now=(due - timedelta(seconds=1)).isoformat())
++        self.assertEqual(early['reasons'], ['regeneration_guard'])
++        for _ in range(2):
++            planning.schedule_reconsideration(engine.instance, state, now=due.isoformat())
++        preparations = [a for a in state['queue'] if a['role'] == 'research_preparation']
++        self.assertEqual(len(preparations), 1)
++
++    def test_native_plan_failures_reach_receiver_counter_through_preserved_bytes(self):
++        from test_native_final_submission import native_result
++        from do_math.repository import canonical_json
++        from do_math.execution_lifecycle import transition_execution
++        engine, _ = self.make(selection_failure_limit=3)
++        engine.runtime['queue'] = []
++        for index, (raw, expected) in enumerate(((b'{broken', 'output_parse'),
++                (b'{"summary":"Missing plan fields"}', 'output_schema'),
++                (json.dumps({'summary': 'Invalid population', 'used_sources': [], 'questions': [],
++                    'dispositions': [{'task_id': 'TK-missing', 'kind': 'not_selected', 'reason': 'Unknown task',
++                        'uncertainty': '', 'parallel_task_ids': [], 'expected_research_change': '',
++                        'revisit': {'event_refs': [], 'at': '2100-01-01T00:00:00Z'}, 'missing_inputs': [], 'next_owner': 'research_plan'}],
++                    'preparation_requests': [], 'goal_audit': False, 'task_assessments': []}).encode(), 'output_contract'))):
++            action = {'id': new_id('AC'), 'role': 'research_plan'}
++            engine._action_lifecycle_gate(action)
++            execution = engine._register_execution(action, {'id': new_id('EX'), 'role': 'research_plan', 'status': 'running'})
++            eid = execution['id']
++            bundle = new_id('BA')
++            execution.update(grant_id=action['grant_id'], input_snapshot=engine.head, input_bundle=bundle)
++            execution.update(planning.governance_revisions(engine.instance))
++            from do_math.input_basis import capture_decision_basis
++            execution['decision_basis'] = capture_decision_basis(engine.instance, engine.runtime, engine._decision_references(action))
++            workspace = Path(engine.instance['workspace']) / 'runs' / eid / 'workspace'
++            workspace.mkdir(parents=True)
++            context = engine._context(action, workspace, execution_id=eid)
++            schema = engine._response_schema(action)
++            submission.install_tools(workspace, context, schema, engine.instance['config']['max_artifact_bytes'])
++            prefix = 'runtime/artifacts/' + bundle
++            engine._save({prefix + '/input/submission/context.json': canonical_json(context),
++                          prefix + '/schema.json': canonical_json(schema), prefix + '/input.txt': b'exact sealed prompt'})
++            execution = engine.runtime['executions'][eid]
++            result = native_result(execution, context, raw, workspace)
++            result = engine._collect_submitted_result(execution, result, context, schema, workspace)
++            self.assertIn('rejected_submission', result, result.get('error'))
++            transition_execution(engine.runtime['executions'][eid], 'stopping', at=now(), stop_phase='terminating')
++            engine._receive_submission(action, result, eid, context, schema, workspace)
++            failure = engine.runtime['executions'][eid]
++            self.assertEqual(failure['error_kind'], expected, failure.get('integration_result'))
++            receipts = [r for r in engine.runtime['history'] if r.get('kind') == 'task_repetition'
++                        and r.get('lineage') == 'selection_failure']
++            self.assertEqual(len(receipts), index + 1)
++            self.assertEqual(receipts[-1]['outcome'], 'rejected')
++            self.assertEqual(task_contracts.repetition_lineages(engine.instance, engine.runtime)['selection_failure']['count'], index + 1)
++        hold = revisions.repetition_hold(engine.instance, engine.runtime, 'selection_failure', receipts[-1]['lineage_id'])
++        self.assertEqual(hold['owner'], 'user')
++        engine._save()
++
++    def seed_plan(self, engine):
++        engine.runtime['queue'] = []
++        engine._enqueue('research_plan', reason='Regression selection')
++        action = engine.runtime['queue'][0]
++        execution = engine._register_execution(action, {'id': new_id('EX'), 'role': action['role'], 'status': 'queued'})
++        from do_math.execution_lifecycle import end_preparation
++        end_preparation(execution, at=now(), stage='context', reason='Fixture original failure', cancelled=False)
++        engine._remove_action(action)
++        activities.wait_for(engine.runtime, execution['owner_activity_id'], reason='receipt failed',
++            condition={'execution_id': execution['id']}, next_owner='operational_review', at=now())
++        return execution
++
++    def test_public_continue_releases_exact_hold_and_replay_is_idempotent(self):
++        engine, _ = self.make(selection_failure_limit=1)
++        target = self.seed_plan(engine)
++        action = activities.continue_activity(engine.runtime, target['id'], at=now(), reason='Retry held plan')
++        lineage = action['repetition_bases']['selection_failure']
++        revisions.record_repetition(engine.instance, engine.runtime, lineage='selection_failure', lineage_id=lineage,
++            event_ref=target['id'], outcome='rejected', owner='ai', reason='Missing population')
++        hold = revisions.repetition_hold(engine.instance, engine.runtime, 'selection_failure', lineage)
++        self.assertEqual(hold['owner'], 'user')
++        self.assertTrue(revisions.action_repetition_waits(engine.instance, engine.runtime, action))
++        engine._save()
++        change = {'kind': 'repetition_continue', 'decision_id': new_id('DC'), 'lineage': 'selection_failure',
++            'lineage_id': lineage, 'hold_event_ref': hold['event_ref'], 'allowed_action': revisions.action_scope(action)}
++        control(self.repo, engine.instance['id'], 'decision', config={'change': change}, text='Continue this held plan.')
++        engine.process_controls()
++        self.assertFalse(revisions.action_repetition_waits(engine.instance, engine.runtime, action))
++        self.assertEqual(task_contracts.repetition_lineages(engine.instance, engine.runtime)['selection_failure']['count'], 0)
++        stored = engine.instance['decisions'][change['decision_id']]
++        _, replay, _ = governance.apply_decision(engine.instance, engine.runtime, change, source_ref=stored['source_ref'])
++        self.assertEqual(replay['history'], engine.runtime['history'])
++        stale = {**change, 'decision_id': new_id('DC')}
++        with self.assertRaisesRegex(ValueError, 'current repetition hold'):
++            governance.apply_decision(engine.instance, engine.runtime, stale, source_ref=stored['source_ref'])
++
++    def test_operational_retry_is_idempotent_and_waits_for_user_at_the_limit(self):
++        engine, _ = self.make(selection_failure_limit=1)
++        target = self.seed_plan(engine)
++        lineage = target['action']['repetition_bases']['selection_failure']
++        revisions.record_repetition(engine.instance, engine.runtime, lineage='selection_failure',
++            lineage_id=lineage, event_ref=target['id'], outcome='rejected', owner='ai', reason='Held plan failure')
++        review_action = {'id': new_id('AC'), 'role': 'operational_review', 'target': target['id']}
++        engine._action_lifecycle_gate(review_action)
++        assessor = engine._register_execution(review_action, {'id': new_id('EX'), 'role': 'operational_review', 'status': 'running'})
++        disposition = {'kind': 'retry', 'basis_refs': [target['id']], 'next_owner': 'research_plan', 'reason': 'Repair selection',
++            'scope': 'Same held plan', 'replay_safety': 'No external effects or accepted bundles'}
++        output = {'summary': 'Retry', 'questions': [], 'used_sources': [], 'disposition': disposition, 'task_assessments': []}
++        from test_native_final_submission import native_result
++        from do_math.repository import canonical_json
++        bundle = new_id('BA')
++        assessor.update(grant_id=review_action['grant_id'], input_snapshot=engine.head, input_bundle=bundle,
++                        **planning.governance_revisions(engine.instance))
++        from do_math.input_basis import capture_decision_basis
++        assessor['decision_basis'] = capture_decision_basis(engine.instance, engine.runtime, engine._decision_references(review_action))
++        workspace = Path(engine.instance['workspace']) / 'runs' / assessor['id'] / 'workspace'
++        workspace.mkdir(parents=True)
++        context = engine._context(review_action, workspace, execution_id=assessor['id'])
++        schema = engine._response_schema(review_action)
++        submission.install_tools(workspace, context, schema, engine.instance['config']['max_artifact_bytes'])
++        prefix = 'runtime/artifacts/' + bundle
++        engine._save({prefix + '/input/submission/context.json': canonical_json(context),
++                      prefix + '/schema.json': canonical_json(schema), prefix + '/input.txt': b'exact sealed prompt'})
++        assessor = engine.runtime['executions'][assessor['id']]
++        result = native_result(assessor, context, json.dumps(output).encode(), workspace)
++        result = engine._collect_submitted_result(assessor, result, context, schema, workspace)
++        self.assertEqual(result['status'], 'completed', result.get('error'))
++        from do_math.execution_lifecycle import transition_execution
++        transition_execution(engine.runtime['executions'][assessor['id']], 'stopping', at=now(), stop_phase='terminating')
++        received = engine._receive_submission(review_action, result, assessor['id'], context, schema, workspace)
++        self.assertEqual(received['status'], 'accepted', received.get('issues'))
++        record = next(iter(engine.runtime['operational_dispositions'].values()))
++        self.assertEqual(record['status'], 'applied')
++        retry = next(a for a in engine.runtime['queue'] if a.get('continuation_of') == target['id'])
++        self.assertEqual(retry['id'], target['action']['id'])
++        self.assertTrue(revisions.action_repetition_waits(engine.instance, engine.runtime, retry))
++        restored = ResearchEngine(self.repo, engine.instance['id'])
++        restored_retry = next(a for a in restored.runtime['queue'] if a.get('id') == retry['id'])
++        self.assertTrue(revisions.action_repetition_waits(restored.instance, restored.runtime, restored_retry))
++        engine._complete_operational_disposition(record)
++        self.assertEqual(sum(a.get('id') == retry['id'] for a in engine.runtime['queue']), 1)
++        change = {'kind': 'repetition_continue', 'decision_id': new_id('DC'), 'lineage': 'selection_failure',
++            'lineage_id': lineage, 'hold_event_ref': target['id'], 'allowed_action': revisions.action_scope(retry)}
++        control(self.repo, engine.instance['id'], 'decision', config={'change': change}, text='Continue this held plan after diagnosis.')
++        engine.process_controls()
++        retry = next(a for a in engine.runtime['queue'] if a.get('id') == retry['id'])
++        self.assertFalse(revisions.action_repetition_waits(engine.instance, engine.runtime, retry))
++        successor = engine._register_execution(retry, {'id': new_id('EX'), 'role': 'research_plan', 'status': 'queued'})
++        self.assertEqual(successor['continuation_of'], target['id'])
++        self.assertEqual(successor['action']['id'], target['action']['id'])
++        self.assertFalse(any(r.get('kind') == 'repetition_repair_authorized' for r in engine.runtime['history']))
++
++    def test_review_materialization_failure_ends_preparation_and_saves_recovery(self):
++        engine, _ = self.make()
++        engine.runtime['queue'] = []
++        engine._knowledge_io_control({'action': 'knowledge', 'id': new_id('UC'),
++            'config': {'operation': 'import', 'candidate': theorem()}})
++        formal = next(a for a in engine.runtime['queue'] if a['role'] == 'formal_check')
++        engine._save()
++        engine._formal(formal)
++        kid = formal['target']
++        engine._start_identity_review(kid)
++        action = next(a for a in engine.runtime['queue'] if a['role'] == 'identity_review')
++        original = Path.mkdir
++        def unavailable(path, *args, **kwargs):
++            if 'review-sources' in path.parts:
++                raise OSError(errno.EBUSY, 'Regression source materialization busy')
++            return original(path, *args, **kwargs)
++        with patch.object(Path, 'mkdir', unavailable):
++            engine._call(action)
++        attempts = [e for e in engine.runtime['executions'].values() if e.get('action', {}).get('id') == action['id']]
++        self.assertEqual(len(attempts), 1)
++        self.assertEqual(attempts[0]['status'], 'ended')
++        wait = engine.runtime['waiting_actions'][action['id']]
++        self.assertEqual(wait['kind'], 'review_input_restoration')
++        self.assertEqual(wait['next_owner'], 'review_recovery')
++        _, _, saved = engine.store.load()
++        self.assertEqual(saved['waiting_actions'][action['id']], wait)
++        outcome = engine._retry_review_restoration(wait['action'], self.root / 'restored', at=now())
++        self.assertEqual(outcome['disposition'], 'review_resumed')
++        self.assertNotIn(action['id'], engine.runtime['waiting_actions'])
++
++
++if __name__ == '__main__':
++    unittest.main(verbosity=2)
+--- a/.claude/skills/do-math/scripts/tests/v5_fixtures.py
++++ b/.claude/skills/do-math/scripts/tests/v5_fixtures.py
+@@ -183,7 +183,13 @@
+     """Producer declares its real output/extension coordinates as one coupled unit."""
+     from do_math.integration import mutation_members
+     members = ["output"]
+-    role = context["action"]["role"]
++    role = context["action"]["role"]
++    if role == 'research_preparation':
++        from do_math.model_policy import preparation_only
++        if not preparation_only(context['action']) and context.get('observed_at'):
++            from datetime import datetime, timedelta
++            output.setdefault('regenerate_after', (datetime.fromisoformat(context['observed_at'].replace('Z', '+00:00'))
++                                                  + timedelta(hours=1)).isoformat())
+     if role in {"research_work", "supplemental_research"} and not context["action"].get("review_cycle_id"):
+         members += [f"output/{key}/{i}" for key in ("knowledge", "relations") for i, _ in enumerate(output.get(key, []))]
+     path = workspace / "activity-extensions.json"
+--- a/.claude/skills/do-math/계약/운영-점검.md
++++ b/.claude/skills/do-math/계약/운영-점검.md
+@@ -66,7 +66,9 @@
+ 
+ ## 실패 유형별 판단
+ 
+-`output_validation`이면 주 응답·확장·편입 묶음의 정확한 문제를 읽고 의미 보존 수리 가능성을 판단한다. 이미 수락된 묶음을 바꾸거나 재소유하지 않고 반환된 묶음만 수리한다. `currentness_changed`이면 변경표와 실제 읽기 의존을 대조한다. 공급자 한도는 허용 시각과 원 실패를 보존하며 같은 제한을 확인하려고 새 모델 진단을 반복하지 않는다. scholarly 자료원의 429를 모델 공급자 한도로 바꾸지 않는다.
++`output_parse`·`output_schema`·`output_contract`는 각각 파싱·출력 스키마·계약 수신 실패다. 주 응답·확장·편입 묶음의 정확한 문제를 읽고 의미 보존 수리 가능성을 판단한다. 과거의 `output_validation` 기록은 상세 검사 근거를 읽되 새 분류로 소급 확정하지 않는다. 이미 수락된 묶음을 바꾸거나 재소유하지 않고 반환된 묶음만 수리한다. `currentness_changed`이면 변경표와 실제 읽기 의존을 대조한다. `publication_failure`는 중앙의 저장 재대조 대상이며 작업자의 의미 오류로 처리하지 않는다. 공급자 한도는 허용 시각과 원 실패를 보존하며 같은 제한을 확인하려고 새 모델 진단을 반복하지 않는다. scholarly 자료원의 429를 모델 공급자 한도로 바꾸지 않는다.
++
++입력의 `repetition_holds`에서 대상 계보의 현행 반복 한도 보류를 확인한다. 이 보류는 사용자 계속 승인이 필요하며 기술 수리 처분만으로 해제할 수 없다. 기술적 복구를 위한 `retry`·`resume`을 제안하면 중앙은 수락된 처분과 종료된 대상 실행을 확인하고 같은 의무의 후속 요청을 연결한다. 체크포인트로 재개할 때에는 보존 참조와 원문 바이트도 대조한다. 같은 처분의 재처리는 이미 연결한 후속을 반환하며 요청을 중복 생성하지 않는다. 반복 한도 보류가 남으면 후속 요청도 착수를 기다린다. 기술 수리 처분을 수락했다는 이유로 누적 실패를 지우지 않는다.
+ 
+ 프로세스 시작 실패·중첩·PID 재사용 의심·제어 무응답은 실제 자식 프로세스와 원장·Job 영수증의 범위에서 판단한다. PID 값만 같다는 이유로 같은 실행이라고 보거나, 부모 하나의 종료로 자손 종료를 확정하지 않는다. 현재 Windows Job이 입증하는 로컬 프로세스 수명과 자손 종료를 모든 호스트 자원 격리로 확대하지 않는다.
+ 
+--- a/.claude/skills/do-math/계약/의도-해석.md
++++ b/.claude/skills/do-math/계약/의도-해석.md
+@@ -58,9 +58,15 @@
+ 
+ 검사는 구간이 원문을 정확히 피복하는지, 해석이 원문 의미를 보존하는지, 모든 단위와 질문이 등록된 소비자 및 실제 대상에 연결되는지, `decision_refs`가 현행 판본인지, 질문 없이 창작한 사용자 결정이 없는지를 확인한다. `bundle_sha256`, `unit_ids`, `question_ids`가 검사 대상과 정확히 맞지 않으면 승인할 수 없다. `approved`는 해석 묶음이 적용 후보가 될 수 있다는 뜻일 뿐, 사용자 승인이나 실제 적용을 대신하지 않는다.
+ 
+-## 사례 위임 판단
+-
+-사례 위임의 범위 판단은 일반 `import_units` 출력이 아니라 동적 `delegation_judgment` 분기를 사용한다. 두 독립 실행은 동일하게 봉인된 원문, 현재 위임, 결정·승인 원천과 정확한 `input_sha256`을 받고, 서로의 판단을 보지 않은 채 `within_scope`, `outside_scope`, `unresolved` 중 하나를 낸다. 판단에는 적용한 위임, 포함·제외 대상, 외부 효과와 자원 한계, 근거 원천을 정확히 연결한다.
++## 재저작과 반복 보류
++
++원 해석이 잘못되어 `revision_required`를 반환하면 새 `stage=interpret` 실행이 원입력을 다시 해석한다. 실행기는 `previous_import_id`·`intent_repair`로 기존 묶음과 검사 결과를 연결하고, 같은 원입력의 재저작 시도를 등록할 때 한 번 센다. 해석 실행의 형식 오류를 고치는 후속도 재저작에 포함되며, 새 묶음 ID로 횟수가 초기화되지 않는다. `stage=check`의 형식 수리는 검사 응답만 고치고 검사 대상 묶음의 해시를 유지한다. 원 해석을 바꾸어야 하면 검사자가 직접 수정하지 않고 반려한다.
++
++채택된 재저작 한도 뒤에는 그 원입력의 다음 재저작이 보류된다. 최초 해석, 독립 검사와 별도 사용자 답변의 해석은 그 보류의 적용 대상과 구별한다. 보류 해소는 GLOSSARY의 반복 교정 문턱과 공개 계속 결정 계약을 따른다.
++
++## 사례 위임 판단
++
++사례 위임의 범위 판단은 일반 `import_units` 출력이 아니라 동적 `delegation_judgment` 분기를 사용한다. 두 독립 실행은 동일하게 봉인된 원문, 현재 위임, 결정·승인 원천과 정확한 `input_sha256`을 받고, 서로의 판단을 보지 않은 채 `within_scope`, `outside_scope`, `unresolved` 중 하나를 낸다. 판단에는 적용한 위임, 포함·제외 대상, 외부 효과와 자원 한계, 근거 원천을 정확히 연결한다.
+ 
+ 사례 위임 종류는 현재 계약이 금지한 `proposal_adoption`과 `contract_limit_continuation`을 제외하고 등록될 수 있다. 허용 예시는 닫힌 목록이 아니다. 두 판단은 새 위임을 만들거나 기존 위임의 범위를 넓히지 않으며, 합의와 현재 계약이 허용하는 경우에만 후속 적용의 근거가 된다. 불일치나 근거 부족은 `unresolved`로 남기고 사용자 또는 소유자 결정으로 돌려보낸다.
+ 
+--- a/.claude/skills/do-math/계약/후보-준비.md
++++ b/.claude/skills/do-math/계약/후보-준비.md
+@@ -180,7 +180,11 @@
+ 
+ 필수 원문을 읽지 못했거나 현재 입력만으로 질문·범위·완료 기준을 정할 수 없으면 추측한 계약을 만들지 않는다. `summary`에 확인한 범위와 읽지 못한 자료를 적고, `questions`에 필요한 결정이나 원자료를 구체적으로 남긴다. 후속 조사가 먼저 필요하면 현재 근거로 정할 수 있는 조사 과제를 제안하되, 그 조사 결과를 이미 확보했다고 쓰지 않는다.
+ 
+-적합한 새 계약을 찾지 못한 회차도 유효할 수 있다. 이때 `candidates`는 빈 배열이고, 무엇을 살폈는지, 같은 제안을 반복하지 않은 이유, 남은 F와 다음 재검토 사건을 `summary`에 남긴다. 자료가 없어서 판단하지 못한 상태와 실제로 검토했지만 새 계약이 없었던 상태를 구별한다. 무산출을 연구 완료나 목표 해결로 바꾸지 않는다.
++적합한 새 계약을 찾지 못한 회차도 유효할 수 있다. 이때 `candidates`는 빈 배열이고, 무엇을 살폈는지, 같은 제안을 반복하지 않은 이유, 남은 F와 다음 재검토 사건을 `summary`에 남긴다. 자료가 없어서 판단하지 못한 상태와 실제로 검토했지만 새 계약이 없었던 상태를 구별한다. 무산출을 연구 완료나 목표 해결로 바꾸지 않는다.
++
++일반 후보 준비의 주 응답에는 `regenerate_after`를 쓴다. 입력의 기계 관찰 시각 `observed_at`보다 뒤인 시각을 시간대가 포함된 ISO 8601 문자열로 정한다. 후보를 제안했어도 모두 수신 거부될 수 있으므로 후보 유무와 관계없이 작성한다. 생산자 제출 검사와 중앙 수신 검사는 같은 입력 시각에 대조한다. 작성자가 `observed_at`을 새로 만들거나 출력에 복사할 필요는 없다.
++
++실행기는 실제로 계약을 한 건도 보존하지 못했을 때만 이 시각을 고갈 재생성의 다음 관찰 시점으로 기록한다. 시각이 도래해도 현재 고갈·권한·반복 보류 조건을 다시 검사한다. 정기 탐색 사건은 자기 조건에 따라 따로 처리한다. `assessment_targets` 또는 `observation_rule_targets`를 받은 보충 전용 실행은 `regenerate_after`를 작성하지 않으며 후보 생성의 성공·무산출 집계를 바꾸지 않는다. 보충 요청에는 후보 생성의 무산출 보류를 적용하지 않는다. 관찰 규칙 보충으로 계약 판본을 바꾸는 경우에는 해당 계약의 개정 이력과 개정 보류를 적용한다.
+ 
+ 정지 요청을 받거나 실행을 끝내지 못하면 공통 실행 문서에 따라 이미 얻은 근거와 후보 초안, 남은 의무와 바로 이어갈 위치를 체크포인트에 보존한다. 새 연구나 새 원자료 조회를 시작하지 않는다. 스키마에 맞는 응답을 제출할 수 있으면 실제 범위만 반환하고, 제출할 수 없으면 다음 실행이 체크포인트와 실패 원인을 이어받게 한다.
+ 

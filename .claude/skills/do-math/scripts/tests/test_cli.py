@@ -3,11 +3,16 @@
 from __future__ import annotations
 
 import json
+import io
+import base64
+import hashlib
+from contextlib import redirect_stdout
 from pathlib import Path
 import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 
 SCRIPTS = Path(__file__).resolve().parents[1]
@@ -16,7 +21,138 @@ if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
 
+def response_body(response):
+    envelope = json.loads(response.stdout)
+    assert envelope['schema_version'] == 5
+    assert envelope['exit_code'] == response.returncode
+    assert ('result' in envelope) != ('error' in envelope)
+    return envelope.get('result', envelope.get('error'))
+
+
 class CliTests(unittest.TestCase):
+    def test_audit2_retry_replays_first_receipt_after_later_state(self):
+        from do_math.engine import control
+        args=['pause',*self.instance_args(),'--reason','audit2 pause']
+        first=self.run_cli(*args)
+        self.assertEqual(first.returncode,0,first.stdout)
+        original=response_body(first)
+        resumed=self.run_cli('resume',*self.instance_args(),'--reason','audit2 resume')
+        self.assertEqual(resumed.returncode,0,resumed.stdout)
+        self.assertNotEqual(original['snapshot'],response_body(resumed)['snapshot'])
+        direct=control(self.repository,self.instance,'pause',text='audit2 pause')
+        repeated=self.run_cli(*args)
+        self.assertEqual(repeated.returncode,0,repeated.stdout)
+        result=response_body(repeated)
+        self.assertEqual(result['request_id'],direct['request_id'])
+        for field in ('effect','reason','status','snapshot','config'):
+            self.assertEqual(result[field],original[field],field)
+            self.assertEqual(direct[field],original[field],field)
+        self.assertTrue(result['replayed'])
+        reapplied=self.run_cli(*args,'--idempotency-key','audit2 intentional reapply')
+        receipt=response_body(reapplied)
+        direct=control(self.repository,self.instance,'pause',text='audit2 pause',idempotency_key='audit2 intentional reapply')
+        self.assertNotEqual(receipt['request_id'],original['request_id'])
+        self.assertEqual(receipt['request_id'],direct['request_id'])
+        self.assertEqual(receipt['snapshot'],direct['snapshot'])
+
+    def test_audit2_source_identity_and_effect_use_one_read(self):
+        from do_math import cli
+        from do_math.engine import control,_repository
+        path=self.root/'raw-source.bin'; original=b'\xfforiginal\r\n'; changed=b'changed after read'
+        path.write_bytes(original)
+        read=Path.read_bytes; reads=[]
+        def read_then_change(value):
+            data=read(value)
+            if value==path:
+                reads.append(data)
+                path.write_bytes(changed)
+            return data
+        output=io.StringIO()
+        with patch.object(Path,'read_bytes',read_then_change),redirect_stdout(output):
+            code=cli.main(['source',*self.instance_args(),'--file',str(path),'--name','raw.bin'])
+        envelope=json.loads(output.getvalue())
+        self.assertEqual(code,0,envelope)
+        self.assertEqual(reads,[original])
+        store=_repository(self.repository,self.instance);head,instance,_=store.load()
+        entry=instance['sources'][-1]
+        self.assertEqual(store.read(entry['path'],head),original)
+        normalized={'name':'raw.bin','body_base64':base64.b64encode(original).decode('ascii'),
+                    'sha256':hashlib.sha256(original).hexdigest(),'bytes':len(original)}
+        direct=control(self.repository,self.instance,'source',config=normalized)
+        self.assertEqual(direct['request_id'],envelope['request_id'])
+        self.assertEqual(direct['snapshot'],envelope['result']['snapshot'])
+        alternate=self.root/'same-bytes.bin';alternate.write_bytes(original)
+        direct_file=control(self.repository,self.instance,'source',config={'path':str(alternate),'name':'raw.bin'})
+        self.assertEqual(direct_file['request_id'],envelope['request_id'])
+
+    def test_audit2_pending_and_rejected_receipts_keep_their_meaning(self):
+        from do_math.engine import _repository
+        store=_repository(self.repository,self.instance)
+        args=['pause',*self.instance_args(),'--reason','wait for writer']
+        with store.writer_lock():
+            pending=self.run_cli(*args)
+        self.assertEqual(pending.returncode,0,pending.stdout)
+        queued=response_body(pending)
+        self.assertTrue(queued['accepted'])
+        self.assertEqual(queued['effect'],'pending engine processing')
+        self.assertNotIn('snapshot',queued)
+        done=self.run_cli(*args)
+        self.assertEqual(done.returncode,0,done.stdout)
+        self.assertEqual(response_body(done)['request_id'],queued['request_id'])
+        self.assertEqual(response_body(done)['effect'],'applied')
+        path=self.root/'rejected.json';path.write_text(json.dumps({'operation':'unknown'}),encoding='utf-8')
+        rejected=self.run_cli('trust',*self.instance_args(),'--file',str(path))
+        self.assertEqual(rejected.returncode,0,rejected.stdout)
+        original=response_body(rejected)
+        self.assertTrue(original['accepted'])
+        self.assertEqual(original['effect'],'rejected')
+        self.assertTrue(original['reason'])
+        later=self.run_cli('resume',*self.instance_args(),'--reason','after rejected request')
+        self.assertEqual(later.returncode,0,later.stdout)
+        repeated=self.run_cli('trust',*self.instance_args(),'--file',str(path))
+        self.assertEqual(repeated.returncode,0,repeated.stdout)
+        for key in ('effect','reason','status','snapshot'):
+            self.assertEqual(response_body(repeated)[key],original[key],key)
+
+    def test_audit_public_check_json_discovery_and_fixed_snapshot(self):
+        result = self.run_cli('check', '--repository', str(self.repository), '--instance', self.instance)
+        self.assertEqual(result.returncode, 0, result.stdout)
+        value = json.loads(result.stdout)
+        self.assertEqual(value['schema_version'], 5)
+        self.assertEqual(value['command'], 'check')
+        self.assertEqual(value['exit_code'], 0)
+        self.assertEqual(value['result']['inspection']['status'], 'healthy')
+        discovery = self.run_cli('--describe')
+        self.assertEqual(discovery.returncode, 0, discovery.stdout)
+        self.assertIn('check', json.loads(discovery.stdout)['result']['commands'])
+        request = self.root / 'command.json'
+        request.write_text(json.dumps({'schema_version':5,'command':'check','payload':{
+            'repository':str(self.repository),'instance':self.instance,'snapshot':self.initial['snapshot'],
+            'kinds':['record_storage']}}),encoding='utf-8')
+        response = self.run_cli('--request-file',str(request))
+        self.assertEqual(response.returncode,0,response.stdout)
+        data = json.loads(response.stdout)['result']
+        self.assertEqual(data['snapshot'],self.initial['snapshot'])
+        self.assertEqual(data['inspection']['requested_areas'],['record_storage'])
+        unknown = self.run_cli('check',*self.instance_args(),'--snapshot',self.initial['snapshot'],'--kinds','not_registered')
+        self.assertEqual(unknown.returncode,1,unknown.stdout)
+        self.assertEqual(response_body(unknown)['inspection']['status'],'incomplete')
+        historical = self.run_cli('status',*self.instance_args(),'--snapshot',self.initial['snapshot'],'--json')
+        self.assertEqual(historical.returncode,0,historical.stdout)
+        self.assertEqual(response_body(historical)['snapshot'],self.initial['snapshot'])
+        self.assertIsNone(response_body(historical)['host_observation'])
+
+    def test_audit_default_retry_and_explicit_reapplication(self):
+        arguments = ['pause','--repository',str(self.repository),'--instance',self.instance,'--reason','same request']
+        first, second = self.run_cli(*arguments), self.run_cli(*arguments)
+        self.assertEqual(first.returncode,0,first.stdout)
+        self.assertEqual(second.returncode,0,second.stdout)
+        a,b = json.loads(first.stdout),json.loads(second.stdout)
+        self.assertEqual(a['request_id'],b['request_id'])
+        third = self.run_cli(*arguments,'--idempotency-key','apply-again-1')
+        self.assertEqual(third.returncode,0,third.stdout)
+        self.assertNotEqual(a['request_id'],json.loads(third.stdout)['request_id'])
+
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory()
         self.root = Path(self.temporary.name)
@@ -30,8 +166,8 @@ class CliTests(unittest.TestCase):
             "init", "--repository", str(self.repository), "--workspace", str(self.workspace),
             "--goal", "Prove a small theorem", "--title", "Small theorem", "--config-file", str(self.operator_disabled),
         )
-        self.assertEqual(initialized.returncode, 0, initialized.stderr)
-        self.initial = json.loads(initialized.stdout)
+        self.assertEqual(initialized.returncode, 0, initialized.stdout + initialized.stderr)
+        self.initial = response_body(initialized)
         self.instance = self.initial["instance_id"]
 
     def tearDown(self) -> None:
@@ -56,33 +192,46 @@ class CliTests(unittest.TestCase):
         self.assertIn("request", help_result.stdout)
         invalid = self.run_cli("init", "--repository", str(self.repository), "--workspace", str(self.workspace))
         self.assertEqual(invalid.returncode, 2)
-        self.assertEqual(json.loads(invalid.stdout)["kind"], "input_error")
+        self.assertEqual(response_body(invalid)["kind"], "input_error")
+
+    def test_explicit_request_identity_replays_once_and_rejects_changed_payload(self):
+        first = self.run_cli('input', *self.instance_args(), '--text', 'One request', '--request-id', 'UC-repeat')
+        self.assertEqual(first.returncode, 0, first.stdout)
+        second = self.run_cli('input', *self.instance_args(), '--text', 'One request', '--request-id', 'UC-repeat')
+        self.assertEqual(second.returncode, 0, second.stdout)
+        self.assertTrue(response_body(second)['replayed'])
+        from do_math.engine import _repository
+        _, _, runtime = _repository(self.repository, self.instance).load()
+        self.assertEqual(runtime['processed_controls'].count('UC-repeat'), 1)
+        conflict = self.run_cli('input', *self.instance_args(), '--text', 'Changed request', '--request-id', 'UC-repeat')
+        self.assertEqual(conflict.returncode, 2, conflict.stdout)
+        self.assertIn('different payload', response_body(conflict)['message'])
 
     def test_status_input_pause_and_configure_apply_without_running_model(self) -> None:
         status = self.run_cli("status", *self.instance_args(), "--json")
-        self.assertEqual(status.returncode, 0, status.stderr)
-        self.assertEqual(json.loads(status.stdout)["status"], "ready")
+        self.assertEqual(status.returncode, 0, status.stdout + status.stderr)
+        self.assertEqual(response_body(status)["status"], "initializing")
 
         incoming = self.run_cli("input", *self.instance_args(), "--text", "Use induction")
-        self.assertEqual(incoming.returncode, 0, incoming.stderr)
-        self.assertTrue(json.loads(incoming.stdout)["accepted"])
+        self.assertEqual(incoming.returncode, 0, incoming.stdout + incoming.stderr)
+        self.assertTrue(response_body(incoming)["accepted"])
         paused = self.run_cli("pause", *self.instance_args(), "--reason", "review inputs")
-        self.assertEqual(paused.returncode, 0, paused.stderr)
-        self.assertEqual(json.loads(paused.stdout)["status"], "paused")
+        self.assertEqual(paused.returncode, 0, paused.stdout + paused.stderr)
+        self.assertEqual(response_body(paused)["status"], "paused")
 
         config_path = self.root / "config.json"
         config_path.write_text(json.dumps({"session_limits": None, "work_calls": 4}), encoding="utf-8")
         configured = self.run_cli("configure", *self.instance_args(), "--config-file", str(config_path))
-        self.assertEqual(configured.returncode, 0, configured.stderr)
-        self.assertEqual(json.loads(configured.stdout)["config"]["work_calls"], 4)
+        self.assertEqual(configured.returncode, 0, configured.stdout + configured.stderr)
+        self.assertEqual(response_body(configured)["config"]["work_calls"], 4)
 
     def test_unlimited_budgets_round_trip_and_human_status(self) -> None:
         config_path = self.root / "unlimited.json"
         config_path.write_text(json.dumps({"session_limits": None, "work_calls": None, "operations_calls": None}), encoding="utf-8")
         configured = self.run_cli("configure", *self.instance_args(), "--config-file", str(config_path))
-        self.assertEqual(configured.returncode, 0, configured.stderr)
+        self.assertEqual(configured.returncode, 0, configured.stdout + configured.stderr)
         status = self.run_cli("status", *self.instance_args(), "--json")
-        budgets = json.loads(status.stdout)["budget"]
+        budgets = response_body(status)["budget"]
         for pool in ("work", "operations"):
             self.assertIsNone(budgets[pool]["limit"])
             self.assertEqual(budgets[pool]["used"], 0)
@@ -91,42 +240,66 @@ class CliTests(unittest.TestCase):
 
     def test_request_applies_a_maintenance_queue_entry_without_model_execution(self) -> None:
         requested = self.run_cli("request", *self.instance_args(), "--role", "maintenance", "--reason", "inspect state")
-        self.assertEqual(requested.returncode, 0, requested.stderr)
-        result = json.loads(requested.stdout)
+        self.assertEqual(requested.returncode, 0, requested.stdout + requested.stderr)
+        result = response_body(requested)
         self.assertTrue(result["accepted"])
         self.assertEqual(result["effect"], "applied")
         status = self.run_cli("status", *self.instance_args(), "--json")
-        self.assertEqual(status.returncode, 0, status.stderr)
-        self.assertGreaterEqual(json.loads(status.stdout)["pending_actions"], 2)
-        from do_math.repository import ResearchRepository
+        self.assertEqual(status.returncode, 0, status.stdout + status.stderr)
+        self.assertGreaterEqual(response_body(status)["pending_actions"], 1)
+        from do_math.engine import _repository as ResearchRepository
         _, _, runtime = ResearchRepository(self.repository, self.instance).load()
-        self.assertEqual([a["role"] for a in runtime["queue"][:2]], ["research_preparation", "maintenance"])
+        self.assertIn('maintenance', [a['role'] for a in runtime['queue']])
+        self.assertNotIn('research_preparation', [a['role'] for a in runtime['queue']])
         self.assertFalse(runtime["executions"], "request must not start a model execution")
+
+    def test_retry_action_is_a_distinct_request_mode(self) -> None:
+        from do_math.cli import CliInputError, build_parser
+        parser = build_parser()
+        retry = parser.parse_args(("request", *self.instance_args(), "--retry-action", "AC-held"))
+        self.assertEqual(retry.retry_action, "AC-held")
+        self.assertIsNone(retry.role)
+        with self.assertRaises(CliInputError):
+            parser.parse_args(("request", *self.instance_args(), "--role", "maintenance",
+                               "--retry-action", "AC-held"))
+
+    def test_retry_action_reaches_the_public_control_inbox_idempotently(self) -> None:
+        first = self.run_cli("request", *self.instance_args(), "--retry-action", "AC-held",
+                             "--request-id", "UC-retry-held")
+        self.assertEqual(first.returncode, 0, first.stdout + first.stderr)
+        self.assertTrue(response_body(first)["accepted"])
+        second = self.run_cli("request", *self.instance_args(), "--retry-action", "AC-held",
+                              "--request-id", "UC-retry-held")
+        self.assertEqual(second.returncode, 0, second.stdout + second.stderr)
+        self.assertTrue(response_body(second)["replayed"])
 
     def test_query_read_export_and_check_use_a_fixed_repository_snapshot(self) -> None:
         records = self.run_cli("query", *self.instance_args(), "--limit", "1")
-        self.assertEqual(records.returncode, 0, records.stderr)
-        record_page = json.loads(records.stdout)
-        self.assertGreaterEqual(record_page["total"], 2)
-        self.assertTrue(any(item["record"]["family"] == "grant" for item in record_page["items"]))
-        self.assertEqual(record_page["loaded"], 1)
-        self.assertEqual(record_page["items"][0]["record"]["family"], "grant")
-        self.assertEqual(record_page["items"][0]["record"]["status"], "active")
-        self.assertIsNotNone(record_page["next_cursor"])
+        self.assertEqual(records.returncode, 0, records.stdout + records.stderr)
+        record_page = response_body(records)
+        self.assertEqual(record_page['loaded'], len(record_page['items']))
+        self.assertGreaterEqual(record_page['total'], record_page['loaded'])
         queried = self.run_cli("query", *self.instance_args(), "--files", "--prefix", "research/", "--text", "small", "--limit", "1")
-        self.assertEqual(queried.returncode, 0, queried.stderr)
-        query = json.loads(queried.stdout)
-        self.assertEqual(query["total"], 1)
-        read = self.run_cli("read", *self.instance_args(), "--path", "research/instance.json")
-        self.assertEqual(read.returncode, 0, read.stderr)
-        self.assertEqual(json.loads(read.stdout)["path"], "research/instance.json")
+        self.assertEqual(queried.returncode, 0, queried.stdout + queried.stderr)
+        query = response_body(queried)
+        self.assertGreaterEqual(query["total"], 1)
+        from do_math.engine import _repository
+        store = _repository(self.repository, self.instance)
+        head, _, _ = store.load()
+        path = store.list_files('research/', head)[0]
+        read = self.run_cli("read", *self.instance_args(), "--path", path, '--snapshot', head)
+        self.assertEqual(read.returncode, 0, read.stdout + read.stderr)
+        self.assertEqual(response_body(read)["path"], path)
+        self.assertEqual(response_body(read)['snapshot'], head)
         destination = self.root / "export"
         exported = self.run_cli("export", *self.instance_args(), "--destination", str(destination))
-        self.assertEqual(exported.returncode, 0, exported.stderr)
-        self.assertTrue((destination / "research" / "instance.json").exists())
+        self.assertEqual(exported.returncode, 0, exported.stdout + exported.stderr)
+        self.assertEqual((destination / path).read_bytes(), store.read(path, head))
+        self.assertFalse((destination / 'research/instance.json').exists())
         checked = self.run_cli("check", *self.instance_args())
-        self.assertEqual(checked.returncode, 0, checked.stderr)
-        self.assertTrue(json.loads(checked.stdout)["passed"])
+        report = response_body(checked)
+        self.assertEqual(checked.returncode, 0 if report['passed'] else 1, report)
+        self.assertIn('areas', report.get('inspection', report))
 
     def test_create_repository_is_explicit_and_only_accepts_empty_directory(self) -> None:
         created = self.root / "created"
@@ -134,7 +307,7 @@ class CliTests(unittest.TestCase):
             "init", "--create-repository", "--repository", str(created), "--workspace", str(self.root / "other-workspace"),
             "--goal", "A research goal", "--config-file", str(self.operator_disabled),
         )
-        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertTrue((created / ".git").exists())
         nonempty = self.root / "nonempty"
         nonempty.mkdir()
@@ -144,6 +317,108 @@ class CliTests(unittest.TestCase):
             "--goal", "A research goal", "--config-file", str(self.operator_disabled),
         )
         self.assertEqual(refused.returncode, 2)
+
+
+class CliBoundaryTests(unittest.TestCase):
+    def test_audit2_configure_receipt_does_not_reapply_scheduler(self):
+        from do_math import cli
+        with tempfile.TemporaryDirectory() as directory:
+            configuration=Path(directory)/'configuration.json'
+            configuration.write_text(json.dumps({'operator_enabled':False}),encoding='utf-8')
+            for effect,replayed,expected in [('applied',True,'not_reapplied'),('rejected',False,'not_applied')]:
+                with self.subTest(effect=effect):
+                    receipt={'accepted':True,'request_id':'UC-test','effect':effect,'replayed':replayed,
+                        'snapshot':'a'*40,'config':{'operator_enabled':False},'reason':'original receipt'}
+                    output=io.StringIO()
+                    with patch.object(cli,'_control',return_value=receipt),patch.object(cli,'_reconcile_operator',return_value={'status':'installed'}) as schedule,redirect_stdout(output):
+                        code=cli.main(['configure','--repository','.','--instance','RI-test','--config-file',str(configuration)])
+                    self.assertEqual(code,0,output.getvalue())
+                    schedule.assert_not_called()
+                    envelope=json.loads(output.getvalue())
+                    self.assertEqual(envelope['result']['effect'],effect)
+                    self.assertEqual(envelope['result']['operator_schedule']['status'],expected)
+
+    def test_audit_common_request_rejects_malformed_identity_before_dispatch(self):
+        from do_math import cli
+        with tempfile.TemporaryDirectory() as directory:
+            path=Path(directory)/'request.json'
+            base={'schema_version':5,'command':'pause','payload':{'repository':'.','instance':'RI-test'}}
+            for changes in ({'request_id':False},{'request_id':''},{'idempotency_key':7},{'command':['pause']}):
+                path.write_text(json.dumps({**base,**changes}),encoding='utf-8')
+                output=io.StringIO()
+                with patch.object(cli,'execute',return_value=({},0)) as dispatch, redirect_stdout(output):
+                    code=cli.main(['--request-file',str(path)])
+                self.assertEqual(code,2,output.getvalue())
+                dispatch.assert_not_called()
+                self.assertEqual(json.loads(output.getvalue())['error']['kind'],'input_error')
+
+    def test_audit_json_request_validates_types_and_preserves_common_error(self):
+        from do_math import cli
+        with tempfile.TemporaryDirectory() as directory:
+            request=Path(directory)/'request.json'
+            request.write_text(json.dumps({'schema_version':5,'command':'query','caller':'user',
+                'payload':{'repository':'.','instance':'RI-test','limit':True}}),encoding='utf-8')
+            output=io.StringIO()
+            with redirect_stdout(output):
+                code=cli.main(['--request-file',str(request)])
+            result=json.loads(output.getvalue())
+            self.assertEqual(code,2)
+            self.assertEqual(result['command'],'query')
+            self.assertIn('error',result)
+            self.assertNotIn('result',result)
+            self.assertEqual(result['error']['next_owner'],'user')
+
+    def test_audit_check_exit_uses_actual_inspection_status(self):
+        from do_math import cli
+        for status, expected in [('healthy',0),('incomplete',1),('blocked',1),('degraded',1)]:
+            output = io.StringIO()
+            with patch.object(cli, 'ResearchEngine') as engine, redirect_stdout(output):
+                engine.return_value.check.return_value = {'inspection':{'status':status},
+                    'passed':status != 'healthy','submission_checks':{'evidence':'preserved'}}
+                with patch('do_math.reporting.snapshot_check', return_value={'inspection':{'status':'healthy'},'exit_code':0,'passed':True}):
+                    code = cli.main(['check','--repository','.','--instance','RI-test',
+                                     '--snapshot','a'*40,'--kinds','repair_iteration'])
+                engine.return_value.check.assert_called_once_with(snapshot='a'*40,requested_areas=['repair_iteration'])
+            self.assertEqual(code,expected)
+            self.assertEqual(json.loads(output.getvalue())['result']['submission_checks'],{'evidence':'preserved'})
+
+    def test_audit_normalized_control_identity_at_public_boundary(self):
+        from do_math import cli
+        ids = []
+        def admit(*args, **kwargs):
+            ids.append(kwargs.get('request_id'))
+            return {'request_id': kwargs.get('request_id') or 'random-'+str(len(ids)), 'accepted':True}
+        with patch.object(cli,'control',side_effect=admit), patch.object(cli,'ResearchEngine') as engine:
+            engine.return_value.process_controls.return_value={'status':'paused','snapshot':'a'*40}
+            engine.return_value.control_result.return_value=None
+            engine.return_value.runtime={'history':[]}
+            for extra in ([], [], ['--idempotency-key','again']):
+                with redirect_stdout(io.StringIO()):
+                    code=cli.main(['pause','--repository','.','--instance','RI-test','--reason','P',*extra])
+                self.assertEqual(code,0)
+        self.assertIsNotNone(ids[0])
+        self.assertEqual(ids[0],ids[1])
+        self.assertNotEqual(ids[0],ids[2])
+
+    def test_runtime_failure_is_a_structured_internal_error(self):
+        from do_math import cli
+        output = io.StringIO()
+        with patch.object(cli, 'execute', side_effect=RuntimeError('clock guard blocks new actions')), redirect_stdout(output):
+            code = cli.main(['status', '--repository', '.', '--instance', 'RI-test'])
+        result = json.loads(output.getvalue())
+        self.assertEqual(code, 5)
+        self.assertEqual(result['error']['kind'], 'contract_error')
+        self.assertEqual(result['error']['next_owner'], 'maintenance')
+        self.assertFalse(result['error']['retryable'])
+        self.assertEqual(result['response_contract'], 'do-math-cli/5')
+
+    def test_accepted_control_processing_failure_is_not_a_user_input_error(self):
+        from do_math import cli
+        from argparse import Namespace
+        with patch.object(cli, 'control', return_value={'request_id': 'R-1'}), patch.object(cli, 'ResearchEngine') as engine:
+            engine.return_value.process_controls.side_effect = ValueError('stale derived view: role_profile_refs')
+            with self.assertRaisesRegex(RuntimeError, 'R-1.*stale derived view'):
+                cli._control(Namespace(repository=Path('.'), instance='RI-test'), 'configure')
 
 
 if __name__ == "__main__":

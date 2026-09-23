@@ -51,6 +51,9 @@
           },
           "record_id": {
             "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/id"
+          },
+          "replacement_id": {
+            "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/id"
           }
         },
         "required": [
@@ -147,6 +150,14 @@
             "items": {
               "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
             },
+            "minItems": 1,
+            "type": "array",
+            "uniqueItems": true
+          },
+          "dependency_refs": {
+            "items": {
+              "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+            },
             "minItems": 0,
             "type": "array",
             "uniqueItems": true
@@ -154,6 +165,14 @@
           "disposition": {
             "minLength": 1,
             "type": "string"
+          },
+          "provenance_refs": {
+            "items": {
+              "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+            },
+            "minItems": 0,
+            "type": "array",
+            "uniqueItems": true
           },
           "reason": {
             "minLength": 1,
@@ -170,6 +189,8 @@
           "target_ref",
           "reason",
           "disposition",
+          "provenance_refs",
+          "dependency_refs",
           "requires_independent_review",
           "approval_refs"
         ],
@@ -177,6 +198,17 @@
       },
       "minItems": 0,
       "type": "array"
+    },
+    "impact_plan_refs": {
+      "items": {
+        "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "impact_review_ref": {
+      "$ref": "https://do-math.invalid/schemas/draft/9/common#/$defs/exact_ref"
     },
     "schema_version": {
       "const": "do-math-draft/integration/9"
@@ -191,6 +223,8 @@
     "authority_refs",
     "assessment_refs",
     "check_refs",
+    "impact_plan_refs",
+    "impact_review_ref",
     "impact",
     "followups"
   ],

@@ -30,14 +30,21 @@ class ClaudePrintAdapter(LocalCLIAdapter):
                     b"--no-session-persistence", b"--setting-sources", b"--settings", b"--strict-mcp-config",
                     b"--mcp-config", b"--disable-slash-commands", b"--disallowedTools", b"--permission-mode")
         verified = version.returncode == help_result.returncode == 0 and all(flag in help_result.stdout for flag in required)
-        return {"scope": "cli_command_surface_only", "provider": "claude", "cli_path": self.cli_path,
+        return {"scope": "cli_command_surface_only", "identity": self.capability_identity(), "provider": "claude", "cli_path": self.cli_path,
                 "version_bytes": version.stdout, "version_sha256": _sha256(version.stdout),
                 "exec_help_bytes": help_result.stdout, "exec_help_sha256": _sha256(help_result.stdout),
                 "verified": verified, "supported": {"jsonl": verified, "model": verified,
                 "structured_output": verified, "local_job_stop": True},
-                "unknown": ["remote_termination", "per_execution_read_isolation", "provider_operation_ids"]}
+                "reported_evidence": ["segment_usage", "cumulative_model_usage", "stop_reason_when_present"],
+                "unknown": ["remote_termination", "per_execution_read_isolation", "provider_operation_ids",
+                            "automatic_compaction_control", "provider_operation_count", "provider_maximum_output"]}
+
+    def parse_response(self, raw: bytes | None, request: dict) -> dict:
+        return parse_jsonl(raw, require_structured_output="output_schema_path" in request)
 
     def validate_final(self, parsed: dict, final: bytes | None) -> list[str]:
+        if "final_text" in parsed:
+            return [] if final == parsed["final_text"].encode("utf-8") else ["final_text_mismatch"]
         if "structured_output" not in parsed:
             return ["structured_output_missing"]
         try:

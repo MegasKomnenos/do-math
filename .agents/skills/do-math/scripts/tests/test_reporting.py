@@ -8,9 +8,11 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from do_math.repository import ResearchRepository, new_id
+from do_math.repository import new_id
+from do_math.engine import _repository as ResearchRepository
 from do_math.reporting import timeline, timeline_csv
 from do_math.cli import build_parser, execute
+from test_redesign_SURFACE import surface_state
 
 
 class ReportingTests(unittest.TestCase):
@@ -20,13 +22,15 @@ class ReportingTests(unittest.TestCase):
             subprocess.run(['git', '-C', str(root), 'init', '-q'], check=True)
             identifier = new_id('RI')
             store = ResearchRepository(root, identifier)
-            instance = {'id': identifier, 'workspace': str(root / 'workspace')}
-            runtime = {'executions': {'E': {'id': 'E', 'role': 'research_work', 'status': 'ended',
-                'action': {'id': 'A', 'lineage_id': 'L', 'target': 'T'}, 'model': 'claude-opus-5',
-                'created_at': '2026-09-18T15:01:02+00:00', 'ended_at': '2026-09-18T15:02:03+00:00',
-                'outcome': 'output_accepted', 'budget_kind': 'work'}}, 'queue': []}
+            instance, runtime = surface_state()
+            instance.update(id=identifier, workspace=str(root / 'workspace'))
+            runtime['activities']['AC-1']['owner_ref'] = identifier
+            runtime['executions']['EX-1'].update(status='ended',
+                action={'id': 'A', 'role': 'research_work', 'lineage_id': 'L'}, model='claude-opus-5',
+                created_at='2026-09-18T15:01:02+00:00', ended_at='2026-09-18T15:02:03+00:00',
+                outcome='cancelled', budget_kind='work')
             head = store.initialize(instance, runtime)
-            runtime['executions']['later'] = {'id': 'later', 'role': 'formal_check', 'status': 'ended'}
+            instance['title'] = 'later metadata'
             store.save(head, instance, runtime)
             value = timeline(root, identifier, snapshot=head)
             self.assertEqual(value['counts_by_unit'], {'internal_execution': 1})
@@ -49,8 +53,8 @@ class ReportingTests(unittest.TestCase):
             subprocess.run(['git', '-C', str(root), 'init', '-q'], check=True)
             identifier = new_id('RI')
             store = ResearchRepository(root, identifier)
-            instance = {'id': identifier, 'workspace': str(root / 'workspace')}
-            store.initialize(instance, {'executions': {}, 'queue': []})
+            instance = {'id': identifier, 'feature_version': 5, 'workspace': str(root / 'workspace')}
+            store.initialize(instance, {'feature_version': 5, 'executions': {}, 'queue': []})
             path = root / 'workspace/operator/runs/one/result.json'
             path.parent.mkdir(parents=True)
             path.write_text(json.dumps({'outcome': 'completed', 'ended_at': '2026-09-18T15:00:00Z',

@@ -7,18 +7,18 @@ from __future__ import annotations
 
 from copy import deepcopy
 import hashlib
-import json
 import re
 from typing import Any, Iterable
 
-from .repository import new_id
+from .repository import new_id, semantic_content_hash
 from .input_basis import capture_sources, sources_current
 
 
 def _hash(record: Any) -> str:
-    raw = json.dumps(record, ensure_ascii=False, sort_keys=True,
-                     separators=(",", ":"), allow_nan=False).encode("utf-8")
-    return hashlib.sha256(raw).hexdigest()
+    if isinstance(record, dict) and record.get('family') in {'formal_results', 'expositions'}:
+        from .knowledge_records import record_digest
+        return record_digest(record)
+    return semantic_content_hash(record)
 
 
 def _require_text(value: str, name: str) -> None:
@@ -27,9 +27,9 @@ def _require_text(value: str, name: str) -> None:
 
 
 def _records(instance: dict, runtime: dict) -> Iterable[tuple[str, dict]]:
-    for key in ("knowledge",):
+    for key in ("knowledge", "formal_results", "expositions", "identity_assessments", "assessment_uses", "kind_definitions", "trust_environments"):
         for record_id, record in instance.get(key, {}).items():
-            yield record_id, record
+            yield record.get("id", record_id), record
     for record in instance.get("relations", []):
         if isinstance(record, dict) and isinstance(record.get("id"), str):
             yield record["id"], record
@@ -107,7 +107,7 @@ def content_hash(record: dict) -> str:
 
 
 def decision_reference(record: dict, instance: dict) -> dict:
-    formal = record.get("formal") or {}
+    formal = instance.get("formal_results", {}).get(record.get("formal_result_id"), {})
     environment = formal.get("trust_environment_id")
     return {"id": record["id"], "revision": record.get("revision", 1),
             "content_sha256": content_hash(record), "status": _status(record),
@@ -119,11 +119,11 @@ def decision_reference(record: dict, instance: dict) -> dict:
             "source_basis": deepcopy(record.get("source_basis", []))}
 
 
-_STRICT_REFERENCE_KEYS = frozenset({"dependencies"})
+_STRICT_REFERENCE_KEYS = frozenset({"dependencies", "formal_result_refs", "assessment_refs", "knowledge_refs", "record_refs"})
 _REFERENCE_KEYS = frozenset({
     "used_sources", "exact_refs", "record_refs", "knowledge_refs",
     "evidence_refs", "source_refs", "formal_result_refs", "assessment_refs",
-    "inputs", "reuse",
+    "inputs", "reuse", "origin_refs",
 })
 # Preserved earlier versions are history, not current dependencies of the record.
 _HISTORY_KEYS = frozenset({"history", "use_history", "review_history", "revision_history",
@@ -174,97 +174,305 @@ def _explicit_refs(value: Any, known_ids: set[str]) -> set[str]:
     return refs
 
 
+def assess_research_use(record: dict, instance: dict, _visiting=None) -> dict:
+    """Use a current research record at its stated evidence level, without certifying it."""
+    from .input_basis import sources_current
+    identifier = record.get('id')
+    visiting = set(_visiting or ())
+    reasons = []
+    if not identifier or identifier in visiting:
+        reasons.append('missing_or_cyclic_research_dependency')
+    if record.get('lifecycle') != 'active' or record.get('use_suspended') or record.get('kind_use_suspended'):
+        reasons.append('research_record_not_active')
+    definition = instance.get('kind_definitions', {}).get(record.get('kind_definition_id'), {})
+    if definition.get('status') != 'active':
+        reasons.append('research_kind_not_active')
+    exposition = instance.get('expositions', {}).get(record.get('exposition_id'), {})
+    if exposition.get('lifecycle') != 'active':
+        reasons.append('research_exposition_not_active')
+    if not sources_current(record.get('source_basis', []), instance):
+        reasons.append('research_sources_changed')
+    if reasons:
+        return {'valid': False, 'reasons': reasons}
+    visiting.add(identifier)
+    for dependency in record.get('dependencies', []):
+        prior = instance.get('knowledge', {}).get(dependency)
+        if prior is None or not assess_research_use(prior, instance, visiting)['valid']:
+            reasons.append('research_dependency_not_current:' + dependency)
+    return {'valid': not reasons, 'reasons': reasons}
+
+
 def assess_use(record: dict, instance: dict) -> dict:
     if not isinstance(record, dict):
         raise TypeError("record must be an object")
-    reasons: list[str] = []
-    if _status(record) not in {"verified", "active", "accepted"}:
-        reasons.append(f"record_not_usable:{_status(record)}")
-    if record.get("use_suspended"):
-        reasons.append("record_use_suspended")
-    if not sources_current(record.get("source_basis", []), instance):
-        reasons.append("required_source_changed")
-    if record.get("relation_claim") and (not record.get("relation_endpoint_basis") or not validate_basis(record["relation_endpoint_basis"], instance, {})["valid"]):
-        reasons.append("relation_endpoint_basis_changed_or_missing")
-    knowledge = instance.get("knowledge", {})
-    refs = sorted(_explicit_refs(record, set(knowledge)))
-    for record_id in refs:
-        dependency = knowledge.get(record_id)
-        if dependency is None:
-            reasons.append(f"missing_dependency:{record_id}")
-        elif dependency.get("status") != "verified" or dependency.get("use_suspended"):
-            reasons.append(f"dependency_not_usable:{record_id}")
-    formal = record.get("formal") if isinstance(record.get("formal"), dict) else {}
-    environment_id = formal.get("trust_environment_id")
-    if environment_id is not None:
-        environment = instance.get("trust_environments", {}).get(environment_id)
-        if environment is None:
-            reasons.append(f"unknown_trust_environment:{environment_id}")
-        elif environment.get("status") == "invalid":
-            reasons.append(f"invalid_trust_environment:{environment_id}")
-        elif instance.get("active_trust_environment") != environment_id:
-            reasons.append(f"inactive_trust_environment:{environment_id}")
-    basis = [{"id": item, "sha256": _hash(knowledge[item]), "status": _status(knowledge[item])}
-             for item in refs if item in knowledge]
-    return {"valid": not reasons, "reasons": reasons, "basis": basis}
+    from .knowledge_records import usable_links, formal_usable, assessment_current
+    family = record.get("family", "knowledge")
+    if family == "knowledge":
+        links = usable_links(instance, record.get("id"))
+        valid = bool(links) and not record.get("kind_use_suspended", False)
+        return {"valid": valid, "reasons": [] if valid else ["no_current_verified_exposition"], "basis": links}
+    if family == "formal_results":
+        valid = formal_usable(instance, record)
+        return {"valid": valid, "reasons": [] if valid else ["formal_result_not_current"], "basis": []}
+    if family == "identity_assessments":
+        uses = [use for use in instance.get("assessment_uses", {}).values()
+                if use['assessment_id'] == record['id'] and use['status'] == 'active']
+        valid = assessment_current(instance, record['id']) and bool(uses)
+        return {"valid": valid, "reasons": [] if valid else ["assessment_not_current"],
+                "basis": [{"assessment_id": record['id'], "assessment_use_id": use['id']} for use in uses] if valid else []}
+    return {"valid": False, "reasons": ["record_is_not_a_verified_knowledge_authority"], "basis": []}
 
 
-def _history(record: dict, action: str, reason: str, actor_ref: str) -> list[dict]:
-    previous = {key: deepcopy(value) for key, value in record.items() if key != "history"}
-    return [*deepcopy(record.get("history", [])), {"action": action, "reason": reason,
-            "actor_ref": actor_ref, "previous_sha256": _hash(record), "previous": previous}]
+def _impact_records(instance, runtime):
+    records = dict(_records(instance, runtime))
+    for key in ("plans", "questions", "permissions"):
+        values = runtime.get(key, instance.get(key, {}))
+        for row in values.values() if isinstance(values, dict) else values:
+            if isinstance(row, dict) and row.get("id"):
+                records[row["id"]] = row
+    return records
 
 
-def _suspend(record: dict, suspension: dict) -> None:
-    record["use_suspended"] = True
-    suspensions = record.setdefault("use_suspensions", [])
-    if suspension not in suspensions:
-        suspensions.append(deepcopy(suspension))
-    reason = suspension.get("reason")
-    if isinstance(reason, str) and reason not in record.setdefault("use_suspension_reasons", []):
-        record["use_suspension_reasons"].append(reason)
+def _impact_refs(record, known_ids):
+    refs = _explicit_refs(record, known_ids)
+    # Only declared authority coordinates count; prose and historical judgments do not.
+    for key in ("formal_result_id", "exposition_id", "assessment_id", "kind_definition_id",
+                "source", "target", "trust_environment_id"):
+        if isinstance(record.get(key), str):
+            refs.add(record[key])
+    claim = record.get("relation_claim")
+    if isinstance(claim, dict):
+        refs.update(claim.get(k) for k in ("source", "target") if isinstance(claim.get(k), str))
+    return refs
 
 
-def _propagate(instance: dict, runtime: dict, roots: set[str], reason: str) -> None:
+def plan_impact(instance, runtime, roots, declared_impact, *, sensitive=False, excluded_dependents=()):
+    from .knowledge_records import usable_links
+    records = _impact_records(instance, runtime)
+    roots, declared = set(roots), set(declared_impact)
+    excluded = set(excluded_dependents)
+    if not roots or roots - set(records):
+        raise ValueError("impact roots must exist")
+    if declared - set(records):
+        raise ValueError("declared impact refers to unknown records")
+    if excluded - set(records):
+        raise ValueError("excluded impact dependents must exist")
     affected = set(roots)
-    known_ids = set(instance.get("knowledge", {}))
-    changed = True
-    while changed:
-        changed = False
-        for record_id, record in instance.get("knowledge", {}).items():
-            causes = _explicit_refs(record, known_ids) & affected
-            claim = record.get("relation_claim")
-            if isinstance(claim, dict): causes |= {claim.get("source"), claim.get("target")} & affected
-            if record_id not in affected and causes:
-                affected.add(record_id)
-                changed = True
-                if record.get("status") != "withdrawn":
-                    _suspend(record, {"kind": "dependency", "root_ids": sorted(causes),
-                                      "reason": reason})
-    tasks_changed: list[str] = []
-    for task_id, task in runtime.get("tasks", {}).items():
-        if _explicit_refs({key: task.get(key) for key in ("dependencies", "inputs", "reuse", "results", "assessment")}, known_ids) & affected:
-            # completed and closed are absorbing: keep the sealed disposition and only stop the current use of its assessment.
-            if task.get("status") not in {"completed", "closed"}:
-                task.setdefault("status_before_reassessment", task.get("status"))
-                task["status"] = "waiting"
-            if isinstance(task.get("assessment"), dict):
-                task["assessment"]["current"] = False
-                task["assessment"]["invalidated_reason"] = reason
-            tasks_changed.append(task_id)
-    judgments_changed: list[str] = []
-    for index, judgment in enumerate(instance.get("goal_judgments", [])):
-        if _explicit_refs(judgment, known_ids) & affected:
-            judgment["current"] = False
-            judgment["invalidated_reason"] = reason
-            judgments_changed.append(judgment.get("id", f"goal_judgment:{index}"))
-    event = {"kind": "knowledge_reassessment_required", "affected_knowledge": sorted(affected),
-             "tasks": tasks_changed, "goal_judgments": judgments_changed, "reason": reason}
-    runtime.setdefault("history", []).append(event)
-    action = {"role": "research_plan", "reason": "knowledge currentness changed",
-              "affected_knowledge": sorted(affected)}
-    if (tasks_changed or judgments_changed) and action not in runtime.setdefault("queue", []):
-        runtime["queue"].append(action)
+    while True:
+        found = {rid for rid, record in records.items()
+                 if rid not in excluded and _impact_refs(record, set(records)) & affected}
+        # K depends on the available positive links, not on every historical vote.
+        # An unaffected independent link continues to support the same K.
+        for kid in instance.get("knowledge", {}):
+            links = usable_links(instance, kid)
+            if links and all({link['assessment_id'], link['assessment_use_id']} & affected for link in links):
+                found.add(kid)
+        if found <= affected:
+            break
+        affected |= found
+    computed = affected - roots
+    unknown = sorted({ref for rid in affected for ref in _impact_refs(records[rid], set(records)) if ref not in records})
+    plan = {"roots": sorted(roots), "computed_impact": sorted(computed), "declared_impact": sorted(declared),
+            "missing_declarations": sorted(computed - declared), "extra_declarations": sorted(declared - computed),
+            "unresolved_refs": unknown, "sensitive": sensitive,
+            "requires_independent_review": bool(sensitive or computed != declared or unknown),
+            "basis": {rid: _hash(records[rid]) for rid in sorted(affected | declared)}}
+    plan["digest"] = _hash(plan)
+    return plan
+
+
+def _confirmed_impact(plan, confirmation):
+    if plan.get("digest") != _hash({key: value for key, value in plan.items() if key != "digest"}):
+        raise ValueError("impact plan digest is invalid")
+    affected = set(plan["computed_impact"])
+    if plan["requires_independent_review"]:
+        confirmation = confirmation or {}
+        if (confirmation.get("plan_digest") != plan["digest"] or confirmation.get("decision") != "approve"
+                or not confirmation.get("review_ref") or not confirmation.get("reviewer_ref")
+                or not confirmation.get("producer_ref") or confirmation["reviewer_ref"] == confirmation["producer_ref"]
+                or set(confirmation.get("affected_ids", [])) != affected | set(plan["declared_impact"])):
+            raise ValueError("impact requires independent scope and disposition confirmation")
+        affected |= set(plan["declared_impact"])
+    return affected
+
+
+def _apply_impact_effects(instance, runtime, affected, roots, *, reason, impact_digest):
+    output, new_runtime = deepcopy(instance), deepcopy(runtime)
+    records = _impact_records(output, new_runtime)
+    semantic_only = all(records[rid].get('family') in {'identity_assessments', 'assessment_uses'} for rid in roots)
+    for rid in sorted(affected):
+        record = records[rid]
+        family = record.get("family")
+        if family == "formal_results":
+            if semantic_only:
+                continue  # A semantic judgment defect does not refute checked Lean code.
+            record["formal_use"] = "suspended"
+        elif family == "assessment_uses":
+            if record.get("status") != "withdrawn":
+                record["status"] = "suspended"
+                record.pop("environment_revalidation", None)
+        elif family == "identity_assessments":
+            for use in output.get("assessment_uses", {}).values():
+                if use["assessment_id"] == rid and use["status"] != "withdrawn":
+                    use["status"] = "suspended"
+                    use.pop("environment_revalidation", None)
+            continue  # Sealed judgment is immutable.
+        elif rid in new_runtime.get("tasks", {}):
+            if isinstance(record.get("assessment"), dict):
+                record["assessment"]["current"] = False
+            # Task lifecycle belongs to TASKS; its readiness consumes this currentness.
+            record["input_current"] = False
+        elif record in output.get("relations", []):
+            record["status"] = "suspended"
+        elif record in output.get("goal_judgments", []):
+            record["current"] = False
+        elif family in {"knowledge", "expositions"}:
+            # Currentness is derived from the actual premise/use, not a duplicate lifecycle.
+            continue
+        elif rid in new_runtime.get('executions', {}) or rid in new_runtime.get('activities', {}):
+            # Preserve historical attempts and activity results. Their input
+            # snapshots and execution currentness checks own validity; the
+            # affected IDs remain in the reassessment event below.
+            continue
+        else:
+            record["input_current"] = False
+        record.setdefault("use_history", []).append({"reason": reason, "impact_digest": impact_digest})
+    new_runtime.setdefault("history", []).append({"kind": "knowledge_reassessment_required",
+        "affected_ids": sorted(affected), "reason": reason, "impact_digest": impact_digest})
+    if affected:
+        action = {"role": "research_plan", "reason": "knowledge currentness changed", "affected_ids": sorted(affected)}
+        if not any(all(queued.get(key) == value for key, value in action.items())
+                   for queued in new_runtime.setdefault("queue", [])):
+            action["id"] = action["lineage_id"] = new_id("AC")
+            new_runtime["queue"].append(action)
+    return output, new_runtime
+
+
+def apply_reviewed_impacts(instance, runtime, plans, confirmations, *, reason):
+    """Apply one already-current S0 decision set without recomputing an S1 plan."""
+    _require_text(reason, "reason")
+    if not isinstance(plans, dict) or not plans:
+        raise ValueError("reviewed impacts require at least one named plan")
+    affected, roots = set(), set()
+    for scope, plan in plans.items():
+        confirmation = confirmations.get(scope) if isinstance(confirmations, dict) else None
+        affected.update(_confirmed_impact(plan, confirmation))
+        roots.update(plan["roots"])
+    impact_digest = _hash({"plan_digests": sorted(plan["digest"] for plan in plans.values()),
+                           "affected_ids": sorted(affected)})
+    return _apply_impact_effects(instance, runtime, affected, roots,
+        reason=reason, impact_digest=impact_digest)
+
+
+def apply_impact(instance, runtime, plan, *, reason, independent_confirmation=None):
+    _require_text(reason, "reason")
+    current = plan_impact(instance, runtime, plan["roots"], plan["declared_impact"], sensitive=plan["sensitive"])
+    if current != plan:
+        raise ValueError("impact plan is stale or altered")
+    affected = _confirmed_impact(plan, independent_confirmation)
+    return _apply_impact_effects(instance, runtime, affected, set(plan["roots"]),
+        reason=reason, impact_digest=plan["digest"])
+
+
+def _propagate(instance, runtime, roots, reason):
+    # System-observed failures have a computed scope. Producer changes must use
+    # plan_impact/apply_impact with their declaration before altering the root.
+    preview = plan_impact(instance, runtime, roots, [])
+    plan = plan_impact(instance, runtime, roots, preview["computed_impact"])
+    if plan["requires_independent_review"]:
+        runtime.setdefault("pending_knowledge_impacts", []).append({"plan": plan, "reason": reason})
+        return
+    output, new_runtime = apply_impact(instance, runtime, plan, reason=reason)
+    instance.clear(); instance.update(output)
+    runtime.clear(); runtime.update(new_runtime)
+
+
+def assessment_reassessment_proposal(instance, assessment_id, *, runtime):
+    """Review the original judgment's validity, never silently reinterpret a new K vote."""
+    assessment = instance['identity_assessments'][assessment_id]
+    original = runtime.get('review_cycles', {}).get(assessment.get('review_cycle_id'), {})
+    authors = (set(assessment.get('execution_ids', []))
+        | set(original.get('proposal', {}).get('producer_execution_ids', []))
+        | {entry['execution_id'] for entry in original.get('results', {}).values()})
+    return {'revision': 1, 'producer_execution_ids': sorted(authors),
+        'assessment_reassessment': {'assessment_id': assessment_id, 'assessment_sha256': _hash(assessment),
+            'policy_ref': assessment['policy_ref'], 'original_basis': deepcopy(assessment['basis']),
+            'original_decision': assessment['decision'],
+            'predicate': 'The original judgment kind, value, basis and resulting effect are justified.',
+            'decision_meanings': {'match': 'reaffirmed', 'mismatch': 'error_confirmed', 'unresolved': 'inconclusive'}}}
+
+
+def _assessment_disposition(instance, runtime, assessment_id, status, *, reason, actor_ref,
+                            reason_refs, reassessment_ref=None):
+    from .knowledge_records import set_assessment_use
+    output, run = deepcopy(instance), deepcopy(runtime)
+    use = next(u for u in output['assessment_uses'].values() if u['assessment_id'] == assessment_id)
+    if reassessment_ref and any(h.get('reassessment_ref') == reassessment_ref for h in use['history']):
+        return output, run
+    old_status = use['status']
+    # Calculate fallout while the original support is still visible.
+    if status != 'active' and old_status == 'active':
+        _propagate(output, run, [assessment_id], reason)
+    # Restore the root's state for the transition primitive: propagation can also
+    # reach its AU, but its own explicit disposition must retain the actual prior state.
+    use = next(u for u in output['assessment_uses'].values() if u['assessment_id'] == assessment_id)
+    use['status'] = old_status
+    output = set_assessment_use(output, assessment_id, status, reason, actor_ref)
+    use = next(u for u in output['assessment_uses'].values() if u['assessment_id'] == assessment_id)
+    evidence = {'reason_refs': list(reason_refs)}
+    if reassessment_ref:
+        evidence['reassessment_ref'] = reassessment_ref
+        evidence['assessment_sha256'] = _hash(output['identity_assessments'][assessment_id])
+        evidence['proposal_digest'] = run['review_cycles'][reassessment_ref]['proposal_digest']
+    if old_status == status:
+        use['history'].append({'from': old_status, 'to': status, 'reason': reason, 'actor_ref': actor_ref})
+    use['history'][-1].update(evidence)
+    return output, run
+
+
+def suspend_assessment_use(instance, runtime, assessment_id, *, reason, actor_ref, reason_refs):
+    """Apply a caller-authorized confirmed defect/independent semantic objection.
+
+    This domain transition does not authorize ordinary reports or external actions.
+    The central owner must open the bounded reassessment using the frozen policy.
+    """
+    if not isinstance(reason_refs, list) or not reason_refs or any(not isinstance(r, str) or not r for r in reason_refs):
+        raise ValueError('suspension requires concrete defect or independent objection references')
+    return _assessment_disposition(instance, runtime, assessment_id, 'suspended', reason=reason,
+        actor_ref=actor_ref, reason_refs=reason_refs)
+
+
+def apply_assessment_reassessment(instance, runtime, assessment_id, review_cycle_id, *, reason, actor_ref):
+    """Consume a sealed independent review of the exact original judgment.
+
+    Replay uses the existing review state machine, including scope, sealing and
+    finite-round decisions. Reviewer semantics are evidence, not a machine proof.
+    """
+    from . import review_cycle as reviews
+    assessment = instance['identity_assessments'][assessment_id]
+    cycle = runtime.get('review_cycles', {}).get(review_cycle_id, {})
+    expected = assessment_reassessment_proposal(instance, assessment_id, runtime=runtime)
+    if (cycle.get('proposal', {}).get('assessment_reassessment') != expected['assessment_reassessment']
+            or cycle.get('policy_ref') != assessment['policy_ref']):
+        raise ValueError('reassessment must identify the exact original judgment and policy')
+    original = runtime.get('review_cycles', {}).get(assessment.get('review_cycle_id'), {})
+    if not original or cycle.get('review_policy') != original.get('review_policy'):
+        raise ValueError('reassessment must retain the original review policy')
+    reviews._check_proposal(cycle)
+    authors = set(expected['producer_execution_ids'])
+    if not authors <= set(cycle['proposal'].get('producer_execution_ids', [])):
+        raise ValueError('reassessment omits original author exclusions')
+    replay = reviews.validate_sealed_review(cycle, runtime, instance=instance,
+        excluded_execution_ids=authors)
+    status = {'match': 'active', 'mismatch': 'withdrawn', 'unresolved': 'suspended'}[replay['decision']]
+    if status == 'active':
+        from .knowledge_records import assessment_current
+        # Reaffirming the original judgment does not establish its present premises.
+        if not assessment_current(instance, assessment_id):
+            status = 'suspended'
+    return _assessment_disposition(instance, runtime, assessment_id, status, reason=reason,
+        actor_ref=actor_ref, reason_refs=[entry['execution_id'] for entry in replay['results'].values()],
+        reassessment_ref=review_cycle_id)
 
 
 def validate_changes(changes: dict) -> None:
@@ -276,60 +484,105 @@ def validate_changes(changes: dict) -> None:
         raise ValueError("changes contain engine-owned fields")
 
 
-def revise_knowledge(instance: dict, runtime: dict, knowledge_id: str, changes: dict,
-                     *, reason: str, actor_ref: str) -> tuple[dict, dict]:
+def revision_roots(instance, knowledge_id, changes):
+    record = instance["knowledge"][knowledge_id]
+    roots = {knowledge_id, record["exposition_id"]}
+    # Formal results are immutable and may support other expositions. Replacing
+    # source does not invalidate the original result merely because it exists.
+    return sorted(roots)
+
+
+def replace_knowledge(instance: dict, runtime: dict, knowledge_id: str, changes: dict,
+                      *, reason: str, actor_ref: str, replacement_id=None,
+                      reserved_dependency_ids=()) -> tuple[dict, dict]:
+    """Create one replacement after its bundle's impact disposition is complete."""
+    from . import knowledge_records as kr
     _require_text(reason, "reason"); _require_text(actor_ref, "actor_ref")
     validate_changes(changes)
-    new_instance, new_runtime = deepcopy(instance), deepcopy(runtime)
-    record = new_instance.get("knowledge", {}).get(knowledge_id)
-    if record is None: raise ValueError(f"unknown knowledge ID: {knowledge_id}")
-    history = _history(record, "revise", reason, actor_ref)
-    record.update(deepcopy(changes)); record["history"] = history
-    record["revision"] = int(record.get("revision", 1)) + 1
-    record["status"] = "candidate"; record["formal"] = {}; record["reviews"] = []
-    record.pop("verified_at", None); record.pop("use_suspension_reasons", None)
-    record.pop("use_suspensions", None)
-    record["use_suspended"] = False
-    if "source_basis" in record or "source_refs" in record:
-        source_refs = [row["name"] for row in record.get("source_basis", [])]
-        source_refs.extend(record.get("source_refs", []))
-        record["source_basis"] = capture_sources(new_instance, source_refs)
-    claim = record.get("relation_claim")
-    if claim:
-        if not isinstance(claim, dict) or any(key not in claim for key in ("source", "target")):
-            raise ValueError("relation claim requires exact endpoint IDs")
-        record["relation_endpoint_basis"] = capture_basis(new_instance, new_runtime, list(dict.fromkeys([claim["source"], claim["target"]])))
-    _propagate(new_instance, new_runtime, {knowledge_id}, reason)
-    return new_instance, new_runtime
+    permitted = {"kind", "title", "statement", "explanation", "summary", "definitions", "assumptions",
+                 "lean_code", "declaration_names", "dependencies", "source_refs", "origin_refs",
+                 "confirmed_scope", "epistemic_status", "selection_relevance", "uncertainty_assessment", "relation_claim"}
+    if set(changes) - permitted:
+        raise ValueError("unsupported authored knowledge fields")
+    old = instance["knowledge"][knowledge_id]
+    view = kr.proposal_view(instance, knowledge_id)
+    candidate = {key: deepcopy(value) for key, value in view.items() if key in permitted}
+    candidate.update(deepcopy(changes))
+    if replacement_id is not None:
+        candidate["id"] = replacement_id
+    from .knowledge_io import import_candidate
+    output, new_runtime, actual_replacement_id = import_candidate(instance, runtime, candidate,
+        source_ref=(old.get("origin_refs") or [actor_ref])[0], actor_ref=actor_ref,
+        reserved_dependency_ids=reserved_dependency_ids)
+    replacement = output["knowledge"][actual_replacement_id]
+    replacement["supersedes"] = knowledge_id
+    replacement["revision"] = old.get("revision", 1) + 1
+    replacement["revision_reason"] = reason
+    output["knowledge"][knowledge_id]["lifecycle"] = "superseded"
+    output["expositions"][old["exposition_id"]]["lifecycle"] = "superseded"
+    old_fid = old.get("formal_result_id")
+    # Same formal source/declarations/dependencies permit the exact same sealed result.
+    formal_changed = any(candidate.get(key) != view.get(key) for key in ("lean_code", "declaration_names", "dependencies"))
+    if not formal_changed:
+        unused = replacement.get("formal_result_id")
+        if unused:
+            del output["formal_results"][unused]
+        replacement["formal_result_id"] = old_fid
+        output["expositions"][replacement["exposition_id"]]["formal_result_id"] = old_fid
+    # Superseding the authored record retires its pending checks at the domain
+    # boundary, including callers that apply a revision through integration.
+    # Completed executions and unrelated work remain available as history.
+    new_runtime["queue"] = [action for action in new_runtime.get("queue", [])
+        if action.get("target") != actual_replacement_id and not (
+            action.get("target") == knowledge_id and (
+                action.get("role") in {"formal_check", "identity_review"}
+                or (action.get("role") == "supplemental_research" and action.get("review_cycle_id"))))]
+    next_role = "formal_check" if formal_changed else "identity_review"
+    if not replacement.get("formal_result_id"):
+        next_role = "research_plan"
+    action_id = new_id("AC")
+    new_runtime["queue"].append({"id": action_id, "lineage_id": action_id, "role": next_role,
+        "target": actual_replacement_id, "reason": reason})
+    return output, new_runtime
 
 
-def invalidate_knowledge(instance: dict, runtime: dict, knowledge_id: str, *,
-                         reason: str, actor_ref: str) -> tuple[dict, dict]:
+def revise_knowledge(instance: dict, runtime: dict, knowledge_id: str, changes: dict,
+                     *, reason: str, actor_ref: str, declared_impact=None,
+                     independent_confirmation=None, replacement_id=None) -> tuple[dict, dict]:
+    roots = revision_roots(instance, knowledge_id, changes)
+    preview = plan_impact(instance, runtime, roots, declared_impact or [])
+    # No declaration is harmless only when there are no downstream consumers.
+    output, new_runtime = apply_impact(instance, runtime, preview, reason=reason,
+                                      independent_confirmation=independent_confirmation)
+    return replace_knowledge(output, new_runtime, knowledge_id, changes,
+        reason=reason, actor_ref=actor_ref, replacement_id=replacement_id)
+
+
+def invalidate_knowledge(instance, runtime, knowledge_id, *, reason, actor_ref,
+                         declared_impact=None, independent_confirmation=None):
     _require_text(reason, "reason"); _require_text(actor_ref, "actor_ref")
-    new_instance, new_runtime = deepcopy(instance), deepcopy(runtime)
-    record = new_instance.get("knowledge", {}).get(knowledge_id)
-    if record is None: raise ValueError(f"unknown knowledge ID: {knowledge_id}")
-    record["history"] = _history(record, "invalidate", reason, actor_ref)
-    record["status"] = "withdrawn"
-    _suspend(record, {"kind": "semantic", "root_ids": [knowledge_id], "reason": reason})
-    _propagate(new_instance, new_runtime, {knowledge_id}, reason)
-    return new_instance, new_runtime
+    plan = plan_impact(instance, runtime, [knowledge_id], declared_impact or [])
+    output, new_runtime = apply_impact(instance, runtime, plan, reason=reason,
+                                      independent_confirmation=independent_confirmation)
+    output["knowledge"][knowledge_id].update(lifecycle="withdrawn", withdrawal_reason=reason, withdrawn_by=actor_ref)
+    return output, new_runtime
 
-def suspend_for_source_change(instance: dict, runtime: dict, knowledge_id: str, *, source_name: str,
-                              reason: str, actor_ref: str) -> tuple[dict, dict]:
-    """Stop current use after a required source changed; the record itself is not withdrawn."""
+
+def suspend_for_source_change(instance, runtime, knowledge_id, *, source_name, reason, actor_ref):
     _require_text(source_name, "source_name"); _require_text(reason, "reason"); _require_text(actor_ref, "actor_ref")
-    new_instance, new_runtime = deepcopy(instance), deepcopy(runtime)
-    record = new_instance.get("knowledge", {}).get(knowledge_id)
-    if record is None: raise ValueError(f"unknown knowledge ID: {knowledge_id}")
-    suspension = {"kind": "dependency", "source_name": source_name, "reason": reason}
-    if suspension in record.get("use_suspensions", []):
-        return new_instance, new_runtime
-    record.setdefault("use_history", []).append({"action": "required_source_changed", "source_name": source_name,
-                                                 "reason": reason, "actor_ref": actor_ref})
-    _suspend(record, suspension)
-    _propagate(new_instance, new_runtime, {knowledge_id}, reason)
-    return new_instance, new_runtime
+    output, new_runtime = deepcopy(instance), deepcopy(runtime)
+    record = output["knowledge"][knowledge_id]
+    xid = record["exposition_id"]
+    for assessment in output.get("identity_assessments", {}).values():
+        if assessment["exposition_id"] == xid:
+            for use in output.get("assessment_uses", {}).values():
+                if use["assessment_id"] == assessment["id"] and use["status"] != "withdrawn":
+                    use["status"] = "suspended"
+                    use.pop("environment_revalidation", None)
+                    use.setdefault("use_history", []).append({"reason": reason,
+                        "source_name": source_name, "actor_ref": actor_ref})
+    _propagate(output, new_runtime, {knowledge_id}, reason)
+    return output, new_runtime
 
 
 def register_environment(instance: dict, toolchain: dict,
@@ -347,30 +600,30 @@ def register_environment(instance: dict, toolchain: dict,
 
 
 def begin_transition(instance: dict, new_env_id: str) -> dict:
+    from . import knowledge_records as kr
     environments = instance.get("trust_environments", {})
-    if new_env_id not in environments: raise ValueError(f"unknown trust environment: {new_env_id}")
-    if environments[new_env_id].get("status") == "invalid":
-        raise ValueError("invalid trust environment cannot be a transition target")
+    if new_env_id not in environments or environments[new_env_id].get("status") == "invalid":
+        raise ValueError("unknown or invalid transition environment")
     old_env_id = instance.get("active_trust_environment")
-    if old_env_id is not None and old_env_id not in environments:
-        raise ValueError("active trust environment is unknown")
-    if old_env_id == new_env_id: raise ValueError("new trust environment is already active")
+    if old_env_id == new_env_id:
+        raise ValueError("new trust environment is already active")
     targets = []
-    for record_id, record in sorted(instance.get("knowledge", {}).items()):
-        formal = record.get("formal") if isinstance(record.get("formal"), dict) else {}
-        normal_target = old_env_id is not None and record.get("status") == "verified" and not record.get("use_suspended")
-        recovery_target = (old_env_id is None and record.get("status") == "verified"
-                           and record.get("use_suspended") and isinstance(formal.get("trust_environment_id"), str))
-        if normal_target or recovery_target:
-            previous_ids = list(dict.fromkeys([*formal.get("previous_environment_ids", []),
-                                               *([formal["trust_environment_id"]]
-                                                 if isinstance(formal.get("trust_environment_id"), str) else [])]))
-            targets.append({"id": record_id, "source_sha256": hashlib.sha256(
-                record.get("lean_code", "").encode("utf-8")).hexdigest(),
-                "basis": {"id": record_id, "sha256": _hash(record), "status": _status(record)},
-                "previous_environment_ids": previous_ids})
-    return {"id": new_id("TR"), "from_environment": old_env_id,
-            "to_environment": new_env_id, "targets": targets, "results": {}, "status": "checking"}
+    for kid, record in sorted(instance.get("knowledge", {}).items()):
+        formal = instance.get("formal_results", {}).get(record.get("formal_result_id"))
+        if record.get("lifecycle") != "active" or not formal or formal.get("publication_state") != "accepted":
+            continue
+        verification = formal.get("verification", {})
+        targets.append({"id": kid, "formal_result_id": formal["id"],
+            "source_sha256": hashlib.sha256(formal["lean_code"].encode()).hexdigest(),
+            "basis": {"id": kid, "sha256": _hash(record), "status": _status(record)},
+            "formal_basis": kr.record_digest(formal), "exposition_basis": kr.record_digest(instance["expositions"][record["exposition_id"]]),
+            "declaration_evidence": deepcopy(verification.get("declaration_evidence")),
+            "dependency_closure": deepcopy(verification.get("dependency_closure")),
+            "dependency_evidence": deepcopy(verification.get("dependency_evidence")),
+            "axioms": deepcopy(verification.get("axioms")),
+            "previous_environment_ids": [formal.get("trust_environment_id")]})
+    return {"id": new_id("TR"), "from_environment": old_env_id, "to_environment": new_env_id,
+            "targets": targets, "results": {}, "status": "checking"}
 
 
 def record_transition_result(instance: dict, transition: dict, result_for_id: dict) -> dict:
@@ -392,73 +645,199 @@ def record_transition_result(instance: dict, transition: dict, result_for_id: di
     return output
 
 
-def activate_transition(instance: dict, transition: dict) -> dict:
-    output = deepcopy(instance); environments = output.get("trust_environments", {})
-    new_id_value = transition.get("to_environment")
-    if new_id_value not in environments: raise ValueError(f"unknown trust environment: {new_id_value}")
+def _transition_without_identity_reviews(transition):
+    normalized = deepcopy(transition)
+    for result in normalized.get("results", {}).values():
+        result.pop("identity_review", None)
+    return normalized
+
+
+def _staged_review_basis(instance, transition, knowledge_id):
+    from . import knowledge_records as kr
+    target = next((row for row in transition["targets"] if row["id"] == knowledge_id), None)
+    if target is None:
+        raise ValueError("staged review target is not in the transition")
+    record = instance["knowledge"][knowledge_id]
+    formal = instance["formal_results"][target["formal_result_id"]]
+    verification = {key: deepcopy(value) for key, value in transition["results"][knowledge_id].items()
+                    if key not in {"id", "identity_review"}}
+    environment = instance["trust_environments"][transition["to_environment"]]
+    view = deepcopy(instance)
+    view["formal_results"][formal["id"]].update(
+        verification=verification, trust_environment_id=transition["to_environment"])
+    return {
+        "identity_basis": kr.identity_basis(view, knowledge_id),
+        "transition_basis": kr.exact_digest({
+            "transition_id": transition["id"], "target": target,
+            "verification": verification, "target_environment": environment,
+            "from_environment": transition["from_environment"],
+        }),
+        "target_environment": deepcopy(environment),
+        "live_identity_basis": kr.identity_basis(instance, knowledge_id),
+        "record": record,
+    }
+
+
+def _validated_staged_identity_review(instance, transition, knowledge_id, receipt, runtime):
+    from . import knowledge_records as kr
+    from .review_cycle import validate_sealed_review, identity_assessment
+    stored = runtime.get("trust_transitions", {}).get(transition.get("id"))
+    if stored is None or _transition_without_identity_reviews(stored) != _transition_without_identity_reviews(transition):
+        raise ValueError("staged identity review transition is stale or belongs to another transition")
+    cycle = runtime.get("review_cycles", {}).get(receipt.get("review_cycle_id"))
+    if cycle is None or cycle.get("transition_id") != transition["id"] or cycle.get("knowledge_id") != knowledge_id:
+        raise ValueError("staged identity review belongs to another transition target")
+    basis = _staged_review_basis(instance, transition, knowledge_id)
+    staged = cycle.get("staged_candidate", {})
+    if (cycle.get("identity_basis") != basis["identity_basis"]
+            or staged.get("identity_basis") != basis["identity_basis"]
+            or staged.get("transition_basis") != basis["transition_basis"]
+            or staged.get("target_environment") != basis["target_environment"]):
+        raise ValueError("staged identity review basis changed")
+    environment_id = instance.get("active_trust_environment")
+    expected_premises = {
+        "identity_basis": basis["live_identity_basis"],
+        "active_trust_environment": environment_id,
+        "trust_environment": deepcopy(instance.get("trust_environments", {}).get(environment_id)),
+        "review_policy": deepcopy(instance.get("review_policy")),
+        "governance": deepcopy(instance.get("governance", {})),
+    }
+    if cycle.get("publication_premises") != expected_premises:
+        raise ValueError("staged identity review publication premises changed")
+    validate_sealed_review(cycle, runtime, instance=instance)
+    expected = {
+        **identity_assessment(cycle, reason="Sealed staged identity review"),
+        "policy_ref": cycle["policy_ref"],
+        "identity_basis": deepcopy(cycle["identity_basis"]),
+        "transition_id": transition["id"],
+        "knowledge_id": knowledge_id,
+        "transition_basis": basis["transition_basis"],
+    }
+    if receipt != expected or expected["decision"] != "match" or not expected["scope_complete"]:
+        raise ValueError("staged identity review receipt is stale, altered, or not a complete match")
+    return expected
+
+
+def activate_transition(instance: dict, transition: dict, *, runtime=None) -> dict:
+    from . import knowledge_records as kr
+    from .formal import compare_formal_results
+    output = deepcopy(instance)
+    environments = output.get("trust_environments", {})
+    target_env_id = transition["to_environment"]
+    environment = environments.get(target_env_id)
+    if not environment or environment.get("status") == "invalid":
+        raise ValueError("transition environment is unavailable")
     if output.get("active_trust_environment") != transition.get("from_environment"):
         raise ValueError("active trust environment changed during transition")
-    targets = {target["id"]: target for target in transition.get("targets", [])}
+    targets = {target["id"]: target for target in transition["targets"]}
     results = transition.get("results", {})
-    if set(results) != set(targets) or any(result.get("status") != "verified" for result in results.values()):
+    if set(targets) != set(results) or any(result.get("status") != "verified" for result in results.values()):
         raise ValueError("all transition targets must be verified")
-    for record_id, target in targets.items():
-        record = output.get("knowledge", {}).get(record_id)
-        if record is None or _hash(record) != target["basis"]["sha256"]:
-            raise ValueError(f"transition basis changed: {record_id}")
-        if record.get("status") != "verified":
-            raise ValueError(f"transition target is no longer verified: {record_id}")
-        source_hash = hashlib.sha256(record.get("lean_code", "").encode("utf-8")).hexdigest()
-        if source_hash != target["source_sha256"] or results[record_id].get("source_sha256") != source_hash:
-            raise ValueError(f"transition source changed: {record_id}")
-    old_id = output["active_trust_environment"]
-    if old_id is not None and environments[old_id].get("status") != "invalid":
-        environments[old_id]["status"] = "superseded"
-    environments[new_id_value]["status"] = "active"
-    output["active_trust_environment"] = new_id_value
-    for record_id, result in results.items():
-        record = output["knowledge"][record_id]
-        target = targets[record_id]
-        reasons = deepcopy(record.get("use_suspension_reasons", []))
-        typed = record.get("use_suspensions")
-        resolved_environments = set(target["previous_environment_ids"])
-        if isinstance(typed, list):
-            resolved = [item for item in typed if isinstance(item, dict)
-                        and item.get("kind") == "environment"
-                        and item.get("environment_id") in resolved_environments]
-            remaining = [deepcopy(item) for item in typed if item not in resolved]
-        else:
-            # A legacy boolean/string-only suspension has no safe typed cause.
-            resolved, remaining = [], None
-        record.setdefault("use_history", []).append({"action": "trust_environment_revalidated",
-            "transition_id": transition.get("id"), "reasons": reasons,
-            "resolved_suspensions": deepcopy(resolved),
-            "previous_environment_ids": deepcopy(target["previous_environment_ids"])})
-        record["formal"] = {**deepcopy(result), "trust_environment_id": new_id_value, "trust_environment_status": "active",
-                            "previous_environment_ids": deepcopy(target["previous_environment_ids"])}
-        if remaining is None:
-            record["use_suspended"] = bool(record.get("use_suspended"))
-        else:
-            record["use_suspensions"] = remaining
-            record["use_suspended"] = bool(remaining)
+    comparisons, reviewed = {}, {}
+    for kid, target in targets.items():
+        record = output["knowledge"].get(kid)
+        formal = output.get("formal_results", {}).get(target["formal_result_id"], {})
+        exposition = output["expositions"].get((record or {}).get("exposition_id"), {})
+        result = results[kid]
+        if (not record or _hash(record) != target["basis"]["sha256"] or kr.record_digest(formal) != target["formal_basis"]
+                or kr.record_digest(exposition) != target["exposition_basis"]):
+            raise ValueError("transition basis changed: " + kid)
+        if result.get("source_sha256") != target["source_sha256"] or result.get("toolchain") != environment.get("toolchain"):
+            raise ValueError("transition source or environment mismatch: " + kid)
+        if result.get("declarations") != formal.get("declaration_names"):
+            raise ValueError("transition declarations mismatch")
+        axioms = {a for values in result.get("axioms", {}).values() for a in values}
+        if "sorryAx" in axioms or axioms - set(environment.get("allowed_axioms", [])):
+            raise ValueError("transition contains unapproved axioms")
+        kr.validate_formal_evidence(formal, result, environment)
+        comparison = compare_formal_results(target, result)
+        comparisons[kid] = comparison
+        if comparison["requires_identity_review"]:
+            if runtime is None:
+                raise ValueError("transition requires its sealed staged identity review runtime: " + kid)
+            reviewed[kid] = _validated_staged_identity_review(
+                instance, transition, kid, result.get("identity_review", {}), runtime)
+    old_env_id = output.get("active_trust_environment")
+    if old_env_id and environments[old_env_id].get("status") != "invalid":
+        environments[old_env_id]["status"] = "superseded"
+    environment["status"] = "active"
+    output["active_trust_environment"] = target_env_id
+    for kid, target in targets.items():
+        record = output["knowledge"][kid]
+        old_formal = output["formal_results"][target["formal_result_id"]]
+        old_xid = record["exposition_id"]
+        fid, xid = new_id("FR"), new_id("XP")
+        result = {key: deepcopy(value) for key, value in results[kid].items() if key not in {"id", "identity_review"}}
+        result["trust_environment_digest"] = kr.digest(environment)
+        output["formal_results"][fid] = {**deepcopy(old_formal), "id": fid, "verification": result,
+            "trust_environment_id": target_env_id, "formal_use": "active", "transition_id": transition["id"],
+            "supersedes": old_formal["id"]}
+        output["expositions"][xid] = {**deepcopy(output["expositions"][old_xid]), "id": xid,
+            "formal_result_id": fid, "supersedes": old_xid}
+        record.update(formal_result_id=fid, exposition_id=xid)
+        if kid in reviewed:
+            receipt = reviewed[kid]
+            previous_cycle = record.get("review_cycle_id")
+            if previous_cycle:
+                record["previous_review_cycle_id"] = previous_cycle
+            record["review_cycle_id"] = receipt["review_cycle_id"]
+            assessment = {key: deepcopy(receipt[key]) for key in (
+                "decision", "scope_complete", "execution_ids", "review_cycle_id",
+                "summary", "proposal_digest", "transition_id", "transition_basis")}
+            assessment.update(
+                basis=kr.identity_basis(output, kid),
+                reviewed_identity_basis=deepcopy(receipt["identity_basis"]),
+            )
+            output, _ = kr.record_identity_assessment(
+                output, kid, assessment, receipt["policy_ref"], runtime={})
+            continue
+        # Preserve the old sealed judgment. A new continuity judgment names both
+        # exact new inputs and the transition comparison instead of mutating it.
+        for assessment in list(output.get("identity_assessments", {}).values()):
+            if assessment.get("exposition_id") != old_xid or assessment.get("decision") != "match":
+                continue
+            uses = [use for use in output.get("assessment_uses", {}).values() if use["assessment_id"] == assessment["id"]]
+            recoverable = bool(uses and uses[0].get("environment_revalidation", {}).get("environment_id")
+                               in target["previous_environment_ids"])
+            if not uses or (uses[0]["status"] != "active" and not recoverable):
+                continue
+            inherited = {key: deepcopy(value) for key, value in assessment.items() if key not in {"id", "formal_result_id", "exposition_id"}}
+            inherited.update(basis=kr.identity_basis(output, kid), previous_assessment_id=assessment["id"], transition_id=transition["id"],
+                             continuity_comparison=comparisons[kid])
+            output, _ = kr.record_identity_assessment(output, kid, inherited, assessment["policy_ref"], runtime={})
     return output
 
 
-def invalidate_environment(instance: dict, runtime: dict, env_id: str, reason: str
-                           ) -> tuple[dict, dict]:
+def invalidate_environment(instance, runtime, env_id, reason, *, affected_constants=None,
+                           scope_evidence=None) -> tuple[dict, dict]:
     _require_text(reason, "reason")
-    new_instance, new_runtime = deepcopy(instance), deepcopy(runtime)
-    environment = new_instance.get("trust_environments", {}).get(env_id)
-    if environment is None: raise ValueError(f"unknown trust environment: {env_id}")
-    environment["status"] = "invalid"; environment["invalidated_reason"] = reason
-    if new_instance.get("active_trust_environment") == env_id:
-        new_instance["active_trust_environment"] = None
-    affected = set()
-    for record_id, record in new_instance.get("knowledge", {}).items():
-        formal = record.get("formal") if isinstance(record.get("formal"), dict) else {}
-        if formal.get("trust_environment_id") == env_id:
-            _suspend(record, {"kind": "environment", "environment_id": env_id,
-                              "reason": reason})
-            affected.add(record_id)
-    if affected: _propagate(new_instance, new_runtime, affected, reason)
-    return new_instance, new_runtime
+    output, new_runtime = deepcopy(instance), deepcopy(runtime)
+    environment = output.get("trust_environments", {}).get(env_id)
+    if environment is None:
+        raise ValueError("unknown trust environment: " + env_id)
+    scoped = bool(affected_constants and scope_evidence)
+    candidates = [formal for formal in output.get("formal_results", {}).values()
+                  if formal.get("trust_environment_id") == env_id]
+    if any(not formal.get("verification", {}).get("dependency_closure") for formal in candidates):
+        scoped = False
+    if not scoped:
+        environment.update(status="invalid", invalidated_reason=reason)
+        if output.get("active_trust_environment") == env_id:
+            output["active_trust_environment"] = None
+    roots = set()
+    for formal in candidates:
+        closure = {name for names in formal.get("verification", {}).get("dependency_closure", {}).values() for name in names}
+        closure.update(formal.get("declaration_names", []))
+        if not scoped or closure & set(affected_constants):
+            formal["formal_use"] = "suspended"
+            formal.setdefault("use_history", []).append({"reason": reason, "environment_id": env_id,
+                "affected_constants": sorted(affected_constants or []), "scope_evidence": scope_evidence})
+            roots.add(formal["id"])
+    previously_active = {uid for uid, use in output.get("assessment_uses", {}).items() if use.get("status") == "active"}
+    if roots:
+        _propagate(output, new_runtime, roots, reason)
+        for uid in previously_active:
+            use = output["assessment_uses"][uid]
+            if use["status"] == "suspended":
+                use["environment_revalidation"] = {"environment_id": env_id, "reason": reason}
+    return output, new_runtime

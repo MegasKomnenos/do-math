@@ -5,7 +5,6 @@ import copy
 import hashlib
 import json
 import re
-import unicodedata
 from decimal import Decimal
 from pathlib import PurePosixPath
 
@@ -43,7 +42,7 @@ def safe_path(value):
     return True
 
 
-def normalize(value):
+def exact_json_value(value):
     if value is None or type(value) is bool:
         return value
     if type(value) is int:
@@ -53,32 +52,29 @@ def normalize(value):
     if isinstance(value, str):
         if any(0xD800 <= ord(c) <= 0xDFFF for c in value):
             raise ContractError("surrogate code points are not Unicode scalar values")
-        return unicodedata.normalize("NFC", value)
+        return value
     if isinstance(value, list):
-        return [normalize(x) for x in value]
+        return [exact_json_value(x) for x in value]
     if isinstance(value, dict):
         result = {}
         for key, item in value.items():
             if not isinstance(key, str):
                 raise ContractError("object keys must be strings")
-            key = normalize(key)
+            key = exact_json_value(key)
             if key in result:
-                raise ContractError("NFC key collision")
-            result[key] = normalize(item)
+                raise ContractError("duplicate source key")
+            result[key] = exact_json_value(item)
         return result
     raise ContractError("floating point and non-JSON values are forbidden")
 
 
 def unique_pairs(pairs):
-    result, original = {}, set()
+    result = {}
     for key, value in pairs:
-        if key in original:
+        if key in result:
             raise ContractError("duplicate source key")
-        original.add(key)
-        nkey = normalize(key)
-        if nkey in result:
-            raise ContractError("NFC key collision")
-        result[nkey] = value
+        exact_json_value(key)
+        result[key] = value
     return result
 
 
@@ -86,17 +82,20 @@ def parse_json(data):
     if isinstance(data, bytes):
         if data.startswith(b"\xef\xbb\xbf"):
             raise ContractError("BOM forbidden")
-        data = data.decode("utf-8", errors="strict")
+        try:
+            data = data.decode("utf-8", errors="strict")
+        except UnicodeDecodeError as error:
+            raise ContractError("invalid UTF-8") from error
     if data.startswith("\ufeff"):
         raise ContractError("BOM forbidden")
     def no_float(value):
         raise ContractError("floating point forbidden")
-    return normalize(json.loads(data, object_pairs_hook=unique_pairs,
-                                parse_float=no_float, parse_constant=no_float))
+    return exact_json_value(json.loads(data, object_pairs_hook=unique_pairs,
+                                       parse_float=no_float, parse_constant=no_float))
 
 
 def canonical_json(value):
-    return (json.dumps(normalize(value), ensure_ascii=False, allow_nan=False,
+    return (json.dumps(exact_json_value(value), ensure_ascii=False, allow_nan=False,
                        sort_keys=True, indent=2) + "\n").encode("utf-8")
 
 
@@ -133,7 +132,10 @@ def parse_knowledge(data):
     if isinstance(data, bytes):
         if data.startswith(b"\xef\xbb\xbf"):
             raise ContractError("BOM forbidden")
-        data = data.decode("utf-8", errors="strict")
+        try:
+            data = data.decode("utf-8", errors="strict")
+        except UnicodeDecodeError as error:
+            raise ContractError("invalid UTF-8") from error
     if data.startswith("\ufeff"):
         raise ContractError("BOM forbidden")
     data = data.replace("\r\n", "\n").replace("\r", "\n")
@@ -152,7 +154,7 @@ def parse_knowledge(data):
     front = yaml.load(raw, Loader=JsonScalarLoader)
     if not isinstance(front, dict):
         raise ContractError("frontmatter mapping required")
-    front = normalize(front)
+    front = exact_json_value(front)
     # Schema, not the codec, determines whether any null value is permitted.
     body = "\n".join(lines[end + 1:])
     if body.startswith("\n"):

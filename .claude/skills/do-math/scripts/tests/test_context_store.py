@@ -1,9 +1,106 @@
 from __future__ import annotations
-import json, os, sys, tempfile, unittest
+import json, os, sys, tempfile, unittest, subprocess
+from contextlib import contextmanager
 from pathlib import Path
 from unittest.mock import patch
 SCRIPTS=Path(__file__).resolve().parents[1];sys.path.insert(0,str(SCRIPTS))
 import do_math.context_store as store
+
+@contextmanager
+def junction_at_open(target, outside, *, restore_before_return):
+ """Real junction swap at the actual open, after callers' path prechecks."""
+ original_open=Path.open
+ parent=target.parent
+ saved=parent.with_name(parent.name+'-held')
+ fired=[]
+ def intercepted(path,*args,**kwargs):
+  if path==target and not fired and (args[0] if args else kwargs.get('mode','r'))=='rb':
+   fired.append(True)
+   parent.rename(saved)
+   def quoted(value):return "'"+str(value).replace("'","''")+"'"
+   subprocess.run(['powershell','-NoProfile','-NonInteractive','-Command',
+    'New-Item -ItemType Junction -Path '+quoted(parent)+' -Target '+quoted(outside)+' | Out-Null'],check=True,capture_output=True)
+   stream=original_open(path,*args,**kwargs)
+   if restore_before_return:
+    # Remove only this known test junction, never recurse into its target.
+    parent.rmdir()
+    saved.rename(parent)
+   return stream
+  return original_open(path,*args,**kwargs)
+ try:
+  with patch.object(Path,'open',intercepted):yield fired
+ finally:
+  if saved.exists():
+   if parent.exists():parent.rmdir()
+   saved.rename(parent)
+
+
+@unittest.skipUnless(os.name=='nt','actual Windows junction boundary')
+class OpenedHandleBoundaryTests(unittest.TestCase):
+ def test_collection_rejects_real_junction_swap_at_open(self):
+  for transient in (False,True):
+   with self.subTest(transient=transient),tempfile.TemporaryDirectory() as directory:
+    base=Path(directory); root=base/'workspace'; sub=root/'sub'; sub.mkdir(parents=True)
+    outside=base/'outside';outside.mkdir()
+    target=sub/'result.txt';target.write_bytes(b'worker output')
+    (outside/'result.txt').write_bytes(b'outside bytes')
+    self.assertEqual(store.collect_outputs(root)['files']['sub/result.txt'],b'worker output')
+    with junction_at_open(target,outside,restore_before_return=transient) as fired:
+     result=store.collect_outputs(root,required_paths=['sub/result.txt'])
+    self.assertTrue(fired)
+    self.assertNotIn('sub/result.txt',result['files'],result)
+    self.assertFalse(result['complete'])
+    omission=next(row for row in result['omitted'] if row['path']=='sub/result.txt')
+    self.assertEqual(omission['reason'],'physical_boundary')
+    self.assertTrue(omission['required'])
+    self.assertTrue(omission['error'])
+    self.assertEqual((outside/'result.txt').read_bytes(),b'outside bytes')
+
+ def test_source_read_rejects_handle_outside_restored_lexical_path(self):
+  with tempfile.TemporaryDirectory() as directory:
+   base=Path(directory);root=base/'workspace';sub=root/'input';sub.mkdir(parents=True)
+   outside=base/'outside';outside.mkdir();target=sub/'result.txt'
+   target.write_bytes(b'worker output');(outside/'result.txt').write_bytes(b'outside bytes')
+   with junction_at_open(target,outside,restore_before_return=True):
+    result=store.read_source(root,{'path':'input/result.txt'})
+   self.assertEqual(result['status'],'error',result)
+   self.assertEqual(result['bytes'],b'')
+   self.assertIn('physical',result['reason'])
+
+ def test_retention_inventory_rejects_same_real_open_race(self):
+  from do_math.retention import _inventory
+  with tempfile.TemporaryDirectory() as directory:
+   base=Path(directory);root=base/'runs/EX-1';root.mkdir(parents=True)
+   outside=base/'outside';outside.mkdir();target=root/'result.txt'
+   target.write_bytes(b'worker output');(outside/'result.txt').write_bytes(b'outside bytes')
+   with junction_at_open(target,outside,restore_before_return=True):
+    with self.assertRaisesRegex(ValueError,'physical'):_inventory(root)
+
+ def test_cleanup_preserves_run_when_open_boundary_changes(self):
+  from do_math.retention import cleanup_candidates,cleanup
+  from test_redesign_SURFACE import archived_run
+  for phase in ('eligibility','deletion'):
+   with self.subTest(phase=phase),tempfile.TemporaryDirectory() as directory:
+    base=Path(directory);root=base/'workspace'
+    run,state,archive,read=archived_run(root)
+    outside=base/'outside';outside.mkdir()
+    # Matching archived bytes must not make an outside handle admissible.
+    (outside/'output.txt').write_bytes(b'preserved result')
+    candidates=cleanup_candidates(root,read_artifact=read,**state)
+    self.assertTrue(candidates[0]['eligible'])
+    with junction_at_open(run/'output.txt',outside,restore_before_return=True):
+     if phase=='eligibility':
+      result=cleanup_candidates(root,read_artifact=read,**state)
+      self.assertFalse(result[0]['eligible'])
+      self.assertTrue(any('physical' in reason for reason in result[0]['reasons']))
+     else:
+      result=cleanup(root,candidates,current_state=lambda:state,read_artifact=read)
+      self.assertEqual(result['deleted'],[])
+      self.assertEqual(result['status'],'degraded')
+      self.assertTrue(any('physical' in row['error'] for row in result['failures']))
+    self.assertEqual((run/'output.txt').read_bytes(),b'preserved result')
+    self.assertEqual((outside/'output.txt').read_bytes(),b'preserved result')
+    self.assertEqual(state['executions']['EX-1']['status'],'ended')
 
 class ContextStoreTests(unittest.TestCase):
  def test_large_ongoing_preparation_is_recoverable_without_prompt_overflow(self):
@@ -44,11 +141,11 @@ class ContextStoreTests(unittest.TestCase):
    try:(root/'link').symlink_to(target)
    except OSError as error:self.skipTest(str(error))
    got=store.collect_outputs(root,required_paths=['link']);self.assertFalse(got['complete']);self.assertEqual(got['omitted'][0]['reason'],'outside_symlink')
- def test_catalog_and_overflow_history_are_lossless(self):
+ def test_catalog_and_overflow_history_preserve_exact_values(self):
   with tempfile.TemporaryDirectory() as d:
    root=Path(d)/'new-workspace';context={'goal':'g','action':{'role':'plan'},'recent_history':[{'n':i,'text':'x'*100} for i in range(40)],'tasks':[{'id':'T1','title':'t','question':'q','status':'ready','completion_criteria':['c'],'detail':'y'*1000},{'id':'T2','status':'completed'}],'knowledge_catalog':[{'id':'K','detail':'z'*2000}]}
    fitted=store.fit_context(context,max_bytes=1200,workspace=root,mandatory_keys=['goal','action']);self.assertIsNone(fitted['overflow']);self.assertLessEqual(fitted['actual_bytes'],1200);self.assertTrue(fitted['reductions'])
-   task_reduction=next(x for x in fitted['reductions'] if x['key']=='tasks');self.assertEqual(task_reduction['ready_universe_ids'],['T1'])
+   task_reduction=next(x for x in fitted['reductions'] if x['key']=='tasks');self.assertEqual(json.loads(store.read_source(root,task_reduction['source_ref'],limit=10**7)['bytes']),context['tasks'])
    ref=next(x for x in fitted['manifest'] if x['key']=='recent_history');raw=store.read_source(root,ref,limit=10**7);self.assertEqual(json.loads(raw['bytes']),context['recent_history'])
  def test_mandatory_overflow_reports_size_without_reduction(self):
   with tempfile.TemporaryDirectory() as d:

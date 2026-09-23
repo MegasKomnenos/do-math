@@ -16,6 +16,7 @@ from pathlib import Path
 import re
 import subprocess
 import tempfile
+import stat
 from typing import Final
 
 
@@ -49,6 +50,13 @@ _WINDOWS_RESERVED: Final = {
 }
 
 
+def oid_shape(oid: str) -> str:
+    """Validate only OID syntax, not object existence or this instance's format."""
+    if not isinstance(oid, str) or len(oid) not in {40, 64} or not _HEX.fullmatch(oid):
+        raise ValueError("OID must be a lowercase 40/64-character hexadecimal string")
+    return "sha1" if len(oid) == 40 else "sha256"
+
+
 class GitStateStore:
     """Publish one parent-linked state chain at ``refs/heads/do-math/<id>``.
 
@@ -60,12 +68,14 @@ class GitStateStore:
     def __init__(self, repository: str | os.PathLike[str], instance_id: str) -> None:
         if not isinstance(instance_id, str) or not _INSTANCE_ID.fullmatch(instance_id):
             raise ValueError("instance_id must be the registry RI-prefixed canonical ULID")
-        self.repository = Path(repository).resolve()
+        self.repository = Path(repository).absolute()
+        self._repository_boundary = PhysicalBoundary(self.repository)
         if not self.repository.is_dir():
             raise ValueError("repository must be an existing Git work tree or bare repository")
         self.instance_id = instance_id
         self.ref = f"refs/heads/do-math/{instance_id}"
-        self._git_dir = Path(self._git_text("rev-parse", "--absolute-git-dir")).resolve()
+        self._git_dir = Path(self._git_text("rev-parse", "--absolute-git-dir")).absolute()
+        self._git_boundary = PhysicalBoundary(self._git_dir)
         self.object_format = self._git_text("rev-parse", "--show-object-format")
         if self.object_format not in {"sha1", "sha256"}:
             raise GitStateStoreError(f"unsupported Git object format: {self.object_format!r}")
@@ -73,10 +83,27 @@ class GitStateStore:
 
     def read_snapshot(self) -> StateSnapshot:
         """Return the current state commit and its research/runtime tree OIDs."""
-        head = self._head()
+        head = self._ref_oid()
         if head is None:
             return StateSnapshot(None, None, None)
-        return StateSnapshot(head, self._subtree_oid(head, "research"), self._subtree_oid(head, "runtime"))
+        names = ("research", "runtime")
+        queries = "\n".join([head, *(f"{head}:{name}" for name in names)]) + "\n"
+        result = self._git("cat-file", "--batch-check=%(objectname) %(objecttype)",
+                           input=queries.encode("ascii"), check=False)
+        rows = result.stdout.decode("ascii").splitlines()
+        root = rows[0].split() if rows else []
+        if not root or root == [head, "missing"]:
+            detail = result.stderr.decode("utf-8", "replace").strip()
+            raise GitStateStoreError(f"state ref points to an unreadable object: {detail}")
+        if len(root) != 2 or root[0] != head:
+            raise GitStateStoreError("invalid state commit metadata")
+        if root[1] != "commit":
+            raise GitStateStoreError("state ref must point to a commit")
+        if result.returncode:
+            detail = result.stderr.decode("utf-8", "replace").strip()
+            raise GitStateStoreError(f"cannot read state subtree metadata: {detail}")
+        trees = self._parse_subtree_oids(rows[1:], names)
+        return StateSnapshot(head, trees["research"], trees["runtime"])
 
     def read_bytes(self, commit: str, path: str) -> bytes:
         """Read exact blob bytes from an explicit, format-valid state commit."""
@@ -121,7 +148,8 @@ class GitStateStore:
             filenames = []
             for number, (_, raw) in enumerate(values):
                 file = Path(directory) / str(number)
-                file.write_bytes(raw)
+                with self._git_boundary.open(file, "xb") as stream:
+                    stream.write(raw)
                 filenames.append(json.dumps(file.as_posix(), ensure_ascii=False))
             output = self._git("hash-object", "-w", "--no-filters", "--stdin-paths",
                                input=("\n".join(filenames) + "\n").encode("utf-8")).stdout
@@ -156,6 +184,14 @@ class GitStateStore:
             else:
                 candidate_paths.add(path)
         self._validate_candidate_paths(candidate_paths)
+        if expected_head is not None and not normalized_changes:
+            # A no-op still compares the authoritative ref at the publication
+            # boundary, but creates neither blobs nor an empty history commit.
+            updated = self._git("update-ref", self.ref, expected_head, expected_head, check=False)
+            if updated.returncode:
+                raise GitStateStoreConflict("state ref changed before the no-op compare-and-swap")
+            trees = self._subtree_oids(expected_head, ("research", "runtime"))
+            return StateSnapshot(expected_head, trees["research"], trees["runtime"])
         if expected_head is None:
             if not any(path.startswith("research/") for path in candidate_paths):
                 raise ValueError("the initial state must contain a research subtree")
@@ -180,8 +216,8 @@ class GitStateStore:
                 self._git("update-index", "-z", "--index-info", input=bytes(index_records), env=index_environment)
             tree = self._git("write-tree", env=index_environment).stdout.decode("ascii").strip()
         self._validate_oid(tree)
-        research_tree = self._subtree_oid(tree, "research")
-        runtime_tree = self._subtree_oid(tree, "runtime")
+        trees = self._subtree_oids(tree, ("research", "runtime"))
+        research_tree, runtime_tree = trees["research"], trees["runtime"]
 
         command = ["commit-tree", tree]
         if expected_head is not None:
@@ -201,6 +237,7 @@ class GitStateStore:
         lock_path = self._git_dir / f"do-math-{self.instance_id}.lock"
         descriptor = os.open(lock_path, os.O_RDWR | os.O_CREAT, 0o600)
         try:
+            self._git_boundary.verify_descriptor(descriptor, lock_path)
             if os.fstat(descriptor).st_size == 0:
                 os.write(descriptor, b"\0")
             os.lseek(descriptor, 0, os.SEEK_SET)
@@ -226,7 +263,8 @@ class GitStateStore:
         finally:
             os.close(descriptor)
 
-    def _head(self) -> str | None:
+    def _ref_oid(self) -> str | None:
+        """Resolve the ref and validate OID syntax; object kinds are checked by readers."""
         result = self._git("rev-parse", "--verify", "--quiet", self.ref, check=False)
         if result.returncode:
             if result.returncode == 1 and not result.stderr:
@@ -235,6 +273,12 @@ class GitStateStore:
             raise GitStateStoreError(f"cannot resolve existing state ref: {detail}")
         oid = result.stdout.decode("ascii").strip()
         self._validate_oid(oid)
+        return oid
+
+    def _head(self) -> str | None:
+        oid = self._ref_oid()
+        if oid is None:
+            return None
         object_type = self._git("cat-file", "-t", oid, check=False)
         if object_type.returncode:
             detail = object_type.stderr.decode("utf-8", "replace").strip()
@@ -244,15 +288,32 @@ class GitStateStore:
         return oid
 
     def _subtree_oid(self, commit_or_tree: str, name: str) -> str:
-        result = self._git("rev-parse", "--verify", f"{commit_or_tree}:{name}", check=False)
-        if result.returncode:
-            raise GitStateStoreError(f"state object lacks required {name!r} subtree")
-        oid = result.stdout.decode("ascii").strip()
-        self._validate_oid(oid)
-        object_type = self._git("cat-file", "-t", oid).stdout.decode("ascii").strip()
-        if object_type != "tree":
-            raise GitStateStoreError(f"state {name!r} entry must be a tree")
-        return oid
+        return self._subtree_oids(commit_or_tree, (name,))[name]
+
+    def _subtree_oids(self, commit_or_tree: str, names: tuple[str, ...]) -> dict[str, str]:
+        """Resolve and type-check required trees in one immutable-object read."""
+        self._validate_oid(commit_or_tree)
+        if not names or any(name not in {"research", "runtime"} for name in names):
+            raise ValueError("only research/runtime state subtrees can be resolved")
+        queries = "".join(f"{commit_or_tree}:{name}\n" for name in names).encode("ascii")
+        result = self._git("cat-file", "--batch-check=%(objectname) %(objecttype)", input=queries)
+        rows = result.stdout.decode("ascii").splitlines()
+        return self._parse_subtree_oids(rows, names)
+
+    def _parse_subtree_oids(self, rows: list[str], names: tuple[str, ...]) -> dict[str, str]:
+        if len(rows) != len(names):
+            raise GitStateStoreError("incomplete state subtree metadata")
+        trees = {}
+        for name, row in zip(names, rows):
+            fields = row.split()
+            if len(fields) != 2 or fields[-1] == "missing":
+                raise GitStateStoreError(f"state object lacks required {name!r} subtree")
+            oid, object_type = fields
+            self._validate_oid(oid)
+            if object_type != "tree":
+                raise GitStateStoreError(f"state {name!r} entry must be a tree")
+            trees[name] = oid
+        return trees
 
     def _tree_paths(self, commit: str) -> set[str]:
         raw_paths = self._git("ls-tree", "-r", "-z", "--name-only", commit).stdout.split(b"\0")
@@ -329,13 +390,16 @@ class GitStateStore:
             raise ValueError("artifact paths must name a bundle and a file")
 
     def _validate_oid(self, oid: str) -> None:
-        if not isinstance(oid, str) or len(oid) != self.oid_length or not _HEX.fullmatch(oid):
+        if oid_shape(oid) != self.object_format:
             raise ValueError(f"OID must be a lowercase {self.object_format} object ID")
 
     @contextmanager
     def _private_index(self) -> Iterator[dict[str, str]]:
         descriptor, index_path = tempfile.mkstemp(prefix="do-math-index-", dir=self._git_dir)
-        os.close(descriptor)
+        try:
+            self._git_boundary.verify_descriptor(descriptor, index_path)
+        finally:
+            os.close(descriptor)
         environment = {"GIT_INDEX_FILE": index_path}
         try:
             yield environment
@@ -353,6 +417,9 @@ class GitStateStore:
         env: Mapping[str, str] | None = None,
         check: bool = True,
     ) -> subprocess.CompletedProcess[bytes]:
+        self._repository_boundary.check()
+        if hasattr(self, "_git_boundary"):
+            self._git_boundary.check()
         disabled_hooks = getattr(self, "_git_dir", self.repository) / "do-math-disabled-hooks"
         environment = os.environ.copy()
         environment.update({
@@ -382,3 +449,116 @@ class GitStateStore:
             detail = completed.stderr.decode("utf-8", "replace").strip()
             raise GitStateStoreError(f"git {' '.join(arguments)} failed: {detail}")
         return completed
+
+
+def _no_reparse(path: Path) -> None:
+    candidate = path.absolute()
+    for part in (candidate, *candidate.parents):
+        try:
+            value = part.lstat()
+        except FileNotFoundError:
+            continue
+        if stat.S_ISLNK(value.st_mode) or getattr(value, "st_file_attributes", 0) & 0x400:
+            raise ValueError("physical path crosses a reparse point or symlink: " + str(part))
+
+
+def _windows_handle_facts(handle):
+    import ctypes
+    from ctypes import wintypes
+    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+    final = kernel.GetFinalPathNameByHandleW
+    final.argtypes = [wintypes.HANDLE, wintypes.LPWSTR, wintypes.DWORD, wintypes.DWORD]
+    final.restype = wintypes.DWORD
+    buffer = ctypes.create_unicode_buffer(32768)
+    count = final(handle, buffer, len(buffer), 0)
+    if not count or count >= len(buffer):
+        raise ctypes.WinError(ctypes.get_last_error())
+    path = buffer.value
+    if path.startswith("\\\\?\\UNC\\"):
+        raise ValueError("storage requires a local fixed NTFS volume")
+    path = path.removeprefix("\\\\?\\")
+    volume = ctypes.create_unicode_buffer(32768)
+    volume_path = kernel.GetVolumePathNameW
+    volume_path.argtypes = [wintypes.LPCWSTR, wintypes.LPWSTR, wintypes.DWORD]
+    if not volume_path(path, volume, len(volume)):
+        raise ctypes.WinError(ctypes.get_last_error())
+    drive_type = kernel.GetDriveTypeW
+    drive_type.argtypes = [wintypes.LPCWSTR]
+    if drive_type(volume.value) != 3:
+        raise ValueError("storage requires a local fixed volume")
+    serial = wintypes.DWORD()
+    fs = ctypes.create_unicode_buffer(256)
+    info = kernel.GetVolumeInformationW
+    info.argtypes = [wintypes.LPCWSTR, wintypes.LPWSTR, wintypes.DWORD, ctypes.POINTER(wintypes.DWORD),
+                     ctypes.POINTER(wintypes.DWORD), ctypes.POINTER(wintypes.DWORD), wintypes.LPWSTR, wintypes.DWORD]
+    if not info(volume.value, None, 0, ctypes.byref(serial), None, None, fs, len(fs)):
+        raise ctypes.WinError(ctypes.get_last_error())
+    if fs.value.upper() != "NTFS":
+        raise ValueError("storage requires NTFS")
+    return Path(path), (volume.value.casefold(), serial.value)
+
+
+class PhysicalBoundary:
+    """Check actual open handles; does not assert an unspecified ACL policy."""
+    def __init__(self, root):
+        self.root = Path(root).absolute()
+        _no_reparse(self.root)
+        if not self.root.is_dir():
+            raise ValueError("physical boundary root must be an existing directory")
+        self.device = self.root.stat().st_dev
+        self.check()
+
+    def check(self):
+        _no_reparse(self.root)
+        if self.root.stat().st_dev != self.device:
+            raise ValueError("physical root volume changed")
+        if os.name == "nt":
+            import ctypes
+            from ctypes import wintypes
+            kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+            create = kernel.CreateFileW
+            create.argtypes = [wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD, ctypes.c_void_p,
+                               wintypes.DWORD, wintypes.DWORD, wintypes.HANDLE]
+            create.restype = wintypes.HANDLE
+            close = kernel.CloseHandle
+            close.argtypes = [wintypes.HANDLE]
+            handle = create(str(self.root), 0, 3, None, 3, 0x02000000 | 0x00200000, None)
+            if handle == wintypes.HANDLE(-1).value:
+                raise ctypes.WinError(ctypes.get_last_error())
+            try:
+                final, volume = _windows_handle_facts(handle)
+                if os.path.normcase(str(final)) != os.path.normcase(str(self.root)):
+                    raise ValueError("physical directory handle resolves elsewhere")
+                if hasattr(self, "volume") and volume != self.volume:
+                    raise ValueError("physical volume identity changed")
+                self.volume = volume
+            finally:
+                close(handle)
+
+    def verify_descriptor(self, descriptor, path):
+        path = Path(path).absolute()
+        self.check()
+        _no_reparse(path)
+        if not path.is_relative_to(self.root) or os.fstat(descriptor).st_dev != self.device:
+            raise ValueError("opened file is outside the physical root/volume")
+        if os.name == "nt":
+            import msvcrt
+            final, volume = _windows_handle_facts(msvcrt.get_osfhandle(descriptor))
+            if not final.is_relative_to(self.root) or volume != self.volume or os.path.normcase(str(final)) != os.path.normcase(str(path)):
+                raise ValueError("opened handle final path is outside the physical boundary")
+        else:
+            if (os.fstat(descriptor).st_dev, os.fstat(descriptor).st_ino) != (path.stat().st_dev, path.stat().st_ino):
+                raise ValueError("opened file identity changed")
+
+    @contextmanager
+    def open(self, path, mode):
+        if mode not in {"rb", "xb"}:
+            raise ValueError("physical boundary supports read or exclusive creation")
+        path = Path(path).absolute()
+        if not path.is_relative_to(self.root):
+            raise ValueError("file path is outside the physical boundary")
+        self.check()
+        _no_reparse(path)
+        with path.open(mode) as stream:
+            self.verify_descriptor(stream.fileno(), path)
+            yield stream

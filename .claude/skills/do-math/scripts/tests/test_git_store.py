@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tempfile
 import threading
+import os
 import unittest
 from unittest.mock import patch
 
@@ -48,6 +49,21 @@ class GitStateStoreTests(unittest.TestCase):
             "research/instance.json": b'{"revision": 1}\n',
             "runtime/state.json": b'{"state": "initializing"}\n',
         }
+
+    def test_oid_shape_is_separate_from_instance_format(self):
+        from do_math.git_store import oid_shape
+        self.assertEqual(oid_shape("a" * 64), "sha256")
+        with self.assertRaises(ValueError):
+            self.store._validate_oid("a" * 64)
+        with self.assertRaises(ValueError):
+            oid_shape("A" * 40)
+
+    def test_unicode_artifact_path_preserves_the_supplied_code_points(self):
+        path = "runtime/artifacts/one/e\u0301.txt"
+        snapshot = self.store.publish(None, {**self.initial_changes(), path: b"raw"})
+        self.assertEqual(self.store.read_bytes(snapshot.head, path), b"raw")
+        self.assertIn(path, self.store._tree_paths(snapshot.head))
+        self.assertNotIn("runtime/artifacts/one/\u00e9.txt", self.store._tree_paths(snapshot.head))
 
     def test_many_blobs_use_one_hash_process_and_preserve_raw_bytes(self):
         (self.repository / '.gitattributes').write_text('* text eol=lf\n', encoding='utf-8')
@@ -199,6 +215,29 @@ class GitStateStoreTests(unittest.TestCase):
     def test_only_registry_instance_ids_are_accepted_before_ref_use(self) -> None:
         with self.assertRaises(ValueError):
             GitStateStore(self.repository, "inst_01")
+
+    def test_repository_junction_is_rejected_before_resolve(self):
+        link = Path(self.temporary.name) / "repository-link"
+        if os.name == "nt":
+            created = subprocess.run(["cmd.exe", "/d", "/c", "mklink", "/J", str(link), str(self.repository)], capture_output=True)
+            self.assertEqual(created.returncode, 0, created.stderr)
+        else:
+            link.symlink_to(self.repository, target_is_directory=True)
+        with self.assertRaisesRegex(ValueError, "reparse|symlink"):
+            GitStateStore(link, INSTANCE_ID)
+
+    def test_physical_file_boundary_checks_opened_handle(self):
+        from do_math import git_store
+        self.assertTrue(hasattr(git_store, "PhysicalBoundary"))
+        boundary = git_store.PhysicalBoundary(self.repository)
+        file = self.repository / "boundary.bin"
+        with boundary.open(file, "xb") as stream:
+            stream.write(b"bounded")
+        with boundary.open(file, "rb") as stream:
+            self.assertEqual(stream.read(), b"bounded")
+        outside = Path(self.temporary.name) / "outside.bin"
+        with self.assertRaises(ValueError):
+            boundary.open(outside, "xb").__enter__()
 
     def test_non_commit_or_corrupt_existing_ref_is_not_treated_as_absent(self) -> None:
         blob = git(self.repository, "hash-object", "-w", "--stdin", input=b"not a commit").decode().strip()

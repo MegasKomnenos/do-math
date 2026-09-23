@@ -73,7 +73,7 @@
       ]
     },
     {
-      "contract": "Only documented execution transitions; stopping phases only checkpointing -> terminating; ended is immutable.",
+      "contract": "Only documented execution transitions; the current supported profile stops directly in terminating. Checkpointing -> terminating remains only for a separately verified future bounded profile; ended is immutable.",
       "domain": "execution",
       "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
       "id": "R07",
@@ -85,7 +85,7 @@
       ]
     },
     {
-      "contract": "No substantive action before running authority; all startup reservations including bounded finishing usage are present.",
+      "contract": "No substantive action before running authority; normal startup reservations are present, with no separate finishing reservation in the current supported profile.",
       "domain": "execution",
       "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
       "id": "R08",
@@ -98,7 +98,7 @@
       ]
     },
     {
-      "contract": "Stopping checkpoint authority is bounded in time/tools/paths/usage; immediate stop, expiry or integrity loss skips it.",
+      "contract": "A finish notice requests normal partial submission without revoking authority. An actual stop revokes new model/tool/external work and begins immediate local termination and recovery of already accepted drafts, valid checkpoints and recoverable files. Unobserved remote termination, usage and billing remain unknown; a future bounded checkpointing profile requires separate enforcement evidence.",
       "domain": "execution",
       "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
       "id": "R09",
@@ -108,18 +108,20 @@
         "V156",
         "V157",
         "V158",
-        "V185"
+        "V185",
+        "V230"
       ]
     },
     {
-      "contract": "Submission acknowledgement is not output acceptance; bytes are collected after the termination barrier and compared to the announced manifest.",
+      "contract": "A verified normal native JSON final is the default delivery; an explicit draft-path submit is optional early delivery. Both use one central byte-capture, check, seal and apply path. A previously accepted early seal has absolute precedence and is never replaced or repaired by another final. Failed, incomplete, stopped, stale or unauthorized streams are preserve-only. Checks, hashes and manifests come from captured bytes, and neither normal completion nor receipt is output acceptance, task completion, mathematical approval or integration.",
       "domain": "execution",
       "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
       "id": "R10",
       "owner_section": "6.5",
       "source_vectors": [
         "V43",
-        "V11"
+        "V11",
+        "V185"
       ]
     },
     {
@@ -283,7 +285,7 @@
       ]
     },
     {
-      "contract": "Apply only declared changes to latest research and latest runtime; semantic merge is AI-owned; long checks rerun if their input closure changes.",
+      "contract": "For a response with no existing-record mutation and no partial acceptance to preserve, omission of integration bundles deterministically creates one atomic bundle over all current output and extension members; it never guesses independence or splits the response. Explicit splits, revisions and partial retries preserve declared members, impacts and previous bases. Reject explicit impact without a mutation member before central acceptance and never silently erase it. Bind every actual revision impact plan and independent review to one base snapshot S0, distinguish provenance citations from effective dependencies, reduce the reviewed union into one candidate, validate once and attempt one conditional publication. Apply only declared changes; semantic merge is AI-owned; long checks rerun if their input closure changes.",
       "domain": "integration",
       "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
       "id": "R22",
@@ -291,7 +293,9 @@
       "source_vectors": [
         "V42",
         "V67",
-        "V181"
+        "V181",
+        "V255",
+        "V256"
       ]
     },
     {
@@ -512,11 +516,11 @@
       ]
     },
     {
-      "contract": "Actual capability evidence is mandatory; fixture success is not proof of input injection, isolation or remote termination. Transcript-restoring adapters must disable and report compaction and preserve outputs. A Windows root is suspended and already a Job member at creation, before identity persistence; engine loss in that gap must still terminate it. Authority precedes resume and termination is observed. Unsupported creation paths cannot activate.",
+      "contract": "Actual capability evidence is mandatory; fixture success is not proof of input injection, strong same-user isolation or remote termination. The current boundary is instruction compliance, selected input and a private workspace plus central authority, exact execution binding, public-record writes and publication-scope checks. A Windows root is suspended and already a Job member at creation, before identity persistence; the Job governs local process/descendant lifetime and adopted resource limits, not file/network/secret/IPC isolation. Unobserved provider operations, remote termination and billing stay unknown. Unsupported claimed capabilities cannot activate.",
       "domain": "adapter",
       "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
       "id": "R39",
-      "owner_section": "16.1,16.1.1",
+      "owner_section": "3.4,16.1,16.1.1",
       "source_vectors": [
         "V33",
         "V61",
@@ -527,7 +531,7 @@
       ]
     },
     {
-      "contract": "Same request ID and canonical input => previous result; different input => rejection; identical checker/input disagreement is tool failure. Repair aggregation selects the latest history_window sealed role outputs by event_seq, breaking same-event ties by bundle ID and path bytes, and deduplicates their check records regardless of integration success. A zero window does not suppress mandatory current failures.",
+      "contract": "Same request ID and canonical input => previous result; different input => rejection; identical checker/input disagreement is tool failure. Repair aggregation selects the latest history_window centrally captured submission attempts in submission order, including rejected, corrected and accepted native-final or explicit-submit attempts regardless of later integration, and deduplicates request replay. It derives history from existing central snapshots, events and artifacts, not from optional local check or preview coverage and not from a mandatory producer report. A zero window disables frequency aggregation but does not suppress mandatory current unresolved failures.",
       "domain": "command",
       "enforcement": "Runtime/AI/evidence validation as described in the owner section; schema validity alone is insufficient.",
       "id": "R40",

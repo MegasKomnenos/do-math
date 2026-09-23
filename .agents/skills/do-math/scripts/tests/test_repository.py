@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+import json
 import os
 from pathlib import Path
 import re
@@ -39,7 +40,7 @@ class ResearchRepositoryTests(unittest.TestCase):
 
         subprocess.run(["git", "-C", str(self.repository_path), "init", "-q"], check=True)
         self.repository = ResearchRepository(self.repository_path, INSTANCE_ID)
-        self.initial_head = self.repository.initialize({"name": "instance", "revision": 1}, {"state": "initializing"})
+        self.initial_head = self.repository.initialize({"feature_version": 5, "title": "instance"}, {"feature_version": 5, "status": "initializing"})
 
     def tearDown(self) -> None:
         self.temporary.cleanup()
@@ -47,38 +48,39 @@ class ResearchRepositoryTests(unittest.TestCase):
     def test_initialize_load_save_and_exact_old_snapshot_read(self) -> None:
         head, instance, runtime = self.repository.load()
         self.assertEqual(head, self.initial_head)
-        self.assertEqual(instance, {"name": "instance", "revision": 1})
-        self.assertEqual(runtime, {"state": "initializing"})
+        self.assertEqual(instance["title"], "instance")
+        self.assertEqual(instance["object_format"], "sha1")
+        self.assertEqual(runtime["status"], "initializing")
 
-        later = self.repository.save(head, instance, {"state": "active"})
-        self.assertEqual(self.repository.load(self.initial_head)[2], {"state": "initializing"})
-        self.assertEqual(self.repository.read("runtime/state.json", later), canonical_json({"state": "active"}))
+        later = self.repository.save(head, instance, {"feature_version": 5, "status": "active"})
+        self.assertEqual(self.repository.load(self.initial_head)[2]["status"], "initializing")
+        self.assertEqual(json.loads(self.repository.read("runtime/_state/metadata.json", later))["record"]["status"], "active")
 
     def test_stale_save_conflict_does_not_overwrite(self) -> None:
         second = ResearchRepository(self.repository_path, INSTANCE_ID)
-        winner = self.repository.save(self.initial_head, {"name": "instance", "revision": 1}, {"state": "winner"})
+        winner = self.repository.save(self.initial_head, {"feature_version": 5, "title": "instance"}, {"feature_version": 5, "status": "winner"})
         with self.assertRaises(GitStateStoreConflict):
-            second.save(self.initial_head, {"name": "instance", "revision": 1}, {"state": "loser"})
-        self.assertEqual(self.repository.load(winner)[2], {"state": "winner"})
+            second.save(self.initial_head, {"feature_version": 5, "title": "instance"}, {"feature_version": 5, "status": "loser"})
+        self.assertEqual(self.repository.load(winner)[2]["status"], "winner")
 
     def test_new_artifact_bundle_is_saved_with_state_and_existing_bundle_is_immutable(self) -> None:
         first = self.repository.save(
             self.initial_head,
-            {"name": "instance", "revision": 1},
-            {"state": "running"},
+            {"feature_version": 5, "title": "instance"},
+            {"feature_version": 5, "status": "running"},
             artifacts={"runtime/artifacts/AB-01/output.txt": b"sealed"},
         )
         with self.assertRaises(ValueError):
             self.repository.save(
                 first,
-                {"name": "instance", "revision": 1},
-                {"state": "running"},
+                {"feature_version": 5, "title": "instance"},
+                {"feature_version": 5, "status": "running"},
                 artifacts={"runtime/artifacts/AB-01/other.txt": b"forbidden"},
             )
         later = self.repository.save(
             first,
-            {"name": "instance", "revision": 1},
-            {"state": "ended"},
+            {"feature_version": 5, "title": "instance"},
+            {"feature_version": 5, "status": "ended"},
             artifacts={"runtime/artifacts/AB-02/output.txt": b"new bundle"},
         )
         self.assertEqual(self.repository.read("runtime/artifacts/AB-01/output.txt", later), b"sealed")
@@ -115,14 +117,15 @@ class ResearchRepositoryTests(unittest.TestCase):
         self.assertEqual(empty, {"snapshot": head, "total": 0, "items": [], "next_cursor": None, "truncated": False})
 
     def test_list_files_prefix_and_read_reject_implicit_missing_snapshot(self) -> None:
-        self.assertEqual(self.repository.list_files("research/"), ["research/instance.json"])
-        self.assertEqual(self.repository.list_files("runtime/"), ["runtime/state.json"])
+        self.assertIn("research/_state/metadata.json", self.repository.list_files("research/"))
+        self.assertNotIn("research/instance.json", self.repository.list_files("research/"))
+        self.assertIn("runtime/_state/metadata.json", self.repository.list_files("runtime/"))
         with self.assertRaises(ValueError):
             self.repository.list_files("../")
 
     def test_duplicate_json_and_nonfinite_values_are_rejected(self) -> None:
         bad_head = self.repository._store.publish(self.initial_head, {
-            "research/instance.json": b'{"name":"first","name":"second"}\n',
+            "research/_state/metadata.json": b'{"name":"first","name":"second"}\n',
         }).head
         with self.assertRaises(ValueError):
             self.repository.load(bad_head)
@@ -134,8 +137,8 @@ class ResearchRepositoryTests(unittest.TestCase):
         destination = self.root / "export"
         result = self.repository.export(destination, prefixes=("research/",))
         self.assertEqual(result["snapshot"], self.initial_head)
-        self.assertEqual(result["files"], ["research/instance.json"])
-        self.assertEqual((destination / "research" / "instance.json").read_bytes(), canonical_json({"name": "instance", "revision": 1}))
+        self.assertEqual(result["files"], self.repository.list_files("research/"))
+        self.assertEqual((destination / "research" / "_state" / "metadata.json").read_bytes(), self.repository.read("research/_state/metadata.json"))
         with self.assertRaises(ValueError):
             self.repository.export(destination, prefixes=("research/",))
 

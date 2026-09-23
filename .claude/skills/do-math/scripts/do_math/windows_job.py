@@ -1,6 +1,6 @@
 """Windows Job-backed process lifetime ownership for the initial do-math adapter.
 
-This module owns process lifetime only.  A Job object does not isolate files,
+This module owns process lifetime and optional local resource caps. A Job does not isolate files,
 network, IPC, credentials, or process identity; those boundaries need separate
 enforcement.
 """
@@ -18,6 +18,32 @@ from typing import Final
 
 class WindowsJobUnsupportedError(RuntimeError):
     """The host cannot provide atomic Job-list process creation."""
+
+
+class WindowsJobResourceError(WindowsJobUnsupportedError, OSError):
+    """Required local Job settings failed before creating the user process."""
+
+    capability = "local_job_resources"
+
+
+def validate_resource_limits(value):
+    if value is None:
+        return None
+    if (not isinstance(value, Mapping) or set(value) != {"memory_bytes", "cpu_rate_basis_points"}
+            or any(type(v) is not int or v <= 0 for v in value.values())
+            or value["memory_bytes"] > (1 << (8 * ctypes.sizeof(ctypes.c_size_t))) - 1
+            or value["cpu_rate_basis_points"] > 10000):
+        raise ValueError("Job limits need positive commit bytes and CPU hard-cap basis points in 1..10000")
+    return dict(value)
+
+
+def process_identity(job) -> dict:
+    """Serialize native FILETIME exactly, without a floating-point conversion."""
+    created = getattr(job, "creation_filetime", None)
+    if created is not None and (type(created) is not int or created < 0):
+        raise ValueError("native process creation FILETIME must be a nonnegative integer")
+    return {"pid": getattr(job, "pid", None),
+            "creation_filetime": str(created) if created is not None else None}
 
 
 @dataclass(frozen=True, slots=True)
@@ -46,6 +72,9 @@ if os.name == "nt":
     _ERROR_ACCESS_DENIED: Final = 5
     _HANDLE_FLAG_INHERIT: Final = 0x00000001
     _JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE: Final = 0x00002000
+    _JOB_OBJECT_LIMIT_JOB_MEMORY: Final = 0x00000200
+    _JobObjectCpuRateControlInformation: Final = 15
+    _CPU_RATE_ENABLE_HARD_CAP: Final = 0x00000005
     _JobObjectBasicAccountingInformation: Final = 1
     _JobObjectBasicProcessIdList: Final = 3
     _JobObjectExtendedLimitInformation: Final = 9
@@ -136,6 +165,10 @@ if os.name == "nt":
             ("ActiveProcesses", _DWORD),
             ("TotalTerminatedProcesses", _DWORD),
         ]
+
+    class _JOBOBJECT_CPU_RATE_CONTROL_INFORMATION(ctypes.Structure):
+        # CpuRate occupies the DWORD union member when ENABLE|HARD_CAP is set.
+        _fields_ = [("ControlFlags", _DWORD), ("CpuRate", _DWORD)]
 
     class _SECURITY_CAPABILITIES(ctypes.Structure):
         _fields_ = [
@@ -243,7 +276,9 @@ class WindowsJob:
         env: Mapping[str, str] | None = None,
         appcontainer_sid: int | None = None,
         name: str | None = None,
+        resource_limits: Mapping[str, int] | None = None,
     ) -> None:
+        self.resource_limits = validate_resource_limits(resource_limits)
         _require_windows_10_job_list()
         command_line = _command_line(argv)
         environment = _environment_block(env)
@@ -299,6 +334,9 @@ class WindowsJob:
             raise OSError(error, "SetHandleInformation failed", None, error)
         limits = _JOBOBJECT_EXTENDED_LIMIT_INFORMATION()
         limits.BasicLimitInformation.LimitFlags = _JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+        if self.resource_limits is not None:
+            limits.BasicLimitInformation.LimitFlags |= _JOB_OBJECT_LIMIT_JOB_MEMORY
+            limits.JobMemoryLimit = self.resource_limits["memory_bytes"]
         if not _kernel32.SetInformationJobObject(
             handle,
             _JobObjectExtendedLimitInformation,
@@ -307,8 +345,38 @@ class WindowsJob:
         ):
             error = ctypes.get_last_error()
             _kernel32.CloseHandle(handle)
-            raise OSError(error, "SetInformationJobObject failed", None, error)
+            kind = (WindowsJobResourceError if self.resource_limits is not None and error in (
+                _ERROR_NOT_SUPPORTED, _ERROR_CALL_NOT_IMPLEMENTED, _ERROR_INVALID_PARAMETER, _ERROR_ACCESS_DENIED) else OSError)
+            raise kind(error, "SetInformationJobObject(ExtendedLimit) failed", None, error)
+        if self.resource_limits is not None:
+            cpu = _JOBOBJECT_CPU_RATE_CONTROL_INFORMATION(
+                _CPU_RATE_ENABLE_HARD_CAP, self.resource_limits["cpu_rate_basis_points"])
+            if not _kernel32.SetInformationJobObject(handle, _JobObjectCpuRateControlInformation,
+                    ctypes.byref(cpu), ctypes.sizeof(cpu)):
+                error = ctypes.get_last_error()
+                _kernel32.CloseHandle(handle)
+                kind = (WindowsJobResourceError if error in (_ERROR_NOT_SUPPORTED, _ERROR_CALL_NOT_IMPLEMENTED,
+                    _ERROR_INVALID_PARAMETER, _ERROR_ACCESS_DENIED) else OSError)
+                raise kind(error, "SetInformationJobObject(CpuRate) failed", None, error)
         return int(handle)
+
+    def resource_usage(self) -> dict:
+        """Read settings and local accounting; configuration alone is not enforcement evidence."""
+        extended = _JOBOBJECT_EXTENDED_LIMIT_INFORMATION()
+        cpu = _JOBOBJECT_CPU_RATE_CONTROL_INFORMATION()
+        accounting = _JOBOBJECT_BASIC_ACCOUNTING_INFORMATION()
+        for info_class, value in ((_JobObjectExtendedLimitInformation, extended),
+                (_JobObjectCpuRateControlInformation, cpu), (_JobObjectBasicAccountingInformation, accounting)):
+            if not _kernel32.QueryInformationJobObject(self.job_handle, info_class,
+                    ctypes.byref(value), ctypes.sizeof(value), None):
+                _raise_last_error("QueryInformationJobObject(resources)")
+        memory_enabled = bool(extended.BasicLimitInformation.LimitFlags & _JOB_OBJECT_LIMIT_JOB_MEMORY)
+        cpu_enabled = cpu.ControlFlags & _CPU_RATE_ENABLE_HARD_CAP == _CPU_RATE_ENABLE_HARD_CAP
+        return {"limits": {"memory_bytes": int(extended.JobMemoryLimit) if memory_enabled else None,
+                           "cpu_rate_basis_points": int(cpu.CpuRate) if cpu_enabled else None},
+                "peak_job_memory_bytes": int(extended.PeakJobMemoryUsed),
+                "cpu_time_100ns": int(accounting.TotalUserTime + accounting.TotalKernelTime),
+                "scope": "local_job_commit_memory_and_cpu_cap_not_rss_or_remote_usage"}
 
     def _create_suspended_root(
         self,
