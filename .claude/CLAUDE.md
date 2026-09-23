@@ -131,3 +131,7 @@ cd가 필요한 명령은 같은 호출 안에서 끝내고, 세션의 작업 �
 
 do-dag의 모델_프리셋 기본값은 mixed. 검증런_모델_프리셋 기본값은 do-dag의 모델_프리셋과 같게.
 verify-rounds의 모델_프리셋 기본값은 mixed.
+
+## do-math graphify
+
+graphify는 .claude/skills/do-math/ 내부 구조를 탐색할 때 필요에 따라 사용한다. 정본은 .claude/skills/graphify/SKILL.md이며 Codex도 같은 정본과 그래프를 사용한다. 갱신은 사용자의 명시적인 업데이트·초기 구축 요청에만 수행한다. 조회나 코드 변경으로 자동 실행하지 않으며 판단 근거는 현재 원문과 코드로 확인한다.

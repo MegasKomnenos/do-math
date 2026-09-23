@@ -21,6 +21,7 @@
     "writing-skills/references/멀티런타임_동기화.md",
     "writing-skills/scripts/build_skill_mirrors.py",
     "writing-skills/scripts/test_build_skill_mirrors.py",
-    "writing-skills/testing-skills-with-subagents.md"
+    "writing-skills/testing-skills-with-subagents.md",
+    "graphify/*"
   ]
 }
