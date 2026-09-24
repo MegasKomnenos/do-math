@@ -25,46 +25,87 @@ INSTANCE_ID = "RI-01ARZ3NDEKTSV4RRFFQ69G5FAV"
 
 
 class StorageRedesignTests(unittest.TestCase):
-    def native_preparation_task(self):
+    def test_relation_claim_endpoint_basis_survives_storage_and_remains_typed(self):
+        from do_math import knowledge, knowledge_io
+        from test_knowledge import candidate
+        from test_knowledge_io import activate
+        instance, runtime = {"feature_version": 5}, {"feature_version": 5}
+        endpoints = []
+        for title in ("source", "target"):
+            instance, runtime, kid = knowledge_io.import_candidate(instance, runtime,
+                candidate(title=title, lean_code="", declaration_names=[]),
+                source_ref="fixture:input", actor_ref="fixture:user")
+            endpoints.append(kid)
+        instance = activate(instance, "formally_implies")
+        claim = {"kind": "formally_implies", "source": endpoints[0],
+                 "target": endpoints[1], "confirmed_scope": "True implies True"}
+        instance, runtime, kid = knowledge_io.import_candidate(instance, runtime,
+            candidate(title="relation proof", relation_claim=claim),
+            source_ref="fixture:input", actor_ref="fixture:user")
+        expected = deepcopy(instance["knowledge"][kid]["relation_endpoint_basis"])
+        head = self.repository.initialize(instance, runtime)
+        _, saved, running = self.repository.load(head)
+        self.assertEqual(saved["knowledge"][kid]["relation_endpoint_basis"], expected)
+        self.assertTrue(knowledge.validate_basis(expected, saved, running)["valid"])
+        for invalid in ({}, [{"id": endpoints[0], "sha256": "bad", "status": "active"}],
+                        [{"id": endpoints[0], "sha256": "a" * 64}]):
+            with self.subTest(invalid=invalid):
+                changed = deepcopy(saved)
+                changed["knowledge"][kid]["relation_endpoint_basis"] = invalid
+                with self.assertRaisesRegex(ValueError, "relation_endpoint_basis"):
+                    self.repository.validate_candidate(changed, running, head)
+    def task_with_reference_locators(self):
         from do_math.contracts import task_candidate_record
-        # Exact normal final from REAL run013; model not called by this test.
-        raw = (Path(__file__).parent / 'fixtures/native-preparation-task.json').read_bytes()
-        candidate = json.loads(raw)['candidates'][0]
-        task = task_candidate_record(candidate, task_id='TK-native-preparation')
+        from do_math.execution_profiles import profile_ref
+        from research_fixtures import candidate
+        instance = self.reference_fixture_instance()
+        profile = next(p for p in instance['execution_profiles'].values() if p['role'] == 'research_work')
+        wire = candidate('Reference locator fixture')
+        wire.update(inputs=['source:NatAddZero.lean', 'tool:lean'],
+            basis_refs=['context:goal', 'context:policy', 'tool:lean'],
+            profile_refs=[profile_ref(profile)], authority_refs=['GR-reference'])
+        task = task_candidate_record(wire, task_id='TK-reference-locators')
         task.pop('revises_task_id')
         task['status'] = 'planned'
         return task
 
-    def task_reference_fixture_instance(self, task):
-        # Exact recorded profiles and source-bound user approval from run013.
-        return json.loads((Path(__file__).parent /
-            'fixtures/native-task-reference-owners.json').read_bytes())
+    def reference_fixture_instance(self):
+        from do_math.engine import DEFAULT_CONFIG
+        from do_math.execution_profiles import build_profiles
+        from do_math.governance import apply_decision, preserve_source
+        config = {**deepcopy(DEFAULT_CONFIG), 'lean_command': ['fixture-lean'], 'scholarly_enabled': False}
+        instance = {'feature_version': 5, **build_profiles(config), 'governance_sources': {
+            'GS-reference': preserve_source('GS-reference', 'Authorize the fixture research.', origin='user')}}
+        instance, _, _ = apply_decision(instance, {}, {'kind': 'grant', 'grant': {
+            'id': 'GR-reference', 'kind': 'local', 'roles': ['research_work'],
+            'reuse': 'reusable', 'budget_kind': 'work'}}, source_ref='GS-reference')
+        return instance
 
-    def test_native_task_input_and_basis_locators_survive_actual_git_storage(self):
-        task = self.native_preparation_task()
+    def test_task_input_and_basis_locators_survive_actual_git_storage(self):
+        task = self.task_with_reference_locators()
         self.assertIn('context:goal', task['basis_refs'])
         self.assertIn('source:NatAddZero.lean', task['inputs'])
-        head = self.repository.initialize(self.task_reference_fixture_instance(task),
+        head = self.repository.initialize(self.reference_fixture_instance(),
             {'feature_version': 5, 'tasks': {task['id']: task}})
         saved = self.repository.load(head)[2]['tasks'][task['id']]
         for field in ('inputs', 'basis_refs', 'reuse', 'dependencies', 'authority_refs', 'profile_refs'):
             self.assertEqual(saved[field], task[field])
 
     def test_task_source_path_locators_keep_exact_unicode_in_git(self):
-        task = self.native_preparation_task()
+        task = self.task_with_reference_locators()
         refs = ['source:e\u0301.lean', 'input/sources/\u212a.lean',
                 'runtime/artifacts/BA-source/report.md', 'context:policy', 'tool:lean']
         task.update(inputs=refs, basis_refs=refs)
-        head = self.repository.initialize(self.task_reference_fixture_instance(task),
+        head = self.repository.initialize(self.reference_fixture_instance(),
             {'feature_version': 5, 'tasks': {task['id']: task}})
         saved = self.repository.load(head)[2]['tasks'][task['id']]
         self.assertEqual(saved['inputs'], refs)
         self.assertEqual(saved['basis_refs'], refs)
 
     def test_task_locator_storage_does_not_widen_record_or_profile_authority(self):
-        task = self.native_preparation_task()
+        task = self.task_with_reference_locators()
         task.update(inputs=[], basis_refs=[])
-        head = self.repository.initialize(self.task_reference_fixture_instance(task),
+        head = self.repository.initialize(self.reference_fixture_instance(),
             {'feature_version': 5, 'tasks': {task['id']: task}})
         _, instance, runtime = self.repository.load(head)
         for field in ('reuse', 'dependencies', 'authority_refs', 'profile_refs'):
@@ -128,13 +169,13 @@ class StorageRedesignTests(unittest.TestCase):
 
     def test_lossless_json_preserves_values_and_mathematical_dictionary_keys(self):
         import json
-        from do_math.repository import lossless_json
+        from do_math.repository import canonical_json
         value = {"source": '-- e\u0301\r\n', "declarations": {"\u212a": "\u2126", "K": "\u03a9"}}
-        raw = lossless_json(value)
+        raw = canonical_json(value)
         self.assertEqual(json.loads(raw), value)
-        self.assertNotEqual(lossless_json("e\u0301"), lossless_json("\u00e9"))
+        self.assertNotEqual(canonical_json("e\u0301"), canonical_json("\u00e9"))
         for invalid in (0.5, float("nan"), 2 ** 53, "\ud800", {1: "not a string key"}):
-            with self.assertRaises(ValueError): lossless_json(invalid)
+            with self.assertRaises(ValueError): canonical_json(invalid)
         self.assertEqual(canonical_json(value), raw)
 
     def test_registered_exact_payload_keeps_closed_logical_validation_and_file_coordinates(self):
@@ -160,7 +201,7 @@ class StorageRedesignTests(unittest.TestCase):
         self.assertEqual(descriptor["json_pointer"], "/record")
         self.assertEqual(descriptor["record"], state["exact_fixture"]["EF-1"])
         self.assertNotIn("utf8_base64", descriptor["bytes"].decode("utf-8"))
-        self.assertEqual(self.repository.save(head, state, run), head)
+        self.assertEqual(self.repository.save_with_state(head, state, run)[0], head)
         state["exact_fixture"]["EF-1"]["payload"]["K"] = 7
         with self.assertRaises(ValueError): self.repository.validate_candidate(state, run)
 
@@ -174,12 +215,12 @@ class StorageRedesignTests(unittest.TestCase):
         self.assertEqual(state["governance_sources"][source["id"]], source)
         state["governance_sources"][source["id"]] = preserve_source("GS-exact", text.replace("e\u0301", "\u00e9"), origin="user")
         with self.assertRaisesRegex(ValueError, "immutable"):
-            self.repository.save(head, state, runtime)
+            self.repository.save_with_state(head, state, runtime)[0]
 
     def test_actual_host_profile_reservation_round_trip_and_authority_refs(self):
         import platform
         from do_math import execution_profiles as profiles, governance
-        from do_math.session_slots import GitSessionSlots
+        from do_math.session_slots import SessionSlots
         instance, runtime = self._execution_state()
         source = governance.preserve_source("GS-host", "Disposable test approval: local jobs 3, memory 4096, CPU 8000; reserve 1/1024/1000", origin="user")
         instance["governance_sources"] = {source["id"]: source}
@@ -200,7 +241,7 @@ class StorageRedesignTests(unittest.TestCase):
             input_manifest={}, profile_ref=profiles.profile_ref(profile), created_at="2026-09-20T00:00:00Z")
         execution["role"] = profile["role"]
         assign_execution(runtime, "AT-1", execution)
-        self.assertTrue(GitSessionSlots(runtime, instance).acquire("EX-host", profile["budget_kind"], None,
+        self.assertTrue(SessionSlots(runtime, instance).acquire("EX-host", profile["budget_kind"], None,
             profile=profile, execution=execution, current_time=100))
         head = self.repository.initialize(instance, runtime)
         _, saved, loaded = self.repository.load(head)
@@ -311,7 +352,7 @@ class StorageRedesignTests(unittest.TestCase):
         runtime["checkpoints"] = {"EX-1": checkpoint}
         with self.assertRaisesRegex(ValueError, "artifact evidence"):
             self.repository.validate_candidate(instance, runtime, head)
-        head = self.repository.save(head, instance, runtime, artifacts={reference: raw})
+        head = self.repository.save_with_state(head, instance, runtime, artifacts={reference: raw})[0]
         _, instance, loaded = self.repository.load(head)
         self.assertEqual(loaded["checkpoints"]["EX-1"], checkpoint)
         for change in ("bytes", "omissions", "final"):
@@ -328,7 +369,7 @@ class StorageRedesignTests(unittest.TestCase):
         from do_math.execution_lifecycle import transition_execution, record_submission_intent
         instance, runtime = self._execution_state("maintenance")
         head = self.repository.initialize(instance, runtime)
-        from v5_fixtures import sealed_maintenance_submission
+        from research_fixtures import sealed_maintenance_submission
         with tempfile.TemporaryDirectory() as workspace:
             intent, artifacts = sealed_maintenance_submission(workspace, "EX-1")
         execution = runtime["executions"]["EX-1"]
@@ -337,7 +378,7 @@ class StorageRedesignTests(unittest.TestCase):
         record_submission_intent(execution, intent,
             {"id": "CT-submit", "kind": "submit_intent", "state": "accepted", "execution_id": "EX-1"},
             at="2026-09-20T00:00:01Z")
-        head = self.repository.save(head, instance, runtime, artifacts=artifacts)
+        head = self.repository.save_with_state(head, instance, runtime, artifacts=artifacts)[0]
         _, instance, runtime = self.repository.load(head)
         self.assertEqual(runtime["executions"]["EX-1"]["authority_revocation"]["receipt_id"], "CT-submit")
         for field, value in (("receipt_id", "CT-other"), ("state", "rejected"), ("kind", "self_check")):
@@ -381,7 +422,7 @@ class StorageRedesignTests(unittest.TestCase):
         _, instance, runtime = self.repository.load(head)
         end_preparation(runtime["executions"]["EX-1"], at="2026-09-20T00:01:00Z",
                         stage="packing", reason="input overflow", cancelled=True)
-        head = self.repository.save(head, instance, runtime)
+        head = self.repository.save_with_state(head, instance, runtime)[0]
         saved = self.repository.load(head)[2]["executions"]["EX-1"]
         self.assertEqual(saved["outcome"], "cancelled")
         self.assertEqual(saved["input_preparation"]["reason"], "input overflow")
@@ -464,7 +505,7 @@ class StorageRedesignTests(unittest.TestCase):
         def persist(row):
             nonlocal head
             runtime["external_operations"][row["id"]] = deepcopy(row)
-            head = self.repository.save(head, instance, runtime)
+            head = self.repository.save_with_state(head, instance, runtime)[0]
             self.assertEqual(self.repository.load(head)[2]["external_operations"][row["id"]], row)
         unknown = external.execute_operation(operation, instance["grants"]["GR-http"], persist=persist,
             transport=lambda *_: {"http_status": 503, "body": b"uncertain"}, runtime=runtime)
@@ -481,7 +522,7 @@ class StorageRedesignTests(unittest.TestCase):
 
     def test_actual_plan_disposition_and_repetition_request_round_trip(self):
         from do_math.decision_engine import DecisionEngineMixin
-        from v5_fixtures import candidate, disposition
+        from research_fixtures import candidate, disposition
         instance, runtime = self._execution_state("research_plan")
         task = {**candidate(), "id": "TK-1", "revision": 1, "status": "planned"}
         task.pop("revises_task_id")
@@ -557,7 +598,7 @@ class StorageRedesignTests(unittest.TestCase):
 
         collision = {"feature_version": 5, "events": [{"id": "SO-01", "kind": "created"}]}
         with self.assertRaisesRegex(ValueError, "globally unique"):
-            self.repository.save(head, instance, collision)
+            self.repository.save_with_state(head, instance, collision)[0]
 
         contract = StateContract.default()
         contract.register_family(
@@ -637,7 +678,7 @@ class StorageRedesignTests(unittest.TestCase):
         _, instance, runtime = self.repository.load(head)
         runtime["events"][0]["kind"] = "rewritten"
         with self.assertRaisesRegex(ValueError, "content cannot be rewritten"):
-            self.repository.save(head, instance, runtime)
+            self.repository.save_with_state(head, instance, runtime)[0]
 
     def test_public_candidate_and_record_evidence_apis_exist(self):
         for name in ("validate_candidate", "records", "read_record"):
@@ -651,19 +692,19 @@ class StorageRedesignTests(unittest.TestCase):
         before = deepcopy((instance, runtime))
         with patch.object(self.repository._store, "publish", side_effect=GitStateStoreConflict("late race")):
             with self.assertRaises(GitStateStoreConflict):
-                self.repository.save(head, instance, runtime)
+                self.repository.save_with_state(head, instance, runtime)[0]
         self.assertEqual((instance, runtime), before)
-        next_head = self.repository.save(head, instance, runtime)
+        next_head = self.repository.save_with_state(head, instance, runtime)[0]
         _, instance, runtime = self.repository.load(next_head)
         self.assertEqual([e["event_seq"] for e in runtime["events"]], [1, 2])
-        retry = self.repository.save(next_head, instance, runtime)
+        retry = self.repository.save_with_state(next_head, instance, runtime)[0]
         self.assertEqual(self.repository.load(retry)[2]["events"], runtime["events"])
         runtime["events"].reverse()
         with self.assertRaisesRegex(ValueError, "order"):
-            self.repository.save(retry, instance, runtime)
+            self.repository.save_with_state(retry, instance, runtime)[0]
         runtime["events"].clear()
         with self.assertRaisesRegex(ValueError, "removed"):
-            self.repository.save(retry, instance, runtime)
+            self.repository.save_with_state(retry, instance, runtime)[0]
 
     def test_empty_family_and_list_order_round_trip_and_runtime_oid(self):
         instance = {"feature_version": 5, "knowledge": {}, "sources": []}
@@ -671,7 +712,7 @@ class StorageRedesignTests(unittest.TestCase):
         head = self.repository.initialize(instance, runtime)
         first = self.repository._store.read_snapshot()
         runtime["events"] = [{"id": "EV-Z", "kind": "first"}, {"id": "EV-A", "kind": "second"}]
-        next_head = self.repository.save(head, instance, runtime)
+        next_head = self.repository.save_with_state(head, instance, runtime)[0]
         self.assertEqual(self.repository._store.read_snapshot().research_tree, first.research_tree)
         _, loaded, state = self.repository.load(next_head)
         self.assertEqual(loaded["knowledge"], {})
@@ -704,14 +745,14 @@ class StorageRedesignTests(unittest.TestCase):
         _, instance, runtime = self.repository.load(head)
         instance["object_format"] = "sha256"
         with self.assertRaisesRegex(ValueError, "object_format"):
-            self.repository.save(head, instance, runtime)
+            self.repository.save_with_state(head, instance, runtime)[0]
         import json
         path = "research/_state/manifest.json"
         manifest = json.loads(self.repository.read(path, head))
         manifest["contract"]["sha256"] = "0" * 64
         bad = self.repository._store.publish(head, {path: canonical_json(manifest)}).head
         self.repository.load(bad)  # Same edition is checked against current values and layout.
-        manifest["contract"]["schema_version"] += 1
+        manifest["contract"]["contract_id"] = "unsupported"
         incompatible = self.repository._store.publish(bad, {path: canonical_json(manifest)}).head
         with self.assertRaisesRegex(ValueError, "contract/schema"):
             self.repository.load(incompatible)
@@ -733,7 +774,7 @@ class StorageRedesignTests(unittest.TestCase):
         self.assertEqual(runtime["pending_events"], ["EV-1"])
         runtime["pending_events"] = ["EV-missing"]
         with self.assertRaises(ValueError):
-            self.repository.save(head, instance, runtime)
+            self.repository.save_with_state(head, instance, runtime)[0]
 
     def test_load_rejects_removed_required_contract_field(self):
         import json
@@ -780,7 +821,7 @@ class StorageRedesignTests(unittest.TestCase):
             resolve_evidence=lambda ref: raw if ref == path else None)
         with self.assertRaisesRegex(ValueError, "artifact evidence"):
             self.repository.validate_candidate(instance, runtime, head)
-        saved = self.repository.save(head, instance, runtime, artifacts={path: raw})
+        saved = self.repository.save_with_state(head, instance, runtime, artifacts={path: raw})[0]
         _, instance, runtime = self.repository.load(saved)
         self.assertEqual(runtime["academic_resolution_records"][0]["evidence_hashes"][path], hashlib.sha256(raw).hexdigest())
         broken = deepcopy(runtime)
@@ -880,15 +921,15 @@ class StorageRedesignTests(unittest.TestCase):
         _, instance, winner = self.repository.load(head)
         loser = deepcopy(winner)
         winner["events"].append({"id": "EV-2", "kind": "winner"})
-        accepted = self.repository.save(head, instance, winner)
+        accepted = self.repository.save_with_state(head, instance, winner)[0]
         loser["events"].append({"id": "EV-3", "kind": "retry"})
         before = deepcopy((instance, loser))
         with self.assertRaises(GitStateStoreConflict):
-            self.repository.save(head, instance, loser)
+            self.repository.save_with_state(head, instance, loser)[0]
         self.assertEqual((instance, loser), before)
         _, instance, retry = self.repository.load(accepted)
         retry["events"].append(loser["events"][-1])
-        final = self.repository.save(accepted, instance, retry)
+        final = self.repository.save_with_state(accepted, instance, retry)[0]
         saved = self.repository.load(final)[2]
         self.assertEqual([r["event_seq"] for r in saved["events"]], [1, 2, 3])
         self.assertEqual(saved["pending_events"], ["EV-1"])
@@ -965,7 +1006,7 @@ class StorageRedesignTests(unittest.TestCase):
         bad = deepcopy(loaded)
         bad["knowledge"][kid]["exposition_id"] = "XP-absent"
         with self.assertRaisesRegex(ValueError, "unknown record"):
-            self.repository.save(head, bad, runtime)
+            self.repository.save_with_state(head, bad, runtime)[0]
 
     def test_complete_lifecycle_candidate_uses_installed_current_state_gate(self):
         from do_math.initialization import initialize_state
@@ -1006,7 +1047,7 @@ class StorageRedesignTests(unittest.TestCase):
 
     def test_public_initialize_control_and_source_bound_grant_round_trip(self):
         from do_math.engine import initialize, ResearchEngine
-        from v5_fixtures import send_control
+        from research_fixtures import send_control
         initialized = initialize(self.repository_path, goal="Preserve original request",
             workspace=self.repository_path / "work", config={"scholarly_enabled": False})
         engine = ResearchEngine(self.repository_path, initialized["instance_id"])
@@ -1028,7 +1069,7 @@ class StorageRedesignTests(unittest.TestCase):
 
     def test_public_initial_grant_adoption_preserves_exact_approved_scope(self):
         from do_math.engine import initialize, ResearchEngine
-        from v5_fixtures import send_control
+        from research_fixtures import send_control
         from datetime import datetime, timedelta, timezone
         initialized = initialize(self.repository_path, goal="Check explicit initial grant adoption",
             workspace=self.repository_path / "initial-work", config={"scholarly_enabled": False})
@@ -1049,7 +1090,7 @@ class StorageRedesignTests(unittest.TestCase):
     def test_public_trust_owner_flow_round_trip_requires_complete_manifest(self):
         from do_math.engine import initialize, ResearchEngine
         from do_math.initialization import trust_environment_errors
-        from v5_fixtures import send_control, trust_fixture
+        from research_fixtures import send_control, trust_fixture
         initialized = initialize(self.repository_path, goal="Check a synthetic environment contract",
             workspace=self.repository_path / "trust-work", config={"scholarly_enabled": False})
         engine = ResearchEngine(self.repository_path, initialized["instance_id"])
@@ -1107,7 +1148,7 @@ class StorageRedesignTests(unittest.TestCase):
     def _reviewed_candidate(self, *, verified=False):
         from do_math import knowledge_records as kr, knowledge_io, review_cycle as rc
         from do_math.review_engine import ReviewEngineMixin
-        from do_math.review_policy import default_scope_assessment
+        from research_fixtures import scope_assessment
         from do_math.execution_lifecycle import create_execution
         from do_math.activities import assign_execution
         instance, runtime = self._execution_state("identity_review")
@@ -1141,7 +1182,7 @@ class StorageRedesignTests(unittest.TestCase):
             output = {"proposal_digest": cycle["proposal_digest"], "summary": "Synthetic reviewer output",
                 "used_sources": ["proposal"], "questions": [], "scope_complete": verified or index == 0}
             if action["stage"] == "scope":
-                scope = default_scope_assessment(cycle["review_policy"], ["initial-0"])
+                scope = scope_assessment(cycle["review_policy"], ["initial-0"])
                 scope["selected_profile_ref"] = profile
                 output["scope_assessment"] = scope
             else:
@@ -1216,7 +1257,7 @@ class StorageRedesignTests(unittest.TestCase):
         instance = k.activate_transition(instance, transition)
         transition["status"] = "active"
         runtime["trust_transitions"][transition["id"]] = transition
-        next_head = self.repository.save(head, instance, runtime)
+        next_head = self.repository.save_with_state(head, instance, runtime)[0]
         _, saved, loaded = self.repository.load(next_head)
         inherited = next(a for a in saved["identity_assessments"].values() if a.get("previous_assessment_id") == aid)
         self.assertTrue(inherited["continuity_comparison"]["equivalent"])
@@ -1233,13 +1274,13 @@ class StorageRedesignTests(unittest.TestCase):
         head = self.repository.initialize(instance, {"feature_version": 5})
         _, instance, runtime = self.repository.load(head)
         with patch.object(self.repository._store, "_write_blobs", wraps=self.repository._store._write_blobs) as write:
-            same = self.repository.save(head, instance, runtime)
+            same = self.repository.save_with_state(head, instance, runtime)[0]
         print("STORAGE no-op blob writes:", sum(len(c.args[0]) for c in write.call_args_list), flush=True)
         self.assertEqual(same, head)
         self.assertEqual(sum(len(c.args[0]) for c in write.call_args_list), 0)
         runtime["status"] = "ready"
         with patch.object(self.repository._store, "_write_blobs", wraps=self.repository._store._write_blobs) as write:
-            changed = self.repository.save(head, instance, runtime)
+            changed = self.repository.save_with_state(head, instance, runtime)[0]
         self.assertNotEqual(changed, head)
         self.assertLessEqual(sum(len(c.args[0]) for c in write.call_args_list), 2)
 

@@ -37,7 +37,7 @@ class DelegationStorageTests(unittest.TestCase):
                 goal="Preserve an independently checked delegated case.",
                 workspace=root / "workspace",
                 sources=[source_path],
-                config={"session_limits": None, "scholarly_enabled": False, "operator_enabled": False,
+                config={ "scholarly_enabled": False, "operator_enabled": False,
                         "lean_command": ["fixture-lean"]},
             )
             store = _repository(repository, created["instance_id"])
@@ -72,7 +72,7 @@ class DelegationStorageTests(unittest.TestCase):
                 "basis_refs": [{"id": source_id}],
             }
             application = prepare_application(instance, runtime, "DG-source", case)
-            head = store.save(head, instance, runtime)
+            head = store.save_with_state(head, instance, runtime)[0]
             head, instance, runtime = store.load(head)
 
             profile = next(profile for profile in instance["execution_profiles"].values()
@@ -97,13 +97,13 @@ class DelegationStorageTests(unittest.TestCase):
                     execution_id=execution_id,
                     stage=stage,
                 )
-            head = store.save(head, instance, runtime)
+            head = store.save_with_state(head, instance, runtime)[0]
             head, instance, runtime = store.load(head)
             allowed = authorize_delegated_case(instance, "DG-source", {"application_id": application["id"]}, runtime=runtime)
             self.assertTrue(allowed["allowed"], allowed)
 
             instance["sources"][0]["status"] = "superseded"
-            head = store.save(head, instance, runtime)
+            head = store.save_with_state(head, instance, runtime)[0]
             _, instance, runtime = store.load(head)
             rejected = authorize_delegated_case(instance, "DG-source", {"application_id": application["id"]}, runtime=runtime)
             self.assertFalse(rejected["allowed"])

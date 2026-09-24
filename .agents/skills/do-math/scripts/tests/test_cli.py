@@ -220,23 +220,11 @@ class CliTests(unittest.TestCase):
         self.assertEqual(response_body(paused)["status"], "paused")
 
         config_path = self.root / "config.json"
-        config_path.write_text(json.dumps({"session_limits": None, "work_calls": 4}), encoding="utf-8")
+        config_path.write_text(json.dumps({"call_timeout_seconds": 4}), encoding="utf-8")
         configured = self.run_cli("configure", *self.instance_args(), "--config-file", str(config_path))
         self.assertEqual(configured.returncode, 0, configured.stdout + configured.stderr)
-        self.assertEqual(response_body(configured)["config"]["work_calls"], 4)
+        self.assertEqual(response_body(configured)["config"]["call_timeout_seconds"], 4)
 
-    def test_unlimited_budgets_round_trip_and_human_status(self) -> None:
-        config_path = self.root / "unlimited.json"
-        config_path.write_text(json.dumps({"session_limits": None, "work_calls": None, "operations_calls": None}), encoding="utf-8")
-        configured = self.run_cli("configure", *self.instance_args(), "--config-file", str(config_path))
-        self.assertEqual(configured.returncode, 0, configured.stdout + configured.stderr)
-        status = self.run_cli("status", *self.instance_args(), "--json")
-        budgets = response_body(status)["budget"]
-        for pool in ("work", "operations"):
-            self.assertIsNone(budgets[pool]["limit"])
-            self.assertEqual(budgets[pool]["used"], 0)
-        human = self.run_cli("status", *self.instance_args())
-        self.assertIn("work 0/unlimited; operations 0/unlimited", human.stdout)
 
     def test_request_applies_a_maintenance_queue_entry_without_model_execution(self) -> None:
         requested = self.run_cli("request", *self.instance_args(), "--role", "maintenance", "--reason", "inspect state")
@@ -320,6 +308,33 @@ class CliTests(unittest.TestCase):
 
 
 class CliBoundaryTests(unittest.TestCase):
+    def test_json_string_values_preserve_leading_hyphens(self):
+        from do_math import cli
+        parser = cli.build_parser()
+        for command, field in (('input', 'text'), ('pause', 'reason'), ('init', 'goal')):
+            for value in ('--literal-user-text', '-P', '--', ''):
+                with self.subTest(command=command, value=value):
+                    payload = {'repository': '.', field: value}
+                    payload.update({'workspace': '.'} if command == 'init' else {'instance': 'RI-test'})
+                    args = cli._json_arguments(parser, {
+                        'schema_version': 5, 'command': command, 'payload': payload})
+                    self.assertEqual(getattr(args, field), value)
+        args = cli._json_arguments(parser, {
+            'schema_version': 5, 'command': 'init',
+            'payload': {'repository': '.', 'workspace': '.', 'goal': 'P',
+                        'source': ['--first.txt', '-second.txt']}})
+        self.assertEqual(args.source, [Path('--first.txt'), Path('-second.txt')])
+
+    def test_record_output_path_is_rejected_before_reading(self):
+        from do_math import cli
+        output = io.StringIO()
+        with patch('do_math.engine.read_record') as read, redirect_stdout(output):
+            code = cli.main(['read', '--repository', '.', '--instance', 'RI-test',
+                             '--id', 'KN-test', '--output', 'unused.json'])
+        self.assertEqual(code, 2)
+        read.assert_not_called()
+        self.assertEqual(json.loads(output.getvalue())['error']['message'],
+                         '--output requires --path')
     def test_audit2_configure_receipt_does_not_reapply_scheduler(self):
         from do_math import cli
         with tempfile.TemporaryDirectory() as directory:

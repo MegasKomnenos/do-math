@@ -59,6 +59,15 @@ def task_candidate_record(candidate: dict, *, task_id: str, previous: dict | Non
     if candidate['work_class'] == 'formal' and trust_environment_id is not None:
         record['trust_environment_id'] = trust_environment_id
     validate_task_contract(record)
+    if previous and previous.get('transferred_obligations'):
+        inherited = {row['obligation_id'] for row in previous['transferred_obligations']}
+        old_obligations = {row['id']: row for row in previous['completion_obligations']}
+        new_obligations = {row['id']: row for row in record['completion_obligations']}
+        if any(identifier not in old_obligations or
+               new_obligations.get(identifier) != old_obligations[identifier]
+               for identifier in inherited):
+            raise ValueError('contract revision must preserve transferred obligations; use an authorized scope disposition')
+        record['transferred_obligations'] = copy.deepcopy(previous['transferred_obligations'])
     return record
 
 

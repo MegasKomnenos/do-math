@@ -253,8 +253,8 @@ class ExecutionConnections(unittest.TestCase):
         engine.instance["config"] = deepcopy(DEFAULT_CONFIG)
         engine.instance.update(execution_profiles.build_profiles(engine.instance["config"]))
         action = {"id": "AC-machine", "role": "formal_check", "target": "KN-one"}
-        from do_math.session_slots import GitSessionSlots
-        engine._slots = GitSessionSlots(engine.runtime, engine.instance)
+        from do_math.session_slots import SessionSlots
+        engine._slots = SessionSlots(engine.runtime, engine.instance)
         engine.runtime["executions"]["EX-unrelated"] = {"id": "EX-unrelated", "role": "formal_check",
             "status": "ended", "action": {"target": "KN-one"}, "owner_activity_id": "AY-unrelated"}
         row = engine._register_execution(action, {"id": "EX-new", "role": "formal_check", "status": "running",
@@ -291,11 +291,10 @@ class PersistedConnections(unittest.TestCase):
 class InputManifestConnections(unittest.TestCase):
     def test_delivered_previous_hashes_pass_the_actual_live_impact_gate(self):
         from test_redesign_SURFACE import surface_state
-        from v5_fixtures import candidate
+        from research_fixtures import candidate
         from do_math import contracts, knowledge_io, knowledge
         engine = routing_engine(); engine.instance, engine.runtime = surface_state()
         engine.instance.update(relations=[], goal_status="unresolved")
-        engine.instance["config"]["session_limits"] = None
         engine.runtime.update(inputs=[], questions=[])
         engine.instance, engine.runtime, kid = knowledge_io.import_candidate(engine.instance, engine.runtime,
             {"kind": "observation", "title": "Record", "statement": "A bounded observation", "summary": "Observed",
@@ -372,12 +371,12 @@ class FormalBindingConnections(unittest.TestCase):
         from do_math import knowledge_io
         engine = routing_engine()
         directory = tempfile.TemporaryDirectory(); self.addCleanup(directory.cleanup)
-        config = {**deepcopy(DEFAULT_CONFIG), "lean_command": [sys.executable], "lean_timeout_seconds": 17}
+        config = {**deepcopy(DEFAULT_CONFIG), "lean_command": [sys.executable], }
         environment = {"id": "TE-one", "status": "active", "toolchain": {"configured_command": [sys.executable], "sha256": "a" * 64}, "allowed_axioms": []}
         engine.instance.update(feature_version=5, workspace=directory.name, sources=[], config=config,
             active_trust_environment="TE-one", trust_environments={"TE-one": environment})
         engine.instance.update(execution_profiles.build_profiles(config))
-        engine.instance["config"] = {**config, "lean_command": ["unapproved-config-command"], "lean_timeout_seconds": 999}
+        engine.instance["config"] = {**config, "lean_command": ["unapproved-config-command"], }
         engine.instance, engine.runtime, kid = knowledge_io.import_candidate(engine.instance, engine.runtime,
             {"kind": "theorem", "title": "T", "statement": "True", "summary": "True", "explanation": "A proof",
                 "lean_code": "-- e\u0301\r\ntheorem t : True := by trivial", "declaration_names": ["t"], "dependencies": []}, source_ref="EX-author", actor_ref="EX-author")
@@ -393,7 +392,7 @@ class FormalBindingConnections(unittest.TestCase):
         engine, environment = self.run_verifier({"status": "failed", "reason": "compiler double, no proof claim"})
         kwargs = engine.formal_verifier.call_args.kwargs
         self.assertEqual(kwargs["lean_command"], [sys.executable])
-        self.assertIsNone(kwargs["timeout_seconds"])
+        self.assertNotIn("timeout_seconds", kwargs)
         self.assertEqual(kwargs["expected_toolchain"], environment["toolchain"])
         self.assertEqual(kwargs["allowed_axioms"], ())
         self.assertEqual(next(e for e in engine.runtime["executions"].values() if e.get("role") == "formal_check")["outcome"], "execution_incomplete")
@@ -599,8 +598,6 @@ class UserControlIdentity(unittest.TestCase):
                     control(root, "RI-test", "request", config={"role": "maintenance"}, text="changed", request_id="UC-explicit")
 
 
-
-
     def test_git_replay_keeps_original_outcome_and_snapshot_after_close(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -640,7 +637,7 @@ class UserControlIdentity(unittest.TestCase):
 
 class PublicGitFlow(unittest.TestCase):
     def test_public_activation_work_receipt_assessment_and_next_plan(self):
-        from v5_fixtures import activate, install_adapter_fixture, candidate, contract_review, intent_response, assessment, seal_response, local_job_runner
+        from research_fixtures import activate, install_adapter_fixture, candidate, contract_review, intent_response, assessment, seal_response, local_job_runner
         from do_math import submission, task_contracts
         from do_math.control_transport import ControlTransport
         install_adapter_fixture(self)
@@ -714,7 +711,7 @@ class PublicGitFlow(unittest.TestCase):
             root = Path(temporary)
             subprocess.run(["git", "init", "--quiet", str(root / "repo")], check=True, capture_output=True)
             created = initialize(root / "repo", goal="Record and assess a bounded observation", workspace=root / "work", config={
-                "session_limits": None, "scholarly_enabled": False, "operator_enabled": False, "lean_command": ["fixture-lean"],
+                 "scholarly_enabled": False, "operator_enabled": False, "lean_command": ["fixture-lean"],
                 "observation_mode": "periodic", "tool_review_window_seconds": 600, "self_check_response_window_seconds": 60,
                 "import_rework_limit": 3, "selection_failure_limit": 3, "exhaustion_empty_limit": 3,
                 "proposal_version_limit": 3, "contract_revision_limit": 3})
@@ -748,7 +745,7 @@ class PublicGitFlow(unittest.TestCase):
 class ControlQueueConnections(unittest.TestCase):
     def engine(self, request):
         engine = routing_engine(); engine.head = "parent"; engine._calls = None
-        engine.instance.update(config={**deepcopy(DEFAULT_CONFIG), "session_limits": None}, lifecycle={"state": "active"})
+        engine.instance.update(config={**deepcopy(DEFAULT_CONFIG), }, lifecycle={"state": "active"})
         engine.runtime["processed_controls"] = []
         engine._inbox = Mock(return_value=[request]); engine._save = Mock(); engine._resume_lifecycle = Mock()
         for name in ("_review_recovery_control", "_knowledge_io_control", "_academic_control", "_apply_extended_control"):
@@ -800,11 +797,11 @@ class GovernanceOwnerConnections(unittest.TestCase):
 class MachineAdmissionConnections(unittest.TestCase):
     def fixture(self):
         from test_host_resources import fixture
-        from do_math.session_slots import GitSessionSlots
+        from do_math.session_slots import SessionSlots
         instance, selected, _ = fixture()
         engine = routing_engine(); engine.instance.update(instance)
         engine._execution_profile = Mock(return_value=selected["formal_check"])
-        engine._slots = GitSessionSlots(engine.runtime, engine.instance)
+        engine._slots = SessionSlots(engine.runtime, engine.instance)
         engine._admit_review_execution = Mock(return_value={"disposition": "not_applicable"})
         engine._save = Mock()
         return engine
@@ -844,7 +841,7 @@ class MachineAdmissionConnections(unittest.TestCase):
 
     def test_actual_git_snapshot_binds_machine_reservations_and_start_identity(self):
         from do_math.repository import ResearchRepository, new_id
-        from do_math.session_slots import GitSessionSlots
+        from do_math.session_slots import SessionSlots
         from test_host_resources import fixture
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -857,10 +854,10 @@ class MachineAdmissionConnections(unittest.TestCase):
             engine.store = ResearchRepository(root / "repo", engine.instance["id"])
             engine.head = engine.store.initialize(engine.instance, engine.runtime)
             def save(artifacts=None):
-                engine.head = engine.store.save(engine.head, engine.instance, engine.runtime, artifacts=artifacts)
+                engine.head = engine.store.save_with_state(engine.head, engine.instance, engine.runtime, artifacts=artifacts)[0]
                 engine.head, engine.instance, engine.runtime = engine.store.load(engine.head)
             engine._save = save
-            engine._slots = GitSessionSlots(engine.runtime, engine.instance)
+            engine._slots = SessionSlots(engine.runtime, engine.instance)
             with engine.store.writer_lock():
                 engine._register_execution({"id": "AC-machine", "role": "formal_check"},
                     {"id": "EX-machine", "role": "formal_check", "status": "running"})
@@ -914,7 +911,7 @@ class MaintenanceConnections(unittest.TestCase):
             engine.store = ResearchRepository(root / "repo", identifier)
             engine.head = engine.store.initialize(engine.instance, engine.runtime)
             def save(artifacts=None):
-                engine.head = engine.store.save(engine.head, engine.instance, engine.runtime, artifacts=artifacts)
+                engine.head = engine.store.save_with_state(engine.head, engine.instance, engine.runtime, artifacts=artifacts)[0]
                 engine.head, engine.instance, engine.runtime = engine.store.load(engine.head)
             engine._save = save
             run = root / "work/runs/EX-finished"
@@ -995,14 +992,6 @@ class EvaluationConnections(unittest.TestCase):
 
 
 class ContinuationConnections(unittest.TestCase):
-    def test_call_budget_uses_git_reservations_not_execution_count(self):
-        engine = routing_engine()
-        engine.instance["config"] = {**deepcopy(DEFAULT_CONFIG), "session_limits": None, "work_calls": 2}
-        engine._slots = Mock(spec=["usage_snapshot"])
-        engine._slots.usage_snapshot.return_value = {"work": {"limit": 2, "used": 2, "available": 0}}
-        self.assertFalse(engine._budget_available("work", 0))
-        engine._slots.usage_snapshot.return_value["work"].update(used=0, available=2)
-        self.assertTrue(engine._budget_available("work", 99))
 
     def test_same_domain_callback_is_available_to_preview_without_publication(self):
         engine = routing_engine()
@@ -1232,7 +1221,7 @@ class LivePreviewConnections(unittest.TestCase):
                     process.kill()
                 process.communicate()
             self.assertEqual((engine.instance, engine.runtime), before)
-            engine.store.save.assert_not_called()
+            engine.store.save_with_state.assert_not_called()
             receipt = next(iter(transport._receipts.values()))
             self.assertEqual(receipt["state"], "previewed")
             self.assertTrue(receipt["result"]["passed"], receipt)
@@ -1307,7 +1296,7 @@ class ReceiptAndQuotaConnections(unittest.TestCase):
             with self.subTest(owner=owner), tempfile.TemporaryDirectory() as temporary:
                 workspace = Path(temporary)
                 from types import SimpleNamespace
-                from v5_fixtures import sealed_maintenance_submission
+                from research_fixtures import sealed_maintenance_submission
                 from do_math import submission
                 intent, artifacts = sealed_maintenance_submission(workspace, 'EX-work')
                 prefix = intent['output_ref'].removesuffix('output.json')
@@ -1549,6 +1538,54 @@ class AuditConsumerConnections(unittest.TestCase):
         engine._runner_tools(arguments)
         for name, value in execution_profiles.runner_tools(profile).items():
             self.assertEqual(arguments[name], value)
+
+class TaskObservationRoleTests(unittest.TestCase):
+    def test_task_rules_follow_the_selected_roles_observation_contract(self):
+        from do_math.observations import tracker_config, ObservationTracker
+
+        class BeforeInput(Exception):
+            pass
+
+        settings = {**deepcopy(DEFAULT_CONFIG), "tool_review_window_seconds": 60,
+                    "self_check_response_window_seconds": 5}
+        profiles = execution_profiles.build_profiles(settings)["execution_profiles"]
+        rule = {"id": "checkpoints", "operator": "checkpoint_count_gte",
+                "subject": {"kind": "checkpoint", "id": "$execution"},
+                "basis": {"source": "checkpoint", "unit": "count"},
+                "threshold": 2, "required_evidence": ["contract"]}
+        for role in ("research_work", "supplemental_research"):
+            with self.subTest(role=role):
+                engine = routing_engine()
+                engine.head = "snapshot-one"
+                engine.instance["config"] = deepcopy(settings)
+                engine.runtime["tasks"]["TK-one"] = {"initial_observation_rules": [deepcopy(rule)]}
+                profile = next(p for p in profiles.values() if p["role"] == role)
+                engine._check_installation = Mock(return_value=True)
+                engine._clock_guard = Mock(return_value={"usable": True})
+                engine._evaluation_context = Mock(return_value={})
+                engine._action_lifecycle_gate = Mock()
+                engine._revision_dispatch_waits = Mock(return_value=[])
+                engine._selected_action_current = Mock(return_value=True)
+                engine._obsolete_action_reason = Mock(return_value=None)
+                engine._execution_profile = Mock(return_value=profile)
+                engine._activity_for_action = Mock(return_value={"id": "AY-one"})
+                engine._register_execution = Mock(side_effect=BeforeInput)
+                action = {"id": "AC-one", "role": role, "target": "TK-one"}
+                with patch("do_math.engine.tracker_config", wraps=tracker_config) as configured, \
+                     patch("do_math.engine.governance.authorize", return_value={"allowed": True, "grant_id": "GR-one"}), \
+                     patch("do_math.engine.planning.task_ready", return_value={"state": "ready"}):
+                    with self.assertRaises(BeforeInput):
+                        next(engine._call_steps(action))
+                eid = engine._register_execution.call_args.args[1]["id"]
+                config = tracker_config(profile, initial_self_check_rules=
+                    configured.call_args.kwargs["initial_self_check_rules"])
+                tracker = ObservationTracker(eid, Path("."), config)
+                self.assertEqual(tracker.research_self_checks, role == "research_work")
+                self.assertEqual(bool(tracker.rules), role == "research_work")
+                if tracker.rules:
+                    self.assertEqual(tracker.rules[0]["subject"]["id"], eid)
+                self.assertEqual(engine.runtime["tasks"]["TK-one"]["initial_observation_rules"], [rule])
+
 
 if __name__ == "__main__":
     unittest.main()

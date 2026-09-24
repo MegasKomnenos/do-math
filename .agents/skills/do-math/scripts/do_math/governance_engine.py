@@ -44,20 +44,12 @@ class GovernanceEngineMixin:
         patch = request.get('config', {})
         if not isinstance(patch, dict): raise ValueError('configuration patch must be an object')
         if request.get('origin', 'user') not in {'user', 'operator'}: raise ValueError('unknown configuration authority')
-        current = {**deepcopy(DEFAULT_CONFIG), 'session_limits': None, **instance['config']}
+        current = instance['config']
         candidate = {**current, **patch}
         validate_config(candidate)
         result, state = deepcopy(instance), deepcopy(runtime)
         candidate = bind_host_configuration(result, candidate, origin=request.get('origin', 'user'))
-        if candidate.get('session_limits') is not None:
-            if {'model', 'operator_model'} & patch.keys(): raise ValueError('session mode selects models with tier_models; model is a legacy option')
-            if {'work_calls', 'operations_calls'} & patch.keys(): raise ValueError('session mode uses session_limits; explicitly set session_limits=null to configure legacy call budgets')
-        changes_mode = (candidate.get('session_limits') is None) != (current.get('session_limits') is None)
-        if changes_mode and (getattr(self, '_executor_running', False) or getattr(self, '_calls', None) is not None
-                             or getattr(self, '_live_execution_ids', set())):
-            raise ValueError('budget mode conversion requires a stopped executor')
-        protected = ('work_calls', 'operations_calls', 'session_limits', 'tier_models', 'role_tiers', 'model',
-                     'role_models', 'operator_model', 'claude_only_assigned_model', 'host_resources')
+        protected = ('session_limits', 'tier_models', 'role_tiers', 'claude_only_assigned_model', 'host_resources')
         if request.get('origin', 'user') == 'operator' and any(candidate.get(k) != current.get(k) for k in protected):
             raise ValueError('resource settings require a user decision at application time')
         host_changed = candidate.get('host_resources') != current.get('host_resources')
@@ -78,16 +70,13 @@ class GovernanceEngineMixin:
             result['host_capacity_ref'] = editions['host_capacity_ref']
         else:
             result.pop('host_capacity_ref', None)
-        if candidate.get('session_limits') is not None:
-            # A detached ledger view stages the same configure transition. Do
-            # not mutate self._slots' live roots before the common Git CAS.
-            slots = SessionSlots(Path(result['workspace']), result['id'], runtime=state, instance=result)
-            try: slots.configure(candidate['session_limits'])
-            finally: slots.close()
-            live = {e.get('action', {}).get('id') for e in state['executions'].values() if e['status'] != 'ended'}
-            waiting = [row['action'] for row in state.get('waiting_actions', {}).values()]
-            for pending in [*state['queue'], *waiting]:
-                if pending.get('id') not in live: pending.pop('model_selection', None)
+        slots = SessionSlots( runtime=state, instance=result)
+        try: slots.configure(candidate['session_limits'])
+        finally: slots.close()
+        live = {e.get('action', {}).get('id') for e in state['executions'].values() if e['status'] != 'ended'}
+        waiting = [row['action'] for row in state.get('waiting_actions', {}).values()]
+        for pending in [*state['queue'], *waiting]:
+            if pending.get('id') not in live: pending.pop('model_selection', None)
         if host_changed:
             from . import revisions
             waiting = [row['action'] for row in state.get('waiting_actions', {}).values()]

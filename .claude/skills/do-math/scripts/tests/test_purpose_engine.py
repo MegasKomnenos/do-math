@@ -402,9 +402,9 @@ class PurposeHarness(unittest.TestCase):
         settings = {'reviewers': 2, 'goal_auditors': 2, 'review_rounds': 2,
                     'plan_settle_seconds': 1,
                     'max_input_bytes': 2_000_000,
-                    'lean_command': ['test-double'], 'observation_idle_seconds': 1,
+                    'lean_command': ['test-double'],
                     'tool_review_window_seconds': 60, 'self_check_response_window_seconds': 5,
-                    'max_observation_reviews': 1, 'checkpoint_grace_seconds': 1,
+                    'checkpoint_grace_seconds': 1,
                     'scholarly_enabled': False, 'operator_enabled': False, **config}
         return settings
 

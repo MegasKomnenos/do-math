@@ -48,9 +48,7 @@ python .agents/skills/do-math/scripts/setup_lean.py
 
 관찰 설정의 `tool_review_window_seconds`와 `self_check_response_window_seconds`에는 제품 기본값이 없다. 프로필을 채택하기 전에 사용할 두 값을 확정하여 `init --config-file`이나 `configure --config-file`로 전달한다. 이미 승인된 설정에 있으면 그대로 사용한다. 주기·사건 관찰에는 도구 검토 window와 관찰 주기가 필요하고, 연구 수행에는 자기 점검 응답 window도 필요하다. 누락되거나 유효하지 않은 값은 역할·프로필 ID·필드와 함께 반환되며 연구 활성화가 완료되지 않는다. 구체적인 설정 보충과 프로필 재조회는 [초기화 운전](references/초기화-운전.md)의 1단계와 4단계를 따른다.
 
-모델과 예산은 다음 두 모드를 구별한다.
-
-- 모델별 동시 세션 예산에는 설정 파일의 `tier_models`, `role_tiers`, `session_limits`를 사용한다. 세션 용량을 명시한 `session_limits`와 `--model`을 함께 주면 초기화가 거부된다.
+모델 대응·역할별 최소 등급·모델별 동시 세션 예산은 설정 파일의 `tier_models`, `role_tiers`, `session_limits`로 정한다. 구체적인 설정은 아래 「모델과 동시실행 예산 설정」을 따른다.
 
 독립 운영의 기본값은 `operator_enabled=true`, `operator_interval_seconds=7200`이다. 새 인스턴스는 상·중·하 모델마다 운영 3개와 작업 3개의 동시 세션을 사용한다. [모델과 실행예산](references/모델과-실행예산.md)의 기본 대응과 배정 기준을 확인하고, 다른 용량이나 수동 운영이 필요하면 설정 파일에 지정한다. `init`은 독립 운영이 활성일 때 정상 감독과 연구 엔진을 맡는 두 숨김 Windows 예약 작업을 등록하며, 그 자체로 모델이나 연구 실행을 시작하지는 않는다. 첫 정기 감독은 등록 후 설정한 주기에 도래한다. 정상 감독은 저장 상태와 예약 상태를 모델 없이 검사하고 필요할 때 연구 엔진 작업만 요청한다. 연구 작업에는 고정 반복 주기를 두지 않는다. 엔진을 읽을 수 없는 실제 실패가 보존됐거나 운영 점검의 설치 결함 진단이 수락됐을 때 별도 설치 복구 AI 경로를 열 수 있다.
 
@@ -217,13 +215,24 @@ python .agents/skills/do-math/scripts/do_math.py input `
 
 ### 구조화된 사용자 결정
 
-목표·정책·grant·과제 범위·학술 요구처럼 효과가 정해진 변경은 JSON 객체를 파일로 만든 뒤 `decision --file`로 보낸다.
+목표·정책·grant·과제 범위·학술 요구처럼 효과가 정해진 변경은 JSON 객체를 파일로 만든 뒤 `decision --file`로 보낸다. 목표와 학술 요구 변경은 현행 헌장 전체를 읽어 `kind="charter"`의 새 `record`로 작성한다. 정책은 다음 구조를 사용한다. 예시의 ID·범위·근거·문면은 실제 승인한 값으로 바꾸고, 기존 정책을 대체하면 그 활성 ID를 `supersedes`에 넣는다.
 
 ```json
 {
   "kind": "policy",
-  "text": "사용한 문헌은 내부 보존 사본과 정확한 절 좌표를 남긴다.",
-  "expected_revision": 1
+  "record": {
+    "id": "PO-source-evidence",
+    "kind": "policy",
+    "revision": 1,
+    "supersedes": [],
+    "content": {
+      "rule_id": "source-evidence",
+      "text": "사용한 문헌은 내부 보존 사본과 정확한 절 좌표를 남긴다.",
+      "scope": ["연구 수행"],
+      "reason_refs": ["CH-실제-현행-헌장-ID"],
+      "audit_refs": []
+    }
+  }
 }
 ```
 
@@ -234,7 +243,7 @@ python .agents/skills/do-math/scripts/do_math.py decision `
   --file .skill-workspace/my-math/policy-decision.json
 ```
 
-구조화 결정의 정확한 종류와 필드는 CLI 실행 계약에서 확인한다. `expected_revision`이 현재 판본과 다르거나 대상 상태가 이미 바뀌었다면 요청은 거부된다.
+구조화 결정의 정확한 종류·필드와 현행 기록 조회 절차는 CLI 실행 계약에서 확인한다. 통치 기록은 새 ID·판본과 완전한 `content`로 제출하고, `supersedes`가 가리키는 기록이 적용 시점에 활성인 같은 종류인지 검사한다. 반환의 `effect`와 `reason`으로 적용 여부를 확인한다.
 
 ### 원자료 수입
 
@@ -277,7 +286,7 @@ python .agents/skills/do-math/scripts/do_math.py read `
   --id KN-...
 ```
 
-`--id`는 구조화 record를 JSON과 SHA-256으로 반환한다. `--path`는 snapshot 안의 파일 바이트를 읽는다. UTF-8이면 `text`, 아니면 `base64`로 반환한다. 큰 바이너리를 파일로 받으려면 `--output`을 지정한다.
+`--id`는 구조화 record를 JSON과 SHA-256으로 반환한다. `--path`는 snapshot 안의 파일 바이트를 읽는다. UTF-8이면 `text`, 아니면 `base64`로 반환한다. 파일 바이트를 로컬 파일로 받으려면 `--path`와 `--output`을 함께 지정한다. `--id`에는 `--output`을 사용할 수 없다.
 
 ### 파일 목록과 snapshot 내보내기
 
@@ -428,7 +437,7 @@ python .agents/skills/do-math/scripts/run_tests.py --match "*test_performance_sa
 
 특정 연구를 Opus 5만으로 운영하려면 모든 등급·실제 역할·독립 운영 배정을 `claude-opus-5`로 맞추고 그 인스턴스의 `claude_only_assigned_model=true`를 사용한다. 옵션 기본값은 false이며 다른 연구의 모델 정책은 바뀌지 않는다. 모델 잠금은 내부 보조 모델을 제한하고 보고 모델을 대조하며, 모든 역할을 자동으로 Claude로 바꾸는 옵션은 아니다.
 
-`probe_cli.py --skill-only`는 정적·동적 역할 스키마와 문서 구조만 검사한다. 대표 실호출은 provider와 모델, 새 증거 경로를 명시한다. 이 명령은 실제 모델 예산을 사용하므로 해당 인스턴스의 모델 정책을 따른다.
+`probe_cli.py --skill-only`는 정적·동적 역할 스키마와 문서 구조만 검사한다. 대표 실호출은 provider와 모델, 새 증거 경로를 명시한다. `structured`·`files`·`stop`은 두 공급자에 사용하며, `background`와 `--only-assigned-model`은 Claude 전용이다. 이 명령은 실제 모델 예산을 사용하므로 해당 인스턴스의 모델 정책을 따른다.
 
 ```powershell
 python .agents/skills/do-math/scripts/probe_cli.py --provider claude --model claude-opus-5 --only-assigned-model --cases structured files background stop --scholarly --output-dir <새-증거-경로>

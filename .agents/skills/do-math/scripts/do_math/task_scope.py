@@ -135,11 +135,6 @@ def validate_withdrawal_record(task):
     record = task['scope_disposition']
     if task['status'] != 'closed' or record['previous_contract_sha256'] != contract_hash(task):
         raise ValueError('withdrawal contract or status differs')
-    # Earlier v5 withdrawals admitted only unperformed tasks. Preserve that
-    # historical record without inventing assessment evidence retroactively.
-    if not task.get('results') and not any(key in record for key in
-            ('results_sha256', 'assessment_sha256', 'remaining_obligation_ids')):
-        return
     if record.get('results_sha256') != _hash(task.get('results', [])):
         raise ValueError('withdrawal results changed')
     assessment = next((a for a in task.get('assessment_history', [])

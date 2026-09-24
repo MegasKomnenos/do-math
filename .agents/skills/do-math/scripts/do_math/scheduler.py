@@ -40,8 +40,9 @@ class SchedulerMixin:
 
     def _abort_parallel_calls(self):
         """Preserve returned evidence and reconcile confirmed Jobs after owner failure."""
-        from .repository import lossless_json, new_id
+        from .repository import canonical_json, new_id
         from .governance import timestamp
+        from .engine import json_safe
         returned = []
         for future, generator in self._calls.futures.items():
             execution_id = future.execution_id
@@ -50,7 +51,7 @@ class SchedulerMixin:
             except BaseException as error:
                 result = {'status': 'failed', 'reason': f'{type(error).__name__}: {error}'}
             if execution_id:
-                raw = lossless_json(result)
+                raw = canonical_json(json_safe(result))
                 # This local copy remains available even if publication itself failed.
                 path = Path(self.instance['workspace']) / 'execution-recovery' / execution_id / 'returned-result.json'
                 path.parent.mkdir(parents=True, exist_ok=True)
@@ -129,13 +130,11 @@ class SchedulerMixin:
             parent["stop_requested"] = "operating_review_unavailable"
             parent["after_stop"] = {"decision": "wait", "reason": reason}
 
-    def _session_mode(self):
-        return self.instance["config"].get("session_limits") is not None
 
     def _session_resources(self):
         if getattr(self, "_slots", None) is not None:
             return self._slots.snapshot()
-        slots = SessionSlots(Path(self.instance["workspace"]), self.instance["id"], observer=True,
+        slots = SessionSlots( observer=True,
                              runtime=self.runtime, instance=self.instance)
         try:
             return slots.snapshot()
@@ -168,7 +167,7 @@ class SchedulerMixin:
             if extensions.get("model_assessments"):
                 raise ValueError("only preparation and planning author model assessments")
             return
-        identified = validate_assessments(action, output, extensions, required=self._session_mode())
+        identified = validate_assessments(action, output, extensions, required=True)
         if preparation_only(action):
             for field in ('assessment_targets', 'observation_rule_targets'):
                 for tid, basis in action.get(field, {}).items():
@@ -275,7 +274,7 @@ class SchedulerMixin:
                 # Its pending independent review, not an already-consumed
                 # rejection, owns the next judgment.
                 continue
-            if self._session_mode() and task.get('model_assessment'):
+            if task.get('model_assessment'):
                 task.setdefault('model_assessment_history', []).append({
                     **basis, 'assessment': task.pop('model_assessment'),
                     'contract_review_execution': review['execution_id']})
@@ -283,14 +282,8 @@ class SchedulerMixin:
                 **basis, 'rules': task.pop('initial_observation_rules', []),
                 'contract_review_execution': review['execution_id']})
             self.runtime.get('task_observation_rules', {}).pop(tid, None)
-            # Retire the old implementation's unstarted, general revision request.
-            self.runtime["queue"][:] = [a for a in self.runtime["queue"] if not (
-                a.get("role") == "research_preparation" and a.get("target") == tid
-                and a.get("contract_review_execution") == review["execution_id"]
-                and a.get("id") not in live)]
         missing = {tid: assessment_basis(task) for tid, task in self.runtime["tasks"].items()
-                   if task.get("status") in {"planned", "active", "waiting"}
-                   and self._session_mode() and not task.get("model_assessment")}
+                   if (task.get("status") in {"planned", "active", "waiting"}) and (not task.get("model_assessment"))}
         missing_rules = {}
         for tid, task in self.runtime['tasks'].items():
             if not task.get('academic_requirement_id') or task.get('status') in {'completed', 'closed'}:
@@ -356,7 +349,7 @@ class SchedulerMixin:
                 validate_task_rules(task.get('initial_observation_rules', []))
             except ValueError:
                 continue
-            if self._session_mode() and not task.get('model_assessment'):
+            if not task.get('model_assessment'):
                 continue
             basis = {**assessment_basis(task), 'goal_revision': view['goal_revision'], 'policy_revision': view['policy_revision']}
             self._enqueue('task_contract_review', tid, contract_basis=basis,
@@ -473,9 +466,9 @@ class SchedulerMixin:
             if role in {'formal_check', 'trust_check'} and any(e['role'] in {'formal_check', 'trust_check'} for e in live):
                 action['dispatch_wait'] = {'kind': 'formal_execution'}
                 return False
-            from .session_slots import GitSessionSlots
+            from .session_slots import SessionSlots
             profile = self._execution_profile(action)
-            admission = GitSessionSlots(self.runtime, self.instance, observer=True).admission_check(profile)
+            admission = SessionSlots(self.runtime, self.instance, observer=True).admission_check(profile)
             if not admission['allowed']:
                 action['dispatch_wait'] = admission['wait']
             return admission['allowed']
@@ -492,16 +485,16 @@ class SchedulerMixin:
         if not capability["satisfied"]:
             action["dispatch_wait"] = {"kind": "capability_evidence", **capability}
             return False
-        from .session_slots import GitSessionSlots
+        from .session_slots import SessionSlots
         profile = self._execution_profile(action)
-        admission = GitSessionSlots(self.runtime, self.instance, observer=True).admission_check(profile)
+        admission = SessionSlots(self.runtime, self.instance, observer=True).admission_check(profile)
         if not admission['allowed']:
             action['dispatch_wait'] = admission['wait']
         return admission['allowed']
 
     def _run_parallel(self, *, max_steps=None, watch=False):
         from .repository import new_id
-        self._slots = SessionSlots(Path(self.instance["workspace"]), self.instance["id"],
+        self._slots = SessionSlots(
                                    runtime=self.runtime, instance=self.instance)
         self._calls = ModelCalls()
         steps = 0

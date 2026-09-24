@@ -5,7 +5,7 @@ GROUPS = ('unit', 'integration', 'lean', 'resource', 'archive')
 # compilers, providers, servers or process lifetimes. New modules are opt-in.
 UNIT_MODULES = frozenset('''
 test_academic test_budget test_claude_adapter test_claude_stream
-test_contract_checks test_decision_basis test_execution_window test_governance
+test_contract_checks test_decision_basis test_execution_window
 test_knowledge test_knowledge_io test_machine_scheduling test_model_metadata_boundary
 test_model_runner test_native_probe test_observation_audit1 test_observations
 test_planning test_provider_final_contract test_questions test_reference_catalog

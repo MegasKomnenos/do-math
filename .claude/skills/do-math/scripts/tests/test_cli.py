@@ -308,6 +308,33 @@ class CliTests(unittest.TestCase):
 
 
 class CliBoundaryTests(unittest.TestCase):
+    def test_json_string_values_preserve_leading_hyphens(self):
+        from do_math import cli
+        parser = cli.build_parser()
+        for command, field in (('input', 'text'), ('pause', 'reason'), ('init', 'goal')):
+            for value in ('--literal-user-text', '-P', '--', ''):
+                with self.subTest(command=command, value=value):
+                    payload = {'repository': '.', field: value}
+                    payload.update({'workspace': '.'} if command == 'init' else {'instance': 'RI-test'})
+                    args = cli._json_arguments(parser, {
+                        'schema_version': 5, 'command': command, 'payload': payload})
+                    self.assertEqual(getattr(args, field), value)
+        args = cli._json_arguments(parser, {
+            'schema_version': 5, 'command': 'init',
+            'payload': {'repository': '.', 'workspace': '.', 'goal': 'P',
+                        'source': ['--first.txt', '-second.txt']}})
+        self.assertEqual(args.source, [Path('--first.txt'), Path('-second.txt')])
+
+    def test_record_output_path_is_rejected_before_reading(self):
+        from do_math import cli
+        output = io.StringIO()
+        with patch('do_math.engine.read_record') as read, redirect_stdout(output):
+            code = cli.main(['read', '--repository', '.', '--instance', 'RI-test',
+                             '--id', 'KN-test', '--output', 'unused.json'])
+        self.assertEqual(code, 2)
+        read.assert_not_called()
+        self.assertEqual(json.loads(output.getvalue())['error']['message'],
+                         '--output requires --path')
     def test_audit2_configure_receipt_does_not_reapply_scheduler(self):
         from do_math import cli
         with tempfile.TemporaryDirectory() as directory:

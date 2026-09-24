@@ -31,7 +31,7 @@ class ReportingTests(unittest.TestCase):
                 outcome='cancelled', budget_kind='work')
             head = store.initialize(instance, runtime)
             instance['title'] = 'later metadata'
-            store.save(head, instance, runtime)
+            store.save_with_state(head, instance, runtime)[0]
             value = timeline(root, identifier, snapshot=head)
             self.assertEqual(value['counts_by_unit'], {'internal_execution': 1})
             row = value['rows'][0]

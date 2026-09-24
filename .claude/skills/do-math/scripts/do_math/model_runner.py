@@ -102,7 +102,7 @@ class CodexModelRunner:
             request["control_binding"] = deepcopy(control_binding)
         if scholarly_server is not None:
             request["scholarly_server"] = scholarly_server
-        if claude_only_assigned_model:
+        if claude_only_assigned_model and "claude_path" in request:
             request["claude_only_assigned_model"] = True
         request_path = evidence_dir / "request.json"
         request_path.write_text(json.dumps(request, ensure_ascii=False, sort_keys=True), encoding="utf-8")
@@ -141,9 +141,9 @@ class CodexModelRunner:
                     offset = stream.tell()
                 if chunk:
                     on_observation({"type": "transport_bytes_received", "bytes": len(chunk)})
-                buffer += chunk
-                while b"\n" in buffer:
-                    line, buffer = buffer.split(b"\n", 1)
+                lines = (buffer + chunk).split(b"\n")
+                buffer = lines.pop()
+                for line in lines:
                     if line.strip():
                         try:
                             event = json.loads(line)

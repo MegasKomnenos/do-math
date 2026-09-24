@@ -404,7 +404,11 @@ def _replay_replacement(replay, cycle, action, instance, runtime):
     verified, omitted = [], []
     for pos in range(max(len(archive['turns']), len(archive['manifest']))):
         if (pos < len(archive['turns']) and pos < len(archive['manifest'])
-                and archive['manifest'][pos].get('index') == pos
+                and isinstance(archive['turns'][pos], dict)
+                and {'role', 'content'} <= archive['turns'][pos].keys()
+                and isinstance(archive['manifest'][pos], dict)
+                and {'sha256', 'bytes', 'index', 'proposal_digest', 'ref'} <= archive['manifest'][pos].keys()
+                and archive['manifest'][pos]['index'] == pos
                 and _digest(archive['turns'][pos]) == archive['manifest'][pos].get('sha256')
                 and len(_bytes(archive['turns'][pos])) == archive['manifest'][pos].get('bytes')):
             verified.append(archive['manifest'][pos])

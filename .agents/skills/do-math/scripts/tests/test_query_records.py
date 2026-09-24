@@ -53,16 +53,16 @@ class QueryRecordTests(unittest.TestCase):
         instance, self.relation_id = import_relation(instance,
             {"kind": "supports", "source": self.kids[0], "target": self.kids[1], "evidence": "alpha"},
             source_ref=INSTANCE_ID, actor_ref=INSTANCE_ID)
-        self.old_head = self.repository.save(self.initial_head, instance, runtime, artifacts={
+        self.old_head = self.repository.save_with_state(self.initial_head, instance, runtime, artifacts={
             check_ref: canonical_json({'definition': definition, 'verdict': 'checked',
                 'scope': 'Explicit CORE_TESTS kind-check fixture'}),
             approval_ref: canonical_json({'definition': definition, 'decision': 'activate',
                 'scope': 'Explicit CORE_TESTS fixture; not actual user approval'}),
-        })
-        self.file_head = self.repository.save(self.old_head, instance, runtime, artifacts={
+        })[0]
+        self.file_head = self.repository.save_with_state(self.old_head, instance, runtime, artifacts={
             "runtime/artifacts/query-fixture/a.txt": b"needle alpha",
             "runtime/artifacts/query-fixture/b.txt": b"needle beta",
-        })
+        })[0]
 
     def tearDown(self) -> None:
         self.temporary.cleanup()
@@ -77,7 +77,7 @@ class QueryRecordTests(unittest.TestCase):
             {"kind": "question", "title": "Three", "statement": "new", "summary": "new",
              "explanation": "A later query record", "lean_code": "", "declaration_names": [], "dependencies": []},
             source_ref=INSTANCE_ID, actor_ref=INSTANCE_ID)
-        self.repository.save(self.file_head, instance, runtime)
+        self.repository.save_with_state(self.file_head, instance, runtime)[0]
 
         resumed = query_records(self.git, INSTANCE_ID, cursor=first["next_cursor"], limit=10)
         self.assertEqual(resumed["snapshot"], self.old_head)
@@ -99,7 +99,7 @@ class QueryRecordTests(unittest.TestCase):
     def test_file_cursor_reuses_old_snapshot_and_malformed_cursor_is_error(self) -> None:
         first = self.repository.query(snapshot=self.file_head, prefix="runtime/artifacts/query-fixture/", text="needle", limit=1)
         _, instance, runtime = self.repository.load(self.file_head)
-        self.repository.save(self.file_head, instance, runtime)
+        self.repository.save_with_state(self.file_head, instance, runtime)[0]
         resumed = self.repository.query(prefix="runtime/artifacts/query-fixture/", text="needle", limit=10, cursor=first["next_cursor"])
         self.assertEqual(resumed["snapshot"], self.file_head)
         self.assertEqual([item["path"] for item in resumed["items"]], ["runtime/artifacts/query-fixture/b.txt"])

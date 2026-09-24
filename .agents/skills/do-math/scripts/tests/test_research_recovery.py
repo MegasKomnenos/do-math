@@ -7,9 +7,9 @@ import unittest
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from v5_fixtures import local_job_runner
+from research_fixtures import local_job_runner
 from do_math.engine import DEFAULT_CONFIG, control
-from v5_fixtures import charter_change, policy_change, producer_result, disposition, send_control
+from research_fixtures import charter_change, policy_change, producer_result, disposition, send_control
 from test_purpose_engine import PurposeHarness, candidate, common
 
 
@@ -44,9 +44,6 @@ class RecoveryStorageConnectionTests(unittest.TestCase):
 
 
 class ResearchRecoveryTests(PurposeHarness):
-    def test_default_call_budgets_are_unlimited(self):
-        self.assertIsNone(DEFAULT_CONFIG['work_calls'])
-        self.assertIsNone(DEFAULT_CONFIG['operations_calls'])
 
     def test_revised_contract_replaces_obsolete_criteria_and_preserves_history(self):
         from test_purpose_engine import ActiveStateHarness, PurposeRunner
@@ -359,11 +356,6 @@ class RecoveryRoutingTests(PurposeHarness):
             with self.subTest(action=action), self.assertRaises(ValueError):
                 control(self.repo, engine.instance['id'], action, origin='operator', text='operator request')
 
-    def test_operator_cannot_increase_a_user_call_limit(self):
-        engine, _ = self.make_active(work_calls=4)
-        with self.assertRaises(ValueError):
-            control(self.repo, engine.instance['id'], 'configure', origin='operator',
-                    config={'work_calls': None})
 
     def test_conditional_hold_release_preserves_a_different_user_pause(self):
         engine, _ = self.make_active()
@@ -409,6 +401,56 @@ class RecoveryRoutingTests(PurposeHarness):
         self.assertEqual(engine.runtime['executions'][failed['id']], preserved)
         self.assertFalse(engine.runtime['questions'])
 
+
+class LimitedRecoveryCallTests(PurposeHarness):
+    def test_actual_ai_call_keeps_pause_and_honors_a_new_stop(self):
+        from datetime import datetime, timedelta, timezone
+        from test_purpose_engine import ActiveStateHarness
+        for stop_again in (False, True):
+            with self.subTest(stop_again=stop_again):
+                engine, _ = ActiveStateHarness.make(self, **self.fixture_config())
+                engine.runtime['queue'] = []
+                engine._enqueue('maintenance', engine.instance['id'], id='AC-limited',
+                    reason='Inspect the preserved recovery state and report remaining work')
+                engine._save()
+                send_control(engine, 'pause', text='Keep general research paused')
+                action = next(a for a in engine.runtime['queue'] if a['id'] == 'AC-limited')
+                grant_id = engine.instance['lifecycle']['adoption']['research_grant_ids'][0]
+                send_control(engine, 'decision', config={'change': {
+                    'kind': 'limited_recovery', 'action_id': action['id'], 'grant_id': grant_id,
+                    'profile_ref': engine._select_model(action)['profile_ref'],
+                    'purpose': 'Inspect the preserved recovery state',
+                    'procedure': 'Read the supplied state and return a maintenance report',
+                    'expires_at': (datetime.now(timezone.utc) + timedelta(minutes=5)).isoformat()}})
+                calls = []
+                case = self
+                class Runner:
+                    @local_job_runner
+                    def run(inner, **arguments):
+                        calls.append(arguments['execution_id'])
+                        arguments['on_started']()
+                        case.assertEqual(engine.runtime['status'], 'paused')
+                        case.assertEqual(engine.instance['lifecycle']['state'], 'paused')
+                        case.assertFalse(arguments['should_stop']())
+                        if stop_again:
+                            control(case.repo, engine.instance['id'], 'pause',
+                                text='Stop the approved recovery too')
+                            case.assertTrue(arguments['should_stop']())
+                            return {'status': 'stopped', 'output': None, 'usage': {},
+                                    'error': 'New user pause observed'}
+                        return producer_result({'status': 'completed', 'usage': {}, 'output': {
+                            **common('Limited recovery inspection complete'),
+                            'report': 'Inspected only the supplied recovery state.',
+                            'remaining_work': []}}, arguments)
+                engine.runner = Runner()
+                engine.run(max_steps=1)
+                self.assertEqual(len(calls), 1)
+                execution = engine.runtime['executions'][calls[0]]
+                self.assertEqual(execution['outcome'], 'cancelled' if stop_again else 'output_accepted',
+                                 execution.get('error'))
+                self.assertEqual(engine.runtime['status'], 'paused')
+                self.assertEqual(engine.instance['lifecycle']['state'], 'paused')
+                self.assertIn('user_pause', engine.runtime)
 
 
 if __name__ == '__main__':

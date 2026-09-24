@@ -47,7 +47,7 @@ class FakeEngine(RevisionEngineMixin,LifecycleEngineMixin,SchedulerMixin,ReviewE
         self.instance.update(profiles.build_profiles(config))
         self.runtime.update(cycles=0,waiting_actions={})
         self.head='fixture-head'; self.saves=[]; self.formal_calls=[]; self.formal_behavior=None; self._slots=None
-        self.formal_verifier=self.verify; self._upgrade_runtime()
+        self.formal_verifier=self.verify; self._task_readiness = {}
     def _enqueue(self,role,target=None,**fields):
         row={'role':role,**fields}
         if target is not None: row['target']=target
@@ -119,7 +119,7 @@ class FakeEngine(RevisionEngineMixin,LifecycleEngineMixin,SchedulerMixin,ReviewE
         self.environment('base',True)
         iid=self.instance['lifecycle']['input_id']
         from do_math import governance
-        from v5_fixtures import intent_response
+        from research_fixtures import intent_response
         source = governance.import_input_source(self.instance, self.runtime, iid)
         author_action = {'id':'AC-interpret', 'role':'intent_interpretation', 'target':iid, 'stage':'interpret'}
         author = self._register_execution(author_action, {'id':'EX-interpret','role':'intent_interpretation','status':'running'})
@@ -187,7 +187,7 @@ class PublicInitializationRunner:
         import json
         from do_math import submission
         from do_math.repository import canonical_json
-        from v5_fixtures import intent_response, seal_response
+        from research_fixtures import intent_response, seal_response
         context = json.loads((workspace/'input/submission/context.json').read_bytes())
         if context['action']['role'] != 'intent_interpretation':
             raise AssertionError('No research is authorized by the initialization fixture')
@@ -250,7 +250,7 @@ class PublicLifecycleTests(unittest.TestCase):
     def test_public_initializing_pause_resume_preserves_source_and_missing(self):
         import subprocess
         from do_math.engine import initialize
-        from v5_fixtures import send_control
+        from research_fixtures import send_control
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory)
             subprocess.run(['git','init','-q',str(root)],check=True)
@@ -277,14 +277,14 @@ class PublicLifecycleTests(unittest.TestCase):
     def test_public_call_mode_init_activate_pause_resume_and_persistence(self):
         import subprocess
         from do_math.engine import initialize
-        from v5_fixtures import activate, install_adapter_fixture, send_control
+        from research_fixtures import activate, install_adapter_fixture, send_control
         install_adapter_fixture(self)
         with tempfile.TemporaryDirectory() as directory, patch('do_math.windows_job.named_job_empty',return_value=True):
             root = Path(directory)
             subprocess.run(['git','init','-q',str(root)],check=True)
             initialized = initialize(root,goal='Prove n + 0 = n',workspace=root/'work',config={
-                'session_limits':None,'operations_calls':50,'work_calls':10,'scholarly_enabled':False,
-                'lean_command':['synthetic-lean'],'run_timeout_seconds':7200})
+                'scholarly_enabled':False,
+                'lean_command':['synthetic-lean'],})
             engine = ResearchEngine(root,initialized['instance_id'],runner=PublicInitializationRunner())
             activate(engine,root,initialization_runner=engine.runner)
             self.assertEqual(engine.instance['lifecycle']['state'],'active')
@@ -303,7 +303,7 @@ class PublicLifecycleTests(unittest.TestCase):
         import os, subprocess, threading
         from http.server import HTTPServer
         from do_math.engine import initialize
-        from v5_fixtures import activate, install_adapter_fixture, send_control
+        from research_fixtures import activate, install_adapter_fixture, send_control
         from test_external import H
         class Handler(H):
             count=0
@@ -319,8 +319,8 @@ class PublicLifecycleTests(unittest.TestCase):
             root=Path(directory)
             subprocess.run(['git','init','-q',str(root)],check=True)
             initialized=initialize(root,goal='Prove n + 0 = n',workspace=root/'work',config={
-                'session_limits':None,'operations_calls':50,'work_calls':10,'scholarly_enabled':False,
-                'lean_command':['synthetic-lean'],'run_timeout_seconds':7200})
+                'scholarly_enabled':False,
+                'lean_command':['synthetic-lean'],})
             engine=ResearchEngine(root,initialized['instance_id'],runner=PublicInitializationRunner())
             activate(engine,root,initialization_runner=engine.runner,external_policy='explicit_grants')
             send_control(engine,'decision',config={'change':{'kind':'grant','grant':{
@@ -372,10 +372,6 @@ class LifecycleTests(unittest.TestCase):
         chosen=e.instance['lifecycle']['adoption']['initial_profile_ref']
         actual=ResearchEngine._execution_profile(e,{'role':'intent_interpretation','profile_ref':chosen})
         self.assertEqual(profiles.profile_ref(actual),chosen)
-    def test_upgrade_idempotent_and_no_legacy_promotion(self):
-        e=self.engine; before=deepcopy((e.instance,e.runtime)); e._upgrade_runtime()
-        self.assertEqual((e.instance,e.runtime),before); e.runtime['feature_version']=4
-        with self.assertRaises(ValueError): e._upgrade_runtime()
     def test_review_currentness_and_no_persisted_readiness(self):
         e=self.engine; t=e.task(approved=False); e._refresh_readiness(); e._refresh_readiness()
         self.assertEqual(len([a for a in e.runtime['queue'] if a['role']=='task_contract_review']),1)
@@ -436,6 +432,14 @@ class LifecycleTests(unittest.TestCase):
         with self.assertRaises(ValueError): e.control('conversation',{'operation':'heartbeat','id':'chat','generation':1})
         e.control('conversation',{'operation':'attach','id':'chat','generation':2,'lease_seconds':10})
         e.control('resume',{}); self.assertEqual(e.instance['lifecycle']['state'],'active')
+    def test_continue_alias_is_rejected_without_changing_conversation(self):
+        e = self.engine
+        before = deepcopy((e.instance, e.runtime))
+        with self.assertRaisesRegex(ValueError, 'conversation loss policy'):
+            e.control('conversation', {'operation': 'attach', 'id': 'chat',
+                'generation': 1, 'lease_seconds': 60, 'disconnect_policy': 'continue'})
+        self.assertEqual((e.instance, e.runtime), before)
+
     def test_continue_policy_does_not_pause(self):
         e=self.engine; e.control('conversation',{'operation':'attach','id':'chat','generation':1,'lease_seconds':1,'disconnect_policy':'continue_authorized'})
         e.current_time+=timedelta(seconds=2); e._check_conversations()
@@ -467,13 +471,6 @@ class LifecycleTests(unittest.TestCase):
         transition=next(reversed(e.runtime['trust_transitions'].values()))
         jsonschema.validate(transition,RECORDS['trust_transitions'])
 
-    def test_call_mode_scheduler_consumes_usage_capacity(self):
-        with tempfile.TemporaryDirectory() as root:
-            e=FakeEngine(root,config={'session_limits':None,'operations_calls':5})
-            e.activate()
-            action={'id':'AC-call','role':'research_preparation'}
-            with patch.object(e,'_revision_dispatch_waits',return_value=[]), patch.object(e,'_selected_action_current',return_value=True), patch.object(e,'_provider_status',return_value={'providers':{}},create=True):
-                self.assertTrue(e._dispatchable(action))
 
     def test_initial_grant_does_not_queue_research_before_activation(self):
         with tempfile.TemporaryDirectory() as root:
@@ -826,14 +823,14 @@ class Audit2LifecycleTests(unittest.TestCase):
             e = FakeEngine(root); e.activate(); e.knowledge('K1')
             new = e.environment('next')
             command = e.instance['trust_environments'][new]['toolchain']['configured_command']
-            fixed = profiles.build_profiles({**e.instance['config'], 'lean_command':command, 'lean_timeout_seconds':37})
+            fixed = profiles.build_profiles({**e.instance['config'], 'lean_command':command, })
             p = next(p for p in fixed['execution_profiles'].values() if p['role']=='trust_check')
             e.instance['execution_profiles'][p['id']] = p
             e.instance['role_profile_refs']['trust_check'] = [profiles.profile_ref(p)]
             e.control('trust', {'operation':'transition','env_id':new})
             e.machine('trust_check')
             self.assertEqual(len(e.formal_calls),1)
-            self.assertIsNone(e.formal_calls[0]['timeout_seconds'])
+            self.assertNotIn("timeout_seconds", e.formal_calls[0])
             self.assertEqual(e.formal_calls[0]['lean_command'],command)
 
     def test_paused_recovery_is_exact_authorized_and_revocable(self):

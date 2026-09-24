@@ -77,6 +77,38 @@ class KnowledgeIoTests(unittest.TestCase):
         ins, _, kid = io.import_candidate(ins, {}, candidate(kind=token), source_ref='s', actor_ref='u')
         self.assertEqual(ins['knowledge'][kid]['kind'], token)
 
+    def test_relation_claim_endpoint_basis_matches_the_storage_contract(self):
+        import jsonschema
+        from do_math import knowledge
+        from do_math.state_contract import default_state_contract
+        ins, run = {'feature_version': 5, 'object_format': 'sha1'}, {'feature_version': 5}
+        endpoints = []
+        for title in ('Source endpoint', 'Target endpoint'):
+            ins, run, kid = io.import_candidate(ins, run,
+                candidate(title=title, lean_code='', declaration_names=[]),
+                source_ref='fixture', actor_ref='user')
+            endpoints.append(kid)
+        ins = activate(ins, 'formally_implies')
+        claim = dict(kind='formally_implies', source=endpoints[0],
+                     target=endpoints[1], confirmed_scope='True implies True')
+        ins, run, proof = io.import_candidate(ins, run, candidate(relation_claim=claim),
+            source_ref='fixture', actor_ref='user')
+        expected = knowledge.capture_basis(ins, run, endpoints)
+        self.assertEqual(ins['knowledge'][proof]['relation_endpoint_basis'], expected)
+        contract = default_state_contract()
+        contract.validate(ins, run)
+        self.assertTrue(knowledge.validate_basis(expected, ins, run)['valid'])
+        schema = contract.family('research', 'knowledge').schema
+        invalid = [
+            {},
+            [{'id': endpoints[0], 'sha256': 'not-a-hash', 'status': 'active'}],
+            [{'id': endpoints[0], 'sha256': expected[0]['sha256']}],
+            [{**expected[0], 'unregistered': True}],
+        ]
+        for basis in invalid:
+            with self.subTest(basis=basis), self.assertRaises(jsonschema.ValidationError):
+                jsonschema.validate({**ins['knowledge'][proof], 'relation_endpoint_basis': basis}, schema)
+
     def test_missing_dependency_is_rejected_without_mutation(self):
         ins, run, _ = fixture()
         before = deepcopy(ins)
@@ -92,6 +124,37 @@ class KnowledgeIoTests(unittest.TestCase):
         ins, rid = io.import_relation(ins, analogy, source_ref='s', actor_ref='u')
         self.assertEqual(next(r for r in ins['relations'] if r['id'] == rid)['authority'], 'research_connection')
         self.assertFalse(io.validate_relation(ins, {**analogy, 'kind': 'formally_implies'})['valid'])
+
+    def test_mathematical_relation_requires_match_in_addition_to_active_use(self):
+        from do_math.knowledge import assess_use
+        from test_knowledge import evidence
+        for decision in ("mismatch", "unresolved"):
+            with self.subTest(decision=decision):
+                ins, run, ids = fixture()
+                ins = activate(ins, "formally_implies")
+                claim = dict(kind="formally_implies", source=ids["a"], target=ids["b"],
+                             confirmed_scope="True implies True")
+                ins, run, proof, _ = add(ins, run, verified=False, relation_claim=claim)
+                ins = kr.record_formal_result(ins, proof, evidence(ins, proof), "TE-old", runtime=run)
+                ins, negative = kr.record_identity_assessment(ins, proof,
+                    {"decision": decision, "basis": kr.identity_basis(ins, proof)},
+                    "policy:fixture", runtime=run)
+                relation = {**claim, "evidence": "proof",
+                    "formal_result_refs": [ins["knowledge"][proof]["formal_result_id"]],
+                    "assessment_refs": [negative]}
+                self.assertTrue(assess_use(ins["identity_assessments"][negative], ins)["valid"])
+                checked = io.validate_relation(ins, relation)
+                self.assertFalse(checked["valid"])
+                self.assertTrue(any(r.startswith("formal_result_does_not_establish_this_relation:")
+                                    for r in checked["reasons"]))
+                ins, positive = kr.record_identity_assessment(ins, proof,
+                    {"decision": "match", "basis": kr.identity_basis(ins, proof)},
+                    "policy:fixture", runtime=run)
+                checked = io.validate_relation(ins, relation)
+                self.assertFalse(checked["valid"])
+                self.assertIn("assessment_not_effective:" + negative, checked["reasons"])
+                relation["assessment_refs"] = [positive]
+                self.assertTrue(io.validate_relation(ins, relation)["valid"])
 
     def test_mathematical_relation_requires_exact_formal_identity_and_current_endpoints(self):
         ins, run, ids = fixture()

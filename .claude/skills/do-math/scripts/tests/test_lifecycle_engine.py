@@ -432,6 +432,14 @@ class LifecycleTests(unittest.TestCase):
         with self.assertRaises(ValueError): e.control('conversation',{'operation':'heartbeat','id':'chat','generation':1})
         e.control('conversation',{'operation':'attach','id':'chat','generation':2,'lease_seconds':10})
         e.control('resume',{}); self.assertEqual(e.instance['lifecycle']['state'],'active')
+    def test_continue_alias_is_rejected_without_changing_conversation(self):
+        e = self.engine
+        before = deepcopy((e.instance, e.runtime))
+        with self.assertRaisesRegex(ValueError, 'conversation loss policy'):
+            e.control('conversation', {'operation': 'attach', 'id': 'chat',
+                'generation': 1, 'lease_seconds': 60, 'disconnect_policy': 'continue'})
+        self.assertEqual((e.instance, e.runtime), before)
+
     def test_continue_policy_does_not_pause(self):
         e=self.engine; e.control('conversation',{'operation':'attach','id':'chat','generation':1,'lease_seconds':1,'disconnect_policy':'continue_authorized'})
         e.current_time+=timedelta(seconds=2); e._check_conversations()

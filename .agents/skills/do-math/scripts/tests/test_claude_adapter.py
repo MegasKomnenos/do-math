@@ -30,6 +30,31 @@ RESULT = {"type": "result", "subtype": "success", "is_error": False,
 
 
 class ClaudeTests(unittest.TestCase):
+    def test_claude_lock_in_pinned_profile_keeps_codex_request_valid(self):
+        from do_math import codex_worker, execution_profiles
+        from test_model_runner import Adapter
+        config = {**DEFAULT_CONFIG, "claude_only_assigned_model": True,
+                  "scholarly_enabled": False}
+        profile = next(p for p in execution_profiles.build_profiles(config)["execution_profiles"].values()
+                       if p["role"] == "maintenance")
+        self.assertTrue(profile["ai"]["claude_only_assigned_model"])
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            workspace = root / "workspace"
+            workspace.mkdir()
+            runner = model_runner.ModelRunner(codex_path="fixture-cli")
+            runner.codex._adapter = Adapter({"result": "output_collected",
+                                            "final": {"raw": b"{}"}, "jsonl": {}})
+            prompt = execution_profiles.prepare_prompt("fixture", profile)
+            result = runner.run(model=profile["ai"]["model"], effort=profile["ai"]["effort"],
+                prompt=prompt, output_schema={}, workspace=workspace, evidence_dir=root / "evidence",
+                timeout_seconds=1, execution_id="EX-codex-lock", profile=profile,
+                input_seal=execution_profiles.prompt_seal(prompt), claude_only_assigned_model=True)
+            request = codex_worker.load_request(root / "evidence/request.json")
+            self.assertNotIn("claude_only_assigned_model", request)
+            self.assertEqual(request["profile_ref"], execution_profiles.profile_ref(profile))
+            self.assertEqual(result["status"], "completed")
+
     def test_model_lock_is_opt_in_and_reaches_only_claude(self):
         from do_math.engine import ResearchEngine
         from types import SimpleNamespace
@@ -201,7 +226,7 @@ class ClaudeTests(unittest.TestCase):
         state = {**build_profiles(config), "config": config}
         runtime = {"executions": {}, "reservations": {}}
         with tempfile.TemporaryDirectory() as d:
-            slots = SessionSlots(Path(d), "mixed", runtime=runtime, instance=state)
+            slots = SessionSlots( runtime=runtime, instance=state)
             def acquire(eid, pool, model):
                 role = "research_work" if pool == "work" else "research_plan"
                 profile = next(p for p in state["execution_profiles"].values()
@@ -214,7 +239,6 @@ class ClaudeTests(unittest.TestCase):
             self.assertTrue(slots.release("one"))
             self.assertTrue(acquire("two", "work", "claude:opus"))
             slots.close()
-
 
 
 if __name__ == "__main__":

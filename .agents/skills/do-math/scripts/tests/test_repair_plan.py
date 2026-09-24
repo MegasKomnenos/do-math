@@ -10,7 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from test_categories import test_group
 from do_math.engine import ResearchEngine, DEFAULT_CONFIG
 from do_math import execution_profiles, reporting
-from do_math.session_slots import GitSessionSlots
+from do_math.session_slots import SessionSlots
 
 
 @test_group('unit')
@@ -20,6 +20,7 @@ class GoalAuditFlowRepairTests(unittest.TestCase):
         e.instance = {'id': 'IN-1', 'config': {'goal_auditors': 2}, 'goal_judgments': []}
         e.runtime = {'executions': {}, 'queue': [], 'waiting_actions': {}, 'history': [],
                      'events': [], 'pending_events': [], 'tasks': {}, 'activities': {}, 'reservations': {}}
+        e.runtime['last_observed_utc'] = e._lifecycle_now().isoformat()
         e._goal_basis_key = lambda: 'basis'
         return e
 
@@ -69,7 +70,10 @@ class GoalAuditFlowRepairTests(unittest.TestCase):
             process={'job_name': 'fixture-job'}, result_ref='original-result', input_bundle='original-input',
             capacity={'local_termination': 'confirmed'}, submission_intent={})
         artifacts, refs = {}, []
-        for name, value in (('output', {'summary': 'original'}), ('extensions', {}), ('check', {'passed': True, 'issues': []})):
+        for name, value in (('output', {'summary': 'original'}), ('extensions', {}), ('check', {'passed': True, 'capture_eligible': True, 'issues': []})):
+            if name == 'check':
+                from do_math.integration import digest
+                value['id'] = 'MC-' + digest(value)[:24]
             raw = canonical_json(value)
             digest = hashlib.sha256(raw).hexdigest()
             artifacts[name] = raw
@@ -79,7 +83,7 @@ class GoalAuditFlowRepairTests(unittest.TestCase):
                                     'payload': {'submission_check': {'artifacts': refs}}}
         e.runtime['integrations'] = {'IB-one': {'execution_id': ex['id'], 'members': ['output']}}
         e.store = SimpleNamespace(read=lambda path, snapshot: artifacts[path])
-        e._slots = GitSessionSlots(e.runtime, e.instance)
+        e._slots = SessionSlots(e.runtime, e.instance)
         with patch.object(e, '_save'), patch('do_math.windows_job.named_job_empty', return_value=False), \
                 patch('do_math.engine.collect_outputs', side_effect=AssertionError('must retain original files')):
             e._recover_disappeared()
@@ -176,31 +180,13 @@ class DispatchResourceRepairTests(unittest.TestCase):
         profile = next(p for p in instance['execution_profiles'].values() if p['role'] == 'research_work')
         return instance, runtime, profile
 
-    def test_budget_diagnosis_uses_pinned_edition_and_matches_actual_acquire(self):
-        instance, runtime, profile = self.state(session_limits=None, work_calls=0)
-        newer = execution_profiles.build_profiles({**instance['config'], 'work_calls': 1})
-        for family in ('execution_profiles', 'capacity_constraints'):
-            instance[family].update(newer[family])
-        instance['role_profile_refs'] = newer['role_profile_refs']
-        before = deepcopy((instance, runtime))
-        slots = GitSessionSlots(runtime, instance)
-        check = slots.admission_check(profile, current_time=123)
-        self.assertEqual((instance, runtime), before)
-        self.assertFalse(check['allowed'])
-        self.assertEqual(check['wait']['kind'], 'budget_exhausted')
-        self.assertEqual(check['wait']['next_owner'], 'user')
-        self.assertIn(check['wait']['constraint_id'], profile['ai']['usage_constraint_ids'])
-        self.assertFalse(slots.acquire('EX-one', profile['budget_kind'], profile['ai']['model'],
-                                      profile=profile, execution={'id': 'EX-one', 'status': 'queued'}, current_time=123))
-        self.assertEqual(slots.admission_wait, check['wait'])
-        self.assertEqual(slots.admission_reason, 'budget_exhausted')
 
     def test_zero_capacity_and_provider_probe_are_distinct_and_read_only(self):
         config = deepcopy(DEFAULT_CONFIG)
         for model in config['session_limits']['work']:
             config['session_limits']['work'][model] = 0
         instance, runtime, profile = self.state(**config)
-        slots = GitSessionSlots(runtime, instance)
+        slots = SessionSlots(runtime, instance)
         wait = slots.admission_check(profile)['wait']
         self.assertEqual((wait['kind'], wait['next_owner']), ('capacity', 'user'))
         self.assertNotIn('retry_at', wait)
@@ -214,14 +200,14 @@ class DispatchResourceRepairTests(unittest.TestCase):
 
     def test_non_task_wait_projection_is_detached_and_printable(self):
         runtime = {'executions': {}, 'queue': [{'id': 'AC-prep', 'role': 'research_preparation',
-            'dispatch_wait': {'kind': 'budget_exhausted', 'constraint_id': 'BC-old', 'next_owner': 'user'}}]}
+            'dispatch_wait': {'kind': 'capacity', 'constraint_id': 'BC-old', 'next_owner': 'user'}}]}
         rows = reporting.dispatch_waits(runtime)
         text = '\n'.join(reporting.render_dispatch_waits({'tasks': [], 'dispatch_waits': rows}))
         self.assertIn('AC-prep', text)
-        self.assertIn('budget_exhausted', text)
+        self.assertIn('capacity', text)
         self.assertIn('BC-old', text)
         rows[0]['wait']['kind'] = 'changed'
-        self.assertEqual(runtime['queue'][0]['dispatch_wait']['kind'], 'budget_exhausted')
+        self.assertEqual(runtime['queue'][0]['dispatch_wait']['kind'], 'capacity')
         runtime['executions']['EX-live'] = {'status': 'running', 'action': {'id': 'AC-prep'}}
         self.assertEqual(reporting.dispatch_waits(runtime), [])
 
@@ -229,13 +215,13 @@ class DispatchResourceRepairTests(unittest.TestCase):
         from test_governance_engine import CentralGovernanceTests
         e, _, _ = CentralGovernanceTests().host()
         e.instance['workspace'] = str(Path('.').resolve())
-        e.instance['config']['operations_calls'] = 10
+        e.instance['config']['session_limits']['operations'] = {m: 0 for m in e.instance['config']['tier_models'].values()}
         e.instance.update(execution_profiles.build_profiles(e.instance['config']))
         e.runtime.update(status='waiting', queue=[{'id': 'AC-wait', 'role': 'research_preparation',
             'profile_ref': deepcopy(e.instance['role_profile_refs']['research_preparation'][0]),
-            'dispatch_wait': {'kind': 'budget_exhausted', 'next_owner': 'user'}}])
+            'dispatch_wait': {'kind': 'capacity', 'next_owner': 'user'}}])
         original = deepcopy(e.runtime['queue'][0]['profile_ref'])
-        request = {'origin': 'user', 'config': {'operations_calls': e.instance['config']['operations_calls'] + 1}}
+        request = {'origin': 'user', 'config': {'session_limits': deepcopy(DEFAULT_CONFIG['session_limits'])}}
         _, state = e._configure_candidate(e.instance, e.runtime, request)
         self.assertEqual(state['status'], 'ready')
         self.assertNotIn('dispatch_wait', state['queue'][0])
@@ -297,49 +283,6 @@ class ReadinessCopyRepairTests(unittest.TestCase):
                     self.assertIn(value['waiting'], result['waits'])
                     result['waits'][0]['reason'] = 'changed by result consumer'
                     self.assertEqual(value['waiting']['reason'], 'wait')
-
-
-@test_group('integration')
-class DispatchWaitIntegrationTests(unittest.TestCase):
-    def test_actual_scheduler_and_both_status_readers_report_budget_wait_without_model(self):
-        import subprocess
-        import tempfile
-        from state_fixtures import active_engine
-        from test_lifecycle_engine import AdapterDouble
-        from do_math.cli import _human_status
-        class ForbiddenRunner:
-            def run(self, **kwargs):
-                raise AssertionError('exhausted budget must not call a model')
-        with tempfile.TemporaryDirectory() as directory, patch('do_math.initialization.adapter_for', return_value=AdapterDouble()):
-            root = Path(directory)
-            subprocess.run(['git', 'init', '-q', str(root)], check=True)
-            e = active_engine(root, root/'work', runner=ForbiddenRunner(), config={
-                'operator_enabled': False, 'scholarly_enabled': False, 'session_limits': None,
-                'operations_calls': 1, 'work_calls': 10})
-            from do_math import execution_lifecycle
-            spent_action = {'id': 'AC-spent', 'role': 'maintenance'}
-            spent = e._register_execution(spent_action, {'id': 'EX-spent', 'role': 'maintenance', 'status': 'queued'})
-            profile = e._execution_profile(spent_action)
-            slots = e._provider_slots()
-            self.assertTrue(slots.acquire(spent['id'], 'operations', profile['ai']['model'],
-                                          profile=profile, execution=spent))
-            self.assertTrue(slots.release(spent['id']))
-            at = e._lifecycle_now().isoformat()
-            execution_lifecycle.transition_execution(spent, 'stopping', at=at, stop_phase='terminating')
-            execution_lifecycle.transition_execution(spent, 'ended', at=at, outcome='execution_incomplete')
-            e._settle_activity(spent['id'])
-            e._enqueue('research_preparation', reason='Observe the actual exhausted operations profile')
-            e._save()
-            previous = set(e.runtime['executions'])
-            status = e.run(max_steps=1)
-            self.assertEqual(status['status'], 'waiting')
-            self.assertEqual(set(e.runtime['executions']), previous)
-            self.assertEqual(status['dispatch_waits'][0]['wait']['kind'], 'budget_exhausted')
-            self.assertEqual(status['capacity_waiting'], [])
-            snapshot = reporting.snapshot_report(root, e.instance['id'], snapshot=e.head)
-            self.assertEqual(snapshot['dispatch_waits'], status['dispatch_waits'])
-            self.assertIn('budget_exhausted', _human_status(status))
-            self.assertIn('budget_exhausted', reporting.render_human_report(snapshot))
 
 
 if __name__ == '__main__':

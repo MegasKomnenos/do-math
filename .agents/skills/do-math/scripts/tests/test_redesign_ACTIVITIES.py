@@ -127,7 +127,7 @@ class ExecutionLifecycleTests(unittest.TestCase):
             request = {**capability, "request_id": "CT-1", "kind": "submit_intent",
                        "payload": {"manifest": ["result.json"]}}
             receipt = transport.receive(request, publish=lambda _: {"state": "accepted", "published": True, "snapshot": "SN-1"})
-        from v5_fixtures import sealed_maintenance_submission
+        from research_fixtures import sealed_maintenance_submission
         with tempfile.TemporaryDirectory() as workspace:
             intent, _ = sealed_maintenance_submission(workspace, execution['id'])
         record_submission_intent(execution, intent, receipt, at=TIME)
@@ -160,7 +160,7 @@ class ExecutionLifecycleTests(unittest.TestCase):
 
     def test_submission_transition_replay_and_invalid_receipt_are_atomic(self):
         execution = self.running()
-        from v5_fixtures import sealed_maintenance_submission
+        from research_fixtures import sealed_maintenance_submission
         with tempfile.TemporaryDirectory() as workspace:
             intent, _ = sealed_maintenance_submission(workspace, execution['id'])
         receipt = {"id": "CT-submit", "kind": "submit_intent", "state": "accepted",
@@ -237,8 +237,6 @@ class ProviderAndParallelTests(unittest.TestCase):
                 self.runtime = {"queue": [], "status": "ready"}
                 self.instance = {"config": {"model": "gpt-5.6-terra", "provider_retry_initial_seconds": 20,
                                             "provider_retry_max_seconds": 60}}
-            def _session_mode(self):
-                return True
             def _remove_action(self, action):
                 self.runtime["queue"] = [item for item in self.runtime["queue"] if item is not action]
         engine = Harness()
@@ -408,7 +406,7 @@ class AuditRecoveryTests(unittest.TestCase):
         self.head = self.repo.initialize(self.instance, self.runtime)
 
     def reload(self):
-        self.head = self.repo.save(self.head, self.instance, self.runtime)
+        self.head = self.repo.save_with_state(self.head, self.instance, self.runtime)[0]
         _, self.instance, self.runtime = self.repo.load(self.head)
         self.execution = self.runtime["executions"]["EX-audit"]
 
@@ -426,8 +424,8 @@ class AuditRecoveryTests(unittest.TestCase):
 
     def test_04_confirmed_local_termination_releases_only_its_reservation(self):
         from unittest.mock import patch
-        from do_math.session_slots import GitSessionSlots
-        slots = GitSessionSlots(self.runtime, self.instance)
+        from do_math.session_slots import SessionSlots
+        slots = SessionSlots(self.runtime, self.instance)
         transition_execution(self.execution, "starting", at=TIME)
         self.assertTrue(slots.acquire("EX-audit", self.profile["budget_kind"], self.profile["ai"]["model"],
                                      profile=self.profile, execution=self.execution))
@@ -436,7 +434,7 @@ class AuditRecoveryTests(unittest.TestCase):
         self.reload()
         engine = ProviderEngineMixin()
         engine.instance, engine.runtime = self.instance, self.runtime
-        engine._slots = GitSessionSlots(self.runtime, self.instance)
+        engine._slots = SessionSlots(self.runtime, self.instance)
         self.assertTrue(hasattr(engine, "_settle_recovered_execution"), "missing recovery/slot settlement API")
         with patch("do_math.windows_job.named_job_empty", return_value=False):
             self.assertFalse(engine._settle_recovered_execution("EX-audit", at=TIME))
@@ -451,7 +449,7 @@ class AuditRecoveryTests(unittest.TestCase):
                 self.assertEqual(row["returned"], row["reserved"])
         engine.instance, engine.runtime = self.instance, self.runtime
         # A loaded ended execution is reconciled idempotently, not silently excluded.
-        engine._slots = GitSessionSlots(self.runtime, self.instance)
+        engine._slots = SessionSlots(self.runtime, self.instance)
         self.assertTrue(engine._settle_recovered_execution("EX-audit", at=TIME))
 
     def test_05_queued_recovery_is_retired_and_requeued_with_exact_lineage(self):
@@ -499,7 +497,7 @@ class AuditRecoveryTests(unittest.TestCase):
         self.reload()
         transport = ControlTransport(Path(self.temporary.name) / "delivery")
         workspace=Path(self.temporary.name)/'submission-workspace'
-        from v5_fixtures import sealed_maintenance_submission
+        from research_fixtures import sealed_maintenance_submission
         intent, artifacts = sealed_maintenance_submission(workspace, 'EX-audit')
         binding = transport.issue("EX-audit", "GR-audit", workspace=workspace)
         request = {**binding, "request_id": "request-audit", "kind": "submit_intent", "payload": {"draft_path": "draft.json"}}
@@ -511,7 +509,7 @@ class AuditRecoveryTests(unittest.TestCase):
             self.assertEqual(self.execution["stop_phase"], "terminating")
             self.assertEqual(self.execution["authority_revocation"]["scope"], "execution_research")
             self.runtime["control_receipts"] = {receipt["id"]: receipt}
-            self.head=self.repo.save(self.head,self.instance,self.runtime,artifacts=artifacts)
+            self.head=self.repo.save_with_state(self.head,self.instance,self.runtime,artifacts=artifacts)[0]
             return {"state": "accepted", "published": True, "snapshot": self.head}
         receipt = transport.receive(request, publish=publish)
         _, _, stored = self.repo.load(receipt["snapshot"])

@@ -97,7 +97,7 @@ class AdvancedCliTests(unittest.TestCase):
                 "lean_code": "", "declaration_names": [], "dependencies": []}
         instance, kid = create_candidate(instance, {**base, "id": "KN-1"}, source_ref="input-source", actor_ref="EX-author")
         instance, child = create_candidate(instance, {**base, "id": "KN-2", "dependencies": [kid]}, source_ref="input-source", actor_ref="EX-author")
-        store.save(head, instance, runtime)
+        store.save_with_state(head, instance, runtime)[0]
         plan = plan_impact(instance, runtime, [kid], [])
         confirmation = {"plan_digest": plan["digest"], "decision": "approve", "review_ref": "review",
             "reviewer_ref": "reviewer", "producer_ref": "producer",

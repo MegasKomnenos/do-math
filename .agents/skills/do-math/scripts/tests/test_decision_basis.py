@@ -6,7 +6,7 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.input_basis import capture_decision_basis, decision_basis_changes
 from do_math import integration, planning, revisions
-from v5_fixtures import candidate, contract_review, charter_record
+from research_fixtures import candidate, contract_review, charter_record
 from do_math.governance import initialize_governance, preserve_source, digest
 from do_math.knowledge_records import create_candidate
 

@@ -12,6 +12,7 @@ from unittest.mock import Mock, patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.engine import ResearchEngine, DEFAULT_CONFIG
 from do_math import observations, execution_profiles, task_scope, planning
+from test_categories import test_group
 
 
 class WaitOwnershipTests(unittest.TestCase):
@@ -56,6 +57,7 @@ class WaitOwnershipTests(unittest.TestCase):
 
 
 class ToolchainContractTests(unittest.TestCase):
+    @test_group('lean')
     def test_inspection_matches_actual_formal_verifier(self):
         from do_math.formal import inspect_toolchain, toolchain_errors, verify_lean, portable_bin, toolchain_root
         command = [str(portable_bin(toolchain_root()) / 'lean.exe')]

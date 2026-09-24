@@ -25,6 +25,35 @@ INSTANCE_ID = "RI-01ARZ3NDEKTSV4RRFFQ69G5FAV"
 
 
 class StorageRedesignTests(unittest.TestCase):
+    def test_relation_claim_endpoint_basis_survives_storage_and_remains_typed(self):
+        from do_math import knowledge, knowledge_io
+        from test_knowledge import candidate
+        from test_knowledge_io import activate
+        instance, runtime = {"feature_version": 5}, {"feature_version": 5}
+        endpoints = []
+        for title in ("source", "target"):
+            instance, runtime, kid = knowledge_io.import_candidate(instance, runtime,
+                candidate(title=title, lean_code="", declaration_names=[]),
+                source_ref="fixture:input", actor_ref="fixture:user")
+            endpoints.append(kid)
+        instance = activate(instance, "formally_implies")
+        claim = {"kind": "formally_implies", "source": endpoints[0],
+                 "target": endpoints[1], "confirmed_scope": "True implies True"}
+        instance, runtime, kid = knowledge_io.import_candidate(instance, runtime,
+            candidate(title="relation proof", relation_claim=claim),
+            source_ref="fixture:input", actor_ref="fixture:user")
+        expected = deepcopy(instance["knowledge"][kid]["relation_endpoint_basis"])
+        head = self.repository.initialize(instance, runtime)
+        _, saved, running = self.repository.load(head)
+        self.assertEqual(saved["knowledge"][kid]["relation_endpoint_basis"], expected)
+        self.assertTrue(knowledge.validate_basis(expected, saved, running)["valid"])
+        for invalid in ({}, [{"id": endpoints[0], "sha256": "bad", "status": "active"}],
+                        [{"id": endpoints[0], "sha256": "a" * 64}]):
+            with self.subTest(invalid=invalid):
+                changed = deepcopy(saved)
+                changed["knowledge"][kid]["relation_endpoint_basis"] = invalid
+                with self.assertRaisesRegex(ValueError, "relation_endpoint_basis"):
+                    self.repository.validate_candidate(changed, running, head)
     def task_with_reference_locators(self):
         from do_math.contracts import task_candidate_record
         from do_math.execution_profiles import profile_ref

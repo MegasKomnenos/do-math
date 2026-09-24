@@ -16,15 +16,15 @@ from .state_contract import STATE_FORMAT_VERSION
 
 WORK_ROLES = {"research_work", "supplemental_research", "task_contract_review", "identity_review", "goal_audit"}
 MACHINE_ROLES = {"formal_check", "trust_check", "trust_activate", "external_action"}
-OBSERVATION_KEYS = ("observation_interval_seconds", "observation_idle_seconds",
-                    "observation_unbounded_wait_seconds", "max_observation_reviews", "checkpoint_grace_seconds",
+OBSERVATION_KEYS = ("observation_interval_seconds", "checkpoint_grace_seconds",
                     "self_check_response_window_seconds", "tool_review_window_seconds")
 WINDOW_KEYS = ("call_timeout_seconds", "finish_notice_seconds")
-LEGACY_WINDOW_KEYS = ("run_timeout_seconds", "dispatch_reserve_seconds")
+PROFILE_ROLES = (set(ROLE_TIERS) - {"independent_operator"}) | MACHINE_ROLES | {"recovery"}
+HOST_ROLES = PROFILE_ROLES - {"formal_check", "trust_check", "trust_activate"}
 BOUNDARY = {"mode": "instructions", "os_isolation": False, "authenticated_caller": False,
             "rules": ["Use only assigned inputs, allowed queries and your execution workspace.",
                       "Do not read other reviewers' private work or modify central records directly.",
-                      "Submit proposals through the execution's supplied submission tools.",
+                      "Deliver proposals as a normal JSON final, or use the supplied tools for optional early submission.",
                       "Do not issue user controls or expand research goals, budgets or external authority."]}
 
 
@@ -162,9 +162,9 @@ def job_resource_limits(profile: dict) -> dict | None:
 
 def build_profiles(config: dict) -> dict:
     """Freeze adopted values. No new capacity, permission or measured limit is invented."""
-    limits = config.get("session_limits")
-    if limits is not None and not isinstance(limits, dict):
-        raise ValueError("session limits must be a mapping or explicit call-budget mode")
+    limits = config["session_limits"]
+    if not isinstance(limits, dict):
+        raise ValueError("session_limits must be a mapping")
     constraints = {}
     adopted_host = config.get("host_resources")
     if adopted_host is not None:
@@ -176,19 +176,7 @@ def build_profiles(config: dict) -> dict:
         for demands in adopted_host['demands_by_role'].values():
             _host_amounts(demands, demand=True)
         constraints[adopted_host["constraint"]["id"]] = deepcopy(adopted_host["constraint"])
-    usage_refs = {}
-    if limits is None:
-        for pool in ("work", "operations"):
-            maximum = config[pool + "_calls"]
-            if maximum is not None and (type(maximum) is not int or maximum < 0):
-                raise ValueError("call budget must be nonnegative or unlimited")
-            body = {"kind": "cumulative", "budget_kind": pool, "unit": "local_execution_attempt",
-                    "limit": {"kind": "unlimited"} if maximum is None else {"kind": "bounded", "value": maximum},
-                    "scope": "admitted_local_attempts_not_provider_operations"}
-            identifier = "CP-" + _digest(body)
-            constraints[identifier] = {"id": identifier, **body}
-            usage_refs[pool] = [identifier]
-    for model in sorted(set(limits["work"]) | set(limits["operations"])) if limits is not None else ():
+    for model in sorted(set(limits["work"]) | set(limits["operations"])):
         work, operations = limits["work"].get(model, 0), limits["operations"].get(model, 0)
         if any(type(n) is not int or n < 0 for n in (work, operations)):
             raise ValueError("session capacity must be a nonnegative integer")
@@ -198,20 +186,18 @@ def build_profiles(config: dict) -> dict:
             "total_slots": work + operations, "scope": "local_execution_not_provider_operations"}
     profiles, refs = {}, {}
     lean = _lean_contract(config)
-    for role in sorted((set(ROLE_TIERS) - {"independent_operator"}) | MACHINE_ROLES | {"recovery"}):
+    for role in sorted(PROFILE_ROLES):
         machine = role in MACHINE_ROLES
         pool = "work" if role in WORK_ROLES else "operations"
         mode = (config["observation_mode"] if role == "research_work" else
                 "periodic" if pool == "work" else "deadline_only")
-        for tier in ((None,) if machine or limits is None else TIERS):
+        for tier in ((None,) if machine else TIERS):
             body = {"role": role, "actor_kind": "machine" if machine else "ai", "budget_kind": pool,
                     "boundary": deepcopy(BOUNDARY), "host_capacity_refs": [],
                     "host_capacity_status": "unmeasured_not_enforced",
                     "observation": {"mode": mode, "settings": {k: deepcopy(config[k]) for k in OBSERVATION_KEYS if k in config},
                                     "rule_bindings": deepcopy(_research_observation_rule_contract() if role == "research_work" else [])},
-                    # Retain old, explicitly stored fields only to reconstruct
-                    # their immutable profile IDs. They have no runtime effect.
-                    "window": {k: deepcopy(config[k]) for k in (*WINDOW_KEYS, *LEGACY_WINDOW_KEYS) if k in config},
+                    "window": {k: deepcopy(config[k]) for k in WINDOW_KEYS if k in config},
                     "input": {"max_input_bytes": config["max_input_bytes"], "unit": "utf8_bytes",
                               "provider_context_capacity": "unknown"},
                     "required_capabilities": [] if machine else ["jsonl", "model", "structured_output"],
@@ -219,16 +205,14 @@ def build_profiles(config: dict) -> dict:
             if machine and role in {"formal_check", "trust_check", "trust_activate"}:
                 body["machine"] = deepcopy(lean)
             if not machine:
-                model = (config["tier_models"][tier] if limits is not None else
-                         config["operator_model"] if role == "recovery" else
-                         config.get("role_models", {}).get(role, config["model"]))
+                model = config["tier_models"][tier]
                 capacity = next((c["id"] for c in constraints.values() if c.get("model") == model), None)
-                if limits is not None and capacity is None:
+                if capacity is None:
                     raise ValueError("tier model has no adopted capacity")
                 provider = "claude" if model.startswith(("claude:", "claude-")) else "codex"
                 body["ai"] = {"model": model, "tier": tier, "provider": provider,
                               "effort": config["operator_effort"] if role == "recovery" else config["effort"],
-                              "capacity_refs": [capacity] if capacity else [], "usage_constraint_ids": usage_refs.get(pool, []),
+                              "capacity_refs": [capacity] if capacity else [], "usage_constraint_ids": [],
                               "provider_operations": "unknown", "remote_termination": "unknown",
                               "maximum_output_enforced": False,
                               "claude_only_assigned_model": config.get("claude_only_assigned_model", False),
@@ -236,7 +220,7 @@ def build_profiles(config: dict) -> dict:
                 if role == "recovery":
                     body["window"]["call_timeout_seconds"] = config["operator_timeout_seconds"]
             profile = seal_profile(body)
-            if adopted_host is not None and role not in {"formal_check", "trust_check", "trust_activate"}:
+            if adopted_host is not None and role in HOST_ROLES:
                 if role not in adopted_host["demands_by_role"]:
                     raise ValueError("every capped role needs an explicit host demand in an adopted shared scope")
                 profile = with_host_resources(profile, adopted_host["constraint"], adopted_host["demands_by_role"][role])
@@ -244,8 +228,8 @@ def build_profiles(config: dict) -> dict:
             refs.setdefault(role, []).append(profile_ref(profile))
     result = {"execution_profiles": profiles, "capacity_constraints": constraints, "role_profile_refs": refs}
     if adopted_host is not None:
-        if set(adopted_host['demands_by_role']) - set(refs):
-            raise ValueError('host demands must name generated profile roles')
+        if set(adopted_host['demands_by_role']) - HOST_ROLES:
+            raise ValueError('host demands must name capped roles only')
         result["host_capacity_ref"] = adopted_host["constraint"]["id"]
     return result
 
@@ -289,7 +273,7 @@ def bind_execution(execution: dict, profile: dict) -> dict:
 
 def runtime_config(profile: dict) -> dict:
     validate_profile(profile)
-    window = {key: value for key, value in profile["window"].items() if key not in LEGACY_WINDOW_KEYS}
+    window = profile["window"]
     return deepcopy({**window, **profile["observation"]["settings"],
                      "observation_mode": profile["observation"]["mode"],
                      "max_input_bytes": profile["input"]["max_input_bytes"]})
@@ -298,7 +282,7 @@ def runtime_config(profile: dict) -> dict:
 def _lean_contract(config: dict) -> dict:
     from .formal import discover_lean
     command = deepcopy(config.get("lean_command") or discover_lean())
-    return {"lean_command": command, "lean_timeout_seconds": None,
+    return {"lean_command": command,
             "tool_manifest": _command_manifest(command),
             "tool_manifest_scope": "local_command_files_and_checker_not_dependency_closure"}
 
@@ -328,7 +312,7 @@ def machine_invocation(profile: dict, *, trust_environment: dict, on_started=Non
         raise ValueError("profile command differs from the approved trust environment")
     if profile.get('host_resources'):
         raise ValueError('Lean profiles with host resource caps must be replaced by an uncapped profile')
-    arguments = {"lean_command": deepcopy(command), "timeout_seconds": None,
+    arguments = {"lean_command": deepcopy(command),
                  "expected_toolchain": deepcopy(toolchain)}
     if on_started is not None:
         arguments['on_started'] = on_started
@@ -373,12 +357,7 @@ def structural_failure_evidence(profile: dict, identity: dict, *, observed_at: s
 
 def boundary_prompt(profile: dict) -> str:
     validate_profile(profile)
-    # Preserve the sealed profile; render its delivery rule through the current
-    # central interface. Reviewer isolation and authority rules stay exact.
-    rules = ["Deliver proposals as a normal JSON final, or use the supplied tools for optional early submission."
-             if rule == "Submit proposals through the execution's supplied submission tools." else rule
-             for rule in profile["boundary"]["rules"]]
-    return "\n\nExecution boundary (instructions; not OS isolation):\n" + "\n".join(rules)
+    return "\n\nExecution boundary (instructions; not OS isolation):\n" + "\n".join(profile["boundary"]["rules"])
 
 
 def register_families(contract) -> None:

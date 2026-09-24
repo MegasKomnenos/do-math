@@ -77,6 +77,44 @@ class WithoutDeadlineTests(unittest.TestCase):
                     should_stop=lambda: stop and adapter.polls >= 4)
             return result, adapter
 
+    def test_observation_burst_preserves_order_and_split_utf8_tail(self):
+        import json
+        from unittest.mock import patch
+        expected = [{"type": "item.updated", "index": index, "text": "x" * 960}
+                    for index in range(2000)]
+        last = {"type": "item.updated", "index": 2000, "text": "가"}
+        encoded = json.dumps(last, ensure_ascii=False).encode("utf-8")
+        cut = encoded.index("가".encode("utf-8")) + 1
+        first = b"".join(json.dumps(row).encode("utf-8") + b"\r\n" for row in expected) + b"\r\n" + encoded[:cut]
+        second = encoded[cut:] + b"\r\nnot-json\r\n" + b'{"type":'
+
+        class BurstAdapter(Adapter):
+            polls = 0
+            def wait_for_termination(self, *args):
+                self.polls += 1
+                path = Path(self.request["stdout_path"])
+                if self.polls == 1:
+                    path.write_bytes(first)
+                elif self.polls == 2:
+                    with path.open("ab") as stream:
+                        stream.write(second)
+                return self.polls >= 4
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            worker = runner.CodexModelRunner("fake")
+            worker._adapter = BurstAdapter({"result": "output_collected", "final": {"raw": b"{}"}, "jsonl": {}})
+            observed = []
+            with patch.object(runner.time, "sleep"):
+                result = worker.run(prompt="fixture", output_schema={}, workspace=root, evidence_dir=root / "evidence",
+                    model="fixture", effort="low", timeout_seconds=None, on_observation=observed.append)
+        self.assertEqual(result["status"], "completed")
+        self.assertEqual([row for row in observed if row.get("type") == "item.updated"], [*expected, last])
+        self.assertEqual([row for row in observed if row.get("type") == "unparsed_observation"],
+                         [{"type": "unparsed_observation", "bytes": len(b"not-json\r")}])
+        self.assertEqual(sum(row["bytes"] for row in observed if row.get("type") == "transport_bytes_received"),
+                         len(first) + len(second))
+
     def test_long_running_work_keeps_running_until_its_normal_return(self):
         result, adapter = self.run_observed()
         self.assertEqual(result['status'], 'completed')

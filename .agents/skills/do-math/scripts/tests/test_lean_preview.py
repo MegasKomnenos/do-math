@@ -19,8 +19,7 @@ class LeanPreviewTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             workspace = Path(directory)
             context = {"action": {"role": "research_work"}, "snapshot": "fixed",
-                "formal_verifier": {"command": ["definitely-missing-lean"], "allowed_axioms": [],
-                                    "timeout_seconds": 30}}
+                "formal_verifier": {"command": ["definitely-missing-lean"], "allowed_axioms": []}}
             install_tools(workspace, context, schema_for('research_work'), 1000000)
             (workspace / 'draft.lean').write_text('theorem good : True := by trivial', encoding='utf-8')
             (workspace / '.control').mkdir()
@@ -37,8 +36,7 @@ class LeanPreviewTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             workspace = Path(directory)
             context = {"action": {"role": "research_work"}, "snapshot": "fixed",
-                "formal_verifier": {"command": command, "allowed_axioms": ["propext", "Classical.choice", "Quot.sound"],
-                                    "timeout_seconds": 30}}
+                "formal_verifier": {"command": command, "allowed_axioms": ["propext", "Classical.choice", "Quot.sound"]}}
             install_tools(workspace, context, schema_for('research_work'), 1000000)
             preview = context['formal_verifier'].get('preview')
             self.assertIsNotNone(preview, 'worker must receive the compiler preview command')

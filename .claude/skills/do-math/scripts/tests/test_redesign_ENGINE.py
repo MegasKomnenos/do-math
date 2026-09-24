@@ -1539,5 +1539,53 @@ class AuditConsumerConnections(unittest.TestCase):
         for name, value in execution_profiles.runner_tools(profile).items():
             self.assertEqual(arguments[name], value)
 
+class TaskObservationRoleTests(unittest.TestCase):
+    def test_task_rules_follow_the_selected_roles_observation_contract(self):
+        from do_math.observations import tracker_config, ObservationTracker
+
+        class BeforeInput(Exception):
+            pass
+
+        settings = {**deepcopy(DEFAULT_CONFIG), "tool_review_window_seconds": 60,
+                    "self_check_response_window_seconds": 5}
+        profiles = execution_profiles.build_profiles(settings)["execution_profiles"]
+        rule = {"id": "checkpoints", "operator": "checkpoint_count_gte",
+                "subject": {"kind": "checkpoint", "id": "$execution"},
+                "basis": {"source": "checkpoint", "unit": "count"},
+                "threshold": 2, "required_evidence": ["contract"]}
+        for role in ("research_work", "supplemental_research"):
+            with self.subTest(role=role):
+                engine = routing_engine()
+                engine.head = "snapshot-one"
+                engine.instance["config"] = deepcopy(settings)
+                engine.runtime["tasks"]["TK-one"] = {"initial_observation_rules": [deepcopy(rule)]}
+                profile = next(p for p in profiles.values() if p["role"] == role)
+                engine._check_installation = Mock(return_value=True)
+                engine._clock_guard = Mock(return_value={"usable": True})
+                engine._evaluation_context = Mock(return_value={})
+                engine._action_lifecycle_gate = Mock()
+                engine._revision_dispatch_waits = Mock(return_value=[])
+                engine._selected_action_current = Mock(return_value=True)
+                engine._obsolete_action_reason = Mock(return_value=None)
+                engine._execution_profile = Mock(return_value=profile)
+                engine._activity_for_action = Mock(return_value={"id": "AY-one"})
+                engine._register_execution = Mock(side_effect=BeforeInput)
+                action = {"id": "AC-one", "role": role, "target": "TK-one"}
+                with patch("do_math.engine.tracker_config", wraps=tracker_config) as configured, \
+                     patch("do_math.engine.governance.authorize", return_value={"allowed": True, "grant_id": "GR-one"}), \
+                     patch("do_math.engine.planning.task_ready", return_value={"state": "ready"}):
+                    with self.assertRaises(BeforeInput):
+                        next(engine._call_steps(action))
+                eid = engine._register_execution.call_args.args[1]["id"]
+                config = tracker_config(profile, initial_self_check_rules=
+                    configured.call_args.kwargs["initial_self_check_rules"])
+                tracker = ObservationTracker(eid, Path("."), config)
+                self.assertEqual(tracker.research_self_checks, role == "research_work")
+                self.assertEqual(bool(tracker.rules), role == "research_work")
+                if tracker.rules:
+                    self.assertEqual(tracker.rules[0]["subject"]["id"], eid)
+                self.assertEqual(engine.runtime["tasks"]["TK-one"]["initial_observation_rules"], [rule])
+
+
 if __name__ == "__main__":
     unittest.main()

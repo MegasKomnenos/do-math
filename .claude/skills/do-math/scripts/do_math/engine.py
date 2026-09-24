@@ -89,8 +89,7 @@ DEFAULT_CONFIG = {
     "lean_command": None,
     "review_rounds": 3, "review_research_limit": 3, "research_reconsider_seconds": 86400,
     "observation_mode": "event_driven", "observation_interval_seconds": 300,
-    "observation_idle_seconds": 120, "max_observation_reviews": 3,
-    "observation_unbounded_wait_seconds": 600, "plan_settle_seconds": 300,
+    "plan_settle_seconds": 300,
     "checkpoint_grace_seconds": 10, "max_artifact_bytes": 268435456,
     "allowed_axioms": ["propext", "Classical.choice", "Quot.sound"],
     "operator_enabled": True, "operator_interval_seconds": 7200,
@@ -175,10 +174,10 @@ def validate_config(config: dict) -> None:
     for key in ("call_timeout_seconds",
                 "reviewers", "goal_auditors", "max_input_bytes",
                 "review_rounds", "review_research_limit", "research_reconsider_seconds", "observation_interval_seconds",
-                "observation_idle_seconds", "max_observation_reviews", "checkpoint_grace_seconds", "max_artifact_bytes",
+                "checkpoint_grace_seconds", "max_artifact_bytes",
                 "operator_interval_seconds", "operator_timeout_seconds",
                 "provider_retry_initial_seconds", "provider_retry_max_seconds", "finish_notice_seconds",
-                "observation_unbounded_wait_seconds", "plan_settle_seconds"):
+                "plan_settle_seconds"):
         if isinstance(config[key], bool) or not isinstance(config[key], int) or config[key] < 1:
             raise ValueError(f"{key} must be a positive integer")
     if isinstance(config.get("max_output_repairs", 1), bool) or not isinstance(config.get("max_output_repairs", 1), int) or config.get("max_output_repairs", 1) < 0:
@@ -1172,6 +1171,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         execution = self.runtime["executions"].get(request["execution_id"])
         if not execution or execution["status"] != "running" or execution.get("grant_id") != request["grant_id"]:
             return {"state": "rejected", "reason": "execution is no longer running under this grant"}
+        if self.runtime.get("status") == "paused" and not self._limited_recovery_allowed(execution["action"]):
+            return {"state": "rejected", "reason": "the current pause does not authorize this recovery"}
         if not governance.authorize(self.instance, {**execution["action"], "grant_id": request["grant_id"]}, runtime=self.runtime)["allowed"]:
             return {"state": "rejected", "reason": "execution authority no longer permits this request"}
         if not self._clock_guard()["usable"]:
@@ -2136,6 +2137,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             authority = governance.authorize(instance, action, runtime=runtime)
             if not authority["allowed"]:
                 raise ValueError("execution authority was revoked before result acceptance")
+            if runtime.get("status") == "paused" and not self._limited_recovery_allowed(action):
+                raise ValueError("the current pause no longer authorizes this recovery result")
             for reference in bundle["authority_refs"]:
                 grant = instance.get("grants", {}).get(reference)
                 if grant is not None:
@@ -2271,7 +2274,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                     "issues": sealed["check"]["issues"], "bundles": [], "authoritative": False,
                     "not_checked": ["candidate_application", "mathematical_meaning", "Lean"]}
         output = submission.load_json(sealed["artifacts"]["output.json"])
-        extensions = submission.load_json(sealed["artifacts"]["extensions.json"])
+        extensions = submission.load_extensions(sealed["artifacts"]["extensions.json"])
         action = execution["action"]
         preview_prefix = f"runtime/artifacts/preview/{execution['id']}"
         preview_artifacts = {preview_prefix + "/" + path: raw for path, raw in sealed["artifacts"].items()}
@@ -2898,7 +2901,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 return {**result, 'status': 'failed', 'output': None, 'error_kind': 'execution_failure',
                         'error': str(error)}
         if (result.get('error_kind') == 'model_policy' or execution.get('currentness_changes')
-                or execution.get('stop_requested') or self.runtime['status'] in {'paused', 'closed', 'completed'}):
+                or self._execution_stop_requested(execution['action'], execution)):
             return result
         try:
             raw = self.store.read(intent['output_ref'], self.head)
@@ -2945,9 +2948,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 raise ValueError('a different native final was already captured for this execution')
             return prior
         if (execution.get('submission_intent') or execution.get('currentness_changes')
-                or execution.get('stop_requested') or execution.get('authority_revocation')
-                or execution.get('stop_reason') or self.runtime.get('stop_requested')
-                or self.runtime['status'] in {'paused', 'closed', 'completed'}
+                or execution.get('authority_revocation') or execution.get('stop_reason')
+                or self._execution_stop_requested(execution['action'], execution)
                 or execution['status'] != ('ended' if recovery_request else 'running')
                 or not governance.authorize(self.instance, execution['action'], runtime=self.runtime)['allowed']
                 or not self._clock_guard()['usable']):
@@ -3100,7 +3102,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         task = self.runtime["tasks"].get(action.get("target"), {})
         rules = (self.runtime.get("task_observation_rules", {}).get(
             action.get("target"), task.get("initial_observation_rules", []))
-            if role in {"research_work", "supplemental_research"} and not action.get("review_cycle_id") else [])
+            if role == "research_work" and not action.get("review_cycle_id") else [])
         execution_id = new_id('EX')
         if config["observation_mode"] == "deadline_only":
             rules = []
@@ -3202,7 +3204,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         context = submission.load_json((workspace / "input/submission/context.json").read_bytes())
         prompt = fitted["prompt"]
         self._controls(pump=False)
-        if (self.runtime["status"] in {"paused", "closed", "completed"}
+        if (self._execution_stop_requested(action)
                 or not self._check_installation(force=True)):
             self._discard_prepared_input(base, execution_id)
             return False
@@ -3354,7 +3356,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             execution_lifecycle.transition_execution(execution, "starting", at=now())
         self.runtime["active_execution"] = execution_id
         self._live_execution_ids.add(execution_id)
-        self.runtime["status"] = "running"
+        if self.runtime["status"] != "paused":
+            self.runtime["status"] = "running"
         if role in {"research_work", "supplemental_research"} and not action.get("review_cycle_id"):
             self.runtime["tasks"][action["target"]]["status"] = "active"
         execution["control_transport"] = {key: value for key, value in binding.items() if key != "capability"}
@@ -3404,8 +3407,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 changed = changed or planning.contract_hash(target_task) != current["contract_sha256"] or target_task["status"] == "closed"
             if changed:
                 current["currentness_changes"] = premise_changes or [{"field": "action_contract_or_authority", "reason": "execution input changed"}]
-            requested = (current.get("submission_intent") or self.runtime["status"] in {"paused", "closed", "completed"} or self.runtime.get("stop_requested")
-                         or current.get("stop_requested") or not allowed or changed
+            requested = (current.get("submission_intent") or self._execution_stop_requested(action, current)
+                         or not allowed or changed
                          or (call_deadline is not None and time.monotonic() >= call_deadline))
             if not requested:
                 execution_window.request_finish(workspace, call_deadline, config, pool)
@@ -3475,8 +3478,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         if result.get("error_kind") == "model_policy":
             self._pause_for_model_policy(execution_id, execution["model"], result)
         if result["status"] == "completed" and (
-                stopped_execution.get("stop_requested") or stopped_execution.get("after_stop")
-                or self.runtime["status"] == "paused"):
+                stopped_execution.get("after_stop")
+                or self._execution_stop_requested(action, stopped_execution)):
             # The stop request already revoked general authority; keep the late output only as preserved evidence.
             result = {**result, "status": "stopped",
                       "error": "final output was collected after " + str(stopped_execution.get("stop_requested")
@@ -4404,12 +4407,6 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                      "sha256": knowledge_records.digest(environment)}]
         if predecessor and predecessor.get("role") == "formal_check":
             prior = predecessor.get("input_manifest", [])
-            # Older manifests lack declaration names; their immutable input snapshot
-            # supplies the missing part of the original contract.
-            if prior and "declaration_names" not in prior[0]:
-                _, original, _ = self.store.load(predecessor["input_snapshot"])
-                prior = deepcopy(prior)
-                prior[0]["declaration_names"] = knowledge_records.proposal_view(original, kid)["declaration_names"]
             if prior != manifest:
                 self._remove_action(action)
                 self._enqueue("research_plan", reason="Formal continuation inputs changed; reassess the preserved result",

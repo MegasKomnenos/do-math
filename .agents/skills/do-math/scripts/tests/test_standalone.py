@@ -33,7 +33,7 @@ class StandaloneTests(unittest.TestCase):
             shutil.copytree(Path(__file__).resolve().parents[2], skill,
                             ignore=shutil.ignore_patterns("__pycache__"))
             result = subprocess.run(
-                [sys.executable, str(skill / "scripts/probe_codex.py"), "--spec-only"],
+                [sys.executable, str(skill / "scripts/probe_cli.py"), "--skill-only"],
                 cwd=root, capture_output=True, timeout=30)
             self.assertEqual(result.returncode, 0, result.stderr.decode(errors="replace"))
             report = json.loads(result.stdout)

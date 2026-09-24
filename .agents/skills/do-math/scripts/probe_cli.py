@@ -111,6 +111,8 @@ def main(argv=None):
         parser.error("model locking requires the full Claude model ID")
     if args.provider == "codex" and args.model.startswith(("claude:", "claude-")):
         parser.error("provider and model disagree")
+    if args.provider == "codex" and ("background" in args.cases or args.only_assigned_model):
+        parser.error("background and --only-assigned-model require --provider claude")
     if len(set(args.cases)) != len(args.cases):
         parser.error("cases must be distinct")
     args.output_dir.mkdir(parents=True, exist_ok=False)

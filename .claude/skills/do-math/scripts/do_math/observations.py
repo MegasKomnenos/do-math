@@ -10,6 +10,8 @@ from pathlib import Path
 import time
 from typing import Any
 
+from jsonschema import Draft202012Validator
+
 from .context_store import _excluded, _safe_path
 
 CHECKPOINT_MAX_BYTES = 4 * 1024 * 1024
@@ -65,6 +67,8 @@ CHECKPOINT_SCHEMA = {
     },
     "required": ["current_claim", "evidence_paths", "attempts", "remaining_work", "next_step", "progress_state"],
 }
+Draft202012Validator.check_schema(CHECKPOINT_SCHEMA)
+_CHECKPOINT_VALIDATOR = Draft202012Validator(CHECKPOINT_SCHEMA)
 
 _TEXT = {"type": "string", "minLength": 1}
 _REFS = {"type": "array", "items": _TEXT, "uniqueItems": True}
@@ -435,8 +439,7 @@ def read_checkpoint(workspace: Path) -> dict:
             return {"status": "being_written"}
         digest = hashlib.sha256(raw).hexdigest()
         value = json.loads(raw.decode("utf-8-sig"))
-        import jsonschema
-        jsonschema.validate(value, CHECKPOINT_SCHEMA)
+        _CHECKPOINT_VALIDATOR.validate(value)
         for reference in value["evidence_paths"]:
             evidence = _safe_path(workspace, reference)
             relative = Path(reference)

@@ -64,7 +64,7 @@ class AuditWorkflowTests(unittest.TestCase):
         from do_math import contracts
         from do_math.execution_profiles import profile_ref
         from jsonschema import Draft202012Validator
-        from v5_fixtures import candidate
+        from research_fixtures import candidate
         _, instance, _ = approved_fixture()
         wire = candidate()
         wire['profile_refs'] = [profile_ref(next(iter(instance['execution_profiles'].values())))]
@@ -227,7 +227,7 @@ class AuditPersistenceTests(unittest.TestCase):
     def candidate(self, identifier):
         from do_math.contracts import task_candidate_record
         from do_math.execution_profiles import profile_ref
-        from v5_fixtures import candidate
+        from research_fixtures import candidate
         wire = candidate()
         profile = next(p for p in self.instance['execution_profiles'].values() if p['role']=='research_work')
         wire['profile_refs'] = [profile_ref(profile)]
@@ -273,7 +273,7 @@ class AuditPersistenceTests(unittest.TestCase):
         bad = deepcopy(runtime)
         bad['tasks'][saved['id']]['profile_refs'][0]['revision'] += 1
         with self.assertRaises(ValueError):
-            self.store.save(head, instance, bad)
+            self.store.save_with_state(head, instance, bad)[0]
         self.assertEqual(self.store.load()[0], head)
         # Receipt currentness reads the same persisted governance as review/dispatch.
         from do_math.decision_engine import DecisionEngineMixin
@@ -289,7 +289,7 @@ class AuditPersistenceTests(unittest.TestCase):
             'content':{'rule_id':'persisted', 'scope':['P'], 'text':'Require an explicit domain', 'reason_refs':['D'], 'audit_refs':[]}}
         receiver.instance, receiver.runtime, _ = governance.apply_decision(instance, runtime,
             {'kind':'policy', 'record':policy}, source_ref='S')
-        changed_head = self.store.save(head, receiver.instance, receiver.runtime)
+        changed_head = self.store.save_with_state(head, receiver.instance, receiver.runtime)[0]
         _, receiver.instance, receiver.runtime = self.store.load(changed_head)
         with self.assertRaises(CurrentnessChanged):
             receiver._validate_decision_acceptance(review_action, output, receipt, {})
@@ -312,7 +312,7 @@ class AuditPersistenceTests(unittest.TestCase):
             'item_dispositions':[{'obligation_id':source['completion_obligations'][0]['id'], 'kind':'transferred',
                 'authority_ref':decision['id'], 'target_task_id':target['id'], 'target_obligation_id':'OB-inherited', 'evidence_refs':[]}], 'unresolved':[]}
         instance, runtime = task_scope.apply_task_assessments(instance, runtime, [assessment], execution_id='EX-plan', input_tasks=deepcopy(runtime['tasks']))
-        saved_head = self.store.save(head, instance, runtime)
+        saved_head = self.store.save_with_state(head, instance, runtime)[0]
         _, instance, runtime = self.store.load(saved_head)
         original, recipient = runtime['tasks'][source['id']], runtime['tasks'][target['id']]
         self.assertEqual(original['status'], 'closed')
@@ -324,7 +324,7 @@ class AuditPersistenceTests(unittest.TestCase):
         bad['tasks'][source['id']]['status'] = 'completed'
         bad['tasks'][source['id']]['assessment']['decision'] = 'completed'
         with self.assertRaisesRegex(ValueError, 'completed.*transferred'):
-            self.store.save(saved_head, instance, bad)
+            self.store.save_with_state(saved_head, instance, bad)[0]
         self.assertFalse(task_scope.assessment_current(bad['tasks'][source['id']], instance, bad))
         self.assertEqual(self.store.load()[0], saved_head)
         omitted = {'task_id':target['id'], 'decision':'completed', 'item_dispositions':[
@@ -337,7 +337,7 @@ class AuditPersistenceTests(unittest.TestCase):
         from do_math.contracts import CONTRACT_REVIEW_ITEMS, TASK_CANDIDATE
         from do_math.execution_profiles import profile_ref
         from jsonschema import Draft202012Validator
-        from v5_fixtures import candidate
+        from research_fixtures import candidate
         self.grant()
         self.instance.update(knowledge={}, sources=[])
         self.runtime.update(cycles=0, waiting_actions={})
@@ -359,11 +359,43 @@ class AuditPersistenceTests(unittest.TestCase):
         output = {'item_reviews':[{'item_id':key, 'decision':'approved', 'evidence_refs':['S'],
             'findings':[], 'missing_inputs':[], 'next_owner':'research_plan'} for key in CONTRACT_REVIEW_ITEMS]}
         engine._apply({'role':'task_contract_review', 'target':task['id']}, output, 'EX-review', owns_response=False)
-        saved_head = self.store.save(engine.head, engine.instance, engine.runtime)
+        saved_head = self.store.save_with_state(engine.head, engine.instance, engine.runtime)[0]
         _, instance, runtime = self.store.load(saved_head)
         task = runtime['tasks'][task['id']]
         self.assertTrue(planning.contract_review_current(task['reviews'][-1], task, instance, runtime)['valid'])
         self.assertEqual(planning.task_ready(task, instance, runtime)['state'], 'ready')
+
+
+class TransferredContractRevisionTests(unittest.TestCase):
+    def test_replacement_preserves_inherited_obligation_and_machine_provenance(self):
+        from do_math.contracts import task_candidate_record
+        from do_math.task_scope import validate_withdrawal_scope
+        from research_fixtures import candidate
+        fixture = AssessmentApplicationTests()
+        instance, runtime, assessment = fixture.fixture()
+        instance, runtime = fixture.apply(instance, runtime, assessment)
+        recipient = runtime['tasks']['TK-2']
+        proposal = candidate('Revised recipient', revises=recipient['id'])
+        proposal['completion_obligations'] = deepcopy(recipient['completion_obligations'])
+        proposal['completion_obligations'][0]['claim'] = 'Refine the independently authored obligation'
+        revised = task_candidate_record(proposal, task_id=recipient['id'], previous=recipient)
+        self.assertEqual(revised['transferred_obligations'], recipient['transferred_obligations'])
+        self.assertIsNot(revised['transferred_obligations'], recipient['transferred_obligations'])
+        self.assertEqual(revised['completion_obligations'][-1], recipient['completion_obligations'][-1])
+        with self.assertRaisesRegex(ValueError, 'protected obligations'):
+            validate_withdrawal_scope({**revised, 'status': 'planned'}, revised)
+        for field in ('remove', 'id', 'claim', 'judges', 'evidence_required'):
+            with self.subTest(field=field):
+                bad = deepcopy(proposal)
+                if field == 'remove':
+                    bad['completion_obligations'].pop()
+                else:
+                    bad['completion_obligations'][-1][field] = (
+                        ['changed'] if field in {'judges', 'evidence_required'} else 'changed')
+                before = deepcopy(recipient)
+                with self.assertRaisesRegex(ValueError, 'preserve transferred obligations'):
+                    task_candidate_record(bad, task_id=recipient['id'], previous=recipient)
+                self.assertEqual(recipient, before)
 
 
 class TaskContractsTest(unittest.TestCase):
@@ -756,6 +788,39 @@ class RepetitionProductionTests(unittest.TestCase):
         self.assertEqual(planning.task_ready(t,i,r)['state'],'ready')
         r['executions']['EX-used']={'id':'EX-used','grant_id':'GR-1','role':'research_work','status':'ended','action':{'id':'AC-other'}}
         self.assertEqual(planning.task_ready(t,i,r)['state'],'not_ready')
+
+class PreparationReceiptClassificationTests(unittest.TestCase):
+    def test_rejected_preparation_does_not_count_as_an_empty_research_result(self):
+        from do_math import revisions
+        for failure in ('output_validation', 'currentness_changed', 'submission_semantic'):
+            with self.subTest(failure=failure):
+                instance = {'id': 'I', 'config': {'exhaustion_empty_limit': 1}}
+                action = {'role': 'research_preparation',
+                          'repetition_bases': {'exhaustion_empty': 'same-input'}}
+                runtime = {'tasks': {}, 'queue': [], 'history': [], 'executions': {
+                    'EX-failed': {'id': 'EX-failed', 'role': 'research_preparation',
+                                  'error_kind': failure, 'observed_at': '2026-09-20T00:00:00Z'}}}
+                revisions.record_execution_outcome(instance, runtime, action,
+                    {'regenerate_after': '2026-09-21T00:00:00Z'}, 'EX-failed', accepted=False)
+                self.assertEqual(runtime['history'], [])
+                self.assertEqual(runtime['queue'], [])
+                self.assertFalse(revisions.action_repetition_waits(instance, runtime, action))
+                runtime['executions']['EX-empty'] = {'id': 'EX-empty', 'role': 'research_preparation'}
+                revisions.record_execution_outcome(instance, runtime, action, {}, 'EX-empty', accepted=True)
+                self.assertEqual(task_contracts.repetition_lineages(instance, runtime)['exhaustion_empty']['count'], 1)
+                self.assertTrue(revisions.repetition_hold(instance, runtime, 'exhaustion_empty', 'same-input'))
+
+    def test_partially_accepted_contract_still_records_its_real_production(self):
+        from do_math import revisions
+        value, instance, runtime = approved_fixture()
+        value['producer_execution'] = 'EX-partial'
+        runtime['executions']['EX-partial'] = {'id': 'EX-partial', 'role': 'research_preparation'}
+        action = {'role': 'research_preparation', 'repetition_bases': {'exhaustion_empty': 'same-input'}}
+        revisions.record_execution_outcome(instance, runtime, action, {}, 'EX-partial', accepted=False)
+        receipts = [r for r in runtime['history'] if r.get('lineage') == 'exhaustion_empty']
+        self.assertEqual([r['outcome'] for r in receipts], ['contracts_preserved'])
+        self.assertEqual(task_contracts.repetition_lineages(instance, runtime)['contract_revision']['count'], 1)
+
 
 
 if __name__ == "__main__":

@@ -13,7 +13,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.engine import ResearchEngine, control
-from v5_fixtures import charter_change, policy_change, send_control, candidate
+from research_fixtures import charter_change, policy_change, send_control, candidate
 from state_fixtures import active_engine
 from test_lifecycle_engine import AdapterDouble
 from do_math.model_policy import MODELS

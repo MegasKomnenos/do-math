@@ -9,7 +9,7 @@ import jsonschema
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math import contracts, execution_profiles, review_cycle, review_policy
 from do_math.engine import DEFAULT_CONFIG
-from v5_fixtures import scope_response
+from research_fixtures import scope_response
 
 
 class ScopeWireTests(unittest.TestCase):

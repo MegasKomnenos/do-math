@@ -16,8 +16,7 @@ from .state_contract import STATE_FORMAT_VERSION
 
 WORK_ROLES = {"research_work", "supplemental_research", "task_contract_review", "identity_review", "goal_audit"}
 MACHINE_ROLES = {"formal_check", "trust_check", "trust_activate", "external_action"}
-OBSERVATION_KEYS = ("observation_interval_seconds", "observation_idle_seconds",
-                    "observation_unbounded_wait_seconds", "max_observation_reviews", "checkpoint_grace_seconds",
+OBSERVATION_KEYS = ("observation_interval_seconds", "checkpoint_grace_seconds",
                     "self_check_response_window_seconds", "tool_review_window_seconds")
 WINDOW_KEYS = ("call_timeout_seconds", "finish_notice_seconds")
 PROFILE_ROLES = (set(ROLE_TIERS) - {"independent_operator"}) | MACHINE_ROLES | {"recovery"}

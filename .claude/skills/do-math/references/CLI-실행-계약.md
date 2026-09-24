@@ -215,7 +215,7 @@ JSON status와 역할 입력은 `budget_unit=concurrent_sessions`와 예산·모
 init --repository PATH [--create-repository] --workspace PATH
      (--goal TEXT | --goal-file PATH) [--title TEXT]
      [--goal-kind mathematical|research] [--policies-file PATH]
-     [--source PATH ...] [--config-file PATH] [--model NAME] [--effort VALUE]
+     [--source PATH ...] [--config-file PATH] [--effort VALUE]
 ```
 
 `init`은 원입력과 설정·초기 source를 보존하고 `initializing` 인스턴스를 만든다. `--create-repository`는 새 경로나 빈 디렉터리에만 Git 저장소를 만든다. 생성 응답의 `instance_id`와 `snapshot`을 보존하고 이후 같은 인스턴스에 제어를 보낸다. 생성 시 grant와 연구 queue는 비어 있다.
@@ -300,17 +300,30 @@ CLI는 파일을 한 번 읽어 payload와 그 정확한 원문을 함께 전달
 
 #### 목표와 정책
 
-```json
-{"kind":"goal","goal":"새 목표 원문","goal_kind":"mathematical","expected_revision":1}
-```
+목표 변경은 `kind="charter"`와 새 헌장 `record`를 제출한다. 먼저 같은 snapshot에서 활성 헌장을 조회·읽는다. 새 `record`에는 새 `id`, `kind="charter"`, 다음 `revision`, 대체할 활성 헌장 ID의 `supersedes`, 완전한 `content`를 쓴다. 기존 `content`에서 사용자가 승인한 목표·범위·성공 기준의 변경만 반영하고, 다른 조건과 학술 요구는 보존한다. 저장된 `status`, `approval_ref`, `source_ref`, `content_sha256` 같은 메타데이터는 새 제안에 복사하지 않는다. `content`의 필수 구조는 [입력 소비자](입력-소비자.md)의 charter 계약을 따른다.
 
-`goal_kind`를 생략하면 현재 값을 유지한다. `expected_revision`을 생략하면 적용 시점의 현재 revision을 사용하지만, 동시 변경을 명시적으로 방지하려면 현재 값을 제공한다. 판본 5의 목표 변경은 구조화된 charter 결정으로 적용하며, 영향받은 미완료 과제는 `governance_revision_required`와 후속 준비·계획을 통해 현행 근거를 다시 확인한다.
+정책도 `kind="policy"`와 완전한 새 `record`를 사용한다. 다음 예시의 ID·범위·근거·문면은 실제 승인한 값으로 바꾼다.
 
 ```json
-{"kind":"policy","text":"정책 원문","expected_revision":1}
+{
+  "kind": "policy",
+  "record": {
+    "id": "PO-source-evidence",
+    "kind": "policy",
+    "revision": 1,
+    "supersedes": [],
+    "content": {
+      "rule_id": "source-evidence",
+      "text": "사용한 문헌은 내부 보존 사본과 정확한 절 좌표를 남긴다.",
+      "scope": ["연구 수행"],
+      "reason_refs": ["CH-실제-현행-헌장-ID"],
+      "audit_refs": []
+    }
+  }
+}
 ```
 
-정책 변경은 미완료 과제를 다시 계약 검토하고 연구 계획을 열게 한다.
+같은 `rule_id`의 활성 정책을 바꾸려면 새 ID와 전체 문면을 제출하고 `supersedes`에 그 정책 ID를 넣는다. 적용기는 대체 대상의 종류·활성 상태와 새 ID를 검사한다. 승인된 목표·정책 변경은 영향받은 미완료 과제의 현행 통치 근거를 다시 확인하게 하며, 후속 준비 또는 계획으로 연결한다.
 
 #### 반복 보류의 계속 결정
 
@@ -364,29 +377,31 @@ CLI는 파일을 한 번 읽어 payload와 그 정확한 원문을 함께 전달
 
 #### 과제 범위
 
+아래 예시에는 미완료 과제의 현행 `revision`과 그 판본의 실제 계약 해시를 넣는다. `contract_sha256`은 과제 전체 조회 record의 해시와 구별한다. ID·판본·해시 자리를 실제 값으로 바꾼 뒤 제출한다.
 ```json
-{"kind":"task_scope","task_id":"TK-...","disposition":"revise","reason":"필수 범위를 다시 정해야 한다."}
+{"kind":"task_scope","task_id":"TK-...","revision":1,"contract_sha256":"조회한-현행-계약-해시","disposition":"revise","reason":"필수 범위를 다시 정해야 한다."}
 ```
 
 판본 5의 `task_scope`는 미완료 과제의 현행 `revision`과 `contract_sha256`을 요구한다. `disposition`은 `revise`, `waive`, `transfer`다. `revise`는 후보 준비에 계약 개정을 요청한다. `waive`와 `transfer`는 비어 있지 않은 `obligation_ids`로 승인 대상 완료 의무를 지정하며, `transfer`에는 서로 다른 미완료 수신 과제의 `target_task_id`도 필요하다. 면제와 이전은 원 과제를 즉시 닫지 않고, 연구 계획이 승인 근거와 의무별 처분을 대조하도록 요청한다.
 
 #### 학술 요구와 외부 거부
 
+학술 요구 변경도 위의 `charter` 결정으로 제출한다. 현행 헌장의 다른 내용은 보존하고 `record.content.academic_requirements`를 승인된 요구 배열로 교체한다. 다음은 그 필드에 넣는 배열의 예시이며, 독립된 결정 객체가 아니다.
+
 ```json
-{
-  "kind":"academic_requirements",
-  "requirements":[
-    {
-      "id":"paper-reproduction",
-      "scope":"해설과 Lean 결과를 독립적으로 재현할 자료를 만든다.",
-      "assessor":"research_plan",
-      "criteria":["새 환경에서 Lean 결과를 재빌드했다.","해설의 가정과 선언 대응을 기록했다."],
-      "required_inputs":[],
-      "external_effects":[]
-    }
-  ]
-}
+[
+  {
+    "id":"paper-reproduction",
+    "scope":"해설과 Lean 결과를 독립적으로 재현할 자료를 만든다.",
+    "assessor":"research_plan",
+    "criteria":["새 환경에서 Lean 결과를 재빌드했다.","해설의 가정과 선언 대응을 기록했다."],
+    "required_inputs":[],
+    "external_effects":[]
+  }
+]
 ```
+
+각 requirement는 고유한 `id`, 비어 있지 않은 `scope`, `assessor="research_plan"`, 중복 없는 비어 있지 않은 `criteria`를 요구한다. `required_inputs`는 정확한 입력 참조 목록이다. `external_effects`의 각 항목은 고유 `id`, `scope`, 선택적 `grant_id`를 가진다. 요구 목록을 바꾼 새 헌장은 새 판본과 내용 해시를 가지며 현재 해결 근거에 결박된 새 과제를 생성한다.
 
 각 requirement는 고유한 `id`, 비어 있지 않은 `scope`, `assessor="research_plan"`, 중복 없는 비어 있지 않은 `criteria`를 요구한다. `required_inputs`는 정확한 입력 참조 목록이다. `external_effects`의 각 항목은 고유 `id`, `scope`, 선택적 `grant_id`를 가진다. 요구 목록의 변경은 새 revision과 SHA-256을 만들고 현재 해결 근거에 결박된 새 과제를 생성한다.
 
@@ -545,7 +560,7 @@ retry는 알려진 `failed` 또는 `cancelled`만 받는다. 전송 가능성이
 {"operation":"attach","id":"conversation-1","generation":1,"disconnect_policy":"pause","lease_seconds":60}
 ```
 
-`generation`은 양의 정수이고, 재연결은 이전보다 큰 generation을 사용한다. `disconnect_policy`는 `pause` 또는 `continue_authorized`이며 `continue` 입력은 후자로 정규화된다. lease는 유한한 양수 초다.
+`generation`은 양의 정수이고, 재연결은 이전보다 큰 generation을 사용한다. `disconnect_policy`는 `pause` 또는 `continue_authorized`다. lease는 유한한 양수 초다.
 
 ```json
 {"operation":"heartbeat","id":"conversation-1","generation":1}
@@ -583,10 +598,11 @@ query --files [--snapshot OID] [--prefix research/|runtime/.../] [--text TEXT]
 ### `read`
 
 ```text
-read [--snapshot OID] (--id RECORD_ID | --path POSIX_PATH) [--output PATH]
+read [--snapshot OID] --id RECORD_ID
+read [--snapshot OID] --path POSIX_PATH [--output PATH]
 ```
 
-`--id`는 구조화 record와 정규 JSON hash를 반환한다. `--path`는 exact snapshot의 파일을 읽어 UTF-8이면 `text`, 아니면 `base64`로 반환한다. `--output`을 주면 바이트를 로컬 파일로 쓰고 path·snapshot·size를 반환한다.
+`--id`는 구조화 record와 정규 JSON hash를 반환한다. `--path`는 exact snapshot의 파일을 읽어 UTF-8이면 `text`, 아니면 `base64`로 반환한다. `--output`은 `--path`와 함께 사용할 때 바이트를 로컬 파일로 쓰고 path·snapshot·size를 반환한다. `--id`와 `--output`을 함께 쓰면 입력 오류다.
 
 ### `export`
 
@@ -905,7 +921,7 @@ Claude의 원본 `stream-json`은 그대로 보존한다. 수신자는 같은 �
 
 `lineage_id`는 같은 의무의 수리·재시도를 연결한다. `refresh`는 전제 변경과 원 실행을, `recovery`는 복구할 원 실행을 식별한다. 결과 구성원을 기계가 임의로 잘라 적용하지 않고 생산자가 선언한 편입 묶음마다 원자적으로 검사·적용한다. 일반 `research_work`·`supplemental_research` 이외의 역할, 검토 회차에 속한 보충 조사, 기존 기록의 개정을 배정받은 수행은 전체 주 응답·확장이 한 묶음이다. 원 응답·파일·체크포인트와 실패 이력은 보존한다.
 
-`question_links`는 원문 위치·발생 실행·owner(user/research/operations/unclassified)·영향 대상·status(open/resolved/superseded)·해소 근거다. 주 응답의 `questions` 문자열 형식은 유지한다. 입력 명령의 `--responds-to <QU-ID>`는 반복할 수 있고 원문과 함께 보존된다. 독립 의도 대조의 `confirmed_question_ids`가 실제 답변을 확인한 뒤 해당 질문만 해소한다. 구조화 결정은 `resolves_questions`를 사용할 수 있으며 결정의 영향 대상과 질문 대상을 검사한다. 명시적인 답변 결정은 `{"kind":"question_answer","text":"사용자 답변","resolves_questions":["QU-..."]}`다. 질문 해소가 grant나 수학 승인을 대신하지 않는다.
+`question_links`는 원문 위치·발생 실행·owner(user/research/operations/unclassified)·영향 대상·status(open/resolved/superseded)·해소 근거다. 주 응답의 `questions` 문자열 형식은 유지한다. 입력 명령의 `--responds-to <QU-ID>`는 반복할 수 있고 원문과 함께 보존된다. 독립 의도 대조의 `confirmed_question_ids`가 실제 답변을 확인한 뒤 해당 질문만 해소한다. 구조화 결정은 `resolves_questions`를 사용할 수 있으며 결정의 영향 대상과 질문 대상을 검사한다. 명시적인 답변 결정은 `{"kind":"question_answer","text":"사용자 답변","resolves_questions":["QU-..."],"target_ids":["실제-미해소-대상-ID"]}`다. `target_ids`는 비어 있지 않은 목록이며, 열거한 각 질문의 `unresolved_target_ids`(그 필드가 없으면 `target_ids`) 중 이번 답으로 실제 해소하는 대상만 넣는다. 서로 다른 대상 집합의 질문은 각각 답한다. 질문 해소가 grant나 수학 승인을 대신하지 않는다.
 
 `claude_only_assigned_model=false`가 기본이다. true인 인스턴스의 Claude 호출은 전체 모델 ID를 내부 보조·fallback 설정에도 고정하고 보고 모델을 대조한다. 모든 역할을 자동으로 Claude로 선택하는 옵션은 아니다. 단일 모델 연구는 등급·실제 역할과 실패 시 복구 모델의 배정도 같은 모델인지 확인해야 한다. 정상 예약 감독은 모델을 호출하지 않는다. 다른 인스턴스의 정책은 바뀌지 않는다.
 

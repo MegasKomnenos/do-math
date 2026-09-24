@@ -342,7 +342,7 @@ def timestamp(value: str | None = None) -> datetime:
     return result.astimezone(timezone.utc)
 
 
-def ensure_governance(instance: dict, at: str | None = None) -> dict:
+def ensure_governance(instance: dict) -> dict:
     result = deepcopy(instance)
     result.setdefault("governance", {})
     result.setdefault("governance_sources", {})
@@ -536,7 +536,7 @@ def apply_decision(instance: dict, runtime: dict, change: dict, *, source_ref: s
         raise ValueError("a preserved user decision is required")
     if change.get("kind") in GOVERNANCE_KINDS | {"goal", "academic_requirements"}:
         return _apply_domain_decision(instance, runtime, change, source_ref, actor, at)
-    instance, runtime = ensure_governance(instance, at), deepcopy(runtime)
+    instance, runtime = ensure_governance(instance), deepcopy(runtime)
     validate_source(instance.get("governance_sources", {}).get(source_ref, {}))
     when = timestamp(at).isoformat()
     kind = change.get("kind")
@@ -697,7 +697,7 @@ def _import_basis(instance, runtime, output):
     from .planning import contract_hash
     from .planning import _records
     reference_fields = {'owner_ref', 'decision_refs', 'used_sources', 'source_refs', 'supersedes',
-        'target_ids', 'task_ids', 'resolves_questions', 'grant_id', 'replaces_grant_id',
+        'target_ids', 'task_ids', 'resolves_questions', 'grant_id', 'replaces',
         'original_decision_id', 'task_id', 'target_task_id', 'included_targets', 'excluded_targets',
         'record_refs', 'dependencies', 'basis_refs', 'authority_refs', 'formal_result_ref', 'input_refs'}
     references = set()

@@ -26,7 +26,7 @@ class DiagnosedRecoveryTests(unittest.TestCase):
         repository = SimpleNamespace(_store=SimpleNamespace(_git_dir=root),
             writer_lock=lambda: nullcontext(), load=lambda: ('head',state,runtime),
             read=lambda path, snapshot: b'{"preserved":"actual rejected response"}',
-            save=lambda *a, **k: 'next-head')
+            save_with_state=lambda *a, **k: ('next-head', state, runtime))
         slots = SimpleNamespace(acquire=lambda *a, **k:True, started=lambda *a, **k:None, release=lambda *a:True)
         installation = root/'skill'
         installation.mkdir()

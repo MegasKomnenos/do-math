@@ -344,7 +344,8 @@ def validate_relation(instance: dict, relation: dict) -> dict:
                 if not record or not knowledge_records.formal_usable(instance, record):
                     reasons.append(f"formal_result_not_usable:{ref}")
                 claims = [assessment.get("relation_claim", {}) for assessment in instance.get("identity_assessments", {}).values()
-                          if assessment.get("formal_result_id") == ref and assess_use(assessment, instance)["valid"]]
+                          if assessment.get("formal_result_id") == ref and assessment.get("decision") == "match"
+                          and assess_use(assessment, instance)["valid"]]
                 if not any(isinstance(claim, dict) and all(claim.get(key) == relation.get(key)
                         for key in ("kind", "source", "target", "confirmed_scope")) for claim in claims):
                     reasons.append(f"formal_result_does_not_establish_this_relation:{ref}")
@@ -358,7 +359,8 @@ def validate_relation(instance: dict, relation: dict) -> dict:
                 if assessment.get("formal_result_id") not in relation.get("formal_result_refs", []):
                     continue
                 claim = assessment.get("relation_claim", {})
-                if (assess_use(assessment, instance)["valid"] and isinstance(claim, dict)
+                if (assessment.get("decision") == "match" and assess_use(assessment, instance)["valid"]
+                        and isinstance(claim, dict)
                         and all(claim.get(key) == relation.get(key) for key in ("kind", "source", "target", "confirmed_scope"))):
                     effective.add(assessment_id)
             for ref in assessment_refs:

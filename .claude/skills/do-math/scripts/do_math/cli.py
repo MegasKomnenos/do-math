@@ -357,6 +357,8 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
         return query_records(args.repository, args.instance, snapshot=args.snapshot, kind=args.kind, text=args.text,
                              limit=args.limit, cursor=args.cursor, related_to=args.related_to, direction=args.direction), 0
     if command == "read":
+        if args.output is not None and args.path is None:
+            raise CliInputError("--output requires --path")
         if args.path is not None:
             store = ResearchRepository(args.repository, args.instance)
             resolved_snapshot = store._resolve_snapshot(args.snapshot)
@@ -580,11 +582,11 @@ def _json_arguments(parser, request):
                 argv.append(flag)
         elif isinstance(action,argparse._AppendAction):
             for item in value:
-                argv.extend([flag,str(item)])
+                argv.append(f"{flag}={item}")
         elif action.nargs in ('+','*'):
             argv.extend([flag,*map(str,value)])
         else:
-            argv.extend(([flag] if flag else []) + [str(value)])
+            argv.append(f"{flag}={value}" if flag else str(value))
     args = parser.parse_args(argv)
     if command == 'status':
         args.json = True

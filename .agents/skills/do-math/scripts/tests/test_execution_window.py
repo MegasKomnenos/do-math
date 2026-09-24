@@ -28,13 +28,9 @@ class WindowTests(unittest.TestCase):
             self.assertTrue((root / ".control" / "execution-window.json").is_file())
             self.assertFalse(json.loads((root / ".control" / "finish-request.json").read_text())["revokes_authority"])
 
-    def test_retired_run_window_cannot_shorten_operational_notice(self):
-        config = {"run_timeout_seconds": 1, "call_timeout_seconds": 30, "finish_notice_seconds": 60}
-        self.assertEqual(notice_seconds(config, "work"), 0)
-        self.assertEqual(notice_seconds(config, "operations"), 3)
 
     def test_work_without_deadline_has_no_finish_notice_after_long_elapsed_time(self):
-        config = {"run_timeout_seconds": 1, "call_timeout_seconds": 30, "finish_notice_seconds": 60}
+        config = { "call_timeout_seconds": 30, "finish_notice_seconds": 60}
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             value = publish(root, "E", None, config, "work", deadline_source="none")

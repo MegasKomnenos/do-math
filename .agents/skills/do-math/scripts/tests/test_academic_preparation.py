@@ -16,7 +16,7 @@ from test_engine import common
 import test_model_assessment_flow as assessment_tests
 from test_model_assessment_flow import rating
 from test_purpose_engine import ActiveStateHarness, PurposeRunner
-from v5_fixtures import candidate, prepared_rule_conditions, seal_response
+from research_fixtures import candidate, prepared_rule_conditions, seal_response
 from test_categories import test_group
 
 
@@ -133,9 +133,10 @@ class RulePreparationFlowTests(ActiveStateHarness):
         self.assertEqual(engine.runtime['cycles'], 0)
         self.assertTrue(any(h['kind'] == 'observation_rules_resolved' for h in engine.runtime['history']))
 
-    def test_legacy_mode_assigns_only_rules_and_deferral_waits_for_new_input(self):
+    def test_assessed_task_rule_deferral_waits_for_relevant_new_input(self):
         engine = self.prepare()
-        engine.instance['config']['session_limits'] = None
+        for task in engine.runtime['tasks'].values():
+            task['model_assessment'] = {k: v for k, v in rating(task_id=task['id']).items() if k != 'task_id'}
         engine.runtime['queue'] = []
         engine._ensure_model_assessments()
         action = next(a for a in engine.runtime['queue'] if a.get('observation_rule_targets'))

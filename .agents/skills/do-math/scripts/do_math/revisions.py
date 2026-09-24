@@ -112,14 +112,13 @@ def dependency_cycles(tasks):
 
 
 def active_repetition_holds(runtime):
-    """Derive configured repetition holds without rewriting historical ownership."""
+    """Project unresolved configured repetition holds from their recorded authority."""
     history = runtime.get('history', [])
     holds = {}
     for row in history:
         key = row.get('lineage'), row.get('lineage_id')
         if row.get('kind') == 'repetition_hold':
-            # Every producer of this record represents a configured count limit.
-            holds[key] = {**row, 'owner': 'user', 'next_owner': 'user'}
+            holds[key] = row
         elif row.get('kind') == 'task_repetition':
             if row.get('outcome') == 'continued':
                 holds.pop(key, None)
@@ -379,9 +378,10 @@ def record_execution_outcome(instance, runtime, action, output, execution_id, *,
                     regenerate_after = None
             except (ValueError, TypeError, AttributeError):
                 regenerate_after = None
-        record_repetition(instance,runtime,lineage='exhaustion_empty',lineage_id=basis,event_ref=execution_id,
-                          outcome='contracts_preserved' if preserved else 'empty',owner='ai',reason=reason,
-                          observed_at=observed_at, regenerate_after=regenerate_after)
+        if preserved or accepted:
+            record_repetition(instance,runtime,lineage='exhaustion_empty',lineage_id=basis,event_ref=execution_id,
+                              outcome='contracts_preserved' if preserved else 'empty',owner='ai',reason=reason,
+                              observed_at=observed_at, regenerate_after=regenerate_after)
     for identifier,current in runtime.get('tasks',{}).items():
         previous=action.get('revision_targets',{}).get(identifier,{})
         authored=current.get('producer_execution')==execution_id or any(h.get('execution_id')==execution_id for h in current.get('revision_history',[]))

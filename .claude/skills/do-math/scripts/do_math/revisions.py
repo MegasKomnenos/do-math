@@ -378,9 +378,10 @@ def record_execution_outcome(instance, runtime, action, output, execution_id, *,
                     regenerate_after = None
             except (ValueError, TypeError, AttributeError):
                 regenerate_after = None
-        record_repetition(instance,runtime,lineage='exhaustion_empty',lineage_id=basis,event_ref=execution_id,
-                          outcome='contracts_preserved' if preserved else 'empty',owner='ai',reason=reason,
-                          observed_at=observed_at, regenerate_after=regenerate_after)
+        if preserved or accepted:
+            record_repetition(instance,runtime,lineage='exhaustion_empty',lineage_id=basis,event_ref=execution_id,
+                              outcome='contracts_preserved' if preserved else 'empty',owner='ai',reason=reason,
+                              observed_at=observed_at, regenerate_after=regenerate_after)
     for identifier,current in runtime.get('tasks',{}).items():
         previous=action.get('revision_targets',{}).get(identifier,{})
         authored=current.get('producer_execution')==execution_id or any(h.get('execution_id')==execution_id for h in current.get('revision_history',[]))

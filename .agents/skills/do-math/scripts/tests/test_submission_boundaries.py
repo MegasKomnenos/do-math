@@ -12,7 +12,7 @@ import time
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from v5_fixtures import local_job_runner
+from research_fixtures import local_job_runner
 import test_purpose_engine as purpose
 from test_engine import common, contract_checks, formal_ok
 from do_math.engine import control
@@ -23,7 +23,7 @@ from do_math.input_basis import capture_decision_basis
 from do_math.repository import canonical_json
 from do_math import submission
 from do_math.control_transport import ControlTransport
-from v5_fixtures import (candidate, seal_response, bind_candidates, contract_review,
+from research_fixtures import (candidate, seal_response, bind_candidates, contract_review,
                          disposition, scope_response, assessment, supply_observation_rules)
 
 
@@ -60,8 +60,6 @@ class CheckedRunner:
 class BoundaryFixture(purpose.PurposeHarness):
     def engine(self, runner, count=1, **configuration):
         # Preparation and approval are real applications, never injected ready flags.
-        if configuration.get("session_limits", True) is None:
-            configuration.pop("session_limits")
         # Public initialization has separate coverage. Start these boundary
         # cases from validated active state, then actually prepare and review tasks.
         engine, bootstrap = purpose.ActiveStateHarness.make(self, **self.fixture_config(**configuration))
@@ -280,7 +278,7 @@ class AcceptanceTests(unittest.TestCase):
             def run(inner, **args):
                 args["on_started"]({"pid": 1})
                 return {"status": "failed", "output": None, "usage": {}, "error": "local execution failure"}
-        engine = self.fixture.engine(Runner(), count=1, session_limits=None)
+        engine = self.fixture.engine(Runner(), count=1)
         failed_id = engine.runtime["queue"][0]["id"]
         engine.run(max_steps=1)
         self.assertNotIn(failed_id, [a.get("id") for a in engine.runtime["queue"]])

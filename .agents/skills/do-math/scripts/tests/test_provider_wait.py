@@ -15,7 +15,7 @@ from do_math.engine import DEFAULT_CONFIG
 from do_math.execution_profiles import build_profiles, profile_ref
 from do_math.git_store import GitStateStoreLockError
 from do_math.repository import ResearchRepository, new_id
-from do_math.session_slots import GitSessionSlots
+from do_math.session_slots import SessionSlots
 from do_math.provider_wait import timestamp
 
 MODEL = "claude-opus-5"
@@ -60,9 +60,9 @@ def finish(slots, runtime, identifier, current):
 def transact(repository, operation):
     with repository.writer_lock():
         head, instance, runtime = repository.load()
-        slots = GitSessionSlots(runtime, instance)
+        slots = SessionSlots(runtime, instance)
         result = operation(slots, instance, runtime)
-        repository.save(head, instance, runtime)
+        repository.save_with_state(head, instance, runtime)[0]
         return result
 
 
@@ -103,13 +103,12 @@ class ProviderTests(unittest.TestCase):
                        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
         self.repository = self.make_repository()
 
-    def make_repository(self, *, call_mode=False):
+    def make_repository(self):
         iid = new_id("RI")
         config = {**deepcopy(DEFAULT_CONFIG), "scholarly_enabled": False,
-            "model": MODEL, "operator_model": MODEL,
             "tier_models": {tier: MODEL for tier in ("low", "medium", "high")},
-            "session_limits": None if call_mode else {"work": {MODEL: 3}, "operations": {MODEL: 1}},
-            "work_calls": 10, "operations_calls": 10}
+            "session_limits": {"work": {MODEL: 3}, "operations": {MODEL: 1}},
+             }
         instance = {"feature_version": 5, "id": iid, "workspace": str(self.root),
                     "config": config, **build_profiles(config)}
         runtime = {"feature_version": 5, "status": "ready", "executions": {},
@@ -139,7 +138,7 @@ class ProviderTests(unittest.TestCase):
         runtime["queue"] = [action]
         engine._hold_provider_action(action, "EX-original", gate, "Observed provider limit")
         waiting = runtime["waiting_actions"][action["id"]]
-        self.repository.save(head, instance, runtime)
+        self.repository.save_with_state(head, instance, runtime)[0]
         loaded = self.repository.load()[2]["waiting_actions"][action["id"]]
         self.assertEqual(loaded, waiting)
         due = loaded["activity_wait"]["retry_at_timestamp"]
@@ -171,20 +170,11 @@ class ProviderTests(unittest.TestCase):
         second = self.change(lambda s, i, r: s.provider_result("EX-old", "claude", failure=FAILURE, current_time=401))
         self.change(lambda s, i, r: s.provider_result("EX-probe", "claude", current_time=402))
         _, instance, runtime = self.repository.load()
-        current = GitSessionSlots(runtime, instance, observer=True).provider_snapshot(current_time=403)["providers"]["claude"]
+        current = SessionSlots(runtime, instance, observer=True).provider_snapshot(current_time=403)["providers"]["claude"]
         self.assertEqual(current["generation"], first["generation"] + 1)
         self.assertEqual(current["generation"], second["generation"])
         self.assertEqual(current["state"], "waiting")
 
-    def test_call_budget_mode_uses_provider_gate_without_model_capacity(self):
-        self.repository = self.make_repository(call_mode=True)
-        def reject(slots, instance, runtime):
-            self.assertTrue(admit(slots, instance, runtime, "EX-call", "operations", 1))
-            slots.provider_result("EX-call", "claude", failure=FAILURE, current_time=1)
-            finish(slots, runtime, "EX-call", 1)
-            self.assertFalse(slots.snapshot()["operations"])
-        self.change(reject)
-        self.assertFalse(self.change(lambda s, i, r: admit(s, i, r, "EX-blocked", "operations", 2)))
 
     def test_unknown_limit_uses_bounded_backoff_and_known_limit_preserves_time(self):
         first = self.reject()
@@ -206,13 +196,13 @@ class ProviderTests(unittest.TestCase):
         self.reject()
         self.assertTrue(self.change(lambda s, i, r: admit(s, i, r, "EX-vanished", current=400)))
         head, instance, runtime = self.repository.load()
-        observer = GitSessionSlots(runtime, instance, observer=True)
+        observer = SessionSlots(runtime, instance, observer=True)
         observer.close()
         self.assertEqual(self.repository.load()[0], head)
         self.assertEqual(observer.provider_snapshot(current_time=500)["providers"]["claude"]["state"], "checking")
         self.change(lambda s, i, r: finish(s, r, "EX-vanished", 500))
         _, instance, runtime = self.repository.load()
-        gate = GitSessionSlots(runtime, instance, observer=True).provider_snapshot(current_time=500)["providers"]["claude"]
+        gate = SessionSlots(runtime, instance, observer=True).provider_snapshot(current_time=500)["providers"]["claude"]
         self.assertEqual(gate["state"], "waiting")
         self.assertTrue(self.change(lambda s, i, r: admit(s, i, r, "EX-replacement", "operations", 500)))
 
@@ -231,7 +221,7 @@ class ProviderTests(unittest.TestCase):
             self.assertTrue(all(error is None for _, _, error in outcomes), outcomes)
             self.assertEqual(sum(success for _, success, _ in outcomes), 1, outcomes)
             _, instance, runtime = self.repository.load()
-            gate = GitSessionSlots(runtime, instance, observer=True).provider_snapshot(current_time=500)["providers"]["claude"]
+            gate = SessionSlots(runtime, instance, observer=True).provider_snapshot(current_time=500)["providers"]["claude"]
             winner = next(name for name, success, _ in outcomes if success)
             self.assertEqual((gate["state"], gate["probe_owner"]), ("checking", winner))
         finally:

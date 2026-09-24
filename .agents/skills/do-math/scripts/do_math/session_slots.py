@@ -42,7 +42,7 @@ def _unlock(stream):
     stream.close()
 
 
-class GitSessionSlots:
+class SessionSlots:
     """A working view of the Git execution/reservation families.
 
     The caller holds ResearchRepository.writer_lock for every mutation and
@@ -72,10 +72,10 @@ class GitSessionSlots:
         from copy import deepcopy
         from .repository import new_id
         runtime = {"executions": {},
-                   "reservations": deepcopy(self.runtime.get("reservations", {})),
+                   "reservations": dict(self.runtime.get("reservations", {})),
                    "provider_waits": deepcopy(self.runtime.get("provider_waits", {}))}
         candidate = {"id": new_id("EX"), "role": profile["role"], "status": "queued"}
-        slots = GitSessionSlots(runtime, self.instance)
+        slots = SessionSlots(runtime, self.instance)
         allowed = slots.acquire(
             candidate["id"], profile["budget_kind"], profile.get("ai", {}).get("model"),
             profile=profile, execution=candidate, current_time=current_time)
@@ -100,7 +100,7 @@ class GitSessionSlots:
             self.instance.pop('host_capacity_ref', None)
 
     def acquire(self, execution_id, pool, model, *, profile=None, execution=None, provider=None,
-                enforce_capacity=True, current_time=None):
+                current_time=None):
         self._writable()
         self.admission_wait = None
         from copy import deepcopy
@@ -141,7 +141,8 @@ class GitSessionSlots:
         # A new capacity edition must still count executions reserved under older
         # editions of the same model. Limits are not independent resource pools.
         constraints = self.instance["capacity_constraints"]
-        reservations = deepcopy(self.runtime.get("reservations", {}))
+        # Rebase only each row's constraint ID; nested evidence stays read-only.
+        reservations = {rid: dict(row) for rid, row in self.runtime.get("reservations", {}).items()}
         capacity_refs = list(ai.get("capacity_refs", []))
         usage_refs = list(ai.get("usage_constraint_ids", []))
         adopted = self.instance.get("role_profile_refs")
@@ -361,30 +362,6 @@ class GitSessionSlots:
                 cell["available"] = max(0, cell["limit"] - cell["used"])
         return result
 
-    def usage_snapshot(self):
-        """Project adopted cumulative call limits from the same reservation ledger."""
-        constraints = self.instance["capacity_constraints"]
-        active_profiles = {ref["id"] for refs in self.instance.get("role_profile_refs", {}).values() for ref in refs}
-        usage_ids = {cid for pid in active_profiles for cid in
-                     self.instance["execution_profiles"][pid].get("ai", {}).get("usage_constraint_ids", [])}
-        result = {}
-        for cid in usage_ids:
-            constraint = constraints[cid]
-            pool = constraint["budget_kind"]
-            used = sum(row["reserved"] - row["returned"] for row in self.runtime.get("reservations", {}).values()
-                       if constraints[row["constraint_id"]].get("kind") == "cumulative"
-                       and constraints[row["constraint_id"]].get("unit") == constraint["unit"]
-                       and row["budget_kind"] == pool)
-            maximum = constraint["limit"].get("value") if constraint["limit"]["kind"] == "bounded" else None
-            result[pool] = {"limit": maximum, "used": used,
-                            "available": None if maximum is None else max(0, maximum - used),
-                            "unit": constraint["unit"], "source": "git_reservations"}
-        return result
 
     def close(self):
         pass  # The repository owns the writer lock and CAS; this view owns neither.
-
-
-def SessionSlots(workspace, instance_id, *, runtime, instance, observer=False):
-    """Keep caller argument shape while requiring the sole Git working set."""
-    return GitSessionSlots(runtime, instance, observer=observer)

@@ -17,7 +17,7 @@ class WalkthroughRepairs(unittest.TestCase):
         from do_math.model_policy import assessment_basis, LIMITS
         from test_redesign_TASKS import approved_fixture
         from test_model_assessment_flow import rating
-        from v5_fixtures import prepared_rule_conditions
+        from research_fixtures import prepared_rule_conditions
         class Host(SchedulerMixin):
             pass
         for unchanged in (False, True):
@@ -201,7 +201,7 @@ class WalkthroughRepairs(unittest.TestCase):
         from do_math.scheduler import SchedulerMixin
         from do_math.engine import ResearchEngine
         from test_redesign_TASKS import approved_fixture
-        from v5_fixtures import candidate
+        from research_fixtures import candidate
         prior, instance, runtime = approved_fixture()
         proposal = candidate('Followup')
         proposal['dependencies'] = [prior['id']]

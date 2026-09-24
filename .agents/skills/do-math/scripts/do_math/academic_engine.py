@@ -17,27 +17,26 @@ def current_solution_basis(instance, runtime):
         return None
     ids = sorted({ref for j in judgments for ref in j.get("dependencies", []) if ref in instance["knowledge"]})
     records = [instance["knowledge"][kid] for kid in ids]
-    if instance.get("feature_version", 0) >= 5:
-        from .knowledge_records import usable_links, all_records
-        if not ids or any(not usable_links(instance, kid) for kid in ids):
-            return None
-        support = all_records(instance)
-        pending, visited, support_ids = list(ids), set(), set()
-        while pending:
-            kid = pending.pop()
-            if kid in visited:
-                continue
-            visited.add(kid)
-            record = instance["knowledge"][kid]
-            support_ids.add(record["kind_definition_id"])
-            pending.extend(record.get("dependencies", []))
-            for link in usable_links(instance, kid):
-                support_ids.update(link.values())
-        for ref in list(support_ids):
-            env = support.get(ref, {}).get("trust_environment_id")
-            if env:
-                support_ids.add(env)
-        records = [support[ref] for ref in sorted(visited | support_ids)]
+    from .knowledge_records import usable_links, all_records
+    if not ids or any(not usable_links(instance, kid) for kid in ids):
+        return None
+    support = all_records(instance)
+    pending, visited, support_ids = list(ids), set(), set()
+    while pending:
+        kid = pending.pop()
+        if kid in visited:
+            continue
+        visited.add(kid)
+        record = instance["knowledge"][kid]
+        support_ids.add(record["kind_definition_id"])
+        pending.extend(record.get("dependencies", []))
+        for link in usable_links(instance, kid):
+            support_ids.update(link.values())
+    for ref in list(support_ids):
+        env = support.get(ref, {}).get("trust_environment_id")
+        if env:
+            support_ids.add(env)
+    records = [support[ref] for ref in sorted(visited | support_ids)]
     records += [{"id": j["execution_id"], **j} for j in judgments]
     charter = governance.governance_view(instance).get("charter")
     goal_ref = (governance.digest({"content": {key: value for key, value in charter["content"].items()

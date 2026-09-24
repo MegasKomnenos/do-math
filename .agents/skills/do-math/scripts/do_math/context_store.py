@@ -542,7 +542,7 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
             compared.append(row)
         value['profile_selection'] = {
             'default_policy': {key: deepcopy(instance['config'][key]) for key in
-                ('role_tiers', 'tier_models', 'role_models', 'model', 'effort') if key in instance['config']},
+                ('role_tiers', 'tier_models', 'effort') if key in instance['config']},
             'allowed_profiles': [deepcopy(p) for _, p in sorted(instance.get('execution_profiles', {}).items())],
             'capacity_constraints': deepcopy(instance.get('capacity_constraints', {})),
             'task_profile_constraints': {row['id']: deepcopy(row.get('profile_refs', [])) for row in compared}}
@@ -555,7 +555,7 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
         if role == 'research_plan':
             value['ready_task_ids'] = list(order['ids'])
     required = role_direct_keys(role, value)
-    # goal/policies are legacy display projections; the full governance view is authoritative.
+    # Goal and policy text are projections of the approved governance records.
     required = [key for key in required if key not in {'goal', 'policies', 'implementation_documents'}]
     missing = set(required) - value.keys()
     if missing:
@@ -785,8 +785,6 @@ def defer_input_overflow(runtime, overflow, *, at, question_ref):
     wait_for(runtime, identifier, reason='input_overflow', condition=condition,
              next_owner=next_owner, at=at)
     return {'status': 'waiting', 'condition': condition}
-
-
 
 
 def _input_overflow(reason: str, *, actual_bytes: int, mandatory_bytes: int, max_bytes: int,

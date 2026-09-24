@@ -15,7 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math import cli, contracts, submission, task_contracts, task_scope
 import test_redesign_TASKS as task_fixtures
 import test_redesign_KNOWLEDGE as knowledge_fixtures
-from v5_fixtures import candidate, trust_fixture
+from research_fixtures import candidate, trust_fixture
 
 
 class WalkthroughRepairs(unittest.TestCase):
@@ -265,7 +265,7 @@ class WalkthroughRepairs(unittest.TestCase):
             def _save(self): pass
             def _dispatchable(self, *args): raise AssertionError('new work must not be dispatched')
         host = Host()
-        host.instance = {'workspace':'.','id':'RI-test','config':{'run_timeout_seconds':30}}
+        host.instance = {'workspace':'.','id':'RI-test','config':{}}
         host.runtime = runtime
         with patch('do_math.scheduler.SessionSlots',return_value=SimpleNamespace(close=lambda:None)), \
                 patch('do_math.scheduler.ModelCalls',return_value=calls), patch('do_math.scheduler.time.sleep'):

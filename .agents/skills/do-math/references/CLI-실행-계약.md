@@ -134,7 +134,7 @@ GLOSSARY의 보편 상태가 개념의 뜻을 소유한다. 아래 값은 CLI가
 
 허용 필드와 기본값의 기계 정본은 `scripts/do_math/engine.py`의 `DEFAULT_CONFIG`와 `validate_config`다. 인스턴스에 실제 적용된 값은 해당 snapshot에서 재구성한 `config` 기록이 소유한다. 이 문서는 그 목록을 따로 복제하지 않고 설정 가족이 어떤 동작을 바꾸는지 설명한다.
 
-`host_resources`는 선택적인 구조화 설정으로 `constraint`와 `demands_by_role`을 받는다. 제약은 `execution_profiles.host_constraint(host_id=..., limits=..., control_reserve=..., authority_refs=...)`가 내용에서 계산한 용량 제약 식별자(CP ID)를 포함해야 한다. `host_id`는 실제 로컬 호스트 이름이다. `limits`의 `jobs`는 동시 Job 수, `memory_bytes`는 committed memory 바이트, `cpu_rate_basis_points`는 1/10000 단위의 CPU 비율이며 최대 10000이다. 같은 세 단위의 `control_reserve`는 각 한도 이하이고 작업이 차용하지 않는다. `demands_by_role`은 호스트 상한을 적용하는 역할 전건을 키로 사용하고 역할마다 `jobs=1`, 양의 `memory_bytes`, 1~10000의 `cpu_rate_basis_points`를 명시한다. 상한을 적용하지 않는 `formal_check`, `trust_check`, `trust_activate`의 요구량은 생략할 수 있으며, 기존 설정에 들어 있는 값은 호환을 위해 읽되 상한으로 적용하지 않는다. 숫자는 사용자 승인 값에서 받으며 자동 기본 상한은 없다.
+`host_resources`는 선택적인 구조화 설정으로 `constraint`와 `demands_by_role`을 받는다. 제약은 `execution_profiles.host_constraint(host_id=..., limits=..., control_reserve=..., authority_refs=...)`가 내용에서 계산한 용량 제약 식별자(CP ID)를 포함해야 한다. `host_id`는 실제 로컬 호스트 이름이다. `limits`의 `jobs`는 동시 Job 수, `memory_bytes`는 committed memory 바이트, `cpu_rate_basis_points`는 1/10000 단위의 CPU 비율이며 최대 10000이다. 같은 세 단위의 `control_reserve`는 각 한도 이하이고 작업이 차용하지 않는다. `demands_by_role`은 호스트 상한을 적용하는 역할 전건을 키로 사용하고 역할마다 `jobs=1`, 양의 `memory_bytes`, 1~10000의 `cpu_rate_basis_points`를 명시한다. 상한을 적용하지 않는 `formal_check`, `trust_check`, `trust_activate`의 요구량은 설정하지 않는다. 숫자는 사용자 승인 값에서 받으며 자동 기본 상한은 없다.
 
 `authority_refs`에는 저장된 사용자 결정·출처 ID를 넣는다. 직접 제출하는 설정 원문 자체를 승인 출처로 삼으려면 `configuration:request`를 명시한다. 중앙은 그 설정을 불변 user 출처로 보존하고 이 참조를 실제 출처 ID로 치환한 뒤 제약 ID를 다시 계산한다. 원 설정에 없던 수치나 권한을 추가하지 않는다. 초기화에는 이 방법으로 출처까지 함께 보존할 수 있다. 기존 출처를 지정하면 실제로 존재하는 사용자 출처인지 검증한다.
 
@@ -155,16 +155,16 @@ Path('host-config.json').write_text(json.dumps(settings, ensure_ascii=False, ind
 
 호스트 설정의 채택·변경·해제는 사용자 권한으로 실행기가 정지하고 모든 execution이 ended이며 held 예약이 없을 때 적용한다. inbox의 요청도 실제 적용 시 이 조건을 다시 검사한다. 같은 설정의 재적용은 제약을 바꾸지 않는다. `host_resources=null`은 해제이고, 부분 configure에서 필드를 생략하면 기존 설정을 유지한다. `operator`는 호스트 설정을 바꿀 수 없다. 과거 제약·프로필은 종료 실행의 근거로 남긴다. 바뀐 호스트 승인과 맞지 않는 과제 프로필은 재준비·독립 계약 검토로 갱신하며, 이미 고정된 검토 프로필은 덮어쓰지 않고 미완료 사유와 함께 계획으로 반환한다. `formal_check`, `trust_check`, `trust_activate`에는 호스트 상한을 붙이지 않는 현행 Lean 계약을 유지한다.
 
-중앙 Lean 검사는 완료까지 기다리며 실행 시간·메모리·CPU·출력량 상한을 적용하지 않는다. 정지 요청이나 실행 권한 변경에 따른 취소는 유지한다. 기존 `lean_timeout_seconds` 값과 설치 명령의 `--smoke-timeout` 인자는 호환을 위해 읽지만 실행 제한으로 사용하지 않는다. 메모리 상한이 결박된 구 Lean 프로필은 상한 없는 새 프로필로 교체해야 한다. 출력 전체를 보존하며, 공통 의존 선언의 타입·본문은 한 검사에서 한 번만 전송하고 선언별 의존 관계와 증거 해시는 모두 보존한다.
+중앙 Lean 검사는 완료까지 기다리며 실행 시간·메모리·CPU·출력량 상한을 적용하지 않는다. 정지 요청이나 실행 권한 변경에 따른 취소는 유지한다. 출력 전체를 보존하며, 공통 의존 선언의 타입·본문은 한 검사에서 한 번만 전송하고 선언별 의존 관계와 증거 해시는 모두 보존한다.
 
 일반 형식 검사와 신뢰 환경 전환 검사는 기존 병렬 호출 관리에서 실행하며, 두 종류의 동시 실행 수를 합해 인스턴스당 최대 한 건으로 제한한다. 메인은 고정 입력·프로필·권한과 Job 식별자를 저장한 뒤 계산 시작을 허용한다. 계산 중에도 제어 요청과 독립 AI의 배정·완료를 처리한다.
 
-`run`에는 전체 실행 시간 제한이 없다. `--max-steps`는 새 action 시작 수만 제한하며 진행 중 실행의 종료·결과 회수는 계속한다. 작업 예산 AI와 중앙 Lean 검사는 경과 시간만으로 취소하지 않는다. Windows 연구 예약은 `ExecutionTimeLimit=PT0S`를 명시하고 운영 담당 예약은 기존 유한 제한을 유지한다. 새 기본 설정에는 `run_timeout_seconds`와 `dispatch_reserve_seconds`가 없다. 과거 설정에 두 필드가 있으면 기존 봉인 프로필의 ID를 그대로 회수하기 위해 원래 값을 보존하지만, 현재 실행 제한·배정·종료에는 사용하지 않는다.
+`run`에는 전체 실행 시간 제한이 없다. `--max-steps`는 새 action 시작 수만 제한하며 진행 중 실행의 종료·결과 회수는 계속한다. 작업 예산 AI와 중앙 Lean 검사는 경과 시간만으로 취소하지 않는다. Windows 연구 예약은 `ExecutionTimeLimit=PT0S`를 명시하고 운영 담당 예약은 기존 유한 제한을 유지한다.
 
 정지·종결·권한 회수·필수 전제 변경 뒤에 도착한 해당 실행의 결과는 보존하되 정상 승인으로 편입하지 않는다. 예약과 슬롯은 로컬 종료가 확인된 뒤 반환한다. 종료가 확인되지 않은 실행은 기존 복구 절차에 남긴다.
 
-- 실행 선택: 세션 모드는 `tier_models`의 상·중·하 모델 대응과 `role_tiers`의 역할별 최소 등급을 사용한다. 난이도·중요도·근거의 저작과 선택은 [모델과 실행예산](모델과-실행예산.md)을 따른다. `effort`는 공통 추론 노력이다. 구 실행횟수 모드에서는 `model`과 `role_models`를 사용한다.
-- 작업·운영 용량: `session_limits`의 `work`와 `operations`는 모델 이름별 동시 세션 상한이다. 값은 0 이상의 정수이며 `tier_models`의 모델은 두 예산에 모두 명시한다. 기본값은 상·중·하 각각 작업 3개·운영 3개다. `session_limits=null`인 구 호환 모드는 `work_calls`·`operations_calls`의 양의 정수 또는 null을 누적 실행 시도 한도로 사용한다. 세션 모드에서는 그 구 필드로 실행을 제한하지 않으며 실행 이력은 계속 보존한다.
+- 실행 선택: 세션 모드는 `tier_models`의 상·중·하 모델 대응과 `role_tiers`의 역할별 최소 등급을 사용한다. 난이도·중요도·근거의 저작과 선택은 [모델과 실행예산](모델과-실행예산.md)을 따른다. `effort`는 공통 추론 노력이다.
+- 작업·운영 용량: `session_limits`의 `work`와 `operations`는 모델 이름별 동시 세션 상한이다. 값은 0 이상의 정수이며 `tier_models`의 모델은 두 예산에 모두 명시한다. 기본값은 상·중·하 각각 작업 3개·운영 3개다. 실행 이력은 계속 보존한다.
 - 운영 AI 실행 기한: `call_timeout_seconds`는 운영 예산 AI 실행 하나에 적용한다.
 - 작업 AI 실행 종료: 연구 수행·보충 조사·작업 계약 검토·동일성 검토·목표 감사에는 실행 기한을 적용하지 않는다. 이 실행들은 제출, pause·close, 권한·입력 변경과 수락된 운영 처분에 따라 종료한다. 하위 CLI 요청의 `max_runtime_seconds=null`도 기한 없음을 뜻하며, 0이나 임의의 큰 시간값으로 바꾸지 않는다.
 - 그 밖의 반복 한도: 자동 후보 준비 회차, 출력 수리 횟수, 검토 회차와 보충 조사 한도는 각 대응 설정이 정한다.
@@ -174,10 +174,10 @@ Path('host-config.json').write_text(json.dumps(settings, ensure_ascii=False, ind
 
 프로필 채택·활성화와 실행 직전은 같은 관찰 설정 검사를 사용한다. 주기·사건 관찰에는 `tool_review_window_seconds`·`observation_interval_seconds`, 연구 수행에는 `self_check_response_window_seconds`가 필요하다. 누락이나 잘못된 값은 `observation_configuration`과 역할·프로필 ID·필드별 오류로 표시한다. 초기화의 `activation.observation_errors`는 활성화 검사에서 확인한 세부 오류다. 초기화에서는 아직 없는 과제의 규칙을 요구하지 않는다. 이미 활성화된 인스턴스에서 설정 문제를 만나면 해당 실행을 기다리게 하고 다른 허용된 역할은 계속 처리한다. 새 설정 프로필은 원래 프로필과 함께 보존하며, 과제에 고정된 참조의 변경은 재준비와 새 독립 계약 검토를 거친다.
 - 계획과 착수: `plan_settle_seconds`(기본 300)는 연구 계획이 대기·실행 중인 작업 계약 검토의 종료를 기다리는 상한이며, 기다리는 계획의 `dispatch_wait.kind`는 `plan_settle`이다. 사용자·독립 운영이 요청한 계획에는 적용하지 않는다.
-- 독립 운영: `operator_enabled`는 기본 true, `operator_interval_seconds`는 기본 7200초다. `operator_timeout_seconds`는 한 예약 작업 실행의 상한으로 기본 5400초이며, `operator_effort`의 기본값은 high다. 정상 감독은 모델 없이 상태·예약·HOLD를 검사하고 엔진 작업을 요청한다. 엔진을 읽을 수 없는 실제 실패가 보존됐거나 운영 점검의 설치 결함 진단이 수락됐을 때 복구 AI를 열며, 이때 세션 모드의 `role_tiers.independent_operator`·`tier_models`와 같은 모델의 운영 슬롯 또는 구 호환 모드의 `operator_model`을 사용한다. 이는 내부 `research_reconsider_seconds`가 정하는 후보 밖 탐색 주기와 별개다.
+- 독립 운영: `operator_enabled`는 기본 true, `operator_interval_seconds`는 기본 7200초다. `operator_timeout_seconds`는 한 예약 작업 실행의 상한으로 기본 5400초이며, `operator_effort`의 기본값은 high다. 정상 감독은 모델 없이 상태·예약·HOLD를 검사하고 엔진 작업을 요청한다. 엔진을 읽을 수 없는 실제 실패가 보존됐거나 운영 점검의 설치 결함 진단이 수락됐을 때 복구 AI를 열며, 이때 세션 모드의 `role_tiers.independent_operator`·`tier_models`와 같은 모델의 운영 슬롯을 사용한다. 이는 내부 `research_reconsider_seconds`가 정하는 후보 밖 탐색 주기와 별개다.
 - 학술자료: `scholarly_enabled`는 기본 true다. `scholarly_server`는 null 또는 `command`·`args` 객체이며 초기화 때 명시 설정이나 Codex 설정의 scholarly 항목에서 회수한다. command/서버 파일 경로는 실행 위치와 무관하게 사용할 수 있도록 고정한다. 다른 MCP와 사용자 훅은 하위 연구 실행에 자동 상속하지 않는다. 서버의 자료 저장 위치는 실행별 `scholarly-data/`로 지정한다.
 
-모델 이름이 `claude:`로 시작하면 그 접두어를 제거해 Claude CLI의 `--model`에 전달한다. `claude-`로 시작하는 전체 ID는 그대로 Claude에 전달하고 나머지는 Codex에 전달한다. 이 선택은 세션 모드의 `tier_models`, 구 모드의 `model`·`role_models`·`operator_model`에 동일하게 적용한다. `claude:` 뒤에는 비어 있지 않은 모델 이름이 필요하다. 별칭과 전체 ID를 포함해 동일 모델의 설정 표기를 통일한다. 슬롯은 접두어를 포함한 원래 설정 문자열별로 계산하며 CLI가 해석한 실제 모델 ID를 기준으로 합치지 않는다.
+모델 이름이 `claude:`로 시작하면 그 접두어를 제거해 Claude CLI의 `--model`에 전달한다. `claude-`로 시작하는 전체 ID는 그대로 Claude에 전달하고 나머지는 Codex에 전달한다. 모델은 `tier_models`로 설정한다. `claude:` 뒤에는 비어 있지 않은 모델 이름이 필요하다. 별칭과 전체 ID를 포함해 동일 모델의 설정 표기를 통일한다. 슬롯은 접두어를 포함한 원래 설정 문자열별로 계산하며 CLI가 해석한 실제 모델 ID를 기준으로 합치지 않는다.
 
 Claude는 기존 CLI 로그인을 사용한다. `PATH`에서 실행 파일을 찾으며 `CLAUDE_CONFIG_DIR`와 Windows의 `CLAUDE_CODE_GIT_BASH_PATH`를 전달한다. API 키·API 공급자 변경 환경변수는 전달하지 않는다. `--setting-sources`를 비우고 사용자 훅·자동 기억·스킬 호출·내부 Agent/Task 도구를 비활성화하며, `--strict-mcp-config`로 인스턴스에 고정된 scholarly만 연결한다. Claude만 사용하는 인스턴스도 scholarly의 자동 탐색 위치는 작업 경로에서 부모 방향으로 찾는 `.codex/config.toml`, 이어 `CODEX_HOME/config.toml`(미설정이면 사용자 홈의 `.codex/config.toml`) 순서이며, 다른 위치의 설정은 `scholarly_server`에 직접 지정한다.
 
@@ -201,9 +201,9 @@ Claude는 기존 CLI 로그인을 사용한다. `PATH`에서 실행 파일을 �
 
 `configure`는 기존 설정 위에 제공 필드를 덮어쓴 뒤 전체 설정을 다시 검사한다. 알 수 없는 필드는 거부한다. 대부분의 수치 설정은 양의 정수이고, 출력 수리 횟수와 세션 용량은 0을 허용한다. `tier_models`와 `session_limits`는 지정할 때 해당 맵 전체를 전달한다. 역할 최소 등급은 지정한 `role_tiers` 항목을 사용하고 생략한 역할에는 기본값을 적용한다. 판본 5의 정확한 현재 값은 고정 snapshot의 등록된 설정 기록 경로를 `query --files`로 찾은 뒤 `read --path`로 확인한다. 옛 `research/instance.json` 경로를 가정하지 않는다.
 
-판본 5의 동시 세션 모드는 모델별 동시 점유를 제한한다. 실행횟수 모드는 `session_limits=null`과 `work_calls`·`operations_calls`로 로컬 실행 시도를 누적 제한한다. 세션 예산으로 전환할 때에는 모델 대응과 두 용량 맵을 `configure --config-file`로 함께 적용하고, 기존 `role_models`가 있으면 같은 요청에서 빈 객체로 바꾼다. 전환 뒤에도 사용 이력과 결과는 보존하며 옛 횟수 필드는 세션 제한으로 사용하지 않는다. 실행횟수 모드로 돌아갈 때는 `session_limits=null`을 명시한다. 이 전환은 판본 5 안의 예산 계약 변경이며 판본 1~4의 자동 변환·재개가 아니다.
+모델별 동시 세션 용량과 모델 대응은 `configure --config-file`로 함께 적용한다.
 
-JSON status와 역할 입력은 `budget_unit=concurrent_sessions`와 예산·모델별 `limit`, `used`, `available`, `execution_ids`를 제공한다. status의 `execution_attempts`는 누적 실행 이력이며 세션 상한과 별개다. `active_executions`는 진행 중인 내부 실행 전건이고, 실패 전용 설치 복구 AI까지 포함한 점유는 `budget`에서 확인한다. 모델 없는 정상 감독은 이 점유에 들어가지 않는다. `capacity_waiting`에는 미시작 요청의 모델 배정을 표시한다. 구 모드는 `budget_unit=execution_attempts`와 예산별 `limit`·누적 `used`를 제공하며 null 상한을 사람용 상태에서 unlimited로 표시한다.
+JSON status와 역할 입력은 `budget_unit=concurrent_sessions`와 예산·모델별 `limit`, `used`, `available`, `execution_ids`를 제공한다. status의 `execution_attempts`는 누적 실행 이력이며 세션 상한과 별개다. `active_executions`는 진행 중인 내부 실행 전건이고, 실패 전용 설치 복구 AI까지 포함한 점유는 `budget`에서 확인한다. 모델 없는 정상 감독은 이 점유에 들어가지 않는다. `capacity_waiting`에는 미시작 요청의 모델 배정을 표시한다.
 
 한도를 점유보다 낮추면 새 배정을 대기시킨다. 현재 실행의 모델은 고정하고 종료를 강제하지 않는다. 설정 변경 권한이 없는 운영 AI는 세션 상한·모델 대응·역할 등급을 바꿀 수 없다. 예산 모드를 전환하기 전에는 `operator hold`로 정지를 요청하고, status의 미종료 실행이 없으며 operator status의 연구 예약 작업이 Running이 아닌지 확인한다. 그 뒤 configure를 적용한다. 설정 변경이 HOLD를 해제하지는 않는다. 실행 시간·검토 회차·행동 허가는 각각의 계약을 따른다.
 
@@ -215,7 +215,7 @@ JSON status와 역할 입력은 `budget_unit=concurrent_sessions`와 예산·모
 init --repository PATH [--create-repository] --workspace PATH
      (--goal TEXT | --goal-file PATH) [--title TEXT]
      [--goal-kind mathematical|research] [--policies-file PATH]
-     [--source PATH ...] [--config-file PATH] [--model NAME] [--effort VALUE]
+     [--source PATH ...] [--config-file PATH] [--effort VALUE]
 ```
 
 `init`은 원입력과 설정·초기 source를 보존하고 `initializing` 인스턴스를 만든다. `--create-repository`는 새 경로나 빈 디렉터리에만 Git 저장소를 만든다. 생성 응답의 `instance_id`와 `snapshot`을 보존하고 이후 같은 인스턴스에 제어를 보낸다. 생성 시 grant와 연구 queue는 비어 있다.
@@ -240,7 +240,7 @@ init --repository PATH [--create-repository] --workspace PATH
 - `pause|resume|close [--reason TEXT]`는 제어 요청을 inbox에 기록한다. `resume`은 CLI `closed`와 `completed`를 열지 않는다.
 - `input (--text TEXT|--file PATH) [--responds-to QU-ID ...]`는 비어 있지 않은 사용자 원문을 보존하고 `intent_interpretation`을 먼저 queue에 넣는다.
 - `configure --config-file PATH`는 지원 설정만 갱신한다. 목표·정책·grant·학술 요구는 각각 `decision`을 사용한다.
-- `request --role ROLE [--target ID] [--reason TEXT|--text TEXT]`는 모델을 호출하지 않고 새 action을 queue에 접수한다. 세션 모드의 새 운영 요청은 기존 운영 요청 뒤에 배정하고, 구 실행횟수 호환 모드는 기존의 맨 앞 삽입을 유지한다. 지원 role은 `research_preparation`, `research_plan`, `supplemental_research`, `operational_review`, `maintenance`다. 보충 조사는 현재 `ready` 과제 ID, 운영 점검은 존재하는 execution ID를 target으로 요구한다.
+- `request --role ROLE [--target ID] [--reason TEXT|--text TEXT]`는 모델을 호출하지 않고 새 action을 queue에 접수한다. 새 운영 요청은 기존 운영 요청 뒤에 배정한다. 지원 role은 `research_preparation`, `research_plan`, `supplemental_research`, `operational_review`, `maintenance`다. 보충 조사는 현재 `ready` 과제 ID, 운영 점검은 존재하는 execution ID를 target으로 요구한다.
 - `request --retry-action AC-ID [--request-id UC-ID]`는 입력 초과로 보류된 action 또는 초기화 중 기술적 실행 실패로 끝난 원입력의 의도 해석을 명시적으로 다시 처리한다. `--role`, `--target`, `--reason`, `--text`와 함께 쓸 수 없다. 원 action ID와 owner activity를 유지하고 현재 채택 프로필과 권한을 다시 검사한다. 정상 종료한 native 최종 응답이 정확한 원문·실행 근거와 함께 보존돼 있으면 현재 재시도 권한으로 그 응답을 중앙 접수·편입에 재사용한다. 이 경우 새 모델 실행을 만들지 않으며 원 실행의 종료 시각·원 결과 참조·실패 이력을 보존한다. 재사용 조건을 충족하는 정상 응답이 없으면 같은 원입력과 활동을 잇는 새 실행을 배정한다. 기존 봉인 후보를 다른 final로 대체하거나 오류·중단 응답을 정상 응답으로 취급하지 않는다. 같은 `request-id`의 동일 재전송은 최초 영수증을 재생하며 효과를 두 번 적용하지 않는다.
 
 입력 초과의 재시도는 원 grant를 유지하며 아래 입력 크기·질문 계약을 따른다. 초기 해석의 재시도는 `initializing` 상태에서 최초 불변 입력을 대상으로 한 `execution_failure`에만 적용한다. 전 실행이 `execution_incomplete`로 끝났고 로컬 종료가 확인됐으며 그 실행의 예약이 회수돼야 한다. 원 활동은 대기 중이어야 하고 같은 해석이나 그 실패를 진단하는 실행이 진행 중이면 거부한다. 보존 응답을 재사용하든 새 실행을 배정하든 현재 초기 운영 권한을 확인하고 실패 실행·원 대기·시작하지 않은 이전 진단을 이력으로 보존한다. 새 실행이 필요하면 현재 채택 초기 프로필로 배정하고 `continuation_of`로 선행 실행을 연결한다.
@@ -300,17 +300,30 @@ CLI는 파일을 한 번 읽어 payload와 그 정확한 원문을 함께 전달
 
 #### 목표와 정책
 
-```json
-{"kind":"goal","goal":"새 목표 원문","goal_kind":"mathematical","expected_revision":1}
-```
+목표 변경은 `kind="charter"`와 새 헌장 `record`를 제출한다. 먼저 같은 snapshot에서 활성 헌장을 조회·읽는다. 새 `record`에는 새 `id`, `kind="charter"`, 다음 `revision`, 대체할 활성 헌장 ID의 `supersedes`, 완전한 `content`를 쓴다. 기존 `content`에서 사용자가 승인한 목표·범위·성공 기준의 변경만 반영하고, 다른 조건과 학술 요구는 보존한다. 저장된 `status`, `approval_ref`, `source_ref`, `content_sha256` 같은 메타데이터는 새 제안에 복사하지 않는다. `content`의 필수 구조는 [입력 소비자](입력-소비자.md)의 charter 계약을 따른다.
 
-`goal_kind`를 생략하면 현재 값을 유지한다. `expected_revision`을 생략하면 적용 시점의 현재 revision을 사용하지만, 동시 변경을 명시적으로 방지하려면 현재 값을 제공한다. 판본 5의 목표 변경은 구조화된 charter 결정으로 적용하며, 영향받은 미완료 과제는 `governance_revision_required`와 후속 준비·계획을 통해 현행 근거를 다시 확인한다.
+정책도 `kind="policy"`와 완전한 새 `record`를 사용한다. 다음 예시의 ID·범위·근거·문면은 실제 승인한 값으로 바꾼다.
 
 ```json
-{"kind":"policy","text":"정책 원문","expected_revision":1}
+{
+  "kind": "policy",
+  "record": {
+    "id": "PO-source-evidence",
+    "kind": "policy",
+    "revision": 1,
+    "supersedes": [],
+    "content": {
+      "rule_id": "source-evidence",
+      "text": "사용한 문헌은 내부 보존 사본과 정확한 절 좌표를 남긴다.",
+      "scope": ["연구 수행"],
+      "reason_refs": ["CH-실제-현행-헌장-ID"],
+      "audit_refs": []
+    }
+  }
+}
 ```
 
-정책 변경은 미완료 과제를 다시 계약 검토하고 연구 계획을 열게 한다.
+같은 `rule_id`의 활성 정책을 바꾸려면 새 ID와 전체 문면을 제출하고 `supersedes`에 그 정책 ID를 넣는다. 적용기는 대체 대상의 종류·활성 상태와 새 ID를 검사한다. 승인된 목표·정책 변경은 영향받은 미완료 과제의 현행 통치 근거를 다시 확인하게 하며, 후속 준비 또는 계획으로 연결한다.
 
 #### 반복 보류의 계속 결정
 
@@ -364,29 +377,31 @@ CLI는 파일을 한 번 읽어 payload와 그 정확한 원문을 함께 전달
 
 #### 과제 범위
 
+아래 예시에는 미완료 과제의 현행 `revision`과 그 판본의 실제 계약 해시를 넣는다. `contract_sha256`은 과제 전체 조회 record의 해시와 구별한다. ID·판본·해시 자리를 실제 값으로 바꾼 뒤 제출한다.
 ```json
-{"kind":"task_scope","task_id":"TK-...","disposition":"revise","reason":"필수 범위를 다시 정해야 한다."}
+{"kind":"task_scope","task_id":"TK-...","revision":1,"contract_sha256":"조회한-현행-계약-해시","disposition":"revise","reason":"필수 범위를 다시 정해야 한다."}
 ```
 
 판본 5의 `task_scope`는 미완료 과제의 현행 `revision`과 `contract_sha256`을 요구한다. `disposition`은 `revise`, `waive`, `transfer`다. `revise`는 후보 준비에 계약 개정을 요청한다. `waive`와 `transfer`는 비어 있지 않은 `obligation_ids`로 승인 대상 완료 의무를 지정하며, `transfer`에는 서로 다른 미완료 수신 과제의 `target_task_id`도 필요하다. 면제와 이전은 원 과제를 즉시 닫지 않고, 연구 계획이 승인 근거와 의무별 처분을 대조하도록 요청한다.
 
 #### 학술 요구와 외부 거부
 
+학술 요구 변경도 위의 `charter` 결정으로 제출한다. 현행 헌장의 다른 내용은 보존하고 `record.content.academic_requirements`를 승인된 요구 배열로 교체한다. 다음은 그 필드에 넣는 배열의 예시이며, 독립된 결정 객체가 아니다.
+
 ```json
-{
-  "kind":"academic_requirements",
-  "requirements":[
-    {
-      "id":"paper-reproduction",
-      "scope":"해설과 Lean 결과를 독립적으로 재현할 자료를 만든다.",
-      "assessor":"research_plan",
-      "criteria":["새 환경에서 Lean 결과를 재빌드했다.","해설의 가정과 선언 대응을 기록했다."],
-      "required_inputs":[],
-      "external_effects":[]
-    }
-  ]
-}
+[
+  {
+    "id":"paper-reproduction",
+    "scope":"해설과 Lean 결과를 독립적으로 재현할 자료를 만든다.",
+    "assessor":"research_plan",
+    "criteria":["새 환경에서 Lean 결과를 재빌드했다.","해설의 가정과 선언 대응을 기록했다."],
+    "required_inputs":[],
+    "external_effects":[]
+  }
+]
 ```
+
+각 requirement는 고유한 `id`, 비어 있지 않은 `scope`, `assessor="research_plan"`, 중복 없는 비어 있지 않은 `criteria`를 요구한다. `required_inputs`는 정확한 입력 참조 목록이다. `external_effects`의 각 항목은 고유 `id`, `scope`, 선택적 `grant_id`를 가진다. 요구 목록을 바꾼 새 헌장은 새 판본과 내용 해시를 가지며 현재 해결 근거에 결박된 새 과제를 생성한다.
 
 각 requirement는 고유한 `id`, 비어 있지 않은 `scope`, `assessor="research_plan"`, 중복 없는 비어 있지 않은 `criteria`를 요구한다. `required_inputs`는 정확한 입력 참조 목록이다. `external_effects`의 각 항목은 고유 `id`, `scope`, 선택적 `grant_id`를 가진다. 요구 목록의 변경은 새 revision과 SHA-256을 만들고 현재 해결 근거에 결박된 새 과제를 생성한다.
 
@@ -545,7 +560,7 @@ retry는 알려진 `failed` 또는 `cancelled`만 받는다. 전송 가능성이
 {"operation":"attach","id":"conversation-1","generation":1,"disconnect_policy":"pause","lease_seconds":60}
 ```
 
-`generation`은 양의 정수이고, 재연결은 이전보다 큰 generation을 사용한다. `disconnect_policy`는 `pause` 또는 `continue_authorized`이며 `continue` 입력은 후자로 정규화된다. lease는 유한한 양수 초다.
+`generation`은 양의 정수이고, 재연결은 이전보다 큰 generation을 사용한다. `disconnect_policy`는 `pause` 또는 `continue_authorized`다. lease는 유한한 양수 초다.
 
 ```json
 {"operation":"heartbeat","id":"conversation-1","generation":1}
@@ -583,10 +598,11 @@ query --files [--snapshot OID] [--prefix research/|runtime/.../] [--text TEXT]
 ### `read`
 
 ```text
-read [--snapshot OID] (--id RECORD_ID | --path POSIX_PATH) [--output PATH]
+read [--snapshot OID] --id RECORD_ID
+read [--snapshot OID] --path POSIX_PATH [--output PATH]
 ```
 
-`--id`는 구조화 record와 정규 JSON hash를 반환한다. `--path`는 exact snapshot의 파일을 읽어 UTF-8이면 `text`, 아니면 `base64`로 반환한다. `--output`을 주면 바이트를 로컬 파일로 쓰고 path·snapshot·size를 반환한다.
+`--id`는 구조화 record와 정규 JSON hash를 반환한다. `--path`는 exact snapshot의 파일을 읽어 UTF-8이면 `text`, 아니면 `base64`로 반환한다. `--output`은 `--path`와 함께 사용할 때 바이트를 로컬 파일로 쓰고 path·snapshot·size를 반환한다. `--id`와 `--output`을 함께 쓰면 입력 오류다.
 
 ### `export`
 
@@ -753,7 +769,7 @@ relation 항목은 `kind`, `source`, `target`, `evidence`를 가진다. source�
 
 현재 확장 파일은 후보 과제의 발생 조건·의존·최초 관찰 규칙과 후보별 계약 자기점검 `contract_checks`, 부수 연구 통찰, 외부 행동 요청, 기존·신규 지식의 metadata와 관계, 검토 자리의 고정 질문, 관찰 규칙과 학술 외부 거부의 해소 근거를 전달한다. 예를 들어 새 knowledge의 `confirmed_scope`는 주 JSON의 유일한 title에 결박하고, 검토 보충 조사는 원 검토 자리의 질문 ID와 exact source references에 결박한다.
 
-`contract_checks`는 후보 준비가 후보마다 하나씩 제출하는 `{task_title, symbols, outcome_branches, sibling_boundaries}`다. 중앙 검사는 선언과 계약 문면을 대조하며, 선택적 로컬 검사도 같은 함수를 사용한다. 대조 항목은 기호의 중복 선언과 문면 부재, 서로 다른 결과 갈래 둘 이상과 의존 과제의 언급, 문면에 인용한 `TK-`·`KN-` 기록의 실재, 인용한 과제의 경계 선언과 현행 revision 일치, 개정 중인 과제에 달린 경계다. `budget_unit=concurrent_sessions`에서는 후보 전건에 필요하고 `execution_attempts` 호환 운전에서는 선택이다. 실행기는 이 선언을 생산 실행의 확장 기록으로 보존하며 과제 계약과 계약 검토 입력에는 넣지 않는다. 필드의 의미와 점검 순서는 후보 준비 계약을 따른다.
+`contract_checks`는 후보 준비가 후보마다 하나씩 제출하는 `{task_title, symbols, outcome_branches, sibling_boundaries}`다. 중앙 검사는 선언과 계약 문면을 대조하며, 선택적 로컬 검사도 같은 함수를 사용한다. 대조 항목은 기호의 중복 선언과 문면 부재, 서로 다른 결과 갈래 둘 이상과 의존 과제의 언급, 문면에 인용한 `TK-`·`KN-` 기록의 실재, 인용한 과제의 경계 선언과 현행 revision 일치, 개정 중인 과제에 달린 경계다. 후보 전건에 필요하다. 실행기는 이 선언을 생산 실행의 확장 기록으로 보존하며 과제 계약과 계약 검토 입력에는 넣지 않는다. 필드의 의미와 점검 순서는 후보 준비 계약을 따른다.
 
 `task_dispositions`는 후보 준비와 연구 계획이 AI 생성 미완료 과제를 철회하는 경로다. `{task_id, disposition:"withdraw", reason}`를 받으며 입력 스냅샷의 계약 해시·생성 계보·현재 상태·실행 부재를 검사한다. 부분 결과는 보존하고 `closed` 처분과 제거한 미시작 요청을 기록한다. 완료·닫힘·수행 중 과제나 사용자 학술 요구에는 적용하지 않는다. 전체 의미와 예시는 공통 실행 문서를 따른다.
 
@@ -821,7 +837,7 @@ Lean source가 있는 knowledge candidate는 중앙 `formal_check` action으로 
 
 형식 검사가 사용자 pause·HOLD로 멈추면 프로세스 종료와 예약 반환 뒤 원 action·활동과 종료 execution의 계보를 남긴다. 정상 resume·release 뒤에는 동일한 소스·선언·신뢰 환경과 현재 허가를 다시 확인하여 새 execution으로 검사한다. 컴파일러의 중간 메모리를 복원하는 것은 아니다. 소스·환경·허가가 바뀌었거나 인스턴스가 닫혔으면 이 일시 정지 재개를 적용하지 않는다.
 
-작업자의 `formal_verifier.preview.command`는 `input/tools/check_lean.py`를 실행한다. `--source`와 반복 가능한 `--declaration`을 받고 JSON을 반환한다. `verified`이면 exit 0, 그 밖의 `rejected`, `failed`, `unavailable`, `stopped`는 exit 1이다. `authoritative=false`이며 성공한 검사의 해시는 읽은 UTF-8 소스 바이트에 결박된다. `submission-support.zip` 안의 같은 검증 코드와 입력의 구성 명령·허용 공리를 사용하고, 컴파일은 별도 임시 작업 폴더와 Windows Job에서 수행한다. 검사기는 호환용 `timeout_seconds`를 계산 시간 제한으로 사용하지 않는다. 다만 preview는 작업자의 로컬 Job 소유 범위에 속하므로 작업자의 기한·정지에 따라 함께 종료될 수 있다. 공유 라이브러리·Lake 프로젝트·빌드 캐시의 불변성이나 격리는 보증하지 않는다. 중앙 `formal_check`는 사전 검사 결과를 승계하지 않고 제출된 소스를 다시 검사한다.
+작업자의 `formal_verifier.preview.command`는 `input/tools/check_lean.py`를 실행한다. `--source`와 반복 가능한 `--declaration`을 받고 JSON을 반환한다. `verified`이면 exit 0, 그 밖의 `rejected`, `failed`, `unavailable`, `stopped`는 exit 1이다. `authoritative=false`이며 성공한 검사의 해시는 읽은 UTF-8 소스 바이트에 결박된다. `submission-support.zip` 안의 같은 검증 코드와 입력의 구성 명령·허용 공리를 사용하고, 컴파일은 별도 임시 작업 폴더와 Windows Job에서 수행한다. 다만 preview는 작업자의 로컬 Job 소유 범위에 속하므로 작업자의 기한·정지에 따라 함께 종료될 수 있다. 공유 라이브러리·Lake 프로젝트·빌드 캐시의 불변성이나 격리는 보증하지 않는다. 중앙 `formal_check`는 사전 검사 결과를 승계하지 않고 제출된 소스를 다시 검사한다.
 
 형식 검사를 통과하면 현재 CLI는 동일성 검토 계보의 initial 결과를 서로 숨긴 채 봉인한다. 전건 complete match이고 열린 finding이 없으면 직접 집계한다. 그 밖에는 organize, 독립 judge 세 자리, 원 initial 자리의 answer와 같은 judge의 재심을 `review_rounds` 안에서 수행한다. 보충 조사, 실행 미완료와 남은 쟁점은 같은 계보에 보존한다.
 
@@ -843,7 +859,7 @@ initial 결과는 서로 숨긴 채 봉인한다. 열린 finding이 있으면 or
 
 두 역할의 `task_catalog`는 현재 과제 전건의 요약과 각 과제의 고정 `source_ref`를 제공한다. `tasks`는 후보 준비나 계획의 현재 처분 모집단으로 제한된다. 종료 과제의 `results[].report`와 미종결 과제의 현행 계약이 필요하면 `task_catalog`에서 원문을 연다. `ongoing_work`는 미종결 실행과 대기 행동의 대상·단계·이유·공개 참조를 직접 제공한다. 이 두 조회 경로는 `ready_task_ids`의 선택 권한을 늘리지 않는다.
 
-초기화 관문을 모두 통과하면, 현재 지식 기록이 있는 경우 최초 연구 계획을, 없는 경우 최초 후보 준비를 연다. 활성 인스턴스에서 학술 요구를 포함한 헌장 변경이 적용되면 그 결정의 사건과 현재 기록을 다음 계획·준비에 전달한다. 일반 계획은 배정 후보가 없어도 변경된 요구와 부족한 입력을 판단할 수 있다. 기존 기록을 개정하지 않는 준비와 계획은 병렬로 진행할 수 있으며, 실제 개정 중인 기록의 독자는 해당 개정의 종료를 기다린다. 과거 입력에 남은 `initial_preparation_wait`는 현행 배정 조건으로 사용하지 않는다.
+초기화 관문을 모두 통과하면, 현재 지식 기록이 있는 경우 최초 연구 계획을, 없는 경우 최초 후보 준비를 연다. 활성 인스턴스에서 학술 요구를 포함한 헌장 변경이 적용되면 그 결정의 사건과 현재 기록을 다음 계획·준비에 전달한다. 일반 계획은 배정 후보가 없어도 변경된 요구와 부족한 입력을 판단할 수 있다. 기존 기록을 개정하지 않는 준비와 계획은 병렬로 진행할 수 있으며, 실제 개정 중인 기록의 독자는 해당 개정의 종료를 기다린다.
 
 이력과 다른 큰 입력은 `input/catalog/` 원문으로 바뀔 수 있으며 source reference에서 다시 읽는다. 최근 이력의 inline window가 작다는 사실은 과거 결과가 없다는 뜻이 아니다.
 
@@ -905,7 +921,7 @@ Claude의 원본 `stream-json`은 그대로 보존한다. 수신자는 같은 �
 
 `lineage_id`는 같은 의무의 수리·재시도를 연결한다. `refresh`는 전제 변경과 원 실행을, `recovery`는 복구할 원 실행을 식별한다. 결과 구성원을 기계가 임의로 잘라 적용하지 않고 생산자가 선언한 편입 묶음마다 원자적으로 검사·적용한다. 일반 `research_work`·`supplemental_research` 이외의 역할, 검토 회차에 속한 보충 조사, 기존 기록의 개정을 배정받은 수행은 전체 주 응답·확장이 한 묶음이다. 원 응답·파일·체크포인트와 실패 이력은 보존한다.
 
-`question_links`는 원문 위치·발생 실행·owner(user/research/operations/unclassified)·영향 대상·status(open/resolved/superseded)·해소 근거다. 주 응답의 `questions` 문자열 형식은 유지한다. 입력 명령의 `--responds-to <QU-ID>`는 반복할 수 있고 원문과 함께 보존된다. 독립 의도 대조의 `confirmed_question_ids`가 실제 답변을 확인한 뒤 해당 질문만 해소한다. 구조화 결정은 `resolves_questions`를 사용할 수 있으며 결정의 영향 대상과 질문 대상을 검사한다. 명시적인 답변 결정은 `{"kind":"question_answer","text":"사용자 답변","resolves_questions":["QU-..."]}`다. 질문 해소가 grant나 수학 승인을 대신하지 않는다.
+`question_links`는 원문 위치·발생 실행·owner(user/research/operations/unclassified)·영향 대상·status(open/resolved/superseded)·해소 근거다. 주 응답의 `questions` 문자열 형식은 유지한다. 입력 명령의 `--responds-to <QU-ID>`는 반복할 수 있고 원문과 함께 보존된다. 독립 의도 대조의 `confirmed_question_ids`가 실제 답변을 확인한 뒤 해당 질문만 해소한다. 구조화 결정은 `resolves_questions`를 사용할 수 있으며 결정의 영향 대상과 질문 대상을 검사한다. 명시적인 답변 결정은 `{"kind":"question_answer","text":"사용자 답변","resolves_questions":["QU-..."],"target_ids":["실제-미해소-대상-ID"]}`다. `target_ids`는 비어 있지 않은 목록이며, 열거한 각 질문의 `unresolved_target_ids`(그 필드가 없으면 `target_ids`) 중 이번 답으로 실제 해소하는 대상만 넣는다. 서로 다른 대상 집합의 질문은 각각 답한다. 질문 해소가 grant나 수학 승인을 대신하지 않는다.
 
 `claude_only_assigned_model=false`가 기본이다. true인 인스턴스의 Claude 호출은 전체 모델 ID를 내부 보조·fallback 설정에도 고정하고 보고 모델을 대조한다. 모든 역할을 자동으로 Claude로 선택하는 옵션은 아니다. 단일 모델 연구는 등급·실제 역할과 실패 시 복구 모델의 배정도 같은 모델인지 확인해야 한다. 정상 예약 감독은 모델을 호출하지 않는다. 다른 인스턴스의 정책은 바뀌지 않는다.
 

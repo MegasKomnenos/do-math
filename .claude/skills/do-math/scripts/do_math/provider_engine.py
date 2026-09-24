@@ -94,7 +94,7 @@ class ProviderEngineMixin:
         """
         slots = self._provider_slots()
         admitted = slots.acquire(execution_id, pool, model, profile=profile, execution=execution,
-                                 provider=provider_for(model), enforce_capacity=True)
+                                 provider=provider_for(model))
         if not admitted:
             action['dispatch_wait'] = deepcopy(slots.admission_wait)
             if slots.admission_reason == 'provider_limit':

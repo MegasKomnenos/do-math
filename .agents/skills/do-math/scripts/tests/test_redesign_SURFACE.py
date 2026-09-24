@@ -75,7 +75,7 @@ def archived_run(root):
 class SurfaceRedesignTests(unittest.TestCase):
     def test_checker_sees_canonical_catalog_beyond_direct_comparison(self):
         from test_redesign_TASKS import task, disposition
-        from v5_fixtures import assessment, candidate
+        from research_fixtures import assessment, candidate
         from test_contract_checks import checks
         from do_math.submission import contract_check_errors
         from do_math.planning import validate_plan_submission
@@ -218,7 +218,7 @@ class SurfaceRedesignTests(unittest.TestCase):
             root=Path(directory); repository=root/'repo'; repository.mkdir()
             subprocess.run(['git','-C',str(repository),'init','-q'],check=True)
             created=initialize(repository,goal='Preserve resume evidence',workspace=root/'work',
-                               config={'operator_enabled':False,'scholarly_enabled':False,'session_limits':None})
+                               config={'operator_enabled':False,'scholarly_enabled':False,})
             engine=ResearchEngine(repository,created['instance_id'])
             raw=b'ancestral evidence'; ref='runtime/artifacts/EX-a/lemma.txt'
             newer=b'latest lemma'; latest_ref='runtime/artifacts/EX-b/lemma.txt'
@@ -227,7 +227,7 @@ class SurfaceRedesignTests(unittest.TestCase):
                 'runtime/artifacts/EX-a/result.json':b'{"stage":"EX-a"}',
                 'runtime/artifacts/EX-b/result.json':b'{"stage":"EX-b"}'}
             with engine.store.writer_lock():
-                engine.head=engine.store.save(engine.head,engine.instance,engine.runtime,artifacts=artifacts)
+                engine.head=engine.store.save_with_state(engine.head,engine.instance,engine.runtime,artifacts=artifacts)[0]
             def entry(path, artifact_ref):
                 data=artifacts[artifact_ref]
                 return {'path':path,'artifact_ref':artifact_ref,'sha256':hashlib.sha256(data).hexdigest(),'bytes':len(data)}
@@ -517,7 +517,7 @@ class SurfaceRedesignTests(unittest.TestCase):
             runtime = {'feature_version': 5, 'executions': {}, 'activities': {}}
             head = repository.initialize(instance, runtime)
             run, state, archive, _ = archived_run(root / 'work')
-            archived = repository.save(head, instance, runtime, artifacts=archive)
+            archived = repository.save_with_state(head, instance, runtime, artifacts=archive)[0]
             execution = state['executions']['EX-1']
             execution['termination']['snapshot'] = archived
             for row in execution['collection']['retention_manifest']: row['snapshot'] = archived

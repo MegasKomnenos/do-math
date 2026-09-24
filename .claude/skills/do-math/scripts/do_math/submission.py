@@ -68,7 +68,7 @@ def read_sealed_submission(execution: dict, snapshot: str, read_artifact):
         if entry and entry.get("bytes") != len(raw):
             raise SealedSubmissionError(f"execution {identifier}: sealed {field} size differs at {path}")
         try:
-            result[name] = load_json(raw)
+            result[name] = load_extensions(raw) if name == "extensions" else load_json(raw)
         except (ValueError, TypeError) as error:
             raise SealedSubmissionError(f"execution {identifier}: invalid sealed {field} JSON at {path}: {error}") from error
     check = result['check']
@@ -197,12 +197,16 @@ def load_json(raw: bytes):
     return value
 
 
-def read_extensions(workspace: Path) -> dict:
-    path = _safe_path(workspace, "activity-extensions.json")
-    value = load_json(path.read_bytes()) if path.exists() else {}
+def load_extensions(raw: bytes):
+    value = load_json(raw)
     if isinstance(value, dict):
         return {key: items for key, items in value.items() if items != [] or key not in EXTENSION_ROLES}
     return value
+
+
+def read_extensions(workspace: Path) -> dict:
+    path = _safe_path(workspace, "activity-extensions.json")
+    return load_extensions(path.read_bytes()) if path.exists() else {}
 
 
 def reported_references(output: dict, extensions: dict, context: dict | None = None) -> list[str]:
@@ -1435,7 +1439,7 @@ def seal_submission(workspace, draft=None, *, execution_id, context, schema, max
         extension_raw = collected["files"].get("activity-extensions.json", canonical_json({}))
         phase = 'parse'
         output = load_json(raw)
-        extensions = load_json(extension_raw)
+        extensions = load_extensions(extension_raw)
         phase = 'check'
         check = check_submission(output, schema, context, extensions, workspace, mode="receiver",
             execution_id=execution_id, tool_sha256=context["submission_contract"]["tool_sha256"],

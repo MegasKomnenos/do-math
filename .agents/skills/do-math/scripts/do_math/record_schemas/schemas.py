@@ -48,7 +48,9 @@ RECORDS["knowledge"] = record({**COMMON,
     "kind": TEXT, "title": TEXT, "lifecycle": LIFECYCLE, "formal_result_id": nullable(ID), "exposition_id": ID,
     "dependencies": REFS, "source_refs": array(TEXT), "source_basis": HISTORY, "confirmed_scope": TEXT,
     "epistemic_status": TEXT, "selection_relevance": TEXT, "uncertainty_assessment": {"type": ["string", "object"]},
-    "relation_claim": EVIDENCE, "relation_endpoint_basis": EVIDENCE, "revision": NAT,
+    "relation_claim": EVIDENCE,
+    "relation_endpoint_basis": array(obj({"id": ID, "sha256": HASH, "status": TEXT}, ("id", "sha256", "status"))),
+    "revision": NAT,
     "review_cycle_id": ID, "previous_review_cycle_id": ID, "use_suspended": BOOL,
     "change_reasons": HISTORY, "impact_plan": EVIDENCE,
     "withdrawal_reason": TEXT, "withdrawn_by": TEXT}, ("lifecycle", "exposition_id", "formal_result_id"))
@@ -162,8 +164,7 @@ RECORDS["grants"] = record({"kind": enum("local", "http"), "status": enum("activ
     "credential_env": {"type": "object", "additionalProperties": TEXT}, "allow_idempotent_retry": BOOL,
     "included_targets": REFS, "excluded_targets": REFS, "reuse": TEXT}, ("kind", "status", "source_ref"))
 RECORDS["decisions"] = record({"kind": TEXT, "change": EVIDENCE, "source_ref": TEXT, "actor": {"const": "user"},
-    # Historical marker remains readable; v5 producers no longer create it.
-    "created_at": TEXT, "affected": REFS, "requirements_revision": NAT, "initial_registration": BOOL,
+    "created_at": TEXT, "affected": REFS, "initial_registration": BOOL,
     "grant_id": ID, "delegation_id": ID}, ("kind", "change", "source_ref", "actor", "affected"))
 RECORDS["delegations"] = record({"status": enum("active", "revoked", "withdrawn"), "decision_kind": TEXT,
     "original_decision_id": ID, "included_targets": REFS, "excluded_targets": REFS, "external_effects": array(TEXT),

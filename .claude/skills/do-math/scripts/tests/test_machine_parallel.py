@@ -209,7 +209,8 @@ class MachineSchedulerTests(unittest.TestCase):
         def verify(**args):
             args['on_started']({'job_name': 'synthetic-owned-job'})
             while not args['should_stop'](): time.sleep(.01)
-            return {'status': 'stopped', 'reason': 'owner stopped', 'stdout': 'preserved evidence'}
+            return {'status': 'stopped', 'reason': 'owner stopped',
+                    'stdout': b'preserved evidence\xff', 'usage': {'cost_usd': 0.25}}
         host.formal_verifier = verify
         def control():
             if any(e.get('process') for e in host.runtime['executions'].values()):
@@ -221,7 +222,11 @@ class MachineSchedulerTests(unittest.TestCase):
         self.assertEqual(formal['status'], 'ended')
         self.assertEqual(formal['capacity']['local_termination'], 'confirmed')
         self.assertEqual(host.identity_reviews, [])
-        self.assertTrue(any('preserved evidence' in raw.decode() for raw in host.saves[-1]['artifacts'].values()))
+        import base64
+        import json
+        preserved = json.loads(host.saves[-1]['artifacts'][formal['result_ref']])
+        self.assertEqual(base64.b64decode(preserved['stdout']['base64']), b'preserved evidence\xff')
+        self.assertEqual(preserved['usage']['cost_usd'], {'reported_decimal': '0.25'})
         self.assertEqual(host.runtime['waiting_actions'][formal['action']['id']]['kind'], 'execution_failure')
         self.assertFalse(any(a.get('id') == formal['action']['id'] for a in host.runtime['queue']))
         self.assertTrue(any(a['role'] == 'operational_review' and a.get('target') == formal['id'] for a in host.runtime['queue']))

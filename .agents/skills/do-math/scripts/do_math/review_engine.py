@@ -281,12 +281,6 @@ class ReviewEngineMixin:
                 'transition_id': transition_id, 'knowledge_id': knowledge_id,
                 'transition_basis': cycle['staged_candidate']['transition_basis']}
 
-    def _review_call_budget_available(self, required):
-        config = self.instance['config']
-        if config.get('session_limits') is not None or config.get('work_calls') is None:
-            return True
-        used = sum(row.get('budget_kind') == 'work' for row in self.runtime.get('executions', {}).values())
-        return self._budget_available('work', used, required)
 
     def _admit_review_execution(self, action, execution):
         """Reserve an actual AI attempt before runner start; ENGINE owns registration."""
@@ -343,10 +337,8 @@ class ReviewEngineMixin:
                 len(cycle['retained_reviewer_slots'])), cycle['max_rounds'], len(used) + 1)
             if required > limit:
                 return {**outcome, 'disposition': 'review_scope_unaffordable', 'minimum_required': required}
-        if action.get('role') != 'identity_review' and (len(used) + 1 + len(reserved) > limit
-                or not self._review_call_budget_available(1 + len(reserved))):
-            return {**outcome, 'disposition': 'review_followup_reserved',
-                    'global_budget_available': self._review_call_budget_available(1 + len(reserved))}
+        if action.get('role') != 'identity_review' and (len(used) + 1 + len(reserved) > limit):
+            return {**outcome, 'disposition': 'review_followup_reserved'}
         if cycle.get('owner_activity_id') is None:
             cycle['owner_activity_id'] = owner
             cycle['review_input_basis'] = capture_review_input_basis(cycle)
@@ -639,10 +631,6 @@ class ReviewEngineMixin:
             return {'disposition': 'recovery_recorded',
                     'recovery': self._record_review_recovery(action, error, retryable=retryable)}
 
-    def _review_context(self, action, workspace: Path, *, sources=None):
-        """Compatibility adapter; ENGINE should consume `_prepare_review_context` directly."""
-        outcome = self._prepare_review_context(action, workspace, sources=sources)
-        return outcome["context"] if outcome["disposition"] == "ready" else {"review_recovery": outcome}
 
     def _review_replacement_authority(self, action, execution_id=None):
         if action.get('replacement_for') is None:
@@ -1129,8 +1117,7 @@ class ReviewEngineMixin:
         used = len(cycle['execution_accounting']['executions_used'])
         updated = defer_for_research(cycle, _action(action), output, requests, execution_id,
             limit=self.instance['config'].get('review_research_limit', 3),
-            budget_available=(used + len(requests) + len(reserved) <= cycle['activity_execution_limit']
-                              and self._review_call_budget_available(len(requests) + len(reserved))))
+            budget_available=(used + len(requests) + len(reserved) <= cycle['activity_execution_limit']))
         self.runtime['review_cycles'][action['review_cycle_id']] = updated
         self.runtime.get('review_inputs', {}).pop(_pending_key(action), None)
         self.runtime['queue'][:] = [queued for queued in self.runtime['queue'] if not (

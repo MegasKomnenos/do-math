@@ -183,7 +183,7 @@ class ObservationRedesignTests(unittest.TestCase):
             tracker_config(seal_profile(body), initial_self_check_rules=[rule()])
         body["observation"]["settings"] = {"tool_review_window_seconds": 60, "self_check_response_window_seconds": 5,
                                             "observation_interval_seconds": 300}
-        body["observation"]["rule_bindings"] = [{key: rule()[key] for key in ("operator", "subject", "basis")}]
+        body["observation"]["rule_bindings"] = observation_rule_contract()
         frozen = tracker_config(seal_profile(body), initial_self_check_rules=[rule()])
         self.assertEqual(frozen["tool_review_window_seconds"], 60)
         self.assertEqual(frozen["observation_profile_ref"]["revision"], 1)

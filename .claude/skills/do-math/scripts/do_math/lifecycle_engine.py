@@ -810,7 +810,6 @@ class LifecycleEngineMixin:
         now = self._lifecycle_now()
         if operation == 'attach':
             policy = config.get('disconnect_policy', self.instance.get('conversation_loss_policy'))
-            if policy == 'continue': policy = 'continue_authorized'
             if policy not in {'pause', 'continue_authorized'}:
                 raise ValueError('conversation loss policy requires an explicit user decision')
             if current and generation <= current['generation']:

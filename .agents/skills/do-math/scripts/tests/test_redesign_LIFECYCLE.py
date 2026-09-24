@@ -39,7 +39,7 @@ class FixtureEngine(LifecycleEngineMixin, GovernanceEngineMixin):
             workspace=Path(tempfile.gettempdir()), config={}, source_input='original request',
             created_at=self.current_time.isoformat())
         self.lifecycle_monotonic = lambda: 0.0
-        self._upgrade_runtime()
+        self._task_readiness = {}
 
     def _enqueue(self, role, target=None, **extra):
         self.runtime["queue"].append({"role": role, **({"target": target} if target else {}), **extra})
@@ -120,15 +120,12 @@ class FollowupTests(unittest.TestCase):
             goal_kind='mathematical', workspace=Path(tempfile.gettempdir()), config={},
             source_input='original', created_at=engine.current_time.isoformat())
         engine.lifecycle_monotonic = lambda: 0.0
-        engine._upgrade_runtime()
+        engine._task_readiness = {}
         return engine
 
-    def test_no_implicit_grants_and_no_legacy_upgrade(self):
+    def test_initialization_does_not_create_implicit_grants(self):
         engine = self.engine()
         self.assertEqual(engine.instance.get('grants'), {})
-        engine.instance['feature_version'] = engine.runtime['feature_version'] = 4
-        with self.assertRaises(ValueError):
-            engine._upgrade_runtime()
 
     def test_pause_resume_returns_to_initialization_and_requires_new_generation(self):
         engine = self.engine()
@@ -224,29 +221,6 @@ class ClockResolutionTests(unittest.TestCase):
         tick[0] = 2.
         engine.current_time += timedelta(seconds=1)
         self.assertEqual(engine._clock_guard()['reason'], 'live_monotonic_regression')
-
-
-class CapacityContractTests(unittest.TestCase):
-    def test_call_capacity_is_the_adopted_git_constraint_not_session_dict(self):
-        from copy import deepcopy
-        from do_math.engine import DEFAULT_CONFIG
-        from do_math.execution_profiles import build_profiles
-        from do_math.session_slots import GitSessionSlots
-        for maximum in (1, None):
-            with self.subTest(maximum=maximum):
-                config = deepcopy(DEFAULT_CONFIG)
-                config.update(session_limits=None, operations_calls=maximum)
-                instance, runtime = initialize_state(instance_id='RI-capacity', goal='G', goal_kind='mathematical',
-                    workspace=tempfile.gettempdir(), config=config, source_input='G')
-                instance.update(build_profiles(config))
-                self.assertNotIn('operations_capacity', activation_requirements(instance, runtime)['missing'])
-                if maximum is not None:
-                    profile = next(p for p in instance['execution_profiles'].values() if p['role']=='intent_interpretation')
-                    slots = GitSessionSlots(runtime, instance)
-                    execution = {'id':'EX-reserved', 'role':'intent_interpretation', 'status':'starting'}
-                    self.assertTrue(slots.acquire(execution['id'],'operations',profile['ai']['model'],
-                                                  profile=profile,execution=execution))
-                    self.assertIn('operations_capacity', activation_requirements(instance,runtime)['missing'])
 
 
 if __name__ == "__main__":

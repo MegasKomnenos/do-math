@@ -37,29 +37,6 @@ def route_failed_action(engine, action, execution_id, *, reason, front=False):
         engine._enqueue('operational_review', execution_id, front=front, reason=reason)
 
 
-def reroute_initial_failures(engine):
-    """Replace only unstarted legacy diagnoses of a current initial failure."""
-    if engine.instance.get('lifecycle', {}).get('state') != 'initializing':
-        return
-    live = {row.get('action', {}).get('id') for row in engine.runtime['executions'].values()
-            if row.get('status') != 'ended'}
-    for wait in engine.runtime.get('waiting_actions', {}).values():
-        action = wait.get('action', {})
-        if action.get('role') != 'intent_interpretation' or wait.get('kind') not in {
-                'execution_failure', 'submission_failure', 'output_validation'}:
-            continue
-        if wait.get('failure_kind') == 'provider_limit':
-            continue
-        obsolete = [row for row in engine.runtime['queue'] if row.get('role') == 'operational_review'
-                    and row.get('target') == wait.get('execution_id') and row.get('id') not in live]
-        if not obsolete or engine.runtime['executions'].get(wait.get('execution_id'), {}).get('status') != 'ended':
-            continue
-        engine.runtime['queue'][:] = [row for row in engine.runtime['queue'] if row not in obsolete]
-        engine.runtime['history'].append({'kind': 'initial_diagnosis_rerouted',
-            'execution_id': wait['execution_id'], 'superseded_requests': deepcopy(obsolete)})
-        route_failed_action(engine, action, wait['execution_id'], reason='Diagnose the preserved initial execution failure')
-
-
 def route_submission_return(engine, action, received, execution_id, output, *, rejected_submission=None):
     """Keep a bounded producer repair, then diagnose the preserved actual error."""
     retry = {**deepcopy(action), 'continuation_of': execution_id,

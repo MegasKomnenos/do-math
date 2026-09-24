@@ -51,7 +51,7 @@ class AuditRepairTests(unittest.TestCase):
         return submission.producer_check(self.workspace, self.draft)
 
     def test_wire_candidate_id_revision_and_profiles_match_stored_contract(self):
-        from v5_fixtures import candidate
+        from research_fixtures import candidate
         wire = candidate()
         wire["profile_refs"] = [{"id": "EP-test", "revision": 1, "sha256": "a" * 64}]
         original = deepcopy(wire)
@@ -425,10 +425,10 @@ class ImpactReviewTests(unittest.TestCase):
             artifacts = {"runtime/artifacts/BA-review-input/input/submission/context.json": canonical_json(fixed),
                          **{"runtime/artifacts/BA-review-output/" + path: raw
                             for path, raw in sealed["artifacts"].items()}}
-            head = repo.save(head, self.instance, self.runtime, artifacts=artifacts)
+            head = repo.save_with_state(head, self.instance, self.runtime, artifacts=artifacts)[0]
             def publish(i, r, bundle):
                 nonlocal head
-                head = repo.save(head, i, r)
+                head = repo.save_with_state(head, i, r)[0]
             def validate(i, r, bundle):
                 repo.validate_candidate(i, r, head)
             def accept_review(i, r, bundle):
@@ -711,7 +711,7 @@ class ContractBoundaryTests(unittest.TestCase):
             head = repo.initialize(instance, runtime)
             def publish(i, r, bundle):
                 nonlocal head
-                head = repo.save(head, i, r)
+                head = repo.save_with_state(head, i, r)[0]
             def apply(i, r, bundle):
                 for record in bundle["output"]["knowledge"]:
                     updated, running, _ = knowledge_io.import_candidate(i, r, record,

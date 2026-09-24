@@ -37,6 +37,24 @@ class Tests(unittest.TestCase):
     def due(self, **event):
         return next(r for r in self.t.observe({"type": "tick", "counters": {"attempts": 2}, **event}) if r["kind"] == "self_check_due")
 
+    def test_repeated_checkpoint_reads_reuse_schema_but_recheck_value_and_evidence(self):
+        import jsonschema
+        self.write()
+        validator = jsonschema.validators.validator_for(observations.CHECKPOINT_SCHEMA)
+        with patch.object(validator, "check_schema", wraps=validator.check_schema) as checks:
+            for _ in range(20):
+                self.assertEqual(observations.read_checkpoint(self.ws)["status"], "valid")
+            self.write(progress_state="invented")
+            self.assertEqual(observations.read_checkpoint(self.ws)["status"], "invalid")
+            self.write(evidence_paths=["proof.txt"])
+            self.assertEqual(observations.read_checkpoint(self.ws)["status"], "invalid")
+            proof = self.ws / "proof.txt"
+            proof.write_bytes(b"current evidence")
+            self.assertEqual(observations.read_checkpoint(self.ws)["status"], "valid")
+            proof.unlink()
+            self.assertEqual(observations.read_checkpoint(self.ws)["status"], "invalid")
+        self.assertLessEqual(checks.call_count, 1)
+
     def test_checkpoint_requires_available_preserved_evidence_paths(self):
         self.write(evidence_paths=["proof.txt"])
         self.assertEqual(observations.read_checkpoint(self.ws)["status"], "invalid")

@@ -12,7 +12,7 @@ import unittest
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from do_math import execution_profiles as profiles
 from do_math.scheduler import SchedulerMixin
-from do_math.session_slots import GitSessionSlots
+from do_math.session_slots import SessionSlots
 from test_host_resources import fixture
 
 
@@ -47,7 +47,7 @@ class MachineSchedulingTests(unittest.TestCase):
             {'jobs':1,'memory_bytes':128*1024**2,'cpu_rate_basis_points':2000})
         instance['execution_profiles'].update({p['id']:p for p in (big,small)})
         runtime={'tasks':{},'executions':{},'reservations':{}}
-        slots=GitSessionSlots(runtime,instance)
+        slots=SessionSlots(runtime,instance)
         held=selected['research_work']
         self.assertTrue(slots.acquire('EX-held',held['budget_kind'],held['ai']['model'],
             profile=held,execution={'id':'EX-held','role':'research_work','status':'queued'}))

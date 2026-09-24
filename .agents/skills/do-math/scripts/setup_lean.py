@@ -33,8 +33,6 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--inspect-only', action='store_true', help='observe an installed command without installing or adopting it')
     parser.add_argument('--command-file', type=Path, help='UTF-8 JSON object with lean_command argv; requires --inspect-only')
-    parser.add_argument("--smoke-timeout", type=int, default=None,
-                        help="legacy option, ignored; Lean runs to completion")
     args = parser.parse_args()
     if args.command_file and not args.inspect_only:
         parser.error('--command-file requires --inspect-only')
@@ -44,7 +42,7 @@ def main():
         if not command:
             parser.error('Lean was not found; supply --command-file')
         with tempfile.TemporaryDirectory() as directory:
-            observed = inspect_toolchain(command, Path(directory), args.smoke_timeout)
+            observed = inspect_toolchain(command, Path(directory))
         print(json.dumps({'status':'observed', 'lean_command':command, 'toolchain':observed}))
         return
     root = toolchain_root()
@@ -81,7 +79,7 @@ def main():
         raise SystemExit("import Mathlib compilation failed; the environment is not selected")
     marker.write_text(LEAN_VERSION, encoding="utf-8")
     with tempfile.TemporaryDirectory() as directory:
-        observed = inspect_toolchain(command, Path(directory), args.smoke_timeout)
+        observed = inspect_toolchain(command, Path(directory))
     print(json.dumps({"status": "ready", "lean_command": command, 'toolchain': observed}))
 
 

@@ -17,7 +17,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from test_categories import test_group as category
 from do_math import execution_profiles as profiles
-from do_math.session_slots import GitSessionSlots
+from do_math.session_slots import SessionSlots
 from do_math.windows_job import WindowsJob
 from test_redesign_PROFILES import CONFIG
 
@@ -61,7 +61,7 @@ class HostReservations(unittest.TestCase):
     def test_work_operations_machine_share_capacity_and_preserve_control(self):
         instance, selected, constraint = fixture()
         runtime = {"executions": {}, "reservations": {}}
-        slots = GitSessionSlots(runtime, instance)
+        slots = SessionSlots(runtime, instance)
         for n, role in enumerate(selected):
             accepted, execution = self.admit(slots, "EX-" + str(n), selected[role])
             self.assertTrue(accepted)
@@ -97,7 +97,7 @@ class HostReservations(unittest.TestCase):
                     {"jobs": 1, "memory_bytes": 128 * 1024**2, "cpu_rate_basis_points": 2000})
                 instance["execution_profiles"][p["id"]] = p
                 runtime = {"executions": {}, "reservations": {}}
-                slots = GitSessionSlots(runtime, instance)
+                slots = SessionSlots(runtime, instance)
                 before = deepcopy(runtime)
                 self.assertFalse(self.admit(slots, "EX-refused", p)[0])
                 self.assertEqual(runtime, before)
@@ -108,13 +108,13 @@ class HostReservations(unittest.TestCase):
         self.assertIsNone(profiles.job_resource_limits(p))
         self.assertEqual(p["host_capacity_status"], "unmeasured_not_enforced")
         runtime = {"executions": {}, "reservations": {}}
-        self.assertTrue(self.admit(GitSessionSlots(runtime, instance), "EX-machine", p)[0])
+        self.assertTrue(self.admit(SessionSlots(runtime, instance), "EX-machine", p)[0])
         self.assertEqual(runtime["reservations"], {})
 
     def test_other_host_refused_and_unknown_termination_retains_reservations(self):
         instance, selected, _ = fixture()
         runtime = {"executions": {}, "reservations": {}}
-        slots = GitSessionSlots(runtime, instance)
+        slots = SessionSlots(runtime, instance)
         with patch("platform.node", return_value="different-host"):
             with self.assertRaisesRegex(ValueError, "host"):
                 self.admit(slots, "EX-wrong", selected["formal_check"])
@@ -137,7 +137,7 @@ class HostReservations(unittest.TestCase):
             store = GitStateStore(directory, "RI-00000000000000000000000000")
             head = store.publish(None, {"research/approval.json": canonical_json(instance),
                 "runtime/initial.json": b"{}"}).head
-            slots = GitSessionSlots(runtime, instance)
+            slots = SessionSlots(runtime, instance)
             for index, role in enumerate(selected):
                 eid = "EX-" + str(index)
                 self.assertTrue(self.admit(slots, eid, selected[role])[0])
@@ -162,7 +162,7 @@ class HostReservations(unittest.TestCase):
     def test_old_profile_editions_do_not_open_an_independent_host_pool(self):
         instance, selected, constraint = fixture()
         runtime = {"executions": {}, "reservations": {}}
-        slots = GitSessionSlots(runtime, instance)
+        slots = SessionSlots(runtime, instance)
         for n in range(3):
             self.assertTrue(self.admit(slots, "EX-" + str(n), selected["formal_check"])[0])
         changed = profiles.host_constraint(host_id=constraint["host_id"],
@@ -179,16 +179,15 @@ class HostReservations(unittest.TestCase):
         unbound = next(p for p in instance["execution_profiles"].values() if not p.get("host_capacity_refs"))
         runtime = {"executions": {}, "reservations": {}}
         with self.assertRaisesRegex(ValueError, "current adopted host"):
-            self.admit(GitSessionSlots(runtime, instance), "EX-bypass", unbound)
+            self.admit(SessionSlots(runtime, instance), "EX-bypass", unbound)
         self.assertEqual(runtime, {"executions": {}, "reservations": {}})
 
-    def test_explicit_authoring_covers_every_role_without_dropping_call_mode(self):
+    def test_explicit_authoring_covers_every_capped_role(self):
         _, selected, constraint = fixture()
         bare = profiles.build_profiles(CONFIG)
         demands = {p["role"]: {"jobs": 1, "memory_bytes": 128*1024**2, "cpu_rate_basis_points": 1000}
-                   for p in bare["execution_profiles"].values()}
-        config = {**CONFIG, "session_limits": None, "model": "gpt-5.6-sol", "role_models": {},
-                  "work_calls": 2, "operations_calls": 2,
+                   for p in bare["execution_profiles"].values() if p["role"] in profiles.HOST_ROLES}
+        config = {**CONFIG,
                   "host_resources": {"constraint": constraint, "demands_by_role": demands}}
         instance = profiles.build_profiles(config)
         self.assertEqual(instance["host_capacity_ref"], constraint["id"])
@@ -196,11 +195,11 @@ class HostReservations(unittest.TestCase):
                             else [constraint["id"]]) for p in instance["execution_profiles"].values()))
         p = next(p for p in instance["execution_profiles"].values() if p["role"] == "research_work")
         runtime = {"executions": {}, "reservations": {}}
-        slots = GitSessionSlots(runtime, instance)
+        slots = SessionSlots(runtime, instance)
         for n in range(2):
             self.assertTrue(self.admit(slots, "EX-call-" + str(n), p)[0])
             self.assertTrue(slots.release("EX-call-" + str(n)))
-        self.assertFalse(self.admit(slots, "EX-call-extra", p)[0])
+        self.assertTrue(self.admit(slots, "EX-call-extra", p)[0])
         machine = next(p for p in instance["execution_profiles"].values() if p["role"] == "formal_check")
         self.assertTrue(self.admit(slots, "EX-machine", machine)[0])
         self.assertEqual({r["unit"] for r in runtime["reservations"].values() if r["owner_id"] == "EX-machine"},
@@ -215,7 +214,7 @@ class HostReservations(unittest.TestCase):
         instance["config"] = deepcopy(CONFIG)
         before = deepcopy(instance)
         with self.assertRaisesRegex(ValueError, "cannot drop"):
-            GitSessionSlots({}, instance).configure(CONFIG["session_limits"])
+            SessionSlots({}, instance).configure(CONFIG["session_limits"])
         self.assertEqual(instance, before)
 
     def test_legacy_host_capped_lean_profile_requires_replacement(self):
@@ -253,8 +252,8 @@ class HostRepositoryContract(unittest.TestCase):
             e["role"] = p["role"]
             assign_execution(runtime, "AT-host", e)
             with repo.writer_lock():
-                self.assertTrue(GitSessionSlots(runtime, instance).acquire(e["id"], p["budget_kind"], None, profile=p, execution=e))
-                head = repo.save(head, instance, runtime)
+                self.assertTrue(SessionSlots(runtime, instance).acquire(e["id"], p["budget_kind"], None, profile=p, execution=e))
+                head = repo.save_with_state(head, instance, runtime)[0]
             loaded_head, _, loaded = repo.load()
             self.assertEqual(loaded_head, head)
             self.assertEqual(loaded["executions"][e["id"]]["status"], "starting")
@@ -265,13 +264,13 @@ class HostRepositoryContract(unittest.TestCase):
                 import uuid
                 marker = Path(directory) / "user-started"
                 code = f"from pathlib import Path; Path({str(marker)!r}).write_text('ok')"
-                slots = GitSessionSlots(runtime, instance)
+                slots = SessionSlots(runtime, instance)
                 with WindowsJob([sys.executable, "-c", code], resource_limits=profiles.job_resource_limits(p),
                                 name="Local\\DoMath-test-" + uuid.uuid4().hex) as job:
                     with repo.writer_lock():
                         slots.started(e["id"], {**process_identity(job), "job_name": job.name,
                                                "host_resources": job.resource_usage()})
-                        head = repo.save(head, instance, runtime)
+                        head = repo.save_with_state(head, instance, runtime)[0]
                     self.assertFalse(marker.exists(), "user code must wait for the published identity")
                     job.resume()
                     self.assertTrue(job.wait(15))
@@ -281,9 +280,9 @@ class HostRepositoryContract(unittest.TestCase):
                         self.assertTrue(slots.release(e["id"]))
                         transition_execution(e, "stopping", at="2026-09-20T00:01:00Z", stop_phase="terminating")
                         transition_execution(e, "ended", at="2026-09-20T00:01:01Z", outcome="execution_incomplete")
-                        head = repo.save(head, instance, runtime)
+                        head = repo.save_with_state(head, instance, runtime)[0]
                         self.assertTrue(slots.release(e["id"], reason="repeat settlement"))
-                        self.assertEqual(repo.save(head, instance, runtime), head)
+                        self.assertEqual(repo.save_with_state(head, instance, runtime)[0], head)
                     _, _, after = repo.load()
                     self.assertTrue(all(row["reserved"] == row["returned"] for row in after["reservations"].values()))
 
@@ -374,7 +373,7 @@ class HostJobTests(unittest.TestCase):
         for outcome in ("creation_failure", "normal", "nonzero", "terminated", "setting_failure"):
             instance, selected, _ = fixture()
             runtime = {"executions": {}, "reservations": {}}
-            slots = GitSessionSlots(runtime, instance)
+            slots = SessionSlots(runtime, instance)
             p = selected["formal_check"]
             e = {"id": "EX-" + outcome, "role": p["role"], "status": "queued"}
             self.assertTrue(slots.acquire(e["id"], p["budget_kind"], None, profile=p, execution=e))

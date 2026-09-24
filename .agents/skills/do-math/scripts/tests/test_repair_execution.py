@@ -20,7 +20,7 @@ AT = "2026-09-20T00:00:00Z"
 class RepositoryHost:
     """Only the ENGINE save facade; all persistence/validation uses the real store."""
     def _save(self, artifacts=None):
-        self.head = self.store.save(self.head, self.instance, self.runtime, artifacts=artifacts)
+        self.head = self.store.save_with_state(self.head, self.instance, self.runtime, artifacts=artifacts)[0]
         self.head, self.instance, self.runtime = self.store.load(self.head)
 
 

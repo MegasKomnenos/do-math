@@ -14,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from do_math.external import execute_operation, prepare_operation
 from do_math.governance import apply_decision, authorize, interpretation_schema
-from do_math.academic import academic_status, set_requirements, solution_basis
+from do_math.academic import academic_status, solution_basis
 from do_math import governance as gov, questions
 from copy import deepcopy
 
@@ -246,9 +246,6 @@ class DomainGovernanceTests(unittest.TestCase):
         self.assertEqual(verdict["decision"],"satisfied")
         self.assertEqual(i["goal_status"],"unsolved")
 
-    def test_v5_requirement_edit_cannot_restore_parallel_authority(self):
-        i = self.initial()
-        with self.assertRaises(ValueError): set_requirements(i,[])
 
     def test_question_mixin_publishes_advice_without_global_wait_and_resolves_atomically(self):
         from do_math.question_engine import QuestionEngineMixin
@@ -452,10 +449,11 @@ class GovernanceRedesignTests(unittest.TestCase):
         self.assertEqual(result["waiting_reason"]["kind"], "credential_unavailable")
 
     def test_revocation_cancels_only_untransmitted_prepared_effects(self):
-        instance = {
-            "goal": "g", "goal_kind": "research", "goal_status": "unresolved", "policies": "p",
-            "grants": {"G": {"id": "G", "kind": "http", "status": "active", "allowed_origins": ["https://example.test"], "allowed_methods": ["POST"]}},
-        }
+        instance = {'id': 'I', 'governance_sources': {'user': gov.preserve_source(
+            'user', 'Authorize the HTTP grant, then revoke it.', origin='user')}}
+        instance, _, _ = apply_decision(instance, {}, {'kind': 'grant', 'grant': {
+            'id': 'G', 'kind': 'http', 'reuse': 'reusable', 'allowed_origins': ['https://example.test'],
+            'allowed_methods': ['POST'], 'allowed_path_prefixes': ['/submit'], 'credential_env': {}}}, source_ref='user')
         operation = self._operation()
         runtime = {"status": "ready", "tasks": {}, "queue": [], "executions": {}, "external_operations": {operation["id"]: operation}}
         _, updated, _ = apply_decision(instance, runtime, {"kind": "revoke", "grant_id": "G", "decision_id": "D"}, source_ref="user")
@@ -463,11 +461,15 @@ class GovernanceRedesignTests(unittest.TestCase):
         self.assertFalse(updated["external_operations"][operation["id"]]["transmitted"])
 
     def test_overlapping_grants_are_not_selected_by_identifier_order(self):
-        instance = {"grants": {
-            "A": {"id": "A", "kind": "local", "status": "active", "roles": ["research_work"], "task_ids": []},
-            "B": {"id": "B", "kind": "local", "status": "active", "roles": ["research_work"], "task_ids": []},
-        }}
-        decision = authorize(instance, {"role": "research_work"})
+        instance = {'id': 'I', 'governance_sources': {'user': gov.preserve_source(
+            'user', 'Authorize two reusable work grants.', origin='user')}}
+        runtime = {'tasks': {}, 'executions': {}, 'queue': []}
+        for identifier in ('A', 'B'):
+            instance, runtime, _ = apply_decision(instance, runtime, {'kind': 'grant', 'grant': {
+                'id': identifier, 'kind': 'local', 'reuse': 'reusable', 'roles': ['research_work'],
+                'budget_kind': 'work'}}, source_ref='user')
+        decision = authorize(instance, {'id': 'AC', 'role': 'research_work', 'budget_kind': 'work',
+                                        'actor_kind': 'ai'}, runtime=runtime)
         self.assertFalse(decision["allowed"])
         self.assertEqual(decision["reason"], "ambiguous current grants")
 
@@ -497,16 +499,12 @@ class GovernanceRedesignTests(unittest.TestCase):
         )
         self.assertFalse(denied["allowed"])
 
-    def test_research_goal_kind_cannot_claim_a_general_final_status(self):
-        instance = {"goal": "g", "goal_kind": "mathematical", "goal_status": "unresolved", "policies": "p"}
-        runtime = {"status": "ready", "tasks": {}, "queue": [], "executions": {}}
-        with self.assertRaisesRegex(ValueError, "mathematical"):
-            apply_decision(instance, runtime, {"kind": "goal", "goal": "a literature report", "goal_kind": "research"}, source_ref="user")
 
     def test_external_rejection_resolution_requires_a_current_structured_record(self):
-        instance = set_requirements({"goal_status": "mathematically_solved"}, [{
-            "id": "R", "scope": "s", "criteria": ["c"], "assessor": "research_plan",
-        }])
+        instance = {"goal_status": "mathematically_solved", "governance": {"CH": {
+            "id": "CH", "kind": "charter", "status": "active", "revision": 1,
+            "content": {"goal": "P", "academic_requirements": [{
+                "id": "R", "scope": "s", "criteria": ["c"], "assessor": "research_plan"}]}}}}
         basis = solution_basis("goal", [{"id": "K"}])
         runtime = {
             "tasks": {}, "academic_assessments": [],
@@ -554,7 +552,7 @@ class AcademicConsumerTests(unittest.TestCase):
              'record_hashes': {'CH1': gov.digest(record)}}, [record])
         from do_math.execution_profiles import build_profiles
         from do_math.engine import DEFAULT_CONFIG
-        config = {**deepcopy(DEFAULT_CONFIG), 'session_limits': None,
+        config = {**deepcopy(DEFAULT_CONFIG),
                   'tool_review_window_seconds': 60, 'self_check_response_window_seconds': 5}
         profile = next(p for p in build_profiles(config)['execution_profiles'].values()
                        if p['role'] == 'research_work')
@@ -574,7 +572,7 @@ class AcademicConsumerTests(unittest.TestCase):
     def reviewed(self):
         from do_math import planning, contracts
         h, task = self.generated()
-        from v5_fixtures import prepared_rule_conditions
+        from research_fixtures import prepared_rule_conditions
         action = next(a for a in h.runtime['queue'] if a.get('observation_rule_targets'))
         h.runtime['executions']['PREP'] = {'id': 'PREP', 'role': 'research_preparation', 'status': 'ended',
             'action': action, 'extensions': {'task_conditions': prepared_rule_conditions([task['id']])}}
@@ -853,7 +851,7 @@ class AuditRepairTests(unittest.TestCase):
         i['config'] = deepcopy(DEFAULT_CONFIG)
         output.update(questions=[], question_details=[], needs_clarification=False)
         output['import_units'][0].update(owner_kind='configuration', owner_ref='I', question_refs=[],
-            payload={'kind': 'configuration', 'config': {'work_calls': -1}})
+            payload={'kind': 'configuration', 'config': {'call_timeout_seconds': 0}})
         with self.assertRaises(ValueError): gov.prepare_import(i, rt, source, output, execution_id='E1', owner_handlers=handlers)
 
     def test_once_http_operation_and_its_execution_share_logical_case(self):

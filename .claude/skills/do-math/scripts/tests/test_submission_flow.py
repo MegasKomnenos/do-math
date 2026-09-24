@@ -52,6 +52,7 @@ class SubmissionFlowTests(unittest.TestCase):
         engine.store.read.side_effect = read
         engine._validate_bundle_current = lambda *args, **kwargs: None
         before = canonical_json(engine.runtime)
+        (workspace / 'activity-extensions.json').write_bytes(b'{"knowledge_changes": []}')
         preview = engine._preview_submission(execution, {'draft_path': 'draft.json'})
         self.assertTrue(preview['passed'], preview['issues'])
         self.assertEqual(canonical_json(engine.runtime), before)
@@ -242,6 +243,38 @@ class SubmissionFlowTests(unittest.TestCase):
         self.assertFalse(sealed["passed"])
         self.assertTrue(any(row["path"] == "output/used_sources/0" and "preserved workspace file" in row["message"]
                             for row in sealed["check"]["issues"]), sealed["check"]["issues"])
+
+    def test_empty_known_extension_is_normalized_at_capture_and_sealed_read(self):
+        raw = b'{ "knowledge_changes": [] }\r\n'
+        (self.workspace / "activity-extensions.json").write_bytes(raw)
+        producer = submission.producer_check(self.workspace, self.draft)
+        self.assertTrue(producer["passed"], producer["issues"])
+        sealed = submission.seal_submission(self.workspace, ".scratch/draft.json",
+            execution_id="EX-flow", context=self.context, schema=self.schema,
+            max_artifact_bytes=1024 * 1024)
+        self.assertTrue(sealed["passed"], sealed["check"]["issues"])
+        self.assertEqual(producer["input_hashes"], sealed["check"]["input_hashes"])
+        self.assertEqual(sealed["artifacts"]["extensions.json"], raw)
+        self.assertEqual(sealed["artifacts"]["files/activity-extensions.json"], raw)
+        prefix = "runtime/artifacts/BA-empty/"
+        artifacts = {prefix + name: data for name, data in sealed["artifacts"].items()}
+        intent = {**sealed["intent"], "output_ref": prefix + "output.json",
+                  "extensions_ref": prefix + "extensions.json", "check_ref": prefix + "check.json"}
+        receipt = {"state": "accepted", "execution_id": "EX-flow", "payload": {"submission_check": {
+            "artifacts": [{"path": path, "sha256": hashlib.sha256(data).hexdigest(), "bytes": len(data)}
+                          for path, data in artifacts.items()]}}}
+        recovered = submission.read_sealed_submission(
+            {"id": "EX-flow", "submission_intent": intent, "submission_receipt": receipt},
+            "fixed", lambda snapshot, path: artifacts[path])
+        self.assertEqual(recovered["extensions"], {})
+        for invalid in ({"unknown_family": []}, {"knowledge_changes": {}},
+                        {"knowledge_changes": [{"id": "KN-unavailable"}]}):
+            with self.subTest(invalid=invalid):
+                (self.workspace / "activity-extensions.json").write_bytes(canonical_json(invalid))
+                rejected = submission.seal_submission(self.workspace, ".scratch/draft.json",
+                    execution_id="EX-flow", context=self.context, schema=self.schema,
+                    max_artifact_bytes=1024 * 1024)
+                self.assertFalse(rejected["capture_eligible"])
 
     def test_central_candidate_rejects_malformed_draft_bytes(self):
         self.draft.write_bytes(b'{"summary":')

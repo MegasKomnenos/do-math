@@ -8,6 +8,21 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 
 class CentralGovernanceTests(unittest.TestCase):
+    def test_import_basis_tracks_replaced_grant_but_not_unrelated_grants(self):
+        from do_math import governance as gov
+        instance = {'id': 'RI-test', 'governance': {}, 'grants': {
+            'GR-old': {'id': 'GR-old', 'kind': 'local', 'status': 'active', 'roles': ['maintenance']},
+            'GR-other': {'id': 'GR-other', 'kind': 'local', 'status': 'active', 'roles': ['maintenance']}}}
+        output = {'import_units': [{'owner_ref': 'GR-new', 'payload': {
+            'kind': 'grant', 'grant': {'id': 'GR-new'}, 'replaces': ['GR-old']}}]}
+        original = gov._import_basis(instance, {}, output)
+        unrelated = deepcopy(instance)
+        unrelated['grants']['GR-other']['roles'].append('research_work')
+        self.assertEqual(gov._import_basis(unrelated, {}, output), original)
+        changed = deepcopy(instance)
+        changed['grants']['GR-old']['roles'].append('research_work')
+        self.assertNotEqual(gov._import_basis(changed, {}, output), original)
+
     def mixin(self):
         self.assertIsNotNone(importlib.util.find_spec('do_math.governance_engine'),
                              'No central governance consumer exists')
@@ -277,13 +292,9 @@ class PublicGitGovernanceTests(unittest.TestCase):
     def engine_type(self):
         from do_math.engine import ResearchEngine
         from do_math.governance_engine import GovernanceEngineMixin
-        if issubclass(ResearchEngine, GovernanceEngineMixin): return ResearchEngine
-        # Assemble the exact documented control hook until ENGINE lands its
-        # inheritance edit. Real public control(), writer lock and Git CAS run.
-        class AssembledEngine(GovernanceEngineMixin, ResearchEngine):
-            def _apply_extended_control(self, request):
-                return self._governance_control(request) or super()._apply_extended_control(request)
-        return AssembledEngine
+        self.assertTrue(issubclass(ResearchEngine, GovernanceEngineMixin),
+                        'The installed engine must own the governance transition')
+        return ResearchEngine
 
     def initialized(self, root, goal='User approves P'):
         import subprocess

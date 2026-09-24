@@ -22,7 +22,7 @@ from typing import Any
 
 from .events import EventPublisher
 from .git_store import GitStateStore, PhysicalBoundary
-from .state_contract import STATE_FORMAT_VERSION, STATE_CONTRACT_ID, SCHEMA_VERSION, StateContract, default_state_contract
+from .state_contract import STATE_CONTRACT_ID, StateContract, default_state_contract
 
 
 class RepositoryCursorError(ValueError):
@@ -54,14 +54,9 @@ def canonical_json(value: Any) -> bytes:
     return (json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2, allow_nan=False) + "\n").encode("utf-8")
 
 
-def lossless_json(value: Any) -> bytes:
-    """Compatibility name for the exact canonical JSON representation."""
-    return canonical_json(value)
-
-
 def exact_content_hash(value: Any) -> str:
     """Identity of an exact logical payload, not a file or semantic projection."""
-    return hashlib.sha256(lossless_json(value)).hexdigest()
+    return hashlib.sha256(canonical_json(value)).hexdigest()
 
 
 class ResearchRepository:
@@ -87,8 +82,6 @@ class ResearchRepository:
     def _read_documents(self, head):
         """Validate one snapshot and retain its exact non-artifact file bytes."""
         paths = self._store._tree_paths(head)
-        if {"research/instance.json", "runtime/state.json"} & paths:
-            raise ValueError("legacy two-root state is not a version-five snapshot")
         # Sealed artifacts are not parsed or loaded just to reconstruct state.
         files = self._store.read_many(head, sorted(p for p in paths if not p.startswith("runtime/artifacts/")))
         instance, runtime, descriptors = _decode_families(files, self.contract, self._store.object_format)
@@ -118,12 +111,6 @@ class ResearchRepository:
         runtime = deepcopy(runtime)
         validate_storage_value(instance)
         validate_storage_value(runtime)
-        for state in (instance, runtime):
-            if state.get("feature_version") != STATE_FORMAT_VERSION:
-                raise ValueError("storage requires feature_version 5")
-            if state.get("contract_id", STATE_CONTRACT_ID) != STATE_CONTRACT_ID:
-                raise ValueError("unsupported persisted state contract")
-            state["contract_id"] = STATE_CONTRACT_ID
         if instance.get("object_format", self._store.object_format) != self._store.object_format:
             raise ValueError("persisted object_format differs from Git")
         instance["object_format"] = self._store.object_format
@@ -183,9 +170,6 @@ class ResearchRepository:
         published = self._store.publish(expected_head, changes)
         return published.head, candidate["instance"], candidate["runtime"]
 
-    def save(self, expected_head, instance, runtime, *, artifacts=None):
-        """Publish a valid state and retain the historical head-only interface."""
-        return self.save_with_state(expected_head, instance, runtime, artifacts=artifacts)[0]
 
     @staticmethod
     def _snapshot_artifacts(artifacts):
@@ -460,7 +444,7 @@ def _validate_prefix(prefix: str) -> str:
 
 
 def _encode_cursor(value: Mapping[str, str]) -> str:
-    return base64.urlsafe_b64encode(lossless_json(dict(value))).decode("ascii").rstrip("=")
+    return base64.urlsafe_b64encode(canonical_json(dict(value))).decode("ascii").rstrip("=")
 
 
 def _decode_cursor(cursor: str) -> dict[str, Any]:
@@ -529,8 +513,7 @@ def _record_path(root, name, identifier):
 
 
 def _envelope(family, value):
-    return {"contract_id": STATE_CONTRACT_ID, "schema_version": SCHEMA_VERSION,
-            "family": family, "record": value}
+    return {"contract_id": STATE_CONTRACT_ID, "family": family, "record": value}
 
 
 def _encode_families(instance, runtime, contract, object_format):
@@ -581,14 +564,11 @@ def _decode_families(files, contract, object_format):
         if (set(manifest) != {"contract", "object_format", "containers"}
                 or not isinstance(declared, dict) or set(declared) != set(installed)
                 or declared.get("contract_id") != installed["contract_id"]
-                or declared.get("schema_version") != installed["schema_version"]
                 or not isinstance(declared.get("sha256"), str)
                 or not re.fullmatch(r"[0-9a-f]{64}", declared["sha256"])):
             raise ValueError("unsupported stored contract/schema version or manifest")
-        # The writer's schema digest identifies its declarations. An optional
-        # field added later does not change existing records' representation.
-        # Check every stored layout and record against the installed contract
-        # below; never infer compatibility by rewriting or dropping fields.
+        # The digest identifies the writer. Validate every layout and record
+        # with the installed schema; loading never rewrites saved values.
         if manifest["object_format"] != object_format:
             raise ValueError("snapshot object_format differs from Git")
         if not isinstance(manifest["containers"], dict):
@@ -645,7 +625,7 @@ def _decode_families(files, contract, object_format):
                 expected.add(path)
                 raw = files[path]
                 envelope = _decode_object(raw)
-                if set(envelope) != {"contract_id", "schema_version", "family", "record"} or envelope != _envelope(name, envelope["record"]):
+                if set(envelope) != {"contract_id", "family", "record"} or envelope != _envelope(name, envelope["record"]):
                     raise ValueError("invalid record envelope: " + path)
                 row = envelope["record"]
                 if family.identity and (not isinstance(row, dict) or row.get("id") != identifier):

@@ -16,8 +16,8 @@ sys.path.insert(0, str(SCRIPTS))
 from do_math.contracts import schema_for  # noqa: E402
 from do_math.engine import ResearchEngine, control, initialize, validate_config  # noqa: E402
 from do_math.repository import ResearchRepository  # noqa: E402
-from v5_fixtures import local_job_runner, planning_model_assessments, supply_observation_rules, read_fixture_context
-from v5_fixtures import (activate, install_adapter_fixture, candidate, contract_review, disposition,
+from research_fixtures import local_job_runner, planning_model_assessments, supply_observation_rules, read_fixture_context
+from research_fixtures import (activate, install_adapter_fixture, candidate, contract_review, disposition,
                          assessment, intent_response, seal_response, submit_intent, bind_candidates)
 
 
@@ -96,7 +96,7 @@ class ScriptedRunner:
         elif role == "identity_review":
             stage = ctx["action"]["stage"]
             if stage == "scope":
-                from v5_fixtures import scope_response
+                from research_fixtures import scope_response
                 out.update(scope_response(ctx))
             else:
                 review = ctx["role_review"]
@@ -127,7 +127,7 @@ class ScriptedRunner:
             if role == "research_preparation":
                 supply_observation_rules(out.get("candidates", []), extensions)
                 if ctx['action'].get('observation_rule_targets'):
-                    from v5_fixtures import prepared_rule_conditions
+                    from research_fixtures import prepared_rule_conditions
                     extensions['task_conditions'] = prepared_rule_conditions(ctx['action']['observation_rule_targets'])
             elif ctx.get("budget_unit") == "concurrent_sessions":
                 extensions["model_assessments"] = planning_model_assessments(out, ctx)
@@ -140,7 +140,7 @@ class ScriptedRunner:
         return {"status": "completed", "output": out, "usage": {"calls": 1}, "error": None}
 
 
-def formal_ok(*, source, declarations, workspace, lean_command, timeout_seconds,
+def formal_ok(*, source, declarations, workspace, lean_command,
               allowed_axioms=(), should_stop=None, expected_toolchain=None, on_started=None):
     if source == "theorem t : True := by trivial" and declarations == ["t"]:
         signature, dependencies, value = "True", ["True", "True.intro"], "True.intro"
@@ -175,7 +175,7 @@ class EngineTests(unittest.TestCase):
 
     def make(self, runner, verifier=formal_ok, goal_kind="mathematical", **config):
         config.setdefault('plan_settle_seconds', 1)
-        init = initialize(self.repo, goal="goal", goal_kind=goal_kind, workspace=self.root / "work", config={"reviewers": 2, "goal_auditors": 2, "max_cycles": 8, "lean_command": ["test-lean"], "scholarly_enabled": False, "operator_enabled": False, **config})
+        init = initialize(self.repo, goal="goal", goal_kind=goal_kind, workspace=self.root / "work", config={"reviewers": 2, "goal_auditors": 2,  "lean_command": ["test-lean"], "scholarly_enabled": False, "operator_enabled": False, **config})
         engine = ResearchEngine(self.repo, init["instance_id"], runner=runner, formal_verifier=verifier)
         activate(engine, self.root, initialization_runner=ScriptedRunner())
         return engine, init["instance_id"]
@@ -289,145 +289,6 @@ class EngineTests(unittest.TestCase):
             self.assertTrue(any(('derived-ready' if invalid == 'missing' else 'obligation') in w['reason']
                                 for w in failed), failed)
 
-    def test_work_budget_pause_resume_preserves_failed_request_without_replay(self):
-        runner = ScriptedRunner(fail_role="research_work"); engine, instance = self.make(runner, work_calls=2, operations_calls=None)
-        for _ in range(0, 10, 2):
-            paused = engine.run(max_steps=2)
-            if (paused['status'] in {'waiting', 'capacity_waiting'}
-                    and any(item['action']['role'] == 'research_work'
-                            for item in engine.runtime['waiting_actions'].values())):
-                break
-        else:
-            self.fail('The failed work request did not reach a preserved wait')
-        self.assertIn(paused["status"], {"waiting", "capacity_waiting"})
-        before = ResearchRepository(self.repo, instance).load()[2]["waiting_actions"]
-        self.assertTrue(any(item["action"]["role"] == "research_work" for item in before.values()))
-        work_calls = sum(role == "research_work" for role, _ in runner.prompts)
-        control(self.repo, instance, "resume")
-        resumed = engine.run(max_steps=1)
-        after = ResearchRepository(self.repo, instance).load()[2]["waiting_actions"]
-        self.assertEqual(before, after)
-        self.assertEqual(sum(role == "research_work" for role, _ in runner.prompts), work_calls)
-        self.assertIn(resumed["status"], {"waiting", "capacity_waiting"})
-
-    def test_work_budget_exhaustion_does_not_prevent_operations(self):
-        runner = ScriptedRunner()
-        engine, _ = self.make(runner, work_calls=1, operations_calls=10)
-        for _ in range(10):
-            engine.run(max_steps=1)
-            if any(a['role'] == 'research_work' for a in engine.runtime['queue']):
-                break
-        blocked = next(a.copy() for a in engine.runtime['queue'] if a['role'] == 'research_work')
-        before = engine.status()["budget"]
-        self.assertEqual(before["work"]["used"], before["work"]["limit"])
-        engine._enqueue("research_plan", reason="Assess next steps with the remaining operating budget")
-        engine._save()
-        status = engine.run(max_steps=1)
-        self.assertEqual(runner.prompts[-1][0], "research_plan")
-        self.assertEqual(status["budget"]["operations"]["used"], before["operations"]["used"] + 1)
-        self.assertEqual(status["budget"]["work"]["used"], before["work"]["used"])
-        retained = next(a for a in engine.runtime['queue'] if a['id'] == blocked['id'])
-        self.assertEqual({key: retained[key] for key in blocked}, blocked)
-
-    def test_unlimited_budgets_continue_after_finite_exhaustion(self):
-        runner = ScriptedRunner(formal=True)
-        engine, instance = self.make(runner, work_calls=1, operations_calls=10)
-        for _ in range(0, 20, 4):
-            exhausted = engine.run(max_steps=4)
-            if (exhausted['budget']['work']['available'] == 0
-                    and any(action['role'] == 'research_work' for action in engine.runtime['queue'])
-                    and exhausted['status'] in {'capacity_waiting', 'waiting'}):
-                break
-        else:
-            self.fail('The finite work budget did not preserve a queued request')
-        self.assertIn(exhausted["status"], {"capacity_waiting", "waiting"})
-        self.assertEqual(exhausted['budget']['work']['available'], 0)
-        pinned_work = next(action for action in engine.runtime['queue'] if action['role'] == 'research_work')
-        pinned_profile_ref = pinned_work['profile_ref']
-        old_executions = set(engine.runtime["executions"])
-        from v5_fixtures import send_control
-        from do_math.execution_profiles import resolve_profile, profile_ref
-        send_control(engine, "configure", config={"work_calls": None, "operations_calls": None})
-        current_profiles = [resolve_profile(engine.instance['execution_profiles'], ref)
-                            for refs in engine.instance['role_profile_refs'].values() for ref in refs]
-        send_control(engine, "decision", config={"change": {"kind": "initialization",
-            "operation": "probe", "profile_refs": [profile_ref(p) for p in current_profiles
-                                               if p['actor_kind'] == 'ai']}})
-        engine._enqueue("research_plan", reason="Inspect the newly unbounded work budget", front=True)
-        engine._save()
-        for _ in range(8):
-            status = engine.run(max_steps=1)
-            if status['budget']['operations']['used'] > exhausted['budget']['operations']['used']:
-                break
-        else:
-            self.fail('Lifting the finite limits did not admit an operating call')
-        self.assertTrue(old_executions <= set(engine.runtime["executions"]))
-        for pool in ("work", "operations"):
-            self.assertIsNone(status["budget"][pool]["limit"])
-        self.assertGreater(status["budget"]["operations"]["used"], exhausted["budget"]["operations"]["used"])
-        self.assertTrue(any(action['role'] == 'research_work' and action['profile_ref'] == pinned_profile_ref
-                            for action in engine.runtime['queue']))
-        fresh_work_profile = resolve_profile(engine.instance['execution_profiles'],
-                                             engine.instance['role_profile_refs']['research_work'][0])
-        self.assertNotEqual(profile_ref(fresh_work_profile), pinned_profile_ref)
-        fresh_constraint = engine.instance['capacity_constraints'][fresh_work_profile['ai']['usage_constraint_ids'][0]]
-        self.assertEqual(fresh_constraint['limit'], {'kind': 'unlimited'})
-        # Admission is checked on an isolated copy: the old selected task keeps
-        # its pinned profile, while newly prepared work can use this edition.
-        from copy import deepcopy
-        from do_math.repository import new_id
-        from do_math.session_slots import SessionSlots
-        from do_math.provider_wait import provider_for
-        scratch = deepcopy(engine.runtime)
-        candidate = {'id': new_id('EX'), 'role': 'research_work', 'status': 'queued'}
-        slots = SessionSlots(engine.instance['workspace'], engine.instance['id'],
-                             runtime=scratch, instance=deepcopy(engine.instance))
-        self.assertTrue(slots.acquire(candidate['id'], 'work', fresh_work_profile['ai']['model'],
-                                      profile=fresh_work_profile, execution=candidate,
-                                      provider=provider_for(fresh_work_profile['ai']['model'])))
-        self.assert_persisted_state_clean(engine)
-
-    def test_budget_config_allows_null_only_for_call_limits(self):
-        validate_config({"work_calls": None, "operations_calls": None})
-        for field in ("work_calls", "operations_calls"):
-            for value in (0, -1, True, "unlimited", 1.5):
-                with self.subTest(field=field, value=value), self.assertRaises(ValueError):
-                    validate_config({field: value})
-        with self.assertRaises(ValueError):
-            validate_config({"run_timeout_seconds": None})
-
-    def test_each_unlimited_pool_keeps_the_other_pool_finite(self):
-        for work, operations, exhausted_pool in ((None, 1, "operations"), (1, None, "work")):
-            with self.subTest(work=work, operations=operations):
-                engine, _ = self.make(ScriptedRunner(), work_calls=None, operations_calls=None)
-                before = engine.status()['budget']
-                limits = {pool + '_calls': None if limit is None else before[pool]['used'] + limit
-                          for pool, limit in (('work', work), ('operations', operations))}
-                control(self.repo, engine.instance['id'], 'configure', config=limits)
-                engine.process_controls()
-                from do_math.execution_profiles import profile_ref
-                selected = {ref['id'] for refs in engine.instance['role_profile_refs'].values() for ref in refs}
-                control(self.repo, engine.instance['id'], 'decision', config={'change': {
-                    'kind': 'initialization', 'operation': 'probe', 'profile_refs': [profile_ref(p)
-                    for pid, p in engine.instance['execution_profiles'].items()
-                    if pid in selected and p['actor_kind'] == 'ai']}})
-                engine.process_controls()
-                for _ in range(0, 20, 4):
-                    status = engine.run(max_steps=4)
-                    budget = status['budget']
-                    unlimited_pool = 'work' if work is None else 'operations'
-                    if (budget[exhausted_pool]['used'] > before[exhausted_pool]['used']
-                            and budget[unlimited_pool]['used'] > before[unlimited_pool]['used']):
-                        break
-                else:
-                    self.fail('Both budget pools were not exercised within 20 steps')
-                self.assertEqual(status["budget"][exhausted_pool]["used"] - before[exhausted_pool]['used'], 1,
-                    {'budget': status['budget'], 'waits': status['waiting_actions'], 'queue': engine.runtime['queue']})
-                self.assertEqual(status['budget'][exhausted_pool]['available'], 0)
-                self.assertFalse(engine._budget_available(exhausted_pool, 0))
-                self.assertIsNone(status["budget"][unlimited_pool]["limit"])
-                self.assertTrue(engine._budget_available(unlimited_pool, 0))
-                self.assertGreater(status["budget"][unlimited_pool]["used"], before[unlimited_pool]['used'])
 
     def test_crash_recovery_and_artifact_immutability(self):
         engine, instance = self.make(ScriptedRunner())
@@ -462,8 +323,8 @@ class EngineTests(unittest.TestCase):
         self.assertTrue(store.read(recovered['result_ref'], head))
         bundle = recovered['artifact_bundle']
         with self.assertRaises(ValueError):
-            store.save(head, instance_data, runtime_data,
-                       artifacts={f"runtime/artifacts/{bundle}/other.txt": b"mutate"})
+            store.save_with_state(head, instance_data, runtime_data,
+                       artifacts={f"runtime/artifacts/{bundle}/other.txt": b"mutate"})[0]
 
 
 if __name__ == "__main__": unittest.main(verbosity=2)

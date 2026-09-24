@@ -89,13 +89,6 @@ class RepetitionReceiptTests(unittest.TestCase):
             engine._complete_operational_disposition(record)
         self.assertEqual(engine.runtime['queue'], [])
 
-    def test_legacy_threshold_keeps_user_authority_without_rewriting_history(self):
-        historical = {'kind': 'repetition_hold', 'lineage': 'selection_failure', 'lineage_id': 'basis',
-                      'event_ref': 'EX-failed', 'owner': 'ai', 'next_owner': 'operational_review', 'count': 2, 'limit': 2}
-        runtime = {'history': [deepcopy(historical)]}
-        current = revisions.repetition_hold({}, runtime, 'selection_failure', 'basis')
-        self.assertEqual((current['owner'], current['next_owner']), ('user', 'user'))
-        self.assertEqual(runtime['history'], [historical])
 
     def test_continue_after_successful_empty_preparation_creates_its_missing_request(self):
         engine = routing_engine()

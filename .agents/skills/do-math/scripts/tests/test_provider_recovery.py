@@ -9,10 +9,10 @@ import unittest
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from v5_fixtures import local_job_runner
+from research_fixtures import local_job_runner
 from do_math.engine import ResearchEngine, initialize, control
 from do_math import scheduled_operator
-from v5_fixtures import producer_result, activate, install_adapter_fixture
+from research_fixtures import producer_result, activate, install_adapter_fixture
 from test_engine import common, context_from, ScriptedRunner
 
 
@@ -48,7 +48,7 @@ class RecoveryTests(unittest.TestCase):
                 config={"tier_models": {tier: "claude-opus-5" for tier in ("high", "medium", "low")},
                         "scholarly_enabled": False, "operator_enabled": False,
                         "tool_review_window_seconds": 60, "self_check_response_window_seconds": 5,
-                        "run_timeout_seconds": 120, "max_cycles": 1, "plan_settle_seconds": 1,
+                          "plan_settle_seconds": 1,
                         "session_limits": {pool: {"claude-opus-5": 1} for pool in ("work", "operations")}, "lean_command": ["test-lean"]})
             runner = QuotaRunner()
             engine = ResearchEngine(repository, instance["instance_id"], runner=runner)
@@ -75,7 +75,7 @@ class RecoveryTests(unittest.TestCase):
             self.assertNotIn(original_action, engine.runtime["waiting_actions"])
 
     def test_wake_keeps_hold_and_user_pause_and_only_requests_engine(self):
-        from v5_fixtures import send_control
+        from research_fixtures import send_control
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             repo = root / 'repo'; repo.mkdir()

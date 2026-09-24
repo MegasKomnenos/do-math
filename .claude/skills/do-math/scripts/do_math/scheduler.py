@@ -42,6 +42,7 @@ class SchedulerMixin:
         """Preserve returned evidence and reconcile confirmed Jobs after owner failure."""
         from .repository import canonical_json, new_id
         from .governance import timestamp
+        from .engine import json_safe
         returned = []
         for future, generator in self._calls.futures.items():
             execution_id = future.execution_id
@@ -50,7 +51,7 @@ class SchedulerMixin:
             except BaseException as error:
                 result = {'status': 'failed', 'reason': f'{type(error).__name__}: {error}'}
             if execution_id:
-                raw = canonical_json(result)
+                raw = canonical_json(json_safe(result))
                 # This local copy remains available even if publication itself failed.
                 path = Path(self.instance['workspace']) / 'execution-recovery' / execution_id / 'returned-result.json'
                 path.parent.mkdir(parents=True, exist_ok=True)

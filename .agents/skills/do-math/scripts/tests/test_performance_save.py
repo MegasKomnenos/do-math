@@ -60,7 +60,7 @@ class SaveWithStateTests(unittest.TestCase):
         head, instance, runtime = self.repository.load()
         invalid_runtime = {**runtime, "status": float("nan")}
         with self.assertRaises(ValueError):
-            self.repository.save(head, instance, invalid_runtime)
+            self.repository.save_with_state(head, instance, invalid_runtime)[0]
         self.assertEqual(self.repository.load()[0], head)
 
     def test_save_reads_parent_family_bytes_once_and_preserves_reload_equivalence(self) -> None:

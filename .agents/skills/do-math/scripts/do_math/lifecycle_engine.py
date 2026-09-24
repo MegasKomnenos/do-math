@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 import hashlib
 import json
 import math
@@ -10,7 +10,7 @@ import time
 from pathlib import Path
 
 from .external import prepare_operation, validate_operation, execute_operation, reconcile_operation, prepare_retry
-from .governance import ensure_governance, apply_decision, timestamp
+from .governance import apply_decision, timestamp
 from .knowledge import (revise_knowledge, invalidate_knowledge, register_environment,
     begin_transition, record_transition_result, activate_transition, invalidate_environment,
     validate_basis, assess_use)
@@ -55,44 +55,17 @@ class LifecycleEngineMixin:
         clock = getattr(self, 'lifecycle_clock', None)
         return timestamp(clock() if clock else None)
 
-    def _upgrade_runtime(self):
-        """Validate the current edition; do not migrate or infer permissions."""
-        from .state_contract import STATE_FORMAT_VERSION, STATE_CONTRACT_ID
-        if any(type(root.get('feature_version')) is not int or root['feature_version'] != STATE_FORMAT_VERSION
-               for root in (self.instance, self.runtime)):
-            raise ValueError('unsupported feature version; initialize a version-five instance')
-        if any(root.get('contract_id') != STATE_CONTRACT_ID for root in (self.instance, self.runtime)):
-            raise ValueError('unsupported persisted contract identifier')
-        self.instance.setdefault('grants', {})
-        self.instance = ensure_governance(self.instance, self._lifecycle_now().isoformat())
-        for name, value in {'events': [], 'pending_events': [], 'review_cycles': {},
-            'external_operations': {}, 'trust_transitions': {}, 'conversations': {},
-            'checkpoints': {}, 'observations': {}, 'condition_states': {},
-            'extended_controls': {}, 'tasks': {}, 'executions': {}, 'activities': {},
-            'queue': [], 'history': [], 'questions': [], 'question_links': []}.items():
-            self.runtime.setdefault(name, deepcopy(value))
-        self.runtime.pop('task_readiness', None)
-        if not hasattr(self, '_task_readiness'):
-            self._task_readiness = {}
-        if 'lifecycle' not in self.instance:
-            raise ValueError('version-five lifecycle is missing')
-        self.instance.setdefault('trust_environments', {})
-        self.instance.setdefault('active_trust_environment', None)
 
     def _lifecycle_event(self, kind, *, target=None, source_ref=None, schedule=True, **details):
-        if max(self.instance.get('feature_version', 1), self.runtime.get('feature_version', 1)) >= 5:
-            guard = self._clock_guard()
-            if not guard['usable']:
-                raise RuntimeError('cannot publish a lifecycle event while the clock guard blocks new actions')
-            when = guard['observed_utc']
-        else:
-            when = self._lifecycle_now().isoformat()
+        guard = self._clock_guard()
+        if not guard['usable']:
+            raise RuntimeError('cannot publish a lifecycle event while the clock guard blocks new actions')
+        when = guard['observed_utc']
         event = {'id': new_id('EV'), 'kind': kind, 'at': when, 'opened_at': when,
                  'target': target, 'source_ref': source_ref, **deepcopy(details)}
         self.runtime['events'].append(event)
         if schedule: self.runtime['pending_events'].append(event['id'])
-        if max(self.instance.get('feature_version', 1), self.runtime.get('feature_version', 1)) >= 5:
-            self.runtime['last_observed_utc'] = when
+        self.runtime['last_observed_utc'] = when
         return event
 
     def _clock_guard(self):
@@ -182,7 +155,6 @@ class LifecycleEngineMixin:
         target = self.runtime.get('resume_lifecycle', self.instance['lifecycle']['state'])
         if target not in {'initializing', 'active'}:
             raise ValueError('resume lifecycle is missing')
-        self._restore_paused_formal_actions()
         # Resume restores lifecycle, not expired permissions or tool evidence.
         # Each dispatch rechecks those facts; maintenance/transition recovery must remain possible.
         self.instance['lifecycle']['state'] = target
@@ -193,42 +165,10 @@ class LifecycleEngineMixin:
             self.runtime.pop('model_policy_violation', None)
         self.runtime.pop('resume_lifecycle', None)
 
-    def _restore_paused_formal_actions(self):
-        """Recover legacy pause waits only when one ended attempt proves the lineage."""
-        from .activities import continue_activity
-        for identifier, waiting in list(self.runtime.get('waiting_actions', {}).items()):
-            if waiting.get('kind') != 'formal_stopped':
-                continue
-            action = waiting['action']
-            matches = [row for row in self.runtime['executions'].values()
-                if row.get('role') == 'formal_check' and row.get('action', {}).get('id') == action.get('id')
-                and row.get('owner_activity_id') == action.get('owner_activity_id')
-                and row.get('status') == 'ended' and row.get('formal_status') == 'stopped'
-                and row.get('result_ref')]
-            if waiting.get('execution_id'):
-                matches = [row for row in matches if row['id'] == waiting['execution_id']]
-            if len(matches) != 1:
-                waiting.update(next_owner='maintenance', reason='Legacy formal stop has no unique ended attempt')
-                self._enqueue('maintenance', reason=waiting['reason'], evidence_refs=[identifier])
-                continue
-            previous = matches[0]
-            reasons = previous.get('result_disposition', {}).get('stop_reasons')
-            if reasons is not None:
-                # New records already distinguish non-resumable authority/input stops.
-                continue
-            if any(row.get('owner_id') == previous['id'] and row.get('state') == 'held'
-                   for row in self.runtime.get('reservations', {}).values()):
-                continue
-            raw = json.loads(self.store.read(previous['result_ref'], self.head))
-            if raw.get('status') != 'stopped':
-                raise ValueError('legacy formal stop differs from its preserved result')
-            continue_activity(self.runtime, previous['id'], at=self._lifecycle_now().isoformat(), reason='formal_paused')
-            self.runtime['waiting_actions'].pop(identifier)
 
     def _activate_initialization(self):
         if self.runtime.get('status') in {'closed', 'completed'} or self.instance['lifecycle'].get('permanently_closed'):
             raise ValueError('closed/completed instance cannot activate')
-        self._upgrade_runtime()
         lifecycle = self.instance['lifecycle']
         if lifecycle['state'] != 'initializing':
             return {'activated': lifecycle['state'] == 'active', 'missing': []}
@@ -570,7 +510,6 @@ class LifecycleEngineMixin:
         if self.runtime.get('status') in {'closed', 'completed'} or self.instance.get('lifecycle', {}).get('permanently_closed'):
             raise ValueError('closed/completed instance cannot apply lifecycle controls')
         self._verify_current_head()
-        self._upgrade_runtime()
         source_ref = request.get('id')
         if not isinstance(source_ref, str) or not source_ref:
             raise ValueError('extended control requires its preserved user request ID')
@@ -871,7 +810,6 @@ class LifecycleEngineMixin:
         now = self._lifecycle_now()
         if operation == 'attach':
             policy = config.get('disconnect_policy', self.instance.get('conversation_loss_policy'))
-            if policy == 'continue': policy = 'continue_authorized'
             if policy not in {'pause', 'continue_authorized'}:
                 raise ValueError('conversation loss policy requires an explicit user decision')
             if current and generation <= current['generation']:
@@ -926,15 +864,13 @@ class LifecycleEngineMixin:
 
     def _refresh_readiness(self):
         self._verify_current_head()
-        self._upgrade_runtime()
-        if max(self.instance.get('feature_version', 1), self.runtime.get('feature_version', 1)) >= 5:
-            guard = self._clock_guard()
-            if not guard['usable']:
-                self.runtime['clock_guard'] = {'state': 'blocked', **guard}
-                self.runtime['availability'] = {'state': 'blocked', 'reason': 'clock_regression'}
-                if self.runtime.get('status') not in {'closed', 'completed'}:
-                    self._pause_lifecycle('clock_regression')
-                return
+        guard = self._clock_guard()
+        if not guard['usable']:
+            self.runtime['clock_guard'] = {'state': 'blocked', **guard}
+            self.runtime['availability'] = {'state': 'blocked', 'reason': 'clock_regression'}
+            if self.runtime.get('status') not in {'closed', 'completed'}:
+                self._pause_lifecycle('clock_regression')
+            return
         if self.instance['lifecycle']['state'] == 'paused':
             return
         if self.runtime.get('status') in {'closed', 'completed'} or self.instance['lifecycle'].get('permanently_closed'):
@@ -988,13 +924,12 @@ class LifecycleEngineMixin:
                         'goal_revision': query_instance['goal_revision'], 'policy_revision': query_instance['policy_revision']}
             review_key = review_basis_key(task, query_instance, self.runtime)
             for review in task.get('reviews', []):
-                if 'decision_basis' in review or self.instance.get('feature_version', 0) >= 4:
-                    currentness = contract_review_current(review, task, query_instance, self.runtime)
-                    review['inputs_current'] = currentness['valid']
-                    if currentness['changes']:
-                        review['currentness_changes'] = currentness['changes']
-                    else:
-                        review.pop('currentness_changes', None)
+                currentness = contract_review_current(review, task, query_instance, self.runtime)
+                review['inputs_current'] = currentness['valid']
+                if currentness['changes']:
+                    review['currentness_changes'] = currentness['changes']
+                else:
+                    review.pop('currentness_changes', None)
             approved = any(review.get('decision') == 'approved'  and review.get('inputs_current', True) and all(review.get(key) == value for key, value in required.items())
                            for review in task.get('reviews', []))
             reviewed = any(review.get('inputs_current', True) and all(review.get(key) == value for key, value in required.items()) for review in task.get('reviews', []))
@@ -1009,19 +944,12 @@ class LifecycleEngineMixin:
                 and execution['action'].get('target') == task_id and execution['action'].get('contract_basis') == required
                 for execution in self.runtime['executions'].values())
             if not approved and not reviewed and not blocked_review and not live_review:
-                # Older queues may have an unbound review from governance. Bind it
-                # to the current contract rather than adding a duplicate request.
                 candidates = [a for a in self.runtime['queue'] if a.get('role') == 'task_contract_review' and a.get('target') == task_id]
-                for candidate in candidates:
-                    if candidate.get('id') not in live_actions and candidate.get('contract_basis') == required and 'review_basis_key' not in candidate:
-                        candidate['review_basis_key'] = review_key
                 same = next((a for a in candidates if a.get('contract_basis') == required and a.get('review_basis_key') == review_key), None)
                 if same is None:
                     self.runtime['queue'][:] = [a for a in self.runtime['queue'] if a not in candidates]
                     self._enqueue('task_contract_review', task_id, contract_basis=required, review_basis_key=review_key,
                                   reason='Current contract and policy require independent approval')
-            # The source API supports legacy tasks; this integration deliberately
-            # requires the stronger current-contract basis for migrated tasks.
             evaluation = deepcopy(task_ready(task, query_instance, self.runtime,
                                     action={'role': 'research_work', 'target': task_id, 'budget_kind': 'work', 'actor_kind': 'ai'},
                                     evaluation_context=evaluation_context))
@@ -1090,7 +1018,6 @@ class LifecycleEngineMixin:
         if assigned and self.runtime.get('status') == 'waiting': self.runtime['status'] = 'ready'
 
     def _bind_formal_environment(self, result):
-        self._upgrade_runtime()
         output = deepcopy(result)
         toolchain = output.get('toolchain')
         allowed = output.get('allowed_axioms', self.instance.get('config', {}).get('allowed_axioms', _DEFAULT_AXIOMS))
@@ -1180,7 +1107,6 @@ class LifecycleEngineMixin:
     def _process_machine_action(self, action):
         role = action.get('role')
         if role not in {'external_action', 'trust_check', 'trust_activate'}: return False
-        self._upgrade_runtime()
         self._action_lifecycle_gate(action)
         if role == 'external_action':
             completed = self._run_external_action(action)

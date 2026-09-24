@@ -14,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.contracts import schema_for
 from do_math.submission import payload_issues
 from test_engine import common
-from v5_fixtures import candidate
+from research_fixtures import candidate
 from test_model_assessment_flow import rating
 
 
@@ -39,7 +39,7 @@ class ContractCheckTests(unittest.TestCase):
         extensions = {"model_assessments": [rating(task_title=c['title']) for c in output['candidates']], "contract_checks": list(entries)}
         if self.conditions:
             extensions["task_conditions"] = self.conditions
-        from v5_fixtures import supply_observation_rules
+        from research_fixtures import supply_observation_rules
         supply_observation_rules(output['candidates'], extensions)
         output["integration_bundles"] = [{"integration_id": "IN-check", "members": ["output", *[
             f"activity-extensions.json/{family}/{i}" for family, rows in extensions.items() for i, _ in enumerate(rows)]],
@@ -58,9 +58,6 @@ class ContractCheckTests(unittest.TestCase):
         self.assertNotEqual(self.issues(checks(), checks()), "[]")
         self.assertNotEqual(self.issues(checks(), checks("foreign")), "[]")
 
-    def test_legacy_attempt_budget_contracts_remain_accepted_without_self_checks(self):
-        self.context["budget_unit"] = "execution_attempts"
-        self.assertEqual(self.issues(), "[]")
 
     def test_one_symbol_cannot_carry_two_meanings_and_must_occur_in_the_contract(self):
         self.item["question"] = "With T the threshold, expand C = T - Q + L"

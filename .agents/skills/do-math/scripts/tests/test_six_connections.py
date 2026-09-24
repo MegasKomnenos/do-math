@@ -119,13 +119,13 @@ class PlanningConnections(unittest.TestCase):
         self.assertEqual(engine.runtime['tasks'][task['id']]['reviews'], before['reviews'])
         high['reason'] = 'Mutation of the source must not change the request'
         self.assertNotEqual(action['model_assessment'], high)
-        from do_math.session_slots import GitSessionSlots
+        from do_math.session_slots import SessionSlots
         from do_math.execution_lifecycle import create_execution, transition_execution
         profile = execution_profiles.resolve_profile(engine.instance['execution_profiles'], selected['profile_ref'])
         execution = create_execution(execution_id='EX-no-slot', owner_activity_id='AY-work', actor_kind='ai',
             input_manifest={}, profile_ref=selected['profile_ref'], created_at='2026-09-23T00:00:00+00:00')
         transition_execution(execution, 'starting', at='2026-09-23T00:00:00+00:00')
-        slots = GitSessionSlots(engine.runtime, engine.instance)
+        slots = SessionSlots(engine.runtime, engine.instance)
         self.assertFalse(slots.acquire('EX-no-slot', 'work', selected['model'], profile=profile,
                                       execution=execution))
         self.assertEqual(engine._select_model(action)['tier'], 'high')
@@ -282,7 +282,7 @@ class OverflowConnections(unittest.TestCase):
         from do_math import contracts, submission
         from do_math.repository import canonical_json
         from test_engine import common
-        from v5_fixtures import seal_response
+        from research_fixtures import seal_response
         engine, reference = self.fixture()
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -376,7 +376,7 @@ class ProviderConnections(unittest.TestCase):
                 actual['wake'] = {'description': kwargs['wake_key'], 'next_run': kwargs['wake_at'], 'state': 'Ready'}
             return {}
         def save(artifacts=None):
-            engine.head = engine.store.save(engine.head, engine.instance, engine.runtime, artifacts=artifacts or {})
+            engine.head = engine.store.save_with_state(engine.head, engine.instance, engine.runtime, artifacts=artifacts or {})[0]
         engine._save = save
         with patch.object(scheduled_operator, 'schedule', side_effect=OSError('scheduler unavailable')):
             engine._publish_provider_result()
@@ -417,7 +417,7 @@ class OverflowGitConnection(unittest.TestCase):
         from do_math.repository import canonical_json
         from test_redesign_TASKS import task as task_fixture, approve
         from test_engine import common, context_from
-        from v5_fixtures import local_job_runner, producer_result
+        from research_fixtures import local_job_runner, producer_result
         fixture = InputRecoveryPublicTests()
         fixture.setUp()
         self.addCleanup(fixture.doCleanups)
@@ -462,7 +462,7 @@ class OverflowGitConnection(unittest.TestCase):
             authority_refs=['GR-research'], profile_refs=[execution_profiles.profile_ref(small), reference],
             model_assessment={'difficulty': 'high', 'importance': 'high', 'reason': 'Preserve the assigned requirement'},
             question='Inspect the following fixed evidence: ' + 'required evidence ' * 40000, results=[])
-        from v5_fixtures import supply_observation_rules
+        from research_fixtures import supply_observation_rules
         extensions = {}
         supply_observation_rules([task], extensions)
         task['initial_observation_rules'] = extensions['task_conditions'][0]['observation_rules']

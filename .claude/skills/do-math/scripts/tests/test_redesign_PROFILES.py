@@ -18,8 +18,7 @@ CONFIG = {
     "max_input_bytes": 500000, "call_timeout_seconds": 600,
     "operator_timeout_seconds": 5400, "operator_effort": "high",
     "observation_mode": "event_driven", "observation_interval_seconds": 300,
-    "observation_idle_seconds": 120, "observation_unbounded_wait_seconds": 600,
-    "max_observation_reviews": 3, "checkpoint_grace_seconds": 10,
+    "checkpoint_grace_seconds": 10,
     "finish_notice_seconds": 60,
     "scholarly_enabled": True, "scholarly_server": None, "claude_only_assigned_model": False,
      "provider_retry_initial_seconds": 300, "provider_retry_max_seconds": 7200,
@@ -27,6 +26,13 @@ CONFIG = {
 
 
 class ProfileTests(unittest.TestCase):
+    def test_unused_observation_settings_are_rejected_at_configuration_boundary(self):
+        from do_math.engine import DEFAULT_CONFIG, validate_config
+        for key in ("observation_idle_seconds", "max_observation_reviews",
+                    "observation_unbounded_wait_seconds"):
+            with self.subTest(key=key), self.assertRaisesRegex(ValueError, "configuration fields"):
+                validate_config({**deepcopy(DEFAULT_CONFIG), key: 1})
+
     def test_normal_final_delivery_rendering_preserves_the_sealed_profile(self):
         from do_math import execution_profiles as api, contracts
         profile = next(p for p in api.build_profiles(CONFIG)['execution_profiles'].values()
@@ -181,6 +187,53 @@ class ProfileTests(unittest.TestCase):
                 self.assertEqual(snap["execution_id"], binding["execution_id"])
                 request.write_text("{}", encoding="utf-8")
                 self.assertEqual(json.loads(execution.request_path.read_text(encoding="utf-8"))["control_binding"], binding)
+
+    def test_admission_probe_preserves_history_and_provider_gate_across_capacity_editions(self):
+        from do_math.session_slots import SessionSlots
+        api = self.profiles()
+        instance = {**api.build_profiles(CONFIG), "config": deepcopy(CONFIG)}
+        profile = next(p for p in instance["execution_profiles"].values() if p["role"] == "research_work")
+        runtime = {"executions": {}, "reservations": {}, "provider_waits": {}}
+        slots = SessionSlots(runtime, instance)
+        model = profile["ai"]["model"]
+        self.assertTrue(slots.acquire("EX-history", "work", model, profile=profile,
+                                     execution={"id": "EX-history", "role": "research_work"}))
+        self.assertTrue(slots.release("EX-history"))
+        history_id = runtime["executions"]["EX-history"]["capacity"]["reservation_ids"][0]
+        history = deepcopy(runtime["reservations"][history_id])
+        limits = deepcopy(CONFIG["session_limits"])
+        limits["work"][model] = 1
+        slots.configure(limits)
+        instance["config"]["session_limits"] = limits
+        provider = profile["ai"]["provider"]
+        runtime["provider_waits"]["PW-" + provider] = {
+            "id": "PW-" + provider, "provider": provider, "generation": 1,
+            "state": "waiting", "retry_at": 100, "attempts": 1,
+            "evidence": {"evidence_ref": "fixture-limit"},
+            "probe_owner": None, "probe_started_at": None}
+        before = deepcopy(runtime)
+        observer = SessionSlots(runtime, instance, observer=True)
+        self.assertTrue(observer.admission_check(profile, current_time=100)["allowed"])
+        self.assertEqual(runtime, before)
+        self.assertTrue(slots.acquire("EX-held", "work", model, profile=profile,
+            execution={"id": "EX-held", "role": "research_work"}, current_time=100))
+        self.assertEqual(runtime["reservations"][history_id], history)
+        held_id = runtime["executions"]["EX-held"]["capacity"]["reservation_ids"][0]
+        self.assertNotEqual(runtime["reservations"][held_id]["constraint_id"], history["constraint_id"])
+        before = deepcopy(runtime)
+        self.assertEqual(observer.admission_check(profile, current_time=100)["wait"]["kind"], "provider_limit")
+        self.assertEqual(runtime, before)
+        runtime["provider_waits"].clear()
+        before = deepcopy(runtime)
+        denied = observer.admission_check(profile, current_time=100)
+        self.assertFalse(denied["allowed"])
+        self.assertEqual(denied["wait"]["kind"], "capacity")
+        self.assertEqual(runtime, before)
+        runtime["reservations"][history_id]["reserved"] = -1
+        before = deepcopy(runtime)
+        with self.assertRaises(ValueError):
+            observer.admission_check(profile, current_time=100)
+        self.assertEqual(runtime, before)
 
     def test_session_slots_has_only_git_authority(self):
         from do_math import session_slots

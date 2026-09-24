@@ -24,8 +24,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import do_math.engine as engine_module
 from do_math.engine import ResearchEngine, initialize, control
 from do_math.repository import canonical_json
-from v5_fixtures import local_job_runner, planning_model_assessments, supply_observation_rules, read_fixture_context
-from v5_fixtures import (charter_change, policy_change, candidate as v5_candidate, contract_review, disposition, assessment,
+from research_fixtures import local_job_runner, planning_model_assessments, supply_observation_rules, read_fixture_context
+from research_fixtures import (charter_change, policy_change, candidate as v5_candidate, contract_review, disposition, assessment,
                          intent_response, seal_response, submit_intent, activate, install_adapter_fixture, bind_candidates)
 from test_engine import ScriptedRunner, formal_ok
 
@@ -56,18 +56,17 @@ def theorem():
             'lean_code': SOURCE, 'declaration_names': ['add_zero_fixture'], 'dependencies': []}
 
 
-def formal_fixture(*, source, declarations, workspace, lean_command, timeout_seconds,
+def formal_fixture(*, source, declarations, workspace, lean_command,
                    allowed_axioms=(), should_stop=None, expected_toolchain=None, on_started=None):
     if source != SOURCE or declarations != ['add_zero_fixture']:
         raise AssertionError('The explicit formal test fixture only covers SOURCE/add_zero_fixture')
     result = formal_ok(source=source, declarations=declarations, workspace=workspace,
-        lean_command=lean_command, timeout_seconds=timeout_seconds, allowed_axioms=allowed_axioms, expected_toolchain=expected_toolchain)
+        lean_command=lean_command,  allowed_axioms=allowed_axioms, expected_toolchain=expected_toolchain)
     result['dependency_closure'] = {'add_zero_fixture': ['Nat', 'Nat.add_zero']}
     result['dependency_evidence'] = {'add_zero_fixture': {'Nat': 'fixture-Nat', 'Nat.add_zero': 'fixture-Nat.add_zero'}}
     result['declaration_evidence'] = {'add_zero_fixture': {'type': '(n : Nat) -> n + 0 = n', 'value': 'Nat.add_zero'}}
     result['reason'] = 'Explicit compiler fixture; not an actual Lean invocation'
     return result
-
 
 
 class PurposeRunner:
@@ -163,7 +162,7 @@ class PurposeRunner:
             supply_observation_rules(output['candidates'], extensions)
             path.write_bytes(canonical_json(extensions))
         if role == 'research_preparation' and action.get('observation_rule_targets'):
-            from v5_fixtures import prepared_rule_conditions
+            from research_fixtures import prepared_rule_conditions
             path = workspace / 'activity-extensions.json'
             extensions = json.loads(path.read_bytes()) if path.exists() else {}
             extensions['task_conditions'] = prepared_rule_conditions(action['observation_rule_targets'])
@@ -244,7 +243,7 @@ class PurposeRunner:
                 'knowledge': knowledge, 'relations': [], 'remaining_work': [], 'checkpoint': 'Argument and domain are explicit'}
         if role == 'identity_review':
             if action['stage'] == 'scope':
-                from v5_fixtures import scope_response
+                from research_fixtures import scope_response
                 return {**common('Inspect the full supplied proposal and assign independent perspectives'), **scope_response(context)}
             review = context['role_review']
             base = {**common('Compare the exact Nat statement, explanation and proof'), 'proposal_digest': review['proposal_digest'],
@@ -400,15 +399,13 @@ class PurposeHarness(unittest.TestCase):
 
     @staticmethod
     def fixture_config(**config):
-        settings = {'reviewers': 2, 'goal_auditors': 2, 'review_rounds': 2, 'max_cycles': 10,
+        settings = {'reviewers': 2, 'goal_auditors': 2, 'review_rounds': 2,
                     'plan_settle_seconds': 1,
                     'max_input_bytes': 2_000_000,
-                    'lean_command': ['test-double'], 'observation_idle_seconds': 1,
+                    'lean_command': ['test-double'],
                     'tool_review_window_seconds': 60, 'self_check_response_window_seconds': 5,
-                    'max_observation_reviews': 1, 'checkpoint_grace_seconds': 1,
+                    'checkpoint_grace_seconds': 1,
                     'scholarly_enabled': False, 'operator_enabled': False, **config}
-        if 'session_limits' not in config and {'work_calls', 'operations_calls', 'model', 'role_models', 'operator_model'} & config.keys():
-            settings['session_limits'] = None
         return settings
 
     def make(self, scenario='direct', *, observation=None, external_policy='disabled', review_policy=None, **config):
@@ -513,7 +510,7 @@ class PurposeEngineTests(PurposeHarness):
         self.assertTrue(any(w['kind'] == 'import_application_authority' for w in engine.runtime['waiting_actions'].values()))
         # An exact public decision, separate from the model's semantic check,
         # authorizes the new goal and preserves the previous charter.
-        from v5_fixtures import send_control
+        from research_fixtures import send_control
         send_control(engine, 'decision', config={'change': charter_change(engine, goal=NEW_GOAL,
             success_criteria=[NEW_GOAL], included_scope=[NEW_GOAL])})
         self.assertEqual(engine._governance()['goal'], NEW_GOAL)
@@ -532,7 +529,7 @@ class PurposeEngineTests(PurposeHarness):
         previous_assessments = deepcopy(engine.instance['identity_assessments'])
         downstream = next(t for t in engine.runtime['tasks'].values() if t['title'] == 'Dependent')
         from do_math import knowledge
-        from v5_fixtures import send_control
+        from research_fixtures import send_control
         send_control(engine, 'knowledge', config={'operation': 'invalidate', 'id': kid,
             'reason': 'The previous explanation is disputed and its use is withdrawn',
             'declared_impact': knowledge.plan_impact(engine.instance, engine.runtime, [kid], [])['computed_impact']})
@@ -568,7 +565,7 @@ class PurposeEngineTests(PurposeHarness):
         self.assertTrue(engine.instance['goal_judgments'][-1].get('current', True))
 
     def test_work_budget_execution_is_not_bounded_by_operations_call_timeout(self):
-        engine, runner = self.make(call_timeout_seconds=1, run_timeout_seconds=3600)
+        engine, runner = self.make(call_timeout_seconds=1, )
         seen = []
         original = runner.run
         def recording_run(**arguments):
@@ -583,7 +580,7 @@ class PurposeEngineTests(PurposeHarness):
         self.assertTrue(operations and all(timeout <= 1 for timeout in operations))
 
     def test_live_continue_preserves_checkpoint_and_uses_operating_budget(self):
-        engine, runner = self.make(observation='continue', work_calls=None, operations_calls=None)
+        engine, runner = self.make(observation='continue',  )
         self.drive(engine, predicate=lambda e: any(
             row['disposition']['kind'] == 'continue' and row['target_execution_id'] in e.runtime['checkpoints']
             for row in e.runtime['operational_dispositions'].values()))
@@ -599,7 +596,7 @@ class PurposeEngineTests(PurposeHarness):
                             for r in engine.runtime['operational_dispositions'].values()))
 
     def test_operating_review_runs_even_when_the_worker_used_the_last_work_call(self):
-        engine, runner = self.make(observation='continue', work_calls=2)
+        engine, runner = self.make(observation='continue', )
         self.drive(engine, predicate=lambda e: any(ex['role'] == 'research_work' and ex.get('outcome') == 'output_accepted'
                                                  for ex in e.runtime['executions'].values()))
         work = [ex for ex in engine.runtime['executions'].values() if ex.get('budget_kind') == 'work']
@@ -655,10 +652,10 @@ class PurposeEngineTests(PurposeHarness):
         engine, _ = self.make()
         engine.run(max_steps=1)
         head, instance, runtime = engine.store.load()
-        with self.assertRaises(ValueError): engine.store.save('stale', instance, runtime)
+        with self.assertRaises(ValueError): engine.store.save_with_state('stale', instance, runtime)[0]
         execution = next(ex for ex in runtime['executions'].values() if ex.get('input_bundle'))
         bundle = execution['input_bundle']
-        with self.assertRaises(ValueError): engine.store.save(head, instance, runtime, artifacts={f'runtime/artifacts/{bundle}/new.txt': b'changed'})
+        with self.assertRaises(ValueError): engine.store.save_with_state(head, instance, runtime, artifacts={f'runtime/artifacts/{bundle}/new.txt': b'changed'})[0]
 
     def test_environment_revalidation_does_not_clear_independent_meaning_dispute(self):
         from do_math.knowledge_records import usable_links
@@ -669,7 +666,7 @@ class PurposeEngineTests(PurposeHarness):
         old_environment = engine.instance['active_trust_environment']
         control(self.repo, engine.instance['id'], 'trust', config={'operation': 'invalidate', 'env_id': old_environment, 'reason': 'Compiler environment needs revalidation'})
         engine.process_controls()
-        from v5_fixtures import send_control, trust_fixture
+        from research_fixtures import send_control, trust_fixture
         send_control(engine, 'knowledge', config={'operation': 'invalidate', 'id': kid,
             'reason': 'Meaning dispute remains open',
             'declared_impact': knowledge.plan_impact(engine.instance, engine.runtime, [kid], [])['computed_impact']})

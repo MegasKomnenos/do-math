@@ -72,7 +72,7 @@ class SessionSlots:
         from copy import deepcopy
         from .repository import new_id
         runtime = {"executions": {},
-                   "reservations": deepcopy(self.runtime.get("reservations", {})),
+                   "reservations": dict(self.runtime.get("reservations", {})),
                    "provider_waits": deepcopy(self.runtime.get("provider_waits", {}))}
         candidate = {"id": new_id("EX"), "role": profile["role"], "status": "queued"}
         slots = SessionSlots(runtime, self.instance)
@@ -100,7 +100,7 @@ class SessionSlots:
             self.instance.pop('host_capacity_ref', None)
 
     def acquire(self, execution_id, pool, model, *, profile=None, execution=None, provider=None,
-                enforce_capacity=True, current_time=None):
+                current_time=None):
         self._writable()
         self.admission_wait = None
         from copy import deepcopy
@@ -141,7 +141,8 @@ class SessionSlots:
         # A new capacity edition must still count executions reserved under older
         # editions of the same model. Limits are not independent resource pools.
         constraints = self.instance["capacity_constraints"]
-        reservations = deepcopy(self.runtime.get("reservations", {}))
+        # Rebase only each row's constraint ID; nested evidence stays read-only.
+        reservations = {rid: dict(row) for rid, row in self.runtime.get("reservations", {}).items()}
         capacity_refs = list(ai.get("capacity_refs", []))
         usage_refs = list(ai.get("usage_constraint_ids", []))
         adopted = self.instance.get("role_profile_refs")

@@ -16,7 +16,7 @@ from test_redesign_SURFACE import surface_state
 
 class StateCheckTests(unittest.TestCase):
     def test_valid_rule_payload_is_not_an_error_list(self):
-        from v5_fixtures import supply_observation_rules
+        from research_fixtures import supply_observation_rules
         instance, runtime = surface_state()
         extensions = {}
         supply_observation_rules([{'title': 'fixture'}], extensions)
@@ -151,7 +151,7 @@ class StateCheckTests(unittest.TestCase):
         instance['feature_version'] = 99
         self.assertError(instance, runtime, 'feature_version 5', 'record_storage')
         instance['feature_version'] = runtime['feature_version'] = 99
-        self.assertIn('state: unsupported feature version', state_errors(instance, runtime))
+        self.assertIn('current state requires feature_version 5 in both families', state_errors(instance, runtime))
 
 
 if __name__ == '__main__':
