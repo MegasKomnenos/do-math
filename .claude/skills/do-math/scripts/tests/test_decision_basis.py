@@ -176,6 +176,18 @@ class BasisTests(unittest.TestCase):
     def test_dependency_cycles_are_reported_with_the_actual_edges(self):
         self.assertEqual(revisions.dependency_cycles({"A": {"dependencies": ["B"]}, "B": {"dependencies": ["A"]}}), [["A", "B", "A"]])
 
+    def test_revision_response_rejects_distinct_titles_for_the_same_existing_task(self):
+        context = {"action": {"role": "research_preparation", "revision_targets": {"A": {}}},
+                   "tasks": [self.runtime["tasks"]["A"]]}
+        extension = {"revision_resolutions": [
+            {"record_id": "A", "disposition": "revised", "reason": "Replace the contract"}]}
+        output = {"candidates": [{"title": "First", "revises_task_id": "A"},
+                                 {"title": "Second", "revises_task_id": "A"}]}
+        errors = revisions.submission_errors(output, extension, context)
+        self.assertTrue(any("one replacement candidate" in row["message"] for row in errors), errors)
+        output["candidates"][1]["revises_task_id"] = None
+        self.assertEqual(revisions.submission_errors(output, extension, context), [])
+
 
 if __name__ == "__main__":
     unittest.main()

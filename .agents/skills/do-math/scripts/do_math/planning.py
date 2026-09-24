@@ -770,7 +770,10 @@ def collect_due_events(instance: dict, runtime: dict, now_iso: str, *, evaluatio
         for condition in task.get("due_conditions", []):
             outcome = evaluate_condition(condition, instance, runtime,evaluation_context=evaluation_context)
             key=_hash(condition); previous=runtime.get("condition_states",{}).get(f"{task.get('id')}:{key}")
-            if outcome["state"] == "ready" and previous != "ready": events.append(_event("task_condition_due", key, task.get("id")))
+            if outcome["state"] == "ready" and previous != "ready":
+                event = _event("task_condition_due", key + "|" + now_iso, task.get("id"))
+                event["at"] = now_iso
+                events.append(event)
         if task.get("newinput"): events.append(_event("task_new_input", now_iso, task.get("id")))
     existing = {event.get("id") for event in runtime.get("events", [])}
     return [event for event in events if event["id"] not in existing]

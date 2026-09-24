@@ -630,24 +630,50 @@ class StorageRedesignTests(unittest.TestCase):
                 "EV-01": {"id": "EV-01", "kind": "created"},
                 "EV-02": {"id": "EV-02", "kind": "queued"},
             }},
-            parent_last_seq=7,
         )
 
-        self.assertEqual([runtime["events"][event_id]["event_seq"] for event_id in ("EV-01", "EV-02")], [8, 9])
-        self.assertEqual(runtime["event_cursor"], 9)
+        self.assertEqual([runtime["events"][event_id]["event_seq"] for event_id in ("EV-01", "EV-02")], [1, 2])
+        self.assertEqual(runtime["event_cursor"], 2)
 
     def test_republication_keeps_prior_event_sequence_and_only_numbers_new_events(self) -> None:
+        previous = {"EV-01": {"id": "EV-01", "event_seq": 1, "kind": "created"}}
         _, runtime = EventPublisher.prepare(
             {"feature_version": STATE_FORMAT_VERSION},
             {"feature_version": STATE_FORMAT_VERSION, "events": {
-                "EV-01": {"id": "EV-01", "event_seq": 8, "kind": "created"},
+                "EV-01": dict(previous["EV-01"]),
                 "EV-02": {"id": "EV-02", "kind": "queued"},
             }},
-            parent_last_seq=8,
+            published_events=previous,
         )
 
-        self.assertEqual(runtime["events"]["EV-01"]["event_seq"], 8)
-        self.assertEqual(runtime["events"]["EV-02"]["event_seq"], 9)
+        self.assertEqual(runtime["events"]["EV-01"]["event_seq"], 1)
+        self.assertEqual(runtime["events"]["EV-02"]["event_seq"], 2)
+
+    def test_parent_event_numbers_require_exact_integers_in_every_position(self):
+        for bad in (True, 1.0, None, "1", 0, -1):
+            with self.subTest(number=bad):
+                previous = {"EV-01": {"id": "EV-01", "event_seq": bad, "kind": "created"},
+                            "EV-02": {"id": "EV-02", "event_seq": 2, "kind": "queued"}}
+                with self.assertRaisesRegex(ValueError, "invalid parent event sequence"):
+                    EventPublisher.prepare({}, {"events": list(previous.values())}, published_events=previous)
+
+    def test_current_event_numbers_require_exact_integers(self):
+        for bad in (True, 1.0, None, "1", 0, -1):
+            for previous in ({}, {"EV-01": {"id": "EV-01", "event_seq": 1, "kind": "created"}}):
+                with self.subTest(number=bad, published=bool(previous)):
+                    with self.assertRaisesRegex(ValueError, "invalid event sequence"):
+                        EventPublisher.prepare({}, {"events": [
+                            {"id": "EV-01", "event_seq": bad, "kind": "created"}]}, published_events=previous)
+
+    def test_event_publication_preserves_history_and_rejects_unbacked_sequence(self):
+        previous = {"EV-01": {"id": "EV-01", "event_seq": 1, "kind": "created"}}
+        for rows, message in (([], "cannot be removed"),
+                              ([{**previous["EV-01"], "kind": "rewritten"}], "content cannot be rewritten"),
+                              ([{**previous["EV-01"], "event_seq": 2}], "sequence cannot be rewritten")):
+            with self.subTest(message=message), self.assertRaisesRegex(ValueError, message):
+                EventPublisher.prepare({}, {"events": rows}, published_events=previous)
+        with self.assertRaisesRegex(ValueError, "contiguous"):
+            EventPublisher.prepare({}, {"events": [{"id": "EV-unbacked", "event_seq": 8}]})
 
     def test_canonical_json_rejects_float_and_keeps_distinct_unicode_keys(self) -> None:
         with self.assertRaisesRegex(ValueError, "floating-point"):

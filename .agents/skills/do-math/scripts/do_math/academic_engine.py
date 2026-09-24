@@ -61,12 +61,6 @@ class AcademicEngineMixin:
         basis = self._solution_basis()
         requirements = academic.current_requirements(self.instance)
         if basis is None or self.runtime["status"] in {"paused", "closed", "budget_exhausted"}: return
-        if not requirements.get("items"):
-            rejections = [r for r in self.runtime.get("external_rejections", []) if r["solution_basis"] == basis]
-            if rejections and not academic.unresolved_rejections(self.instance, self.runtime, basis, resolve_evidence=self._academic_evidence):
-                self.runtime["status"] = "completed"
-                self.runtime["queue"] = []
-            return
         current_hash = requirements["sha256"]
         for task in self.runtime["tasks"].values():
             if task.get("academic_requirement_id") and (task.get("solution_basis") != basis or task.get("requirements_sha256") != current_hash):
@@ -75,10 +69,10 @@ class AcademicEngineMixin:
                 if task["status"] == "completed":
                     # completed is absorbing; the old assessment only stops being current.
                     if isinstance(task.get("assessment"), dict) and task["assessment"].get("current") is not False:
-                        task["assessment"].update(current=False, invalidated_reason="Academic requirements or solution basis changed; new tasks carry the current basis")
+                        task["assessment"].update(current=False, invalidated_reason="Approved academic requirements or solution basis changed")
                     continue
                 task["status"] = "closed"
-                task["scope_disposition"] = {"kind": "superseded_requirements", "reason": "New tasks carry the current requirements and solution basis"}
+                task["scope_disposition"] = {"kind": "superseded_requirements", "reason": "Approved academic requirements or solution basis changed"}
                 self.runtime["queue"] = [a for a in self.runtime["queue"] if a.get("target") != task["id"]]
         created = False
         for requirement in requirements["items"]:
@@ -121,7 +115,7 @@ class AcademicEngineMixin:
         if created:
             self._ensure_model_assessments()
         status = self._academic_status()["status"]
-        if status == "completed":
+        if status in {"completed", "not_applicable"}:
             self.runtime["status"] = "completed"
             self.runtime["queue"] = []
         elif created or self.runtime["status"] == "completed":

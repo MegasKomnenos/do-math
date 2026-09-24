@@ -242,14 +242,24 @@ class CliTests(unittest.TestCase):
         self.assertFalse(runtime["executions"], "request must not start a model execution")
 
     def test_retry_action_is_a_distinct_request_mode(self) -> None:
-        from do_math.cli import CliInputError, build_parser
-        parser = build_parser()
+        from do_math import cli
+        parser = cli.build_parser()
         retry = parser.parse_args(("request", *self.instance_args(), "--retry-action", "AC-held"))
         self.assertEqual(retry.retry_action, "AC-held")
         self.assertIsNone(retry.role)
-        with self.assertRaises(CliInputError):
+        with self.assertRaises(cli.CliInputError):
             parser.parse_args(("request", *self.instance_args(), "--role", "maintenance",
                                "--retry-action", "AC-held"))
+        with self.assertRaises(cli.CliInputError):
+            parser.parse_args(("request", *self.instance_args(), "--role", "maintenance",
+                               "--text", "inspect state"))
+        schema = cli.describe_commands(parser, 'request')['commands']['request']['payload_schema']
+        self.assertIn('reason', schema['properties'])
+        self.assertNotIn('text', schema['properties'])
+        with self.assertRaises(cli.CliInputError):
+            cli._json_arguments(parser, {'schema_version': 5, 'command': 'request',
+                'payload': {'repository': str(self.repository), 'instance': self.instance,
+                            'role': 'maintenance', 'text': 'inspect state'}})
 
     def test_retry_action_reaches_the_public_control_inbox_idempotently(self) -> None:
         first = self.run_cli("request", *self.instance_args(), "--retry-action", "AC-held",
@@ -308,6 +318,54 @@ class CliTests(unittest.TestCase):
 
 
 class CliBoundaryTests(unittest.TestCase):
+    def test_query_rejects_unused_filters_before_reading_in_both_interfaces(self):
+        from do_math import cli
+        base = ['query', '--repository', '.', '--instance', 'RI-test']
+        cases = [
+            (['--prefix', 'runtime/'], {'prefix': 'runtime/'}),
+            (['--direction', 'incoming'], {'direction': 'incoming'}),
+            (['--files', '--kind', 'grant'], {'files': True, 'kind': 'grant'}),
+            (['--files', '--related-to', 'KN-one'], {'files': True, 'related_to': 'KN-one'}),
+            (['--files', '--direction', 'both'], {'files': True, 'direction': 'both'}),
+        ]
+        for options, payload in cases:
+            with self.subTest(options=options), patch.object(cli, 'ResearchRepository') as files, \
+                    patch('do_math.engine.query_records') as records:
+                with self.assertRaises(cli.CliInputError):
+                    cli.execute(cli.build_parser().parse_args(base + options))
+                with self.assertRaises(cli.CliInputError):
+                    cli._json_arguments(cli.build_parser(), {
+                        'schema_version': 5, 'command': 'query',
+                        'payload': {'repository': '.', 'instance': 'RI-test', **payload}})
+                files.assert_not_called()
+                records.assert_not_called()
+
+    def test_query_defaults_and_explicit_filters_reach_consumers_in_both_interfaces(self):
+        from do_math import cli
+        parser = cli.build_parser()
+        base = ['query', '--repository', '.', '--instance', 'RI-test']
+        for interface in ('cli', 'json'):
+            def arguments(options, payload):
+                if interface == 'cli':
+                    return parser.parse_args(base + options)
+                return cli._json_arguments(parser, {'schema_version': 5, 'command': 'query',
+                    'payload': {'repository': '.', 'instance': 'RI-test', **payload}})
+            with self.subTest(interface=interface), patch.object(cli, 'ResearchRepository') as files:
+                files.return_value.query.return_value = {
+                    'snapshot': 'fixed', 'items': [], 'total': 0, 'next_cursor': None, 'truncated': False}
+                cli.execute(arguments(['--files'], {'files': True}))
+                self.assertEqual(files.return_value.query.call_args.kwargs['prefix'], 'research/')
+                cli.execute(arguments(['--files', '--prefix', 'runtime/'], {'files': True, 'prefix': 'runtime/'}))
+                self.assertEqual(files.return_value.query.call_args.kwargs['prefix'], 'runtime/')
+            with self.subTest(interface=interface), patch('do_math.engine.query_records', return_value={}) as records:
+                cli.execute(arguments([], {}))
+                self.assertEqual(records.call_args.kwargs['direction'], 'both')
+                cli.execute(arguments(['--kind', 'knowledge', '--related-to', 'KN-one', '--direction', 'incoming'],
+                    {'kind': 'knowledge', 'related_to': 'KN-one', 'direction': 'incoming'}))
+                self.assertEqual(records.call_args.kwargs['kind'], 'knowledge')
+                self.assertEqual(records.call_args.kwargs['related_to'], 'KN-one')
+                self.assertEqual(records.call_args.kwargs['direction'], 'incoming')
+
     def test_json_string_values_preserve_leading_hyphens(self):
         from do_math import cli
         parser = cli.build_parser()

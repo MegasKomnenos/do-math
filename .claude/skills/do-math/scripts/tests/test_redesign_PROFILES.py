@@ -26,6 +26,58 @@ CONFIG = {
 
 
 class ProfileTests(unittest.TestCase):
+    def test_role_scoped_authoring_preserves_exact_profile_editions_and_capacity(self):
+        api = self.profiles()
+        config = {**deepcopy(CONFIG), "lean_command": ["fixture-no-lean"]}
+        full = api.build_profiles(config)
+        for role in sorted(api.PROFILE_ROLES):
+            with self.subTest(role=role):
+                scoped = api.build_profiles(config, roles={role})
+                expected = {key: row for key, row in full["execution_profiles"].items()
+                            if row["role"] == role}
+                self.assertEqual(scoped["execution_profiles"], expected)
+                self.assertEqual(scoped["role_profile_refs"], {role: full["role_profile_refs"][role]})
+                self.assertEqual(scoped["capacity_constraints"], full["capacity_constraints"])
+        with self.assertRaisesRegex(ValueError, "supported roles"):
+            api.build_profiles(config, roles={"invented"})
+
+    def test_ai_selection_builds_only_its_role_without_reading_lean(self):
+        api = self.profiles()
+        config = {**deepcopy(CONFIG), "lean_command": ["fixture-no-lean"]}
+        registry = api.build_profiles(config)["execution_profiles"]
+        with patch.object(api, "_lean_contract", side_effect=AssertionError("AI selection read Lean")), \
+             patch.object(api, "seal_profile", wraps=api.seal_profile) as seals:
+            chosen = model_policy.selection(config, {"role": "maintenance"}, {}, {}, profiles=registry)
+        self.assertEqual(registry[chosen["profile_ref"]["id"]]["role"], "maintenance")
+        self.assertEqual(seals.call_count, len(model_policy.TIERS))
+
+    def test_scoped_authoring_keeps_shared_host_validation(self):
+        api = self.profiles()
+        constraint = api.host_constraint(host_id="fixture-host",
+            limits={"jobs": 3, "memory_bytes": 4096, "cpu_rate_basis_points": 10000},
+            control_reserve={"jobs": 1, "memory_bytes": 1024, "cpu_rate_basis_points": 1000},
+            authority_refs=["GS-fixture"])
+        demands = {role: {"jobs": 1, "memory_bytes": 1024, "cpu_rate_basis_points": 1000}
+                   for role in api.HOST_ROLES}
+        config = {**deepcopy(CONFIG), "lean_command": ["fixture-no-lean"],
+                  "host_resources": {"constraint": constraint, "demands_by_role": demands}}
+        full = api.build_profiles(config)
+        scoped = api.build_profiles(config, roles={"maintenance"})
+        self.assertEqual(scoped["execution_profiles"], {
+            key: row for key, row in full["execution_profiles"].items() if row["role"] == "maintenance"})
+        self.assertEqual(scoped["host_capacity_ref"], full["host_capacity_ref"])
+        for defect in ("missing", "unknown", "invalid"):
+            bad = deepcopy(config)
+            rows = bad["host_resources"]["demands_by_role"]
+            if defect == "missing":
+                del rows["research_work"]
+            elif defect == "unknown":
+                rows["invented"] = deepcopy(rows["research_work"])
+            else:
+                rows["research_work"]["memory_bytes"] = 0
+            with self.subTest(defect=defect), self.assertRaises(ValueError):
+                api.build_profiles(bad, roles={"maintenance"})
+
     def test_unused_observation_settings_are_rejected_at_configuration_boundary(self):
         from do_math.engine import DEFAULT_CONFIG, validate_config
         for key in ("observation_idle_seconds", "max_observation_reviews",

@@ -16,6 +16,30 @@ from test_redesign_SURFACE import surface_state
 
 
 class ReportingTests(unittest.TestCase):
+    def test_timeline_preserves_explicit_continuation_and_pending_successor(self):
+        from copy import deepcopy
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        pending = {'id': 'AC-work', 'role': 'research_work', 'continuation_of': 'EX-second'}
+        runtime = {'executions': {
+            'EX-first': {'id': 'EX-first', 'status': 'ended', 'action': {'id': 'AC-work'}},
+            'EX-second': {'id': 'EX-second', 'status': 'ended', 'continuation_of': 'EX-first',
+                          'action': {'id': 'AC-work', 'continuation_of': 'EX-first'}}},
+            'queue': [pending, {'id': 'AC-other', 'role': 'maintenance', 'continuation_of': 'EX-unrelated'}]}
+        before = deepcopy(runtime)
+        store = SimpleNamespace(load=lambda snapshot: ('a' * 40, {}, runtime))
+        with patch('do_math.reporting._repository', return_value=store):
+            value = timeline(Path('.'), 'RI-test', snapshot='a' * 40)
+        rows = {row['id']: row for row in value['rows']}
+        self.assertIsNone(rows['EX-first']['continuation_of'])
+        self.assertEqual(rows['EX-second']['continuation_of'], 'EX-first')
+        self.assertEqual(rows['EX-second']['next_actions'], [pending])
+        self.assertEqual(rows['EX-first']['next_actions'], [])
+        exported = {row['id']: row for row in csv.DictReader(io.StringIO(timeline_csv(value)))}
+        self.assertEqual(exported['EX-second']['continuation_of'], 'EX-first')
+        self.assertEqual(json.loads(exported['EX-second']['next_actions']), [pending])
+        self.assertEqual(runtime, before)
+
     def test_fixed_snapshot_preserves_unknown_times_and_crosses_the_kst_date(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

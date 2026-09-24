@@ -13,6 +13,7 @@ from typing import Any
 from jsonschema import Draft202012Validator
 
 from .context_store import _excluded, _safe_path
+from .repository import validate_storage_value
 
 CHECKPOINT_MAX_BYTES = 4 * 1024 * 1024
 RULES_MAX_BYTES = 65536
@@ -439,6 +440,7 @@ def read_checkpoint(workspace: Path) -> dict:
             return {"status": "being_written"}
         digest = hashlib.sha256(raw).hexdigest()
         value = json.loads(raw.decode("utf-8-sig"))
+        validate_storage_value(value)
         _CHECKPOINT_VALIDATOR.validate(value)
         for reference in value["evidence_paths"]:
             evidence = _safe_path(workspace, reference)

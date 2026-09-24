@@ -614,6 +614,7 @@ def begin_transition(instance: dict, new_env_id: str) -> dict:
             continue
         verification = formal.get("verification", {})
         targets.append({"id": kid, "formal_result_id": formal["id"],
+            "exposition_id": record["exposition_id"],
             "source_sha256": hashlib.sha256(formal["lean_code"].encode()).hexdigest(),
             "basis": {"id": kid, "sha256": _hash(record), "status": _status(record)},
             "formal_basis": kr.record_digest(formal), "exposition_basis": kr.record_digest(instance["expositions"][record["exposition_id"]]),
@@ -739,7 +740,8 @@ def activate_transition(instance: dict, transition: dict, *, runtime=None) -> di
         formal = output.get("formal_results", {}).get(target["formal_result_id"], {})
         exposition = output["expositions"].get((record or {}).get("exposition_id"), {})
         result = results[kid]
-        if (not record or _hash(record) != target["basis"]["sha256"] or kr.record_digest(formal) != target["formal_basis"]
+        if (not record or record.get("exposition_id") != target["exposition_id"]
+                or _hash(record) != target["basis"]["sha256"] or kr.record_digest(formal) != target["formal_basis"]
                 or kr.record_digest(exposition) != target["exposition_basis"]):
             raise ValueError("transition basis changed: " + kid)
         if result.get("source_sha256") != target["source_sha256"] or result.get("toolchain") != environment.get("toolchain"):

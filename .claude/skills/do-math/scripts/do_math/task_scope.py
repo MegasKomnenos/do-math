@@ -217,9 +217,15 @@ def assessment_basis(task, assessment, instance, runtime):
         if ref in records:
             refs.update(action_read_ids({'role':'research_work','target':ref},instance,runtime))
     refs.discard(task['id'])
+    from .input_basis import aliases
     result={}
     for ref in sorted(refs):
         found=records.get(ref)
+        if found is None:
+            source = next((source for source in instance.get('sources', [])
+                           if ref in aliases(source)), None)
+            if source is not None:
+                found = ('source', source)
         value=found[1] if found else next((r for r in task.get('results',[]) if ref in {r.get('id'),r.get('execution_id')}),None)
         if found and found[0]=='task':value=task_reference_basis(value)
         result[ref]=_hash(value) if value is not None else None

@@ -58,11 +58,11 @@ def extend():
         "lease_expires_at": TEXT, "source_ref": TEXT, "lost_at": TEXT, "loss_reason": TEXT},
         ("generation", "status", "lease_seconds", "disconnect_policy", "attached_at", "last_heartbeat_at", "lease_expires_at", "source_ref"))
     RECORDS["trust_transitions"] = record({"from_environment": nullable(ID), "to_environment": ID,
-        "targets": array(obj({"id": ID, "formal_result_id": ID, "source_sha256": HASH, "basis": EVIDENCE,
+        "targets": array(obj({"id": ID, "formal_result_id": ID, "exposition_id": ID, "source_sha256": HASH, "basis": EVIDENCE,
             "formal_basis": HASH, "exposition_basis": HASH, "declaration_evidence": nullable(EVIDENCE),
             "dependency_closure": nullable(mapping(array(TEXT))), "dependency_evidence": nullable(EVIDENCE),
             "axioms": nullable(mapping(array(TEXT))), "previous_environment_ids": array(nullable(ID))},
-            ("id", "formal_result_id", "source_sha256", "basis", "formal_basis", "exposition_basis"))),
+            ("id", "formal_result_id", "exposition_id", "source_sha256", "basis", "formal_basis", "exposition_basis"))),
         "results": mapping(EVIDENCE), "status": enum("checking", "ready", "active", "activated", "failed", "withdrawn"),
         "source_ref": TEXT, "created_at": TEXT, "activated_at": TEXT, "semantic_pending": REFS,
         "semantic_results": mapping(EVIDENCE), "history": HISTORY}, ("from_environment", "to_environment", "targets", "results", "status"))
@@ -120,7 +120,7 @@ def extend():
     supplied_source['properties']['local_path'] = TEXT
     # Existing-ID keyed operational views: no duplicate record ID is manufactured.
     RUNTIME_FIELDS.update({"checkpoints": mapping(checkpoint),
-        "condition_states": mapping(enum("ready", "blocked", "unknown", "unavailable")),
+        "condition_states": mapping(enum("ready", "not_ready", "evaluation_error")),
         "lost_conversation_generations": mapping(NAT), "resume_lifecycle": TEXT,
         "extended_controls": mapping(obj({"action": TEXT, "source_ref": TEXT, "status": TEXT,
             "request": EVIDENCE, "result": EVIDENCE, "processed_at": TEXT})),

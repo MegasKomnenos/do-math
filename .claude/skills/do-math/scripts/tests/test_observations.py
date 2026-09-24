@@ -55,6 +55,20 @@ class Tests(unittest.TestCase):
             self.assertEqual(observations.read_checkpoint(self.ws)["status"], "invalid")
         self.assertLessEqual(checks.call_count, 1)
 
+    def test_checkpoint_rejects_numbers_outside_the_storage_value_domain(self):
+        for changes in ({"iteration": 1.0}, {"counters": {"attempts": 2.0}},
+                        {"iteration": 2 ** 53}):
+            with self.subTest(changes=changes):
+                self.write(**changes)
+                self.assertEqual(observations.read_checkpoint(self.ws)["status"], "invalid")
+        self.write(iteration=1, counters={"attempts": 2})
+        checkpoint = observations.read_checkpoint(self.ws)
+        self.assertEqual(checkpoint["status"], "valid")
+        stored = observations.persistent_record(checkpoint,
+            artifact_ref="runtime/artifacts/fixture/checkpoint.json")
+        self.assertEqual(stored["value"]["iteration"], 1)
+        self.assertEqual(stored["value"]["counters"], {"attempts": 2})
+
     def test_checkpoint_requires_available_preserved_evidence_paths(self):
         self.write(evidence_paths=["proof.txt"])
         self.assertEqual(observations.read_checkpoint(self.ws)["status"], "invalid")

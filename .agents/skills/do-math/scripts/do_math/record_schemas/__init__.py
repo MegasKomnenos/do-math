@@ -378,7 +378,9 @@ def validate_semantics(instance, runtime, identifiers):
         if assessment.get("previous_assessment_id"):
             previous = instance["identity_assessments"][assessment["previous_assessment_id"]]
             transition = runtime.get("trust_transitions", {}).get(assessment.get("transition_id"), {})
-            targets = [t for t in transition.get("targets", []) if t["formal_result_id"] == previous["formal_result_id"]]
+            targets = [t for t in transition.get("targets", [])
+                       if t["formal_result_id"] == previous["formal_result_id"]
+                       and t["exposition_id"] == previous["exposition_id"]]
             if len(targets) != 1 or transition.get("status") not in {"active", "activated"}:
                 raise ValueError("identity continuity requires the actual activated transition")
             from ..formal import compare_formal_results

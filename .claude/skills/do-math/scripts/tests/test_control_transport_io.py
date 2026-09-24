@@ -25,6 +25,28 @@ class ControlTransportIoTests(unittest.TestCase):
         self.binding = self.transport.issue("EX-transport", "GR-transport")
         self.endpoint = Path(self.binding["endpoint"])
 
+    def test_nonstring_control_fields_reject_without_breaking_later_requests(self):
+        transport = ControlTransport()
+        binding = transport.issue("EX-memory", "GR-memory")
+        published = []
+        def publish(request):
+            published.append(request["request_id"])
+            return {"state": "rejected", "reason": "fixture receiver"}
+        for field in ("transport_id", "kind"):
+            for index, value in enumerate(([], {})):
+                with self.subTest(field=field, value=value):
+                    request_id = field + "-" + str(index)
+                    request = {**binding, "request_id": request_id,
+                               "kind": "submit_intent", "payload": {}, field: value}
+                    receipt = transport.receive(request, publish=publish)
+                    self.assertEqual(receipt["state"], "rejected")
+                    self.assertEqual(transport.receipt(request_id), receipt)
+        self.assertEqual(published, [])
+        receipt = transport.receive({**binding, "request_id": "valid-after-errors",
+            "kind": "submit_intent", "payload": {}}, publish=publish)
+        self.assertEqual(receipt["reason"], "fixture receiver")
+        self.assertEqual(published, ["valid-after-errors"])
+
     def test_competing_different_payloads_cannot_both_submit(self):
         request_id = "race-one"
         request_path = self.endpoint / "inbox" / f"{request_id}.json"

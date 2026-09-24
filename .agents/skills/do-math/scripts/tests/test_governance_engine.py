@@ -8,6 +8,29 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 
 class CentralGovernanceTests(unittest.TestCase):
+    def test_import_unit_target_matches_each_governance_consumer(self):
+        from do_math import governance as gov
+        source = gov.preserve_source('GS-target', 'Use the named target.', origin='user')
+        cases = [
+            ('grant', 'GR-one', {'kind': 'grant', 'grant': {'id': 'GR-one'}}),
+            ('delegation', 'DG-one', {'kind': 'delegation', 'delegation': {'id': 'DG-one'}}),
+            ('revoke', 'GR-one', {'kind': 'revoke', 'grant_id': 'GR-one'}),
+            ('task_scope', 'TK-one', {'kind': 'task_scope', 'task_id': 'TK-one'}),
+            ('question_answer', 'QU-one', {'kind': 'question_answer', 'resolves_questions': ['QU-one', 'QU-two']}),
+        ]
+        for kind, target, payload in cases:
+            with self.subTest(kind=kind):
+                output = {'questions': [], 'question_details': [], 'needs_clarification': False,
+                    'import_units': [{'unit_id': 'U', 'source_range': {'start': 0, 'end': len(source['text'])},
+                        'interpretation': 'Use the named target.', 'owner_kind': kind, 'owner_ref': target,
+                        'payload': deepcopy(payload), 'decision_refs': [], 'question_refs': []}]}
+                gov.validate_import_units({'id': 'RI-test'}, {}, source, output)
+                output['import_units'][0]['owner_ref'] = 'different-target'
+                with self.assertRaisesRegex(ValueError, 'owner coordinate'):
+                    gov.validate_import_units({'id': 'RI-test'}, {}, source, output)
+                output['import_units'][0]['payload'] = {}
+                gov.validate_import_units({'id': 'RI-test'}, {}, source, output)
+
     def test_import_basis_tracks_replaced_grant_but_not_unrelated_grants(self):
         from do_math import governance as gov
         instance = {'id': 'RI-test', 'governance': {}, 'grants': {

@@ -255,6 +255,46 @@ class MachineSchedulerTests(unittest.TestCase):
 @test_group('resource')
 class CallManagerTests(unittest.TestCase):
     @test_group('unit')
+    def test_collection_releases_finished_threads_but_retains_a_live_call(self):
+        calls = ModelCalls()
+        release = threading.Event()
+        returned = []
+
+        def continuation():
+            returned.append((yield))
+
+        def wait_for_release():
+            release.wait()
+            return "released"
+
+        live = continuation()
+        next(live)
+        calls.start_call(live, wait_for_release, {}, execution_id="EX-live")
+        live_thread = calls.threads[-1]
+        try:
+            for index in range(16):
+                generator = continuation()
+                next(generator)
+                future = calls.start_call(generator, lambda value: value,
+                    {"value": index}, execution_id="EX-finished-" + str(index))
+                thread = calls.threads[-1]
+                self.assertEqual(future.result(timeout=5), index)
+                thread.join(timeout=5)
+                self.assertFalse(thread.is_alive())
+                self.assertEqual(calls.collect(), 1)
+                self.assertEqual(calls.threads, [live_thread])
+                self.assertEqual(len(calls.futures), 1)
+            self.assertEqual(returned, list(range(16)))
+        finally:
+            release.set()
+            calls.close()
+        self.assertEqual(calls.collect(), 1)
+        self.assertEqual(calls.collect(), 0)
+        self.assertEqual(returned, [*range(16), "released"])
+        self.assertEqual(calls.threads, [])
+        self.assertEqual(calls.futures, {})
+
+    @test_group('unit')
     def test_admission_transition_preserves_native_utc_precision(self):
         from datetime import datetime, timezone
         from do_math.execution_lifecycle import create_execution

@@ -330,7 +330,8 @@ class ControlTransport:
             _require_file_name(result.get(key), key)
         for key in ("capability", "execution_id", "grant_id"):
             _require_text(result.get(key), key)
-        if result.get("kind") not in _REQUEST_KINDS or not isinstance(result.get("payload"), dict):
+        if (not isinstance(result.get("kind"), str) or result["kind"] not in _REQUEST_KINDS
+                or not isinstance(result.get("payload"), dict)):
             raise ValueError("unsupported control kind or payload")
         binding = self._binding(result)
         if any(result[key] != binding[key] for key in ("execution_id", "grant_id", "capability")):
@@ -365,11 +366,11 @@ class ControlTransport:
                    "state": "rejected", "reason": reason}
         self._receipts[request["request_id"]] = deepcopy(receipt)
         transport_id = request.get("transport_id")
-        binding = self._capabilities.get(transport_id)
         try:
             safe_transport_id = _require_file_name(transport_id, "transport_id")
         except ValueError:
             safe_transport_id = None
+        binding = self._capabilities.get(safe_transport_id) if safe_transport_id is not None else None
         if binding is None and self.root is not None and safe_transport_id is not None:
             binding = _json(self.root / safe_transport_id / "binding.json")
         if binding is not None and binding.get("endpoint"):

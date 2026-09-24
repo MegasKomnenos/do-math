@@ -890,8 +890,21 @@ def validate_import_units(instance, runtime, source, output, *, owner_handlers=N
         if payload:
             if payload.get("kind") != unit["owner_kind"]: raise ValueError("payload and unit have different owners")
             if payload.get("record", {}).get("id", unit["owner_ref"]) != unit["owner_ref"]: raise ValueError("payload target differs from owner coordinate")
-            if unit["owner_kind"] in owner_handlers:
-                owner_handlers[unit["owner_kind"]]["validate"](instance, runtime, unit)
+            kind = unit["owner_kind"]
+            if kind in {"grant", "delegation"}:
+                target = payload.get(kind)
+                if not isinstance(target, dict) or target.get("id") != unit["owner_ref"]:
+                    raise ValueError("payload target differs from owner coordinate")
+            elif kind in {"revoke", "task_scope"}:
+                field = "grant_id" if kind == "revoke" else "task_id"
+                if payload.get(field) != unit["owner_ref"]:
+                    raise ValueError("payload target differs from owner coordinate")
+            elif kind == "question_answer":
+                targets = payload.get("resolves_questions")
+                if not isinstance(targets, list) or unit["owner_ref"] not in targets:
+                    raise ValueError("payload target differs from owner coordinate")
+            if kind in owner_handlers:
+                owner_handlers[kind]["validate"](instance, runtime, unit)
     if cursor != len(source["text"]): raise ValueError("incomplete source coverage")
     if referenced_questions != set(qids): raise ValueError("question lacks a source meaning unit")
     indices = set()

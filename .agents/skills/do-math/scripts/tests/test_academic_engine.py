@@ -177,6 +177,46 @@ class AcademicEngineTests(PurposeHarness):
         self.assertEqual([row["claim"] for row in current["completion_obligations"]], ["draft account", "archival supplement"])
         self.assertNotEqual(engine.runtime["status"], "completed")
 
+    def test_removing_all_requirements_retires_old_tasks_and_completes_followup(self):
+        engine = self._requirement_change_fixture(completed=True)
+        before = deepcopy(engine.runtime["tasks"])
+        self.assertTrue(any(task["status"] == "completed" for task in before.values()))
+        self.assertTrue(any(task["status"] != "completed" for task in before.values()))
+        send_control(engine, "decision", config={"change": charter_change(
+            engine, academic_requirements=[])})
+        self._publish_followup(engine)
+        self.assertEqual(set(engine.runtime["tasks"]), set(before))
+        for tid, previous in before.items():
+            current = engine.runtime["tasks"][tid]
+            self.assertEqual(current["results"], previous["results"])
+            if previous["status"] == "completed":
+                self.assertEqual(current["status"], "completed")
+                self.assertFalse(current["assessment"]["current"])
+            else:
+                self.assertEqual(current["status"], "closed")
+                self.assertEqual(current["scope_disposition"]["kind"], "superseded_requirements")
+        self.assertEqual(engine.instance["goal_status"], "mathematically_solved")
+        self.assertEqual(engine._academic_status()["status"], "not_applicable")
+        self.assertEqual(engine.runtime["status"], "completed")
+        self.assertEqual(engine.runtime["queue"], [])
+
+    def test_removing_all_requirements_preserves_unresolved_external_rejection(self):
+        engine = self._requirement_change_fixture()
+        send_control(engine, "decision", config={"change": {
+            "kind": "academic_rejection", "actor": "referee",
+            "text": "The preserved solution still needs a response."}})
+        rejection = deepcopy(engine.runtime["external_rejections"][-1])
+        send_control(engine, "decision", config={"change": charter_change(
+            engine, academic_requirements=[])})
+        self._publish_followup(engine)
+        self.assertEqual(engine._academic_status()["status"], "externally_rejected")
+        self.assertNotEqual(engine.runtime["status"], "completed")
+        self.assertEqual(engine.runtime["external_rejections"][-1], rejection)
+        self.assertTrue(all(task["status"] == "closed"
+                            for task in engine.runtime["tasks"].values()))
+        self.assertFalse(any(action.get("target") in engine.runtime["tasks"]
+                             for action in engine.runtime["queue"]))
+
     def test_completed_instance_rejects_requirement_changes(self):
         engine = self._requirement_change_fixture()
         from state_fixtures import complete_academic_task
@@ -363,18 +403,19 @@ class AcademicTaskPersistenceTests(unittest.TestCase):
         from do_math.governance import governance_view
         engine = ResearchEngine(self.repo, self.identifier)
         send_control(engine, "decision", config={"change": charter_change(engine,
-            academic_requirements=[requirement(["Explain the supplied result"])])})
+            academic_requirements=[{**requirement(["Explain the supplied result"]), "id": "원고 검토"}])})
         # Only the mathematical solution basis is synthetic; generation, approval,
         # record/reference validation and Git publication are real.
         basis = {"goal_ref": "synthetic-solution", "records": []}
         with patch.object(engine, "_solution_basis", return_value=basis):
+            engine.instance["goal_status"] = "mathematically_solved"
             engine._ensure_academic_followup()
             engine._save()
         task = next(t for t in engine.runtime["tasks"].values() if t.get("academic_requirement_id"))
         charter = governance_view(engine.instance)["charter"]
         self.assertNotIn("producer_execution", task)
         self.assertEqual(task["basis_refs"], [charter["id"], charter["approval_ref"]])
-        self.assertEqual(task["academic_requirement_id"], "writeup")
+        self.assertEqual(task["academic_requirement_id"], "원고 검토")
         self.assertEqual(task["requirements_sha256"], governance_view(engine.instance)["academic_requirements"]["sha256"])
         preparation = next(a for a in engine.runtime['queue'] if task['id'] in a.get('observation_rule_targets', {}))
         self.assertEqual(preparation['role'], 'research_preparation')

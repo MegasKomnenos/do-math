@@ -237,22 +237,34 @@ class ProducerStorageContractTests(unittest.TestCase):
     def test_accepted_uncertainty_metadata_matches_registered_storage_shape(self):
         from do_math import submission
         from do_math.state_contract import default_state_contract
+        from test_redesign_CONTRACTS import response, context
         wire = submission.extension_schema({'role': 'research_work'}, {})
-        contract = default_state_contract()
-        kr.register_storage_families(contract)
-        registered = contract.family('research', 'knowledge').schema
-        for value in ('Not a proof', {'claim': 'Not a proof', 'scope': 'finite search only'}):
+        registered = default_state_contract().family('research', 'knowledge').schema
+        output = response()
+        output['integration_bundles'][0]['members'].append('activity-extensions.json/knowledge_metadata/0')
+        workspace = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        for value in ('Not a proof', {'claim': 'Not a proof', 'scope': 'finite search only'},
+                      None, [], 7, False):
             with self.subTest(value=value):
-                metadata = {'title': 'Bounded observation', 'uncertainty_assessment': value}
-                if list(jsonschema.Draft202012Validator(wire).iter_errors({'knowledge_metadata': [metadata]})):
-                    continue  # A deliberate producer rejection closes this path.
-                e = engine_fixture()
-                proposed = candidate('Bounded observation', '', uncertainty_assessment=value)
-                proposed.update(kind='observation', declaration_names=[])
-                e.instance, e.runtime, kid = knowledge_io.import_candidate(e.instance, e.runtime,
-                    proposed, source_ref='fixture:submission', actor_ref='EX-producer')
-                errors = [error.message for error in jsonschema.Draft202012Validator(registered).iter_errors(e.instance['knowledge'][kid])]
-                self.assertEqual(errors, [], 'Accepted producer metadata must have a persistence representation')
+                extension = {'knowledge_metadata': [{'title': 'A', 'uncertainty_assessment': value}]}
+                valid = isinstance(value, (str, dict))
+                errors = list(jsonschema.Draft202012Validator(wire).iter_errors(extension))
+                self.assertEqual(not errors, valid)
+                issues = submission.payload_issues(output, contracts.schema_for('research_work'),
+                    context(), extension, workspace)
+                self.assertEqual(not issues, valid, issues)
+                proposed = {**output['knowledge'][0], 'uncertainty_assessment': value}
+                if not valid:
+                    self.assertTrue(any(row['rule_id'] == 'schema.type' and
+                        row['path'].endswith('/uncertainty_assessment') for row in issues), issues)
+                    with self.assertRaisesRegex(ValueError, 'uncertainty_assessment'):
+                        knowledge_io.import_candidate({}, {}, proposed,
+                            source_ref='fixture:submission', actor_ref='fixture:author')
+                    continue
+                state, _, kid = knowledge_io.import_candidate({}, {}, proposed,
+                    source_ref='fixture:submission', actor_ref='fixture:author')
+                jsonschema.Draft202012Validator(registered).validate(state['knowledge'][kid])
+                self.assertEqual(state['knowledge'][kid]['uncertainty_assessment'], value)
 
 
 class TraceabilityCheckerTests(unittest.TestCase):

@@ -518,6 +518,13 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict)
                     if result.get("output") is not None:
                         execution["output"] = result["output"]
                     execution["error"] = result.get("error")
+                    parsed = result.get("execution", {}).get("collect", {}).get("jsonl", {})
+                    slots.provider_result(eid, profile["ai"]["provider"],
+                        failure=result.get("failure") if result.get("error_kind") == "provider_limit" else None,
+                        response_observed=result.get("status") == "completed" or bool(
+                            parsed.get("turn_failed") or parsed.get("turn_completed")),
+                        initial_seconds=config["provider_retry_initial_seconds"],
+                        maximum_seconds=config["provider_retry_max_seconds"])
                     observation = execution_observation(result)
                     if observation is not None:
                         execution["provider_observation"] = observation
@@ -525,6 +532,11 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict)
                         evidence = result["capability_evidence"]
                         state.setdefault("capability_evidence", {})[evidence["id"]] = evidence
                     outcome = "repaired" if result.get("status") == "completed" else "recovery_failed"
+                    if result.get("error_kind") == "model_policy":
+                        runtime["model_policy_violation"] = {
+                            "execution_id": eid, "assigned_model": chosen["model"],
+                            "reported_models": deepcopy(result.get("reported_models"))}
+                        runtime["status"] = "paused"
                     if outcome == 'repaired' and diagnosis:
                         regression = collect_repair_verification(result.get('output'), execution_workspace)
                         _json(run_directory / 'regression-evidence.json', {'files': regression})

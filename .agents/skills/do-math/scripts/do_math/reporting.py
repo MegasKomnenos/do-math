@@ -164,6 +164,7 @@ def timeline(repository: Path, instance_id: str, *, snapshot=None, timezone_name
         created, started, ended = (execution.get(key) for key in ("created_at", "started_at", "ended_at"))
         rows.append({"unit": "internal_execution", "id": execution["id"], "snapshot": head,
             "input_snapshot": execution.get("input_snapshot"), "action_id": action.get("id"), "lineage_id": action.get("lineage_id"),
+            "continuation_of": execution.get("continuation_of") or action.get("continuation_of"),
             "role": execution.get("role"), "target": action.get("target"), "budget_kind": execution.get("budget_kind"),
             "assigned_model": execution.get("model"), "reported_models": execution.get("reported_models"),
             "created_at_utc": created, "started_at_utc": started, "ended_at_utc": ended,
@@ -175,7 +176,9 @@ def timeline(repository: Path, instance_id: str, *, snapshot=None, timezone_name
             "output_files": execution.get("output_files", []), "artifact_bundle": execution.get("artifact_bundle"),
             "usage": execution.get("usage"), "usage_segments": execution.get("usage_segments"),
             "model_usage_reported": execution.get("model_usage_reported"), "usage_scope": execution.get("usage_scope"),
-            "next_actions": [a for a in runtime.get("queue", []) if any(a.get(key, {}).get("execution_id") == execution["id"] for key in ("repair", "refresh", "recovery"))],
+            "next_actions": [a for a in runtime.get("queue", [])
+                if a.get("continuation_of") == execution["id"] or any(
+                    a.get(key, {}).get("execution_id") == execution["id"] for key in ("repair", "refresh", "recovery"))],
             "evidence_source": {"kind": "research_snapshot", "snapshot": head}})
     if include_operator:
         for path in sorted((Path(instance["workspace"]) / "operator/runs").glob("*/result.json")):

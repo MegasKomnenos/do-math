@@ -267,7 +267,7 @@ def repetition_lineages(instance: dict, runtime: dict, task_id: str | None = Non
             counts[key] = 0
         elif 'version' in row:
             counts[key] = row['version']-baselines.get((name,key),0)
-        elif row['outcome'] not in {'premises_changed', 'capacity_wait', 'input_overflow', 'waiting', 'transport_failure','parse_failure','unclassified_failure'}:
+        elif row['outcome'] not in {'premises_changed', 'capacity_wait', 'input_overflow', 'waiting', 'transport_failure','unclassified_failure'}:
             counts[key] = counts.get(key, 0) + 1
         result[name]["count"] = sum(counts.values())
         result[name]["events"].append(deepcopy(row))

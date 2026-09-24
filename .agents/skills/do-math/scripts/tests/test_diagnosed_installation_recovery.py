@@ -6,7 +6,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math import scheduled_operator as operator, execution_profiles, repair_execution
@@ -15,19 +15,21 @@ import test_walkthrough_contract_repairs as fixtures
 
 
 class DiagnosedRecoveryTests(unittest.TestCase):
-    def run_case(self, outcome):
+    def run_case(self, outcome, *, runner_result=None):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         root = Path(temporary.name)
         runtime, diagnosis = fixtures.WalkthroughRepairs().installation_fixture()
         configured = execution_profiles.build_profiles(DEFAULT_CONFIG)
         profile = next(p for p in configured['execution_profiles'].values() if p['role'] == 'recovery')
-        state = {**configured, 'config':{'operator_enabled':True}, 'id':'RI-fixture'}
+        state = {**configured, 'config':dict(DEFAULT_CONFIG), 'id':'RI-fixture'}
         repository = SimpleNamespace(_store=SimpleNamespace(_git_dir=root),
             writer_lock=lambda: nullcontext(), load=lambda: ('head',state,runtime),
             read=lambda path, snapshot: b'{"preserved":"actual rejected response"}',
             save_with_state=lambda *a, **k: ('next-head', state, runtime))
-        slots = SimpleNamespace(acquire=lambda *a, **k:True, started=lambda *a, **k:None, release=lambda *a:True)
+        self.provider_results = Mock(return_value={})
+        slots = SimpleNamespace(acquire=lambda *a, **k:True, started=lambda *a, **k:None,
+            release=lambda *a:True, provider_result=self.provider_results)
         installation = root/'skill'
         installation.mkdir()
         (installation/'SKILL.md').write_text('fixture installation',encoding='utf-8')
@@ -36,9 +38,10 @@ class DiagnosedRecoveryTests(unittest.TestCase):
             observed.append(arguments)
             arguments['on_started']({'pid':123,'job_name':'synthetic-not-a-real-process'})
             (arguments['workspace']/'regression.txt').write_text('Synthetic regression: former input now accepted',encoding='utf-8')
-            return {'status':'completed','output':{'repair_outcome':outcome,'verification_evidence':['regression.txt'],
+            return {**{'status':'completed','output':{'repair_outcome':outcome,'verification_evidence':['regression.txt'],
                 'summary':'synthetic repair','observed_status':outcome,'actions':['fixture inspection'],
-                'evidence_paths':['regression.txt'],'user_questions':[],'next_step':'launcher continuation'}}
+                'evidence_paths':['regression.txt'],'user_questions':[],'next_step':'launcher continuation'}},
+                **(runner_result or {})}
         stack = ExitStack()
         self.addCleanup(stack.close)
         for owner,name,value in (
@@ -70,6 +73,22 @@ class DiagnosedRecoveryTests(unittest.TestCase):
         self.assertIn('actual rejected response',(observed[0]['workspace']/'input/failure-0.json').read_text())
         verify.assert_called_once(); wake.assert_called_once()
 
+    def test_recovery_model_policy_violation_pauses_future_calls(self):
+        _, runtime, diagnosis, observed, result, verify, wake, args = self.run_case('unresolved',
+            runner_result={'status': 'failed', 'output': None, 'error': 'wrong reported model',
+                'error_kind': 'model_policy', 'reported_models': ['other-model']})
+        self.assertEqual(result['outcome'], 'recovery_held')
+        self.assertEqual(runtime['status'], 'paused')
+        self.assertEqual(runtime['model_policy_violation'], {
+            'execution_id': observed[0]['execution_id'],
+            'assigned_model': observed[0]['model'], 'reported_models': ['other-model']})
+        verify.assert_not_called()
+        wake.assert_not_called()
+        repeated = operator.recovery(*args,
+            failure=repair_execution.installation_failure(runtime, diagnosis))
+        self.assertEqual(repeated['outcome'], 'held')
+        self.assertEqual(len(observed), 1)
+
     def test_unresolved_does_not_restart_or_repeat_same_failure_and_installation(self):
         _,runtime,diagnosis,observed,result,verify,wake,args = self.run_case('unresolved')
         self.assertEqual(result['outcome'],'recovery_failed')
@@ -79,6 +98,28 @@ class DiagnosedRecoveryTests(unittest.TestCase):
         repeated = operator.recovery(*args,failure=repair_execution.installation_failure(runtime,diagnosis))
         self.assertEqual(repeated['outcome'],'recovery_waiting')
         self.assertEqual(len(observed),1)
+
+    def test_recovery_forwards_provider_limit_to_the_shared_gate(self):
+        failure = {'kind': 'provider_limit', 'provider': 'codex',
+                   'retry_at': None, 'evidence_ref': 'synthetic-provider.jsonl'}
+        _, _, _, observed, result, verify, wake, _ = self.run_case('unresolved',
+            runner_result={'status': 'failed', 'output': None, 'error': 'provider quota',
+                           'error_kind': 'provider_limit', 'failure': failure})
+        self.assertEqual(result['outcome'], 'recovery_failed')
+        self.provider_results.assert_called_once_with(observed[0]['execution_id'],
+            observed[0]['profile']['ai']['provider'], failure=failure, response_observed=False,
+            initial_seconds=DEFAULT_CONFIG['provider_retry_initial_seconds'],
+            maximum_seconds=DEFAULT_CONFIG['provider_retry_max_seconds'])
+        verify.assert_not_called()
+        wake.assert_not_called()
+
+    def test_normal_recovery_response_reaches_provider_reobservation(self):
+        _, _, _, observed, result, _, _, _ = self.run_case('repaired')
+        self.assertEqual(result['outcome'], 'repaired')
+        self.provider_results.assert_called_once_with(observed[0]['execution_id'],
+            observed[0]['profile']['ai']['provider'], failure=None, response_observed=True,
+            initial_seconds=DEFAULT_CONFIG['provider_retry_initial_seconds'],
+            maximum_seconds=DEFAULT_CONFIG['provider_retry_max_seconds'])
 
     def test_report_without_real_regression_file_cannot_claim_repaired(self):
         with tempfile.TemporaryDirectory() as directory:

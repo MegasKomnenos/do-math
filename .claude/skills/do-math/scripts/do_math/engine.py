@@ -3839,6 +3839,10 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             if model_policy.preparation_only(action):
                 self._finish_assessment_preparation(action, execution_id)
                 return
+            revision_ids = [proposal["revises_task_id"] for proposal in output["candidates"]
+                            if proposal["revises_task_id"]]
+            if len(revision_ids) != len(set(revision_ids)):
+                raise ValueError("each existing task may have only one replacement candidate per response")
             self.runtime["cycles"] += 1
             titles = {}
             authoring_environment = None
@@ -3951,6 +3955,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             task["reviews"].append(review)
             decision = review["decision"]
             task["status"] = "planned" if decision == "approved" else "waiting"
+            if decision == "approved" and task.get("waiting", {}).get("kind") == "contract_review":
+                task.pop("waiting")
             if decision != "approved":
                 task["revision_requested"] = {"execution_id": execution_id, "item_reviews": deepcopy(output["item_reviews"])}
                 if task.get("academic_requirement_id"):

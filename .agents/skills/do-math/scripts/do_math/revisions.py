@@ -53,7 +53,10 @@ def submission_errors(output, extensions, context):
         issue("revision_requests", "revision requests must name distinct provided tasks or knowledge")
     if set(requests) & {row['task_id'] for row in output.get('dispositions', []) if row['kind'] == 'selected'}:
         issue("revision_requests", "the same output cannot revise and select a task")
-    task_writes = {row["revises_task_id"] for row in output.get("candidates", []) if row.get("revises_task_id")}
+    task_targets = [row["revises_task_id"] for row in output.get("candidates", []) if row.get("revises_task_id")]
+    task_writes = set(task_targets)
+    if len(task_targets) != len(task_writes):
+        issue("revision_targets", "each existing task may have only one replacement candidate per response")
     knowledge_writes = {row["id"] for row in extensions.get("knowledge_changes", [])}
     if (task_writes | knowledge_writes) - declared.keys():
         issue("revision_targets", "existing records must be declared before this execution; submit revision_requests for new targets")
@@ -236,7 +239,7 @@ def record_repetition(instance, runtime, *, lineage, lineage_id, event_ref, outc
         link(runtime, execution_id=event_ref, field='repetition/' + lineage + '/' + lineage_id,
              owner='user', targets=[event_ref], reason='Configured repetition limit reached; scoped continuation required')
     no_followup={'accepted','contracts_preserved','continued','premises_changed','capacity_wait','input_overflow','waiting',
-                 'transport_failure','parse_failure'}
+                 'transport_failure'}
     if outcome in {'revised','authored','reauthored'} and not repetition_hold(instance,runtime,lineage,lineage_id):
         no_followup.add('revised')
         no_followup.add('authored')
@@ -354,7 +357,7 @@ def record_execution_outcome(instance, runtime, action, output, execution_id, *,
     if role=='research_plan':
         failure=execution.get('error_kind')
         result='accepted' if accepted else {'currentness_changed':'premises_changed','input_overflow':'input_overflow','capacity_wait':'capacity_wait',
-            'output_validation':'parse_failure','output_parse':'rejected','output_schema':'rejected',
+            'output_validation':'rejected','output_parse':'rejected','output_schema':'rejected',
             'output_contract':'rejected','publication_failure':'waiting',
             'provider_failure':'transport_failure','provider_error':'transport_failure',
             'semantic_rejection':'rejected','plan_disposition_invalid':'rejected','submission_semantic':'rejected'}.get(failure,'unclassified_failure')

@@ -115,6 +115,21 @@ class RevisionObligationTests(unittest.TestCase):
         self.assertFalse(h._selected_action_current(action))
         self.assertFalse(any(a['role']=='research_work' for a in h.runtime['queue']))
         self.assertTrue(any(a['role']=='research_plan' for a in h.runtime['queue']))
+        from do_math.engine import ResearchEngine
+        from do_math.governance import governance_view
+        from research_fixtures import contract_review
+        h._governance = lambda: governance_view(h.instance)
+        task = h.runtime['tasks']['TK-1']
+        review_action = {'role': 'task_contract_review', 'target': task['id']}
+        ResearchEngine._apply(h, review_action, contract_review({'task': task}),
+                             'EX-fresh-review', owns_response=False)
+        self.assertNotIn('waiting', task)
+        self.assertEqual(planning.task_ready(task, h.instance, h.runtime)['state'], 'ready')
+        task['waiting'] = {'kind': 'external_event', 'next_owner': 'user'}
+        ResearchEngine._apply(h, review_action, contract_review({'task': task}),
+                             'EX-other-review', owns_response=False)
+        self.assertEqual(task['waiting'], {'kind': 'external_event', 'next_owner': 'user'})
+        self.assertEqual(planning.task_ready(task, h.instance, h.runtime)['state'], 'not_ready')
 
     def test_revision_cannot_omit_target_or_cancel_required_repair_as_unchanged(self):
         h=OwnerHarness();task=h.runtime['tasks']['TK-1']

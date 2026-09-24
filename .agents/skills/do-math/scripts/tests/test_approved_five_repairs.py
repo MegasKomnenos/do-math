@@ -126,14 +126,19 @@ class RuleBindingTests(unittest.TestCase):
 
 
 class PartialWithdrawalTests(unittest.TestCase):
-    def test_historical_unperformed_withdrawal_remains_readable(self):
+    def test_current_unperformed_withdrawal_preserves_results_and_residual_scope(self):
         from test_task_scope import TaskScopeTests
         _, runtime, snapshot = TaskScopeTests().fixture()
         _, changed = TaskScopeTests().withdraw(runtime, snapshot)
         task = changed['tasks']['TK-AI']
-        for key in ('results_sha256', 'assessment_sha256', 'remaining_obligation_ids'):
-            task['scope_disposition'].pop(key)
         task_scope.validate_withdrawal_record(task)
+        self.assertIsNone(task['scope_disposition']['assessment_sha256'])
+        for key in ('results_sha256', 'remaining_obligation_ids'):
+            with self.subTest(missing=key):
+                broken = deepcopy(task)
+                broken['scope_disposition'].pop(key)
+                with self.assertRaises(ValueError):
+                    task_scope.validate_withdrawal_record(broken)
 
     def fixture(self):
         from test_task_scope import TaskScopeTests

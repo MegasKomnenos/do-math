@@ -39,6 +39,10 @@ exit 0은 요청이 수학적으로 승인됐거나 과제·활동·실행이 �
 
 동일 인스턴스의 writer lock을 다른 실행기가 보유하면 요청은 inbox에 남고 `effect="pending engine processing"`, `lock="busy"`를 반환한다. 다음 실행기 제어 처리에서 전제가 달라졌으면 해당 요청은 `effect="rejected"`와 이유를 남기고 소비된다. 접수 사실은 적용·실행·성공을 뜻하지 않는다.
 
+`pause`, `resume`, `close`, `input`, `configure`, `request`, `decision`, `knowledge`, `trust`, `external`, `conversation`, `source`는 제어 요청의 재전송과 새 적용을 구별한다. `--request-id`를 생략하면 인스턴스·명령·출처·원문·payload·선택적 `--idempotency-key`에서 요청 ID를 계산한다. 같은 내용의 재전송은 이미 처리한 효과를 반복하지 않고 최초 영수증을 `replayed=true`로 돌려준다. 이 영수증의 상태와 snapshot은 현재 상태가 아니므로 현재 상태는 `status`로 조회한다.
+
+같은 내용을 새 결정으로 다시 적용하려면 새 `--idempotency-key`를 지정한다. 그 적용의 재전송에는 같은 키를 유지한다. 예를 들어 재개 뒤 같은 이유로 다시 정지하거나 설정을 A→B→A로 되돌릴 때에는 마지막 요청에 새 키가 필요하다. `--request-id`로 요청 ID를 직접 지정할 수도 있으며, 같은 ID에 다른 payload를 보내면 거부된다. 두 옵션은 함께 사용할 수 없다. JSON 명령도 같은 이름의 `request_id`·`idempotency_key`를 사용한다.
+
 ## 현재 저장과 작업 경로
 
 인스턴스의 권위 있는 머리는 `refs/heads/do-math/<instance_id>`다. 각 상태 commit은 직전 상태 commit 하나를 부모로 가지며, 판본 5 저장소는 등록된 기록군을 `research/<family>/...`와 `runtime/<family>/...` 아래에 분리해 저장한다. `runtime/artifacts/<bundle_id>/...`의 불변 산출은 추가 전용으로 보존한다. 정확한 기록군·shape·스키마는 설치본의 `do-math-state/5` manifest가 소유한다.
@@ -240,8 +244,8 @@ init --repository PATH [--create-repository] --workspace PATH
 - `pause|resume|close [--reason TEXT]`는 제어 요청을 inbox에 기록한다. `resume`은 CLI `closed`와 `completed`를 열지 않는다.
 - `input (--text TEXT|--file PATH) [--responds-to QU-ID ...]`는 비어 있지 않은 사용자 원문을 보존하고 `intent_interpretation`을 먼저 queue에 넣는다.
 - `configure --config-file PATH`는 지원 설정만 갱신한다. 목표·정책·grant·학술 요구는 각각 `decision`을 사용한다.
-- `request --role ROLE [--target ID] [--reason TEXT|--text TEXT]`는 모델을 호출하지 않고 새 action을 queue에 접수한다. 새 운영 요청은 기존 운영 요청 뒤에 배정한다. 지원 role은 `research_preparation`, `research_plan`, `supplemental_research`, `operational_review`, `maintenance`다. 보충 조사는 현재 `ready` 과제 ID, 운영 점검은 존재하는 execution ID를 target으로 요구한다.
-- `request --retry-action AC-ID [--request-id UC-ID]`는 입력 초과로 보류된 action 또는 초기화 중 기술적 실행 실패로 끝난 원입력의 의도 해석을 명시적으로 다시 처리한다. `--role`, `--target`, `--reason`, `--text`와 함께 쓸 수 없다. 원 action ID와 owner activity를 유지하고 현재 채택 프로필과 권한을 다시 검사한다. 정상 종료한 native 최종 응답이 정확한 원문·실행 근거와 함께 보존돼 있으면 현재 재시도 권한으로 그 응답을 중앙 접수·편입에 재사용한다. 이 경우 새 모델 실행을 만들지 않으며 원 실행의 종료 시각·원 결과 참조·실패 이력을 보존한다. 재사용 조건을 충족하는 정상 응답이 없으면 같은 원입력과 활동을 잇는 새 실행을 배정한다. 기존 봉인 후보를 다른 final로 대체하거나 오류·중단 응답을 정상 응답으로 취급하지 않는다. 같은 `request-id`의 동일 재전송은 최초 영수증을 재생하며 효과를 두 번 적용하지 않는다.
+- `request --role ROLE [--target ID] [--reason TEXT]`는 모델을 호출하지 않고 새 action을 queue에 접수한다. 새 운영 요청은 기존 운영 요청 뒤에 배정한다. 지원 role은 `research_preparation`, `research_plan`, `supplemental_research`, `operational_review`, `maintenance`다. 보충 조사는 현재 `ready` 과제 ID, 운영 점검은 존재하는 execution ID를 target으로 요구한다.
+- `request --retry-action AC-ID [--request-id UC-ID]`는 입력 초과로 보류된 action 또는 초기화 중 기술적 실행 실패로 끝난 원입력의 의도 해석을 명시적으로 다시 처리한다. `--role`, `--target`, `--reason`와 함께 쓸 수 없다. 원 action ID와 owner activity를 유지하고 현재 채택 프로필과 권한을 다시 검사한다. 정상 종료한 native 최종 응답이 정확한 원문·실행 근거와 함께 보존돼 있으면 현재 재시도 권한으로 그 응답을 중앙 접수·편입에 재사용한다. 이 경우 새 모델 실행을 만들지 않으며 원 실행의 종료 시각·원 결과 참조·실패 이력을 보존한다. 재사용 조건을 충족하는 정상 응답이 없으면 같은 원입력과 활동을 잇는 새 실행을 배정한다. 기존 봉인 후보를 다른 final로 대체하거나 오류·중단 응답을 정상 응답으로 취급하지 않는다. 같은 `request-id`의 동일 재전송은 최초 영수증을 재생하며 효과를 두 번 적용하지 않는다.
 
 입력 초과의 재시도는 원 grant를 유지하며 아래 입력 크기·질문 계약을 따른다. 초기 해석의 재시도는 `initializing` 상태에서 최초 불변 입력을 대상으로 한 `execution_failure`에만 적용한다. 전 실행이 `execution_incomplete`로 끝났고 로컬 종료가 확인됐으며 그 실행의 예약이 회수돼야 한다. 원 활동은 대기 중이어야 하고 같은 해석이나 그 실패를 진단하는 실행이 진행 중이면 거부한다. 보존 응답을 재사용하든 새 실행을 배정하든 현재 초기 운영 권한을 확인하고 실패 실행·원 대기·시작하지 않은 이전 진단을 이력으로 보존한다. 새 실행이 필요하면 현재 채택 초기 프로필로 배정하고 `continuation_of`로 선행 실행을 연결한다.
 
@@ -582,7 +586,7 @@ query [--snapshot OID] [--kind KIND] [--text TEXT] [--limit 1..1000]
       [--direction incoming|outgoing|both]
 ```
 
-구조화 record를 ID 순서로 조회한다. `kind`는 record family 또는 구체 kind와 일치한다. text는 정규 JSON 전체를 대소문자 구분 없이 찾는다. 관계 이웃 조회는 relation record와 반대편 endpoint를 함께 반환한다.
+구조화 record를 ID 순서로 조회한다. `kind`는 record family 또는 구체 kind와 일치한다. text는 정규 JSON 전체를 대소문자 구분 없이 찾는다. 관계 이웃 조회는 relation record와 반대편 endpoint를 함께 반환한다. `--direction`은 `--related-to`와 함께 사용하며 생략하면 `both`다. `--prefix`는 파일 조회 전용이므로 이 모드에서 지정하면 입력 오류다.
 
 응답은 `snapshot`, 전체 `total`, 이번 `loaded`, `truncated`, `items`, `next_cursor`다. 각 item은 `record`와 그 정규 JSON `sha256`을 가진다. cursor는 query 인자와 snapshot에 결박되며 조건을 바꾸어 재사용할 수 없다.
 
@@ -593,7 +597,7 @@ query --files [--snapshot OID] [--prefix research/|runtime/.../] [--text TEXT]
               [--limit N] [--cursor CURSOR]
 ```
 
-경로와 UTF-8 query byte가 일치하는 snapshot 파일을 POSIX 경로 순으로 반환한다. 각 항목은 path·size·SHA-256을 가진다. prefix는 `research/` 또는 `runtime/` 아래에서 `/`로 끝나야 한다.
+경로와 UTF-8 query byte가 일치하는 snapshot 파일을 POSIX 경로 순으로 반환한다. 각 항목은 path·size·SHA-256을 가진다. prefix는 `research/` 또는 `runtime/` 아래에서 `/`로 끝나야 하며 생략하면 `research/`다. 파일 조회에서 `--kind`, `--related-to`, `--direction`을 지정하면 입력 오류다. 같은 조합 검사를 JSON 명령 요청에도 적용한다.
 
 ### `read`
 
@@ -799,9 +803,9 @@ relation 항목은 `kind`, `source`, `target`, `evidence`를 가진다. source�
 
 운영 응답의 `disposition.kind`는 `continue`, `repair`, `resume`, `retry`, `task_disposition`, `user_decision` 중 하나다. 처분과 현재 근거·권한을 검사한 뒤 실행 유지, 종료 후 후속, 과제 처분 또는 필요한 사용자 결정을 연결한다. 대기는 처분의 다음 소유자·해소 조건으로 표현하며, 전체 사용자 정지는 공개 `pause` 제어로 구별한다. 상세 판단 기준은 [운영 점검](../계약/운영-점검.md)에 있다.
 
-실행기 안에서 결정론적으로 수행하는 수리는 종료된 실행의 **봉인된 입력 사본 복원**이다. 설치 결함의 AI 수리는 아래 실행 수명·복구 절의 별도 경로를 따른다. 운영 검토자는 `repair_target`에 그 실행의 `input_manifest.catalog` 또는 `detail_sources`에 정확히 한 번 있는 경로를, `verification`에 `sha256:<그 항목의 실제 해시>`를 쓴다. 응답 편입 뒤 내부 함수 `repair_execution.complete_repair`가 입력 bundle의 Git 원문 바이트를 해당 실행의 사적 입력 공간에 복원하고 해시를 검증한 뒤 명시적 연속 action을 연다. 복원·검증·후속의 영수증이 갖춰져야 처분은 `applied`다. 후속 실행은 다시 현재 프로필·권한·예산 관문을 통과한다.
+종료된 실행의 로컬 입력 사본만 손상됐고 Git에 봉인된 원문은 온전하면 운영 점검은 `retry`를 제출한다. `scope`에는 남은 수행 범위를, `replay_safety`에는 이미 편입된 묶음·완료된 외부 효과와 재실행의 경계를 적는다. 중앙은 선행 실행의 종료와 봉인 자료를 확인하고 같은 활동의 후속 요청을 만든다. 다음 실행은 새 작업 공간과 현재 입력을 받으며 현재 프로필·권한·예산 관문을 다시 통과한다. 옛 로컬 사본을 복원하는 일은 이 재시도의 선행조건이 아니다. 봉인 원문 자체가 없거나 손상됐다면 자료 보존 문제와 필요한 다음 소유자를 먼저 밝힌다.
 
-지원하지 않는 표적·환경 수리나 의미 변경은 `repair_deferred`, 검증 실패는 `repair_verification_failed`의 근거와 `result.followup.next_owner`로 남는다. 작업자의 수리 산문을 셸 코드로 실행하지 않는다. 설치 기동 실패와 수락된 설치 결함 진단에서 사용하는 외부 복구 launcher는 `operator`의 별도 승인·잠금·설치 검사 계약을 따른다.
+새 `repair`는 `installation:<스킬 상대 파일 경로>`의 설치 결함에 사용하며, 아래 실행 수명·복구 절과 「운영 점검」의 진단·검증 절차를 따른다. 저장된 입력 복원 이력의 `repair_deferred`·`repair_verification_failed`는 당시의 실패 상태로 읽고 성공으로 바꾸지 않는다. 작업자의 수리 산문을 셸 코드로 실행하지 않는다. 설치 기동 실패와 수락된 설치 결함 진단에서 사용하는 외부 복구 launcher는 `operator`의 별도 승인·잠금·설치 검사 계약을 따른다.
 
 늦은 산출이 이미 닫힌 과제나 종결된 검토 자리를 가리키면 그 산출은 보존하되 대상을 다시 열지 않는다. 원문을 읽지 못한 실행, 실패한 공급자 호출과 의미상 미해결 결과도 구별해 기록한다.
 
@@ -896,7 +900,7 @@ Claude의 원본 `stream-json`은 그대로 보존한다. 수신자는 같은 �
 
 검증 증거는 실행 당시 코드·문서 판본과 사례 범위에 결박해 읽는다. 실행 명령과 입력, 실제 출력, 통과·실패·미실행 범위, 사용한 도구와 모델·신뢰 환경의 판본을 함께 보존한다. 과거 검증 기록이 현재 설치본의 검증을 대신하지 않는다.
 
-스킬의 `scripts/tests/`는 회귀 검사를, `scripts/probe_cli.py`는 설치 구조와 명시한 provider의 대표 실호출 검사를 제공한다. 기존 `scripts/probe_codex.py`도 같은 정적 구조 검사와 이전 Codex 전용 실호출 경로를 유지한다. 설치 구조 검사 `--skill-only`와 모델을 호출하는 실제 검사는 보증 범위가 다르다. 실제 실행·중단·도구 호출은 해당 실행 증거에서, 수학적 결과는 형식 검사·동일성 판정·목표 감사에서 확인한다.
+스킬의 `scripts/tests/`는 회귀 검사를, `scripts/probe_cli.py --skill-only`는 모델 없는 설치 구조 검사를 제공한다. `probe_cli.py`의 실호출 검사는 provider·모델·새 증거 경로를 명시해 실행한다. `scripts/probe_codex.py`는 모델과 Codex CLI를 지정하는 어댑터 실호출 검사이며, text·structured·tool·cancel 사례와 Windows sandbox 설정을 검사한다. 이 도구는 `--skill-only`를 제공하지 않는다. 설치 구조 검사와 실호출 검사는 보증 범위가 다르다. 실제 실행·중단·도구 호출은 해당 실행 증거에서, 수학적 결과는 형식 검사·동일성 판정·목표 감사에서 확인한다.
 
 한 작은 수학 사례와 합성 fixture의 통과를 일반 연구 성능이나 수학 판단의 무오류성으로 확대하지 않는다. 현재 source를 검증하려면 안정된 사본에서 관련 테스트를 실행하고, 실제 Codex·Claude·Lean·HTTP·Windows 프로세스가 필요한 검사는 model-double 단위 검사와 구별한다.
 

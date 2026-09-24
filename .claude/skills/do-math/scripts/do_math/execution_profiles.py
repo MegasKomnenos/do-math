@@ -160,8 +160,15 @@ def job_resource_limits(profile: dict) -> dict | None:
     return {key: host["demands"][key] for key in ("memory_bytes", "cpu_rate_basis_points")}
 
 
-def build_profiles(config: dict) -> dict:
-    """Freeze adopted values. No new capacity, permission or measured limit is invented."""
+def build_profiles(config: dict, *, roles: set[str] | None = None) -> dict:
+    """Freeze selected roles, or every role when omitted, from adopted values.
+
+    Shared capacity and host-demand validation still cover the whole config.
+    No new capacity, permission or measured limit is invented.
+    """
+    selected_roles = PROFILE_ROLES if roles is None else set(roles)
+    if not selected_roles <= PROFILE_ROLES:
+        raise ValueError("profile authoring requires supported roles")
     limits = config["session_limits"]
     if not isinstance(limits, dict):
         raise ValueError("session_limits must be a mapping")
@@ -175,6 +182,8 @@ def build_profiles(config: dict) -> dict:
             raise ValueError('host demands_by_role must be an object')
         for demands in adopted_host['demands_by_role'].values():
             _host_amounts(demands, demand=True)
+        if HOST_ROLES - set(adopted_host["demands_by_role"]):
+            raise ValueError("every capped role needs an explicit host demand in an adopted shared scope")
         constraints[adopted_host["constraint"]["id"]] = deepcopy(adopted_host["constraint"])
     for model in sorted(set(limits["work"]) | set(limits["operations"])):
         work, operations = limits["work"].get(model, 0), limits["operations"].get(model, 0)
@@ -185,8 +194,9 @@ def build_profiles(config: dict) -> dict:
             "accounting_unit": "execution", "work_slots": work, "operations_slots": operations,
             "total_slots": work + operations, "scope": "local_execution_not_provider_operations"}
     profiles, refs = {}, {}
-    lean = _lean_contract(config)
-    for role in sorted(PROFILE_ROLES):
+    lean = (_lean_contract(config)
+            if selected_roles & {"formal_check", "trust_check", "trust_activate"} else None)
+    for role in sorted(selected_roles):
         machine = role in MACHINE_ROLES
         pool = "work" if role in WORK_ROLES else "operations"
         mode = (config["observation_mode"] if role == "research_work" else
@@ -221,8 +231,6 @@ def build_profiles(config: dict) -> dict:
                     body["window"]["call_timeout_seconds"] = config["operator_timeout_seconds"]
             profile = seal_profile(body)
             if adopted_host is not None and role in HOST_ROLES:
-                if role not in adopted_host["demands_by_role"]:
-                    raise ValueError("every capped role needs an explicit host demand in an adopted shared scope")
                 profile = with_host_resources(profile, adopted_host["constraint"], adopted_host["demands_by_role"][role])
             profiles[profile["id"]] = profile
             refs.setdefault(role, []).append(profile_ref(profile))

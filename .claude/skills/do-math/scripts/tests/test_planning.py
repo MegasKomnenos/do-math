@@ -59,6 +59,25 @@ class PlanningTests(unittest.TestCase):
         self.assertTrue(result['runtime']['pending_events'])
         self.assertFalse(planning.apply_event_schedule(result['instance'],result['runtime'],'2026-01-02T00:00:00Z')['events'])
 
+    def test_condition_state_storage_accepts_each_actual_evaluation_result(self):
+        from jsonschema import Draft202012Validator
+        from do_math.record_schemas import RUNTIME_FIELDS
+        validator = Draft202012Validator(RUNTIME_FIELDS['condition_states'])
+        cases = [({'op': 'always'}, 'ready'),
+                 ({'op': 'record_exists', 'space': 'research', 'family': 'source',
+                   'record_id': 'SO-missing'}, 'not_ready'),
+                 ({'op': 'unsupported'}, 'evaluation_error')]
+        for condition, expected in cases:
+            with self.subTest(expected=expected):
+                runtime = deepcopy(self.runtime)
+                runtime['tasks'][self.task['id']]['due_conditions'] = [condition]
+                scheduled = planning.apply_event_schedule(self.instance, runtime, '2026-09-24T00:00:00Z')
+                states = scheduled['runtime']['condition_states']
+                self.assertEqual(list(states.values()), [expected])
+                validator.validate(states)
+        for obsolete in ('blocked', 'unknown', 'unavailable'):
+            self.assertTrue(list(validator.iter_errors({'condition': obsolete})))
+
     def test_source_arrival_and_trust_transition_are_machine_conditions(self):
         condition={'op':'all','args':[
             {'op':'record_exists','space':'research','family':'source','record_id':'SO-new'},
@@ -69,6 +88,28 @@ class PlanningTests(unittest.TestCase):
         self.assertEqual(planning.evaluate_condition(condition,self.instance,self.runtime)['state'],'ready')
         self.instance['trust_environments']['TE-1']['status']='invalid'
         self.assertEqual(planning.evaluate_condition(condition,self.instance,self.runtime)['state'],'not_ready')
+
+    def test_condition_rearms_after_false_without_repeating_while_true(self):
+        conditions = [self.condition('record_field_equals', pointer='/value', value=1),
+                      self.condition('record_lifecycle_is', value='active')]
+        self.task['due_conditions'] = conditions
+        first = planning.apply_event_schedule(self.instance, self.runtime, '2026-09-24T00:00:00Z')
+        self.assertEqual(len(first['events']), 2)
+        original_events = deepcopy(first['events'])
+        instance, runtime = first['instance'], first['runtime']
+        runtime['pending_events'] = []
+        instance['knowledge']['K'].update(value=0, lifecycle='withdrawn')
+        false = planning.apply_event_schedule(instance, runtime, '2026-09-24T00:00:01Z')
+        self.assertEqual(false['events'], [])
+        instance, runtime = false['instance'], false['runtime']
+        instance['knowledge']['K'].update(value=1, lifecycle='active')
+        again = planning.apply_event_schedule(instance, runtime, '2026-09-24T00:00:02Z')
+        self.assertEqual(len(again['events']), 2)
+        self.assertEqual(len({row['id'] for row in again['runtime']['events']}), 4)
+        self.assertEqual(again['runtime']['events'][:2], original_events)
+        self.assertEqual(set(again['runtime']['pending_events']), {row['id'] for row in again['events']})
+        repeated = planning.apply_event_schedule(again['instance'], again['runtime'], '2026-09-24T00:00:03Z')
+        self.assertEqual(repeated['events'], [])
 
     def test_relation_condition_rechecks_its_proof_after_import(self):
         from do_math import knowledge_io

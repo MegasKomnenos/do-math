@@ -324,6 +324,8 @@ python .agents/skills/do-math/scripts/do_math.py pause `
 
 제어 명령은 먼저 workspace의 inbox에 요청을 기록한다. 같은 인스턴스의 writer lock을 얻을 수 있으면 즉시 적용하고, 다른 실행기가 lock을 보유하면 `effect="pending engine processing"`, `lock="busy"`를 반환한다. 이 경우 현재 실행기나 다음 `run`이 요청을 적용한다.
 
+같은 내용의 제어 명령을 다시 보내면 최초 영수증을 재생하며 효과를 반복하지 않는다. 재개 뒤 같은 이유로 다시 정지하거나 이전 설정을 새로 적용하려면 명령에 새 `--idempotency-key`를 붙인다. 예를 들어 위 정지를 새로 적용할 때에는 `--idempotency-key pause-review-2`를 추가하고, 그 요청을 재전송할 때는 같은 키를 유지한다. `replayed=true` 응답의 상태·snapshot은 최초 처리 시점의 값이므로 현재 상태는 `status`로 확인한다. 직접 요청 ID를 지정하는 방법과 전체 적용 범위는 [CLI 실행 계약](references/CLI-실행-계약.md)의 공통 반환 절을 따른다.
+
 AI 실행 중 pause·close, grant 철회, 필수 입력·목표·정책의 현재성 변경 또는 그 AI 실행에 적용된 기한 도래가 확인되면 실행기는 관리 디렉터리 `.control/`에 정지 요청을 기록한다. 작업자는 새 연구나 외부 행동을 시작하지 않고 이미 얻은 사실과 가능한 제출·체크포인트를 남긴다. 중앙은 정지 전에 미리 접수한 봉인 후보가 있으면 그 원문만 회수한다. 정지 뒤 도착한 native final이나 파일은 보존 자료일 수 있지만 새 의미 후보로 승인하지 않는다. 실행기는 로컬 Job의 종료를 확인한 뒤 예약을 반환한다. 현재 구현이 관찰하지 못한 원격 종료와 공급자 내부 호출은 `unknown` 범위로 남는다.
 
 ```powershell

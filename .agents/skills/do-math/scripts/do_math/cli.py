@@ -145,9 +145,7 @@ def build_parser() -> _Parser:
     ))
     request_mode.add_argument("--retry-action", help="retry one held input overflow or failed initial interpretation; reuse a verified preserved native final when available")
     request.add_argument("--target")
-    reason = request.add_mutually_exclusive_group()
-    reason.add_argument("--reason")
-    reason.add_argument("--text")
+    request.add_argument("--reason")
     request.add_argument("--origin", choices=("user", "operator"), default="user")
 
     for name in ("decision", "knowledge", "trust", "external", "conversation"):
@@ -165,14 +163,15 @@ def build_parser() -> _Parser:
     query = commands.add_parser("query", help="query records or raw snapshot files")
     _instance_arguments(query)
     query.add_argument("--snapshot")
-    query.add_argument("--prefix", default="research/")
+    query.add_argument("--prefix", help="file-query path prefix; requires --files (default: research/)")
     query.add_argument("--text", default="")
     query.add_argument("--limit", type=int, default=50)
     query.add_argument("--cursor")
     query.add_argument("--files", action="store_true")
     query.add_argument("--kind")
     query.add_argument("--related-to")
-    query.add_argument("--direction", choices=("both", "incoming", "outgoing"), default="both")
+    query.add_argument("--direction", choices=("both", "incoming", "outgoing"),
+                       help="relation direction; requires --related-to (default: both)")
 
     read = commands.add_parser("read", help="read a record or raw snapshot file")
     _instance_arguments(read)
@@ -329,10 +328,10 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
         return result, 0
     if command == "request":
         if args.retry_action is not None:
-            if args.target is not None or args.reason is not None or args.text is not None:
+            if args.target is not None or args.reason is not None:
                 raise CliInputError("--retry-action cannot be combined with target or request text")
             return _control(args, "request", config={"retry_action": args.retry_action}), 0
-        return _control(args, "request", text=args.reason if args.reason is not None else args.text or "",
+        return _control(args, "request", text=args.reason or "",
                         config={"role": args.role, "target": args.target}), 0
     if command in {"decision", "knowledge", "trust", "external", "conversation"}:
         payload, original = _json_document(args.file)
@@ -345,17 +344,25 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
         return _control(args, "source", config={"path": str(path), "name": args.name or path.name}), 0
     if command == "query":
         if args.files:
-            value = ResearchRepository(args.repository, args.instance).query(snapshot=args.snapshot, prefix=args.prefix,
+            if args.kind is not None or args.related_to is not None or args.direction is not None:
+                raise CliInputError("--files cannot be combined with --kind, --related-to or --direction")
+            prefix = args.prefix if args.prefix is not None else "research/"
+            value = ResearchRepository(args.repository, args.instance).query(snapshot=args.snapshot, prefix=prefix,
                                                                                text=args.text, limit=args.limit, cursor=args.cursor)
             value["provenance"] = {"snapshot": value["snapshot"],
-                                   "filters": {"prefix": args.prefix, "text": args.text, "limit": args.limit,
+                                   "filters": {"prefix": prefix, "text": args.text, "limit": args.limit,
                                                "cursor": args.cursor},
                                    "page": {"loaded": len(value["items"]), "total": value["total"],
                                             "next_cursor": value["next_cursor"], "truncated": value["truncated"]}}
             return value, 0
+        if args.prefix is not None:
+            raise CliInputError("--prefix requires --files")
+        if args.direction is not None and args.related_to is None:
+            raise CliInputError("--direction requires --related-to")
         from .engine import query_records
         return query_records(args.repository, args.instance, snapshot=args.snapshot, kind=args.kind, text=args.text,
-                             limit=args.limit, cursor=args.cursor, related_to=args.related_to, direction=args.direction), 0
+                             limit=args.limit, cursor=args.cursor, related_to=args.related_to,
+                             direction=args.direction if args.direction is not None else "both"), 0
     if command == "read":
         if args.output is not None and args.path is None:
             raise CliInputError("--output requires --path")
@@ -530,6 +537,13 @@ def describe_commands(parser, command=None):
             if action.required:
                 required.append(action.dest)
         schema = {'type':'object','properties':properties,'required':required,'additionalProperties':False}
+        if name == 'query':
+            schema['allOf'] = [{
+                'if': {'properties': {'files': {'const': True}}, 'required': ['files']},
+                'then': {'not': {'anyOf': [{'required': [key]} for key in ('kind', 'related_to', 'direction')]}},
+                'else': {'not': {'required': ['prefix']}},
+            }]
+            schema['dependentRequired'] = {'direction': ['related_to']}
         groups = []
         for group in subparser._mutually_exclusive_groups:
             names = [action.dest for action in group._group_actions]

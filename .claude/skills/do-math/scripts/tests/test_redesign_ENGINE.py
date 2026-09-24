@@ -1587,5 +1587,35 @@ class TaskObservationRoleTests(unittest.TestCase):
                 self.assertEqual(engine.runtime["tasks"]["TK-one"]["initial_observation_rules"], [rule])
 
 
+class DuplicateRevisionConnections(unittest.TestCase):
+    def test_same_task_replacements_are_rejected_before_any_receiver_mutation(self):
+        from test_redesign_TASKS import approved_fixture
+        from research_fixtures import candidate
+        from do_math import revisions
+        task, instance, runtime = approved_fixture()
+        instance.update(config={"lean_command": ["unused-fixture"], "scholarly_enabled": False},
+                        knowledge={})
+        runtime.update(cycles=0, waiting_actions={})
+        engine = routing_engine()
+        engine.instance, engine.runtime = instance, runtime
+        engine._evaluation_context = Mock(return_value={})
+        action = {"id": "AC-revise", "role": "research_preparation",
+                  "revision_targets": revisions.capture_targets(instance, runtime, [task["id"]])}
+        runtime["executions"]["EX-revise"] = {"id": "EX-revise", "role": "research_preparation",
+            "status": "ended", "extensions": {}, "input_snapshot": "snapshot"}
+        proposals = [candidate(title, revises=task["id"]) for title in ("First", "Second")]
+        for proposal in proposals:
+            proposal["profile_refs"] = deepcopy(task["profile_refs"])
+            proposal["authority_refs"] = list(task["authority_refs"])
+            proposal["completion_obligations"][0]["claim"] = proposal["title"]
+        output = {"summary": "Conflicting replacements", "questions": [],
+                  "used_sources": [], "candidates": proposals}
+        before = deepcopy((instance, runtime))
+        with self.assertRaisesRegex(ValueError, "one replacement candidate"):
+            engine._apply(action, output, "EX-revise")
+        self.assertEqual((engine.instance, engine.runtime), before)
+        engine._record_output_questions.assert_called_once()
+
+
 if __name__ == "__main__":
     unittest.main()

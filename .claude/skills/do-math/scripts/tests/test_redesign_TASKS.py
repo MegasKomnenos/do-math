@@ -571,16 +571,39 @@ class FollowupRegressions(unittest.TestCase):
         planning.schedule_reconsideration(i,r,now='2026-09-20T00:00:03Z')
         self.assertTrue(any(a['role']=='research_preparation' for a in r['queue']))
 
-    def test_repetition_threshold_is_local_and_parse_failures_are_excluded(self):
+    def test_repetition_threshold_counts_validation_failures_once_per_execution(self):
         from do_math import revisions
-        i={'id':'IN-1','config':{'selection_failure_limit':2}};r={'history':[],'queue':[],'executions':{}}
-        for n in range(2):
-            revisions.record_repetition(i,r,lineage='selection_failure',lineage_id='population-1',event_ref='EX-'+str(n),outcome='rejected',owner='ai',reason='semantic omission')
-        self.assertTrue(revisions.repetition_hold(i,r,'selection_failure','population-1'))
-        self.assertFalse(revisions.repetition_hold(i,r,'selection_failure','population-2'))
-        r['executions']['EX-parse']={'role':'research_plan','error_kind':'output_validation'}
-        revisions.record_execution_outcome(i,r,{'role':'research_plan'}, {}, 'EX-parse',accepted=False)
-        self.assertEqual(task_contracts.repetition_lineages(i,r)['selection_failure']['count'],2)
+        instance = {'id': 'IN-1', 'config': {'selection_failure_limit': 2}}
+        runtime = {'history': [], 'queue': [], 'executions': {}}
+        action = {'role': 'research_plan', 'repetition_bases': {'selection_failure': 'population-1'}}
+        for number, failure in enumerate(('output_validation', 'output_schema')):
+            identifier = 'EX-' + str(number)
+            runtime['executions'][identifier] = {'role': 'research_plan', 'error_kind': failure}
+            for _ in range(2):
+                revisions.record_execution_outcome(instance, runtime, action, {}, identifier, accepted=False)
+            count = task_contracts.repetition_lineages(instance, runtime)['selection_failure']['count']
+            self.assertEqual(count, number + 1)
+        self.assertTrue(revisions.repetition_hold(instance, runtime, 'selection_failure', 'population-1'))
+        self.assertFalse(revisions.repetition_hold(instance, runtime, 'selection_failure', 'population-2'))
+
+    def test_technical_plan_failures_do_not_count_and_acceptance_ends_the_sequence(self):
+        from do_math import revisions
+        instance = {'id': 'IN-1'}
+        runtime = {'history': [], 'queue': [], 'executions': {}}
+        action = {'role': 'research_plan', 'repetition_bases': {'selection_failure': 'population-1'}}
+        failures = ('currentness_changed', 'input_overflow', 'capacity_wait',
+                    'publication_failure', 'provider_failure', 'provider_error')
+        for number, failure in enumerate(failures):
+            identifier = 'EX-technical-' + str(number)
+            runtime['executions'][identifier] = {'role': 'research_plan', 'error_kind': failure}
+            revisions.record_execution_outcome(instance, runtime, action, {}, identifier, accepted=False)
+        self.assertEqual(task_contracts.repetition_lineages(instance, runtime)['selection_failure']['count'], 0)
+        runtime['executions']['EX-invalid'] = {'role': 'research_plan', 'error_kind': 'output_validation'}
+        revisions.record_execution_outcome(instance, runtime, action, {}, 'EX-invalid', accepted=False)
+        self.assertEqual(task_contracts.repetition_lineages(instance, runtime)['selection_failure']['count'], 1)
+        runtime['executions']['EX-accepted'] = {'role': 'research_plan'}
+        revisions.record_execution_outcome(instance, runtime, action, {}, 'EX-accepted', accepted=True)
+        self.assertEqual(task_contracts.repetition_lineages(instance, runtime)['selection_failure']['count'], 0)
 
     def test_empty_queue_is_not_exhaustion_when_work_is_running(self):
         runtime={'status':'active','tasks':{},'queue':[], 'executions':{'EX-live':{'id':'EX-live','role':'research_work','status':'running','action':{'target':'TK'}}}}
@@ -699,14 +722,23 @@ class AssessmentApplicationTests(unittest.TestCase):
 
     def test_missing_assessment_input_arrival_reopens_assessment_without_new_work(self):
         from do_math.task_scope import refresh_task_assessments
-        i,r,a=self.fixture();a.update(decision='incomplete')
-        a['item_dispositions']=a['item_dispositions'][1:]
-        a['unresolved']=[{'obligation_id':'OB-1','missing_inputs':['SO-new'],'next_owner':'research_work'}]
-        i,r=self.apply(i,r,a)
-        self.assertFalse(task_contracts.returned_task_ids(r['tasks']))
-        i['sources'].append({'id':'SO-new','sha256':'b'*64})
-        self.assertEqual(refresh_task_assessments(i,r),['TK-1'])
-        self.assertEqual(task_contracts.returned_task_ids(r['tasks']),['TK-1'])
+        for reference in ('SO-new', 'new.txt', 'source:new.txt', 'sources/new.txt'):
+            with self.subTest(reference=reference):
+                i,r,a=self.fixture();a.update(decision='incomplete')
+                a['item_dispositions']=a['item_dispositions'][1:]
+                a['unresolved']=[{'obligation_id':'OB-1','missing_inputs':[reference],'next_owner':'research_work'}]
+                i,r=self.apply(i,r,a)
+                results = deepcopy(r['tasks']['TK-1']['results'])
+                self.assertFalse(task_contracts.returned_task_ids(r['tasks']))
+                i['sources'].append({'id':'SO-other','name':'other.txt',
+                    'path':'sources/other.txt','sha256':'c'*64})
+                self.assertEqual(refresh_task_assessments(i,r), [])
+                self.assertTrue(r['tasks']['TK-1']['assessment']['current'])
+                i['sources'].append({'id':'SO-new','name':'new.txt',
+                    'path':'sources/new.txt','sha256':'b'*64})
+                self.assertEqual(refresh_task_assessments(i,r),['TK-1'])
+                self.assertEqual(task_contracts.returned_task_ids(r['tasks']),['TK-1'])
+                self.assertEqual(r['tasks']['TK-1']['results'], results)
 
     def test_plan_covers_every_ready_and_returned_task_and_rejects_double_disposition(self):
         i,r,a=self.fixture()

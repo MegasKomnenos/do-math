@@ -15,28 +15,29 @@ def event_rows(value):
 
 class EventPublisher:
     @staticmethod
-    def prepare(instance, runtime, parent_last_seq=0, published_sequences=None, *, published_events=None):
+    def prepare(instance, runtime, *, published_events=None):
         """Return detached candidates; the repository supplies complete parent facts."""
         instance, runtime = deepcopy(instance), deepcopy(runtime)
-        EventPublisher.assign_sequences_in_place(runtime, parent_last_seq, published_sequences,
-                                                published_events=published_events)
+        EventPublisher.assign_sequences_in_place(runtime, published_events=published_events)
         return instance, runtime
 
     @staticmethod
-    def assign_sequences_in_place(runtime, parent_last_seq=0, published_sequences=None, *, published_events=None):
+    def assign_sequences_in_place(runtime, *, published_events=None):
         """Validate event history and assign sequence fields on the supplied runtime.
 
         An error can leave this runtime partially numbered. Callers requiring an
         unchanged original use prepare(), or apply this to their own candidate copy.
         """
         previous = published_events or {}
+        parent_last_seq = 0
         if previous:
-            numbers = sorted(row["event_seq"] for row in previous.values())
+            numbers = [row.get("event_seq") for row in previous.values()]
+            if any(type(number) is not int or number < 1 for number in numbers):
+                raise ValueError("invalid parent event sequence")
+            numbers.sort()
             if numbers != list(range(1, len(previous) + 1)):
                 raise ValueError("parent event sequence is not contiguous")
             parent_last_seq = numbers[-1]
-        if type(parent_last_seq) is not int or parent_last_seq < 0:
-            raise ValueError("invalid parent event sequence")
         if "events" not in runtime and not previous and not runtime.get("pending_events"):
             return
         events = runtime.setdefault("events", [])
@@ -57,6 +58,8 @@ class EventPublisher:
         next_sequence = parent_last_seq
         for row in rows:
             identifier = row["id"]
+            if "event_seq" in row and (type(row["event_seq"]) is not int or row["event_seq"] < 1):
+                raise ValueError("invalid event sequence")
             if identifier in previous:
                 old = previous[identifier]
                 if {k: v for k, v in row.items() if k != "event_seq"} != {k: v for k, v in old.items() if k != "event_seq"}:
@@ -64,10 +67,6 @@ class EventPublisher:
                 if row.get("event_seq", old["event_seq"]) != old["event_seq"]:
                     raise ValueError("published event sequence cannot be rewritten")
                 row["event_seq"] = old["event_seq"]
-            elif published_events is None and row.get("event_seq", parent_last_seq + 1) <= parent_last_seq:
-                # Standalone sequence-only API; repository never uses this weaker boundary.
-                if published_sequences is not None and published_sequences.get(identifier) != row["event_seq"]:
-                    raise ValueError("published event sequence cannot be rewritten")
             else:
                 next_sequence += 1
                 if row.get("event_seq", next_sequence) != next_sequence:

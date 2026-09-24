@@ -483,6 +483,56 @@ class KnowledgeAudit2(unittest.TestCase):
             self.head = self.repo.save_with_state(self.head, self.state, self.runtime)[0]
         self.head, self.state, self.runtime = self.repo.load()
 
+    def test_shared_formal_result_continuity_round_trips_for_each_exposition(self):
+        first = self.kid
+        first_assessment = self.assessment()
+        shared = self.state["knowledge"][first]["formal_result_id"]
+        proposed = candidate(formal_result_ref=shared)
+        proposed.update(title="Second explanation", explanation="An independent account of True")
+        self.state, self.runtime, second = knowledge_io.import_candidate(
+            self.state, self.runtime, proposed, source_ref="second-source", actor_ref="second-author")
+        self.kid = second
+        second_assessment = self.assessment()
+        self.roundtrip()
+        self.assertEqual(self.state["knowledge"][second]["formal_result_id"], shared)
+        previous_assessments = {first: first_assessment, second: second_assessment}
+        for environment_id in ("TE-next", "TE-third"):
+            current_environment = self.state["active_trust_environment"]
+            self.state["trust_environments"][environment_id] = {
+                **copy.deepcopy(self.state["trust_environments"][current_environment]),
+                "id": environment_id, "status": "registered"}
+            transition = knowledge.begin_transition(self.state, environment_id)
+            self.assertEqual({target["id"] for target in transition["targets"]}, {first, second})
+            for target in transition["targets"]:
+                self.assertEqual(target["exposition_id"],
+                                 self.state["knowledge"][target["id"]]["exposition_id"])
+                result = copy.deepcopy(self.state["formal_results"][target["formal_result_id"]]["verification"])
+                result.update(id=target["id"], toolchain=copy.deepcopy(
+                    self.state["trust_environments"][environment_id]["toolchain"]))
+                transition = knowledge.record_transition_result(self.state, transition, result)
+            self.runtime.setdefault("trust_transitions", {})[transition["id"]] = transition
+            self.roundtrip()
+            transition = self.runtime["trust_transitions"][transition["id"]]
+            self.state = knowledge.activate_transition(self.state, transition)
+            transition["status"] = "active"
+            self.roundtrip()
+            for kid, old_assessment in list(previous_assessments.items()):
+                inherited = next(row for row in self.state["identity_assessments"].values()
+                                 if row.get("previous_assessment_id") == old_assessment)
+                self.assertEqual(self.state["expositions"][inherited["exposition_id"]]["supersedes"],
+                                 self.state["identity_assessments"][old_assessment]["exposition_id"])
+                self.assertTrue(kr.usable_links(self.state, kid))
+                previous_assessments[kid] = inherited["id"]
+            broken = copy.deepcopy(self.runtime)
+            targets = broken["trust_transitions"][transition["id"]]["targets"]
+            targets[0]["exposition_id"] = targets[1]["exposition_id"]
+            with self.assertRaises(ValueError):
+                self.repo.validate_candidate(self.state, broken)
+            missing = copy.deepcopy(self.runtime)
+            del missing["trust_transitions"][transition["id"]]["targets"][0]["exposition_id"]
+            with self.assertRaises(ValueError):
+                self.repo.validate_candidate(self.state, missing)
+
     def test_unicode_currentness_and_impact_survive_actual_storage(self):
         self.assessment()
         self.state['knowledge'][self.kid]['title'] = 'Cafe\u0301'

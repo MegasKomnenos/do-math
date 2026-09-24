@@ -90,6 +90,7 @@ class ModelCalls:
                 raise RuntimeError("an execution yielded more than one call")
             self.futures.pop(future)
             finished += 1
+        self.threads[:] = [thread for thread in self.threads if thread.is_alive()]
         return finished
 
     def close(self):

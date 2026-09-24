@@ -138,7 +138,7 @@ def selection(config: dict, action: dict, tasks: dict, knowledge: dict, *, profi
         if allowed is None and not action.get("profile_ref"):
             # The registry retains old editions for running executions. New
             # default assignments use only the current adopted configuration.
-            allowed = build_profiles(config)["role_profile_refs"].get(role, [])
+            allowed = build_profiles(config, roles={role})["role_profile_refs"].get(role, [])
         selected = select_profile(profiles, action, result, allowed_refs=allowed)
         result["profile_ref"] = profile_ref(selected)
     return result
