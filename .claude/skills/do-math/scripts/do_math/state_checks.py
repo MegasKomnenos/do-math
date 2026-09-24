@@ -584,6 +584,23 @@ def _inspect_area(area, instance, runtime, read_artifact, read_artifacts=None):
                     _goal_errors(instance, {**runtime, 'status': 'completed'}, errors, False)
                     return errors
                 run('solved goal complete current agreeing audits', audits, 'goal')
+            if runtime.get('status') == 'completed':
+                from .academic_engine import current_solution_basis
+                artifact_refs = [ref for record in runtime.get('academic_resolution_records', [])
+                                 for ref in record.get('evidence_refs', []) if ref.startswith('runtime/artifacts/')]
+                if artifact_refs and read_artifact is None:
+                    omitted('current academic resolution artifact bytes')
+                else:
+                    def completed_academic():
+                        def resolve_evidence(ref):
+                            if read_artifact is not None and ref.startswith('runtime/artifacts/'):
+                                return read_artifact(ref)
+                            return None
+                        status = academic_status(instance, runtime, current_solution_basis(instance, runtime),
+                                                 resolve_evidence=resolve_evidence)
+                        if status['status'] not in {'completed', 'not_applicable'}:
+                            raise ValueError('completed runtime has incomplete current academic requirements')
+                    run('completed academic requirements and external receipts', completed_academic, 'goal')
         else:
             def legacy_k():
                 errors = []; _knowledge_errors(instance, runtime, errors, _is_feature2(instance, runtime)); return errors

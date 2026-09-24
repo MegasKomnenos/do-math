@@ -345,7 +345,7 @@ LIFECYCLE_VALUES = {
     'execution': {'queued','starting','running','stopping','ended'},
     'assessment-use': {'active','suspended','withdrawn'},
     'kind-definition': {'candidate','checked','active','withdrawn'},
-    'external-operation': {'prepared','sent','succeeded','failed','unknown','cancelled'},
+    'external-operation': {'prepared','confirmed','failed','unknown','cancelled'},
     'review-cycle': {'working','completed','unresolved'},
 }
 EXPOSED_FIELDS = {

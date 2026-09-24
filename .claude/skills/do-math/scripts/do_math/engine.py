@@ -1213,7 +1213,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         sealed_submission = None
         if request["kind"] == "submit_intent":
             workspace = Path(self.instance["workspace"]) / "runs" / execution["id"] / "workspace"
-            draft_path = request["payload"].get("draft_path") or request["payload"].get("raw_output_path")
+            draft_path = request["payload"].get("draft_path")
             if not isinstance(draft_path, str):
                 return {"state": "rejected", "reason": "submission requires a workspace-relative draft_path"}
             base = f"runtime/artifacts/{execution['input_bundle']}"
@@ -2298,7 +2298,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         context = submission.load_json(self.store.read(base + "/input/submission/context.json", self.head))
         schema = submission.load_json(self.store.read(base + "/schema.json", self.head))
         workspace = Path(self.instance["workspace"]) / "runs" / execution["id"] / "workspace"
-        draft_path = payload.get("draft_path") or payload.get("raw_output_path")
+        draft_path = payload.get("draft_path")
         sealed = submission.seal_submission(workspace, draft_path, execution_id=execution["id"],
             context=context, schema=schema, max_artifact_bytes=self.instance["config"]["max_artifact_bytes"])
         if not sealed["capture_eligible"]:

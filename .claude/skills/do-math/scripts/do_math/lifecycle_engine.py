@@ -1067,8 +1067,9 @@ class LifecycleEngineMixin:
             if not selected: continue
             # A preparation that outlasts its interval does not reset its own
             # clock; one due event remains pending for the subsequent activity.
-            if role == 'research_preparation' and any(activity.get('role') == role and activity.get('status') in {'active', 'running'}
-                                                     for activity in self.runtime['activities'].values()):
+            if role == 'research_preparation' and any(
+                    activity.get('activity_kind') == role and activity.get('status') == 'working'
+                    for activity in self.runtime['activities'].values()):
                 continue
             queued = next((a for a in self.runtime['queue'] if a.get('role') == role and a.get('id') not in running_ids
                            and 'assessment_targets' not in a and 'observation_rule_targets' not in a), None)

@@ -51,8 +51,14 @@ def run_case(destination, case, *, provider, model, effort, timeout, only_assign
                 native_tool_names.append(block.get("name"))
                 if case == "stop":
                     stop = True
-        if case == "stop" and event.get("type") == "item.started" and event.get("item", {}).get("type") == "command_execution":
-            stop = True
+        item = event.get("item", {})
+        if event.get("type") == "item.started" and isinstance(item, dict):
+            if item.get("type") == "mcp_tool_call":
+                server, tool = item.get("server"), item.get("tool")
+                if isinstance(server, str) and isinstance(tool, str):
+                    native_tool_names.append(f"mcp__{server}__{tool}")
+            if case == "stop" and item.get("type") == "command_execution":
+                stop = True
     server = resolve_scholarly_server(None, start=Path.cwd()) if scholarly else None
     runner = ModelRunner()
     routed_model = model if provider == "codex" or model.startswith("claude-") else "claude:" + model

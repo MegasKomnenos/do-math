@@ -105,10 +105,10 @@ class FormalRuntimeTests(unittest.TestCase):
         self.assertEqual(result[0], 0)
         self.assertEqual(len(result[1]), count)
 
-    def test_legacy_timeout_does_not_interrupt_work(self):
+    def test_formal_job_completes_without_deadline(self):
         with tempfile.TemporaryDirectory() as directory:
             result = formal._job_run([sys.executable, '-c',
-                "import time; time.sleep(.25); print('completed')"], Path(directory), .01)
+                "import time; time.sleep(.25); print('completed')"], Path(directory))
         self.assertEqual(result[0], 0)
         self.assertEqual(result[1].strip(), 'completed')
         self.assertFalse(result[3])

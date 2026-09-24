@@ -368,7 +368,7 @@ CLI는 파일을 한 번 읽어 payload와 그 정확한 원문을 함께 전달
 {"kind":"task_scope","task_id":"TK-...","disposition":"revise","reason":"필수 범위를 다시 정해야 한다."}
 ```
 
-`disposition`은 `revise`, `transfer`, `withdraw`다. `transfer`는 서로 다른 미완료 대상의 `target_task_id`를 요구하고 양쪽의 미종료 실행이 없어야 한다. 현재 CLI는 받는 과제의 현행 완료 기준과 옮겨 오는 과제의 완료 기준을 합쳐 revision을 올리고 계약 검토를 다시 연다. `withdraw`와 `transfer`는 원 과제를 `closed`로 만든다.
+판본 5의 `task_scope`는 미완료 과제의 현행 `revision`과 `contract_sha256`을 요구한다. `disposition`은 `revise`, `waive`, `transfer`다. `revise`는 후보 준비에 계약 개정을 요청한다. `waive`와 `transfer`는 비어 있지 않은 `obligation_ids`로 승인 대상 완료 의무를 지정하며, `transfer`에는 서로 다른 미완료 수신 과제의 `target_task_id`도 필요하다. 면제와 이전은 원 과제를 즉시 닫지 않고, 연구 계획이 승인 근거와 의무별 처분을 대조하도록 요청한다.
 
 #### 학술 요구와 외부 거부
 

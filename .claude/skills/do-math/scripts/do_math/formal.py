@@ -234,9 +234,9 @@ def _worker(request_path: Path) -> int:
     return 0
 
 
-def _job_run(command: list[str], cwd: Path, timeout=None, should_stop=None, *, on_started=None,
+def _job_run(command: list[str], cwd: Path, *, should_stop=None, on_started=None,
              resource_limits=None, on_finished=None, raw_output=False):
-    """Wait for the whole Job. Legacy timeout is ignored; only explicit stop terminates it.
+    """Wait for the whole Job; only explicit stop terminates it.
 
     The five-item return shape retains a false timeout slot for existing consumers.
     The two-second termination check applies only after cancellation, never to computation.
@@ -339,7 +339,7 @@ def inspect_toolchain(command, workspace, timeout_seconds=None, should_stop=None
         raise ValueError('a nonempty Lean command is required')
     _check_stop(should_stop)
     resolved = Path(shutil.which(command[0]) or command[0]).resolve(strict=True)
-    code, stdout, stderr, timedout, stopped = _job_run([*command, '--version'], Path(workspace), None,should_stop)
+    code, stdout, stderr, timedout, stopped = _job_run([*command, '--version'], Path(workspace), should_stop=should_stop)
     if stopped: raise VerificationStopped('toolchain observation stopped')
     if stopped or timedout or code != 0:
         raise RuntimeError('toolchain version observation failed: ' + stderr)

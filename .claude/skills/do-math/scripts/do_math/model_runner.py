@@ -347,9 +347,9 @@ def verified_native_final(result, execution, context, *, recovery=False):
             raise ValueError('native Job identity differs from its published process')
         adapter = ClaudePrintAdapter('evidence-only') if 'claude_path' in request else CodexExecAdapter('evidence-only')
         parsed = adapter.parse_response(stdout, request)
-        events = [json.loads(line, object_pairs_hook=_unique_pairs, parse_constant=_reject_constant)
-                  for line in stdout.splitlines() if line.strip()]
         if 'claude_path' not in request:
+            events = [json.loads(line, object_pairs_hook=_unique_pairs, parse_constant=_reject_constant)
+                      for line in stdout.splitlines() if line.strip()]
             message = events[-2].get('item', {}) if len(events) >= 2 else {}
             if (events[-2].get('type') != 'item.completed' or message.get('type') != 'agent_message'
                     or not isinstance(message.get('text'), str) or message['text'].encode('utf-8') != final):

@@ -43,7 +43,7 @@ class T(unittest.TestCase):
  def test_job_start_failure_is_not_reported_as_timeout(self):
   with tempfile.TemporaryDirectory() as d:
    with self.assertRaisesRegex(RuntimeError, 'FileNotFoundError'):
-    formal._job_run([str(Path(d)/'missing-compiler.exe')], Path(d), 2)
+    formal._job_run([str(Path(d)/'missing-compiler.exe')], Path(d))
 
  def test_job_missing_completion_is_not_reported_as_timeout(self):
   job=Mock(name='worker'); job.name='worker'; job.pid=17; job.creation_filetime=1
@@ -51,7 +51,7 @@ class T(unittest.TestCase):
   job.inspect.return_value=type('Inspection',(),{'root_signaled':True,'active_processes':0,'process_ids':()})()
   with tempfile.TemporaryDirectory() as d, patch('do_math.formal.WindowsJob',return_value=job):
    with self.assertRaisesRegex(RuntimeError, 'completion status'):
-    formal._job_run(['fixture'],Path(d),1)
+    formal._job_run(['fixture'],Path(d))
   job.close.assert_called_once()
 
  def test_job_termination_confirmation_has_a_fixed_deadline(self):
@@ -71,7 +71,7 @@ class T(unittest.TestCase):
 
  def test_actual_job_stop_without_completion_is_still_stopped(self):
   with tempfile.TemporaryDirectory() as d:
-   result=formal._job_run([sys.executable,'-c','import time; time.sleep(10)'],Path(d),2,should_stop=lambda:True)
+   result=formal._job_run([sys.executable,'-c','import time; time.sleep(10)'],Path(d),should_stop=lambda:True)
   self.assertFalse(result[3])
   self.assertTrue(result[4])
 
@@ -126,7 +126,7 @@ class T(unittest.TestCase):
    def close(self): events.append(('closed',None))
   self_test=self
   with tempfile.TemporaryDirectory() as d, patch('do_math.formal.WindowsJob',Job):
-   result=formal._job_run(['fixture'],Path(d),1,resource_limits=limits,
+   result=formal._job_run(['fixture'],Path(d),resource_limits=limits,
     on_started=lambda identity:events.append(('started',identity)),
     on_finished=lambda observed:events.append(('finished',observed)))
   self.assertEqual(result,(0,'out','err',False,False))

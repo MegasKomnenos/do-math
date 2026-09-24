@@ -353,8 +353,8 @@ def charter_record(goal):
 def activate(engine, root, *, initialization_runner, external_policy="disabled", review_policy=None):
     """Fill activation through public controls and two actual interpretation executions.
 
-    This intentionally fails at an unconnected production gate. It never sets
-    lifecycle, intent_check, approval hashes, capability evidence, or ready flags.
+    The fixture supplies synthetic approval, trust, and capability observations.
+    The engine applies lifecycle changes and checks the activation gates.
     """
     from do_math.engine import control
     # This fixture explicitly approves observation windows before adopting the

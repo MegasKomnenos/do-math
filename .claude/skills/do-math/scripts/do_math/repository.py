@@ -298,15 +298,18 @@ class ResearchRepository:
         needle = text.encode("utf-8")
         matches: list[dict[str, Any]] = []
         paths = self.list_files(normalized_prefix, head)
-        # Batch Git reads without retaining the entire snapshot's contents.
-        for offset in range(0, len(paths), 16):
-            batch = paths[offset:offset + 16]
-            contents = self._store.read_many(head, batch)
-            for path in batch:
-                content = contents[path]
-                if text and text not in path and needle not in content:
-                    continue
-                matches.append({"path": path, "size": len(content), "sha256": hashlib.sha256(content).hexdigest()})
+        if text:
+            # Content matching requires scanning the snapshot.
+            for offset in range(0, len(paths), 16):
+                batch = paths[offset:offset + 16]
+                contents = self._store.read_many(head, batch)
+                for path in batch:
+                    content = contents[path]
+                    if text not in path and needle not in content:
+                        continue
+                    matches.append({"path": path, "size": len(content), "sha256": hashlib.sha256(content).hexdigest()})
+        else:
+            matches = [{"path": path} for path in paths]
         total = len(matches)
         start = 0
         if last_path is not None:
@@ -315,6 +318,14 @@ class ResearchRepository:
                 raise RepositoryCursorError("cursor path is not present in this query result")
             start = matching_indexes[0] + 1
         items = matches[start:start + limit]
+        if not text:
+            hydrated = []
+            for offset in range(0, len(items), 16):
+                batch = [item["path"] for item in items[offset:offset + 16]]
+                contents = self._store.read_many(head, batch)
+                hydrated.extend({"path": path, "size": len(contents[path]),
+                                 "sha256": hashlib.sha256(contents[path]).hexdigest()} for path in batch)
+            items = hydrated
         next_cursor = None
         if start + len(items) < total:
             next_cursor = _encode_cursor({

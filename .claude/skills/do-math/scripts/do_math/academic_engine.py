@@ -5,44 +5,55 @@ from . import academic, governance
 from .repository import new_id
 
 
+def current_solution_basis(instance, runtime):
+    if instance.get("goal_status") != "mathematically_solved":
+        return None
+    group = instance.get("goal_assessment_basis")
+    judgments = [j for j in instance.get("goal_judgments", []) if j.get("basis") == group]
+    if not judgments or any(not j.get("current", True) for j in judgments):
+        return None
+    from . import knowledge
+    if any(not knowledge.validate_basis(j.get("record_basis", []), instance, runtime)["valid"] for j in judgments):
+        return None
+    ids = sorted({ref for j in judgments for ref in j.get("dependencies", []) if ref in instance["knowledge"]})
+    records = [instance["knowledge"][kid] for kid in ids]
+    if instance.get("feature_version", 0) >= 5:
+        from .knowledge_records import usable_links, all_records
+        if not ids or any(not usable_links(instance, kid) for kid in ids):
+            return None
+        support = all_records(instance)
+        pending, visited, support_ids = list(ids), set(), set()
+        while pending:
+            kid = pending.pop()
+            if kid in visited:
+                continue
+            visited.add(kid)
+            record = instance["knowledge"][kid]
+            support_ids.add(record["kind_definition_id"])
+            pending.extend(record.get("dependencies", []))
+            for link in usable_links(instance, kid):
+                support_ids.update(link.values())
+        for ref in list(support_ids):
+            env = support.get(ref, {}).get("trust_environment_id")
+            if env:
+                support_ids.add(env)
+        records = [support[ref] for ref in sorted(visited | support_ids)]
+    records += [{"id": j["execution_id"], **j} for j in judgments]
+    charter = governance.governance_view(instance).get("charter")
+    goal_ref = (governance.digest({"content": {key: value for key, value in charter["content"].items()
+                                              if key != "academic_requirements"}, "document": charter.get("document")})
+                if charter else str(instance.get("goal_revision", 1)))
+    # Academic requirements have their own edition binding; changing them
+    # alone cannot retroactively change the mathematical solution evidence.
+    return academic.solution_basis(goal_ref + ":" + str(group), records)
+
+
 class AcademicEngineMixin:
     def _academic_evidence(self, ref):
         return self.store.read_many([ref], self.head).get(ref)
 
     def _solution_basis(self):
-        if self.instance.get("goal_status") != "mathematically_solved": return None
-        group = self.instance.get("goal_assessment_basis")
-        judgments = [j for j in self.instance.get("goal_judgments", []) if j.get("basis") == group]
-        if not judgments or any(not j.get("current", True) for j in judgments): return None
-        from . import knowledge
-        if any(not knowledge.validate_basis(j.get("record_basis", []), self.instance, self.runtime)["valid"] for j in judgments): return None
-        ids = sorted({ref for j in judgments for ref in j.get("dependencies", []) if ref in self.instance["knowledge"]})
-        records = [self.instance["knowledge"][kid] for kid in ids]
-        if self.instance.get("feature_version", 0) >= 5:
-            from .knowledge_records import usable_links, all_records
-            if not ids or any(not usable_links(self.instance,kid) for kid in ids): return None
-            support = all_records(self.instance)
-            pending = list(ids); visited=set(); support_ids=set()
-            while pending:
-                kid=pending.pop()
-                if kid in visited: continue
-                visited.add(kid)
-                record=self.instance["knowledge"][kid]
-                support_ids.add(record["kind_definition_id"])
-                pending.extend(record.get("dependencies", []))
-                for link in usable_links(self.instance,kid): support_ids.update(link.values())
-            for ref in list(support_ids):
-                env=support.get(ref,{}).get("trust_environment_id")
-                if env: support_ids.add(env)
-            records=[support[ref] for ref in sorted(visited | support_ids)]
-        records += [{"id": j["execution_id"], **j} for j in judgments]
-        charter = governance.governance_view(self.instance).get("charter")
-        goal_ref = (governance.digest({"content": {key: value for key, value in charter["content"].items()
-                                                  if key != "academic_requirements"}, "document": charter.get("document")})
-                    if charter else str(self.instance.get("goal_revision", 1)))
-        # Academic requirements have their own edition binding; changing them
-        # alone cannot retroactively change the mathematical solution evidence.
-        return academic.solution_basis(goal_ref + ":" + str(group), records)
+        return current_solution_basis(self.instance, self.runtime)
 
     def _academic_status(self):
         return academic.academic_status(self.instance, self.runtime, self._solution_basis(), resolve_evidence=self._academic_evidence)

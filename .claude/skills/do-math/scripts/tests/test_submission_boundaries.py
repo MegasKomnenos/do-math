@@ -50,8 +50,7 @@ class CheckedRunner:
             draft.write_bytes(canonical_json(output))
             check = submission.producer_check(args["workspace"], draft)
             binding = args["control_binding"]
-            payload = {k: check[k] for k in ("output_sha256", "raw_output_path", "input_hashes", "schema_ref")}
-            payload.update(producer_check_id=check["id"], manifest=check.get("files", []))
+            payload = {"draft_path": check["raw_output_path"]}
             request_id = "submit-" + check["id"]
             ControlTransport.worker_submit(binding, request_id=request_id, kind="submit_intent", payload=payload)
             args["should_stop"]()

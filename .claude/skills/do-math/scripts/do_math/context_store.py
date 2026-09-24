@@ -133,6 +133,7 @@ def collect_outputs(workspace: Path, *, required_paths: list[str] = [],
     manifest: list[dict] = []
     omitted: list[dict] = []
     seen: set[str] = set()
+    total_bytes = 0
     if not workspace.is_dir():
         return {"files": files, "manifest": manifest,
                 "omitted": [{"path": name, "reason": "workspace_missing"} for name in sorted(required)],
@@ -147,12 +148,13 @@ def collect_outputs(workspace: Path, *, required_paths: list[str] = [],
         if not isinstance(data, bytes):
             raise TypeError("captured research file must be bytes: " + name)
         _safe_path(workspace, name)
-        if sum(row["bytes"] for row in manifest) + len(data) > max_bytes:
+        if total_bytes + len(data) > max_bytes:
             omitted.append({"path": name, "reason": "max_bytes_exceeded", "bytes": len(data),
                             "required": name in required})
             continue
         files[name] = data
         manifest.append({"path": name, "sha256": _sha256(data), "bytes": len(data)})
+        total_bytes += len(data)
         seen.add(name)
     boundary = PhysicalBoundary(workspace)
     for directory, dirnames, filenames in os.walk(workspace, topdown=True, followlinks=False):
@@ -198,11 +200,12 @@ def collect_outputs(workspace: Path, *, required_paths: list[str] = [],
                 omitted.append({"path": name, "reason": "read_error", "error_type": type(error).__name__,
                                 "error": str(error), "required": name in required})
                 continue
-            if sum(row["bytes"] for row in manifest) + len(data) > max_bytes:
+            if total_bytes + len(data) > max_bytes:
                 omitted.append({"path": name, "reason": "max_bytes_exceeded", "bytes": len(data), "required": name in required})
                 continue
             files[name] = data
             manifest.append({"path": name, "sha256": _sha256(data), "bytes": len(data)})
+            total_bytes += len(data)
     for name in sorted(required - set(files)):
         if not any(row["path"] == name for row in omitted):
             omitted.append({"path": name, "reason": "required_missing" if name not in seen else "required_not_collected", "required": True})
