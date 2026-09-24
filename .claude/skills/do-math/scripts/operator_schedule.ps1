@@ -39,8 +39,12 @@ function Task-View([string]$Name) {
 if ($Action -eq 'install') {
     $liveBootstrap = Join-Path (Split-Path -Parent $Entrypoint) 'operator_bootstrap.py'
     $installationRoot = Split-Path -Parent (Split-Path -Parent $Entrypoint)
-    $frozenText = & $Python $liveBootstrap --freeze --installation-root $installationRoot --workspace $Workspace
-    if ($LASTEXITCODE -ne 0) { throw 'Could not freeze the supervisor installation.' }
+    # An explicit pipeline makes PowerShell wait for GUI executables such as
+    # pythonw.exe and collect their stdout and exit code before proceeding.
+    $frozenText = & $Python $liveBootstrap --freeze --installation-root $installationRoot --workspace $Workspace | Out-String
+    $freezeExitCode = $LASTEXITCODE
+    if ($null -eq $freezeExitCode -or $freezeExitCode -ne 0) { throw 'Could not freeze the supervisor installation.' }
+    if ([string]::IsNullOrWhiteSpace($frozenText)) { throw 'Supervisor freeze returned no JSON.' }
     $frozen = $frozenText | ConvertFrom-Json
     $Entrypoint = [string]$frozen.entrypoint
     $principal = New-ScheduledTaskPrincipal -UserId ([System.Security.Principal.WindowsIdentity]::GetCurrent().Name) -LogonType Interactive -RunLevel Limited

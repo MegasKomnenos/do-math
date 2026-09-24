@@ -516,7 +516,7 @@ source --file PATH [--name FILE_NAME]
 
 ### `trust`
 
-`register`에는 정확한 `toolchain`, `allowed_axioms`, 실제 파일·빌드·검증 근거를 갖춘 `manifest`가 필요하다. 완전한 요청 형식과 각 값의 출처는 [초기화 운전](초기화-운전.md)의 신뢰 환경 절에 있다. 등록 시 기계 검사는 manifest 해시, 실제 파일 해시, 명령과 기초 공리 프로필을 대조한다. 검사 예정이나 준비 표지 하나로 환경을 활성화하지 않는다.
+`register`에는 정확한 `toolchain`, `allowed_axioms`, 실제 파일·검증 근거를 갖춘 `manifest`가 필요하다. manifest의 현행 필드는 `command`, `foundation_profile`, `files`, `validation`이다. 사전 빌드 캐시를 허용하며 클린 빌드는 요구하지 않는다. `validation.status=verified`는 명시한 환경 검사에 상대적인 통과이며 전체 라이브러리 재검증을 뜻하지 않는다. `setup_lean.py --verify-only`는 Mathlib import와 대표 증명 검사의 원문·결과 및 등록용 검증 참조를 보존한다. 완전한 요청 형식과 각 값의 출처는 [초기화 운전](초기화-운전.md)의 신뢰 환경 절에 있다. 등록 시 기계 검사는 manifest 해시, 실제 파일 해시, 명령과 기초 공리 프로필을 대조한다. 검사 예정이나 준비 표지 하나로 환경을 활성화하지 않는다.
 
 ```json
 {"operation":"transition","env_id":"TE-실제-등록-ID"}

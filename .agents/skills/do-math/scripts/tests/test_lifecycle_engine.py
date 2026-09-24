@@ -83,7 +83,6 @@ class FakeEngine(RevisionEngineMixin,LifecycleEngineMixin,SchedulerMixin,ReviewE
         manifest={'files':files,'command':chain['configured_command'],
             'foundation_profile':{'allowed_axioms':sorted(FOUNDATION_AXIOMS),
                                  'forbidden':['sorryAx','Lean.trustCompiler','additional_axioms']},
-            'build_kind':'clean',
             'validation':{'status':'verified','evidence_refs':['fixture-build-evidence']}}
         self._trust_control({'operation':'register','toolchain':chain,'manifest':manifest,
                              'allowed_axioms':sorted(FOUNDATION_AXIOMS)},'UI-env-'+name)

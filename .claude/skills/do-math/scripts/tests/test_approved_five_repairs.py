@@ -79,7 +79,7 @@ class ToolchainContractTests(unittest.TestCase):
             'forbidden': ['sorryAx', 'Lean.trustCompiler', 'additional_axioms']},
             'files': [{'role': role, 'path': str(Path(tempfile.gettempdir()) / role), 'sha256': 'a'*64}
                       for role in ('lean_binary','lean_source','lake_binary','mathlib_source','mathlib_build','checker')],
-            'build_kind': 'clean', 'validation': {'status': 'verified', 'evidence_refs': ['fixture']}}
+            'validation': {'status': 'verified', 'evidence_refs': ['fixture']}}
         environment = {'source_ref': 'UC-adopt', 'allowed_axioms': ['Classical.choice','Quot.sound','propext'],
             'manifest': manifest, 'manifest_sha256': digest(manifest),
             'toolchain': {'executable': 'lean', 'sha256': 'a'*64, 'version': 'Lean', 'configured_command': ['lean']}}

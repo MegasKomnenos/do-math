@@ -67,7 +67,15 @@ python .agents/skills/do-math/scripts/setup_lean.py
 
 준비 표지가 있으면 `lean_command`를 생략한 인스턴스는 이 프로젝트를 거쳐 Lean을 실행하므로 제출 소스에서 Mathlib을 import할 수 있다. 설정에 명시한 `lean_command`는 언제나 이 탐색보다 우선한다. 준비 전과 후에는 탐색되는 명령이 다르므로 검사 결과에 기록되는 toolchain도 달라진다.
 
-준비 완료 출력에는 등록에 사용할 완전한 `toolchain`도 들어간다. 이미 설치된 환경은 `setup_lean.py --inspect-only`로 도구 정보만 관측할 수 있으며, 별도 명령은 `--command-file`로 지정한다. 이 관측은 환경 채택이나 깨끗한 Mathlib 빌드 검증이 아니다. 실제 등록과 증거의 결합은 [초기화 운전](references/초기화-운전.md)을 따른다.
+사전 빌드 캐시를 사용할 수 있으며 클린 빌드는 요구하지 않는다. 준비 완료 출력에는 등록에 사용할 완전한 `toolchain`과 실제 환경 검사의 `validation` 참조가 들어간다. 검사 원문·명령·출력·종료 코드·검사 전후 도구 정보는 `.skill-workspace/do-math-toolchains/validation/`의 고유 디렉터리에 보존한다. `validation.status=verified`는 Mathlib import와 대표 증명 검사의 통과를 뜻하며 전체 라이브러리 재검증을 뜻하지 않는다. 이미 설치된 환경은 `setup_lean.py --inspect-only`로 도구 정보만 관측할 수 있으며, 별도 명령은 `--command-file`로 지정한다. 이 관측은 실행 파일과 프로젝트의 식별이며 환경 검사나 채택은 아니다. 실제 등록과 증거의 결합은 [초기화 운전](references/초기화-운전.md)을 따른다.
+
+이미 설치한 환경은 다음 명령으로 다운로드 없이 검사하고 등록용 검증 참조를 얻는다. `--evidence-dir`는 선택 사항이며 증거를 둘 상위 경로를 바꾼다. 환경의 소스·빌드 디렉터리 밖을 사용한다.
+
+```powershell
+python .agents/skills/do-math/scripts/setup_lean.py --verify-only
+```
+
+명시적인 명령은 `--command-file`로 지정할 수 있다. 이 검사는 신뢰 환경 등록·사용자 채택을 자동 수행하지 않는다. 실제 파일·판본·검증 증거의 결합은 [초기화 운전](references/초기화-운전.md)을 따른다.
 
 연구를 시작하기 전에 다음 경로를 정한다.
 

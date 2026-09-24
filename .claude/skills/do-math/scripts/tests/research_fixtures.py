@@ -305,7 +305,7 @@ def trust_fixture(root, command):
     toolchain = {"executable": "test-lean", "sha256": "f" * 64, "version": "Lean test 4.32.0",
                  "version_exit": 0, "configured_command": list(command),
                  "verifier_sha256": "f" * 64, "executables": {}, "project": None}
-    manifest = {"command": list(command), "files": files, "build_kind": "clean",
+    manifest = {"command": list(command), "files": files,
         "foundation_profile": {"allowed_axioms": AXIOMS, "forbidden": ["sorryAx", "Lean.trustCompiler", "additional_axioms"]},
         "validation": {"status": "verified", "evidence_refs": ["CORE_TESTS synthetic trust fixture; not a Lean build"]}}
     return {"operation": "register", "toolchain": toolchain, "allowed_axioms": AXIOMS, "manifest": manifest}

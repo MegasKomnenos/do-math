@@ -83,6 +83,8 @@ def trust_environment_errors(environment, *, verify_files=True):
     errors.extend(toolchain_errors(environment.get('toolchain')))
     if not isinstance(manifest, dict) or environment.get("manifest_sha256") != digest(manifest):
         return ["trust manifest missing or changed"]
+    if set(manifest) != {"command", "foundation_profile", "files", "validation"}:
+        errors.append("trust manifest fields differ from the current contract")
     if not environment.get("source_ref"):
         errors.append("trust environment has no explicit adoption")
     if set(environment.get("allowed_axioms", [])) != FOUNDATION_AXIOMS:
@@ -117,8 +119,6 @@ def trust_environment_errors(environment, *, verify_files=True):
     validation = manifest.get("validation", {})
     if validation.get("status") != "verified" or not validation.get("evidence_refs"):
         errors.append("trust validation evidence absent")
-    if manifest.get("build_kind") != "clean":
-        errors.append("clean Mathlib build evidence absent")
     return errors
 
 

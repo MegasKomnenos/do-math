@@ -326,7 +326,7 @@ def _project_identity(command, should_stop=None):
 
 
 def inspect_toolchain(command, workspace, *, should_stop=None):
-    """Observe exact tool identity; this does not attest to a clean Mathlib build."""
+    """Observe exact tool identity; this does not run environment validation."""
     command = list(command)
     if not command or any(not isinstance(p, str) or not p or '\x00' in p for p in command):
         raise ValueError('a nonempty Lean command is required')
