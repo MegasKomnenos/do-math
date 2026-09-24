@@ -96,9 +96,11 @@ class ProviderEngineMixin:
         admitted = slots.acquire(execution_id, pool, model, profile=profile, execution=execution,
                                  provider=provider_for(model), enforce_capacity=True)
         if not admitted:
-            action["dispatch_wait"] = {"kind": slots.admission_reason, "provider": provider_for(model),
-                                        "activity_wait": provider_wait_disposition(
-                                            model=model, attempts=1, current=time.time())}
+            action['dispatch_wait'] = deepcopy(slots.admission_wait)
+            if slots.admission_reason == 'provider_limit':
+                action['dispatch_wait']['activity_wait'] = provider_wait_disposition(
+                    model=model, attempts=1, current=time.time(),
+                    failure={'retry_at': action['dispatch_wait'].get('retry_at')})
         else:
             action.pop("dispatch_wait", None)
         return admitted

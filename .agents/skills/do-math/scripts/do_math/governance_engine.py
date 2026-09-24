@@ -121,7 +121,15 @@ class GovernanceEngineMixin:
                 state['queue'].insert(0, {'id': new_id('AC'), 'role': 'research_preparation',
                     'reason': 'Reprepare task profile contracts for the newly adopted host resources',
                     'revision_targets': revisions.capture_targets(result, state, affected)})
-        if state.get('status') in {'budget_exhausted', 'capacity_waiting'}: state['status'] = 'ready'
+        resources_changed = any(candidate.get(key) != current.get(key) for key in protected)
+        if state.get('status') in {'waiting', 'capacity_waiting'} and resources_changed:
+            live = {e.get('action', {}).get('id') for e in state['executions'].values() if e['status'] != 'ended'}
+            for action in state['queue']:
+                if (action.get('id') not in live and action.get('dispatch_wait', {}).get('kind') in {
+                        'budget_exhausted', 'capacity', 'host_capacity', 'budget_window', 'resource_unclassified'}):
+                    action.pop('dispatch_wait', None)
+            if state['queue']:
+                state['status'] = 'ready'
         return result, state
 
     def _governance_owner_handlers(self):
@@ -289,7 +297,134 @@ class GovernanceEngineMixin:
         self._after_governance_import(bundle['id'])
         return receipt
 
+    def _goal_audit_seal(self, action):
+        if action.get('role') != 'goal_audit':
+            return None
+        rows = [j for j in self.instance.get('goal_judgments', [])
+                if j.get('basis') == action.get('basis') and j.get('slot') == action.get('slot')]
+        if not rows:
+            return None
+        if len(rows) != 1 or rows[0].get('required') != action.get('required'):
+            raise ValueError('conflicting goal audit slot seals')
+        judgment = rows[0]
+        producer = self.runtime.get('executions', {}).get(judgment.get('execution_id'), {})
+        if producer.get('role') != 'goal_audit' or any(
+                producer.get('action', {}).get(key) != judgment.get(key) for key in ('basis', 'slot', 'required')):
+            raise ValueError('goal audit seal differs from its producer')
+        return judgment
+
+    def _committed_goal_audit(self, execution_id):
+        rows = [j for j in self.instance.get('goal_judgments', []) if j.get('execution_id') == execution_id]
+        if not rows:
+            return None
+        execution = self.runtime.get('executions', {}).get(execution_id, {})
+        judgment = self._goal_audit_seal(execution.get('action', {}))
+        if (len(rows) != 1 or judgment != rows[0] or not any(
+                r.get('execution_id') == execution_id and 'output' in r.get('members', [])
+                for r in self.runtime.get('integrations', {}).values())):
+            raise ValueError('goal audit seal lacks its original integration receipt')
+        return judgment
+
+    def _ensure_goal_audit_requests(self, basis, request_execution_id):
+        if self._goal_basis_key() != basis:
+            raise ValueError('goal audit request basis changed')
+        required = self.instance['config']['goal_auditors']
+        summary = {'basis': basis, 'required': required, 'slots': []}
+        for slot in range(required):
+            scope = {'role': 'goal_audit', 'basis': basis, 'slot': slot, 'required': required}
+            def matches(action):
+                return all(action.get(key) == value for key, value in scope.items())
+            judgment = self._goal_audit_seal(scope)
+            live = next((e for e in self.runtime.get('executions', {}).values()
+                         if e.get('status') != 'ended' and matches(e.get('action', {}))), None)
+            queued = next((a for a in self.runtime.get('queue', []) if matches(a)), None)
+            waiting = next((w for w in self.runtime.get('waiting_actions', {}).values()
+                            if matches(w.get('action', {}))), None)
+            row = {'slot': slot}
+            if judgment:
+                row.update(state='sealed', judgment_id=judgment['id'])
+                if judgment.get('current') is False:
+                    row.update(state='sealed_unusable', next_owner='research_plan',
+                               reason=deepcopy(judgment.get('currentness_changes', 'sealed judgment is no longer current')))
+            elif live:
+                row.update(state='running', execution_id=live['id'])
+            elif queued:
+                row.update(state='queued', action_id=queued['id'])
+            elif waiting:
+                row.update(state='waiting', action_id=waiting['action']['id'],
+                           kind=waiting.get('kind'), next_owner=waiting.get('next_owner'))
+            else:
+                identifier = new_id('AC')
+                self._enqueue(**scope, id=identifier, requested_by=request_execution_id,
+                              reason='Complete the unsealed slot of the requested goal audit')
+                row.update(state='queued_new', action_id=identifier)
+            summary['slots'].append(row)
+        self.runtime.setdefault('history', []).append({'kind': 'goal_audit_request',
+            'execution_id': request_execution_id, **deepcopy(summary)})
+        return summary
+
+    def _retire_sealed_goal_audit_requests(self):
+        from .activities import finish_activity
+        if not self.instance.get('goal_judgments'):
+            return False
+        executions = self.runtime.get('executions', {})
+        waits = self.runtime.setdefault('waiting_actions', {})
+        actions = {a['id']: a for a in self.runtime.get('queue', []) if a.get('role') == 'goal_audit'}
+        actions.update({w['action']['id']: w['action'] for w in waits.values() if w.get('action', {}).get('id')})
+        changed = False
+        for identifier, action in actions.items():
+            judgment = self._goal_audit_seal(action)
+            if not judgment:
+                continue
+            owners = {eid: e for eid, e in executions.items() if e.get('action', {}).get('id') == identifier}
+            if (any(e.get('status') != 'ended' for e in owners.values())
+                    or any(r.get('owner_id') in owners and r.get('state') == 'held'
+                           for r in self.runtime.get('reservations', {}).values())
+                    or (judgment['execution_id'] in owners
+                        and owners[judgment['execution_id']].get('outcome') != 'output_accepted')):
+                continue
+            previous = waits.pop(identifier, None)
+            self.runtime['queue'][:] = [a for a in self.runtime['queue'] if a.get('id') != identifier]
+            self.runtime.setdefault('history', []).append({'kind': 'goal_audit_request_superseded',
+                'action': deepcopy(action), 'waiting': deepcopy(previous), 'judgment_id': judgment['id']})
+            changed = True
+            activity = self.runtime.get('activities', {}).get(action.get('owner_activity_id'))
+            if not activity or activity.get('status') == 'finished':
+                continue
+            assigned = [executions.get(eid, {}) for eid in activity.get('assigned_execution_ids', [])]
+            remaining = [*self.runtime['queue'], *(w.get('action', {}) for w in waits.values())]
+            if (any(a.get('owner_activity_id') == activity['id'] for a in remaining)
+                    or any(e.get('status') != 'ended' or e.get('action', {}).get('role') != 'goal_audit'
+                           or any(e.get('action', {}).get(k) != action.get(k) for k in ('basis', 'slot', 'required'))
+                           or (e.get('id') == judgment['execution_id'] and e.get('outcome') != 'output_accepted')
+                           for e in assigned)
+                    or any(r.get('owner_id') in activity.get('assigned_execution_ids', []) and r.get('state') == 'held'
+                           for r in self.runtime.get('reservations', {}).values())
+                    or any(not isinstance(row, dict) or row.get('action_id') != identifier
+                           for row in [*activity.get('unresolved', []), *activity.get('followups', [])])):
+                continue
+            unresolved = deepcopy(activity.get('unresolved', []))
+            if judgment.get('current') is False:
+                unresolved.append({'judgment_id': judgment['id'], 'reason': 'sealed judgment is no longer current'})
+            finish_activity(self.runtime, activity['id'], result_refs=activity.get('result_refs', []),
+                unresolved=unresolved, followups=[*activity.get('followups', []),
+                    {'action_id': identifier, 'judgment_id': judgment['id'], 'reason': 'goal audit request superseded'}],
+                at=self._lifecycle_now().isoformat())
+        return changed
+
+    def _record_goal_audit_followup(self, basis, judgments):
+        judgment_ids = sorted(row['id'] for row in judgments)
+        for event in self.runtime.get('events', []):
+            if (event['kind'] == 'goal_audit_completed' and event.get('basis_sha256') == basis
+                    and event.get('judgment_ids') == judgment_ids):
+                return event['id']
+        return self._lifecycle_event('goal_audit_completed', target=self.instance['id'],
+            basis_sha256=basis, judgment_ids=judgment_ids, outcome='not_established', next_owner='research_plan')['id']
+
     def _apply_governance_goal_audit(self, action, output, execution_id):
+        required, slot = action.get('required'), action.get('slot')
+        if type(required) is not int or required < 1 or type(slot) is not int or not 0 <= slot < required:
+            raise ValueError('goal audit requires a positive count and an in-range integer slot')
         if any(j['basis'] == action['basis'] and j['slot'] == action['slot'] for j in self.instance['goal_judgments']):
             raise ValueError('goal audit slot already sealed')
         if action['basis'] != self._goal_basis_key(): raise ValueError('goal audit inputs changed before acceptance')
@@ -309,8 +444,12 @@ class GovernanceEngineMixin:
             'record_basis': knowledge.capture_basis(self.instance, self.runtime, dependencies), 'basis_is_conservative': not bool(cited),
             'goal_revision': view.get('goal_revision', 1), 'policy_revision': view.get('policy_revision', 1), 'current': True,
             'source_basis': deepcopy(self.runtime['executions'][execution_id].get('source_basis', [])), 'additional_audits': mapped}
+        judgments = [j for j in self.instance['goal_judgments'] if j['basis'] == action['basis']] + [judgment]
+        if (any(type(j.get('required')) is not int or j['required'] != required
+                or type(j.get('slot')) is not int or not 0 <= j['slot'] < required for j in judgments)
+                or len({j['slot'] for j in judgments}) != len(judgments)):
+            raise ValueError('goal audit group has inconsistent slots or counts')
         self.instance['goal_judgments'].append(judgment)
-        judgments = [j for j in self.instance['goal_judgments'] if j['basis'] == action['basis']]
         if len(judgments) != action['required']: return judgment
         satisfied = bool(usable) and all(j['decision'] == 'satisfied' and j['scope_complete'] and j.get('current', True)
             and all(a['decision'] == 'satisfied' for a in j['additional_audits']) for j in judgments)
@@ -323,4 +462,6 @@ class GovernanceEngineMixin:
             self._ensure_academic_followup()
             if self.runtime['questions']:
                 self.runtime['history'].append({'kind': 'questions_preserved_at_goal_completion', 'questions': self.runtime['questions']})
+        else:
+            self._record_goal_audit_followup(action['basis'], judgments)
         return judgment

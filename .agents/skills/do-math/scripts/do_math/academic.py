@@ -267,5 +267,6 @@ def apply_goal_assurance(instance, *, decision, basis, judgments, runtime=None):
         for ref in {ref for judgment in judgments for ref in judgment["formal_result_refs"]}:
             formal = instance.get("formal_results",{}).get(ref)
             if not formal or not formal_usable(instance,formal): raise ValueError("final goal cites unavailable formal evidence")
-    result = deepcopy(instance); result.update(goal_status=decision, goal_assessment_basis=deepcopy(basis), goal_judgments=deepcopy(judgments))
+    result = deepcopy(instance)
+    result.update(goal_status=decision, goal_assessment_basis=deepcopy(basis))
     return result

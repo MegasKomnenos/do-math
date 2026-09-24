@@ -419,6 +419,7 @@ def extend():
         "revision_followup": array(obj({"record_id": ID, "task_id": ID}, ("record_id", "task_id"))),
         "intent_repair": obj({"import_id": ID, "previous_sha256": HASH, "check_execution_id": ID,
             "findings": array(TEXT)}, ("import_id", "previous_sha256", "check_execution_id", "findings")),
+        # Historical input only; no longer a dispatch condition.
         "initial_preparation_wait": obj({"goal_revision": NAT, "policy_revision": {"type": ["integer", "string"]},
             "requirements_sha256": HASH}, ("goal_revision", "policy_revision", "requirements_sha256"))})
     RUNTIME_FIELDS["revision_cycles"] = array(array(ID))

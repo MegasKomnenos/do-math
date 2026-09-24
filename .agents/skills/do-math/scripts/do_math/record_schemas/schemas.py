@@ -162,6 +162,7 @@ RECORDS["grants"] = record({"kind": enum("local", "http"), "status": enum("activ
     "credential_env": {"type": "object", "additionalProperties": TEXT}, "allow_idempotent_retry": BOOL,
     "included_targets": REFS, "excluded_targets": REFS, "reuse": TEXT}, ("kind", "status", "source_ref"))
 RECORDS["decisions"] = record({"kind": TEXT, "change": EVIDENCE, "source_ref": TEXT, "actor": {"const": "user"},
+    # Historical marker remains readable; v5 producers no longer create it.
     "created_at": TEXT, "affected": REFS, "requirements_revision": NAT, "initial_registration": BOOL,
     "grant_id": ID, "delegation_id": ID}, ("kind", "change", "source_ref", "actor", "affected"))
 RECORDS["delegations"] = record({"status": enum("active", "revoked", "withdrawn"), "decision_kind": TEXT,

@@ -73,6 +73,52 @@ def archived_run(root):
 
 
 class SurfaceRedesignTests(unittest.TestCase):
+    def test_checker_sees_canonical_catalog_beyond_direct_comparison(self):
+        from test_redesign_TASKS import task, disposition
+        from v5_fixtures import assessment, candidate
+        from test_contract_checks import checks
+        from do_math.submission import contract_check_errors
+        from do_math.planning import validate_plan_submission
+        instance, runtime = surface_state()
+        runtime['tasks'] = {identifier: {**task(), 'id': identifier, 'status': status, 'results': []}
+            for identifier, status in [('TK-ready', 'planned'), ('TK-completed', 'completed'), ('TK-waiting', 'waiting')]}
+        runtime['tasks']['TK-completed']['results'] = [{'execution_id': 'EX-old', 'report': 'preserved'}]
+        readers = deepcopy(list(runtime['tasks'].values()))
+        readers[1]['results'][0]['local_path'] = 'restored/output.txt'
+        returned = {**task(), 'id': 'TK-returned', 'status': 'waiting',
+                    'results': [{'execution_id': 'EX-returned', 'report': 'A returned proof sketch'}]}
+        for obligation in returned['completion_obligations']:
+            obligation['evidence_required'] = ['EX-returned']
+        runtime['tasks']['TK-returned'] = returned
+        readers.append(deepcopy(returned))
+        for role in ('research_plan', 'research_preparation'):
+            with self.subTest(role=role), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                profile = next(p for p in instance['execution_profiles'].values() if p['role'] == role)
+                fitted = prepare_role_input({'instance_id': instance['id'], 'action': {'id': 'A', 'role': role},
+                    'tasks': readers, 'resources': {}, 'knowledge_catalog': [], 'ready_task_ids': ['TK-ready']},
+                    instance=instance, runtime=runtime, role=role, profile=profile,
+                    snapshot='a'*40, workspace=root, activity_id='AC-1', install_submission_tools=True)
+                context = json.loads((root/'input/submission/context.json').read_bytes())
+                tasks = {t['id']: t for t in context['tasks']}
+                self.assertEqual(tasks, runtime['tasks'])
+                self.assertNotIn('TK-completed', [t['id'] for t in fitted['context']['tasks']])
+                plan = {'dispositions': [disposition('TK-ready')], 'task_assessments': [assessment(returned)]}
+                validate_plan_submission(plan, tasks, ['TK-ready'])
+                with self.assertRaises(ValueError):
+                    validate_plan_submission({**plan, 'task_assessments': []}, tasks, ['TK-ready'])
+                proposal = candidate('new')
+                entry = checks('new', sibling_boundaries=[{'task_id': 'TK-completed', 'revision': 1,
+                    'boundary': 'Use the completed sibling boundary', 'independent_of_next_revision': True}])
+                self.assertEqual(contract_check_errors(proposal, entry, [], tasks, set(), set()), [])
+                entry['sibling_boundaries'][0]['revision'] = 2
+                self.assertTrue(contract_check_errors(proposal, entry, [], tasks, set(), set()))
+                for extra in ('TK-completed', 'TK-waiting'):
+                    invalid = deepcopy(plan)
+                    invalid['dispositions'][0]['parallel_task_ids'] = [extra]
+                    with self.assertRaises(ValueError):
+                        validate_plan_submission(invalid, tasks, ['TK-ready'])
+
     def test_plan_receives_returned_work_separately_from_ready_selection_population(self):
         instance, runtime = surface_state()
         runtime['tasks'] = {'TK-returned': {'id': 'TK-returned', 'status': 'waiting',
@@ -562,7 +608,6 @@ class SurfaceRedesignTests(unittest.TestCase):
         profile = next(p for p in instance['execution_profiles'].values() if p['role'] == 'research_preparation')
         with tempfile.TemporaryDirectory() as d:
             context = context_engine(instance, runtime)._context({'role': 'research_preparation'}, Path(d))
-            context['tasks'].append({'id': 'stale'})
             result = prepare_role_input(context,
                 instance=instance, runtime=runtime, role='research_preparation', profile=profile,
                 snapshot='a'*40, workspace=Path(d), activity_id='AC-1')

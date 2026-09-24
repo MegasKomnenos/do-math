@@ -125,7 +125,7 @@ python .agents/skills/do-math/scripts/do_math.py status `
   --instance RI-...
 ```
 
-사람용 출력은 목표, 목표 상태, CLI 상태와 snapshot, 모델별 작업·운영 세션 점유, 과제 상태와 보증 범위 요지를 보여 준다. 자동 처리나 세부 진단에는 `--json`을 쓴다.
+사람용 출력은 목표, 목표 상태, CLI 상태와 snapshot, 모델별 작업·운영 세션 점유, 과제 상태·`assessment_pending`·보존된 `dispatch_waits` 사유와 보증 범위 요지를 보여 준다. 자동 처리나 세부 진단에는 `--json`을 쓴다.
 
 ```powershell
 python .agents/skills/do-math/scripts/do_math.py status `

@@ -197,7 +197,7 @@ class BundleConnections(unittest.TestCase):
         engine.store.validate_candidate = Mock(side_effect=lambda instance, runtime, head: {"instance": deepcopy(instance), "runtime": deepcopy(runtime)})
         engine._validate_bundle_current = Mock()
         engine._validate_bundle_candidate = Mock()
-        def apply(action, output, execution_id, *, owns_response=True):
+        def apply(action, output, execution_id, *, owns_response=True, question_source_ref=None):
             for item in output["knowledge"]:
                 if item["title"] == "invalid":
                     raise ValueError("rejected candidate")
@@ -440,7 +440,7 @@ class ControlReceipts(unittest.TestCase):
 
     @staticmethod
     def sealed():
-        return {"passed": True, "check": {"issues": []}, "manifest": [],
+        return {"passed": True, "capture_eligible": True, "check": {"issues": []}, "manifest": [],
             "intent": {"candidate_id": "CS-one", "draft_path": "draft.json",
                        "output_sha256": "a" * 64, "extensions_sha256": "b" * 64,
                        "schema_ref": {}, "manifest": []},
@@ -672,8 +672,6 @@ class PublicGitFlow(unittest.TestCase):
                     output["candidates"] = [row] if not context["tasks"] else []
                     if "observed_at" in arguments["output_schema"]["properties"]:
                         output["observed_at"] = context["observed_at"]
-                    if "regenerate_after" in arguments["output_schema"]["properties"]:
-                        output["regenerate_after"] = None
                     if output["candidates"]:
                         rules = [{"id": "rule-attempt", "operator": "counter_gte", "subject": {"kind": "counter", "id": "attempts"},
                             "basis": {"source": "checkpoint", "unit": "count"}, "threshold": 10, "required_evidence": ["checkpoint.json"]}]
@@ -1081,12 +1079,16 @@ class ImpactReviewRouting(unittest.TestCase):
         self.assertEqual(review_action["input_basis"]["impact_review"], request)
         self.assertNotIn("continuation_of", review_action)
         engine._receive_submission = Mock(); engine._save = Mock(); engine._settle_activity = Mock()
-        engine._retry_impact_reviews()
+        with patch("do_math.engine.submission.read_sealed_submission",
+                   side_effect=lambda execution, *_: {"output": execution["output"]}):
+            engine._retry_impact_reviews()
         engine._receive_submission.assert_not_called()
         engine.runtime["executions"]["EX-review"] = {"id": "EX-review", "status": "ended", "outcome": "output_accepted",
             "action": review_action, "output": source.review_output(request)}
         engine.store = Mock(); engine.store.read.return_value = b"{}"
-        engine._retry_impact_reviews()
+        with patch("do_math.engine.submission.read_sealed_submission",
+                   side_effect=lambda execution, *_: {"output": execution["output"]}):
+            engine._retry_impact_reviews()
         self.assertEqual(engine._receive_submission.call_args.args[2], "EX-producer")
         self.assertTrue(engine._receive_submission.call_args.kwargs["preserved"])
         self.assertEqual(engine.runtime["waiting_actions"][action["id"]]["review_execution_ids"], {"IN-held": "EX-review"})
@@ -1119,7 +1121,9 @@ class ImpactReviewRouting(unittest.TestCase):
         engine.runtime["executions"]["EX-review"] = {"id": "EX-review", "status": "ended", "outcome": "output_accepted",
             "action": deepcopy(next(row for row in engine.runtime["queue"] if row.get("stage") == "impact_review")), "output": output}
         engine._record_task_receipt = Mock(); engine._save = Mock(); engine._receive_submission = Mock()
-        engine._retry_impact_reviews(); engine._retry_impact_reviews()
+        with patch("do_math.engine.submission.read_sealed_submission",
+                   side_effect=lambda execution, *_: {"output": execution["output"]}):
+            engine._retry_impact_reviews(); engine._retry_impact_reviews()
         engine._receive_submission.assert_not_called()
         engine._record_task_receipt.assert_called_once()
         self.assertFalse(engine._record_task_receipt.call_args.kwargs["accepted"])
@@ -1313,9 +1317,12 @@ class ReceiptAndQuotaConnections(unittest.TestCase):
                 engine.head = 'fixture-snapshot'
                 output = submission.load_json(artifacts[intent['output_ref']])
                 context = submission.load_json((workspace/'input/submission/context.json').read_bytes())
+                receipt_artifacts = [{'path': path, 'sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)}
+                                     for path, raw in artifacts.items()]
                 execution = {'id': 'EX-work', 'action': context['action'], 'status': 'stopping',
                     'stop_phase': 'terminating', 'submission_intent': intent,
-                    'submission_receipt': {'kind': 'submit_intent', 'state': 'accepted'}}
+                    'submission_receipt': {'kind': 'submit_intent', 'state': 'accepted',
+                        'execution_id': 'EX-work', 'payload': {'submission_check': {'artifacts': receipt_artifacts}}}}
                 engine.runtime["executions"][execution["id"]] = execution
                 action = {"id": "AC-one", "role": "maintenance"}
                 engine._save = Mock(); engine._resolve_failed_actions = Mock(); engine._ensure_academic_followup = Mock()
@@ -1337,6 +1344,7 @@ class ReceiptAndQuotaConnections(unittest.TestCase):
                        if p["role"] == "supplemental_research")
         engine._execution_profile = Mock(return_value=profile)
         engine._admit_review_execution = Mock(return_value={"disposition": "review_followup_reserved"})
+        engine._request_review_resource_disposition = Mock()
         action = {"id": "AC-review", "role": "supplemental_research", "owner_review_cycle_id": "RC-one"}
         engine.runtime["queue"] = [action]
         result = engine._register_execution(action, {"id": "EX-attempt", "role": action["role"], "status": "queued"})
@@ -1345,8 +1353,8 @@ class ReceiptAndQuotaConnections(unittest.TestCase):
         self.assertEqual(execution["actor_kind"], "ai")
         self.assertEqual(execution["execution_profile_ref"], execution_profiles.profile_ref(profile))
         self.assertNotIn("EX-attempt", engine.runtime["executions"])
-        self.assertEqual(engine.runtime["queue"], [])
-        self.assertEqual(engine.runtime["waiting_actions"][action["id"]]["kind"], "review_followup_reserved")
+        engine._request_review_resource_disposition.assert_called_once_with(
+            action, "review_followup_reserved", {"disposition": "review_followup_reserved"})
 
 
 class FinalBoundaryConnections(unittest.TestCase):

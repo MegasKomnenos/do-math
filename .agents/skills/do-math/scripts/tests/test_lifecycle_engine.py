@@ -13,6 +13,7 @@ from do_math.lifecycle_engine import LifecycleEngineMixin
 from do_math.revision_engine import RevisionEngineMixin
 from do_math.scheduler import SchedulerMixin
 from do_math.review_engine import ReviewEngineMixin
+from do_math.governance_engine import GovernanceEngineMixin
 from do_math.initialization import initialize_state, FOUNDATION_AXIOMS, governance_working_view
 from do_math import execution_profiles as profiles, knowledge_records as kr, planning
 from do_math.governance import WORK_ROLES, OPERATING_ROLES
@@ -24,7 +25,7 @@ class AdapterDouble:
         return {'identity':self.capability_identity(),'verified':True,'scope':'cli_command_surface_only',
                 'supported':{'jsonl':True,'model':True,'structured_output':True}}
 
-class FakeEngine(RevisionEngineMixin,LifecycleEngineMixin,SchedulerMixin,ReviewEngineMixin):
+class FakeEngine(RevisionEngineMixin,LifecycleEngineMixin,SchedulerMixin,ReviewEngineMixin,GovernanceEngineMixin):
     _register_execution=ResearchEngine._register_execution
     _activity_for_action=ResearchEngine._activity_for_action
     _provider_slots=ResearchEngine._provider_slots
@@ -472,7 +473,7 @@ class LifecycleTests(unittest.TestCase):
             e.activate()
             action={'id':'AC-call','role':'research_preparation'}
             with patch.object(e,'_revision_dispatch_waits',return_value=[]), patch.object(e,'_selected_action_current',return_value=True), patch.object(e,'_provider_status',return_value={'providers':{}},create=True):
-                self.assertTrue(e._dispatchable(action,e._session_resources()))
+                self.assertTrue(e._dispatchable(action))
 
     def test_initial_grant_does_not_queue_research_before_activation(self):
         with tempfile.TemporaryDirectory() as root:
@@ -551,14 +552,13 @@ class LifecycleTests(unittest.TestCase):
         e=self.engine; t=e.task(); a={'id':'AC-work','role':'research_work','target':t['id']}
         e.runtime['queue']=[a]
         with patch.object(e,'_revision_dispatch_waits',return_value=[]), patch.object(e,'_selected_action_current',return_value=True), patch.object(e,'_provider_status',return_value={'providers':{}},create=True):
-            resources={'work':{p['ai']['model']:{'available':1} for p in e.instance['execution_profiles'].values() if p['actor_kind']=='ai'},'operations':{}}
-            self.assertTrue(e._dispatchable(a,resources))
+            self.assertTrue(e._dispatchable(a))
             e.runtime['tasks'][t['id']]['inputs'].append('absent')
-            self.assertFalse(e._dispatchable(a,resources))
+            self.assertFalse(e._dispatchable(a))
             e.runtime['tasks'][t['id']]['inputs']=[]
             e.runtime['tasks'][t['id']]['status']='ready'
             e.runtime['task_readiness']={t['id']:{'state':'ready'}}
-            self.assertFalse(e._dispatchable(a,resources))
+            self.assertFalse(e._dispatchable(a))
             self.assertEqual(a['dispatch_wait']['kind'],'task_readiness')
 
     def test_task_artifact_context_reaches_refresh_schedule_and_dispatch(self):
@@ -576,8 +576,7 @@ class LifecycleTests(unittest.TestCase):
         a={'id':'AC-artifact','role':'research_work','target':t['id']}
         e.runtime['queue']=[a]
         with patch.object(e,'_revision_dispatch_waits',return_value=[]), patch.object(e,'_selected_action_current',return_value=True) as selected, patch.object(e,'_provider_status',return_value={'providers':{}},create=True):
-            resources={'work':{p['ai']['model']:{'available':1} for p in e.instance['execution_profiles'].values() if p['actor_kind']=='ai'},'operations':{}}
-            self.assertTrue(e._dispatchable(a,resources))
+            self.assertTrue(e._dispatchable(a))
             context=selected.call_args.kwargs['evaluation_context']
             self.assertTrue(callable(context['validate_artifact']))
             self.assertEqual(context['read_artifact']('sealed-evidence',path),raw)

@@ -64,6 +64,39 @@ class ConcurrentRunner:
 
 
 class SessionPolicyTests(unittest.TestCase):
+    def test_old_profile_cannot_bypass_a_new_zero_capacity_limit(self):
+        from do_math.execution_profiles import build_profiles
+        from do_math.session_slots import GitSessionSlots
+
+        config = deepcopy(DEFAULT_CONFIG)
+        instance = {"config": config, **build_profiles(config)}
+        runtime = {"executions": {}, "reservations": {}, "provider_waits": {}}
+        old = next(profile for profile in instance["execution_profiles"].values()
+                   if profile["role"] == "research_work" and profile["ai"].get("tier") == "high")
+        slots = GitSessionSlots(runtime, instance)
+
+        lower = deepcopy(config["session_limits"])
+        lower["work"][MODELS["high"]] = 0
+        slots.configure(lower)
+        config["session_limits"] = lower
+        execution = {"id": "EX-old-profile", "role": "research_work", "status": "queued"}
+        self.assertFalse(slots.acquire(execution["id"], "work", MODELS["high"],
+                                       profile=old, execution=execution))
+        self.assertEqual(slots.admission_wait["kind"], "capacity")
+        self.assertEqual(runtime["reservations"], {})
+
+        raised = deepcopy(lower)
+        raised["work"][MODELS["high"]] = 1
+        slots.configure(raised)
+        config["session_limits"] = raised
+        self.assertTrue(slots.acquire(execution["id"], "work", MODELS["high"],
+                                      profile=old, execution=execution))
+        current = next(instance["execution_profiles"][ref["id"]]
+                       for ref in instance["role_profile_refs"]["research_work"]
+                       if instance["execution_profiles"][ref["id"]]["ai"].get("tier") == "high")
+        self.assertEqual(next(iter(runtime["reservations"].values()))["constraint_id"],
+                         current["ai"]["capacity_refs"][0])
+
     def test_defaults_and_max_of_difficulty_and_importance(self):
         self.assertEqual(MODELS, {"high": "gpt-6-astra", "medium": "gpt-5.6-sol", "low": "gpt-5.6-terra"})
         per_model = {"gpt-6-astra": 3, "gpt-5.6-sol": 3, "gpt-5.6-terra": 3}

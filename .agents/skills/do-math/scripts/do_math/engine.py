@@ -660,9 +660,9 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             slots = self._provider_slots()
             if not slots.acquire(execution["id"], profile["budget_kind"], None,
                                  profile=profile, execution=execution):
-                action["dispatch_wait"] = {"kind": "host_capacity"}
+                action["dispatch_wait"] = deepcopy(slots.admission_wait)
                 activities.wait_for(self.runtime, activity["id"], reason="machine capacity unavailable",
-                    condition=deepcopy(action["dispatch_wait"]), next_owner="scheduler", at=now())
+                    condition=deepcopy(action["dispatch_wait"]), next_owner=action["dispatch_wait"]["next_owner"], at=now())
                 return None
             action.pop("dispatch_wait", None)
             execution["action"] = deepcopy(action)
@@ -1051,6 +1051,9 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                     schema = submission.load_json(self.store.read(prefix + "/schema.json", self.head))
                     self._receive_submission(action, {}, execution["id"], context, schema,
                         Path(self.instance["workspace"]) / "runs" / execution["id"] / "workspace", preserved=True)
+                    if (execution.get('role') == 'goal_audit'
+                            and self.runtime['executions'][execution['id']].get('outcome') == 'output_accepted'):
+                        self._settle_activity(execution['id'])
                     self._save()
                 except submission.SealedSubmissionError as error:
                     live = self.runtime.setdefault("waiting_actions", {})[action["id"]]
@@ -1471,6 +1474,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             if slots is not None and hasattr(slots, "runtime"):
                 slots.runtime, slots.instance = self.runtime, self.instance
         executions = list(self.runtime["executions"].values())
+        dispatch_waits = reporting.dispatch_waits(self.runtime)
         evaluation_context = self._evaluation_context()
         return {"instance_id": self.instance["id"], "snapshot": self.head, "title": self.instance["title"],
                 "research_wake_reasons": planning.research_wake_reasons(self.instance, self.runtime,
@@ -1481,6 +1485,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 "pending_actions": len(self.runtime["queue"]), "cycles": self.runtime["cycles"],
                 "installation_repair": deepcopy(repair_execution.pending_installation_repair(self.runtime)),
                 "tasks": reporting.task_status(self.instance, self.runtime),
+                "dispatch_waits": dispatch_waits,
                 "research_observed_at": now(), "budget_observed_at": now(),
                 "knowledge": {"K": sum(row["usable"] for row in knowledge_records.knowledge_view(self.instance)),
                               "formal_results": len(self.instance.get("formal_results", {})),
@@ -1494,7 +1499,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 "budget_unit": "concurrent_sessions" if self._session_mode() else "execution_attempts",
                 "active_executions": [e["id"] for e in executions if e["status"] != "ended"],
                 "execution_attempts": {pool: sum(e.get("budget_kind") == pool for e in executions) for pool in ("work", "operations")},
-                "capacity_waiting": [{"role": a["role"], "target": a.get("target"), "model_selection": a.get("model_selection")} for a in self.runtime["queue"] if a.get("model_selection") and a.get("id") not in {e.get("action", {}).get("id") for e in executions if e["status"] != "ended"}],
+                "capacity_waiting": [{k: a[k] for k in ('role', 'target', 'model_selection')}
+                                     for a in dispatch_waits if a['wait']['kind'] in {'capacity', 'host_capacity'}],
                 "usage": [e.get("usage", {}) for e in executions if e.get("usage")],
                 "latest_results": list(self.runtime["activities"].values())[-5:],
                 "provider_waits": self._provider_status(),
@@ -1568,7 +1574,42 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             self._run_parallel(max_steps=max_steps, watch=watch)
         return self.status()
 
+    def _restore_goal_audit_publication(self, execution):
+        """Reconnect a committed producer to its sealed submission, never rerun it."""
+        action = execution['action']
+        waits = self.runtime.setdefault('waiting_actions', {})
+        previous = waits.get(action['id'])
+        if previous and previous.get('execution_id') == execution['id'] and previous.get('kind') in {
+                'submission_publication', 'submission_failure'}:
+            return False
+        if previous:
+            self.runtime.setdefault('history', []).append({'kind': 'goal_audit_publication_recovered',
+                'execution_id': execution['id'], 'previous_wait': deepcopy(previous)})
+        waiting = {'action': deepcopy(action), 'execution_id': execution['id'],
+                   'kind': 'submission_publication', 'next_owner': 'engine',
+                   'reason': 'Finish the original committed goal audit submission'}
+        waits[action['id']] = waiting
+        try:
+            submission.read_sealed_submission(execution, self.head,
+                lambda snapshot, path: self.store.read(path, snapshot))
+        except submission.SealedSubmissionError as error:
+            waiting.update(kind='submission_failure', reason=str(error))
+            repair_execution.route_failed_action(self, action, execution['id'],
+                reason='Diagnose unreadable sealed goal audit submission')
+        return True
+
     def _recover_disappeared(self) -> None:
+        restored = False
+        for execution in list(self.runtime['executions'].values()):
+            if (execution.get('role') == 'goal_audit' and execution.get('status') == 'ended'
+                    and execution.get('outcome') != 'output_accepted'
+                    and execution.get('capacity', {}).get('local_termination') == 'confirmed'
+                    and not any(r.get('owner_id') == execution['id'] and r.get('state') == 'held'
+                                for r in self.runtime.get('reservations', {}).values())
+                    and self._committed_goal_audit(execution['id'])):
+                restored = self._restore_goal_audit_publication(execution) or restored
+        if restored:
+            self._save()
         publication_pending = {row["execution_id"] for row in self.runtime.get("waiting_actions", {}).values()
             if row.get("kind") == "submission_publication" and
             self.runtime["executions"].get(row.get("execution_id"), {}).get("capacity", {}).get("local_termination") == "confirmed"}
@@ -1618,6 +1659,14 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                            "remote_termination": "unknown", "next_owner": "operator"}
             if not local_ended:
                 self.runtime["recoveries"][recovery_id]["dispositions"].append(disposition)
+                continue
+            if execution.get('role') == 'goal_audit' and self._committed_goal_audit(eid):
+                if self._settle_recovered_execution(eid, at=now(),
+                        disposition={'kind': 'committed_submission_pending'}):
+                    self._restore_goal_audit_publication(execution)
+                    disposition['next_owner'] = 'engine'
+                self.runtime['recoveries'][recovery_id]['dispositions'].append(disposition)
+                self._save()
                 continue
             bundle = new_id("BA")
             workspace = Path(self.instance["workspace"]) / "runs" / eid / "workspace"
@@ -3025,7 +3074,10 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             return result.value
         raise RuntimeError("model call did not finish")
 
-    def _obsolete_action_reason(self, action: dict) -> str | None:
+    def _obsolete_action_reason(self, action: dict, *, execution_id=None) -> str | None:
+        judgment = self._goal_audit_seal(action)
+        if judgment and judgment['execution_id'] != execution_id:
+            return 'The goal audit slot is already sealed by ' + judgment['execution_id']
         if action.get("role") == "operational_review" and action.get("live"):
             parent = self.runtime["executions"].get(action.get("target"))
             if not parent or parent.get("status") == "ended":
@@ -3119,13 +3171,6 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 self._enqueue("research_preparation", action.get("target"), reason="Supply valid observation rules before research starts")
             self._save()
             return True
-        used = sum(e.get("budget_kind") == pool for e in self.runtime["executions"].values())
-        if not self._budget_available(pool, used):
-            self.runtime["status"] = "capacity_waiting"
-            self.runtime["availability"] = {"state": "blocked", "reason": "budget_exhausted",
-                "next_owner": "user", "budget_kind": pool}
-            self._save()
-            return False
         authority = governance.authorize(self.instance, action, runtime=self.runtime)
         if not authority["allowed"]:
             self.runtime.setdefault("waiting_actions", {})[action["id"]] = {"action": action, "reason": authority["reason"]}
@@ -3341,8 +3386,11 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             execution_lifecycle.transition_execution(execution, "ended", at=now(), outcome="start_failed",
                 reason="provider admission deferred", disposition=deepcopy(action.get("dispatch_wait")))
             self._continue_prepared_action(execution)
+            for queued in self.runtime['queue']:
+                if queued.get('id') == action['id']:
+                    queued['dispatch_wait'] = deepcopy(action['dispatch_wait'])
             activities.wait_for(self.runtime, activity_id, reason="provider admission deferred",
-                condition=deepcopy(action.get("dispatch_wait", {"kind": "capacity"})), next_owner="scheduler", at=now())
+                condition=deepcopy(action["dispatch_wait"]), next_owner=action["dispatch_wait"]["next_owner"], at=now())
             self._save(self._input_artifacts(input_bundle, role, prompt, schema, fitted, workspace))
             return False
         if execution["status"] == "queued":
@@ -3516,7 +3564,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         execution = self.runtime["executions"][execution_id]
         if execution["status"] != "stopping":
             execution_lifecycle.transition_execution(execution, "stopping", at=now(), stop_phase="terminating")
-        obsolete = self._obsolete_action_reason(action)
+        obsolete = self._obsolete_action_reason(action, execution_id=execution_id)
         accepting = ((result["status"] == "completed" or result.get("error_kind") == "output_validation")
             and self.runtime["status"] not in {"closed", "completed"} and not obsolete
             and not execution.get("currentness_changes"))
@@ -3537,7 +3585,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         # Raw evidence is durable before any domain bundle is attempted.
         self._save(artifacts)
         artifacts = {}
-        obsolete = self._obsolete_action_reason(action)
+        obsolete = self._obsolete_action_reason(action, execution_id=execution_id)
         if self.runtime["status"] == "closed":
             self.runtime["executions"][execution_id]["result_disposition"] = {"kind": "preserved_after_close"}
             self.runtime["queue"] = []
@@ -3632,7 +3680,6 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                     reasons = queued.setdefault("reasons", [queued["reason"]] if queued.get("reason") else [])
                     if action["reason"] not in reasons:
                         reasons.append(action["reason"])
-                        queued.pop("initial_preparation_wait", None)
                     queued["reason"] = "\n".join(reasons)
                 if action.get("requested_by"):
                     queued["requested_by_refs"] = list(dict.fromkeys([
@@ -4358,9 +4405,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 raise ValueError("nonformal work cannot authorize a final goal guarantee")
             if self.instance["goal_status"] != "mathematically_solved":
                 basis = self._goal_basis_key()
-                for slot in range(self.instance["config"]["goal_auditors"]):
-                    self._enqueue("goal_audit", basis=basis, slot=slot,
-                                  required=self.instance["config"]["goal_auditors"])
+                self._ensure_goal_audit_requests(basis, execution_id)
         self._ensure_academic_followup()
 
     def _formal(self, action: dict) -> None:

@@ -256,7 +256,7 @@ class DomainGovernanceTests(unittest.TestCase):
         h=Host();h.instance={"id":"I","feature_version":5}
         h.runtime={"executions":{"E":{"id":"E","role":"research_plan","artifact_bundle":"B", "extensions":{"question_routes":[{"question_index":0,"owner":"user","target_ids":["I"],"blocks":False,"reason":"optional"}]}}}}
         h._record_output_questions({"role":"research_plan"},{"questions":["Optional priority?"]},"E")
-        self.assertFalse(h._has_global_user_question())
+        self.assertEqual(questions.user_waits({"role":"research_plan"}, h.instance, h.runtime), [])
         one=questions.link(h.runtime,execution_id="A",field="questions/0",owner="research",targets=["I"])
         h.runtime["executions"]["E"]["extensions"]={"question_resolutions":[
             {"question_id":one["id"],"disposition":"resolved","evidence_refs":["EV"],"reason":"answered"},

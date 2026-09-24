@@ -227,7 +227,8 @@ class ProviderAndParallelTests(unittest.TestCase):
 
     def test_provider_mixin_records_structured_waits_on_admission_and_failure(self):
         class Slots:
-            admission_reason = "provider_capacity"
+            admission_reason = "provider_limit"
+            admission_wait = {"kind": "provider_limit", "provider": "codex", "next_owner": "scheduler"}
             def acquire(self, *args, **kwargs):
                 return False
         class Harness(ProviderEngineMixin):

@@ -131,9 +131,11 @@ class WalkthroughRepairs(unittest.TestCase):
 
     def test_goal_judgment_must_cover_this_tasks_result_and_remain_current(self):
         from do_math.knowledge import capture_basis
+        from do_math.planning import governance_revisions
         instance, runtime, assessment, kid, _ = self.specialist_fixture('goal_audit')
         judgment = {'id':'GJ-proof','decision':'satisfied','scope_complete':True,'current':True,
-            'dependencies':[kid], 'record_basis':capture_basis(instance,runtime,[kid])}
+            'dependencies':[kid], 'record_basis':capture_basis(instance,runtime,[kid]),
+            **governance_revisions(instance)}
         instance['goal_judgments'] = [judgment]
         assessment['item_dispositions'][0]['evidence_refs'] = ['GJ-proof']
         _, completed = task_fixtures.AssessmentApplicationTests().apply(instance, runtime, assessment)

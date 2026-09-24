@@ -945,6 +945,7 @@ class LifecycleEngineMixin:
             if self.instance['lifecycle']['state'] == 'initializing':
                 return
         self._retire_closed_revision_targets()
+        self._retire_sealed_goal_audit_requests()
         self._reconcile_revision_delegations()
         live_actions = {execution.get('action', {}).get('id') for execution in self.runtime['executions'].values()
                         if execution.get('status') != 'ended'}
@@ -1021,9 +1022,9 @@ class LifecycleEngineMixin:
                                   reason='Current contract and policy require independent approval')
             # The source API supports legacy tasks; this integration deliberately
             # requires the stronger current-contract basis for migrated tasks.
-            evaluation = task_ready(deepcopy(task), deepcopy(query_instance), deepcopy(self.runtime),
+            evaluation = deepcopy(task_ready(task, query_instance, self.runtime,
                                     action={'role': 'research_work', 'target': task_id, 'budget_kind': 'work', 'actor_kind': 'ai'},
-                                    evaluation_context=evaluation_context)
+                                    evaluation_context=evaluation_context))
             if not approved:
                 evaluation = {'state': 'not_ready', 'basis': [], 'errors': ['current revision lacks approved contract review']}
             previous = self._task_readiness.get(task_id)

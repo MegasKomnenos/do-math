@@ -53,13 +53,17 @@ class GitSessionSlots:
 
     def __init__(self, runtime: dict, instance: dict, *, observer=False):
         self.runtime, self.instance, self.observer = runtime, instance, observer
-        self.admission_reason = None
+        self.admission_wait = None
+
+    @property
+    def admission_reason(self):
+        return (self.admission_wait or {}).get('kind')
 
     def _writable(self):
         if self.observer:
             raise ValueError("a read-only slot observer cannot mutate reservations")
 
-    def admission_available(self, profile):
+    def admission_check(self, profile, *, current_time=None):
         """Evaluate the actual admission calculation on detached ledger data.
 
         A ready result is not a reservation. The real acquire repeats the check
@@ -71,9 +75,14 @@ class GitSessionSlots:
                    "reservations": deepcopy(self.runtime.get("reservations", {})),
                    "provider_waits": deepcopy(self.runtime.get("provider_waits", {}))}
         candidate = {"id": new_id("EX"), "role": profile["role"], "status": "queued"}
-        return GitSessionSlots(runtime, self.instance).acquire(
+        slots = GitSessionSlots(runtime, self.instance)
+        allowed = slots.acquire(
             candidate["id"], profile["budget_kind"], profile.get("ai", {}).get("model"),
-            profile=profile, execution=candidate)
+            profile=profile, execution=candidate, current_time=current_time)
+        return {'allowed': allowed, 'wait': deepcopy(slots.admission_wait)}
+
+    def admission_available(self, profile):
+        return self.admission_check(profile)['allowed']
 
     def configure(self, limits):
         self._writable()
@@ -93,6 +102,7 @@ class GitSessionSlots:
     def acquire(self, execution_id, pool, model, *, profile=None, execution=None, provider=None,
                 enforce_capacity=True, current_time=None):
         self._writable()
+        self.admission_wait = None
         from copy import deepcopy
         from .execution_profiles import (bind_execution, resolve_profile, profile_ref,
                                          job_resource_limits, validate_host_constraint)
@@ -123,13 +133,51 @@ class GitSessionSlots:
         provider = expected_provider
         gate = self.runtime.get("provider_waits", {}).get("PW-" + provider) if provider else None
         if gate and (gate["state"] == "checking" or gate["state"] == "waiting" and gate["retry_at"] > current):
-            self.admission_reason = "provider_limit"
+            from .provider_wait import utc
+            self.admission_wait = {'kind': 'provider_limit', 'budget_kind': pool, 'model': model,
+                'profile_ref': profile_ref(profile), 'provider': provider, 'retry_at': utc(gate['retry_at']),
+                'reason': 'provider admission is waiting for reobservation', 'next_owner': 'scheduler'}
             return False
         # A new capacity edition must still count executions reserved under older
         # editions of the same model. Limits are not independent resource pools.
         constraints = self.instance["capacity_constraints"]
         reservations = deepcopy(self.runtime.get("reservations", {}))
-        refs = ai.get("capacity_refs", []) + ai.get("usage_constraint_ids", [])
+        capacity_refs = list(ai.get("capacity_refs", []))
+        usage_refs = list(ai.get("usage_constraint_ids", []))
+        adopted = self.instance.get("role_profile_refs")
+        if adopted and ai:
+            # An execution keeps its immutable profile, but a new reservation
+            # must obey the currently adopted limit for the same resource.
+            active_constraints = set()
+            for role_refs in adopted.values():
+                for reference in role_refs:
+                    active_profile = self.instance["execution_profiles"][reference["id"] if isinstance(reference, dict) else reference]
+                    active_ai = active_profile.get("ai", {})
+                    active_constraints.update(active_ai.get("capacity_refs", []))
+                    # Cumulative call budgets remain bound to their explicit
+                    # immutable edition; only live session slots are rebased.
+
+            def current_ref(reference):
+                previous = constraints[reference]
+                if previous["kind"] == "concurrency":
+                    matches = [cid for cid in active_constraints if constraints[cid]["kind"] == "concurrency"
+                               and constraints[cid]["model"] == previous["model"]]
+                else:
+                    matches = [reference]
+                return matches[0] if len(matches) == 1 else None
+
+            capacity_refs = [current_ref(ref) for ref in capacity_refs]
+            usage_refs = [current_ref(ref) for ref in usage_refs]
+            if None in capacity_refs + usage_refs:
+                self.admission_wait = {"kind": "capacity", "budget_kind": pool, "model": model,
+                    "profile_ref": profile_ref(profile), "reason": "pinned profile has no current adopted accounting constraint",
+                    "next_owner": "user"}
+                return False
+        refs = capacity_refs + usage_refs
+        accounting_profile = deepcopy(profile)
+        if ai:
+            accounting_profile["ai"]["capacity_refs"] = capacity_refs
+            accounting_profile["ai"]["usage_constraint_ids"] = usage_refs
         host_refs = profile.get("host_capacity_refs", [])
         for ref in host_refs:
             validate_host_constraint(constraints[ref])
@@ -161,10 +209,20 @@ class GitSessionSlots:
                    "reobserve": {"on": "local_termination_barrier"}, "demands": demands}
         try:
             plan = (plan_reservations({"reservations": reservations},
-                                     {"constraints": list(constraints.values())}, profile, request)
+                                     {"constraints": list(constraints.values())}, accounting_profile, request)
                     if demands else ReservationPlan((), False, ()))
-        except BudgetConflict:
-            self.admission_reason = "capacity"
+        except BudgetConflict as error:
+            kind, owner = {'cumulative': ('budget_exhausted', 'user'),
+                           'concurrency': ('capacity', 'scheduler'), 'host': ('host_capacity', 'operations'),
+                           'window': ('budget_window', 'operations')}.get(
+                               error.constraint_kind, ('resource_unclassified', 'operations'))
+            constraint = constraints.get(error.constraint_id, {})
+            if error.constraint_kind == 'concurrency' and (
+                    constraint.get(pool + '_slots') == 0 or constraint.get('total_slots') == 0):
+                owner = 'user'
+            self.admission_wait = {'kind': kind, 'budget_kind': pool, 'model': model,
+                'profile_ref': profile_ref(profile), 'constraint_id': error.constraint_id,
+                'constraint_kind': error.constraint_kind, 'reason': str(error), 'next_owner': owner}
             return False
         candidate = deepcopy(execution)
         bind_execution(candidate, profile)
@@ -185,7 +243,7 @@ class GitSessionSlots:
         execution.clear()
         execution.update(candidate)
         self.runtime["executions"][execution_id] = execution
-        self.admission_reason = None
+        self.admission_wait = None
         return True
 
     def started(self, execution_id, identity):

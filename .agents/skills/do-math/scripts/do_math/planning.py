@@ -253,8 +253,11 @@ def ready_task_ids(runtime: dict, instance: dict, *, evaluation_context=None) ->
 
 def validate_plan_submission(output: dict, tasks: dict, ready_ids: list[str]) -> None:
     """Validate the supplied planning population, before applying any decision."""
-    from .task_contracts import validate_plan_dispositions
-    validate_plan_dispositions(output, tasks, ready_ids)
+    from .task_contracts import returned_task_ids, validate_plan_dispositions
+    comparison_ids = set(ready_ids) | set(returned_task_ids(tasks))
+    comparison_tasks = {identifier: task for identifier, task in tasks.items()
+                        if identifier in comparison_ids}
+    validate_plan_dispositions(output, comparison_tasks, ready_ids)
 
 
 CONDITION_FIELDS = {"always": set(), "all": {"args"}, "any": {"args"}, "not": {"arg"},

@@ -7,7 +7,7 @@ import sys
 import tempfile
 from types import SimpleNamespace
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.engine import ResearchEngine, DEFAULT_CONFIG
@@ -36,7 +36,11 @@ class WaitOwnershipTests(unittest.TestCase):
         engine._apply_submission_bundles = apply
         engine._remove_action = lambda action: None
         engine._record_task_receipt = lambda *args, **kwargs: None
-        engine._receive_submission(action, {}, 'EX-one', {}, {}, Path('.'))
+        # Sealing is covered separately; this fixture starts at a captured
+        # submission so the wait ownership rule is the behavior under test.
+        sealed = {'output': output, 'extensions': {}, 'check': {'issues': []}, 'output_ref': 'out'}
+        with patch('do_math.engine.submission.read_sealed_submission', return_value=sealed):
+            engine._receive_submission(action, {}, 'EX-one', {}, {}, Path('.'))
         return engine.runtime
 
     def test_new_user_wait_survives_successful_response(self):

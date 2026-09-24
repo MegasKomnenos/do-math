@@ -73,7 +73,7 @@ def engine_fixture(goal='Establish P', *, academic_requirements=None):
     e.instance.update(execution_profiles.build_profiles(e.instance['config']))
     e.runtime = {'feature_version': 5, 'last_observed_utc': TIME, 'tasks': {}, 'activities': {}, 'executions': {}, 'queue': [],
         'waiting_actions': {}, 'history': [], 'inputs': [], 'questions': [], 'question_links': [],
-        'interpretations': {}, 'events': [], 'status': 'ready'}
+        'interpretations': {}, 'events': [], 'pending_events': [], 'status': 'ready'}
     e.head, e._slots = 'input-snapshot', None
     e._task_readiness = {}
     e.lifecycle_clock = lambda: TIME
@@ -175,22 +175,21 @@ class PriorityVectorTests(unittest.TestCase):
             observation['id'] = 'CE-' + digest(observation)
             e.instance['capability_evidence'][observation['id']] = observation
         model = e.instance['config']['tier_models']['medium']
-        resources = {'work': {model: {'available': 4}}, 'operations': {model: {'available': 4}}}
         first = {'id': 'AC-first', 'role': 'research_work', 'target': task['id'], 'grant_id': 'GR-evidence',
                  'owner_activity_id': 'AY-first', 'model_selection': {'model': model}}
         other = {**first, 'id': 'AC-other', 'owner_activity_id': 'AY-other', 'role': 'supplemental_research'}
         same_role = {**first, 'id': 'AC-other-work', 'owner_activity_id': 'AY-other'}
-        self.assertTrue(e._dispatchable(other, resources), repr(other))
-        self.assertTrue(e._dispatchable(same_role, resources), 'different work request is valid before occupancy')
-        self.assertTrue(e._dispatchable(first, resources), 'reviewed unoccupied task must be dispatchable')
+        self.assertTrue(e._dispatchable(other), repr(other))
+        self.assertTrue(e._dispatchable(same_role), 'different work request is valid before occupancy')
+        self.assertTrue(e._dispatchable(first), 'reviewed unoccupied task must be dispatchable')
         e.runtime['executions']['EX-first'] = {'id': 'EX-first', 'status': 'running',
             'role': first['role'], 'action': deepcopy(first), 'owner_activity_id': 'AY-first'}
-        self.assertFalse(e._dispatchable(other, resources))
-        self.assertFalse(e._dispatchable(same_role, resources))
+        self.assertFalse(e._dispatchable(other))
+        self.assertFalse(e._dispatchable(same_role))
         e.runtime['executions']['EX-first'].update(status='ended', outcome='execution_incomplete')
-        self.assertTrue(e._dispatchable({**first, 'id': 'AC-retry', 'continuation_of': 'EX-first'}, resources),
+        self.assertTrue(e._dispatchable({**first, 'id': 'AC-retry', 'continuation_of': 'EX-first'}),
                         'ended attempt must not consume a lifetime task slot')
-        self.assertTrue(e._dispatchable(other, resources), 'ended work releases the task for the other role')
+        self.assertTrue(e._dispatchable(other), 'ended work releases the task for the other role')
 
     def test_v112_engine_completion_rejects_open_then_applies_fulfilled_obligations(self):
         e = engine_fixture(); task = task_fixture()

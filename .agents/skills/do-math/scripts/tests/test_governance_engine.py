@@ -17,8 +17,9 @@ class CentralGovernanceTests(unittest.TestCase):
     def host(self):
         from test_redesign_GOVERNANCE import AuditRepairTests
         from do_math.engine import DEFAULT_CONFIG
+        from do_math.lifecycle_engine import LifecycleEngineMixin
         i, rt, bundle, request = AuditRepairTests().checked_import()
-        class Host(self.mixin()):
+        class Host(self.mixin(), LifecycleEngineMixin):
             _executor_running = False
             _calls = None
             _live_execution_ids = set()
@@ -30,6 +31,8 @@ class CentralGovernanceTests(unittest.TestCase):
             def _complete_initial_intent(self, target): self.completed_input = target
             def _activate_initialization(self): self.activation_attempted = True
         h = Host(); h.instance = i; h.runtime = rt
+        rt.setdefault('events', [])
+        rt.setdefault('pending_events', [])
         for execution in rt['executions'].values(): execution.setdefault('status', 'queued')
         i['config'] = {**deepcopy(DEFAULT_CONFIG), 'session_limits': None, 'scholarly_enabled': False}
         # Config addition is not a premise of this charter import.
@@ -176,9 +179,10 @@ class CentralGovernanceTests(unittest.TestCase):
         h, _, _ = self.host()
         h.instance, h.runtime = AuditRepairTests().audited()
         h.instance.update(knowledge={}, goal_judgments=[])
+        h.runtime.update(events=[], pending_events=[], last_observed_utc='2020-01-01T00:00:00Z')
         h._goal_basis_key = lambda: 'B'
         action = {'role': 'goal_audit', 'basis': 'B', 'slot': 0, 'required': 1}
-        execution = {'id': 'AUDITOR', 'role': 'goal_audit'}
+        execution = {'id': 'AUDITOR', 'role': 'goal_audit', 'action': deepcopy(action), 'status': 'ended'}
         h._bind_governance_input(action, execution, h._governance_context(action, {}))
         h.runtime['executions']['AUDITOR'] = execution
         output = {'decision': 'satisfied', 'scope_complete': True, 'used_sources': [],
@@ -221,6 +225,9 @@ class CentralGovernanceTests(unittest.TestCase):
                 h, action, output = self.audit_host()
                 h.instance['knowledge'] = {'K': {'id': 'K', 'statement': 'fixture only'}}
                 h.instance['formal_results'] = {'FR': {'id': 'FR'}}
+                old_judgment = {'id': 'GJ-old', 'basis': 'old', 'slot': 0, 'required': 1,
+                                'execution_id': 'EX-old', 'decision': 'not_satisfied', 'current': False}
+                h.instance['goal_judgments'].append(deepcopy(old_judgment))
                 temporary = tempfile.TemporaryDirectory()
                 self.addCleanup(temporary.cleanup)
                 trusted = trust_fixture(Path(temporary.name), ['synthetic-audit-lean'])
@@ -245,6 +252,8 @@ class CentralGovernanceTests(unittest.TestCase):
                 jsonschema.validate(record_basis, basis_schema)
                 self.assertEqual(h.instance.get('goal_status') == 'mathematically_solved', expected)
                 self.assertEqual(getattr(h, 'academic_followup', False), expected)
+                self.assertEqual(h.instance['goal_judgments'][0], old_judgment)
+                self.assertEqual(len(h.instance['goal_judgments']), 2)
 
     def test_raw_initial_charter_compares_lossless_input_not_nfc_projection(self):
         import hashlib, unicodedata
@@ -443,6 +452,7 @@ class PublicGitGovernanceTests(unittest.TestCase):
             action = {'id': 'AC-AUDITOR', 'role': 'goal_audit', 'target': None,
                       'basis': engine._goal_basis_key(), 'slot': 0, 'required': 1}
             self.execution_fixture(engine, 'AUDITOR', 'goal_audit', iid)
+            engine.runtime['executions']['AUDITOR']['action'] = deepcopy(action)
             context = engine._context(action, Path(engine.instance['workspace']), execution_id='AUDITOR')
             self.assertEqual(context['additional_audit_input'][0]['audit']['id'], 'AU')
             self.assertIn('additional_audits', engine._response_schema(action)['required'])
@@ -457,11 +467,60 @@ class PublicGitGovernanceTests(unittest.TestCase):
                 with self.assertRaises(ValueError): engine._apply(action, {**output, 'additional_audits': invalid}, 'AUDITOR')
                 self.assertEqual(engine.instance['goal_judgments'], [])
             engine._apply(action, output, 'AUDITOR')
-            engine._save()
+            # Preserve a crash immediately after the judgment/receipt publication,
+            # before the original execution's final output_accepted bookkeeping.
+            import hashlib
+            from do_math import integration, execution_lifecycle
+            from do_math.repository import canonical_json
+            output['integration_bundles'] = [{'integration_id': 'IN-audit', 'members': ['output'],
+                'impact_set': [], 'authority_refs': []}]
+            fixed = {'action': action, 'snapshot': engine.head}
+            bundle = next(integration.split_bundles(output, {}, fixed))
+            engine.runtime.setdefault('integrations', {})['IN-audit'] = {'id': 'IN-audit', 'execution_id': 'AUDITOR',
+                'payload_sha256': bundle['payload_sha256'], 'members': ['output'], 'input_snapshot': engine.head}
+            ex = engine.runtime['executions']['AUDITOR']
+            execution_lifecycle.transition_execution(ex, 'ended', at=engine.instance['created_at'],
+                outcome='start_failed', reason='crash fixture before finalization')
+            ex['capacity'] = {'local_termination': 'confirmed', 'reservation_ids': [], 'provider': None, 'process': None}
+            ex['input_bundle'] = 'BA-audit-input'
+            ex['input_snapshot'] = engine.head
+            ex['result_ref'] = 'runtime/artifacts/BA-audit/result.json'
+            artifacts = {ex['result_ref']: b'{"status":"completed"}',
+                'runtime/artifacts/BA-audit-input/input/submission/context.json': canonical_json(fixed),
+                'runtime/artifacts/BA-audit-input/schema.json': b'{}'}
+            ex['submission_intent'] = {}
+            refs = []
+            for name, value in (('output', output), ('extensions', {}), ('check', {'passed': True, 'issues': []})):
+                ref = 'runtime/artifacts/BA-audit/' + name + '.json'
+                raw = canonical_json(value)
+                artifacts[ref] = raw
+                digest = hashlib.sha256(raw).hexdigest()
+                ex['submission_intent'][name + '_ref'] = ref
+                ex['submission_intent'][name + '_sha256'] = digest
+                refs.append({'path': ref, 'sha256': digest, 'bytes': len(raw)})
+            ex['submission_receipt'] = {'state': 'accepted', 'execution_id': 'AUDITOR',
+                                        'payload': {'submission_check': {'artifacts': refs}}}
+            from do_math.submission import read_sealed_submission
+            read_sealed_submission(ex, engine.head, lambda snapshot, path: artifacts[path])
+            engine._save(artifacts)
             restarted = self.engine_type()(root, iid)
             self.assertEqual(restarted.instance['goal_judgments'][0]['additional_audits'][0]['decision'], 'not_satisfied')
             self.assertNotEqual(restarted.runtime['status'], 'completed')
             self.assertEqual(restarted.runtime['executions']['AUDITOR']['additional_audit_input'], context['additional_audit_input'])
+            judgments, events = deepcopy(restarted.instance['goal_judgments']), deepcopy(restarted.runtime['events'])
+            result_ref = restarted.runtime['executions']['AUDITOR']['result_ref']
+            with restarted.store.writer_lock():
+                restarted._recover_disappeared()
+                self.assertEqual(restarted.runtime['waiting_actions'][action['id']]['kind'], 'submission_publication',
+                                 restarted.runtime['waiting_actions'][action['id']])
+                restarted._retry_submission_publications()
+            final = self.engine_type()(root, iid)
+            self.assertEqual(final.runtime['executions']['AUDITOR']['outcome'], 'output_accepted')
+            self.assertEqual(final.runtime['activities']['ACT-AUDITOR']['status'], 'finished')
+            self.assertEqual(final.runtime['executions']['AUDITOR']['result_ref'], result_ref)
+            self.assertEqual(final.instance['goal_judgments'], judgments)
+            self.assertEqual(final.runtime['events'], events)
+            self.assertNotIn(action['id'], final.runtime['waiting_actions'])
 
     def test_exact_initial_input_context_survives_actual_git_restart(self):
         import tempfile

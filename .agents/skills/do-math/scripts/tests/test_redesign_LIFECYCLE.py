@@ -17,10 +17,11 @@ from do_math.initialization import (  # noqa: E402
 )
 from do_math.knowledge import register_environment  # noqa: E402
 from do_math.lifecycle_engine import LifecycleEngineMixin  # noqa: E402
+from do_math.governance_engine import GovernanceEngineMixin
 from do_math.preflight import inspect_current_state  # noqa: E402
 
 
-class FixtureEngine(LifecycleEngineMixin):
+class FixtureEngine(LifecycleEngineMixin, GovernanceEngineMixin):
     def __init__(self):
         self.current_time = datetime(2026, 9, 20, tzinfo=timezone.utc)
         self.lifecycle_clock = lambda: self.current_time.isoformat()

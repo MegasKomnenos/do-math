@@ -237,7 +237,12 @@ class EngineTests(unittest.TestCase):
 
     def test_formal_requires_two_blind_reviews_and_failure_does_not_create_k(self):
         runner = ScriptedRunner(formal=True); engine, _ = self.make(runner, plan_settle_seconds=1)
-        solved = engine.run(max_steps=30)
+        for step in range(0, 30, 4):
+            solved = engine.run(max_steps=min(4, 30 - step))
+            if solved['knowledge']['K'] == 1:
+                break
+        else:
+            self.fail('The fixture did not publish formally reviewed knowledge')
         from do_math.knowledge_records import usable_links
         self.assertEqual(solved["knowledge"]["K"], 1)
         kid = next(kid for kid in engine.instance['knowledge'] if usable_links(engine.instance, kid))
@@ -259,7 +264,14 @@ class EngineTests(unittest.TestCase):
         self.assertEqual(engine.instance["active_trust_environment"], engine.instance["formal_results"][verified["formal_result_id"]]["trust_environment_id"])
         self.assertEqual(engine.instance["formal_results"][verified["formal_result_id"]]["verification"]["toolchain"]["sha256"], "f" * 64)
         failed_runner = ScriptedRunner(formal=True); failed, _ = self.make(failed_runner, formal_fail, plan_settle_seconds=1)
-        self.assertEqual(failed.run(max_steps=20)["knowledge"]["K"], 0)
+        for _ in range(0, 20, 4):
+            failed_status = failed.run(max_steps=4)
+            if any(ex['role'] == 'formal_check' and ex.get('status') == 'ended'
+                   and ex.get('formal_status') == 'failed' for ex in failed.runtime['executions'].values()):
+                break
+        else:
+            self.fail('The fixture did not reach a failed formal check')
+        self.assertEqual(failed_status["knowledge"]["K"], 0)
 
     def test_plan_rejects_missing_candidate_and_criterion(self):
         for invalid in ("missing", "criterion"):
@@ -279,7 +291,14 @@ class EngineTests(unittest.TestCase):
 
     def test_work_budget_pause_resume_preserves_failed_request_without_replay(self):
         runner = ScriptedRunner(fail_role="research_work"); engine, instance = self.make(runner, work_calls=2, operations_calls=None)
-        paused = engine.run(max_steps=10)
+        for _ in range(0, 10, 2):
+            paused = engine.run(max_steps=2)
+            if (paused['status'] in {'waiting', 'capacity_waiting'}
+                    and any(item['action']['role'] == 'research_work'
+                            for item in engine.runtime['waiting_actions'].values())):
+                break
+        else:
+            self.fail('The failed work request did not reach a preserved wait')
         self.assertIn(paused["status"], {"waiting", "capacity_waiting"})
         before = ResearchRepository(self.repo, instance).load()[2]["waiting_actions"]
         self.assertTrue(any(item["action"]["role"] == "research_work" for item in before.values()))
@@ -313,8 +332,15 @@ class EngineTests(unittest.TestCase):
     def test_unlimited_budgets_continue_after_finite_exhaustion(self):
         runner = ScriptedRunner(formal=True)
         engine, instance = self.make(runner, work_calls=1, operations_calls=10)
-        exhausted = engine.run(max_steps=20)
-        self.assertEqual(exhausted["status"], "capacity_waiting")
+        for _ in range(0, 20, 4):
+            exhausted = engine.run(max_steps=4)
+            if (exhausted['budget']['work']['available'] == 0
+                    and any(action['role'] == 'research_work' for action in engine.runtime['queue'])
+                    and exhausted['status'] in {'capacity_waiting', 'waiting'}):
+                break
+        else:
+            self.fail('The finite work budget did not preserve a queued request')
+        self.assertIn(exhausted["status"], {"capacity_waiting", "waiting"})
         self.assertEqual(exhausted['budget']['work']['available'], 0)
         pinned_work = next(action for action in engine.runtime['queue'] if action['role'] == 'research_work')
         pinned_profile_ref = pinned_work['profile_ref']
@@ -386,14 +412,19 @@ class EngineTests(unittest.TestCase):
                     for pid, p in engine.instance['execution_profiles'].items()
                     if pid in selected and p['actor_kind'] == 'ai']}})
                 engine.process_controls()
-                status = engine.run(max_steps=20)
-                # max_steps bounds the sample, not the unlimited pool's remaining
-                # planning work. Resource independence is checked directly below.
+                for _ in range(0, 20, 4):
+                    status = engine.run(max_steps=4)
+                    budget = status['budget']
+                    unlimited_pool = 'work' if work is None else 'operations'
+                    if (budget[exhausted_pool]['used'] > before[exhausted_pool]['used']
+                            and budget[unlimited_pool]['used'] > before[unlimited_pool]['used']):
+                        break
+                else:
+                    self.fail('Both budget pools were not exercised within 20 steps')
                 self.assertEqual(status["budget"][exhausted_pool]["used"] - before[exhausted_pool]['used'], 1,
                     {'budget': status['budget'], 'waits': status['waiting_actions'], 'queue': engine.runtime['queue']})
                 self.assertEqual(status['budget'][exhausted_pool]['available'], 0)
                 self.assertFalse(engine._budget_available(exhausted_pool, 0))
-                unlimited_pool = "work" if work is None else "operations"
                 self.assertIsNone(status["budget"][unlimited_pool]["limit"])
                 self.assertTrue(engine._budget_available(unlimited_pool, 0))
                 self.assertGreater(status["budget"][unlimited_pool]["used"], before[unlimited_pool]['used'])

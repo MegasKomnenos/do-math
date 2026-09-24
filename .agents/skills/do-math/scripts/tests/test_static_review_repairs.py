@@ -298,7 +298,8 @@ class InputBoundaryRepairs(unittest.TestCase):
             root = Path(directory)
             fitted, fixed = package(engine, root)
             self.assertEqual(fixed['ready_task_ids'], [selected['id']])
-            self.assertEqual({row['id'] for row in fixed['tasks']}, {selected['id']})
+            self.assertEqual({row['id'] for row in fixed['tasks']},
+                             {selected['id'], finished['id'], active['id']})
             catalog = {row['id']: row for row in fixed['task_catalog']}
             self.assertEqual(set(catalog), {selected['id'], finished['id'], active['id']})
             report = submission.load_json((root / catalog[finished['id']]['source_ref']['path']).read_bytes())

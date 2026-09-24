@@ -43,10 +43,9 @@ class StateContract:
 
     @classmethod
     def default(cls):
-        from .record_schemas import install
-        contract = cls()
-        install(contract)
-        return contract
+        # Installation validates every built-in schema. Keep that validated
+        # template, but give each repository an independent mutable contract.
+        return deepcopy(_default_template(cls))
 
     def register_family(self, root, name, *, shape="map", schema=None,
                         validator=None, references=None, identity=True, derived=None):
@@ -182,6 +181,14 @@ class StateContract:
 
 def default_state_contract():
     return StateContract.default()
+
+
+@lru_cache(maxsize=16)
+def _default_template(contract_type):
+    from .record_schemas import install
+    contract = contract_type()
+    install(contract)
+    return contract
 
 
 def register_record_family(contract, root, name, **kwargs):

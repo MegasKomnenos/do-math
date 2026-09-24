@@ -561,7 +561,9 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
     schema = output_schema if output_schema is not None else contracts.schema_for(role)
     validation_context = deepcopy(value)
     if role in {'research_preparation', 'research_plan'}:
-        validation_context['tasks'] = [deepcopy(runtime['tasks'][row['id']]) for row in value['tasks']]
+        # Resolve catalog references independently of the comparison population.
+        validation_context['tasks'] = [deepcopy(runtime['tasks'][identifier])
+                                       for identifier in sorted(runtime['tasks'])]
     if role in {'research_work', 'supplemental_research'}:
         # A fixed public domain view for the shared relation checker, not a
         # second store or a worker-authored validity assertion.

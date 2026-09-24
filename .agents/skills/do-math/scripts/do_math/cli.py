@@ -470,6 +470,7 @@ def _human_status(status: dict[str, Any]) -> str:
     for task in tasks:
         waits = ', '.join(row.get('kind', 'unknown') for row in task.get('waits', [])) or 'none'
         lines.append(f"  {task['id']} revision={task.get('revision', 'unknown')} stage={task['status']} "
+                     f"assessment_pending={str(task.get('assessment_pending', False)).lower()} "
                      f"active_records={','.join(task.get('active_execution_ids', [])) or 'none'} "
                      f"queued={','.join(str(value) for value in task.get('selected_actions', [])) or 'none'} "
                      f"waits={waits} next={task.get('next_owner') or 'none'}")
@@ -480,6 +481,8 @@ def _human_status(status: dict[str, Any]) -> str:
         lines.append(render_human_report(status))
     else:
         lines.append('inspection: not supplied; research effectiveness: not evaluated')
+        from .reporting import render_dispatch_waits
+        lines.extend(render_dispatch_waits(status))
     return '\n'.join(lines)
 
 

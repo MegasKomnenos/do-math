@@ -78,6 +78,29 @@ class TaskScopeTests(unittest.TestCase):
         self.assertEqual(changed["tasks"]["TK-dependent"]["status"], "waiting")
         self.assertEqual(runtime["tasks"]["TK-AI"]["status"], "planned")
 
+    def test_selected_unstarted_withdrawal_excludes_only_its_authorizing_execution(self):
+        _, runtime, snapshot = self.fixture()
+        runtime['tasks']['TK-AI']['status'] = 'active'
+        runtime['executions']['EX-plan'] = {'id': 'EX-plan', 'role': 'research_preparation',
+            'status': 'stopping', 'action': {'target': 'TK-AI'}}
+        _, changed = self.withdraw(runtime, snapshot)
+        self.assertEqual(changed['tasks']['TK-AI']['status'], 'closed')
+        runtime['executions']['EX-other'] = {**runtime['executions']['EX-plan'], 'id': 'EX-other'}
+        with self.assertRaisesRegex(ValueError, 'live execution'):
+            self.withdraw(runtime, snapshot)
+        del runtime['executions']['EX-other']
+        runtime['executions']['EX-plan']['role'] = 'research_work'
+        with self.assertRaisesRegex(ValueError, 'live execution'):
+            self.withdraw(runtime, snapshot)
+
+    def test_terminal_assessment_cannot_withdraw_even_without_results(self):
+        from do_math.task_scope import validate_withdrawal_scope
+        _, runtime, snapshot = self.fixture()
+        for decision in ('completed', 'closed'):
+            with self.subTest(decision=decision), self.assertRaisesRegex(ValueError, 'terminal'):
+                validate_withdrawal_scope(runtime['tasks']['TK-AI'], snapshot['TK-AI'],
+                                          proposed_assessment={'decision': decision})
+
     def test_rejects_changed_snapshot_user_or_academic_task_and_live_or_terminal_task(self):
         for mutation in (
             lambda runtime, snap: snap["TK-AI"].update(question="new"),

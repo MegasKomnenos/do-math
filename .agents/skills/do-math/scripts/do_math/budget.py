@@ -23,6 +23,11 @@ class BudgetInputError(ValueError):
 class BudgetConflict(RuntimeError):
     """At least one required capacity cannot admit the complete request."""
 
+    def __init__(self, message, *, constraint_id=None, constraint_kind=None):
+        super().__init__(message)
+        self.constraint_id = constraint_id
+        self.constraint_kind = constraint_kind
+
 
 class BudgetReplayConflict(BudgetInputError):
     """An existing reservation ID was requested again with different bytes."""
@@ -313,7 +318,8 @@ def _check_concurrency(
         raise BudgetInputError("concurrency slots violate work + operations <= total")
     slice_name = "work_slots" if budget_kind == "work" else "operations_slots"
     if own + demand["amount"] > constraint[slice_name] or total + demand["amount"] > constraint["total_slots"]:
-        raise BudgetConflict(f"concurrency capacity unavailable: {constraint['id']}")
+        raise BudgetConflict(f"concurrency capacity unavailable: {constraint['id']}",
+                             constraint_id=constraint['id'], constraint_kind='concurrency')
 
 
 def _check_host(
@@ -335,7 +341,8 @@ def _check_host(
                 raise BudgetInputError("control reserve exceeds the approved host limit")
         used = _outstanding_sum(reservations, constraint["id"], demand["unit"])
         if used + demand["amount"] > constraint[limit_key] - headroom:
-            raise BudgetConflict(f"host capacity unavailable: {constraint['id']}/{demand['unit']}")
+            raise BudgetConflict(f"host capacity unavailable: {constraint['id']}/{demand['unit']}",
+                                 constraint_id=constraint['id'], constraint_kind='host')
 
 
 def _check_usage(
@@ -354,7 +361,8 @@ def _check_usage(
     else:
         used = sum(_outstanding(reservations[reservation_id]) for reservation_id in population)
     if used + demand["amount"] > limit["value"]:
-        raise BudgetConflict(f"usage capacity unavailable: {constraint['id']}")
+        raise BudgetConflict(f"usage capacity unavailable: {constraint['id']}",
+                             constraint_id=constraint['id'], constraint_kind=constraint['kind'])
 
 
 def _validate_window_population(
