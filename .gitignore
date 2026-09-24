@@ -20,6 +20,9 @@ __pycache__/
 # 세션별 작문 실행 상태와 독해 원문. 검증 사례는 별도로 선별해 보존한다.
 /.codex/writing-flow/
 
+# Raw review runs are local scratch; selected reports and source evidence live in docs/do-math/review-evidence/.
+/.codex/reviews/
+
 # 일반적인 빌드 산출물.
 /build/
 
