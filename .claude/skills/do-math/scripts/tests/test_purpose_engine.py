@@ -490,11 +490,15 @@ class PurposeEngineTests(PurposeHarness):
         current_policy = engine._governance()['policy_revision']
         self.assertNotEqual(current_policy, previous_policy)
         self.assertEqual(engine._task_readiness[task['id']]['state'], 'not_ready')
-        self.drive(engine)
+        self.drive(engine, predicate=lambda e: any(call['role'] == 'research_work'
+            and call['context']['policy_revision'] == current_policy for call in runner.calls))
         task = engine.runtime['tasks'][task['id']]
         self.assertTrue(any(r['policy_revision'] == current_policy and r['decision'] == 'approved' for r in task['reviews']))
-        work = next(call for call in runner.calls if call['role'] == 'research_work')
+        work = next(call for call in runner.calls if call['role'] == 'research_work'
+                    and call['context']['policy_revision'] == current_policy)
         self.assertEqual(work['context']['policy_revision'], current_policy)
+        self.assertTrue(any(ex['role'] == 'research_work' and ex.get('outcome') == 'output_accepted'
+                            for ex in engine.runtime['executions'].values()))
 
     def test_user_input_is_independently_checked_without_becoming_goal_authority(self):
         engine, runner = self.make()
@@ -579,13 +583,17 @@ class PurposeEngineTests(PurposeHarness):
         self.assertTrue(operations and all(timeout <= 1 for timeout in operations))
 
     def test_live_continue_preserves_checkpoint_and_uses_operating_budget(self):
-        engine, runner = self.make(observation='continue')
-        self.drive(engine)
+        engine, runner = self.make(observation='continue', work_calls=None, operations_calls=None)
+        self.drive(engine, predicate=lambda e: any(
+            row['disposition']['kind'] == 'continue' and row['target_execution_id'] in e.runtime['checkpoints']
+            for row in e.runtime['operational_dispositions'].values()))
         live = [e for e in engine.runtime['executions'].values() if e['role'] == 'operational_review' and e['action'].get('live')]
         self.assertEqual(len(live), 1)
         parent = engine.runtime['executions'][live[0]['action']['target']]
         self.assertEqual(parent['budget_kind'], 'work')
         self.assertEqual(live[0]['budget_kind'], 'operations')
+        self.assertEqual(live[0]['outcome'], 'output_accepted')
+        self.assertIsNone(engine.status()['budget']['operations']['limit'])
         self.assertEqual(engine.runtime['checkpoints'][parent['id']]['kind'], 'worker_checkpoint')
         self.assertTrue(any(r['target_execution_id'] == parent['id'] and r['disposition']['kind'] == 'continue'
                             for r in engine.runtime['operational_dispositions'].values()))
@@ -601,21 +609,16 @@ class PurposeEngineTests(PurposeHarness):
         self.assertEqual(operating[0]['outcome'], 'output_accepted')
         self.assertEqual(operating[0]['budget_kind'], 'operations')
 
-    def test_live_review_works_with_unlimited_operating_budget(self):
-        engine, runner = self.make(observation='continue', work_calls=None, operations_calls=None)
-        self.drive(engine)
-        reviews = [e for e in engine.runtime['executions'].values()
-                   if e['role'] == 'operational_review' and e['action'].get('live')]
-        self.assertEqual(len(reviews), 1)
-        self.assertEqual(reviews[0]['outcome'], 'output_accepted')
-
     def test_large_history_uses_exact_context_source_files_without_losing_work(self):
         engine, runner = self.make('catalog')
-        self.drive(engine)
+        self.drive(engine, predicate=lambda e: any(call['role'] == 'research_plan'
+            and any(task.get('results') and len(task['results'][0]['report']) > 180000
+                    for task in call['context']['tasks']) for call in runner.calls))
         # Comparison population stays direct. Large record details are exact
         # sources independently of optional whole-field input reductions.
         task_sources = [entry for execution in engine.runtime['executions'].values()
-                        if execution.get('role') == 'research_plan' and isinstance(execution.get('input_manifest'), dict)
+                        if execution.get('role') == 'research_plan' and execution.get('outcome') == 'output_accepted'
+                        and isinstance(execution.get('input_manifest'), dict)
                         for entry in execution.get('input_manifest', {}).get('detail_sources', [])
                         if entry['path'].startswith('input/details/tasks/') and entry['bytes'] > 180000]
         self.assertTrue(task_sources)

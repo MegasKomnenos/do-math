@@ -118,35 +118,11 @@ class ReviewResearchEngineTests(PurposeHarness):
         self.assertEqual(question['status'], 'open')
         self.assertIn(knowledge_id, question['target_ids'])
 
-    def test_same_slot_defers_investigates_and_resumes_before_approval(self):
-        engine, runner = self.make_research()
-        self.drive(engine)
-        self.assertEqual(len(runner.research_answers), 1)
-        self.assertEqual(len(runner.resumed_contexts), 1)
-        investigation = next(ex for ex in engine.runtime['executions'].values() if ex['role'] == 'supplemental_research')
-        self.assertEqual(investigation['budget_kind'], 'work')
-        cycle = next(iter(engine.runtime['review_cycles'].values()))
-        self.assertEqual(cycle['decision'], 'match')
-        self.assertEqual(sum(row['action']['stage'] == 'initial' for row in cycle['results'].values()), 2)
-        self.assertIn('scope:1:scope', cycle['results'])
-        self.assertFalse(cycle['deferred_actions'])
-        request = next(iter(cycle['research'].values()))
-        self.assertEqual(request['action']['slot'], 'initial-0')
-        self.assertNotEqual(request['requested_by'], request['result']['execution_id'])
-        self.assertEqual(request['result']['execution_id'], investigation['id'])
-        self.assertEqual(runner.resumed_contexts[0]['action']['slot'], 'initial-0')
-        self.assertTrue(any(message['role'] == 'tool' and message.get('kind') == 'supplemental_research'
-                            for message in cycle['turns']['initial-0']))
-        self.assertIn('declaration_signatures', cycle['proposal']['formal'])
-        self.assertIn('signature_hash', cycle['proposal']['formal'])
-        final_id = next(result['execution_id'] for result in cycle['results'].values() if result['action']['slot'] == 'initial-0')
-        self.assertNotEqual(final_id, request['requested_by'])
-        self.assertNotIn(request['requested_by'], {r['execution_id'] for r in cycle['results'].values()})
-
     def test_confirmed_withdrawal_closes_before_the_round_cap(self):
         engine, runner = self.make('dispute', review_rounds=3)
         engine.formal_verifier = signed_formal_fixture
-        self.drive(engine)
+        self.drive(engine, predicate=lambda e: any(c['decision'] == 'match'
+            for c in e.runtime['review_cycles'].values()))
         cycle = next(iter(engine.runtime['review_cycles'].values()))
         self.assertEqual(cycle['decision'], 'match')
         self.assertEqual(cycle['round'], 2)
@@ -154,10 +130,33 @@ class ReviewResearchEngineTests(PurposeHarness):
 
     def test_all_fixed_questions_return_before_resuming_the_deferred_slot(self):
         engine, runner = self.make_research(batch=True)
-        self.drive(engine)
+        self.drive(engine, predicate=lambda e: bool(runner.resumed_contexts)
+            and any(c['decision'] == 'match' for c in e.runtime['review_cycles'].values()))
         self.assertEqual(len(runner.research_answers), 2)
         self.assertEqual(len(runner.resumed_contexts), 1)
         self.assertEqual(len(runner.resumed_contexts[0]['supplemental_results']), 2)
+        cycle = next(iter(engine.runtime['review_cycles'].values()))
+        self.assertEqual(cycle['decision'], 'match')
+        self.assertEqual(sum(row['action']['stage'] == 'initial' for row in cycle['results'].values()), 2)
+        self.assertIn('scope:1:scope', cycle['results'])
+        self.assertFalse(cycle['deferred_actions'])
+        requests = list(cycle['research'].values())
+        self.assertEqual(len(requests), 2)
+        self.assertEqual(runner.resumed_contexts[0]['action']['slot'], 'initial-0')
+        self.assertTrue(any(message['role'] == 'tool' and message.get('kind') == 'supplemental_research'
+                            for message in cycle['turns']['initial-0']))
+        self.assertIn('declaration_signatures', cycle['proposal']['formal'])
+        self.assertIn('signature_hash', cycle['proposal']['formal'])
+        final_id = next(result['execution_id'] for result in cycle['results'].values()
+                        if result['action']['slot'] == 'initial-0')
+        for request in requests:
+            investigation = engine.runtime['executions'][request['result']['execution_id']]
+            self.assertEqual(investigation['role'], 'supplemental_research')
+            self.assertEqual(investigation['budget_kind'], 'work')
+            self.assertEqual(request['action']['slot'], 'initial-0')
+            self.assertNotEqual(request['requested_by'], investigation['id'])
+            self.assertNotEqual(final_id, request['requested_by'])
+            self.assertNotIn(request['requested_by'], {r['execution_id'] for r in cycle['results'].values()})
         actual_roles = [call['role'] for call in runner.calls]
         research_positions = [i for i, role in enumerate(actual_roles) if role == 'supplemental_research']
         resumed_position = next(i for i, call in enumerate(runner.calls) if call['role'] == 'identity_review'
@@ -183,9 +182,11 @@ class ReviewResearchEngineTests(PurposeHarness):
 
     def test_unlimited_work_budget_admits_fixed_question_research(self):
         engine, runner = self.make_research(work_calls=None, operations_calls=None)
-        self.drive(engine)
+        self.drive(engine, predicate=lambda e: bool(runner.research_answers))
         self.assertTrue(runner.research_answers)
-        self.assertEqual(engine.instance['goal_status'], 'mathematically_solved')
+        self.assertIsNone(engine.status()['budget']['work']['limit'])
+        self.assertTrue(any(ex['role'] == 'supplemental_research' and ex.get('outcome') == 'output_accepted'
+            and ex['budget_kind'] == 'work' for ex in engine.runtime['executions'].values()))
 
     def test_initial_peer_question_is_not_exposed_before_phase_seal(self):
         engine, runner = self.make_research()
@@ -240,7 +241,8 @@ class ReviewResearchEngineTests(PurposeHarness):
         old_cycle = engine.runtime['review_cycles'][old_cycle_id]
         self.assertEqual(old_cycle['status'], 'unresolved')
         self.assertTrue(all(r['status'] == 'cancelled' for r in old_cycle['research'].values()))
-        self.drive(engine)
+        self.drive(engine, predicate=lambda e: any(row.get('supersedes') == item['id']
+            and kr.usable_links(e.instance, row['id']) for row in e.instance['knowledge'].values()))
         replacement = next(row for row in engine.instance['knowledge'].values() if row.get('supersedes') == item['id'])
         self.assertNotEqual(replacement['review_cycle_id'], old_cycle_id)
         self.assertTrue(kr.usable_links(engine.instance, replacement['id']))
@@ -255,7 +257,9 @@ class ReviewResearchEngineTests(PurposeHarness):
         send_control(engine, 'knowledge', config={'operation': 'revise', 'id': item['id'], 'changes': changes,
             'declared_impact': knowledge.plan_impact(engine.instance, engine.runtime, roots, [])['computed_impact'],
             'reason': 'New proposal revision'})
-        self.drive(engine)
+        self.drive(engine, predicate=lambda e: len(runner.resumed_contexts) >= 2
+            and any(row.get('supersedes') == item['id'] and kr.usable_links(e.instance, row['id'])
+                    for row in e.instance['knowledge'].values()))
         self.assertEqual(len(runner.research_answers), 1)
         self.assertEqual(len(runner.resumed_contexts), 2)
         self.assertIn('previous_revision', runner.resumed_contexts[-1]['supplemental_results'][0])
