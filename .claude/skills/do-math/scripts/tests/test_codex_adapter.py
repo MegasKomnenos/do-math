@@ -155,6 +155,28 @@ class CodexWorkerTests(unittest.TestCase):
         self.assertFalse(parsed["turn_completed"])
         self.assertGreater(parsed["unparsed_tail_bytes"], 0)
 
+    def test_ambiguous_or_nonfinite_native_events_cannot_establish_completion(self):
+        prefix = (b'{"type":"thread.started","thread_id":"t"}\n'
+                  b'{"type":"turn.started"}\n')
+        invalid = [b'{"type":"turn.failed","type":"turn.completed"}\n',
+                   b'{"type":"turn.completed","usage":{"tokens":1,"tokens":2}}\n',
+                   b'{"type":"turn.completed","usage":{"cost":NaN}}\n',
+                   b'{"type":"turn.completed","usage":{"cost":Infinity}}\n',
+                   b'{"type":"turn.completed","usage":{"cost":-Infinity}}\n',
+                   b'{"type":"turn.completed","usage":{"cost":1e999}}\n']
+        for terminal in invalid:
+            with self.subTest(terminal=terminal):
+                parsed = _parse_jsonl(prefix + terminal)
+                self.assertFalse(parsed["parse_complete"])
+                self.assertFalse(parsed["turn_completed"])
+                self.assertEqual(parsed["parsed_bytes"], len(prefix))
+                self.assertEqual(parsed["unparsed_tail_bytes"], len(terminal))
+                self.assertEqual(parsed["unknown_events"][0]["kind"], "invalid_jsonl")
+        valid = _parse_jsonl(prefix + b'{"type":"turn.completed","usage":{"cost":0.25}}\n')
+        self.assertTrue(valid["parse_complete"])
+        self.assertTrue(valid["turn_completed"])
+        self.assertEqual(valid["usage"], [{"cost": 0.25}])
+
     def test_collect_rejects_malformed_tail_even_with_turn_completed(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

@@ -176,6 +176,35 @@ class FormalBoundaryTests(unittest.TestCase):
             self.assertEqual(execution['outcome'], 'output_accepted')
             self.assertEqual(execution['submission_receipt']['state'], 'accepted')
 
+    def test_review_start_failure_produces_a_storable_wait_after_formal_acceptance(self):
+        from do_math.state_contract import default_state_contract
+        from test_redesign_STORAGE import StorageRedesignTests
+        with tempfile.TemporaryDirectory() as d:
+            e, kid = self.host(Path(d))
+            e._start_identity_review.side_effect = ValueError('adopted review policy is required before review admission')
+            action = {'id': new_id('AC'), 'role': 'formal_check', 'target': kid}
+            with patch('do_math.engine.governance.authorize', return_value={'allowed': True, 'grant_id': 'GR-fixture'}):
+                e._formal(action)
+            identifier, waiting = next(iter(e.runtime['waiting_actions'].items()))
+            self.assertNotEqual(identifier, action['id'])
+            self.assertEqual(waiting['action']['role'], 'identity_review')
+            self.assertEqual(waiting['action']['target'], kid)
+            self.assertEqual(waiting['next_owner'], 'review_policy')
+            self.assertIn('adopted review policy', waiting['reason'])
+            execution = e.runtime['executions'][waiting['execution_id']]
+            self.assertEqual((execution['status'], execution['outcome']), ('ended', 'output_accepted'))
+            self.assertEqual(e.instance['formal_results'][e.instance['knowledge'][kid]['formal_result_id']]['publication_state'], 'accepted')
+            # Use a structurally complete execution fixture for the stored reference;
+            # the waiting record itself comes unchanged from the actual producer.
+            instance, runtime = StorageRedesignTests()._execution_state()
+            instance['object_format'] = 'sha1'
+            stored_execution = runtime['executions'].pop('EX-1')
+            stored_execution['id'] = execution['id']
+            runtime['executions'][execution['id']] = stored_execution
+            runtime['activities']['AT-1']['assigned_execution_ids'] = [execution['id']]
+            runtime['waiting_actions'] = deepcopy(e.runtime['waiting_actions'])
+            default_state_contract().validate(instance, runtime)
+
     def test_changed_manifest_file_blocks_even_fake_verifier(self):
         with tempfile.TemporaryDirectory() as d:
             e, kid = self.host(Path(d))

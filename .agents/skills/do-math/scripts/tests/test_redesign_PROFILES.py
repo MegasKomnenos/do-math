@@ -41,6 +41,37 @@ class ProfileTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "supported roles"):
             api.build_profiles(config, roles={"invented"})
 
+    def test_selection_cost_depends_on_allowed_profiles_not_retained_editions(self):
+        api = self.profiles()
+        registry = {}
+        for edition in range(12):
+            config = {**deepcopy(CONFIG), "max_input_bytes": 500000 + edition,
+                      "lean_command": ["fixture-no-lean"]}
+            current = api.build_profiles(config)
+            registry.update(current["execution_profiles"])
+        allowed = current["role_profile_refs"]["maintenance"]
+        before = deepcopy(registry)
+        with patch.object(api, "resolve_profile", wraps=api.resolve_profile) as resolve:
+            chosen = model_policy.selection(config, {"role": "maintenance"}, {}, {}, profiles=registry)
+        self.assertIn(chosen["profile_ref"], allowed)
+        self.assertLessEqual(resolve.call_count, 2 * len(allowed))
+        self.assertEqual(registry, before)
+
+        requirement = {key: chosen[key] for key in ("model", "tier")}
+        selected = api.select_profile(registry, {"role": "maintenance"}, requirement,
+                                      allowed_refs=[*allowed, allowed[0]])
+        self.assertEqual(api.profile_ref(selected), chosen["profile_ref"])
+        with self.assertRaisesRegex(ValueError, "permitted role/model edition"):
+            api.select_profile(registry, {"role": "maintenance"}, requirement, allowed_refs=[])
+        stale = {**allowed[0], "revision": allowed[0]["revision"] + 1}
+        with self.assertRaisesRegex(ValueError, "absent or stale"):
+            api.select_profile(registry, {"role": "maintenance"}, requirement, allowed_refs=[stale])
+        old = next(p for p in registry.values() if p["role"] == "maintenance"
+                   and p["ai"]["tier"] == chosen["tier"] and api.profile_ref(p) not in allowed)
+        with self.assertRaisesRegex(ValueError, "permitted role/model edition"):
+            api.select_profile(registry, {"role": "maintenance", "profile_ref": api.profile_ref(old)},
+                               requirement, allowed_refs=allowed)
+
     def test_ai_selection_builds_only_its_role_without_reading_lean(self):
         api = self.profiles()
         config = {**deepcopy(CONFIG), "lean_command": ["fixture-no-lean"]}

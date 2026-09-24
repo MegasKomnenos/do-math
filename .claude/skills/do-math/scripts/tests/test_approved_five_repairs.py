@@ -125,6 +125,43 @@ class RuleBindingTests(unittest.TestCase):
         self.assertEqual(rules[0]['subject']['id'], '$execution')
 
 
+    def test_checkpoint_iterations_bind_and_round_trip_for_each_execution(self):
+        template = [{'id': 'iteration-review', 'operator': 'iteration_gte',
+            'subject': {'kind': 'iteration', 'id': '$execution'},
+            'basis': {'source': 'checkpoint', 'unit': 'count'},
+            'threshold': 10, 'repeat_interval': 10, 'required_evidence': ['contract']}]
+        for eid in ('EX-first', 'EX-retry'):
+            bound = observations.bind_task_rules(template, eid)
+            observations.validate_execution_rules(bound,
+                bindings=observations.observation_rule_contract(), execution_id=eid)
+            self.assertEqual(bound[0]['subject']['id'], eid)
+            snapshot = {'by_source': {'checkpoint': {'iterations': {eid: 10}}}}
+            due = observations.evaluate_rules(bound, snapshot)
+            self.assertEqual([row['rule_id'] for row in due], ['iteration-review'])
+            self.assertEqual(observations.task_rules_from_execution(bound, eid), template)
+            foreign = deepcopy(bound)
+            foreign[0]['subject']['id'] = 'EX-foreign'
+            with self.assertRaises(ValueError):
+                observations.bind_task_rules(foreign, eid)
+            with self.assertRaises(ValueError):
+                observations.task_rules_from_execution(foreign, eid)
+            with self.assertRaises(ValueError):
+                observations.validate_execution_rules(foreign,
+                    bindings=observations.observation_rule_contract(), execution_id=eid)
+        self.assertEqual(template[0]['subject']['id'], '$execution')
+
+    def test_event_iteration_names_remain_owned_by_the_event_source(self):
+        rules = [{'id': 'search', 'operator': 'iteration_gte',
+            'subject': {'kind': 'iteration', 'id': 'search-branches'},
+            'basis': {'source': 'execution_events', 'unit': 'count'},
+            'threshold': 2, 'required_evidence': ['contract']}]
+        bound = observations.bind_task_rules(rules, 'EX-new')
+        observations.validate_execution_rules(bound,
+            bindings=observations.observation_rule_contract(), execution_id='EX-new')
+        self.assertEqual(bound, rules)
+        self.assertEqual(observations.task_rules_from_execution(bound, 'EX-new'), rules)
+
+
 class PartialWithdrawalTests(unittest.TestCase):
     def test_current_unperformed_withdrawal_preserves_results_and_residual_scope(self):
         from test_task_scope import TaskScopeTests

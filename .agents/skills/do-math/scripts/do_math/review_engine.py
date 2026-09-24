@@ -276,7 +276,7 @@ class ReviewEngineMixin:
         self._review_cycle({'role': 'identity_review', 'target': knowledge_id, 'review_cycle_id': cycle_id})
         if cycle['status'] != 'completed' or cycle.get('decision') != 'match':
             raise ValueError('staged identity review has no completed match')
-        assessment = self._identity_assessment(cycle, effective=False, reason='Sealed staged identity review')
+        assessment = self._identity_assessment(cycle, reason='Sealed staged identity review')
         return {**assessment, 'policy_ref': cycle['policy_ref'], 'identity_basis': deepcopy(cycle['identity_basis']),
                 'transition_id': transition_id, 'knowledge_id': knowledge_id,
                 'transition_basis': cycle['staged_candidate']['transition_basis']}
@@ -921,8 +921,17 @@ class ReviewEngineMixin:
                     messages.append({'role': 'tool', 'content': deepcopy(block)})
         if not messages:
             return False
-        source = {'artifact_ref': artifact_ref, 'event_index': event_index, 'event_sha256': kr.digest(event)}
+        source = {'artifact_ref': artifact_ref, 'event_index': event_index,
+                  'event_sha256': hashlib.sha256(_transcript_bytes(event)).hexdigest()}
         for index, message in enumerate(messages):
+            for field in ('content', 'arguments', 'call'):
+                if field not in message:
+                    continue
+                try:
+                    canonical_json(message[field])
+                except ValueError:
+                    # Provider JSON numbers remain exact text outside integer-only state.
+                    message[field] = _transcript_bytes(message[field]).decode('utf-8')
             message.update(kind='observed_public_message', source=deepcopy(source),
                            message_id=f'{execution_id}:public:{event_index}:{index}')
         cycle = self._review_cycle(action)
@@ -935,7 +944,7 @@ class ReviewEngineMixin:
         return True
 
     @staticmethod
-    def _identity_assessment(cycle, *, effective, reason):
+    def _identity_assessment(cycle, *, reason):
         return identity_assessment(cycle, reason=reason)
 
     def _apply_identity_review(self, action, output, execution_id):
@@ -1020,7 +1029,7 @@ class ReviewEngineMixin:
             # A stored manifest cannot attest to currently installed file bytes.
             from .initialization import require_trust_environment
             require_trust_environment(self.instance, self.runtime)
-        assessment = self._identity_assessment(updated, effective=False, reason='Complete independent review')
+        assessment = self._identity_assessment(updated, reason='Complete independent review')
         assessment.pop('cycle_id', None)
         assessment.update(review_cycle_id=updated['id'], basis=deepcopy(updated['identity_basis']))
         published, assessment_id = kr.record_identity_assessment(

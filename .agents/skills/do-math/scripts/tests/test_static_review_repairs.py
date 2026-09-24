@@ -247,29 +247,34 @@ class InputBoundaryRepairs(unittest.TestCase):
             self.assertEqual(engine.store.read(engine.instance['sources'][0]['path'], engine.head),
                              source.read_bytes())
 
-    def test_operational_decision_question_reads_new_and_existing_links(self):
+    def test_operational_question_uses_exact_execution_or_sealed_source_coordinate(self):
         engine = object.__new__(ResearchEngine)
         engine.instance = {'decisions': {}}
+        engine.head = 'fixed'
         engine.store = Mock()
+        engine.store.read_many.return_value = {'sealed-output.json': canonical_json({
+            'disposition': {'question': 'Question from the sealed response'}})}
         engine.runtime = {'executions': {
-            'EX-new': {'id': 'EX-new', 'role': 'operational_review',
-                       'output': {'disposition': {'question': 'Choose the next action'}}},
-            'EX-old': {'id': 'EX-old', 'role': 'operational_review',
-                       'output': {'disposition': {'question': 'Resolve the old question'}}},
+            'EX-current': {'id': 'EX-current', 'role': 'operational_review',
+                           'output': {'disposition': {'question': 'Choose the next action'}}},
             'EX-missing': {'id': 'EX-missing', 'role': 'operational_review', 'output': {}}},
             'question_links': [
-                {'id': 'QU-new', 'origin_execution_id': 'EX-new', 'origin_field': 'output/disposition/question',
-                 'owner': 'user', 'status': 'open'},
-                {'id': 'QU-old', 'origin_execution_id': 'EX-old', 'origin_field': 'disposition/question',
-                 'owner': 'user', 'status': 'open'},
-                {'id': 'QU-missing', 'origin_execution_id': 'EX-missing', 'origin_field': 'disposition/question',
-                 'owner': 'user', 'status': 'open'}]}
+                {'id': 'QU-current', 'origin_execution_id': 'EX-current',
+                 'origin_field': 'output/disposition/question', 'owner': 'user', 'status': 'open'},
+                {'id': 'QU-wrong', 'origin_execution_id': 'EX-current',
+                 'origin_field': 'disposition/question', 'owner': 'user', 'status': 'open'},
+                {'id': 'QU-missing', 'origin_execution_id': 'EX-missing',
+                 'origin_field': 'output/disposition/question', 'owner': 'user', 'status': 'open'},
+                {'id': 'QU-sealed', 'origin_execution_id': 'EX-current', 'source_ref': 'sealed-output.json',
+                 'origin_field': 'disposition/question', 'owner': 'user', 'status': 'open'}]}
         view = {row['id']: row for row in QuestionEngineMixin._question_view(engine)}
-        self.assertEqual(view['QU-new']['text'], 'Choose the next action')
-        self.assertEqual(view['QU-old']['text'], 'Resolve the old question')
-        self.assertEqual(view['QU-missing']['source_status'], 'unavailable')
+        self.assertEqual(view['QU-current']['text'], 'Choose the next action')
+        self.assertEqual(view['QU-sealed']['text'], 'Question from the sealed response')
+        for identifier in ('QU-wrong', 'QU-missing'):
+            self.assertIsNone(view[identifier]['text'])
+            self.assertEqual(view[identifier]['source_status'], 'unavailable')
         self.assertEqual(QuestionEngineMixin._user_questions(engine),
-                         ['Choose the next action', 'Resolve the old question'])
+                         ['Choose the next action', 'Question from the sealed response'])
 
     def test_planning_keeps_completed_report_and_active_work_as_readable_context(self):
         selected, instance, runtime = approved_fixture()

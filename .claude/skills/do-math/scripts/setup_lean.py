@@ -48,6 +48,9 @@ def main():
     root = toolchain_root()
     if root is None:
         raise SystemExit("this installation has no repository root above it; set lean_command explicitly instead")
+    project = mathlib_project(root)
+    marker = project / READY_MARKER
+    marker.unlink(missing_ok=True)
     bin_dir = portable_bin(root)
     if not (bin_dir / "lean.exe").is_file():
         archive = bin_dir.parents[1] / f"lean-{LEAN_VERSION}-windows.zip"
@@ -56,7 +59,6 @@ def main():
         urllib.request.urlretrieve(LEAN_ZIP, archive)
         with zipfile.ZipFile(archive) as bundle:
             bundle.extractall(archive.parent)
-    project = mathlib_project(root)
     project.mkdir(parents=True, exist_ok=True)
     for name, text in PROJECT_FILES.items():
         if not (project / name).is_file() or (project / name).read_text(encoding="utf-8") != text:
@@ -67,7 +69,6 @@ def main():
     if not (project / "lake-manifest.json").is_file():
         run([lake, "update"], project, env)
     run([lake, "exe", "cache", "get"], project, env)
-    marker = project / READY_MARKER
     command = [lake, "--dir", str(project), "env", str(bin_dir / "lean.exe")]
     with tempfile.TemporaryDirectory() as directory:
         smoke = Path(directory) / "smoke.lean"

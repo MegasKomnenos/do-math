@@ -61,6 +61,8 @@ class GoalAuditFlowRepairTests(unittest.TestCase):
         import hashlib
         from types import SimpleNamespace
         from do_math.repository import canonical_json
+        from do_math.contracts import schema_reference
+        from do_math.integration import digest as content_digest
         e = self.host()
         action, _ = self.seal(e)
         e.head = 'fixed'
@@ -70,7 +72,13 @@ class GoalAuditFlowRepairTests(unittest.TestCase):
             process={'job_name': 'fixture-job'}, result_ref='original-result', input_bundle='original-input',
             capacity={'local_termination': 'confirmed'}, submission_intent={})
         artifacts, refs = {}, []
-        for name, value in (('output', {'summary': 'original'}), ('extensions', {}), ('check', {'passed': True, 'capture_eligible': True, 'issues': []})):
+        output, extensions = {'summary': 'original'}, {}
+        schema_ref = schema_reference({'type': 'object'})
+        ex['submission_intent']['schema_ref'] = schema_ref
+        check = {'passed': True, 'capture_eligible': True, 'issues': [],
+                 'mode': 'receiver', 'execution_id': ex['id'], 'schema_ref': schema_ref,
+                 'input_hashes': {'output': content_digest(output), 'extensions': content_digest(extensions)}}
+        for name, value in (('output', output), ('extensions', extensions), ('check', check)):
             if name == 'check':
                 from do_math.integration import digest
                 value['id'] = 'MC-' + digest(value)[:24]

@@ -4528,8 +4528,9 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             try:
                 self._start_identity_review(kid)
             except (ValueError, KeyError, TypeError) as error:
-                self.runtime.setdefault("waiting_actions", {})[action["id"]] = {
-                    "action": {"id": new_id("AC"), "role": "identity_review", "target": kid},
+                review_action = {"id": new_id("AC"), "role": "identity_review", "target": kid}
+                self.runtime.setdefault("waiting_actions", {})[review_action["id"]] = {
+                    "action": review_action,
                     "kind": "review_initialization", "execution_id": execution_id,
                     "reason": str(error), "next_owner": "review_policy"}
             self._save()

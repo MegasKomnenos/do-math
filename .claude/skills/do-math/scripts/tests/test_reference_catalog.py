@@ -40,6 +40,27 @@ class CatalogTests(unittest.TestCase):
                 "review_research": {"sources": [{"ref": "allowed"}]}}
             self.assertEqual([r["value"] for r in reference_catalog(context, Path(directory))], ["allowed"])
 
+    def test_workspace_root_reference_returns_a_submission_issue(self):
+        from do_math import contracts, submission
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            context = {'action': {'id': 'AC-check', 'role': 'maintenance'},
+                       'execution_id': 'EX-check', 'snapshot': 'fixed'}
+            output = {'summary': 'Inspect', 'used_sources': [], 'questions': [],
+                      'report': 'Inspected the supplied material', 'remaining_work': []}
+            schema = contracts.schema_for('maintenance')
+            for reference in ('.', './', 'workspace:.', 'workspace:./'):
+                with self.subTest(reference=reference):
+                    issues = submission.payload_issues(
+                        {**output, 'used_sources': [reference]}, schema, context, {}, root)
+                    self.assertEqual(len(issues), 1, issues)
+                    self.assertEqual(issues[0]['path'], 'output/used_sources/0')
+                    self.assertIn('unsafe relative path', issues[0]['message'])
+            (root / 'evidence.txt').write_bytes(b'preserved evidence')
+            self.assertEqual(submission.payload_issues(
+                {**output, 'used_sources': ['workspace:evidence.txt']},
+                schema, context, {}, root), [])
+
 
 if __name__ == "__main__":
     unittest.main()

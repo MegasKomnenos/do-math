@@ -822,6 +822,22 @@ class ContractBoundaryTests(unittest.TestCase):
         issues = self.integration().inspect_bundles(output, {}, context())
         self.assertIsInstance(issues, list)
 
+    def test_malformed_metadata_returns_its_bundle_without_losing_independent_output(self):
+        for value in (None, [], 1, 'invalid', {'title': []}):
+            with self.subTest(value=value), tempfile.TemporaryDirectory() as directory:
+                output = response()
+                output['integration_bundles'][0]['members'].append(
+                    'activity-extensions.json/knowledge_metadata/0')
+                extensions = {'knowledge_metadata': [value]}
+                issues = submission.payload_issues(output, contracts.schema_for('research_work'),
+                    context(), extensions, Path(directory))
+                self.assertTrue(issues)
+                self.assertEqual({row['integration_id'] for row in issues}, {'IN-A'})
+                self.assertTrue(all(row['rule_id'] == 'schema.type' for row in issues), issues)
+                self.assertTrue(all(row['path'].startswith(
+                    'activity-extensions.json/knowledge_metadata/0') for row in issues))
+                self.assertTrue(submission.capture_eligible(output, extensions, context(), issues))
+
     def test_structural_top_level_failure_returns_without_candidate_application(self):
         for output, extensions in ((None, {}), ([], {}), (response(), [])):
             with self.subTest(output=type(output).__name__, extensions=type(extensions).__name__):

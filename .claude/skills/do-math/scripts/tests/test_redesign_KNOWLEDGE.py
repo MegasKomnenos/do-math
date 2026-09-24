@@ -290,7 +290,7 @@ class KnowledgeRedesign(unittest.TestCase):
             self.assertEqual(cycle['status'], 'completed')
             cycle.update(id=new_id('RC'), knowledge_id=kid, identity_basis=kr.identity_basis(state, kid), policy_ref='policy:fixture')
             runtime['review_cycles'] = {cycle['id']: cycle}
-            assessment = ReviewEngineMixin._identity_assessment(cycle, effective=False, reason='Synthetic sealed review')
+            assessment = ReviewEngineMixin._identity_assessment(cycle, reason='Synthetic sealed review')
             state, aid = kr.record_identity_assessment(state, kid,
                 {**assessment, 'basis': cycle['identity_basis']}, cycle['policy_ref'], runtime=runtime)
             subprocess.run(["git", "init", "-q", directory], check=True)
@@ -471,7 +471,7 @@ class KnowledgeAudit2(unittest.TestCase):
     def assessment(self, decision='match'):
         from do_math.review_engine import ReviewEngineMixin
         cycle = self.cycle(decision)
-        assessment = ReviewEngineMixin._identity_assessment(cycle, effective=False, reason='Synthetic sealed review')
+        assessment = ReviewEngineMixin._identity_assessment(cycle, reason='Synthetic sealed review')
         self.state, aid = kr.record_identity_assessment(self.state, self.kid,
             {**assessment, 'basis': cycle['identity_basis']}, cycle['policy_ref'], runtime=self.runtime)
         return aid

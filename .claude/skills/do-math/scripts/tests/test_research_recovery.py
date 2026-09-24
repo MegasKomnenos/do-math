@@ -289,7 +289,16 @@ class RecoveryRoutingTests(PurposeHarness):
         engine.run(max_steps=1)
         self.assertNotIn('AC-failed', engine.runtime['waiting_actions'])
         self.assertEqual(engine.runtime['executions'][failed['id']]['outcome'], 'execution_incomplete')
-        self.assertTrue(any(row.get('kind') == 'failed_action_explicitly_resolved' for row in engine.runtime['history']))
+        resolution = next(row for row in engine.runtime['history']
+                          if row.get('kind') == 'failed_action_explicitly_resolved')
+        activity = engine.runtime['activities'][failed['owner_activity_id']]
+        self.assertEqual(activity['status'], 'finished')
+        self.assertNotIn('waiting', activity)
+        self.assertEqual(activity['unresolved'], [])
+        self.assertIn(resolution['resolved_by'], activity['result_refs'])
+        self.assertEqual(activity['followups'][0]['resolved_by'], resolution['resolved_by'])
+        stored = engine.store.load()[2]['activities'][activity['id']]
+        self.assertEqual(stored, activity)
 
     def test_diagnosis_wait_does_not_block_independent_actions(self):
         engine, _ = self.make_active()

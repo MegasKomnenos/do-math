@@ -262,6 +262,47 @@ class ReviewEngineTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'out of order'):
             engine._record_review_observation('ORDER', event, artifact_ref='events.jsonl', event_index=1)
 
+    def test_public_provider_numbers_survive_storage_and_slot_restoration(self):
+        from do_math.repository import canonical_json
+        from do_math.review_cycle import validate_transcript
+        engine = self.engine
+        cid = engine._start_identity_review('K1')
+        action = deepcopy(engine.pending())
+        engine.runtime['executions']['NUMBERS'] = {'id': 'NUMBERS', 'action': action}
+        events = []
+        for value in (0.25, 2 ** 53):
+            events.extend([
+                {'type': 'assistant', 'message': {'content': [{'type': 'text', 'text': 'Observed value'}],
+                                                'usage': {'reported': value}}},
+                {'type': 'item.completed', 'item': {'type': 'mcp_tool_call', 'id': str(len(events)),
+                    'arguments': {'threshold': value}, 'result': {'estimate': value}}},
+                {'type': 'assistant', 'message': {'content': [{'type': 'tool_use', 'id': 'tool',
+                    'name': 'calculate', 'input': {'threshold': value}}]}},
+                {'type': 'public_message', 'message': {'role': 'tool', 'content': 'Returned value',
+                    'arguments': {'threshold': value}}},
+            ])
+        original = deepcopy(events)
+        for index, event in enumerate(events):
+            for _ in range(2):
+                engine._record_review_observation('NUMBERS', event,
+                    artifact_ref='runtime/artifacts/NUMBERS/events.jsonl', event_index=index)
+        self.assertEqual(events, original)
+        cycle = json.loads(canonical_json(engine.runtime['review_cycles'][cid]))
+        engine.runtime['review_cycles'][cid] = cycle
+        turns, _ = validate_transcript(cycle, action['slot'])
+        self.assertEqual(len(turns), len(events))
+        for offset, value in ((0, 0.25), (4, 2 ** 53)):
+            self.assertEqual(turns[offset]['content'], 'Observed value')
+            self.assertEqual(json.loads(turns[offset + 1]['content'])['result']['estimate'], value)
+            self.assertEqual(json.loads(turns[offset + 2]['content'])['input']['threshold'], value)
+            self.assertEqual(json.loads(turns[offset + 3]['arguments'])['threshold'], value)
+        restored = engine._prepare_review_context(action, engine.root / 'numeric-restoration')['context']
+        self.assertEqual(len(restored['self_messages']), len(events))
+        for reference in restored['source_refs']:
+            raw = (engine.root / 'numeric-restoration' / reference['local_path']).read_bytes()
+            self.assertEqual(hashlib.sha256(raw).hexdigest(), reference['sha256'])
+            self.assertEqual(json.loads(raw), turns[reference['index']])
+
     def test_restore_diagnostics_keep_exact_coordinate_hashes_and_verified_prefix(self):
         engine = self.engine
         cid = engine._start_identity_review('K1')

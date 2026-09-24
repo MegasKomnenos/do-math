@@ -63,6 +63,7 @@ def _parse_jsonl(raw: bytes | None) -> dict[str, Any]:
         return {"parsed_bytes": 0, "unparsed_tail_bytes": 0, "events": [], "thread_id": None,
                 "turn_completed": False, "turn_failed": False, "usage": [], "unknown_events": ["stdout_missing"],
                 "parse_complete": False}
+    from .repository import _reject_constant
     events, usage, unknown = [], [], []
     offset = 0
     thread_id = None
@@ -73,8 +74,11 @@ def _parse_jsonl(raw: bytes | None) -> dict[str, Any]:
             offset += len(line)
             continue
         try:
-            event = json.loads(body)
-        except (UnicodeDecodeError, json.JSONDecodeError):
+            event = json.loads(body, object_pairs_hook=codex_worker._pairs,
+                               parse_constant=_reject_constant)
+            # JSON exponents may overflow to infinity even without a named constant.
+            json.dumps(event, allow_nan=False)
+        except (UnicodeError, ValueError):
             unknown.append({"kind": "invalid_jsonl", "offset": offset})
             return {"parsed_bytes": offset, "unparsed_tail_bytes": len(raw) - offset, "events": events,
                     "thread_id": thread_id, "turn_completed": completed, "turn_failed": failed,

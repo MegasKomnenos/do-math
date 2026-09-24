@@ -692,6 +692,7 @@ class AssessmentApplicationTests(unittest.TestCase):
     def test_bare_unrelated_revoked_expired_or_changed_authority_cannot_transfer(self):
         mutations=[lambda i,r,a:i['decisions'].clear(),
             lambda i,r,a:i['decisions']['DC-1'].update(status='revoked'),
+            lambda i,r,a:i['decisions']['DC-1'].update(revoked=True),
             lambda i,r,a:i['decisions']['DC-1'].update(expires_at='2000-01-01T00:00:00Z'),
             lambda i,r,a:i['decisions']['DC-1']['change'].update(target_task_id='TK-other'),
             lambda i,r,a:i['decisions']['DC-1']['change'].update(revision=2),
@@ -702,6 +703,23 @@ class AssessmentApplicationTests(unittest.TestCase):
                 i,r,a=self.fixture();mutation(i,r,a);before=deepcopy((i,r))
                 with self.assertRaises(ValueError):self.apply(i,r,a)
                 self.assertEqual((i,r),before)
+
+    def test_revocation_invalidates_scope_assessment_and_decision_condition(self):
+        from do_math.task_scope import assessment_current
+        instance, runtime, assessment = self.fixture()
+        instance['decisions']['DC-1']['change']['value'] = 'continue'
+        instance, runtime = self.apply(instance, runtime, assessment)
+        source = runtime['tasks']['TK-1']
+        condition = {'op': 'decision_value_is', 'decision_id': 'DC-1', 'value': 'continue'}
+        context = {'task_id': source['id']}
+        self.assertTrue(assessment_current(source, instance, runtime))
+        self.assertEqual(planning.evaluate_condition(condition, instance, runtime,
+            evaluation_context=context)['state'], 'ready')
+        instance['decisions']['DC-1']['revoked'] = True
+        self.assertFalse(assessment_current(source, instance, runtime))
+        self.assertEqual(planning.evaluate_condition(condition, instance, runtime,
+            evaluation_context=context)['state'], 'not_ready')
+        self.assertEqual(source['status'], 'closed')
 
     def test_waiver_is_a_scope_decision_not_missing_evidence(self):
         i,r,a=self.fixture();a['item_dispositions'][1]={'obligation_id':'OB-2','kind':'waived','evidence_refs':[],'authority_ref':'DC-1'}

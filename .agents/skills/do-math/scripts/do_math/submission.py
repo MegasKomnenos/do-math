@@ -73,6 +73,12 @@ def read_sealed_submission(execution: dict, snapshot: str, read_artifact):
             raise SealedSubmissionError(f"execution {identifier}: invalid sealed {field} JSON at {path}: {error}") from error
     check = result['check']
     _validated_check(canonical_json(check), check.get('id'))
+    hashes = check.get('input_hashes', {})
+    if (not isinstance(hashes, dict) or check.get('mode') != 'receiver' or check.get('execution_id') != identifier
+            or check.get('schema_ref') != intent.get('schema_ref')
+            or hashes.get('output') != integration.digest(result['output'])
+            or hashes.get('extensions') != integration.digest(result['extensions'])):
+        raise SealedSubmissionError(f"execution {identifier}: sealed check does not bind this candidate")
     if not captured_check(check):
         raise SealedSubmissionError(f"execution {identifier}: sealed check_ref at {intent['check_ref']} is not capture eligible")
     if not check['passed']:

@@ -152,7 +152,8 @@ def decision_is_current(decision, instance, runtime, *, evaluation_context=None)
     from .input_basis import sources_current, aliases
     if decision.get('actor') != 'user' or not decision.get('source_ref') or not isinstance(decision.get('change'), dict):
         return False
-    if decision.get('status', 'active') != 'active' or decision.get('lifecycle', 'active') != 'active' or decision.get('current') is False:
+    if (decision.get('revoked') or decision.get('status', 'active') != 'active'
+            or decision.get('lifecycle', 'active') != 'active' or decision.get('current') is False):
         return False
     context = evaluation_context or {}
     now = _utc(context['now']) if context.get('now') else datetime.now(timezone.utc)

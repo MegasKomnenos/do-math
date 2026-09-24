@@ -41,6 +41,24 @@ class StandaloneTests(unittest.TestCase):
             self.assertEqual(report["scope"], "installed_skill_structure")
             self.assertFalse((root / "docs").exists())
 
+    def test_failed_lean_preparation_invalidates_the_previous_ready_marker(self):
+        import setup_lean
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            binary = setup_lean.portable_bin(root) / 'lean.exe'
+            binary.parent.mkdir(parents=True)
+            binary.write_bytes(b'fixture: no compiler is started')
+            project = setup_lean.mathlib_project(root)
+            project.mkdir(parents=True)
+            marker = project / setup_lean.READY_MARKER
+            marker.write_text(setup_lean.LEAN_VERSION, encoding='utf-8')
+            with patch.object(sys, 'argv', ['setup_lean.py']), \
+                    patch.object(setup_lean, 'toolchain_root', return_value=root), \
+                    patch.object(setup_lean, 'run', side_effect=subprocess.CalledProcessError(1, ['lake', 'update'])):
+                with self.assertRaises(subprocess.CalledProcessError):
+                    setup_lean.main()
+            self.assertFalse(marker.exists())
+
 
 if __name__ == "__main__":
     unittest.main()

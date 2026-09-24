@@ -232,12 +232,17 @@ def record_repetition(instance, runtime, *, lineage, lineage_id, event_ref, outc
         history.pop();raise ValueError('repetition limit must be an adopted positive integer')
     count=repetition_lineages(instance,runtime)[lineage].get('by_lineage',{}).get(lineage_id,0)
     if limit is not None and count>=limit and not repetition_hold(instance,runtime,lineage,lineage_id):
+        question = (f'Repetition limit reached for {lineage}/{lineage_id}: {count}/{limit}. '
+                    f'Basis: {event_ref}. {reason} '
+                    'Which exact continuation or replacement strategy do you authorize?')
         history.append({'kind':'repetition_hold','lineage':lineage,'lineage_id':lineage_id,'event_ref':event_ref,
             'count':count,'limit':limit,'owner':'user','next_owner':'user',
-            'release_condition':'explicit scoped continuation or replacement strategy', 'reason':reason})
+            'release_condition':'explicit scoped continuation or replacement strategy', 'reason':reason,
+            'question': question})
         from .questions import link
-        link(runtime, execution_id=event_ref, field='repetition/' + lineage + '/' + lineage_id,
+        linked = link(runtime, execution_id=event_ref, field=f'{len(history) - 1}/question',
              owner='user', targets=[event_ref], reason='Configured repetition limit reached; scoped continuation required')
+        linked['source_kind'] = 'history'
     no_followup={'accepted','contracts_preserved','continued','premises_changed','capacity_wait','input_overflow','waiting',
                  'transport_failure'}
     if outcome in {'revised','authored','reauthored'} and not repetition_hold(instance,runtime,lineage,lineage_id):
@@ -312,9 +317,10 @@ def continue_repetition(instance, runtime, change, decision):
         if not any(a.get('id') == action['id'] for a in runtime.setdefault('queue', [])):
             runtime['queue'].append(deepcopy(action))
     from .questions import resolve_user
+    question_field = f"{runtime['history'].index(hold)}/question"
     questions = [q['id'] for q in runtime.get('question_links', []) if q.get('status') == 'open'
         and q.get('owner') == 'user' and q.get('origin_execution_id') == hold['event_ref']
-        and q.get('origin_field') == 'repetition/' + lineage + '/' + key]
+        and q.get('source_kind') == 'history' and q.get('origin_field') == question_field]
     if questions:
         resolve_user(runtime, questions, resolution_ref=decision['id'], affected_ids=[hold['event_ref']])
     decision['affected'] = [hold['event_ref'], action['id']]

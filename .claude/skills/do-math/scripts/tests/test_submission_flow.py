@@ -91,6 +91,40 @@ class SubmissionFlowTests(unittest.TestCase):
         self.assertEqual(recovered['extensions'], {})
         self.assertTrue(recovered['check']['passed'])
 
+        for mutation in ('output', 'extensions', 'execution', 'mode', 'schema'):
+            with self.subTest(mutation=mutation):
+                changed = dict(artifacts)
+                changed_intent = deepcopy(intent)
+                changed_check = deepcopy(sealed['check'])
+                if mutation == 'output':
+                    changed[intent['output_ref']] = canonical_json({
+                        **self.output, 'report': 'A different, unchecked report'})
+                elif mutation == 'extensions':
+                    changed[intent['extensions_ref']] = canonical_json({
+                        'research_insights': [{'kind': 'question', 'title': 'New question',
+                            'statement': 'What remains?', 'summary': 'Unchecked insight'}]})
+                elif mutation == 'execution':
+                    changed_check['execution_id'] = 'EX-other'
+                elif mutation == 'mode':
+                    changed_check['mode'] = 'producer'
+                else:
+                    changed_check['schema_ref']['sha256'] = '0' * 64
+                changed_check['id'] = 'MC-' + submission.integration.digest({
+                    key: value for key, value in changed_check.items() if key != 'id'})[:24]
+                changed[intent['check_ref']] = canonical_json(changed_check)
+                for field in ('output', 'extensions'):
+                    changed_intent[field + '_sha256'] = hashlib.sha256(
+                        changed[intent[field + '_ref']]).hexdigest()
+                changed_receipt = deepcopy(receipt)
+                changed_receipt['payload']['submission_check']['artifacts'] = [
+                    {'path': path, 'sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)}
+                    for path, raw in changed.items()]
+                with self.assertRaises(submission.SealedSubmissionError):
+                    submission.read_sealed_submission(
+                        {'id': 'EX-flow', 'submission_intent': changed_intent,
+                         'submission_receipt': changed_receipt},
+                        head, lambda snapshot, path: changed[path])
+
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)

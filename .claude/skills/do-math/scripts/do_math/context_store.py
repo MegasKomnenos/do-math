@@ -30,7 +30,7 @@ def _relative(name: str) -> PurePosixPath:
     if not isinstance(name, str) or not name or "\\" in name or ":" in name:
         raise ValueError("path must be a nonempty relative POSIX path")
     path = PurePosixPath(name)
-    if path.is_absolute() or any(part in {"", ".", ".."} for part in path.parts):
+    if not path.parts or path.is_absolute() or any(part in {"", ".", ".."} for part in path.parts):
         raise ValueError(f"unsafe relative path: {name}")
     return path
 

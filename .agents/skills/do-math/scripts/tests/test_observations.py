@@ -178,6 +178,37 @@ class Tests(unittest.TestCase):
                 self.assertEqual(result["kind"], "self_check_received")
                 self.assertEqual(result["followup"]["kind"], expected)
 
+    def test_oversized_rules_are_reported_once_per_exact_content(self):
+        import hashlib
+        import os
+        path = self.ws / "observation-rules.json"
+        initial = json.dumps({"current_revision": 0, "reason": "rename",
+                              "rules": [rule(id="R-new")]}).encode("utf-8")
+        path.write_bytes(initial)
+        initial_notice = self.t._rule_file_events()[0]
+        self.assertEqual(initial_notice["proposal_sha256"], hashlib.sha256(initial).hexdigest())
+        raw = b"x" * (observations.RULES_MAX_BYTES + 1)
+        path.write_bytes(raw)
+        stamp = path.stat()
+        rejected = self.t._rule_file_events()
+        self.assertEqual(len(rejected), 1)
+        self.assertIn("exceed 64 KiB", rejected[0]["reason"])
+        self.assertEqual(rejected[0]["proposal_sha256"], hashlib.sha256(raw).hexdigest())
+        for _ in range(3):
+            self.assertEqual(self.t._rule_file_events(), [])
+        changed = b"y" + raw[1:]
+        path.write_bytes(changed)
+        os.utime(path, ns=(stamp.st_atime_ns, stamp.st_mtime_ns))
+        rejected = self.t._rule_file_events()
+        self.assertEqual(len(rejected), 1)
+        self.assertEqual(rejected[0]["proposal_sha256"], hashlib.sha256(changed).hexdigest())
+        self.assertEqual(self.t._rule_file_events(), [])
+        path.write_bytes(initial)
+        self.assertIn("valid self-check response", self.t._rule_file_events()[0]["reason"])
+        self.assertEqual(self.t.rules, self.config["observation_rules"])
+        self.assertEqual(self.t.rule_revision, 0)
+        self.assertEqual(self.t.next_self_check_offset_ms, 300000)
+
     def test_rule_only_file_cannot_reanchor_or_replace_and_feedback_is_delivered(self):
         proposal = {"current_revision": 0, "reason": "rename", "rules": [rule(id="R-new")]}
         (self.ws / "observation-rules.json").write_text(json.dumps(proposal), encoding="utf-8")

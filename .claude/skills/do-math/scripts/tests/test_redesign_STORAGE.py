@@ -81,6 +81,31 @@ class StorageRedesignTests(unittest.TestCase):
             'reuse': 'reusable', 'budget_kind': 'work'}}, source_ref='GS-reference')
         return instance
 
+    def test_wire_task_description_survives_storage_and_binds_contract(self):
+        from do_math.contracts import TASK_CANDIDATE, task_candidate_record
+        from do_math.planning import contract_hash
+        task = self.task_with_reference_locators()
+        wire = {key: deepcopy(value) for key, value in task.items()
+                if key in TASK_CANDIDATE['properties']}
+        wire.update(revises_task_id=None, description='Exact task explanation e\u0301\r\n')
+        task = task_candidate_record(wire, task_id=task['id'])
+        task.pop('revises_task_id')
+        task['status'] = 'planned'
+        before = contract_hash(task)
+        head = self.repository.initialize(self.reference_fixture_instance(),
+            {'feature_version': 5, 'tasks': {task['id']: task}})
+        _, instance, runtime = self.repository.load(head)
+        saved = runtime['tasks'][task['id']]
+        self.assertEqual(saved['description'], wire['description'])
+        self.assertEqual(contract_hash(saved), before)
+        self.assertNotEqual(contract_hash({**saved, 'description': 'Changed explanation'}), before)
+        for value in ('', '   ', 3, None):
+            with self.subTest(description=value):
+                changed = deepcopy(runtime)
+                changed['tasks'][task['id']]['description'] = value
+                with self.assertRaises(ValueError):
+                    self.repository.validate_candidate(instance, changed, head)
+
     def test_task_input_and_basis_locators_survive_actual_git_storage(self):
         task = self.task_with_reference_locators()
         self.assertIn('context:goal', task['basis_refs'])
@@ -1217,7 +1242,7 @@ class StorageRedesignTests(unittest.TestCase):
                 input_manifest={"proposal_digest": cycle["proposal_digest"], "role_slot_id": action["slot"]})
         self.assertEqual(cycle["status"], "completed" if verified else "unresolved")
         runtime["review_cycles"] = {cycle["id"]: cycle}
-        assessment = ReviewEngineMixin._identity_assessment(cycle, effective=False, reason="Scope remains incomplete")
+        assessment = ReviewEngineMixin._identity_assessment(cycle, reason="Scope remains incomplete")
         assessment["basis"] = kr.identity_basis(instance, kid)
         instance, aid = kr.record_identity_assessment(instance, kid, assessment, cycle["policy_ref"], runtime=runtime)
         return instance, runtime, kid, aid

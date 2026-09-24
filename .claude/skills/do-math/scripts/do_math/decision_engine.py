@@ -38,6 +38,27 @@ class DecisionEngineMixin:
                 if event.get("assigned_to") == identifier and not event.get("consumed_at"):
                     event.pop("assigned_to", None)
                     event.pop("assigned_at", None)
+            failed = self.runtime["executions"].get(entry.get("execution_id"), {})
+            activity_id = previous.get("owner_activity_id") or failed.get("owner_activity_id")
+            activity = self.runtime.get("activities", {}).get(activity_id)
+            pending = [*self.runtime.get("queue", []),
+                       *(row["action"] for row in self.runtime["waiting_actions"].values())]
+            if (activity and activity["status"] == "waiting"
+                    and activity.get("waiting", {}).get("condition") == {"action_ids": [identifier]}
+                    and not any(row.get("owner_activity_id") == activity_id for row in pending)
+                    and all(self.runtime["executions"][eid]["status"] == "ended"
+                            for eid in activity["assigned_execution_ids"])
+                    and not any(row.get("owner_id") in activity["assigned_execution_ids"]
+                                and row.get("state") == "held"
+                                for row in self.runtime.get("reservations", {}).values())
+                    and all(isinstance(row, dict) and row.get("action_id") == identifier
+                            for row in [*activity["unresolved"], *activity["followups"]])):
+                from .activities import finish_activity
+                finish_activity(self.runtime, activity_id,
+                    result_refs=[*activity["result_refs"], evidence_id], unresolved=[],
+                    followups=[{"action_id": identifier, "resolved_by": evidence_id,
+                                "decision_execution_id": execution_id, "reason": claim["reason"]}],
+                    at=self._lifecycle_now().isoformat())
 
     def _execution_requirement_changes(self, action, *, evaluation_context=None):
         if action.get("role") not in {"research_work", "supplemental_research"} or action.get("review_cycle_id"):

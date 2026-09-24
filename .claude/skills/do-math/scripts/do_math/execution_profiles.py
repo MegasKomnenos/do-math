@@ -258,6 +258,8 @@ def select_profile(profiles: dict, action: dict, selection: dict, allowed_refs=N
     allowed = None if allowed_refs is None else [profile_ref(resolve_profile(profiles,
         profile_ref(profiles[r]) if isinstance(r, str) and r in profiles else r)) for r in allowed_refs]
     candidates = ([resolve_profile(profiles, requested)] if requested else
+                  [resolve_profile(profiles, ref)
+                   for ref in {ref["id"]: ref for ref in allowed}.values()] if allowed is not None else
                   [resolve_profile(profiles, profile_ref(p)) for p in profiles.values()])
     candidates = [p for p in candidates if p["role"] == action["role"]
                   and (p["actor_kind"] == "machine" or p["ai"]["model"] == selection["model"])

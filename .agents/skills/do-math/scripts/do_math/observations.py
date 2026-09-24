@@ -126,19 +126,25 @@ def persistent_record(record: dict, *, artifact_ref: str | None = None) -> dict:
     return _json_safe(value)
 
 
+def _execution_bound_subject(rule):
+    return (rule['subject']['kind'] in {'execution', 'checkpoint'}
+            or (rule['operator'] == 'iteration_gte'
+                and rule['basis']['source'] == 'checkpoint'))
+
+
 def validate_task_rules(rules):
     """Reusable task rules cannot name a future or previous execution."""
     checked = validate_rules(rules)
     for rule in checked:
-        if rule['subject']['kind'] in {'execution', 'checkpoint'} and rule['subject']['id'] != '$execution':
-            raise ValueError('task rule execution/checkpoint subject must be $execution')
+        if _execution_bound_subject(rule) and rule['subject']['id'] != '$execution':
+            raise ValueError('task rule execution-bound subject must be $execution')
     return checked
 
 
 def bind_task_rules(rules, execution_id):
     checked = validate_task_rules(rules)
     for rule in checked:
-        if rule['subject']['kind'] in {'execution', 'checkpoint'}:
+        if _execution_bound_subject(rule):
             rule['subject']['id'] = execution_id
     return checked
 
@@ -182,7 +188,7 @@ def task_rules_from_execution(rules, execution_id):
     """Preserve a separate reusable rule without rewriting the execution evidence."""
     checked = validate_rules(rules)
     for rule in checked:
-        if rule['subject']['kind'] in {'execution', 'checkpoint'}:
+        if _execution_bound_subject(rule):
             if rule['subject']['id'] not in {'$execution', execution_id}:
                 raise ValueError('persisted rule refers to another execution')
             rule['subject']['id'] = '$execution'
@@ -366,7 +372,7 @@ def validate_execution_rules(rules: list[dict], *, bindings: list[dict], executi
     bindings = validate_observation_rule_contract(bindings)
     for rule in checked:
         subject = rule["subject"]
-        if execution_id is not None and subject["kind"] in {"execution", "checkpoint"} and subject["id"] != execution_id:
+        if execution_id is not None and _execution_bound_subject(rule) and subject["id"] != execution_id:
             raise ValueError("rule subject belongs to a different execution")
         def matches(binding):
             return (binding["operator"] == rule["operator"] and binding["source"] == rule["basis"]["source"] and
@@ -477,7 +483,7 @@ class ObservationTracker:
         if config.get("observation_profile_ref") or self.rule_bindings is not None:
             self.rules = validate_execution_rules(self.rules, bindings=self.rule_bindings, execution_id=execution_id)
         for rule in self.rules:
-            if rule["subject"]["kind"] in {"execution", "checkpoint"} and rule["subject"]["id"] != execution_id:
+            if _execution_bound_subject(rule) and rule["subject"]["id"] != execution_id:
                 raise ValueError("rule subject belongs to a different execution")
         self.rules_digest = hashlib.sha256(json.dumps(self.rules, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
         self.rule_proposal_digest = None
@@ -725,10 +731,10 @@ class ObservationTracker:
             if path.is_symlink() or not path.resolve().is_relative_to(self.workspace.resolve()):
                 raise ValueError("observation rules must stay in workspace")
             raw = path.read_bytes()
-            if len(raw) > RULES_MAX_BYTES: raise ValueError("observation rules exceed 64 KiB")
             digest = hashlib.sha256(raw).hexdigest()
             if digest == self.rule_proposal_digest: return []
             self.rule_proposal_digest = digest
+            if len(raw) > RULES_MAX_BYTES: raise ValueError("observation rules exceed 64 KiB")
             proposal = json.loads(raw.decode("utf-8-sig"))
             validate_rule_proposal(proposal, current_revision=self.rule_revision, allowed_subjects=self.allowed_subjects)
             raise ValueError("rule replacement requires rule_proposal in a valid self-check response")

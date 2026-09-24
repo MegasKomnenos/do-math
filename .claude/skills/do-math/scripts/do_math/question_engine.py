@@ -24,13 +24,9 @@ class QuestionEngineMixin:
                 source = (sources[row["source_ref"]] if row.get("source_ref") else
                           self.runtime["intent_imports"][row["source_id"]] if row.get("source_kind") == "intent_import" else
                           self.runtime["review_cycles"][row["source_id"]] if row.get("source_kind") == "review_cycle" else
+                          self.runtime["history"] if row.get("source_kind") == "history" else
                           self.runtime["executions"][row["origin_execution_id"]])
                 field = row["origin_field"]
-                if (field == "disposition/question" and not row.get("source_ref")
-                        and isinstance(source, dict) and source.get("role") == "operational_review"
-                        and isinstance(source.get("output", {}).get("disposition"), dict)
-                        and source["output"]["disposition"].get("question")):
-                    field = "output/disposition/question"
                 row["text"] = _pointer(source, field)
                 if row.get("question_kind") == "grant":
                     row["text"] = "External action requires a user grant: " + row["text"]

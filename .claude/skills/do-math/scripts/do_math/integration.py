@@ -401,8 +401,9 @@ def inspect_bundles(output, extensions, context):
         refs = _refs(value)
         if isinstance(value, dict) and value.get("kind"):
             refs.add(value["kind"])
-        if coordinate.startswith("activity-extensions.json/knowledge_metadata/"):
-            refs.add(value.get("title"))
+        if (coordinate.startswith("activity-extensions.json/knowledge_metadata/")
+                and isinstance(value, dict) and isinstance(value.get("title"), str)):
+            refs.add(value["title"])
         if coordinate.startswith("activity-extensions.json/question_routes/"):
             if owners[coordinate] != owners.get("output"):
                 issues.append(issue("integration.reference_closure", coordinate,

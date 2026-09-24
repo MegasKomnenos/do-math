@@ -428,7 +428,7 @@ def validate_semantics(instance, runtime, identifiers):
                         or exposition.get("formal_result_id") != formal["id"]):
                     raise ValueError("staged identity assessment differs from its activated transition")
             from ..review_engine import ReviewEngineMixin
-            source = ReviewEngineMixin._identity_assessment(cycle, effective=False, reason=assessment.get("summary", ""))
+            source = ReviewEngineMixin._identity_assessment(cycle, reason=assessment.get("summary", ""))
             if any(assessment.get(key) != value for key, value in source.items()):
                 raise ValueError("identity assessment does not reproduce the sealed review result")
         elif assessment["decision"] == "match":
