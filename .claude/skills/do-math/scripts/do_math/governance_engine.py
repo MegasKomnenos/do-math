@@ -70,9 +70,7 @@ class GovernanceEngineMixin:
             result['host_capacity_ref'] = editions['host_capacity_ref']
         else:
             result.pop('host_capacity_ref', None)
-        slots = SessionSlots( runtime=state, instance=result)
-        try: slots.configure(candidate['session_limits'])
-        finally: slots.close()
+        SessionSlots(state, result).configure(candidate['session_limits'])
         live = {e.get('action', {}).get('id') for e in state['executions'].values() if e['status'] != 'ended'}
         waiting = [row['action'] for row in state.get('waiting_actions', {}).values()]
         for pending in [*state['queue'], *waiting]:
@@ -115,7 +113,7 @@ class GovernanceEngineMixin:
             live = {e.get('action', {}).get('id') for e in state['executions'].values() if e['status'] != 'ended'}
             for action in state['queue']:
                 if (action.get('id') not in live and action.get('dispatch_wait', {}).get('kind') in {
-                        'budget_exhausted', 'capacity', 'host_capacity', 'budget_window', 'resource_unclassified'}):
+                        'capacity', 'host_capacity', 'resource_unclassified'}):
                     action.pop('dispatch_wait', None)
             if state['queue']:
                 state['status'] = 'ready'
@@ -417,8 +415,6 @@ class GovernanceEngineMixin:
         if any(j['basis'] == action['basis'] and j['slot'] == action['slot'] for j in self.instance['goal_judgments']):
             raise ValueError('goal audit slot already sealed')
         if action['basis'] != self._goal_basis_key(): raise ValueError('goal audit inputs changed before acceptance')
-        if governance.governance_view(self.instance)['goal_kind'] != 'mathematical':
-            raise ValueError('nonformal tasks do not establish a nonformal final goal guarantee')
         mapped = governance.evaluate_goal_audits(self.instance, self.runtime, execution_id, output.get('additional_audits', []))
         usable = [k for k in self.instance['knowledge'].values() if knowledge.assess_use(k, self.instance)['valid']]
         known = {k['id'] for k in usable} | {t['id'] for t in self.runtime['tasks'].values() if t.get('results')}
@@ -447,7 +443,8 @@ class GovernanceEngineMixin:
             require_trust_environment(self.instance, self.runtime)
             self.instance = academic.apply_goal_assurance(self.instance, decision='mathematically_solved',
                 basis=action['basis'], judgments=judgments, runtime=self.runtime)
-            self.runtime['status'] = 'completed'; self.runtime['queue'] = []
+            self.runtime['status'] = 'completed'
+            self._settle_goal_completion()
             self._ensure_academic_followup()
             if self.runtime['questions']:
                 self.runtime['history'].append({'kind': 'questions_preserved_at_goal_completion', 'questions': self.runtime['questions']})

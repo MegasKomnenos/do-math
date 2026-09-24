@@ -20,8 +20,7 @@ class PersistedPreflightTests(unittest.TestCase):
         subprocess.run(['git','init','-q',str(root)],check=True,capture_output=True)
         identifier=new_id('RI')
         self.store=ResearchRepository(root,identifier)
-        self.instance,self.runtime=initialize_state(instance_id=identifier,goal='G',goal_kind='mathematical',
-            workspace=root/'work',config={},source_input='Original request')
+        self.instance,self.runtime=initialize_state(instance_id=identifier,goal='G',workspace=root/'work',config={},source_input='Original request')
         self.head=self.store.initialize(self.instance,self.runtime)
 
     def test_good_head_preserves_rejected_raw_not_candidate_state(self):

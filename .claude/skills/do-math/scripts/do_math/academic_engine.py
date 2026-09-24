@@ -48,6 +48,48 @@ def current_solution_basis(instance, runtime):
 
 
 class AcademicEngineMixin:
+    def _settle_goal_completion(self):
+        """Close dispatch obligations with evidence, without claiming task success."""
+        from . import activities
+        from .engine import now
+        pending = {action['id']: {'action': deepcopy(action)} for action in self.runtime['queue']}
+        for waiting in self.runtime.get('waiting_actions', {}).values():
+            action = waiting['action']
+            pending.setdefault(action['id'], {'action': deepcopy(action)})['waiting'] = deepcopy(waiting)
+        if not pending:
+            return
+        self.runtime['queue'] = []
+        self.runtime['waiting_actions'] = {}
+        owners = set()
+        for row in pending.values():
+            action = row['action']
+            event = {'kind': 'goal_completion_superseded_action', **row,
+                     'reason': 'goal_completed_before_dispatch', 'next_owner': 'user'}
+            self.runtime['history'].append(event)
+            reference = 'runtime/history/' + str(len(self.runtime['history']) - 1)
+            if action['role'] == 'intent_interpretation':
+                self.runtime['questions'].append(
+                    'Goal completed before input ' + str(action.get('target'))
+                    + ' was interpreted; the unprocessed request is preserved at ' + reference)
+            aid = action.get('owner_activity_id')
+            activity = self.runtime.get('activities', {}).get(aid)
+            if activity is None or activity['status'] == 'finished':
+                continue
+            obligation = {'action_id': action['id'], 'reason': 'goal_completed_before_dispatch',
+                          'evidence_ref': reference}
+            activity['unresolved'].append(obligation)
+            activity['followups'].append({**obligation, 'next_owner': 'user'})
+            owners.add(aid)
+        for aid in owners:
+            activity = self.runtime['activities'][aid]
+            attempts = [self.runtime['executions'][eid] for eid in activity['assigned_execution_ids']]
+            if any(execution['status'] != 'ended' for execution in attempts):
+                continue
+            references = list(dict.fromkeys([*activity['result_refs'],
+                *(execution['result_ref'] for execution in attempts if execution.get('result_ref'))]))
+            activities.finish_activity(self.runtime, aid, result_refs=references,
+                unresolved=activity['unresolved'], followups=activity['followups'], at=now())
+
     def _academic_evidence(self, ref):
         return self.store.read_many([ref], self.head).get(ref)
 
@@ -60,7 +102,7 @@ class AcademicEngineMixin:
     def _ensure_academic_followup(self):
         basis = self._solution_basis()
         requirements = academic.current_requirements(self.instance)
-        if basis is None or self.runtime["status"] in {"paused", "closed", "budget_exhausted"}: return
+        if basis is None or self.runtime["status"] in {"paused", "closed"}: return
         current_hash = requirements["sha256"]
         for task in self.runtime["tasks"].values():
             if task.get("academic_requirement_id") and (task.get("solution_basis") != basis or task.get("requirements_sha256") != current_hash):
@@ -117,7 +159,7 @@ class AcademicEngineMixin:
         status = self._academic_status()["status"]
         if status in {"completed", "not_applicable"}:
             self.runtime["status"] = "completed"
-            self.runtime["queue"] = []
+            self._settle_goal_completion()
         elif created or self.runtime["status"] == "completed":
             self.runtime["status"] = "ready"
             self._enqueue("research_plan", reason="Complete the explicit postsolution academic requirements")

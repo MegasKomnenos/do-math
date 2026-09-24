@@ -57,7 +57,8 @@ class CentralGovernanceTests(unittest.TestCase):
         from do_math.engine import DEFAULT_CONFIG
         from do_math.lifecycle_engine import LifecycleEngineMixin
         i, rt, bundle, request = AuditRepairTests().checked_import()
-        class Host(self.mixin(), LifecycleEngineMixin):
+        from do_math.academic_engine import AcademicEngineMixin
+        class Host(self.mixin(), LifecycleEngineMixin, AcademicEngineMixin):
             _executor_running = False
             _calls = None
             _live_execution_ids = set()
@@ -496,7 +497,7 @@ class PublicGitGovernanceTests(unittest.TestCase):
             self.assertIn('additional_audits', engine._response_schema(action)['required'])
             engine._bind_governance_input(action, engine.runtime['executions']['AUDITOR'], context)
             output = {'decision': 'satisfied', 'scope_complete': True, 'used_sources': [],
-                'summary': 'Audit has only partial evidence', 'questions': [], 'findings': [],
+                'summary': 'Audit has only partial evidence', 'questions': [],
                 'reason': 'Preserve the actual goal judgment explanation',
                 'additional_audits': [{'audit_ref': 'AU', 'assessor': 'goal_audit', 'verdict': 'partial',
                     'reason': 'Only part of the scope has evidence',
@@ -512,7 +513,8 @@ class PublicGitGovernanceTests(unittest.TestCase):
             from do_math.repository import canonical_json
             output['integration_bundles'] = [{'integration_id': 'IN-audit', 'members': ['output'],
                 'impact_set': [], 'authority_refs': []}]
-            fixed = {'action': action, 'snapshot': engine.head}
+            fixed = {**deepcopy(context), 'action': action, 'snapshot': engine.head}
+            schema = engine._response_schema(action)
             bundle = next(integration.split_bundles(output, {}, fixed))
             engine.runtime.setdefault('integrations', {})['IN-audit'] = {'id': 'IN-audit', 'execution_id': 'AUDITOR',
                 'payload_sha256': bundle['payload_sha256'], 'members': ['output'], 'input_snapshot': engine.head}
@@ -525,13 +527,15 @@ class PublicGitGovernanceTests(unittest.TestCase):
             ex['result_ref'] = 'runtime/artifacts/BA-audit/result.json'
             artifacts = {ex['result_ref']: b'{"status":"completed"}',
                 'runtime/artifacts/BA-audit-input/input/submission/context.json': canonical_json(fixed),
-                'runtime/artifacts/BA-audit-input/schema.json': b'{}'}
-            ex['submission_intent'] = {}
+                'runtime/artifacts/BA-audit-input/schema.json': canonical_json(schema)}
+            from do_math import contracts, submission
+            check = submission.check_submission(output, schema, fixed, {}, Path(engine.instance['workspace']),
+                mode='receiver', execution_id='AUDITOR', tool_sha256='a' * 64)
+            self.assertTrue(check['passed'], check['issues'])
+            ex['submission_intent'] = {'schema_ref': contracts.schema_reference(schema)}
             refs = []
-            for name, value in (('output', output), ('extensions', {}), ('check', {'passed': True, 'capture_eligible': True, 'issues': []})):
+            for name, value in (('output', output), ('extensions', {}), ('check', check)):
                 ref = 'runtime/artifacts/BA-audit/' + name + '.json'
-                if name == 'check':
-                    value['id'] = 'MC-' + integration.digest(value)[:24]
                 raw = canonical_json(value)
                 artifacts[ref] = raw
                 digest = hashlib.sha256(raw).hexdigest()

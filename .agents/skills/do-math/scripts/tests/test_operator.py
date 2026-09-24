@@ -94,18 +94,6 @@ class OperatorTests(unittest.TestCase):
             run_cli.assert_not_called()
         self.assertIn("run", commands[0])
 
-    def test_context_records_status_and_previous_report_without_state_write(self) -> None:
-        report = self.workspace / "operator" / "latest-report.json"
-        report.parent.mkdir()
-        report.write_text(json.dumps({"outcome": "prior"}), encoding="utf-8")
-        context = operator.invocation_context(self.repository, self.instance, self.workspace,
-                                              {"status": "ready", "snapshot": "abc"}, self.root)
-        self.assertEqual(context["repository"], str(self.repository.resolve()))
-        self.assertEqual(context["workspace"], str(self.workspace.resolve()))
-        self.assertEqual(context["status"]["snapshot"], "abc")
-        self.assertEqual(context["previous_report"], str(report))
-        self.assertEqual(context["control_policy"]["user_pause"], "never resume")
-
     def test_probe_observes_without_starting_a_model_or_engine(self) -> None:
         status = {"status": "ready", "user_pause": None}
         with patch.object(operator, "read_status", return_value=status), \
@@ -188,6 +176,8 @@ class OperatorTests(unittest.TestCase):
         self.assertTrue(result["instance_id"])
         self.assertEqual(result["operator_schedule"]["status"], "failed")
         self.assertIn("operator install", result["operator_schedule"]["reconcile"])
+        self.assertIn("--repository", result["operator_schedule"]["reconcile"])
+        self.assertIn(str(self.repository), result["operator_schedule"]["reconcile"])
 
     def test_new_instance_installs_the_operator_every_two_hours_by_default(self) -> None:
         subprocess.run(["git", "-C", str(self.repository), "init", "-q"], check=True)

@@ -32,8 +32,7 @@ class InitialIntentConnectionTests(unittest.TestCase):
             self.assertEqual(store.read(preserved['path'],head),source.read_bytes())
 
     def applied(self, text):
-        instance,runtime=initialize_state(instance_id='RI-case',goal=text,goal_kind='mathematical',
-            workspace=Path(tempfile.gettempdir()),config={},source_input=text)
+        instance,runtime=initialize_state(instance_id='RI-case',goal=text,workspace=Path(tempfile.gettempdir()),config={},source_input=text)
         source=gov.preserve_source('GS-adoption',text,origin='user')
         records=[charter()]
         approval={'id':'DC-adopt','actor':'user','source_ref':source['id'],'source_sha256':source['sha256'],

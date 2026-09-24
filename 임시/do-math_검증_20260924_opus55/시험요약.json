@@ -1,0 +1,705 @@
+{
+  "basis": "초기 전체 선택 회귀 및 교정 후 해당 경로 재검사의 최신 결과. 전체 통합 전건 실행을 뜻하지 않는다.",
+  "counts": {
+    "passed": 1526,
+    "skipped": 1
+  },
+  "selected": 1527,
+  "history": [
+    {
+      "report": "_최종단위시험/report.json",
+      "counts": {
+        "passed": 307
+      },
+      "successful": true
+    },
+    {
+      "report": "_통합시험1/report.json",
+      "counts": {
+        "passed": 153,
+        "skipped": 1
+      },
+      "successful": true
+    },
+    {
+      "report": "_통합시험2/report.json",
+      "counts": {
+        "passed": 131,
+        "error": 4
+      },
+      "successful": false
+    },
+    {
+      "report": "_통합시험3/report.json",
+      "counts": {
+        "passed": 146,
+        "failed": 1,
+        "error": 1
+      },
+      "successful": false
+    },
+    {
+      "report": "_통합시험4/report.json",
+      "counts": {
+        "passed": 134,
+        "failed": 2,
+        "error": 2,
+        "not_run": 11
+      },
+      "successful": false
+    },
+    {
+      "report": "_통합시험5/report.json",
+      "counts": {
+        "passed": 145
+      },
+      "successful": true
+    },
+    {
+      "report": "_통합시험6/report.json",
+      "counts": {
+        "passed": 143,
+        "error": 2
+      },
+      "successful": false
+    },
+    {
+      "report": "_통합시험7/report.json",
+      "counts": {
+        "passed": 118,
+        "error": 1
+      },
+      "successful": false
+    },
+    {
+      "report": "_통합시험8/report.json",
+      "counts": {
+        "passed": 150,
+        "error": 1
+      },
+      "successful": false
+    },
+    {
+      "report": "_통합시험9/report.json",
+      "counts": {
+        "passed": 46
+      },
+      "successful": true
+    },
+    {
+      "report": "_Lean자원시험/report.json",
+      "counts": {
+        "passed": 27,
+        "not_run": 1
+      },
+      "successful": false
+    },
+    {
+      "report": "_추적정본확인/report.json",
+      "counts": {
+        "passed": 12
+      },
+      "successful": true
+    },
+    {
+      "report": "_교정회귀시험/report.json",
+      "counts": {
+        "passed": 36,
+        "failed": 1
+      },
+      "successful": false
+    },
+    {
+      "report": "_봉인입력재검사/report.json",
+      "counts": {
+        "passed": 7
+      },
+      "successful": true
+    }
+  ],
+  "not_passed": [
+    {
+      "id": "test_context_store.ContextStoreTests.test_outside_symlink_is_reported_when_supported",
+      "outcome": "skipped",
+      "seconds": 0.0,
+      "details": [
+        "WinError 1314: 심볼릭 링크를 생성할 OS 권한이 없음. 원 예외는 로컬 시험 보고에 보존."
+      ],
+      "report": "_통합시험1/report.json"
+    }
+  ],
+  "omitted_long_integration": [
+    {
+      "id": "test_academic_engine.AcademicEngineTests.test_changed_same_requirement_id_supersedes_old_contract_and_creates_new_criteria",
+      "historical_seconds": 35.57799999997951
+    },
+    {
+      "id": "test_academic_engine.AcademicEngineTests.test_explicit_requirement_blocks_runtime_completion_until_independent_assessment",
+      "historical_seconds": 909.1410000000033
+    },
+    {
+      "id": "test_academic_engine.AcademicEngineTests.test_external_rejection_keeps_formal_solution_and_requires_planner_evidence_to_clear",
+      "historical_seconds": 623.9839999999967
+    },
+    {
+      "id": "test_academic_engine.AcademicEngineTests.test_non2xx_or_unknown_external_effect_cannot_complete_academic_requirement",
+      "historical_seconds": 511.76600000000326
+    },
+    {
+      "id": "test_academic_engine.AcademicEngineTests.test_required_external_effect_uses_confirmed_loopback_receipt_before_completion",
+      "historical_seconds": 983.4839999999967
+    },
+    {
+      "id": "test_approved_five_repairs.ResearchAdmissionTests.test_public_task_flow_keeps_observation_and_state_contracts_consistent",
+      "historical_seconds": 282.46899999998277
+    },
+    {
+      "id": "test_cli.CliTests.test_audit2_pending_and_rejected_receipts_keep_their_meaning",
+      "historical_seconds": 39.61000000004424
+    },
+    {
+      "id": "test_cli.CliTests.test_audit2_retry_replays_first_receipt_after_later_state",
+      "historical_seconds": 33.93699999997625
+    },
+    {
+      "id": "test_cli.CliTests.test_audit_default_retry_and_explicit_reapplication",
+      "historical_seconds": 25.93799999996554
+    },
+    {
+      "id": "test_cli.CliTests.test_audit_public_check_json_discovery_and_fixed_snapshot",
+      "historical_seconds": 22.68700000003446
+    },
+    {
+      "id": "test_cli.CliTests.test_explicit_request_identity_replays_once_and_rejects_changed_payload",
+      "historical_seconds": 21.81199999997625
+    },
+    {
+      "id": "test_cli.CliTests.test_query_read_export_and_check_use_a_fixed_repository_snapshot",
+      "historical_seconds": 30.78100000001723
+    },
+    {
+      "id": "test_cli.CliTests.test_status_input_pause_and_configure_apply_without_running_model",
+      "historical_seconds": 29.26600000000326
+    },
+    {
+      "id": "test_cli_advanced.AdvancedCliTests.test_goal_policy_grant_query_and_revoke",
+      "historical_seconds": 42.51600000000326
+    },
+    {
+      "id": "test_cli_advanced.AdvancedCliTests.test_knowledge_invalidation_and_trust_registration",
+      "historical_seconds": 25.094000000040978
+    },
+    {
+      "id": "test_connection_repairs.ReviewOverflowGitTests.test_public_pause_restart_resume_preserves_formal_attempt_lineage",
+      "historical_seconds": 28.15600000001723
+    },
+    {
+      "id": "test_controls.ControlTransitionTests.test_crash_marks_owning_activity_unresolved",
+      "historical_seconds": 155.09299999999348
+    },
+    {
+      "id": "test_controls.ControlTransitionTests.test_stale_request_is_consumed_and_does_not_poison_later_controls",
+      "historical_seconds": 198.04699999996228
+    },
+    {
+      "id": "test_currentness_recovery.CurrentnessTests.test_cited_task_contract_change_during_plan_rejects_the_plan",
+      "historical_seconds": 89.01600000000326
+    },
+    {
+      "id": "test_currentness_recovery.CurrentnessTests.test_cited_task_lifecycle_change_during_plan_does_not_reject_the_plan",
+      "historical_seconds": 93.07799999997951
+    },
+    {
+      "id": "test_currentness_recovery.CurrentnessTests.test_failed_execution_materials_are_restored_for_its_operational_review",
+      "historical_seconds": 26.28100000001723
+    },
+    {
+      "id": "test_currentness_recovery.CurrentnessTests.test_graceful_output_on_changed_source_is_preserved_but_not_accepted",
+      "historical_seconds": 39.90599999995902
+    },
+    {
+      "id": "test_currentness_recovery.CurrentnessTests.test_same_source_is_idempotent_changed_source_preserves_completed_task_history",
+      "historical_seconds": 179.0779999999795
+    },
+    {
+      "id": "test_efficiency.EfficiencyTests.test_charter_replanning_preserves_ongoing_preparation_and_consumes_its_event",
+      "historical_seconds": 86.93800000002375
+    },
+    {
+      "id": "test_efficiency.EfficiencyTests.test_pause_before_model_resume_has_no_checkpoint_grace",
+      "historical_seconds": 23.96899999998277
+    },
+    {
+      "id": "test_efficiency.EfficiencyTests.test_plan_settle_waits_only_up_to_limit",
+      "historical_seconds": 68.125
+    },
+    {
+      "id": "test_efficiency.EfficiencyTests.test_readiness_is_derived_and_changes_with_contract_review_evidence",
+      "historical_seconds": 60.60899999999674
+    },
+    {
+      "id": "test_efficiency.EfficiencyTests.test_running_model_stops_immediately_after_public_pause",
+      "historical_seconds": 24.344000000040978
+    },
+    {
+      "id": "test_engine.EngineTests.test_crash_recovery_and_artifact_immutability",
+      "historical_seconds": 149.71899999998277
+    },
+    {
+      "id": "test_engine.EngineTests.test_formal_requires_two_blind_reviews_and_failure_does_not_create_k",
+      "historical_seconds": 1727.890000000014
+    },
+    {
+      "id": "test_engine.EngineTests.test_nonformal_mathematical_goal_is_not_solved",
+      "historical_seconds": 673.4380000000237
+    },
+    {
+      "id": "test_engine.EngineTests.test_plan_rejects_missing_candidate_and_criterion",
+      "historical_seconds": 468.7030000000377
+    },
+    {
+      "id": "test_engine.EngineTests.test_public_initialization_reaches_active_with_distinct_interpretation",
+      "historical_seconds": 102.92199999996228
+    },
+    {
+      "id": "test_formal_input_manifest.FormalInputManifestTests.test_project_identity_bounds_role_input_and_detects_file_changes",
+      "historical_seconds": 21.70299999997951
+    },
+    {
+      "id": "test_governance_engine.PublicGitGovernanceTests.test_git_changed_premise_rejects_later_approval_and_preserves_seal",
+      "historical_seconds": 24.14100000000326
+    },
+    {
+      "id": "test_governance_engine.PublicGitGovernanceTests.test_git_configuration_import_uses_public_transition_and_profiles",
+      "historical_seconds": 27.93700000003446
+    },
+    {
+      "id": "test_governance_engine.PublicGitGovernanceTests.test_git_sealed_import_later_control_and_restart",
+      "historical_seconds": 28.67199999996228
+    },
+    {
+      "id": "test_initial_intent_connection.InitialFailureRetryTests.test_public_retry_preserves_original_input_and_ended_predecessor",
+      "historical_seconds": 55.375
+    },
+    {
+      "id": "test_input_recovery.InputRecoveryPublicTests.test_public_retry_replays_refails_resolves_and_rejects_after_close",
+      "historical_seconds": 162.0
+    },
+    {
+      "id": "test_input_recovery.InputRecoveryPublicTests.test_resolved_retry_marker_survives_provider_deferral_and_repreparation",
+      "historical_seconds": 128.09399999998277
+    },
+    {
+      "id": "test_knowledge_import_engine.KnowledgeImportTests.test_custom_kind_reaches_worker_catalog_only_after_check_and_activation",
+      "historical_seconds": 20.48399999999674
+    },
+    {
+      "id": "test_lifecycle_engine.PublicLifecycleTests.test_public_call_mode_init_activate_pause_resume_and_persistence",
+      "historical_seconds": 119.20300000003772
+    },
+    {
+      "id": "test_lifecycle_engine.PublicLifecycleTests.test_public_external_once_credential_resume_persists_attempts",
+      "historical_seconds": 130.9529999999795
+    },
+    {
+      "id": "test_lifecycle_engine.PublicLifecycleTests.test_public_initializing_pause_resume_preserves_source_and_missing",
+      "historical_seconds": 20.39100000000326
+    },
+    {
+      "id": "test_machine_parallel.MachineSchedulerTests.test_machine_artifacts_publish_to_real_immutable_git_bundles",
+      "historical_seconds": 21.82799999997951
+    },
+    {
+      "id": "test_model_assessment_flow.AssessmentFlowTests.test_assessment_only_run_preserves_user_contract_and_unblocks_independent_review",
+      "historical_seconds": 143.75
+    },
+    {
+      "id": "test_model_assessment_flow.AssessmentFlowTests.test_assessment_only_schema_makes_contract_creation_impossible",
+      "historical_seconds": 118.09400000004098
+    },
+    {
+      "id": "test_model_assessment_flow.AssessmentFlowTests.test_assessment_request_does_not_absorb_an_ordinary_preparation",
+      "historical_seconds": 120.26600000000326
+    },
+    {
+      "id": "test_model_assessment_flow.AssessmentFlowTests.test_completed_normal_preparation_does_not_resolve_a_failed_assessment_request",
+      "historical_seconds": 116.18699999997625
+    },
+    {
+      "id": "test_model_assessment_flow.AssessmentFlowTests.test_deferred_assessment_waits_for_input_and_can_resume_without_stale_question",
+      "historical_seconds": 145.48499999998603
+    },
+    {
+      "id": "test_model_assessment_flow.AssessmentFlowTests.test_late_assessment_cannot_change_a_revised_user_contract",
+      "historical_seconds": 126.14000000001397
+    },
+    {
+      "id": "test_model_assessment_flow.AssessmentFlowTests.test_missing_academic_assessments_are_batched_before_any_contract_review",
+      "historical_seconds": 99.29700000002049
+    },
+    {
+      "id": "test_model_assessment_flow.AssessmentFlowTests.test_real_academic_generation_enters_assessment_preparation_on_session_conversion",
+      "historical_seconds": 565.5779999999795
+    },
+    {
+      "id": "test_model_assessment_flow.AssessmentFlowTests.test_receiver_parks_incomplete_new_candidate_assessments_without_creating_tasks",
+      "historical_seconds": 113.20299999997951
+    },
+    {
+      "id": "test_model_assessment_flow.AssessmentFlowTests.test_saved_deferral_with_sources_does_not_retry_without_input_change",
+      "historical_seconds": 101.40700000000652
+    },
+    {
+      "id": "test_model_assessment_flow.RejectedAcademicAssessmentTests.test_late_repair_cannot_overwrite_a_changed_user_contract",
+      "historical_seconds": 190.40599999995902
+    },
+    {
+      "id": "test_model_assessment_flow.RejectedAcademicAssessmentTests.test_preexisting_rejection_enters_repair_on_refresh",
+      "historical_seconds": 157.875
+    },
+    {
+      "id": "test_model_assessment_flow.RejectedAcademicAssessmentTests.test_rejected_rating_is_preserved_and_replaced_by_assessment_only_request",
+      "historical_seconds": 154.0470000000205
+    },
+    {
+      "id": "test_model_assessment_flow.RejectedAcademicAssessmentTests.test_repair_deferral_preserves_obligation_until_resume",
+      "historical_seconds": 196.56199999997625
+    },
+    {
+      "id": "test_model_assessment_flow.RejectedAcademicAssessmentTests.test_repaired_and_unchanged_ratings_both_receive_fresh_independent_review",
+      "historical_seconds": 464.829000000027
+    },
+    {
+      "id": "test_observation_admission.PublicObservationAdmissionTests.test_public_default_init_rejects_unready_adoption_then_accepts_configured_edition",
+      "historical_seconds": 46.73499999998603
+    },
+    {
+      "id": "test_provider_recovery.RecoveryTests.test_wake_keeps_hold_and_user_pause_and_only_requests_engine",
+      "historical_seconds": 135.34399999998277
+    },
+    {
+      "id": "test_purpose_engine.GitPurposeTests.test_actual_temp_git_full_formal_review_and_goal_flow",
+      "historical_seconds": 550.329000000027
+    },
+    {
+      "id": "test_purpose_engine.PurposeEngineTests.test_environment_revalidation_does_not_clear_independent_meaning_dispute",
+      "historical_seconds": 404.5779999999795
+    },
+    {
+      "id": "test_purpose_engine.PurposeEngineTests.test_external_user_pause_is_processed_during_running_work",
+      "historical_seconds": 216.43700000003446
+    },
+    {
+      "id": "test_purpose_engine.PurposeEngineTests.test_knowledge_currentness_loss_and_revision_recover_through_fresh_review",
+      "historical_seconds": 1559.5629999999655
+    },
+    {
+      "id": "test_purpose_engine.PurposeEngineTests.test_large_history_uses_exact_context_source_files_without_losing_work",
+      "historical_seconds": 594.140000000014
+    },
+    {
+      "id": "test_purpose_engine.PurposeEngineTests.test_live_continue_preserves_checkpoint_and_uses_operating_budget",
+      "historical_seconds": 607.4529999999795
+    },
+    {
+      "id": "test_purpose_engine.PurposeEngineTests.test_live_retry_stops_the_attempt_and_keeps_partial_artifacts_without_publishing_a_theorem",
+      "historical_seconds": 273.0320000000065
+    },
+    {
+      "id": "test_purpose_engine.PurposeEngineTests.test_objection_judgment_answer_and_final_approval_use_real_engine",
+      "historical_seconds": 1116.25
+    },
+    {
+      "id": "test_purpose_engine.PurposeEngineTests.test_operating_review_runs_even_when_the_worker_used_the_last_work_call",
+      "historical_seconds": 232.78200000000652
+    },
+    {
+      "id": "test_purpose_engine.PurposeEngineTests.test_policy_control_invalidates_old_contract_approval_before_work",
+      "historical_seconds": 654.7810000000172
+    },
+    {
+      "id": "test_purpose_engine.PurposeEngineTests.test_repository_enforces_snapshot_cas_and_artifact_immutability",
+      "historical_seconds": 119.95299999997951
+    },
+    {
+      "id": "test_purpose_engine.PurposeEngineTests.test_task_dependency_extension_blocks_A_until_B_completed_then_solves_goal",
+      "historical_seconds": 988.0939999999828
+    },
+    {
+      "id": "test_purpose_engine.PurposeEngineTests.test_user_input_is_independently_checked_without_becoming_goal_authority",
+      "historical_seconds": 262.1720000000205
+    },
+    {
+      "id": "test_purpose_engine.PurposeEngineTests.test_work_budget_execution_is_not_bounded_by_operations_call_timeout",
+      "historical_seconds": 262.03100000001723
+    },
+    {
+      "id": "test_question_flow.QuestionFlowTests.test_answer_closes_only_its_question_and_reaches_the_next_worker",
+      "historical_seconds": 287.06300000002375
+    },
+    {
+      "id": "test_redesign_ENGINE.AuditConsumerConnections.test_central_repair_restores_actual_sealed_bytes_before_one_continuation",
+      "historical_seconds": 20.56200000003446
+    },
+    {
+      "id": "test_redesign_ENGINE.PublicGitFlow.test_public_activation_work_receipt_assessment_and_next_plan",
+      "historical_seconds": 228.28200000000652
+    },
+    {
+      "id": "test_research_recovery.RecoveryRoutingTests.test_diagnosed_plan_retry_uses_fresh_input_and_keeps_failure_evidence",
+      "historical_seconds": 77.625
+    },
+    {
+      "id": "test_research_recovery.RecoveryRoutingTests.test_diagnosis_wait_does_not_block_independent_actions",
+      "historical_seconds": 64.48399999999674
+    },
+    {
+      "id": "test_research_recovery.RecoveryRoutingTests.test_operator_resume_cannot_release_a_user_pause",
+      "historical_seconds": 21.625
+    },
+    {
+      "id": "test_research_recovery.RecoveryRoutingTests.test_output_failure_opens_diagnosis_without_replaying_rejected_plan",
+      "historical_seconds": 34.90600000001723
+    },
+    {
+      "id": "test_research_recovery.RecoveryRoutingTests.test_rejected_history_keeps_original_output_out_of_inline_action",
+      "historical_seconds": 38.28100000001723
+    },
+    {
+      "id": "test_research_recovery.RecoveryRoutingTests.test_retry_count_does_not_substitute_for_an_operational_disposition",
+      "historical_seconds": 74.48499999998603
+    },
+    {
+      "id": "test_research_recovery.RecoveryRoutingTests.test_scholarly_configuration_reaches_the_actual_runner_call",
+      "historical_seconds": 32.35899999999674
+    },
+    {
+      "id": "test_research_recovery.RecoveryRoutingTests.test_status_failure_summary_does_not_repeat_rejected_output",
+      "historical_seconds": 34.54700000002049
+    },
+    {
+      "id": "test_research_recovery.RecoveryRoutingTests.test_successful_fresh_plan_resolves_parked_failure_without_deleting_history",
+      "historical_seconds": 61.96899999998277
+    },
+    {
+      "id": "test_research_recovery.ResearchRecoveryTests.test_exhausted_output_repair_does_not_stop_unrelated_work",
+      "historical_seconds": 27.92199999996228
+    },
+    {
+      "id": "test_research_recovery.ResearchRecoveryTests.test_plan_input_always_has_authoritative_ready_ids",
+      "historical_seconds": 56.29700000002049
+    },
+    {
+      "id": "test_research_recovery.ResearchRecoveryTests.test_plan_rejection_names_missing_unexpected_and_duplicate_ids",
+      "historical_seconds": 81.39000000001397
+    },
+    {
+      "id": "test_research_recovery.ResearchRecoveryTests.test_resume_keeps_failed_output_out_of_execution_queue",
+      "historical_seconds": 135.75
+    },
+    {
+      "id": "test_research_recovery.ResearchRecoveryTests.test_revised_contract_replaces_obsolete_criteria_and_preserves_history",
+      "historical_seconds": 89.89100000000326
+    },
+    {
+      "id": "test_review_research.ReviewResearchEngineTests.test_all_fixed_questions_return_before_resuming_the_deferred_slot",
+      "historical_seconds": 702.6720000000205
+    },
+    {
+      "id": "test_review_research.ReviewResearchEngineTests.test_common_document_overflow_waits_without_reconstructing_the_proposal",
+      "historical_seconds": 283.14000000001397
+    },
+    {
+      "id": "test_review_research.ReviewResearchEngineTests.test_confirmed_withdrawal_closes_before_the_round_cap",
+      "historical_seconds": 1062.609999999986
+    },
+    {
+      "id": "test_review_research.ReviewResearchEngineTests.test_initial_peer_question_is_not_exposed_before_phase_seal",
+      "historical_seconds": 347.2179999999935
+    },
+    {
+      "id": "test_review_research.ReviewResearchEngineTests.test_inline_stop_returns_execution_incomplete_to_the_requesting_slot",
+      "historical_seconds": 412.9220000000205
+    },
+    {
+      "id": "test_review_research.ReviewResearchEngineTests.test_investigator_does_not_receive_unsealed_peer_summary",
+      "historical_seconds": 385.60999999998603
+    },
+    {
+      "id": "test_review_research.ReviewResearchEngineTests.test_repeated_unanswered_request_closes_unresolved_at_the_activity_limit",
+      "historical_seconds": 456.3280000000377
+    },
+    {
+      "id": "test_review_research.ReviewResearchEngineTests.test_supplemental_evidence_is_readable_again_in_the_next_revision",
+      "historical_seconds": 1164.4839999999967
+    },
+    {
+      "id": "test_review_research.ReviewResearchEngineTests.test_user_revision_cancels_old_investigation_and_reviews_new_revision",
+      "historical_seconds": 933.7969999999623
+    },
+    {
+      "id": "test_run_feedback.DuplicateContractReviewTests.test_a_running_review_of_the_same_contract_is_not_doubled_when_its_outside_premises_move",
+      "historical_seconds": 125.25
+    },
+    {
+      "id": "test_run_feedback.PlanAfterPreparationTests.test_new_contracts_awaiting_review_do_not_open_a_plan_with_nothing_to_decide",
+      "historical_seconds": 153.53200000000652
+    },
+    {
+      "id": "test_run_feedback.PlanAfterPreparationTests.test_preparation_still_opens_a_plan_when_a_ready_task_awaits_a_decision",
+      "historical_seconds": 218.39000000001397
+    },
+    {
+      "id": "test_run_feedback.PlanAfterPreparationTests.test_preparation_without_any_pending_review_still_opens_a_plan",
+      "historical_seconds": 157.15599999995902
+    },
+    {
+      "id": "test_run_feedback.RunWithoutDeadlineTests.test_elapsed_legacy_run_limit_does_not_block_the_next_execution",
+      "historical_seconds": 58.35899999999674
+    },
+    {
+      "id": "test_session_scheduler.ParallelEngineTests.test_blocked_high_priority_work_does_not_block_independent_low_model_work",
+      "historical_seconds": 418.76600000000326
+    },
+    {
+      "id": "test_session_scheduler.ParallelEngineTests.test_failed_live_review_stops_its_parent_and_preserves_independent_work",
+      "historical_seconds": 316.68699999997625
+    },
+    {
+      "id": "test_session_scheduler.ParallelEngineTests.test_failed_work_waits_for_diagnosis_when_its_operating_model_is_full",
+      "historical_seconds": 232.625
+    },
+    {
+      "id": "test_session_scheduler.ParallelEngineTests.test_live_operations_can_run_when_work_is_full_and_step_limit_is_reached",
+      "historical_seconds": 368.0470000000205
+    },
+    {
+      "id": "test_session_scheduler.ParallelEngineTests.test_model_assessments_flow_from_preparation_through_review_and_planning_to_execution",
+      "historical_seconds": 555.75
+    },
+    {
+      "id": "test_session_scheduler.ParallelEngineTests.test_output_repair_keeps_the_original_operating_queue_position",
+      "historical_seconds": 149.76600000000326
+    },
+    {
+      "id": "test_session_scheduler.ParallelEngineTests.test_pause_reaches_all_parallel_calls_and_releases_their_slots",
+      "historical_seconds": 289.045999999973
+    },
+    {
+      "id": "test_session_scheduler.ParallelEngineTests.test_planner_queue_order_cancels_only_unstarted_requests_and_preserves_obligations",
+      "historical_seconds": 249.0470000000205
+    },
+    {
+      "id": "test_session_scheduler.ParallelEngineTests.test_three_calls_overlap_and_apply_serially_to_distinct_workspaces",
+      "historical_seconds": 558.530999999959
+    },
+    {
+      "id": "test_session_scheduler.ParallelEngineTests.test_unavailable_assigned_model_waits_without_spending_other_model_slots",
+      "historical_seconds": 318.030999999959
+    },
+    {
+      "id": "test_session_scheduler.ParallelEngineTests.test_user_requests_and_intent_join_existing_operating_queue_in_order",
+      "historical_seconds": 130.625
+    },
+    {
+      "id": "test_six_connections.OverflowGitConnection.test_plan_choice_repackages_original_work_and_reaches_runner",
+      "historical_seconds": 79.18699999997625
+    },
+    {
+      "id": "test_static_review_repairs.InputBoundaryRepairs.test_profile_query_document_reads_cli_result_envelope",
+      "historical_seconds": 41.14100000000326
+    },
+    {
+      "id": "test_submission_boundaries.AcceptanceTests.test_changed_prerequisite_task_assessment_invalidates_its_running_consumer",
+      "historical_seconds": 271.2029999999795
+    },
+    {
+      "id": "test_submission_boundaries.AcceptanceTests.test_execution_failure_is_parked_before_diagnosis",
+      "historical_seconds": 109.93800000002375
+    },
+    {
+      "id": "test_submission_boundaries.AcceptanceTests.test_exhausted_retry_does_not_stop_a_running_independent_worker",
+      "historical_seconds": 186.045999999973
+    },
+    {
+      "id": "test_submission_boundaries.AcceptanceTests.test_identity_review_ignores_unrelated_source_change_but_checks_required_source",
+      "historical_seconds": 340.26600000000326
+    },
+    {
+      "id": "test_submission_boundaries.AcceptanceTests.test_large_accepted_report_survives_revision_review_and_resumed_work",
+      "historical_seconds": 342.344000000041
+    },
+    {
+      "id": "test_submission_boundaries.AcceptanceTests.test_newly_reported_knowledge_dependencies_bind_the_read_snapshot",
+      "historical_seconds": 506.125
+    },
+    {
+      "id": "test_submission_boundaries.AcceptanceTests.test_same_oversized_contract_is_not_automatically_requeued",
+      "historical_seconds": 99.18699999997625
+    },
+    {
+      "id": "test_submission_tools.OperatorProducerTests.test_failure_recovery_preserves_a_structured_nonresearch_report",
+      "historical_seconds": 115.07900000002701
+    },
+    {
+      "id": "test_submission_tools.ProducerToolTests.test_legacy_live_review_validates_sidecar_before_applying_continue",
+      "historical_seconds": 351.9220000000205
+    },
+    {
+      "id": "test_submission_tools.ProducerToolTests.test_local_call_timeout_parks_only_the_timed_out_request",
+      "historical_seconds": 133.14000000001397
+    },
+    {
+      "id": "test_submission_tools.ProducerToolTests.test_receiver_rejects_unknown_insight_kind_and_missing_evidence",
+      "historical_seconds": 60.28100000001723
+    },
+    {
+      "id": "test_submission_tools.ProducerToolTests.test_revoked_original_grant_preserves_late_output_despite_alternative_grant",
+      "historical_seconds": 29.04700000002049
+    },
+    {
+      "id": "test_submission_tools.ProducerToolTests.test_unsealed_invalid_runner_output_is_preserved_for_operational_review",
+      "historical_seconds": 32.51499999995576
+    },
+    {
+      "id": "test_submission_tools.ReviewFailureTests.test_exhausted_investigation_returns_incomplete_to_its_waiting_review_slot",
+      "historical_seconds": 337.219000000041
+    },
+    {
+      "id": "test_submission_tools.ReviewFailureTests.test_explicit_diagnosis_can_open_one_new_attempt_after_an_exhausted_retry",
+      "historical_seconds": 53.96899999998277
+    },
+    {
+      "id": "test_submission_tools.ReviewFailureTests.test_failed_contract_review_is_not_regenerated_while_waiting_for_diagnosis",
+      "historical_seconds": 117.95299999997951
+    },
+    {
+      "id": "test_submission_tools.ReviewFailureTests.test_failed_identity_slot_is_not_regenerated_after_its_peer_finishes",
+      "historical_seconds": 296.9220000000205
+    },
+    {
+      "id": "test_submission_tools.ReviewFailureTests.test_fixed_question_resolver_accepts_the_supplied_source_aliases",
+      "historical_seconds": 255.0779999999795
+    },
+    {
+      "id": "test_submission_tools.ReviewFailureTests.test_large_own_review_history_does_not_request_mathematical_reconstruction",
+      "historical_seconds": 252.7970000000205
+    },
+    {
+      "id": "test_submission_tools.ReviewFailureTests.test_late_identity_result_is_preserved_without_retrying_a_superseded_slot",
+      "historical_seconds": 252.31199999997625
+    },
+    {
+      "id": "test_submission_tools.ReviewFailureTests.test_private_insight_rechecks_its_own_basis_when_published_after_peer_review",
+      "historical_seconds": 389.98500000004424
+    },
+    {
+      "id": "test_walkthrough_followup.WalkthroughEngineTests.test_empty_preparation_preserves_machine_time_and_opens_one_due_regeneration",
+      "historical_seconds": 39.75
+    },
+    {
+      "id": "test_walkthrough_followup.WalkthroughEngineTests.test_failed_review_slot_keeps_its_live_sibling_running",
+      "historical_seconds": 64.14000000001397
+    }
+  ]
+}

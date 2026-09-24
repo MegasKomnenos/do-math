@@ -35,8 +35,7 @@ class FixtureEngine(LifecycleEngineMixin, GovernanceEngineMixin):
                         "executions": {}, "activities": {}, "queue": [], "history": [],
                         "questions": [], "last_observed_utc": self.current_time.isoformat()}
         self.head = "snapshot-fixture"
-        self.instance, self.runtime = initialize_state(instance_id='RI-fixture', goal='G', goal_kind='mathematical',
-            workspace=Path(tempfile.gettempdir()), config={}, source_input='original request',
+        self.instance, self.runtime = initialize_state(instance_id='RI-fixture', goal='G', workspace=Path(tempfile.gettempdir()), config={}, source_input='original request',
             created_at=self.current_time.isoformat())
         self.lifecycle_monotonic = lambda: 0.0
         self._task_readiness = {}
@@ -48,8 +47,7 @@ class FixtureEngine(LifecycleEngineMixin, GovernanceEngineMixin):
 class LifecycleRedesignTests(unittest.TestCase):
     def test_initialization_persists_missing_activation_requirements_without_dispatch(self):
         instance, runtime = initialize_state(
-            instance_id="RI-test", goal="Prove a theorem", goal_kind="mathematical",
-            workspace=Path(tempfile.gettempdir()) / "do-math-lifecycle-test",
+            instance_id="RI-test", goal="Prove a theorem", workspace=Path(tempfile.gettempdir()) / "do-math-lifecycle-test",
             config={"allowed_axioms": ["propext"]}, source_input="original user request",
         )
 
@@ -103,8 +101,7 @@ class LifecycleRedesignTests(unittest.TestCase):
 
     def test_read_only_preflight_rejects_an_incomplete_feature_five_head(self):
         instance, runtime = initialize_state(
-            instance_id="RI-check", goal="Prove a theorem", goal_kind="mathematical",
-            workspace=Path(tempfile.gettempdir()) / "do-math-lifecycle-check", config={}, source_input="input",
+            instance_id="RI-check", goal="Prove a theorem", workspace=Path(tempfile.gettempdir()) / "do-math-lifecycle-check", config={}, source_input="input",
         )
         self.assertTrue(inspect_current_state(instance, runtime)["valid"])
         runtime.pop("last_observed_utc")
@@ -117,7 +114,7 @@ class FollowupTests(unittest.TestCase):
     def engine(self):
         engine = FixtureEngine()
         engine.instance, engine.runtime = initialize_state(instance_id='RI-test', goal='G',
-            goal_kind='mathematical', workspace=Path(tempfile.gettempdir()), config={},
+            workspace=Path(tempfile.gettempdir()), config={},
             source_input='original', created_at=engine.current_time.isoformat())
         engine.lifecycle_monotonic = lambda: 0.0
         engine._task_readiness = {}

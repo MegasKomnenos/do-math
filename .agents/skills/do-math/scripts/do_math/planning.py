@@ -651,8 +651,6 @@ def exhaustion_state(instance, runtime, *, now=None, evaluation_context=None):
     external=[t for t in unfinished if t.get('waiting',{}).get('kind') in {'external_event','user_decision','assessment_input','permission','time','condition'}]
     if external:
         answer.update(reasons=['external_waits'],next_owner=external[0]['waiting'].get('next_owner')); return answer
-    if any(a.get('status')!='finished' and a.get('obligations') for a in runtime.get('activities',{}).values()):
-        answer.update(reasons=['unfinished_activity_obligations']);return answer
     if any(a.get('role') in {'research_preparation','task_contract_review'} for a in runtime.get('queue',[])) or any(
         e.get('role') in {'research_preparation','task_contract_review'} and e.get('status')!='ended' for e in runtime.get('executions',{}).values()):
         answer.update(reasons=['preparation_or_review_in_progress']);return answer

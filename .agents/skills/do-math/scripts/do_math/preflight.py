@@ -120,24 +120,22 @@ def inspect_bundle(skill_root: Path | None = None) -> dict:
         from .governance import interpretation_schema
         from .scheduled_operator import OPERATOR_SCHEMA
         from .submission import extension_schema
-        from .knowledge_io import catalog_definitions
         from .repository import canonical_json
         schemas = {role: schema_for(role) for role in ROLES}
         schemas.update({"identity_review:" + stage: stage_schema(stage) for stage in ("initial", "organize", "answer", "judge")})
         schemas.update({"intent_interpretation:" + stage: interpretation_schema(stage) for stage in ("interpret", "check")})
         schemas.update(review_research=research_schema(), independent_operator=OPERATOR_SCHEMA)
-        definitions = catalog_definitions({})
-        schemas.update({role + ':bound_action': action_schema({'role': role}, definitions) for role in ROLES})
-        schemas['assessment:main'] = action_schema({'role': 'research_preparation', 'assessment_targets': {}}, definitions)
-        schemas['live_operations:main'] = action_schema({'role': 'operational_review', 'live': True}, definitions)
+        schemas.update({role + ':bound_action': action_schema({'role': role}) for role in ROLES})
+        schemas['assessment:main'] = action_schema({'role': 'research_preparation', 'assessment_targets': {}})
+        schemas['live_operations:main'] = action_schema({'role': 'operational_review', 'live': True})
         for role in ROLES:
-            schemas[role + ":extensions"] = extension_schema({"role": role}, definitions)
-        schemas["assessment:extensions"] = extension_schema({"role": "research_preparation", "assessment_targets": {}}, definitions)
+            schemas[role + ":extensions"] = extension_schema({"role": role})
+        schemas["assessment:extensions"] = extension_schema({"role": "research_preparation", "assessment_targets": {}})
         preparation = {'role': 'research_preparation', 'assessment_targets': {}, 'observation_rule_targets': {}}
-        schemas['preparation:main'] = action_schema(preparation, definitions)
-        schemas['preparation:extensions'] = extension_schema(preparation, definitions)
-        schemas["fixed_research:extensions"] = extension_schema({"role": "supplemental_research", "review_cycle_id": "fixed"}, definitions)
-        schemas['identity:extensions'] = extension_schema({'role': 'identity_review', 'review_cycle_id': 'fixed'}, definitions)
+        schemas['preparation:main'] = action_schema(preparation)
+        schemas['preparation:extensions'] = extension_schema(preparation)
+        schemas["fixed_research:extensions"] = extension_schema({"role": "supplemental_research", "review_cycle_id": "fixed"})
+        schemas['identity:extensions'] = extension_schema({'role': 'identity_review', 'review_cycle_id': 'fixed'})
         for schema in schemas.values():
             _check_schema_pair(json.dumps(schema, ensure_ascii=False, sort_keys=True,
                                           separators=(",", ":"), allow_nan=False))

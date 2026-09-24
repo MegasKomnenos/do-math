@@ -608,7 +608,7 @@ class LifecycleEngineMixin:
                 judgment['invalidated_reason'] = ('A mathematical dependency is no longer usable: ' + ', '.join(invalid_dependencies)
                                                    if invalid_dependencies else 'The actual judgment basis changed')
         stale = [j for j in current if j.get('current') is False]
-        if stale and self.instance.get('goal_status') in {'mathematically_solved', 'research_goal_satisfied'}:
+        if stale and self.instance.get('goal_status') == 'mathematically_solved':
             self.instance['goal_status'] = 'unsolved'
             if self.runtime.get('status') == 'completed': self.runtime['status'] = 'ready'
             self._lifecycle_event('goal_basis_invalidated', judgment_ids=[j.get('id', j.get('execution_id')) for j in stale])
@@ -975,7 +975,7 @@ class LifecycleEngineMixin:
             scheduled['runtime']['events'] = [event for event in scheduled['runtime']['events'] if event['id'] not in duplicate_ids]
             scheduled['runtime']['pending_events'] = [event_id for event_id in scheduled['runtime']['pending_events'] if event_id not in duplicate_ids]
         self.instance, self.runtime = scheduled['instance'], scheduled['runtime']
-        if self.runtime.get('status') in {'paused', 'closed', 'completed', 'budget_exhausted'}:
+        if self.runtime.get('status') in {'paused', 'closed', 'completed'}:
             return
         self._schedule_reconsideration(now.isoformat())
         events = {event['id']: event for event in self.runtime['events']}

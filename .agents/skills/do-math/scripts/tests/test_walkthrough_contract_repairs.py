@@ -19,22 +19,20 @@ from research_fixtures import candidate, trust_fixture
 
 
 class WalkthroughRepairs(unittest.TestCase):
-    def test_unsupported_research_entry_has_no_repository_or_workspace_effect(self):
+    def test_removed_goal_kind_option_has_no_repository_or_workspace_effect(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            args = cli.build_parser().parse_args(['init', '--repository', str(root/'repo'),
-                '--workspace', str(root/'work'), '--goal', 'Compare methods', '--goal-kind', 'research'])
             with patch.object(cli, '_require_git') as git:
-                with self.assertRaisesRegex(ValueError, 'unsupported.*research'):
-                    cli.execute(args)
+                with self.assertRaisesRegex(ValueError, 'unrecognized'):
+                    cli.build_parser().parse_args(['init', '--repository', str(root/'repo'),
+                        '--workspace', str(root/'work'), '--goal', 'Compare methods', '--goal-kind', 'research'])
                 git.assert_not_called()
             self.assertEqual(list(root.iterdir()), [])
             request = {'schema_version':5, 'command':'init', 'payload':{'repository':str(root/'repo'),
                 'workspace':str(root/'work'), 'goal':'Compare methods', 'goal_kind':'research'}}
-            converted = cli._json_arguments(cli.build_parser(), request)
             with patch.object(cli, '_require_git') as git:
-                with self.assertRaisesRegex(ValueError, 'unsupported.*research'):
-                    cli.execute(converted)
+                with self.assertRaisesRegex(ValueError, 'unknown|unrecognized|unexpected'):
+                    cli._json_arguments(cli.build_parser(), request)
                 git.assert_not_called()
 
     def test_independent_operation_does_not_require_a_conversation_lease(self):

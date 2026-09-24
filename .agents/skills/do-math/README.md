@@ -42,7 +42,7 @@ python .agents/skills/do-math/scripts/setup_lean.py
 - `--repository`: 인스턴스의 권위 있는 상태와 산출 묶음을 저장할 Git 저장소다. `--create-repository`를 쓰려면 경로가 없거나 빈 디렉터리여야 한다.
 - `--workspace`: 실행별 작업 공간, 제어 inbox와 복구 자료를 둘 로컬 경로다. Git 정본과 다른 역할을 하며, 작업 공간 파일만으로 공용 기록이 되지는 않는다.
 - `--goal` 또는 `--goal-file`: 연구 헌장의 현재 목표가 될 원문이다. 둘 중 하나만 사용한다.
-- `--goal-kind`: 현재 지원하는 진입값은 `mathematical`이다. 형식 결과·동일성 판정·목표 감사를 거쳐 `mathematically_solved`를 판단한다. `research` 진입값은 현재 `unsupported`로 거부하며 저장소·작업 공간·예약 작업을 만들지 않는다. 관련 내부 분기와 기록은 후속 작업을 위해 유지한다. 수학 목표 안의 문헌 조사·계산·비형식 과제는 계속 사용할 수 있다.
+- 목표는 수학적 질문이다. 형식 결과·동일성 판정·목표 감사를 거쳐 `mathematically_solved`를 판단한다. 그 목표를 위한 문헌 조사·계산·비형식 과제도 사용할 수 있다.
 
 초기화 때 정책, 원자료와 설정을 함께 넣을 수 있다. `--source`는 여러 번 지정할 수 있다. `--effort`는 설정 파일의 추론 노력보다 우선하며, 생략한 필드는 코드의 기본값을 사용한다.
 
@@ -87,7 +87,6 @@ python .agents/skills/do-math/scripts/do_math.py init `
   --workspace .skill-workspace/my-math/work `
   --goal-file .agents/skills/do-math/examples/nat-add-zero.txt `
   --title "자연수 덧셈의 오른쪽 항등원" `
-  --goal-kind mathematical `
   --effort medium
 ```
 
@@ -381,7 +380,7 @@ python .agents/skills/do-math/scripts/do_math.py resume `
 | `0` | 명령 처리가 끝났다. 제어 요청은 `effect`를 확인해야 하며 다른 수학·완료 판단을 뜻하지 않는다 |
 | `1` | `check`가 결함을 찾았거나 `profile`이 요청한 표면을 확인하지 못했다 |
 | `2` | 명령 인자, JSON, 대상 ID·상태 또는 요청 계약이 잘못됐다. 응답 `kind`는 `input_error`다 |
-| `5` | Git 저장·저장소 작업, OS 또는 subprocess 도구 오류다. `run`이 다른 실행기가 보유한 writer lock을 얻지 못한 경우도 여기에 속하며, 이때는 그 실행기가 끝난 뒤 다시 실행한다. 응답 `kind`는 `tool_error`다. 제어 명령의 lock 경합은 오류가 아니라 exit 0과 `lock="busy"`로 반환한다 |
+| `5` | Git 저장·저장소 작업, OS 또는 subprocess 도구 오류이면 응답 `kind`는 `tool_error`다. `run`이 다른 실행기가 보유한 writer lock을 얻지 못한 경우도 여기에 속하며, 이때는 그 실행기가 끝난 뒤 다시 실행한다. 제어 명령의 lock 경합은 오류가 아니라 exit 0과 `lock="busy"`로 반환한다. 구현이 요청을 처리하지 못한 내부 계약 오류이면 `kind`는 `contract_error`이고 `next_owner`는 `maintenance`다. `init`·`configure`가 상태를 저장했으나 예약 등록에 실패한 경우에도 exit 5이며, 이때는 `result.operator_schedule`에 `status="failed"`와 그대로 실행할 재조정 명령이 들어 있다 |
 
 제어 명령은 구문이 맞아도 접수 뒤 전제가 바뀌면 exit 0과 `effect="rejected"`, `reason`을 반환할 수 있다. `accepted=true`는 inbox 접수를 뜻하고 적용·실행·성공과 다르다.
 

@@ -47,7 +47,7 @@ class FormalInputManifestTests(unittest.TestCase):
                          'project': {'fingerprint': removed}}
             verifier = {'command': ['test-lean'], 'observed_toolchain': toolchain,
                         'expected_toolchain': deepcopy(toolchain), 'allowed_axioms': [],
-                        'timeout_seconds': 30, 'environment_id': 'TE-fixed', 'environment_status': 'active'}
+                        'environment_id': 'TE-fixed', 'environment_status': 'active'}
             context = {'instance_id': instance['id'], 'action': {'id': 'AC-interpret', 'role': 'intent_interpretation'},
                        'user_request': {'text': 'For every n : Nat, n + 0 = n'},
                        'interpretation_to_check': None, 'formal_verifier': verifier}

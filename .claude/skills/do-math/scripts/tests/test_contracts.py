@@ -15,26 +15,25 @@ from do_math.contracts import ROLES, reading_map, prompt_documents, render_promp
 
 
 class ContractTests(unittest.TestCase):
-    def test_knowledge_change_carries_declared_impact_and_typed_confirmation(self):
+    def test_knowledge_change_carries_declared_impact_without_producer_confirmation(self):
         from do_math import submission
-        schema = submission.extension_schema({"role": "research_work"}, {})
+        schema = submission.extension_schema({"role": "research_work"})
         change = {"id": "KN-source", "changes": {"statement": "Corrected"},
                   "reason": "Correct the statement", "impact_set": ["TK-consumer"]}
         jsonschema.validate({"knowledge_changes": [change]}, schema)
         without_impact = {key: value for key, value in change.items() if key != "impact_set"}
         with self.assertRaises(jsonschema.ValidationError):
             jsonschema.validate({"knowledge_changes": [without_impact]}, schema)
+        # Impact approval comes only from the designated central review execution.
         confirmed = {**change, "independent_confirmation": {"plan_digest": "a" * 64,
             "decision": "approve", "review_ref": "RV-sealed", "reviewer_ref": "EX-reviewer",
             "producer_ref": "EX-producer", "affected_ids": ["TK-consumer"]}}
-        jsonschema.validate({"knowledge_changes": [confirmed]}, schema)
-        confirmed["independent_confirmation"]["plan_digest"] = "not-a-hash"
         with self.assertRaises(jsonschema.ValidationError):
             jsonschema.validate({"knowledge_changes": [confirmed]}, schema)
 
     def test_exact_schema_identity_distinguishes_variants_and_is_idempotent(self):
-        ordinary = contracts.action_schema({"role": "research_preparation"}, {})
-        assessing = contracts.action_schema({"role": "research_preparation", "assessment_targets": []}, {})
+        ordinary = contracts.action_schema({"role": "research_preparation"})
+        assessing = contracts.action_schema({"role": "research_preparation", "assessment_targets": []})
         self.assertNotEqual(ordinary["$id"], assessing["$id"])
         self.assertEqual(ordinary, contracts.with_integration_schema(ordinary))
         self.assertNotEqual(contracts.schema_reference(ordinary), contracts.schema_reference(assessing))
@@ -50,7 +49,7 @@ class ContractTests(unittest.TestCase):
 
     def test_academic_resolution_carries_real_evidence_references(self):
         from do_math.submission import extension_schema
-        shape = extension_schema({"role": "research_plan"}, {})["properties"]["academic_resolutions"]["items"]
+        shape = extension_schema({"role": "research_plan"})["properties"]["academic_resolutions"]["items"]
         row = {"id": "ER-1", "decision": "resolved", "evidence": "Exact assessment", "evidence_refs": ["EX-evidence"]}
         self.assertTrue(jsonschema.Draft202012Validator(shape).is_valid(row))
         self.assertFalse(jsonschema.Draft202012Validator(shape).is_valid({k: v for k, v in row.items() if k != "evidence_refs"}))

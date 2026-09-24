@@ -186,14 +186,13 @@ SCHEMAS = {
     "identity_review": _schema({"decision": {"type": "string", "enum": ["match", "mismatch", "unresolved"]}, "findings": STRINGS, "scope_complete": {"type": "boolean"}}),
     "goal_audit": _schema({"decision": {"type": "string", "enum": ["satisfied", "not_satisfied", "unresolved"]}, "reason": STRING, "scope_complete": {"type": "boolean"}}),
     "operational_review": _schema({"disposition": disposition_schema()}),
-    "intent_interpretation": _schema({"interpretation": STRING, "requested_changes": STRINGS, "needs_clarification": {"type": "boolean"}}),
     "maintenance": _schema({"report": STRING, "remaining_work": STRINGS}),
 }
 
 
 def schema_for(role: str) -> dict[str, Any]:
     """Return an independent JSON Schema for one named CLI role."""
-    if role not in SCHEMAS:
+    if role not in ROLES:
         raise ValueError(f"unknown do-math role: {role}")
     if role == "intent_interpretation":
         from .governance import interpretation_schema
@@ -201,7 +200,7 @@ def schema_for(role: str) -> dict[str, Any]:
     return copy.deepcopy(SCHEMAS[role])
 
 
-def action_schema(action: dict, definitions: dict) -> dict:
+def action_schema(action: dict) -> dict:
     """Context-free action variants shared by runtime and installed preflight."""
     if action['role'] == 'maintenance' and action.get('stage') == 'impact_review':
         from .integration import impact_review_response_schema
@@ -343,5 +342,4 @@ def prompt_metrics(prompt: str, context: dict, schema: dict, documents: list[dic
     return {"unit": "UTF-8_bytes", "prompt_bytes": len(prompt.encode("utf-8")), "context_bytes": context_bytes,
             "schema_bytes": schema_bytes, "document_bytes": document_bytes,
             "context_component_value_bytes": {key: size(value) for key, value in context.items()},
-            "framing_bytes": len(prompt.encode("utf-8")) - context_bytes - schema_bytes - sum(document_bytes.values()),
-            "token_estimate": None}
+            "framing_bytes": len(prompt.encode("utf-8")) - context_bytes - schema_bytes - sum(document_bytes.values())}

@@ -59,7 +59,8 @@ class FollowupDocumentTests(ActiveStateHarness):
         engine._action_lifecycle_gate(action)
         old = engine._register_execution(action, {"id": "EX-old", "role": "research_preparation", "status": "running"})
         # Synthetic historical result, with actual actor/activity record shape.
-        old.update(artifact_bundle="BA-old", error="output validation: earlier proposal omitted its required source")
+        old.update(artifact_bundle="BA-old", result_ref=reference,
+                   error="output validation: earlier proposal omitted its required source")
         at = engine._lifecycle_now().isoformat()
         transition_execution(old, "stopping", at=at, stop_phase="terminating")
         transition_execution(old, "ended", at=at, outcome="execution_incomplete")

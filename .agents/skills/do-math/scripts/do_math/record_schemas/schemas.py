@@ -145,14 +145,13 @@ RECORDS["execution_profiles"] = record({"revision": NAT, "feature_version": {"co
     "window": EVIDENCE, "input": EVIDENCE, "required_capabilities": array(TEXT),
     "capability_evidence_refs": REFS, "ai": EVIDENCE},
     ("revision", "feature_version", "sha256", "role", "actor_kind", "budget_kind", "boundary", "observation", "window", "input"))
-RECORDS["capacity_constraints"] = record({"kind": enum("concurrency", "host", "cumulative", "window"),
+RECORDS["capacity_constraints"] = record({"kind": enum("concurrency", "host"),
     "model": TEXT, "accounting_unit": TEXT, "work_slots": NAT, "operations_slots": NAT, "total_slots": NAT,
-    "scope": TEXT, "max_jobs": NAT, "memory_bytes": NAT, "cpu_rate_basis_points": NAT, "unit": TEXT,
-    "limit": obj({"kind": enum("bounded", "unlimited"), "value": NAT}, ("kind",)), "window": EVIDENCE}, ("kind",))
+    "scope": TEXT, "max_jobs": NAT, "memory_bytes": NAT, "cpu_rate_basis_points": NAT}, ("kind",))
 RECORDS["reservations"] = record({"schema_version": {"const": STATE_FORMAT_VERSION}, "constraint_id": ID, "unit": TEXT,
-    "authority_refs": array({"type": ["string", "object"]}), "owner_kind": enum("execution", "provider_operation"),
-    "owner_id": ID, "purpose": enum("normal", "stop_checkpoint"), "budget_kind": enum("work", "operations"),
-    "reserved": NAT, "confirmed_consumed": NAT, "returned": NAT, "state": enum("held", "settled", "unrecoverable"),
+    "authority_refs": array({"type": ["string", "object"]}), "owner_kind": enum("execution"),
+    "owner_id": ID, "purpose": enum("normal"), "budget_kind": enum("work", "operations"),
+    "reserved": NAT, "confirmed_consumed": NAT, "returned": NAT, "state": enum("held", "settled"),
     "evidence_refs": array({"type": ["string", "object"]}), "reconcile_owner": TEXT, "reobserve": EVIDENCE},
     ("constraint_id", "unit", "owner_kind", "owner_id", "budget_kind", "reserved", "confirmed_consumed", "returned", "state"))
 RECORDS["capability_evidence"] = record({"execution_profile_ref": PROFILE_REF, "identity": EVIDENCE,
@@ -163,7 +162,7 @@ RECORDS["grants"] = record({"kind": enum("local", "http"), "status": enum("activ
     "expires_at": nullable(TEXT), "valid_from": nullable(TEXT), "created_at": TEXT, "source_ref": TEXT,
     "checkpoint_allowed": BOOL, "decision_id": ID, "revoked_at": TEXT, "revoked_by": ID,
     "allowed_origins": array(TEXT), "allowed_methods": array(TEXT), "allowed_path_prefixes": array(TEXT),
-    "credential_env": {"type": "object", "additionalProperties": TEXT}, "allow_idempotent_retry": BOOL,
+    "credential_env": {"type": "object", "additionalProperties": TEXT},
     "included_targets": REFS, "excluded_targets": REFS, "reuse": TEXT}, ("kind", "status", "source_ref"))
 RECORDS["decisions"] = record({"kind": TEXT, "change": EVIDENCE, "source_ref": TEXT, "actor": {"const": "user"},
     "created_at": TEXT, "affected": REFS, "initial_registration": BOOL,
@@ -173,7 +172,7 @@ RECORDS["delegations"] = record({"status": enum("active", "revoked", "withdrawn"
     "expires_at": nullable(TEXT), "source_ref": TEXT, "decision_id": ID, "created_at": TEXT},
     ("status", "decision_kind", "original_decision_id", "included_targets", "excluded_targets", "external_effects", "expires_at"))
 RECORDS["question_links"] = record({"origin_execution_id": ID, "origin_field": TEXT, "owner": TEXT,
-    "target_ids": REFS, "status": enum("open", "resolved"), "resolution_ref": nullable(ID),
+    "target_ids": REFS, "status": enum("open", "resolved", "superseded"), "resolution_ref": nullable(ID),
     "source_ref": TEXT, "routing_reason": TEXT}, ("origin_execution_id", "origin_field", "owner", "target_ids", "status", "resolution_ref"))
 RECORDS["external_operations"] = record({"request": obj({"method": TEXT, "url": TEXT, "body": TEXT}, ("method", "url", "body")),
     "request_sha256": HASH, "grant_id": ID, "source_ref": TEXT, "status": enum("prepared", "confirmed", "failed", "unknown", "cancelled"),
@@ -220,13 +219,12 @@ RECORDS["provider_waits"] = record({"provider": TEXT, "model": TEXT, "attempts":
 # never acquire a storage location based on their run-time Python shape.
 RESEARCH_FIELDS = {
     "id": ID, "feature_version": {"const": STATE_FORMAT_VERSION}, "contract_id": {"const": STATE_CONTRACT_ID},
-    "object_format": enum("sha1", "sha256"), "title": TEXT, "goal": TEXT, "goal_kind": enum("mathematical", "research"),
-    "policies": TEXT, "workspace": TEXT, "created_at": TEXT, "goal_status": TEXT,
-    "goal_revision": NAT, "policy_revision": NAT, "active_trust_environment": nullable(ID),
+    "object_format": enum("sha1", "sha256"), "title": TEXT,
+    "workspace": TEXT, "created_at": TEXT, "goal_status": TEXT,
+    "active_trust_environment": nullable(ID),
     "conversation_loss_policy": TEXT, "governance_approval": {"type": ["boolean", "object"]},
-    "governance_history": HISTORY, "goal_assessment_basis": TEXT,
+    "goal_assessment_basis": TEXT,
     "role_profile_refs": {"type": "object", "additionalProperties": array(PROFILE_REF)},
-    "academic_requirements": EVIDENCE,
     "lifecycle": obj({"state": TEXT, "immutable_input": obj({"text": TEXT, "sha256": HASH, "bytes": NAT},
         ("text", "sha256", "bytes")),
         "initial_profile_id": nullable(ID), "required_capabilities": array(TEXT), "requires_initial_profile": BOOL,

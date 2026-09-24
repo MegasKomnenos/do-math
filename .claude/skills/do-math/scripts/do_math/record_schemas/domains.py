@@ -11,10 +11,6 @@ def mapping(value):
 
 
 def extend():
-    # Governance owns these facts; callers use governance_view, never parallel
-    # persisted scalar copies (including before charter adoption).
-    for key in ("goal", "policies", "goal_kind", "goal_revision", "policy_revision", "academic_requirements"):
-        RESEARCH_FIELDS.pop(key, None)
     requirement = obj({"id": TEXT, "scope": TEXT, "assessor": enum("research_plan"),
         "criteria": array(TEXT, True), "required_inputs": array(TEXT, True),
         "external_effects": array(obj({"id": TEXT, "scope": TEXT, "grant_id": nullable(ID)}, ("id", "scope")))},
@@ -179,7 +175,7 @@ def extend():
     RECORDS["integrations"]["properties"]["response_sha256"] = HASH
     RECORDS["question_links"]["properties"].update({"unresolved_target_ids": REFS, "blocks": BOOL,
         "checked_by": nullable(ID), "resolution_history": HISTORY, "source_kind": TEXT, "source_id": ID,
-        "origin_execution_id": nullable(ID)})
+        "origin_execution_id": nullable(ID), "resolution_evidence": array(TEXT), "resolution_reason": TEXT})
     from ..governance import interpretation_schema
     RECORDS["intent_imports"] = record({"source": RECORDS["governance_sources"],
         "output": interpretation_schema("interpret"), "execution_id": ID,
@@ -205,7 +201,6 @@ def extend():
         "active_revision": NAT, "rules": array(rule), "rule_revision": NAT,
         "started_offset_ms": NAT, "due_offset_ms": NAT, "evidence_refs": array(TEXT)}, ("kind", "execution_id", "observed_at"))
     RUNTIME_FIELDS["observations"] = mapping(observation)
-    RUNTIME_FIELDS["observation_rules"] = mapping(observation)
     fact = RECORDS["observation_facts"]
     fact["properties"].update({"event_json": TEXT, "event_sha256": HASH, "monotonic_offset_ms": NAT})
     fact["required"] = ["id", "kind", "execution_id", "observed_at"]
@@ -315,7 +310,7 @@ def extend():
     profile["input"] = obj({"max_input_bytes": NAT, "unit": enum("utf8_bytes"), "provider_context_capacity": enum("unknown")},
                             ("max_input_bytes", "unit", "provider_context_capacity"))
     profile["ai"] = obj({"model": TEXT, "tier": nullable(TEXT), "provider": enum("codex", "claude"),
-        "effort": TEXT, "capacity_refs": REFS, "usage_constraint_ids": REFS, "provider_operations": TEXT,
+        "effort": TEXT, "capacity_refs": REFS, "provider_operations": TEXT,
         "remote_termination": TEXT, "maximum_output_enforced": BOOL, "claude_only_assigned_model": BOOL,
         "scholarly_server": nullable(EVIDENCE)}, ("model", "tier", "provider", "effort", "capacity_refs"))
     RECORDS["events"]["properties"].update({"basis_sha256": HASH, "basis": EVIDENCE,
@@ -394,13 +389,12 @@ def extend():
         "knowledge_id": ID, "source_basis": HISTORY})
     metrics = obj({"unit": enum("UTF-8_bytes"), "prompt_bytes": NAT, "context_bytes": NAT,
         "schema_bytes": NAT, "document_bytes": mapping(NAT), "context_component_value_bytes": mapping(NAT),
-        "framing_bytes": INTEGER, "token_estimate": {"type": "null"}},
+        "framing_bytes": INTEGER},
         ("unit", "prompt_bytes", "context_bytes", "schema_bytes", "document_bytes",
-         "context_component_value_bytes", "framing_bytes", "token_estimate"))
+         "context_component_value_bytes", "framing_bytes"))
     overflow = obj({"kind": enum("input_overflow"), "reason": TEXT, "actual_bytes": NAT,
         "mandatory_bytes": NAT, "limit_bytes": NAT, "required_direct_keys": array(TEXT, True),
         "role": nullable(TEXT), "profile_id": nullable(ID), "activity_id": nullable(ID),
-        "next_owner": enum("activities"), "disposition": enum("await_activity_decision"),
         "packed_bytes": NAT, "original_bytes": NAT, "unit": enum("utf8_bytes"),
         "component_bytes": mapping(NAT), "reductions": HISTORY, "prompt_metrics": metrics,
         "cause": enum("common_documents_or_governance", "required_role_input", "current_proposal_or_required_sources", "restored_dialogue"),
@@ -410,7 +404,7 @@ def extend():
             "role": nullable(TEXT), "required_direct_keys": array(TEXT, True), "question": TEXT,
             "next_owner": enum("research_plan", "user")}, ("question", "next_owner"))},
         ("kind", "reason", "actual_bytes", "mandatory_bytes", "limit_bytes", "required_direct_keys",
-         "role", "profile_id", "activity_id", "next_owner", "disposition"))
+         "role", "profile_id", "activity_id"))
     action["properties"].update({"input_overflow": overflow, "overflow_activity_id": ID,
         "delegation_application_id": ID, "contract_review_execution": ID,
         "operational_disposition_id": ID, "research_request_id": TEXT, "requesting_slot": TEXT,

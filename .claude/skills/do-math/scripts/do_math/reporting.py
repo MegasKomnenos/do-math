@@ -9,7 +9,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from .provider_wait import timestamp
-from .state_checks import inspect_state, inspection_exit_code
+from .state_checks import inspect_state
 
 
 def _repository(repository, instance_id):
@@ -66,7 +66,7 @@ def task_status(instance, runtime):
             waiting.extend(questions.user_waits(action, instance, runtime))
             waiting.extend(planning.revision_waits(action, instance, runtime))
             if action.get('dispatch_wait', {}).get('kind') in {
-                    'capacity', 'provider_limit', 'budget_exhausted', 'host_capacity', 'budget_window', 'resource_unclassified'}:
+                    'capacity', 'provider_limit', 'host_capacity', 'resource_unclassified'}:
                 waiting.append(action['dispatch_wait'])
         readiness = None
         if not executions and task.get('status') not in planning.TERMINAL_TASK_STATUSES:
@@ -115,16 +115,6 @@ def snapshot_report(repository: Path, instance_id: str, *, snapshot: str | None 
             "assurance": runtime.get("assurance", {}), "host_observation": observation,
             "research_effectiveness": {"status": "not_evaluated",
                                          "reason": "implementation checks do not measure research effectiveness"}}
-
-
-def snapshot_check(repository, instance_id, *, snapshot=None, requested_areas=None):
-    report = snapshot_report(repository, instance_id, snapshot=snapshot, requested_areas=requested_areas)
-    inspection = report['inspection']
-    code = inspection_exit_code(inspection)
-    return {'snapshot': report['snapshot'], 'inspection': inspection, 'exit_code': code,
-            'passed': code == 0,
-            'errors': [row['message'] for row in inspection['findings'] if row['status'] == 'blocked'],
-            'research_effectiveness': report['research_effectiveness']}
 
 
 def render_human_report(report: dict) -> str:

@@ -195,7 +195,9 @@ class NativeFinalGitTests(unittest.TestCase):
                 self.engine.runtime, self.engine.instance = deepcopy(original_runtime), deepcopy(original_instance)
                 execution = self.engine.runtime['executions']['EX-history']; value = deepcopy(result)
                 if boundary == 'user_stop': execution['stop_requested'] = 'user'
-                elif boundary == 'paused': self.engine.runtime['status'] = 'paused'
+                elif boundary == 'paused':
+                    self.engine.runtime['status'] = 'paused'
+                    self.engine.instance['lifecycle']['state'] = 'paused'
                 elif boundary == 'changed_input': execution['currentness_changes'] = [{'field':'test'}]
                 elif boundary == 'revoked_grant': self.engine.instance['grants'][execution['grant_id']]['status'] = 'revoked'
                 elif boundary == 'stopped_result': value['status'] = 'stopped'

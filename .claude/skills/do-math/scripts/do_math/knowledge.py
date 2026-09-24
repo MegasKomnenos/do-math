@@ -224,13 +224,7 @@ def assess_use(record: dict, instance: dict) -> dict:
 
 
 def _impact_records(instance, runtime):
-    records = dict(_records(instance, runtime))
-    for key in ("plans", "questions", "permissions"):
-        values = runtime.get(key, instance.get(key, {}))
-        for row in values.values() if isinstance(values, dict) else values:
-            if isinstance(row, dict) and row.get("id"):
-                records[row["id"]] = row
-    return records
+    return dict(_records(instance, runtime))
 
 
 def _impact_refs(record, known_ids):
@@ -257,21 +251,23 @@ def plan_impact(instance, runtime, roots, declared_impact, *, sensitive=False, e
         raise ValueError("declared impact refers to unknown records")
     if excluded - set(records):
         raise ValueError("excluded impact dependents must exist")
+    known = set(records)
+    # Record references and K support links stay fixed while the closure grows.
+    refs = {rid: _impact_refs(record, known) for rid, record in records.items()}
+    links = {kid: usable_links(instance, kid) for kid in instance.get("knowledge", {})}
     affected = set(roots)
     while True:
-        found = {rid for rid, record in records.items()
-                 if rid not in excluded and _impact_refs(record, set(records)) & affected}
+        found = {rid for rid, targets in refs.items() if rid not in excluded and targets & affected}
         # K depends on the available positive links, not on every historical vote.
         # An unaffected independent link continues to support the same K.
-        for kid in instance.get("knowledge", {}):
-            links = usable_links(instance, kid)
-            if links and all({link['assessment_id'], link['assessment_use_id']} & affected for link in links):
+        for kid, support in links.items():
+            if support and all({link['assessment_id'], link['assessment_use_id']} & affected for link in support):
                 found.add(kid)
         if found <= affected:
             break
         affected |= found
     computed = affected - roots
-    unknown = sorted({ref for rid in affected for ref in _impact_refs(records[rid], set(records)) if ref not in records})
+    unknown = sorted({ref for rid in affected for ref in refs[rid] if ref not in records})
     plan = {"roots": sorted(roots), "computed_impact": sorted(computed), "declared_impact": sorted(declared),
             "missing_declarations": sorted(computed - declared), "extra_declarations": sorted(declared - computed),
             "unresolved_refs": unknown, "sensitive": sensitive,
@@ -484,7 +480,7 @@ def validate_changes(changes: dict) -> None:
         raise ValueError("changes contain engine-owned fields")
 
 
-def revision_roots(instance, knowledge_id, changes):
+def revision_roots(instance, knowledge_id):
     record = instance["knowledge"][knowledge_id]
     roots = {knowledge_id, record["exposition_id"]}
     # Formal results are immutable and may support other expositions. Replacing
@@ -549,7 +545,7 @@ def replace_knowledge(instance: dict, runtime: dict, knowledge_id: str, changes:
 def revise_knowledge(instance: dict, runtime: dict, knowledge_id: str, changes: dict,
                      *, reason: str, actor_ref: str, declared_impact=None,
                      independent_confirmation=None, replacement_id=None) -> tuple[dict, dict]:
-    roots = revision_roots(instance, knowledge_id, changes)
+    roots = revision_roots(instance, knowledge_id)
     preview = plan_impact(instance, runtime, roots, declared_impact or [])
     # No declaration is harmless only when there are no downstream consumers.
     output, new_runtime = apply_impact(instance, runtime, preview, reason=reason,
@@ -633,11 +629,7 @@ def record_transition_result(instance: dict, transition: dict, result_for_id: di
         raise ValueError(f"unknown trust environment: {environment_id}")
     targets = {target["id"] for target in transition.get("targets", [])}
     result = deepcopy(result_for_id)
-    record_id = result.get("id", result.get("knowledge_id"))
-    if record_id is None and len(result) == 1:
-        candidate_id, candidate_result = next(iter(result.items()))
-        if candidate_id in targets and isinstance(candidate_result, dict):
-            record_id, result = candidate_id, {"id": candidate_id, **candidate_result}
+    record_id = result.get("id")
     if record_id not in targets: raise ValueError(f"result is not for a transition target: {record_id}")
     if result.get("status") not in {"verified", "failed", "rejected", "unavailable"}:
         raise ValueError("transition result has an unsupported status")

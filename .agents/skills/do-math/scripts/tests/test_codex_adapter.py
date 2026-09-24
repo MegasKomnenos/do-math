@@ -87,17 +87,6 @@ class CodexWorkerTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "windows_sandbox"):
                 codex_worker.load_request(path)
 
-    def test_closed_filesystem_profile_replaces_legacy_sandbox(self):
-        request = {"codex_path": "C:/Codex/codex.exe", "prompt_path": "p", "cwd": "C:/work", "model": "gpt-x",
-                   "effort": "low", "approval_policy": "never", "windows_sandbox": "elevated",
-                   "max_runtime_seconds": 1, "stdout_path": "o", "stderr_path": "e", "final_path": "f", "status_path": "s",
-                   "filesystem": {"read_roots": ["C:/input"], "write_roots": ["C:/work/out"], "deny_roots": ["C:/private"]}}
-        argv = codex_worker.build_argv(request)
-        self.assertNotIn("--sandbox", argv)
-        self.assertIn('default_permissions="do_math"', argv)
-        self.assertIn("permissions.do_math.network.enabled=false", argv)
-        self.assertIn('windows.sandbox="elevated"', argv)
-
     def test_scholarly_is_the_only_explicit_mcp_and_uses_workspace_data_directory(self):
         request = {"codex_path": "C:/Codex/codex.exe", "prompt_path": "p", "cwd": "C:/work", "model": "gpt-x",
                    "effort": "low", "sandbox": "read-only", "approval_policy": "never", "max_runtime_seconds": 1,
@@ -118,33 +107,14 @@ class CodexWorkerTests(unittest.TestCase):
         self.assertNotIn(b"No module named", result.stderr)
         self.assertIn(b"usage: codex_worker.py REQUEST.json", result.stderr)
 
-    def test_filesystem_write_root_outside_workspace_is_rejected_before_spawn(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory); workspace = root / "workspace"; workspace.mkdir(); prompt = root / "prompt"; prompt.write_bytes(b"p")
-            request = {"codex_path": sys.executable, "prompt_path": str(prompt), "cwd": str(workspace), "model": "m", "effort": "low",
-                       "approval_policy": "never", "windows_sandbox": "elevated", "max_runtime_seconds": 1,
-                       "stdout_path": str(root / "out"), "stderr_path": str(root / "err"), "final_path": str(root / "final"), "status_path": str(root / "status"),
-                       "filesystem": {"read_roots": [], "write_roots": [str(root)], "deny_roots": []}}
-            path = root / "request.json"; path.write_text(json.dumps(request), encoding="utf-8")
-            with self.assertRaisesRegex(ValueError, "inside the model workspace"):
-                CodexExecAdapter(sys.executable).start(path, cwd=root, env={})
-
-    def test_filesystem_request_rejects_mixed_mode_and_unknown_fields(self):
+    def test_unknown_worker_request_field_is_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             request = {"codex_path": sys.executable, "prompt_path": str(root / "prompt"), "cwd": str(root / "work"),
-                       "model": "m", "effort": "low", "approval_policy": "never", "windows_sandbox": "elevated",
+                       "model": "m", "effort": "low", "sandbox": "read-only", "approval_policy": "never",
                        "max_runtime_seconds": 1, "stdout_path": "o", "stderr_path": "e", "final_path": "f", "status_path": "s",
-                       "filesystem": {"read_roots": [str(root / "input")], "write_roots": [str(root / "work")], "deny_roots": []}}
+                       "file_system": {}}
             path = root / "request.json"
-            path.write_text(json.dumps(request), encoding="utf-8")
-            self.assertEqual(codex_worker.load_request(path)["filesystem"], request["filesystem"])
-            request["sandbox"] = "read-only"
-            path.write_text(json.dumps(request), encoding="utf-8")
-            with self.assertRaisesRegex(ValueError, "mutually exclusive"):
-                codex_worker.load_request(path)
-            del request["sandbox"]
-            request["file_system"] = {}
             path.write_text(json.dumps(request), encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "unknown worker request fields"):
                 codex_worker.load_request(path)

@@ -294,10 +294,17 @@ class SealedReplayTests(unittest.TestCase):
         cycle = defer_for_research(cycle, action, output, requests, 'requester', limit=0)
         runtime = {'executions': {'requester': {'id': 'requester', 'role': 'identity_review', 'status': 'ended',
             'outcome': 'output_accepted', 'output': output, 'action': {**action, 'review_cycle_id': cycle['id']}}}}
-        result = validate_sealed_review(cycle, runtime, instance={'config': {'review_research_limit': 0}})
+        from do_math.engine import DEFAULT_CONFIG
+        from do_math.execution_profiles import build_profiles, profile_ref
+        config = {**copy.deepcopy(DEFAULT_CONFIG), 'review_research_limit': 0}
+        instance = {'config': config, **build_profiles(config)}
+        profile = next(p for p in instance['execution_profiles'].values() if p['role'] == 'identity_review')
+        runtime['executions']['requester'].update(actor_kind='ai', execution_profile_ref=profile_ref(profile))
+        result = validate_sealed_review(cycle, runtime, instance=instance)
         self.assertEqual((result['status'], result['decision']), ('unresolved', 'unresolved'))
+        instance['config']['review_research_limit'] = 3
         with self.assertRaisesRegex(ValueError, 'closure|limit'):
-            validate_sealed_review(cycle, runtime, instance={'config': {'review_research_limit': 3}})
+            validate_sealed_review(cycle, runtime, instance=instance)
 
     def test_authorized_replacement_keeps_full_authority_and_sealed_input(self):
         from do_math.review_cycle import validate_sealed_review, record_recovery_event

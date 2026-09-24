@@ -173,9 +173,9 @@ class EngineTests(unittest.TestCase):
 
     def tearDown(self): self.temp.cleanup()
 
-    def make(self, runner, verifier=formal_ok, goal_kind="mathematical", **config):
+    def make(self, runner, verifier=formal_ok, **config):
         config.setdefault('plan_settle_seconds', 1)
-        init = initialize(self.repo, goal="goal", goal_kind=goal_kind, workspace=self.root / "work", config={"reviewers": 2, "goal_auditors": 2,  "lean_command": ["test-lean"], "scholarly_enabled": False, "operator_enabled": False, **config})
+        init = initialize(self.repo, goal="goal", workspace=self.root / "work", config={"reviewers": 2, "goal_auditors": 2,  "lean_command": ["test-lean"], "scholarly_enabled": False, "operator_enabled": False, **config})
         engine = ResearchEngine(self.repo, init["instance_id"], runner=runner, formal_verifier=verifier)
         activate(engine, self.root, initialization_runner=ScriptedRunner())
         return engine, init["instance_id"]
@@ -212,20 +212,6 @@ class EngineTests(unittest.TestCase):
         self.assertNotEqual(check["interpretation_execution_id"], check["check_execution_id"])
         self.assertTrue(engine.instance["capability_evidence"])
         self.assertEqual(engine.instance["lifecycle"]["activation"]["missing"], [])
-
-    def test_nonformal_task_cannot_claim_final_research_goal_guarantee(self):
-        runner = ScriptedRunner(); engine, _ = self.make(runner, goal_kind="research")
-        for _ in range(20):
-            status = engine.run(max_steps=1)
-            if any(task['status'] == 'completed' for task in engine.runtime['tasks'].values()):
-                break
-        else:
-            self.fail('The returned nonformal task was never independently assessed complete')
-        self.assertNotIn(status["goal_status"], {"research_goal_satisfied", "mathematically_solved"})
-        self.assertTrue(any(task.get("results") for task in engine.runtime["tasks"].values()),
-                        engine.runtime["history"][-3:])
-        self.assert_persisted_state_clean(engine)
-        self.assertEqual(status["knowledge"]["K"], 0)
 
     def test_nonformal_mathematical_goal_is_not_solved(self):
         engine, _ = self.make(ScriptedRunner())

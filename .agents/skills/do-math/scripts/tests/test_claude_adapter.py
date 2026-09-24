@@ -238,7 +238,6 @@ class ClaudeTests(unittest.TestCase):
             self.assertTrue(acquire("four", "work", "gpt-5.6-sol"))
             self.assertTrue(slots.release("one"))
             self.assertTrue(acquire("two", "work", "claude:opus"))
-            slots.close()
 
 
 if __name__ == "__main__":

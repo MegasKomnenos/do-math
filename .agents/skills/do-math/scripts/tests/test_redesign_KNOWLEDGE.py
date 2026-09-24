@@ -245,9 +245,7 @@ class KnowledgeRedesign(unittest.TestCase):
     def test_storage_registration_roundtrip_uses_split_family_files(self):
         from do_math.repository import ResearchRepository, new_id
         from do_math.state_contract import default_state_contract
-        self.assertTrue(callable(getattr(kr, "register_storage_families", None)), "missing storage registration")
         contract = default_state_contract()
-        kr.register_storage_families(contract)
         with tempfile.TemporaryDirectory() as directory:
             # Real Git and domain validators; compiler/reviewer/approval evidence is synthetic.
             from research_fixtures import trust_fixture
@@ -680,7 +678,7 @@ class KnowledgeAudit2(unittest.TestCase):
         original_fid = self.state['knowledge'][self.kid]['formal_result_id']
         original_formal = copy.deepcopy(self.state['formal_results'][original_fid])
         changes = {'summary': 'Clearer summary of the unchanged formal proposition'}
-        roots = knowledge.revision_roots(self.state, self.kid, changes)
+        roots = knowledge.revision_roots(self.state, self.kid)
         impact = knowledge.plan_impact(self.state, self.runtime, roots, [])['computed_impact']
         profiles = build_profiles({**DEFAULT_CONFIG, 'lean_command': ['synthetic-lean']})
         profile = next(p for p in profiles['execution_profiles'].values() if p['role'] == 'research_work')
@@ -885,7 +883,7 @@ class KnowledgeRawSource(unittest.TestCase):
         self.assertEqual(self.state['formal_results'][fid], expected)
         self.assertEqual(self.state['formal_results'][fid]['verification']['source_sha256'], hashlib.sha256(source.encode()).hexdigest())
         changes = {'summary': 'Exact compiler expression \u2126 preserved in a clearer explanation'}
-        roots = knowledge.revision_roots(self.state, self.kid, changes)
+        roots = knowledge.revision_roots(self.state, self.kid)
         scope = knowledge.plan_impact(self.state, self.runtime, roots, [])['computed_impact']
         old = self.kid
         self.state, self.runtime = knowledge.revise_knowledge(self.state, self.runtime, old, changes,

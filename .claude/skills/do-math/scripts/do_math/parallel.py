@@ -37,7 +37,7 @@ class ModelCalls:
                 raise ValueError("execution_id must be a nonempty string")
             if any(getattr(future, "execution_id", None) == execution_id for future in self.futures):
                 raise ValueError("an execution already has an active call")
-        for key in ("on_started", "on_observation", "should_stop", "on_control"):
+        for key in ("on_started", "on_observation", "should_stop"):
             if key in arguments:
                 arguments[key] = self._callback(arguments[key], stop=key == "should_stop")
         future = Future()

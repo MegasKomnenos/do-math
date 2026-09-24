@@ -19,19 +19,14 @@ from do_math.repository import canonical_json, _unique_pairs, _reject_constant
 
 
 class CodexModelRunner:
-    def __init__(self, codex_path: str | None = None, *, windows_sandbox: str = "unelevated", sandbox: str = "danger-full-access") -> None:
+    def __init__(self, codex_path: str | None = None) -> None:
         self.codex_path = codex_path or shutil.which("codex") or "codex"
-        if windows_sandbox not in {"unelevated", "elevated"}:
-            raise ValueError("windows_sandbox must be unelevated or elevated")
-        self.windows_sandbox = windows_sandbox
-        if sandbox not in {"read-only", "workspace-write", "danger-full-access"}:
-            raise ValueError("unsupported CLI sandbox")
-        self.sandbox = sandbox
         self._adapter = CodexExecAdapter(self.codex_path)
 
     def worker_options(self) -> dict:
-        return {"codex_path": self.codex_path, "sandbox": self.sandbox,
-                "approval_policy": "never", "windows_sandbox": self.windows_sandbox}
+        # The adopted local permission mode: existing user permissions, approval never.
+        return {"codex_path": self.codex_path, "sandbox": "danger-full-access",
+                "approval_policy": "never", "windows_sandbox": "unelevated"}
 
     def run(self, *, prompt: str, output_schema: dict, workspace: Path, evidence_dir: Path,
             model: str, effort: str, timeout_seconds: float | None,

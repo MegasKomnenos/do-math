@@ -229,9 +229,12 @@ class SubmissionFlowTests(unittest.TestCase):
         engine = object.__new__(ResearchEngine)
         engine.head = "sealed-head"
         engine.runtime = {"status": "running"}
+        engine.instance = {"lifecycle": {"state": "active"}}
+        engine._clock_guard = unittest.mock.Mock(return_value={"usable": True})
         engine.store = unittest.mock.Mock()
         engine.store.read.return_value = raw
-        execution = {"submission_intent": {"output_ref": "sealed/output.json",
+        execution = {"id": "EX-flow", "action": deepcopy(self.context["action"]),
+            "submission_intent": {"output_ref": "sealed/output.json",
             "output_sha256": hashlib.sha256(raw).hexdigest()}}
         recovered = engine._collect_submitted_result(execution,
             {"status": "stopped", "usage": {}}, self.context, self.schema, self.workspace)

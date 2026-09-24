@@ -58,6 +58,21 @@ class GitStateStoreTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             oid_shape("A" * 40)
 
+    def test_tree_cache_reuses_only_immutable_oids_and_rechecks_boundaries(self):
+        snapshot = self.store.publish(None, self.initial_changes())
+        with patch.object(self.store, '_git', wraps=self.store._git) as calls:
+            first = self.store._tree_paths(snapshot.head)
+            second = self.store._tree_paths(snapshot.head)
+        self.assertEqual(first, second)
+        self.assertEqual(sum(c.args[0] == 'ls-tree' for c in calls.call_args_list), 1)
+        with patch.object(self.store._repository_boundary, 'check', side_effect=ValueError('boundary changed')):
+            with self.assertRaisesRegex(ValueError, 'boundary changed'):
+                self.store._tree_paths(snapshot.head)
+        with patch.object(self.store._git_boundary, 'check', side_effect=ValueError('git boundary changed')):
+            with self.assertRaisesRegex(ValueError, 'git boundary changed'):
+                self.store._tree_paths(snapshot.head)
+        self.assertEqual(first, self.store._tree_paths(snapshot.head))
+
     def test_unicode_artifact_path_preserves_the_supplied_code_points(self):
         path = "runtime/artifacts/one/e\u0301.txt"
         snapshot = self.store.publish(None, {**self.initial_changes(), path: b"raw"})

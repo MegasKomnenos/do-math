@@ -106,7 +106,7 @@ def relation_templates():
 
 
 def catalog_definitions(instance: dict) -> dict:
-    current = ensure_ontology(instance)["kind_definitions"]
+    current = ensure_ontology({"kind_definitions": instance.get("kind_definitions", {})})["kind_definitions"]
     return {"knowledge": [deepcopy(value) for key, value in sorted(current.items())
                           if value.get("family") == "knowledge" and value.get("status") == "active"],
             "relations": [deepcopy(value) for key, value in sorted(current.items())
@@ -196,7 +196,8 @@ def withdraw_kind_definition(instance, runtime, family, token, *, reason, actor_
 
 
 def _definition_for(instance: dict, family: str, token: str) -> dict:
-    definition = _lookup_definition(ensure_ontology(instance), family, token)
+    definition = _lookup_definition(ensure_ontology({"kind_definitions": instance.get("kind_definitions", {})}),
+                                     family, token)
     if not definition or definition.get("status") != "active":
         raise ValueError(f"unknown {family} kind: {token}")
     return definition

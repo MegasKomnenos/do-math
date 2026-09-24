@@ -2,7 +2,6 @@
 from __future__ import annotations
 import hashlib, json, os, re, shutil, subprocess, sys, tempfile, time, traceback, uuid
 from pathlib import Path
-if __package__ in (None, ''): sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.windows_job import WindowsJob, process_identity
 
 class VerificationStopped(RuntimeError):
@@ -504,5 +503,3 @@ def _parse_evidence(base, declarations, allowed_axioms, should_stop=None):
         base.setdefault('dependency_evidence',{})[declaration]={name:dependency_hashes[name] for name in dependencies}
     base['dependency_hash']=_hash(json.dumps(base['dependency_closure'],sort_keys=True,separators=(',',':')).encode())
     return {**base,'status':'verified','reason':None,'expression_encoding':'lean-expr-dag/1'}
-
-if __name__ == '__main__' and len(sys.argv)==3 and sys.argv[1]=='--worker': raise SystemExit(_worker(Path(sys.argv[2])))

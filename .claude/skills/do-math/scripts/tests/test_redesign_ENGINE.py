@@ -28,7 +28,7 @@ def routing_engine():
     engine._slots = None
     engine.instance = {"id": "RI-test", "knowledge": {}, "relations": [],
                        "goal": "Original approved goal", "policies": "", "goal_status": "unresolved",
-                       "config": {"goal_auditors": 2}, "goal_kind": "mathematical"}
+                       "config": {"goal_auditors": 2}}
     engine.runtime = {"tasks": {}, "activities": {}, "executions": {}, "queue": [],
                       "questions": [], "question_links": [], "history": [], "inputs": [],
                       "interpretations": {}, "status": "ready"}
@@ -429,7 +429,7 @@ class ControlReceipts(unittest.TestCase):
         engine.instance["grants"] = {"GR-one": {"id": "GR-one", "kind": "local", "status": "active",
             "roles": ["research_work"], "task_ids": [], "expires_at": None}}
         engine.runtime["executions"]["EX-work"] = {"id": "EX-work", "role": "research_work", "status": "running",
-            "grant_id": "GR-one", "action": {"role": "research_work"}, "input_bundle": "BA-input"}
+            "grant_id": "GR-one", "action": {"id": "AC-work", "role": "research_work"}, "input_bundle": "BA-input"}
         engine._clock_guard = Mock(return_value={"usable": True, "observed_utc": "2026-09-22T00:00:00Z"})
         engine._save = Mock(side_effect=lambda *a: setattr(engine, "head", "published"))
         request = {"request_id": "request-one", "transport_id": "local", "capability": "delivery-only",
@@ -1089,9 +1089,9 @@ class ImpactReviewRouting(unittest.TestCase):
         bundle = deepcopy(source.bundle)
         bundle["owns_response"] = False
         for change in bundle["extensions"]["knowledge_changes"]:
-            roots = knowledge.revision_roots(engine.instance, change["id"], change["changes"])
+            roots = knowledge.revision_roots(engine.instance, change["id"])
             change["impact_set"] = knowledge.plan_impact(engine.instance, engine.runtime, roots, [])["computed_impact"]
-        roots = set().union(*(knowledge.revision_roots(engine.instance, change["id"], change["changes"])
+        roots = set().union(*(knowledge.revision_roots(engine.instance, change["id"])
             for change in bundle["extensions"]["knowledge_changes"]))
         bundle["impact_set"] = knowledge.plan_impact(engine.instance, engine.runtime, roots, [])["computed_impact"]
         # Preview and receiver both call this exact domain callback; storage/CAS is

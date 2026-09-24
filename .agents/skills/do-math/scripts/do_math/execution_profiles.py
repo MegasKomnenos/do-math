@@ -222,11 +222,11 @@ def build_profiles(config: dict, *, roles: set[str] | None = None) -> dict:
                 provider = "claude" if model.startswith(("claude:", "claude-")) else "codex"
                 body["ai"] = {"model": model, "tier": tier, "provider": provider,
                               "effort": config["operator_effort"] if role == "recovery" else config["effort"],
-                              "capacity_refs": [capacity] if capacity else [], "usage_constraint_ids": [],
+                              "capacity_refs": [capacity],
                               "provider_operations": "unknown", "remote_termination": "unknown",
                               "maximum_output_enforced": False,
-                              "claude_only_assigned_model": config.get("claude_only_assigned_model", False),
-                              "scholarly_server": deepcopy(config.get("scholarly_server")) if config.get("scholarly_enabled", True) else None}
+                              "claude_only_assigned_model": config["claude_only_assigned_model"],
+                              "scholarly_server": deepcopy(config["scholarly_server"]) if config["scholarly_enabled"] else None}
                 if role == "recovery":
                     body["window"]["call_timeout_seconds"] = config["operator_timeout_seconds"]
             profile = seal_profile(body)
@@ -253,10 +253,7 @@ def resolve_profile(profiles: dict, reference: dict) -> dict:
 
 def select_profile(profiles: dict, action: dict, selection: dict, allowed_refs=None) -> dict:
     requested = action.get("profile_ref") or selection.get("profile_ref")
-    # A content-addressed ID is itself immutable. Task contracts use these IDs;
-    # execution records still receive the complete checked edition reference.
-    allowed = None if allowed_refs is None else [profile_ref(resolve_profile(profiles,
-        profile_ref(profiles[r]) if isinstance(r, str) and r in profiles else r)) for r in allowed_refs]
+    allowed = None if allowed_refs is None else [profile_ref(resolve_profile(profiles, r)) for r in allowed_refs]
     candidates = ([resolve_profile(profiles, requested)] if requested else
                   [resolve_profile(profiles, ref)
                    for ref in {ref["id"]: ref for ref in allowed}.values()] if allowed is not None else
@@ -368,21 +365,6 @@ def structural_failure_evidence(profile: dict, identity: dict, *, observed_at: s
 def boundary_prompt(profile: dict) -> str:
     validate_profile(profile)
     return "\n\nExecution boundary (instructions; not OS isolation):\n" + "\n".join(profile["boundary"]["rules"])
-
-
-def register_families(contract) -> None:
-    """Register our owned families with STORAGE before initialize/load/save."""
-    from .budget import _validate_reservation
-    for root, name, validator, references in (
-            ("research", "execution_profiles", validate_profile,
-             lambda p: p.get("ai", {}).get("capacity_refs", []) + p.get("ai", {}).get("usage_constraint_ids", []) + p.get("host_capacity_refs", [])),
-            ("research", "capacity_constraints", None, None),
-            ("research", "capability_evidence", None, lambda r: [r["execution_profile_ref"]["id"]]),
-            ("runtime", "reservations", _validate_reservation,
-             lambda r: [r["constraint_id"], r["owner_id"]] + [a["id"] for a in r["authority_refs"]]),
-            ("runtime", "provider_waits", None, None)):
-        if contract.family(root, name) is None:
-            contract.register_family(root, name, validator=validator, references=references)
 
 
 def capability_evidence(profile: dict, description: dict, *, observed_at: str) -> dict:

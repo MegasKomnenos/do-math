@@ -70,7 +70,7 @@ class DomainGovernanceTests(unittest.TestCase):
                              "verdict_mapping": {"pass": "satisfied", "fail": "not_satisfied", "unknown": "unresolved"}}}
         i, rt, _ = gov.apply_decision(i, rt, {"kind": "additional_audit", "record": audit}, source_ref="S")
         self.assertEqual(gov.governance_view(i)["additional_audits"][0]["id"], "AU")
-        audit["id"] = "AU2"; audit["content"]["verdict_mapping"]["pass"] = "research_goal_satisfied"
+        audit["id"] = "AU2"; audit["content"]["verdict_mapping"]["pass"] = "unsupported_assurance"
         with self.assertRaises(ValueError):
             gov.apply_decision(i, rt, {"kind": "additional_audit", "record": audit}, source_ref="S")
 
@@ -173,7 +173,7 @@ class DomainGovernanceTests(unittest.TestCase):
         case = {"id": "CASE", "target_id": "T", "decision_kind": "review_replacement", "external_effects": [], "resources": {}, "effect": {"replace_slot": "R"}}
         app = d.prepare_application(i, rt, "DG", case)
         for eid, stage in (("E1", "interpret"), ("E2", "check")):
-            rt["executions"][eid] = {"id": eid, "role": "intent_interpretation", "input_sha256": app["input_sha256"], "status": "ended"}
+            rt["executions"][eid] = {"id": eid, "role": "intent_interpretation", "delegation_input_sha256": app["input_sha256"], "status": "ended"}
             d.record_judgment(rt, app["id"], {"decision": "within_scope", "reason": "same approved recovery", "input_sha256": app["input_sha256"]}, execution_id=eid, stage=stage)
         def effect(a,b,value):
             b["tasks"]["T"]["status"]="ready";b["replacement"]=value
@@ -319,7 +319,7 @@ class DomainGovernanceTests(unittest.TestCase):
     def test_nonformal_task_does_not_establish_final_goal_assurance(self):
         from do_math.academic import apply_goal_assurance
         i=self.initial()
-        with self.assertRaises(ValueError):apply_goal_assurance(i,decision="research_goal_satisfied",basis="B",judgments=[{"decision":"satisfied"}])
+        with self.assertRaises(ValueError):apply_goal_assurance(i,decision="unsupported_assurance",basis="B",judgments=[{"decision":"satisfied"}])
 
     def test_import_repair_cannot_claim_unchanged_units_were_changed(self):
         i,rt,s,out=self.import_fixture();b=gov.prepare_import(i,rt,s,out,execution_id="E1")
@@ -750,7 +750,7 @@ class ReplacementAuthorityTests(unittest.TestCase):
         i, rt, action, case = self.fixture()
         app = d.prepare_application(i, rt, 'DG', case)
         for eid, stage in [('INTERPRET', 'interpret'), ('CHECK', 'check')]:
-            rt['executions'][eid] = {'id': eid, 'role': 'intent_interpretation', 'input_sha256': app['input_sha256']}
+            rt['executions'][eid] = {'id': eid, 'role': 'intent_interpretation', 'delegation_input_sha256': app['input_sha256']}
             d.record_judgment(rt, app['id'], {'input_sha256': app['input_sha256'], 'decision': 'within_scope',
                                            'reason': 'Synthetic matching case'}, execution_id=eid, stage=stage)
         return i, rt, action, {**case, 'application_id': app['id']}

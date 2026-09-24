@@ -97,7 +97,7 @@ class SchedulerMixin:
         from .initialization import governance_working_view
         from .planning import schedule_reconsideration
         if self.instance['lifecycle']['state'] != 'active' or self.runtime['status'] in {
-                'paused', 'closed', 'completed', 'budget_exhausted'}:
+                'paused', 'closed', 'completed'}:
             return
         original_events = {e['id']: deepcopy(e) for e in self.runtime.get('events', [])}
         candidate = deepcopy(self.runtime)
@@ -134,12 +134,7 @@ class SchedulerMixin:
     def _session_resources(self):
         if getattr(self, "_slots", None) is not None:
             return self._slots.snapshot()
-        slots = SessionSlots( observer=True,
-                             runtime=self.runtime, instance=self.instance)
-        try:
-            return slots.snapshot()
-        finally:
-            slots.close()
+        return SessionSlots(self.runtime, self.instance, observer=True).snapshot()
 
     def _select_model(self, action):
         if action.get("model_selection"):
@@ -151,14 +146,7 @@ class SchedulerMixin:
             action["model_assessment"] = chosen.get("assessment") or {
                 "difficulty": chosen["tier"], "importance": chosen["tier"],
                 "reason": "Preserve the reviewed execution's model requirement."}
-        # TASKS stores profile IDs; PROFILES selection accepts sealed references.
-        # Adapt the query view without changing the authoritative task contract.
-        from .execution_profiles import profile_ref
-        tasks = deepcopy(self.runtime['tasks'])
-        for task in tasks.values():
-            task['execution_profile_refs'] = [profile_ref(self.instance['execution_profiles'][ref])
-                if isinstance(ref, str) else ref for ref in task.get('profile_refs', [])]
-        return selection(self.instance["config"], action, tasks, self.instance["knowledge"],
+        return selection(self.instance["config"], action, self.runtime["tasks"], self.instance["knowledge"],
                          profiles=self.instance["execution_profiles"])
 
     def _apply_model_metadata(self, action, output, execution_id):
@@ -167,7 +155,7 @@ class SchedulerMixin:
             if extensions.get("model_assessments"):
                 raise ValueError("only preparation and planning author model assessments")
             return
-        identified = validate_assessments(action, output, extensions, required=True)
+        identified = validate_assessments(action, output, extensions)
         if preparation_only(action):
             for field in ('assessment_targets', 'observation_rule_targets'):
                 for tid, basis in action.get(field, {}).items():
@@ -530,7 +518,6 @@ class SchedulerMixin:
                             break
                         time.sleep(.2)
                         continue
-                    from .questions import open_links
                     # _refresh_readiness already asks TASKS about obligations,
                     # exhaustion and repetition lineage. An empty queue or an
                     # old cycle counter is not authority to generate new work.
@@ -581,5 +568,4 @@ class SchedulerMixin:
         finally:
             self._calls.close()
             self._calls = None
-            self._slots.close()
             self._slots = None

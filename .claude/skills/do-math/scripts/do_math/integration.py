@@ -85,7 +85,7 @@ def bundle_impact_request(instance, runtime, bundle, *, producer_execution_id, i
     if len(changes) != len(coordinates) or len({row["id"] for row in changes}) != len(changes):
         raise ValueError("impact changes need distinct targets and exact member coordinates")
     for coordinate, change in zip(coordinates, changes):
-        target_roots = knowledge.revision_roots(instance, change["id"], change["changes"])
+        target_roots = knowledge.revision_roots(instance, change["id"])
         roots.update(target_roots)
         targets.add(change["id"])
         specifications.append((coordinate, target_roots, change["impact_set"]))
@@ -412,7 +412,7 @@ def inspect_bundles(output, extensions, context):
             if owners[coordinate] != owners[new_records[reference]]:
                 issues.append(issue("integration.reference_closure", coordinate,
                                     "merge bundles referencing new object: " + reference, owners[coordinate]))
-    authorities = {row["id"] for key in ("grants", "decisions", "authority_catalog")
+    authorities = {row["id"] for key in ("grants", "decisions")
                    for row in context.get(key, []) if row.get("id")}
     input_records = {row["id"]: row for key in ("knowledge_catalog", "tasks")
                      for row in context.get(key, []) if row.get("id")}
@@ -424,10 +424,6 @@ def inspect_bundles(output, extensions, context):
         for ref in set(bundle["authority_refs"]) - authorities:
             issues.append(issue("integration.authority_reference", "output/integration_bundles",
                                 "authority is not in the fixed visible input: " + ref, ident))
-        computed = context.get("computed_impacts", {}).get(ident)
-        if computed is not None and set(bundle["impact_set"]) != set(computed):
-            issues.append(issue("integration.impact_review", "output/integration_bundles",
-                                "declared impact differs from computed dependencies; independent review required", ident))
         for target, coordinate in mutations.items():
             if owners[coordinate] != ident:
                 continue
@@ -557,33 +553,3 @@ def preview_bundles(instance, runtime, output, extensions, context, *, execution
         if row["status"] == "accepted":
             row["status"] = "preview_passed"
     return result
-
-
-def register_families(contract):
-    """Explicit STORAGE hook; receipts share the domain candidate's single CAS."""
-    def validate_receipt(row):
-        required = {"id", "execution_id", "payload_sha256", "members", "input_snapshot"}
-        if not required <= row.keys():
-            raise ValueError("integration receipt lacks required provenance")
-        for key in ("id", "execution_id", "payload_sha256"):
-            if not isinstance(row[key], str) or not row[key]:
-                raise ValueError("integration receipt needs " + key)
-        if len(row["payload_sha256"]) != 64 or any(c not in "0123456789abcdef" for c in row["payload_sha256"]):
-            raise ValueError("integration payload hash must be SHA-256")
-        if not isinstance(row["members"], list) or not row["members"] or len(set(row["members"])) != len(row["members"]):
-            raise ValueError("integration receipt needs distinct members")
-    schema = {"type": "object", "additionalProperties": False,
-        "required": ["id", "execution_id", "payload_sha256", "members", "input_snapshot"],
-        "properties": {
-            "id": {"type": "string", "minLength": 1},
-            "execution_id": {"type": "string", "minLength": 1},
-            "payload_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
-            "response_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
-            "members": {"type": "array", "minItems": 1, "uniqueItems": True,
-                        "items": {"type": "string", "minLength": 1}},
-            "input_snapshot": {"type": ["string", "null"]}}}
-    # The installed STORAGE registry owns its existing schema; standalone
-    # registries still receive a closed schema instead of an implicit fallback.
-    options = {} if contract.family("runtime", "integrations") else {"schema": schema}
-    contract.register_family("runtime", "integrations", validator=validate_receipt,
-                             references=lambda row: [(row["execution_id"], "executions")], **options)

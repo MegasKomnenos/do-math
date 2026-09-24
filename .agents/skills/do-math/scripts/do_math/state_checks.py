@@ -14,7 +14,7 @@ from .academic import academic_status
 
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _TERMINAL_OPERATION = {"confirmed", "failed", "unknown", "cancelled"}
-_OPERATION_STATUS = {"prepared", "running", *_TERMINAL_OPERATION}
+_OPERATION_STATUS = {"prepared", *_TERMINAL_OPERATION}
 
 
 def _sha(value: Any) -> bool:
@@ -194,7 +194,7 @@ def _inspect_area(area, instance, runtime, read_artifact, read_artifacts=None):
         'record_storage': ('sources', 'events'),
         'governance_trust': ('governance', 'governance_sources', 'decisions', 'grants', 'trust_environments', 'capability_evidence'),
         'tasks_activities_executions': ('tasks', 'activities', 'executions', 'execution_profiles', 'capacity_constraints', 'reservations', 'external_operations'),
-        'preparation_selection': ('plans', 'preparations'),
+        'preparation_selection': (),
         'mathematical_effect': ('knowledge', 'formal_results', 'expositions', 'identity_assessments', 'assessment_uses', 'relations', 'goal_judgments'),
         'start_import_input': ('integrations',),
         'self_check_stop': ('self_check_obligations', 'self_check_responses', 'observation_facts', 'operational_dispositions'),
@@ -297,7 +297,7 @@ def _inspect_area(area, instance, runtime, read_artifact, read_artifacts=None):
                         defect('transferred obligation target is absent', identifier)
         for identifier, profile in instance.get('execution_profiles', {}).items():
             run('immutable profile content', lambda p=profile: validate_profile(p), identifier)
-            capacity_refs = profile.get('ai', {}).get('capacity_refs', []) + profile.get('ai', {}).get('usage_constraint_ids', []) + profile.get('host_capacity_refs', [])
+            capacity_refs = profile.get('ai', {}).get('capacity_refs', []) + profile.get('host_capacity_refs', [])
             if set(capacity_refs) - set(instance.get('capacity_constraints', {})):
                 defect('profile capacity reference is absent', identifier)
         for identifier, execution in runtime.get('executions', {}).items():
@@ -343,7 +343,7 @@ def _inspect_area(area, instance, runtime, read_artifact, read_artifacts=None):
                             raise ValueError('reservation ledger exceeds ' + pool + ' capacity')
             run('reservation capacity pool separation', capacity, identifier)
         for identifier, operation in runtime.get('external_operations', {}).items():
-            status = operation.get('effect_status', operation.get('status'))
+            status = operation.get('status')
             execution_id = operation.get('execution_id')
             if execution_id is not None and (status != 'prepared' or execution_id in runtime.get('executions', {})):
                 execution = runtime.get('executions', {}).get(execution_id, {})
@@ -420,12 +420,6 @@ def _inspect_area(area, instance, runtime, read_artifact, read_artifacts=None):
         def supplements():
             errors = []; _supplement_errors(instance, runtime, errors); return errors
         run('supplementary research request ownership', supplements)
-        for plan in runtime.get('plans', []):
-            from .task_contracts import validate_plan_dispositions
-            if isinstance(plan.get('ready_ids'), list):
-                run('plan all-candidate dispositions', lambda p=plan: validate_plan_dispositions(p, runtime.get('tasks', {}), p['ready_ids']), plan.get('id', 'plan'))
-            else:
-                omitted('plan fixed candidate population')
     elif area == 'start_import_input':
         for identifier, execution in runtime.get('executions', {}).items():
             manifest = execution.get('input_manifest')
@@ -465,19 +459,10 @@ def _inspect_area(area, instance, runtime, read_artifact, read_artifacts=None):
         for identifier, execution in runtime.get('executions', {}).items():
             if 'observation_rules' in execution:
                 run('observation rules', lambda e=execution: (validate_rules(e['observation_rules']), None)[1], identifier)
-            for obligation in execution.get('self_check_obligations', []):
-                if not obligation.get('id') or not obligation.get('status'):
-                    defect('self-check obligation lacks identity or state', identifier)
-                if obligation.get('status') in {'fulfilled', 'resolved'} and not obligation.get('response_ref'):
-                    defect('closed self-check lacks response reference', identifier)
             if execution.get('status') == 'stopping' and not execution.get('stop_phase'):
                 defect('stop has no phase', identifier)
         checked.extend(['self-check response bindings', 'stop phase'])
     elif area == 'repair_iteration':
-        for identifier, waiting in runtime.get('waiting_actions', {}).items():
-            if waiting.get('resolved') and not (waiting.get('resolution_ref') or waiting.get('resolved_by')):
-                defect('resolved repair lacks accepted resolution evidence', identifier)
         from .task_contracts import repetition_lineages
         run('five repetition lineages', lambda: (repetition_lineages(instance, runtime), None)[1])
-        checked.append('repair resolution references')
     return findings, checked, missing

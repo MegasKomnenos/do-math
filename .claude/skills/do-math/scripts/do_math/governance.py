@@ -135,8 +135,6 @@ def initialize_governance(instance, source, approval, records, *, approval_sourc
     if source["id"] in result.get("governance_sources", {}) and result["governance_sources"][source["id"]] != source:
         raise ValueError("source ID already bound")
     if approval["id"] in result.get("decisions", {}): raise ValueError("initial approval ID already exists")
-    for key in ("goal", "policies", "goal_kind", "goal_revision", "policy_revision", "academic_requirements"):
-        result.pop(key, None)
     result.setdefault("governance_sources", {})[source["id"]] = deepcopy(source)
     if approval_source["id"] in result["governance_sources"] and result["governance_sources"][approval_source["id"]] != approval_source:
         raise ValueError("approval original source ID already bound")
@@ -157,7 +155,7 @@ def governance_view(instance):
     charters = [r for r in active if r["kind"] == "charter"]
     if len(charters) != 1: raise ValueError("no unique approved charter")
     charter = charters[0]; policies = sorted((r for r in active if r["kind"] == "policy"), key=lambda r: r["id"])
-    return {"charter": charter, "goal": charter["content"]["goal"], "goal_kind": "mathematical", "goal_revision": charter["revision"],
+    return {"charter": charter, "goal": charter["content"]["goal"], "goal_revision": charter["revision"],
             "policies": "\n\n".join(r["content"]["text"] for r in policies), "policy_revision": digest(policies), "policy_records": policies,
             "research_context": [r for r in active if r["kind"] == "research_context"],
             "additional_audits": [r for r in active if r["kind"] == "additional_audit"],
@@ -166,7 +164,7 @@ def governance_view(instance):
 
 def validate_governance_state(instance):
     """Domain validation callable before publication, independent of file layout."""
-    if any(k in instance for k in ("goal", "policies", "goal_kind", "goal_revision", "policy_revision", "academic_requirements")):
+    if any(k in instance for k in ("goal", "policies", "goal_revision", "policy_revision", "academic_requirements")):
         raise ValueError("parallel governance authority in feature 5")
     if instance.get("goal_status", "unsolved") not in {"unsolved", "mathematically_solved"}: raise ValueError("unsupported final goal assurance")
     known = set(instance.get("governance", {})) | set(instance.get("decisions", {}))
@@ -300,7 +298,7 @@ def _apply_domain_decision(instance, runtime, change, source_ref, actor, at):
         if old.get("change") != change or old.get("source_ref") != source_ref: raise ValueError("decision ID reused")
         return result, state, old
     record = change.get("record")
-    if change.get("kind") == "goal" or not isinstance(record, dict): raise ValueError("feature 5 requires a structured governance record")
+    if not isinstance(record, dict): raise ValueError("governance decision requires a structured governance record")
     if record.get("kind") != change["kind"]: raise ValueError("record owner differs from decision kind")
     previous_charter = governance_view(instance)["charter"]
     academic_only = (record["kind"] == "charter"
@@ -534,7 +532,7 @@ def apply_decision(instance: dict, runtime: dict, change: dict, *, source_ref: s
     """Apply one explicit decision atomically to copies of the two roots."""
     if actor != "user" or not source_ref:
         raise ValueError("a preserved user decision is required")
-    if change.get("kind") in GOVERNANCE_KINDS | {"goal", "academic_requirements"}:
+    if change.get("kind") in GOVERNANCE_KINDS:
         return _apply_domain_decision(instance, runtime, change, source_ref, actor, at)
     instance, runtime = ensure_governance(instance), deepcopy(runtime)
     validate_source(instance.get("governance_sources", {}).get(source_ref, {}))
@@ -680,8 +678,6 @@ def apply_decision(instance: dict, runtime: dict, change: dict, *, source_ref: s
     if change.get("resolves_questions"):
         from .questions import resolve_user
         affected = set(event["affected"])
-        if kind in {"goal", "policy"}:
-            affected.add(instance["id"])
         if kind == "grant":
             granted = instance["grants"][event["grant_id"]]
             affected.update(granted.get("task_ids") or [instance["id"]])

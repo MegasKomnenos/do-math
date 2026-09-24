@@ -231,7 +231,7 @@ class SubmissionShapeWorkTests(unittest.TestCase):
         output.pop('report')
         output['integration_bundles'][0]['members'] = ['unknown']
         expected = (submission._schema_issues(output, schema, 'output') +
-            submission._schema_issues({}, submission.extension_schema(context['action'], {}), 'activity-extensions.json') +
+            submission._schema_issues({}, submission.extension_schema(context['action']), 'activity-extensions.json') +
             submission.integration.inspect_bundles(output, {}, context))
         self.assertEqual(submission.payload_issues(output, schema, context, {}, Path('.')), expected)
         self.assertTrue(expected[0]['rule_id'].startswith('schema.'))

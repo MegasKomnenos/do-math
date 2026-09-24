@@ -78,12 +78,7 @@ class ProviderEngineMixin:
             return slots.provider_snapshot()
         if not {"execution_profiles", "capacity_constraints"}.issubset(self.instance):
             return {"source": "uninitialized_feature_5_runtime", "providers": {}}
-        observer = SessionSlots( observer=True,
-                                runtime=self.runtime, instance=self.instance)
-        try:
-            return observer.provider_snapshot()
-        finally:
-            observer.close()
+        return SessionSlots(self.runtime, self.instance, observer=True).provider_snapshot()
 
     def _provider_admit(self, action, execution_id, pool, model, *, profile, execution):
         """Reserve a feature-5 profile and its starting execution together.
@@ -100,7 +95,9 @@ class ProviderEngineMixin:
             if slots.admission_reason == 'provider_limit':
                 action['dispatch_wait']['activity_wait'] = provider_wait_disposition(
                     model=model, attempts=1, current=time.time(),
-                    failure={'retry_at': action['dispatch_wait'].get('retry_at')})
+                    failure={'retry_at': action['dispatch_wait'].get('retry_at')},
+                    initial=self.instance['config']['provider_retry_initial_seconds'],
+                    maximum=self.instance['config']['provider_retry_max_seconds'])
         else:
             action.pop("dispatch_wait", None)
         return admitted
@@ -137,14 +134,12 @@ class ProviderEngineMixin:
 
     def _hold_provider_action(self, action, execution_id, gate, reason):
         self._remove_action(action)
-        selection = action.get("model_selection")
-        selected_model = (selection.get("model") if isinstance(selection, dict) else selection)
         self.runtime.setdefault("waiting_actions", {})[action["id"]] = {
             "action": deepcopy(action), "kind": "execution_failure", "failure_kind": "provider_limit",
             "reason": reason, "execution_id": execution_id, "provider": gate["provider"],
             "generation": gate["generation"], "retry_at": gate.get("retry_at"),
             "activity_wait": provider_wait_disposition(
-                model=selected_model or self.instance["config"]["model"],
+                model=action["model_selection"]["model"],
                 provider=gate["provider"], attempts=max(1, int(gate.get("attempts", 1))),
                 current=time.time(), failure={"retry_at": gate.get("retry_at")},
                 initial=self.instance["config"]["provider_retry_initial_seconds"],

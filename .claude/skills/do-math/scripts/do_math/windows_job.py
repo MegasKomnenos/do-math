@@ -79,7 +79,6 @@ if os.name == "nt":
     _JobObjectBasicProcessIdList: Final = 3
     _JobObjectExtendedLimitInformation: Final = 9
     _PROC_THREAD_ATTRIBUTE_JOB_LIST: Final = 0x0002000D
-    _PROC_THREAD_ATTRIBUTE_SECURITY_CAPABILITIES: Final = 0x00020009
     _EXTENDED_STARTUPINFO_PRESENT: Final = 0x00080000
     _CREATE_SUSPENDED: Final = 0x00000004
     _CREATE_NO_WINDOW: Final = 0x08000000
@@ -170,14 +169,6 @@ if os.name == "nt":
         # CpuRate occupies the DWORD union member when ENABLE|HARD_CAP is set.
         _fields_ = [("ControlFlags", _DWORD), ("CpuRate", _DWORD)]
 
-    class _SECURITY_CAPABILITIES(ctypes.Structure):
-        _fields_ = [
-            ("AppContainerSid", ctypes.c_void_p),
-            ("Capabilities", ctypes.c_void_p),
-            ("CapabilityCount", _DWORD),
-            ("Reserved", _DWORD),
-        ]
-
     _kernel32.CreateJobObjectW.argtypes = [ctypes.c_void_p, ctypes.c_wchar_p]
     _kernel32.CreateJobObjectW.restype = _HANDLE
     _kernel32.SetInformationJobObject.argtypes = [_HANDLE, ctypes.c_int, ctypes.c_void_p, _DWORD]
@@ -264,8 +255,7 @@ class WindowsJob:
     The object is the sole holder of its non-inheritable Job handle.  Closing
     it therefore kills remaining roots and descendants.  It intentionally
     does not claim any filesystem, network, IPC, credential, or identity
-    isolation.  ``appcontainer_sid`` is an unverified optional creation
-    attribute and is not evidence that any such boundary is enforced.
+    isolation.
     """
 
     def __init__(
@@ -274,7 +264,6 @@ class WindowsJob:
         *,
         cwd: str | os.PathLike[str] | None = None,
         env: Mapping[str, str] | None = None,
-        appcontainer_sid: int | None = None,
         name: str | None = None,
         resource_limits: Mapping[str, int] | None = None,
     ) -> None:
@@ -285,12 +274,6 @@ class WindowsJob:
         current_directory = None if cwd is None else os.fspath(cwd)
         if current_directory is not None and "\x00" in current_directory:
             raise ValueError("cwd must be NUL-free")
-        if appcontainer_sid is not None and (
-            isinstance(appcontainer_sid, bool)
-            or not isinstance(appcontainer_sid, int)
-            or appcontainer_sid <= 0
-        ):
-            raise ValueError("appcontainer_sid must be a non-null SID pointer integer")
 
         self.name = name
         self._job: int | None = None
@@ -304,7 +287,7 @@ class WindowsJob:
         try:
             self._job = self._create_job()
             self._process, self._thread, self.pid = self._create_suspended_root(
-                command_line, current_directory, environment, appcontainer_sid
+                command_line, current_directory, environment
             )
             self.creation_filetime = self._process_creation_filetime()
         except BaseException:
@@ -383,9 +366,8 @@ class WindowsJob:
         command_line: str,
         cwd: str | None,
         environment,
-        appcontainer_sid: int | None,
     ) -> tuple[int, int, int]:
-        attribute_count = 1 + (appcontainer_sid is not None)
+        attribute_count = 1
         attribute_size = _SIZE_T()
         ctypes.set_last_error(0)
         _kernel32.InitializeProcThreadAttributeList(None, attribute_count, 0, ctypes.byref(attribute_size))
@@ -421,31 +403,6 @@ class WindowsJob:
                 raise WindowsJobUnsupportedError(
                     f"PROC_THREAD_ATTRIBUTE_JOB_LIST is unavailable (Win32 error {error})"
                 )
-            security_capabilities = None
-            if appcontainer_sid is not None:
-                security_capabilities = _SECURITY_CAPABILITIES(
-                    ctypes.c_void_p(appcontainer_sid), None, 0, 0
-                )
-                if not _kernel32.UpdateProcThreadAttribute(
-                    attribute_list,
-                    0,
-                    _PROC_THREAD_ATTRIBUTE_SECURITY_CAPABILITIES,
-                    ctypes.byref(security_capabilities),
-                    ctypes.sizeof(security_capabilities),
-                    None,
-                    None,
-                ):
-                    error = ctypes.get_last_error()
-                    if error in (_ERROR_NOT_SUPPORTED, _ERROR_CALL_NOT_IMPLEMENTED):
-                        raise WindowsJobUnsupportedError(
-                            f"PROC_THREAD_ATTRIBUTE_SECURITY_CAPABILITIES is unavailable (Win32 error {error})"
-                        )
-                    raise OSError(
-                        error,
-                        "PROC_THREAD_ATTRIBUTE_SECURITY_CAPABILITIES failed",
-                        None,
-                        error,
-                    )
 
             startup = _STARTUPINFOEXW()
             startup.StartupInfo.cb = ctypes.sizeof(startup)

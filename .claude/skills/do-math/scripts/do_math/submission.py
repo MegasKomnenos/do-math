@@ -120,7 +120,7 @@ def _object(properties, required=None):
             "required": list(properties) if required is None else required}
 
 
-def extension_schema(action: dict, definitions: dict) -> dict:
+def extension_schema(action: dict) -> dict:
     """The installed schema describes only families available to this role."""
     from .contracts import PROFILE_REF
     kind = TEXT
@@ -140,17 +140,14 @@ def extension_schema(action: dict, definitions: dict) -> dict:
                 "boundary": TEXT, "independent_of_next_revision": {"type": "boolean"}})}}),
         "task_dispositions": _object({"task_id": TEXT, "disposition": {"const": "withdraw"}, "reason": TEXT}),
         "research_insights": _object({"kind": kind, "title": TEXT, "statement": TEXT, "summary": TEXT,
-            "explanation": TEXT, "information_state": TEXT, "evidence_ids": STRINGS},
+            "explanation": TEXT, "evidence_ids": STRINGS},
             ["kind", "title", "statement", "summary"]),
         "external_requests": _object({"id": TEXT, "request": {"type": "object"}, "grant_id": {"type": ["string", "null"]},
             "purpose": TEXT, "academic_effect_id": TEXT}, ["request", "purpose"]),
         "knowledge_changes": _object({"id": TEXT,
             "replacement_id": {"type": "string", "pattern": r"^KN-[0-7][0-9A-HJKMNP-TV-Z]{25}$"},
             "changes": {"type": "object", "minProperties": 1},
-            "reason": TEXT, "impact_set": STRINGS,
-            "independent_confirmation": _object({"plan_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
-                "decision": {"const": "approve"}, "review_ref": TEXT, "reviewer_ref": TEXT,
-                "producer_ref": TEXT, "affected_ids": STRINGS})}, ["id", "changes", "reason", "impact_set"]),
+            "reason": TEXT, "impact_set": STRINGS}, ["id", "changes", "reason", "impact_set"]),
         "kind_definitions": _object({"family": {"enum": ["knowledge", "relation"]}, "token": TEXT,
             "meaning": TEXT, "constraints": _object({
                 "mathematical_claim": {"type": "boolean"}, "requires_evidence": {"type": "boolean"},
@@ -250,9 +247,6 @@ def reported_references(output: dict, extensions: dict, context: dict | None = N
         refs.extend(entry.get("changes", {}).get("dependencies", []))
         refs.extend(entry.get("changes", {}).get("source_refs", []))
         refs.extend(entry.get("impact_set", []))
-        confirmation = entry.get("independent_confirmation", {})
-        refs.extend(confirmation.get(key) for key in ("review_ref", "reviewer_ref", "producer_ref"))
-        refs.extend(confirmation.get("affected_ids", []))
     for entry in extensions.get("knowledge_metadata", []):
         claim = entry.get("relation_claim", {})
         refs.extend([claim.get("source"), claim.get("target")])
@@ -356,7 +350,7 @@ def contract_check_errors(item: dict, entry: dict, dependencies: list[str], task
             errors.append("sibling boundary names a task outside the supplied input: " + ref)
         elif row["revision"] != sibling.get("revision"):
             errors.append(f"sibling boundary was not read from the current revision {sibling.get('revision')} of {ref}")
-        elif ((sibling.get("status") == "needs_revision" or ref in revising)
+        elif ((sibling.get("revision_requested") or ref in revising)
               and not row["independent_of_next_revision"] and ref not in dependencies):
             errors.append("sibling contract is under revision: state a boundary that its next revision cannot move, "
                           "or wait for it through task_conditions dependencies: " + ref)
@@ -449,7 +443,7 @@ def _reference_ids(context):
         ids.update((source["name"], source["path"], "source:" + source["name"]))
     ids.update(row["id"] for row in context.get("grants", []))
     for key in ("user_inputs", "events", "external_operations", "external_rejections", "question_links", "decisions",
-                "authority_catalog", "activities", "executions", "self_check_obligations", "observation_facts",
+                "activities", "executions", "self_check_obligations", "observation_facts",
                 "governance_records", "delegations", "goal_judgments"):
         ids.update(row["id"] for row in context.get(key, []) if row.get("id"))
     ids.update(row['resolution']['id'] for row in context.get('question_links', []) if isinstance(row.get('resolution'), dict) and row['resolution'].get('id'))
@@ -545,7 +539,7 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
     """Check producer-visible conditions; application-time state stays separate."""
     issues = _schema_issues(output, schema, "output")
     action = context["action"]
-    extension_errors = _schema_issues(extensions, extension_schema(action, context.get("kind_definitions", {})), "activity-extensions.json")
+    extension_errors = _schema_issues(extensions, extension_schema(action), "activity-extensions.json")
     if issues or extension_errors:
         return issues + extension_errors
     from .revisions import submission_errors, dependency_cycles
@@ -739,18 +733,6 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
         for ref in entry["impact_set"]:
             check(f"activity-extensions.json/knowledge_changes/{index}/impact_set",
                   lambda ref=ref: validate_reference(ref, context, workspace, candidate_files=candidate_files))
-        if "independent_confirmation" in entry:
-            confirmation = entry["independent_confirmation"]
-            check(f"activity-extensions.json/knowledge_changes/{index}/independent_confirmation",
-                lambda confirmation=confirmation: require(
-                    confirmation["producer_ref"] == context.get("execution_id") and
-                    confirmation["reviewer_ref"] != confirmation["producer_ref"],
-                    "impact confirmation requires this producer and a distinct reviewer"))
-            # Existence is a producer-visible check only. The receiver must
-            # resolve the actual sealed review and verify its scope/authority.
-            for ref in [confirmation["review_ref"], confirmation["reviewer_ref"], *confirmation["affected_ids"]]:
-                check(f"activity-extensions.json/knowledge_changes/{index}/independent_confirmation",
-                      lambda ref=ref: validate_reference(ref, context, workspace, candidate_files=candidate_files))
         if "dependencies" in entry["changes"]:
             check(f"activity-extensions.json/knowledge_changes/{index}/changes/dependencies", lambda entry=entry: require(
                 isinstance(entry["changes"]["dependencies"], list) and
@@ -804,7 +786,7 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
             len({row[key] for row in rows}) == len(rows), "entries must identify distinct targets"))
     if action["role"] in PLANNERS:
         check("activity-extensions.json/model_assessments", lambda: validate_assessments(
-            action, output, extensions, required=True))
+            action, output, extensions))
     if 'observation_rule_targets' in action:
         from .observations import validate_rule_preparation
         check('activity-extensions.json/task_conditions', lambda: validate_rule_preparation(action, extensions, tasks))
@@ -896,7 +878,7 @@ def payload_issues(output: dict, schema: dict, context: dict, extensions: dict, 
 
     def original_schema_issues():
         return _schema_issues(original_output, schema, "output") + _schema_issues(extensions,
-            extension_schema(context["action"], context.get("kind_definitions", {})), "activity-extensions.json")
+            extension_schema(context["action"]), "activity-extensions.json")
 
     if not isinstance(output, dict) or not isinstance(extensions, dict):
         return original_schema_issues()
@@ -1245,7 +1227,7 @@ def summarize_snapshot_checks(seals, *, snapshot, read_artifact, history_window)
         if type(seal.get('event_seq')) is not int or seal['event_seq'] <= sequence:
             raise ValueError('central checks must follow explicit public event order')
         sequence = seal['event_seq']
-        capture_id = seal.get('capture_id', seal.get('request_id'))
+        capture_id = seal.get('capture_id')
         if not capture_id or capture_id in seen:
             raise ValueError('central submission request was published twice')
         seen.add(capture_id)
@@ -1326,7 +1308,7 @@ def install_tools(workspace: Path, context: dict, schema: dict, max_artifact_byt
     context["submission_contract"] = contract
     files["submission/context.json"] = canonical_json(context)
     files["submission/schema.json"] = canonical_json(schema)
-    files["submission/extensions.schema.json"] = canonical_json(extension_schema(context["action"], context.get("kind_definitions", {})))
+    files["submission/extensions.schema.json"] = canonical_json(extension_schema(context["action"]))
     materialize_inputs(workspace, files)
     return contract
 
@@ -1457,7 +1439,7 @@ def seal_submission(workspace, draft=None, *, execution_id, context, schema, max
         check = {"contract_id": "do-math-machine-check/5", "mode": "receiver", "passed": False,
             "execution_id": execution_id, "tool_sha256": context.get("submission_contract", {}).get("tool_sha256"),
             "check_subject": {key: deepcopy(context.get("action", {}).get(key)) for key in
-                              ("id", "role", "target", "stage", "slot", "review_cycle_id")},
+                              ("id", "role", "target", "stage", "slot", "review_cycle_id", "revision_targets")},
             "input_snapshot": context.get("snapshot"),
             "input_hashes": {"raw_output": hashlib.sha256(raw).hexdigest()} if raw is not None else {},
             "issues": [_issue("submission", str(error), 'submission.parse'

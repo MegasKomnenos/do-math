@@ -93,8 +93,6 @@ def build_parser() -> _Parser:
     goal.add_argument("--goal")
     goal.add_argument("--goal-file")
     init.add_argument("--title", default="")
-    init.add_argument("--goal-kind", choices=("mathematical", "research"), default="mathematical",
-                      help="mathematical is supported; research is reserved and currently unsupported")
     init.add_argument("--policies-file")
     init.add_argument("--source", action="append", default=[], type=Path)
     init.add_argument("--config-file")
@@ -260,9 +258,10 @@ def _reconcile_operator(repository: Path, instance: str, configuration: dict[str
                                        operator_timeout_seconds=configuration["operator_timeout_seconds"])
 
 
-def _schedule_failure(result: dict[str, Any], error: RuntimeError, instance: str) -> tuple[dict[str, Any], int]:
-    result["operator_schedule"] = {"status": "failed", "error": str(error),
-                                   "reconcile": f"operator install --instance {instance}"}
+def _schedule_failure(result: dict[str, Any], error: RuntimeError, repository: Path,
+                      instance: str) -> tuple[dict[str, Any], int]:
+    reconcile = subprocess.list2cmdline(["operator", "install", "--repository", str(repository), "--instance", instance])
+    result["operator_schedule"] = {"status": "failed", "error": str(error), "reconcile": reconcile}
     return result, 5
 
 
@@ -274,8 +273,6 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
                          include_operator=args.include_operator)
         return (timeline_csv(value) if args.format == "csv" else value), 0
     if command == "init":
-        if args.goal_kind != "mathematical":
-            raise CliInputError("unsupported goal_kind: research; this entrypoint currently supports mathematical only")
         _require_git(args.repository, args.create_repository)
         goal = args.goal if args.goal is not None else _text_file(args.goal_file)
         policies = "" if args.policies_file is None else _text_file(args.policies_file)
@@ -286,13 +283,13 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
             if not source.is_file():
                 raise CliInputError(f"--source is not a file: {source}")
         result = initialize(args.repository, goal=goal, workspace=args.workspace, config=config, title=args.title,
-                            goal_kind=args.goal_kind, policies=policies, sources=args.source)
+                            policies=policies, sources=args.source)
         _, initialized, _ = ResearchRepository(args.repository, result["instance_id"]).load()
         if initialized["config"]["operator_enabled"]:
             try:
                 result["operator_schedule"] = _reconcile_operator(args.repository, result["instance_id"], initialized["config"])
             except RuntimeError as error:
-                return _schedule_failure(result, error, result["instance_id"])
+                return _schedule_failure(result, error, args.repository, result["instance_id"])
         return result, 0
     if command == "run":
         return ResearchEngine(args.repository, args.instance).run(max_steps=args.max_steps, watch=args.watch), 0
@@ -312,7 +309,7 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
     if command == "configure":
         requested = _json_file(args.config_file)
         result = _control(args, "configure", config=requested)
-        operator_keys = {"operator_enabled", "operator_interval_seconds", "operator_timeout_seconds", "operator_effort", "checkpoint_grace_seconds"}
+        operator_keys = {"operator_enabled", "operator_interval_seconds", "operator_timeout_seconds", "operator_effort"}
         if operator_keys.intersection(requested) and result['effect'] == 'rejected':
             result['operator_schedule'] = {'status': 'not_applied', 'reason': 'configuration was rejected'}
         elif operator_keys.intersection(requested) and result.get('replayed') and result['effect'] == 'applied':
@@ -322,7 +319,7 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
             try:
                 result["operator_schedule"] = _reconcile_operator(args.repository, args.instance, result["config"])
             except RuntimeError as error:
-                return _schedule_failure(result, error, args.instance)
+                return _schedule_failure(result, error, args.repository, args.instance)
         elif operator_keys.intersection(requested):
             result["operator_schedule"] = {"status": "pending", "reason": "run operator install or uninstall after the control is applied"}
         return result, 0
@@ -411,43 +408,42 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
         return result, 0 if result.get("verified") else 1
     if command == "operator":
         workspace = _operator_workspace(args.repository, args.instance, args.workspace)
-        if command == "operator":
-            mode = args.mode
-            if mode in {"install", "uninstall", "status", "start", "start-operator"}:
-                _, initialized, _ = ResearchRepository(args.repository, args.instance).load()
-                configuration = initialized["config"]
-                action = {"start": "start-engine", "start-operator": "start-operator"}.get(mode, mode)
-                if action == "start-engine":
-                    guard = scheduled_operator.engine_start_guard(args.repository, args.instance, workspace)
-                    if guard["outcome"] != "startable":
-                        return guard, 0
-                return scheduled_operator.schedule(action, repository=args.repository, instance=args.instance, workspace=workspace,
-                                                   interval_seconds=configuration.get("operator_interval_seconds", 7200),
-                                                   operator_timeout_seconds=configuration.get("operator_timeout_seconds", 5400)), 0
-            if mode == "hold":
-                marker = scheduled_operator.hold(workspace, reason=args.reason)
-                pause = _control(args, "pause", text="User requested scheduled operator HOLD " + marker["id"])
-                try:
-                    cleanup = scheduled_operator.schedule("cancel-wake", repository=args.repository, instance=args.instance, workspace=workspace)
-                    (workspace / "operator/wake-registration.json").unlink(missing_ok=True)
-                except (RuntimeError, OSError) as error:
-                    cleanup = {"status": "failed", "error": str(error), "hold_still_blocks_wake": True}
-                return {"hold": marker, "pause": pause, "wake_cleanup": cleanup}, 0
-            if mode == "release":
-                released = scheduled_operator.release(workspace)
-                marker = released.get("released")
-                expected = "User requested scheduled operator HOLD " + marker["id"] if marker else None
-                if expected:
-                    released["resume"] = _control(args, "resume", text="User released scheduled operator HOLD " + marker["id"],
-                                                  config={"expected_user_pause_reason": expected})
-                else:
-                    released["resume"] = {"effect": "not_requested", "reason": "no HOLD was released"}
-                return released, 0
-            if mode == "wake":
-                return scheduled_operator.wake(args.repository, args.instance, workspace), 0
-            if mode == "engine":
-                return scheduled_operator.run_engine(args.repository, args.instance, workspace), 0
-            return scheduled_operator.check(args.repository, args.instance, workspace, probe=mode == "probe"), 0
+        mode = args.mode
+        if mode in {"install", "uninstall", "status", "start", "start-operator"}:
+            _, initialized, _ = ResearchRepository(args.repository, args.instance).load()
+            configuration = initialized["config"]
+            action = {"start": "start-engine", "start-operator": "start-operator"}.get(mode, mode)
+            if action == "start-engine":
+                guard = scheduled_operator.engine_start_guard(args.repository, args.instance, workspace)
+                if guard["outcome"] != "startable":
+                    return guard, 0
+            return scheduled_operator.schedule(action, repository=args.repository, instance=args.instance, workspace=workspace,
+                                               interval_seconds=configuration["operator_interval_seconds"],
+                                               operator_timeout_seconds=configuration["operator_timeout_seconds"]), 0
+        if mode == "hold":
+            marker = scheduled_operator.hold(workspace, reason=args.reason)
+            pause = _control(args, "pause", text="User requested scheduled operator HOLD " + marker["id"])
+            try:
+                cleanup = scheduled_operator.schedule("cancel-wake", repository=args.repository, instance=args.instance, workspace=workspace)
+                (workspace / "operator/wake-registration.json").unlink(missing_ok=True)
+            except (RuntimeError, OSError) as error:
+                cleanup = {"status": "failed", "error": str(error), "hold_still_blocks_wake": True}
+            return {"hold": marker, "pause": pause, "wake_cleanup": cleanup}, 0
+        if mode == "release":
+            released = scheduled_operator.release(workspace)
+            marker = released.get("released")
+            expected = "User requested scheduled operator HOLD " + marker["id"] if marker else None
+            if expected:
+                released["resume"] = _control(args, "resume", text="User released scheduled operator HOLD " + marker["id"],
+                                              config={"expected_user_pause_reason": expected})
+            else:
+                released["resume"] = {"effect": "not_requested", "reason": "no HOLD was released"}
+            return released, 0
+        if mode == "wake":
+            return scheduled_operator.wake(args.repository, args.instance, workspace), 0
+        if mode == "engine":
+            return scheduled_operator.run_engine(args.repository, args.instance, workspace), 0
+        return scheduled_operator.check(args.repository, args.instance, workspace, probe=mode == "probe"), 0
     raise CliInputError("unknown command")
 
 

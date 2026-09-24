@@ -279,7 +279,7 @@ class WalkthroughRepairs(unittest.TestCase):
             root = Path(directory)
             fitted = prepare_role_input({'action': {'id': 'A', 'role': 'research_preparation',
                 'assessment_targets': {task['id']: {'revision': 1}}}, 'resources': {},
-                'tasks': [deepcopy(task)], 'knowledge_catalog': []},
+                'tasks': [deepcopy(task)], 'knowledge_catalog': [], 'blocked_actions': []},
                 instance=instance, runtime=runtime, role='research_preparation', profile=profile,
                 snapshot='a'*40, workspace=root, activity_id='ACT', install_submission_tools=True,
                 max_artifact_bytes=100000)

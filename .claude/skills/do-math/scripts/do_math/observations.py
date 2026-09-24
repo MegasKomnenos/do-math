@@ -226,7 +226,7 @@ def tracker_config(profile: dict, *, initial_self_check_rules: list[dict] | None
     if research:
         validate_rules(initial_self_check_rules)
         validate_execution_rules(initial_self_check_rules, bindings=profile["observation"].get("rule_bindings"), execution_id=None)
-    return {**settings, "observation_contract_version": 5,
+    return {**settings,
             "observation_mode": profile["observation"]["mode"],
             "observation_profile_ref": reference, "research_self_checks": research,
             "observation_rule_bindings": deepcopy(profile["observation"].get("rule_bindings", [])),
@@ -462,8 +462,6 @@ class ObservationTracker:
     """One execution's v5 observation state; persistence remains ENGINE-owned."""
 
     def __init__(self, execution_id: str, workspace: Path, config: dict, *, clock=time.monotonic):
-        if config.get("observation_contract_version", 5) != 5:
-            raise ValueError("only observation contract version 5 is supported")
         config = deepcopy(config)
         self.execution_id, self.workspace, self.config, self.clock = execution_id, workspace, config, clock
         self.started = self.last_review = clock()

@@ -334,7 +334,8 @@ class PurposeFixtureContractTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             workspace = Path(directory)
             fitted = prepare_role_input({'action': {'role': 'research_plan'}, 'resources': {},
-                'ready_task_ids': [], 'knowledge_catalog': [], 'tasks': deepcopy(list(runtime['tasks'].values()))},
+                'ready_task_ids': [], 'knowledge_catalog': [], 'ongoing_preparation': [],
+                'tasks': deepcopy(list(runtime['tasks'].values()))},
                 instance=instance, runtime=runtime, role='research_plan', profile=profile,
                 snapshot='a'*40, workspace=workspace, activity_id='AC-1')
             self.assertNotIn('results', fitted['context']['tasks'][0])
@@ -362,8 +363,8 @@ class PurposeFixtureContractTests(unittest.TestCase):
             {'id': 'TK-selected', 'model_assessment': {'difficulty': 'high', 'importance': 'medium'}},
             {'id': 'TK-deferred', 'model_assessment': {'difficulty': 'low', 'importance': 'low'}}]}
         extensions = {'model_assessments': planning_model_assessments(output, context)}
-        jsonschema.validate(extensions, submission.extension_schema(action, {}))
-        identified = model_policy.validate_assessments(action, output, extensions, required=True)
+        jsonschema.validate(extensions, submission.extension_schema(action))
+        identified = model_policy.validate_assessments(action, output, extensions)
         self.assertEqual(set(identified), {'TK-selected'})
         self.assertEqual(identified['TK-selected']['difficulty'], 'high')
         self.assertEqual(identified['TK-selected']['importance'], 'medium')
@@ -426,7 +427,7 @@ class PurposeHarness(unittest.TestCase):
         for _ in range(limit):
             engine.run(max_steps=1)
             if predicate(engine): return
-            if engine.runtime['status'] in {'paused', 'closed', 'budget_exhausted', 'waiting'}:
+            if engine.runtime['status'] in {'paused', 'closed', 'waiting'}:
                 self.fail('Workflow stopped before its fixture outcome: ' + json.dumps({
                     'status': engine.runtime['status'], 'questions': engine.runtime['questions'],
                     'queue': engine.runtime['queue'], 'executions': [{k: ex.get(k) for k in ('role', 'outcome', 'error')} for ex in engine.runtime['executions'].values()]}, ensure_ascii=False))
@@ -540,7 +541,7 @@ class PurposeEngineTests(PurposeHarness):
         self.assertTrue(any('disputed' in row['reason'] for row in suspended['use_history']))
         self.assertFalse(any(j.get('current') for j in engine.instance.get('goal_judgments', [])))
         changes = {'explanation': EXPLANATION + ' This revision explicitly resolves the disputed domain description.'}
-        roots = knowledge.revision_roots(engine.instance, kid, changes)
+        roots = knowledge.revision_roots(engine.instance, kid)
         send_control(engine, 'knowledge', config={'operation': 'revise', 'id': kid, 'changes': changes,
             'reason': 'The replacement explanation fixes the domain explicitly',
             'declared_impact': knowledge.plan_impact(engine.instance, engine.runtime, roots, [])['computed_impact']})

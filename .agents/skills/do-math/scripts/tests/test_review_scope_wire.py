@@ -49,7 +49,7 @@ class ScopeWireTests(unittest.TestCase):
                               "execution_profile": profile}),
             "integration_bundles": [{"integration_id": "IN-scope", "members": ["output"],
                                       "impact_set": [], "authority_refs": []}]}
-        self.wire = contracts.action_schema({"role": "identity_review", "stage": "scope", "review_cycle_id": "RC-fixture"}, {})
+        self.wire = contracts.action_schema({"role": "identity_review", "stage": "scope", "review_cycle_id": "RC-fixture"})
 
     def test_one_real_response_contract_reaches_the_consumer(self):
         jsonschema.Draft202012Validator(self.wire).validate(self.response)

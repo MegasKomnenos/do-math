@@ -33,7 +33,6 @@ SKILL_ROOT = SCRIPTS.parent
 LIVE_INSTALLATION_ROOT = SKILL_ROOT
 ENTRYPOINT = SCRIPTS / "do_math.py"
 SCHEDULE_SCRIPT = SCRIPTS / "operator_schedule.ps1"
-PROMPT = SKILL_ROOT / "계약" / "독립-운영.md"
 
 Runner = Callable[..., subprocess.CompletedProcess[str]]
 OPERATOR_SCHEMA = {
@@ -173,13 +172,6 @@ def _operator_dir(workspace: Path) -> Path:
     return workspace / "operator"
 
 
-def _latest_report(report: dict[str, Any], result_path: Path) -> dict[str, Any]:
-    result = report.get("result") if isinstance(report.get("result"), dict) else {}
-    return {key: report[key] for key in ("outcome", "probe", "status_before", "run_directory", "output", "ended_at", "error") if key in report} | {
-        "result_path": str(result_path), "evidence_dir": result.get("evidence_dir"), "usage": result.get("usage", {}),
-    }
-
-
 def hold(workspace: Path, *, reason: str) -> dict[str, Any]:
     """Set a local hold marker; intentionally does not send pause or resume."""
     value = {"id": uuid.uuid4().hex, "reason": reason, "started_at": datetime.now(timezone.utc).isoformat()}
@@ -197,22 +189,6 @@ def release(workspace: Path) -> dict[str, Any]:
     result = {"released": held, "released_at": datetime.now(timezone.utc).isoformat()}
     _json(_operator_dir(workspace) / "release.json", result)
     return result
-
-
-def invocation_context(repository: Path, instance: str, workspace: Path, status: dict[str, Any], skill_root: Path = SKILL_ROOT,
-                       *, probe: bool = False, scholarly_configured: bool = False) -> dict[str, Any]:
-    run_directory = _operator_dir(workspace) / "runs" / (datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:8])
-    previous = _operator_dir(workspace) / "latest-report.json"
-    return {
-        "repository": str(repository.resolve()), "instance": instance, "workspace": str(workspace.resolve()),
-        "skill_root": str(skill_root.resolve()), "run_directory": str(run_directory), "status": status,
-        "probe": probe, "scholarly_configured": scholarly_configured,
-        "previous_report": str(previous) if previous.is_file() else None,
-        "control_policy": {
-            "user_pause": "never resume", "hold": "never start engine while HOLD.json exists",
-            "research_state": "use do-math CLI controls; never edit JSON or Git refs directly",
-        },
-    }
 
 
 def run_engine(repository: Path, instance: str, workspace: Path) -> dict[str, Any]:
@@ -381,7 +357,6 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict)
     if (_operator_dir(workspace) / "HOLD.json").exists():
         return {"outcome": "held"}
     repo = ResearchRepository(repository, instance)
-    register_profile_families(repo)
     try:
         with repo.writer_lock():
             head, state, runtime = repo.load()
@@ -601,11 +576,6 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict)
             "outcome": "recovery_verified", "recovery_report": str(Path(report["run_directory"]) / "result.json")})
         report["restart"] = wake(repository, instance, workspace)
     return report
-
-
-def register_profile_families(repository):
-    from .execution_profiles import register_families
-    register_families(repository.contract)
 
 
 def main(argv=None):

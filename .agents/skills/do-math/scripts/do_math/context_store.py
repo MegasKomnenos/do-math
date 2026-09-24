@@ -230,8 +230,6 @@ def write_source_catalog(context: dict, workspace: Path) -> dict:
     entries: dict[str, dict] = {}
     manifest: list[dict] = []
     for key in sorted(context):
-        if key not in context:
-            continue
         logical = "input/catalog/" + _catalog_name(key)
         target = _safe_path(workspace, logical, require_input=True)
         data = canonical_json(context[key])
@@ -327,9 +325,6 @@ def restore_continuation(runtime, action, workspace, *, snapshot, read_artifact,
                  'error': execution.get('error'),
                  'checkpoint': deepcopy(runtime.get('checkpoints', {}).get(execution['id']))}
         result_ref = execution.get('result_ref')
-        if not result_ref and execution.get('artifact_bundle'):
-            filename = 'checkpoint-recovery.json' if execution.get('error') == 'previous executor disappeared' else 'result.json'
-            result_ref = 'runtime/artifacts/' + execution['artifact_bundle'] + '/' + filename
         if result_ref:
             raw = read_artifact(result_ref)
             logical = 'resume-history/' + _sha256(execution['id'].encode()) + '/result.json'
@@ -514,7 +509,6 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
             returned = task_contracts.returned_task_ids(tasks)
             value['returned_task_ids'] = returned
             value['tasks'] = [reader_task(identifier) for identifier in sorted(set(ready) | set(returned))]
-            value.setdefault('ongoing_preparation', [])
         else:
             from .planning import pending_revisions
             revisions = pending_revisions(runtime)
@@ -526,7 +520,6 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
                 targets.add(action['target'])
             value['tasks'] = [reader_task(identifier) for identifier, task in sorted(tasks.items())
                               if task.get('status') == 'planned' or identifier in targets and task.get('status') not in {'completed', 'closed'}]
-            value.setdefault('blocked_actions', deepcopy(runtime.get('waiting_actions', {})))
             value['pending_revisions'] = deepcopy(revisions)
         from .planning import CONTRACT_FIELDS
         comparison_fields = set(CONTRACT_FIELDS) | {'id', 'title', 'question', 'revision', 'status',
@@ -794,8 +787,7 @@ def _input_overflow(reason: str, *, actual_bytes: int, mandatory_bytes: int, max
     return {"kind": "input_overflow", "reason": reason, "actual_bytes": actual_bytes,
             "mandatory_bytes": mandatory_bytes, "limit_bytes": max_bytes,
             "required_direct_keys": list(mandatory_keys), "role": role,
-            "profile_id": profile_id, "activity_id": activity_id,
-            "next_owner": "activities", "disposition": "await_activity_decision"}
+            "profile_id": profile_id, "activity_id": activity_id}
 
 
 def fit_context(context: dict, *, max_bytes: int, workspace: Path,

@@ -18,7 +18,6 @@ from do_math.repository import ResearchRepository, canonical_json, semantic_cont
 from do_math.events import EventPublisher
 from do_math.state_contract import STATE_FORMAT_VERSION, StateContract
 from do_math.git_store import GitStateStoreConflict
-from do_math.repository import transport_json
 
 
 INSTANCE_ID = "RI-01ARZ3NDEKTSV4RRFFQ69G5FAV"
@@ -297,7 +296,7 @@ class StorageRedesignTests(unittest.TestCase):
             authority_refs=[source["id"]])
         instance["config"]["host_resources"] = {"constraint": constraint, "demands_by_role": {
             role: {"jobs": 1, "memory_bytes": 1024, "cpu_rate_basis_points": 1000}
-            for role in instance["role_profile_refs"]}}
+            for role in profiles.HOST_ROLES}}
         adopted = profiles.build_profiles(instance["config"])
         for family in ("execution_profiles", "capacity_constraints"):
             instance[family].update(adopted[family])
@@ -808,12 +807,9 @@ class StorageRedesignTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "contract/schema"):
             self.repository.load(incompatible)
 
-    def test_transport_decimals_do_not_relax_storage(self):
-        self.assertIn(b"1.25", transport_json({"seconds": 1.25}))
+    def test_storage_rejects_decimals_and_preserves_list_order(self):
         with self.assertRaises(ValueError):
             canonical_json({"seconds": 1.25})
-        with self.assertRaises(ValueError):
-            transport_json({"seconds": float("nan")})
         self.assertEqual(canonical_json({"a": [2, 1]}), canonical_json({"a": [2, 1]}))
         self.assertNotEqual(canonical_json({"a": [2, 1]}), canonical_json({"a": [1, 2]}))
 
@@ -1046,8 +1042,7 @@ class StorageRedesignTests(unittest.TestCase):
         from do_math.initialization import initialize_state
         from do_math.knowledge_io import ensure_ontology
         from do_math.knowledge_records import create_candidate
-        instance, runtime = initialize_state(instance_id=INSTANCE_ID, goal="question", goal_kind="mathematical",
-            workspace=self.repository_path, config={}, source_input="question")
+        instance, runtime = initialize_state(instance_id=INSTANCE_ID, goal="question", workspace=self.repository_path, config={}, source_input="question")
         instance = ensure_ontology(instance)
         instance, kid = create_candidate(instance, {"kind": "observation", "statement": "a bounded observation", "dependencies": []}, source_ref="user-input", actor_ref="user")
         head = self.repository.initialize(instance, runtime)
@@ -1061,8 +1056,7 @@ class StorageRedesignTests(unittest.TestCase):
 
     def test_complete_lifecycle_candidate_uses_installed_current_state_gate(self):
         from do_math.initialization import initialize_state
-        instance, runtime = initialize_state(instance_id=INSTANCE_ID, goal="P", goal_kind="mathematical",
-            workspace=self.repository_path, config={}, source_input="P")
+        instance, runtime = initialize_state(instance_id=INSTANCE_ID, goal="P", workspace=self.repository_path, config={}, source_input="P")
         self.repository.validate_candidate(instance, runtime)
         runtime["status"] = "invented_status"
         with self.assertRaisesRegex(ValueError, "runtime_status"):
@@ -1071,8 +1065,7 @@ class StorageRedesignTests(unittest.TestCase):
     def test_original_input_bytes_are_the_exact_working_text(self):
         from do_math.initialization import initialize_state, original_input_bytes
         source = "e\u0301 original input"
-        instance, runtime = initialize_state(instance_id=INSTANCE_ID, goal="P", goal_kind="mathematical",
-            workspace=self.repository_path, config={}, source_input=source)
+        instance, runtime = initialize_state(instance_id=INSTANCE_ID, goal="P", workspace=self.repository_path, config={}, source_input=source)
         original = instance["lifecycle"]["immutable_input"]
         self.assertEqual(original_input_bytes(original), source.encode("utf-8"))
         self.assertEqual(original["text"], source)
@@ -1081,8 +1074,7 @@ class StorageRedesignTests(unittest.TestCase):
 
     def test_initial_input_and_loaded_pending_event_references_are_checked(self):
         from do_math.initialization import initialize_state
-        instance, runtime = initialize_state(instance_id=INSTANCE_ID, goal="P", goal_kind="mathematical",
-            workspace=self.repository_path, config={}, source_input="P")
+        instance, runtime = initialize_state(instance_id=INSTANCE_ID, goal="P", workspace=self.repository_path, config={}, source_input="P")
         runtime["inputs"] = []
         with self.assertRaisesRegex(ValueError, "unknown record"):
             self.repository.validate_candidate(instance, runtime)
@@ -1175,7 +1167,7 @@ class StorageRedesignTests(unittest.TestCase):
     def test_actual_uncertainty_text_and_object_preserve_wire_meaning(self):
         import jsonschema
         from do_math import submission, knowledge_io
-        wire = submission.extension_schema({"role": "research_work"}, {})
+        wire = submission.extension_schema({"role": "research_work"})
         for value in ("Not a proof", {"claim": "Not a proof", "scope": "finite search only"}):
             jsonschema.validate({"knowledge_metadata": [{"title": "Bounded", "uncertainty_assessment": value}]}, wire)
             instance, runtime, kid = knowledge_io.import_candidate({"feature_version": 5}, {"feature_version": 5},

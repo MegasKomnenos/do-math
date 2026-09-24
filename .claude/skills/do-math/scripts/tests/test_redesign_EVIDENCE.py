@@ -49,10 +49,9 @@ class InputSnapshot:
 def engine_fixture(goal='Establish P', *, academic_requirements=None):
     e = object.__new__(ResearchEngine)
     e.instance = {'id': 'RI-evidence', 'feature_version': 5, 'lifecycle': {'state': 'active'},
-        'goal': goal, 'goal_kind': 'mathematical', 'goal_status': 'unresolved',
-        'goal_revision': 1, 'policy_revision': 1, 'goal_judgments': [], 'policies': '',
+        'goal_status': 'unresolved', 'goal_judgments': [],
         'sources': [], 'knowledge': {}, 'relations': [], 'decisions': {}, 'config': deepcopy(DEFAULT_CONFIG),
-        'academic_requirements': {'items': [], 'sha256': 'none'}, 'workspace': str(SCRIPTS),
+        'workspace': str(SCRIPTS),
         'grants': {'GR-evidence': {'id': 'GR-evidence', 'kind': 'local', 'status': 'active',
             'roles': ['research_work', 'supplemental_research'], 'task_ids': [],
             'expires_at': None, 'checkpoint_allowed': True, 'reuse': 'reusable'}}}
@@ -238,7 +237,7 @@ class ProducerStorageContractTests(unittest.TestCase):
         from do_math import submission
         from do_math.state_contract import default_state_contract
         from test_redesign_CONTRACTS import response, context
-        wire = submission.extension_schema({'role': 'research_work'}, {})
+        wire = submission.extension_schema({'role': 'research_work'})
         registered = default_state_contract().family('research', 'knowledge').schema
         output = response()
         output['integration_bundles'][0]['members'].append('activity-extensions.json/knowledge_metadata/0')

@@ -546,8 +546,8 @@
       ],
       "rationale": "입원 시험은 작업 예약이 꽉 찬 상태에서 같은 모델의 운영 예약을 추가한다. 실제 운영 AI 시작/작업 무정지까지는 대역 경계 밖이다.",
       "implementation": [
-        ".claude/skills/do-math/scripts/do_math/session_slots.py::GitSessionSlots.acquire",
-        ".claude/skills/do-math/scripts/do_math/session_slots.py::GitSessionSlots.release"
+        ".claude/skills/do-math/scripts/do_math/session_slots.py::SessionSlots.acquire",
+        ".claude/skills/do-math/scripts/do_math/session_slots.py::SessionSlots.release"
       ],
       "evidence": [
         {
@@ -560,7 +560,7 @@
           "observations": []
         }
       ],
-      "scope": "GitSessionSlots의 프로필 기반 예약과 로컬 Job 반환을 검사한다.",
+      "scope": "SessionSlots의 프로필 기반 예약과 로컬 Job 반환을 검사한다.",
       "gaps": [
         "입원 시험은 작업 예약이 꽉 찬 상태에서 같은 모델의 운영 예약을 추가한다. 실제 운영 AI 시작/작업 무정지까지는 대역 경계 밖이다."
       ],
@@ -575,7 +575,7 @@
             0
           ],
           "category": "b",
-          "basis": "구현된 범위: GitSessionSlots의 프로필 기반 예약과 로컬 Job 반환을 검사한다. 직접 시험의 asserts는 그 범위만 지지한다. 이 gaps 항목은 전체 요구를 재생하는 assertion/공개 연결 증거가 부족한 부분이며, 코드 부재를 입증한 판정은 아니다.",
+          "basis": "구현된 범위: SessionSlots의 프로필 기반 예약과 로컬 Job 반환을 검사한다. 직접 시험의 asserts는 그 범위만 지지한다. 이 gaps 항목은 전체 요구를 재생하는 assertion/공개 연결 증거가 부족한 부분이며, 코드 부재를 입증한 판정은 아니다.",
           "owners": [
             "PROFILES",
             "ENGINE"
@@ -594,8 +594,8 @@
       ],
       "rationale": "프로필 budget_kind와 독립 work/operations 슬롯은 검사한다. 검토 요청 폭주 전건의 실제 스케줄 실행은 없다.",
       "implementation": [
-        ".claude/skills/do-math/scripts/do_math/session_slots.py::GitSessionSlots.acquire",
-        ".claude/skills/do-math/scripts/do_math/session_slots.py::GitSessionSlots.release"
+        ".claude/skills/do-math/scripts/do_math/session_slots.py::SessionSlots.acquire",
+        ".claude/skills/do-math/scripts/do_math/session_slots.py::SessionSlots.release"
       ],
       "evidence": [
         {
@@ -608,7 +608,7 @@
           "observations": []
         }
       ],
-      "scope": "GitSessionSlots의 프로필 기반 예약과 로컬 Job 반환을 검사한다.",
+      "scope": "SessionSlots의 프로필 기반 예약과 로컬 Job 반환을 검사한다.",
       "gaps": [
         "프로필 budget_kind와 독립 work/operations 슬롯은 검사한다. 검토 요청 폭주 전건의 실제 스케줄 실행은 없다."
       ],
@@ -623,7 +623,7 @@
             0
           ],
           "category": "b",
-          "basis": "구현된 범위: GitSessionSlots의 프로필 기반 예약과 로컬 Job 반환을 검사한다. 직접 시험의 asserts는 그 범위만 지지한다. 이 gaps 항목은 전체 요구를 재생하는 assertion/공개 연결 증거가 부족한 부분이며, 코드 부재를 입증한 판정은 아니다.",
+          "basis": "구현된 범위: SessionSlots의 프로필 기반 예약과 로컬 Job 반환을 검사한다. 직접 시험의 asserts는 그 범위만 지지한다. 이 gaps 항목은 전체 요구를 재생하는 assertion/공개 연결 증거가 부족한 부분이며, 코드 부재를 입증한 판정은 아니다.",
           "owners": [
             "PROFILES",
             "ENGINE"
@@ -1161,7 +1161,7 @@
       "groups": [
         "execution_recovery"
       ],
-      "rationale": "현재 GitSessionSlots는 local execution reservation이다. local ended에서 원격 호출 예약을 별도 유지하는 전체 원장은 입증하지 못한다.",
+      "rationale": "현재 SessionSlots는 local execution reservation이다. local ended에서 원격 호출 예약을 별도 유지하는 전체 원장은 입증하지 못한다.",
       "implementation": [
         ".claude/skills/do-math/scripts/do_math/execution_lifecycle.py::transition_execution",
         ".claude/skills/do-math/scripts/do_math/execution_lifecycle.py::recover_execution",
@@ -1208,7 +1208,7 @@
       ],
       "scope": "전이 및 복구 API의 장벽 사실 소비와 수신 영수증을 검사한다. 호스트/원격 사실은 fixture다.",
       "gaps": [
-        "현재 GitSessionSlots는 local execution reservation이다. local ended에서 원격 호출 예약을 별도 유지하는 전체 원장은 입증하지 못한다."
+        "현재 SessionSlots는 local execution reservation이다. local ended에서 원격 호출 예약을 별도 유지하는 전체 원장은 입증하지 못한다."
       ],
       "execution": {
         "state": "partial",
@@ -1461,7 +1461,7 @@
       ],
       "rationale": "실제 후보 저장/묶음 수신의 CAS 실패 반환을 검사한다.",
       "implementation": [
-        ".claude/skills/do-math/scripts/do_math/repository.py::ResearchRepository.save",
+        ".claude/skills/do-math/scripts/do_math/repository.py::ResearchRepository.save_with_state",
         ".claude/skills/do-math/scripts/do_math/integration.py::apply_bundles"
       ],
       "evidence": [
@@ -3278,8 +3278,8 @@
       ],
       "rationale": "현재 profile capacity_refs는 공유 제약을 받을 수 있지만 시험은 같은 모델 pool 중심이다. 계정 공유 상한+모델 상한의 동시 교차 표본은 추가한다.",
       "implementation": [
-        ".claude/skills/do-math/scripts/do_math/session_slots.py::GitSessionSlots.acquire",
-        ".claude/skills/do-math/scripts/do_math/session_slots.py::GitSessionSlots.release"
+        ".claude/skills/do-math/scripts/do_math/session_slots.py::SessionSlots.acquire",
+        ".claude/skills/do-math/scripts/do_math/session_slots.py::SessionSlots.release"
       ],
       "evidence": [
         {
@@ -3292,7 +3292,7 @@
           "observations": []
         }
       ],
-      "scope": "GitSessionSlots의 프로필 기반 예약과 로컬 Job 반환을 검사한다.",
+      "scope": "SessionSlots의 프로필 기반 예약과 로컬 Job 반환을 검사한다.",
       "gaps": [
         "현재 profile capacity_refs는 공유 제약을 받을 수 있지만 시험은 같은 모델 pool 중심이다. 계정 공유 상한+모델 상한의 동시 교차 표본은 추가한다."
       ],
@@ -3307,7 +3307,7 @@
             0
           ],
           "category": "b",
-          "basis": "구현된 범위: GitSessionSlots의 프로필 기반 예약과 로컬 Job 반환을 검사한다. 직접 시험의 asserts는 그 범위만 지지한다. 이 gaps 항목은 전체 요구를 재생하는 assertion/공개 연결 증거가 부족한 부분이며, 코드 부재를 입증한 판정은 아니다.",
+          "basis": "구현된 범위: SessionSlots의 프로필 기반 예약과 로컬 Job 반환을 검사한다. 직접 시험의 asserts는 그 범위만 지지한다. 이 gaps 항목은 전체 요구를 재생하는 assertion/공개 연결 증거가 부족한 부분이며, 코드 부재를 입증한 판정은 아니다.",
           "owners": [
             "PROFILES",
             "ENGINE"
@@ -3587,7 +3587,7 @@
       ],
       "rationale": "실제 후보 저장/묶음 수신의 CAS 실패 반환을 검사한다.",
       "implementation": [
-        ".claude/skills/do-math/scripts/do_math/repository.py::ResearchRepository.save",
+        ".claude/skills/do-math/scripts/do_math/repository.py::ResearchRepository.save_with_state",
         ".claude/skills/do-math/scripts/do_math/integration.py::apply_bundles"
       ],
       "evidence": [],
@@ -4645,8 +4645,8 @@
       "implementation": [
         ".claude/skills/do-math/scripts/do_math/execution_profiles.py::host_constraint",
         ".claude/skills/do-math/scripts/do_math/execution_profiles.py::with_host_resources",
-        ".claude/skills/do-math/scripts/do_math/session_slots.py::GitSessionSlots.acquire",
-        ".claude/skills/do-math/scripts/do_math/session_slots.py::GitSessionSlots.release"
+        ".claude/skills/do-math/scripts/do_math/session_slots.py::SessionSlots.acquire",
+        ".claude/skills/do-math/scripts/do_math/session_slots.py::SessionSlots.release"
       ],
       "evidence": [
         {
@@ -4678,7 +4678,7 @@
           ]
         }
       ],
-      "scope": "GitSessionSlots의 프로필 기반 예약과 로컬 Job 반환을 검사한다.",
+      "scope": "SessionSlots의 프로필 기반 예약과 로컬 Job 반환을 검사한다.",
       "gaps": [
         "명시적으로 채택한 로컬 host constraint의 공유 예약·제어 여유는 frozen 실제 시험에서 관찰했다. 현행 root의 최종 전체 회귀와 지원 OS 밖의 일반 강제 격리는 주장하지 않는다."
       ],
@@ -4714,11 +4714,11 @@
       ],
       "rationale": "현행 scheduler는 큐 순서와 가용성 필터를 사용한다. 건너뛴 최초 진입 순서와 점검 유입 중 공정성의 직접 시험이 없다.",
       "implementation": [
-        ".claude/skills/do-math/scripts/do_math/session_slots.py::GitSessionSlots.acquire",
-        ".claude/skills/do-math/scripts/do_math/session_slots.py::GitSessionSlots.release"
+        ".claude/skills/do-math/scripts/do_math/session_slots.py::SessionSlots.acquire",
+        ".claude/skills/do-math/scripts/do_math/session_slots.py::SessionSlots.release"
       ],
       "evidence": [],
-      "scope": "GitSessionSlots의 프로필 기반 예약과 로컬 Job 반환을 검사한다.",
+      "scope": "SessionSlots의 프로필 기반 예약과 로컬 Job 반환을 검사한다.",
       "gaps": [
         "현행 scheduler는 큐 순서와 가용성 필터를 사용한다. 건너뛴 최초 진입 순서와 점검 유입 중 공정성의 직접 시험이 없다."
       ],
@@ -4733,7 +4733,7 @@
             0
           ],
           "category": "b",
-          "basis": "구현된 범위: GitSessionSlots의 프로필 기반 예약과 로컬 Job 반환을 검사한다. 직접 시험의 asserts는 그 범위만 지지한다. 이 gaps 항목은 전체 요구를 재생하는 assertion/공개 연결 증거가 부족한 부분이며, 코드 부재를 입증한 판정은 아니다.",
+          "basis": "구현된 범위: SessionSlots의 프로필 기반 예약과 로컬 Job 반환을 검사한다. 직접 시험의 asserts는 그 범위만 지지한다. 이 gaps 항목은 전체 요구를 재생하는 assertion/공개 연결 증거가 부족한 부분이며, 코드 부재를 입증한 판정은 아니다.",
           "owners": [
             "PROFILES",
             "ENGINE"
@@ -5192,7 +5192,7 @@
       ],
       "rationale": "CAS 충돌시 전부 거부하는 시험은 최신 B 위에 A 변경만 재검사·병합하는 요구를 입증하지 않는다.",
       "implementation": [
-        ".claude/skills/do-math/scripts/do_math/repository.py::ResearchRepository.save",
+        ".claude/skills/do-math/scripts/do_math/repository.py::ResearchRepository.save_with_state",
         ".claude/skills/do-math/scripts/do_math/integration.py::apply_bundles"
       ],
       "evidence": [],
@@ -5700,8 +5700,8 @@
       "implementation": [
         ".claude/skills/do-math/scripts/do_math/execution_profiles.py::host_constraint",
         ".claude/skills/do-math/scripts/do_math/execution_profiles.py::with_host_resources",
-        ".claude/skills/do-math/scripts/do_math/session_slots.py::GitSessionSlots.acquire",
-        ".claude/skills/do-math/scripts/do_math/session_slots.py::GitSessionSlots.release",
+        ".claude/skills/do-math/scripts/do_math/session_slots.py::SessionSlots.acquire",
+        ".claude/skills/do-math/scripts/do_math/session_slots.py::SessionSlots.release",
         ".claude/skills/do-math/scripts/do_math/windows_job.py::WindowsJob"
       ],
       "evidence": [
@@ -5734,7 +5734,7 @@
           ]
         }
       ],
-      "scope": "GitSessionSlots의 프로필 기반 예약과 로컬 Job 반환을 검사한다.",
+      "scope": "SessionSlots의 프로필 기반 예약과 로컬 Job 반환을 검사한다.",
       "gaps": [
         "기계 작업의 host 예약, 생성 실패와 정상·비정상 종료의 단일 반환은 frozen 실제 Windows 시험에서 관찰했다. 현행 root의 공개 scheduler부터 저장까지 이어진 최종 전체 실행은 남아 있다."
       ],
@@ -5770,11 +5770,11 @@
       ],
       "rationale": "독립 가용 Y가 시작하고 오래된 X 순서가 보존되는 실제 공정성 표본은 없다.",
       "implementation": [
-        ".claude/skills/do-math/scripts/do_math/session_slots.py::GitSessionSlots.acquire",
-        ".claude/skills/do-math/scripts/do_math/session_slots.py::GitSessionSlots.release"
+        ".claude/skills/do-math/scripts/do_math/session_slots.py::SessionSlots.acquire",
+        ".claude/skills/do-math/scripts/do_math/session_slots.py::SessionSlots.release"
       ],
       "evidence": [],
-      "scope": "GitSessionSlots의 프로필 기반 예약과 로컬 Job 반환을 검사한다.",
+      "scope": "SessionSlots의 프로필 기반 예약과 로컬 Job 반환을 검사한다.",
       "gaps": [
         "독립 가용 Y가 시작하고 오래된 X 순서가 보존되는 실제 공정성 표본은 없다."
       ],
@@ -5789,7 +5789,7 @@
             0
           ],
           "category": "b",
-          "basis": "구현된 범위: GitSessionSlots의 프로필 기반 예약과 로컬 Job 반환을 검사한다. 직접 시험의 asserts는 그 범위만 지지한다. 이 gaps 항목은 전체 요구를 재생하는 assertion/공개 연결 증거가 부족한 부분이며, 코드 부재를 입증한 판정은 아니다.",
+          "basis": "구현된 범위: SessionSlots의 프로필 기반 예약과 로컬 Job 반환을 검사한다. 직접 시험의 asserts는 그 범위만 지지한다. 이 gaps 항목은 전체 요구를 재생하는 assertion/공개 연결 증거가 부족한 부분이며, 코드 부재를 입증한 판정은 아니다.",
           "owners": [
             "PROFILES",
             "ENGINE"
@@ -17520,8 +17520,8 @@
           "observations": []
         },
         {
-          "coordinate": ".claude/skills/do-math/scripts/tests/test_input_recovery.py::InputRecoveryMarkerUnitTests.test_only_pending_or_legacy_pending_retry_marker_is_active",
-          "asserts": "pending 또는 legacy-pending marker만 active retry로 읽고 resolved/failed marker는 재대기 근거로 쓰지 않는다.",
+          "coordinate": ".claude/skills/do-math/scripts/tests/test_input_recovery.py::InputRecoveryMarkerUnitTests.test_only_explicit_pending_retry_marker_is_active",
+          "asserts": "명시적인 pending marker만 active retry로 읽고 resolved/failed marker는 재대기 근거로 쓰지 않는다.",
           "boundary": [
             "current pure domain assertion coordinate",
             "no fixed compatible run attached"

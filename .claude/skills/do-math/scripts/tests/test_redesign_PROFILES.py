@@ -377,7 +377,7 @@ class ProfileTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             api.select_profile(state["execution_profiles"], action, selected, allowed_refs=[])
         self.assertEqual(api.select_profile(state["execution_profiles"], action, selected,
-                         allowed_refs=[profile["id"]])["id"], profile["id"])
+                         allowed_refs=[api.profile_ref(profile)])["id"], profile["id"])
         broken = deepcopy(state["execution_profiles"])
         broken[profile["id"]]["ai"]["model"] = "different"
         with self.assertRaises(ValueError):
@@ -614,7 +614,6 @@ class ProfileTests(unittest.TestCase):
             subprocess.run(["git", "-C", str(root), "init", "-q"], check=True)
             iid = "RI-01ARZ3NDEKTSV4RRFFQ69G5FAV"
             repository = ResearchRepository(root, iid)
-            api.register_families(repository.contract)
             instance = {**api.build_profiles(CONFIG), "feature_version": 5, "id": iid,
                         "config": CONFIG, "workspace": str(root)}
             runtime = {"feature_version": 5, "status": "ready", "executions": {}, "reservations": {}, "provider_waits": {}}
@@ -709,7 +708,6 @@ class ProfileTests(unittest.TestCase):
             with patch.object(scheduled_operator, "ResearchRepository", return_value=repo), \
                  patch("do_math.initialization.adapter_for", return_value=self.capability_adapter()), \
                  patch.object(scheduled_operator, "LIVE_INSTALLATION_ROOT", root / "live-installation", create=True), \
-                 patch.object(scheduled_operator, "register_profile_families"), \
                  patch.object(scheduled_operator.ModelRunner, "run", side_effect=model), \
                  patch.object(scheduled_operator.subprocess, "run", return_value=subprocess.CompletedProcess([], 0, "ok", "")) as verify, \
                  patch("do_math.windows_job.named_job_empty", return_value=None), \
@@ -735,7 +733,6 @@ class ProfileTests(unittest.TestCase):
             repo.save_with_state.return_value = ("capability-published", {}, {})
             repo._store._git_dir = root
             with patch.object(scheduled_operator, "ResearchRepository", return_value=repo), \
-                 patch.object(scheduled_operator, "register_profile_families"), \
                  patch("do_math.initialization.adapter_for", return_value=self.capability_adapter(supported=False)), \
                  patch.object(scheduled_operator.ModelRunner, "run") as runner:
                 result = scheduled_operator.recovery(root, "test", root,
@@ -998,7 +995,7 @@ class Audit1Tests(unittest.TestCase):
         p = next(p for p in state["execution_profiles"].values() if p["role"] == "research_preparation")
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            fitted = prepare_role_input({"action": {}, "resources": {}, 'knowledge_catalog': []}, instance=state, runtime=runtime,
+            fitted = prepare_role_input({"action": {}, "resources": {}, 'knowledge_catalog': [], 'blocked_actions': []}, instance=state, runtime=runtime,
                 role="research_preparation", profile=p, snapshot="a"*40, workspace=root, activity_id="AC-1",
                 output_schema=schema, artifact_prefix="runtime/artifacts/EX-seal")
             self.assertIsNone(fitted["overflow"])

@@ -198,8 +198,8 @@ def selected_task_ids(plan):
 
 
 def validate_plan_dispositions(plan: dict, tasks: dict, ready_ids: list[str]) -> None:
-    if 'selections' in plan or 'deferred' in plan or 'dispositions' not in plan:
-        raise ValueError('v5 plan requires one dispositions array')
+    if 'dispositions' not in plan:
+        raise ValueError('plan requires one dispositions array')
     if set(ready_ids)-set(tasks):
         raise ValueError('ready population names an unknown task')
     for field in ('dispositions','task_assessments'):

@@ -114,7 +114,7 @@ def judgment_input(runtime, application_id):
 
 def _judgment_input_hash(execution):
     # ENGINE seals the complete role context separately from the blind case.
-    return execution.get("delegation_input_sha256", execution.get("input_sha256"))
+    return execution.get("delegation_input_sha256")
 
 
 def record_judgment(runtime, application_id, output, *, execution_id, stage):

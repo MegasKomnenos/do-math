@@ -11,7 +11,6 @@ from collections.abc import Mapping
 from contextlib import AbstractContextManager
 import hashlib
 import json
-import math
 from copy import deepcopy
 import os
 from pathlib import Path
@@ -213,11 +212,16 @@ class ResearchRepository:
                     or (size is not None and len(raw) != size)):
                 raise ValueError("artifact evidence missing or hash differs: " + ref)
 
+    def load_records(self, snapshot=None):
+        """Load one validated snapshot together with its exact persisted record rows."""
+        head = self._resolve_snapshot(snapshot)
+        instance, runtime, rows = self._documents(head)
+        return head, instance, runtime, [{**row, "snapshot": head} for row in rows]
+
     def records(self, snapshot=None, *, family=None, root=None):
         """Enumerate exact persisted record bytes, including singleton authorities."""
-        head = self._resolve_snapshot(snapshot)
-        _, _, rows = self._documents(head)
-        return [{**row, "snapshot": head} for row in rows
+        _, _, _, rows = self.load_records(snapshot)
+        return [row for row in rows
                 if (family is None or row["family"] == family) and (root is None or row["root"] == root)]
 
     def read_record(self, record_id, snapshot=None):
@@ -238,16 +242,7 @@ class ResearchRepository:
         """List files below one POSIX state prefix in stable lexical order."""
         head = self._resolve_snapshot(snapshot)
         normalized_prefix = _validate_prefix(prefix)
-        raw = self._git("ls-tree", "-r", "-z", "--name-only", head).stdout.split(b"\0")
-        paths: list[str] = []
-        for raw_path in raw:
-            if not raw_path:
-                continue
-            path = raw_path.decode("utf-8")
-            self._store._validate_path(path)
-            if path.startswith(normalized_prefix):
-                paths.append(path)
-        return sorted(paths)
+        return sorted(path for path in self._store._tree_paths(head) if path.startswith(normalized_prefix))
 
     def query(
         self,
@@ -478,25 +473,6 @@ def _is_reparse(path: Path) -> bool:
         return True
     attributes = getattr(os.stat(path, follow_symlinks=False), "st_file_attributes", 0)
     return bool(attributes & _REPARSE_POINT)
-
-
-def transport_json(value):
-    """JSON transport for measured finite decimals; not canonical storage bytes."""
-    def check(item):
-        if isinstance(item, float):
-            if not math.isfinite(item):
-                raise ValueError("transport numbers must be finite")
-        elif isinstance(item, dict):
-            for key, child in item.items():
-                validate_storage_value(key)
-                check(child)
-        elif isinstance(item, list):
-            for child in item:
-                check(child)
-        else:
-            validate_storage_value(item)
-    check(value)
-    return (json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2, allow_nan=False) + "\n").encode("utf-8")
 
 
 def semantic_content_hash(value, projection=None):

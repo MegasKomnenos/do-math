@@ -184,9 +184,9 @@ class RepetitionReceiptTests(unittest.TestCase):
 
     def test_generation_time_uses_fixed_machine_observation_and_excludes_supplement(self):
         action = {'role': 'research_preparation'}
-        schema = contracts.action_schema(action, {})
+        schema = contracts.action_schema(action)
         self.assertIn('regenerate_after', schema['required'])
-        supplemental = contracts.action_schema({**action, 'assessment_targets': {}}, {})
+        supplemental = contracts.action_schema({**action, 'assessment_targets': {}})
         self.assertNotIn('regenerate_after', supplemental['properties'])
         context = {'action': action, 'observed_at': '2026-09-23T00:00:00Z',
                    'tasks': [], 'kind_definitions': {}, 'knowledge_catalog': [], 'available_input_refs': []}

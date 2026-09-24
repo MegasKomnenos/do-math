@@ -380,18 +380,3 @@ def _validate_family_record(record):
         raise ValueError("invalid identity decision")
     if family == "assessment_uses" and record["status"] not in {"active", "suspended", "withdrawn"}:
         raise ValueError("invalid assessment effect")
-
-
-def _family_references(record):
-    for field in ("formal_result_id", "exposition_id", "assessment_id", "trust_environment_id", "supersedes", "previous_assessment_id"):
-        if record.get(field):
-            yield record[field]
-    yield from record.get("dependencies", [])
-
-
-def register_storage_families(contract):
-    """Install domain validation through STORAGE's explicit registration API."""
-    for family in FAMILIES[1:]:
-        if contract.family("research", family) is None:
-            contract.register_family("research", family, validator=_validate_family_record,
-                                     references=_family_references)

@@ -166,7 +166,7 @@ class SourceCorrectionRegressionTest(unittest.TestCase):
             candidate.update(kind='observation',title=name,dependencies=[ids.get(k,k) for k in row['dependencies']])
             engine.instance,engine.runtime,ids[name]=knowledge_io.import_candidate(engine.instance,engine.runtime,candidate,source_ref='SO-paper',actor_ref='user')
         changes={'statement':'The paper prints n/m.','explanation':'The original PDF is unchanged; prior transcription reversed it.'}
-        roots=knowledge.revision_roots(engine.instance,ids['KN-reading'],changes)
+        roots=knowledge.revision_roots(engine.instance,ids['KN-reading'])
         impact=knowledge.plan_impact(engine.instance,engine.runtime,roots,[])
         engine.instance,engine.runtime=knowledge.revise_knowledge(engine.instance,engine.runtime,ids['KN-reading'],changes,
             reason='PDF layout audit reads n/m.',actor_ref='EX-correction',declared_impact=impact['computed_impact'])

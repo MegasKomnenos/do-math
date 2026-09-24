@@ -224,7 +224,7 @@ class FormalBoundaryTests(unittest.TestCase):
         e._enqueue = Mock()
         kid = ids['a']
         changes = {'summary': 'Clarified summary'}
-        impact = declaration(e.instance, e.runtime, k.revision_roots(e.instance, kid, changes))
+        impact = declaration(e.instance, e.runtime, k.revision_roots(e.instance, kid))
         e._knowledge_control({'operation': 'revise', 'id': kid, 'changes': changes,
                               'reason': 'clarify', 'declared_impact': impact}, 'UC-fixture')
         replacement = next(r for r in e.instance['knowledge'].values() if r.get('supersedes') == kid)

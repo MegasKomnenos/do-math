@@ -194,7 +194,7 @@ class AcceptanceTests(unittest.TestCase):
                 from do_math.knowledge import plan_impact, revision_roots
                 changes = {"statement": "The result is two."}
                 impact = plan_impact(engine.instance, engine.runtime,
-                    revision_roots(engine.instance, kid, changes), [])
+                    revision_roots(engine.instance, kid), [])
                 request_id = control(self.fixture.repo, engine.instance["id"], "knowledge", config={
                     "operation": "revise", "id": kid, "changes": changes,
                     "declared_impact": impact["computed_impact"], "reason": "Correct a prerequisite result."})

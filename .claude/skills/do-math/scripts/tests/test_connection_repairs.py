@@ -248,8 +248,7 @@ class HostConfigurationTests(unittest.TestCase):
         from research_fixtures import candidate
         with tempfile.TemporaryDirectory() as directory:
             config = {**deepcopy(DEFAULT_CONFIG), 'scholarly_enabled': False}
-            instance, runtime = initialize_state(instance_id='RI-host-change', goal='Test profiles', goal_kind='research',
-                workspace=Path(directory), config=config, source_input='Test profiles', created_at='2026-09-23T00:00:00Z')
+            instance, runtime = initialize_state(instance_id='RI-host-change', goal='Test profiles', workspace=Path(directory), config=config, source_input='Test profiles', created_at='2026-09-23T00:00:00Z')
             instance.update(execution_profiles.build_profiles(config))
             old = deepcopy(instance['role_profile_refs']['maintenance'][0])
             wire = candidate()
@@ -322,7 +321,7 @@ class PartialCaptureTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             workspace = Path(directory)
             visible = {**context(), 'execution_id': 'EX-partial'}
-            schema = contracts.action_schema(visible['action'], visible['kind_definitions'])
+            schema = contracts.action_schema(visible['action'])
             submission.install_tools(workspace, visible, schema, None)
             output = response()
             output['knowledge'][1]['dependencies'] = ['KN-not-supplied']
@@ -381,7 +380,7 @@ class PartialCaptureGitTests(unittest.TestCase):
             'tasks': [deepcopy(task)], 'sources': [], 'knowledge_catalog': [],
             'kind_definitions': knowledge_io.catalog_definitions(self.engine.instance),
             'grants': [deepcopy(self.engine.instance['grants'][action['grant_id']])]}
-        self.schema = contracts.action_schema(action, self.context['kind_definitions'])
+        self.schema = contracts.action_schema(action)
         submission.install_tools(self.workspace, self.context, self.schema, None)
         self.engine._save({'runtime/artifacts/BA-partial-input/input/submission/context.json': canonical_json(self.context),
                            'runtime/artifacts/BA-partial-input/schema.json': canonical_json(self.schema)})

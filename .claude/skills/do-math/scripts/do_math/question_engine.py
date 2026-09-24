@@ -54,8 +54,6 @@ class QuestionEngineMixin:
                       f"runtime/artifacts/{execution['artifact_bundle']}/output.json")
         routes = {row["question_index"]: row for row in execution.get("extensions", {}).get("question_routes", [])}
         default_owner = "operations" if action["role"] in {"operational_review", "maintenance"} else "research"
-        if action["role"] == "intent_interpretation" and output.get("needs_clarification"):
-            default_owner = "user"
         for index, text in enumerate(output.get("questions", [])):
             route = routes.get(index, {})
             owner = route.get("owner", default_owner)

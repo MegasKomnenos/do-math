@@ -132,6 +132,11 @@ class ContractCheckTests(unittest.TestCase):
         entry = {"task_id": "TK-window", "revision": 2, "boundary": "k <= T - s", "independent_of_next_revision": False}
         self.assertIn("under revision", self.issues(checks(sibling_boundaries=[entry])))
 
+    def test_a_revision_request_on_the_sibling_counts_as_under_revision(self):
+        self.sibling(revision_requested={"revision": 2, "source": "AC-review", "reason": "The sibling boundary is under revision"})
+        entry = {"task_id": "TK-window", "revision": 2, "boundary": "k <= T - s", "independent_of_next_revision": False}
+        self.assertIn("under revision", self.issues(checks(sibling_boundaries=[entry])))
+
     def test_a_cited_record_must_exist(self):
         self.item["scope"]["included"] = ["Apply KN-missing to the given inputs."]
         self.assertIn("KN-missing", self.issues(checks()))

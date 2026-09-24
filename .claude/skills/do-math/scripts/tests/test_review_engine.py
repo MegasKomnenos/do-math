@@ -726,7 +726,7 @@ class ReviewEngineTests(unittest.TestCase):
         application = delegations.prepare_application(engine.instance, engine.runtime, 'DG', case)
         for eid, stage in [('INTERPRET', 'interpret'), ('CHECK', 'check')]:
             engine.runtime['executions'][eid] = {'id': eid, 'role': 'intent_interpretation',
-                                                'input_sha256': application['input_sha256']}
+                                                'delegation_input_sha256': application['input_sha256']}
             delegations.record_judgment(engine.runtime, application['id'],
                 {'input_sha256': application['input_sha256'], 'decision': 'within_scope', 'reason': 'Same authorized recovery'},
                 execution_id=eid, stage=stage)

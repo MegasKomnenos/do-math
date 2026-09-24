@@ -100,17 +100,14 @@ def load_request(path: Path) -> dict[str, Any]:
         raise ValueError("codex_path must be one NUL-free executable string")
     if "codex_argv" in value:
         raise ValueError("codex_argv is forbidden; production accepts one executable only")
-    unknown = set(value) - set(required) - {"sandbox", "filesystem", "windows_sandbox", "output_schema_path", "scholarly_server", "execution_id", "profile_ref", "control_binding", "resource_limits"}
+    unknown = set(value) - set(required) - {"sandbox", "windows_sandbox", "output_schema_path", "scholarly_server", "execution_id", "profile_ref", "control_binding", "resource_limits"}
     if unknown:
         raise ValueError("unknown worker request fields: " + ", ".join(sorted(unknown)))
     validate_execution_binding(value)
     if not isinstance(value["effort"], str) or value["effort"] not in _EFFORTS or value["approval_policy"] != "never":
         raise ValueError("unsupported effort or approval policy")
-    if "filesystem" in value:
-        if "sandbox" in value:
-            raise ValueError("filesystem and sandbox are mutually exclusive")
-    elif not isinstance(value.get("sandbox"), str) or value["sandbox"] not in _SANDBOXES:
-        raise ValueError("a supported sandbox or filesystem profile is required")
+    if not isinstance(value.get("sandbox"), str) or value["sandbox"] not in _SANDBOXES:
+        raise ValueError("a supported sandbox is required")
     if not isinstance(value["model"], str) or not value["model"]:
         raise ValueError("model must be non-empty")
     timeout = value["max_runtime_seconds"]
@@ -127,26 +124,6 @@ def load_request(path: Path) -> dict[str, Any]:
         raise ValueError("windows_sandbox must be elevated or unelevated when present")
     if "scholarly_server" in value and value["scholarly_server"] is not None:
         value["scholarly_server"] = validate_scholarly_server(value["scholarly_server"])
-    if "filesystem" in value:
-        fs = value["filesystem"]
-        if value.get("windows_sandbox") != "elevated" or not isinstance(fs, dict):
-            raise ValueError("filesystem profile requires elevated windows sandbox")
-        if set(fs) != {"read_roots", "write_roots", "deny_roots"}:
-            raise ValueError("filesystem has exactly read_roots, write_roots, deny_roots")
-        seen = set()
-        for field in ("read_roots", "write_roots", "deny_roots"):
-            roots = fs.get(field, [])
-            if not isinstance(roots, list): raise ValueError(field + " must be a list")
-            for root in roots:
-                if (not isinstance(root, str) or "\x00" in root or any(char in root for char in "*?[]")
-                        or not Path(root).is_absolute()):
-                    raise ValueError("filesystem roots must be distinct absolute paths")
-                key = str(Path(root).resolve()).casefold()
-                if key in seen:
-                    raise ValueError("filesystem roots must be distinct absolute paths")
-                seen.add(key)
-        if set(x.casefold() for x in fs.get("read_roots", [])) & set(x.casefold() for x in fs.get("write_roots", [])):
-            raise ValueError("read and write roots overlap")
     return value
 
 
@@ -174,15 +151,7 @@ def build_argv(request: Mapping[str, Any]) -> list[str]:
         args = [*server["args"], "--data-dir", data_dir]
         argv.extend(["--config", "mcp_servers.scholarly.command=" + json.dumps(server["command"], ensure_ascii=False),
                      "--config", "mcp_servers.scholarly.args=" + json.dumps(args, ensure_ascii=False)])
-    if "filesystem" in request:
-        fs = request["filesystem"]; entries = {'":minimal"': '"read"'}
-        for field, mode in (("read_roots", "read"), ("write_roots", "write"), ("deny_roots", "deny")):
-            for root in fs.get(field, []): entries[json.dumps(Path(root).resolve().as_posix(), ensure_ascii=False)] = '"' + mode + '"'
-        inline = "{" + ",".join(key + "=" + value for key, value in entries.items()) + "}"
-        argv.extend(["--config", 'default_permissions="do_math"', "--config", "permissions.do_math.filesystem=" + inline,
-                     "--config", "permissions.do_math.network.enabled=false"])
-    else:
-        argv.extend(["--sandbox", request["sandbox"]])
+    argv.extend(["--sandbox", request["sandbox"]])
     return [*argv, "-"]
 
 

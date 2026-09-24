@@ -18,8 +18,7 @@ from test_categories import test_group
 class ObservationAdmissionTests(unittest.TestCase):
     def test_default_bootstrap_reports_exact_missing_settings_before_activation(self):
         with tempfile.TemporaryDirectory() as root:
-            instance, runtime = initialize_state(instance_id='RI-default', goal='A goal', goal_kind='research',
-                workspace=root, config=deepcopy(DEFAULT_CONFIG), source_input='Original request')
+            instance, runtime = initialize_state(instance_id='RI-default', goal='A goal', workspace=root, config=deepcopy(DEFAULT_CONFIG), source_input='Original request')
             instance.update(build_profiles(instance['config']))
             instance['lifecycle']['adoption']['profile_refs'] = [profile_ref(p) for p in instance['execution_profiles'].values()]
             result = activation_requirements(instance, runtime)

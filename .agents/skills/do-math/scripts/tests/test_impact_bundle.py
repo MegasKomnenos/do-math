@@ -41,6 +41,9 @@ class ImpactBundleTests(unittest.TestCase):
         )
 
     def _seal_review(self, request, *, used_sources=()):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        root = Path(temporary.name)
         output = self.review_output(request)
         output["used_sources"] = list(used_sources)
         action = {
@@ -49,12 +52,17 @@ class ImpactBundleTests(unittest.TestCase):
             "stage": "impact_review",
             "input_basis": {"impact_review": request},
         }
-        fixed = {"action": action, "execution_id": "EX-review"}
+        fixed = {"action": action, "execution_id": "EX-review",
+                 "knowledge_catalog": deepcopy(list(self.instance["knowledge"].values()))}
         review_bundle = next(integration.split_bundles(output, {}, fixed))
         output_ref = "runtime/artifacts/BA-review-output/output.json"
         extensions_ref = "runtime/artifacts/BA-review-output/extensions.json"
         check_ref = "runtime/artifacts/BA-review-output/check.json"
-        output_raw, extensions_raw, check_raw = canonical_json(output), canonical_json({}), canonical_json({"passed": True})
+        schema = contracts.action_schema(action)
+        check = submission.check_submission(output, schema, fixed, {}, root, mode="receiver",
+            execution_id="EX-review", tool_sha256="a" * 64)
+        self.assertTrue(check["passed"], check["issues"])
+        output_raw, extensions_raw, check_raw = canonical_json(output), canonical_json({}), canonical_json(check)
         artifacts = {output_ref: output_raw, extensions_ref: extensions_raw, check_ref: check_raw}
         self.runtime["executions"]["EX-review"] = {
             "id": "EX-review",
@@ -64,7 +72,8 @@ class ImpactBundleTests(unittest.TestCase):
             "outcome": "output_accepted",
             "action": action,
             "input_bundle": "BA-review-input",
-            "submission_intent": {"output_ref": output_ref, "extensions_ref": extensions_ref,
+            "submission_intent": {"schema_ref": contracts.schema_reference(schema),
+                "output_ref": output_ref, "extensions_ref": extensions_ref,
                 "check_ref": check_ref, "output_sha256": hashlib.sha256(output_raw).hexdigest(),
                 "extensions_sha256": hashlib.sha256(extensions_raw).hexdigest()},
             "submission_receipt": {"execution_id": "EX-review", "state": "accepted",
@@ -82,9 +91,6 @@ class ImpactBundleTests(unittest.TestCase):
                 ),
             }
         }
-        temporary = tempfile.TemporaryDirectory()
-        self.addCleanup(temporary.cleanup)
-        root = Path(temporary.name)
         subprocess.run(["git", "-C", str(root), "init", "-q"], check=True)
         store = GitStateStore(root, "RI-01ARZ3NDEKTSV4RRFFQ69G5FAV")
         head = store.publish(
@@ -320,7 +326,7 @@ class ImpactBundleTests(unittest.TestCase):
             "reason": "Correct the record",
             "impact_set": [],
         }
-        schema = submission.extension_schema({"role": "research_work"}, {})
+        schema = submission.extension_schema({"role": "research_work"})
         self.assertEqual(
             [],
             list(jsonschema.Draft202012Validator(schema).iter_errors({"knowledge_changes": [row]})),

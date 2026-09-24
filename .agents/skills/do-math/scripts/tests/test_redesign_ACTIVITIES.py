@@ -235,12 +235,13 @@ class ProviderAndParallelTests(unittest.TestCase):
             def __init__(self):
                 self._slots = Slots()
                 self.runtime = {"queue": [], "status": "ready"}
-                self.instance = {"config": {"model": "gpt-5.6-terra", "provider_retry_initial_seconds": 20,
+                self.instance = {"config": {"provider_retry_initial_seconds": 20,
                                             "provider_retry_max_seconds": 60}}
             def _remove_action(self, action):
                 self.runtime["queue"] = [item for item in self.runtime["queue"] if item is not action]
         engine = Harness()
-        action = {"id": "AC-1", "model_selection": "gpt-5.6-terra"}
+        action = {"id": "AC-1", "model_selection": {"tier": "low", "model": "gpt-5.6-terra",
+                  "assessment": None, "reason": "Provider-admission fixture assignment"}}
         profile, execution = {"id": "EP-1"}, {"id": "EX-1"}
         self.assertFalse(engine._provider_admit(action, "EX-1", "work", "gpt-5.6-terra", profile=profile, execution=execution))
         self.assertEqual(action["dispatch_wait"]["activity_wait"]["kind"], "provider_admission")
@@ -257,6 +258,9 @@ class ProviderAndParallelTests(unittest.TestCase):
             "effort": "medium",
             "operator_effort": "medium",
             "operator_timeout_seconds": 60,
+            "scholarly_enabled": True,
+            "scholarly_server": None,
+            "claude_only_assigned_model": False,
             "tier_models": {tier: "gpt-5.6-terra" for tier in TIERS},
             "session_limits": {
                 "work": {"gpt-5.6-terra": 1},

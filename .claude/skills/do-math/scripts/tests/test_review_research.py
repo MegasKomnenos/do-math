@@ -220,7 +220,7 @@ class ReviewResearchEngineTests(PurposeHarness):
         old_cycle_id = item['review_cycle_id']
         from do_math import knowledge
         changes = {'explanation': EXPLANATION + ' The revised statement explicitly retains that domain.'}
-        roots = knowledge.revision_roots(engine.instance, item['id'], changes)
+        roots = knowledge.revision_roots(engine.instance, item['id'])
         send_control(engine, 'knowledge', config={'operation': 'revise', 'id': item['id'], 'changes': changes,
             'declared_impact': knowledge.plan_impact(engine.instance, engine.runtime, roots, [])['computed_impact'],
             'reason': 'Explicit source revision'})
@@ -240,7 +240,7 @@ class ReviewResearchEngineTests(PurposeHarness):
         item = next(iter(engine.instance['knowledge'].values()))
         from do_math import knowledge
         changes = {'explanation': EXPLANATION + ' This revision adds an explicit domain reminder.'}
-        roots = knowledge.revision_roots(engine.instance, item['id'], changes)
+        roots = knowledge.revision_roots(engine.instance, item['id'])
         send_control(engine, 'knowledge', config={'operation': 'revise', 'id': item['id'], 'changes': changes,
             'declared_impact': knowledge.plan_impact(engine.instance, engine.runtime, roots, [])['computed_impact'],
             'reason': 'New proposal revision'})

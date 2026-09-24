@@ -339,9 +339,6 @@ class ReviewEngineMixin:
                 return {**outcome, 'disposition': 'review_scope_unaffordable', 'minimum_required': required}
         if action.get('role') != 'identity_review' and (len(used) + 1 + len(reserved) > limit):
             return {**outcome, 'disposition': 'review_followup_reserved'}
-        if cycle.get('owner_activity_id') is None:
-            cycle['owner_activity_id'] = owner
-            cycle['review_input_basis'] = capture_review_input_basis(cycle)
         activity = self.runtime.get('activities', {}).get(owner)
         if activity is not None:
             activity['execution_limit'] = limit
@@ -447,7 +444,7 @@ class ReviewEngineMixin:
         if previous is not None and previous.get('knowledge_id') != knowledge_id:
             # A revised proposal may have a new knowledge ID, but the explicit
             # revision relation must identify the source item.
-            if item.get('supersedes', item.get('revision_of')) != previous.get('knowledge_id'):
+            if item.get('supersedes') != previous.get('knowledge_id'):
                 raise ValueError('revision must name the previous knowledge item')
         config = self.instance['config']
         policy = self._adopted_review_policy()

@@ -26,7 +26,7 @@ class AdvancedCliTests(unittest.TestCase):
         configuration.write_text(json.dumps({"operator_enabled": False}), encoding="utf-8")
         init = self.cli("init", "--create-repository", "--repository", str(self.repo),
                         "--workspace", str(self.workspace), "--goal", "Original goal",
-                        "--goal-kind", "mathematical", "--config-file", str(configuration))
+                        "--config-file", str(configuration))
         self.assertEqual(init[0], 0, init)
         self.instance_id = init[1]["instance_id"]
 

@@ -222,7 +222,7 @@ class CurrentnessTests(ActiveStateHarness):
         rules = [{'id': 'steps', 'operator': 'counter_gte', 'subject': {'kind': 'counter', 'id': 'attempts'},
                   'basis': {'source': 'execution_events', 'unit': 'count'}, 'threshold': 2,
                   'repeat_interval': 2, 'required_evidence': ['EV-iteration']}]
-        tracker = ObservationTracker('EX', folder, {'observation_contract_version': 5,
+        tracker = ObservationTracker('EX', folder, {
             'observation_rules': rules, 'self_check_response_window_seconds': 60}, clock=lambda: clock[0])
         first = next(row for row in tracker.observe({'type': 'tick', 'counters': {'attempts': 2}})
                      if row['kind'] == 'self_check_due')

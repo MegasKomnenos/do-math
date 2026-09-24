@@ -230,6 +230,16 @@ def cleanup(workspace, candidates, *, current_state=None, read_artifact=None):
     return {'deleted': deleted, 'failures': failures, 'status': 'degraded' if failures else 'healthy'}
 
 
+def record_cleanup_interruption(runtime, execution_ids, execution_id, reason, *, history_start):
+    """Name unfinished paths without undoing deletions recorded in this attempt."""
+    completed = {path for event in runtime['history'][history_start:]
+                 if event.get('kind') == 'maintenance_cleanup' and event.get('execution_id') == execution_id
+                 for path in event.get('result', {}).get('deleted', [])}
+    runtime['history'].append({'kind': 'maintenance_cleanup_failed', 'execution_id': execution_id,
+        'paths': ['runs/' + identifier for identifier in execution_ids if 'runs/' + identifier not in completed],
+        'completed_paths': sorted(completed), 'reason': reason, 'next_owner': 'maintenance'})
+
+
 def pending_cleanup_failures(runtime):
     """Derive unresolved path failures from the actual maintenance history.
 
@@ -241,8 +251,9 @@ def pending_cleanup_failures(runtime):
     for index, event in enumerate(runtime.get('history', [])):
         if event.get('kind') == 'maintenance_cleanup_failed':
             reference = 'runtime/history/' + str(index)
-            pending[reference] = {'path': None, 'error': event.get('reason'), 'status': 'degraded',
-                'next_owner': 'maintenance', 'execution_id': event.get('execution_id'), 'evidence_ref': reference}
+            for path in event['paths']:
+                pending[path] = {'path': path, 'error': event.get('reason'), 'status': 'degraded',
+                    'next_owner': 'maintenance', 'execution_id': event.get('execution_id'), 'evidence_ref': reference}
             continue
         if event.get('kind') != 'maintenance_cleanup':
             continue

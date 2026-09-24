@@ -80,6 +80,7 @@ class GitStateStore:
         if self.object_format not in {"sha1", "sha256"}:
             raise GitStateStoreError(f"unsupported Git object format: {self.object_format!r}")
         self.oid_length = 40 if self.object_format == "sha1" else 64
+        self._listed: tuple[str, frozenset[str]] | None = None
 
     def read_snapshot(self) -> StateSnapshot:
         """Return the current state commit and its research/runtime tree OIDs."""
@@ -287,9 +288,6 @@ class GitStateStore:
             raise GitStateStoreError("state ref must point to a commit")
         return oid
 
-    def _subtree_oid(self, commit_or_tree: str, name: str) -> str:
-        return self._subtree_oids(commit_or_tree, (name,))[name]
-
     def _subtree_oids(self, commit_or_tree: str, names: tuple[str, ...]) -> dict[str, str]:
         """Resolve and type-check required trees in one immutable-object read."""
         self._validate_oid(commit_or_tree)
@@ -315,7 +313,12 @@ class GitStateStore:
             trees[name] = oid
         return trees
 
-    def _tree_paths(self, commit: str) -> set[str]:
+    def _tree_paths(self, commit: str) -> frozenset[str]:
+        self._validate_oid(commit)
+        self._repository_boundary.check()
+        self._git_boundary.check()
+        if self._listed is not None and self._listed[0] == commit:
+            return self._listed[1]
         raw_paths = self._git("ls-tree", "-r", "-z", "--name-only", commit).stdout.split(b"\0")
         paths: set[str] = set()
         for raw_path in raw_paths:
@@ -327,7 +330,8 @@ class GitStateStore:
                 raise GitStateStoreError("existing state contains a non-UTF-8 path") from error
             self._validate_path(path)
             paths.add(path)
-        return paths
+        self._listed = (commit, frozenset(paths))
+        return self._listed[1]
 
     def _validate_changes(self, changes: Mapping[str, bytes | None]) -> dict[str, bytes | None]:
         if not isinstance(changes, Mapping):

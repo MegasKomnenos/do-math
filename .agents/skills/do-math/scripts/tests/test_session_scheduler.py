@@ -464,7 +464,7 @@ class ParallelEngineTests(unittest.TestCase):
                 from research_fixtures import seal_response
                 seal_response(result["output"], context, arguments["workspace"])
                 return result
-        result = initialize(self.repo, goal="bounded research", goal_kind="research", workspace=self.root / "work",
+        result = initialize(self.repo, goal="bounded research", workspace=self.root / "work",
                             config={"operator_enabled": False, "scholarly_enabled": False, "lean_command": ["test-lean"]})
         engine = ResearchEngine(self.repo, result["instance_id"], runner=AssessedRunner())
         activate(engine, self.root, initialization_runner=ScriptedRunner())

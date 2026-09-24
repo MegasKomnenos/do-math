@@ -57,9 +57,6 @@ CONTRACT = STATE_CONTRACT_ID
 
 def _repository(repository: Path, instance_id: str) -> ResearchRepository:
     contract = default_state_contract()
-    knowledge_records.register_storage_families(contract)
-    execution_profiles.register_families(contract)
-    integration.register_families(contract)
     return ResearchRepository(repository, instance_id, contract=contract)
 
 
@@ -201,10 +198,10 @@ def validate_config(config: dict) -> None:
 
 
 def initialize(repository: Path, *, goal: str, workspace: Path, config: dict | None = None,
-               title: str = "", goal_kind: str = "mathematical", policies: str = "",
+               title: str = "", policies: str = "",
                instance_id: str | None = None, sources: list[Path] | None = None) -> dict:
-    if not goal.strip() or goal_kind not in {"mathematical", "research"}:
-        raise ValueError("a goal and mathematical/research goal_kind are required")
+    if not goal.strip():
+        raise ValueError("a nonempty mathematical goal is required")
     settings = deepcopy(DEFAULT_CONFIG)
     settings.update(config or {})
     validate_config(settings)
@@ -215,7 +212,7 @@ def initialize(repository: Path, *, goal: str, workspace: Path, config: dict | N
     workspace = workspace.resolve()
     workspace.mkdir(parents=True, exist_ok=True)
     instance, runtime = initialization.initialize_state(instance_id=instance_id, goal=goal,
-        goal_kind=goal_kind, workspace=workspace, config=settings, source_input=goal,
+        workspace=workspace, config=settings, source_input=goal,
         title=title, policies=policies, created_at=now())
     from .governance_engine import bind_host_configuration
     settings = bind_host_configuration(instance, settings, origin='user')
@@ -454,8 +451,8 @@ def query_records(repository: Path, instance_id: str, *, snapshot: str | None = 
         except (KeyError, UnicodeError, json.JSONDecodeError, binascii.Error) as error:
             raise ValueError("invalid cursor") from error
     store = _repository(repository, instance_id)
-    head, instance, runtime = store.load(snapshot)
-    descriptors = {row["id"]: row for row in store.records(head) if row["id"]}
+    head, instance, runtime, rows = store.load_records(snapshot)
+    descriptors = {row["id"]: row for row in rows if row["id"]}
     records = sorted((_query_record(row) for row in descriptors.values()), key=lambda row: row["id"])
     if kind:
         records = [r for r in records if r["family"] == kind or r.get("kind") == kind]
@@ -550,9 +547,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         allowed = self.instance.get("role_profile_refs", {}).get(action["role"])
         task = self.runtime["tasks"].get(action.get("target"))
         if task and action["role"] in {"research_work", "supplemental_research"}:
-            task_refs = task.get("profile_refs", [])
-            allowed = [execution_profiles.profile_ref(profiles[ref]) if isinstance(ref, str) else ref
-                       for ref in task_refs]
+            allowed = task.get("profile_refs", [])
         profile = execution_profiles.select_profile(profiles, action, selection, allowed_refs=allowed)
         action["profile_ref"] = execution_profiles.profile_ref(profile)
         action.update(actor_kind=profile["actor_kind"], budget_kind=profile["budget_kind"])
@@ -696,10 +691,14 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 condition={"action_ids": [row["action"]["id"] for row in waiting]},
                 next_owner=waiting[0].get("next_owner", "engine"), at=now())
             return
+        preserved = [row for row in activity['unresolved'] if isinstance(row, dict)
+                     and row.get('reason') == 'goal_completed_before_dispatch']
+        followups = [row for row in activity['followups'] if isinstance(row, dict)
+                     and row.get('reason') == 'goal_completed_before_dispatch']
+        failed = ([] if execution["outcome"] == "output_accepted" or execution.get("formal_status") == "verified"
+                  else [{"execution_id": execution_id, "reason": execution.get("error") or execution["outcome"]}])
         activities.finish_activity(self.runtime, aid, result_refs=activity["result_refs"],
-            unresolved=[] if execution["outcome"] == "output_accepted" or execution.get("formal_status") == "verified"
-                          else [{"execution_id": execution_id, "reason": execution.get("error") or execution["outcome"]}],
-            followups=[], at=now())
+            unresolved=[*preserved, *failed], followups=followups, at=now())
 
     def _render_prompt(self, role: str, context: dict, **kwargs) -> str:
         return render_prompt(role, context, documents=self._documents[role], **kwargs)
@@ -811,9 +810,9 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         self.head, self.instance, self.runtime = self.store.save_with_state(
             self.head, self.instance, self.runtime, artifacts=artifacts)
         self._saved_state = self._state_signature()
-        for slots in (getattr(self, "_slots", None), getattr(self, "_classic_provider_slots", None)):
-            if slots is not None and hasattr(slots, "runtime"):
-                slots.runtime, slots.instance = self.runtime, self.instance
+        slots = getattr(self, "_slots", None)
+        if slots is not None and hasattr(slots, "runtime"):
+            slots.runtime, slots.instance = self.runtime, self.instance
 
     def _record_control_result(self, request, *, rejected=False, reason=None, **details):
         self.runtime["history"].append({"kind": "rejected_user_control" if rejected else "user_control",
@@ -892,7 +891,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                         self.instance, self.runtime = knowledge.suspend_for_source_change(self.instance, self.runtime, kid,
                             source_name=spec["name"], reason="Required source content changed: " + spec["name"], actor_ref=request["id"])
                 self._invalidate_goal_currentness()
-                if self.runtime["status"] in {"waiting", "budget_exhausted", "capacity_waiting"}: self.runtime["status"] = "ready"
+                if self.runtime["status"] in {"waiting", "capacity_waiting"}: self.runtime["status"] = "ready"
                 self.runtime["processed_controls"].append(request["id"])
                 self._record_control_result(request, source_id=entry["id"])
                 self._lifecycle_event("source_imported", target=entry["id"], source_ref=request["id"])
@@ -978,7 +977,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 if role == "maintenance" and "cleanup_execution_ids" in request["config"]:
                     requested["cleanup_execution_ids"] = deepcopy(request["config"]["cleanup_execution_ids"])
                 self._enqueue(requested.pop("role"), requested.pop("target", None), front=False, **requested)
-                if self.runtime["status"] in {"waiting", "budget_exhausted", "capacity_waiting"}:
+                if self.runtime["status"] in {"waiting", "capacity_waiting"}:
                     self.runtime["status"] = "ready"
             else:
                 raise ValueError("unsupported control action")
@@ -1440,9 +1439,9 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
     def status(self, snapshot=None) -> dict:
         self.head, self.instance, self.runtime = self.store.load(snapshot)
         self._saved_state = self._state_signature()
-        for slots in (getattr(self, "_slots", None), getattr(self, "_classic_provider_slots", None)):
-            if slots is not None and hasattr(slots, "runtime"):
-                slots.runtime, slots.instance = self.runtime, self.instance
+        slots = getattr(self, "_slots", None)
+        if slots is not None and hasattr(slots, "runtime"):
+            slots.runtime, slots.instance = self.runtime, self.instance
         executions = list(self.runtime["executions"].values())
         dispatch_waits = reporting.dispatch_waits(self.runtime)
         evaluation_context = self._evaluation_context()
@@ -1508,9 +1507,6 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             return self._run_executor(max_steps=max_steps, watch=watch)
         finally:
             self._executor_running = False
-            if getattr(self, "_classic_provider_slots", None) is not None:
-                self._classic_provider_slots.close()
-                self._classic_provider_slots = None
 
     def _run_executor(self, *, max_steps: int | None = None, watch: bool = False) -> dict:
         if max_steps is not None and max_steps < 1:
@@ -1770,7 +1766,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                         restored.append({**file, "local_path": path.relative_to(workspace).as_posix()})
                     result["output_files"] = restored
         governance_input = self._governance()
-        context = {"snapshot": self.head, "execution_id": execution_id, "workspace": str(workspace.resolve()), "goal": governance_input["goal"], "goal_kind": governance_input["goal_kind"],
+        context = {"snapshot": self.head, "execution_id": execution_id, "workspace": str(workspace.resolve()), "goal": governance_input["goal"],
                    "policies": governance_input["policies"], "governance": governance_input, "action": action, "task": task,
                    "tasks": task_views, "knowledge_catalog": catalog, "implementation_documents": implementation_documents,
                    "relations": self.instance["relations"], "sources": sources,
@@ -1823,6 +1819,9 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                                              else academic.current_requirements(self.instance))
         context["academic_phase"] = "postsolution" if self.instance["goal_status"] == "mathematically_solved" else "deferred_until_goal_solved"
         context["kind_definitions"] = knowledge_io.catalog_definitions(self.instance)
+        if action["role"] in submission.EXTENSION_ROLES["kind_definitions"] and not action.get("review_cycle_id"):
+            # Installed inactive frames for proposing relation kinds; never usable kinds.
+            context["relation_templates"] = knowledge_io.relation_templates()
         if action.get("kind_definition_id"):
             definition = self.instance["kind_definitions"][action["kind_definition_id"]]
             if integration.digest(definition) != action["kind_definition_sha256"]:
@@ -1867,13 +1866,10 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         if action["role"] == "identity_review":
             context.pop("tasks")
         if action["role"] == "identity_review":
-            if action.get("review_cycle_id"):
-                prepared = self._prepare_review_context(action, workspace, sources=sources)
-                if prepared["disposition"] != "ready":
-                    raise ReviewPreparationDeferred(prepared)
-                context["role_review"] = prepared["context"]
-            else:
-                context["proposal"] = knowledge_records.proposal_view(self.instance, target)
+            prepared = self._prepare_review_context(action, workspace, sources=sources)
+            if prepared["disposition"] != "ready":
+                raise ReviewPreparationDeferred(prepared)
+            context["role_review"] = prepared["context"]
         if action["role"] == "goal_audit":
             context["eligible_knowledge"] = []
             for kid, record in self.instance["knowledge"].items():
@@ -2037,8 +2033,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
     def _planning_history(self, role: str, workspace: Path) -> list[dict]:
         """Keep rejected and incomplete submissions readable after later events."""
         history = []
-        references = {e["id"]: e.get("result_ref")
-                      or f"runtime/artifacts/{e['artifact_bundle']}/result.json"
+        references = {e["id"]: e["result_ref"]
                       for e in self.runtime["executions"].values()
                       if e.get("role") == role and e.get("status") == "ended" and e.get("artifact_bundle")}
         self._preparation_checkpoint()
@@ -2075,7 +2070,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         elif action["role"] == "identity_review" and action.get("review_cycle_id"):
             schema = self._review_schema(action)
         elif action.get("delegation_application_id"):
-            schema = action_schema({"role": "maintenance"}, knowledge_io.catalog_definitions(self.instance))
+            schema = action_schema({"role": "maintenance"})
             schema["properties"].pop("report"); schema["properties"].pop("remaining_work")
             schema["required"] = [key for key in schema["required"] if key not in {"report", "remaining_work"}]
             schema["properties"]["delegation_judgment"] = {"type": "object", "additionalProperties": False,
@@ -2086,11 +2081,11 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         elif action["role"] == "intent_interpretation":
             schema = governance.interpretation_schema(action.get("stage", "interpret"))
         else:
-            schema = action_schema(action, knowledge_io.catalog_definitions(self.instance))
+            schema = action_schema(action)
         if action["role"] == "operational_review":
             schema = deepcopy(schema)
             schema["properties"]["task_assessments"] = deepcopy(action_schema(
-                {"role": "research_plan"}, knowledge_io.catalog_definitions(self.instance))["properties"]["task_assessments"])
+                {"role": "research_plan"})["properties"]["task_assessments"])
             schema.setdefault("allOf", []).append({"if": {"properties": {"disposition": {"properties": {"kind": {"const": "task_disposition"}}}}},
                 "then": {"required": ["task_assessments"], "properties": {"task_assessments": {"minItems": 1, "maxItems": 1}}}})
         if action["role"] == "maintenance" and action.get("kind_definition_id"):
@@ -2419,11 +2414,12 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                         "execution_id": execution_id, "reason": str(error), "next_owner": "engine"})
         if received["status"] == "accepted" and action["role"] == "maintenance" and action.get("cleanup_execution_ids"):
             self._save()
+            cleanup_history_start = len(self.runtime['history'])
             try:
                 self._maintenance_cleanup(action, execution_id)
             except (ValueError, OSError) as error:
-                self.runtime["history"].append({"kind": "maintenance_cleanup_failed", "execution_id": execution_id,
-                    "reason": str(error), "next_owner": "maintenance"})
+                retention.record_cleanup_interruption(self.runtime, action['cleanup_execution_ids'],
+                    execution_id, str(error), history_start=cleanup_history_start)
         if self.runtime["status"] == "running":
             self.runtime["status"] = "ready"
         return received
@@ -2813,15 +2809,12 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                     self.runtime.setdefault("observation_facts", {})[observed["id"]] = persistent_record(observed)
                 elif kind == "self_check_due":
                     self_checks.append(deepcopy(observed))
-                elif kind in {"observation_rules", "checkpoint"}:
+                elif kind == "checkpoint":
                     ref = f"runtime/artifacts/{new_id('BA')}/{kind}.json"
                     record = persistent_record(observed, artifact_ref=ref)
                     artifacts[ref] = observed["raw"]
-                    if kind == "checkpoint":
-                        record["kind"] = "worker_checkpoint"
-                        self.runtime.setdefault("checkpoints", {})[execution_id] = record
-                    else:
-                        self.runtime.setdefault("observation_rules", {})[execution_id] = record
+                    record["kind"] = "worker_checkpoint"
+                    self.runtime.setdefault("checkpoints", {})[execution_id] = record
                 elif kind == "checkpoint_reminder_due":
                     remind = True
                 else:
@@ -3945,8 +3938,6 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                     reason="Independently reconsider the unresolved kind using the newly prepared evidence")
         elif role == "task_contract_review":
             task = self.runtime["tasks"][target]
-            if task.get("producer_execution") == execution_id:
-                raise ValueError("contract author cannot review its own contract")
             basis = action.get("contract_basis", {"revision": task["revision"], "contract_sha256": planning.contract_hash(task),
                 "goal_revision": self._governance().get("goal_revision", 1), "policy_revision": self._governance().get("policy_revision", 1)})
             if basis["contract_sha256"] != planning.contract_hash(task):
@@ -4026,10 +4017,10 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         return list(requested)
 
     def _retention_state(self, action):
-        head, instance, runtime = self.store.load()
+        head, instance, runtime, rows = self.store.load_records()
         if head != self.head:
             raise ValueError("cleanup state changed outside the held writer lock")
-        records = {row["id"]: deepcopy(row["record"]) for row in self.store.records(head) if row.get("id")}
+        records = {row["id"]: deepcopy(row["record"]) for row in rows if row.get("id")}
         reference_keys = {"references", "dependencies", "source_refs", "origin_refs", "input_refs", "inputs", "reuse",
             "artifact_ref", "path", "checkpoint_ref", "source_ref", "formal_result_id", "exposition_id",
             "assessment_id", "evidence_refs", "authority_refs", "basis_refs", "record_refs", "result_ref"}
@@ -4064,7 +4055,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         # These issued semantic references do not name materialized run files.
         for alias in ("context:goal", "context:policy", "tool:lean", "tool:scholarly"):
             records.setdefault(alias, {"references": []})
-        protected = [row["id"] for row in self.store.records(head) if row.get("id") and
+        protected = [row["id"] for row in rows if row.get("id") and
                      (row["root"] == "research" or row["family"] in {"tasks", "question_links", "review_cycles"})]
         protected.extend(references(runtime.get("waiting_actions", {})))
         return {"executions": runtime["executions"], "runtime": runtime,
@@ -4329,7 +4320,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
 
     def _goal_basis_key(self) -> str:
         tasks = [{key: deepcopy(task.get(key)) for key in
-                  ("id", "revision", "question", "scope", "completion_obligations", "expected_outputs", "results", "status")}
+                  ("id", "revision", "question", "scope", "completion_obligations", "expected", "results", "status")}
                  for task in self.runtime["tasks"].values()]
         return hashlib.sha256(canonical_json({"goal": self._governance()["goal"], "goal_revision": self._governance().get("goal_revision", 1),
             "policy_revision": self._governance().get("policy_revision", 1), "knowledge": self.instance["knowledge"],
@@ -4337,7 +4328,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             "identity_assessments": self.instance.get("identity_assessments", {}),
             "assessment_uses": self.instance.get("assessment_uses", {}),
             "trust_environments": self.instance.get("trust_environments", {}),
-            "tasks": tasks, "goal_kind": self._governance()["goal_kind"], "sources": capture_sources(self.instance),
+            "tasks": tasks, "sources": capture_sources(self.instance),
             "user_inputs": self.runtime["inputs"], "required": self.instance["config"]["goal_auditors"],
             "input_contract": hashlib.sha256(self._render_prompt("goal_audit", {}).encode()).hexdigest()})).hexdigest()
 
@@ -4367,8 +4358,6 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             task = self.runtime["tasks"][assessment["task_id"]]
             self._record_academic_assessment(task, assessment, execution_id)
         if output["goal_audit"]:
-            if self._governance()["goal_kind"] != "mathematical":
-                raise ValueError("nonformal work cannot authorize a final goal guarantee")
             if self.instance["goal_status"] != "mathematically_solved":
                 basis = self._goal_basis_key()
                 self._ensure_goal_audit_requests(basis, execution_id)

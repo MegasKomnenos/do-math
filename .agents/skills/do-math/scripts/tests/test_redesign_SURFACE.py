@@ -96,7 +96,8 @@ class SurfaceRedesignTests(unittest.TestCase):
                 root = Path(directory)
                 profile = next(p for p in instance['execution_profiles'].values() if p['role'] == role)
                 fitted = prepare_role_input({'instance_id': instance['id'], 'action': {'id': 'A', 'role': role},
-                    'tasks': readers, 'resources': {}, 'knowledge_catalog': [], 'ready_task_ids': ['TK-ready']},
+                    'tasks': readers, 'resources': {}, 'knowledge_catalog': [], 'ready_task_ids': ['TK-ready'],
+                    'ongoing_preparation': [], 'blocked_actions': []},
                     instance=instance, runtime=runtime, role=role, profile=profile,
                     snapshot='a'*40, workspace=root, activity_id='AC-1', install_submission_tools=True)
                 context = json.loads((root/'input/submission/context.json').read_bytes())
@@ -129,7 +130,7 @@ class SurfaceRedesignTests(unittest.TestCase):
             root = Path(directory)
             fitted = prepare_role_input({'instance_id': instance['id'], 'action': {'id': 'A', 'role': 'research_plan'},
                 'tasks': deepcopy(list(runtime['tasks'].values())),
-                'resources': {}, 'knowledge_catalog': [], 'ready_task_ids': []}, instance=instance, runtime=runtime, role='research_plan', profile=profile,
+                'resources': {}, 'knowledge_catalog': [], 'ready_task_ids': [], 'ongoing_preparation': []}, instance=instance, runtime=runtime, role='research_plan', profile=profile,
                 snapshot='a'*40, workspace=root, activity_id='AC-1', install_submission_tools=True)
             direct = fitted['context']
             self.assertEqual(direct['ready_task_ids'], [])
@@ -204,7 +205,7 @@ class SurfaceRedesignTests(unittest.TestCase):
             root=Path(directory)
             fitted=prepare_role_input({'instance_id':instance['id'],'action':{'id':'A','role':'research_preparation'},
                 'tasks':deepcopy(list(runtime['tasks'].values())),
-                'resources':{},'knowledge_catalog':[]},instance=instance,runtime=runtime,role='research_preparation',profile=profile,
+                'resources':{},'knowledge_catalog':[],'blocked_actions':[]},instance=instance,runtime=runtime,role='research_preparation',profile=profile,
                 snapshot='a'*40,workspace=root,activity_id='AC-1',install_submission_tools=True,max_artifact_bytes=100000)
             preview=json.loads((root/'input/submission/context.json').read_bytes())
             self.assertIn('EX-preserved',submission._reference_ids(preview))
@@ -254,6 +255,7 @@ class SurfaceRedesignTests(unittest.TestCase):
     def test_audit_cleanup_aborted_attempt_is_not_healthy(self):
         instance, runtime = surface_state()
         runtime['history'] = [{'kind':'maintenance_cleanup_failed','execution_id':'EX-maint',
+                              'paths':['runs/EX-1'],'completed_paths':[],
                               'reason':'root inaccessible','next_owner':'maintenance'}]
         result=inspect_state(instance,runtime,requested_areas=['record_storage'])
         self.assertEqual(result['status'],'degraded')
@@ -279,7 +281,7 @@ class SurfaceRedesignTests(unittest.TestCase):
         profile = next(p for p in instance['execution_profiles'].values() if p['role'] == 'research_preparation')
         context = {'action': {'id': 'AC-prep', 'role': 'research_preparation'}, 'resources': {},
                    'tasks': deepcopy(list(runtime['tasks'].values())),
-                   'blocked_actions': {}, 'pending_revisions': [], 'knowledge_catalog': []}
+                   'blocked_actions': [], 'pending_revisions': [], 'knowledge_catalog': []}
         with tempfile.TemporaryDirectory() as directory:
             fitted = prepare_role_input(context, instance=instance, runtime=runtime, role='research_preparation',
                 profile=profile, snapshot='a'*40, workspace=Path(directory)/'first', activity_id='AC-prep')

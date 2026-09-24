@@ -37,7 +37,7 @@ def assessment_key(action: dict) -> str:
     return "task_title" if action["role"] == "research_preparation" and not preparation_only(action) else "task_id"
 
 
-def validate_assessments(action: dict, output: dict, extensions: dict, *, required: bool) -> dict:
+def validate_assessments(action: dict, output: dict, extensions: dict) -> dict:
     """One shared completeness check for the supplied checker and receiver."""
     key = assessment_key(action)
     rows = extensions.get("model_assessments", [])
@@ -62,14 +62,13 @@ def validate_assessments(action: dict, output: dict, extensions: dict, *, requir
         if len(deferred) != len(set(deferred)) or set(deferred) & set(identified):
             raise ValueError("assessment and deferral must identify each target exactly once")
         supplied = set(identified) | set(deferred)
-        required = True
     else:
         from .task_contracts import selected_task_ids
         expected = ({item["title"] for item in output.get("candidates", [])}
                     if action["role"] == "research_preparation" else set(selected_task_ids(output)))
         supplied = set(identified)
     missing, unexpected = expected - supplied, supplied - expected
-    if unexpected or (required and missing):
+    if unexpected or missing:
         import json
         raise ValueError("model assessment coverage: " + json.dumps(
             {"missing": sorted(missing), "unexpected": sorted(unexpected)}, ensure_ascii=False))
@@ -123,7 +122,7 @@ def selection(config: dict, action: dict, tasks: dict, knowledge: dict, *, profi
         # A task's allowlist governs its work attempts. Reviewers and other
         # decision roles use their own adopted role profiles, while still
         # inheriting the task's difficulty/importance requirement above.
-        allowed = (task.get("execution_profile_refs", task.get("profile_refs"))
+        allowed = (task.get("profile_refs")
                    if role in {"research_work", "supplemental_research"}
                    and not action.get("review_cycle_id") else None)
         if action.get("profile_ref"):

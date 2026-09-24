@@ -221,7 +221,7 @@ class DesignWalkthroughs(unittest.TestCase):
         old_solution = e._solution_basis(); formal_before = deepcopy(e.instance['formal_results'])
         use_ids = [key for key, row in e.instance['assessment_uses'].items() if row['assessment_id'] == aid]
         changes = {'summary': 'Correct the explanation after an objection'}
-        roots = knowledge.revision_roots(e.instance, kid, changes)
+        roots = knowledge.revision_roots(e.instance, kid)
         impact = knowledge.plan_impact(e.instance, e.runtime, roots, [])
         e.instance, e.runtime = knowledge.revise_knowledge(e.instance, e.runtime, kid,
             changes, reason='Confirmed explanation defect',
@@ -260,7 +260,7 @@ class DesignWalkthroughs(unittest.TestCase):
     def test_w08_self_check_defect_and_late_objection_reach_fresh_judges(self):
         clock = Clock()
         with tempfile.TemporaryDirectory() as directory:
-            tracker = ObservationTracker('EX-repeat', Path(directory), {'observation_contract_version': 5,
+            tracker = ObservationTracker('EX-repeat', Path(directory), {
                 'self_check_revision': 1, 'observation_rules': [rule()], 'self_check_response_window_seconds': 5}, clock=clock)
             due = next(r for r in tracker.observe({'type': 'tick', 'counters': {'attempts': 2}}) if r['kind'] == 'self_check_due')
             receipt = self_check(tracker, due, 'defect')
@@ -303,7 +303,7 @@ class DesignWalkthroughs(unittest.TestCase):
         clock = Clock()
         with tempfile.TemporaryDirectory() as directory:
             workspace = Path(directory)
-            tracker = ObservationTracker('EX-adapt', workspace, {'observation_contract_version': 5,
+            tracker = ObservationTracker('EX-adapt', workspace, {
                 'self_check_revision': 1, 'observation_rules': [rule()], 'self_check_response_window_seconds': 5}, clock=clock)
             due = next(r for r in tracker.observe({'type': 'tick', 'counters': {'attempts': 2}}) if r['kind'] == 'self_check_due')
             deadline = due['deadline_offset_ms']

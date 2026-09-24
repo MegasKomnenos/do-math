@@ -81,9 +81,6 @@ class SessionSlots:
             profile=profile, execution=candidate, current_time=current_time)
         return {'allowed': allowed, 'wait': deepcopy(slots.admission_wait)}
 
-    def admission_available(self, profile):
-        return self.admission_check(profile)['allowed']
-
     def configure(self, limits):
         self._writable()
         from .execution_profiles import build_profiles
@@ -144,7 +141,6 @@ class SessionSlots:
         # Rebase only each row's constraint ID; nested evidence stays read-only.
         reservations = {rid: dict(row) for rid, row in self.runtime.get("reservations", {}).items()}
         capacity_refs = list(ai.get("capacity_refs", []))
-        usage_refs = list(ai.get("usage_constraint_ids", []))
         adopted = self.instance.get("role_profile_refs")
         if adopted and ai:
             # An execution keeps its immutable profile, but a new reservation
@@ -152,11 +148,9 @@ class SessionSlots:
             active_constraints = set()
             for role_refs in adopted.values():
                 for reference in role_refs:
-                    active_profile = self.instance["execution_profiles"][reference["id"] if isinstance(reference, dict) else reference]
+                    active_profile = self.instance["execution_profiles"][reference["id"]]
                     active_ai = active_profile.get("ai", {})
                     active_constraints.update(active_ai.get("capacity_refs", []))
-                    # Cumulative call budgets remain bound to their explicit
-                    # immutable edition; only live session slots are rebased.
 
             def current_ref(reference):
                 previous = constraints[reference]
@@ -168,17 +162,15 @@ class SessionSlots:
                 return matches[0] if len(matches) == 1 else None
 
             capacity_refs = [current_ref(ref) for ref in capacity_refs]
-            usage_refs = [current_ref(ref) for ref in usage_refs]
-            if None in capacity_refs + usage_refs:
+            if None in capacity_refs:
                 self.admission_wait = {"kind": "capacity", "budget_kind": pool, "model": model,
                     "profile_ref": profile_ref(profile), "reason": "pinned profile has no current adopted accounting constraint",
                     "next_owner": "user"}
                 return False
-        refs = capacity_refs + usage_refs
+        refs = capacity_refs
         accounting_profile = deepcopy(profile)
         if ai:
             accounting_profile["ai"]["capacity_refs"] = capacity_refs
-            accounting_profile["ai"]["usage_constraint_ids"] = usage_refs
         host_refs = profile.get("host_capacity_refs", [])
         for ref in host_refs:
             validate_host_constraint(constraints[ref])
@@ -188,18 +180,15 @@ class SessionSlots:
             previous = constraints.get(row["constraint_id"], {})
             for ref in refs + host_refs:
                 constraint = constraints[ref]
-                same_pool = (previous.get("kind") == constraint["kind"] == "cumulative"
-                             and previous.get("budget_kind") == constraint["budget_kind"]
-                             and previous.get("unit") == constraint["unit"])
                 same_model = (previous.get("kind") == constraint["kind"] == "concurrency"
                               and previous.get("model") == constraint["model"])
                 same_host = (previous.get("kind") == constraint["kind"] == "host"
                              and previous.get("scope") == constraint.get("scope") == "instance_on_host"
                              and previous.get("host_id") == constraint.get("host_id"))
-                if same_pool or same_model or same_host:
+                if same_model or same_host:
                     row["constraint_id"] = ref
         demands = [{"id": "RS-" + execution_id + "-" + str(i), "constraint_id": ref,
-                    "unit": constraints[ref].get("accounting_unit", constraints[ref].get("unit")), "amount": 1}
+                    "unit": constraints[ref]["accounting_unit"], "amount": 1}
                    for i, ref in enumerate(refs)]
         for ref in host_refs:
             demands.extend({"id": "RS-" + execution_id + "-host-" + unit,
@@ -211,11 +200,10 @@ class SessionSlots:
         try:
             plan = (plan_reservations({"reservations": reservations},
                                      {"constraints": list(constraints.values())}, accounting_profile, request)
-                    if demands else ReservationPlan((), False, ()))
+                    if demands else ReservationPlan((), False))
         except BudgetConflict as error:
-            kind, owner = {'cumulative': ('budget_exhausted', 'user'),
-                           'concurrency': ('capacity', 'scheduler'), 'host': ('host_capacity', 'operations'),
-                           'window': ('budget_window', 'operations')}.get(
+            kind, owner = {'concurrency': ('capacity', 'scheduler'),
+                           'host': ('host_capacity', 'operations')}.get(
                                error.constraint_kind, ('resource_unclassified', 'operations'))
             constraint = constraints.get(error.constraint_id, {})
             if error.constraint_kind == 'concurrency' and (
@@ -282,11 +270,8 @@ class SessionSlots:
         updates = {}
         for rid in capacity["reservation_ids"]:
             record = self.runtime["reservations"][rid]
-            # The approved call mode counts admitted local attempts, including
-            # unsuccessful starts. Returning a concurrency slot does not refund it.
-            consumed = record["reserved"] if record["unit"] == "local_execution_attempt" else 0
             updates[rid] = settle_reservation({"reservations": self.runtime["reservations"]}, rid,
-                confirmed_consumed=consumed, returned=record["reserved"] - consumed, evidence_refs=evidence).record
+                confirmed_consumed=0, returned=record["reserved"], evidence_refs=evidence).record
         self.runtime["reservations"].update(updates)
         capacity["local_termination"] = "confirmed"
         for gate in self.runtime.get("provider_waits", {}).values():
@@ -361,7 +346,3 @@ class SessionSlots:
             for cell in pool.values():
                 cell["available"] = max(0, cell["limit"] - cell["used"])
         return result
-
-
-    def close(self):
-        pass  # The repository owns the writer lock and CAS; this view owns neither.

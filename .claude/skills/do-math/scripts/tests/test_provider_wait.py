@@ -134,7 +134,9 @@ class ProviderTests(unittest.TestCase):
         head, instance, runtime = self.repository.load()
         engine = ResearchEngine.__new__(ResearchEngine)
         engine.instance, engine.runtime = instance, runtime
-        action = {"id": "AC-original", "role": "research_work", "target": "TK-fixture"}
+        action = {"id": "AC-original", "role": "research_work", "target": "TK-fixture",
+                  "model_selection": {"tier": "high", "model": MODEL, "assessment": None,
+                                      "reason": "Provider-limit fixture assignment"}}
         runtime["queue"] = [action]
         engine._hold_provider_action(action, "EX-original", gate, "Observed provider limit")
         waiting = runtime["waiting_actions"][action["id"]]
@@ -197,7 +199,6 @@ class ProviderTests(unittest.TestCase):
         self.assertTrue(self.change(lambda s, i, r: admit(s, i, r, "EX-vanished", current=400)))
         head, instance, runtime = self.repository.load()
         observer = SessionSlots(runtime, instance, observer=True)
-        observer.close()
         self.assertEqual(self.repository.load()[0], head)
         self.assertEqual(observer.provider_snapshot(current_time=500)["providers"]["claude"]["state"], "checking")
         self.change(lambda s, i, r: finish(s, r, "EX-vanished", 500))

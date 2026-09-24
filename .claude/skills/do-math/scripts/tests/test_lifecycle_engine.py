@@ -42,7 +42,7 @@ class FakeEngine(RevisionEngineMixin,LifecycleEngineMixin,SchedulerMixin,ReviewE
                 'self_check_response_window_seconds':5, **(config or {})}
         config.update(research_reconsider_seconds=60)
         self.instance,self.runtime=initialize_state(instance_id='RI-test',goal='Prove the target',
-            goal_kind='mathematical',workspace=root,config=config,source_input='Original user request',
+            workspace=root,config=config,source_input='Original user request',
             created_at=self.current_time.isoformat())
         self.instance.update(profiles.build_profiles(config))
         self.runtime.update(cycles=0,waiting_actions={})
@@ -889,7 +889,7 @@ class Audit2LifecycleTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as root:
             source = 'Cafe\u0301'
             instance, runtime = initialize_state(instance_id='RI-unicode', goal=source,
-                goal_kind='research', workspace=root, config=DEFAULT_CONFIG, source_input=source)
+                workspace=root, config=DEFAULT_CONFIG, source_input=source)
             restored = json.loads(canonical_json(instance))
             original = restored['lifecycle']['immutable_input']
             self.assertEqual(original_input_bytes(original), source.encode())

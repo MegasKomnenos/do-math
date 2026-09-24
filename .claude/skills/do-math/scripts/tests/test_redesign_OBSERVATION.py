@@ -56,7 +56,7 @@ class ObservationRedesignTests(unittest.TestCase):
         clock = Clock()
         with tempfile.TemporaryDirectory() as directory:
             tracker = ObservationTracker("EX-1", Path(directory), {
-                "observation_contract_version": 5, "self_check_revision": 3,
+                "self_check_revision": 3,
                 "observation_rules": [rule()], "self_check_response_window_seconds": 5,
                 "tool_review_window_seconds": 60,
             }, clock=clock)

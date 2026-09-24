@@ -173,22 +173,10 @@ class LocalCLIAdapter:
         if any(path.exists() for path in (stdout_path, stderr_path, final_path, status_path)):
             raise FileExistsError("output paths must be newly allocated")
         workspace = Path(request["cwd"]).resolve()
-        filesystem = request.get("filesystem")
-        if filesystem is not None:
-            write_roots = [Path(value).resolve() for value in filesystem["write_roots"]]
-            if any(not root.is_relative_to(workspace) for root in write_roots):
-                raise ValueError("filesystem write roots must stay inside the model workspace")
-            controls = [request_path, prompt_path, stdout_path, stderr_path, final_path, status_path]
-            if "output_schema_path" in request:
-                controls.append(Path(request["output_schema_path"]))
-            if any(control.resolve().is_relative_to(root) for root in write_roots for control in controls):
-                raise ValueError("fixed inputs, outputs, and status must be outside every write root")
         if any(path.resolve().is_relative_to(workspace) for path in (stdout_path, stderr_path, final_path, status_path)):
             raise ValueError("worker outputs and status must be outside the model workspace")
         request_raw, prompt_raw = request_path.read_bytes(), prompt_path.read_bytes()
         stage = Path(tempfile.mkdtemp(prefix="do-math-cli-", dir=workspace.parent))
-        if filesystem is not None and any(stage.resolve().is_relative_to(root) for root in write_roots):
-            raise RuntimeError("snapshot directory would be writable by the model")
         snapshot_prompt = stage / "prompt.bin"; snapshot_prompt.write_bytes(prompt_raw)
         snapshot_schema = None
         schema_sha256 = None

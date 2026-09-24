@@ -99,8 +99,7 @@ class UnicodeFlowTests(unittest.TestCase):
 
     def test_initial_immutable_input_is_one_exact_utf8_representation(self) -> None:
         source = "e\u0301 and K/K"
-        instance, _ = initialize_state(instance_id=INSTANCE_ID, goal="goal", goal_kind="mathematical",
-                                       workspace=self.root / "workspace", config={}, source_input=source)
+        instance, _ = initialize_state(instance_id=INSTANCE_ID, goal="goal", workspace=self.root / "workspace", config={}, source_input=source)
         immutable = instance["lifecycle"]["immutable_input"]
         self.assertEqual(immutable, {
             "text": source,

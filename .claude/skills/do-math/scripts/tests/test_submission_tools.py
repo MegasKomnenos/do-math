@@ -270,7 +270,7 @@ class ProducerToolTests(purpose.PurposeHarness):
             "tasks": [], "ready_task_ids": [], "knowledge_catalog": [], "sources": [],
             "kind_definitions": knowledge_io.catalog_definitions(knowledge_io.ensure_ontology({}))}
         context.update(context_values or {})
-        submission.install_tools(workspace, context, contracts.action_schema(context["action"], context["kind_definitions"]),
+        submission.install_tools(workspace, context, contracts.action_schema(context["action"]),
                                  configuration.get("max_artifact_bytes"))
         self.assertIn("submission_contract", context,
                       "the producer needs an executable check, fixed inputs and limits")
@@ -555,7 +555,7 @@ class ReviewFailureTests(purpose.PurposeHarness):
             context = purpose.parse_context(args["prompt"], args["workspace"])
             from do_math.knowledge import plan_impact, revision_roots
             changes = {'explanation': 'A replacement explanation of the same domain.'}
-            roots = revision_roots(engine.instance, context['action']['target'], changes)
+            roots = revision_roots(engine.instance, context['action']['target'])
             control(self.repo, engine.instance["id"], "knowledge", config={"operation": "revise", "id": context["action"]["target"],
                 'changes': changes, 'declared_impact': plan_impact(engine.instance, engine.runtime, roots, [])['computed_impact'],
                 "reason": "Revise the sealed proposal."})
@@ -632,7 +632,7 @@ class ReviewFailureTests(purpose.PurposeHarness):
             if action['role'] == 'identity_review' and action.get('stage') == 'initial' and action.get('slot') == 'initial-1':
                 from do_math.knowledge import plan_impact, revision_roots
                 changes = {'statement': 'The corrected answer is two.'}
-                roots = revision_roots(engine.instance, kid, changes)
+                roots = revision_roots(engine.instance, kid)
                 control(self.repo, engine.instance['id'], 'knowledge', config={'operation': 'revise', 'id': kid,
                     'changes': changes, 'declared_impact': plan_impact(engine.instance, engine.runtime, roots, [])['computed_impact'],
                     'reason': 'Correct a computation.'})

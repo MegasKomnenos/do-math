@@ -63,7 +63,7 @@ def declaration(state, runtime, roots):
 def revise(state, runtime, kid, changes=None):
     changes = changes or {'statement': 'Revised statement'}
     return k.revise_knowledge(state, runtime, kid, changes, reason='correction', actor_ref='author',
-        declared_impact=declaration(state, runtime, k.revision_roots(state, kid, changes)))
+        declared_impact=declaration(state, runtime, k.revision_roots(state, kid)))
 
 
 def withdraw(state, runtime, kid):

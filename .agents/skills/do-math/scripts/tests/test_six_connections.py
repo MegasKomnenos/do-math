@@ -248,7 +248,7 @@ class OverflowConnections(unittest.TestCase):
         engine, reference = self.fixture()
         choice = {'action_id': 'AC-held', 'profile_ref': reference, 'reason': 'Required evidence fits'}
         extension = {'input_overflow_resolutions': [choice]}
-        jsonschema.validate(extension, submission.extension_schema({'role': 'research_plan'}, {}))
+        jsonschema.validate(extension, submission.extension_schema({'role': 'research_plan'}))
         with tempfile.TemporaryDirectory() as directory:
             _, fixed = package(engine, Path(directory))
         engine._apply_input_overflow_resolutions([choice], fixed, 'EX-plan')

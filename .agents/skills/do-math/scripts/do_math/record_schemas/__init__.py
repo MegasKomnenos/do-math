@@ -229,7 +229,7 @@ def validate_semantics(instance, runtime, identifiers):
                     or row["authority_revocation"]["receipt_id"] != (receipt.get("id") or receipt.get("request_id"))):
                 raise ValueError("submission authority revocation differs from its actual receipt")
     for profile in instance.get("execution_profiles", {}).values():
-        ids = profile.get("ai", {}).get("capacity_refs", []) + profile.get("ai", {}).get("usage_constraint_ids", []) + profile.get("host_capacity_refs", [])
+        ids = profile.get("ai", {}).get("capacity_refs", []) + profile.get("host_capacity_refs", [])
         if set(ids) - set(instance.get("capacity_constraints", {})):
             raise ValueError("profile references unknown capacity constraint")
         host = profile.get("host_resources")
@@ -354,10 +354,9 @@ def validate_semantics(instance, runtime, identifiers):
             checked = validate_relation(instance, {k: v for k, v in relation.items() if k in _RELATION_FIELDS})
             if not checked["valid"]:
                 raise ValueError("invalid relation semantics: " + ", ".join(checked["reasons"]))
-    for name in ("task_observation_rules",):
-        from ..observations import validate_rules
-    for rules in runtime.get(name, {}).values():
-            validate_rules(rules, allow_empty=True)
+    from ..observations import validate_rules
+    for rules in runtime.get("task_observation_rules", {}).values():
+        validate_rules(rules, allow_empty=True)
     from ..knowledge_records import validate_formal_evidence, _assessment_basis
     for formal in instance.get("formal_results", {}).values():
         evidence = formal["verification"]

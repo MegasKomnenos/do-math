@@ -29,7 +29,7 @@ class RuleSubmissionTests(unittest.TestCase):
         self.task = {**candidate('one'), 'id': 'TK-one', 'revision': 1, 'status': 'planned'}
         self.action = {'id': 'AC-rules', 'role': 'research_preparation',
                        'observation_rule_targets': {'TK-one': assessment_basis(self.task)}}
-        self.context = {'action': self.action, 'budget_unit': 'execution_attempts', 'tasks': [self.task],
+        self.context = {'action': self.action, 'budget_unit': 'concurrent_sessions', 'tasks': [self.task],
                         'knowledge_catalog': [], 'kind_definitions': {}, 'sources': []}
 
     def issues(self, extensions, candidates=None):
@@ -37,13 +37,12 @@ class RuleSubmissionTests(unittest.TestCase):
         from do_math.repository import canonical_json
         (self.workspace / 'activity-extensions.json').write_bytes(canonical_json(extensions))
         seal_response(output, self.context, self.workspace)
-        return payload_issues(output, action_schema(self.action, {}), self.context, extensions, self.workspace)
+        return payload_issues(output, action_schema(self.action), self.context, extensions, self.workspace)
 
     def test_rules_only_and_combined_preparation_cover_exact_assignments(self):
         extensions = {'task_conditions': prepared_rule_conditions(['TK-one'])}
         self.assertEqual(self.issues(extensions), [])
         self.action['assessment_targets'] = {'TK-one': assessment_basis(self.task)}
-        self.context['budget_unit'] = 'concurrent_sessions'
         self.assertTrue(self.issues(extensions))
         self.assertEqual(self.issues({**extensions, 'model_assessments': [rating(task_id='TK-one')]}), [])
 

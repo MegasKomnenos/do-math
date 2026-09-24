@@ -48,7 +48,6 @@ class DiagnosedRecoveryTests(unittest.TestCase):
             (operator,'ResearchRepository',repository), (operator,'LIVE_INSTALLATION_ROOT',installation),
         ):
             stack.enter_context(patch.object(owner,name,return_value=value) if name=='ResearchRepository' else patch.object(owner,name,value))
-        stack.enter_context(patch.object(operator,'register_profile_families'))
         stack.enter_context(patch.object(operator,'selection',return_value={'model':profile['ai']['model']}))
         stack.enter_context(patch('do_math.execution_profiles.select_profile',return_value=profile))
         stack.enter_context(patch('do_math.initialization.adapter_for',return_value=SimpleNamespace(capability_identity=lambda:{})))

@@ -110,6 +110,19 @@ class AuditRepairTests(unittest.TestCase):
         self.assertEqual(sealed['check']['mode'],'receiver')
         self.assertFalse(any(path.startswith('files/checks/') for path in sealed['artifacts']))
 
+    def test_receiver_parse_failure_is_resolved_by_a_later_valid_receiver_check(self):
+        seal = lambda: submission.seal_submission(self.workspace, '.scratch/draft.json', execution_id='EX-1',
+            context=self.context, schema=self.schema, max_artifact_bytes=1024*1024)['check']
+        self.draft.write_text('{', encoding='utf-8')
+        failed = seal()
+        self.draft.write_text(json.dumps(self.good), encoding='utf-8')
+        passed = seal()
+        self.assertEqual(['submission.parse'], [row['rule_id'] for row in failed['issues']])
+        self.assertTrue(passed['passed'], passed['issues'])
+        self.assertEqual(failed['check_subject'], passed['check_subject'])
+        passed['repairs'] = submission._repair_links([failed], passed)
+        self.assertEqual([], submission.summarize_checks([failed, passed], history_window=2)['unresolved'])
+
     def test_changed_failure_message_is_not_a_successful_repair(self):
         first = submission.check_submission({**self.good, "report": 1}, self.schema, self.context, {}, self.workspace,
             mode="producer", execution_id="EX-1", tool_sha256="same")
@@ -127,7 +140,7 @@ class AuditRepairTests(unittest.TestCase):
 
     def test_snapshot_summary_rejects_nonobject_central_check(self):
         raw=b'[]'; path='runtime/artifacts/BA-1/submission/check.json'
-        seal={'event_seq':1,'request_id':'CT-1','execution_id':'EX-1','state':'rejected',
+        seal={'event_seq':1,'capture_id':'CT-1','execution_id':'EX-1','state':'rejected',
               'submission_check':{'check_ref':path,'artifacts':[{'path':path,
                   'sha256':__import__('hashlib').sha256(raw).hexdigest(),'bytes':len(raw)}]}}
         with self.assertRaises(ValueError):
@@ -149,7 +162,7 @@ class AuditRepairTests(unittest.TestCase):
             prefix=f'runtime/artifacts/BA-{number}/submission/'
             artifacts={prefix+name:raw for name,raw in sealed['artifacts'].items()}
             head=store.publish(head,{'research/fixture.json':b'{}',**artifacts}).head
-            seals.append({'event_seq':number,'request_id':f'CT-{number}','execution_id':'EX-1',
+            seals.append({'event_seq':number,'capture_id':f'CT-{number}','execution_id':'EX-1',
                 'state':'accepted' if sealed['passed'] else 'rejected',
                 'submission_check':{'check_ref':prefix+'check.json','artifacts':[
                     {'path':path,'sha256':hashlib.sha256(raw).hexdigest(),'bytes':len(raw)}
@@ -164,7 +177,7 @@ class AuditRepairTests(unittest.TestCase):
         self.assertEqual(zero['window_check_count'],0);self.assertEqual(zero['rule_failure_counts'],{})
         self.assertEqual(zero['unresolved'],old['unresolved'])
         self.assertEqual(old,submission.summarize_snapshot_checks(seals[:1],snapshot=first_head,read_artifact=reader,history_window=1))
-        for changed in (list(reversed(seals)),[seals[0],{**seals[1],'request_id':'CT-1'}]):
+        for changed in (list(reversed(seals)),[seals[0],{**seals[1],'capture_id':'CT-1'}]):
             with self.assertRaises(ValueError):
                 submission.summarize_snapshot_checks(changed,snapshot=head,read_artifact=reader,history_window=1)
         with self.assertRaises(ValueError):
@@ -178,7 +191,7 @@ class ImpactReviewTests(unittest.TestCase):
         from do_math.engine import ResearchEngine
         from do_math.execution_lifecycle import transition_execution
         from do_math.repository import canonical_json, new_id
-        schema = contracts.action_schema(fixed['action'], {})
+        schema = contracts.action_schema(fixed['action'])
         submission.install_tools(workspace, fixed, schema, None)
         (workspace / 'draft.json').write_bytes(canonical_json(output))
         sealed = submission.seal_submission(workspace, 'draft.json', execution_id=execution['id'],
@@ -239,7 +252,7 @@ class ImpactReviewTests(unittest.TestCase):
         request = self.request()
         action = {"role": "maintenance", "stage": "impact_review", "input_basis": {"impact_review": request}}
         output = self.review_output(request)
-        schema = contracts.action_schema(action, {})
+        schema = contracts.action_schema(action)
         self.assertEqual([], list(jsonschema.Draft202012Validator(schema).iter_errors(output)))
         self.api.validate_impact_review_response(request, output)
         self.assertEqual(3, len(request["plans"]))
@@ -384,7 +397,8 @@ class ImpactReviewTests(unittest.TestCase):
             subprocess.run(["git", "-C", str(root), "init", "-q"], check=True)
             profiles = execution_profiles.build_profiles({"session_limits": model_policy.LIMITS,
                 "tier_models": model_policy.MODELS, "observation_mode": "event_driven", "max_input_bytes": 500000,
-                "effort": "medium", "operator_effort": "high", "operator_timeout_seconds": 600})
+                "effort": "medium", "operator_effort": "high", "operator_timeout_seconds": 600,
+                "scholarly_enabled": True, "scholarly_server": None, "claude_only_assigned_model": False})
             self.instance.update({k: v for k, v in profiles.items() if k != "role_profile_refs"})
             self.runtime["queue"] = []
             def execution(identifier, role, action):
@@ -497,7 +511,9 @@ class ContractBoundaryTests(unittest.TestCase):
                 "reviewer_ref": "EX-current", "producer_ref": "EX-current", "affected_ids": []}}]}
         with tempfile.TemporaryDirectory() as directory:
             issues = submission.payload_issues(output, contracts.schema_for("research_work"), ctx, extensions, Path(directory))
-        self.assertTrue(any("distinct reviewer" in row["message"] for row in issues), issues)
+        self.assertTrue(any(row["rule_id"] == "schema.additionalProperties"
+                            and row["path"].startswith("activity-extensions.json/knowledge_changes/0")
+                            for row in issues), issues)
 
     def test_central_capture_uses_exact_current_draft_after_optional_local_check(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -583,7 +599,7 @@ class ContractBoundaryTests(unittest.TestCase):
                 owner_kind="charter", owner_ref="context:goal", payload={}, decision_refs=[], question_refs=[])],
             integration_bundles=[dict(integration_id="IN-1", members=["output"], impact_set=[], authority_refs=[])])
         with tempfile.TemporaryDirectory() as directory:
-            schema = contracts.action_schema(action, {})
+            schema = contracts.action_schema(action)
             issues = submission.payload_issues(output, schema, ctx, {}, Path(directory))
             self.assertTrue(any(row["rule_id"] == "intent.source_coverage" for row in issues))
             output["import_units"][0]["source_range"]["end"] = len(ctx["user_request"]["text"])
@@ -606,7 +622,7 @@ class ContractBoundaryTests(unittest.TestCase):
         self.assertNotIn("deferred", props)
 
     def test_scope_planning_schema_reaches_domain_scope_validator(self):
-        props = contracts.action_schema({"role": "identity_review", "stage": "scope"}, {})["properties"]
+        props = contracts.action_schema({"role": "identity_review", "stage": "scope"})["properties"]
         self.assertIn("scope_assessment", props)
 
     def test_machine_check_compares_checkpoint_failures_in_both_modes(self):
@@ -690,12 +706,12 @@ class ContractBoundaryTests(unittest.TestCase):
             root = Path(directory)
             subprocess.run(["git", "-C", str(root), "init", "-q"], check=True)
             contract = StateContract.default()
-            module.register_families(contract)
             repo = ResearchRepository(root, "RI-01ARZ3NDEKTSV4RRFFQ69G5FAV", contract=contract)
             profile_state = execution_profiles.build_profiles({
                 "session_limits": model_policy.LIMITS, "tier_models": model_policy.MODELS,
                 "observation_mode": "event_driven", "max_input_bytes": 500000,
-                "effort": "medium", "operator_effort": "high", "operator_timeout_seconds": 600})
+                "effort": "medium", "operator_effort": "high", "operator_timeout_seconds": 600,
+                "scholarly_enabled": True, "scholarly_server": None, "claude_only_assigned_model": False})
             instance = {"feature_version": 5, "knowledge": {}, "expositions": {},
                         **{k: v for k, v in profile_state.items() if k != "role_profile_refs"}}
             instance = knowledge_io.ensure_ontology(instance)
@@ -768,12 +784,12 @@ class ContractBoundaryTests(unittest.TestCase):
         self.assertNotIn("decision", props)
 
     def test_same_response_can_propose_a_kind_definition(self):
-        props = submission.extension_schema(context()["action"], context()["kind_definitions"])["properties"]
+        props = submission.extension_schema(context()["action"])["properties"]
         self.assertIn("kind_definitions", props)
 
     def test_specialized_role_schema_uses_same_envelope(self):
         from do_math import governance
-        schema = contracts.action_schema({"role": "intent_interpretation", "stage": "check"}, {})
+        schema = contracts.action_schema({"role": "intent_interpretation", "stage": "check"})
         expected = governance.interpretation_schema("check")
         self.assertTrue(set(expected["properties"]) <= set(schema["properties"]))
         self.assertIn("integration_bundles", schema["properties"])
@@ -869,27 +885,11 @@ class ContractBoundaryTests(unittest.TestCase):
         self.assertEqual({"IN-A": True, "IN-B": True}, preview["instance"])
         self.assertEqual("preview", preview["mode"])
 
-    def test_storage_registration_is_explicit_and_receipt_checks_execution_ref(self):
-        module = self.integration()
-        self.assertTrue(hasattr(module, "register_families"))
+    def test_installed_receipt_family_checks_execution_ref(self):
         from do_math.state_contract import StateContract
-        contract = StateContract.default()
-        module.register_families(contract)
-        family = contract.family("runtime", "integrations")
+        family = StateContract.default().family("runtime", "integrations")
         self.assertIsNotNone(family)
         self.assertEqual({("EX-1", "executions")}, set(family.references({"execution_id": "EX-1"})))
-
-    def test_receipt_registration_provides_a_closed_schema_for_an_empty_contract(self):
-        import jsonschema
-        from do_math.state_contract import StateContract
-        contract = StateContract()
-        self.integration().register_families(contract)
-        family = contract.family("runtime", "integrations")
-        receipt = {"id": "IN-A", "execution_id": "EX-1", "payload_sha256": "a" * 64,
-                   "members": ["output"], "input_snapshot": None, "response_sha256": "b" * 64}
-        jsonschema.validate(receipt, family.schema)
-        with self.assertRaises(jsonschema.ValidationError):
-            jsonschema.validate({**receipt, "unexpected": True}, family.schema)
 
 
     def integration(self):
@@ -908,7 +908,7 @@ class ContractBoundaryTests(unittest.TestCase):
                 self.assertTrue(list(validator.iter_errors({**output, "integration_bundles": value})))
 
     def test_operational_review_can_request_contract_revision(self):
-        schema = submission.extension_schema({"role": "operational_review"}, {})
+        schema = submission.extension_schema({"role": "operational_review"})
         self.assertIn("revision_requests", schema["properties"])
 
     def test_valid_bundles_pass_same_preview_checker(self):
@@ -1029,9 +1029,6 @@ class ContractBoundaryTests(unittest.TestCase):
             self.assertTrue(all("issue_id" in row and "rule_id" in row for row in malformed["issues"]))
 
 
-if __name__ == "__main__":
-    unittest.main()
-
 
 class DefaultBundleTests(unittest.TestCase):
     def setUp(self):
@@ -1078,3 +1075,7 @@ class DefaultBundleTests(unittest.TestCase):
         issues = self.api.inspect_bundles(output, {}, self.context)
         self.assertTrue(any(r["rule_id"] == "integration.mutation_root" and r["integration_id"] == "IN-A" for r in issues), issues)
         self.assertEqual(output["integration_bundles"][0]["impact_set"], ["read-source"])
+
+
+if __name__ == "__main__":
+    unittest.main()

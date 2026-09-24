@@ -448,9 +448,8 @@ class CliBoundaryTests(unittest.TestCase):
             with patch.object(cli, 'ResearchEngine') as engine, redirect_stdout(output):
                 engine.return_value.check.return_value = {'inspection':{'status':status},
                     'passed':status != 'healthy','submission_checks':{'evidence':'preserved'}}
-                with patch('do_math.reporting.snapshot_check', return_value={'inspection':{'status':'healthy'},'exit_code':0,'passed':True}):
-                    code = cli.main(['check','--repository','.','--instance','RI-test',
-                                     '--snapshot','a'*40,'--kinds','repair_iteration'])
+                code = cli.main(['check','--repository','.','--instance','RI-test',
+                                 '--snapshot','a'*40,'--kinds','repair_iteration'])
                 engine.return_value.check.assert_called_once_with(snapshot='a'*40,requested_areas=['repair_iteration'])
             self.assertEqual(code,expected)
             self.assertEqual(json.loads(output.getvalue())['result']['submission_checks'],{'evidence':'preserved'})

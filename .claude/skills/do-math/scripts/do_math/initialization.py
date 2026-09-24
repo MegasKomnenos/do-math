@@ -267,8 +267,7 @@ def activation_requirements(instance, runtime, *, at=None, owner_handlers=None):
 
 def grant_current(instance, gid, at, *, initial):
     grant = instance.get("grants", {}).get(gid, {})
-    if (grant.get("kind") != "local" or grant.get("status") != "active" or not grant.get("source_ref")
-            or grant.get("source_ref") == "instance-init"):
+    if grant.get("kind") != "local" or grant.get("status") != "active" or not grant.get("source_ref"):
         return False
     if initial and (not grant.get("expires_at") or not set(grant.get("roles", [])).issubset(INITIAL_ROLES)
                     or grant.get("budget_kind") != "operations" or grant.get('reuse') != 'reusable'):
@@ -280,12 +279,10 @@ def grant_current(instance, gid, at, *, initial):
         not grant.get("valid_from") or timestamp(grant["valid_from"]) <= at)
 
 
-def initialize_state(*, instance_id, goal, goal_kind, workspace, config, source_input,
+def initialize_state(*, instance_id, goal, workspace, config, source_input,
                      title="", policies="", created_at=None):
     if not isinstance(source_input, str) or not source_input.strip():
         raise ValueError("initialization requires the original nonempty input")
-    if goal_kind not in {"mathematical", "research"}:
-        raise ValueError("unsupported goal kind")
     when = timestamp(created_at).isoformat()
     raw = source_input.encode('utf-8')
     input_id = new_id('UI')
@@ -294,7 +291,7 @@ def initialize_state(*, instance_id, goal, goal_kind, workspace, config, source_
         "config": deepcopy(config),
         "workspace": str(workspace), "created_at": when, "knowledge": {}, "relations": [],
         "sources": [], "goal_judgments": [], "goal_status": "unsolved", "grants": {}, "decisions": {},
-        "governance": {}, "governance_sources": {}, "governance_history": [],
+        "governance": {}, "governance_sources": {},
         "trust_environments": {}, "active_trust_environment": None,
         "lifecycle": {"state": "initializing", "immutable_input": {
             "text": source_input, "sha256": hashlib.sha256(raw).hexdigest(), "bytes": len(raw)},
@@ -305,7 +302,7 @@ def initialize_state(*, instance_id, goal, goal_kind, workspace, config, source_
         "availability": {"state": "blocked", "reason": "initialization_incomplete"},
         "tasks": {}, "executions": {}, "activities": {}, "queue": [], "history": [],
         "inputs": [{'id': input_id, 'text': source_input, 'sha256': hashlib.sha256(raw).hexdigest(),
-                    'config': {'goal': goal, 'goal_kind': goal_kind, 'policies': policies}, 'created_at': when}],
+                    'config': {'goal': goal, 'policies': policies}, 'created_at': when}],
         "questions": [], "question_links": [], "events": [], "pending_events": [],
         "last_observed_utc": when, "recovery_checked": False,
         "review_cycles": {}, "external_operations": {}, "trust_transitions": {}, "conversations": {},
