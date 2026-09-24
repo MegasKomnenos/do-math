@@ -468,8 +468,13 @@ class OperatorProducerTests(unittest.TestCase):
 
 
 class ReviewFailureTests(purpose.PurposeHarness):
+    def make_active(self):
+        # These checks start after initialization; preserve real Git-backed
+        # review and submission while reusing validated active state.
+        return purpose.ActiveStateHarness.make(self, **self.fixture_config(scholarly_enabled=False))
+
     def test_failed_contract_review_is_not_regenerated_while_waiting_for_diagnosis(self):
-        engine, _ = self.make(scholarly_enabled=False)
+        engine, _ = self.make_active()
         engine.run(max_steps=1)
         task_id = next(iter(engine.runtime["tasks"]))
         class Runner:
@@ -482,7 +487,7 @@ class ReviewFailureTests(purpose.PurposeHarness):
         self.assertFalse(any(a["role"] == "task_contract_review" and a.get("target") == task_id for a in engine.runtime["queue"]))
 
     def test_failed_identity_slot_is_not_regenerated_after_its_peer_finishes(self):
-        engine, runner = self.make(scholarly_enabled=False)
+        engine, runner = self.make_active()
         self.drive(engine, predicate=lambda e: bool(e.runtime["review_cycles"]))
         original_run, original_answer = runner.run, runner.answer
         def run(**args):
@@ -505,7 +510,7 @@ class ReviewFailureTests(purpose.PurposeHarness):
 
     def test_explicit_diagnosis_can_open_one_new_attempt_after_an_exhausted_retry(self):
         from do_math.engine import control
-        engine, _ = purpose.ActiveStateHarness.make(self, **self.fixture_config(scholarly_enabled=False))
+        engine, _ = self.make_active()
         engine.runtime["queue"] = [{"id": "AC-failed", "role": "maintenance", "recovery_attempt": 1}]
         engine._save()
         class Runner:
@@ -541,7 +546,7 @@ class ReviewFailureTests(purpose.PurposeHarness):
 
     def test_late_identity_result_is_preserved_without_retrying_a_superseded_slot(self):
         from do_math.engine import control
-        engine, runner = self.make(scholarly_enabled=False)
+        engine, runner = self.make_active()
         self.drive(engine, predicate=lambda e: bool(e.runtime["review_cycles"]))
         cid = next(iter(engine.runtime["review_cycles"]))
         original = runner.run
@@ -565,7 +570,7 @@ class ReviewFailureTests(purpose.PurposeHarness):
 
     def test_large_own_review_history_does_not_request_mathematical_reconstruction(self):
         from do_math.review_cycle import record_turn
-        engine, runner = self.make(scholarly_enabled=False)
+        engine, runner = self.make_active()
         self.drive(engine, predicate=lambda e: bool(e.runtime["review_cycles"]))
         action = next(a for a in engine.runtime["queue"] if a["role"] == "identity_review")
         cid, kid = action["review_cycle_id"], action["target"]
@@ -582,7 +587,7 @@ class ReviewFailureTests(purpose.PurposeHarness):
 
     def test_fixed_question_resolver_accepts_the_supplied_source_aliases(self):
         from do_math.engine import control
-        engine, _ = self.make(scholarly_enabled=False)
+        engine, _ = self.make_active()
         path = self.root / "paper.txt"
         path.write_text("The exact original source.", encoding="utf-8")
         control(self.repo, engine.instance["id"], "source", config={"path": str(path)})
@@ -604,7 +609,7 @@ class ReviewFailureTests(purpose.PurposeHarness):
                 self.assertEqual(resolved["sha256"], source["sha256"])
     def test_private_insight_rechecks_its_own_basis_when_published_after_peer_review(self):
         from do_math.engine import control
-        engine, runner = self.make(scholarly_enabled=False)
+        engine, runner = self.make_active()
         control(self.repo, engine.instance["id"], "knowledge", config={"operation": "import", "candidate": {
             "kind": "observation", "title": "Earlier computation", "statement": "The answer is one.",
             "explanation": "A bounded computation.", "summary": "One was computed.", "lean_code": ""}})

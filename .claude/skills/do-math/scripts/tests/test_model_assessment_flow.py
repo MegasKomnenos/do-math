@@ -21,7 +21,7 @@ from do_math.repository import canonical_json
 from do_math.submission import payload_issues
 from v5_fixtures import charter_change, policy_change, producer_result, contract_review, prepared_rule_conditions
 from test_engine import common, context_from
-from test_purpose_engine import PurposeHarness
+from test_purpose_engine import ActiveStateHarness, PurposeHarness
 
 
 def candidate(title="one"):
@@ -111,14 +111,15 @@ class AssessmentSubmissionTests(unittest.TestCase):
 
 class AssessmentFlowTests(PurposeHarness):
     def prepare_engine(self):
-        engine, _ = self.make(scholarly_enabled=False, operator_enabled=False, session_limits=deepcopy(LIMITS))
+        engine, _ = ActiveStateHarness.make(self, **self.fixture_config(
+            scholarly_enabled=False, operator_enabled=False, session_limits=deepcopy(LIMITS)))
         from v5_fixtures import send_control
         from do_math.academic import current_requirements
         send_control(engine, "decision", config={"change": charter_change(engine, academic_requirements=[
             {"id": "r", "scope": "solution", "criteria": ["Explain the supplied argument"], "assessor": "research_plan"}])})
         requirement_hash = current_requirements(engine.instance)["sha256"]
-        # Public controls reload Git; isolate this assessment fixture afterward,
-        # preserving its real grants, requirements and pending event history.
+        # The validated active fixture supplies grants; the public charter
+        # control above supplies the requirement and its pending event history.
         engine.runtime["queue"] = []
         for number in (1, 2):
             tid = f"TK-academic-{number}"
@@ -288,8 +289,12 @@ class AssessmentFlowTests(PurposeHarness):
         self.assertTrue(any(a.get("assessment_targets") for a in engine.runtime["queue"]))
 
     def test_receiver_parks_incomplete_new_candidate_assessments_without_creating_tasks(self):
-        engine, _ = self.make(scholarly_enabled=False, operator_enabled=False,
-                              session_limits=deepcopy(LIMITS), max_output_repairs=0)
+        engine, _ = ActiveStateHarness.make(self, **self.fixture_config(
+            scholarly_enabled=False, operator_enabled=False,
+            session_limits=deepcopy(LIMITS), max_output_repairs=0))
+        engine.runtime['queue'] = []
+        engine._enqueue('research_preparation', reason='Check missing candidate assessments')
+        engine._save()
         class MissingRunner:
             @local_job_runner
             def run(inner, **args):
