@@ -1,0 +1,54 @@
+{
+  "status": "verified_before_commit",
+  "source_head": "9c5356dac4e7ce14e2efbc086d81492320c2ff7a",
+  "memory_paths": [
+    "기억/layer2/D-0009.md",
+    "기억/layer3/L-0001.md",
+    "기억/layer3/L-0009.md",
+    "기억/layer3/L-0015.md",
+    "기억/layer3/L-0016.md",
+    "기억/layer3/L-0020.md",
+    "기억/색인.md",
+    "기억/색인_아카이브.md"
+  ],
+  "evidence_paths": [
+    "임시/dream-20260924/합의.md",
+    "임시/dream-20260924/독자.md",
+    "임시/dream-20260924/근거해시.json",
+    "임시/dream-20260924/근거해시_최종.json",
+    "임시/dream-20260924/독해_1.json",
+    "임시/dream-20260924/독해_2.json",
+    "임시/dream-20260924/독해_3.json",
+    "임시/dream-20260924/독해_최종.json",
+    "임시/dream-20260924/독해대조_1.json",
+    "임시/dream-20260924/독해대조_2.json",
+    "임시/dream-20260924/독해대조_3.json",
+    "임시/dream-20260924/독해대조_최종.json",
+    "임시/dream-20260924/사실검증.md",
+    "임시/dream-20260924/현행_합의.md",
+    "임시/dream-20260924/현행_해시.json",
+    "임시/dream-20260924/현행_독해.json",
+    "임시/dream-20260924/현행_독해대조.json",
+    "임시/dream-20260924/최종확인.json"
+  ],
+  "validation": "[validate_memory_index] 정합: 파일 356개 = 색인 10 + 아카이브 346줄",
+  "D_sha256": "990346fb7955898a6096058ac091b05f1387b71ef14df2d08ecd7db63a9442a5",
+  "D_reading": "19b288d1e7804a1aafa9e59501699262",
+  "D_decision": "accept",
+  "L_reading": "50c978f52a154e6c9a8f99667e16bba5",
+  "L_decision": "accept",
+  "L_completion_problem": null,
+  "fact_check": "PASS; final D hash verified by independent agent",
+  "watermarks": {
+    "M": "M-0338",
+    "D": "D-0009"
+  },
+  "convention_version": 27,
+  "loop": "자율 실익 소진으로 종료; 예약 없음; 미적용 소스 제안 1건",
+  "limits": [
+    "제품 시험·연구 운전·graphify 갱신은 수행하지 않음",
+    "원 세션 로그와 작성 실행 로그는 Git 제외 로컬 자료",
+    "현행_원고.md는 현행_해시.json 순서대로 각 파일에 # 원문 파일: 경로 헤더를 붙여 두 줄 개행으로 이어 붙인 로컬 독해 입력이며 커밋에서 제외",
+    "SHA-256은 검증 당시 작업 트리 바이트 기준"
+  ]
+}
