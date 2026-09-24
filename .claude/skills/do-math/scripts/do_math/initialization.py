@@ -2,14 +2,13 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from datetime import datetime, timezone
 import hashlib
 from pathlib import Path
 import shutil
 
-from .state_contract import STATE_FORMAT_VERSION as FEATURE_VERSION, STATE_CONTRACT_ID
-from .execution_profiles import resolve_profile, profile_ref
-from .governance import timestamp, authorize
+from .state_contract import STATE_FORMAT_VERSION, STATE_CONTRACT_ID
+from .execution_profiles import resolve_profile
+from .governance import timestamp
 from .repository import canonical_json, new_id
 
 INITIAL_ROLES = {"intent_interpretation", "maintenance"}
@@ -177,14 +176,11 @@ def initial_intent_evidence(instance, runtime, *, owner_handlers=None):
 
 def operations_capacity_available(instance, runtime):
     """Read approved concurrency/cumulative limits through the Git ledger view."""
-    from .session_slots import GitSessionSlots
+    from .session_slots import SessionSlots
     if not instance.get('capacity_constraints') or not instance.get('role_profile_refs'):
         return False
-    slots = GitSessionSlots(runtime, instance, observer=True)
-    if instance['config'].get('session_limits') is not None:
-        return any(cell['available'] > 0 for cell in slots.snapshot()['operations'].values())
-    usage = slots.usage_snapshot().get('operations')
-    return bool(usage) and (usage['available'] is None or usage['available'] > 0)
+    slots = SessionSlots(runtime, instance, observer=True)
+    return any(cell['available'] > 0 for cell in slots.snapshot()['operations'].values())
 
 
 def activation_requirements(instance, runtime, *, at=None, owner_handlers=None):
@@ -293,7 +289,7 @@ def initialize_state(*, instance_id, goal, goal_kind, workspace, config, source_
     when = timestamp(created_at).isoformat()
     raw = source_input.encode('utf-8')
     input_id = new_id('UI')
-    instance = {"id": instance_id, "feature_version": FEATURE_VERSION, "title": title or goal[:80],
+    instance = {"id": instance_id, "feature_version": STATE_FORMAT_VERSION, "title": title or goal[:80],
         'contract_id': STATE_CONTRACT_ID,
         "config": deepcopy(config),
         "workspace": str(workspace), "created_at": when, "knowledge": {}, "relations": [],
@@ -304,13 +300,15 @@ def initialize_state(*, instance_id, goal, goal_kind, workspace, config, source_
             "text": source_input, "sha256": hashlib.sha256(raw).hexdigest(), "bytes": len(raw)},
             'input_id': input_id,
             "adoption": {}, "activation": {}}}
-    runtime = {"feature_version": FEATURE_VERSION, "status": "initializing",
+    runtime = {"feature_version": STATE_FORMAT_VERSION, "status": "initializing",
         'contract_id': STATE_CONTRACT_ID,
         "availability": {"state": "blocked", "reason": "initialization_incomplete"},
         "tasks": {}, "executions": {}, "activities": {}, "queue": [], "history": [],
         "inputs": [{'id': input_id, 'text': source_input, 'sha256': hashlib.sha256(raw).hexdigest(),
                     'config': {'goal': goal, 'goal_kind': goal_kind, 'policies': policies}, 'created_at': when}],
         "questions": [], "question_links": [], "events": [], "pending_events": [],
-        "last_observed_utc": when, "recovery_checked": False}
+        "last_observed_utc": when, "recovery_checked": False,
+        "review_cycles": {}, "external_operations": {}, "trust_transitions": {}, "conversations": {},
+        "checkpoints": {}, "observations": {}, "condition_states": {}, "extended_controls": {}}
     instance["lifecycle"]["activation"]["missing"] = activation_requirements(instance, runtime, at=when)["missing"]
     return instance, runtime

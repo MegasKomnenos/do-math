@@ -280,8 +280,8 @@ def reconcile_wake(repository: Path, instance: str, workspace: Path, *, config: 
     previous = _load_json(marker)
     held = (_operator_dir(workspace) / "HOLD.json").exists() or status.get("user_pause") or status.get("status") in {"paused", "closed", "completed"}
     _, state, runtime = ResearchRepository(repository, instance).load()
-    from .session_slots import GitSessionSlots
-    providers = GitSessionSlots(runtime, state, observer=True).provider_snapshot()["providers"]
+    from .session_slots import SessionSlots
+    providers = SessionSlots(runtime, state, observer=True).provider_snapshot()["providers"]
     waits = [row for row in providers.values() if row["state"] == "waiting"]
     if held or not config.get("operator_enabled", True) or not waits:
         if previous:
@@ -372,7 +372,7 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict)
     """
     from .execution_profiles import (select_profile, profile_ref, capability_evidence, prepare_prompt,
                                      prompt_seal, execution_observation)
-    from .session_slots import GitSessionSlots, _lock, _unlock
+    from .session_slots import SessionSlots, _lock, _unlock
     from .repository import new_id
     from .git_store import GitStateStoreLockError
     from . import activities, execution_lifecycle
@@ -436,7 +436,7 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict)
                     description.setdefault("identity", adapter.capability_identity())
                     evidence = capability_evidence(profile, description, observed_at=checked_at)
                     state.setdefault("capability_evidence", {})[evidence["id"]] = evidence
-                    head = repo.save(head, state, runtime)
+                    head = repo.save_with_state(head, state, runtime)[0]
                     capability = capability_requirements(state, reference,
                         current_identity=adapter.capability_identity(), at=datetime.now(timezone.utc).isoformat())
                 if not capability["satisfied"]:
@@ -491,18 +491,18 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict)
                     context_origin=activity["assigned_execution_ids"][-1:])
                 execution.update(role="recovery", budget_kind="operations")
                 execution_lifecycle.transition_execution(execution, "starting", at=at)
-                slots = GitSessionSlots(runtime, state)
+                slots = SessionSlots(runtime, state)
                 if not slots.acquire(eid, "operations", chosen["model"], profile=profile, execution=execution):
                     return {"outcome": "recovery_waiting", "reason": slots.admission_reason,
                             "wait": deepcopy(slots.admission_wait)}
                 activities.assign_execution(runtime, aid, execution)
-                head = repo.save(head, state, runtime)
+                head = repo.save_with_state(head, state, runtime)[0]
                 def on_started(identity):
                     nonlocal head
                     slots.started(eid, identity)
                     execution_lifecycle.transition_execution(runtime["executions"][eid], "running",
                         at=datetime.now(timezone.utc).isoformat())
-                    head = repo.save(head, state, runtime)
+                    head = repo.save_with_state(head, state, runtime)[0]
                 try:
                     result = ModelRunner().run(prompt=prompt, output_schema=repair_report_schema(diagnosed=diagnosis is not None),
                         workspace=execution_workspace, evidence_dir=run_directory / "evidence",
@@ -575,7 +575,7 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict)
                                 current_diagnosis['status'] = 'installation_repair_waiting'
                                 current_diagnosis.setdefault('result', {})['installation_repair'].update(
                                     status=outcome, attempted_by=eid)
-                    head = repo.save(head, state, runtime)
+                    head = repo.save_with_state(head, state, runtime)[0]
                 report = {"outcome": outcome, "execution_id": eid, "snapshot": head,
                           "run_directory": str(run_directory)}
                 _json(run_directory / "result.json", report)

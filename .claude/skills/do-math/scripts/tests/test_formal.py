@@ -17,17 +17,13 @@ class T(unittest.TestCase):
     project_fingerprint(Path(d),should_stop=lambda:True)
 
 
-
-
-
  def test_nested_stop_preserves_flushed_child_output(self):
   with tempfile.TemporaryDirectory() as d:
    root=Path(d);ready=root/'ready'
    child="import time; from pathlib import Path; print('child started',flush=True); Path("+repr(str(ready))+").touch(); time.sleep(10)"
    parent='import subprocess,sys,time; subprocess.Popen([sys.executable,"-c",'+repr(child)+']); time.sleep(10)'
    result=formal._job_run([sys.executable,'-c',parent],root,should_stop=ready.exists)
-  self.assertFalse(result[3])
-  self.assertTrue(result[4])
+  self.assertTrue(result[3])
   self.assertIn('child started',result[1])
 
  def test_compiler_crash_preserves_native_exit_code(self):
@@ -72,8 +68,7 @@ class T(unittest.TestCase):
  def test_actual_job_stop_without_completion_is_still_stopped(self):
   with tempfile.TemporaryDirectory() as d:
    result=formal._job_run([sys.executable,'-c','import time; time.sleep(10)'],Path(d),should_stop=lambda:True)
-  self.assertFalse(result[3])
-  self.assertTrue(result[4])
+  self.assertTrue(result[3])
 
  def test_verifier_reports_worker_failure_without_raising_or_claiming_timeout(self):
   with tempfile.TemporaryDirectory() as d, patch('do_math.formal.inspect_toolchain',return_value={}), \
@@ -107,34 +102,6 @@ class T(unittest.TestCase):
    self.assertEqual(result['status'],'rejected')
    self.assertEqual(result['reason'],'approved project inputs changed before execution')
 
- def test_job_publishes_applied_limits_before_resume_and_reports_usage_after_exit(self):
-  import json
-  events=[]; captured={}
-  limits={'memory_bytes':1048576,'cpu_rate_basis_points':2500}
-  usage={'limits':dict(limits),'peak_job_memory_bytes':4096,'cpu_time_100ns':17,
-         'scope':'local_job_commit_memory_and_cpu_cap_not_rss_or_remote_usage'}
-  class Job:
-   def __init__(self, argv, **kwargs):
-    captured.update(kwargs); self.name=kwargs['name']; self.pid=17; self.creation_filetime=987654321
-    request=json.loads(Path(argv[-1]).read_text(encoding='utf8')); self.out=Path(request['stdout']);self.err=Path(request['stderr']);self.status=Path(request['status'])
-   def resource_usage(self): return usage
-   def resume(self):
-    self_test.assertEqual(events[0][0],'started')
-    self.out.write_bytes(b'out');self.err.write_bytes(b'err');self.status.write_text(json.dumps({'state':'exited','exit':0}),encoding='utf8')
-   def wait(self, timeout): return True
-   def inspect(self): return type('Inspection',(),{'root_signaled':True,'active_processes':0,'process_ids':()})()
-   def close(self): events.append(('closed',None))
-  self_test=self
-  with tempfile.TemporaryDirectory() as d, patch('do_math.formal.WindowsJob',Job):
-   result=formal._job_run(['fixture'],Path(d),resource_limits=limits,
-    on_started=lambda identity:events.append(('started',identity)),
-    on_finished=lambda observed:events.append(('finished',observed)))
-  self.assertEqual(result,(0,'out','err',False,False))
-  self.assertEqual(captured['resource_limits'],limits)
-  self.assertEqual(events[0][1]['host_resources'],usage)
-  self.assertEqual(events[0][1]['creation_filetime'],'987654321')
-  self.assertEqual(events[1],('finished',usage))
-  self.assertEqual(events[2],('closed',None))
  @category('lean')
  def test_actual_exact_unicode_names_and_expressions_are_not_normalized(self):
   names=['\u212a','K']
@@ -149,7 +116,7 @@ class T(unittest.TestCase):
   self.assertIn('\u2126',result['declaration_signatures'][names[0]])
 
  def test_changed_approved_executable_is_rejected_before_version_execution(self):
-  with tempfile.TemporaryDirectory() as d, patch('do_math.formal._job_run', return_value=(0,'fixture version','',False,False)) as run:
+  with tempfile.TemporaryDirectory() as d, patch('do_math.formal._job_run', return_value=(0,'fixture version','',False)) as run:
    executable=Path(d)/'synthetic-lean.exe'
    executable.write_bytes(b'approved fixture executable')
    approved_hash=hashlib.sha256(executable.read_bytes()).hexdigest()
@@ -168,9 +135,9 @@ class T(unittest.TestCase):
     version='fixture version',version_exit=0,project=None,
     verifier_sha256=hashlib.sha256(Path(formal.__file__).read_bytes()).hexdigest(),executables={str(executable):digest})
    def run(args,*unused,**kwargs):
-    if args[-1]=='--version': return 0,'fixture version','',False,False
+    if args[-1]=='--version': return 0,'fixture version','',False
     executable.write_bytes(b'changed during simulated compiler run')
-    return 0,'','',False,False
+    return 0,'','',False
    with patch('do_math.formal._job_run',side_effect=run):
     result=verify_lean(source='theorem x : True := True.intro',declarations=['x'],workspace=Path(d),
      lean_command=command,expected_toolchain=expected)

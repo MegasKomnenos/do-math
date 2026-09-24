@@ -33,7 +33,7 @@ def complete_academic_task(engine, task, basis):
     """Supply a returned report and apply the real independent assessment rules."""
     from do_math.execution_lifecycle import transition_execution
     from do_math.task_scope import apply_task_assessments
-    from v5_fixtures import assessment
+    from research_fixtures import assessment
 
     executions = []
     for role in ("research_work", "research_plan"):

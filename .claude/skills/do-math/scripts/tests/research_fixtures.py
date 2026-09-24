@@ -436,3 +436,12 @@ def sealed_maintenance_submission(workspace, execution_id):
     prefix = 'runtime/artifacts/BA-fixture-submission/'
     return ({**sealed['intent'], 'output_ref': prefix + 'output.json'},
             {prefix + path: raw for path, raw in sealed['artifacts'].items()})
+
+
+def scope_assessment(policy, slots):
+    """Explicit synthetic full-proposal scope authored by the fixture reviewer."""
+    return {"assessment_id": "fixture-full-proposal-scope", "policy_id": policy["id"],
+        "policy_version": policy["version"], "required_perspectives": policy["required_perspectives"],
+        "initial_slots": [{"id": slot, "perspective": slot, "required_source_refs": ["proposal"]} for slot in slots],
+        "selected_profile_ref": None, "activity_execution_limit": policy["activity_execution_limit"],
+        "overflow_disposition": policy["overflow_disposition"]}

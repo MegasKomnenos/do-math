@@ -319,9 +319,7 @@ def _boundary_key(rule: dict) -> str:
 def validate_observation_rule_contract(bindings: list[dict]) -> list[dict]:
     """Validate profile signal kinds against the implemented snapshot producers.
 
-    The legacy exact-binding form remains readable for recorded profile
-    editions. New profiles use the kind-only form emitted by
-    :func:`observation_rule_contract`.
+    Profiles use the signal kinds emitted by observation_rule_contract.
     """
     if not isinstance(bindings, list):
         raise ValueError("profile observation rule contract must be a list")
@@ -341,17 +339,6 @@ def validate_observation_rule_contract(bindings: list[dict]) -> list[dict]:
                 raise ValueError("profile observation contract has no implemented producer for its signal kind")
             normalized = {"source": source, "operator": operator,
                           "subject_kind": subject_kind, "unit": unit}
-        elif set(binding) == {"operator", "subject", "basis"}:
-            # Compatibility for a previously sealed exact subject binding.
-            operator = binding["operator"]
-            sample = {**binding, "id": "binding",
-                      "threshold": "2000-01-01T00:00:00Z" if operator == "wall_time_reached" else 1,
-                      "required_evidence": ["binding-validation"]}
-            validate_rules([sample])
-            source, unit = binding["basis"]["source"], binding["basis"]["unit"]
-            if operator not in OBSERVATION_SOURCES.get(source, set()):
-                raise ValueError("profile observation source has no implemented producer for this operator")
-            normalized = deepcopy(binding)
         else:
             raise ValueError("invalid profile observation binding")
         identity = _raw_json(normalized)
@@ -365,8 +352,7 @@ def validate_observation_rule_contract(bindings: list[dict]) -> list[dict]:
 def validate_execution_rules(rules: list[dict], *, bindings: list[dict], execution_id: str | None) -> list[dict]:
     """Admit only signals registered in the immutable profile's observation contract.
 
-    New bindings are {source, operator, subject_kind, unit}; an exact legacy
-    binding remains readable for existing records. Syntax alone intentionally
+    Bindings are {source, operator, subject_kind, unit}. Syntax alone
     does not establish that an execution-local name has appeared in a snapshot.
     """
     checked = validate_rules(rules, allow_empty=True)
@@ -378,14 +364,8 @@ def validate_execution_rules(rules: list[dict], *, bindings: list[dict], executi
         if execution_id is not None and subject["kind"] in {"execution", "checkpoint"} and subject["id"] != execution_id:
             raise ValueError("rule subject belongs to a different execution")
         def matches(binding):
-            if set(binding) == {"source", "operator", "subject_kind", "unit"}:
-                return (binding["operator"] == rule["operator"] and binding["source"] == rule["basis"]["source"] and
-                        binding["unit"] == rule["basis"]["unit"] and binding["subject_kind"] == subject["kind"])
-            expected = binding["subject"]["id"]
-            same_id = (expected == subject["id"] or expected == "$execution" and
-                       (execution_id is None or subject["id"] == execution_id))
-            return (binding["operator"] == rule["operator"] and binding["basis"] == rule["basis"] and
-                    binding["subject"]["kind"] == subject["kind"] and same_id)
+            return (binding["operator"] == rule["operator"] and binding["source"] == rule["basis"]["source"] and
+                    binding["unit"] == rule["basis"]["unit"] and binding["subject_kind"] == subject["kind"])
         if not any(matches(binding) for binding in bindings):
             raise ValueError("rule has no registered observable subject/source/unit: " + rule["id"])
     return checked

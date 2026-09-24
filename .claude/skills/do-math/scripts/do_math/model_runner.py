@@ -7,7 +7,7 @@ import shutil
 import os
 from pathlib import Path
 import time
-from typing import Any, Callable
+from typing import Callable
 
 import jsonschema
 
@@ -275,23 +275,18 @@ class ModelRunner:
         return self.codex.run(model=model, **options)
 
 
-def verified_native_final(result, execution, context, *, recovery=False):
+def verified_native_final(result, execution, context):
     """Revalidate captured native evidence against the published start and input.
 
     This consumes adapter evidence after the real local termination barrier.
     A completed runner status or an arbitrary final file is not sufficient.
-    Historical evidence uses the same checks, with only the superseded
-    missing-seal policy failure allowed by an explicit recovery caller.
     """
     import base64
     import hashlib
     from .submission import load_json
     from .codex_adapter import CodexExecAdapter
     from .claude_adapter import ClaudePrintAdapter
-    legacy = (recovery and result.get('status') == 'failed'
-        and result.get('error_kind') == 'execution_failure'
-        and result.get('error') == 'Execution ended without a centrally sealed submission')
-    if result.get('status') != 'completed' and not legacy:
+    if result.get('status') != 'completed':
         raise ValueError('native execution did not complete normally')
     try:
         evidence = result['execution']; collected = evidence['collect']; started = evidence['started']

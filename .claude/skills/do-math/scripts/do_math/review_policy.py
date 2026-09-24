@@ -22,7 +22,7 @@ def _strings(values, label, *, allow_empty=False):
 
 
 def build_review_policy(policy=None, *, reviewer_count=None, max_rounds=None, judge_slots=None):
-    """Return a frozen v5 review policy, deriving only legacy-safe defaults."""
+    """Validate the adopted review policy or construct the configured default."""
     if policy is None:
         count = _positive(reviewer_count, "reviewer count")
         rounds = _positive(max_rounds, "round limit")
@@ -61,27 +61,12 @@ def build_review_policy(policy=None, *, reviewer_count=None, max_rounds=None, ju
     return deepcopy(policy)
 
 
-def default_scope_assessment(policy, reviewer_slots):
-    """Adapt the old all-proposal assignment without inventing expertise claims."""
-    slots = _strings(list(reviewer_slots), "reviewer slots")
-    return {
-        "assessment_id": "legacy-full-proposal-scope",
-        "policy_id": policy["id"],
-        "policy_version": policy["version"],
-        "required_perspectives": list(policy["required_perspectives"]),
-        "initial_slots": [{"id": slot, "perspective": slot, "required_source_refs": ["proposal"]} for slot in slots],
-        "selected_profile_ref": None,
-        "activity_execution_limit": policy["activity_execution_limit"],
-        "overflow_disposition": policy["overflow_disposition"],
-    }
-
-
 def minimum_scope_executions(initial_slots, round_limit, executions_used=0):
     """Attempts already spent plus the mandatory initial/organize/judge path."""
     return executions_used + initial_slots + 1 + (3 if round_limit == 1 else initial_slots + 6)
 
 
-def validate_scope_assessment(assessment, policy, *, executions_used=0, enforce_execution_minimum=True):
+def validate_scope_assessment(assessment, policy, *, executions_used=0):
     """Validate an assessment without letting it split the proposal's review scope."""
     policy = build_review_policy(policy)
     if not isinstance(assessment, dict):
@@ -125,7 +110,7 @@ def validate_scope_assessment(assessment, policy, *, executions_used=0, enforce_
     if limit > policy["activity_execution_limit"]:
         raise ValueError("scope assessment exceeds the policy execution limit")
     minimum = minimum_scope_executions(len(normalized), policy['round_limit'], executions_used)
-    if enforce_execution_minimum and limit < minimum:
+    if limit < minimum:
         raise ValueError(f"scope activity execution limit requires at least {minimum} attempts including {executions_used} already used")
     if assessment["overflow_disposition"] != policy["overflow_disposition"]:
         raise ValueError("scope assessment changes the policy overflow disposition")

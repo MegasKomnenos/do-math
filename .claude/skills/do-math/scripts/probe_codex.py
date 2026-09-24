@@ -16,7 +16,6 @@ import uuid
 
 from do_math.codex_adapter import CodexExecAdapter
 from do_math.codex_worker import sanitized_environment
-from do_math.preflight import inspect_bundle
 
 
 def dump(path: Path, value: object) -> None:
@@ -129,8 +128,6 @@ def run_case(adapter: CodexExecAdapter, directory: Path, case: str, *, model: st
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repository", type=Path, default=Path.cwd(), help="Base directory for live probe evidence")
-    parser.add_argument("--skill-only", "--spec-only", dest="skill_only", action="store_true",
-                        help="Check installed skill documents and role schemas; make no model request")
     parser.add_argument("--codex", default=shutil.which("codex"))
     parser.add_argument("--model", help="Required for a live CLI probe")
     parser.add_argument("--effort", choices=("low", "medium", "high", "xhigh", "max", "ultra"), default="low")
@@ -139,10 +136,6 @@ def main() -> int:
     parser.add_argument("--cases", nargs="+", choices=("text", "structured", "tool", "cancel"), default=["text", "structured", "cancel"])
     parser.add_argument("--output-dir", type=Path, help="New evidence directory, which must not already exist")
     args = parser.parse_args()
-    if args.skill_only:
-        report = inspect_bundle()
-        print(json.dumps(report, ensure_ascii=False, indent=2))
-        return 0 if report["status"] == "verified" else 1
     if not args.model or not args.codex:
         parser.error("live probes require --model and an installed codex CLI")
     if args.timeout_seconds <= 0:

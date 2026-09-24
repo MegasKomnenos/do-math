@@ -64,7 +64,7 @@ class AuditWorkflowTests(unittest.TestCase):
         from do_math import contracts
         from do_math.execution_profiles import profile_ref
         from jsonschema import Draft202012Validator
-        from v5_fixtures import candidate
+        from research_fixtures import candidate
         _, instance, _ = approved_fixture()
         wire = candidate()
         wire['profile_refs'] = [profile_ref(next(iter(instance['execution_profiles'].values())))]
@@ -227,7 +227,7 @@ class AuditPersistenceTests(unittest.TestCase):
     def candidate(self, identifier):
         from do_math.contracts import task_candidate_record
         from do_math.execution_profiles import profile_ref
-        from v5_fixtures import candidate
+        from research_fixtures import candidate
         wire = candidate()
         profile = next(p for p in self.instance['execution_profiles'].values() if p['role']=='research_work')
         wire['profile_refs'] = [profile_ref(profile)]
@@ -273,7 +273,7 @@ class AuditPersistenceTests(unittest.TestCase):
         bad = deepcopy(runtime)
         bad['tasks'][saved['id']]['profile_refs'][0]['revision'] += 1
         with self.assertRaises(ValueError):
-            self.store.save(head, instance, bad)
+            self.store.save_with_state(head, instance, bad)[0]
         self.assertEqual(self.store.load()[0], head)
         # Receipt currentness reads the same persisted governance as review/dispatch.
         from do_math.decision_engine import DecisionEngineMixin
@@ -289,7 +289,7 @@ class AuditPersistenceTests(unittest.TestCase):
             'content':{'rule_id':'persisted', 'scope':['P'], 'text':'Require an explicit domain', 'reason_refs':['D'], 'audit_refs':[]}}
         receiver.instance, receiver.runtime, _ = governance.apply_decision(instance, runtime,
             {'kind':'policy', 'record':policy}, source_ref='S')
-        changed_head = self.store.save(head, receiver.instance, receiver.runtime)
+        changed_head = self.store.save_with_state(head, receiver.instance, receiver.runtime)[0]
         _, receiver.instance, receiver.runtime = self.store.load(changed_head)
         with self.assertRaises(CurrentnessChanged):
             receiver._validate_decision_acceptance(review_action, output, receipt, {})
@@ -312,7 +312,7 @@ class AuditPersistenceTests(unittest.TestCase):
             'item_dispositions':[{'obligation_id':source['completion_obligations'][0]['id'], 'kind':'transferred',
                 'authority_ref':decision['id'], 'target_task_id':target['id'], 'target_obligation_id':'OB-inherited', 'evidence_refs':[]}], 'unresolved':[]}
         instance, runtime = task_scope.apply_task_assessments(instance, runtime, [assessment], execution_id='EX-plan', input_tasks=deepcopy(runtime['tasks']))
-        saved_head = self.store.save(head, instance, runtime)
+        saved_head = self.store.save_with_state(head, instance, runtime)[0]
         _, instance, runtime = self.store.load(saved_head)
         original, recipient = runtime['tasks'][source['id']], runtime['tasks'][target['id']]
         self.assertEqual(original['status'], 'closed')
@@ -324,7 +324,7 @@ class AuditPersistenceTests(unittest.TestCase):
         bad['tasks'][source['id']]['status'] = 'completed'
         bad['tasks'][source['id']]['assessment']['decision'] = 'completed'
         with self.assertRaisesRegex(ValueError, 'completed.*transferred'):
-            self.store.save(saved_head, instance, bad)
+            self.store.save_with_state(saved_head, instance, bad)[0]
         self.assertFalse(task_scope.assessment_current(bad['tasks'][source['id']], instance, bad))
         self.assertEqual(self.store.load()[0], saved_head)
         omitted = {'task_id':target['id'], 'decision':'completed', 'item_dispositions':[
@@ -337,7 +337,7 @@ class AuditPersistenceTests(unittest.TestCase):
         from do_math.contracts import CONTRACT_REVIEW_ITEMS, TASK_CANDIDATE
         from do_math.execution_profiles import profile_ref
         from jsonschema import Draft202012Validator
-        from v5_fixtures import candidate
+        from research_fixtures import candidate
         self.grant()
         self.instance.update(knowledge={}, sources=[])
         self.runtime.update(cycles=0, waiting_actions={})
@@ -359,7 +359,7 @@ class AuditPersistenceTests(unittest.TestCase):
         output = {'item_reviews':[{'item_id':key, 'decision':'approved', 'evidence_refs':['S'],
             'findings':[], 'missing_inputs':[], 'next_owner':'research_plan'} for key in CONTRACT_REVIEW_ITEMS]}
         engine._apply({'role':'task_contract_review', 'target':task['id']}, output, 'EX-review', owns_response=False)
-        saved_head = self.store.save(engine.head, engine.instance, engine.runtime)
+        saved_head = self.store.save_with_state(engine.head, engine.instance, engine.runtime)[0]
         _, instance, runtime = self.store.load(saved_head)
         task = runtime['tasks'][task['id']]
         self.assertTrue(planning.contract_review_current(task['reviews'][-1], task, instance, runtime)['valid'])

@@ -13,7 +13,7 @@ from do_math.review_cycle import (start_review, next_actions, context_for, defer
 from test_purpose_engine import PurposeHarness, PurposeRunner, common, formal_fixture, EXPLANATION, parse_context
 from test_review_engine import FakeEngine
 from do_math import knowledge_records as kr
-from v5_fixtures import local_job_runner, send_control
+from research_fixtures import local_job_runner, send_control
 import tempfile
 
 
@@ -174,19 +174,6 @@ class ReviewResearchEngineTests(PurposeHarness):
         self.assertFalse(any(a.get('review_cycle_id') == cycle['id'] for a in engine.runtime['queue']))
         self.assertTrue(any('external textbook definition' in (question.get('text') or '') for question in engine._question_view()))
 
-    def test_optional_investigation_cannot_consume_reserved_final_review_calls(self):
-        engine, runner = self.make_research(work_calls=6)
-        self.drive(engine, predicate=lambda e: any(c['status'] == 'unresolved' for c in e.runtime['review_cycles'].values()))
-        self.assertFalse(runner.research_answers)
-        self.assertEqual(next(iter(engine.runtime['review_cycles'].values()))['decision'], 'unresolved')
-
-    def test_unlimited_work_budget_admits_fixed_question_research(self):
-        engine, runner = self.make_research(work_calls=None, operations_calls=None)
-        self.drive(engine, predicate=lambda e: bool(runner.research_answers))
-        self.assertTrue(runner.research_answers)
-        self.assertIsNone(engine.status()['budget']['work']['limit'])
-        self.assertTrue(any(ex['role'] == 'supplemental_research' and ex.get('outcome') == 'output_accepted'
-            and ex['budget_kind'] == 'work' for ex in engine.runtime['executions'].values()))
 
     def test_initial_peer_question_is_not_exposed_before_phase_seal(self):
         engine, runner = self.make_research()
@@ -324,14 +311,13 @@ class SplitReviewResearchTests(unittest.TestCase):
         self.addCleanup(self.directory.cleanup)
         self.engine = FakeEngine(self.directory.name)
         self.engine.instance['config'].pop('review_scope_assessment')
-        self.engine._budget_available = lambda pool, used, requested=1: True
 
     def defer(self):
         engine = self.engine
         cid = engine._start_identity_review('K1')
         engine.execute()
         action = deepcopy(engine.pending())
-        context = engine._review_context(action, engine.root / 'deferred')
+        context = engine._prepare_review_context(action, engine.root / 'deferred')['context']
         requests = [{'id': 'domain', 'question': 'Which kernel constants does this exact declaration depend on?',
                      'source_refs': ['proposal:formal.dependency_closure', 'proposal:lean_code']}]
         engine.runtime['executions']['INV-request'] = {'id': 'INV-request', 'role': 'identity_review',
@@ -351,32 +337,6 @@ class SplitReviewResearchTests(unittest.TestCase):
         self.assertFalse(any(a['role'] == 'supplemental_research' for a in self.engine.runtime['queue']))
         self.assertEqual(self.engine.runtime['review_cycles'][cid]['decision'], 'unresolved')
 
-    def test_finite_call_pool_preserves_final_slots_at_request_time(self):
-        self.engine.instance['config']['work_calls'] = 6
-        requested = []
-        def available(pool, used, required=1):
-            self.assertEqual(pool, 'work')
-            requested.append(required)
-            return required <= 1
-        self.engine._budget_available = available
-        cid = self.defer()
-        self.assertTrue(requested and requested[0] > 1)
-        self.assertEqual(self.engine.runtime['review_cycles'][cid]['decision'], 'unresolved')
-        self.assertFalse(any(a['role'] == 'supplemental_research' for a in self.engine.runtime['queue']))
-        self.engine.instance['config']['session_limits'] = {'work': {}, 'operations': {}}
-        self.assertTrue(self.engine._review_call_budget_available(100))
-
-    def test_finite_call_pool_is_rechecked_before_optional_dispatch(self):
-        engine = self.engine
-        engine.instance['config']['work_calls'] = 100
-        cid = self.defer()
-        action = next(a for a in engine.runtime['queue'] if a['role'] == 'supplemental_research')
-        engine._budget_available = lambda pool, used, required=1: required <= 1
-        execution = {'id': 'INV-no-capacity', 'role': 'supplemental_research', 'action': action,
-                     'actor_kind': 'ai', 'owner_activity_id': action['owner_activity_id'],
-                     'execution_profile_ref': deepcopy(engine.research_profile)}
-        self.assertEqual(engine._admit_review_execution(action, execution)['disposition'], 'review_followup_reserved')
-        self.assertNotIn(execution['id'], engine.runtime['review_cycles'][cid]['execution_accounting']['admissions'])
 
     def test_split_scope_fixed_research_and_resumed_review_publish_exact_assessment(self):
         engine = self.engine

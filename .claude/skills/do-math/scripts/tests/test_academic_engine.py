@@ -19,7 +19,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.engine import control
 from do_math import external as external_module
 from do_math.repository import canonical_json
-from v5_fixtures import charter_change, policy_change, send_control, assessment
+from research_fixtures import charter_change, policy_change, send_control, assessment
 from test_purpose_engine import PurposeHarness, PurposeRunner
 
 

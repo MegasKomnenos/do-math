@@ -54,7 +54,7 @@ class FakeEngine(QuestionEngineMixin, ReviewEngineMixin):
         self.profile = profile_ref(next(p for p in profiles['execution_profiles'].values() if p['role'] == 'identity_review'))
         self.research_profile = profile_ref(next(p for p in profiles['execution_profiles'].values() if p['role'] == 'supplemental_research'))
         self.instance['review_policy'] = deepcopy(policy)
-        from v5_fixtures import trust_fixture
+        from research_fixtures import trust_fixture
         from do_math.initialization import digest
         trusted = trust_fixture(Path(root), ['fixture-review-lean'])
         trusted.pop('operation')  # Registration wire fields are not persisted environment fields.
@@ -108,7 +108,7 @@ class FakeEngine(QuestionEngineMixin, ReviewEngineMixin):
         self.sequence += 1
         execution_id = f'ex-{self.sequence}'
         workspace = self.root / execution_id / 'workspace'
-        context = self._review_context(action, workspace)
+        context = self._prepare_review_context(action, workspace)['context']
         cycle = self.runtime['review_cycles'][action['review_cycle_id']]
         output = dict(proposal_digest=context['proposal_digest'], summary='Evidence-backed result',
                       used_sources=['proposal:1'], questions=[])
@@ -445,7 +445,7 @@ class ReviewEngineTests(unittest.TestCase):
     def _staged_activation_git_round_trip(self, *, followup_transition):
         engine = self.engine
         from do_math.initialization import digest as initialization_digest
-        from v5_fixtures import trust_fixture
+        from research_fixtures import trust_fixture
         old_fixture = trust_fixture(Path(self.temp.name), ['old-lean'])
         old_environment = engine.instance['trust_environments']['TE-review']
         old_environment.update(toolchain=old_fixture['toolchain'], allowed_axioms=old_fixture['allowed_axioms'],
@@ -517,7 +517,7 @@ class ReviewEngineTests(unittest.TestCase):
             state['capacity_constraints'] = deepcopy(capacity_constraints)
             state.pop('role_profile_refs', None)
         first = repository.initialize(persisted_before, persisted_runtime_before)
-        second = repository.save(first, persisted_after, persisted_runtime_after)
+        second = repository.save_with_state(first, persisted_after, persisted_runtime_after)[0]
         old_loaded = ResearchRepository(repository_path, instance_id).load(first)[1]
         new_loaded = ResearchRepository(repository_path, instance_id).load(second)[1]
 
@@ -573,7 +573,7 @@ class ReviewEngineTests(unittest.TestCase):
         self.assertFalse(kr.assessment_current(twice_activated, assessment['id']))
         self.assertTrue(kr.usable_links(twice_activated, 'K1'))
 
-        third = repository.save(second, twice_activated, persisted_runtime_after)
+        third = repository.save_with_state(second, twice_activated, persisted_runtime_after)[0]
         twice_loaded = ResearchRepository(repository_path, instance_id).load(third)[1]
         self.assertEqual(twice_loaded['formal_results'][current['formal_result_id']],
                          first_transition_records['formal'])
@@ -926,7 +926,7 @@ class ReviewEngineTests(unittest.TestCase):
         engine.runtime['review_cycles'][cycle_id] = record_turn(cycle, 'initial-0', [source])
         action = engine.pending()
         workspace = engine.root / 'source-test'
-        context = engine._review_context(action, workspace)
+        context = engine._prepare_review_context(action, workspace)['context']
         reference = context['source_refs'][0]
         path = workspace / reference['local_path']
         self.assertTrue(path.is_file())
@@ -935,7 +935,7 @@ class ReviewEngineTests(unittest.TestCase):
         self.assertFalse(Path(reference['local_path']).is_absolute())
         self.assertNotIn(source['content'], json.dumps(context))
         self.assertEqual(context['self_messages'][0]['content']['source_ref']['local_path'], reference['local_path'])
-        engine._review_context(action, workspace)
+        engine._prepare_review_context(action, workspace)['context']
         self.assertEqual(len(engine.runtime['review_cycles'][cycle_id]['turns']['initial-0']), 1)
 
     def test_final_match_does_not_override_suspension_or_formal_change(self):

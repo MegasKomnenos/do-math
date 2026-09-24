@@ -8,7 +8,7 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.engine import ResearchEngine, control, initialize, _repository
 from test_engine import ScriptedRunner
-from v5_fixtures import activate, install_adapter_fixture
+from research_fixtures import activate, install_adapter_fixture
 from do_math.repository import ResearchRepository
 
 
@@ -31,7 +31,7 @@ class ControlTransitionTests(unittest.TestCase):
     def update(self, change):
         head, instance, runtime = self.store.load()
         change(instance, runtime)
-        self.store.save(head, instance, runtime)
+        self.store.save_with_state(head, instance, runtime)[0]
 
     def test_pause_and_resume_cannot_reopen_a_publicly_closed_instance(self):
         control(self.repo, self.iid, "close")
@@ -107,7 +107,6 @@ class ControlTransitionTests(unittest.TestCase):
         self.assertFalse(disposition['local_termination_confirmed'])
         self.assertEqual(disposition['remote_termination'], 'unknown')
         self.assertEqual(disposition['next_owner'], 'operator')
-
 
 
 if __name__ == "__main__":

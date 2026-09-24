@@ -50,7 +50,7 @@ class DiagnosedRecoveryTests(unittest.TestCase):
         stack.enter_context(patch('do_math.execution_profiles.select_profile',return_value=profile))
         stack.enter_context(patch('do_math.initialization.adapter_for',return_value=SimpleNamespace(capability_identity=lambda:{})))
         stack.enter_context(patch('do_math.initialization.capability_requirements',return_value={'satisfied':True}))
-        stack.enter_context(patch('do_math.session_slots.GitSessionSlots',return_value=slots))
+        stack.enter_context(patch('do_math.session_slots.SessionSlots',return_value=slots))
         stack.enter_context(patch('do_math.session_slots._lock',return_value=object()))
         stack.enter_context(patch('do_math.session_slots._unlock'))
         stack.enter_context(patch.object(operator,'ModelRunner',return_value=SimpleNamespace(run=provider)))

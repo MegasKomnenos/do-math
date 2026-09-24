@@ -12,20 +12,20 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from v5_fixtures import local_job_runner
+from research_fixtures import local_job_runner
 from do_math.contracts import schema_for
 from do_math.model_policy import LIMITS, MODELS
 from do_math.execution_profiles import profile_ref
 from do_math.planning import contract_hash
 from do_math.repository import canonical_json
 from do_math.submission import payload_issues
-from v5_fixtures import charter_change, policy_change, producer_result, contract_review, prepared_rule_conditions
+from research_fixtures import charter_change, policy_change, producer_result, contract_review, prepared_rule_conditions
 from test_engine import common, context_from
 from test_purpose_engine import ActiveStateHarness, PurposeHarness
 
 
 def candidate(title="one"):
-    from v5_fixtures import candidate as task_candidate
+    from research_fixtures import candidate as task_candidate
     return task_candidate(title)
 
 
@@ -43,7 +43,7 @@ class AssessmentSubmissionTests(unittest.TestCase):
         self.output = {**common("research_preparation"), "candidates": [candidate("one"), candidate("two")]}
 
     def issues(self, extensions):
-        from v5_fixtures import seal_response, supply_observation_rules
+        from research_fixtures import seal_response, supply_observation_rules
         extensions = deepcopy(extensions)
         if 'assessment_targets' not in self.context['action']:
             supply_observation_rules(self.output['candidates'], extensions)
@@ -79,11 +79,8 @@ class AssessmentSubmissionTests(unittest.TestCase):
         issues = self.issues({})
         self.assertIn('model_assessments', json.dumps(issues), "the old edition's assessment must not fill the new candidate implicitly")
 
-    def test_empty_preparation_and_legacy_call_budget_contract_remain_accepted(self):
+    def test_empty_preparation_requires_no_candidate_assessments(self):
         self.output["candidates"] = []
-        self.assertEqual(self.issues({}), [])
-        self.output["candidates"] = [candidate()]
-        self.context["budget_unit"] = "execution_attempts"
         self.assertEqual(self.issues({}), [])
 
     def test_assessment_only_payload_cannot_edit_contracts_or_use_other_extensions(self):
@@ -113,7 +110,7 @@ class AssessmentFlowTests(PurposeHarness):
     def prepare_engine(self):
         engine, _ = ActiveStateHarness.make(self, **self.fixture_config(
             scholarly_enabled=False, operator_enabled=False, session_limits=deepcopy(LIMITS)))
-        from v5_fixtures import send_control
+        from research_fixtures import send_control
         from do_math.academic import current_requirements
         send_control(engine, "decision", config={"change": charter_change(engine, academic_requirements=[
             {"id": "r", "scope": "solution", "criteria": ["Explain the supplied argument"], "assessor": "research_plan"}])})
@@ -165,7 +162,7 @@ class AssessmentFlowTests(PurposeHarness):
                 output = {**common("research_preparation"), "candidates": []}
                 extensions = {"model_assessments": [rating(task_id=tid) for tid in targets]}
                 (args["workspace"] / "activity-extensions.json").write_bytes(canonical_json(extensions))
-                from v5_fixtures import seal_response
+                from research_fixtures import seal_response
                 seal_response(output, context, args["workspace"])
                 draft = args["workspace"] / ".scratch/submission.json"
                 draft.parent.mkdir(exist_ok=True); draft.write_bytes(canonical_json(output))
@@ -308,7 +305,7 @@ class AssessmentFlowTests(PurposeHarness):
     def test_real_academic_generation_enters_assessment_preparation_on_session_conversion(self):
         from do_math.engine import control
         from test_academic_engine import requirement
-        engine, _ = self.make(scholarly_enabled=False, work_calls=50, operations_calls=60)
+        engine, _ = self.make(scholarly_enabled=False,  )
         control(self.repo, engine.instance["id"], "decision", config={"change": charter_change(engine, academic_requirements=[requirement(["Explain the result"])])})
         engine.process_controls()
         self.drive(engine, predicate=lambda e: e.instance["goal_status"] == "mathematically_solved")

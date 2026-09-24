@@ -11,9 +11,7 @@ from typing import Callable
 import jsonschema
 
 STATE_FORMAT_VERSION = 5
-SCHEMA_VERSION = 2
 STATE_CONTRACT_ID = "do-math-state/5"
-CONTRACT_ID = STATE_CONTRACT_ID
 
 
 @lru_cache(maxsize=256)
@@ -35,10 +33,7 @@ class RegisteredFamily:
 
 
 class StateContract:
-    def __init__(self, version=STATE_FORMAT_VERSION):
-        if version != STATE_FORMAT_VERSION:
-            raise ValueError("unsupported state contract version")
-        self.version = version
+    def __init__(self):
         self._families = {}
 
     @classmethod
@@ -96,20 +91,12 @@ class StateContract:
         return tuple(self._families[key] for key in sorted(self._families))
 
     def manifest(self):
-        """Record the format version and the writer's schema declarations.
-
-        The installed validators run on every load and publication. Their source
-        bytes belong to the engine installation identity; a compatible repair
-        must be able to read the records it repairs. A semantic reinterpretation
-        of existing values requires a new schema_version or contract_id. The
-        declaration digest is provenance: compatible optional-field additions
-        are decided by validating the actual saved layouts and records.
-        """
+        """Describe the installed schema; its digest identifies the writer."""
         families = [{"root": f.root, "name": f.name, "shape": f.shape, "identity": f.identity,
                      "schema": f.schema} for f in self.families()]
-        payload = {"contract_id": STATE_CONTRACT_ID, "schema_version": SCHEMA_VERSION, "families": families}
+        payload = {"contract_id": STATE_CONTRACT_ID, "families": families}
         digest = hashlib.sha256(json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
-        return {"contract_id": STATE_CONTRACT_ID, "schema_version": SCHEMA_VERSION, "sha256": digest}
+        return {"contract_id": STATE_CONTRACT_ID, "sha256": digest}
 
     def validate(self, instance, runtime):
         """Pure schema and relationship validation; no ID/time allocation."""
@@ -117,10 +104,6 @@ class StateContract:
         for root, state in (("research", instance), ("runtime", runtime)):
             if not isinstance(state, dict):
                 raise ValueError(root + " must be an object")
-            if type(state.get("feature_version")) is not int or state["feature_version"] != STATE_FORMAT_VERSION:
-                raise ValueError(root + " feature_version is missing or unsupported")
-            if state.get("contract_id") != STATE_CONTRACT_ID:
-                raise ValueError(root + " contract_id is missing or unsupported")
             if root == "research" and state.get("object_format") not in {"sha1", "sha256"}:
                 raise ValueError("research object_format is missing or unsupported")
             for name, value in state.items():
@@ -189,7 +172,3 @@ def _default_template(contract_type):
     contract = contract_type()
     install(contract)
     return contract
-
-
-def register_record_family(contract, root, name, **kwargs):
-    contract.register_family(root, name, **kwargs)

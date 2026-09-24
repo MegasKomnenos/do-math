@@ -41,7 +41,7 @@ class QuestionEngineMixin:
 
     def _record_output_questions(self, action, output, execution_id, *, public=False, source_ref=None):
         # v5 intent questions are published only by governance.apply_import after check.
-        if self.instance.get("feature_version", 0) >= 5 and action.get("role") == "intent_interpretation":
+        if action.get("role") == "intent_interpretation":
             return
         if not output.get("questions") or (action.get("review_cycle_id") and not public):
             return

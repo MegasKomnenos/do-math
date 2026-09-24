@@ -98,7 +98,6 @@ def build_parser() -> _Parser:
     init.add_argument("--policies-file")
     init.add_argument("--source", action="append", default=[], type=Path)
     init.add_argument("--config-file")
-    init.add_argument("--model")
     init.add_argument("--effort")
 
     run = commands.add_parser("run", help="advance the workflow")
@@ -282,8 +281,6 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
         goal = args.goal if args.goal is not None else _text_file(args.goal_file)
         policies = "" if args.policies_file is None else _text_file(args.policies_file)
         config = {} if args.config_file is None else _json_file(args.config_file)
-        if args.model is not None:
-            config["model"] = args.model
         if args.effort is not None:
             config["effort"] = args.effort
         for source in args.source:
@@ -316,7 +313,7 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
     if command == "configure":
         requested = _json_file(args.config_file)
         result = _control(args, "configure", config=requested)
-        operator_keys = {"operator_enabled", "operator_interval_seconds", "operator_timeout_seconds", "operator_model", "operator_effort", "checkpoint_grace_seconds"}
+        operator_keys = {"operator_enabled", "operator_interval_seconds", "operator_timeout_seconds", "operator_effort", "checkpoint_grace_seconds"}
         if operator_keys.intersection(requested) and result['effect'] == 'rejected':
             result['operator_schedule'] = {'status': 'not_applied', 'reason': 'configuration was rejected'}
         elif operator_keys.intersection(requested) and result.get('replayed') and result['effect'] == 'applied':
@@ -448,12 +445,8 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
 def _human_status(status: dict[str, Any]) -> str:
     from .reporting import display_time
     budget = status["budget"]
-    if status.get("budget_unit") == "concurrent_sessions":
-        budget_text = "sessions: " + "; ".join(pool + " " + ", ".join(
-            f"{model} {row['used']}/{row['limit']}" for model, row in values.items()) for pool, values in budget.items())
-    else:
-        limits = {pool: "unlimited" if row["limit"] is None else row["limit"] for pool, row in budget.items()}
-        budget_text = f"budget: work {budget['work']['used']}/{limits['work']}; operations {budget['operations']['used']}/{limits['operations']}"
+    budget_text = "sessions: " + "; ".join(pool + " " + ", ".join(
+        f"{model} {row['used']}/{row['limit']}" for model, row in values.items()) for pool, values in budget.items())
     tasks = status["tasks"]
     assurance = status["assurance"]
     task_text = ", ".join(f"{task['id']}={task['status']}" for task in tasks) or "none"

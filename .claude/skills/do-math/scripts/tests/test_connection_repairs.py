@@ -7,6 +7,7 @@ import unittest
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from research_fixtures import scope_assessment
 from do_math import execution_profiles, review_cycle, review_policy, submission
 from do_math.engine import ResearchEngine
 from test_lifecycle_engine import FakeEngine, AdapterDouble
@@ -110,7 +111,7 @@ class ReviewScopeBudgetTests(unittest.TestCase):
         limit = review_policy.minimum_scope_executions(2, policy['round_limit'])
         policy['activity_execution_limit'] = limit
         engine._adopted_review_policy = lambda: deepcopy(policy)
-        engine.instance['knowledge']['K2']['scope_assessment'] = review_policy.default_scope_assessment(policy, ['one','two'])
+        engine.instance['knowledge']['K2']['scope_assessment'] = scope_assessment(policy, ['one','two'])
         cid = engine._start_identity_review('K2')
         action = next(a for a in engine.runtime['queue'] if a.get('review_cycle_id') == cid)
         stamp = engine.current_time.isoformat()
@@ -139,28 +140,12 @@ class ReviewScopeBudgetTests(unittest.TestCase):
         self.assertEqual(sum(a['role']=='research_plan' for a in engine.runtime['queue']), 1)
         self.assertEqual(review_cycle.validate_sealed_review(cycle, engine.runtime)['decision'], 'unresolved')
 
-    def test_completed_legacy_review_replays_without_a_retroactive_admission_floor(self):
-        import do_math.review_engine as owner
-        from test_review_engine import FakeEngine as ReviewFixture
-        with tempfile.TemporaryDirectory() as directory:
-            engine = ReviewFixture(directory)
-            engine.instance['review_policy']['activity_execution_limit'] = 2
-            engine.instance['config']['review_scope_assessment']['activity_execution_limit'] = 2
-            start = review_cycle.start_review
-            with patch.object(owner, 'start_review', side_effect=lambda *a, **kw:
-                    start(*a, **kw, enforce_execution_minimum=False)):
-                cid = engine._start_identity_review('K1')
-            engine.execute()
-            engine.execute()
-            replay = review_cycle.validate_sealed_review(engine.runtime['review_cycles'][cid],
-                engine.runtime, instance=engine.instance)
-            self.assertEqual(replay['decision'], 'match')
 
     def test_floor_counts_scope_and_mandatory_followup(self):
         for rounds, required in [(1, 8), (2, 14), (4, 14)]:
             with self.subTest(rounds=rounds):
                 policy = review_policy.build_review_policy(None, reviewer_count=3, max_rounds=rounds)
-                scope = review_policy.default_scope_assessment(policy, ['one', 'two', 'three'])
+                scope = scope_assessment(policy, ['one', 'two', 'three'])
                 scope['activity_execution_limit'] = required - 1
                 with self.assertRaisesRegex(ValueError, 'at least'):
                     review_policy.validate_scope_assessment(scope, policy, executions_used=1)
@@ -240,15 +225,17 @@ class FixedResearchReferenceTests(unittest.TestCase):
 
 
 class HostConfigurationTests(unittest.TestCase):
-    def test_uncapped_lean_demands_can_be_omitted(self):
+    def test_host_demands_accept_only_capped_roles(self):
         from do_math.engine import validate_config
         config = self.configuration()
-        for role in ('formal_check', 'trust_check', 'trust_activate'):
-            config['host_resources']['demands_by_role'].pop(role)
         validate_config(config)
         profiles = execution_profiles.build_profiles(config)['execution_profiles']
         self.assertTrue(all('host_resources' not in p for p in profiles.values()
             if p['role'] in {'formal_check','trust_check','trust_activate'}))
+        invalid = deepcopy(config)
+        invalid['host_resources']['demands_by_role']['formal_check'] = {'jobs': 1, 'memory_bytes': 100, 'cpu_rate_basis_points': 100}
+        with self.assertRaisesRegex(ValueError, 'capped roles only'):
+            validate_config(invalid)
         config['host_resources']['demands_by_role'].pop('research_work')
         with self.assertRaisesRegex(ValueError, 'capped role'):
             validate_config(config)
@@ -258,7 +245,7 @@ class HostConfigurationTests(unittest.TestCase):
         from do_math.initialization import initialize_state
         from do_math.governance_engine import GovernanceEngineMixin
         from do_math.contracts import task_candidate_record
-        from v5_fixtures import candidate
+        from research_fixtures import candidate
         with tempfile.TemporaryDirectory() as directory:
             config = {**deepcopy(DEFAULT_CONFIG), 'scholarly_enabled': False}
             instance, runtime = initialize_state(instance_id='RI-host-change', goal='Test profiles', goal_kind='research',
@@ -288,23 +275,19 @@ class HostConfigurationTests(unittest.TestCase):
             control_reserve={'jobs': 1, 'memory_bytes': 134217728, 'cpu_rate_basis_points': 2000},
             authority_refs=['configuration:request'])
         settings['host_resources'] = {'constraint': host, 'demands_by_role': {role:
-            {'jobs': 1, 'memory_bytes': 134217728, 'cpu_rate_basis_points': 2000} for role in roles}}
+            {'jobs': 1, 'memory_bytes': 134217728, 'cpu_rate_basis_points': 2000} for role in roles if role in execution_profiles.HOST_ROLES}}
         return settings
 
-    def test_public_init_configure_and_removal_in_both_budget_modes(self):
+    def test_public_init_configure_and_removal(self):
         import subprocess
         from do_math.engine import initialize
         from do_math.governance_engine import GovernanceEngineMixin
         from do_math.repository import ResearchRepository
-        for sessions in (True, False):
+        for sessions in (True,):
             with self.subTest(sessions=sessions), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
                 subprocess.run(['git', '-C', str(root), 'init', '-q'], check=True)
                 settings = self.configuration()
-                if not sessions: settings['session_limits'] = None
-                else:
-                    settings.pop('model')
-                    settings.pop('operator_model')
                 created = initialize(root, goal='Temporary configuration test', workspace=root/'workspace', config=settings)
                 store = ResearchRepository(root, created['instance_id'])
                 head, instance, runtime = store.load()
@@ -324,7 +307,7 @@ class HostConfigurationTests(unittest.TestCase):
                 removed, state = host._configure_candidate(instance, runtime, {'config': {'host_resources': None}})
                 self.assertNotIn('host_capacity_ref', removed)
                 self.assertIn(host_id, removed['capacity_constraints'])
-                saved = store.save(head, removed, state)
+                saved = store.save_with_state(head, removed, state)[0]
                 self.assertIsNone(store.load(saved)[1]['config']['host_resources'])
                 for profile in same['execution_profiles'].values():
                     if profile['role'] in {'formal_check', 'trust_check', 'trust_activate'}:
@@ -372,7 +355,7 @@ class PartialCaptureGitTests(unittest.TestCase):
         action = {'id': 'AC-partial', 'role': 'research_work'}
         self.engine._action_lifecycle_gate(action)
         execution = self.engine._register_execution(action, {'id': 'EX-partial', 'role': 'research_work', 'status': 'running'})
-        from v5_fixtures import candidate
+        from research_fixtures import candidate
         from types import SimpleNamespace
         wire = candidate()
         wire['profile_refs'] = [execution['execution_profile_ref']]
@@ -500,7 +483,7 @@ class ReviewOverflowGitTests(unittest.TestCase):
 
     def test_public_pause_restart_resume_preserves_formal_attempt_lineage(self):
         from do_math import knowledge_records
-        from v5_fixtures import send_control
+        from research_fixtures import send_control
         engine = ResearchEngine(self.repo, self.identifier)
         environment = engine._formal_environment()
         engine.instance['config']['lean_command'] = environment['toolchain']['configured_command']

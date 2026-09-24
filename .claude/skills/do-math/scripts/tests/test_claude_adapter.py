@@ -201,7 +201,7 @@ class ClaudeTests(unittest.TestCase):
         state = {**build_profiles(config), "config": config}
         runtime = {"executions": {}, "reservations": {}}
         with tempfile.TemporaryDirectory() as d:
-            slots = SessionSlots(Path(d), "mixed", runtime=runtime, instance=state)
+            slots = SessionSlots( runtime=runtime, instance=state)
             def acquire(eid, pool, model):
                 role = "research_work" if pool == "work" else "research_plan"
                 profile = next(p for p in state["execution_profiles"].values()
@@ -214,7 +214,6 @@ class ClaudeTests(unittest.TestCase):
             self.assertTrue(slots.release("one"))
             self.assertTrue(acquire("two", "work", "claude:opus"))
             slots.close()
-
 
 
 if __name__ == "__main__":

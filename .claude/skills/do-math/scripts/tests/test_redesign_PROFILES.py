@@ -15,14 +15,14 @@ from do_math import model_policy, scheduled_operator
 CONFIG = {
     "tier_models": dict(model_policy.MODELS), "role_tiers": dict(model_policy.ROLE_TIERS),
     "session_limits": deepcopy(model_policy.LIMITS), "effort": "medium",
-    "max_input_bytes": 500000, "call_timeout_seconds": 600, "run_timeout_seconds": 7200,
+    "max_input_bytes": 500000, "call_timeout_seconds": 600,
     "operator_timeout_seconds": 5400, "operator_effort": "high",
     "observation_mode": "event_driven", "observation_interval_seconds": 300,
     "observation_idle_seconds": 120, "observation_unbounded_wait_seconds": 600,
     "max_observation_reviews": 3, "checkpoint_grace_seconds": 10,
-    "finish_notice_seconds": 60, "dispatch_reserve_seconds": 300,
+    "finish_notice_seconds": 60,
     "scholarly_enabled": True, "scholarly_server": None, "claude_only_assigned_model": False,
-    "operator_model": "gpt-5.6-sol", "provider_retry_initial_seconds": 300, "provider_retry_max_seconds": 7200,
+     "provider_retry_initial_seconds": 300, "provider_retry_max_seconds": 7200,
 }
 
 
@@ -189,52 +189,18 @@ class ProfileTests(unittest.TestCase):
         instance = self.profiles().build_profiles(CONFIG)
         runtime = {"executions": {}, "reservations": {}}
         with tempfile.TemporaryDirectory() as directory:
-            slots = session_slots.SessionSlots(Path(directory), "test", runtime=runtime, instance=instance)
-            self.assertIsInstance(slots, session_slots.GitSessionSlots)
+            slots = session_slots.SessionSlots(runtime, instance)
+            self.assertIsInstance(slots, session_slots.SessionSlots)
             self.assertEqual(list(Path(directory).iterdir()), [])
             with self.assertRaises(TypeError):
-                session_slots.SessionSlots(Path(directory), "test")
+                session_slots.SessionSlots()
 
-    def test_adopted_call_limits_share_git_ledger_without_becoming_sessions(self):
-        from do_math.session_slots import GitSessionSlots
-        api = self.profiles()
-        config = {**deepcopy(CONFIG), "session_limits": None, "model": "adopted-model",
-                  "role_models": {"research_plan": "adopted-planner"}, "work_calls": 1, "operations_calls": 2}
-        instance = api.build_profiles(config)
-        runtime = {"executions": {}, "reservations": {}}
-        chosen = model_policy.selection(config, {"role": "research_work"}, {}, {}, profiles=instance["execution_profiles"])
-        self.assertEqual(chosen["model"], "adopted-model")
-        profile = api.resolve_profile(instance["execution_profiles"], chosen["profile_ref"])
-        self.assertEqual(profile["ai"]["capacity_refs"], [])
-        slots = GitSessionSlots(runtime, instance)
-        self.assertTrue(slots.acquire("EX-call", "work", chosen["model"], profile=profile,
-                                    execution={"id": "EX-call", "role": "research_work"}))
-        self.assertTrue(slots.release("EX-call"))
-        # Call mode counts admitted attempts, including failures, as the old call budget did.
-        self.assertFalse(slots.acquire("EX-second", "work", chosen["model"], profile=profile,
-                                     execution={"id": "EX-second", "role": "research_work"}))
-        plan = model_policy.selection(config, {"role": "research_plan"}, {}, {}, profiles=instance["execution_profiles"])
-        self.assertEqual(plan["model"], "adopted-planner")
-        self.assertTrue(all(c["kind"] == "cumulative" for c in instance["capacity_constraints"].values()))
-        self.assertEqual(slots.usage_snapshot()["work"]["used"], 1)
-        # Raising a limit creates a new edition, not a fresh unspent budget.
-        changed = api.build_profiles({**config, "work_calls": 2})
-        instance["execution_profiles"].update(changed["execution_profiles"])
-        instance["capacity_constraints"].update(changed["capacity_constraints"])
-        instance["role_profile_refs"] = changed["role_profile_refs"]
-        new_profile = next(p for p in changed["execution_profiles"].values() if p["role"] == "research_work")
-        self.assertTrue(slots.acquire("EX-edition", "work", chosen["model"], profile=new_profile,
-                                    execution={"id": "EX-edition", "role": "research_work"}))
-        self.assertFalse(slots.acquire("EX-third", "work", chosen["model"], profile=new_profile,
-                                     execution={"id": "EX-third", "role": "research_work"}))
-        self.assertEqual(slots.usage_snapshot()["work"]["used"], 2)
 
     def test_work_has_no_deadline_and_operations_keep_their_call_window(self):
         from do_math.model_runner import CodexModelRunner
         from test_model_runner import Adapter
         api = self.profiles()
-        profiles = api.build_profiles({key: value for key, value in CONFIG.items()
-            if key not in api.LEGACY_WINDOW_KEYS})["execution_profiles"]
+        profiles = api.build_profiles(CONFIG)["execution_profiles"]
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             for role, timeout in (("research_work", None), ("operational_review", 600)):
@@ -260,22 +226,6 @@ class ProfileTests(unittest.TestCase):
         from do_math import execution_profiles
         return execution_profiles
 
-    def test_legacy_profile_identity_is_preserved_without_restoring_its_deadline(self):
-        api = self.profiles()
-        current = api.build_profiles({key: value for key, value in CONFIG.items()
-            if key not in api.LEGACY_WINDOW_KEYS})['execution_profiles']
-        old_registry = {}
-        for profile in current.values():
-            body = deepcopy(profile)
-            body['window'].update({key: CONFIG[key] for key in api.LEGACY_WINDOW_KEYS})
-            old = api.seal_profile(body)
-            old_registry[old['id']] = old
-        self.assertEqual(api.build_profiles(CONFIG)['execution_profiles'], old_registry)
-        chosen = model_policy.selection(CONFIG, {'role': 'operational_review'}, {}, {}, profiles=old_registry)
-        profile = old_registry[chosen['profile_ref']['id']]
-        self.assertEqual(api.profile_ref(profile), chosen['profile_ref'])
-        self.assertNotIn('run_timeout_seconds', api.runtime_config(profile))
-        self.assertNotIn('dispatch_reserve_seconds', api.runtime_config(profile))
 
     def test_selection_is_pinned_and_contract_allowlist_is_enforced(self):
         api = self.profiles()
@@ -333,12 +283,12 @@ class ProfileTests(unittest.TestCase):
 
     def test_git_admission_all_or_nothing_and_unknown_release(self):
         api = self.profiles()
-        from do_math.session_slots import GitSessionSlots
+        from do_math.session_slots import SessionSlots
         instance = api.build_profiles(CONFIG)
         runtime = {"executions": {}, "reservations": {}, "provider_waits": {}}
         profile = next(p for p in instance["execution_profiles"].values()
                        if p["role"] == "research_work" and p["ai"]["model"] == CONFIG["tier_models"]["low"])
-        slots = GitSessionSlots(runtime, instance)
+        slots = SessionSlots(runtime, instance)
         for i in range(3):
             self.assertTrue(slots.acquire(f"EX-{i}", "work", profile["ai"]["model"],
                             profile=profile, execution={"id": f"EX-{i}", "role": "research_work"}))
@@ -362,14 +312,14 @@ class ProfileTests(unittest.TestCase):
                         profile=operation, execution={"id": "EX-op", "role": "maintenance"}))
 
     def test_admission_accepts_registered_queued_execution_exactly_once(self):
-        from do_math.session_slots import GitSessionSlots
+        from do_math.session_slots import SessionSlots
         api = self.profiles()
         instance = api.build_profiles(CONFIG)
         profile = next(p for p in instance["execution_profiles"].values() if p["role"] == "research_work")
         execution = {"id": "EX-registered", "role": "research_work", "status": "queued",
                      "execution_profile_ref": api.profile_ref(profile), "owner_activity_id": "AY-one"}
         runtime = {"executions": {execution["id"]: execution}, "reservations": {}}
-        slots = GitSessionSlots(runtime, instance)
+        slots = SessionSlots(runtime, instance)
         self.assertTrue(slots.acquire(execution["id"], "work", profile["ai"]["model"], profile=profile, execution=execution))
         self.assertIs(runtime["executions"][execution["id"]], execution)
         self.assertEqual(execution["owner_activity_id"], "AY-one")
@@ -479,12 +429,12 @@ class ProfileTests(unittest.TestCase):
 
     def test_provider_wait_is_canonical_and_serializes_retry_probe(self):
         api = self.profiles()
-        from do_math.session_slots import GitSessionSlots
+        from do_math.session_slots import SessionSlots
         from do_math.repository import canonical_json
         instance = api.build_profiles(CONFIG)
         runtime = {"executions": {}, "reservations": {}, "provider_waits": {}}
         profile = next(p for p in instance["execution_profiles"].values() if p["role"] == "research_work")
-        slots = GitSessionSlots(runtime, instance)
+        slots = SessionSlots(runtime, instance)
         admit = lambda eid, t: slots.acquire(eid, "work", profile["ai"]["model"], profile=profile,
                          execution={"id": eid, "role": "research_work"}, current_time=t)
         self.assertTrue(admit("EX-failure", 10))
@@ -521,7 +471,7 @@ class ProfileTests(unittest.TestCase):
     def test_git_publication_and_recovery_exclude_engine_writer(self):
         import subprocess
         from do_math.repository import ResearchRepository
-        from do_math.session_slots import GitSessionSlots
+        from do_math.session_slots import SessionSlots
         api = self.profiles()
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -609,7 +559,7 @@ class ProfileTests(unittest.TestCase):
             repo = Mock()
             repo.writer_lock.return_value = nullcontext()
             repo.load.return_value = ("head", instance, runtime)
-            repo.save.return_value = "published"
+            repo.save_with_state.return_value = ("published", {}, {})
             repo._store._git_dir = root
             def model(**arguments):
                 self.assertEqual(arguments.get("input_seal"), api.prompt_seal(arguments["prompt"]))
@@ -646,7 +596,7 @@ class ProfileTests(unittest.TestCase):
             repo = Mock()
             repo.writer_lock.return_value = nullcontext()
             repo.load.return_value = ("head", instance, runtime)
-            repo.save.return_value = "capability-published"
+            repo.save_with_state.return_value = ("capability-published", {}, {})
             repo._store._git_dir = root
             with patch.object(scheduled_operator, "ResearchRepository", return_value=repo), \
                  patch.object(scheduled_operator, "register_profile_families"), \
@@ -711,11 +661,11 @@ class ProfileTests(unittest.TestCase):
 class Audit1Tests(unittest.TestCase):
     def profiles(self, **changes):
         from do_math import execution_profiles as ep
-        return ep, ep.build_profiles({**CONFIG, "lean_command": ["lean-A"], "lean_timeout_seconds": 10, **changes})
+        return ep, ep.build_profiles({**CONFIG, "lean_command": ["lean-A"],  **changes})
 
     def test_machine_profile_changes_with_command_deadline_and_tool_bytes(self):
         ep, a = self.profiles()
-        _, b = self.profiles(lean_command=["lean-B"], lean_timeout_seconds=999)
+        _, b = self.profiles(lean_command=["lean-B"], )
         def formal(state):
             return next(p for p in state["execution_profiles"].values() if p["role"] == "formal_check")
         self.assertNotEqual(ep.profile_ref(formal(a)), ep.profile_ref(formal(b)))
@@ -727,7 +677,7 @@ class Audit1Tests(unittest.TestCase):
             p = formal(first)
             env = {"toolchain": {"configured_command": [str(tool)], "version": "fixture"}}
             args = ep.machine_invocation(p, trust_environment=env)
-            self.assertIsNone(args["timeout_seconds"])
+            self.assertNotIn("timeout_seconds", args)
             self.assertEqual(args["lean_command"], [str(tool)])
             self.assertEqual(args["expected_toolchain"], env["toolchain"])
             tool.write_bytes(b"edition two")

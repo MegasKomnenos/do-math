@@ -220,23 +220,11 @@ class CliTests(unittest.TestCase):
         self.assertEqual(response_body(paused)["status"], "paused")
 
         config_path = self.root / "config.json"
-        config_path.write_text(json.dumps({"session_limits": None, "work_calls": 4}), encoding="utf-8")
+        config_path.write_text(json.dumps({"call_timeout_seconds": 4}), encoding="utf-8")
         configured = self.run_cli("configure", *self.instance_args(), "--config-file", str(config_path))
         self.assertEqual(configured.returncode, 0, configured.stdout + configured.stderr)
-        self.assertEqual(response_body(configured)["config"]["work_calls"], 4)
+        self.assertEqual(response_body(configured)["config"]["call_timeout_seconds"], 4)
 
-    def test_unlimited_budgets_round_trip_and_human_status(self) -> None:
-        config_path = self.root / "unlimited.json"
-        config_path.write_text(json.dumps({"session_limits": None, "work_calls": None, "operations_calls": None}), encoding="utf-8")
-        configured = self.run_cli("configure", *self.instance_args(), "--config-file", str(config_path))
-        self.assertEqual(configured.returncode, 0, configured.stdout + configured.stderr)
-        status = self.run_cli("status", *self.instance_args(), "--json")
-        budgets = response_body(status)["budget"]
-        for pool in ("work", "operations"):
-            self.assertIsNone(budgets[pool]["limit"])
-            self.assertEqual(budgets[pool]["used"], 0)
-        human = self.run_cli("status", *self.instance_args())
-        self.assertIn("work 0/unlimited; operations 0/unlimited", human.stdout)
 
     def test_request_applies_a_maintenance_queue_entry_without_model_execution(self) -> None:
         requested = self.run_cli("request", *self.instance_args(), "--role", "maintenance", "--reason", "inspect state")

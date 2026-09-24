@@ -78,9 +78,8 @@ class AuditTests(unittest.TestCase):
             self.assertTrue(any(r["kind"] == "self_check_missed" for r in tracker.observe(event)))
 
     def test_profile_binds_source_unit_and_current_execution(self):
-        binding = {"operator": "checkpoint_count_gte", "subject": {"kind": "checkpoint", "id": "$execution"},
-                   "basis": {"source": "checkpoint", "unit": "count"}}
-        good = h.rule("checkpoint_count_gte", "checkpoint", "EX-1", 1, basis=binding["basis"])
+        binding = {"operator": "checkpoint_count_gte", "subject_kind": "checkpoint", "source": "checkpoint", "unit": "count"}
+        good = h.rule("checkpoint_count_gte", "checkpoint", "EX-1", 1, basis={"source": binding["source"], "unit": binding["unit"]})
         for bad in ({**good, "subject": {"kind": "checkpoint", "id": "EX-other"}},
                     {**good, "basis": {"source": "invented", "unit": "count"}}):
             with self.assertRaises(ValueError):
@@ -97,11 +96,11 @@ class AuditTests(unittest.TestCase):
     def test_profile_cannot_register_nonexistent_source_or_mix_counter_sources(self):
         import json
         rule = h.rule(basis={"source": "checkpoint", "unit": "count"})
-        binding = {key: deepcopy(rule[key]) for key in ("operator", "subject", "basis")}
+        binding = {"operator": rule["operator"], "subject_kind": rule["subject"]["kind"], **rule["basis"]}
         forged = deepcopy(binding)
-        forged["basis"]["source"] = "invented"
+        forged["source"] = "invented"
         with self.assertRaises(ValueError):
-            obs.tracker_config(profile([forged]), initial_self_check_rules=[{**rule, "basis": forged["basis"]}])
+            obs.tracker_config(profile([forged]), initial_self_check_rules=[{**rule, "basis": {"source": forged["source"], "unit": forged["unit"]}}])
         tracker = obs.ObservationTracker("EX-1", self.ws, obs.tracker_config(profile([binding]), initial_self_check_rules=[rule]), clock=self.clock)
         rows = tracker.observe({"type": "tick", "counters": {"attempts": 2}})
         self.assertFalse(any(r["kind"] == "self_check_due" for r in rows))

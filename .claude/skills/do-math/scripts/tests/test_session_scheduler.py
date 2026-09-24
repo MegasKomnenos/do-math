@@ -22,8 +22,8 @@ from do_math.input_basis import capture_decision_basis
 from do_math.repository import new_id
 from do_math.session_slots import SessionSlots
 from test_engine import ScriptedRunner, common, context_from
-from v5_fixtures import local_job_runner
-from v5_fixtures import activate, install_adapter_fixture, candidate, producer_result
+from research_fixtures import local_job_runner
+from research_fixtures import activate, install_adapter_fixture, candidate, producer_result
 
 
 class ConcurrentRunner:
@@ -66,14 +66,14 @@ class ConcurrentRunner:
 class SessionPolicyTests(unittest.TestCase):
     def test_old_profile_cannot_bypass_a_new_zero_capacity_limit(self):
         from do_math.execution_profiles import build_profiles
-        from do_math.session_slots import GitSessionSlots
+        from do_math.session_slots import SessionSlots
 
         config = deepcopy(DEFAULT_CONFIG)
         instance = {"config": config, **build_profiles(config)}
         runtime = {"executions": {}, "reservations": {}, "provider_waits": {}}
         old = next(profile for profile in instance["execution_profiles"].values()
                    if profile["role"] == "research_work" and profile["ai"].get("tier") == "high")
-        slots = GitSessionSlots(runtime, instance)
+        slots = SessionSlots(runtime, instance)
 
         lower = deepcopy(config["session_limits"])
         lower["work"][MODELS["high"]] = 0
@@ -150,7 +150,7 @@ class SlotTests(unittest.TestCase):
 
     def slots(self, *, observer=False):
         e = self.engine
-        return SessionSlots(self.root / 'work', e.instance['id'], runtime=e.runtime,
+        return SessionSlots( runtime=e.runtime,
                             instance=e.instance, observer=observer)
 
     def reserve(self, eid, pool='work'):
@@ -211,7 +211,7 @@ class SlotTests(unittest.TestCase):
                     'operator_enabled': False, 'scholarly_enabled': False})
         other = ResearchEngine(self.repo, created['instance_id'], runner=ScriptedRunner())
         self.assertNotEqual(other.instance['id'], self.engine.instance['id'])
-        observer = SessionSlots(other_workspace, other.instance['id'], runtime=other.runtime,
+        observer = SessionSlots( runtime=other.runtime,
                                 instance=other.instance, observer=True)
         self.assertEqual(observer.snapshot()['work'][MODELS['high']]['used'], 0)
         self.assertEqual(self.slots(observer=True).snapshot()['work'][MODELS['high']]['used'], 1)
@@ -308,7 +308,7 @@ class ParallelEngineTests(unittest.TestCase):
         return engine
 
     def configure_limits(self, engine, limits):
-        from v5_fixtures import send_control
+        from research_fixtures import send_control
         send_control(engine, "configure", config={"session_limits":limits})
         refs = [ref for rows in engine.instance['role_profile_refs'].values() for ref in rows
                 if engine.instance['execution_profiles'][ref['id']]['actor_kind']=='ai']
@@ -367,16 +367,6 @@ class ParallelEngineTests(unittest.TestCase):
         self.assertEqual(runner.models, [MODELS["low"]])
         self.assertTrue(any(a.get("target") == high for a in engine.runtime["queue"]))
 
-    def test_legacy_budget_transition_preserves_history_and_changes_units(self):
-        runner = ConcurrentRunner(expected=1)
-        engine = self.engine(runner, count=0, work_calls=4, operations_calls=3)
-        self.assertIsNone(engine.instance["config"]["session_limits"])
-        before = deepcopy(engine.runtime["executions"])
-        control(self.repo, engine.instance["id"], "configure", config={"session_limits": deepcopy(LIMITS)})
-        state = engine.process_controls()
-        self.assertEqual(state["budget_unit"], "concurrent_sessions")
-        self.assertEqual(engine.runtime["executions"], before)
-        self.assertEqual(engine.instance["feature_version"], 5)
 
     def test_pause_reaches_all_parallel_calls_and_releases_their_slots(self):
         runner = ConcurrentRunner(expected=99)
@@ -471,7 +461,7 @@ class ParallelEngineTests(unittest.TestCase):
                     checks = contract_checks(result["output"]["candidates"]) if role == "research_preparation" else []
                     (arguments["workspace"] / "activity-extensions.json").write_text(
                         json.dumps({"model_assessments": entries, **({"contract_checks": checks} if checks else {})}), encoding="utf-8")
-                from v5_fixtures import seal_response
+                from research_fixtures import seal_response
                 seal_response(result["output"], context, arguments["workspace"])
                 return result
         result = initialize(self.repo, goal="bounded research", goal_kind="research", workspace=self.root / "work",

@@ -250,7 +250,7 @@ class KnowledgeRedesign(unittest.TestCase):
         kr.register_storage_families(contract)
         with tempfile.TemporaryDirectory() as directory:
             # Real Git and domain validators; compiler/reviewer/approval evidence is synthetic.
-            from v5_fixtures import trust_fixture
+            from research_fixtures import trust_fixture
             from do_math.initialization import digest, trust_environment_errors
             from do_math.execution_profiles import build_profiles, profile_ref
             from do_math.engine import DEFAULT_CONFIG
@@ -412,7 +412,7 @@ class KnowledgeAudit2(unittest.TestCase):
         from do_math.engine import DEFAULT_CONFIG
         from do_math.execution_profiles import build_profiles
         from do_math.initialization import digest
-        from v5_fixtures import trust_fixture
+        from research_fixtures import trust_fixture
         self.directory = tempfile.TemporaryDirectory()
         self.addCleanup(self.directory.cleanup)
         self.root = Path(self.directory.name)
@@ -480,7 +480,7 @@ class KnowledgeAudit2(unittest.TestCase):
         if not hasattr(self, 'head'):
             self.head = self.repo.initialize(self.state, self.runtime)
         else:
-            self.head = self.repo.save(self.head, self.state, self.runtime)
+            self.head = self.repo.save_with_state(self.head, self.state, self.runtime)[0]
         self.head, self.state, self.runtime = self.repo.load()
 
     def test_unicode_currentness_and_impact_survive_actual_storage(self):

@@ -52,37 +52,37 @@ class ResearchRepositoryTests(unittest.TestCase):
         self.assertEqual(instance["object_format"], "sha1")
         self.assertEqual(runtime["status"], "initializing")
 
-        later = self.repository.save(head, instance, {"feature_version": 5, "status": "active"})
+        later = self.repository.save_with_state(head, instance, {"feature_version": 5, "status": "active"})[0]
         self.assertEqual(self.repository.load(self.initial_head)[2]["status"], "initializing")
         self.assertEqual(json.loads(self.repository.read("runtime/_state/metadata.json", later))["record"]["status"], "active")
 
     def test_stale_save_conflict_does_not_overwrite(self) -> None:
         second = ResearchRepository(self.repository_path, INSTANCE_ID)
-        winner = self.repository.save(self.initial_head, {"feature_version": 5, "title": "instance"}, {"feature_version": 5, "status": "winner"})
+        winner = self.repository.save_with_state(self.initial_head, {"feature_version": 5, "title": "instance"}, {"feature_version": 5, "status": "winner"})[0]
         with self.assertRaises(GitStateStoreConflict):
-            second.save(self.initial_head, {"feature_version": 5, "title": "instance"}, {"feature_version": 5, "status": "loser"})
+            second.save_with_state(self.initial_head, {"feature_version": 5, "title": "instance"}, {"feature_version": 5, "status": "loser"})[0]
         self.assertEqual(self.repository.load(winner)[2]["status"], "winner")
 
     def test_new_artifact_bundle_is_saved_with_state_and_existing_bundle_is_immutable(self) -> None:
-        first = self.repository.save(
+        first = self.repository.save_with_state(
             self.initial_head,
             {"feature_version": 5, "title": "instance"},
             {"feature_version": 5, "status": "running"},
             artifacts={"runtime/artifacts/AB-01/output.txt": b"sealed"},
-        )
+        )[0]
         with self.assertRaises(ValueError):
-            self.repository.save(
+            self.repository.save_with_state(
                 first,
                 {"feature_version": 5, "title": "instance"},
                 {"feature_version": 5, "status": "running"},
                 artifacts={"runtime/artifacts/AB-01/other.txt": b"forbidden"},
-            )
-        later = self.repository.save(
+            )[0]
+        later = self.repository.save_with_state(
             first,
             {"feature_version": 5, "title": "instance"},
             {"feature_version": 5, "status": "ended"},
             artifacts={"runtime/artifacts/AB-02/output.txt": b"new bundle"},
-        )
+        )[0]
         self.assertEqual(self.repository.read("runtime/artifacts/AB-01/output.txt", later), b"sealed")
 
     def test_query_cursor_is_bound_to_snapshot_and_query_and_has_no_empty_page(self) -> None:

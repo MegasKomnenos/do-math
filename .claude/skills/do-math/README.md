@@ -1,5 +1,7 @@
 # do-math CLI 운영 안내
 
+이 스킬은 프리알파이며 현재 판본 하나만 지원한다. 이전 코드·설정·저장 형식과의 호환성이나 마이그레이션을 제공하지 않는다. 계약 변경 뒤에는 새 인스턴스로 실험한다. 개발 시 [AGENTS.md](AGENTS.md)의 원칙을 따른다.
+
 이 문서는 do-math 연구 인스턴스를 만들고 운전하는 사람을 위한 진입점이다. do-math의 목적과 전체 연구 흐름은 [SKILL.md](SKILL.md), 공통 용어의 뜻은 [GLOSSARY.md](GLOSSARY.md), 정확한 명령·필드·상태 투영과 역할별 JSON은 [CLI 실행 계약](references/CLI-실행-계약.md)이 소유한다.
 
 역할 응답 스키마는 `do-math-cli/5`, 저장 계약은 `do-math-state/5`다. 중앙 실행기, 설치 manifest와 역할별 소비자는 이 판본을 함께 사용하며 다른 판본의 필드를 섞지 않는다.
@@ -49,7 +51,6 @@ python .agents/skills/do-math/scripts/setup_lean.py
 모델과 예산은 다음 두 모드를 구별한다.
 
 - 모델별 동시 세션 예산에는 설정 파일의 `tier_models`, `role_tiers`, `session_limits`를 사용한다. 세션 용량을 명시한 `session_limits`와 `--model`을 함께 주면 초기화가 거부된다.
-- 구 실행횟수 호환 모드에는 `--model`을 쓸 수 있다. 설정 파일에 `session_limits`가 없는 상태에서 이 인자를 주면 호환 모드로 초기화되며, `--model`이 같은 필드의 파일 설정보다 우선한다.
 
 독립 운영의 기본값은 `operator_enabled=true`, `operator_interval_seconds=7200`이다. 새 인스턴스는 상·중·하 모델마다 운영 3개와 작업 3개의 동시 세션을 사용한다. [모델과 실행예산](references/모델과-실행예산.md)의 기본 대응과 배정 기준을 확인하고, 다른 용량이나 수동 운영이 필요하면 설정 파일에 지정한다. `init`은 독립 운영이 활성일 때 정상 감독과 연구 엔진을 맡는 두 숨김 Windows 예약 작업을 등록하며, 그 자체로 모델이나 연구 실행을 시작하지는 않는다. 첫 정기 감독은 등록 후 설정한 주기에 도래한다. 정상 감독은 저장 상태와 예약 상태를 모델 없이 검사하고 필요할 때 연구 엔진 작업만 요청한다. 연구 작업에는 고정 반복 주기를 두지 않는다. 엔진을 읽을 수 없는 실제 실패가 보존됐거나 운영 점검의 설치 결함 진단이 수락됐을 때 별도 설치 복구 AI 경로를 열 수 있다.
 
@@ -69,7 +70,7 @@ scholarly는 기본 활성이다. `scholarly_server`에 `command`·`args`를 직
 }
 ```
 
-이 예시는 기본 구성과 같다. 세션은 종료 후 재사용하며 작업·운영 예산은 자동 차용하지 않는다. 모델 이름이나 수를 바꾸면 두 예산 맵에도 해당 모델을 명시한다. 판본 5 안에서는 동시 세션 모드와 실행횟수 모드를 구별한다. 예산 모드를 바꾸기 전에는 `operator hold`로 정지를 요청하고 미종료 실행·예약 점유·실행 중 연구 예약 작업이 없는지 확인한다. 실행횟수 모드의 `role_models`를 해제해야 하면 전환 설정에 `"role_models": {}`를 넣는다. 판본 1~4의 기록은 자동 변환하거나 재개하지 않으며, 예산 설정 변경도 그 지원 범위를 바꾸지 않는다.
+이 예시는 기본 구성과 같다. 세션은 종료 후 재사용하며 작업·운영 예산은 자동 차용하지 않는다. 모델 이름이나 수를 바꾸면 두 예산 맵에도 해당 모델을 명시한다.
 
 Claude를 배정하려면 `claude:opus`, `claude:sonnet`, `claude:haiku`처럼 `claude:` 뒤에 CLI 모델 이름이나 별칭을 적는다. `claude-`로 시작하는 전체 모델 ID도 사용할 수 있다. 다른 이름은 Codex로 전달한다. 같은 등급·모델 선택 규칙을 연구·검토·운영 역할에 적용한다. 정상 예약 감독은 모델 슬롯을 쓰지 않으며, 엔진 실패 뒤 허용된 live 설치 수리를 수행하는 복구 AI만 배정된 운영 슬롯을 사용한다.
 
@@ -145,7 +146,7 @@ JSON status에서 먼저 볼 필드는 다음과 같다.
 | `tasks` | 과제 ID·제목·현재 CLI 단계 |
 | `knowledge` | 현재 사용 가능한 `K` 수와 `formal_results`, `expositions`, `identity_assessments`의 기록 수. 기록 수를 성공 판정 수로 읽지 않는다 |
 | `questions` | 사용자 입력이나 결정을 기다리는 질문 |
-| `budget` | 세션 모드의 작업·운영 모델별 한도·점유·여유 또는 구 모드의 실행횟수 한도·누적 사용 |
+| `budget` | 작업·운영 모델별 동시 세션 한도·점유·여유 |
 | `pending_controls` | inbox에 접수됐지만 아직 적용되지 않은 제어 수 |
 | `user_pause` | 명시적 사용자 재개를 기다리는 정지의 요청 ID·이유·시각 |
 | `waiting_actions` | 해소되지 않은 행동의 역할·대상·실패 종류·이유·실행 ID 요지 |
@@ -169,7 +170,7 @@ python .agents/skills/do-math/scripts/do_math.py run `
 
 `--max-steps`는 이번 `run` 호출이 처리할 action 수의 상한이다. 수학 연구 단계나 모델 호출 수와 항상 같지는 않는다. 형식 검사·외부 행동 같은 기계 action도 한 step으로 처리될 수 있고, 하나의 AI 실행 안에서 모델 CLI가 수행한 내부 동작 수를 세지 않는다.
 
-`--max-steps`는 새 action 시작 수의 상한이며 이미 시작한 실행을 시간으로 끊지 않는다. 생략하면 실행기는 queue와 현재 설정이 허용하는 동안 진행한다. `--watch`를 함께 쓰면 CLI 상태가 `waiting`이어도 제어 inbox, 대화 lease와 관찰 사건을 계속 확인한다. 사용자 정지·종결·목표 완료 또는 지정한 시작 수에 따른 회수가 끝나면 반환한다. 사용자 결정을 자동으로 만들거나 waiting 과제의 조건을 임의로 해소하지 않는다. 과거 설정의 `run_timeout_seconds`와 `dispatch_reserve_seconds`는 호환성을 위해 읽지만 배정·종료에는 사용하지 않는다.
+`--max-steps`는 새 action 시작 수의 상한이며 이미 시작한 실행을 시간으로 끊지 않는다. 생략하면 실행기는 queue와 현재 설정이 허용하는 동안 진행한다. `--watch`를 함께 쓰면 CLI 상태가 `waiting`이어도 제어 inbox, 대화 lease와 관찰 사건을 계속 확인한다. 사용자 정지·종결·목표 완료 또는 지정한 시작 수에 따른 회수가 끝나면 반환한다. 사용자 결정을 자동으로 만들거나 waiting 과제의 조건을 임의로 해소하지 않는다.
 
 ```powershell
 python .agents/skills/do-math/scripts/do_math.py run `
@@ -185,7 +186,6 @@ python .agents/skills/do-math/scripts/do_math.py run `
 - `ready`: 처리할 action이 남았거나 다음 `run`에서 계속할 수 있다.
 - `waiting`: `questions`, 대기 과제 또는 외부 사건을 확인한다. 입력·결정 없이 같은 `run`을 반복해도 조건이 바뀌지 않는다.
 - `capacity_waiting`: 배정된 모델의 세션 슬롯을 기다린다. 같은 인스턴스의 점유와 설정을 확인하고, 반환 뒤 `run` 또는 `run --watch`로 이어간다.
-- `budget_exhausted`: 구 실행횟수 호환 모드에서 작업 또는 운영 실행 시도 한도에 닿았다. 실제 결과와 실패를 검토한 뒤 필요한 경우 `configure`로 명시적으로 한도를 바꾼다.
 - `paused`: 사용자 정지, 실행기 복구, 설치 문서 변경이나 인스턴스 전체의 중단 사유를 확인한다. `resume` 전에 `check`, status의 questions와 최근 실행 기록을 읽는다. 개별 실행의 실패는 해당 요청을 보류하고 운영 점검으로 연결하며, 독립 작업은 계속한다.
 - `completed`: 현재 CLI가 목표와 적용되는 학술 요구의 완료 조건을 충족했다고 계산한 상태다. 정확한 목표 감사, K·해설·동일성 판정과 학술 근거를 별도로 읽는다.
 - `closed`: 사용자가 인스턴스를 종결했다. `resume`으로 다시 열 수 없다.
@@ -334,7 +334,7 @@ python .agents/skills/do-math/scripts/do_math.py resume `
 
 ### 독립 운영의 설정과 정지
 
-`operator status`는 실제 예약 작업을 조회한다. `operator install`은 현재 인스턴스 설정으로 정상 감독·연구 엔진 작업을 다시 맞추고 `operator uninstall`은 그 인스턴스의 연구·정기 감독·일회성 wake 예약을 제거한다. 운영 주기와 기한은 `configure`의 `operator_enabled`, `operator_interval_seconds`, `operator_timeout_seconds`, `operator_effort`로 바꾼다. `operator_effort`, 세션 모드의 `tier_models`와 `role_tiers.independent_operator`, 구 실행횟수 모드의 `operator_model`은 실패 시 설치 복구 AI에 적용된다. 정상 감독에는 모델 배정이 없다. 즉시 적용된 운영 설정 변경은 CLI가 예약에 반영한다. 제어가 아직 대기 중이면 운전자는 적용을 확인한 뒤 같은 인스턴스에서 `operator install`로 예약을 재조정한다. 비활성화나 예약 제거가 이미 실행 중인 연구까지 정지했다는 뜻은 아니다.
+`operator status`는 실제 예약 작업을 조회한다. `operator install`은 현재 인스턴스 설정으로 정상 감독·연구 엔진 작업을 다시 맞추고 `operator uninstall`은 그 인스턴스의 연구·정기 감독·일회성 wake 예약을 제거한다. 운영 주기와 기한은 `configure`의 `operator_enabled`, `operator_interval_seconds`, `operator_timeout_seconds`, `operator_effort`로 바꾼다. `operator_effort`, `tier_models`와 `role_tiers.independent_operator`은 실패 시 설치 복구 AI에 적용된다. 정상 감독에는 모델 배정이 없다. 즉시 적용된 운영 설정 변경은 CLI가 예약에 반영한다. 제어가 아직 대기 중이면 운전자는 적용을 확인한 뒤 같은 인스턴스에서 `operator install`로 예약을 재조정한다. 비활성화나 예약 제거가 이미 실행 중인 연구까지 정지했다는 뜻은 아니다.
 
 연구 예약의 Windows 실행 제한은 무제한을 뜻하는 `PT0S`다. 운영 담당 예약에는 `operator_timeout_seconds`에 종료 여유 300초를 더한 유한 제한을 적용한다. 기존 설치를 갱신할 때는 같은 인스턴스에서 `operator install`을 사용하고 `operator status`의 `execution_limit`을 확인한다. 재설치는 기존 예약의 Disabled 상태를 보존하며 HOLD나 사용자 정지를 해제하지 않는다.
 
@@ -378,7 +378,7 @@ python .agents/skills/do-math/scripts/do_math.py resume `
 
 판본 5는 인스턴스별 Git ref와 writer lock, 기록군 저장, 활동·다중 실행 수명, 불변 프로필, 구조화 작업 의무·처분, 편입 묶음, 독립 동일성 검토의 범위 계획과 자기 점검 규칙을 정의한다. 각 명령과 역할의 성공은 그 소비자가 실제로 검사·적용한 범위에만 효력이 있다. 스키마 적합, 로컬 생산자 검사, 중앙 미리보기, 제출 의도 접수, 저장 적용, 형식 검사와 독립 의미 판정은 서로 다른 증거다.
 
-새 인스턴스의 작업·운영 예산은 모델별 로컬 AI 실행의 동시 점유로 계산한다. 기존 실행횟수 모드는 명시적인 설정 전환 전까지 보존한다. Codex의 turn usage와 Claude의 최종 result usage는 보존하지만 공급자 내부 호출별 ID·예약·원격 종료를 보증하지 않는다. 현재 기본 Windows 실행은 Codex의 `danger-full-access`·승인 정책 `never`, Claude의 `bypassPermissions`로 기존 사용자 권한을 쓴다. Windows Job은 로컬 프로세스 수명과 자손 종료를 관리하지만 모든 host 파일·network·credential 접근을 차단하지 않는다. 별도 세션·작업 공간과 동료 결과 비제공은 입력 경계를 만들지만 통계적 독립성이나 강한 OS 격리의 증거가 아니다.
+새 인스턴스의 작업·운영 예산은 모델별 로컬 AI 실행의 동시 점유로 계산한다. Codex의 turn usage와 Claude의 최종 result usage는 보존하지만 공급자 내부 호출별 ID·예약·원격 종료를 보증하지 않는다. 현재 기본 Windows 실행은 Codex의 `danger-full-access`·승인 정책 `never`, Claude의 `bypassPermissions`로 기존 사용자 권한을 쓴다. Windows Job은 로컬 프로세스 수명과 자손 종료를 관리하지만 모든 host 파일·network·credential 접근을 차단하지 않는다. 별도 세션·작업 공간과 동료 결과 비제공은 입력 경계를 만들지만 통계적 독립성이나 강한 OS 격리의 증거가 아니다.
 
 ## 기능 판본과 결과의 시각을 확인한다
 
@@ -402,7 +402,7 @@ python .agents/skills/do-math/scripts/do_math.py timeline --repository <repo> --
 python .agents/skills/do-math/scripts/probe_cli.py --skill-only
 ```
 
-이 검사는 스킬 폴더 안의 문서와 코드만 읽으며 모델을 호출하지 않는다. 기존 `probe_codex.py --skill-only`도 같은 구조 검사기를 호출하는 호환 진입점이다. `scope="installed_skill_structure"`, `status="verified"`는 역할 읽기 대응표의 문서와 운영 문서를 읽었고 역할 출력 스키마의 형식 검사를 통과했다는 뜻이다. 문서 내용의 정확성, 실행 환경이나 연구 성능까지 검증한 결과는 아니다. `--spec-only`는 같은 검사의 호환 별칭이다.
+이 검사는 스킬 폴더 안의 문서와 코드만 읽으며 모델을 호출하지 않는다. `scope="installed_skill_structure"`, `status="verified"`는 역할 읽기 대응표의 문서와 운영 문서를 읽었고 역할 출력 스키마의 형식 검사를 통과했다는 뜻이다. 문서 내용의 정확성, 실행 환경이나 연구 성능까지 검증한 결과는 아니다.
 
 회귀 검사는 `run_tests.py`로 실행한다. 실행기는 unittest discovery로 `scripts/tests/test_*.py`를 수집하고 기본으로 전체를 순차 실행한다. 실제 Lean·부하 검사는 Windows Job이 소유한 별도 프로세스에서 실행한다. 별도 프로세스에서 실행하는 검사는 같은 클래스의 공통 준비를 한 번 수행하며, 각 검사와 그 준비·종료 단계의 제한 시간은 기본 300초다. `--timeout`으로 초 단위 상한을 바꿀 수 있다. 이 값은 테스트 실행기의 운영 기본값이며 제품 Lean의 무제한 계산 계약을 바꾸지 않는다.
 

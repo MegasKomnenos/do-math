@@ -17,7 +17,7 @@ from do_math.context_store import collect_outputs
 from do_math.control_transport import ControlTransport
 from do_math.git_store import GitStateStore
 from do_math.repository import canonical_json
-from v5_fixtures import seal_response
+from research_fixtures import seal_response
 
 
 class SubmissionFlowTests(unittest.TestCase):

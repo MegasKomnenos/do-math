@@ -95,7 +95,6 @@ class InitialIntentConnectionTests(unittest.TestCase):
         self.assertEqual(action['decision_id'],event['id'])
 
 
-
 class InitialFailureRetryTests(unittest.TestCase):
     def test_public_retry_preserves_original_input_and_ended_predecessor(self):
         from copy import deepcopy
@@ -105,7 +104,7 @@ class InitialFailureRetryTests(unittest.TestCase):
         from do_math.repository import ResearchRepository, new_id
         from do_math import execution_profiles as profiles
         from test_lifecycle_engine import FakeEngine, AdapterDouble, PublicInitializationRunner
-        from v5_fixtures import charter_record, install_adapter_fixture
+        from research_fixtures import charter_record, install_adapter_fixture
         install_adapter_fixture(self)
         from do_math.initialization import adapter_for
         class FailingRunner:
@@ -116,7 +115,7 @@ class InitialFailureRetryTests(unittest.TestCase):
             repo=root/'repo'; subprocess.run(['git','init','-q',str(repo)],check=True)
             seed=FakeEngine(workspace, {'scholarly_enabled':False, 'operator_enabled':False,
                 'tool_review_window_seconds':60, 'self_check_response_window_seconds':5,
-                'run_timeout_seconds':7200})
+                })
             seed.grant('GR-init',True); seed.grant('GR-research')
             seed.control('decision',{'change':{'kind':'initialization','operation':'governance',
                 'records':[charter_record(seed.instance['lifecycle']['immutable_input']['text'])]}})

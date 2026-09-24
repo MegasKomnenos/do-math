@@ -8,7 +8,7 @@ from do_math.contracts import task_candidate_record
 from do_math.execution_profiles import build_profiles,profile_ref
 from do_math.engine import DEFAULT_CONFIG
 from test_redesign_ENGINE import routing_engine
-from v5_fixtures import candidate, disposition
+from research_fixtures import candidate, disposition
 
 
 class ModelMetadataBoundaryTests(unittest.TestCase):
@@ -65,7 +65,7 @@ class ModelMetadataBoundaryTests(unittest.TestCase):
 
     def test_assessment_is_preserved_without_changing_the_candidate_wire_shape(self):
         engine=routing_engine()
-        engine.instance['config']={**deepcopy(DEFAULT_CONFIG),'session_limits':None}
+        engine.instance['config']={**deepcopy(DEFAULT_CONFIG),}
         item=candidate('bounded observation')
         profile=next(p for p in build_profiles(DEFAULT_CONFIG)['execution_profiles'].values()
                      if p['role']=='research_work')

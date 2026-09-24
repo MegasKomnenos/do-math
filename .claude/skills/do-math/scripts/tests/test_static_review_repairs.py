@@ -23,7 +23,7 @@ from test_redesign_SURFACE import surface_state
 import test_redesign_KNOWLEDGE as knowledge_fixtures
 from test_redesign_TASKS import approved_fixture, approve, disposition
 from test_engine import common
-from v5_fixtures import seal_response
+from research_fixtures import seal_response
 
 AT = '2026-09-22T00:00:00+00:00'
 
@@ -47,9 +47,7 @@ def context_engine(instance=None, runtime=None):
     engine.store.read_many.side_effect = lambda paths, snapshot: {p: engine.store.read(p, snapshot) for p in paths}
     engine._documents = {role: contracts.prompt_documents(role) for role in ('research_preparation', 'research_plan', 'research_work')}
     engine._preparation_checkpoint = lambda: None
-    engine._session_mode = lambda: False
     engine._provider_slots = Mock()
-    engine._provider_slots.return_value.usage_snapshot.return_value = {}
     engine._academic_status = lambda: {}
     engine._planning_history = lambda *args: []
     engine._execution_profile = Mock(side_effect=ValueError('no compiler launched in input test'))
@@ -382,6 +380,9 @@ class InputBoundaryRepairs(unittest.TestCase):
             self.assertEqual(fixed['observed_at'], fixed['submission_contract']['basis_time'])
             self.assertEqual(fitted['manifest']['candidate_order']['ids'], [task['id']])
             output = {**common('research_plan'), 'dispositions': [disposition(task['id'])]}
+            (root / 'activity-extensions.json').write_bytes(canonical_json({'model_assessments': [{
+                'task_id': task['id'], 'difficulty': 'low', 'importance': 'low',
+                'reason': 'The selected fixture task has bounded evidence and scope.'}]}))
             seal_response(output, fixed, root)
             draft = root / 'draft.json'; draft.write_bytes(canonical_json(output))
             check = submission.producer_check(root, draft)
@@ -603,9 +604,7 @@ class RecoveryBoundaryRepairs(unittest.TestCase):
             engine.store.read_many.side_effect = lambda refs, head: {ref: originals[ref] for ref in refs}
             engine._documents = {'maintenance': contracts.prompt_documents('maintenance')}
             engine._preparation_checkpoint = lambda: None
-            engine._session_mode = lambda: False
             engine._provider_slots = Mock()
-            engine._provider_slots.return_value.usage_snapshot.return_value = {}
             engine._academic_status = lambda: {}
             workspace = root / 'diagnosis'
             context = engine._context({'id': 'AC-diagnosis', 'role': 'maintenance', 'target': 'EX-bad',
@@ -708,17 +707,6 @@ class RecoveryBoundaryRepairs(unittest.TestCase):
                         diagnosis={'decision': 'retry', 'guidance': 'Retry'})
                 self.assertEqual(engine.runtime['queue'], [])
 
-    def test_legacy_initial_operation_is_rerouted_once_and_history_is_kept(self):
-        with tempfile.TemporaryDirectory() as directory:
-            engine, action, wait = initial_failure_engine(Path(directory))
-            old = {'id': 'AC-old', 'role': 'operational_review', 'target': 'EX-bad'}
-            other = {'id': 'AC-other', 'role': 'operational_review', 'target': 'EX-other'}
-            engine.runtime['queue'] = [old, other]
-            repair_execution.reroute_initial_failures(engine)
-            repair_execution.reroute_initial_failures(engine)
-            self.assertIn(other, engine.runtime['queue'])
-            self.assertEqual(sum(a['role'] == 'maintenance' for a in engine.runtime['queue']), 1)
-            self.assertEqual(engine.runtime['history'][-1]['superseded_requests'], [old])
 
     def test_retry_keeps_pending_bundles_and_never_restores_old_input(self):
         from do_math import activities, execution_lifecycle, execution_profiles

@@ -46,22 +46,15 @@ def _requirement(value: dict) -> dict:
             "external_effects": normalized_effects}
 
 
-def set_requirements(instance: dict, requirements: list[dict]) -> dict:
-    if instance.get("feature_version", 0) >= 5:
-        raise ValueError("feature 5 academic requirements are owned by the approved charter")
+def requirement_record(requirements: list[dict]) -> dict:
+    """Validate the requirements of one approved charter edition."""
     if not isinstance(requirements, list) or any(not isinstance(item, dict) for item in requirements):
         raise ValueError("requirements must be objects")
     items = [_requirement(item) for item in requirements]
     if len({item["id"] for item in items}) != len(items):
         raise ValueError("requirements need distinct IDs")
-    result = deepcopy(instance)
-    old = result.get("academic_requirements")
-    if old:
-        result.setdefault("academic_requirements_history", []).append(deepcopy(old))
-    record = {"revision": result.get("academic_requirements", {}).get("revision", 0) + 1, "items": items}
-    record["sha256"] = _hash(record)
-    result["academic_requirements"] = record
-    return result
+    record = {"items": items}
+    return {**record, "sha256": _hash(record)}
 
 
 def solution_basis(goal_ref: str, records: list[dict]) -> dict:
@@ -79,8 +72,6 @@ def criterion_obligations(task_id, requirement):
 
 def assessment_current(instance, runtime, record):
     task = runtime.get("tasks", {}).get(record.get("task_id"), {})
-    if instance.get("feature_version", 0) < 5:
-        return task.get("assessment", {}).get("current") is not False
     from .task_scope import assessment_current as task_assessment_current
     applied = task.get("assessment", {})
     return (record.get("task_assessment_sha256") == _hash(applied)
@@ -164,10 +155,8 @@ def requirements_changed(old: dict, new: dict) -> bool:
 
 
 def current_requirements(instance):
-    if instance.get("feature_version", 0) >= 5:
-        from .governance import governance_view
-        return governance_view(instance)["academic_requirements"]
-    return instance.get("academic_requirements", {})
+    from .governance import governance_view
+    return governance_view(instance)["academic_requirements"]
 
 
 def _evidence(instance, runtime, identifier, resolve_evidence=None):

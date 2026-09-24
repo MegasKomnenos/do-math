@@ -2,7 +2,6 @@
 from __future__ import annotations
 import hashlib, json, os, re, shutil, subprocess, sys, tempfile, time, traceback, uuid
 from pathlib import Path
-from typing import Sequence
 if __package__ in (None, ''): sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.windows_job import WindowsJob, process_identity
 
@@ -29,7 +28,7 @@ def _file_hash(path, should_stop=None):
 def _git(command, should_stop=None):
     # Own the process tree and accept cancellation, without a computation deadline.
     with tempfile.TemporaryDirectory(prefix='do-math-git-') as directory:
-        code,out,err,_,stopped=_job_run(command,Path(directory),should_stop=should_stop,raw_output=True)
+        code,out,err,stopped=_job_run(command,Path(directory),should_stop=should_stop,raw_output=True)
     if stopped: raise VerificationStopped('project inspection stopped')
     _check_stop(should_stop)
     return subprocess.CompletedProcess(command,code,out,err)
@@ -182,7 +181,7 @@ def _ident(x: str) -> bool:
     parts = [part.rstrip("'") for part in x.split('.')]
     return all(part and part.replace('_', 'a').isalnum() and part[0].isalpha() for part in parts)
 
-def project_fingerprint(project_root: Path, *, timeout_seconds=None, should_stop=None) -> dict | None:
+def project_fingerprint(project_root: Path, *, should_stop=None) -> dict | None:
     """Fingerprint only the configured Lake project's tracked subtree and local inputs."""
     _check_stop(should_stop)
     root=project_root.resolve()
@@ -235,23 +234,18 @@ def _worker(request_path: Path) -> int:
 
 
 def _job_run(command: list[str], cwd: Path, *, should_stop=None, on_started=None,
-             resource_limits=None, on_finished=None, raw_output=False):
+             on_finished=None, raw_output=False):
     """Wait for the whole Job; only explicit stop terminates it.
 
-    The five-item return shape retains a false timeout slot for existing consumers.
     The two-second termination check applies only after cancellation, never to computation.
     """
     root=Path(tempfile.mkdtemp(dir=cwd)); out=root/'out'; err=root/'err'; status=root/'status'; request=root/'request.json'
     request.write_text(json.dumps({'command':command,'cwd':str(cwd),'stdout':str(out),'stderr':str(err),'status':str(status)}))
     worker = "import sys; from pathlib import Path; sys.path.insert(0,sys.argv[1]); from do_math.formal import _worker; raise SystemExit(_worker(Path(sys.argv[2])))"
     job=WindowsJob([sys.executable,'-B','-c',worker,str(Path(__file__).resolve().parents[1]),str(request)],cwd=root,env=os.environ,
-                   name='do-math-formal-'+uuid.uuid4().hex,resource_limits=resource_limits)
+                   name='do-math-formal-'+uuid.uuid4().hex)
     try:
         started={**process_identity(job),'job_name':job.name}
-        if resource_limits is not None:
-            started['host_resources']=job.resource_usage()
-            if started['host_resources']['limits'] != resource_limits:
-                raise RuntimeError('local Job settings differ from pinned profile before resume')
         if on_started: on_started(started)
         job.resume(); stopped=False
         while True:
@@ -276,7 +270,7 @@ def _job_run(command: list[str], cwd: Path, *, should_stop=None, on_started=None
             return path.read_bytes() if raw_output else path.read_text(encoding='utf-8',errors='replace')
         stdout,stderr=read_output(out),read_output(err)
         error_stderr=stderr.decode(errors='replace') if isinstance(stderr,bytes) else stderr
-        if stopped: return None,stdout,stderr,False,True
+        if stopped: return None,stdout,stderr,True
         if not status.exists():
             raise RuntimeError('formal worker completion status missing' + (': '+error_stderr if error_stderr else ''))
         try:
@@ -287,7 +281,7 @@ def _job_run(command: list[str], cwd: Path, *, should_stop=None, on_started=None
         except ValueError as error:
             raise RuntimeError('formal worker completion status invalid: '+str(error)) from error
         if data['state']=='worker_error': raise RuntimeError('formal worker failed: '+error_stderr)
-        return data['exit'],stdout,stderr,False,False
+        return data['exit'],stdout,stderr,False
     finally: job.close()
 
 def toolchain_errors(toolchain):
@@ -332,16 +326,16 @@ def _project_identity(command, should_stop=None):
             'fingerprint': project_fingerprint(root,should_stop=should_stop)}
 
 
-def inspect_toolchain(command, workspace, timeout_seconds=None, should_stop=None):
+def inspect_toolchain(command, workspace, *, should_stop=None):
     """Observe exact tool identity; this does not attest to a clean Mathlib build."""
     command = list(command)
     if not command or any(not isinstance(p, str) or not p or '\x00' in p for p in command):
         raise ValueError('a nonempty Lean command is required')
     _check_stop(should_stop)
     resolved = Path(shutil.which(command[0]) or command[0]).resolve(strict=True)
-    code, stdout, stderr, timedout, stopped = _job_run([*command, '--version'], Path(workspace), should_stop=should_stop)
+    code, stdout, stderr, stopped = _job_run([*command, '--version'], Path(workspace), should_stop=should_stop)
     if stopped: raise VerificationStopped('toolchain observation stopped')
-    if stopped or timedout or code != 0:
+    if code != 0:
         raise RuntimeError('toolchain version observation failed: ' + stderr)
     result = {'executable': str(resolved), 'sha256': _file_hash(resolved,should_stop),
         'configured_command': command, 'version': stdout.strip(), 'version_exit': code,
@@ -373,10 +367,10 @@ def _approved_files_current(command, resolved, expected, should_stop=None):
 
 
 def verify_lean(*, source: str, declarations: list[str], workspace: Path,
-                lean_command: list[str] | None = None, timeout_seconds=None,
+                lean_command: list[str] | None = None,
                 allowed_axioms: tuple[str,...] = ('propext','Classical.choice','Quot.sound'), should_stop=None,
-                expected_toolchain: dict | None = None, on_started=None, resource_limits=None) -> dict:
-    """Verify to completion. Legacy timeout/resource limits are accepted but never enforced.
+                expected_toolchain: dict | None = None, on_started=None) -> dict:
+    """Verify Lean to completion.
 
     All output is preserved. Cancellation remains available through should_stop.
     """
@@ -407,7 +401,7 @@ def verify_lean(*, source: str, declarations: list[str], workspace: Path,
         local_job_usage={}
         try:
             _check_stop(should_stop)
-            code,stdout,stderr,_,stopped=_job_run([*command,str(check)],Path(directory),should_stop=should_stop,
+            code,stdout,stderr,stopped=_job_run([*command,str(check)],Path(directory),should_stop=should_stop,
                 on_started=on_started,on_finished=lambda observed:local_job_usage.update(observed))
         except VerificationStopped as error:
             return {**base,'status':'stopped','reason':str(error),'toolchain':toolchain}

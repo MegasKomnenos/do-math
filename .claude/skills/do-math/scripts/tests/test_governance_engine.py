@@ -34,7 +34,7 @@ class CentralGovernanceTests(unittest.TestCase):
         rt.setdefault('events', [])
         rt.setdefault('pending_events', [])
         for execution in rt['executions'].values(): execution.setdefault('status', 'queued')
-        i['config'] = {**deepcopy(DEFAULT_CONFIG), 'session_limits': None, 'scholarly_enabled': False}
+        i['config'] = {**deepcopy(DEFAULT_CONFIG),  'scholarly_enabled': False}
         # Config addition is not a premise of this charter import.
         return h, bundle, request
 
@@ -118,7 +118,7 @@ class CentralGovernanceTests(unittest.TestCase):
         h, _, _ = self.host()
         before = deepcopy(h.instance)
         with self.assertRaises(ValueError): h._governance_control({'action': 'configure', 'origin': 'operator',
-            'config': {'work_calls': 999}})
+            'config': {'session_limits': {'work': {}, 'operations': {}}}})
         self.assertEqual(h.instance, before)
         h._executor_running = True
         with self.assertRaises(ValueError): h._governance_control({'action': 'configure', 'origin': 'user',
@@ -218,7 +218,7 @@ class CentralGovernanceTests(unittest.TestCase):
     def test_goal_consumer_and_final_assurance_with_explicit_formal_double(self):
         from unittest.mock import patch
         import tempfile
-        from v5_fixtures import trust_fixture
+        from research_fixtures import trust_fixture
         from do_math.initialization import digest
         for verdict, expected in [('partial', False), ('pass', True)]:
             with self.subTest(verdict=verdict):
@@ -285,13 +285,13 @@ class PublicGitGovernanceTests(unittest.TestCase):
                 return self._governance_control(request) or super()._apply_extended_control(request)
         return AssembledEngine
 
-    def initialized(self, root, goal='User approves P', *, session_mode=False):
+    def initialized(self, root, goal='User approves P'):
         import subprocess
         from do_math.engine import initialize, DEFAULT_CONFIG
         subprocess.run(['git', 'init', '-q', str(root)], check=True)
         result = initialize(root, goal=goal, workspace=root/'work', config={
-            'scholarly_enabled': False, 'session_limits': deepcopy(DEFAULT_CONFIG['session_limits']) if session_mode else None,
-            'operations_calls': None if session_mode else 50, 'work_calls': None if session_mode else 10})
+            'scholarly_enabled': False, 'session_limits': deepcopy(DEFAULT_CONFIG['session_limits']),
+             })
         return self.engine_type()(root, result['instance_id'])
 
     def execution_fixture(self, engine, eid, role, target=None):
@@ -307,24 +307,28 @@ class PublicGitGovernanceTests(unittest.TestCase):
 
     def test_public_configure_preserves_original_result_after_other_control_and_reload(self):
         import tempfile
-        from do_math.engine import control
+        from do_math.engine import control, DEFAULT_CONFIG
+        def capacity(count):
+            limits = deepcopy(DEFAULT_CONFIG['session_limits'])
+            limits['work'] = {model: count for model in limits['work']}
+            return {'session_limits': limits}
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory); engine = self.initialized(root)
             iid = engine.instance['id']
-            first = control(root, iid, 'configure', config={'work_calls': 12}, request_id='configure-first')
+            first = control(root, iid, 'configure', config=capacity(12), request_id='configure-first')
             engine.process_controls()
             original = engine.control_result(first['request_id'])
             self.assertEqual(original['effect'], 'applied')
-            self.assertEqual(original['config']['work_calls'], 12)
-            control(root, iid, 'configure', config={'work_calls': 14}, request_id='configure-second')
+            self.assertEqual(original['config']['session_limits'], capacity(12)['session_limits'])
+            control(root, iid, 'configure', config=capacity(14), request_id='configure-second')
             engine.process_controls()
             restarted = self.engine_type()(root, iid)
-            replay = control(root, iid, 'configure', config={'work_calls': 12}, request_id='configure-first')
+            replay = control(root, iid, 'configure', config=capacity(12), request_id='configure-first')
             self.assertEqual(replay['snapshot'], original['snapshot'])
-            self.assertEqual(replay['config']['work_calls'], 12)
-            self.assertEqual(restarted.instance['config']['work_calls'], 14)
-            with self.assertRaises(ValueError): control(root, iid, 'configure', config={'work_calls': 99}, origin='operator')
-            with self.assertRaises(ValueError): control(root, iid, 'configure', config={'work_calls': 13}, request_id='configure-first')
+            self.assertEqual(replay['config']['session_limits'], capacity(12)['session_limits'])
+            self.assertEqual(restarted.instance['config']['session_limits'], capacity(14)['session_limits'])
+            with self.assertRaises(ValueError): control(root, iid, 'configure', config=capacity(15), origin='operator')
+            with self.assertRaises(ValueError): control(root, iid, 'configure', config=capacity(16), request_id='configure-first')
 
     def test_git_sealed_import_later_control_and_restart(self):
         self.run_sealed_import_case('exact')
@@ -342,7 +346,7 @@ class PublicGitGovernanceTests(unittest.TestCase):
         from test_redesign_GOVERNANCE import charter
         from do_math.repository import new_id
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory); engine = self.initialized(root, session_mode=True)
+            root = Path(directory); engine = self.initialized(root)
             iid = engine.instance['id']
             control(root, iid, 'decision', config={'change': {'kind': 'initialization', 'operation': 'governance',
                 'records': [charter()]}}, text='Adopt the exact charter', request_id='adopt-charter')
@@ -437,7 +441,7 @@ class PublicGitGovernanceTests(unittest.TestCase):
         from do_math.engine import control
         from test_redesign_GOVERNANCE import charter
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory); engine = self.initialized(root, session_mode=True)
+            root = Path(directory); engine = self.initialized(root)
             iid = engine.instance['id']
             control(root, iid, 'decision', config={'change': {'kind': 'initialization', 'operation': 'governance',
                 'records': [charter()]}}, text='Adopt charter', request_id='charter')
@@ -490,8 +494,10 @@ class PublicGitGovernanceTests(unittest.TestCase):
                 'runtime/artifacts/BA-audit-input/schema.json': b'{}'}
             ex['submission_intent'] = {}
             refs = []
-            for name, value in (('output', output), ('extensions', {}), ('check', {'passed': True, 'issues': []})):
+            for name, value in (('output', output), ('extensions', {}), ('check', {'passed': True, 'capture_eligible': True, 'issues': []})):
                 ref = 'runtime/artifacts/BA-audit/' + name + '.json'
+                if name == 'check':
+                    value['id'] = 'MC-' + integration.digest(value)[:24]
                 raw = canonical_json(value)
                 artifacts[ref] = raw
                 digest = hashlib.sha256(raw).hexdigest()
@@ -537,7 +543,7 @@ class PublicGitGovernanceTests(unittest.TestCase):
         import tempfile
         from do_math.engine import control
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory); engine = self.initialized(root, session_mode=True)
+            root = Path(directory); engine = self.initialized(root)
             iid = engine.instance['id']; text = 'e\u0301 is a two-codepoint literal'
             control(root, iid, 'input', text=text, request_id='literal-input')
             engine.process_controls()

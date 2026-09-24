@@ -88,9 +88,9 @@ def preserve_rejected_candidate(store, snapshot, *, raw, reason):
     identity = new_id('RJ')
     path = 'runtime/artifacts/' + identity + '/candidate.raw'
     audit = 'runtime/artifacts/' + identity + '/rejection.json'
-    new_head = store.save(snapshot, instance, runtime, artifacts={path: raw, audit: canonical_json({
+    new_head = store.save_with_state(snapshot, instance, runtime, artifacts={path: raw, audit: canonical_json({
         'id': identity, 'candidate_ref': path, 'sha256': hashlib.sha256(raw).hexdigest(),
-        'base_snapshot': snapshot, 'reason': reason, 'disposition': 'rejected_not_applied'})})
+        'base_snapshot': snapshot, 'reason': reason, 'disposition': 'rejected_not_applied'})})[0]
     return {'snapshot': new_head, 'raw_ref': path, 'audit_ref': audit}
 
 

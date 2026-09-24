@@ -15,7 +15,7 @@ from do_math.engine import ResearchEngine, initialize, control, query_records
 from do_math import knowledge as k, knowledge_records as kr
 from do_math.repository import new_id
 from do_math import activities, formal, initialization
-from v5_fixtures import trust_fixture
+from research_fixtures import trust_fixture
 from test_formal import actual_command
 import hashlib
 import json
@@ -130,7 +130,7 @@ class FormalBoundaryTests(unittest.TestCase):
         e.runtime = {'queue': [], 'history': []}
         e.instance, e.runtime, kid, _ = add(e.instance, e.runtime, verified=False)
         # Deliberately different: central execution must use the approved command.
-        e.instance.update(workspace=str(workspace), config={'lean_command': ['unapproved-config-command'], 'lean_timeout_seconds': 60})
+        e.instance.update(workspace=str(workspace), config={'lean_command': ['unapproved-config-command'], })
         e.runtime.update(status='ready', executions={}, activities={}, trust_transitions={})
         e.head = 'fixture-snapshot'
         for name in ('_save', '_controls', '_execution_profile', '_settle_activity', '_remove_action',
@@ -138,7 +138,7 @@ class FormalBoundaryTests(unittest.TestCase):
             setattr(e, name, Mock())
         from do_math.engine import DEFAULT_CONFIG
         from do_math.execution_profiles import build_profiles
-        profiles = build_profiles({**DEFAULT_CONFIG, 'lean_command': trust['toolchain']['configured_command'], 'lean_timeout_seconds': 60})
+        profiles = build_profiles({**DEFAULT_CONFIG, 'lean_command': trust['toolchain']['configured_command'], })
         e._execution_profile.return_value = next(p for p in profiles['execution_profiles'].values() if p['role'] == 'formal_check')
         # Registration is a host double here; no real shared reservation exists.
         # Compiler subprocesses remain real in PortableFormalBoundaryTests.

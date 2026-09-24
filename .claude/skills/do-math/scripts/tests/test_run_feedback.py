@@ -115,7 +115,7 @@ class RunWithoutDeadlineTests(ActiveStateHarness):
         import do_math.engine as engine_module
         import do_math.scheduler as scheduler
         engine, _ = self.make(scholarly_enabled=False, operator_enabled=False,
-            session_limits=deepcopy(LIMITS), run_timeout_seconds=1, dispatch_reserve_seconds=300)
+            session_limits=deepcopy(LIMITS),  )
         engine.runtime['queue'] = []
         engine._enqueue('research_preparation', reason='Prepare a contract for the deadline regression')
         engine._save()

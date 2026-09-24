@@ -90,8 +90,6 @@ def validate_policy(config: dict) -> None:
     if not isinstance(roles, dict) or set(roles) - set(ROLE_TIERS) or any(t not in TIERS for t in roles.values()):
         raise ValueError("role_tiers contains an unknown role or tier")
     limits = config["session_limits"]
-    if limits is None:  # Explicit compatibility mode for existing call-budget instances.
-        return
     if not isinstance(limits, dict) or set(limits) != {"work", "operations"}:
         raise ValueError("session_limits requires work and operations model maps")
     for pool, values in limits.items():
@@ -100,8 +98,6 @@ def validate_policy(config: dict) -> None:
             raise ValueError(f"session_limits.{pool} must map model names to nonnegative integers")
         if set(models.values()) - set(values):
             raise ValueError(f"session_limits.{pool} must explicitly include every tier model, including zero capacity")
-    if config.get("role_models"):
-        raise ValueError("session mode uses tier_models and role_tiers; clear legacy role_models on conversion")
 
 
 def selection(config: dict, action: dict, tasks: dict, knowledge: dict, *, profiles: dict | None = None) -> dict:
@@ -122,10 +118,6 @@ def selection(config: dict, action: dict, tasks: dict, knowledge: dict, *, profi
         tier, reason = floor, "Configured role requirement; raise when task difficulty or importance requires it."
     result = {"tier": tier, "model": config["tier_models"][tier],
               "assessment": deepcopy(requirement), "reason": reason}
-    if config.get("session_limits") is None:
-        result["model"] = (config["operator_model"] if role in {"recovery", "independent_operator"}
-                           else config.get("role_models", {}).get(role, config["model"]))
-        result["reason"] = "Preserve the adopted call-budget model assignment."
     if profiles is not None:
         from .execution_profiles import build_profiles, select_profile, profile_ref, resolve_profile
         # A task's allowlist governs its work attempts. Reviewers and other
@@ -138,7 +130,7 @@ def selection(config: dict, action: dict, tasks: dict, knowledge: dict, *, profi
             explicit = resolve_profile(profiles, action["profile_ref"])
             if explicit["actor_kind"] == "ai":
                 pinned = explicit["ai"]
-                if config.get("session_limits") is not None and (
+                if (
                         pinned.get("tier") not in TIERS or TIERS.index(pinned["tier"]) < TIERS.index(tier)):
                     raise ValueError("explicit profile does not meet the role/task model requirement")
                 result.update(model=pinned["model"], tier=pinned.get("tier"),

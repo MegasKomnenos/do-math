@@ -128,7 +128,7 @@ def accept_knowledge(e, proposed=None):
     proposed = proposed or candidate()
     e.instance, e.runtime, kid = knowledge_io.import_candidate(e.instance, e.runtime, proposed,
         source_ref='fixture:source', actor_ref='EX-producer')
-    from v5_fixtures import trust_fixture
+    from research_fixtures import trust_fixture
     from do_math.initialization import digest
     if not hasattr(e, '_trust_fixture_directory'):
         e._trust_fixture_directory = tempfile.TemporaryDirectory()

@@ -2,10 +2,10 @@ from pathlib import Path
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from v5_fixtures import local_job_runner
+from research_fixtures import local_job_runner
 from do_math.engine import control
 from do_math.repository import canonical_json
-from v5_fixtures import producer_result
+from research_fixtures import producer_result
 from test_purpose_engine import PurposeHarness, common, parse_context
 from test_engine import common as role_output
 

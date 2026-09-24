@@ -126,7 +126,7 @@ def _slots(value, prefix):
 
 
 def start_review(proposal, reviewers, judges=3, max_rounds=3, previous=None, *, policy=None,
-                 scope_assessment=None, owner_activity_id=None, enforce_execution_minimum=True):
+                 scope_assessment=None, owner_activity_id=None):
     if not isinstance(proposal, dict) or proposal.get("revision") is None:
         raise ValueError("proposal requires an exact revision")
     reviewer_slots, requested_judges = _slots(reviewers, "initial"), _slots(judges, "judge")
@@ -135,8 +135,7 @@ def start_review(proposal, reviewers, judges=3, max_rounds=3, previous=None, *, 
     _unique(reviewer_slots + requested_judges + ["scope", "organize"], "requested role slot")
     policy = build_review_policy(policy, reviewer_count=len(reviewer_slots), max_rounds=max_rounds,
                                  judge_slots=requested_judges)
-    assessment = validate_scope_assessment(scope_assessment, policy,
-        enforce_execution_minimum=enforce_execution_minimum) if scope_assessment is not None else None
+    assessment = validate_scope_assessment(scope_assessment, policy) if scope_assessment is not None else None
     actual_reviewer_slots = [slot["id"] for slot in assessment["initial_slots"]] if assessment else []
     judge_slots, max_rounds = list(policy["judge_slots"]), policy["round_limit"]
     _unique(actual_reviewer_slots + judge_slots + ["scope", "organize"], "role slot")
@@ -215,7 +214,7 @@ def validate_review_execution(cycle, runtime, execution_id, action, output=None,
     execution = runtime['executions'][execution_id]
     actual = execution.get('action', {})
     role = action.get('role', 'identity_review')
-    if instance is not None and instance.get('feature_version') == 5:
+    if instance is not None:
         from .execution_profiles import resolve_profile
         profile = resolve_profile(instance.get('execution_profiles', {}), execution.get('execution_profile_ref'))
         if profile['role'] != role or execution.get('actor_kind') != 'ai' or profile['actor_kind'] != 'ai':
@@ -265,8 +264,7 @@ def validate_sealed_review(cycle, runtime, *, instance=None, excluded_execution_
     if cycle['proposal'].get('assessment_reassessment') and not has_scope and resource is None:
         raise ValueError('reassessment requires an actual independent scope execution')
     replay = start_review(cycle['proposal'], cycle['requested_reviewer_slots'], cycle['judge_slots'], cycle['max_rounds'],
-                          previous, policy=cycle['review_policy'], scope_assessment=None if has_scope else cycle['scope_assessment'],
-                          enforce_execution_minimum=False)
+                          previous, policy=cycle['review_policy'], scope_assessment=None if has_scope else cycle['scope_assessment'])
     replay.update(id=cid, knowledge_id=cycle.get('knowledge_id'), identity_basis=copy.deepcopy(cycle.get('identity_basis')),
                   policy_ref=cycle.get('policy_ref'))
     consumed = []
@@ -359,10 +357,7 @@ def validate_sealed_review(cycle, runtime, *, instance=None, excluded_execution_
         if actual_action['stage'] == 'scope':
             used = cycle.get('execution_accounting', {}).get('executions_used', [])
             replay['execution_accounting']['executions_used'] = used[:used.index(entry['execution_id']) + 1] if entry['execution_id'] in used else []
-        # Admission floors are prospective. Replaying the actual completed path
-        # must not revoke an older judgment that never needed the reserved stages.
-        replay = accept_result(replay, actual_action, entry['output'], entry['execution_id'], entry.get('manifest'),
-                               enforce_execution_minimum=False)
+        replay = accept_result(replay, actual_action, entry['output'], entry['execution_id'], entry.get('manifest'))
         consumed.append(key)
     if (set(consumed) != set(cycle['results']) or any(replay[k] != cycle[k] for k in
             ('status', 'decision', 'phase', 'round', 'results', 'sealed', 'scope_assessment', 'issues', 'findings',
@@ -561,9 +556,7 @@ def validate_resource_disposition(cycle, runtime, *, read_artifact=None, instanc
             raise ValueError('minimum review scope fits the execution limit')
     elif reason == 'review_followup_reserved':
         if len(used) + 1 + len(detail['reserved_execution_slots']) <= record['limit']:
-            # The other supported boundary is the user-owned global call budget.
-            if detail.get('global_budget_available') is not False:
-                raise ValueError('review followup fits the available resources')
+            raise ValueError('review followup fits the available resources')
     elif reason == 'review_input_overflow':
         overflow = detail['overflow']
         if (overflow.get('cause') != 'current_proposal_or_required_sources'
@@ -777,7 +770,7 @@ def _judge(cycle, output):
         raise ValueError("mismatch requires an identified objection")
 
 
-def _validate_content(cycle, action, output, *, enforce_execution_minimum=True):
+def _validate_content(cycle, action, output):
     _validate(output, stage_schema(action["stage"]))
     if output["proposal_digest"] != cycle["proposal_digest"]:
         raise ValueError("result belongs to another proposal")
@@ -790,8 +783,7 @@ def _validate_content(cycle, action, output, *, enforce_execution_minimum=True):
         raise ValueError("finding requires evidence and a nonreserved ID")
     if stage == "scope":
         assessment = validate_scope_assessment(output["scope_assessment"], cycle["review_policy"],
-            executions_used=cycle.get('scope_executions_used', len(cycle.get('execution_accounting', {}).get('executions_used', []))),
-            enforce_execution_minimum=enforce_execution_minimum)
+            executions_used=cycle.get('scope_executions_used', len(cycle.get('execution_accounting', {}).get('executions_used', []))))
         if not output["scope_complete"] or output["questions"]:
             raise ValueError("scope assessment must be complete and leave no open questions")
         if cycle.get("retained_reviewer_slots") and not set(cycle["retained_reviewer_slots"]).issubset(
@@ -867,7 +859,7 @@ def _aggregate_judges(cycle, entries):
         _finish(cycle, "unresolved", "Review incomplete, disputed, or at its round limit")
 
 
-def accept_result(cycle, action, output, execution_id, input_manifest=None, *, enforce_execution_minimum=True):
+def accept_result(cycle, action, output, execution_id, input_manifest=None):
     if action not in next_actions(cycle):
         raise ValueError("action is not pending")
     _validate(output, stage_schema(action["stage"]))
@@ -930,12 +922,11 @@ def accept_result(cycle, action, output, execution_id, input_manifest=None, *, e
             if set(manifest[field]) - allowed:
                 raise ValueError("input contains unsealed peer results")
     stage = action["stage"]
-    _validate_content(cycle, action, output, enforce_execution_minimum=enforce_execution_minimum)
+    _validate_content(cycle, action, output)
     n = copy.deepcopy(cycle)
     if stage == "scope":
         assessment = validate_scope_assessment(output["scope_assessment"], n["review_policy"],
-            executions_used=len(n['execution_accounting']['executions_used']),
-            enforce_execution_minimum=enforce_execution_minimum)
+            executions_used=len(n['execution_accounting']['executions_used']))
         n["scope_assessment"] = assessment
         n["reviewer_slots"] = [slot["id"] for slot in assessment["initial_slots"]]
         n["reviewers"] = len(n["reviewer_slots"])

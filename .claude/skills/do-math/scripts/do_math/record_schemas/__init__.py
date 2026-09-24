@@ -139,10 +139,9 @@ def install(contract):
     for root, fields in (("research", RESEARCH_FIELDS), ("runtime", RUNTIME_FIELDS)):
         for name, schema in fields.items():
             if name == "role_profile_refs":
-                from ..execution_profiles import MACHINE_ROLES
-                from ..model_policy import ROLE_TIERS
+                from ..execution_profiles import PROFILE_ROLES
                 choices = {**array(PROFILE_REF, True), "minItems": 1}
-                selection_schema = obj({role: choices for role in sorted(set(ROLE_TIERS) | MACHINE_ROLES | {"recovery"})})
+                selection_schema = obj({role: choices for role in sorted(PROFILE_ROLES)})
                 contract.register_family(root, name, shape="singleton", schema=selection_schema,
                                          identity=False, references=_role_profile_references)
             else:
@@ -157,24 +156,22 @@ def install(contract):
     contract.register_family("runtime", "task_readiness", shape="derived", schema=EVIDENCE,
                              identity=False, derived=_task_readiness)
     # Configuration is an authoring input with a closed field vocabulary.
-    text_keys = "model effort operator_model operator_effort observation_mode".split()
-    int_keys = "call_timeout_seconds run_timeout_seconds max_cycles reviewers goal_auditors max_input_bytes max_output_repairs lean_timeout_seconds review_rounds review_research_limit research_reconsider_seconds observation_interval_seconds observation_idle_seconds max_observation_reviews observation_unbounded_wait_seconds plan_settle_seconds dispatch_reserve_seconds checkpoint_grace_seconds max_artifact_bytes operator_interval_seconds operator_timeout_seconds provider_retry_initial_seconds provider_retry_max_seconds finish_notice_seconds self_check_response_window_seconds tool_review_window_seconds contract_revision_limit exhaustion_empty_limit import_rework_limit proposal_version_limit selection_failure_limit".split()
+    text_keys = "effort operator_effort observation_mode".split()
+    int_keys = "call_timeout_seconds reviewers goal_auditors max_input_bytes max_output_repairs review_rounds review_research_limit research_reconsider_seconds observation_interval_seconds observation_idle_seconds max_observation_reviews observation_unbounded_wait_seconds plan_settle_seconds checkpoint_grace_seconds max_artifact_bytes operator_interval_seconds operator_timeout_seconds provider_retry_initial_seconds provider_retry_max_seconds finish_notice_seconds self_check_response_window_seconds tool_review_window_seconds contract_revision_limit exhaustion_empty_limit import_rework_limit proposal_version_limit selection_failure_limit".split()
     config = {**{k: TEXT for k in text_keys}, **{k: NAT for k in int_keys},
               "no_progress_limit": {"type": "integer", "minimum": 1},
               **{k: BOOL for k in ("operator_enabled", "scholarly_enabled", "claude_only_assigned_model")},
-              **{k: nullable(NAT) for k in ("work_calls", "operations_calls")},
-              **{k: {"type": "object", "additionalProperties": TEXT} for k in ("tier_models", "role_models", "role_tiers")},
-              "session_limits": nullable(obj({"work": {"type": "object", "additionalProperties": NAT},
-                                               "operations": {"type": "object", "additionalProperties": NAT}}, ("work", "operations"))),
-              "lean_command": nullable(array(TEXT)), "lean_timeout_seconds": nullable(NAT),
+              **{k: {"type": "object", "additionalProperties": TEXT} for k in ("tier_models", "role_tiers")},
+              "session_limits": obj({"work": {"type": "object", "additionalProperties": NAT},
+                                               "operations": {"type": "object", "additionalProperties": NAT}}, ("work", "operations")),
+              "lean_command": nullable(array(TEXT)),
               "allowed_axioms": array(TEXT), "scholarly_server": nullable(EVIDENCE)}
-    from ..execution_profiles import MACHINE_ROLES
-    from ..model_policy import ROLE_TIERS
+    from ..execution_profiles import HOST_ROLES
     host_demands = obj({"jobs": {"const": 1}, "memory_bytes": {"type": "integer", "minimum": 1},
         "cpu_rate_basis_points": {"type": "integer", "minimum": 1, "maximum": 10000}},
         ("jobs", "memory_bytes", "cpu_rate_basis_points"))
     config["host_resources"] = nullable(obj({"constraint": RECORDS["capacity_constraints"],
-        "demands_by_role": obj({role: host_demands for role in sorted(set(ROLE_TIERS) | MACHINE_ROLES | {"recovery"})})},
+        "demands_by_role": obj({role: host_demands for role in sorted(HOST_ROLES)})},
         ("constraint", "demands_by_role")))
     contract.register_family("research", "config", shape="singleton", schema=obj(config), identity=False)
 

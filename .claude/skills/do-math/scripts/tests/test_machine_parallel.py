@@ -254,7 +254,7 @@ class CallManagerTests(unittest.TestCase):
         from datetime import datetime, timezone
         from do_math.execution_lifecycle import create_execution
         from do_math.execution_profiles import build_profiles, profile_ref
-        from do_math.session_slots import GitSessionSlots
+        from do_math.session_slots import SessionSlots
         from do_math.engine import DEFAULT_CONFIG
         instant = datetime(2026, 9, 23, 0, 0, 0, 997259, tzinfo=timezone.utc)
         class Clock(datetime):
@@ -267,7 +267,7 @@ class CallManagerTests(unittest.TestCase):
             input_manifest=[], profile_ref=profile_ref(profile), created_at=instant.isoformat())
         execution['role'] = 'formal_check'
         with patch('datetime.datetime', Clock), patch('do_math.session_slots.time.time', return_value=instant.timestamp() - .000001):
-            self.assertTrue(GitSessionSlots(runtime, instance).acquire(execution['id'], profile['budget_kind'], None,
+            self.assertTrue(SessionSlots(runtime, instance).acquire(execution['id'], profile['budget_kind'], None,
                 profile=profile, execution=execution))
         self.assertEqual(execution['transitions'][-1]['at'], instant.isoformat())
 

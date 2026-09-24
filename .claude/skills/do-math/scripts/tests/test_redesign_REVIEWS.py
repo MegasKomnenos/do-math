@@ -248,7 +248,7 @@ class ReassessmentGitTests(unittest.TestCase):
             action = engine.pending()
             cid = action['review_cycle_id']
             cycle = engine.runtime['review_cycles'][cid]
-            engine._review_context(action, fixture.root / 'synthetic-review-input')
+            engine._prepare_review_context(action, fixture.root / 'synthetic-review-input')['context']
             output = ReviewCycleTests().output(cycle, action['stage'])
             if action['stage'] == 'scope':
                 scope = scoped_start(cycle['proposal'], reviewers=2, max_rounds=1)['scope_assessment']

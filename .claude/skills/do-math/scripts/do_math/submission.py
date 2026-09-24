@@ -72,8 +72,7 @@ def read_sealed_submission(execution: dict, snapshot: str, read_artifact):
         except (ValueError, TypeError) as error:
             raise SealedSubmissionError(f"execution {identifier}: invalid sealed {field} JSON at {path}: {error}") from error
     check = result['check']
-    if 'capture_eligible' in check:
-        _validated_check(canonical_json(check), check.get('id'))
+    _validated_check(canonical_json(check), check.get('id'))
     if not captured_check(check):
         raise SealedSubmissionError(f"execution {identifier}: sealed check_ref at {intent['check_ref']} is not capture eligible")
     if not check['passed']:
@@ -643,9 +642,8 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
             entries = extensions.get("contract_checks", [])
             titles = [entry["task_title"] for entry in entries]
             expected = [item["title"] for item in output["candidates"]]
-            required = context.get("budget_unit") == "concurrent_sessions"
             check("activity-extensions.json/contract_checks", lambda: require(
-                len(titles) == len(set(titles)) and not set(titles) - set(expected) and (not required or set(titles) == set(expected)),
+                len(titles) == len(set(titles)) and set(titles) == set(expected),
                 "contract self-check coverage: every candidate needs exactly one entry; missing " +
                 json.dumps(sorted(set(expected) - set(titles)), ensure_ascii=False)))
             revising = {target for row in context.get("pending_revisions", []) if row["action"].get("id") != action.get("id")
@@ -795,7 +793,7 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
             len({row[key] for row in rows}) == len(rows), "entries must identify distinct targets"))
     if action["role"] in PLANNERS:
         check("activity-extensions.json/model_assessments", lambda: validate_assessments(
-            action, output, extensions, required=context.get("budget_unit") == "concurrent_sessions"))
+            action, output, extensions, required=True))
     if 'observation_rule_targets' in action:
         from .observations import validate_rule_preparation
         check('activity-extensions.json/task_conditions', lambda: validate_rule_preparation(action, extensions, tasks))
@@ -1029,10 +1027,8 @@ def capture_eligible(output, extensions, context, issues):
 
 
 def captured_check(check):
-    """Read old successful checks without promoting any historical rejection."""
+    """Validate the central check and its declared capture eligibility."""
     passed = check.get('passed') is True and not check.get('issues')
-    if 'capture_eligible' not in check:
-        return passed
     if check.get('passed') is not (not check.get('issues')):
         raise ValueError('machine check pass flag differs from its issues')
     eligible = check['capture_eligible']

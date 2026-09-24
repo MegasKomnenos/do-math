@@ -12,7 +12,7 @@ import hashlib
 from typing import Any
 
 from .repository import canonical_json, exact_content_hash, new_id
-from .academic import set_requirements
+from .academic import requirement_record
 
 WORK_ROLES = {"research_work", "supplemental_research", "task_contract_review", "identity_review", "goal_audit", "formal_check"}
 OPERATING_ROLES = {"research_preparation", "research_plan", "operational_review", "intent_interpretation", "maintenance",
@@ -67,7 +67,7 @@ def validate_governance_record(record: dict) -> None:
         if c["decision_authority"] != "user": raise ValueError("charter authority cannot create a new decision owner")
         for key in ("success_criteria", "partial_success_criteria", "included_scope", "excluded_scope", "priorities", "preferences", "stop_conditions"):
             _strings(c.get(key), key, nonempty=key in {"success_criteria", "included_scope"})
-        set_requirements({}, c.get("academic_requirements"))
+        requirement_record(c.get("academic_requirements"))
     elif kind == "policy":
         _require_text(c.get("rule_id"), "rule id"); _require_text(c.get("text"), "rule text")
         _strings(c.get("scope"), "rule scope", nonempty=True)
@@ -152,9 +152,7 @@ def initialize_governance(instance, source, approval, records, *, approval_sourc
 
 
 def governance_view(instance):
-    """Read-only projection for legacy-named consumers; never persist these keys."""
-    if instance.get("feature_version", 0) < 5 and not instance.get("governance"):
-        return {k: deepcopy(instance.get(k)) for k in ("goal", "policies", "goal_kind", "goal_revision", "policy_revision", "academic_requirements")}
+    """Derive the current research view from approved governance records."""
     active = [deepcopy(r) for r in instance.get("governance", {}).values() if r["status"] == "active"]
     charters = [r for r in active if r["kind"] == "charter"]
     if len(charters) != 1: raise ValueError("no unique approved charter")
@@ -163,15 +161,14 @@ def governance_view(instance):
             "policies": "\n\n".join(r["content"]["text"] for r in policies), "policy_revision": digest(policies), "policy_records": policies,
             "research_context": [r for r in active if r["kind"] == "research_context"],
             "additional_audits": [r for r in active if r["kind"] == "additional_audit"],
-            "academic_requirements": set_requirements({}, charter["content"]["academic_requirements"])["academic_requirements"]}
+            "academic_requirements": requirement_record(charter["content"]["academic_requirements"])}
 
 
 def validate_governance_state(instance):
     """Domain validation callable before publication, independent of file layout."""
-    if instance.get("feature_version", 0) >= 5:
-        if any(k in instance for k in ("goal", "policies", "goal_kind", "goal_revision", "policy_revision", "academic_requirements")):
-            raise ValueError("parallel governance authority in feature 5")
-        if instance.get("goal_status", "unsolved") not in {"unsolved", "mathematically_solved"}: raise ValueError("unsupported final goal assurance")
+    if any(k in instance for k in ("goal", "policies", "goal_kind", "goal_revision", "policy_revision", "academic_requirements")):
+        raise ValueError("parallel governance authority in feature 5")
+    if instance.get("goal_status", "unsolved") not in {"unsolved", "mathematically_solved"}: raise ValueError("unsupported final goal assurance")
     known = set(instance.get("governance", {})) | set(instance.get("decisions", {}))
     for family in ("knowledge", "formal_results", "expositions", "research_records"):
         known.update(instance.get(family, {}))
@@ -347,26 +344,10 @@ def timestamp(value: str | None = None) -> datetime:
 
 def ensure_governance(instance: dict, at: str | None = None) -> dict:
     result = deepcopy(instance)
-    if result.get("feature_version", 0) >= 5:
-        result.setdefault("governance", {})
-        result.setdefault("governance_sources", {})
-        result.setdefault("decisions", {})
-        result.setdefault("grants", {})
-        return result
-    when = timestamp(at).isoformat()
-    result.setdefault("goal_revision", 1)
-    result.setdefault("policy_revision", 1)
-    result.setdefault("governance_history", [])
+    result.setdefault("governance", {})
+    result.setdefault("governance_sources", {})
     result.setdefault("decisions", {})
-    if "grants" not in result:
-        result["grants"] = {}
-        for pool, roles in (("work", WORK_ROLES), ("operations", OPERATING_ROLES)):
-            gid = new_id("GR")
-            result["grants"][gid] = {
-                "id": gid, "kind": "local", "status": "active", "budget_kind": pool,
-                "roles": sorted(roles), "task_ids": [], "expires_at": None,
-                "created_at": when, "source_ref": "instance-init", "checkpoint_allowed": True,
-            }
+    result.setdefault("grants", {})
     return result
 
 
@@ -447,7 +428,7 @@ def authorize(instance: dict, action: dict, at: str | None = None, *, runtime: d
             reason = "grant expired"
         elif grant.get("valid_from") and timestamp(grant["valid_from"]) > now:
             reason = "grant is not effective yet"
-        if reason is None and instance.get("feature_version", 0) >= 5:
+        if reason is None:
             reason = grant_scope_reason(grant, action, runtime, at=at)
         if reason:
             rejected.append({"grant_id": grant["id"], "reason": reason})
@@ -553,11 +534,10 @@ def apply_decision(instance: dict, runtime: dict, change: dict, *, source_ref: s
     """Apply one explicit decision atomically to copies of the two roots."""
     if actor != "user" or not source_ref:
         raise ValueError("a preserved user decision is required")
-    if instance.get("feature_version", 0) >= 5 and change.get("kind") in GOVERNANCE_KINDS | {"goal", "academic_requirements"}:
+    if change.get("kind") in GOVERNANCE_KINDS | {"goal", "academic_requirements"}:
         return _apply_domain_decision(instance, runtime, change, source_ref, actor, at)
     instance, runtime = ensure_governance(instance, at), deepcopy(runtime)
-    if instance.get("feature_version", 0) >= 5:
-        validate_source(instance.get("governance_sources", {}).get(source_ref, {}))
+    validate_source(instance.get("governance_sources", {}).get(source_ref, {}))
     when = timestamp(at).isoformat()
     kind = change.get("kind")
     decision_id = change.get("decision_id") or new_id("DC")
@@ -568,59 +548,10 @@ def apply_decision(instance: dict, runtime: dict, change: dict, *, source_ref: s
         return instance, runtime, old
     event = {"id": decision_id, "kind": kind, "change": deepcopy(change), "source_ref": source_ref,
              "actor": actor, "created_at": when, "affected": []}
-    if instance.get("feature_version", 0) >= 5:
-        source = instance.get("governance_sources", {}).get(source_ref)
-        validate_source(source)
-        event["source_sha256"] = source["sha256"]
-    if kind == "goal":
-        goal = _require_text(change.get("goal"), "goal")
-        if change.get("expected_revision", instance["goal_revision"]) != instance["goal_revision"]:
-            raise ValueError("goal revision changed")
-        if change.get("goal_kind", instance["goal_kind"]) != "mathematical":
-            raise ValueError("the general goal contract is mathematical; nonformal work remains a task, not a final goal status")
-        instance["governance_history"].append({"kind": "goal", "revision": instance["goal_revision"],
-            "goal": instance["goal"], "goal_kind": instance["goal_kind"], "goal_status": instance["goal_status"], "replaced_by": decision_id})
-        instance.update(goal=goal, goal_kind=change.get("goal_kind", instance["goal_kind"]),
-                        goal_revision=instance["goal_revision"] + 1, goal_status="unresolved")
-        for task in runtime["tasks"].values():
-            if task["status"] not in {"completed", "closed"}:
-                task["status"] = "needs_revision"
-                task.setdefault("change_reasons", []).append({"decision_id": decision_id, "reason": "goal changed"})
-                event["affected"].append(task["id"])
-        goal_dependent = {"research_preparation", "research_plan", "goal_audit", "task_contract_review", "research_work", "supplemental_research"}
-        # Only actions that consume the replaced goal are cancelled; machine transitions, identity review
-        # slots (including their fixed-question research), intent checks and recovery actions continue.
-        runtime["queue"] = [a for a in runtime["queue"] if a["role"] not in goal_dependent or a.get("review_cycle_id")]
-        from .revisions import capture_targets
-        targets = [identifier for identifier in event["affected"] if not runtime["tasks"][identifier].get("academic_requirement_id")]
-        _queue(runtime, "research_preparation", "goal changed", decision_id=decision_id,
-               revision_targets=capture_targets(instance, runtime, targets, required=True, source_ref=decision_id))
-        if runtime["status"] in {"waiting", "completed", "budget_exhausted"}:
-            runtime["status"] = "ready"
-    elif kind == "policy":
-        text = _require_text(change.get("text"), "policy text")
-        if change.get("expected_revision", instance["policy_revision"]) != instance["policy_revision"]:
-            raise ValueError("policy revision changed")
-        instance["governance_history"].append({"kind": "policy", "revision": instance["policy_revision"],
-                                               "text": instance["policies"], "replaced_by": decision_id})
-        instance["policies"] = text
-        instance["policy_revision"] += 1
-        for task in runtime["tasks"].values():
-            if task["status"] not in {"completed", "closed"}:
-                task["status"] = "planned"
-                event["affected"].append(task["id"])
-                _queue(runtime, "task_contract_review", "policy changed", target=task["id"])
-        _queue(runtime, "research_plan", "policy changed")
-    elif kind == "academic_requirements":
-        requirements = change.get("requirements")
-        instance = set_requirements(instance, requirements)
-        event["requirements_revision"] = instance["academic_requirements"]["revision"]
-        for task in runtime["tasks"].values():
-            if task.get("academic_requirement_id") and task["status"] not in {"completed", "closed"}:
-                task["status"] = "planned"
-                event["affected"].append(task["id"])
-        _queue(runtime, "research_plan", "academic requirements changed")
-    elif kind == "grant":
+    source = instance.get("governance_sources", {}).get(source_ref)
+    validate_source(source)
+    event["source_sha256"] = source["sha256"]
+    if kind == "grant":
         spec = deepcopy(change.get("grant"))
         if not isinstance(spec, dict) or spec.get("kind") not in {"local", "http"}:
             raise ValueError("grant kind must be local or http")
@@ -706,14 +637,14 @@ def apply_decision(instance: dict, runtime: dict, change: dict, *, source_ref: s
             raise ValueError("a question answer must identify its questions")
         by_id = {row["id"]: row for row in runtime.get("question_links", [])}
         targets = change.get("target_ids")
-        if instance.get("feature_version", 0) >= 5: _strings(targets, "answer affected targets", nonempty=True)
+        _strings(targets, "answer affected targets", nonempty=True)
         for identifier in identifiers:
             if identifier not in by_id:
                 raise ValueError("unknown question: " + str(identifier))
             relevant = by_id[identifier].get("unresolved_target_ids", by_id[identifier]["target_ids"])
             if targets is not None and set(targets) - set(relevant): raise ValueError("answer names unrelated or already resolved targets")
             event["affected"].extend(targets if targets is not None else relevant)
-    elif kind == "task_scope" and instance.get("feature_version", 0) >= 5:
+    elif kind == "task_scope":
         from .planning import contract_hash
         from .task_contracts import validate_task_contract
         tid = change.get("task_id")
@@ -744,57 +675,6 @@ def apply_decision(instance: dict, runtime: dict, change: dict, *, source_ref: s
             _queue(runtime, "research_preparation", reason, target=tid,
                    revision_targets=capture_targets(instance, runtime, [tid], required=True, source_ref=decision_id))
         event["affected"].append(tid)
-    elif kind == "task_scope":
-        tid = change.get("task_id")
-        task = runtime["tasks"].get(tid)
-        if task is None or task["status"] in {"completed", "closed"}:
-            raise ValueError("task scope change requires an unfinished task")
-        disposition = change.get("disposition")
-        if disposition not in {"revise", "transfer", "withdraw"}:
-            raise ValueError("scope disposition must be revise, transfer or withdraw")
-        reason = _require_text(change.get("reason"), "scope disposition reason")
-        if disposition == "transfer":
-            target = runtime["tasks"].get(change.get("target_task_id"))
-            if target is None or target["id"] == tid or target["status"] in {"completed", "closed"}:
-                raise ValueError("scope transfer requires a distinct unfinished receiving task")
-            live = [execution['id'] for execution in runtime.get('executions', {}).values()
-                    if execution.get('status') != 'ended' and execution.get('action', {}).get('target') in {tid, target['id']}]
-            if live: raise ValueError('scope transfer requires source and target executions to end first: ' + ','.join(live))
-            previous = {'revision': target.get('revision', 1), 'completion_criteria': deepcopy(target.get('completion_criteria', [])),
-                        'reviews': deepcopy(target.get('reviews', [])), 'assessment': deepcopy(target.get('assessment'))}
-            inherited = list(dict.fromkeys([*target.get('completion_criteria', []), *task.get('completion_criteria', [])]))
-            target.setdefault('revision_history', []).append({'decision_id': decision_id, 'reason': reason, 'previous': previous,
-                                                                'inherited_from': tid, 'criteria': deepcopy(task.get('completion_criteria', []))})
-            target['completion_criteria'] = inherited
-            target['revision'] = target.get('revision', 1) + 1
-            target['reviews'] = []
-            target.pop('assessment', None)
-            target['status'] = 'needs_revision'
-            target.setdefault("transferred_obligations", []).append({"from_task": tid, "criteria": task["completion_criteria"], "decision_id": decision_id})
-            _queue(runtime, "task_contract_review", "transferred obligations require review", target=target['id'])
-        task["scope_disposition"] = {"kind": disposition, "reason": reason, "decision_id": decision_id, "target_task_id": change.get("target_task_id")}
-        task.pop("pending_withdrawal", None)
-        live_work = [execution for execution in runtime.get("executions", {}).values()
-                     if execution.get("status") != "ended"
-                     and execution.get("role") in {"research_work", "supplemental_research"}
-                     and execution.get("action", {}).get("target") == tid
-                     and not execution.get("action", {}).get("review_cycle_id")]
-        if disposition == "withdraw" and live_work:
-            task["pending_withdrawal"] = deepcopy(task["scope_disposition"])
-            for execution in live_work:
-                execution["stop_requested"] = "task_withdrawn"
-                execution["after_stop"] = {"decision": "wait", "reason": reason}
-        else:
-            task["status"] = "needs_revision" if disposition == "revise" else "closed"
-        if disposition == "revise":
-            # The current contract revision may not be scheduled again until preparation authors a new revision.
-            task["revision_requested"] = {"source": decision_id, "revision": task.get("revision"), "reason": reason}
-        event["affected"].append(tid)
-        runtime["queue"] = [a for a in runtime["queue"] if a.get("target") != tid]
-        if disposition == "revise":
-            from .revisions import capture_targets
-            _queue(runtime, "research_preparation", reason, target=tid,
-                   revision_targets=capture_targets(instance, runtime, [tid], required=True, source_ref=decision_id))
     else:
         raise ValueError(f"unsupported governance decision: {kind}")
     if change.get("resolves_questions"):
@@ -812,64 +692,51 @@ def apply_decision(instance: dict, runtime: dict, change: dict, *, source_ref: s
     return instance, runtime, event
 
 
-def _import_basis(instance, runtime, output=None):
-    """Bind actual interpretation premises; retain old seals' original algorithm."""
+def _import_basis(instance, runtime, output):
+    """Bind the governance and records actually referenced by this interpretation."""
     from .planning import contract_hash
-    if output is not None:
-        from .planning import _records
-        reference_fields = {'owner_ref', 'decision_refs', 'used_sources', 'source_refs', 'supersedes',
-            'target_ids', 'task_ids', 'resolves_questions', 'grant_id', 'replaces_grant_id',
-            'original_decision_id', 'task_id', 'target_task_id', 'included_targets', 'excluded_targets',
-            'record_refs', 'dependencies', 'basis_refs', 'authority_refs', 'formal_result_ref', 'input_refs'}
-        references = set()
-        def collect(value):
-            if isinstance(value, dict):
-                for key, child in value.items():
-                    if key in reference_fields:
-                        references.update(x for x in (child if isinstance(child, list) else [child]) if isinstance(x, str))
-                    collect(child)
-            elif isinstance(value, list):
-                for child in value:
-                    collect(child)
-        collect(output)
-        # Current research governance constrains every interpretation. Unrelated
-        # task progress, decisions and grants are not part of that premise.
-        governance = {key: row for key, row in instance.get('governance', {}).items() if row.get('status') == 'active'}
-        records = {key: row for key, (_, row) in _records(instance, runtime).items()}
-        if instance.get('id'):
-            # An owner coordinate naming the instance is not a dependency on
-            # every nested record. Domain handlers capture their own settings.
-            records[instance['id']] = {'id': instance['id']}
-        records.update(instance.get('governance_sources', {}))
-        from .input_basis import aliases
-        for source in instance.get('sources', []):
-            for alias in aliases(source):
-                records.setdefault(alias, source)
-        records.update({row['id']: row for row in runtime.get('question_links', [])})
-        for row in governance.values():
-            references.update(row[key] for key in ('approval_ref', 'source_ref') if row.get(key))
-        pending = list(references)
-        while pending:
-            row = records.get(pending.pop(), {})
-            for key in ('source_ref', 'decision_id'):
-                ref = row.get(key)
-                if isinstance(ref, str) and ref not in references:
-                    references.add(ref)
-                    pending.append(ref)
-        return digest({'governance': governance,
-            'references': {ref: deepcopy(records.get(ref)) for ref in sorted(references)}})
-    return digest({"governance": instance.get("governance", {}), "decisions": instance.get("decisions", {}),
-                   "grants": instance.get("grants", {}), "delegations": instance.get("delegations", {}),
-                   "targets": {k: {"contract_sha256": contract_hash(t),
-                                   **{f: t.get(f) for f in ("revision", "status", "scope_disposition")}}
-                               for k, t in runtime.get("tasks", {}).items()}})
-
-
-def _bundle_basis(instance, runtime, bundle):
-    scope = bundle.get('basis_scope')
-    if scope not in (None, 'referenced-v1'):
-        raise ValueError('unknown interpretation premise scope')
-    return _import_basis(instance, runtime, bundle['output'] if scope else None)
+    from .planning import _records
+    reference_fields = {'owner_ref', 'decision_refs', 'used_sources', 'source_refs', 'supersedes',
+        'target_ids', 'task_ids', 'resolves_questions', 'grant_id', 'replaces_grant_id',
+        'original_decision_id', 'task_id', 'target_task_id', 'included_targets', 'excluded_targets',
+        'record_refs', 'dependencies', 'basis_refs', 'authority_refs', 'formal_result_ref', 'input_refs'}
+    references = set()
+    def collect(value):
+        if isinstance(value, dict):
+            for key, child in value.items():
+                if key in reference_fields:
+                    references.update(x for x in (child if isinstance(child, list) else [child]) if isinstance(x, str))
+                collect(child)
+        elif isinstance(value, list):
+            for child in value:
+                collect(child)
+    collect(output)
+    # Current research governance constrains every interpretation. Unrelated
+    # task progress, decisions and grants are not part of that premise.
+    governance = {key: row for key, row in instance.get('governance', {}).items() if row.get('status') == 'active'}
+    records = {key: row for key, (_, row) in _records(instance, runtime).items()}
+    if instance.get('id'):
+        # An owner coordinate naming the instance is not a dependency on
+        # every nested record. Domain handlers capture their own settings.
+        records[instance['id']] = {'id': instance['id']}
+    records.update(instance.get('governance_sources', {}))
+    from .input_basis import aliases
+    for source in instance.get('sources', []):
+        for alias in aliases(source):
+            records.setdefault(alias, source)
+    records.update({row['id']: row for row in runtime.get('question_links', [])})
+    for row in governance.values():
+        references.update(row[key] for key in ('approval_ref', 'source_ref') if row.get(key))
+    pending = list(references)
+    while pending:
+        row = records.get(pending.pop(), {})
+        for key in ('source_ref', 'decision_id'):
+            ref = row.get(key)
+            if isinstance(ref, str) and ref not in references:
+                references.add(ref)
+                pending.append(ref)
+    return digest({'governance': governance,
+        'references': {ref: deepcopy(records.get(ref)) for ref in sorted(references)}})
 
 
 def register_import_owner(handlers, kind, *, apply, validate, basis, contract=None):
@@ -1086,7 +953,7 @@ def prepare_import(instance, runtime, source, output, *, execution_id, previous_
         old_units = {u["unit_id"]:unit_basis(previous["output"],u) for u in previous["output"]["import_units"]}
         changed = {u["unit_id"] for u in output["import_units"] if old_units.get(u["unit_id"]) != unit_basis(output,u)}
         if set(repair["changed_unit_ids"]) != changed: raise ValueError("repair coordinates do not match actual changed units")
-        premise_changed = (previous.get("application", {}).get("post_basis_sha256", previous["basis_sha256"]) != _bundle_basis(instance, runtime, previous)
+        premise_changed = (previous.get("application", {}).get("post_basis_sha256", previous["basis_sha256"]) != _import_basis(instance, runtime, previous["output"])
             or previous.get("application", {}).get("post_owner_basis", previous.get("owner_basis", {})) !=
                _owner_basis(instance, runtime, previous["output"], _owner_handlers(owner_handlers)))
         if not changed and not premise_changed: raise ValueError("unchanged import resumes application; it does not need a new check")
@@ -1119,7 +986,7 @@ def _current_import(instance, runtime, import_id, *, owner_handlers=None):
     if receipt and receipt.get("sha256") != digest({k: v for k, v in receipt.items() if k != "sha256"}):
         raise ValueError("sealed import application receipt changed")
     expected_basis = bundle.get("application", {}).get("post_basis_sha256", bundle["basis_sha256"])
-    if expected_basis != _bundle_basis(instance, runtime, bundle): raise ValueError("import authority or affected targets changed")
+    if expected_basis != _import_basis(instance, runtime, bundle["output"]): raise ValueError("import authority or affected targets changed")
     expected_owners = bundle.get("application", {}).get("post_owner_basis", bundle.get("owner_basis", {}))
     handlers = _owner_handlers(owner_handlers)
     if any(u["owner_kind"] not in GOVERNANCE_KINDS | {"grant", "revoke", "delegation", "question_answer", "task_scope"} | set(handlers)
@@ -1206,7 +1073,7 @@ def apply_import(instance, runtime, import_id, *, approvals=None, owner_handlers
                 result, state, _ = apply_decision(result, state, change, source_ref=source_ref)
             applied.append(unit["unit_id"])
         outcome = {"status": "applied", "import_id": import_id, "applied_units": applied}
-    outcome["post_basis_sha256"] = _bundle_basis(result, state, bundle)
+    outcome["post_basis_sha256"] = _import_basis(result, state, bundle["output"])
     outcome["post_owner_basis"] = _owner_basis(result, state, bundle["output"], owner_handlers)
     outcome["bundle_sha256"] = bundle["sha256"]
     outcome["check_sha256"] = check["sha256"]

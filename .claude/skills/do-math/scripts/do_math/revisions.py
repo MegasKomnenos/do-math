@@ -112,14 +112,13 @@ def dependency_cycles(tasks):
 
 
 def active_repetition_holds(runtime):
-    """Derive configured repetition holds without rewriting historical ownership."""
+    """Project unresolved configured repetition holds from their recorded authority."""
     history = runtime.get('history', [])
     holds = {}
     for row in history:
         key = row.get('lineage'), row.get('lineage_id')
         if row.get('kind') == 'repetition_hold':
-            # Every producer of this record represents a configured count limit.
-            holds[key] = {**row, 'owner': 'user', 'next_owner': 'user'}
+            holds[key] = row
         elif row.get('kind') == 'task_repetition':
             if row.get('outcome') == 'continued':
                 holds.pop(key, None)

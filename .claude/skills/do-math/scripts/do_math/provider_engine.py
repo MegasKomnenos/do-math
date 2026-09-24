@@ -65,10 +65,10 @@ class ProviderEngineMixin:
             return self._slots
         if not {"execution_profiles", "capacity_constraints"}.issubset(self.instance):
             raise ValueError("provider admission requires feature-5 execution profiles")
-        # Passing runtime and instance selects GitSessionSlots.  Do not retain a
+        # Passing runtime and instance selects SessionSlots.  Do not retain a
         # SQLite fallback: ENGINE holds the writer lock and publishes this same
         # candidate runtime before a worker resumes.
-        self._slots = SessionSlots(Path(self.instance["workspace"]), self.instance["id"],
+        self._slots = SessionSlots(
                                    runtime=self.runtime, instance=self.instance)
         return self._slots
 
@@ -78,7 +78,7 @@ class ProviderEngineMixin:
             return slots.provider_snapshot()
         if not {"execution_profiles", "capacity_constraints"}.issubset(self.instance):
             return {"source": "uninitialized_feature_5_runtime", "providers": {}}
-        observer = SessionSlots(Path(self.instance["workspace"]), self.instance["id"], observer=True,
+        observer = SessionSlots( observer=True,
                                 runtime=self.runtime, instance=self.instance)
         try:
             return observer.provider_snapshot()

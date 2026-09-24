@@ -92,7 +92,7 @@ class RuleBindingTests(unittest.TestCase):
         fixture.setUp()
         try:
             from unittest.mock import patch
-            with patch('v5_fixtures.supply_observation_rules', lambda *args: None):
+            with patch('research_fixtures.supply_observation_rules', lambda *args: None):
                 issues = fixture.issues(checks())
             self.assertIn('initial_observation_rules', issues)
         finally:

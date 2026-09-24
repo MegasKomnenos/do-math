@@ -7,18 +7,18 @@ import sys
 import unittest
 from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from v5_fixtures import local_job_runner
+from research_fixtures import local_job_runner
 from do_math.engine import control
 from do_math.observations import ObservationTracker, validate_rules
 from do_math.planning import task_ready, contract_hash
 from do_math.input_basis import capture_decision_basis
-from v5_fixtures import producer_result
+from research_fixtures import producer_result
 from test_purpose_engine import ActiveStateHarness, common
 
 
 class CurrentnessTests(ActiveStateHarness):
     def make(self, **config):
-        settings = {'max_input_bytes': 2_000_000, 'max_cycles': 10,
+        settings = {'max_input_bytes': 2_000_000,
             'tool_review_window_seconds': 60, 'self_check_response_window_seconds': 5,
             'checkpoint_grace_seconds': 1, 'observation_idle_seconds': 1,
             'max_observation_reviews': 1, 'scholarly_enabled': False, 'operator_enabled': False}
@@ -45,7 +45,7 @@ class CurrentnessTests(ActiveStateHarness):
         self.drive(engine, predicate=lambda e: any(t['status'] == 'completed' for t in e.runtime['tasks'].values()))
         task = next(iter(engine.runtime['tasks'].values()))
         completed_assessment = deepcopy(task['assessment'])
-        from v5_fixtures import candidate, contract_review
+        from research_fixtures import candidate, contract_review
         from do_math.planning import seal_contract_review
         downstream = {**candidate('Downstream'), 'id': 'TK-downstream', 'status': 'planned', 'revision': 1,
             'results': [], 'reviews': [], 'dependencies': [task['id']], 'occurrence_condition': {'op': 'always'},
@@ -238,7 +238,6 @@ class CurrentnessTests(ActiveStateHarness):
         self.assertEqual(tracker.rules, rules)
         with self.assertRaises(ValueError):
             validate_rules([{**rules[0], 'threshold': True}])
-
 
 
 if __name__ == '__main__': unittest.main()

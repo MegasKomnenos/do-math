@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import test_purpose_engine as purpose
 from do_math.repository import canonical_json
 from do_math import contracts, submission, knowledge_io
-from v5_fixtures import local_job_runner, seal_response
+from research_fixtures import local_job_runner, seal_response
 from test_submission_boundaries import CheckedRunner
 
 
@@ -331,7 +331,7 @@ class ProducerToolTests(purpose.PurposeHarness):
         self.assertIn("missing-proof.txt", json.dumps(result["issues"]))
 
     def test_legacy_live_review_validates_sidecar_before_applying_continue(self):
-        engine, runner = self.make(observation="continue", scholarly_enabled=False, session_limits=None)
+        engine, runner = self.make(observation="continue", scholarly_enabled=False)
         original = runner.answer
         def answer(role, context, workspace):
             if role == "operational_review":
@@ -390,7 +390,7 @@ class ProducerToolTests(purpose.PurposeHarness):
         self.assertIn("observation-rules.json", issues)
 
     def test_producer_checks_planning_population_and_exact_completion_criteria(self):
-        from v5_fixtures import candidate, disposition
+        from research_fixtures import candidate, disposition
         tid = "TK-ready"
         task = {**candidate(), "id": tid, "revision": 1, "status": "planned", "results": []}
         _, workspace, context = self.prepare("research_plan", context_values={"tasks": [task], "ready_task_ids": [tid]})

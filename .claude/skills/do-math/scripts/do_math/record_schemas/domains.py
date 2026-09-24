@@ -300,18 +300,18 @@ def extend():
         ("delegation_id", "basis", "input_sha256", "judgments"))
     RECORDS["governance_events"] = record({"kind": TEXT, "grant_id": ID, "at": TEXT, "affected": REFS},
                                          ("kind", "grant_id", "at", "affected"))
-    from ..execution_profiles import OBSERVATION_KEYS, WINDOW_KEYS, LEGACY_WINDOW_KEYS
+    from ..execution_profiles import OBSERVATION_KEYS, WINDOW_KEYS
     profile = RECORDS["execution_profiles"]["properties"]
-    profile["machine"] = obj({"lean_command": nullable(array(TEXT)), "lean_timeout_seconds": nullable(NAT),
+    profile["machine"] = obj({"lean_command": nullable(array(TEXT)),
         "tool_manifest": array(obj({"path": TEXT, "sha256": HASH}, ("path", "sha256"))),
         "tool_manifest_scope": enum("local_command_files_and_checker_not_dependency_closure")},
-        ("lean_command", "lean_timeout_seconds", "tool_manifest", "tool_manifest_scope"))
+        ("lean_command", "tool_manifest", "tool_manifest_scope"))
     observation_binding = obj({"source": TEXT, "operator": TEXT, "subject_kind": TEXT, "unit": TEXT},
                               ("source", "operator", "subject_kind", "unit"))
     profile["observation"] = obj({"mode": enum("event_driven", "periodic", "deadline_only"),
         "settings": obj({key: NAT for key in OBSERVATION_KEYS}), "rule_bindings": array(observation_binding)},
         ("mode", "settings", "rule_bindings"))
-    profile["window"] = obj({key: NAT for key in (*WINDOW_KEYS, *LEGACY_WINDOW_KEYS)})
+    profile["window"] = obj({key: NAT for key in WINDOW_KEYS})
     profile["input"] = obj({"max_input_bytes": NAT, "unit": enum("utf8_bytes"), "provider_context_capacity": enum("unknown")},
                             ("max_input_bytes", "unit", "provider_context_capacity"))
     profile["ai"] = obj({"model": TEXT, "tier": nullable(TEXT), "provider": enum("codex", "claude"),
@@ -419,9 +419,7 @@ def extend():
         "revision_followup": array(obj({"record_id": ID, "task_id": ID}, ("record_id", "task_id"))),
         "intent_repair": obj({"import_id": ID, "previous_sha256": HASH, "check_execution_id": ID,
             "findings": array(TEXT)}, ("import_id", "previous_sha256", "check_execution_id", "findings")),
-        # Historical input only; no longer a dispatch condition.
-        "initial_preparation_wait": obj({"goal_revision": NAT, "policy_revision": {"type": ["integer", "string"]},
-            "requirements_sha256": HASH}, ("goal_revision", "policy_revision", "requirements_sha256"))})
+    })
     RUNTIME_FIELDS["revision_cycles"] = array(array(ID))
     impact_plan = obj({**{name: REFS for name in ("roots", "computed_impact", "declared_impact",
         "missing_declarations", "extra_declarations", "unresolved_refs")}, "sensitive": BOOL,
