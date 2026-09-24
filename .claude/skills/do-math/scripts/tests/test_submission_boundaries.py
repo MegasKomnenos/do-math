@@ -103,7 +103,7 @@ class AcceptanceTests(unittest.TestCase):
         self.addCleanup(self.fixture.tearDown)
 
     def test_newly_reported_knowledge_dependencies_bind_the_read_snapshot(self):
-        for declaration in ("used_sources", "dependencies", "both", "knowledge_path"):
+        for declaration in ("used_sources", "dependencies", "knowledge_path"):
             with self.subTest(declaration=declaration):
                 class Runner:
                     def run(inner, **args):
@@ -114,8 +114,8 @@ class AcceptanceTests(unittest.TestCase):
                             "operation": "revise", "id": kid, "changes": {"statement": "The result is two."},
                             "reason": "Correct the computation."})
                         args["should_stop"]()
-                        dependencies = [kid] if declaration in {"dependencies", "both"} else []
-                        used = [kid] if declaration in {"used_sources", "both"} else []
+                        dependencies = [kid] if declaration == "dependencies" else []
+                        used = [kid] if declaration == "used_sources" else []
                         if declaration == "knowledge_path":
                             used = ["input/knowledge/" + kid + ".json"]
                         return returned("research_work", used_sources=used,

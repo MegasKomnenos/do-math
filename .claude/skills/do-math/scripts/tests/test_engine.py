@@ -291,7 +291,14 @@ class EngineTests(unittest.TestCase):
 
     def test_work_budget_pause_resume_preserves_failed_request_without_replay(self):
         runner = ScriptedRunner(fail_role="research_work"); engine, instance = self.make(runner, work_calls=2, operations_calls=None)
-        paused = engine.run(max_steps=10)
+        for _ in range(0, 10, 2):
+            paused = engine.run(max_steps=2)
+            if (paused['status'] in {'waiting', 'capacity_waiting'}
+                    and any(item['action']['role'] == 'research_work'
+                            for item in engine.runtime['waiting_actions'].values())):
+                break
+        else:
+            self.fail('The failed work request did not reach a preserved wait')
         self.assertIn(paused["status"], {"waiting", "capacity_waiting"})
         before = ResearchRepository(self.repo, instance).load()[2]["waiting_actions"]
         self.assertTrue(any(item["action"]["role"] == "research_work" for item in before.values()))
@@ -325,7 +332,14 @@ class EngineTests(unittest.TestCase):
     def test_unlimited_budgets_continue_after_finite_exhaustion(self):
         runner = ScriptedRunner(formal=True)
         engine, instance = self.make(runner, work_calls=1, operations_calls=10)
-        exhausted = engine.run(max_steps=20)
+        for _ in range(0, 20, 4):
+            exhausted = engine.run(max_steps=4)
+            if (exhausted['budget']['work']['available'] == 0
+                    and any(action['role'] == 'research_work' for action in engine.runtime['queue'])
+                    and exhausted['status'] in {'capacity_waiting', 'waiting'}):
+                break
+        else:
+            self.fail('The finite work budget did not preserve a queued request')
         self.assertIn(exhausted["status"], {"capacity_waiting", "waiting"})
         self.assertEqual(exhausted['budget']['work']['available'], 0)
         pinned_work = next(action for action in engine.runtime['queue'] if action['role'] == 'research_work')
