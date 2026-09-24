@@ -129,8 +129,10 @@ def main(argv=None):
         values = parser.parse_args(args)
         print(json.dumps(freeze(values.installation_root, values.workspace)))
         return 0
-    manifest_path = Path(__file__).resolve().parents[1] / MANIFEST
-    manifest = verify_snapshot(manifest_path) if manifest_path.exists() else None
+    snapshot_root = Path(__file__).resolve().parents[1]
+    manifest_path = snapshot_root / MANIFEST
+    frozen_location = snapshot_root.parent.name == "bootstrap" and snapshot_root.parent.parent.name == "operator"
+    manifest = verify_snapshot(manifest_path) if frozen_location or manifest_path.exists() else None
     if args == ["--bootstrap-info"]:
         print(json.dumps({"mode": "frozen" if manifest else "live", "manifest": manifest}))
         return 0

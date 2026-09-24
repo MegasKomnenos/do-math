@@ -121,6 +121,10 @@ class SessionPolicyTests(unittest.TestCase):
             config = deepcopy(DEFAULT_CONFIG)
             config["session_limits"]["work"][MODELS["high"]] = value
             with self.assertRaises(ValueError): validate_policy(config)
+        for tier in ("low", "medium", "high"):
+            config = deepcopy(DEFAULT_CONFIG)
+            del config["tier_models"][tier]
+            with self.assertRaises(ValueError): validate_policy(config)
 
     def test_role_floor_raises_low_assessment_and_unassessed_work_uses_high(self):
         config = deepcopy(DEFAULT_CONFIG)

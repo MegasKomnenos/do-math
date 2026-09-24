@@ -807,7 +807,8 @@ def fit_context(context: dict, *, max_bytes: int, workspace: Path,
         raise ValueError("max_bytes must be a positive integer")
     if not isinstance(mandatory_keys, list) or any(not isinstance(k, str) for k in mandatory_keys) or len(mandatory_keys) != len(set(mandatory_keys)):
         raise ValueError("mandatory_keys must contain distinct string keys")
-    mandatory_keys = list(dict.fromkeys([*mandatory_keys, *[key for key in role_direct_keys(role, context) if key in context]]))
+    mandatory_keys = list(dict.fromkeys([*mandatory_keys, *[key for key in role_direct_keys(role, context)
+                                                   if key in context and key not in {'goal', 'policies', 'implementation_documents'}]]))
     missing = set(mandatory_keys) - context.keys()
     if missing:
         raise ValueError("mandatory context keys are missing: " + ", ".join(sorted(missing)))

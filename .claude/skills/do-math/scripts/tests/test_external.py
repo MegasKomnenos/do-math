@@ -43,8 +43,9 @@ class Tests(unittest.TestCase):
 
  def setUp(self):
   self.server=HTTPServer(('127.0.0.1',0),H);threading.Thread(target=self.server.serve_forever,daemon=True).start();time.sleep(.02);self.origin=f'http://127.0.0.1:{self.server.server_port}'
-  self.grant={'id':'G','status':'active','expires_at':None,'allowed_origins':[self.origin],'allowed_methods':['POST','GET'],'allowed_path_prefixes':['/ok'],'credential_env':{'X-Key':'EXT_TEST_KEY'},'allow_idempotent_retry':True};os.environ['EXT_TEST_KEY']='secret'
- def tearDown(self):self.server.shutdown();self.server.server_close();os.environ.pop('EXT_TEST_KEY',None)
+  self.grant={'id':'G','status':'active','expires_at':None,'allowed_origins':[self.origin],'allowed_methods':['POST','GET'],'allowed_path_prefixes':['/ok'],'credential_env':{'X-Key':'EXT_TEST_KEY'},'allow_idempotent_retry':True}
+  self.enterContext(patch.dict(os.environ, {'EXT_TEST_KEY': 'secret'}))
+ def tearDown(self):self.server.shutdown();self.server.server_close()
  def test_persist_before_send_confirm_and_redact(self):
   calls=[];op=prepare_operation({'method':'POST','url':self.origin+'/ok','body':'x'},'G','S');out=execute_operation(op,self.grant,persist=lambda x:calls.append(x) or True)
   self.assertEqual([x['status'] for x in calls],['prepared','prepared','confirmed']);self.assertTrue(calls[1]['transmitted']);self.assertEqual(out['status'],'confirmed');self.assertNotIn('secret',str(out))
