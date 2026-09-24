@@ -137,7 +137,8 @@ class ResearchRecoveryTests(PurposeHarness):
         self.assertTrue(failure.get('execution_id'))
 
     def test_resume_keeps_failed_output_out_of_execution_queue(self):
-        engine, _ = self.make()
+        from test_purpose_engine import ActiveStateHarness
+        engine, _ = ActiveStateHarness.make(self, **self.fixture_config())
         failed = RecoveryRoutingTests.failed_plan(self, engine)
         send_control(engine, 'pause', text='Pause after preserving the rejected output')
         engine._enqueue('research_preparation', reason='Independent continuation', requested_by='UC-fixture')
