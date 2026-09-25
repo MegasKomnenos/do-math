@@ -77,12 +77,8 @@ class KnowledgeImportTests(unittest.TestCase):
             context = self.engine._context({'role': 'research_preparation'}, self.repo / new_id('EX'))
             return [row['token'] for row in context['kind_definitions']['knowledge']]
         self.assertNotIn(definition['token'], kinds())
-        self.send(operation='check-kind', family='knowledge', token=definition['token'], check_ref='fixture:check')
-        self.assertNotIn(definition['token'], kinds())
-        self.send(operation='activate-kind', family='knowledge', token=definition['token'])
-        self.assertNotIn(definition['token'], kinds())
-        # A user control is not an independent semantic finding. Use the actual
-        # central consumer with a separate v5 execution and synthetic AI verdict.
+        # Only the central consumer of an independent check activates a kind.
+        # Use a separate v5 execution and a synthetic AI verdict.
         from do_math import execution_lifecycle
         from do_math.execution_profiles import profile_ref
         engine = self.engine
@@ -108,7 +104,6 @@ class KnowledgeImportTests(unittest.TestCase):
         with engine.store.writer_lock():
             engine._save()
         engine.head, engine.instance, engine.runtime = engine.store.load()
-        self.send(operation='activate-kind', family='knowledge', token=definition['token'], check_ref=eid)
         self.assertIn(definition['token'], kinds())
 
 

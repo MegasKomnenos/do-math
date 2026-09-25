@@ -4,6 +4,7 @@ import hashlib
 import sys
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math import knowledge as k, knowledge_io as io, knowledge_records as kr
 from do_math.repository import new_id
@@ -332,6 +333,23 @@ class KnowledgeTests(unittest.TestCase):
         ins['knowledge'][ids['b']]['history'] = [{'previous': {'dependencies': [ids['c']]}}]
         changed, _ = revise(ins, run, ids['c'])
         self.assertTrue(k.assess_use(changed['knowledge'][ids['b']], changed)['valid'])
+
+    def test_fresh_plan_is_applied_without_recomputing_the_closure(self):
+        ins, run, ids = fixture()
+        with patch.object(k, 'plan_impact', wraps=k.plan_impact) as plans:
+            changed, _ = withdraw(ins, run, ids['a'])
+        # One producer declaration and one plan inside invalidate_knowledge.
+        self.assertEqual(plans.call_count, 2)
+        self.assertEqual(changed['knowledge'][ids['a']]['lifecycle'], 'withdrawn')
+
+    def test_observed_propagation_plans_twice_and_applies_to_the_callers_copy(self):
+        ins, run, _ = fixture()
+        with patch.object(k, 'plan_impact', wraps=k.plan_impact) as plans:
+            _, changed_run = k.invalidate_environment(ins, run, 'TE-old', 'environment defect')
+        # Preview and plan inside _propagate; no third recomputation on apply.
+        self.assertEqual(plans.call_count, 2)
+        self.assertEqual(changed_run['history'][-1]['kind'], 'knowledge_reassessment_required')
+        self.assertNotIn('knowledge_reassessment_required', [h.get('kind') for h in run['history']])
 
 
 if __name__ == '__main__': unittest.main(verbosity=2)

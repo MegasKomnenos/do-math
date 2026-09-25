@@ -16,6 +16,7 @@ import jsonschema
 from do_math.codex_adapter import CodexExecAdapter
 from do_math.claude_adapter import ClaudePrintAdapter
 from do_math.claude_stream import provider_limit
+from do_math.provider_wait import provider_for
 from datetime import datetime, timezone
 from do_math.repository import canonical_json, _unique_pairs, _reject_constant
 from .observation_transport import ObservationBatch
@@ -282,13 +283,11 @@ class ModelRunner:
         self.claude = ClaudeModelRunner(claude_path)
 
     def run(self, *, model: str, **options) -> dict:
-        if model.startswith("claude:"):
+        if provider_for(model) == "claude":
             name = model.removeprefix("claude:")
             if not name.strip():
                 raise ValueError("claude: requires a Claude model name or alias")
             return self.claude.run(model=name, **options)
-        if model.startswith("claude-"):
-            return self.claude.run(model=model, **options)
         options.pop("claude_only_assigned_model", None)
         return self.codex.run(model=model, **options)
 

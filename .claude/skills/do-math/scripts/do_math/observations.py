@@ -14,7 +14,7 @@ from jsonschema import Draft202012Validator
 
 from .context_store import _excluded, _safe_path
 from .repository import validate_storage_value, _unique_pairs, _reject_constant
-from .file_io import atomic_replace, read_bytes_shared
+from .file_io import read_bytes_shared, write_bytes_atomic
 
 CHECKPOINT_MAX_BYTES = 4 * 1024 * 1024
 RULES_MAX_BYTES = 65536
@@ -1166,9 +1166,7 @@ def publish_worker_feedback(workspace: Path, feedback: dict) -> None:
     encoded = json.dumps(_json_safe(feedback), ensure_ascii=False)
     control = _control_root(workspace)
     destination = _safe_path(control, "observation-feedback.json")
-    temporary = _safe_path(control, "observation-feedback.json.tmp")
-    temporary.write_text(encoded, encoding="utf-8")
-    atomic_replace(temporary,destination)
+    write_bytes_atomic(destination, encoded.encode("utf-8"))
 
 
 def write_checkpoint_reminder(workspace: Path) -> bool:
@@ -1179,9 +1177,7 @@ def write_checkpoint_reminder(workspace: Path) -> bool:
                           "「공통 실행」의 체크포인트 형식(current_claim, evidence_paths, attempts, remaining_work, next_step, "
                           "progress_state)으로 지금까지 확인한 사실과 그 근거 파일, 남은 작업을 기록한다. "
                           "이 알림은 실행기가 기계적으로 보낸 것이며 진전이나 실패의 판정이 아니다."}
-    temporary = destination.with_suffix(".tmp")
-    temporary.write_text(json.dumps(reminder, ensure_ascii=False), encoding="utf-8")
-    atomic_replace(temporary,destination)
+    write_bytes_atomic(destination, json.dumps(reminder, ensure_ascii=False).encode("utf-8"))
     return True
 
 
@@ -1189,9 +1185,7 @@ def request_checkpoint(workspace: Path, reason: str, *, immediate: bool, deadlin
     request = {"reason": reason, "immediate": immediate, "deadline": deadline,
                "instruction": "Preserve only already obtained facts in checkpoint.json and finish. Do not start new research or external actions."}
     destination = _control_root(workspace) / "stop-request.json"
-    temporary = destination.with_suffix(".tmp")
-    temporary.write_text(json.dumps(request, ensure_ascii=False), encoding="utf-8")
-    atomic_replace(temporary,destination)
+    write_bytes_atomic(destination, json.dumps(request, ensure_ascii=False).encode("utf-8"))
     return request
 
 

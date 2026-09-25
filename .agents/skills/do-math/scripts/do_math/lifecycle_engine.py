@@ -9,17 +9,18 @@ import math
 import time
 from pathlib import Path
 
-from .external import prepare_operation, validate_operation, execute_operation, reconcile_operation, prepare_retry
+from .external import prepare_operation, validate_operation, execute_operation, reconcile_operation, prepare_retry, recover_operation
 from .governance import apply_decision, timestamp
 from .knowledge import (revise_knowledge, invalidate_knowledge, register_environment,
     begin_transition, record_transition_result, activate_transition, invalidate_environment,
     validate_basis, assess_use)
-from .planning import task_ready, contract_hash, apply_event_schedule, contract_review_current, review_basis_key
+from .planning import (task_ready, contract_hash, apply_event_schedule, contract_review_current, review_basis_key,
+                       capture_task_basis)
 from .input_basis import sources_current
 from .repository import canonical_json, new_id
 from .initialization import activation_requirements, capability_requirements, governance_working_view
 
-_DEFAULT_AXIOMS = ['propext', 'Classical.choice', 'Quot.sound']
+from .trust_validation import AXIOMS
 _SCHEDULABLE = {'planned', 'waiting', 'active'}
 
 
@@ -533,7 +534,8 @@ class LifecycleEngineMixin:
         if action == 'pause':
             self._pause_lifecycle('user_pause')
             if request.get('origin', 'user') == 'user':
-                self.runtime['user_pause'] = {'request_id': source_ref, 'reason': request.get('text', '')}
+                self.runtime['user_pause'] = {'request_id': source_ref, 'reason': request.get('text', ''),
+                                              'created_at': request.get('created_at')}
             return True
         if action == 'resume':
             self._resume_lifecycle(request)
@@ -624,6 +626,8 @@ class LifecycleEngineMixin:
 
     def _knowledge_control(self, config, source_ref):
         operation, knowledge_id = config.get('operation'), config.get('id')
+        if operation not in {'revise', 'invalidate'}:
+            raise ValueError('knowledge operation must be revise or invalidate')
         reason = config.get('reason', '')
         item = self.instance['knowledge'].get(knowledge_id)
         if item is None: raise ValueError('knowledge item does not exist')
@@ -677,7 +681,7 @@ class LifecycleEngineMixin:
             return
         if operation == 'register':
             self.instance, environment_id = register_environment(self.instance, config.get('toolchain', {}),
-                                                                 config.get('allowed_axioms', _DEFAULT_AXIOMS))
+                                                                 config.get('allowed_axioms', list(AXIOMS)))
             environment = self.instance['trust_environments'][environment_id]
             environment.update(source_ref=source_ref, manifest=deepcopy(config.get('manifest', {})),
                                manifest_sha256=_digest(config.get('manifest', {})))
@@ -979,9 +983,11 @@ class LifecycleEngineMixin:
                 continue
             required = {'revision': task['revision'], 'contract_sha256': contract_hash(task),
                         'goal_revision': query_instance['goal_revision'], 'policy_revision': query_instance['policy_revision']}
-            review_key = review_basis_key(task, query_instance, self.runtime)
+            # One premise snapshot serves the review key and every recorded review of this task.
+            task_basis = capture_task_basis(task, query_instance, self.runtime)
+            review_key = review_basis_key(task, query_instance, self.runtime, task_basis=task_basis)
             for review in task.get('reviews', []):
-                currentness = contract_review_current(review, task, query_instance, self.runtime)
+                currentness = contract_review_current(review, task, query_instance, self.runtime, task_basis=task_basis)
                 review['inputs_current'] = currentness['valid']
                 if currentness['changes']:
                     review['currentness_changes'] = currentness['changes']
@@ -1080,7 +1086,7 @@ class LifecycleEngineMixin:
     def _bind_formal_environment(self, result):
         output = deepcopy(result)
         toolchain = output.get('toolchain')
-        allowed = output.get('allowed_axioms', self.instance.get('config', {}).get('allowed_axioms', _DEFAULT_AXIOMS))
+        allowed = output.get('allowed_axioms', self.instance.get('config', {}).get('allowed_axioms', list(AXIOMS)))
         output['allowed_axioms'] = deepcopy(allowed)
         if not isinstance(toolchain, dict) or not toolchain.get('sha256') or not toolchain.get('version'):
             output.update(trust_environment_id=None, trust_environment_status='unknown',
@@ -1283,7 +1289,7 @@ class LifecycleEngineMixin:
         if not operation.get('execution_id'): operation['execution_id'] = new_id('EX')
         if operation['status'] == 'unknown' or operation.get('transmission_phase') == 'recorded':
             if operation['status'] == 'prepared':
-                operation.update(status='unknown', error='Executor resumed without a confirmed remote outcome')
+                operation.update(recover_operation(operation), error='Executor resumed without a confirmed remote outcome')
             self._external_execution_record(operation)
             self._lifecycle_event('external_reconciliation_required', target=operation_id)
             return

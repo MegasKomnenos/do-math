@@ -124,9 +124,8 @@ class LocalCLIAdapter:
     executable_key = "codex_path"
     parse_output = staticmethod(_parse_jsonl)
 
-    def __init__(self, codex_path: str, *, describe_timeout: float = 10.0) -> None:
-        self.codex_path = codex_path
-        self.cli_path = codex_path
+    def __init__(self, cli_path: str, *, describe_timeout: float = 10.0) -> None:
+        self.cli_path = cli_path
         self.describe_timeout = describe_timeout
 
     def capability_identity(self) -> dict:
@@ -153,14 +152,14 @@ class LocalCLIAdapter:
     @measured('capability_surface')
     def describe(self) -> dict[str, Any]:
         try:
-            version_result = subprocess.run([self.codex_path, "--version"], check=False, shell=False,
+            version_result = subprocess.run([self.cli_path, "--version"], check=False, shell=False,
                                             capture_output=True, timeout=self.describe_timeout, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
-            global_help_result = subprocess.run([self.codex_path, "--help"], check=False, shell=False,
+            global_help_result = subprocess.run([self.cli_path, "--help"], check=False, shell=False,
                                                 capture_output=True, timeout=self.describe_timeout, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
-            help_result = subprocess.run([self.codex_path, "exec", "--help"], check=False, shell=False,
+            help_result = subprocess.run([self.cli_path, "exec", "--help"], check=False, shell=False,
                                          capture_output=True, timeout=self.describe_timeout, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
         except (OSError, subprocess.TimeoutExpired) as exc:
-            return {"cli_path": self.codex_path, "verified": False, "error_type": type(exc).__name__}
+            return {"cli_path": self.cli_path, "verified": False, "error_type": type(exc).__name__}
         version, help_bytes = version_result.stdout, help_result.stdout
         required = (b"--json", b"--output-last-message", b"--model", b"--sandbox", b"--ephemeral",
                     b"--ignore-user-config", b"--ignore-rules", b"--skip-git-repo-check", b"--output-schema", b"--config",
@@ -168,7 +167,7 @@ class LocalCLIAdapter:
         verified = (version_result.returncode == 0 and global_help_result.returncode == 0 and help_result.returncode == 0
                     and b"--ask-for-approval" in global_help_result.stdout and all(flag in help_bytes for flag in required))
         return {"scope": "cli_command_surface_only", "identity": self.capability_identity(),
-                "cli_path": self.codex_path, "version_bytes": version, "version_sha256": _sha256(version),
+                "cli_path": self.cli_path, "version_bytes": version, "version_sha256": _sha256(version),
                 "exec_help_bytes": help_bytes, "exec_help_sha256": _sha256(help_bytes),
                 "verified": verified, "supported": {"jsonl": verified, "model": verified, "structured_output": verified,
                               "effort_via_config": verified, "sandbox": verified, "local_job_stop": True},
@@ -288,7 +287,6 @@ class LocalCLIAdapter:
         if not parsed["parse_complete"]: reasons.append("jsonl_parse_incomplete")
         if final is None: reasons.append("final_message_missing")
         reasons.extend(self.validate_final(parsed, final))
-        if not barrier: reasons.append("termination_barrier_unconfirmed")
         return {"source_request": _artifact(request_raw), "source_prompt": _artifact(prompt_raw),
                 "host_resources": execution.job.resource_usage() if request.get("resource_limits") is not None else None,
                 "stdout": _artifact(stdout), "stderr": _artifact(stderr), "final": _artifact(final),

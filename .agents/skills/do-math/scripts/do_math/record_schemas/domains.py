@@ -89,7 +89,6 @@ def extend():
     # These assessments have no producer ID. Their enclosing list is one typed
     # singleton until GOVERNANCE introduces independent assessment identities.
     RUNTIME_FIELDS["academic_assessments"] = array(academic_assessment)
-    RUNTIME_FIELDS.pop("external_rejections", None)
     life = RESEARCH_FIELDS["lifecycle"]["properties"]
     life.update({"adoption": obj({"governance_sha256": HASH, "config_sha256": HASH, "review_policy_sha256": HASH,
         "external_policy": {"type": ["string", "object"]}, "profile_refs": array(PROFILE_REF),
@@ -505,8 +504,6 @@ def extend():
         "next_owner": TEXT, "review_closure": TEXT, "recovery_event": EVIDENCE, "reason": TEXT,
         "event": EVIDENCE, "cycle": EVIDENCE, "retryable": BOOL,
         "owner_activity_id": nullable(ID), "review_status": TEXT})
-    RUNTIME_FIELDS.pop("inputs", None)
-    RUNTIME_FIELDS.pop("queue", None)
     # An action embedded in an execution or wait is a historical input copy,
     # not another live queue record/global identity.
     RECORDS["executions"]["properties"]["action"] = action

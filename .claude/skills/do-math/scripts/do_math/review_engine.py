@@ -12,7 +12,10 @@ from .review_cycle import (accept_result, context_for, next_actions, record_turn
                           authorize_record_replacement, reserved_review_slots, ReviewRestorationError,
                           validate_sealed_review, validate_review_execution, validate_review_independence,
                           replacement_authority, identity_assessment, review_action as _action,
-                          resource_disposition, validate_resource_disposition)
+                          resource_disposition, validate_resource_disposition,
+                          # Transcript seals use review_cycle's compact encoding, not repository
+                          # JSON (which uses indentation and a terminal newline).
+                          _bytes as _transcript_bytes)
 from .input_basis import capture_review_input_basis, review_input_basis_changes
 from . import knowledge_records as kr
 from .review_policy import build_review_policy, minimum_scope_executions
@@ -38,12 +41,6 @@ def _proposal(instance, knowledge_id):
 
 def _pending_key(action):
     return f"{action['review_cycle_id']}:{action['stage']}:{action['round']}:{action['slot']}"
-
-
-def _transcript_bytes(value):
-    # review_cycle seals this canonical, compact encoding, rather than repository
-    # JSON (which uses indentation and a terminal newline).
-    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(',', ':'), allow_nan=False).encode('utf-8')
 
 
 class ReviewEngineMixin:
@@ -234,8 +231,8 @@ class ReviewEngineMixin:
         if verification.get('status') != 'verified' or environment.get('status') == 'invalid':
             raise ValueError('staged verification or target environment is not eligible for review')
         kr.validate_formal_evidence(formal, verification, environment)
-        view = deepcopy(self.instance)
-        view['formal_results'][formal['id']].update(verification=verification, trust_environment_id=transition['to_environment'])
+        view = kr.formal_overlay(self.instance, formal['id'], verification=verification,
+                                 trust_environment_id=transition['to_environment'])
         return {'proposal': _proposal(view, knowledge_id), 'identity_basis': kr.identity_basis(view, knowledge_id),
                 'transition_basis': kr.exact_digest({'transition_id': transition_id, 'target': target,
                     'verification': verification, 'target_environment': environment, 'from_environment': transition['from_environment']}),
@@ -311,13 +308,9 @@ class ReviewEngineMixin:
         authority = self._review_replacement_authority(action)
         if authority is not None and not authority['allowed']:
             return {'disposition': 'authorization_denied', 'authority': authority}
-        if action.get('replacement_for') is not None:
-            replacement = cycle['replacement_actions'][f"{action['stage']}:{action['round']}:{action['slot']}"]
-            if replacement.get('delegation_id'):
-                app = self.runtime['delegation_applications'][replacement['case']['application_id']]
-                binding['delegation_authority'] = {'application_id': app['id'], 'application_sha256': kr.digest(app),
-                    'judgment_executions': {j['execution_id']: kr.digest(self.runtime['executions'][j['execution_id']])
-                                           for j in app['judgments'].values()}}
+        delegation_authority = self._delegation_authority_binding(cycle, action)
+        if delegation_authority is not None:
+            binding['delegation_authority'] = delegation_authority
         assigned = [key for key, row in self.runtime.get('executions', {}).items()
                     if row.get('owner_activity_id') == owner and row.get('actor_kind') == 'ai' and key != eid]
         used = list(dict.fromkeys([*accounting['executions_used'], *assigned]))
@@ -627,6 +620,18 @@ class ReviewEngineMixin:
                     'recovery': self._record_review_recovery(action, error, retryable=retryable)}
 
 
+    def _delegation_authority_binding(self, cycle, action):
+        """Seal the applied delegation behind a replacement slot, if one authorizes it."""
+        if action.get('replacement_for') is None:
+            return None
+        replacement = cycle['replacement_actions'][f"{action['stage']}:{action['round']}:{action['slot']}"]
+        if not replacement.get('delegation_id'):
+            return None
+        app = self.runtime['delegation_applications'][replacement['case']['application_id']]
+        return {'application_id': app['id'], 'application_sha256': kr.digest(app),
+                'judgment_executions': {j['execution_id']: kr.digest(self.runtime['executions'][j['execution_id']])
+                                        for j in app['judgments'].values()}}
+
     def _review_replacement_authority(self, action, execution_id=None):
         if action.get('replacement_for') is None:
             return None
@@ -848,15 +853,9 @@ class ReviewEngineMixin:
         authority = self._review_replacement_authority(action, execution_id)
         if authority is not None and not authority['allowed']:
             raise ValueError('replacement authority is no longer current: ' + authority['reason'])
-        if action.get('replacement_for') is not None:
-            key = f"{action['stage']}:{action['round']}:{action['slot']}"
-            replacement = cycle['replacement_actions'][key]
-            if replacement.get('delegation_id'):
-                application_id = replacement['case']['application_id']
-                app = self.runtime['delegation_applications'][application_id]
-                binding['delegation_authority'] = {'application_id': application_id, 'application_sha256': kr.digest(app),
-                    'judgment_executions': {j['execution_id']: kr.digest(self.runtime['executions'][j['execution_id']])
-                                             for j in app['judgments'].values()}}
+        delegation_authority = self._delegation_authority_binding(cycle, action)
+        if delegation_authority is not None:
+            binding['delegation_authority'] = delegation_authority
         messages = [{'role': 'user', 'kind': 'proposal', 'content': deepcopy(prepared['proposal']),
                      'message_id': f'{execution_id}:proposal'},
                     {'role': 'user', 'kind': 'review_request', 'content': deepcopy(prepared['request']),
@@ -1131,13 +1130,12 @@ class ReviewEngineMixin:
         if updated['status'] != 'working':
             self._publish_identity_review_result(action, updated, execution_id)
             return True
+        from .review_cycle import research_request_digest
         for request, specs in zip(requests, source_specs):
             request_id = f"{execution_id}:{request['id']}"
             record = updated['research'][request_id]
             record['source_records'] = specs
-            record['request_digest'] = hashlib.sha256(canonical_json({'question': record['question'],
-                'proposal_digest': updated['proposal_digest'],
-                'sources': [{key: s[key] for key in ('ref', 'sha256', 'bytes')} for s in specs]})).hexdigest()
+            record['request_digest'] = research_request_digest(record['question'], updated['proposal_digest'], specs)
             self._enqueue('supplemental_research', action['target'], review_cycle_id=action['review_cycle_id'],
                 research_request_id=request_id, requesting_slot=action['slot'], stage='investigating',
                 slot='research-' + request_id, round=action['round'], owner_review_cycle_id=action['review_cycle_id'],

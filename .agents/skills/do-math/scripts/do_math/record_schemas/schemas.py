@@ -196,8 +196,6 @@ RECORDS["operational_dispositions"] = record({"execution_id": ID, "disposition":
     "source_execution_id": ID, "created_at": TEXT, "status": TEXT}, ("execution_id", "disposition"))
 RECORDS["control_receipts"] = record({"request_id": ID, "execution_id": ID, "kind": TEXT, "state": TEXT,
     "payload": EVIDENCE, "received_at": TEXT, "grant_id": ID, "reason": TEXT}, ("execution_id", "kind", "state"))
-RECORDS["recoveries"] = record({"execution_id": ID, "started_at": TEXT, "observation": EVIDENCE,
-    "disposition": TEXT, "completed_at": TEXT, "evidence_refs": array(TEXT)}, ("execution_id", "started_at"))
 RECORDS["trust_environments"] = record({"status": enum("candidate", "active", "retired", "withdrawn", "observed"),
     "toolchain": TEXT, "manifest_sha256": HASH, "manifest": EVIDENCE, "allowed_axioms": array(TEXT),
     "command": array(TEXT), "created_at": TEXT, "source_ref": TEXT, "approval_ref": TEXT,
@@ -214,9 +212,6 @@ RECORDS["review_cycles"] = record({
 RECORDS["goal_judgments"] = record({"execution_id": ID, "basis": TEXT, "decision": TEXT, "scope_complete": BOOL,
     "summary": TEXT, "findings": array(TEXT), "used_sources": array(TEXT), "questions": array(TEXT),
     "slot": {"type": ["integer", "string"]}, "required": NAT, "created_at": TEXT, "input_basis": EVIDENCE}, ("execution_id", "decision", "basis"))
-RECORDS["provider_waits"] = record({"provider": TEXT, "model": TEXT, "attempts": NAT, "reason": TEXT,
-    "retry_at": TEXT, "next_owner": TEXT, "activity_id": ID, "execution_id": ID, "failure": EVIDENCE,
-    "status": TEXT, "scope": TEXT, "source_execution": ID}, ("provider", "reason"))
 
 # Scalar and singleton state are enumerated explicitly; unknown top-level keys
 # never acquire a storage location based on their run-time Python shape.
@@ -240,11 +235,10 @@ RUNTIME_FIELDS = {"feature_version": {"const": STATE_FORMAT_VERSION}, "contract_
     "recovery_checked": BOOL, "last_observed_utc": TEXT, "event_cursor": NAT,
     "availability": obj({"state": TEXT, "reason": TEXT, "next_owner": TEXT}, ("state",)),
     "clock_guard": obj({"state": TEXT, "observed_at": TEXT, "reason": TEXT, "high_water": TEXT}),
-    "queue": HISTORY, "pending_events": REFS, "inputs": HISTORY,
+    "pending_events": REFS,
     "user_pause": {"type": ["boolean", "object"]}, "stop_requested": {"type": ["boolean", "string"]},
     "next_research_reconsider_at": nullable(TEXT), "installation": EVIDENCE,
     "interpretation_history": HISTORY, "implementation_history": HISTORY,
-    "external_rejections": HISTORY, "input_overflows": HISTORY,
     "model_policy_violation": EVIDENCE, "provider_wake": EVIDENCE,
-    "pending_knowledge_impacts": HISTORY, "permission_requests": HISTORY, "extended_controls": HISTORY,
+    "pending_knowledge_impacts": HISTORY, "permission_requests": HISTORY,
 }

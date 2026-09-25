@@ -5,24 +5,7 @@ import json
 from pathlib import Path
 import time
 
-from .observations import duration_ms
 from .file_io import write_bytes_atomic
-
-
-def observation_window(profile_observation, field):
-    """Read a selected profile's declared observation window without defaults.
-
-    The caller must have already selected and frozen the execution profile.  A
-    missing value is an unavailable capability, not permission to substitute a
-    convenient global timeout.
-    """
-    if not isinstance(profile_observation, dict):
-        raise ValueError("selected profile has no observation settings")
-    value = profile_observation.get(field)
-    if value is None:
-        raise ValueError("selected profile lacks a positive " + field)
-    duration_ms(value, field, required=True)
-    return value
 
 
 def notice_seconds(config, pool=None):

@@ -302,10 +302,7 @@ def validate_sealed_review(cycle, runtime, *, instance=None, excluded_execution_
                     raise ValueError('fixed supplemental request changed')
                 sources = record.get('source_records', [])
                 if sources:
-                    from .repository import canonical_json
-                    payload = {'question': record['question'], 'proposal_digest': cycle['proposal_digest'],
-                               'sources': [{k: s[k] for k in ('ref', 'sha256', 'bytes')} for s in sources]}
-                    if hashlib.sha256(canonical_json(payload)).hexdigest() != record['request_digest']:
+                    if research_request_digest(record['question'], cycle['proposal_digest'], sources) != record['request_digest']:
                         raise ValueError('supplemental fixed source digest changed')
                     for source in sources:
                         raw = _bytes(source['inline']) if 'inline' in source else (read_artifact(source['artifact_ref'], source['snapshot']) if read_artifact else None)
@@ -384,6 +381,31 @@ def identity_assessment(cycle, *, reason):
             'summary': reason}
 
 
+def _verified_transcript(turns, manifests):
+    """Pair each message whose original hash still verifies with its manifest; list the rest."""
+    verified, omitted = [], []
+    for position in range(max(len(turns), len(manifests))):
+        if (position < len(turns) and position < len(manifests)
+                and isinstance(turns[position], dict) and {'role', 'content'} <= turns[position].keys()
+                and isinstance(manifests[position], dict)
+                and {'sha256', 'bytes', 'index', 'proposal_digest', 'ref'} <= manifests[position].keys()
+                and manifests[position]['index'] == position
+                and _digest(turns[position]) == manifests[position].get('sha256')
+                and len(_bytes(turns[position])) == manifests[position].get('bytes')):
+            verified.append((turns[position], manifests[position]))
+        else:
+            omitted.append(position)
+    return verified, omitted
+
+
+def _replacement_sealed_input(cycle, verified_manifests):
+    """Sealed replacement input; authorization and sealed replay hash this same value."""
+    return {'proposal_digest': cycle['proposal_digest'], 'identity_basis': cycle.get('identity_basis'),
+            'policy_ref': cycle.get('policy_ref'), 'scope_assessment': cycle.get('scope_assessment'),
+            'sealed_results': {k: cycle['results'][k] for k in cycle['sealed']},
+            'verified_transcript': verified_manifests}
+
+
 def _replay_replacement(replay, cycle, action, instance, runtime):
     if instance is None:
         raise ValueError('replacement replay requires current governance sources')
@@ -401,22 +423,8 @@ def _replay_replacement(replay, cycle, action, instance, runtime):
     archive = next((r for r in cycle.get('transcript_replacements', []) if r['recovery_event'] == index and r['slot'] == action['slot']), None)
     if archive is None:
         raise ValueError('replacement transcript archive is missing')
-    verified, omitted = [], []
-    for pos in range(max(len(archive['turns']), len(archive['manifest']))):
-        if (pos < len(archive['turns']) and pos < len(archive['manifest'])
-                and isinstance(archive['turns'][pos], dict)
-                and {'role', 'content'} <= archive['turns'][pos].keys()
-                and isinstance(archive['manifest'][pos], dict)
-                and {'sha256', 'bytes', 'index', 'proposal_digest', 'ref'} <= archive['manifest'][pos].keys()
-                and archive['manifest'][pos]['index'] == pos
-                and _digest(archive['turns'][pos]) == archive['manifest'][pos].get('sha256')
-                and len(_bytes(archive['turns'][pos])) == archive['manifest'][pos].get('bytes')):
-            verified.append(archive['manifest'][pos])
-        else:
-            omitted.append(pos)
-    sealed_input = {'proposal_digest': replay['proposal_digest'], 'identity_basis': replay.get('identity_basis'),
-        'policy_ref': replay.get('policy_ref'), 'scope_assessment': replay.get('scope_assessment'),
-        'sealed_results': {k: replay['results'][k] for k in replay['sealed']}, 'verified_transcript': verified}
+    verified, omitted = _verified_transcript(archive['turns'], archive['manifest'])
+    sealed_input = _replacement_sealed_input(replay, [manifest for _, manifest in verified])
     if (omitted != authorization['omitted_indices'] or omitted != archive['omitted_indices']
             or _digest(sealed_input) != authorization['sealed_input_sha256']):
         raise ValueError('replacement sealed input changed')
@@ -593,6 +601,13 @@ def validate_resource_disposition(cycle, runtime, *, read_artifact=None, instanc
     return record
 
 
+def research_request_digest(question, proposal_digest, sources):
+    """Bind a fixed investigation to its question, proposal edition and exact source bytes."""
+    from .repository import canonical_json
+    return hashlib.sha256(canonical_json({'question': question, 'proposal_digest': proposal_digest,
+        'sources': [{key: source[key] for key in ('ref', 'sha256', 'bytes')} for source in sources]})).hexdigest()
+
+
 def research_schema():
     text = {"type": "string", "minLength": 1}
     return _object({"summary": copy.deepcopy(text), "used_sources": _array(copy.deepcopy(text)),
@@ -624,8 +639,8 @@ def defer_for_research(cycle, action, output, requests, execution_id, *, limit=3
     if not isinstance(execution_id, str) or not execution_id or execution_id in used:
         raise ValueError("research request requires a fresh review execution")
     n = copy.deepcopy(cycle)
-    n = record_turn(n, action["slot"], [{"role": "assistant", "message_id": f"{execution_id}:assistant",
-                                        "content": {"provisional_result": output, "research_requests": requests}}])
+    n = _append_turns(n, action["slot"], [{"role": "assistant", "message_id": f"{execution_id}:assistant",
+                                          "content": {"provisional_result": output, "research_requests": requests}}])
     if len(n.get("research", {})) + len(requests) > limit or not budget_available:
         n['history'].append({'event': 'investigation_limit_closed', 'action': copy.deepcopy(action),
                              'execution_id': execution_id, 'limit': limit, 'budget_available': budget_available})
@@ -669,7 +684,7 @@ def accept_research_result(cycle, request_id, output, execution_id, source_recor
     entry["status"] = output["outcome"]
     entry["result"] = {"execution_id": execution_id, "output": copy.deepcopy(output),
                        "source_records": copy.deepcopy(source_records or []), "execution_status": execution_status}
-    n = record_turn(n, request["action"]["slot"], [{"role": "tool", "kind": "supplemental_research",
+    n = _append_turns(n, request["action"]["slot"], [{"role": "tool", "kind": "supplemental_research",
         "message_id": f"{execution_id}:research-result", "call": "supplemental_research",
         "arguments": {"research_request_id": request_id, "request_digest": request["request_digest"]},
         "content": copy.deepcopy(entry)}])
@@ -957,8 +972,8 @@ def accept_result(cycle, action, output, execution_id, input_manifest=None):
             "grant_sha256": action["grant_sha256"], "execution_id": execution_id,
             "continuity_broken": True, "authorization": copy.deepcopy(replacement)})
     # The final assistant output belongs in its slot even if the caller never resends it.
-    n = record_turn(n, action["slot"], [{"role": "assistant", "content": copy.deepcopy(output),
-                                       "message_id": f"{execution_id}:assistant"}])
+    n = _append_turns(n, action["slot"], [{"role": "assistant", "content": copy.deepcopy(output),
+                                         "message_id": f"{execution_id}:assistant"}])
     batch = [a for a in _phase_actions(cycle)]
     if all(_key(a) in n["results"] for a in batch):
         keys = [_key(a) for a in batch]
@@ -1008,11 +1023,15 @@ def accept_result(cycle, action, output, execution_id, input_manifest=None):
 def record_turn(cycle, slot, messages):
     """Append immutable public messages; stable message IDs deduplicate resends."""
     _check_proposal(cycle)
-    if slot not in cycle["reviewer_slots"] + cycle["judge_slots"] + ["scope", "organize"]:
+    return _append_turns(copy.deepcopy(cycle), slot, messages)
+
+
+def _append_turns(n, slot, messages):
+    """Append in place to a checked cycle copy that the calling transition already owns."""
+    if slot not in n["reviewer_slots"] + n["judge_slots"] + ["scope", "organize"]:
         raise ValueError("unknown logical slot")
     if not isinstance(messages, list):
         raise ValueError("messages must be a list")
-    n = copy.deepcopy(cycle)
     turns = n["turns"].setdefault(slot, [])
     manifest = n["transcript_manifest"].setdefault(slot, [])
     for message in messages:
@@ -1109,27 +1128,13 @@ def authorize_record_replacement(cycle, action, instance, *, runtime, grant_id=N
     if not isinstance(turns, list) or not isinstance(manifests, list):
         return {'disposition': 'invalid_recovery_record', 'cycle': cycle,
                 'reason': 'transcript containers cannot be reconstructed as ordered messages'}
-    verified, omitted = [], []
-    for position in range(max(len(turns), len(manifests))):
-        if (position < len(turns) and position < len(manifests)
-                and isinstance(turns[position], dict) and {'role', 'content'} <= turns[position].keys()
-                and isinstance(manifests[position], dict)
-                and {'sha256', 'bytes', 'index', 'proposal_digest', 'ref'} <= manifests[position].keys()
-                and manifests[position]['index'] == position
-                and _digest(turns[position]) == manifests[position].get('sha256')
-                and len(_bytes(turns[position])) == manifests[position].get('bytes')):
-            verified.append((copy.deepcopy(turns[position]), copy.deepcopy(manifests[position])))
-        else:
-            omitted.append(position)
+    verified, omitted = _verified_transcript(turns, manifests)
     n.setdefault('transcript_replacements', []).append({
         'slot': slot, 'recovery_event': index, 'turns': copy.deepcopy(turns),
         'manifest': copy.deepcopy(manifests), 'omitted_indices': omitted})
     n['turns'][slot] = [message for message, _ in verified]
     n['transcript_manifest'][slot] = [dict(manifest, index=position) for position, (_, manifest) in enumerate(verified)]
-    sealed_input = {'proposal_digest': cycle['proposal_digest'], 'identity_basis': cycle.get('identity_basis'),
-                    'policy_ref': cycle.get('policy_ref'), 'scope_assessment': cycle.get('scope_assessment'),
-                    'sealed_results': {k: cycle['results'][k] for k in cycle['sealed']},
-                    'verified_transcript': [manifest for _, manifest in verified]}
+    sealed_input = _replacement_sealed_input(cycle, [manifest for _, manifest in verified])
     n.setdefault('replacement_actions', {})[key] = {
         'action': replacement, 'recovery_event': index, 'grant_id': authority['grant_id'],
         'grant_sha256': authority['grant_sha256'], 'authority_request': request,

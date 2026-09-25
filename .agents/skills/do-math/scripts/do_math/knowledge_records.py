@@ -240,9 +240,15 @@ def record_formal_result(instance, knowledge_id, verification, trust_environment
 
 
 def record_identity_assessment(instance, knowledge_id, assessment, policy_ref, *, runtime):
+    return seal_identity_assessment(deepcopy(instance), knowledge_id, assessment, policy_ref, runtime=runtime)
+
+
+def seal_identity_assessment(output, knowledge_id, assessment, policy_ref, *, runtime):
+    """Seal into caller-owned state in place; the caller discards it if this raises."""
     if not isinstance(policy_ref, str) or not policy_ref.strip():
         raise ValueError("identity assessment requires a fixed policy reference")
-    output = initialize_families(instance)
+    for family in FAMILIES:
+        output.setdefault(family, {})
     record = output["knowledge"][knowledge_id]
     fid, xid = record["formal_result_id"], record["exposition_id"]
     formal, exposition = output["formal_results"][fid], output["expositions"][xid]
@@ -277,6 +283,13 @@ def identity_basis(instance, knowledge_id):
     record = instance["knowledge"][knowledge_id]
     return _assessment_basis(instance["formal_results"][record["formal_result_id"]],
                              instance["expositions"][record["exposition_id"]])
+
+
+def formal_overlay(instance, formal_id, **changes):
+    """Read-only view with one formal result replaced; never mutate or persist it."""
+    formal_results = dict(instance["formal_results"])
+    formal_results[formal_id] = {**formal_results[formal_id], **changes}
+    return {**instance, "formal_results": formal_results}
 
 
 def assessment_current(instance, assessment_id):

@@ -32,8 +32,6 @@ def _validate(task: dict, snapshot_task: dict, runtime: dict, task_id: str, inst
     if task.get('results'):
         if not assessment_current(task, instance or {}, runtime):
             raise ValueError('performed obligations need current item dispositions for all returned work')
-    if task.get("academic_requirement_id"):
-        raise ValueError("academic requirement task cannot be withdrawn autonomously: " + task_id)
     producer_id = task.get("producer_execution")
     producer = runtime.get("executions", {}).get(producer_id)
     if not isinstance(producer_id, str) or not isinstance(producer, dict) or producer.get("role") != "research_preparation":

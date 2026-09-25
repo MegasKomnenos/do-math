@@ -13,6 +13,7 @@ from typing import Any
 
 from .repository import canonical_json, exact_content_hash, new_id
 from .academic import requirement_record
+from .external import recover_operation
 
 WORK_ROLES = {"research_work", "supplemental_research", "task_contract_review", "identity_review", "goal_audit", "formal_check"}
 OPERATING_ROLES = {"research_preparation", "research_plan", "operational_review", "intent_interpretation", "maintenance",
@@ -378,7 +379,10 @@ def grant_case_id(action, runtime):
 
 def grant_scope_reason(grant, action, runtime, *, at=None):
     """Check explicit authority; execution/operation ledgers own consumption."""
-    now = timestamp(at)
+    return _grant_scope_reason(grant, action, runtime, now=timestamp(at))
+
+
+def _grant_scope_reason(grant, action, runtime, *, now):
     if grant.get("status") != "active": return "grant is not active"
     if grant.get("expires_at") and timestamp(grant["expires_at"]) <= now: return "grant expired"
     if grant.get("valid_from") and timestamp(grant["valid_from"]) > now: return "grant is not effective yet"
@@ -422,15 +426,7 @@ def authorize(instance: dict, action: dict, at: str | None = None, *, runtime: d
             continue
         if grant.get("task_ids") and target not in grant["task_ids"]:
             continue
-        reason = None
-        if grant.get("status") != "active":
-            reason = "grant is not active"
-        elif grant.get("expires_at") and timestamp(grant["expires_at"]) <= now:
-            reason = "grant expired"
-        elif grant.get("valid_from") and timestamp(grant["valid_from"]) > now:
-            reason = "grant is not effective yet"
-        if reason is None:
-            reason = grant_scope_reason(grant, action, runtime, at=at)
+        reason = _grant_scope_reason(grant, action, runtime, now=now)
         if reason:
             rejected.append({"grant_id": grant["id"], "reason": reason})
         else:
@@ -512,7 +508,7 @@ def _dispose_grant_consumers(runtime, gid, event, reason):
             if not operation.get("transmitted") and operation.get("transmission_phase") != "recorded":
                 operation.update(status="cancelled", transmitted=False, cancellation={"authority_event_ref":event["id"],"reason":reason})
             else:
-                operation.update(status="unknown", handling="reconciliation_required")
+                operation.update(recover_operation(operation))
             event["affected"].append(operation["id"])
 
 

@@ -68,6 +68,20 @@ class QuestionTests(unittest.TestCase):
         self.assertEqual(row["text"], "Choose an authorized larger profile.")
         self.assertNotIn("source_status", row)
 
+    def test_review_questions_include_pending_research_without_a_result(self):
+        # A limit closure can publish while another slot's fixed question is still pending.
+        owner = QuestionEngineMixin()
+        owner.runtime = {"question_links": []}
+        cycle = {"id": "RC-closed", "knowledge_id": "KN-reviewed", "followup": [], "research": {
+            "EX-a:first": {"status": "pending", "question": "Is the binder fixed?", "result": None},
+            "EX-b:second": {"status": "unresolved", "question": "Which domain?",
+                            "result": {"output": {"questions": ["The domain remains open"]}}}}}
+        owner._record_review_questions(cycle, "EX-closing")
+        self.assertEqual([row["origin_field"] for row in owner.runtime["question_links"]], [
+            "research/EX-a:first/question", "research/EX-b:second/question",
+            "research/EX-b:second/result/output/questions/0"])
+        self.assertTrue(all(row["source_id"] == "RC-closed" for row in owner.runtime["question_links"]))
+
 
 class RepetitionQuestionTests(unittest.TestCase):
     def host(self):
@@ -94,8 +108,7 @@ class RepetitionQuestionTests(unittest.TestCase):
         from do_math.record_schemas import RECORDS
         from jsonschema import Draft202012Validator
         host, action = self.host()
-        original = revisions.repetition_hold(host.instance, host.runtime,
-                                             'selection_failure', 'population')
+        original = revisions.repetition_hold(host.runtime, 'selection_failure', 'population')
         host.runtime = json.loads(json.dumps(host.runtime))
         host.runtime['history'].append({'kind': 'unrelated_later_event'})
         row = host._question_view()[0]

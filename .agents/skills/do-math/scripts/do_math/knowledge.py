@@ -294,8 +294,9 @@ def _confirmed_impact(plan, confirmation):
     return affected
 
 
-def _apply_impact_effects(instance, runtime, affected, roots, *, reason, impact_digest):
-    output, new_runtime = deepcopy(instance), deepcopy(runtime)
+def _apply_impact_effects(instance, runtime, affected, roots, *, reason, impact_digest, in_place=False):
+    # in_place is for callers that already hold their own copies of both views.
+    output, new_runtime = (instance, runtime) if in_place else (deepcopy(instance), deepcopy(runtime))
     records = _impact_records(output, new_runtime)
     semantic_only = all(records[rid].get('family') in {'identity_assessments', 'assessment_uses'} for rid in roots)
     for rid in sorted(affected):
@@ -367,9 +368,17 @@ def apply_impact(instance, runtime, plan, *, reason, independent_confirmation=No
     current = plan_impact(instance, runtime, plan["roots"], plan["declared_impact"], sensitive=plan["sensitive"])
     if current != plan:
         raise ValueError("impact plan is stale or altered")
+    return _apply_current_plan(instance, runtime, plan, reason=reason,
+        independent_confirmation=independent_confirmation)
+
+
+def _apply_current_plan(instance, runtime, plan, *, reason, independent_confirmation=None, in_place=False):
+    # For a plan the caller has just computed from these same views. A supplied
+    # or stored plan goes through apply_impact, which recomputes it first.
+    _require_text(reason, "reason")
     affected = _confirmed_impact(plan, independent_confirmation)
     return _apply_impact_effects(instance, runtime, affected, set(plan["roots"]),
-        reason=reason, impact_digest=plan["digest"])
+        reason=reason, impact_digest=plan["digest"], in_place=in_place)
 
 
 def _propagate(instance, runtime, roots, reason):
@@ -380,9 +389,8 @@ def _propagate(instance, runtime, roots, reason):
     if plan["requires_independent_review"]:
         runtime.setdefault("pending_knowledge_impacts", []).append({"plan": plan, "reason": reason})
         return
-    output, new_runtime = apply_impact(instance, runtime, plan, reason=reason)
-    instance.clear(); instance.update(output)
-    runtime.clear(); runtime.update(new_runtime)
+    # Callers pass their own copies, and this plan was just computed from them.
+    _apply_current_plan(instance, runtime, plan, reason=reason, in_place=True)
 
 
 def assessment_reassessment_proposal(instance, assessment_id, *, runtime):
@@ -552,8 +560,8 @@ def revise_knowledge(instance: dict, runtime: dict, knowledge_id: str, changes: 
     roots = revision_roots(instance, knowledge_id)
     preview = plan_impact(instance, runtime, roots, declared_impact or [])
     # No declaration is harmless only when there are no downstream consumers.
-    output, new_runtime = apply_impact(instance, runtime, preview, reason=reason,
-                                      independent_confirmation=independent_confirmation)
+    output, new_runtime = _apply_current_plan(instance, runtime, preview, reason=reason,
+                                              independent_confirmation=independent_confirmation)
     return replace_knowledge(output, new_runtime, knowledge_id, changes,
         reason=reason, actor_ref=actor_ref, replacement_id=replacement_id)
 
@@ -562,8 +570,8 @@ def invalidate_knowledge(instance, runtime, knowledge_id, *, reason, actor_ref,
                          declared_impact=None, independent_confirmation=None):
     _require_text(reason, "reason"); _require_text(actor_ref, "actor_ref")
     plan = plan_impact(instance, runtime, [knowledge_id], declared_impact or [])
-    output, new_runtime = apply_impact(instance, runtime, plan, reason=reason,
-                                      independent_confirmation=independent_confirmation)
+    output, new_runtime = _apply_current_plan(instance, runtime, plan, reason=reason,
+                                              independent_confirmation=independent_confirmation)
     output["knowledge"][knowledge_id].update(lifecycle="withdrawn", withdrawal_reason=reason, withdrawn_by=actor_ref)
     return output, new_runtime
 
@@ -659,9 +667,8 @@ def _staged_review_basis(instance, transition, knowledge_id):
     verification = {key: deepcopy(value) for key, value in transition["results"][knowledge_id].items()
                     if key not in {"id", "identity_review"}}
     environment = instance["trust_environments"][transition["to_environment"]]
-    view = deepcopy(instance)
-    view["formal_results"][formal["id"]].update(
-        verification=verification, trust_environment_id=transition["to_environment"])
+    view = kr.formal_overlay(instance, formal["id"], verification=verification,
+                             trust_environment_id=transition["to_environment"])
     return {
         "identity_basis": kr.identity_basis(view, knowledge_id),
         "transition_basis": kr.exact_digest({
@@ -786,8 +793,8 @@ def activate_transition(instance: dict, transition: dict, *, runtime=None) -> di
                 basis=kr.identity_basis(output, kid),
                 reviewed_identity_basis=deepcopy(receipt["identity_basis"]),
             )
-            output, _ = kr.record_identity_assessment(
-                output, kid, assessment, receipt["policy_ref"], runtime={})
+            # output is this activation's own copy; seal in place, not per target.
+            kr.seal_identity_assessment(output, kid, assessment, receipt["policy_ref"], runtime={})
             continue
         # Preserve the old sealed judgment. A new continuity judgment names both
         # exact new inputs and the transition comparison instead of mutating it.
@@ -802,7 +809,7 @@ def activate_transition(instance: dict, transition: dict, *, runtime=None) -> di
             inherited = {key: deepcopy(value) for key, value in assessment.items() if key not in {"id", "formal_result_id", "exposition_id"}}
             inherited.update(basis=kr.identity_basis(output, kid), previous_assessment_id=assessment["id"], transition_id=transition["id"],
                              continuity_comparison=comparisons[kid])
-            output, _ = kr.record_identity_assessment(output, kid, inherited, assessment["policy_ref"], runtime={})
+            kr.seal_identity_assessment(output, kid, inherited, assessment["policy_ref"], runtime={})
     return output
 
 

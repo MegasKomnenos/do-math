@@ -128,7 +128,7 @@ def active_repetition_holds(runtime):
     return deepcopy(holds)
 
 
-def repetition_hold(instance, runtime, lineage, lineage_id):
+def repetition_hold(runtime, lineage, lineage_id):
     return active_repetition_holds(runtime).get((lineage, lineage_id))
 
 
@@ -146,7 +146,7 @@ def action_repetition_waits(instance, runtime, action):
         keys.append((lineage,identifier if lineage=='contract_revision' else proposal_lineage(instance,identifier)[0]))
     waits=[]
     for lineage,key in keys:
-        hold=repetition_hold(instance,runtime,lineage,key)
+        hold=repetition_hold(runtime,lineage,key)
         if not hold or (lineage=='exhaustion_empty' and action.get('periodic_reconsideration')):
             continue
         waits.append(hold)
@@ -210,7 +210,7 @@ def record_repetition(instance, runtime, *, lineage, lineage_id, event_ref, outc
     if outcome == 'continued':
         from .task_scope import decision_is_current
         decision=instance.get('decisions',{}).get(decision_ref,{})
-        change=decision.get('change',{});hold=repetition_hold(instance,runtime,lineage,lineage_id)
+        change=decision.get('change',{});hold=repetition_hold(runtime,lineage,lineage_id)
         if not decision_is_current(decision,instance,runtime) or not hold or change.get('kind')!='repetition_continue' or (
             change.get('lineage'),change.get('lineage_id'),change.get('hold_event_ref'))!=(lineage,lineage_id,hold['event_ref']) or not change.get('allowed_action'):
             raise ValueError('continuation reset requires its explicit current decision')
@@ -230,8 +230,8 @@ def record_repetition(instance, runtime, *, lineage, lineage_id, event_ref, outc
     limit=instance.get('config',{}).get(lineage+'_limit')
     if limit is not None and (type(limit) is not int or limit<1):
         history.pop();raise ValueError('repetition limit must be an adopted positive integer')
-    count=repetition_lineages(instance,runtime)[lineage].get('by_lineage',{}).get(lineage_id,0)
-    if limit is not None and count>=limit and not repetition_hold(instance,runtime,lineage,lineage_id):
+    count=repetition_lineages(runtime,include_events=False)[lineage].get('by_lineage',{}).get(lineage_id,0)
+    if limit is not None and count>=limit and not repetition_hold(runtime,lineage,lineage_id):
         question = (f'Repetition limit reached for {lineage}/{lineage_id}: {count}/{limit}. '
                     f'Basis: {event_ref}. {reason} '
                     'Which exact continuation or replacement strategy do you authorize?')
@@ -245,12 +245,12 @@ def record_repetition(instance, runtime, *, lineage, lineage_id, event_ref, outc
         linked['source_kind'] = 'history'
     no_followup={'accepted','contracts_preserved','continued','premises_changed','capacity_wait','input_overflow','waiting',
                  'transport_failure'}
-    if outcome in {'revised','authored','reauthored'} and not repetition_hold(instance,runtime,lineage,lineage_id):
+    if outcome in {'revised','authored','reauthored'} and not repetition_hold(runtime,lineage,lineage_id):
         no_followup.add('revised')
         no_followup.add('authored')
         no_followup.add('reauthored')
     if outcome not in no_followup:
-        if repetition_hold(instance, runtime, lineage, lineage_id):
+        if repetition_hold(runtime, lineage, lineage_id):
             return deepcopy(row)
         role = 'research_plan' if lineage=='exhaustion_empty' else 'operational_review'
         queue=runtime.setdefault('queue',[])
@@ -279,7 +279,7 @@ def proposal_lineage(instance, identifier):
 def continue_repetition(instance, runtime, change, decision):
     """Apply a user decision to an existing exact queued/waiting obligation."""
     lineage, key = change.get('lineage'), change.get('lineage_id')
-    hold = repetition_hold(instance, runtime, lineage, key)
+    hold = repetition_hold(runtime, lineage, key)
     if not hold or hold['event_ref'] != change.get('hold_event_ref'):
         raise ValueError('continuation must name the current repetition hold')
     allowed = change.get('allowed_action')

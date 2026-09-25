@@ -81,16 +81,20 @@ class ResearchRepository:
         return self._store.publish(None, candidate["files"]).head
 
     def _documents(self, head):
-        return self._read_documents(head)[:3]
+        return deepcopy(self._read_documents(head)[:3])
 
     @measured('snapshot_read_validation')
     def _read_documents(self, head):
-        """Validate one snapshot and retain its exact non-artifact file bytes."""
+        """Validate one snapshot and retain its exact non-artifact file bytes.
+
+        The result is the shared cache entry. Callers that return or mutate
+        state copy it; a publication parent is only compared, never copied.
+        """
         from .operation_trace import phase
         cached = getattr(self, '_validated_read', None)
         contract_id = (self.contract.manifest()['sha256'], self.contract.validation_generation)
         if cached is not None and cached[0] == (head, contract_id):
-            return deepcopy(cached[1])
+            return cached[1]
         paths = self._store._tree_paths(head)
         # Sealed artifacts are not parsed or loaded just to reconstruct state.
         files = self._store.read_many(head, sorted(p for p in paths if not p.startswith("runtime/artifacts/")))
@@ -106,12 +110,12 @@ class ResearchRepository:
         _validate_published_events(runtime)
         self._validate_artifact_evidence(runtime, head)
         result = (instance, runtime, descriptors, {**files, **payload_bytes})
-        self._validated_read = ((head, contract_id), deepcopy(result))
+        self._validated_read = ((head, contract_id), result)
         return result
 
     def load(self, snapshot=None):
         head = self._resolve_snapshot(snapshot)
-        instance, runtime, _ = self._documents(head)
+        instance, runtime = deepcopy(self._read_documents(head)[:2])
         return head, instance, runtime
 
     def validate_candidate(self, instance, runtime, expected_head=None, *, artifacts=None):
@@ -139,7 +143,7 @@ class ResearchRepository:
         parent_instance, parent_runtime = {}, {}
         if expected_head is not None:
             if parent_state is None:
-                _, parent_instance, parent_runtime = self.load(expected_head)
+                parent_instance, parent_runtime = self._read_documents(expected_head)[:2]
             else:
                 parent_instance, parent_runtime = parent_state
         from .events import event_rows
@@ -171,7 +175,9 @@ class ResearchRepository:
             if files[path] != supplied[path]:
                 raise ValueError('immutable artifact differs from encoded state: ' + path)
         # Evidence validation and publication must see the same merged bytes.
-        self._validate_artifact_evidence(runtime, expected_head, {**files, **supplied})
+        # Rows the parent read already resolved in expected_head are not reread.
+        self._validate_artifact_evidence(runtime, expected_head, {**files, **supplied},
+                                         set(self._artifact_references(parent_runtime)))
         self._store._validate_candidate_paths(set(files) | set(supplied))
         return {"instance": instance, "runtime": runtime, "files": files,
                 "contract": self.contract.manifest(), "valid": True}
@@ -220,8 +226,9 @@ class ResearchRepository:
             snapshot[path] = raw
         return snapshot
 
-    def _validate_artifact_evidence(self, runtime, head, artifacts=None):
-        """Resolve immutable byte evidence separately from record identities."""
+    @staticmethod
+    def _artifact_references(runtime):
+        """Immutable byte evidence rows (ref, sha256, bytes or None) named by runtime."""
         references = [(ref, row["evidence_hashes"][ref], None)
             for row in runtime.get("academic_resolution_records", [])
             for ref in row["evidence_refs"] if ref.startswith("runtime/artifacts/")]
@@ -236,17 +243,27 @@ class ResearchRepository:
                     raise ValueError("complete observation evidence cannot contain omissions")
                 references.extend((row["artifact_ref"], row["sha256"], row["bytes"])
                                   for row in observation.get("observation_sources", []))
+        return references
+
+    def _validate_artifact_evidence(self, runtime, head, artifacts=None, verified=frozenset()):
+        """Resolve immutable byte evidence separately from record identities.
+
+        ``verified`` rows were already resolved in ``head``. Existing artifact
+        bundles are immutable, so only new, changed or supplied rows are read.
+        """
+        references = self._artifact_references(runtime)
         if not references:
             return
-        available = self._store._tree_paths(head) if head else set()
         supplied = artifacts or {}
         for ref, _, _ in references:
             if not ref.startswith("runtime/artifacts/"):
                 raise ValueError("artifact evidence must use the immutable artifact namespace")
             self._store._validate_path(ref)
-        stored = self._store.read_many(head, sorted({ref for ref, _, _ in references
-            if supplied.get(ref) is None and ref in available})) if head else {}
-        for ref, digest, size in references:
+        pending = [row for row in references if row[0] in supplied or row not in verified]
+        wanted = sorted({ref for ref, _, _ in pending if ref not in supplied})
+        available = self._store._tree_paths(head) if head and wanted else set()
+        stored = self._store.read_many(head, [ref for ref in wanted if ref in available]) if available else {}
+        for ref, digest, size in pending:
             raw = supplied.get(ref)
             if raw is None:
                 raw = stored.get(ref)

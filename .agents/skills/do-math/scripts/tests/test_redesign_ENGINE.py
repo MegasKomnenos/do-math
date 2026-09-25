@@ -1218,6 +1218,27 @@ class AssessmentReassessmentConnections(unittest.TestCase):
         self.assertTrue(activity["followups"][0]["revisit_conditions"])
         self.assertEqual(len(engine.instance["identity_assessments"]), 1)
 
+    def test_cli_report_reaches_qualified_reassessment_and_replay_is_idempotent(self):
+        from do_math import cli
+        owner = self.fixture()
+        path = Path(owner.directory.name) / "assessment-report.json"
+        path.write_text(json.dumps(owner.request(owner.defect())), encoding="utf-8")
+        args = cli.build_parser().parse_args(["request", "--repository", owner.directory.name,
+            "--instance", "RI-test", "--assessment-reassessment-file", str(path)])
+        def consume(args, action, *, text, config):
+            self.assertEqual(json.loads(text), config["assessment_reassessment"])
+            ResearchEngine._review_recovery_control(owner.engine,
+                {"id": "UC-cli-report", "action": action, "config": config})
+            return owner.engine.runtime["history"][-1]["result"]
+        with patch("do_math.cli._control", side_effect=consume):
+            first, code = cli.execute(args)
+            second, _ = cli.execute(args)
+        self.assertEqual(code, 0)
+        self.assertEqual(first["disposition"], "reassessment_opened")
+        self.assertEqual(second["disposition"], "already_open")
+        self.assertEqual(first["review_cycle_id"], second["review_cycle_id"])
+        self.assertEqual(owner.use()["status"], "suspended")
+
     def test_ordinary_report_cannot_suspend_and_closed_control_cannot_open_review(self):
         owner = self.fixture(); engine = owner.engine
         request = {"id": "UC-report", "action": "request", "config": {"role": "identity_review",

@@ -8,17 +8,16 @@ import os
 from pathlib import Path
 import subprocess
 import sys
-import tempfile
 from typing import Any, Mapping
 
 try:  # This module is also the direct ``python codex_worker.py`` Job root.
     from do_math.scholarly import validate_scholarly_server
     from do_math.control_transport import ControlTransport
-    from do_math.file_io import atomic_replace
+    from do_math.file_io import write_bytes_atomic
 except ModuleNotFoundError:  # pragma: no cover - exercised by the direct-script regression.
     from scholarly import validate_scholarly_server
     from control_transport import ControlTransport
-    from file_io import atomic_replace
+    from file_io import write_bytes_atomic
 
 
 _REMOVED_ENV = frozenset({
@@ -158,12 +157,8 @@ def build_argv(request: Mapping[str, Any]) -> list[str]:
 
 
 def _write_status(path: Path, value: Mapping[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile("w", encoding="utf-8", delete=False, dir=path.parent,
-                                     prefix=path.name + ".", suffix=".tmp") as handle:
-        json.dump(value, handle, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
-        temporary = Path(handle.name)
-    atomic_replace(temporary, path)
+    write_bytes_atomic(path, json.dumps(value, ensure_ascii=False, sort_keys=True,
+                                        separators=(",", ":")).encode("utf-8"))
 
 
 def run(request_path: Path) -> int:

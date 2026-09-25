@@ -477,16 +477,13 @@ class SchedulerMixin:
             return False
         chosen = self._select_model(action)
         action["model_selection"] = chosen
-        reference = action.get("profile_ref") or chosen.get("execution_profile_ref")
-        if reference is None:
-            from .execution_profiles import profile_ref
-            reference = profile_ref(self._execution_profile(action))
-        capability = self._capability_requirements(reference)
+        profile = None if action.get("profile_ref") else self._execution_profile(action)
+        capability = self._capability_requirements(action["profile_ref"])
         if not capability["satisfied"]:
             action["dispatch_wait"] = {"kind": "capability_evidence", **capability}
             return False
         from .session_slots import SessionSlots
-        profile = self._execution_profile(action)
+        profile = profile or self._execution_profile(action)
         admission = SessionSlots(self.runtime, self.instance, observer=True).admission_check(profile)
         if not admission['allowed']:
             action['dispatch_wait'] = admission['wait']

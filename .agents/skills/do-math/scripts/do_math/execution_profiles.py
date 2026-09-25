@@ -12,6 +12,7 @@ from pathlib import Path
 import shutil
 
 from .model_policy import ROLE_TIERS, TIERS
+from .provider_wait import provider_for
 from .state_contract import STATE_FORMAT_VERSION
 
 WORK_ROLES = {"research_work", "supplemental_research", "task_contract_review", "identity_review", "goal_audit"}
@@ -230,7 +231,7 @@ def build_profiles(config: dict, *, roles: set[str] | None = None) -> dict:
                 capacity = next((c["id"] for c in constraints.values() if c.get("model") == model), None)
                 if capacity is None:
                     raise ValueError("tier model has no adopted capacity")
-                provider = "claude" if model.startswith(("claude:", "claude-")) else "codex"
+                provider = provider_for(model)
                 body["ai"] = {"model": model, "tier": tier, "provider": provider,
                               "effort": config["operator_effort"] if role == "recovery" else config["effort"],
                               "capacity_refs": [capacity],

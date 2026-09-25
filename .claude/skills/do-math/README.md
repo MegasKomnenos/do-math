@@ -86,7 +86,7 @@ python .agents/skills/do-math/scripts/setup_lean.py --verify-only --trust-file .
 - `--goal` 또는 `--goal-file`: 연구 헌장의 현재 목표가 될 원문이다. 둘 중 하나만 사용한다.
 - 목표는 수학적 질문이다. 형식 결과·동일성 판정·목표 감사를 거쳐 `mathematically_solved`를 판단한다. 그 목표를 위한 문헌 조사·계산·비형식 과제도 사용할 수 있다.
 
-초기화 때 정책, 원자료와 설정을 함께 넣을 수 있다. `--source`는 여러 번 지정할 수 있다. `--effort`는 설정 파일의 추론 노력보다 우선하며, 생략한 필드는 코드의 기본값을 사용한다.
+초기화 때 원자료와 설정을 함께 넣을 수 있다. 정책은 [초기화 운전](references/초기화-운전.md)의 통치 채택 요청에 헌장과 함께 기록으로 넣는다. `--source`는 여러 번 지정할 수 있다. `--effort`는 설정 파일의 추론 노력보다 우선하며, 생략한 필드는 코드의 기본값을 사용한다.
 
 관찰 설정의 `tool_review_window_seconds`와 `self_check_response_window_seconds`에는 제품 기본값이 없다. 프로필을 채택하기 전에 사용할 두 값을 확정하여 `init --config-file`이나 `configure --config-file`로 전달한다. 이미 승인된 설정에 있으면 그대로 사용한다. 주기·사건 관찰에는 도구 검토 window와 관찰 주기가 필요하고, 연구 수행에는 자기 점검 응답 window도 필요하다. 누락되거나 유효하지 않은 값은 역할·프로필 ID·필드와 함께 반환되며 연구 활성화가 완료되지 않는다. 구체적인 설정 보충과 프로필 재조회는 [초기화 운전](references/초기화-운전.md)의 1단계와 4단계를 따른다.
 
@@ -184,7 +184,7 @@ python .agents/skills/do-math/scripts/do_math.py status `
 
 Windows에서는 `Get-CimInstance Win32_Process`의 `ProcessId`, `ParentProcessId`, `CommandLine`으로 대상 인스턴스의 프로세스를 대조할 수 있다. 연구 예약 작업은 bootstrap을 거쳐 `do_math.py run --repository <대상 저장소> --instance <대상 ID> --watch`를 실행한다. 이미 실행 중이던 같은 인스턴스의 프로세스는 현재 관측으로 확인하고, 종료된 과거 실행 기록을 새로운 시작의 근거로 쓰지 않는다.
 
-시작 조건을 통과한 실행의 기록은 `<workspace>/operator/engine/<실행 디렉터리>/`에 있다. `result.json`의 `outcome=running`은 자식 프로세스 생성 전에 기록되므로 단독 시작 증거가 아니다. 이후 실행·종료 결과는 해당 디렉터리와 `<workspace>/operator/latest-engine.json`에 보존된다. 시작 조건에 따른 정상 비시작 반환에서는 두 기록이 새로 생성되지 않을 수 있고, 시작 조건 조회의 예외는 `latest-engine.json`에만 기록될 수 있다. 새 기록의 부재만으로 성공이나 실패를 추측하지 않는다.
+시작 조건을 통과한 실행의 기록은 `<workspace>/operator/engine/<실행 디렉터리>/`에 있다. `result.json`의 `outcome=running`은 자식 프로세스 생성 전에 기록되므로 단독 시작 증거가 아니다. 이후 실행·종료 결과는 해당 디렉터리와 `<workspace>/operator/latest-engine.json`에 보존된다. 다른 실행기가 writer lock을 보유해 `run`이 재시도 가능한 도구 오류로 끝나면 `outcome=engine_busy`로 기록한다. 이 기록은 설치 복구를 열지 않으며, 다음 감독이 시작 조건을 다시 확인한다. 시작 조건에 따른 정상 비시작 반환에서는 두 기록이 새로 생성되지 않을 수 있고, 시작 조건 조회의 예외는 `latest-engine.json`에만 기록될 수 있다. 새 기록의 부재만으로 성공이나 실패를 추측하지 않는다.
 
 관측 전에 실행이 끝났으면 이번 시작에 대응하는 종료 기록과 현재 연구 상태를 읽는다. 종료 코드 0이나 `outcome=completed`는 프로세스 종료 사실이며 수학적 목표 완료를 뜻하지 않는다. [보고 단계](#report-handoff)에서 관측한 상태를 구별한다.
 

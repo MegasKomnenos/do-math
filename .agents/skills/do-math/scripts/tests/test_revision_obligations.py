@@ -119,6 +119,7 @@ class RevisionObligationTests(unittest.TestCase):
         from do_math.governance import governance_view
         from research_fixtures import contract_review
         h._governance = lambda: governance_view(h.instance)
+        h._governance_revisions = ResearchEngine._governance_revisions.__get__(h)
         task = h.runtime['tasks']['TK-1']
         review_action = {'role': 'task_contract_review', 'target': task['id']}
         ResearchEngine._apply(h, review_action, contract_review({'task': task}),

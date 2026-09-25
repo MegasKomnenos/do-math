@@ -140,7 +140,7 @@ class RepetitionReceiptTests(unittest.TestCase):
         engine.runtime['executions']['EX-rework'] = {'role': rework['role'], 'action': deepcopy(rework)}
         revisions.record_import_rework(engine.instance, engine.runtime, rework, 'EX-rework')
         revisions.record_import_rework(engine.instance, engine.runtime, rework, 'EX-rework')
-        counts = task_contracts.repetition_lineages(engine.instance, engine.runtime)
+        counts = task_contracts.repetition_lineages(engine.runtime)
         self.assertEqual(counts['import_rework']['count'], 1)
         retry = {**deepcopy(rework), 'id': 'AC-next', 'previous_import_id': 'IM-next'}
         retry.pop('repetition_bases')
@@ -170,14 +170,14 @@ class RepetitionReceiptTests(unittest.TestCase):
                 integration.issue(rule, 'output', 'message deliberately contains no classification hints')])}
             for _ in range(2):
                 revisions.record_execution_outcome(instance, runtime, action, {}, eid, accepted=False)
-        self.assertEqual(task_contracts.repetition_lineages(instance, runtime)['selection_failure']['count'], 3)
+        self.assertEqual(task_contracts.repetition_lineages(runtime)['selection_failure']['count'], 3)
         for kind in ('currentness_changed', 'capacity_wait', 'input_overflow', 'provider_failure', 'publication_failure'):
             runtime['executions'][kind] = {'role': action['role'], 'error_kind': kind}
             revisions.record_execution_outcome(instance, runtime, action, {}, kind, accepted=False)
-        self.assertEqual(task_contracts.repetition_lineages(instance, runtime)['selection_failure']['count'], 3)
+        self.assertEqual(task_contracts.repetition_lineages(runtime)['selection_failure']['count'], 3)
         runtime['executions']['EX-good'] = {'role': action['role']}
         revisions.record_execution_outcome(instance, runtime, action, {}, 'EX-good', accepted=True)
-        self.assertEqual(task_contracts.repetition_lineages(instance, runtime)['selection_failure']['count'], 0)
+        self.assertEqual(task_contracts.repetition_lineages(runtime)['selection_failure']['count'], 0)
 
     def test_generation_time_uses_fixed_machine_observation_and_excludes_supplement(self):
         action = {'role': 'research_preparation'}
@@ -327,8 +327,8 @@ class WalkthroughEngineTests(ActiveStateHarness):
                         and r.get('lineage') == 'selection_failure']
             self.assertEqual(len(receipts), index + 1)
             self.assertEqual(receipts[-1]['outcome'], 'rejected')
-            self.assertEqual(task_contracts.repetition_lineages(engine.instance, engine.runtime)['selection_failure']['count'], index + 1)
-        hold = revisions.repetition_hold(engine.instance, engine.runtime, 'selection_failure', receipts[-1]['lineage_id'])
+            self.assertEqual(task_contracts.repetition_lineages(engine.runtime)['selection_failure']['count'], index + 1)
+        hold = revisions.repetition_hold(engine.runtime, 'selection_failure', receipts[-1]['lineage_id'])
         self.assertEqual(hold['owner'], 'user')
         engine._save()
 
@@ -351,7 +351,7 @@ class WalkthroughEngineTests(ActiveStateHarness):
         lineage = action['repetition_bases']['selection_failure']
         revisions.record_repetition(engine.instance, engine.runtime, lineage='selection_failure', lineage_id=lineage,
             event_ref=target['id'], outcome='rejected', owner='ai', reason='Missing population')
-        hold = revisions.repetition_hold(engine.instance, engine.runtime, 'selection_failure', lineage)
+        hold = revisions.repetition_hold(engine.runtime, 'selection_failure', lineage)
         self.assertEqual(hold['owner'], 'user')
         self.assertTrue(revisions.action_repetition_waits(engine.instance, engine.runtime, action))
         engine._save()
@@ -360,7 +360,7 @@ class WalkthroughEngineTests(ActiveStateHarness):
         control(self.repo, engine.instance['id'], 'decision', config={'change': change}, text='Continue this held plan.')
         engine.process_controls()
         self.assertFalse(revisions.action_repetition_waits(engine.instance, engine.runtime, action))
-        self.assertEqual(task_contracts.repetition_lineages(engine.instance, engine.runtime)['selection_failure']['count'], 0)
+        self.assertEqual(task_contracts.repetition_lineages(engine.runtime)['selection_failure']['count'], 0)
         stored = engine.instance['decisions'][change['decision_id']]
         _, replay, _ = governance.apply_decision(engine.instance, engine.runtime, change, source_ref=stored['source_ref'])
         self.assertEqual(replay['history'], engine.runtime['history'])

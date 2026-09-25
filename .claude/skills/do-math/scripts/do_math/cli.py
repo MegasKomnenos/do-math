@@ -96,7 +96,6 @@ def build_parser() -> _Parser:
     original.add_argument('--request-text', help='complete original request, including constraints')
     original.add_argument('--request-text-file', help='UTF-8 complete original request')
     init.add_argument("--title", default="")
-    init.add_argument("--policies-file")
     init.add_argument("--source", action="append", default=[], type=Path)
     init.add_argument("--config-file")
     init.add_argument("--effort")
@@ -149,6 +148,7 @@ def build_parser() -> _Parser:
         "research_preparation", "research_plan", "supplemental_research", "operational_review", "maintenance",
     ))
     request_mode.add_argument("--retry-action", help="retry one held input overflow or failed initial interpretation; reuse a verified preserved native final when available")
+    request_mode.add_argument("--assessment-reassessment-file", help="report exact original assessment and defect evidence for bounded independent reassessment")
     request.add_argument("--target")
     request.add_argument("--reason")
     request.add_argument("--origin", choices=("user", "operator"), default="user")
@@ -298,7 +298,6 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
     if command == "init":
         _require_git(args.repository, args.create_repository)
         goal = args.goal if args.goal is not None else _text_file(args.goal_file)
-        policies = "" if args.policies_file is None else _text_file(args.policies_file)
         config = {} if args.config_file is None else _json_file(args.config_file)
         if args.effort is not None:
             config["effort"] = args.effort
@@ -306,7 +305,7 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
             if not source.is_file():
                 raise CliInputError(f"--source is not a file: {source}")
         result = initialize(args.repository, goal=goal, workspace=args.workspace, config=config, title=args.title,
-                            policies=policies, sources=args.source,
+                            sources=args.source,
                             source_input=args.request_text if args.request_text is not None else
                                 _text_file(args.request_text_file) if args.request_text_file else goal)
         _, initialized, _ = ResearchRepository(args.repository, result["instance_id"]).load()
@@ -377,6 +376,12 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
             result["operator_schedule"] = {"status": "pending", "reason": "run operator install or uninstall after the control is applied"}
         return result, 0
     if command == "request":
+        if args.assessment_reassessment_file is not None:
+            if args.target is not None or args.reason is not None:
+                raise CliInputError("--assessment-reassessment-file cannot be combined with target or request text")
+            payload, original = _json_document(args.assessment_reassessment_file)
+            return _control(args, "request", text=original,
+                            config={"role": "identity_review", "assessment_reassessment": payload}), 0
         if args.retry_action is not None:
             if args.target is not None or args.reason is not None:
                 raise CliInputError("--retry-action cannot be combined with target or request text")

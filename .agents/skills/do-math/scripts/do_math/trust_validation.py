@@ -12,7 +12,8 @@ import stat
 from .operation_trace import phase
 
 ROLES = {'lean_binary', 'lean_source', 'lake_binary', 'mathlib_source', 'mathlib_build', 'checker'}
-AXIOMS = {'propext', 'Classical.choice', 'Quot.sound'}
+AXIOMS = ('propext', 'Classical.choice', 'Quot.sound')
+_AXIOM_SET = frozenset(AXIOMS)
 _scan_gate = threading.BoundedSemaphore(1)
 
 
@@ -56,7 +57,7 @@ def manifest_errors(environment):
         return errors + structural
     if not environment.get('source_ref'):
         errors.append('trust environment has no explicit adoption')
-    if not _strings(environment.get('allowed_axioms')) or set(environment['allowed_axioms']) != AXIOMS:
+    if not _strings(environment.get('allowed_axioms')) or set(environment['allowed_axioms']) != _AXIOM_SET:
         errors.append('foundation axiom profile differs')
     foundation = manifest.get('foundation_profile', {})
     if foundation.get('allowed_axioms') != sorted(AXIOMS) or not {'sorryAx', 'Lean.trustCompiler', 'additional_axioms'}.issubset(foundation.get('forbidden', [])):

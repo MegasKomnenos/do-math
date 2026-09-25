@@ -2,6 +2,7 @@
 from __future__ import annotations
 import hashlib, json, os, re, shutil, subprocess, sys, tempfile, time, traceback, uuid
 from pathlib import Path
+from .trust_validation import AXIOMS
 from do_math.windows_job import WindowsJob, process_identity
 
 class VerificationStopped(RuntimeError):
@@ -394,7 +395,7 @@ def _approved_files_current(command, resolved, expected, should_stop=None):
 
 def verify_lean(*, source: str, declarations: list[str], workspace: Path,
                 lean_command: list[str] | None = None,
-                allowed_axioms: tuple[str,...] = ('propext','Classical.choice','Quot.sound'), should_stop=None,
+                allowed_axioms: tuple[str,...] = AXIOMS, should_stop=None,
                 expected_toolchain: dict | None = None, on_started=None, launch_ticket=None) -> dict:
     """Verify Lean to completion.
 
@@ -415,7 +416,8 @@ def verify_lean(*, source: str, declarations: list[str], workspace: Path,
         return {**base,"status":"rejected","reason":"unsafe command"}
     try:
         _check_stop(should_stop)
-        resolved=Path(command[0]) if Path(command[0]).is_absolute() else Path(shutil.which(command[0]) or command[0])
+        # Compare the same canonical executable identity that inspect_toolchain records.
+        resolved=Path(shutil.which(command[0]) or command[0]).resolve()
         if expected_toolchain is not None and not _approved_files_current(command,resolved,expected_toolchain,should_stop):
             return {**base,'status':'rejected','reason':'approved toolchain changed before execution'}
         if expected_toolchain is not None and _project_identity(command,should_stop,workspace=workspace,

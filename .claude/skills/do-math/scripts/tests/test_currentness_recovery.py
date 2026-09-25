@@ -165,7 +165,9 @@ class CurrentnessTests(ActiveStateHarness):
         self.assertEqual(recovery['execution_id'], execution['id'])
         self.assertEqual((recovery['result_kind'], recovery['final_result_status']),
                          ('execution_result', 'available'))
-        self.assertEqual(recovery['checkpoint'], engine.runtime['checkpoints'][execution['id']])
+        self.assertEqual(recovery['checkpoint'], context['operational_evidence']['checkpoint'])
+        self.assertEqual(recovery['checkpoint']['sha256'], engine.runtime['checkpoints'][execution['id']]['sha256'])
+        self.assertNotIn('checkpoint', recovery['checkpoint'])
         for source in [recovery['result_source'], recovery['checkpoint_source'], *recovery['output_files']]:
             raw = (review_workspace / source['local_path']).read_bytes()
             self.assertEqual(hashlib.sha256(raw).hexdigest(), source['sha256'])

@@ -5,7 +5,7 @@ These shapes check consumed values before routing or mutation; they do not run
 domain actions or silently convert malformed values to empty objects.
 """
 from jsonschema import Draft202012Validator
-from .record_schemas.schemas import PROFILE_REF, RECORDS, RUNTIME_FIELDS
+from .record_schemas.schemas import PROFILE_REF, RECORDS
 
 TEXT = {'type': 'string'}
 TEXTS = {'type': 'array', 'items': TEXT}
@@ -77,18 +77,19 @@ CONFIG_PATCH = obj({
     'host_resources': {'type': ['object', 'null']}, 'scholarly_server': {'type': ['object', 'null']}})
 
 PAYLOADS = {
-    'pause': obj({'model_policy_violation': RUNTIME_FIELDS['model_policy_violation']}),
+    'pause': OBJECT,
     'resume': obj({'expected_user_pause_reason': TIME}),
     'close': OBJECT, 'quiesce': OBJECT,
     'release_quiesce': obj(fields(text='fence_id')),
-    'input': obj({'responds_to': TEXTS, 'import_approvals': IMPORT_APPROVALS}),
+    'input': {**obj({'responds_to': TEXTS}), 'additionalProperties': False},
     'configure': CONFIG_PATCH,
     'request': obj({**fields(text='role retry_action', lists='cleanup_execution_ids'),
         'target': {'type': ['string', 'null']},
         'assessment_reassessment': obj({**fields(text='assessment_id assessment_sha256'), 'evidence': OBJECT}),
         'review_restoration': RECOVERY, 'review_replacement': RECOVERY}),
     'decision': obj({'change': DECISION}),
-    'knowledge': obj({**fields(text='operation id reason family token check_ref'),
+    'knowledge': obj({**fields(text='id reason family token'),
+        'operation': {'enum': ['import', 'register-kind', 'withdraw-kind', 'import-relation', 'revise', 'invalidate']},
         'candidate': CANDIDATE, 'relation': RELATION, 'changes': OBJECT,
         'definition': obj({**fields(text='family token meaning'), 'constraints': OBJECT}),
         'declared_impact': {'type': ['array', 'null'], 'items': TEXT}, 'independent_confirmation': CONFIRMATION}),

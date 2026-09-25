@@ -94,7 +94,7 @@ class QuestionEngineMixin:
                   if request.get("status") in {"pending", "unresolved"}]
         fields.extend(f"research/{key}/result/output/questions/{index}"
                       for key, request in cycle.get("research", {}).items()
-                      for index, _ in enumerate(request.get("result", {}).get("output", {}).get("questions", [])))
+                      for index, _ in enumerate((request.get("result") or {}).get("output", {}).get("questions", [])))
         fields.extend(f"followup/{index}/research_requests/{number}/question"
                       for index, entry in enumerate(cycle.get("followup", []))
                       for number, _ in enumerate(entry.get("research_requests", [])))

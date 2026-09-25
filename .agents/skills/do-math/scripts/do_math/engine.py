@@ -6,6 +6,8 @@ instructions and do not claim OS isolation.
 """
 from __future__ import annotations
 
+from .trust_validation import AXIOMS
+
 from copy import deepcopy
 from contextlib import contextmanager
 from datetime import datetime, timezone
@@ -92,7 +94,7 @@ DEFAULT_CONFIG = {
     "observation_mode": "event_driven", "observation_interval_seconds": 300,
     "plan_settle_seconds": 300,
     "max_artifact_bytes": 268435456,
-    "allowed_axioms": ["propext", "Classical.choice", "Quot.sound"],
+    "allowed_axioms": list(AXIOMS),
     "operator_enabled": True, "operator_interval_seconds": 7200,
     "operator_timeout_seconds": 5400, "operator_effort": "high",
     "scholarly_enabled": True, "scholarly_server": None,
@@ -204,7 +206,7 @@ def validate_config(config: dict) -> None:
 
 
 def initialize(repository: Path, *, goal: str, workspace: Path, config: dict | None = None,
-               title: str = "", policies: str = "",
+               title: str = "",
                instance_id: str | None = None, sources: list[Path] | None = None,
                source_input: str | None = None) -> dict:
     if not goal.strip():
@@ -221,7 +223,7 @@ def initialize(repository: Path, *, goal: str, workspace: Path, config: dict | N
     with tracing(workspace / 'operations'), phase('initialize'):
         instance, runtime = initialization.initialize_state(instance_id=instance_id, goal=goal,
             workspace=workspace, config=settings, source_input=goal if source_input is None else source_input,
-            title=title, policies=policies, created_at=now())
+            title=title, created_at=now())
         from .governance_engine import bind_host_configuration
         settings = bind_host_configuration(instance, settings, origin='user')
         instance['config'] = settings
@@ -575,10 +577,14 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                                 for row in self.instance.get("governance", {}).values()):
             initial_input = next(row for row in self.runtime["inputs"]
                                  if row["id"] == self.instance["lifecycle"]["input_id"])
-            return {**deepcopy(initial_input["config"]),
+            return {**deepcopy(initial_input["config"]), "policies": "",
                     "status": "unadopted_input", "goal_revision": 0, "policy_revision": 0,
                     "source": deepcopy(self.instance["lifecycle"]["immutable_input"])}
         return governance.governance_view(self.instance)
+
+    def _governance_revisions(self):
+        view = self._governance()
+        return {key: view.get(key, 1) for key in ("goal_revision", "policy_revision")}
 
     def __init__(self, repository: Path, instance_id: str, *, runner: Any = None, formal_verifier: Any = None):
         self.store = _repository(repository, instance_id)
@@ -999,42 +1005,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 self._record_control_result(request)
                 self._save()
                 continue
-            if action == "pause":
-                if self.runtime["status"] not in {"completed", "closed"}:
-                    self._pause_lifecycle(request["text"] or "user_pause")
-                    if request.get("config", {}).get("model_policy_violation"):
-                        self.runtime["model_policy_violation"] = deepcopy(request["config"]["model_policy_violation"])
-                    if request.get("origin", "user") == "user":
-                        self.runtime["user_pause"] = {"request_id": request["id"],
-                            "reason": request["text"], "created_at": request["created_at"]}
-            elif action == "close":
-                self.runtime["status"] = "closed"
-                self.runtime["queue"] = []
-            elif action == "resume":
-                try:
-                    self._check_conversations()
-                    self._resume_lifecycle(request)
-                except (ValueError, RuntimeError) as error:
-                    self._reject_control(request, str(error))
-                    continue
-                if self.instance["lifecycle"]["state"] == "initializing":
-                    self._activate_initialization()
-                    self.runtime["processed_controls"].append(request["id"])
-                    self._record_control_result(request)
-                    self._save()
-                    continue
-                for aid, waiting in list(self.runtime.get("waiting_actions", {}).items()):
-                    # Resume resolves the pause, not unrelated input or authority conditions.
-                    if waiting.get("kind") not in {"paused", "user_pause", "conversation_lost"}:
-                        continue
-                    if waiting.get("question"):
-                        self.runtime["questions"] = [q for q in self.runtime["questions"] if q != waiting["question"]]
-                    self.runtime["queue"].append(waiting["action"])
-                    del self.runtime["waiting_actions"][aid]
-                if not self.runtime["queue"]:
-                    role = "research_plan" if self.runtime["tasks"] or self.instance["knowledge"] else "research_preparation"
-                    self._enqueue(role, reason=request["text"] or "explicit user resume")
-            elif action == "input":
+            if action == "input":
                 if self.runtime["status"] in {"closed", "completed"}:
                     self._reject_control(request, "new research input requires an unfinished instance")
                     continue
@@ -1489,7 +1460,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         if request["action"] != "knowledge": return False
         spec = request["config"]
         operation = spec.get("operation")
-        if operation not in {"import", "register-kind", "check-kind", "activate-kind", "withdraw-kind", "import-relation"}: return False
+        if operation not in {"import", "register-kind", "withdraw-kind", "import-relation"}: return False
         if operation == "import":
             self.instance, self.runtime, kid = knowledge_io.import_candidate(self.instance, self.runtime, spec["candidate"],
                 source_ref=request["id"], actor_ref=request["id"])
@@ -1500,17 +1471,6 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                     execution["stop_requested"] = "imported_knowledge_revision"
         elif operation == "register-kind":
             self._propose_kind(spec["definition"], request["id"])
-        elif operation in {"check-kind", "activate-kind"}:
-            definition = knowledge_io._lookup_definition(self.instance, spec["family"], spec["token"])
-            if not definition:
-                raise ValueError("kind definition does not exist")
-            check = definition.get("check", {})
-            execution = self.runtime["executions"].get(check.get("execution_id"), {})
-            if (check.get("decision") != "approved" or execution.get("outcome") != "output_accepted"
-                    or (spec.get("check_ref") and spec["check_ref"] != check.get("execution_id"))):
-                raise ValueError("kind activation requires a published independent semantic check")
-            if definition["status"] != "active":
-                raise ValueError("kind check is no longer active; submit a revised definition")
         elif operation == "withdraw-kind":
             self.instance, self.runtime = knowledge_io.withdraw_kind_definition(self.instance, self.runtime,
                 spec["family"], spec["token"], reason=spec["reason"], actor_ref=request["id"])
@@ -1521,7 +1481,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         return True
 
     @engine_operation('controls')
-    def process_controls(self) -> dict:
+    def process_controls(self) -> None:
         """Apply queued user controls under the sole writer lock, without AI."""
         with self.store.writer_lock():
             self.head, self.instance, self.runtime = self.store.load()
@@ -1532,8 +1492,6 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             _, persisted_instance, persisted_runtime = self.store.load(self.head)
             if self.instance != persisted_instance or self.runtime != persisted_runtime:
                 self._save()
-        return self.status()
-
     def status(self, snapshot=None) -> dict:
         self.head, self.instance, self.runtime = self.store.load(snapshot)
         self._saved_state = self._state_signature()
@@ -1597,9 +1555,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 "active_trust_environment": self.instance.get("active_trust_environment"),
                 "academic_validation": ({"status": "initialization_incomplete"}
                     if self._governance().get("status") == "unadopted_input" else self._academic_status()),
-                "assurance": {"read_scope": "instructions_and_selected_inputs", "provider_operations": "not_observed",
-                              "token_usage": "CLI_reported_after_execution", "formal": "Lean_and_axiom_check",
-                              "review": "fresh_sessions_without_peer_results_in_inputs"}}
+                "assurance": deepcopy(reporting.ASSURANCE)}
 
     @engine_operation('run')
     def run(self, *, max_steps: int | None = None, watch: bool = False, until_active: bool = False) -> dict:
@@ -1615,7 +1571,6 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             raise ValueError("max_steps must be positive")
         with self.store.writer_lock():
             self.head, self.instance, self.runtime = self.store.load()
-            _require_current_contract(self.instance, self.runtime)
             self._inspect_before_write()
             self._saved_state = self._state_signature()
             previous = self.runtime.get("installation")
@@ -1874,7 +1829,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                    "instance_id": self.instance["id"], "question_links": self._question_view(),
                    "recent_history": self.runtime["history"][-8:],
                    "instructions": "Read input/ and your workspace only. Pass the exact absolute workspace as workdir on every shell call, with login=false. Use absolute paths under this workspace for file reads and writes; a shell's default working directory may differ. Ask for missing inputs. Never read other runs or the central repository. New research source code belongs in this workspace."}
-        context.update(goal_revision=self._governance().get("goal_revision", 1), policy_revision=self._governance().get("policy_revision", 1),
+        context.update(goal_revision=governance_input.get("goal_revision", 1), policy_revision=governance_input.get("policy_revision", 1),
                        grants=[{k: v for k, v in grant.items() if k != "credential_env"} for grant in self.instance.get("grants", {}).values()],
                         task_readiness={tid: planning.task_ready(task, self.instance, self.runtime, evaluation_context=evaluation_context)
                                        for tid, task in self.runtime["tasks"].items()},
@@ -1949,7 +1904,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         context["execution_profiles"] = deepcopy(list(self.instance.get("execution_profiles", {}).values()))
         context["role_profile_refs"] = deepcopy(self.instance.get("role_profile_refs", {}))
         context["observed_at"] = evaluation_context["now"]
-        context["repetition_lineages"] = task_contracts.repetition_lineages(self.instance, self.runtime, target)
+        context["repetition_lineages"] = task_contracts.repetition_lineages(self.runtime, target)
         context['repetition_holds'] = list(revisions.active_repetition_holds(self.runtime).values())
         if action.get("profile_ref"):
             profile = execution_profiles.resolve_profile(self.instance["execution_profiles"], action["profile_ref"])
@@ -2080,7 +2035,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 materialize_inputs(workspace, materialized)
                 context["recovery_materials"] = {"execution_id": reviewed_execution["id"],
                     "source_snapshot": source_snapshot,
-                    "checkpoint": deepcopy(self.runtime.get("checkpoints", {}).get(target)),
+                    "checkpoint": deepcopy(checkpoint_metadata),
                     "checkpoint_source": checkpoint_source, "result_source": result_source,
                     "result_kind": result_kind,
                     "final_result_status": "available" if result_kind == "execution_result" else "not_produced",
@@ -2954,9 +2909,14 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 if batch.caught_up():
                     observations.extend(candidate.observe({'type': 'tick'},
                         source=batch.source(batch.end_offset, start_offset=batch.end_offset), live=live))
-                self.runtime['executions'][execution_id]['observation_stream'] = {
-                    'end_offset': batch.end_offset, 'received_at': batch.received_at,
+                stream = {'end_offset': batch.end_offset, 'received_at': batch.received_at,
                     'applied_at': now(), 'local_termination_confirmed': not live}
+                previous = self.runtime['executions'][execution_id].get('observation_stream')
+                # An idle tick applies no stream bytes. Refreshing only its clock
+                # values would republish the whole state on every one-second poll.
+                if (previous is None or previous['end_offset'] != stream['end_offset']
+                        or previous['local_termination_confirmed'] != stream['local_termination_confirmed']):
+                    self.runtime['executions'][execution_id]['observation_stream'] = stream
             for observed in observations:
                 kind = observed["kind"]
                 if kind == "observation_fact":
@@ -3469,7 +3429,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                      "model": chosen_model["model"], "effort": config["effort"],
                      "model_selection": chosen_model,
                      "engine_sha256": ENGINE_SHA256, "grant_id": authority["grant_id"], "observed_at": context["observed_at"],
-                     "goal_revision": self._governance().get("goal_revision", 1), "policy_revision": self._governance().get("policy_revision", 1),
+                     **self._governance_revisions(),
                      "validity_basis": knowledge.capture_basis(self.instance, self.runtime, basis_ids),
                      "decision_basis": capture_decision_basis(self.instance, self.runtime, self._decision_references(action)),
                      "source_basis": capture_sources(self.instance, source_refs),
@@ -3547,8 +3507,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             if role == "operational_review" and action.get("live") and self._obsolete_action_reason(action):
                 current["stop_requested"] = "observation_target_ended"
             allowed = governance.authorize(self.instance, action, runtime=self.runtime)["allowed"]
-            changed = (current["goal_revision"] != self._governance().get("goal_revision", 1) or
-                       current["policy_revision"] != self._governance().get("policy_revision", 1))
+            changed = any(current[key] != value for key, value in self._governance_revisions().items())
             premise_changes = decision_basis_changes(current.get("decision_basis"), self.instance, self.runtime)
             premise_changes.extend(self._execution_requirement_changes(action, evaluation_context=self._evaluation_context()))
             if role == "goal_audit" and action.get("basis") != self._goal_basis_key():
@@ -4072,7 +4031,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 if unknown:
                     raise ValueError("task inputs must copy available source refs; unknown: " + ", ".join(sorted(unknown)))
                 basis = {"revision": task["revision"], "contract_sha256": planning.contract_hash(task),
-                         "goal_revision": self._governance().get("goal_revision", 1), "policy_revision": self._governance().get("policy_revision", 1)}
+                         **self._governance_revisions()}
                 review_key = planning.review_basis_key(task, self.instance, self.runtime)
                 live_actions = {row.get("action", {}).get("id") for row in self.runtime["executions"].values() if row["status"] != "ended"}
                 for pending in list(self.runtime["queue"]):
@@ -4100,7 +4059,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         elif role == "task_contract_review":
             task = self.runtime["tasks"][target]
             basis = action.get("contract_basis", {"revision": task["revision"], "contract_sha256": planning.contract_hash(task),
-                "goal_revision": self._governance().get("goal_revision", 1), "policy_revision": self._governance().get("policy_revision", 1)})
+                **self._governance_revisions()})
             if basis["contract_sha256"] != planning.contract_hash(task):
                 raise ValueError("contract changed while being reviewed")
             review = planning.seal_contract_review(task, output, self.instance, self.runtime, execution_id=execution_id)
@@ -4471,15 +4430,19 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         tasks = [{key: deepcopy(task.get(key)) for key in
                   ("id", "revision", "question", "scope", "completion_obligations", "expected", "results", "status")}
                  for task in self.runtime["tasks"].values()]
-        return hashlib.sha256(canonical_json({"goal": self._governance()["goal"], "goal_revision": self._governance().get("goal_revision", 1),
-            "policy_revision": self._governance().get("policy_revision", 1), "knowledge": self.instance["knowledge"],
+        view = self._governance()
+        if getattr(self, "_goal_audit_contract", None) is None:
+            # Installed role documents are fixed for this engine; a changed installation pauses it.
+            self._goal_audit_contract = hashlib.sha256(self._render_prompt("goal_audit", {}).encode()).hexdigest()
+        return hashlib.sha256(canonical_json({"goal": view["goal"], "goal_revision": view.get("goal_revision", 1),
+            "policy_revision": view.get("policy_revision", 1), "knowledge": self.instance["knowledge"],
             "formal_results": self.instance.get("formal_results", {}), "expositions": self.instance.get("expositions", {}),
             "identity_assessments": self.instance.get("identity_assessments", {}),
             "assessment_uses": self.instance.get("assessment_uses", {}),
             "trust_environments": self.instance.get("trust_environments", {}),
             "tasks": tasks, "sources": capture_sources(self.instance),
             "user_inputs": self.runtime["inputs"], "required": self.instance["config"]["goal_auditors"],
-            "input_contract": hashlib.sha256(self._render_prompt("goal_audit", {}).encode()).hexdigest()})).hexdigest()
+            "input_contract": self._goal_audit_contract})).hexdigest()
 
     def _apply_plan(self, output: dict, execution_id: str) -> None:
         execution = self.runtime["executions"][execution_id]
@@ -4726,9 +4689,6 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
     def _inspect_before_write(self):
         """Reject damaged current evidence before any recovery or installation write."""
         _require_current_contract(self.instance, self.runtime)
-        structural = inspect_current_state(self.instance, self.runtime)
-        if not structural["valid"]:
-            raise ValueError("current state is damaged: " + str(structural))
         snapshot = self.head
         inspection = inspect_state(self.instance, self.runtime, requested_areas=["record_storage"],
             snapshot=snapshot, read_artifact=lambda path: self.store.read(path, snapshot),

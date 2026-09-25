@@ -389,10 +389,6 @@ class AcademicEngineTests(PurposeHarness):
         self.assertEqual(received, ["/reject", "/unknown"])
 
 
-if __name__ == "__main__":
-    unittest.main(verbosity=2)
-
-
 class AcademicTaskPersistenceTests(unittest.TestCase):
     def setUp(self):
         from test_input_recovery import InputRecoveryPublicTests
@@ -423,3 +419,7 @@ class AcademicTaskPersistenceTests(unittest.TestCase):
                              for a in engine.runtime['queue']))
         _, _, saved = engine.store.load()
         self.assertEqual(saved["tasks"][task["id"]], task)
+
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)

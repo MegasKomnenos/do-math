@@ -215,7 +215,9 @@ def run_engine(repository: Path, instance: str, workspace: Path) -> dict[str, An
             env=child_environment(), creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
         (run_directory / "stdout.json").write_text(completed.stdout, encoding="utf-8")
         (run_directory / "stderr.txt").write_text(completed.stderr, encoding="utf-8")
-        record.update(outcome="completed" if completed.returncode == 0 else "engine_failed", exit_code=completed.returncode)
+        busy = completed.returncode != 0 and _retryable_tool_error(completed.stdout)
+        record.update(outcome="completed" if completed.returncode == 0 else "engine_busy" if busy else "engine_failed",
+                      exit_code=completed.returncode)
         record["after"] = read_status(repository, instance)
         after=record['after']
         if (after.get('installation_repair')
@@ -234,6 +236,16 @@ def run_engine(repository: Path, instance: str, workspace: Path) -> dict[str, An
     _json(run_directory / "result.json", record)
     _json(_operator_dir(workspace) / "latest-engine.json", record)
     return record
+
+
+def _retryable_tool_error(stdout: str) -> bool:
+    """A busy writer lock or lost CAS is contention, not an installation failure."""
+    try:
+        envelope = json.loads(stdout)
+    except json.JSONDecodeError:
+        return False
+    error = envelope.get("error") if isinstance(envelope, dict) else None
+    return isinstance(error, dict) and error.get("kind") == "tool_error" and error.get("retryable") is True
 
 
 def engine_start_guard(repository: Path, instance: str, workspace: Path, *, status=None) -> dict[str, Any]:

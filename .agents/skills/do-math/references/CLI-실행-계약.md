@@ -224,7 +224,6 @@ JSON status와 역할 입력은 `budget_unit=concurrent_sessions`와 예산·모
 ```text
 init --repository PATH [--create-repository] --workspace PATH
      (--goal TEXT | --goal-file PATH) [--title TEXT]
-     [--policies-file PATH]
      [--source PATH ...] [--config-file PATH] [--effort VALUE]
      [--request-text TEXT | --request-text-file PATH]
 ```
@@ -259,9 +258,11 @@ init --repository PATH [--create-repository] --workspace PATH
 
 입력 초과의 재시도는 원 grant를 유지하며 아래 입력 크기·질문 계약을 따른다. 초기 해석의 재시도는 `initializing` 상태에서 최초 불변 입력을 대상으로 한 `execution_failure`에만 적용한다. 전 실행이 `execution_incomplete`로 끝났고 로컬 종료가 확인됐으며 그 실행의 예약이 회수돼야 한다. 원 활동은 대기 중이어야 하고 같은 해석이나 그 실패를 진단하는 실행이 진행 중이면 거부한다. 보존 응답을 재사용하든 새 실행을 배정하든 현재 초기 운영 권한을 확인하고 실패 실행·원 대기·시작하지 않은 이전 진단을 이력으로 보존한다. 새 실행이 필요하면 현재 채택 초기 프로필로 배정하고 `continuation_of`로 선행 실행을 연결한다.
 
-두 `request` 형식은 모두 새 권한이나 완료 판정을 만들지 않는다. `--retry-action` 접수는 입력 초과 해소 선언도 아니다. `completed`와 `closed` 인스턴스에는 새 요청을 넣지 않는다.
+`request --assessment-reassessment-file PATH`는 원 동일성 판정의 결함을 보고한다. JSON 파일에는 정확한 `assessment_id`, `assessment_sha256`, `evidence`를 넣는다. `evidence.kind=author_context`는 원 검토자의 `execution_id`를, `independent_objection`은 봉인된 독립 검토의 `review_cycle_id`, `result_key`, `finding_id`를 가리킨다. 실행기는 원 판정과 근거의 결박을 검사하고, 적격 결함이면 판정 사용을 정지한 뒤 원 정책에 따른 유한 재심사를 연다. 일반 보고는 사용 효력을 바꾸지 않으며 같은 근거의 재전송은 기존 재심사를 재사용한다. 이 형식은 `--role`, `--retry-action`, `--target`, `--reason`과 함께 쓰지 않는다. 파일을 제출했다는 사실만으로 원 판정이 잘못됐다고 확정하지 않는다.
 
-사용자 출처의 pause는 `runtime.user_pause`에 요청 ID·이유·시각을 보존한다. operator 출처의 resume은 유효한 user_pause가 있으면 거부한다. 사용자 resume은 이 표시를 해제한다. 일반 resume은 `waiting_actions` 중 `output_validation`·`execution_failure`·`revision_dependency`를 재실행하지 않는다. 진단이나 새 역할 요청으로 이어 가며, 위 조건을 충족하는 초기 해석 실패에는 `request --retry-action`을 사용한다. 성공한 후속 실행은 대응하는 실패 행동을 해결 이력으로 옮기고 원 실패 실행·산출을 보존한다.
+`request`는 새 권한이나 완료 판정을 만들지 않는다. `--retry-action` 접수는 입력 초과 해소 선언도 아니다. `completed`와 `closed` 인스턴스에는 새 요청을 넣지 않는다.
+
+사용자 출처의 pause는 `runtime.user_pause`에 요청 ID·이유를 보존한다. operator 출처의 resume은 유효한 user_pause가 있으면 거부한다. 사용자 resume은 이 표시를 해제한다. 일반 resume은 `waiting_actions` 중 `output_validation`·`execution_failure`·`revision_dependency`를 재실행하지 않는다. 진단이나 새 역할 요청으로 이어 가며, 위 조건을 충족하는 초기 해석 실패에는 `request --retry-action`을 사용한다. 성공한 후속 실행은 대응하는 실패 행동을 해결 이력으로 옮기고 원 실패 실행·산출을 보존한다.
 
 ### `operator`
 

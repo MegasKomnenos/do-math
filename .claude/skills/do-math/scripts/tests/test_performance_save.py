@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+import hashlib
 from pathlib import Path
 import subprocess
 import sys
@@ -69,6 +70,22 @@ class SaveWithStateTests(unittest.TestCase):
             saved = self.repository.save_with_state(head, instance, {**runtime, 'status': 'active'})
         self.assertEqual(len([call for call in reads.call_args_list if call.args[0] == head]), 0)
         self.assertEqual(saved, self.repository.load(saved[0]))
+
+    def test_save_rereads_only_new_artifact_evidence(self) -> None:
+        head, instance, runtime = self.repository.load()
+        ref, raw = "runtime/artifacts/AB-evidence/notes.txt", b"checkpoint evidence"
+        runtime["checkpoints"] = {"EX-evidence": {"evidence_files": [{"path": "notes.txt",
+            "artifact_ref": ref, "sha256": hashlib.sha256(raw).hexdigest(), "bytes": len(raw)}]}}
+        head = self.repository.save_with_state(head, instance, runtime, artifacts={ref: raw})[0]
+        head, instance, runtime = self.repository.load(head)
+        with patch.object(self.repository._store, 'read_many', wraps=self.repository._store.read_many) as reads:
+            saved = self.repository.save_with_state(head, instance, {**runtime, 'status': 'active'})
+        self.assertFalse(any(ref in call.args[1] for call in reads.call_args_list))
+        self.assertEqual(saved, self.repository.load(saved[0]))
+        changed = deepcopy(saved[2])
+        changed["checkpoints"]["EX-evidence"]["evidence_files"][0]["bytes"] += 1
+        with self.assertRaisesRegex(ValueError, "artifact evidence"):
+            self.repository.save_with_state(saved[0], saved[1], changed)
 
     def test_reused_parent_bytes_still_reject_a_damaged_previous_snapshot(self) -> None:
         head, instance, runtime = self.repository.load()

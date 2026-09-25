@@ -1,0 +1,131 @@
+[
+  {
+    "agent": 1,
+    "session": "f89fd09a-3e57-4727-9ac4-6cdad5cb3701",
+    "models": [
+      "claude-opus-5-5"
+    ],
+    "turns": 142,
+    "duration_ms": 1247483,
+    "is_error": false,
+    "permission_denials": [],
+    "graphify_commands": [
+      "python .claude/skills/graphify/scripts/graph.py status 2>&1 | head -15; python .claude/skills/graphify/scripts/graph.py query \"run_engine\" --budget 1500 2>&1 | head -40",
+      "for f in scripts/do_math/scheduled_operator.py scripts/do_math/governance_engine.py scripts/do_math/control_contracts.py scripts/setup_lean.py; do echo \"== $f\"; python .claude/skills/graphify/scripts/graph.py affected \"$f\" 2>&1 | grep -v '^{\"state\"' | head -25; done",
+      "for f in scripts/do_math/scheduled_operator.py scripts/do_math/governance_engine.py scripts/do_math/control_contracts.py scripts/setup_lean.py scripts/do_math/trust_inventory.py scripts/do_math/scheduler.py scripts/do_math/governance.py; do python .claude/skills/graphify/scripts/graph.py affected \"$f\" 2>/dev/null | python -c \"\nimport sys,json\nraw=sys.stdin.read()\ni=raw.find('{',raw.find('}')+1)\ntry:\n    d=json.loads(raw[i:])\nexcept Exception as e:\n    print('$f','parse fail',e); sys.exit()\nfiles=sorted({n.get('source_file') for n in d.get('nodes',[]) if n.get('source_file')})\nprint('$f', len(d.get('nodes',[])), 'nodes;', ', '.join(f.split('/')[-1] for f in files[:30]))\n\"; done",
+      "for f in scripts/do_math/scheduled_operator.py scripts/do_math/governance_engine.py scripts/do_math/control_contracts.py scripts/setup_lean.py scripts/do_math/trust_inventory.py scripts/do_math/scheduler.py scripts/do_math/governance.py scripts/do_math/cli.py; do python .claude/skills/graphify/scripts/graph.py affected \"$f\" 2>/dev/null | python -c \"\nimport sys,json\nraw=sys.stdin.read()\ni=raw.find('\\n{')\nd,_=json.JSONDecoder().raw_decode(raw[i+1:])\nfiles=sorted({n.get('source_file') for n in d.get('nodes',[]) if n.get('source_file')})\nprint('$f', len(d.get('nodes',[])), 'nodes;', ', '.join(x.split('/')[-1] for x in files))\n\"; done",
+      "cd /c/math && python .claude/skills/graphify/scripts/graph.py query \"_governance\" --budget 1200 2>&1 | grep \"^NODE\" | head -30"
+    ]
+  },
+  {
+    "agent": 2,
+    "session": "66f51b76-5655-4476-bfed-b4a820a6ffa1",
+    "models": [
+      "claude-opus-5-5"
+    ],
+    "turns": 158,
+    "duration_ms": 831931,
+    "is_error": false,
+    "permission_denials": [],
+    "graphify_commands": [
+      "python .claude/skills/graphify/scripts/graph.py status 2>&1 | head -15; python .claude/skills/graphify/scripts/graph.py query \"disposition_is_current\" --budget 1500 2>&1 | head -30",
+      "G=\".claude/skills/graphify/scripts/graph.py\"; for n in disposition_is_current observation_window provider_for write_bytes_atomic _write_status; do echo \"== $n\"; python $G query \"$n()\" --exact --budget 800 2>&1 | grep -v '^{' | head -14; done",
+      "G=\".claude/skills/graphify/scripts/graph.py\"; for n in scripts_do_math_operational_dispositions_disposition_is_current scripts_do_math_execution_window_observation_window scripts_do_math_provider_wait_provider_for scripts_do_math_file_io_write_bytes_atomic scripts_do_math_codex_worker_write_status; do echo \"== $n\"; python $G query \"$n\" --exact --budget 1200 2>&1 | grep -v '^{' | head -20; done",
+      "G=\".claude/skills/graphify/scripts/graph.py\"; for n in scripts_do_math_operational_dispositions_disposition_is_current scripts_do_math_execution_window_observation_window scripts_do_math_provider_wait_provider_for scripts_do_math_file_io_write_bytes_atomic scripts_do_math_codex_worker_write_status; do echo \"== $n\"; python $G query \"$n\" --exact --relation calls --budget 3000 2>&1 | grep -E '\"(source|target|relation)\"' | paste - - - | sed 's/  */ /g' | head -12; done"
+    ]
+  },
+  {
+    "agent": 3,
+    "session": "ced04a65-7e4f-4785-9850-2f0c09c33b8f",
+    "models": [
+      "claude-opus-5-5"
+    ],
+    "turns": 87,
+    "duration_ms": 1015146,
+    "is_error": false,
+    "permission_denials": [],
+    "graphify_commands": [
+      "python .claude/skills/graphify/scripts/graph.py status 2>&1 | head -15; python .claude/skills/graphify/scripts/graph.py affected \"scripts/do_math/repository.py\" 2>&1 | head -40",
+      "for id in scripts_do_math_repository_researchrepository_validate_artifact_evidence scripts_do_math_knowledge_propagate scripts_do_math_external_recover_operation scripts_do_math_reporting_snapshot_report; do echo \"== $id\"; python .claude/skills/graphify/scripts/graph.py query \"$id\" --exact --budget 1500 2>&1 | grep -E '\"(label|source_file|source_location|relation)\"' | head -30; done"
+    ]
+  },
+  {
+    "agent": 4,
+    "session": "9eba1a39-12db-4ea9-bcdc-700388121717",
+    "models": [
+      "claude-opus-5-5"
+    ],
+    "turns": 116,
+    "duration_ms": 987436,
+    "is_error": false,
+    "permission_denials": [],
+    "graphify_commands": [
+      "python .claude/skills/graphify/scripts/graph.py status 2>&1 | head -20; python .claude/skills/graphify/scripts/graph.py query \"_record_review_questions\" --budget 1500 2>&1 | head -40",
+      "cd /c/math && for f in question_engine integration planning review_cycle review_engine task_scope task_contracts revisions; do echo \"== $f\"; python .claude/skills/graphify/scripts/graph.py affected \"scripts/do_math/$f.py\" 2>&1 | grep -v '^{\"state\"' | head -25; done",
+      "for f in question_engine integration planning review_cycle review_engine task_scope task_contracts revisions; do echo \"== $f\"; python .claude/skills/graphify/scripts/graph.py affected \"scripts/do_math/$f.py\" 2>/dev/null | python -c \"\nimport sys,json\nraw=sys.stdin.read(); i=raw.index('\\n{',1) if raw.startswith('{\\\"state\\\"') else 0\nd=json.loads(raw[raw.index('{\\n'):])\nfiles=sorted({n.get('source_file') for n in d.get('nodes',[]) if n.get('source_file')})\nprint(len(d.get('nodes',[])),'nodes;', ', '.join(f.split('/')[-1] for f in files))\n\"; done"
+    ]
+  },
+  {
+    "agent": 5,
+    "session": "a7e35719-2f4a-45f2-b407-564bfbf15bb8",
+    "models": [
+      "claude-opus-5-5"
+    ],
+    "turns": 104,
+    "duration_ms": 1020049,
+    "is_error": false,
+    "permission_denials": [],
+    "graphify_commands": [
+      "python .claude/skills/graphify/scripts/graph.py status 2>&1 | head -8; python .claude/skills/graphify/scripts/graph.py affected \"scripts/test_categories.py\" 2>&1 | head -30",
+      "for t in \"scripts/test_categories.py\" \"scripts/do_math/control_contracts.py\" \"scripts/do_math/governance_engine.py\" \"scripts/do_math/initialization.py\" \"scripts/probe_native_isolation.py\" \"scripts/probe_codex.py\"; do echo \"== $t\"; python .claude/skills/graphify/scripts/graph.py affected \"$t\" 2>/dev/null | python -c \"import sys,json; t=sys.stdin.read(); i=t.index('{',1) if t.count('{\\\"state\\\"') else 0; d=json.loads(t[t.index('\\n{')+1:]) if t.startswith('{\\\"state') else json.loads(t); print(sorted({n.get('source_file') for n in d.get('nodes',[]) if n.get('source_file')}))\" 2>&1 | cut -c1-900; done",
+      "python .claude/skills/graphify/scripts/graph.py query \"_apply_extended_control\" --budget 1500 2>/dev/null | tail -n +2 | head -40"
+    ]
+  },
+  {
+    "agent": 6,
+    "session": "249cbc74-2f59-40b3-8fd8-91982e0075f6",
+    "models": [
+      "claude-opus-5-5"
+    ],
+    "turns": 105,
+    "duration_ms": 785600,
+    "is_error": false,
+    "permission_denials": [],
+    "graphify_commands": [
+      "python .claude/skills/graphify/scripts/graph.py affected \"scripts/do_math/formal.py\" 2>&1 | head -40; python .claude/skills/graphify/scripts/graph.py query \"_approved_files_current\" --budget 1500 2>&1 | head -30",
+      "G=\".claude/skills/graphify/scripts/graph.py\"; for q in scripts_do_math_codex_worker_write_status scripts_do_math_provider_wait_provider_for scripts_do_math_observations_publish_worker_feedback scripts_do_math_engine_researchengine_observe_running; do echo \"== $q\"; python $G query \"$q\" --exact 2>&1 | grep -E \"^EDGE|^NODE|calls|imports\" | head -12; done",
+      "G=\".claude/skills/graphify/scripts/graph.py\"; for q in scripts_do_math_codex_worker_write_status scripts_do_math_provider_wait_provider_for scripts_do_math_observations_publish_worker_feedback; do echo \"== $q\"; python $G query \"$q\" --exact 2>&1 | python -c \"\nimport sys,json\nt=sys.stdin.read(); i=t.find('{',t.find('\\n'))\nd=json.loads(t[i:])\nfor e in d.get('edges',d.get('links',[])): print(e.get('source'),'-',e.get('relation'),'->',e.get('target'))\n\" 2>&1 | head -14; done"
+    ]
+  },
+  {
+    "agent": 7,
+    "session": "2ce8f316-b4ac-4e89-82e1-e254c81af05e",
+    "models": [
+      "claude-opus-5-5"
+    ],
+    "turns": 81,
+    "duration_ms": 941538,
+    "is_error": false,
+    "permission_denials": [],
+    "graphify_commands": [
+      "G=\".claude/skills/graphify/scripts/graph.py\"; python $G status 2>&1 | head -8; for f in repository.py knowledge.py academic_engine.py context_store.py knowledge_records.py record_schemas/__init__.py record_schemas/schemas.py; do echo \"=== affected $f\"; python $G affected \"scripts/do_math/$f\" 2>&1 | head -25; done",
+      "G=\".claude/skills/graphify/scripts/graph.py\"; for n in scripts_do_math_academic_engine_academicenginemixin_apply_academic_resolutions scripts_do_math_review_engine_reviewenginemixin_staged_review_candidate scripts_do_math_knowledge_records_record_identity_assessment scripts_do_math_knowledge_propagate scripts_do_math_repository_researchrepository_read_documents scripts_do_math_context_store_build_role_manifest; do echo \"=== $n\"; python $G query \"$n\" --exact --relation calls 2>&1 | grep -E '\"(label|source_file|source_location|relation)\"' | paste - - - - | head -20; done"
+    ]
+  },
+  {
+    "agent": 8,
+    "session": "b9de1451-18ea-4414-9d18-00fe50132b7f",
+    "models": [
+      "claude-opus-5-5"
+    ],
+    "turns": 94,
+    "duration_ms": 988778,
+    "is_error": false,
+    "permission_denials": [],
+    "graphify_commands": [
+      "python .claude/skills/graphify/scripts/graph.py status 2>&1 | head -5; for f in submission review_cycle planning; do echo \"== $f\"; python .claude/skills/graphify/scripts/graph.py affected \"scripts/do_math/$f.py\" --budget 1500 2>&1 | head -40; done",
+      "for f in submission review_cycle planning review_engine revisions; do echo \"== $f\"; python .claude/skills/graphify/scripts/graph.py affected \"scripts/do_math/$f.py\" 2>&1 | head -30; done",
+      "for n in scripts_do_math_review_cycle_record_turn scripts_do_math_submission_validate_reference scripts_do_math_planning_apply_event_schedule scripts_do_math_planning_contract_review_current scripts_do_math_task_contracts_repetition_lineages scripts_do_math_submission_normalize_reference scripts_do_math_review_engine_reviewenginemixin_staged_review_candidate; do echo \"== $n\"; python .claude/skills/graphify/scripts/graph.py query \"$n\" --exact --relation calls 2>&1 | python -c \"\nimport sys,json\nraw=sys.stdin.read()\ni=raw.find('\\n{')\ntry:\n  d=json.loads(raw[i+1:] if i>=0 else raw)\nexcept Exception as e:\n  print(raw[:600]); sys.exit()\nnodes={x['id']:x for x in d.get('nodes',[])}\nfor e in d.get('edges',d.get('links',[])):\n  s,t=e.get('source'),e.get('target')\n  print(e.get('relation'), nodes.get(s,{}).get('label',s), '->', nodes.get(t,{}).get('label',t), nodes.get(s,{}).get('source_file'), nodes.get(s,{}).get('source_location'))\n\"; done"
+    ]
+  }
+]

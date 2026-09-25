@@ -38,10 +38,10 @@ class Tests(unittest.TestCase):
         self.runtime['external_rejections'] = [{'id': 'RJ', 'solution_basis': self.basis,
             'resolved': True, 'resolution_evidence': ['unbound prose'], 'source_ref': 'planner-evidence'}]
         self.assertEqual(academic_status(self.instance, self.runtime, self.basis)['status'], 'externally_rejected')
-        self.runtime['executions'] = {'E': {'role': 'research_plan', 'input_solution_basis': self.basis}}
-        self.runtime['artifacts'] = {'EV': {'text': 'Planner evidence'}}
+        self.runtime['executions'] = {'E': {'role': 'research_plan', 'input_solution_basis': self.basis},
+            'EX-evidence': {'id': 'EX-evidence', 'role': 'research_work', 'report': 'Planner evidence'}}
         record_resolution(self.instance, self.runtime, self.basis,
-            {'id': 'RJ', 'decision': 'resolved', 'evidence': 'Addresses objection', 'evidence_refs': ['EV']}, execution_id='E')
+            {'id': 'RJ', 'decision': 'resolved', 'evidence': 'Addresses objection', 'evidence_refs': ['EX-evidence']}, execution_id='E')
         self.assertEqual(academic_status(self.instance, self.runtime, self.basis)['status'], 'pending')
 
     def test_invalid_requirement_shapes_are_rejected(self):

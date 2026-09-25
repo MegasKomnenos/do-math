@@ -178,7 +178,8 @@ def governance_revisions(instance: dict) -> dict:
     return {key: view[key] for key in ('goal_revision', 'policy_revision')}
 
 
-def contract_review_current(review: dict, task: dict, instance: dict, runtime: dict) -> dict:
+def contract_review_current(review: dict, task: dict, instance: dict, runtime: dict, *, task_basis=None) -> dict:
+    """task_basis may carry capture_task_basis() of this task and state, shared across its reviews."""
     from .input_basis import decision_basis_changes, sources_current
     expected = {"revision": task.get("revision"), "contract_sha256": contract_hash(task),
                 **governance_revisions(instance)}
@@ -196,7 +197,7 @@ def contract_review_current(review: dict, task: dict, instance: dict, runtime: d
     if not sources_current(review.get("source_basis", []), instance):
         reasons.append({"field": "source_basis", "after": "changed"})
     captured = review.get("task_basis")
-    current = capture_task_basis(task, instance, runtime)
+    current = task_basis if task_basis is not None else capture_task_basis(task, instance, runtime)
     if not isinstance(captured, dict) or captured.get("common") != current["common"]:
         reasons.append({"field": "task_basis", "after": "missing_or_changed"})
     return {"valid": not reasons, "changes": reasons}
@@ -240,12 +241,12 @@ def seal_contract_review(task, output, instance, runtime, *, execution_id):
             "task_basis": capture_task_basis(task, instance, runtime)}
 
 
-def review_basis_key(task: dict, instance: dict, runtime: dict) -> str:
+def review_basis_key(task: dict, instance: dict, runtime: dict, *, task_basis=None) -> str:
     from .input_basis import capture_decision_basis
     refs = action_read_ids({"role": "task_contract_review", "target": task["id"]}, instance, runtime)
     return _hash({"contract": contract_hash(task), **governance_revisions(instance),
                   "decision_basis": capture_decision_basis(instance, runtime, refs),
-                  "task_basis": capture_task_basis(task, instance, runtime)})
+                  "task_basis": task_basis if task_basis is not None else capture_task_basis(task, instance, runtime)})
 
 
 def ready_task_ids(runtime: dict, instance: dict, *, evaluation_context=None) -> list[str]:
@@ -539,7 +540,8 @@ def task_ready(task: dict, instance: dict, runtime: dict, *, include_scheduling_
     reviews = task.get("reviews", [])
     approved = [r for r in reviews if r.get("revision") == revision and r.get("decision") == "approved" and r.get("inputs_current", True)]
     try:
-        approved = [r for r in approved if contract_review_current(r, task, instance, runtime)["valid"]]
+        task_basis = capture_task_basis(task, instance, runtime) if approved else None
+        approved = [r for r in approved if contract_review_current(r, task, instance, runtime, task_basis=task_basis)["valid"]]
     except (ValueError, KeyError, TypeError) as error:
         return {"state": "evaluation_error", "basis": [], "errors": [str(error)]}
     if not approved: return {"state": "not_ready", "basis": [], "errors": ["current revision lacks approved contract review"]}
@@ -687,7 +689,7 @@ def exhaustion_state(instance, runtime, *, now=None, evaluation_context=None):
     if receipts and receipts[-1].get('outcome')=='empty':
         receipt=receipts[-1]
         from .revisions import repetition_hold
-        hold = repetition_hold(instance,runtime,'exhaustion_empty',receipt['lineage_id'])
+        hold = repetition_hold(runtime,'exhaustion_empty',receipt['lineage_id'])
         if hold:
             answer.update(reasons=['exhaustion_lineage_hold'],next_owner=hold['next_owner']);return answer
         if not receipt.get('regenerate_after'):
@@ -803,12 +805,14 @@ def collect_due_events(instance: dict, runtime: dict, now_iso: str, *, evaluatio
 
 
 def apply_event_schedule(instance: dict, runtime: dict, now_iso: str, *, evaluation_context=None) -> dict:
-    """Return a deep-copied runtime with due events preserved once; paused does not consume them."""
-    new_instance, new_runtime = deepcopy(instance), deepcopy(runtime)
-    events = collect_due_events(new_instance, new_runtime, now_iso,evaluation_context=evaluation_context)
+    """Return a deep-copied runtime with due events preserved once; paused does not consume them.
+
+    Scheduling only reads the instance, so the caller's instance is returned without a copy."""
+    new_runtime = deepcopy(runtime)
+    events = collect_due_events(instance, new_runtime, now_iso,evaluation_context=evaluation_context)
     new_runtime.setdefault("events", []).extend(events)
     new_runtime.setdefault("pending_events", []).extend(event["id"] for event in events if event["id"] not in new_runtime.get("pending_events", []))
     states=new_runtime.setdefault("condition_states",{})
     for task in new_runtime.get("tasks",{}).values():
-        for condition in task.get("due_conditions",[]): states[f"{task.get('id')}:{_hash(condition)}"]=evaluate_condition(condition,new_instance,new_runtime,evaluation_context=evaluation_context)["state"]
-    return {"instance": new_instance, "runtime": new_runtime, "events": events}
+        for condition in task.get("due_conditions",[]): states[f"{task.get('id')}:{_hash(condition)}"]=evaluate_condition(condition,instance,new_runtime,evaluation_context=evaluation_context)["state"]
+    return {"instance": instance, "runtime": new_runtime, "events": events}

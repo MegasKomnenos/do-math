@@ -12,7 +12,6 @@ from .governance import timestamp
 from .repository import canonical_json, new_id
 
 INITIAL_ROLES = {"intent_interpretation", "maintenance"}
-FOUNDATION_AXIOMS = {"propext", "Classical.choice", "Quot.sound"}
 
 
 def digest(value):
@@ -261,7 +260,7 @@ def grant_current(instance, gid, at, *, initial):
 
 
 def initialize_state(*, instance_id, goal, workspace, config, source_input,
-                     title="", policies="", created_at=None):
+                     title="", created_at=None):
     if not isinstance(source_input, str) or not source_input.strip():
         raise ValueError("initialization requires the original nonempty input")
     when = timestamp(created_at).isoformat()
@@ -283,7 +282,7 @@ def initialize_state(*, instance_id, goal, workspace, config, source_input,
         "availability": {"state": "blocked", "reason": "initialization_incomplete"},
         "tasks": {}, "executions": {}, "activities": {}, "queue": [], "history": [],
         "inputs": [{'id': input_id, 'text': source_input, 'sha256': hashlib.sha256(raw).hexdigest(),
-                    'config': {'goal': goal, 'policies': policies}, 'created_at': when}],
+                    'config': {'goal': goal}, 'created_at': when}],
         "questions": [], "question_links": [], "events": [], "pending_events": [],
         "last_observed_utc": when, "recovery_checked": False,
         "review_cycles": {}, "external_operations": {}, "trust_transitions": {}, "conversations": {},

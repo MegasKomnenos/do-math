@@ -21,7 +21,7 @@ from do_math.execution_profiles import profile_ref
 from do_math.repository import canonical_json
 
 IDENTITY = {"host": "CORE_TESTS synthetic host", "implementation": "CORE_TESTS synthetic adapter"}
-AXIOMS = sorted(["propext", "Classical.choice", "Quot.sound"])
+from do_math.trust_validation import AXIOMS
 
 
 def read_fixture_context(prompt, workspace):
@@ -342,9 +342,9 @@ def trust_fixture(root, command):
     validation=validation_fixture(toolchain,{'scope':scope,'files':files},directory/'smoke.lean')
     manifest = {"command": list(command), "files": files,
         'scope':scope,
-        "foundation_profile": {"allowed_axioms": AXIOMS, "forbidden": ["sorryAx", "Lean.trustCompiler", "additional_axioms"]},
+        "foundation_profile": {"allowed_axioms": sorted(AXIOMS), "forbidden": ["sorryAx", "Lean.trustCompiler", "additional_axioms"]},
         "validation": {'record':validation,'sha256':exact_content_hash(validation)}}
-    return {"operation": "register", "toolchain": toolchain, "allowed_axioms": AXIOMS, "manifest": manifest}
+    return {"operation": "register", "toolchain": toolchain, "allowed_axioms": sorted(AXIOMS), "manifest": manifest}
 
 
 def send_control(engine, action, **kwargs):

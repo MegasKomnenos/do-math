@@ -363,10 +363,8 @@ def _inspect_area(area, instance, runtime, read_artifact, read_artifacts=None):
             if status == 'cancelled' and operation.get('transmitted') is not False and operation.get('reconciliation', {}).get('evidence', {}).get('fact') != 'not_transmitted':
                 defect('cancelled external effect was not confirmed untransmitted', identifier)
             if operation.get('request'):
-                import json
-                raw = json.dumps(operation['request'], ensure_ascii=False, sort_keys=True, separators=(',', ':')).encode()
-                digest = hashlib.sha256(raw).hexdigest()
-                if digest != operation.get('request_sha256') or hashlib.sha256((identifier + digest).encode()).hexdigest() != operation.get('idempotency_key'):
+                from .external import request_binding_current
+                if not request_binding_current({**operation, 'id': identifier}):
                     defect('external request or idempotency binding changed', identifier)
             if operation.get('handling') == 'reconciled' and not operation.get('reconciliation', {}).get('evidence', {}).get('evidence_ref'):
                 defect('reconciled handling lacks external effect evidence', identifier)
@@ -464,5 +462,5 @@ def _inspect_area(area, instance, runtime, read_artifact, read_artifacts=None):
         checked.extend(['self-check response bindings', 'stop phase'])
     elif area == 'repair_iteration':
         from .task_contracts import repetition_lineages
-        run('five repetition lineages', lambda: (repetition_lineages(instance, runtime), None)[1])
+        run('five repetition lineages', lambda: (repetition_lineages(runtime), None)[1])
     return findings, checked, missing

@@ -322,11 +322,9 @@ def validate_semantics(instance, runtime, identifiers):
         if (not row["evidence_refs"] or set(row["evidence_refs"]) != set(row["evidence_hashes"])
                 or row["sha256"] != academic_hash({k: v for k, v in row.items() if k != "sha256"})):
             raise ValueError("academic resolution seal/evidence binding is invalid")
+    from ..external import request_binding_current
     for row in runtime.get("external_operations", {}).values():
-        import hashlib
-        from ..external import _hash as request_hash
-        if (request_hash(row["request"]) != row["request_sha256"] or row["idempotency_key"] !=
-                hashlib.sha256((row["id"] + row["request_sha256"]).encode()).hexdigest()):
+        if not request_binding_current(row):
             raise ValueError("external operation request/key differs from sealed bytes")
         if row.get("retry_evidence"):
             proof = row["retry_evidence"]
@@ -526,18 +524,19 @@ def validate_semantics(instance, runtime, identifiers):
                 raise ValueError("delegation judgment provenance mismatch")
         if len(execution_ids) != len(set(execution_ids)):
             raise ValueError("delegation judgments must use distinct executions")
+    # Question scopes are not restricted to record IDs: the actual owner
+    # also routes decisions to queued/deferred action coordinates or supplied
+    # input aliases. These namespaces are explicit, not a scan for any 'id'.
+    # They do not depend on the question, so build them once per validation.
+    question_targets = set(identifiers) | set(runtime.get("waiting_actions", {})) | set(instance.get("available_input_refs", []))
+    for source in instance.get("sources", []):
+        question_targets.update(v for v in (source.get("path"), source.get("name")) if v)
     for question in runtime.get("question_links", []):
         if question["origin_execution_id"] is None and not question.get("source_ref"):
             raise ValueError("nonexecution question requires a preserved source reference")
-        # Question scopes are not restricted to record IDs: the actual owner
-        # also routes decisions to queued/deferred action coordinates or supplied
-        # input aliases. These namespaces are explicit, not a scan for any 'id'.
-        targets = set(identifiers) | set(runtime.get("waiting_actions", {})) | set(instance.get("available_input_refs", []))
-        for source in instance.get("sources", []):
-            targets.update(v for v in (source.get("path"), source.get("name")) if v)
         # target_ids is immutable routing history. Only still-unresolved
         # coordinates must remain live after a queued/waiting action finishes.
-        if set(question.get("unresolved_target_ids", question["target_ids"])) - targets:
+        if set(question.get("unresolved_target_ids", question["target_ids"])) - question_targets:
             raise ValueError("question target does not resolve in a declared namespace")
     for action_id, wait in runtime.get("waiting_actions", {}).items():
         if wait["action"]["id"] != action_id:

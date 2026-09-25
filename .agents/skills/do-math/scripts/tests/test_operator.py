@@ -149,6 +149,25 @@ class OperatorTests(unittest.TestCase):
         self.assertEqual(result["outcome"], "completed")
         self.assertEqual(Path(run.call_args.args[0][1]), live / "scripts/do_math.py")
 
+    def test_contended_writer_lock_is_recorded_without_opening_recovery(self) -> None:
+        status = {"status": "ready", "user_pause": False}
+        busy = json.dumps({"exit_code": 5, "error": {"kind": "tool_error", "message": "writer lock is busy",
+                                                     "next_owner": "operator", "retryable": True}})
+        with patch.object(operator, "read_status", return_value=status), \
+             patch.object(operator.subprocess, "run", return_value=subprocess.CompletedProcess([], 5, busy, "")):
+            result = operator.run_engine(self.repository, self.instance, self.workspace)
+        self.assertEqual(result["outcome"], "engine_busy")
+        latest = json.loads((self.workspace / "operator" / "latest-engine.json").read_text(encoding="utf-8"))
+        self.assertEqual(latest["outcome"], "engine_busy")
+        with patch.object(operator, "read_status", return_value=status), \
+             patch.object(operator, "ResearchRepository") as repository, \
+             patch.object(operator, "reconcile_wake", return_value={"status": "not_needed"}), \
+             patch.object(operator, "schedule", return_value={"engine": {"state": "Ready"}}), \
+             patch.object(operator, "recovery") as recover:
+            repository.return_value.load.return_value = ("head", {"config": {}}, {})
+            self.assertEqual(operator.check(self.repository, self.instance, self.workspace)["outcome"], "engine_requested")
+        recover.assert_not_called()
+
     def test_accepted_installation_repair_requests_supervisor_without_periodic_delay(self):
         before={'status':'ready','user_pause':False}
         after={'status':'waiting','installation_repair':{'status':'installation_repair_pending'},

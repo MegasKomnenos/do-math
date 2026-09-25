@@ -9,9 +9,8 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from do_math.execution_window import observation_window
 from do_math.observations import ObservationTracker, evaluate_rules, self_check_feedback, validate_rules
-from do_math.operational_dispositions import disposition_is_current, validate_disposition, worker_feedback
+from do_math.operational_dispositions import validate_disposition, worker_feedback
 
 
 class Clock:
@@ -228,16 +227,9 @@ class ObservationRedesignTests(unittest.TestCase):
         disposition = {"kind": "resume", "basis_refs": ["OF-1", "SC-1"], "next_owner": "engine",
                        "reason": "checkpoint is complete", "checkpoint_ref": "CK-1", "scope": "remaining proof"}
         self.assertEqual(disposition, validate_disposition(disposition))
-        self.assertTrue(disposition_is_current(disposition, {"OF-1", "SC-1", "other"}))
-        self.assertFalse(disposition_is_current(disposition, {"OF-1"}))
         self.assertEqual({"kind": "resume", "reason": "checkpoint is complete", "next_owner": "engine"}, worker_feedback(disposition))
         with self.assertRaisesRegex(ValueError, "fields"):
             validate_disposition({**disposition, "private_diagnostic": "do not leak"})
-
-    def test_profile_window_has_no_global_fallback(self):
-        self.assertEqual(15, observation_window({"tool_review_window_seconds": 15}, "tool_review_window_seconds"))
-        with self.assertRaisesRegex(ValueError, "lacks"):
-            observation_window({}, "tool_review_window_seconds")
 
 
 if __name__ == "__main__":

@@ -192,10 +192,11 @@ def collect_inventory(toolchain):
 
 def collect_manifest(toolchain, validation_record, *, observed_inventory=None):
     from .repository import exact_content_hash
+    from .trust_validation import AXIOMS
     observed=collect_inventory(toolchain) if observed_inventory is None else observed_inventory
     scope,files=observed['scope'],observed['files']
     manifest={'command':toolchain['configured_command'],'scope':scope,'files':files,
-        'foundation_profile':{'allowed_axioms':['Classical.choice','Quot.sound','propext'],
+        'foundation_profile':{'allowed_axioms':sorted(AXIOMS),
                               'forbidden':['sorryAx','Lean.trustCompiler','additional_axioms']},
         'validation':{'record':validation_record,'sha256':exact_content_hash(validation_record)}}
     errors=binding_errors({'manifest':manifest,'toolchain':toolchain})+validation_errors(

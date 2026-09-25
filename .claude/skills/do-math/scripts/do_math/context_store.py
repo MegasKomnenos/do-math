@@ -260,8 +260,12 @@ def write_source_catalog(context: dict, workspace: Path) -> dict:
 
 
 def build_role_manifest(context: dict, *, workspace: Path, role: str,
-                        direct_keys: list[str], reference_keys: list[str]) -> dict:
-    """Declare direct role inputs separately from exact source references."""
+                        direct_keys: list[str], reference_keys: list[str],
+                        catalog: dict | None = None) -> dict:
+    """Declare direct role inputs separately from exact source references.
+
+    A caller that already wrote this exact context's catalog passes it as catalog.
+    """
     if not isinstance(context, dict):
         raise TypeError("context must be an object")
     if not isinstance(role, str) or not role:
@@ -275,11 +279,11 @@ def build_role_manifest(context: dict, *, workspace: Path, role: str,
     missing = [key for key in [*direct_keys, *reference_keys] if key not in context]
     if missing:
         raise ValueError("role manifest keys are missing: " + ", ".join(missing))
-    catalog = write_source_catalog(context, workspace)
-    direct = []
-    for key in direct_keys:
-        data = canonical_json(context[key])
-        direct.append({"key": key, "sha256": _sha256(data), "bytes": len(data)})
+    if catalog is None:
+        catalog = write_source_catalog(context, workspace)
+    # Catalog entries already measure each key's exact canonical bytes.
+    direct = [{"key": key, "sha256": catalog["entries"][key]["sha256"],
+               "bytes": catalog["entries"][key]["bytes"]} for key in direct_keys]
     references = []
     for key in reference_keys:
         source_ref = catalog["entries"].get(key)
@@ -594,11 +598,12 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
     if role in {'research_work', 'supplemental_research'}:
         # A fixed public domain view for the shared relation checker, not a
         # second store or a worker-authored validity assertion.
-        relation_state = {key: deepcopy(instance.get(key, {})) for key in (
+        # Serialized immediately below; the records are read, not copied.
+        relation_state = {key: instance.get(key, {}) for key in (
             'knowledge', 'formal_results', 'expositions', 'identity_assessments',
             'assessment_uses', 'kind_definitions', 'trust_environments')}
         relation_state.update(active_trust_environment=instance.get('active_trust_environment'),
-                              sources=deepcopy(instance.get('sources', [])))
+                              sources=instance.get('sources', []))
         raw = canonical_json(relation_state)
         materialize_inputs(workspace, {'submission/relation-state.json': raw})
         ref = {'path': 'input/submission/relation-state.json', 'snapshot': snapshot,
@@ -665,11 +670,12 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
         # Packing used conservative canonical component sizes. The actual
         # rendered profile input is the final admission measurement.
         fitted['overflow'] = None
-    manifest = build_role_manifest(value, workspace=workspace, role=role,
-        direct_keys=required, reference_keys=[k for k in value if k not in required])
-    # A reduced field's source is the original catalog, not a new JSON wrapper.
-    manifest['references'] = [{'key': row['key'], 'source_ref': {k: v for k, v in row.items() if k != 'key'}}
-                              for row in fitted['manifest'] if row['key'] not in required]
+    # fit_context already wrote and read back this exact value's catalog. A
+    # reduced field's source is that original catalog, not a new JSON wrapper.
+    catalog = {'entries': {row['key']: {k: v for k, v in row.items() if k != 'key'} for row in fitted['manifest']},
+               'manifest': fitted['manifest']}
+    manifest = build_role_manifest(value, workspace=workspace, role=role, direct_keys=required,
+        reference_keys=sorted(k for k in value if k not in required), catalog=catalog)
     manifest.update(feature_version=5, snapshot=snapshot, execution_profile_ref=profile_ref(profile),
         output_contract={'id': schema.get('x-contract-id'), 'sha256': _sha256(canonical_json(schema))},
         documents=[{'path': doc['path'], 'sha256': _sha256(doc['content'].encode('utf-8')),

@@ -267,16 +267,14 @@ class GovernanceEngineMixin:
         if bundle['status'] != 'approved':
             self._queue_intent_rework(bundle, '; '.join(bundle['check']['findings']) or 'independent check is unresolved')
             return bundle
-        request = next(row for row in self.runtime['inputs'] if row['id'] == target)
-        approvals = request.get('config', {}).get('import_approvals', {})
         required = {u['unit_id'] for u in bundle['output']['import_units'] if u['payload']}
-        if not any(q['blocks'] for q in bundle['output'].get('question_details', [])) and required - approvals.keys():
+        if not any(q['blocks'] for q in bundle['output'].get('question_details', [])) and required:
             self.runtime.setdefault('waiting_actions', {})[action.get('id', bundle['id'])] = {
                 'action': deepcopy(action), 'kind': 'import_application_authority', 'import_id': bundle['id'],
                 'reason': 'checked interpretation lacks exact change approval', 'next_owner': 'user'}
             return bundle
         self.instance, self.runtime, receipt = governance.apply_import(self.instance, self.runtime, bundle['id'],
-            approvals=approvals, owner_handlers=handlers)
+            owner_handlers=handlers)
         if receipt['status'] == 'awaiting_decision':
             self.runtime.setdefault('waiting_actions', {})[action.get('id', bundle['id'])] = {
                 'action': deepcopy(action), 'kind': 'import_user_decision', 'import_id': bundle['id'],

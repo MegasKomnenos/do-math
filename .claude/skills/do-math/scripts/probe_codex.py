@@ -57,7 +57,7 @@ def run_case(adapter: CodexExecAdapter, directory: Path, case: str, *, model: st
     prompt_path = directory / "prompt.txt"
     prompt_path.write_text(prompt, encoding="utf-8", newline="\n")
     request = {
-        "codex_path": adapter.codex_path, "prompt_path": str(prompt_path),
+        "codex_path": adapter.cli_path, "prompt_path": str(prompt_path),
         "cwd": str(workspace), "model": model, "effort": effort,
         "sandbox": "workspace-write" if case == "tool" else "read-only",
         "windows_sandbox": windows_sandbox, "approval_policy": "never",

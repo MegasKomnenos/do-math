@@ -446,7 +446,7 @@ class TaskContractsTest(unittest.TestCase):
     def test_repetition_lineages_keep_ai_repair_distinct_from_user_authority(self):
         runtime = {'history':[{'kind':'task_repetition','lineage':name,'lineage_id':'TK-1',
             'outcome':'revised','owner':'ai'} for name in task_contracts.REPEAT_LINEAGES]}
-        lineages = task_contracts.repetition_lineages({}, runtime, "TK-1")
+        lineages = task_contracts.repetition_lineages(runtime, "TK-1")
         self.assertEqual(set(lineages), {"import_rework", "selection_failure", "exhaustion_empty", "proposal_version", "contract_revision"})
         self.assertTrue(all(row["owner"] == "ai" for row in lineages.values()))
         self.assertTrue(all(row['count']==1 for row in lineages.values()))
@@ -586,10 +586,10 @@ class FollowupRegressions(unittest.TestCase):
             runtime['executions'][identifier] = {'role': 'research_plan', 'error_kind': failure}
             for _ in range(2):
                 revisions.record_execution_outcome(instance, runtime, action, {}, identifier, accepted=False)
-            count = task_contracts.repetition_lineages(instance, runtime)['selection_failure']['count']
+            count = task_contracts.repetition_lineages(runtime)['selection_failure']['count']
             self.assertEqual(count, number + 1)
-        self.assertTrue(revisions.repetition_hold(instance, runtime, 'selection_failure', 'population-1'))
-        self.assertFalse(revisions.repetition_hold(instance, runtime, 'selection_failure', 'population-2'))
+        self.assertTrue(revisions.repetition_hold(runtime, 'selection_failure', 'population-1'))
+        self.assertFalse(revisions.repetition_hold(runtime, 'selection_failure', 'population-2'))
 
     def test_technical_plan_failures_do_not_count_and_acceptance_ends_the_sequence(self):
         from do_math import revisions
@@ -602,13 +602,13 @@ class FollowupRegressions(unittest.TestCase):
             identifier = 'EX-technical-' + str(number)
             runtime['executions'][identifier] = {'role': 'research_plan', 'error_kind': failure}
             revisions.record_execution_outcome(instance, runtime, action, {}, identifier, accepted=False)
-        self.assertEqual(task_contracts.repetition_lineages(instance, runtime)['selection_failure']['count'], 0)
+        self.assertEqual(task_contracts.repetition_lineages(runtime)['selection_failure']['count'], 0)
         runtime['executions']['EX-invalid'] = {'role': 'research_plan', 'error_kind': 'output_validation'}
         revisions.record_execution_outcome(instance, runtime, action, {}, 'EX-invalid', accepted=False)
-        self.assertEqual(task_contracts.repetition_lineages(instance, runtime)['selection_failure']['count'], 1)
+        self.assertEqual(task_contracts.repetition_lineages(runtime)['selection_failure']['count'], 1)
         runtime['executions']['EX-accepted'] = {'role': 'research_plan'}
         revisions.record_execution_outcome(instance, runtime, action, {}, 'EX-accepted', accepted=True)
-        self.assertEqual(task_contracts.repetition_lineages(instance, runtime)['selection_failure']['count'], 0)
+        self.assertEqual(task_contracts.repetition_lineages(runtime)['selection_failure']['count'], 0)
 
     def test_empty_queue_is_not_exhaustion_when_work_is_running(self):
         runtime={'status':'active','tasks':{},'queue':[], 'executions':{'EX-live':{'id':'EX-live','role':'research_work','status':'running','action':{'target':'TK'}}}}
@@ -805,7 +805,7 @@ class RepetitionProductionTests(unittest.TestCase):
             revisions.bind_repetition_bases(i,r,action)
             revisions.record_import_rework(i,r,action,identifier)
             revisions.record_execution_outcome(i,r,action,output,identifier,accepted=accepted)
-        counts=task_contracts.repetition_lineages(i,r)
+        counts=task_contracts.repetition_lineages(r)
         self.assertTrue(all(row['events'] for row in counts.values()))
         self.assertEqual(counts['proposal_version']['by_lineage'],{'KN-first':2})
         self.assertEqual(counts['contract_revision']['count'],1)
@@ -823,8 +823,8 @@ class RepetitionProductionTests(unittest.TestCase):
             'disposition':{'kind':'retry','basis_refs':['EX-bad'],'next_owner':'research_plan','reason':'fixed input manifest',
                            'scope':'repeat only the held plan','replay_safety':'no external effects'}}}
         self.assertTrue(revisions.action_repetition_waits(i,r,action))
-        self.assertEqual(task_contracts.repetition_lineages(i,r)['selection_failure']['count'],1)
-        self.assertEqual(revisions.repetition_hold(i,r,'selection_failure','population')['owner'],'user')
+        self.assertEqual(task_contracts.repetition_lineages(r)['selection_failure']['count'],1)
+        self.assertEqual(revisions.repetition_hold(r,'selection_failure','population')['owner'],'user')
 
     def test_new_request_ids_do_not_reset_semantic_lineage_and_user_owner_needs_question(self):
         from do_math import revisions
@@ -862,8 +862,8 @@ class PreparationReceiptClassificationTests(unittest.TestCase):
                 self.assertFalse(revisions.action_repetition_waits(instance, runtime, action))
                 runtime['executions']['EX-empty'] = {'id': 'EX-empty', 'role': 'research_preparation'}
                 revisions.record_execution_outcome(instance, runtime, action, {}, 'EX-empty', accepted=True)
-                self.assertEqual(task_contracts.repetition_lineages(instance, runtime)['exhaustion_empty']['count'], 1)
-                self.assertTrue(revisions.repetition_hold(instance, runtime, 'exhaustion_empty', 'same-input'))
+                self.assertEqual(task_contracts.repetition_lineages(runtime)['exhaustion_empty']['count'], 1)
+                self.assertTrue(revisions.repetition_hold(runtime, 'exhaustion_empty', 'same-input'))
 
     def test_partially_accepted_contract_still_records_its_real_production(self):
         from do_math import revisions
@@ -874,7 +874,7 @@ class PreparationReceiptClassificationTests(unittest.TestCase):
         revisions.record_execution_outcome(instance, runtime, action, {}, 'EX-partial', accepted=False)
         receipts = [r for r in runtime['history'] if r.get('lineage') == 'exhaustion_empty']
         self.assertEqual([r['outcome'] for r in receipts], ['contracts_preserved'])
-        self.assertEqual(task_contracts.repetition_lineages(instance, runtime)['contract_revision']['count'], 1)
+        self.assertEqual(task_contracts.repetition_lineages(runtime)['contract_revision']['count'], 1)
 
 
 

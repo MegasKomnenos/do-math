@@ -16,7 +16,7 @@ SCRIPTS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SCRIPTS))
 
 from do_math.context_store import build_role_manifest, fit_context, prepare_role_input, validate_role_manifest, defer_input_overflow
-from do_math.reporting import render_human_report, snapshot_report
+from do_math.reporting import ASSURANCE, render_human_report, snapshot_report
 from do_math.repository import new_id
 from do_math.engine import _repository as ResearchRepository
 from do_math.retention import cleanup, cleanup_candidates
@@ -451,6 +451,7 @@ class SurfaceRedesignTests(unittest.TestCase):
             report = snapshot_report(root, identifier, snapshot=head,
                                      host_observation={"budget": {"work": {"used": 0}}, "observed_at": "2026-09-20T00:00:00Z"})
             self.assertEqual(report["snapshot"], head)
+            self.assertEqual(report["assurance"], ASSURANCE)
             self.assertEqual(report["host_observation"]["observed_at"], "2026-09-20T00:00:00Z")
             human = render_human_report(report)
             self.assertIn(head, human)
@@ -603,15 +604,17 @@ class SurfaceRedesignTests(unittest.TestCase):
                 os.rmdir(alias)
 
     def test_role_input_uses_current_schema_documents_and_private_resume_bytes(self):
-        from do_math import execution_profiles, contracts
+        from do_math import execution_profiles, contracts, context_store
         instance, runtime = surface_state()
         profile = next(p for p in instance['execution_profiles'].values() if p['role'] == 'research_work')
         context = {'action': {'role': 'research_work'}, 'task': {'id': 'TK-1'},
                    'previous_execution': {'id': 'EX-old', 'failure': 'must not disappear'},
                    'resume_checkpoint': {'remaining_work': 'P'}, 'recent_history': ['x' * 1000]}
-        with tempfile.TemporaryDirectory() as d:
+        with tempfile.TemporaryDirectory() as d, patch('do_math.context_store.write_source_catalog',
+                wraps=context_store.write_source_catalog) as catalogs:
             result = prepare_role_input(context, instance=instance, runtime=runtime, role='research_work',
                 profile=profile, snapshot='a' * 40, workspace=Path(d), activity_id='AC-1', artifact_prefix='runtime/artifacts/EX-1')
+            self.assertEqual(catalogs.call_count, 1)  # The manifest reuses fit_context's catalog.
             self.assertEqual(result['context']['resume_checkpoint'], context['resume_checkpoint'])
             self.assertTrue(validate_role_manifest(result['manifest']))
             self.assertEqual(result['manifest']['prompt']['sha256'], hashlib.sha256(result['prompt'].encode()).hexdigest())

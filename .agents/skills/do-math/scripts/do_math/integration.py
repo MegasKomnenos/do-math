@@ -174,6 +174,14 @@ def validate_impact_review_response(request, output):
 
 def require_bundle_impact_review(instance, runtime, bundle, *, producer_execution_id, input_snapshot,
                                  review_execution_id=None, snapshot=None, read_artifact=None, receiving_execution_id=None):
+    return _reviewed_impact_request(instance, runtime, bundle, producer_execution_id=producer_execution_id,
+        input_snapshot=input_snapshot, review_execution_id=review_execution_id, snapshot=snapshot,
+        read_artifact=read_artifact, receiving_execution_id=receiving_execution_id)[1]
+
+
+def _reviewed_impact_request(instance, runtime, bundle, *, producer_execution_id, input_snapshot,
+                             review_execution_id, snapshot, read_artifact, receiving_execution_id):
+    """Return the current impact request with the confirmations its reviewed plans require."""
     receiver = receiving_execution_id or producer_execution_id
     seen = set()
     while receiver != producer_execution_id:
@@ -186,7 +194,7 @@ def require_bundle_impact_review(instance, runtime, bundle, *, producer_executio
     request = bundle_impact_request(instance, runtime, bundle,
         producer_execution_id=producer_execution_id, input_snapshot=input_snapshot)
     if not any(plan["requires_independent_review"] for plan in request["plans"].values()):
-        return {}
+        return request, {}
     if review_execution_id is None:
         raise ImpactReviewRequired(request)
     from .governance import validate_independent_execution
@@ -214,7 +222,7 @@ def require_bundle_impact_review(instance, runtime, bundle, *, producer_executio
         raise ValueError("impact review has no matching published response receipt")
     if any(row["decision"] != "approve" for row in rows.values()):
         raise ValueError("independent impact review did not approve every assigned scope")
-    return {scope: {"plan_digest": row["plan_digest"], "decision": "approve", "affected_ids": row["affected_ids"],
+    return request, {scope: {"plan_digest": row["plan_digest"], "decision": "approve", "affected_ids": row["affected_ids"],
             "review_ref": review_execution_id, "reviewer_ref": review_execution_id,
             "producer_ref": producer_execution_id} for scope, row in rows.items()}
 
@@ -225,12 +233,10 @@ def apply_reviewed_knowledge_changes(instance, runtime, bundle, *, actor_ref, pr
     """Apply the reviewed S0 plans once, then create every replacement candidate."""
     from . import knowledge, knowledge_records
     from .repository import new_id
-    confirmations = require_bundle_impact_review(instance, runtime, bundle,
+    request, confirmations = _reviewed_impact_request(instance, runtime, bundle,
         producer_execution_id=producer_execution_id, input_snapshot=input_snapshot,
         review_execution_id=review_execution_id, snapshot=snapshot, read_artifact=read_artifact,
         receiving_execution_id=receiving_execution_id)
-    request = bundle_impact_request(instance, runtime, bundle,
-        producer_execution_id=producer_execution_id, input_snapshot=input_snapshot)
     plans = request["plans"]
     coordinates = [p for p in bundle["members"] if p.startswith("activity-extensions.json/knowledge_changes/")]
     changes = bundle["extensions"].get("knowledge_changes", [])

@@ -217,11 +217,16 @@ class AcademicEngineMixin:
         if result not in records: records.append(result)
 
     def _apply_academic_resolutions(self, action, execution_id, resolutions):
-        if resolutions and action["role"] != "research_plan":
+        if not resolutions:
+            return
+        if action["role"] != "research_plan":
             raise ValueError("academic resolutions require designated planner")
         if len({r.get("id") for r in resolutions}) != len(resolutions):
             raise ValueError("rejection resolution IDs must be distinct")
-        state = deepcopy(self.runtime)
+        # record_resolution appends only to this ledger. Stage the ledger, not the
+        # whole runtime, so a rejected resolution still leaves the runtime unchanged.
+        basis = self._solution_basis()
+        state = {**self.runtime, "academic_resolution_records": list(self.runtime.get("academic_resolution_records", []))}
         for resolution in resolutions:
-            academic.record_resolution(self.instance, state, self._solution_basis(), resolution, execution_id=execution_id, resolve_evidence=self._academic_evidence)
-        self.runtime = state
+            academic.record_resolution(self.instance, state, basis, resolution, execution_id=execution_id, resolve_evidence=self._academic_evidence)
+        self.runtime["academic_resolution_records"] = state["academic_resolution_records"]

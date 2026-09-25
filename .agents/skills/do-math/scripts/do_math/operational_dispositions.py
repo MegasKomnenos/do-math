@@ -67,12 +67,6 @@ def validate_disposition(disposition: dict[str, Any]) -> dict[str, Any]:
     return deepcopy(disposition)
 
 
-def disposition_is_current(disposition: dict[str, Any], current_basis_refs: set[str] | list[str]) -> bool:
-    """True only if the exact observation basis still exists at apply time."""
-    checked = validate_disposition(disposition)
-    return set(checked["basis_refs"]).issubset(set(current_basis_refs))
-
-
 def admissible_basis_refs(instance, runtime, action):
     """Canonical operational evidence, shared by input production and application."""
     from .revisions import action_repetition_waits

@@ -120,21 +120,20 @@ class T(unittest.TestCase):
   with tempfile.TemporaryDirectory() as d, patch('do_math.formal._job_run', return_value=(0,'fixture version','',False)) as run:
    executable=Path(d)/'synthetic-lean.exe'
    executable.write_bytes(b'approved fixture executable')
-   approved_hash=hashlib.sha256(executable.read_bytes()).hexdigest()
    command=[str(executable)]
+   approved=formal.inspect_toolchain(command,Path(d))
+   run.reset_mock()
    executable.write_bytes(b'changed fixture executable')
    result=verify_lean(source='theorem x : True := True.intro',declarations=['x'],workspace=Path(d),
-    lean_command=command,expected_toolchain={'configured_command':command,'executable':command[0],
-     'sha256':approved_hash,'executables':{command[0]:approved_hash}})
+    lean_command=command,expected_toolchain=approved)
    self.assertEqual(result['status'],'rejected',result)
    run.assert_not_called()
  def test_approved_executable_change_during_run_is_rejected_before_evidence_parsing(self):
   with tempfile.TemporaryDirectory() as d:
    executable=Path(d)/'synthetic-lean.exe';executable.write_bytes(b'approved fixture executable')
-   digest=hashlib.sha256(executable.read_bytes()).hexdigest();command=[str(executable)]
-   expected=dict(executable=str(executable),sha256=digest,configured_command=command,
-    version='fixture version',version_exit=0,project=None,
-    verifier_sha256=hashlib.sha256(Path(formal.__file__).read_bytes()).hexdigest(),executables={str(executable):digest})
+   command=[str(executable)]
+   with patch('do_math.formal._job_run',return_value=(0,'fixture version','',False)):
+    expected=formal.inspect_toolchain(command,Path(d))
    def run(args,*unused,**kwargs):
     if args[-1]=='--version': return 0,'fixture version','',False
     executable.write_bytes(b'changed during simulated compiler run')
@@ -144,6 +143,16 @@ class T(unittest.TestCase):
      lean_command=command,expected_toolchain=expected)
    self.assertEqual(result['status'],'rejected',result)
    self.assertEqual(result['reason'],'approved toolchain changed during verification')
+ def test_path_lookup_spelling_matches_the_inspected_executable(self):
+  if os.name!='nt': self.skipTest('Windows PATHEXT lookup keeps the spelling of its argument')
+  with tempfile.TemporaryDirectory() as d, patch('do_math.formal._job_run',return_value=(0,'fixture version','',False)):
+   root=Path(d).resolve();(root/'synthetic-lean.exe').write_bytes(b'approved fixture executable')
+   command=[str(root/'SYNTHETIC-LEAN.EXE')]
+   observed=formal.inspect_toolchain(command,root)
+   self.assertEqual(observed['executable'],str(root/'synthetic-lean.exe'))
+   result=verify_lean(source='theorem x : True := True.intro',declarations=['x'],workspace=root,
+    lean_command=command,expected_toolchain=observed)
+  self.assertEqual((result['status'],result['reason']),('failed','signature output missing'),result)
  def test_prime_names_keep_the_existing_identifier_boundary(self):
   for value in ("sumTo_succ'", "N.foo''", "α'", "N'.foo'"):
    self.assertTrue(_ident(value), value)

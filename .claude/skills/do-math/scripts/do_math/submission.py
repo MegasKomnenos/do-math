@@ -253,7 +253,8 @@ def reported_references(output: dict, extensions: dict, context: dict | None = N
         refs.extend(sorted(relation_references(entry.get('relation_claim') or {})))
     for entry in extensions.get("research_requests", []):
         refs.extend(entry.get("source_refs", []))
-    return list(dict.fromkeys(normalize_reference(ref, context or {}) for ref in refs if isinstance(ref, str)))
+    aliases = reference_aliases(context or {})
+    return list(dict.fromkeys(normalize_reference(ref, aliases) for ref in refs if isinstance(ref, str)))
 
 
 def reference_aliases(context: dict) -> dict:
@@ -265,9 +266,9 @@ def reference_aliases(context: dict) -> dict:
     return aliases
 
 
-def normalize_reference(reference: str, context: dict) -> str:
+def normalize_reference(reference: str, aliases: dict) -> str:
     # Historical artifact paths are not aliases of the current record.
-    return reference_aliases(context).get(reference.removeprefix("workspace:"), reference)
+    return aliases.get(reference.removeprefix("workspace:"), reference)
 
 
 def _reference_locators(context):
@@ -290,12 +291,9 @@ def _reference_locators(context):
 
 def reference_catalog(context: dict, workspace: Path) -> list[dict]:
     """Project the same reference checker used by producers and receivers."""
-    known = _reference_ids(context) | set(context.get("available_input_refs", [])) | {"context:goal", "context:policy"}
-    locators = _reference_locators(context)
+    known, locators = _reference_index(context)
     aliases = reference_aliases(context)
     candidates = known | locators | set(aliases)
-    for source in context.get("sources", []):
-        locators.update((source["name"], "source:" + source["name"]))
     if context.get("proposal") or context.get("role_review", {}).get("proposal"):
         candidates.add("proposal")
     candidates.update("issue:" + key for key in context.get("role_review", {}).get("issues", {}))
@@ -465,16 +463,26 @@ def _reference_ids(context):
     return ids
 
 
+def _reference_index(context):
+    """Supplied IDs and locators of one fixed input; workspace files are still checked per reference."""
+    known = _reference_ids(context) | set(context.get("available_input_refs", [])) | {"context:goal", "context:policy"}
+    locators = _reference_locators(context)
+    for source in context.get("sources", []):
+        locators.update((source["name"], "source:" + source["name"]))
+    return known, locators
+
+
 def validate_reference(reference: str, context: dict, workspace: Path,
                        *, candidate_files: dict[str, bytes] | None = None) -> None:
     """A reference must identify supplied material or an output that is kept."""
-    known = _reference_ids(context) | set(context.get("available_input_refs", [])) | {"context:goal", "context:policy"}
-    return _validate_reference(reference, context, workspace, known=known, candidate_files=candidate_files)
+    known, locators = _reference_index(context)
+    return _validate_reference(reference, context, workspace, known=known, locators=locators,
+                               candidate_files=candidate_files)
 
 
-def _validate_reference(reference, context, workspace, *, known, locators=None, candidate_files=None):
-    # A catalog reuses these indexes only within one unchanged input. Public
-    # validation always derives authority from the supplied context anew.
+def _validate_reference(reference, context, workspace, *, known, locators, candidate_files=None):
+    # A catalog or one payload check reuses these indexes only within one
+    # unchanged input. Public validation always derives authority from the supplied context anew.
     if reference in known:
         return
     proposal = context.get("proposal") or context.get("role_review", {}).get("proposal")
@@ -491,10 +499,6 @@ def _validate_reference(reference, context, workspace, *, known, locators=None, 
         return
     # Historical artifact locators identify their original bytes, not the
     # newest knowledge revision with a similar ID.
-    if locators is None:
-        locators = _reference_locators(context)
-        for source in context.get("sources", []):
-            locators.update((source["name"], "source:" + source["name"]))
     if reference in locators:
         return
     name = reference.removeprefix("workspace:")
@@ -582,20 +586,25 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
         check("activity-extensions.json", lambda: require(not any(extensions.values()),
               "a designated impact judgment cannot also author research mutations"), "submission.impact_review")
 
+    # One fixed input: build its reference index once, not once per reference.
+    reference_known, reference_locators = _reference_index(context)
+    assessment_ids = assessment_reference_ids(context)
+
+    def supplied(reference):
+        _validate_reference(reference, context, workspace, known=reference_known,
+                            locators=reference_locators, candidate_files=candidate_files)
+
     for coordinate, reference in _explicit_reference_fields(output):
-        check(coordinate, lambda reference=reference: validate_reference(
-            reference, context, workspace, candidate_files=candidate_files),
-              "submission.explicit_reference")
+        check(coordinate, lambda reference=reference: supplied(reference), "submission.explicit_reference")
         if '/evidence_required/' in coordinate or (coordinate.startswith('output/task_assessments/')
                                                    and '/evidence_refs/' in coordinate):
-            check(coordinate, lambda reference=reference: require(reference in assessment_reference_ids(context),
+            check(coordinate, lambda reference=reference: require(reference in assessment_ids,
                   'completion evidence requires a supplied record ID; read the file and cite its producing execution or source record'),
                   'submission.assessment_reference')
     for index, row in enumerate(extensions.get("academic_resolutions", [])):
         for number, reference in enumerate(row["evidence_refs"]):
             check(f"activity-extensions.json/academic_resolutions/{index}/evidence_refs/{number}",
-                  lambda reference=reference: validate_reference(
-                      reference, context, workspace, candidate_files=candidate_files), "submission.explicit_reference")
+                  lambda reference=reference: supplied(reference), "submission.explicit_reference")
     if action["role"] == "intent_interpretation" and action.get("stage", "interpret") == "interpret":
         issues.extend(_intent_import_issues(output, context))
 
@@ -610,8 +619,7 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
             "action resolution requires a supplied failed action and current or supplied execution evidence"))
     for index, row in enumerate(extensions.get("question_resolutions", [])):
         for ref in row["evidence_refs"]:
-            check(f"activity-extensions.json/question_resolutions/{index}/evidence_refs", lambda ref=ref: validate_reference(
-                ref, context, workspace, candidate_files=candidate_files))
+            check(f"activity-extensions.json/question_resolutions/{index}/evidence_refs", lambda ref=ref: supplied(ref))
     knowledge_ids = {row["id"] for row in context.get("knowledge_catalog", [])}
     tasks = {row["id"]: row for row in context.get("tasks", [])}
     if isinstance(context.get("task"), dict):
@@ -621,8 +629,7 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
     new_tasks = {item["title"] for item in output.get("candidates", [])}
     if not (action["role"] == "supplemental_research" and action.get("review_cycle_id")):
         for index, ref in enumerate(output.get("used_sources", [])):
-            check(f"output/used_sources/{index}", lambda ref=ref: validate_reference(
-                ref, context, workspace, candidate_files=candidate_files))
+            check(f"output/used_sources/{index}", lambda ref=ref: supplied(ref))
     for label, rows in (("knowledge", output.get("knowledge", [])), ("candidates", output.get("candidates", []))):
         check("output/" + label, lambda rows=rows: require(len({x["title"] for x in rows}) == len(rows), "titles must be unique within one output"))
 
@@ -764,8 +771,7 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
         from .knowledge import validate_changes
         check(f"activity-extensions.json/knowledge_changes/{index}/changes", lambda entry=entry: validate_changes(entry["changes"]))
         for ref in entry["impact_set"]:
-            check(f"activity-extensions.json/knowledge_changes/{index}/impact_set",
-                  lambda ref=ref: validate_reference(ref, context, workspace, candidate_files=candidate_files))
+            check(f"activity-extensions.json/knowledge_changes/{index}/impact_set", lambda ref=ref: supplied(ref))
         if "dependencies" in entry["changes"]:
             check(f"activity-extensions.json/knowledge_changes/{index}/changes/dependencies", lambda entry=entry: require(
                 isinstance(entry["changes"]["dependencies"], list) and
@@ -841,7 +847,6 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
                     and row.get('status') in {'queued', 'starting', 'running', 'stopping'}
                     and row.get('execution_id') != context.get('execution_id')]
             require(not live, 'task has another live execution')
-            require(not task.get("academic_requirement_id"), "academic requirements cannot be withdrawn autonomously")
             require(entry["task_id"] not in {row["task_id"] for row in output.get("dispositions", []) if row["kind"] == "selected"} and entry["task_id"] not in {c["revises_task_id"] for c in output.get("candidates", [])}, "cannot withdraw and select or revise the same task")
         check("activity-extensions.json/task_dispositions", disposition)
     for entry in extensions.get("academic_resolutions", []):

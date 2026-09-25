@@ -11,6 +11,12 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from .provider_wait import timestamp
 from .state_checks import inspect_state
 
+# One implementation-level scope for live and historical status. Runtime state
+# has no assurance family, so a snapshot cannot supply a different value.
+ASSURANCE = {"read_scope": "instructions_and_selected_inputs", "provider_operations": "not_observed",
+             "token_usage": "CLI_reported_after_execution", "formal": "Lean_and_axiom_check",
+             "review": "fresh_sessions_without_peer_results_in_inputs"}
+
 
 def _repository(repository, instance_id):
     # Use the same installed domain-family registry as the central executor.
@@ -164,7 +170,7 @@ def snapshot_report(repository: Path, instance_id: str, *, snapshot: str | None 
             "maintenance_fence": deepcopy(runtime.get('maintenance_fence')),
             "tasks": task_status(instance, runtime), "dispatch_waits": dispatch_waits(runtime), "inspection": inspection,
             "cleanup_failures": pending_cleanup_failures(runtime),
-            "assurance": runtime.get("assurance", {}), "host_observation": observation,
+            "assurance": deepcopy(ASSURANCE), "host_observation": observation,
             "research_effectiveness": {"status": "not_evaluated",
                                          "reason": "implementation checks do not measure research effectiveness"}}
 

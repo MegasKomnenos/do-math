@@ -245,11 +245,10 @@ def validate_plan_dispositions(plan: dict, tasks: dict, ready_ids: list[str]) ->
         if assessment.get('decision') not in {'completed', 'incomplete', 'closed'}:
             raise ValueError('unknown completion decision')
         validate_item_dispositions(task, assessment, require_complete=assessment.get("decision") in {"completed", "closed"})
-        if assessment.get("decision") == "completed" and remaining_obligations(task, assessment):
-            raise ValueError("completed task retains obligations")
 
 
-def repetition_lineages(instance: dict, runtime: dict, task_id: str | None = None) -> dict[str, dict]:
+def repetition_lineages(runtime: dict, task_id: str | None = None, *,
+                        include_events: bool = True) -> dict[str, dict]:
     """Count independent histories without turning a count into an authority decision."""
     rows = runtime.get("history", [])
     result = {name: {"count": 0, "owner": "ai", "events": []} for name in REPEAT_LINEAGES}
@@ -270,7 +269,8 @@ def repetition_lineages(instance: dict, runtime: dict, task_id: str | None = Non
         elif row['outcome'] not in {'premises_changed', 'capacity_wait', 'input_overflow', 'waiting', 'transport_failure','unclassified_failure'}:
             counts[key] = counts.get(key, 0) + 1
         result[name]["count"] = sum(counts.values())
-        result[name]["events"].append(deepcopy(row))
+        if include_events:
+            result[name]["events"].append(deepcopy(row))
         if row.get("owner") == "user":
             result[name]["owner"] = "user"
     return result

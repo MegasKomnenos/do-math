@@ -109,23 +109,17 @@ class DomainShapeTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     validate_control_payload('decision', '', {'change': {'kind': 'initialization', key: ['yes']}})
 
-    def test_model_policy_notice_keeps_its_existing_object_shape(self):
-        from do_math.control_contracts import validate_control_payload
-        validate_control_payload('pause', 'reported model differed', {'model_policy_violation': {
-            'execution_id': 'EX-fixture', 'assigned_model': 'assigned', 'reported_models': ['other']}})
-
-    def test_import_approval_values_are_validated_at_control_and_domain_boundaries(self):
+    def test_input_carries_no_approval_and_domain_approvals_are_validated(self):
         from do_math.control_contracts import validate_control_payload
         from do_math import governance
         from test_redesign_GOVERNANCE import AuditRepairTests
         instance, runtime, bundle, _ = AuditRepairTests().checked_import()
+        with self.assertRaises(ValueError):
+            validate_control_payload('input', 'text', {'import_approvals': {}})
         for value in ([1], 'text', True, {'actor': 'user', 'source_ref': []}):
             approvals = {'U': value}
-            with self.subTest(value=value):
-                with self.assertRaises(ValueError):
-                    validate_control_payload('input', 'text', {'import_approvals': approvals})
-                with self.assertRaises(ValueError):
-                    governance.apply_import(instance, runtime, bundle['id'], approvals=approvals)
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                governance.apply_import(instance, runtime, bundle['id'], approvals=approvals)
 
     def test_shape_check_preserves_partial_configuration_and_nullable_candidate_fields(self):
         from do_math.control_contracts import validate_control_payload
@@ -159,6 +153,27 @@ class DomainShapeTests(unittest.TestCase):
             for value in (False, 0, 1, [], {}, ''):
                 with self.subTest(parse=parse, value=value), self.assertRaises(ValueError):
                     parse(value)
+
+    def test_authorize_checks_time_even_without_an_eligible_grant(self):
+        from do_math.governance import authorize
+        for grants in ({}, {'GR-other': {'id': 'GR-other', 'kind': 'external', 'roles': []}}):
+            with self.subTest(grants=grants), self.assertRaises(ValueError):
+                authorize({'grants': grants}, {'role': 'maintenance'}, at='')
+
+    def test_unknown_knowledge_operation_cannot_mutate_review_or_running_work(self):
+        from types import SimpleNamespace
+        from do_math.lifecycle_engine import LifecycleEngineMixin
+        from do_math.control_contracts import validate_control_payload
+        owner = SimpleNamespace(instance={'knowledge': {'KN-one': {'review_cycle_id': 'RC-one'}}},
+            runtime={'review_cycles': {'RC-one': {'status': 'working', 'research': {}, 'history': []}},
+                     'executions': {'EX-one': {'status': 'running', 'action': {'target': 'KN-one'}}}})
+        before = deepcopy((owner.instance, owner.runtime))
+        config = {'operation': 'unknown-operation', 'id': 'KN-one'}
+        with self.assertRaises(ValueError):
+            validate_control_payload('knowledge', '', config)
+        with self.assertRaises(ValueError):
+            LifecycleEngineMixin._knowledge_control(owner, config, 'UC-one')
+        self.assertEqual((owner.instance, owner.runtime), before)
 
 
 if __name__ == '__main__':

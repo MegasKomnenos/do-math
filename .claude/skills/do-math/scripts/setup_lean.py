@@ -17,6 +17,7 @@ import uuid
 
 from do_math.formal import LEAN_VERSION, READY_MARKER, discover_lean, mathlib_project, portable_bin, toolchain_root, inspect_toolchain
 from do_math.trust_inventory import SMOKE, validation_program, collect_manifest, collect_inventory
+from do_math.trust_validation import AXIOMS
 
 LEAN_ZIP = f"https://github.com/leanprover/lean4/releases/download/v{LEAN_VERSION}/lean-{LEAN_VERSION}-windows.zip"
 # Mathlib tags follow Lean releases; the tag equal to the toolchain is the one whose cached .olean files load.
@@ -78,7 +79,7 @@ def write_trust_request(result, destination):
         raise ValueError('a successful environment validation is required')
     observed=json.loads(Path(result['inventory_path']).read_text(encoding='utf-8'))
     request={'operation':'register','toolchain':result['toolchain'],
-             'allowed_axioms':['Classical.choice','Quot.sound','propext'],
+             'allowed_axioms':sorted(AXIOMS),
              'manifest':collect_manifest(result['toolchain'],result['validation'],observed_inventory=observed)}
     destination=destination.resolve()
     destination.parent.mkdir(parents=True,exist_ok=True)

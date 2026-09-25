@@ -10,6 +10,11 @@ from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 def _canon(value: Any) -> bytes: return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()
 def _hash(value: Any) -> str: return hashlib.sha256(_canon(value)).hexdigest()
+def idempotency_key(operation_id: str, request_sha256: str) -> str: return hashlib.sha256((operation_id + request_sha256).encode()).hexdigest()
+def request_binding_current(operation: dict) -> bool:
+    """The stored request bytes and idempotency key still bind this operation ID."""
+    digest = _hash(operation.get("request"))
+    return operation.get("request_sha256") == digest and operation.get("idempotency_key") == idempotency_key(operation.get("id", ""), digest)
 def _now(value: str) -> datetime:
     if not isinstance(value, str) or not value:
         raise ValueError('external authority time must be a nonempty timestamp string')
@@ -44,7 +49,7 @@ def prepare_operation(request: dict, grant_id: str, source_ref: str, operation_i
              "budget_kind": budget_kind, "actor_kind": actor_kind}.items() if value is not None}
     if any(not isinstance(value, str) or not value.strip() for value in scope.values()):
         raise ValueError("external action scope fields must be nonempty text")
-    return {"id":oid,"request":normalized,"request_sha256":digest,"grant_id":grant_id,"source_ref":source_ref,"status":"prepared","idempotency_key":hashlib.sha256((oid+digest).encode()).hexdigest(),"attempts":[],"credential_env":None, **scope}
+    return {"id":oid,"request":normalized,"request_sha256":digest,"grant_id":grant_id,"source_ref":source_ref,"status":"prepared","idempotency_key":idempotency_key(oid,digest),"attempts":[],"credential_env":None, **scope}
 
 def validate_operation(operation: dict, grant: dict, now_iso: str, *, runtime=None, academic_check=None) -> None:
     if grant.get("id")!=operation.get("grant_id") or grant.get("status")!="active": raise ValueError("grant is inactive")
@@ -70,7 +75,7 @@ def validate_operation(operation: dict, grant: dict, now_iso: str, *, runtime=No
     if grant.get("academic_only") or grant.get("requires_academic") or operation.get("academic_binding") or operation.get("academic_basis"):
         if academic_check is None or not academic_check(operation, grant): raise ValueError("current academic prerequisite is not established")
     if _hash(operation["request"])!=operation.get("request_sha256"): raise ValueError("request bytes changed")
-    if operation.get("idempotency_key")!=hashlib.sha256((operation["id"]+operation["request_sha256"]).encode()).hexdigest(): raise ValueError("idempotency key changed")
+    if operation.get("idempotency_key")!=idempotency_key(operation["id"],operation["request_sha256"]): raise ValueError("idempotency key changed")
     if operation.get("status") != "prepared": raise ValueError("operation is not startable")
 
 class _NoRedirect(HTTPRedirectHandler):

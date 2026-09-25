@@ -161,7 +161,7 @@ def current_requirements(instance):
 
 def _evidence(instance, runtime, identifier, resolve_evidence=None):
     found = [root[family][identifier] for root in (instance, runtime)
-             for family in ("knowledge", "formal_results", "expositions", "artifacts", "external_operations", "executions")
+             for family in ("knowledge", "formal_results", "expositions", "external_operations", "executions")
              if isinstance(root.get(family), dict) and identifier in root[family]]
     if not found and resolve_evidence:
         value = resolve_evidence(identifier)

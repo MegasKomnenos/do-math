@@ -14,7 +14,8 @@ from do_math.revision_engine import RevisionEngineMixin
 from do_math.scheduler import SchedulerMixin
 from do_math.review_engine import ReviewEngineMixin
 from do_math.governance_engine import GovernanceEngineMixin
-from do_math.initialization import initialize_state, FOUNDATION_AXIOMS, governance_working_view
+from do_math.initialization import initialize_state, governance_working_view
+from do_math.trust_validation import AXIOMS
 from do_math import execution_profiles as profiles, knowledge_records as kr, planning
 from do_math.governance import WORK_ROLES, OPERATING_ROLES
 
@@ -79,7 +80,7 @@ class FakeEngine(RevisionEngineMixin,LifecycleEngineMixin,SchedulerMixin,ReviewE
         request=trust_fixture(self.root/name,['synthetic-lean',name])
         chain,manifest=request['toolchain'],request['manifest']
         self._trust_control({'operation':'register','toolchain':chain,'manifest':manifest,
-                             'allowed_axioms':sorted(FOUNDATION_AXIOMS)},'UI-env-'+name)
+                             'allowed_axioms':sorted(AXIOMS)},'UI-env-'+name)
         eid=next(eid for eid,e in self.instance['trust_environments'].items() if e['toolchain']==chain)
         # Explicit synthetic profile edition for this synthetic toolchain.
         configured = profiles.build_profiles({**self.instance['config'], 'lean_command':chain['configured_command']})
@@ -137,7 +138,7 @@ class FakeEngine(RevisionEngineMixin,LifecycleEngineMixin,SchedulerMixin,ReviewE
         self.runtime['queue'].clear(); self.runtime['pending_events'].clear()
     def verification(self,source,declarations,chain):
         return {'status':'verified','source_sha256':hashlib.sha256(source.encode()).hexdigest(),
-            'declarations':declarations,'toolchain':deepcopy(chain),'allowed_axioms':sorted(FOUNDATION_AXIOMS),
+            'declarations':declarations,'toolchain':deepcopy(chain),'allowed_axioms':sorted(AXIOMS),
             'axioms':{d:[] for d in declarations},'declaration_evidence':{d:{'type':'Eq Nat 1 1'} for d in declarations},
             'dependency_closure':{d:[] for d in declarations},'dependency_evidence':{d:{} for d in declarations}}
     def verify(self,**args):
