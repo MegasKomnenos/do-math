@@ -605,7 +605,16 @@ def task_ready(task: dict, instance: dict, runtime: dict, *, include_scheduling_
                           waiting.get('basis_ref')==task.get('assessment',{}).get('execution_id') and
                           assessment_current(task,instance,runtime,evaluation_context=evaluation_context))
         if occupied or queued or (waiting and not continuation):
-            return {"state": "not_ready", "basis": [], "errors": ["task is occupied or has an unresolved wait"], "waits": [waiting] if waiting else []}
+            normal = bool(occupied or queued) and (not waiting or continuation)
+            normal = normal and all(e.get('role', e.get('action', {}).get('role')) in
+                {'research_work', 'supplemental_research'} for e in occupied)
+            normal = normal and not any(w.get('action', {}).get('target') == task['id']
+                                        for w in runtime.get('waiting_actions', {}).values())
+            if normal:
+                normal = evaluate_condition(task.get('occurrence_condition', {'op': 'always'}), instance, runtime,
+                    evaluation_context={**(evaluation_context or {}), 'task_id': task['id']})['state'] == 'ready'
+            return {"state": "not_ready", "basis": [], "errors": ["task is occupied or has an unresolved wait"],
+                    "waits": [waiting] if waiting else [], 'dispatch_occupied': normal}
         if task.get("status") in {"active", "waiting"} and not action.get("id") and not continuation:
             return {"state": "not_ready", "basis": [], "errors": ["subsequent work needs an explicit continuation basis"]}
     result = evaluate_condition(task.get("occurrence_condition", {"op": "always"}), instance, runtime,

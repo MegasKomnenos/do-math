@@ -216,6 +216,8 @@ class ResearchRepository:
                 references.append((observation['artifact_ref'], observation['sha256'], None))
         for checkpoint in runtime.get("checkpoints", {}).values():
             for observation in (checkpoint, checkpoint.get("final_observation", {})):
+                references.extend((row['artifact_ref'], row['sha256'], row['bytes'])
+                                  for row in observation.get('evidence_files', []))
                 if observation.get("observation_evidence_complete") is True and observation.get("observation_evidence_omitted"):
                     raise ValueError("complete observation evidence cannot contain omissions")
                 references.extend((row["artifact_ref"], row["sha256"], row["bytes"])

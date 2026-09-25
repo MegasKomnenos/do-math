@@ -79,10 +79,19 @@ def task_status(instance, runtime):
                       'task_contract_review' if any(row.get('kind') == 'contract_review' for row in waiting) else
                       next((row['next_owner'] for row in waiting if row.get('next_owner')),
                            queued[0]['role'] if queued else None))
+        assessment = task.get('assessment', {})
+        followups = [e['id'] for e in runtime.get('events', [])
+                     if e['kind'] == 'task_assessment_invalidated' and e.get('target') == identifier]
+        if assessment.get('current') is False and task['status'] in planning.TERMINAL_TASK_STATUSES:
+            next_owner = next_owner or 'research_plan'
         rows.append({"id": identifier, "title": task.get("title", task.get('question')), "status": task["status"], "revision": task.get("revision"),
                      "selected_actions": [a.get("id") for a in queued if a.get("id") not in running_ids],
                      "active_execution_ids": [e["id"] for e in executions],
                      "assessment_pending": identifier in pending_assessments,
+                     'recorded_decision': assessment.get('decision'),
+                     'assessment_current': assessment.get('current'),
+                     'assessment_invalidated_reason': assessment.get('invalidated_reason'),
+                     'assessment_followup_event_refs': followups,
                      "last_accepted_result": task.get("results", [])[-1].get("execution_id") if task.get("results") else None,
                      "unresolved_action_ids": obligations, "waits": waiting,
                      "readiness": readiness, "next_owner": next_owner,

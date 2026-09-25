@@ -43,7 +43,7 @@ def run_case(destination, case, *, provider, model, effort, timeout, only_assign
         prompt += 'Start a Bash command that waits 120 seconds. The local runner will deliberately stop this probe while that tool is active. Do not start background agents.'
     stop = False
     native_tool_names = []
-    def observe(event):
+    def observe_event(event):
         nonlocal stop
         content = event.get("message", {}).get("content", []) if isinstance(event.get("message"), dict) else []
         for block in content if isinstance(content, list) else []:
@@ -59,6 +59,9 @@ def run_case(destination, case, *, provider, model, effort, timeout, only_assign
                     native_tool_names.append(f"mcp__{server}__{tool}")
             if case == "stop" and item.get("type") == "command_execution":
                 stop = True
+    def observe(batch):
+        for event in batch.events:
+            observe_event(event)
     server = resolve_scholarly_server(None, start=Path.cwd()) if scholarly else None
     runner = ModelRunner()
     routed_model = model if provider == "codex" or model.startswith("claude-") else "claude:" + model

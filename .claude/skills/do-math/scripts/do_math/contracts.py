@@ -158,7 +158,9 @@ SCOPE_ASSESSMENT = _object({"assessment_id": TEXT, "policy_id": TEXT, "policy_ve
 
 def disposition_schema():
     """Field names match operational_dispositions.validate_disposition."""
-    common = {"basis_refs": {**REFS, "minItems": 1}, "next_owner": TEXT, "reason": TEXT}
+    common = {"basis_refs": {**REFS, "minItems": 1,
+        "description": "Use canonical entries from admissible_basis_refs. Readable catalog paths and other used_sources are not disposition authority."},
+        "next_owner": TEXT, "reason": TEXT}
     variants = {
         "continue": {"next_review": {"anyOf": [{"type": "null"}, _object({"at": TEXT, "reason": TEXT})]}},
         "repair": {"repair_target": TEXT, "meaning_preserving": {"type": "boolean"}, "verification": TEXT},

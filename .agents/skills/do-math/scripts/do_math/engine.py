@@ -26,7 +26,8 @@ from .formal import verify_lean, discover_lean
 from . import governance, knowledge, planning, knowledge_io, knowledge_records, academic, task_scope, delegations
 from .input_basis import capture_sources, sources_current, capture_decision_basis, decision_basis_changes, CurrentnessChanged
 from .context_store import collect_outputs, prepare_role_input, defer_input_overflow, materialize_inputs, read_source, prefetch_artifacts
-from .operation_trace import engine_operation, tracing, phase, progress as operation_progress
+from .operation_trace import engine_operation, tracing, phase, measured, progress as operation_progress
+from .observation_transport import ObservationBatch
 from .observations import ObservationTracker, CHECKPOINT_SCHEMA, recovered_checkpoint, request_checkpoint, validate_rules, write_checkpoint_reminder, self_check_feedback, publish_worker_feedback, tracker_config, persistent_record, read_checkpoint
 from .review_engine import ReviewEngineMixin
 from .lifecycle_engine import LifecycleEngineMixin
@@ -1908,6 +1909,34 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                     "instruction": "A task_disposition must include one matching task_assessments entry with a disposition for every obligation. Fulfilment requires the designated independent judge; waivers and transfers require current source-bound user authority."}
             context["observation"] = action.get("observation", self.runtime.get("observations", {}).get(target))
             context["live_review"] = action.get("live", False)
+            context['admissible_basis_refs'] = operational_dispositions.admissible_basis_refs(
+                self.instance, self.runtime, action)
+            checkpoint = deepcopy(self.runtime.get('checkpoints', {}).get(target))
+            checkpoint_metadata = ({key: checkpoint[key] for key in
+                ('kind', 'status', 'execution_id', 'observed_at', 'sha256', 'artifact_ref', 'bytes',
+                 'source', 'recovered', 'checkpoint_status', 'reason', 'limitation') if key in checkpoint}
+                if checkpoint else None)
+            evidence = {'checkpoint': checkpoint_metadata, 'checkpoint_source': None,
+                'checkpoint_status': 'not_preserved', 'execution_status': reviewed_execution['status'],
+                'source_snapshot': self.head, 'checkpoint_files': [],
+                'checkpoint_evidence_omitted': deepcopy(checkpoint.get('evidence_omitted', [])) if checkpoint else []}
+            if checkpoint and checkpoint.get('artifact_ref'):
+                raw = self.store.read(checkpoint['artifact_ref'], self.head)
+                if hashlib.sha256(raw).hexdigest() != checkpoint['sha256']:
+                    raise ValueError('operational review checkpoint hash changed')
+                relative = 'operational-review/' + target + '/latest-checkpoint.json'
+                materialize_inputs(workspace, {relative: raw})
+                evidence.update(checkpoint_status='preserved', checkpoint_source={
+                    'artifact_ref': checkpoint['artifact_ref'], 'snapshot': self.head,
+                    'local_path': 'input/' + relative, 'sha256': checkpoint['sha256'], 'bytes': len(raw)})
+                for source in checkpoint.get('evidence_files', []):
+                    raw = self.store.read(source['artifact_ref'], self.head)
+                    if len(raw) != source['bytes'] or hashlib.sha256(raw).hexdigest() != source['sha256']:
+                        raise ValueError('operational checkpoint evidence bytes changed')
+                    relative = 'operational-review/' + target + '/evidence/' + source['path']
+                    materialize_inputs(workspace, {relative: raw})
+                    evidence['checkpoint_files'].append({**source, 'snapshot': self.head, 'local_path': 'input/' + relative})
+            context['operational_evidence'] = evidence
             if reviewed_execution and not context["live_review"] and reviewed_execution.get("artifact_bundle"):
                 source_snapshot = self.head
                 bundle = reviewed_execution["artifact_bundle"]
@@ -1966,6 +1995,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                     "output_files": output_files}
         context["execution_window"] = {"path": ".control/execution-window.json", "finish_request_path": ".control/finish-request.json",
             "stop_request_path": ".control/stop-request.json", "feedback_path": ".control/observation-feedback.json",
+            'self_check_directory': '.control/self-checks',
             "instruction": "Read management notices under .control after start. A finish request asks for normal submission and does not revoke authority."}
         if action.get("delegation_application_id"):
             context["delegation_case"] = delegations.judgment_input(self.runtime, action["delegation_application_id"])
@@ -2796,21 +2826,26 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 event = {"type": "unparsed_observation", "bytes": len(raw.rstrip(b"\n"))}
             self._observe_running(execution_id, tracker, event)
 
-    def _observe_running(self, execution_id: str, tracker: ObservationTracker, event: dict) -> None:
+    @measured('observation_application')
+    def _observe_running(self, execution_id: str, tracker: ObservationTracker, event: dict | ObservationBatch) -> None:
         self._controls()
         if self._check_conversations():
             self._save()
         candidate = deepcopy(tracker)
+        batch = event if isinstance(event, ObservationBatch) else None
+        events = batch.events if batch is not None else [event]
+        live = batch is None or not batch.is_terminated()
         # These are provider-observed MCP identities, not IDs claimed in a draft.
         calls = []
-        item = event.get("item", {})
-        if (event.get("type") in {"item.started", "item.completed"} and item.get("type") == "mcp_tool_call"
-                and item.get("server") == "execution_control" and item.get("tool") in {"control_self_check", "control_submit", "control_receipt"}):
-            calls.append(item)
-        if event.get("type") == "assistant":
-            calls.extend(block for block in event.get("message", {}).get("content", [])
-                if isinstance(block, dict) and block.get("type") == "tool_use"
-                and block.get("name") in {"mcp__execution_control__control_self_check", "mcp__execution_control__control_submit", "mcp__execution_control__control_receipt"})
+        for event in events:
+            item = event.get("item", {})
+            if (event.get("type") in {"item.started", "item.completed"} and item.get("type") == "mcp_tool_call"
+                    and item.get("server") == "execution_control" and item.get("tool") in {"control_self_check", "control_submit", "control_receipt"}):
+                calls.append(item)
+            if event.get("type") == "assistant":
+                calls.extend(block for block in event.get("message", {}).get("content", [])
+                    if isinstance(block, dict) and block.get("type") == "tool_use"
+                    and block.get("name") in {"mcp__execution_control__control_self_check", "mcp__execution_control__control_submit", "mcp__execution_control__control_receipt"})
         candidate.register_self_check_calls([call["id"] for call in calls if isinstance(call.get("id"), str)])
         pending = set(candidate.pending_tools)
         if pending and pending <= candidate.self_check_call_ids:
@@ -2818,16 +2853,31 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             if checkpoint["status"] == "valid" and checkpoint["sha256"] not in candidate.seen_checkpoints:
                 candidate.register_self_check_checkpoint(checkpoint["sha256"])
         original_instance, original_runtime = deepcopy(self.instance), deepcopy(self.runtime)
+        original_cursors = deepcopy(getattr(self, '_review_event_cursors', {}))
         artifacts, self_checks, feedback = {}, [], []
         remind = False
         coordinate = None
         try:
-            coordinate = self._review_observation_source(execution_id, event)
-            if coordinate:
-                artifacts[coordinate["artifact_ref"]] = coordinate["raw"]
-                self._record_review_observation(execution_id, event, artifact_ref=coordinate["artifact_ref"],
-                                                event_index=coordinate["event_index"])
-            for observed in candidate.observe(event):
+            observations = []
+            for index, event in enumerate(events):
+                coordinate = self._review_observation_source(execution_id, event)
+                if coordinate:
+                    artifacts[coordinate["artifact_ref"]] = coordinate["raw"]
+                    self._record_review_observation(execution_id, event, artifact_ref=coordinate["artifact_ref"],
+                                                    event_index=coordinate["event_index"])
+                    self._review_event_cursors = getattr(self, '_review_event_cursors', {})
+                    self._review_event_cursors[execution_id] = coordinate['next_cursor']
+                observations.extend(candidate.observe(event) if batch is None else candidate.observe(event,
+                    source=batch.source(batch.offsets[index][1], start_offset=batch.offsets[index][0]), evaluate=False, live=live))
+            if batch is not None:
+                live = live and not batch.is_terminated()
+                if batch.caught_up():
+                    observations.extend(candidate.observe({'type': 'tick'},
+                        source=batch.source(batch.end_offset, start_offset=batch.end_offset), live=live))
+                self.runtime['executions'][execution_id]['observation_stream'] = {
+                    'end_offset': batch.end_offset, 'received_at': batch.received_at,
+                    'applied_at': now(), 'local_termination_confirmed': not live}
+            for observed in observations:
                 kind = observed["kind"]
                 if kind == "observation_fact":
                     self.runtime.setdefault("observation_facts", {})[observed["id"]] = persistent_record(observed)
@@ -2838,6 +2888,16 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                     record = persistent_record(observed, artifact_ref=ref)
                     artifacts[ref] = observed["raw"]
                     record["kind"] = "worker_checkpoint"
+                    from .observations import capture_checkpoint_files
+                    files, omitted = capture_checkpoint_files(candidate.workspace, observed['value'],
+                        max_bytes=max(0, self.instance['config']['max_artifact_bytes'] - len(observed['raw'])))
+                    record['evidence_files'] = []
+                    record['evidence_omitted'] = omitted
+                    for path, raw in files.items():
+                        reference = ref.rsplit('/', 1)[0] + '/evidence/' + path
+                        artifacts[reference] = raw
+                        record['evidence_files'].append({'path': path, 'artifact_ref': reference,
+                            'sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)})
                     self.runtime.setdefault("checkpoints", {})[execution_id] = record
                 elif kind == "checkpoint_reminder_due":
                     remind = True
@@ -2847,7 +2907,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                     self.runtime.setdefault("observation_facts", {})[record["id"]] = record
                     trigger = kind in {"operational_review_due", "tool_review_due", "periodic_review_due", "explicit_review_due"}
                     trigger = trigger or observed.get("followup", {}).get("kind") == "operational_review_due"
-                    if trigger and not self._inline_reviewing and self.runtime["status"] not in {"paused", "closed"}:
+                    if trigger and live and not self._inline_reviewing and self.runtime["status"] not in {"paused", "closed"}:
                         observation = {**persistent_record(observed), "observation_refs": [record["id"]]}
                         self.runtime.setdefault("observations", {})[execution_id] = observation
                         self._enqueue("operational_review", execution_id, live=True, observation=observation,
@@ -2859,16 +2919,23 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             self._save(artifacts or None)
         except Exception:
             self.instance, self.runtime = original_instance, original_runtime
+            self._review_event_cursors = original_cursors
             raise
         tracker.__dict__.clear()
         tracker.__dict__.update(candidate.__dict__)
-        if coordinate:
-            if not hasattr(self, "_review_event_cursors"):
-                self._review_event_cursors = {}
-            self._review_event_cursors[execution_id] = coordinate["next_cursor"]
         for obligation in self_checks:
+            if batch is not None and batch.is_terminated():
+                break
+            if batch is not None:
+                tracker.record_delivery(obligation['id'], source_offset=batch.stream_size())
+                obligation = tracker.obligations[obligation['id']]
             self._transport.request_self_check(self._transport_bindings[execution_id],
                 self_check_id=obligation["id"], payload=self_check_feedback(obligation))
+            if batch is not None:
+                obligation['delivered_source_offset'] = batch.stream_size()
+                self.runtime['self_check_obligations'][obligation['id']] = deepcopy(tracker.obligations[obligation['id']])
+        if batch is not None and self_checks:
+            self._save()
         if remind:
             write_checkpoint_reminder(candidate.workspace / ".control")
         for item in feedback:
@@ -4198,15 +4265,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         target = self.runtime["executions"].get(action.get("target"))
         if target is None:
             raise ValueError("operational disposition has no execution target")
-        current_refs = {target["id"]}
-        current_refs.update(action.get("observation_refs", []))
-        current_refs.update(action.get("obligation_ids", []))
-        current_refs.update(hold['event_ref'] for hold in revisions.action_repetition_waits(
-            self.instance, self.runtime, target.get('action', {})))
-        current_refs.update(ref for ref in (target.get("result_ref"),
-            self.runtime.get("checkpoints", {}).get(target["id"], {}).get("artifact_ref")) if ref)
-        if not operational_dispositions.disposition_is_current(disposition, current_refs):
-            raise ValueError("operational disposition cites evidence outside its current input")
+        current_refs = operational_dispositions.admissible_basis_refs(self.instance, self.runtime, action)
+        operational_dispositions.require_basis_refs(disposition, current_refs)
         if disposition['kind'] == 'repair' and disposition['repair_target'].startswith('installation:'):
             repair_execution.validate_installation_target(disposition, target, Path(__file__).resolve().parents[2])
         record_id = new_id("OD")

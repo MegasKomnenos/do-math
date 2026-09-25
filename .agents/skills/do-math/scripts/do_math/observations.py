@@ -458,6 +458,25 @@ def read_checkpoint(workspace: Path) -> dict:
         return {"status": "invalid", "error": f"{type(error).__name__}: {error}"}
 
 
+def capture_checkpoint_files(workspace, checkpoint, *, max_bytes):
+    """Capture only named evidence with stable reads, preserving explicit omissions."""
+    from .context_store import _read_stable
+    files, omitted, total = {}, [], 0
+    for name in dict.fromkeys(checkpoint['evidence_paths']):
+        try:
+            path = _safe_path(workspace, name)
+            if total + path.stat().st_size > max_bytes:
+                raise ValueError('checkpoint evidence exceeds artifact byte limit')
+            raw = _read_stable(path)
+            if total + len(raw) > max_bytes:
+                raise ValueError('checkpoint evidence exceeds artifact byte limit')
+            files[name] = raw
+            total += len(raw)
+        except (OSError, ValueError) as error:
+            omitted.append({'path': name, 'reason': str(error)})
+    return files, omitted
+
+
 class ObservationTracker:
     """One execution's v5 observation state; persistence remains ENGINE-owned."""
 
@@ -520,19 +539,27 @@ class ObservationTracker:
         self.self_check_call_ids: set[str] = set()
         self.control_calls: dict[str, dict] = {}
         self.control_requests: dict[str, dict] = {}
+        self.self_check_polls: dict[str, str] = {}
         self.control_server_name = config.get("control_server_name", "execution_control")
         self.explicit_reviews: dict[str, dict] = {}
         self.pending_records: list[dict] = []
         self.last_clock = self.started
         self.reported_unavailable: set[str] = set()
+        self.observation_source = None
+        self.live_observation = True
 
     def _fact(self, kind: str, event: dict, when: float) -> dict:
         self.fact_sequence += 1
         raw = _raw_json(event)
-        return {"kind": kind, "id": f"OF-{self.execution_id}-{self.fact_sequence}",
+        result = {"kind": kind, "id": f"OF-{self.execution_id}-{self.fact_sequence}",
                 "execution_id": self.execution_id, "event_json": raw,
                 "event_sha256": hashlib.sha256(raw.encode()).hexdigest(),
                 "observed_at": utc_now(), "monotonic_offset_ms": _offset_ms(self.started, when)}
+        if self.observation_source is not None:
+            result['source'] = {key: value for key, value in self.observation_source.items()
+                                if key != 'received_monotonic'}
+            result['source']['received_offset_ms'] = _offset_ms(self.started, when)
+        return result
 
     def _merge_monotonic(self, destination: dict[str, int], values: Any, name: str) -> None:
         if values is None:
@@ -593,10 +620,26 @@ class ObservationTracker:
             return
         self.pending_tools[call_id] = {"started": when, "name": name, "review_due": False,
                                        "safe_boundary": False, "review_window_ms": self.tool_review_window_ms}
-        if call_id not in self.self_check_call_ids and call_id not in self.control_calls:
+        if self.live_observation and call_id not in self.self_check_call_ids and call_id not in self.control_calls:
             for obligation in self.obligations.values():
-                if obligation["status"] == "open" and obligation["deadline_offset_ms"] is not None:
+                after_delivery = (self.observation_source is None or
+                    obligation.get('acknowledged_source_offset') is not None and
+                    self.observation_source['start_offset'] >= max(obligation['delivered_source_offset'],
+                                                                   obligation['acknowledged_source_offset']))
+                if after_delivery and obligation["status"] == "open" and obligation["deadline_offset_ms"] is not None:
                     self._miss(obligation, "research_action_before_response")
+
+    def record_delivery(self, obligation_id, *, source_offset):
+        """Existing stdout bytes predate delivery and cannot violate this request."""
+        if type(source_offset) is not int or source_offset < 0:
+            raise ValueError('self-check delivery requires a nonnegative stream offset')
+        obligation = self.obligations[obligation_id]
+        obligation.update(delivered_source_offset=source_offset, delivered_at=utc_now())
+        if obligation['response_availability'] == 'available' and self.response_window_ms is not None:
+            obligation['deadline_offset_ms'] = _offset_ms(self.started, self.clock()) + self.response_window_ms
+        issued = {'self_check_id': obligation_id, 'execution_id': self.execution_id,
+                  'payload': self_check_feedback(obligation)}
+        obligation['delivered_request_sha256'] = hashlib.sha256(_raw_json(issued).encode()).hexdigest()
 
     def _complete_call(self, call_id: str) -> None:
         self.pending_tools.pop(call_id, None)
@@ -634,6 +677,9 @@ class ObservationTracker:
             if payload.get("response") is None and tool == "control_self_check":
                 # This installed tool reads the already-issued self-check only.
                 self.self_check_call_ids.add(call_id)
+                if self.self_check_polls.get(call_id, oid) != oid:
+                    raise ValueError('self-check poll ID reused for another obligation')
+                self.self_check_polls[call_id] = oid
                 continue
             fingerprint = hashlib.sha256(_raw_json(payload).encode()).hexdigest()
             row = {"request_id": request_id, "obligation_id": oid, "payload_sha256": fingerprint}
@@ -644,6 +690,38 @@ class ObservationTracker:
                 raise ValueError("observed control arguments differ from received request")
             self.control_calls[call_id] = row
             if known: self.self_check_call_ids.add(call_id)
+        # A poll attempt or a generic safe boundary does not acknowledge this
+        # request. Match the successful provider-observed returned envelope.
+        if event.get('type') == 'item.completed' and isinstance(item, dict) and item.get('status') != 'failed' and not item.get('error'):
+            self._acknowledge_poll(item.get('id'), item.get('result'))
+        message = event.get('message')
+        if event.get('type') == 'user' and isinstance(message, dict) and isinstance(message.get('content'), list):
+            for block in message['content']:
+                if isinstance(block, dict) and block.get('type') == 'tool_result' and not block.get('is_error'):
+                    self._acknowledge_poll(block.get('tool_use_id'), block.get('content'))
+
+    def _acknowledge_poll(self, call_id, result):
+        if self.observation_source is None or call_id not in self.self_check_polls:
+            return
+        if isinstance(result, dict) and result.get('isError'):
+            return
+        if isinstance(result, dict) and 'content' in result:
+            result = result['content']
+        if isinstance(result, list):
+            result = ''.join(row.get('text', '') for row in result if isinstance(row, dict) and row.get('type') == 'text')
+        if isinstance(result, str):
+            try:
+                result = json.loads(result)
+            except (ValueError, TypeError):
+                return
+        if not isinstance(result, dict):
+            return
+        obligation = self.obligations[self.self_check_polls[call_id]]
+        if (not obligation.get('delivered_request_sha256') or
+                hashlib.sha256(_raw_json(result).encode()).hexdigest() != obligation['delivered_request_sha256']):
+            return
+        obligation.setdefault('acknowledged_source_offset', self.observation_source['end_offset'])
+        obligation.setdefault('acknowledged_call_id', call_id)
 
     def bind_control_request(self, request: dict, *, receipt_id: str) -> dict:
         """ENGINE invokes after checking the actual transport binding and grant.
@@ -891,14 +969,16 @@ class ObservationTracker:
         self.responses.append(record)
         return deepcopy(record)
 
-    def observe(self, event: dict) -> list[dict]:
-        when, emitted = self.clock(), []
+    def observe(self, event: dict, *, source=None, evaluate=True, live=True) -> list[dict]:
+        when, emitted = (self.clock() if source is None else source['received_monotonic']), []
         if when < self.last_clock:
             return [{"kind": "observation_clock_error", "execution_id": self.execution_id,
                      "reason": "monotonic clock regressed", "next_owner": "engine"}]
         self.last_clock = when
-        if self.execution_status != "running":
+        if self.execution_status != "running" and live:
             return []
+        self.observation_source = source
+        self.live_observation = live and self.execution_status == 'running'
         try: self._ingest_event(event, when)
         except ValueError as error:
             emitted.append({"kind": "observation_input_rejected", "execution_id": self.execution_id,
@@ -906,6 +986,13 @@ class ObservationTracker:
                             "followup": {"kind": "operational_review_due", "trigger": "observation_error", "next_owner": "operational_review"}
                             if self.mode != "deadline_only" else None})
         if event.get("type") != "tick": emitted.append(self._fact("observation_fact", event, when))
+        if not evaluate or not self.live_observation:
+            # Replaying a terminated stream preserves its order and facts; it
+            # cannot start a new wall clock, poll a future checkpoint or oblige
+            # an already terminated worker to answer a new live request.
+            emitted.extend(self.pending_records)
+            self.pending_records.clear()
+            return emitted
         emitted.extend(self._rule_file_events())
         checkpoint = read_checkpoint(self.workspace)
         if checkpoint["status"] == "valid" and checkpoint["sha256"] not in self.seen_checkpoints:

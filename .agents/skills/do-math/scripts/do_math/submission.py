@@ -686,8 +686,10 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
         from .contracts import contract_review_decision
         check("output/item_reviews", lambda: contract_review_decision(output))
     if action["role"] == "operational_review":
-        from .operational_dispositions import validate_new_disposition
+        from .operational_dispositions import validate_new_disposition, require_basis_refs
         check("output/disposition", lambda: validate_new_disposition(output["disposition"]))
+        check("output/disposition/basis_refs", lambda: require_basis_refs(
+            output['disposition'], context['admissible_basis_refs']))
     definitions = deepcopy(context.get("kind_definitions", {}))
     kind_instance = {"kind_definitions": {row["family"] + ":" + row["token"]: deepcopy(row)
                      for rows in definitions.values() for row in rows if "family" in row}}

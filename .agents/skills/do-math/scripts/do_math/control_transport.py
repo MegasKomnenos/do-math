@@ -255,10 +255,16 @@ class ControlTransport:
         path = endpoint / "worker-inbox" / (self_check_id + ".json")
         existing = _json(path)
         if existing is None and _create_json_once(path, request):
-            return request
-        existing = _json(path)
+            existing = request
+        else:
+            existing = _json(path)
         if existing != request:
             raise ValueError("self_check_id was reused with different content")
+        if binding.get('workspace'):
+            from .context_store import _safe_path
+            surface = _safe_path(Path(binding['workspace']), '.control/self-checks/' + self_check_id + '.json')
+            if not _create_json_once(surface, request) and _json(surface) != request:
+                raise ValueError('workspace self-check notice differs from its issued request')
         return request
 
     @staticmethod

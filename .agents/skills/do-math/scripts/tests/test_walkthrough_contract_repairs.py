@@ -258,7 +258,7 @@ class WalkthroughRepairs(unittest.TestCase):
             def close(self): self.closed = True
         calls = Calls()
         class Host(SchedulerMixin):
-            def _controls(self): pass
+            def _controls(self, *, pump=True): pass
             def _check_installation(self): pass
             def _save(self): pass
             def _dispatchable(self, *args): raise AssertionError('new work must not be dispatched')

@@ -60,7 +60,7 @@ class FakeEngine(RevisionEngineMixin,LifecycleEngineMixin,SchedulerMixin,ReviewE
             return profiles.resolve_profile(self.instance['execution_profiles'],refs[0])
         return profiles.resolve_profile(self.instance['execution_profiles'],
             action.get('profile_ref') or self.instance['role_profile_refs'][action['role']][0])
-    def _controls(self): pass
+    def _controls(self, *, pump=True): pass
     def _save(self,artifacts=None):
         self.saves.append({'instance':deepcopy(self.instance),'runtime':deepcopy(self.runtime),'artifacts':deepcopy(artifacts or {})})
     def _ensure_model_assessments(self): return set()

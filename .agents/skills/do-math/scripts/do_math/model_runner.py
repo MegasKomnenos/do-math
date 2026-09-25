@@ -18,6 +18,7 @@ from do_math.claude_adapter import ClaudePrintAdapter
 from do_math.claude_stream import provider_limit
 from datetime import datetime, timezone
 from do_math.repository import canonical_json, _unique_pairs, _reject_constant
+from .observation_transport import ObservationBatch
 
 
 class CodexModelRunner:
@@ -41,7 +42,7 @@ class CodexModelRunner:
             claude_only_assigned_model: bool = False,
             should_stop: Callable[[], bool] | None = None,
             on_started: Callable[[dict], None] | None = None,
-            on_observation: Callable[[dict], None] | None = None) -> dict:
+            on_observation: Callable[[ObservationBatch], None] | None = None) -> dict:
         reference = None
         resource_limits = None
         if timeout_seconds is not None and (isinstance(timeout_seconds, bool)
@@ -140,26 +141,32 @@ class CodexModelRunner:
             if on_observation is None:
                 return
             stdout_path = evidence_dir / "stdout.jsonl"
+            chunk = b''
+            begin = offset - len(buffer)
             if stdout_path.exists():
                 with stdout_path.open("rb") as stream:
                     stream.seek(offset)
-                    chunk = stream.read()
+                    chunk = stream.read(1024 * 1024)
                     offset = stream.tell()
-                if chunk:
-                    on_observation({"type": "transport_bytes_received", "bytes": len(chunk)})
-                lines = (buffer + chunk).split(b"\n")
-                buffer = lines.pop()
-                for line in lines:
-                    if line.strip():
-                        try:
-                            event = json.loads(line)
-                        except (UnicodeError, json.JSONDecodeError):
-                            event = {"type": "unparsed_observation", "bytes": len(line)}
-                        on_observation(event)
+            lines = (buffer + chunk).split(b"\n")
+            buffer = lines.pop()
+            events, offsets = [], []
+            for line in lines:
+                start = begin
+                begin += len(line) + 1
+                if line.strip():
+                    try:
+                        event = json.loads(line)
+                    except (UnicodeError, json.JSONDecodeError):
+                        event = {"type": "unparsed_observation", "bytes": len(line)}
+                    events.append(event)
+                    offsets.append((start, begin))
             current = time.monotonic()
-            if current - last_tick >= 1:
+            if chunk or current - last_tick >= 1:
                 last_tick = current
-                on_observation({"type": "tick"})
+                on_observation(ObservationBatch(events, offsets, datetime.now(timezone.utc).isoformat(),
+                    current, len(chunk), offset, stdout_path,
+                    lambda: self._adapter.wait_for_termination(execution, 0)))
         from .windows_job import process_identity
         started = {**process_identity(execution.job),
                    "request_sha256": execution.request_sha256, "job_name": getattr(execution.job, "name", None)}
@@ -191,6 +198,11 @@ class CodexModelRunner:
                                     (deadline is not None and time.monotonic() >= deadline)):
                     self._adapter.stop(execution); stopped = True
                 time.sleep(.2)
+            # Drain complete local stream bytes once the Job has ended. The
+            # batch's fresh barrier probe prevents replay from opening live work.
+            stdout_path = evidence_dir / "stdout.jsonl"
+            while on_observation is not None and stdout_path.exists() and offset < stdout_path.stat().st_size:
+                observe()
             collected = self._adapter.collect(execution)
         except Exception:
             self._adapter.stop(execution)

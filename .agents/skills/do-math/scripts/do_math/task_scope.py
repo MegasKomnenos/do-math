@@ -209,14 +209,52 @@ def validate_disposition_authority(task, row, instance, runtime, *, evaluation_c
 
 
 def assessment_basis(task, assessment, instance, runtime):
-    from .planning import _records,_hash,task_reference_basis,action_read_ids
+    from .planning import _records,_hash,task_reference_basis,condition_refs
     records=_records(instance,runtime)
     refs={ref for row in assessment.get('item_dispositions',[]) for ref in row.get('evidence_refs',[])}
     refs.update(row['authority_ref'] for row in assessment.get('item_dispositions',[]) if row.get('authority_ref'))
     refs.update(ref for row in assessment.get('unresolved',[]) for ref in row['missing_inputs'])
-    for ref in list(refs):
-        if ref in records:
-            refs.update(action_read_ids({'role':'research_work','target':ref},instance,runtime))
+    direct = set(refs)
+    strict = {ref for ref in direct if records.get(ref, (None,))[0] in
+              {'formal-result', 'identity-assessment', 'assessment-use', 'goal-judgment'}}
+    pending = list(refs)
+    visited = set()
+    while pending:
+        ref = pending.pop()
+        mode = (ref, ref in strict)
+        if mode in visited:
+            continue
+        visited.add(mode)
+        found = records.get(ref)
+        if not found:
+            continue
+        family, record = found
+        linked = {item for key in ('inputs', 'reuse', 'dependencies', 'basis_refs', 'authority_refs')
+                  for item in record.get(key, []) if isinstance(item, str)}
+        fields = ('formal_result_id', 'exposition_id', 'kind_definition_id', 'source_ref', 'assessment_id')
+        if family != 'formal-result' or ref in strict:
+            fields += ('trust_environment_id',)
+        linked.update(record[key] for key in fields if isinstance(record.get(key), str))
+        linked.update(row.get('id') or row['name'] for row in record.get('source_basis', [])
+                      if isinstance(row.get('id') or row.get('name'), str))
+        linked.update(row['id'] for row in record.get('profile_refs', []) if isinstance(row.get('id'), str))
+        linked.update(condition_refs(record.get('occurrence_condition')))
+        claim = record.get('relation_claim') or {}
+        linked.update(claim[key] for key in ('source', 'target') if isinstance(claim.get(key), str))
+        for review in record.get('reviews', []):
+            linked.update(row['id'] for row in review.get('decision_basis', {}).get('records', []))
+        if family == 'identity-assessment':
+            linked.update(row['id'] for row in instance.get('assessment_uses', {}).values()
+                          if row.get('assessment_id') == ref)
+        if family == 'knowledge' and ref in strict and record.get('formal_result_id'):
+            linked.update(row['id'] for row in instance.get('identity_assessments', {}).values()
+                if row.get('formal_result_id') == record['formal_result_id']
+                and row.get('exposition_id') == record.get('exposition_id'))
+        pending.extend(linked - refs)
+        if ref in strict:
+            pending.extend(linked - strict)
+            strict.update(linked)
+        refs.update(linked)
     refs.discard(task['id'])
     from .input_basis import aliases
     result={}
@@ -229,6 +267,14 @@ def assessment_basis(task, assessment, instance, runtime):
                 found = ('source', source)
         value=found[1] if found else next((r for r in task.get('results',[]) if ref in {r.get('id'),r.get('execution_id')}),None)
         if found and found[0]=='task':value=task_reference_basis(value)
+        elif found and found[0] == 'knowledge':
+            value = {key: item for key, item in value.items()
+                     if key not in {'review_cycle_id', 'previous_review_cycle_id'}}
+        elif found and found[0] == 'formal-result' and ref not in strict:
+            # A KN citation binds submitted mathematics, not a judgment that
+            # did not exist yet. Explicit FR citations still bind the full record.
+            value = {key: value[key] for key in ('id', 'family', 'lean_code', 'declaration_names',
+                     'dependencies', 'producer_execution', 'origin_refs') if key in value}
         result[ref]=_hash(value) if value is not None else None
     return result
 
@@ -246,6 +292,13 @@ def assessment_current(task,instance,runtime,*,evaluation_context=None):
     except ValueError:
         return False
     for row in assessment.get('item_dispositions',[]):
+        if row['kind'] == 'fulfilled':
+            obligation = next(o for o in task['completion_obligations'] if o['id'] == row['obligation_id'])
+            actor = runtime.get('executions', {}).get(assessment.get('execution_id'), {})
+            if actor.get('role') not in obligation['judges'] and assessment.get('execution_id') not in obligation['judges']:
+                support = assessment.get('specialist_support', {}).get(row['obligation_id'])
+                if not support or designated_judgment(task, obligation, {**row, 'evidence_refs': [support]}, instance, runtime) != support:
+                    return False
         if row['kind'] in {'waived','transferred'}:
             try:validate_disposition_authority(task,row,instance,runtime,evaluation_context=evaluation_context)
             except ValueError:return False
@@ -267,7 +320,13 @@ def refresh_task_assessments(instance,runtime,*,evaluation_context=None):
         if task['id'] in live:
             continue
         if task.get('assessment') and task['assessment'].get('current') is not False and not assessment_current(task,instance,runtime,evaluation_context=evaluation_context):
-            task['assessment']['current']=False;changed.append(task['id'])
+            assessment = task['assessment']
+            previous, current = assessment.get('basis', {}), assessment_basis(task, assessment, instance, runtime)
+            refs = sorted(ref for ref in previous.keys() | current.keys() if previous.get(ref) != current.get(ref))
+            assessment.update(current=False, invalidated_reason=(
+                'Completion evidence changed: ' + ', '.join(refs) if refs else
+                'Completion contract, results, scope authority or designated judgment is no longer current'))
+            changed.append(task['id'])
     return changed
 
 
@@ -396,6 +455,12 @@ def apply_task_assessments(instance, runtime, assessments, *, execution_id, inpu
         task['assessment'] = {**deepcopy(assessment), 'execution_id':execution_id, 'contract_sha256':contract_hash(task),
                               'results_sha256':_hash(task['results']), 'current':True,
                               'basis':assessment_basis(task,assessment,new_instance,new_runtime)}
+        task['assessment']['specialist_support'] = {
+            row['obligation_id']: designated_judgment(task,
+                next(o for o in task['completion_obligations'] if o['id'] == row['obligation_id']), row, new_instance, new_runtime)
+            for row in assessment['item_dispositions'] if row['kind'] == 'fulfilled'
+            and actor['role'] not in next(o for o in task['completion_obligations'] if o['id'] == row['obligation_id'])['judges']
+            and execution_id not in next(o for o in task['completion_obligations'] if o['id'] == row['obligation_id'])['judges']}
         if assessment['decision'] in {'completed','closed'}:
             task['status'] = assessment['decision']; task.pop('waiting', None)
         else:

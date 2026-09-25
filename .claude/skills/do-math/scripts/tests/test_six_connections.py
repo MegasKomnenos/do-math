@@ -191,7 +191,9 @@ class PlanningConnections(unittest.TestCase):
             self.assertEqual(engine.runtime['tasks']['TK-1']['status'], 'closed')
             self.assertEqual(engine.runtime['tasks']['TK-1']['results'], original)
             self.assertFalse(engine.runtime['tasks']['TK-1']['assessment']['current'])
-            self.assertFalse(any(a['role'] == 'research_plan' for a in engine.runtime['queue']))
+            followups = [e for e in engine.runtime['events'] if e['kind'] == 'task_assessment_invalidated']
+            self.assertEqual(len(followups), 1)
+            self.assertTrue(any(followups[0]['id'] in a.get('event_refs', []) for a in engine.runtime['queue']))
 
 
 class OverflowConnections(unittest.TestCase):

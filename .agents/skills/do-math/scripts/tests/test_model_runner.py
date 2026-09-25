@@ -109,10 +109,11 @@ class WithoutDeadlineTests(unittest.TestCase):
                 result = worker.run(prompt="fixture", output_schema={}, workspace=root, evidence_dir=root / "evidence",
                     model="fixture", effort="low", timeout_seconds=None, on_observation=observed.append)
         self.assertEqual(result["status"], "completed")
-        self.assertEqual([row for row in observed if row.get("type") == "item.updated"], [*expected, last])
-        self.assertEqual([row for row in observed if row.get("type") == "unparsed_observation"],
+        events = [row for batch in observed for row in batch.events]
+        self.assertEqual([row for row in events if row.get("type") == "item.updated"], [*expected, last])
+        self.assertEqual([row for row in events if row.get("type") == "unparsed_observation"],
                          [{"type": "unparsed_observation", "bytes": len(b"not-json\r")}])
-        self.assertEqual(sum(row["bytes"] for row in observed if row.get("type") == "transport_bytes_received"),
+        self.assertEqual(sum(batch.bytes_received for batch in observed),
                          len(first) + len(second))
 
     def test_long_running_work_keeps_running_until_its_normal_return(self):

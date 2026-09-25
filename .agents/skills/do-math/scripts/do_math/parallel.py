@@ -14,6 +14,7 @@ class ModelCalls:
         self.threads = []
         self.guard = Lock()
         self.pumping = False
+        self.collecting = False
         self.stopping = False
         self.on_returned = on_returned
 
@@ -59,7 +60,7 @@ class ModelCalls:
         return future
 
     def pump(self):
-        if self.pumping:
+        if self.pumping or self.collecting:
             return
         self.pumping = True
         try:
@@ -76,27 +77,33 @@ class ModelCalls:
             self.pumping = False
 
     def collect(self):
-        self.pump()
+        if self.collecting:
+            return 0
+        self.collecting = True
         finished = 0
-        for future in list(self.futures):
-            if not future.done():
-                continue
-            generator = self.futures[future]
-            try:
-                result = future.result()
-            except Exception as error:
-                result = {"status": "failed", "output": None, "usage": {},
-                          "error": f"{type(error).__name__}: {error}"}
-            if self.on_returned is not None:
-                self.on_returned(future.execution_id, result)
-            try:
-                generator.send(result)
-            except StopIteration:
-                pass
-            else:
-                raise RuntimeError("an execution yielded more than one call")
-            self.futures.pop(future)
-            finished += 1
+        try:
+            for future in list(self.futures):
+                if not future.done():
+                    continue
+                generator = self.futures[future]
+                try:
+                    result = future.result()
+                except Exception as error:
+                    result = {"status": "failed", "output": None, "usage": {},
+                              "error": f"{type(error).__name__}: {error}"}
+                if self.on_returned is not None:
+                    self.on_returned(future.execution_id, result)
+                try:
+                    generator.send(result)
+                except StopIteration:
+                    pass
+                else:
+                    raise RuntimeError("an execution yielded more than one call")
+                self.futures.pop(future)
+                finished += 1
+        finally:
+            self.collecting = False
+        self.pump()
         self.threads[:] = [thread for thread in self.threads if thread.is_alive()]
         return finished
 

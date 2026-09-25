@@ -72,6 +72,27 @@ def disposition_is_current(disposition: dict[str, Any], current_basis_refs: set[
     return set(checked["basis_refs"]).issubset(set(current_basis_refs))
 
 
+def admissible_basis_refs(instance, runtime, action):
+    """Canonical operational evidence, shared by input production and application."""
+    from .revisions import action_repetition_waits
+    target = runtime.get('executions', {}).get(action.get('target'))
+    if target is None:
+        raise ValueError('operational disposition has no execution target')
+    refs = {target['id'], *action.get('observation_refs', []), *action.get('obligation_ids', [])}
+    refs.update(hold['event_ref'] for hold in action_repetition_waits(instance, runtime, target.get('action', {})))
+    refs.update(ref for ref in (target.get('result_ref'),
+        runtime.get('checkpoints', {}).get(target['id'], {}).get('artifact_ref')) if ref)
+    return sorted(refs)
+
+
+def require_basis_refs(disposition, allowed):
+    """Reject source paths or other visible records that are not disposition evidence."""
+    invalid = sorted(set(disposition['basis_refs']) - set(allowed))
+    if invalid:
+        raise ValueError('operational disposition cites evidence outside its current input; '
+                         'invalid_basis_refs=' + repr(invalid) + '; admissible_basis_refs=' + repr(sorted(allowed)))
+
+
 def validate_new_disposition(disposition):
     """New repairs change installation files; old input repairs remain readable."""
     checked = validate_disposition(disposition)

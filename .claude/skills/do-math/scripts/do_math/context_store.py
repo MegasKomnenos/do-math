@@ -370,7 +370,7 @@ _ROLE_DIRECT = {
     'research_work': ('task',), 'supplemental_research': ('task',),
     'task_contract_review': ('task',), 'identity_review': ('role_review',),
     'goal_audit': ('eligible_knowledge',),
-    'operational_review': ('execution_to_review', 'observation'),
+    'operational_review': ('execution_to_review', 'observation', 'operational_evidence', 'admissible_basis_refs'),
     'intent_interpretation': ('user_request', 'interpretation_to_check'),
     'maintenance': (),
 }
@@ -480,6 +480,8 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
         value['task_catalog'] = [
             {'id': identifier, 'title': task.get('title'), 'revision': task.get('revision'),
              'status': task.get('status'), 'result_count': len(task.get('results', [])),
+             'assessment_current': task.get('assessment', {}).get('current'),
+             'assessment_invalidated_reason': task.get('assessment', {}).get('invalidated_reason'),
              'result_execution_ids': [row['execution_id'] for row in task.get('results', []) if row.get('execution_id')],
              'source_ref': preserve_detail('tasks/' + _sha256(identifier.encode()), task)}
             for identifier, task in sorted(reader_tasks.items())]
@@ -828,9 +830,14 @@ def fit_context(context: dict, *, max_bytes: int, workspace: Path,
     # inclusion as required direct input is enforced by prepare_role_input.
     candidates = sorted((key for key in catalog["entries"] if key not in mandatory_keys),
                         key=lambda key: len(canonical_json(context[key])), reverse=True)
+    reference_only = {'execution_profiles', 'role_profile_refs'} if role in _ROLE_DIRECT else set()
+    if role in {'research_work', 'supplemental_research', 'task_contract_review'}:
+        reference_only.add('tasks')
     for key in candidates:
-        if _encoded_size(fitted) <= max_bytes or mandatory_bytes > max_bytes:
+        if mandatory_bytes > max_bytes:
             break
+        if key not in reference_only and _encoded_size(fitted) <= max_bytes:
+            continue
         ref = catalog["entries"][key]
         projected = {"source_ref": ref, "total": len(context[key]) if isinstance(context[key], (dict, list)) else None}
         if _encoded_size(projected) < _encoded_size(fitted[key]):

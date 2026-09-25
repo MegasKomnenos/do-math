@@ -498,7 +498,7 @@ class SchedulerMixin:
         steps = 0
         try:
             while True:
-                self._controls()
+                self._controls(pump=False)
                 self._calls.collect()
                 self._check_installation()
                 if self.runtime.get('maintenance_fence'):

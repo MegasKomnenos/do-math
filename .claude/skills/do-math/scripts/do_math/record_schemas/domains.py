@@ -111,6 +111,10 @@ def extend():
         "observation_evidence_complete": BOOL,
         "observation_evidence_omitted": array(obj({"path": TEXT, "reason": TEXT, "required": BOOL,
             "error": TEXT, "error_type": TEXT, "bytes": NAT}, ("path", "reason")))})
+    checkpoint['properties'].update({
+        'evidence_files': array(obj({'path': TEXT, 'artifact_ref': TEXT, 'sha256': HASH, 'bytes': NAT},
+                                   ('path', 'artifact_ref', 'sha256', 'bytes'))),
+        'evidence_omitted': array(obj({'path': TEXT, 'reason': TEXT}, ('path', 'reason')))})
     from copy import deepcopy
     checkpoint["properties"]["final_observation"] = deepcopy(checkpoint)
     supplied_source = deepcopy(RECORDS['sources'])
@@ -151,7 +155,8 @@ def extend():
     selection["required"] += ["execution_id", "contract_sha256"]
     assessment = deepcopy(schema_for("research_plan")["properties"]["task_assessments"]["items"])
     assessment["properties"].update({"execution_id": ID, "contract_sha256": HASH, "results_sha256": HASH,
-                                      "current": BOOL, "basis": EVIDENCE, "invalidated_reason": TEXT})
+                                      "current": BOOL, "basis": EVIDENCE, "invalidated_reason": TEXT,
+                                      "specialist_support": mapping(ID)})
     RECORDS["tasks"]["properties"].update({
         "feature_version": {"const": STATE_FORMAT_VERSION}, "trust_environment_id": ID,
         "profile_refs": array(PROFILE_REF, True),
@@ -208,14 +213,19 @@ def extend():
         "started_offset_ms": NAT, "due_offset_ms": NAT, "evidence_refs": array(TEXT)}, ("kind", "execution_id", "observed_at"))
     RUNTIME_FIELDS["observations"] = mapping(observation)
     fact = RECORDS["observation_facts"]
-    fact["properties"].update({"event_json": TEXT, "event_sha256": HASH, "monotonic_offset_ms": NAT})
+    fact["properties"].update({"event_json": TEXT, "event_sha256": HASH, "monotonic_offset_ms": NAT,
+        "source": obj({'stream': {'const': 'stdout.jsonl'}, 'start_offset': NAT, 'end_offset': NAT,
+                       'received_at': TEXT, 'received_offset_ms': NAT},
+                      ('stream', 'start_offset', 'end_offset', 'received_at', 'received_offset_ms'))})
     fact["required"] = ["id", "kind", "execution_id", "observed_at"]
     fact["oneOf"] = [{"required": ["event"]}, {"required": ["event_json", "event_sha256", "monotonic_offset_ms"]}]
     obligation = RECORDS["self_check_obligations"]
     obligation["properties"].update({"opened_offset_ms": NAT, "deadline_offset_ms": nullable(NAT),
         "observed_at": TEXT, "rules_sha256": HASH, "snapshot": EVIDENCE,
         "consumed_boundaries": mapping(NAT), "response_availability": enum("available", "awaiting_safe_boundary"),
-        "missed_reason": TEXT, "safe_boundary_ref": TEXT, "closed_at": TEXT, "close_reason": TEXT})
+        "missed_reason": TEXT, "safe_boundary_ref": TEXT, "closed_at": TEXT, "close_reason": TEXT,
+        "delivered_source_offset": NAT, "delivered_at": TEXT, 'delivered_request_sha256': HASH,
+        'acknowledged_source_offset': NAT, 'acknowledged_call_id': TEXT})
     obligation["required"] = ["id", "kind", "execution_id", "rule_revision", "due", "opened_offset_ms", "deadline_offset_ms", "status", "observed_at"]
     response = RECORDS["self_check_responses"]
     response["properties"].update({"obligation_id": nullable(TEXT), "receipt_ref": nullable(TEXT),
@@ -343,6 +353,9 @@ def extend():
         "stop_reason": {"type": ["string", "boolean"]},
         "authority_revocation": obj({"scope": enum("execution_research"), "reason": enum("submission_intent"),
             "at": TEXT, "receipt_id": ID}, ("scope", "reason", "at", "receipt_id")),
+        "observation_stream": obj({'end_offset': NAT, 'received_at': TEXT, 'applied_at': TEXT,
+                                    'local_termination_confirmed': BOOL},
+                                   ('end_offset', 'received_at', 'applied_at', 'local_termination_confirmed')),
         "execution_window": obj({"execution_id": ID, "effective_deadline_at": nullable(TEXT),
             "remaining_ms_at_start": nullable(NAT), "deadline_source": TEXT, "finish_notice_at": nullable(TEXT),
             "effective_notice_ms": NAT}, ("execution_id", "effective_deadline_at", "remaining_ms_at_start",

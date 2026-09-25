@@ -55,8 +55,8 @@ class Host(FakeEngine):
             raise AssertionError('engine mutation escaped the owner thread')
         super()._save(artifacts)
 
-    def _controls(self):
-        if self._calls is not None:
+    def _controls(self, *, pump=True):
+        if pump and self._calls is not None:
             self._calls.pump()
         self.control_action()
 

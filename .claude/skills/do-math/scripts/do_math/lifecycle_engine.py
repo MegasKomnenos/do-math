@@ -193,7 +193,10 @@ class LifecycleEngineMixin:
         self.runtime['next_research_reconsider_at'] = (self._lifecycle_now() + _reconsider_interval(self.instance['config'])).isoformat()
         from .knowledge_records import knowledge_view
         initial_role = 'research_plan' if knowledge_view(self.instance) else 'research_preparation'
-        self._enqueue(initial_role, reason='initialization activation')
+        # The first reader owns initialization facts; assignment is not
+        # consumption, and later user events are never added to its fixed input.
+        self._enqueue(initial_role, reason='initialization activation',
+                      event_refs=list(dict.fromkeys(self.runtime['pending_events'])))
         return {'activated': True, **requirements}
 
     def _initialization_control(self, change, source_ref):
@@ -928,6 +931,18 @@ class LifecycleEngineMixin:
         if reassess:
             self._enqueue('research_plan', reason='Assessment evidence changed; reassess existing results: '
                           + ', '.join(sorted(reassess)))
+        from .repository import exact_content_hash
+        for task_id, task in self.runtime['tasks'].items():
+            assessment = task.get('assessment', {})
+            if task.get('status') not in {'completed', 'closed'} or assessment.get('current') is not False:
+                continue
+            basis = exact_content_hash({key: assessment.get(key) for key in
+                ('execution_id', 'contract_sha256', 'results_sha256', 'basis')})
+            if not any(event['kind'] == 'task_assessment_invalidated' and event.get('target') == task_id
+                       and event.get('basis_sha256') == basis for event in self.runtime['events']):
+                self._lifecycle_event('task_assessment_invalidated', target=task_id,
+                    source_ref=assessment.get('execution_id'), basis_sha256=basis, next_owner='research_plan',
+                    reason=assessment.get('invalidated_reason', 'Recorded terminal assessment is no longer current'))
         self._check_conversations()
         self._invalidate_goal_currentness()
         self._retry_observation_configuration()
@@ -979,11 +994,14 @@ class LifecycleEngineMixin:
             previous = self._task_readiness.get(task_id)
             self._record_readiness(task_id, {**evaluation, 'contract_basis': required}, now.isoformat())
             if evaluation['state'] == 'ready':
-                if not previous or previous['state'] != 'ready':
+                if not previous or previous['state'] != 'ready' and not previous.get('dispatch_occupied'):
                     self._lifecycle_event('task_became_ready', target=task_id,
                                           basis={'records': evaluation['basis']})
-            elif previous and previous['state'] == 'ready':
-                self._lifecycle_event('task_readiness_lost', target=task_id, errors=evaluation['errors'])
+            elif previous and (previous['state'] == 'ready' or
+                               previous.get('dispatch_occupied') and not evaluation.get('dispatch_occupied')):
+                self._lifecycle_event('task_readiness_lost', target=task_id, errors=evaluation['errors'],
+                                      basis={'dispatch_occupied': evaluation.get('dispatch_occupied', False)},
+                                      schedule=not evaluation.get('dispatch_occupied', False))
             if evaluation['state'] == 'evaluation_error' and (not previous or previous.get('errors') != evaluation['errors']):
                 self._lifecycle_event('task_condition_evaluation_error', target=task_id, errors=evaluation['errors'])
         old_pending_inputs = {event.get('target') for event in self.runtime['events']
