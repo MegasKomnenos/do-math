@@ -95,6 +95,8 @@ def initial_failure_engine(root, kind='execution_failure', stage='interpret'):
         owner_ref='engine', input_refs=['UI-original'], opened_at=AT)
     failed = execution_lifecycle.create_execution(execution_id='EX-bad', owner_activity_id='AY-original',
         actor_kind='ai', input_manifest={}, profile_ref=execution_profiles.profile_ref(profile), created_at=AT)
+    from research_fixtures import dispatched_launch
+    failed['launch_ticket'] = {**dispatched_launch(failed['id'], profile), 'phase':'finished'}
     failed.update(role=action['role'], action=deepcopy(action), capacity={'local_termination': 'confirmed'})
     activities.assign_execution(engine.runtime, 'AY-original', failed)
     execution_lifecycle.transition_execution(failed, 'starting', at=AT)

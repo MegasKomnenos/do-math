@@ -215,6 +215,8 @@ class SessionSlots:
             return False
         candidate = deepcopy(execution)
         bind_execution(candidate, profile)
+        from .launch import ticket
+        candidate['launch_ticket'] = ticket(execution_id, profile)
         if "actor_kind" in candidate:
             from .execution_lifecycle import transition_execution
             from datetime import datetime, timezone
@@ -240,6 +242,10 @@ class SessionSlots:
         from copy import deepcopy
         execution = self.runtime["executions"][execution_id]
         capacity = execution["capacity"]
+        from .launch import validate
+        launch = validate(execution['launch_ticket'], execution_id=execution_id)
+        if launch['kind'] != 'native_job' or identity.get('job_name') != launch['job_name']:
+            raise ValueError('started Job differs from the published launch ticket')
         if capacity["process"] is not None:
             if capacity["process"] == identity:
                 return
@@ -258,13 +264,17 @@ class SessionSlots:
         if capacity["local_termination"] == "confirmed":
             return True
         identity = capacity["process"]
+        from .launch import termination_confirmed
+        if not execution.get('launch_ticket') or not termination_confirmed(execution['launch_ticket']):
+            capacity['local_termination'] = 'unknown'
+            return False
         if identity:
             from .windows_job import named_job_empty
             if named_job_empty(identity["job_name"]) is not True:
                 capacity["local_termination"] = "unknown"
                 return False
-        # No process means on_started was never acknowledged; the suspended Job
-        # cannot have resumed. The engine must preserve that ordering.
+        # The launch ticket, not missing process metadata, established the
+        # barrier above. A suspended root may exist before on_started is saved.
         evidence = [{"execution_id": execution_id, "job_name": identity.get("job_name") if identity else None,
                      "kind": "local_job_empty" if identity else "never_resumed", "reason": reason}]
         updates = {}

@@ -233,7 +233,7 @@ def _worker(request_path: Path) -> int:
 
 
 def _job_run(command: list[str], cwd: Path, *, should_stop=None, on_started=None,
-             on_finished=None, raw_output=False):
+             on_finished=None, raw_output=False, job_name=None):
     """Wait for the whole Job; only explicit stop terminates it.
 
     The two-second termination check applies only after cancellation, never to computation.
@@ -242,7 +242,7 @@ def _job_run(command: list[str], cwd: Path, *, should_stop=None, on_started=None
     request.write_text(json.dumps({'command':command,'cwd':str(cwd),'stdout':str(out),'stderr':str(err),'status':str(status)}))
     worker = "import sys; from pathlib import Path; sys.path.insert(0,sys.argv[1]); from do_math.formal import _worker; raise SystemExit(_worker(Path(sys.argv[2])))"
     job=WindowsJob([sys.executable,'-B','-c',worker,str(Path(__file__).resolve().parents[1]),str(request)],cwd=root,env=os.environ,
-                   name='do-math-formal-'+uuid.uuid4().hex)
+                   name=job_name or 'do-math-formal-'+uuid.uuid4().hex)
     try:
         started={**process_identity(job),'job_name':job.name}
         if on_started: on_started(started)
@@ -368,12 +368,18 @@ def _approved_files_current(command, resolved, expected, should_stop=None):
 def verify_lean(*, source: str, declarations: list[str], workspace: Path,
                 lean_command: list[str] | None = None,
                 allowed_axioms: tuple[str,...] = ('propext','Classical.choice','Quot.sound'), should_stop=None,
-                expected_toolchain: dict | None = None, on_started=None) -> dict:
+                expected_toolchain: dict | None = None, on_started=None, launch_ticket=None) -> dict:
     """Verify Lean to completion.
 
     All output is preserved. Cancellation remains available through should_stop.
     """
+    if launch_ticket is not None:
+        from .launch import validate_start
+        validate_start(launch_ticket)
+        if launch_ticket['kind'] != 'native_job' or launch_ticket['phase'] != 'dispatched':
+            raise ValueError('formal runner needs the dispatched native launch ticket')
     workspace=workspace.resolve(); raw=source.encode(); base={"source_sha256":_hash(raw),"declarations":declarations,"axioms":{},"declaration_signatures":{},"dependency_closure":{},"declaration_evidence":{},"signature_hash":None,"stdout":"","stderr":"","command":None,"toolchain":None,"reason":None}
+    base['launch_not_created'] = True
     if not all(_ident(x) for x in declarations): return {**base,"status":"rejected","reason":"invalid declaration"}
     if not declarations: return {**base,"status":"rejected","reason":"no declaration to audit"}
     command=list(lean_command) if lean_command else (discover_lean() or [])
@@ -398,10 +404,15 @@ def verify_lean(*, source: str, declarations: list[str], workspace: Path,
         extraction='#do_math_dependencies '+' '.join(declarations)
         check.write_bytes(b'import Lean\n'+raw+b'\n'+checks.encode()+b'\n'+_DEPENDENCY_EXTRACTOR.encode()+b'\n'+extraction.encode())
         local_job_usage={}
+        def started(identity):
+            base['launch_not_created'] = False
+            if on_started is not None:
+                on_started(identity)
         try:
             _check_stop(should_stop)
             code,stdout,stderr,stopped=_job_run([*command,str(check)],Path(directory),should_stop=should_stop,
-                on_started=on_started,on_finished=lambda observed:local_job_usage.update(observed))
+                on_started=started,on_finished=lambda observed:local_job_usage.update(observed),
+                job_name=launch_ticket['job_name'] if launch_ticket is not None else None)
         except VerificationStopped as error:
             return {**base,'status':'stopped','reason':str(error),'toolchain':toolchain}
         except (OSError,RuntimeError) as error:

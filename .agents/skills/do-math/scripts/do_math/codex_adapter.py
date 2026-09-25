@@ -5,6 +5,8 @@ or per-call usage surface.  This module records those facts as unknown instead
 of inferring them from a killed local process.
 """
 from __future__ import annotations
+from .operation_trace import measured
+
 
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -45,6 +47,11 @@ class CodexExecution:
 
 def _sha256(value: bytes) -> str:
     return hashlib.sha256(value).hexdigest()
+
+
+def _file_sha256(path):
+    with Path(path).open('rb') as stream:
+        return hashlib.file_digest(stream, 'sha256').hexdigest()
 
 
 def _read(path: Path) -> bytes | None:
@@ -127,15 +134,22 @@ class LocalCLIAdapter:
         path = Path(shutil.which(self.cli_path) or self.cli_path).resolve()
         worker = Path(self.worker_module.__file__).resolve()
         from . import control_transport, windows_job
-        return {"cli_path": str(path), "cli_sha256": _sha256(path.read_bytes()) if path.is_file() else None,
-                "worker_sha256": _sha256(worker.read_bytes()),
-                "windows_job_sha256": _sha256(Path(windows_job.__file__).read_bytes()),
-                "control_transport_sha256": _sha256(Path(control_transport.__file__).read_bytes()),
-                "adapter_sha256": _sha256(Path(__file__).read_bytes()),
-                "provider_adapter_sha256": _sha256(Path(sys.modules[type(self).__module__].__file__).read_bytes()),
+        return {"cli_path": str(path), "cli_sha256": _file_sha256(path) if path.is_file() else None,
+                "worker_sha256": _file_sha256(worker),
+                "windows_job_sha256": _file_sha256(windows_job.__file__),
+                "control_transport_sha256": _file_sha256(control_transport.__file__),
+                "adapter_sha256": _file_sha256(__file__),
+                "provider_adapter_sha256": _file_sha256(sys.modules[type(self).__module__].__file__),
                 "host": {"system": platform.system(), "release": platform.release(), "version": platform.version(),
                          "machine": platform.machine(), "node": platform.node(), "python": platform.python_version()}}
 
+    def observation_key(self):
+        """One batch may share facts only for this exact adapter/tool selection."""
+        return (type(self).__module__, type(self).__qualname__,
+                str(Path(shutil.which(self.cli_path) or self.cli_path).resolve()),
+                str(Path(self.worker_module.__file__).resolve()))
+
+    @measured('capability_surface')
     def describe(self) -> dict[str, Any]:
         try:
             version_result = subprocess.run([self.codex_path, "--version"], check=False, shell=False,
@@ -160,7 +174,7 @@ class LocalCLIAdapter:
                             "provider_stop_reason", "automatic_compaction_control",
                             "per_execution_read_isolation", "cross_profile_noninterference"]}
 
-    def start(self, request_path: Path, *, cwd: Path, env: Mapping[str, str]) -> CodexExecution:
+    def start(self, request_path: Path, *, cwd: Path, env: Mapping[str, str], job_name=None) -> CodexExecution:
         request = self.worker_module.load_request(request_path)
         prompt_path, stdout_path, stderr_path, final_path, status_path = _paths(request)
         if Path(request[self.executable_key]).resolve() != Path(self.cli_path).resolve():
@@ -189,7 +203,7 @@ class LocalCLIAdapter:
         worker = Path(self.worker_module.__file__)
         worker_argv = (sys.executable, str(worker), str(snapshot_request))
         job = WindowsJob(worker_argv, cwd=cwd, env=self.worker_module.sanitized_environment(env),
-                         name="Local\\DoMath-" + uuid.uuid4().hex, resource_limits=request.get("resource_limits"))
+                         name=job_name or "Local\\DoMath-" + uuid.uuid4().hex, resource_limits=request.get("resource_limits"))
         return CodexExecution(snapshot_request, snapshot_prompt, _sha256(snapshot_request.read_bytes()), _sha256(prompt_raw), worker_argv,
                               stdout_path, stderr_path, final_path, status_path, job, stage, schema_sha256)
 

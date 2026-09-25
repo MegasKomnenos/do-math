@@ -372,7 +372,10 @@ class FormalBindingConnections(unittest.TestCase):
         engine = routing_engine()
         directory = tempfile.TemporaryDirectory(); self.addCleanup(directory.cleanup)
         config = {**deepcopy(DEFAULT_CONFIG), "lean_command": [sys.executable], }
-        environment = {"id": "TE-one", "status": "active", "toolchain": {"configured_command": [sys.executable], "sha256": "a" * 64}, "allowed_axioms": []}
+        from research_fixtures import trust_fixture
+        from do_math.initialization import digest
+        environment = trust_fixture(Path(directory.name), [sys.executable])
+        environment.update(id="TE-one", status="active", source_ref="fixture", manifest_sha256=digest(environment["manifest"]))
         engine.instance.update(feature_version=5, workspace=directory.name, sources=[], config=config,
             active_trust_environment="TE-one", trust_environments={"TE-one": environment})
         engine.instance.update(execution_profiles.build_profiles(config))
@@ -394,7 +397,7 @@ class FormalBindingConnections(unittest.TestCase):
         self.assertEqual(kwargs["lean_command"], [sys.executable])
         self.assertNotIn("timeout_seconds", kwargs)
         self.assertEqual(kwargs["expected_toolchain"], environment["toolchain"])
-        self.assertEqual(kwargs["allowed_axioms"], ())
+        self.assertEqual(set(kwargs["allowed_axioms"]), set(environment["allowed_axioms"]))
         self.assertEqual(next(e for e in engine.runtime["executions"].values() if e.get("role") == "formal_check")["outcome"], "execution_incomplete")
 
     def test_exact_compiler_keys_and_source_survive_result_artifacts(self):
@@ -672,7 +675,9 @@ class PublicGitFlow(unittest.TestCase):
                     if output["candidates"]:
                         rules = [{"id": "rule-attempt", "operator": "counter_gte", "subject": {"kind": "counter", "id": "attempts"},
                             "basis": {"source": "checkpoint", "unit": "count"}, "threshold": 10, "required_evidence": ["checkpoint.json"]}]
+                        from test_engine import contract_checks
                         (workspace / "activity-extensions.json").write_bytes(canonical_json({
+                            "contract_checks": contract_checks(output["candidates"]),
                             "task_conditions": [{"task_title": row["title"], "occurrence_condition": {"op": "always"},
                                 "dependencies": [], "knowledge_revision_targets": [], "observation_rules": rules}],
                             "model_assessments": [{"task_title": row["title"], "difficulty": "low",
@@ -688,6 +693,9 @@ class PublicGitFlow(unittest.TestCase):
                         "missing_inputs": [], "next_owner": "research_work"} for tid in context["ready_task_ids"]],
                         task_assessments=[assessment(tasks[tid]) for tid in task_contracts.returned_task_ids(tasks)],
                         preparation_requests=[], goal_audit=False)
+                    from research_fixtures import planning_model_assessments
+                    (workspace / "activity-extensions.json").write_bytes(canonical_json({
+                        "model_assessments": planning_model_assessments(output, context)}))
                 elif role == "research_work":
                     output.update(outcome="submitted", report="The observation is bounded to this synthetic execution and its stated domain.",
                         checkpoint="Observation preserved", remaining_work=[], relations=[], knowledge=[{
@@ -820,7 +828,8 @@ class MachineAdmissionConnections(unittest.TestCase):
         self.assertNotIn("EX-refused", engine.runtime["executions"])
         self.assertEqual(engine.runtime["activities"][action["owner_activity_id"]]["status"], "waiting")
         self.assertEqual(len(engine.runtime["reservations"]), 9)
-        self.assertTrue(engine._slots.release("EX-machine-0", reason="test never resumed"))
+        engine._local_call_returned("EX-machine-0", {"launch_not_created":True})
+        self.assertTrue(engine._slots.release("EX-machine-0", reason="explicit local start failure"))
         retry = engine._register_execution(action, {"id": "EX-retry", "status": "running", "role": "formal_check"})
         self.assertEqual(retry["status"], "starting")
 
@@ -828,7 +837,7 @@ class MachineAdmissionConnections(unittest.TestCase):
         engine = self.fixture()
         execution = engine._register_execution({"id": "AC-one", "role": "formal_check"},
             {"id": "EX-one", "status": "running", "role": "formal_check"})
-        identity = {"job_name": "synthetic-machine-job", "pid": 17, "creation_filetime": "12345"}
+        identity = {"job_name": execution["launch_ticket"]["job_name"], "pid": 17, "creation_filetime": "12345"}
         def published():
             self.assertEqual(execution["capacity"]["process"], identity)
             self.assertEqual(execution["status"], "running")
@@ -868,7 +877,7 @@ class MachineAdmissionConnections(unittest.TestCase):
                 self.assertEqual(len(staged["reservations"]), 3)
                 # The Job identity is a double; both pre-resume publications and
                 # the host reservation records use actual schema and Git CAS.
-                identity = {"job_name": "ENGINE-fixture-machine", "pid": 29, "creation_filetime": "123456789012345678"}
+                identity = {"job_name": engine.runtime["executions"]["EX-machine"]["launch_ticket"]["job_name"], "pid": 29, "creation_filetime": "123456789012345678"}
                 engine._machine_started("EX-machine", identity)
                 _, _, started = engine.store.load(engine.head)
                 self.assertNotEqual(engine.head, admitted)
@@ -906,6 +915,8 @@ class MaintenanceConnections(unittest.TestCase):
                 activities.assign_execution(engine.runtime, aid, execution)
                 execution_lifecycle.transition_execution(execution, "ended", at="2026-09-20T00:00:01Z", outcome="cancelled")
                 # Explicit synthetic termination evidence; all scope, schemas, references and Git I/O are real.
+                from do_math.launch import ticket
+                execution["launch_ticket"] = {**ticket(eid, profile), "phase":"not_started"}
                 execution["capacity"] = {"local_termination": "confirmed"}
                 activities.finish_activity(engine.runtime, aid, result_refs=[], unresolved=[], followups=[], at="2026-09-20T00:00:01Z")
             engine.store = ResearchRepository(root / "repo", identifier)

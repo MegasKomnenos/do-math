@@ -249,6 +249,7 @@ class SlotTests(unittest.TestCase):
         name = 'Local\\DoMath-test-' + uuid.uuid4().hex
         with self.engine.store.writer_lock():
             self.assertTrue(self.reserve('EX-job')[0])
+            name = self.engine.runtime['executions']['EX-job']['launch_ticket']['job_name']
             with WindowsJob([sys.executable, '-c', 'import time; time.sleep(30)'], name=name) as job:
                 self.slots().started('EX-job', {'pid': job.pid, 'job_name': name})
                 self.engine._save()
@@ -445,28 +446,9 @@ class ParallelEngineTests(unittest.TestCase):
 
     def test_model_assessments_flow_from_preparation_through_review_and_planning_to_execution(self):
         assessment = {"difficulty": "low", "importance": "low", "reason": "a local bounded comparison with an explicit method"}
-        class AssessedRunner(ScriptedRunner):
-            def run(inner, **arguments):
-                allowed = inspect.signature(ScriptedRunner.run).parameters
-                result = super().run(**{k: v for k, v in arguments.items() if k in allowed})
-                context = context_from(arguments["prompt"])
-                role = context["action"]["role"]
-                entries = []
-                if role == "research_preparation":
-                    entries = [{"task_title": c["title"], **assessment} for c in result["output"]["candidates"]]
-                elif role == "research_plan":
-                    entries = [{"task_id": tid, **assessment} for tid in [row["task_id"] for row in result["output"]["dispositions"] if row["kind"] == "selected"]]
-                if entries:
-                    from test_engine import contract_checks
-                    checks = contract_checks(result["output"]["candidates"]) if role == "research_preparation" else []
-                    (arguments["workspace"] / "activity-extensions.json").write_text(
-                        json.dumps({"model_assessments": entries, **({"contract_checks": checks} if checks else {})}), encoding="utf-8")
-                from research_fixtures import seal_response
-                seal_response(result["output"], context, arguments["workspace"])
-                return result
         result = initialize(self.repo, goal="bounded research", workspace=self.root / "work",
                             config={"operator_enabled": False, "scholarly_enabled": False, "lean_command": ["test-lean"]})
-        engine = ResearchEngine(self.repo, result["instance_id"], runner=AssessedRunner())
+        engine = ResearchEngine(self.repo, result["instance_id"], runner=ScriptedRunner(model_rating=assessment))
         activate(engine, self.root, initialization_runner=ScriptedRunner())
         engine.run(max_steps=12)
         tasks = list(engine.runtime["tasks"].values())
@@ -475,7 +457,11 @@ class ParallelEngineTests(unittest.TestCase):
         self.assertTrue(work)
         self.assertEqual(work[0]["model"], MODELS["low"])
         self.assertEqual(work[0]["model_selection"]["assessment"], assessment)
-        self.assertTrue(engine.check()["passed"], engine.check())
+        inspection = engine.check()
+        self.assertEqual(inspection["errors"], [])
+        self.assertEqual(inspection["submission_checks"]["status"], "verified")
+        self.assertEqual(inspection["inspection"]["not_checked"], ["governance_trust"])
+        self.assertEqual(inspection["inspection"]["status"], "incomplete")
 
     def test_failed_work_waits_for_diagnosis_when_its_operating_model_is_full(self):
         class FailingRunner:

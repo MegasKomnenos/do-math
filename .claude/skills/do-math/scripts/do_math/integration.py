@@ -513,6 +513,9 @@ def apply_bundles(instance, runtime, output, extensions, context, *, execution_i
                             "next_owner": "producer" if stage != "publication" else "engine"})
             if isinstance(error, ImpactReviewRequired):
                 results[-1].update(next_owner="impact_review", impact_review_request=deepcopy(error.request))
+            from .environment_checks import ObservationPending
+            if isinstance(error, ObservationPending):
+                results[-1].update(next_owner='engine', environment_request=error.request_id)
             # The durable parent may have changed. ENGINE must reload before
             # trying any further publication, never bless a stale candidate.
             if stage == "publication":

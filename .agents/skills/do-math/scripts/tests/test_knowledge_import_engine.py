@@ -148,6 +148,8 @@ class FormalBoundaryTests(unittest.TestCase):
         e._activity_for_action = Mock(return_value=activity)
         e._check_conversations = Mock(return_value=False)
         def register(action, row):
+            from research_fixtures import dispatched_launch
+            row['launch_ticket'] = dispatched_launch(row['id'], e._execution_profile.return_value)
             row.update(action=action, activity_id='AT-fixture')
             e.runtime['executions'][row['id']] = row
             return row
@@ -213,8 +215,12 @@ class FormalBoundaryTests(unittest.TestCase):
             with patch('do_math.engine.governance.authorize', return_value={'allowed': True, 'grant_id': 'GR-fixture'}):
                 e._formal({'id': new_id('AC'), 'role': 'formal_check', 'target': kid})
             e.formal_verifier.assert_not_called()
-            self.assertEqual(e.runtime['executions'], {})
-            self.assertIn('trust file changed', next(iter(e.runtime['waiting_actions'].values()))['reason'])
+            execution = next(iter(e.runtime['executions'].values()))
+            self.assertEqual((execution['status'], execution['outcome']), ('ended', 'execution_incomplete'))
+            waiting = next(iter(e.runtime['waiting_actions'].values()))
+            self.assertEqual(waiting['next_owner'], 'trust_governance')
+            self.assertIn('trust file changed', waiting['reason'])
+            e._enqueue.assert_not_called()
 
     def test_revision_consumer_passes_declared_scope_and_queues_replacement(self):
         e = object.__new__(ResearchEngine)

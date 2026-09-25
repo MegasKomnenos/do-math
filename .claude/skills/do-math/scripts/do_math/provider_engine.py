@@ -51,6 +51,9 @@ class ProviderEngineMixin:
             if identity.get("job_name"):
                 from .windows_job import named_job_empty
                 confirmed = named_job_empty(identity["job_name"]) is True
+            elif execution.get('launch_ticket'):
+                from .launch import termination_confirmed
+                confirmed = termination_confirmed(execution['launch_ticket'], recovering=True)
             else:
                 confirmed = execution.get("actor_kind") == "machine" and execution.get("local_termination_observed") is True
             if not confirmed:

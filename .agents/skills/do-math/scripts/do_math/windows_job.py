@@ -308,9 +308,13 @@ class WindowsJob:
         return handle
 
     def _create_job(self) -> int:
+        ctypes.set_last_error(0)
         handle = _kernel32.CreateJobObjectW(None, self.name)
         if not handle:
             _raise_last_error("CreateJobObjectW")
+        if self.name and ctypes.get_last_error() == 183:
+            _kernel32.CloseHandle(handle)
+            raise FileExistsError('execution Job name already exists')
         if not _kernel32.SetHandleInformation(handle, _HANDLE_FLAG_INHERIT, 0):
             error = ctypes.get_last_error()
             _kernel32.CloseHandle(handle)
@@ -571,5 +575,48 @@ def named_job_empty(name: str) -> bool | None:
                 ctypes.byref(accounting), ctypes.sizeof(accounting), ctypes.byref(returned)):
             return None
         return accounting.ActiveProcesses == 0
+    finally:
+        _kernel32.CloseHandle(handle)
+
+
+def owner_identity():
+    """Bind the launch owner to a host/session and exact native creation time."""
+    import platform
+    if os.name != 'nt':
+        raise WindowsJobUnsupportedError('launch ownership requires Windows process identity')
+    current = _kernel32.GetCurrentProcess
+    current.restype = _HANDLE
+    created, ended, kernel, user = (_FILETIME() for _ in range(4))
+    if not _kernel32.GetProcessTimes(current(), ctypes.byref(created), ctypes.byref(ended), ctypes.byref(kernel), ctypes.byref(user)):
+        _raise_last_error('GetProcessTimes')
+    session = _DWORD()
+    if not _kernel32.ProcessIdToSessionId(os.getpid(), ctypes.byref(session)):
+        _raise_last_error('ProcessIdToSessionId')
+    return {'pid':os.getpid(), 'creation_filetime':str((created.dwHighDateTime << 32) | created.dwLowDateTime),
+            'host':platform.node(), 'session':session.value}
+
+
+def owner_ended(identity):
+    """Unknown access/host/session is not evidence of death; PID reuse is."""
+    import platform
+    if os.name != 'nt' or identity.get('host') != platform.node():
+        return None
+    session = _DWORD()
+    if not _kernel32.ProcessIdToSessionId(os.getpid(), ctypes.byref(session)) or session.value != identity.get('session'):
+        return None
+    open_process = _kernel32.OpenProcess
+    open_process.argtypes = [_DWORD, _BOOL, _DWORD]
+    open_process.restype = _HANDLE
+    handle = open_process(0x1000 | 0x100000, False, identity['pid'])
+    if not handle:
+        return True if ctypes.get_last_error() == 87 else None
+    try:
+        created, ended, kernel, user = (_FILETIME() for _ in range(4))
+        if not _kernel32.GetProcessTimes(handle, ctypes.byref(created), ctypes.byref(ended), ctypes.byref(kernel), ctypes.byref(user)):
+            return None
+        actual = str((created.dwHighDateTime << 32) | created.dwLowDateTime)
+        if actual != identity['creation_filetime']:
+            return True
+        return _kernel32.WaitForSingleObject(handle, 0) == 0
     finally:
         _kernel32.CloseHandle(handle)

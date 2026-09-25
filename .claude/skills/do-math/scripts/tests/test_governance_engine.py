@@ -521,6 +521,9 @@ class PublicGitGovernanceTests(unittest.TestCase):
             ex = engine.runtime['executions']['AUDITOR']
             execution_lifecycle.transition_execution(ex, 'ended', at=engine.instance['created_at'],
                 outcome='start_failed', reason='crash fixture before finalization')
+            from research_fixtures import dispatched_launch
+            profile = engine.instance['execution_profiles'][ex['execution_profile_ref']['id']]
+            ex['launch_ticket'] = {**dispatched_launch(ex['id'], profile), 'phase':'finished'}
             ex['capacity'] = {'local_termination': 'confirmed', 'reservation_ids': [], 'provider': None, 'process': None}
             ex['input_bundle'] = 'BA-audit-input'
             ex['input_snapshot'] = engine.head

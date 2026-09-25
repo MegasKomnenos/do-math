@@ -227,7 +227,7 @@ def local_job_runner(method):
             if job is not None:
                 raise AssertionError("A scripted call must start exactly once")
             job = WindowsJob([sys.executable, "-c", "import time; time.sleep(600)"],
-                             cwd=arguments.get("workspace"), name="CORE_TESTS-" + uuid.uuid4().hex)
+                             cwd=arguments.get("workspace"), name=arguments['launch_ticket']['job_name'])
             callback({**process_identity(job), "job_name": job.name})
             job.resume()
 
@@ -243,6 +243,14 @@ def local_job_runner(method):
                 finally:
                     job.close()
     return run
+
+
+def dispatched_launch(execution_id, profile):
+    """The current explicit runner contract used by native boundary fixtures."""
+    from do_math.launch import ticket
+    value = ticket(execution_id, profile)
+    value['phase'] = 'dispatched'
+    return value
 
 
 def submit_intent(binding, should_stop, workspace, output):
@@ -276,6 +284,8 @@ class FixtureAdapter:
 
     def capability_identity(self):
         return deepcopy(IDENTITY)
+
+    def observation_key(self): return ('fixture',)
 
     def describe(self):
         return {"identity": deepcopy(IDENTITY), "verified": True,

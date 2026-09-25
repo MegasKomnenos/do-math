@@ -2,7 +2,7 @@ from copy import deepcopy
 from pathlib import Path
 import sys
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.engine import DEFAULT_CONFIG
@@ -19,8 +19,35 @@ class ProbeBatchTests(unittest.TestCase):
         self.engine.instance = {"lifecycle": {"state": "initializing"}, **build_profiles(config)}
         self.profiles = [p for p in self.engine.instance["execution_profiles"].values() if p["actor_kind"] == "ai"][:2]
 
+    def test_activation_batch_reuses_only_the_current_provider_observation(self):
+        from do_math.initialization import _capability_batch_requirements, capability_requirements
+        from datetime import datetime, timezone
+        references = [profile_ref(p) for p in self.profiles]
+        identity = {'host':'fixture'}
+        adapter = Mock()
+        adapter.describe.return_value = {'identity':identity, 'verified':True,
+            'scope':'cli_command_surface_only',
+            'supported':{'jsonl':True, 'model':True, 'structured_output':True}}
+        adapter.capability_identity.return_value = identity
+        with patch('do_math.initialization.adapter_for', return_value=adapter):
+            self.engine._initialization_control({'operation':'probe','profile_refs':references}, 'source')
+            at = datetime.now(timezone.utc).isoformat()
+            expected = [capability_requirements(self.engine.instance, ref, current_identity=identity, at=at)
+                        for ref in references]
+            actual = list(_capability_batch_requirements(self.engine.instance, references, at=at))
+            self.assertEqual(actual, expected)
+            self.assertEqual(adapter.capability_identity.call_count, 1)
+            self.assertTrue(all(row['evidence_refs'] for row in actual))
+            adapter.capability_identity.return_value = {'host':'changed'}
+            fresh = list(_capability_batch_requirements(self.engine.instance, references, at=at))
+            self.assertEqual(adapter.capability_identity.call_count, 2)
+            self.assertTrue(all(not row['satisfied'] and not row['evidence_refs'] for row in fresh))
+            bad = dict(references[-1], sha256='0'*64)
+            self.assertFalse(list(_capability_batch_requirements(self.engine.instance, [bad], at=at))[0]['satisfied'])
+
     def test_batch_preserves_each_profile_and_observed_capability_scope(self):
         class Adapter:
+            def observation_key(self): return ('fixture',)
             def describe(self):
                 return {"identity": {"host": "fixture"}, "verified": True,
                         "scope": "cli_command_surface_only", "supported": {"jsonl": True, "local_job": True}}
@@ -41,6 +68,7 @@ class ProbeBatchTests(unittest.TestCase):
 
     def test_failed_later_observation_does_not_publish_partial_evidence(self):
         class Adapter:
+            def observation_key(self): return ('fixture',)
             def describe(self):
                 return {"identity": {"host": "fixture"}}
         with patch("do_math.initialization.adapter_for", side_effect=[Adapter(), RuntimeError("probe failed")]):
@@ -52,6 +80,7 @@ class ProbeBatchTests(unittest.TestCase):
         self.engine.instance["lifecycle"] = {"state": "active", "adoption": {"config_sha256": "saved"}}
         before = deepcopy(self.engine.instance)
         class Adapter:
+            def observation_key(self): return ('fixture',)
             def describe(self):
                 return {"identity": {"host": "fixture"}, "verified": True,
                         "scope": "cli_command_surface_only", "supported": {"jsonl": True}}

@@ -19,6 +19,8 @@ import secrets
 import time
 from typing import Any
 
+from .operation_trace import measured
+
 from .events import EventPublisher
 from .git_store import GitStateStore, PhysicalBoundary
 from .state_contract import STATE_CONTRACT_ID, StateContract, default_state_contract
@@ -49,6 +51,9 @@ def new_id(prefix: str) -> str:
 
 def canonical_json(value: Any) -> bytes:
     """Encode a finite JSON value deterministically without changing Unicode."""
+    from .payloads import FrozenDict, FrozenText
+    if isinstance(value, (FrozenDict, FrozenText)) and hasattr(value, '_payload_bytes'):
+        return value._payload_bytes
     validate_storage_value(value)
     return (json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2, allow_nan=False) + "\n").encode("utf-8")
 
@@ -78,16 +83,31 @@ class ResearchRepository:
     def _documents(self, head):
         return self._read_documents(head)[:3]
 
+    @measured('snapshot_read_validation')
     def _read_documents(self, head):
         """Validate one snapshot and retain its exact non-artifact file bytes."""
+        from .operation_trace import phase
+        cached = getattr(self, '_validated_read', None)
+        contract_id = (self.contract.manifest()['sha256'], self.contract.validation_generation)
+        if cached is not None and cached[0] == (head, contract_id):
+            return deepcopy(cached[1])
         paths = self._store._tree_paths(head)
         # Sealed artifacts are not parsed or loaded just to reconstruct state.
         files = self._store.read_many(head, sorted(p for p in paths if not p.startswith("runtime/artifacts/")))
-        instance, runtime, descriptors = _decode_families(files, self.contract, self._store.object_format)
+        payload_bytes = {}
+        def read_payload(path):
+            if path not in payload_bytes:
+                payload_bytes[path] = self._store.read_bytes(head, path)
+            return payload_bytes[path]
+        read_payload.decoded = {}
+        with phase('snapshot_decode', snapshot=head):
+            instance, runtime, descriptors = _decode_families(files, self.contract, self._store.object_format, read_payload=read_payload)
         self.contract.validate(instance, runtime)
         _validate_published_events(runtime)
         self._validate_artifact_evidence(runtime, head)
-        return instance, runtime, descriptors, files
+        result = (instance, runtime, descriptors, {**files, **payload_bytes})
+        self._validated_read = ((head, contract_id), deepcopy(result))
+        return result
 
     def load(self, snapshot=None):
         head = self._resolve_snapshot(snapshot)
@@ -102,12 +122,15 @@ class ResearchRepository:
         """
         return self._validate_candidate(instance, runtime, expected_head, artifacts=artifacts)
 
+    @measured('candidate_validation')
     def _validate_candidate(self, instance, runtime, expected_head=None, *, artifacts=None, parent_state=None):
         # parent_state is private and supplied only by this save's validated read.
         if not isinstance(instance, dict) or not isinstance(runtime, dict):
             raise ValueError("instance and runtime must be objects")
         instance = deepcopy(instance)
         runtime = deepcopy(runtime)
+        from .payloads import seal_large
+        instance, runtime = seal_large(instance), seal_large(runtime)
         validate_storage_value(instance)
         validate_storage_value(runtime)
         if instance.get("object_format", self._store.object_format) != self._store.object_format:
@@ -161,7 +184,7 @@ class ResearchRepository:
         candidate = self._validate_candidate(instance, runtime, expected_head, artifacts=artifact_snapshot,
                                              parent_state=(parent_instance, parent_runtime))
         files = candidate["files"]
-        changes = {p: None for p in old_files if p not in files}
+        changes = {p: None for p in old_files if p not in files and not p.startswith('runtime/artifacts/')}
         changes.update({p: raw for p, raw in files.items() if old_files.get(p) != raw})
         if artifact_snapshot is not None:
             for path, raw in artifact_snapshot.items():
@@ -188,6 +211,9 @@ class ResearchRepository:
         references = [(ref, row["evidence_hashes"][ref], None)
             for row in runtime.get("academic_resolution_records", [])
             for ref in row["evidence_refs"] if ref.startswith("runtime/artifacts/")]
+        for execution in runtime.get('executions', {}).values():
+            for observation in execution.get('environment_observations', []):
+                references.append((observation['artifact_ref'], observation['sha256'], None))
         for checkpoint in runtime.get("checkpoints", {}).values():
             for observation in (checkpoint, checkpoint.get("final_observation", {})):
                 if observation.get("observation_evidence_complete") is True and observation.get("observation_evidence_omitted"):
@@ -402,6 +428,9 @@ def _reject_constant(value: str) -> None:
 
 def validate_storage_value(value: Any) -> None:
     """Validate the exact storage value domain without constructing JSON bytes."""
+    from .payloads import FrozenDict, FrozenText
+    if isinstance(value, (FrozenDict, FrozenText)) and hasattr(value, '_payload_bytes'):
+        return  # Sealing validated exact bytes and these values cannot be edited.
     if value is None or isinstance(value, (bool, str)):
         if isinstance(value, str) and _SURROGATE.search(value):
             raise ValueError("JSON strings cannot contain surrogate code points")
@@ -492,7 +521,9 @@ def _envelope(family, value):
     return {"contract_id": STATE_CONTRACT_ID, "family": family, "record": value}
 
 
+@measured('state_encoding')
 def _encode_families(instance, runtime, contract, object_format):
+    from .payloads import encode
     files = {}
     installed = contract.manifest()
     for root, state in (("research", instance), ("runtime", runtime)):
@@ -518,8 +549,12 @@ def _encode_families(instance, runtime, contract, object_format):
                 descriptor = {"shape": "list", "ids": [k for k, _ in entries]}
             containers[name] = descriptor
             for identifier, record in entries:
-                files[_record_path(root, name, identifier)] = canonical_json(_envelope(name, record))
-        files[f"{root}/_state/metadata.json"] = canonical_json(_envelope("metadata", metadata))
+                envelope, blobs = encode(_envelope(name, record))
+                files.update(blobs)
+                files[_record_path(root, name, identifier)] = canonical_json(envelope)
+        envelope, blobs = encode(_envelope('metadata', metadata))
+        files.update(blobs)
+        files[f"{root}/_state/metadata.json"] = canonical_json(envelope)
         # Each root describes only its own containers, preserving research OID
         # when only runtime families or event membership change.
         files[f"{root}/_state/manifest.json"] = canonical_json({
@@ -527,7 +562,11 @@ def _encode_families(instance, runtime, contract, object_format):
     return files
 
 
-def _decode_families(files, contract, object_format):
+def _decode_families(files, contract, object_format, *, read_payload=None):
+    from .payloads import decode
+    if read_payload is None:
+        def read_payload(path):
+            raise ValueError('immutable payload reader required: ' + path)
     states, descriptors, expected = {}, [], set()
     installed = contract.manifest()
     derived = []
@@ -556,8 +595,8 @@ def _decode_families(files, contract, object_format):
             raise ValueError("missing root metadata record: " + root)
         raw_metadata = files[metadata_path]
         envelope = _decode_object(raw_metadata)
-        metadata = envelope.get("record")
-        if not isinstance(metadata, dict) or envelope != _envelope("metadata", metadata):
+        metadata = decode(envelope, read_payload)
+        if not isinstance(metadata, dict) or envelope.get('contract_id') != STATE_CONTRACT_ID or envelope.get('family') != 'metadata':
             raise ValueError("invalid root metadata envelope: " + root)
         declared_metadata = {name for name, descriptor in manifest["containers"].items()
                              if descriptor == {"shape": "metadata"}}
@@ -566,7 +605,7 @@ def _decode_families(files, contract, object_format):
         expected.add(metadata_path)
         descriptors.append({"root": root, "family": "metadata", "id": None, "path": metadata_path,
             "bytes": raw_metadata, "sha256": hashlib.sha256(raw_metadata).hexdigest(),
-            "record": {}, "json_pointer": "/record"})
+            "record": {}, "json_pointer": "/record", "payload_refs":deepcopy(envelope.get('payloads', []))})
         metadata_descriptor = descriptors[-1]
         for name, descriptor in manifest["containers"].items():
             family = contract.family(root, name)
@@ -601,16 +640,16 @@ def _decode_families(files, contract, object_format):
                 expected.add(path)
                 raw = files[path]
                 envelope = _decode_object(raw)
-                if set(envelope) != {"contract_id", "family", "record"} or envelope != _envelope(name, envelope["record"]):
+                row = decode(envelope, read_payload)
+                if envelope.get('contract_id') != STATE_CONTRACT_ID or envelope.get('family') != name:
                     raise ValueError("invalid record envelope: " + path)
-                row = envelope["record"]
                 if family.identity and (not isinstance(row, dict) or row.get("id") != identifier):
                     raise ValueError("record path and id differ: " + path)
                 rows.append(row)
                 descriptors.append({"root": root, "family": name,
                     "id": identifier if family.identity else None, "path": path,
                     "bytes": raw, "sha256": hashlib.sha256(raw).hexdigest(), "record": deepcopy(row),
-                    "json_pointer": "/record"})
+                    "json_pointer": "/record", "payload_refs":deepcopy(envelope.get('payloads', []))})
             state[name] = rows[0] if shape == "singleton" else dict(zip(ids, rows)) if shape == "map" else rows
     if set(files) != expected:
         raise ValueError("undeclared state files: " + repr(sorted(set(files) - expected)))

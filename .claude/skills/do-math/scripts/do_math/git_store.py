@@ -6,6 +6,8 @@ semantic decisions belong to callers above this storage primitive.
 """
 
 from __future__ import annotations
+from .operation_trace import measured
+
 
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
@@ -161,6 +163,7 @@ class GitStateStore:
             self._validate_oid(oid)
         return {path: oid for (path, _), oid in zip(values, oids)}
 
+    @measured('git_publication')
     def publish(self, expected_head: str | None, changes: Mapping[str, bytes | None]) -> StateSnapshot:
         """Create and atomically publish one complete state commit.
 

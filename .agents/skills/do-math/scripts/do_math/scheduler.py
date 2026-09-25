@@ -14,7 +14,14 @@ WORK_ROLES = {"research_work", "supplemental_research", "task_contract_review", 
 
 
 class SchedulerMixin:
-    def _run_machine_steps(self, generator):
+    def _local_call_returned(self, execution_id, result):
+        if execution_id is None:
+            return
+        execution = self.runtime['executions'][execution_id]
+        if execution.get('launch_ticket'):
+            execution['launch_ticket']['phase'] = 'not_started' if result.get('launch_not_created') is True else 'finished'
+
+    def _run_machine_steps(self, generator, *, calculator=None):
         """Start only the blocking calculation; resume its owner continuation once."""
         try:
             execution_id, arguments = next(generator)
@@ -23,13 +30,15 @@ class SchedulerMixin:
         if not hasattr(self, '_live_execution_ids'):
             self._live_execution_ids = set()
         self._live_execution_ids.add(execution_id)
+        calculator = calculator or self.formal_verifier
         if getattr(self, '_calls', None) is not None:
-            self._calls.start_call(generator, self.formal_verifier, arguments, execution_id=execution_id)
+            self._calls.start_call(generator, calculator, arguments, execution_id=execution_id)
             return False  # The queued request remains owned until completion.
         try:
-            result = self.formal_verifier(**arguments)
+            result = calculator(**arguments)
         except Exception as error:
             result = {'status': 'failed', 'reason': f'{type(error).__name__}: {error}'}
+        self._local_call_returned(execution_id, result)
         try:
             generator.send(result)
         except StopIteration as completed:
@@ -56,12 +65,12 @@ class SchedulerMixin:
                 path = Path(self.instance['workspace']) / 'execution-recovery' / execution_id / 'returned-result.json'
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_bytes(raw)
-                returned.append((execution_id, raw, str(path)))
+                returned.append((execution_id, raw, str(path), result))
             generator.close()
         self.head, self.instance, self.runtime = self.store.load()
         self._saved_state = self._state_signature()
         artifacts = {}
-        for execution_id, raw, local_path in returned:
+        for execution_id, raw, local_path, result in returned:
             execution = self.runtime['executions'].get(execution_id)
             if not execution or execution['status'] == 'ended':
                 continue
@@ -69,6 +78,7 @@ class SchedulerMixin:
             artifacts[reference] = raw
             execution['result_ref'] = reference
             execution['stop_requested'] = 'engine_error'
+            self._local_call_returned(execution_id, result)
             execution['error'] = 'executor failed while this call was pending; returned evidence was preserved'
             if self._settle_recovered_execution(execution_id, at=timestamp().isoformat(),
                     disposition={'kind': 'engine_error', 'result_ref': reference, 'local_result': local_path}):
@@ -484,13 +494,21 @@ class SchedulerMixin:
         from .repository import new_id
         self._slots = SessionSlots(
                                    runtime=self.runtime, instance=self.instance)
-        self._calls = ModelCalls()
+        self._calls = ModelCalls(on_returned=self._local_call_returned)
         steps = 0
         try:
             while True:
                 self._controls()
                 self._calls.collect()
                 self._check_installation()
+                if self.runtime.get('maintenance_fence'):
+                    if self._calls.futures:
+                        time.sleep(.02)
+                        continue
+                    from .maintenance_gate import settle
+                    settle(self.runtime)
+                    self._save()
+                    break
                 limited = self.runtime['status'] == 'paused' and any(
                     self._limited_recovery_allowed(a) for a in self.runtime['queue'])
                 stopping = (self.runtime["status"] in {"closed", "completed"}

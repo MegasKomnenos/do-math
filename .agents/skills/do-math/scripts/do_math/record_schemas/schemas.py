@@ -99,6 +99,9 @@ RECORDS["activities"] = record({"activity_kind": TEXT, "owner_ref": {"type": ["s
         ("reason", "condition", "next_owner", "at")), "resumed_at": TEXT, "finished_at": TEXT},
     ("activity_kind", "owner_ref", "opened_at", "input_refs", "status", "assigned_execution_ids", "result_refs", "unresolved", "followups"))
 RECORDS["executions"] = record({"owner_activity_id": ID, "actor_kind": enum("ai", "machine"),
+    "launch_ticket": EVIDENCE,
+    "environment_observations": array(obj({'artifact_ref':TEXT,'sha256':HASH,'environment_key':HASH},
+                                         ('artifact_ref','sha256','environment_key'))),
     "input_manifest": {"type": ["object", "array", "string"]}, "execution_profile_ref": PROFILE_REF,
     "created_at": TEXT, "status": enum("queued", "starting", "running", "stopping", "ended"),
     "continuation_of": nullable(ID), "context_origin": REFS, "role": TEXT, "action": EVIDENCE,

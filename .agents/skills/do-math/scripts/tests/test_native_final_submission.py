@@ -14,13 +14,16 @@ import test_submission_flow as submission_tests
 
 def native_result(execution, context, raw, workspace):
     """Pure protocol fixture; actual Job coverage is a separate connected test."""
+    from do_math.launch import ticket
+    execution['launch_ticket'] = {**ticket(execution['id'], {'sha256':execution['execution_profile_ref']['sha256'],
+        'actor_kind':'ai','role':execution.get('role','maintenance')}), 'phase':'finished'}
     prompt = b'exact sealed prompt'
     request = {'execution_id': execution['id'], 'profile_ref': execution['execution_profile_ref'],
         'cwd': str(workspace), 'codex_path': 'fixture-cli',
         'control_binding': {'execution_id': execution['id'], 'grant_id': execution['grant_id']}}
     request_raw = json.dumps(request).encode()
     identity = {'request_sha256': hashlib.sha256(request_raw).hexdigest(),
-        'pid': 123, 'creation_filetime': 134345064658094591, 'job_name': 'fixture-job', 'execution_id': execution['id'],
+        'pid': 123, 'creation_filetime': 134345064658094591, 'job_name': execution['launch_ticket']['job_name'], 'execution_id': execution['id'],
         'profile_ref': execution['execution_profile_ref']}
     execution['process'] = {**identity, 'creation_filetime': str(identity['creation_filetime'])}
     execution['input_sha256'] = hashlib.sha256(prompt).hexdigest()
@@ -57,7 +60,9 @@ def job_native_result(case, execution, context, raw, workspace):
     # The suspended process itself writes all terminal evidence after resume.
     script = "from pathlib import Path; import json,sys; p=Path(sys.argv[1]); d=json.loads(sys.argv[2]); [(p/k).write_bytes(v.encode('utf-8')) for k,v in d.items()]"
     argv = (sys.executable, '-B', '-c', script, str(evidence), json.dumps(payload, ensure_ascii=False))
-    job = WindowsJob(argv, cwd=evidence, env=os.environ, name='Local\\DoMath-native-test-' + uuid.uuid4().hex)
+    execution['launch_ticket']['phase'] = 'dispatched'
+    execution['capacity']['local_termination'] = 'unknown'
+    job = WindowsJob(argv, cwd=evidence, env=os.environ, name=execution['launch_ticket']['job_name'])
     native = CodexExecution(evidence/'request.json', evidence/'prompt.txt',
         collected['source_request']['sha256'], collected['source_prompt']['sha256'], argv,
         evidence/'stdout.jsonl', evidence/'stderr.txt', evidence/'final.txt', evidence/'status.json',
@@ -78,6 +83,8 @@ def job_native_result(case, execution, context, raw, workspace):
         case.assertTrue(result['execution']['collect']['termination_barrier']['confirmed'])
     finally:
         job.close()
+    execution['launch_ticket']['phase'] = 'finished'
+    execution['capacity']['local_termination'] = 'confirmed'
     return result
 
 

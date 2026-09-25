@@ -24,6 +24,8 @@ def grant_replacement(engine, *, reuse='reusable'):
 
 
 class FakeEngine(QuestionEngineMixin, ReviewEngineMixin):
+    from do_math.lifecycle_engine import LifecycleEngineMixin
+    _observe_environment = LifecycleEngineMixin._observe_environment
     def __init__(self, root, rounds=2):
         source = 'theorem sample : 1 = 1 := rfl'
         policy = {'id': 'fixture-review-policy-v5', 'version': 5, 'required_perspectives': [],
@@ -528,6 +530,9 @@ class ReviewEngineTests(unittest.TestCase):
         persisted_runtime_after = deepcopy(engine.runtime)
         persisted_runtime_after['feature_version'] = 5
         persisted_runtime_after['trust_transitions'][transition_id]['status'] = 'active'
+        # This domain-level fixture has explicitly applied the queued activation.
+        persisted_runtime_after['queue'] = [a for a in persisted_runtime_after['queue']
+            if not (a['role'] == 'trust_activate' and a.get('transition_id') == transition_id)]
         execution_ids = list(persisted_runtime_after['executions'])
         persisted_runtime_after['activities'] = {'AY-fixture': {
             'id': 'AY-fixture', 'activity_kind': 'identity_review', 'owner_ref': cid,

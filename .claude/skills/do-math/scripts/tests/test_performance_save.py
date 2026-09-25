@@ -67,7 +67,7 @@ class SaveWithStateTests(unittest.TestCase):
         head, instance, runtime = self.repository.load()
         with patch.object(self.repository._store, 'read_many', wraps=self.repository._store.read_many) as reads:
             saved = self.repository.save_with_state(head, instance, {**runtime, 'status': 'active'})
-        self.assertEqual(len([call for call in reads.call_args_list if call.args[0] == head]), 1)
+        self.assertEqual(len([call for call in reads.call_args_list if call.args[0] == head]), 0)
         self.assertEqual(saved, self.repository.load(saved[0]))
 
     def test_reused_parent_bytes_still_reject_a_damaged_previous_snapshot(self) -> None:

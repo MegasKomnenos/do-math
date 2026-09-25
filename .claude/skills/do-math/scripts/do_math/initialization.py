@@ -73,67 +73,48 @@ def capability_requirements(instance, reference, required=(), *, current_identit
         return {"satisfied": False, "missing": missing, "profile_ref": reference, "reason": str(exc)}
 
 
+def _capability_batch_requirements(instance, references, *, at=None):
+    """Observe each provider once for this check; validate every exact profile."""
+    identities = {}
+    for reference in references:
+        try:
+            profile = resolve_profile(instance.get("execution_profiles", {}), reference)
+            identity = None
+            if profile["actor_kind"] == "ai":
+                adapter = adapter_for(profile)
+                key = (profile['ai']['provider'], adapter.observation_key())
+                if key not in identities:
+                    identities[key] = adapter.capability_identity()
+                identity = identities[key]
+            yield capability_requirements(instance, reference, current_identity=identity, at=at)
+        except (ValueError, KeyError, TypeError, OSError) as exc:
+            yield {"satisfied": False, "profile_ref": reference, "reason": str(exc)}
+
+
 def trust_environment_errors(environment, *, verify_files=True):
-    """Validate the approved manifest and its exact currently installed bytes."""
-    if not isinstance(environment, dict):
-        return ["trust environment absent"]
-    manifest = environment.get("manifest", {})
-    errors = []
-    from .formal import toolchain_errors
-    errors.extend(toolchain_errors(environment.get('toolchain')))
-    if not isinstance(manifest, dict) or environment.get("manifest_sha256") != digest(manifest):
-        return ["trust manifest missing or changed"]
-    if set(manifest) != {"command", "foundation_profile", "files", "validation"}:
-        errors.append("trust manifest fields differ from the current contract")
-    if not environment.get("source_ref"):
-        errors.append("trust environment has no explicit adoption")
-    if set(environment.get("allowed_axioms", [])) != FOUNDATION_AXIOMS:
-        errors.append("foundation axiom profile differs")
-    foundation = manifest.get("foundation_profile", {})
-    if foundation.get("allowed_axioms") != sorted(FOUNDATION_AXIOMS) or not {"sorryAx", "Lean.trustCompiler", "additional_axioms"}.issubset(foundation.get("forbidden", [])):
-        errors.append("foundation profile is incomplete")
-    command = environment.get("toolchain", {}).get("configured_command")
-    if not command or manifest.get("command") != command:
-        errors.append("manifest command differs from toolchain")
-    files = manifest.get("files", [])
-    required_roles = {"lean_binary", "lean_source", "lake_binary", "mathlib_source", "mathlib_build", "checker"}
-    if not isinstance(files, list) or not required_roles.issubset({r.get("role") for r in files if isinstance(r, dict)}):
-        errors.append("manifest lacks required source, binary, build or checker evidence")
-    else:
-        paths = set()
-        for entry in files:
-            if not isinstance(entry, dict) or not isinstance(entry.get("path"), str) or not Path(entry["path"]).is_absolute():
-                errors.append("manifest file must have an absolute path")
-                continue
-            path = Path(entry["path"])
-            resolved = str(path.resolve()).casefold()
-            if resolved in paths:
-                errors.append("duplicate manifest path")
-            paths.add(resolved)
-            if verify_files:
-                try:
-                    if path.is_symlink() or hashlib.sha256(path.read_bytes()).hexdigest() != entry.get("sha256"):
-                        errors.append("trust file changed: " + str(path))
-                except OSError:
-                    errors.append("trust file unavailable: " + str(path))
-    validation = manifest.get("validation", {})
-    if validation.get("status") != "verified" or not validation.get("evidence_refs"):
-        errors.append("trust validation evidence absent")
-    return errors
+    from .trust_validation import manifest_errors, verify_environment_files
+    if not verify_files:
+        return manifest_errors(environment)
+    return verify_environment_files(environment)['errors']
 
 
 def governance_basis(instance):
     return digest(instance.get('governance', {}))
 
 
-def require_trust_environment(instance, runtime):
+def require_trust_environment(instance, runtime, *, observe=None, verify_files=True):
     """Check the actual current environment at a formal-use admission boundary."""
     if any(row.get('status') in {'checking', 'ready'} for row in runtime.get('trust_transitions', {}).values()):
         raise ValueError('formal admission is blocked during a trust transition')
     environment = instance.get('trust_environments', {}).get(instance.get('active_trust_environment'))
-    errors = trust_environment_errors(environment)
+    errors = trust_environment_errors(environment, verify_files=False)
     if not environment or environment.get('status') != 'active' or errors:
         raise ValueError('approved fixed trust environment required: ' + '; '.join(errors))
+    if verify_files:
+        from .trust_validation import verify_environment_files
+        result = observe(environment) if observe is not None else verify_environment_files(environment)
+        if result.get('status') != 'verified':
+            raise ValueError('current trust observation required: ' + '; '.join(result.get('errors', [])))
     return deepcopy(environment)
 
 
@@ -222,7 +203,7 @@ def activation_requirements(instance, runtime, *, at=None, owner_handlers=None):
     except (ValueError, TypeError):
         missing.append("review_policy")
     env = instance.get("trust_environments", {}).get(instance.get("active_trust_environment"))
-    if not env or env.get("status") != "active" or trust_environment_errors(env):
+    if not env or env.get("status") != "active" or trust_environment_errors(env, verify_files=False):
         missing.append("trust_environment")
     references = adoption.get("profile_refs", [])
     if not references:
@@ -246,8 +227,8 @@ def activation_requirements(instance, runtime, *, at=None, owner_handlers=None):
         observation_errors.extend(observation_settings_errors(profile))
     if observation_errors:
         missing.append('observation_configuration')
-    for ref in references:
-        if not capability_requirements(instance, ref, at=at)["satisfied"]:
+    for capability in _capability_batch_requirements(instance, references, at=at):
+        if not capability["satisfied"]:
             missing.append("capability_evidence")
             break
     grants = adoption.get("research_grant_ids", [])

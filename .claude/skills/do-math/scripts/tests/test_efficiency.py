@@ -27,7 +27,7 @@ class EfficiencyTests(unittest.TestCase):
     def model_process(self, arguments, *, resume):
         from do_math.windows_job import WindowsJob, process_identity
         job = WindowsJob([sys.executable, '-c', 'import time; time.sleep(600)'],
-                         cwd=arguments['workspace'], name='EFFICIENCY-' + uuid.uuid4().hex)
+                         cwd=arguments['workspace'], name=arguments['launch_ticket']['job_name'])
         try:
             arguments['on_started']({**process_identity(job), 'job_name': job.name})
             if resume:

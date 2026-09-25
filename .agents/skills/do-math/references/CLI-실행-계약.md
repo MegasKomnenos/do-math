@@ -1,5 +1,7 @@
 # do-math CLI 실행 계약
 
+초기화의 검사 분리, 큰 불변 payload의 저장 코덱, `launch_ticket`, `quiesce`/`release-quiesce`, `trust`의 `recheck`, `timeline --include-operations`는 [초기화 효율과 정비](초기화-효율과-정비.md)의 현행 계약을 함께 따른다. `maintenance_fence`와 `operation_progress`는 각각 정비 상태와 별도 로컬 진행 관측이며 수학적 완료 판정이 아니다.
+
 이 문서는 기능 판본 5의 구체 인터페이스 참조다. 역할 응답의 wire 계약은 `do-math-cli/5`, 저장 계약은 `do-math-state/5`이며 서로 같은 스키마가 아니다. 명령행 인자, 구조화 제어, 저장 형식, CLI 상태 투영, AI 입력·출력과 산출 경로를 설명한다. do-math의 목적과 전체 연구 흐름은 `SKILL.md`, 보편 개념의 정의는 `GLOSSARY.md`, 역할별 판단·산출·실패 행동은 `계약/` 문서가 소유한다.
 
 저장소 계층과 중앙 실행기의 초기화·설치 manifest는 모두 기능 판본 5를 사용한다. 역할 응답, 기록 저장과 소비 API는 정확한 판본·해시를 대조하며, 옛 필드를 암묵 변환해 현재 계약으로 취급하지 않는다.

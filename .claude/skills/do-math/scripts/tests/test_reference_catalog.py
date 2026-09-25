@@ -3,12 +3,32 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.submission import reference_catalog, reported_references, validate_reference
 
 
 class CatalogTests(unittest.TestCase):
+    def test_large_manifest_is_indexed_once_without_authorizing_the_projection(self):
+        from do_math import submission
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            paths = [f"environment/module-{i}.olean" for i in range(2000)]
+            context = {"manifest": {"files": [{"path": p} for p in paths]},
+                       "reference_catalog": [{"path": "invented"}],
+                       "proposal": {"valid": {}},
+                       "other": [{"ref": "proposal:missing"}]}
+            with patch.object(submission, '_reference_locators', wraps=submission._reference_locators) as locators:
+                values = {row['value'] for row in reference_catalog(context, root)}
+                self.assertEqual(locators.call_count, 1)
+            self.assertTrue(set(paths).issubset(values))
+            self.assertNotIn('invented', values)
+            self.assertNotIn('proposal:missing', values)
+            context['manifest']['files'].pop()
+            with self.assertRaises(ValueError):
+                validate_reference(paths[-1], context, root)
+
     def test_current_aliases_and_historical_bytes_remain_distinct(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

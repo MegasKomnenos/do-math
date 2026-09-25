@@ -20,12 +20,14 @@ from do_math.governance import WORK_ROLES, OPERATING_ROLES
 
 IDENTITY={'host':'fixture','adapter_sha256':'a'*64}
 class AdapterDouble:
+    def observation_key(self): return ('fixture',)
     def capability_identity(self): return deepcopy(IDENTITY)
     def describe(self):
         return {'identity':self.capability_identity(),'verified':True,'scope':'cli_command_surface_only',
                 'supported':{'jsonl':True,'model':True,'structured_output':True}}
 
 class FakeEngine(RevisionEngineMixin,LifecycleEngineMixin,SchedulerMixin,ReviewEngineMixin,GovernanceEngineMixin):
+    _remove_action=ResearchEngine._remove_action
     _register_execution=ResearchEngine._register_execution
     _activity_for_action=ResearchEngine._activity_for_action
     _provider_slots=ResearchEngine._provider_slots
@@ -95,7 +97,9 @@ class FakeEngine(RevisionEngineMixin,LifecycleEngineMixin,SchedulerMixin,ReviewE
                 self.instance['role_profile_refs']['trust_check'] = [profiles.profile_ref(profile)]
         if active:
             self._trust_control({'operation':'transition','env_id':eid},'UI-transition-'+name)
-            self._finish_trust_transition(next(reversed(self.runtime['trust_transitions'])))
+            from do_math.trust_validation import verify_environment_files
+            self._finish_trust_transition(next(reversed(self.runtime['trust_transitions'])),
+                                          verify_environment_files(self.instance['trust_environments'][eid]))
         return eid
     def activate(self):
         self.grant('GR-init',True); self.grant('GR-research')
@@ -190,7 +194,7 @@ class PublicInitializationRunner:
         context = json.loads((workspace/'input/submission/context.json').read_bytes())
         if context['action']['role'] != 'intent_interpretation':
             raise AssertionError('No research is authorized by the initialization fixture')
-        on_started({'job_name':'LIFECYCLE-synthetic-provider-job'})
+        on_started({'job_name':kwargs['launch_ticket']['job_name']})
         output = seal_response(intent_response(context), context, workspace)
         (workspace/'draft.json').write_bytes(canonical_json(output))
         submission.request_control(workspace, 'draft.json', kind='submit_intent', wait_seconds=0, binding=control_binding)
@@ -503,7 +507,7 @@ class LifecycleTests(unittest.TestCase):
         e=self.engine; old,new,tid=self.transition(); prior=deepcopy(e.instance['formal_results'])
         with self.assertRaises(ValueError): e._formal_environment()
         e.machine('trust_check'); self.assertEqual(e.instance['active_trust_environment'],old)
-        e.machine('trust_check'); self.assertEqual(e.instance['active_trust_environment'],new)
+        e.machine('trust_check'); e.machine('trust_activate'); self.assertEqual(e.instance['active_trust_environment'],new)
         for fid,row in prior.items(): self.assertEqual(e.instance['formal_results'][fid],row)
         for args in e.formal_calls: self.assertEqual(args['lean_command'],args['expected_toolchain']['configured_command'])
         for row in e.runtime['executions'].values():
@@ -515,6 +519,7 @@ class LifecycleTests(unittest.TestCase):
         e=self.engine; old,new,tid=self.transition()
         e.formal_behavior=lambda args:{'status':'failed','reason':'fixture'}
         e.machine('trust_check'); e.machine('trust_check')
+        e.machine('trust_activate')
         self.assertEqual(e.instance['active_trust_environment'],old); self.assertEqual(e.runtime['trust_transitions'][tid]['status'],'failed')
     def test_wrong_compiler_is_rejected(self):
         e=self.engine; old,new,tid=self.transition()
@@ -526,13 +531,14 @@ class LifecycleTests(unittest.TestCase):
             r=e.verification(a['source'],a['declarations'],a['expected_toolchain'])
             r['declaration_evidence']={d:{'type':'changed'} for d in a['declarations']}; return r
         e.formal_behavior=changed; e.machine('trust_check'); e.machine('trust_check')
+        e.machine('trust_activate')
         self.assertEqual(e.instance['active_trust_environment'],old)
         self.assertEqual(e.runtime['trust_transitions'][tid]['status'],'ready')
         self.assertEqual(len([c for c in e.runtime['review_cycles'].values() if c.get('transition_id')==tid]),2)
     def test_completed_target_not_repeated_on_recovery(self):
         e=self.engine; old,new,tid=self.transition(); a=e.machine('trust_check')
         calls=len(e.formal_calls); e._run_trust_check(a); self.assertEqual(len(e.formal_calls),calls)
-        e.machine('trust_check'); self.assertEqual(e.instance['active_trust_environment'],new)
+        e.machine('trust_check'); e.machine('trust_activate'); self.assertEqual(e.instance['active_trust_environment'],new)
     def test_manifest_change_blocks_trust_check(self):
         e=self.engine; old,new,tid=self.transition()
         Path(e.instance['trust_environments'][new]['manifest']['files'][0]['path']).write_bytes(b'changed')
@@ -809,6 +815,7 @@ class Audit2LifecycleTests(unittest.TestCase):
                 return result
             e.formal_behavior = changed
             e.machine('trust_check')
+            e.machine('trust_activate')
             transition = next(reversed(e.runtime['trust_transitions'].values()))
             self.assertEqual(transition['status'],'ready')
             cycles = [r for r in e.runtime['review_cycles'].values() if r.get('transition_id')==transition['id']]

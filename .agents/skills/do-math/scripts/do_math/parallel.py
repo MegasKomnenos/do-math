@@ -2,18 +2,20 @@
 from __future__ import annotations
 
 from concurrent.futures import Future
+from contextvars import copy_context
 from queue import Empty, Queue
 from threading import Lock, Thread
 
 
 class ModelCalls:
-    def __init__(self):
+    def __init__(self, *, on_returned=None):
         self.events = Queue()
         self.futures = {}
         self.threads = []
         self.guard = Lock()
         self.pumping = False
         self.stopping = False
+        self.on_returned = on_returned
 
     def _callback(self, function, *, stop=False):
         def call(*args):
@@ -24,7 +26,9 @@ class ModelCalls:
                         return True
                     raise RuntimeError("executor is shutting down")
                 self.events.put((function, args, response, stop))
-            return response.result()
+            from .operation_trace import phase
+            with phase('callback_wait', callback=getattr(function, '__name__', 'callback')):
+                return response.result()
         return call
 
     def start(self, generator, runner, arguments, *, execution_id=None):
@@ -48,7 +52,8 @@ class ModelCalls:
                 future.set_result(function(**arguments))
             except BaseException as error:
                 future.set_exception(error)
-        thread = Thread(target=run, name="do-math-call")
+        context = copy_context()
+        thread = Thread(target=lambda: context.run(run), name="do-math-call")
         self.threads.append(thread)
         thread.start()
         return future
@@ -82,6 +87,8 @@ class ModelCalls:
             except Exception as error:
                 result = {"status": "failed", "output": None, "usage": {},
                           "error": f"{type(error).__name__}: {error}"}
+            if self.on_returned is not None:
+                self.on_returned(future.execution_id, result)
             try:
                 generator.send(result)
             except StopIteration:

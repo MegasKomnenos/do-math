@@ -1018,6 +1018,7 @@ class ReviewEngineMixin:
                 'review_cycle_id': updated['id'], 'transition_id': updated['transition_id'],
                 'knowledge_id': knowledge_id, 'decision': updated['decision'], 'next_owner': 'trust_transition'})
             self.runtime['queue'][:] = [row for row in self.runtime['queue'] if row.get('review_cycle_id') != updated['id']]
+            self._enqueue('trust_activate', transition_id=updated['transition_id'])
             return
         # The caller seals the basis. Worker output cannot supply publication authority.
         if updated.get('publication_premises') != self._review_publication_premises(knowledge_id):
@@ -1025,7 +1026,7 @@ class ReviewEngineMixin:
         if updated['decision'] == 'match':
             # A stored manifest cannot attest to currently installed file bytes.
             from .initialization import require_trust_environment
-            require_trust_environment(self.instance, self.runtime)
+            require_trust_environment(self.instance, self.runtime, observe=self._observe_environment)
         assessment = self._identity_assessment(updated, reason='Complete independent review')
         assessment.pop('cycle_id', None)
         assessment.update(review_cycle_id=updated['id'], basis=deepcopy(updated['identity_basis']))

@@ -440,7 +440,7 @@ class GovernanceEngineMixin:
             and all(a['decision'] == 'satisfied' for a in j['additional_audits']) for j in judgments)
         if satisfied:
             from .initialization import require_trust_environment
-            require_trust_environment(self.instance, self.runtime)
+            require_trust_environment(self.instance, self.runtime, observe=self._observe_environment)
             self.instance = academic.apply_goal_assurance(self.instance, decision='mathematically_solved',
                 basis=action['basis'], judgments=judgments, runtime=self.runtime)
             self.runtime['status'] = 'completed'

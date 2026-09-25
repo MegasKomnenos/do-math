@@ -17,6 +17,52 @@ from test_categories import test_group
 
 @test_group('unit')
 class EnvironmentValidationTests(unittest.TestCase):
+    def test_large_manifest_rechecks_every_file_and_keeps_ordered_findings(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            request = trust_fixture(root, ['lean'])
+            environment = {key: value for key, value in request.items() if key != 'operation'}
+            files = environment['manifest']['files']
+            for i in range(40):
+                path = root / f'module-{i}'
+                path.write_bytes(b'original')
+                files.append({'role':'mathlib_build', 'path':str(path.resolve()),
+                              'sha256':hashlib.sha256(b'original').hexdigest()})
+            environment.update(source_ref='test', manifest_sha256=digest(environment['manifest']))
+            self.assertEqual(trust_environment_errors(environment), [])
+            changed, missing = files[-2]['path'], files[-1]['path']
+            Path(changed).write_bytes(b'changed')
+            Path(missing).unlink()
+            files.append(dict(files[0]))
+            files.append({'role':'checker','path':'relative','sha256':'0'*64})
+            environment['manifest_sha256'] = digest(environment['manifest'])
+            # A malformed manifest fails before any live observation.
+            self.assertEqual(trust_environment_errors(environment), [
+                'duplicate manifest path', 'manifest file must have an absolute path'])
+            self.assertEqual(trust_environment_errors(environment, verify_files=False), [
+                'duplicate manifest path', 'manifest file must have an absolute path'])
+            del files[-2:]
+            environment['manifest_sha256'] = digest(environment['manifest'])
+            self.assertEqual(trust_environment_errors(environment), [
+                'trust file changed: ' + changed, 'trust file unavailable: ' + missing])
+
+    def test_structure_never_resolves_host_paths_and_live_hashing_streams(self):
+        from do_math.trust_validation import verify_environment_files
+        with tempfile.TemporaryDirectory() as directory:
+            request = trust_fixture(Path(directory), ['lean'])
+            environment = {key:value for key,value in request.items() if key != 'operation'}
+            environment.update(source_ref='test', manifest_sha256=digest(request['manifest']))
+            with patch.object(Path, 'resolve', side_effect=AssertionError('host access')):
+                self.assertEqual(trust_environment_errors(environment, verify_files=False), [])
+            with patch.object(Path, 'read_bytes', side_effect=AssertionError('whole file read')):
+                result = verify_environment_files(environment, workers=2)
+            self.assertEqual(result['status'], 'verified')
+            self.assertLessEqual(result['peak_pending'], 4)
+            self.assertEqual(result['completed_files'], 6)
+            stopped = verify_environment_files(environment, should_stop=lambda:True)
+            self.assertEqual(stopped['status'], 'cancelled')
+            self.assertEqual(stopped['read_bytes'], 0)
+
     def test_cached_environment_requires_evidence_and_unchanged_files(self):
         with tempfile.TemporaryDirectory() as directory:
             request = trust_fixture(Path(directory), ['lean'])

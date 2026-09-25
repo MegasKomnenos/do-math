@@ -1,5 +1,7 @@
 """Lossless input catalogs, bounded prompt contexts, and workspace collection."""
 from __future__ import annotations
+from .operation_trace import measured
+
 
 from copy import deepcopy
 import hashlib
@@ -89,6 +91,7 @@ def _read_stable(path: Path, *, boundary: PhysicalBoundary | None = None) -> byt
     return data
 
 
+@measured('input_materialization')
 def materialize_inputs(workspace: Path, documents: dict[str, bytes]) -> dict:
     if not isinstance(documents, dict):
         raise TypeError("documents must be a path-to-bytes object")
@@ -388,6 +391,7 @@ def role_direct_keys(role, context):
                          'continuity_broken', 'continuation_history', 'candidate_order') if key in context]]))
 
 
+@measured('role_input_preparation')
 def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
                        workspace, activity_id, output_schema=None, documents=None, artifact_prefix=None,
                        install_submission_tools=False, max_artifact_bytes=None, candidate_order=None):
@@ -415,6 +419,16 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
             detail_bytes[ref['artifact_ref']] = raw
         detail_sources.append(ref)
         return deepcopy(ref)
+    # Keep exact historical controls available without treating every nested
+    # operational file path as an inline source for this role's reference index.
+    for field in ('recent_history', 'preparation_history'):
+        for index, row in enumerate(value.get(field, [])):
+            request = row.get('request') if isinstance(row, dict) else None
+            if isinstance(request, dict) and len(canonical_json(request)) > 16384:
+                reference = preserve_detail(field + '-' + str(index), request)
+                row['request'] = {k:deepcopy(request[k]) for k in
+                    ('id','instance_id','action','origin','created_at') if k in request}
+                row['request_source_ref'] = reference
     if 'config' in value or role in {'research_preparation', 'research_plan'}:
         value.pop('config', None)
         value['configuration_source'] = preserve_detail('configuration', instance['config'])

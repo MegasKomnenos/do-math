@@ -37,10 +37,12 @@ class ProviderFinalContractTests(unittest.TestCase):
                     raw_final = b'Draft submitted.' if bound else b'{"ids":[]}'
                     adapter = Adapter({'result': 'output_collected', 'final': {'raw': raw_final}, 'jsonl': {}})
                     runner = runner_type('fixture-cli'); runner._adapter = adapter
+                    from research_fixtures import dispatched_launch
                     result = runner.run(prompt=prompt, input_seal=execution_profiles.prompt_seal(prompt),
                         output_schema=schema, workspace=workspace, evidence_dir=root / 'evidence',
                         model=model, effort=profile['ai']['effort'], timeout_seconds=60,
-                        execution_id='EX-final', profile=profile, control_binding=binding)
+                        execution_id='EX-final', profile=profile, control_binding=binding,
+                        launch_ticket=dispatched_launch('EX-final',profile))
                     request = worker.load_request(root / 'evidence/request.json')
                     argv = worker.build_argv(request)
                     self.assertEqual('output_schema_path' in request, not bound)

@@ -1,5 +1,7 @@
 """Interpret native Claude events without treating exit zero as completion."""
 from __future__ import annotations
+from .operation_trace import measured
+
 
 import json
 import subprocess
@@ -17,6 +19,7 @@ class ClaudePrintAdapter(LocalCLIAdapter):
     executable_key = "claude_path"
     parse_output = staticmethod(parse_jsonl)
 
+    @measured('capability_surface')
     def describe(self) -> dict:
         try:
             options = dict(capture_output=True, timeout=self.describe_timeout, shell=False)

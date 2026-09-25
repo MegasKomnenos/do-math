@@ -115,8 +115,9 @@ class MachineSchedulerTests(unittest.TestCase):
         second = host.candidate('K2')
         host.runtime['queue'] = [action, {'id': new_id('AC'), 'role': 'maintenance'}, second]
         observed = []
+        verifier_entered = threading.Event()
         def control():
-            if host.ai_finished.is_set():
+            if host.ai_finished.is_set() and verifier_entered.is_set():
                 host.tick = 100000.
                 if cancel == 'revoke':
                     for grant in host.instance['grants'].values():
@@ -126,7 +127,8 @@ class MachineSchedulerTests(unittest.TestCase):
                     host.instance['lifecycle']['state'] = 'paused'
         host.control_action = control
         def verify(**args):
-            args['on_started']({'job_name': 'synthetic-formal-job'})
+            verifier_entered.set()
+            args['on_started']({'job_name': args['launch_ticket']['job_name']})
             for _ in range(500):
                 stopped = args['should_stop']()
                 if host.ai_finished.is_set():
@@ -154,6 +156,35 @@ class MachineSchedulerTests(unittest.TestCase):
 
     def test_formal_allows_ai_collection_after_long_elapsed_time(self):
         self.run_case()
+
+    def test_environment_failure_waits_for_explicit_recheck_before_compiler_retry(self):
+        host = self.host
+        action = host.candidate('K-env')
+        host.runtime['queue'] = [action]
+        environment = host.instance['trust_environments'][host.instance['active_trust_environment']]
+        path = Path(next(row['path'] for row in environment['manifest']['files'] if row['role']=='lean_source'))
+        original = path.read_bytes()
+        path.write_bytes(b'changed installation')
+        from unittest.mock import Mock
+        host.formal_verifier = Mock()
+        host._formal(action)
+        host.formal_verifier.assert_not_called()
+        waiting = host.runtime['waiting_actions'][action['id']]
+        self.assertEqual(waiting['kind'], 'formal_environment')
+        self.assertEqual(waiting['next_owner'], 'trust_governance')
+        previous = waiting['execution_id']
+        path.write_bytes(original)
+        host._trust_control({'operation':'recheck','env_id':environment['id']}, 'UI-recheck')
+        successor = next(a for a in host.runtime['queue'] if a['id']==action['id'])
+        self.assertEqual(successor['continuation_of'], previous)
+        self.assertNotIn(action['id'], host.runtime['waiting_actions'])
+        def verify(**args):
+            args['on_started']({'job_name':args['launch_ticket']['job_name']})
+            return host.verification(args['source'], args['declarations'], args['expected_toolchain'])
+        host.formal_verifier = verify
+        host._formal(successor)
+        latest = next(e for e in host.runtime['executions'].values() if e.get('continuation_of')==previous)
+        self.assertEqual(latest['outcome'], 'output_accepted')
 
     def test_formal_user_stop_rejects_a_late_verified_result(self):
         self.run_case(cancel=True)
@@ -207,7 +238,7 @@ class MachineSchedulerTests(unittest.TestCase):
         from types import MethodType
         host._settle_activity = MethodType(ResearchEngine._settle_activity, host)
         def verify(**args):
-            args['on_started']({'job_name': 'synthetic-owned-job'})
+            args['on_started']({'job_name': args['launch_ticket']['job_name']})
             while not args['should_stop'](): time.sleep(.01)
             return {'status': 'stopped', 'reason': 'owner stopped',
                     'stdout': b'preserved evidence\xff', 'usage': {'cost_usd': 0.25}}

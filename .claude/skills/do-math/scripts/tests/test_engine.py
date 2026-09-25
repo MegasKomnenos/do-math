@@ -56,11 +56,12 @@ class ScriptedRunner:
         self.formal, self.invalid_plan, self.fail_role = formal, invalid_plan, fail_role
         self.prompts: list[tuple[str, str]] = []
         self.preparation_candidates = preparation_candidates
+        self.explicit_model_rating = model_rating
         self.model_rating = model_rating or {"difficulty": "low", "importance": "medium", "reason": "Bounded explicit fixture argument"}
 
     @local_job_runner
     def run(self, *, prompt, output_schema, workspace, evidence_dir, model, effort, timeout_seconds,
-            should_stop, on_started, control_binding=None, **kwargs):
+            should_stop, on_started, control_binding=None, launch_ticket=None, **kwargs):
         role = prompt.split("You are the do-math role: ", 1)[1].split(".", 1)[0]
         ctx = context_from(prompt, workspace)
         self.prompts.append((role, prompt))
@@ -131,6 +132,9 @@ class ScriptedRunner:
                     extensions['task_conditions'] = prepared_rule_conditions(ctx['action']['observation_rule_targets'])
             elif ctx.get("budget_unit") == "concurrent_sessions":
                 extensions["model_assessments"] = planning_model_assessments(out, ctx)
+                if self.explicit_model_rating is not None:
+                    extensions["model_assessments"] = [{**row, **self.explicit_model_rating}
+                        for row in extensions["model_assessments"]]
             if extensions:
                 path.write_text(json.dumps(extensions), encoding="utf-8")
         bind_candidates(out, ctx)

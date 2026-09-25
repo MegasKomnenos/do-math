@@ -69,6 +69,13 @@ def validate_profile(profile: dict) -> None:
     if actor == "machine":
         if role not in MACHINE_ROLES or "ai" in profile:
             raise ValueError("machine profile cannot contain AI fields")
+        if role == 'trust_activate':
+            scan = profile.get('machine', {})
+            if (set(scan) != {'mechanism','workers','max_inflight','checker_sha256'}
+                    or scan.get('mechanism') != 'full_environment_scan'
+                    or type(scan.get('workers')) is not int or not 1 <= scan['workers'] <= 16
+                    or scan.get('max_inflight') != scan['workers'] * 2):
+                raise ValueError('trust activation requires its bounded environment scan profile')
     elif not isinstance(profile.get("ai"), dict) or not profile["ai"].get("model"):
         raise ValueError("AI profile requires a model")
     expected_mode = ("deadline_only" if actor == "machine" or profile["budget_kind"] == "operations"
@@ -195,7 +202,7 @@ def build_profiles(config: dict, *, roles: set[str] | None = None) -> dict:
             "total_slots": work + operations, "scope": "local_execution_not_provider_operations"}
     profiles, refs = {}, {}
     lean = (_lean_contract(config)
-            if selected_roles & {"formal_check", "trust_check", "trust_activate"} else None)
+            if selected_roles & {"formal_check", "trust_check"} else None)
     for role in sorted(selected_roles):
         machine = role in MACHINE_ROLES
         pool = "work" if role in WORK_ROLES else "operations"
@@ -212,8 +219,12 @@ def build_profiles(config: dict, *, roles: set[str] | None = None) -> dict:
                               "provider_context_capacity": "unknown"},
                     "required_capabilities": [] if machine else ["jsonl", "model", "structured_output"],
                     "capability_evidence_refs": []}
-            if machine and role in {"formal_check", "trust_check", "trust_activate"}:
+            if machine and role in {"formal_check", "trust_check"}:
                 body["machine"] = deepcopy(lean)
+            elif role == 'trust_activate':
+                from . import trust_validation
+                body['machine'] = {'mechanism':'full_environment_scan', 'workers':4, 'max_inflight':8,
+                    'checker_sha256':hashlib.sha256(Path(trust_validation.__file__).read_bytes()).hexdigest()}
             if not machine:
                 model = config["tier_models"][tier]
                 capacity = next((c["id"] for c in constraints.values() if c.get("model") == model), None)

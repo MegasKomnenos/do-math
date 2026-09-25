@@ -92,12 +92,15 @@ class GoalAuditFlowRepairTests(unittest.TestCase):
         e.runtime['integrations'] = {'IB-one': {'execution_id': ex['id'], 'members': ['output']}}
         e.store = SimpleNamespace(read=lambda path, snapshot: artifacts[path])
         e._slots = SessionSlots(e.runtime, e.instance)
-        with patch.object(e, '_save'), patch('do_math.windows_job.named_job_empty', return_value=False), \
+        with patch.object(e, '_save'), patch('do_math.windows_job.named_job_empty', return_value=True), \
                 patch('do_math.engine.collect_outputs', side_effect=AssertionError('must retain original files')):
             e._recover_disappeared()
         self.assertEqual(ex['status'], 'stopping')
         self.assertEqual(e.runtime['waiting_actions'], {})
-        with patch.object(e, '_save'), patch('do_math.windows_job.named_job_empty', return_value=True), \
+        from research_fixtures import dispatched_launch
+        ex['launch_ticket'] = dispatched_launch(ex['id'], {'sha256':'a'*64, 'actor_kind':'ai', 'role':'goal_audit'})
+        with patch.object(e, '_save'), patch('do_math.windows_job.owner_ended', return_value=True), \
+                patch('do_math.windows_job.named_job_empty', return_value=True), \
                 patch('do_math.engine.collect_outputs', side_effect=AssertionError('must retain original files')):
             e._recover_disappeared()
         self.assertEqual(ex['status'], 'ended')

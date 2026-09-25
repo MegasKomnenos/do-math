@@ -110,6 +110,7 @@ def snapshot_report(repository: Path, instance_id: str, *, snapshot: str | None 
     return {"instance_id": instance_id, "snapshot": head, "goal": goal, "goal_status": instance.get("goal_status"), "status": runtime.get('status'),
             "pending_actions": len(runtime.get('queue', [])),
             "installation_repair": pending_installation_repair(runtime),
+            "maintenance_fence": deepcopy(runtime.get('maintenance_fence')),
             "tasks": task_status(instance, runtime), "dispatch_waits": dispatch_waits(runtime), "inspection": inspection,
             "cleanup_failures": pending_cleanup_failures(runtime),
             "assurance": runtime.get("assurance", {}), "host_observation": observation,
@@ -144,7 +145,7 @@ def render_dispatch_waits(report):
             for row in report.get('dispatch_waits', []) if row.get('target') not in task_ids]
 
 
-def timeline(repository: Path, instance_id: str, *, snapshot=None, timezone_name="Asia/Seoul", include_operator=False):
+def timeline(repository: Path, instance_id: str, *, snapshot=None, timezone_name="Asia/Seoul", include_operator=False, include_operations=False):
     store = _repository(repository, instance_id)
     head, instance, runtime = store.load(snapshot)
     zone = _zone(timezone_name)
@@ -184,6 +185,13 @@ def timeline(repository: Path, instance_id: str, *, snapshot=None, timezone_name
                 "usage_scope": result.get("usage_scope"), "failure_kind": result.get("error_kind"),
                 "evidence_source": {"kind": "local_operator_file", "path": str(path),
                     "sha256": hashlib.sha256(raw).hexdigest(), "observed_at": datetime.now(timezone.utc).isoformat()}})
+    if include_operations:
+        from .operation_trace import phase_rows
+        for row in phase_rows(Path(instance['workspace']) / 'operations'):
+            row['snapshot'] = None
+            row['created_at_local'] = _display(row['created_at_utc'], zone)
+            row['ended_at_local'] = _display(row['ended_at_utc'], zone)
+            rows.append(row)
     rows.sort(key=lambda row: (row.get("created_at_utc") or row.get("started_at_utc") or row.get("ended_at_utc") or "", row["id"]))
     return {"snapshot": head, "timezone": timezone_name, "rows": rows,
             "counts_by_unit": {unit: sum(row["unit"] == unit for row in rows) for unit in sorted({row["unit"] for row in rows})},

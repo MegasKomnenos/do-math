@@ -1143,7 +1143,9 @@ class StorageRedesignTests(unittest.TestCase):
         eid = next(reversed(engine.instance["trust_environments"]))
         self.assertEqual(trust_environment_errors(engine.instance["trust_environments"][eid], verify_files=True), [])
         send_control(engine, "trust", config={"operation": "transition", "env_id": eid})
-        engine._finish_trust_transition(next(reversed(engine.runtime["trust_transitions"])))
+        from do_math.trust_validation import verify_environment_files
+        engine._finish_trust_transition(next(reversed(engine.runtime["trust_transitions"])),
+                                       verify_environment_files(engine.instance['trust_environments'][eid]))
         engine._save()
         _, instance, runtime = engine.store.load()
         self.assertEqual(instance["active_trust_environment"], eid)

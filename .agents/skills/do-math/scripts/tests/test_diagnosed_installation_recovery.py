@@ -28,7 +28,11 @@ class DiagnosedRecoveryTests(unittest.TestCase):
             read=lambda path, snapshot: b'{"preserved":"actual rejected response"}',
             save_with_state=lambda *a, **k: ('next-head', state, runtime))
         self.provider_results = Mock(return_value={})
-        slots = SimpleNamespace(acquire=lambda *a, **k:True, started=lambda *a, **k:None,
+        def acquire(eid, *args, profile, execution):
+            from do_math.launch import ticket
+            execution['launch_ticket'] = ticket(eid, profile)
+            return True
+        slots = SimpleNamespace(acquire=acquire, started=lambda *a, **k:None,
             release=lambda *a:True, provider_result=self.provider_results)
         installation = root/'skill'
         installation.mkdir()
@@ -36,7 +40,7 @@ class DiagnosedRecoveryTests(unittest.TestCase):
         observed = []
         def provider(**arguments):
             observed.append(arguments)
-            arguments['on_started']({'pid':123,'job_name':'synthetic-not-a-real-process'})
+            arguments['on_started']({'pid':123,'job_name':arguments['launch_ticket']['job_name']})
             (arguments['workspace']/'regression.txt').write_text('Synthetic regression: former input now accepted',encoding='utf-8')
             return {**{'status':'completed','output':{'repair_outcome':outcome,'verification_evidence':['regression.txt'],
                 'summary':'synthetic repair','observed_status':outcome,'actions':['fixture inspection'],

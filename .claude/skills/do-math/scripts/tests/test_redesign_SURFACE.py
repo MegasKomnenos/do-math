@@ -169,7 +169,10 @@ class SurfaceRedesignTests(unittest.TestCase):
         from unittest.mock import Mock
         instance,runtime=surface_state()
         runtime['executions']['EX-1'].update(status='ended',outcome='execution_incomplete')
-        runtime['executions']['EX-1']['capacity']={'local_termination':'confirmed'}
+        from research_fixtures import dispatched_launch
+        ex = runtime['executions']['EX-1']
+        ex['launch_ticket'] = {**dispatched_launch(ex['id'], instance['execution_profiles'][ex['execution_profile_ref']['id']]), 'phase':'finished'}
+        ex['capacity']={'local_termination':'confirmed'}
         with tempfile.TemporaryDirectory() as directory:
             instance['workspace']=directory
             (Path(directory)/'runs/EX-1').mkdir(parents=True)

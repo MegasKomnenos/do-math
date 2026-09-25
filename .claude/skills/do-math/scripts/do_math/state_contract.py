@@ -35,6 +35,7 @@ class RegisteredFamily:
 class StateContract:
     def __init__(self):
         self._families = {}
+        self.validation_generation = 0
 
     @classmethod
     def default(cls):
@@ -73,6 +74,7 @@ class StateContract:
                     yield from references(record)
                 existing = replace(existing, references=all_references)
             self._families[root, name] = existing
+            self.validation_generation += 1
             return
         if schema is None:
             raise ValueError("explicit record schema is required: " + name)
@@ -83,6 +85,7 @@ class StateContract:
         if (shape in {"map", "list", "events"} or identity) and (schema.get("type") != "object" or schema.get("additionalProperties") is not False):
             raise ValueError("record schema must reject unknown fields: " + name)
         self._families[root, name] = RegisteredFamily(root, name, shape, schema, validator, references, identity, derived)
+        self.validation_generation += 1
 
     def family(self, root, name):
         return self._families.get((root, name))

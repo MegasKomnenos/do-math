@@ -211,6 +211,9 @@ def validate_semantics(instance, runtime, identifiers):
         raise ValueError("; ".join(errors))
     for row in runtime.get("executions", {}).values():
         profile = resolve_profile(instance.get("execution_profiles", {}), row["execution_profile_ref"])
+        if row.get('capacity'):
+            from ..launch import validate as validate_launch
+            validate_launch(row.get('launch_ticket'), execution_id=row['id'], profile_sha256=profile['sha256'])
         if row.get("role", profile["role"]) != profile["role"] or row["actor_kind"] != profile["actor_kind"]:
             raise ValueError("execution/profile actor or role mismatch")
         if row["status"] == "ended" and (not row.get("ended_at") or not row.get("outcome")):

@@ -232,8 +232,13 @@ class LifecycleEngineMixin:
                 raise ValueError('capability probe profile references must be distinct')
             if any(profile['actor_kind'] != 'ai' for profile in profiles):
                 raise ValueError('CLI capability probe requires AI profiles')
-            rows = [capability_evidence(profile, adapter_for(profile).describe(),
-                        observed_at=self._lifecycle_now().isoformat()) for profile in profiles]
+            observations, rows = {}, []
+            for profile in profiles:
+                adapter = adapter_for(profile)
+                key = (profile['ai']['provider'], adapter.observation_key())
+                if key not in observations:
+                    observations[key] = adapter.describe()
+                rows.append(capability_evidence(profile, observations[key], observed_at=self._lifecycle_now().isoformat()))
             # A failed observation leaves the previous evidence intact. These
             # remain individual observed facts, never an aggregate permission.
             self.instance.setdefault('capability_evidence', {}).update({row['id']: row for row in rows})
@@ -651,6 +656,22 @@ class LifecycleEngineMixin:
 
     def _trust_control(self, config, source_ref):
         operation = config.get('operation')
+        if operation == 'recheck':
+            if config.get('env_id') not in self.instance['trust_environments']:
+                raise ValueError('environment recheck needs an existing environment')
+            checks = getattr(self, '_environment_checks', None)
+            if checks is not None:
+                checks.entries = {k:v for k,v in checks.entries.items()
+                                  if v['result'] is None or v.get('environment_id') != config['env_id']}
+            for aid, waiting in list(self.runtime.get('waiting_actions', {}).items()):
+                if (waiting.get('kind') == 'formal_environment'
+                        and waiting.get('detail', {}).get('environment_id') == config['env_id']):
+                    if not any(a.get('id') == aid for a in self.runtime['queue']):
+                        self.runtime['queue'].append({**deepcopy(waiting['action']),
+                            'continuation_of':waiting['execution_id']})
+                    del self.runtime['waiting_actions'][aid]
+            self._lifecycle_event('trust_recheck_requested', target=config['env_id'], source_ref=source_ref)
+            return
         if operation == 'register':
             self.instance, environment_id = register_environment(self.instance, config.get('toolchain', {}),
                                                                  config.get('allowed_axioms', _DEFAULT_AXIOMS))
@@ -658,7 +679,7 @@ class LifecycleEngineMixin:
             environment.update(source_ref=source_ref, manifest=deepcopy(config.get('manifest', {})),
                                manifest_sha256=_digest(config.get('manifest', {})))
             from .initialization import trust_environment_errors
-            errors = trust_environment_errors(environment)
+            errors = trust_environment_errors(environment, verify_files=False)
             if errors:
                 raise ValueError('; '.join(errors))
             self._lifecycle_event('trust_environment_registered', target=environment_id, source_ref=source_ref)
@@ -673,7 +694,7 @@ class LifecycleEngineMixin:
                 raise ValueError('a trust transition is already in progress')
             transition = begin_transition(self.instance, environment_id)
             from .initialization import trust_environment_errors
-            errors = trust_environment_errors(environment)
+            errors = trust_environment_errors(environment, verify_files=False)
             if errors:
                 raise ValueError('; '.join(errors))
             transition.update(source_ref=source_ref, created_at=self._lifecycle_now().isoformat())
@@ -1032,17 +1053,29 @@ class LifecycleEngineMixin:
         output.update(trust_environment_id=environment['id'], trust_environment_status='active')
         return output
 
-    def _formal_environment(self):
+    def _observe_environment(self, environment):
+        from .environment_checks import EnvironmentChecks
+        from .trust_validation import verify_environment_files
+        operation = getattr(self, '_environment_operation', None)
+        if operation is None:
+            return verify_environment_files(environment)
+        if not hasattr(self, '_environment_checks'):
+            self._environment_checks = EnvironmentChecks(self)
+        return self._environment_checks.observe(environment, operation)
+
+    def _formal_environment(self, *, verify_files=True):
         """Required before checking and again before admitting a formal result."""
         self._require_action_clock()
         from .initialization import require_trust_environment
-        return require_trust_environment(self.instance, self.runtime)
+        return require_trust_environment(self.instance, self.runtime, observe=self._observe_environment, verify_files=verify_files)
 
     def _end_machine_execution(self, execution, *, outcome, disposition):
         from .execution_lifecycle import transition_execution
         at = self._lifecycle_now().isoformat()
         if execution['status'] == 'ended':
             return True
+        if execution.get('launch_ticket') and execution['launch_ticket']['phase'] != 'not_started':
+            execution['launch_ticket']['phase'] = 'finished'
         if execution.get('capacity') and not self._release_call_slot(execution['id']):
             transition_execution(execution, 'stopping', at=at, stop_phase='terminating',
                                  reason='local machine Job termination remains unconfirmed')
@@ -1128,6 +1161,10 @@ class LifecycleEngineMixin:
         return True
 
     def _run_trust_activation(self, action):
+        from .trust_validation import verify_environment_files
+        return self._run_machine_steps(self._trust_activation_steps(action), calculator=verify_environment_files)
+
+    def _trust_activation_steps(self, action):
         transition_id = action['transition_id']
         transition = self.runtime['trust_transitions'][transition_id]
         if transition['status'] in {'active', 'failed'}:
@@ -1141,7 +1178,28 @@ class LifecycleEngineMixin:
             return False
         self.runtime['active_execution'] = execution_id
         self._save()
-        self._finish_trust_transition(transition_id)
+        environment = deepcopy(self.instance['trust_environments'][transition['to_environment']])
+        def stop():
+            return (self._execution_stop_requested(action, self.runtime['executions'][execution_id]) or bool(self.runtime.get('maintenance_fence'))
+                    or self.instance['trust_environments'].get(transition['to_environment']) != environment)
+        from .execution_profiles import resolve_profile
+        from . import trust_validation
+        scan_profile = resolve_profile(self.instance['execution_profiles'], execution['execution_profile_ref'])['machine']
+        if scan_profile['checker_sha256'] != hashlib.sha256(Path(trust_validation.__file__).read_bytes()).hexdigest():
+            raise ValueError('environment checker changed before execution')
+        verification = yield execution_id, {'environment':environment, 'should_stop':stop, 'workers':scan_profile['workers']}
+        self._live_execution_ids.discard(execution_id)
+        execution = self.runtime['executions'][execution_id]
+        if verification.get('status') == 'cancelled' or stop():
+            self._end_machine_execution(execution, outcome='execution_incomplete', disposition={'kind':'environment_interrupted'})
+            from .activities import wait_for
+            wait_for(self.runtime, execution['owner_activity_id'], reason='environment_interrupted',
+                     condition={'transition_id':transition_id}, next_owner='engine', at=self._lifecycle_now().isoformat())
+            action['continuation_of'] = execution_id
+            self._save({f'runtime/artifacts/{execution_id}/environment.json':canonical_json(verification)})
+            return False
+        self._action_lifecycle_gate(action)
+        self._finish_trust_transition(transition_id, verification)
         transition = self.runtime['trust_transitions'][transition_id]
         execution = self.runtime['executions'][execution_id]
         artifact = f'runtime/artifacts/{execution_id}/trust-activation.json'
@@ -1165,6 +1223,10 @@ class LifecycleEngineMixin:
         finish_activity(self.runtime, execution['owner_activity_id'], result_refs=[artifact],
                         unresolved=[] if accepted else [transition_id], followups=[], at=self._lifecycle_now().isoformat())
         self._save({artifact: canonical_json(result)})
+        if getattr(self, '_calls', None) is not None:
+            self._remove_action(action)
+            self._refresh_readiness()
+            self._save()
 
     def _run_external_action(self, action):
         self._action_lifecycle_gate(action)
@@ -1226,7 +1288,8 @@ class LifecycleEngineMixin:
                               source_ref=result['source_ref'], request_sha256=result['request_sha256'])
 
     def _run_trust_check(self, action):
-        return self._run_machine_steps(self._trust_check_steps(action))
+        from .environment_checks import verify_formal
+        return self._run_machine_steps(self._trust_check_steps(action), calculator=verify_formal)
 
     def _trust_check_steps(self, action):
         self._action_lifecycle_gate(action)
@@ -1234,7 +1297,7 @@ class LifecycleEngineMixin:
         transition = self.runtime['trust_transitions'][transition_id]
         if transition['status'] not in {'checking', 'ready'}: return
         if knowledge_id in transition['results']:
-            if transition['status'] == 'ready': self._finish_trust_transition(transition_id)
+            if transition['status'] == 'ready': self._enqueue('trust_activate', transition_id=transition_id)
             return
         target = next((t for t in transition['targets'] if t['id'] == knowledge_id), None)
         if target is None: raise ValueError('trust check is not an assigned transition target')
@@ -1270,7 +1333,7 @@ class LifecycleEngineMixin:
             return stop_requested
         try:
             from .initialization import trust_environment_errors
-            errors = trust_environment_errors(environment)
+            errors = trust_environment_errors(environment, verify_files=False)
             if errors: raise ValueError('; '.join(errors))
             if not check['valid']: raise ValueError('trust transition basis changed: ' + ', '.join(check['reasons']))
             if environment.get('status') == 'invalid': raise ValueError('trust transition environment was invalidated')
@@ -1280,8 +1343,11 @@ class LifecycleEngineMixin:
                 on_started=lambda identity: self._machine_started(execution_id, identity))
             import inspect
             arguments = dict(source=item['lean_code'], declarations=item['declaration_names'], workspace=workspace,
+                environment=environment, verifier=self.formal_verifier,
                 **invocation, allowed_axioms=tuple(environment['allowed_axioms']))
             parameters = inspect.signature(self.formal_verifier).parameters
+            if 'launch_ticket' in parameters or any(p.kind == inspect.Parameter.VAR_KEYWORD for p in parameters.values()):
+                arguments['launch_ticket'] = deepcopy(execution['launch_ticket'])
             if 'should_stop' in parameters or any(p.kind == inspect.Parameter.VAR_KEYWORD for p in parameters.values()):
                 arguments['should_stop'] = should_stop
             if should_stop():
@@ -1345,13 +1411,13 @@ class LifecycleEngineMixin:
         self._save({artifact: canonical_json(result)})
         self._lifecycle_event('trust_target_checked', target=knowledge_id, transition_id=transition_id, result=result['status'])
         if self.runtime['trust_transitions'][transition_id]['status'] == 'ready':
-            self._finish_trust_transition(transition_id)
+            self._enqueue('trust_activate', transition_id=transition_id)
         if getattr(self, '_calls', None) is not None:
             self.runtime['queue'][:] = [queued for queued in self.runtime['queue'] if queued != action]
             self._refresh_readiness()
             self._save()
 
-    def _finish_trust_transition(self, transition_id):
+    def _finish_trust_transition(self, transition_id, verification):
         self._require_action_clock()
         transition = self.runtime['trust_transitions'][transition_id]
         if transition['status'] in {'active', 'failed'}: return
@@ -1362,9 +1428,9 @@ class LifecycleEngineMixin:
                     or bindings[0]['environment_id'] != transition['to_environment']
                     or _digest(environment) != bindings[0]['environment_sha256']):
                 raise ValueError('target trust environment changed during transition')
-            from .initialization import trust_environment_errors
-            errors = trust_environment_errors(environment)
-            if errors: raise ValueError('; '.join(errors))
+            if (verification.get('status') != 'verified'
+                    or verification.get('manifest_sha256') != environment['manifest_sha256']):
+                raise ValueError('complete current environment observation required: ' + '; '.join(verification.get('errors', [])))
             from .formal import compare_formal_results
             reviewed = {}
             pending = False
@@ -1396,5 +1462,6 @@ class LifecycleEngineMixin:
             self._lifecycle_event('trust_transition_failed', target=transition_id, reason=str(error))
             self._enqueue('research_plan', reason='Trust transition failed; the previous environment remains in force', transition_id=transition_id)
         else:
+            self.instance['trust_environments'][transition['to_environment']]['validation_receipt'] = deepcopy(verification)
             transition.update(status='active', activated_at=self._lifecycle_now().isoformat())
             self._lifecycle_event('trust_transition_activated', target=transition_id)

@@ -18,6 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from test_categories import test_group as category
 from do_math import execution_profiles as profiles
 from do_math.session_slots import SessionSlots
+from research_fixtures import dispatched_launch
 from do_math.windows_job import WindowsJob
 from test_redesign_PROFILES import CONFIG
 
@@ -120,7 +121,7 @@ class HostReservations(unittest.TestCase):
                 self.admit(slots, "EX-wrong", selected["formal_check"])
         self.assertEqual(runtime["executions"], {})
         self.assertTrue(self.admit(slots, "EX-unknown", selected["formal_check"])[0])
-        slots.started("EX-unknown", {"job_name": "unobservable-test-job"})
+        slots.started("EX-unknown", {"job_name": runtime['executions']['EX-unknown']['launch_ticket']['job_name']})
         with patch("do_math.windows_job.named_job_empty", return_value=None):
             self.assertFalse(slots.release("EX-unknown"))
         self.assertTrue(all(r["state"] == "held" for r in runtime["reservations"].values()))
@@ -266,7 +267,7 @@ class HostRepositoryContract(unittest.TestCase):
                 code = f"from pathlib import Path; Path({str(marker)!r}).write_text('ok')"
                 slots = SessionSlots(runtime, instance)
                 with WindowsJob([sys.executable, "-c", code], resource_limits=profiles.job_resource_limits(p),
-                                name="Local\\DoMath-test-" + uuid.uuid4().hex) as job:
+                                name=e['launch_ticket']['job_name']) as job:
                     with repo.writer_lock():
                         slots.started(e["id"], {**process_identity(job), "job_name": job.name,
                                                "host_resources": job.resource_usage()})
@@ -312,7 +313,8 @@ class HostJobTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "on_started"):
                 CodexModelRunner(sys.executable).run(prompt=prompt, input_seal=profiles.prompt_seal(prompt),
                     output_schema={}, workspace=workspace, evidence_dir=root / "evidence", model=p["ai"]["model"],
-                    effort=p["ai"]["effort"], timeout_seconds=15, execution_id="EX-no-callback", profile=p)
+                    effort=p["ai"]["effort"], timeout_seconds=15, execution_id="EX-no-callback", profile=p,
+                    launch_ticket=dispatched_launch('EX-no-callback',p))
             self.assertFalse((root / "evidence").exists())
 
     def test_resource_setting_failure_is_distinct_capability_and_starts_nothing(self):
@@ -331,6 +333,7 @@ class HostJobTests(unittest.TestCase):
                 result = CodexModelRunner(sys.executable).run(prompt=prompt, input_seal=profiles.prompt_seal(prompt),
                     output_schema={}, workspace=workspace, evidence_dir=root / "evidence", model=p["ai"]["model"],
                     effort=p["ai"]["effort"], timeout_seconds=15, execution_id="EX-setting-failure", profile=p,
+                    launch_ticket=dispatched_launch('EX-setting-failure',p),
                     on_started=lambda identity: self.fail("setting failure cannot publish a live process"))
             create.assert_not_called()
             self.assertEqual(result["error_kind"], "profile_unsupported")
@@ -355,7 +358,8 @@ class HostJobTests(unittest.TestCase):
                 result = cls(sys.executable).run(prompt=prompt, input_seal=profiles.prompt_seal(prompt),
                     output_schema={}, workspace=workspace, evidence_dir=root / "evidence", model=p["ai"]["model"],
                     effort=p["ai"]["effort"], timeout_seconds=15, execution_id="EX-" + provider,
-                    profile=p, should_stop=lambda: True, on_started=started.append)
+                    profile=p, should_stop=lambda: True, on_started=started.append,
+                    launch_ticket=dispatched_launch('EX-'+provider,p))
                 self.assertEqual(result["status"], "stopped")
                 self.assertEqual(started[0]["host_resources"]["limits"], profiles.job_resource_limits(p))
                 request = json.loads((root / "evidence" / "request.json").read_text(encoding="utf-8"))
@@ -382,7 +386,7 @@ class HostJobTests(unittest.TestCase):
                 code = f"from pathlib import Path; import sys,time; Path({str(marker)!r}).write_text('started'); "
                 code += "time.sleep(30)" if outcome == "terminated" else "sys.exit(7)" if outcome == "nonzero" else "pass"
                 argv = [str(Path(directory) / "absent.exe")] if outcome == "creation_failure" else [sys.executable, "-c", code]
-                kwargs = {"resource_limits": profiles.job_resource_limits(p), "name": "Local\\DoMath-test-" + uuid.uuid4().hex}
+                kwargs = {"resource_limits": profiles.job_resource_limits(p), "name": e['launch_ticket']['job_name']}
                 if outcome == "setting_failure":
                     with patch("do_math.windows_job._kernel32.SetInformationJobObject", return_value=0):
                         with self.assertRaises(OSError): WindowsJob(argv, **kwargs)

@@ -289,8 +289,12 @@ def _reference_locators(context):
 
 def reference_catalog(context: dict, workspace: Path) -> list[dict]:
     """Project the same reference checker used by producers and receivers."""
-    candidates = (_reference_ids(context) | set(context.get("available_input_refs", [])) |
-                  _reference_locators(context) | set(reference_aliases(context)) | {"context:goal", "context:policy"})
+    known = _reference_ids(context) | set(context.get("available_input_refs", [])) | {"context:goal", "context:policy"}
+    locators = _reference_locators(context)
+    aliases = reference_aliases(context)
+    candidates = known | locators | set(aliases)
+    for source in context.get("sources", []):
+        locators.update((source["name"], "source:" + source["name"]))
     if context.get("proposal") or context.get("role_review", {}).get("proposal"):
         candidates.add("proposal")
     candidates.update("issue:" + key for key in context.get("role_review", {}).get("issues", {}))
@@ -306,10 +310,10 @@ def reference_catalog(context: dict, workspace: Path) -> list[dict]:
     rows = []
     for ref in sorted(candidates):
         try:
-            validate_reference(ref, context, workspace)
+            _validate_reference(ref, context, workspace, known=known, locators=locators)
         except (ValueError, OSError):
             continue
-        identity = normalize_reference(ref, context)
+        identity = aliases.get(ref.removeprefix("workspace:"), ref)
         current = identity in records or identity in source_names
         kind = ("source" if identity in source_names else "record" if identity in records else
                 "historical_artifact" if ref.startswith("runtime/artifacts/") else "supplied_reference")
@@ -463,7 +467,14 @@ def _reference_ids(context):
 def validate_reference(reference: str, context: dict, workspace: Path,
                        *, candidate_files: dict[str, bytes] | None = None) -> None:
     """A reference must identify supplied material or an output that is kept."""
-    if reference in _reference_ids(context) | set(context.get("available_input_refs", [])) | {"context:goal", "context:policy"}:
+    known = _reference_ids(context) | set(context.get("available_input_refs", [])) | {"context:goal", "context:policy"}
+    return _validate_reference(reference, context, workspace, known=known, candidate_files=candidate_files)
+
+
+def _validate_reference(reference, context, workspace, *, known, locators=None, candidate_files=None):
+    # A catalog reuses these indexes only within one unchanged input. Public
+    # validation always derives authority from the supplied context anew.
+    if reference in known:
         return
     proposal = context.get("proposal") or context.get("role_review", {}).get("proposal")
     if reference == "proposal" and proposal is not None:
@@ -479,9 +490,10 @@ def validate_reference(reference: str, context: dict, workspace: Path,
         return
     # Historical artifact locators identify their original bytes, not the
     # newest knowledge revision with a similar ID.
-    locators = _reference_locators(context)
-    for source in context.get("sources", []):
-        locators.update((source["name"], "source:" + source["name"]))
+    if locators is None:
+        locators = _reference_locators(context)
+        for source in context.get("sources", []):
+            locators.update((source["name"], "source:" + source["name"]))
     if reference in locators:
         return
     name = reference.removeprefix("workspace:")

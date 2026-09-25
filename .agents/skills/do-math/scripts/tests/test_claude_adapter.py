@@ -46,9 +46,11 @@ class ClaudeTests(unittest.TestCase):
             runner.codex._adapter = Adapter({"result": "output_collected",
                                             "final": {"raw": b"{}"}, "jsonl": {}})
             prompt = execution_profiles.prepare_prompt("fixture", profile)
+            from research_fixtures import dispatched_launch
             result = runner.run(model=profile["ai"]["model"], effort=profile["ai"]["effort"],
                 prompt=prompt, output_schema={}, workspace=workspace, evidence_dir=root / "evidence",
                 timeout_seconds=1, execution_id="EX-codex-lock", profile=profile,
+                launch_ticket=dispatched_launch('EX-codex-lock',profile),
                 input_seal=execution_profiles.prompt_seal(prompt), claude_only_assigned_model=True)
             request = codex_worker.load_request(root / "evidence/request.json")
             self.assertNotIn("claude_only_assigned_model", request)

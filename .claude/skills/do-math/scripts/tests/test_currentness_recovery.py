@@ -190,14 +190,18 @@ class CurrentnessTests(ActiveStateHarness):
             attempt_action = action if parent is None else {'id': 'AC-inline', 'role': 'operational_review', 'target': parent}
             execution = engine._register_execution(attempt_action, {'id': eid, 'role': attempt_action['role'],
                 'status': 'running', 'input_snapshot': engine.head, 'input_manifest': [], 'parent_execution_id': parent})
-            execution['process'] = {'job_name': 'synthetic-ended-' + eid}
+            from research_fixtures import dispatched_launch
+            profile = engine.instance['execution_profiles'][execution['execution_profile_ref']['id']]
+            execution['launch_ticket'] = dispatched_launch(eid, profile)
+            execution['process'] = {'job_name': execution['launch_ticket']['job_name']}
             folder = Path(engine.instance['workspace'])/'runs'/eid/'workspace'; folder.mkdir(parents=True)
             (folder/'partial.txt').write_text(eid)
         engine.runtime.update(active_execution='EX-parent', status='running', queue=[action])
         engine._save()
         # No process was started in this fixture. Its termination observation
         # is explicit; unknown real processes must remain unreleased.
-        with patch('do_math.windows_job.named_job_empty', return_value=True), engine.store.writer_lock():
+        with patch('do_math.windows_job.named_job_empty', return_value=True), \
+                patch('do_math.windows_job.owner_ended', return_value=True), engine.store.writer_lock():
             engine._recover_disappeared()
         self.assertIsNone(engine.runtime['active_execution'])
         self.assertTrue(engine.runtime['recoveries'])

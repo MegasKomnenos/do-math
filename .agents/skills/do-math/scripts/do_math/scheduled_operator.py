@@ -25,6 +25,7 @@ from .repository import ResearchRepository
 from .model_runner import ModelRunner
 from .model_policy import selection
 from .provider_wait import timestamp
+from .operation_trace import workspace_operation, child_environment
 
 
 SCRIPTS = Path(__file__).resolve().parents[1]
@@ -191,6 +192,7 @@ def release(workspace: Path) -> dict[str, Any]:
     return result
 
 
+@workspace_operation('engine_launch')
 def run_engine(repository: Path, instance: str, workspace: Path) -> dict[str, Any]:
     try:
         guard = engine_start_guard(repository, instance, workspace)
@@ -210,7 +212,8 @@ def run_engine(repository: Path, instance: str, workspace: Path) -> dict[str, An
     record = {"outcome": "running", "before": status, "command": command, "run_directory": str(run_directory)}
     _json(run_directory / "result.json", record)
     try:
-        completed = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8", check=False, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        completed = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8", check=False,
+            env=child_environment(), creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
         (run_directory / "stdout.json").write_text(completed.stdout, encoding="utf-8")
         (run_directory / "stderr.txt").write_text(completed.stderr, encoding="utf-8")
         record.update(outcome="completed" if completed.returncode == 0 else "engine_failed", exit_code=completed.returncode)
@@ -228,6 +231,8 @@ def engine_start_guard(repository: Path, instance: str, workspace: Path, *, stat
         return {"outcome": "held"}
     if status is None:
         status = read_status(repository, instance)
+    if status.get('maintenance_fence'):
+        return {'outcome':'maintenance_waiting', 'before':status}
     if status.get("model_policy_violation"):
         return {"outcome": "model_policy_waiting", "status": status, "reason": "Reported model violated the instance lock; no further operator model was called."}
     if status.get("user_pause") or status.get("status") == "paused":
@@ -254,7 +259,8 @@ def reconcile_wake(repository: Path, instance: str, workspace: Path, *, config: 
     """Repair a missing/stale one-shot reservation before invoking any model."""
     marker = _operator_dir(workspace) / "wake-registration.json"
     previous = _load_json(marker)
-    held = (_operator_dir(workspace) / "HOLD.json").exists() or status.get("user_pause") or status.get("status") in {"paused", "closed", "completed"}
+    held = ((_operator_dir(workspace) / "HOLD.json").exists() or status.get("user_pause")
+            or status.get('maintenance_fence') or status.get("status") in {"paused", "closed", "completed"})
     _, state, runtime = ResearchRepository(repository, instance).load()
     from .session_slots import SessionSlots
     providers = SessionSlots(runtime, state, observer=True).provider_snapshot()["providers"]
@@ -363,7 +369,7 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict)
             config = state["config"]
             if not config.get("operator_enabled", True):
                 return {"outcome": "recovery_disabled", "failure": failure}
-            if (runtime.get("user_pause") or runtime.get("status") in {"paused", "closed", "completed"}
+            if (runtime.get("user_pause") or runtime.get('maintenance_fence') or runtime.get("status") in {"paused", "closed", "completed"}
                     or (_operator_dir(workspace) / "HOLD.json").exists()):
                 return {"outcome": "held"}
             from .repair_execution import installation_failure, installation_fingerprint, resume_installation_repair
@@ -372,12 +378,11 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict)
                 diagnosis = runtime.get('operational_dispositions', {}).get(failure.get('diagnosis_id'))
                 if diagnosis is None or installation_failure(runtime, diagnosis) != failure:
                     raise ValueError('installation diagnosis is missing or differs from its published record')
-            from .windows_job import named_job_empty
+            from .launch import termination_confirmed
             for execution in runtime.get("executions", {}).values():
                 if execution.get("status") == "ended":
                     continue
-                process = execution.get("capacity", {}).get("process") or execution.get("process")
-                if not process or not process.get("job_name") or named_job_empty(process["job_name"]) is not True:
+                if not execution.get('launch_ticket') or not termination_confirmed(execution['launch_ticket'], recovering=True):
                     return {"outcome": "recovery_waiting", "reason": "existing execution termination is unconfirmed",
                             "execution_id": execution["id"]}
             maintenance = _lock(repo._store._git_dir / "do-math-installation-maintenance.lock")
@@ -471,6 +476,7 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict)
                     return {"outcome": "recovery_waiting", "reason": slots.admission_reason,
                             "wait": deepcopy(slots.admission_wait)}
                 activities.assign_execution(runtime, aid, execution)
+                execution['launch_ticket']['phase'] = 'dispatched'
                 head = repo.save_with_state(head, state, runtime)[0]
                 def on_started(identity):
                     nonlocal head
@@ -478,12 +484,14 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict)
                     execution_lifecycle.transition_execution(runtime["executions"][eid], "running",
                         at=datetime.now(timezone.utc).isoformat())
                     head = repo.save_with_state(head, state, runtime)[0]
+                result = None
                 try:
                     result = ModelRunner().run(prompt=prompt, output_schema=repair_report_schema(diagnosed=diagnosis is not None),
                         workspace=execution_workspace, evidence_dir=run_directory / "evidence",
                         model=chosen["model"], effort=profile["ai"]["effort"],
                         timeout_seconds=profile["window"]["call_timeout_seconds"],
                         execution_id=eid, profile=profile, input_seal=sealed_input, on_started=on_started,
+                        launch_ticket=deepcopy(runtime['executions'][eid]['launch_ticket']),
                         should_stop=lambda: (_operator_dir(workspace) / "HOLD.json").exists())
                     execution = runtime["executions"][eid]
                     _json(run_directory / "runner-result.json", result)
@@ -538,6 +546,8 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict)
                 finally:
                     # save() may rebuild dictionary objects; always update the loaded view.
                     execution = runtime["executions"][eid]
+                    execution['launch_ticket']['phase'] = ('not_started' if result is not None
+                        and result.get('launch_not_created') is True else 'finished')
                     released = slots.release(eid)
                     if not released:
                         outcome = "recovery_termination_unknown"

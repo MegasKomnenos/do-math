@@ -9,6 +9,7 @@ import unittest
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from research_fixtures import dispatched_launch
 from do_math import model_policy, scheduled_operator
 
 
@@ -163,7 +164,7 @@ class ProfileTests(unittest.TestCase):
             runner._adapter = adapter
             runner.run(prompt=api.prepare_prompt("test", profile), input_seal=api.prompt_seal(api.prepare_prompt("test", profile)), output_schema={}, workspace=root,
                 evidence_dir=root / "evidence", model=profile["ai"]["model"], effort=profile["ai"]["effort"],
-                timeout_seconds=600, execution_id="EX-bound", profile=profile, control_binding=binding)
+                timeout_seconds=600, execution_id="EX-bound", profile=profile, launch_ticket=dispatched_launch("EX-bound", profile), control_binding=binding)
             self.assertEqual(adapter.request["control_binding"], binding)
             request = codex_worker.load_request(root / "evidence" / "request.json")
             argv = codex_worker.build_argv(request)
@@ -238,7 +239,7 @@ class ProfileTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 runner.run(prompt=api.prepare_prompt("wrong", profile), input_seal=api.prompt_seal(api.prepare_prompt("wrong", profile)), output_schema={}, workspace=root, evidence_dir=root / "wrong",
                     model=profile["ai"]["model"], effort=profile["ai"]["effort"], timeout_seconds=600,
-                    execution_id="EX-other", profile=profile, control_binding=binding)
+                    execution_id="EX-other", profile=profile, launch_ticket=dispatched_launch("EX-other", profile), control_binding=binding)
             self.assertFalse((root / "wrong").exists())
 
     def test_both_adapters_snapshot_the_exact_control_binding(self):
@@ -347,14 +348,14 @@ class ProfileTests(unittest.TestCase):
                 runner._adapter = Adapter({"result": "output_collected", "final": {"raw": b'{}'}, "jsonl": {}})
                 runner.run(prompt=api.prepare_prompt("test", profile), input_seal=api.prompt_seal(api.prepare_prompt("test", profile)), output_schema={}, workspace=root, evidence_dir=root / role,
                     model=profile["ai"]["model"], effort=profile["ai"]["effort"], timeout_seconds=timeout,
-                    execution_id="EX-" + role, profile=profile)
+                    execution_id="EX-" + role, profile=profile, launch_ticket=dispatched_launch("EX-" + role, profile))
                 self.assertEqual(runner._adapter.request['max_runtime_seconds'], timeout)
                 if role == 'operational_review':
                     for invalid in (None, CONFIG['call_timeout_seconds'] + 1):
                         with self.assertRaisesRegex(ValueError, "deadline"):
                             runner.run(prompt=api.prepare_prompt("test", profile), input_seal=api.prompt_seal(api.prepare_prompt("test", profile)), output_schema={}, workspace=root, evidence_dir=root / (role + "-over"),
                                 model=profile["ai"]["model"], effort=profile["ai"]["effort"], timeout_seconds=invalid,
-                                execution_id="EX-" + role, profile=profile)
+                                execution_id="EX-" + role, profile=profile, launch_ticket=dispatched_launch("EX-" + role, profile))
 
     def profiles(self):
         self.assertIsNotNone(importlib.util.find_spec("do_math.execution_profiles"),
@@ -434,7 +435,7 @@ class ProfileTests(unittest.TestCase):
         self.assertFalse(slots.acquire("EX-over", "work", profile["ai"]["model"],
                          profile=profile, execution={"id": "EX-over", "role": "research_work"}))
         self.assertEqual(runtime, before)
-        slots.started("EX-0", {"job_name": "test-job", "pid": 1})
+        slots.started("EX-0", {"job_name": runtime["executions"]["EX-0"]["launch_ticket"]["job_name"], "pid": 1})
         with patch("do_math.windows_job.named_job_empty", return_value=None):
             self.assertFalse(slots.release("EX-0"))
         self.assertEqual(slots.snapshot()["work"][profile["ai"]["model"]]["used"], 3)
@@ -493,7 +494,7 @@ class ProfileTests(unittest.TestCase):
             runner._adapter = adapter
             result = runner.run(prompt=api.prepare_prompt("test", profile), input_seal=api.prompt_seal(api.prepare_prompt("test", profile)), output_schema={}, workspace=root,
                 evidence_dir=root / "evidence", model=profile["ai"]["model"], effort=profile["ai"]["effort"],
-                timeout_seconds=600, execution_id="EX-bound", profile=profile)
+                timeout_seconds=600, execution_id="EX-bound", profile=profile, launch_ticket=dispatched_launch("EX-bound", profile))
             self.assertEqual(adapter.request["execution_id"], "EX-bound")
             self.assertEqual(adapter.request["profile_ref"], api.profile_ref(profile))
             self.assertEqual(result["provider_observation"]["stop_reason"], "end_turn")
@@ -522,7 +523,7 @@ class ProfileTests(unittest.TestCase):
                 prompt = api.prepare_prompt('test', profile)
                 options = dict(prompt=prompt, input_seal=api.prompt_seal(prompt), output_schema={},
                     workspace=workspace, model=model, effort=profile['ai']['effort'], timeout_seconds=60,
-                    execution_id='EX-bound', profile=profile)
+                    execution_id='EX-bound', profile=profile, launch_ticket=dispatched_launch('EX-bound', profile))
                 runner.run(**options, evidence_dir=root / 'evidence', control_binding=binding)
                 request_path = root / 'evidence/request.json'
                 request = worker.load_request(request_path)
@@ -653,7 +654,7 @@ class ProfileTests(unittest.TestCase):
                 from do_math.git_store import GitStateStoreLockError
                 with self.assertRaises(GitStateStoreLockError), repository.writer_lock():
                     self.fail("recovery model ran without excluding the engine")
-                arguments["on_started"]({"job_name": "fixture-job", "pid": 17})
+                arguments["on_started"]({"job_name": arguments["launch_ticket"]["job_name"], "pid": 17})
                 _, _, published = repository.load()
                 self.assertEqual(published["executions"][arguments["execution_id"]]["capacity"]["process"]["pid"], 17)
                 return {"status": "completed", "output": {"summary": "fixture repair", "observed_status": "ready",
@@ -703,7 +704,7 @@ class ProfileTests(unittest.TestCase):
                 raw_prompt = arguments["prompt"].split(api.boundary_prompt(arguments["profile"]))[0]
                 self.assertEqual(json.loads(raw_prompt.rsplit("\n", 1)[1])["installation"],
                                  str(root / "live-installation"))
-                arguments["on_started"]({"job_name": "still-unknown", "pid": 42})
+                arguments["on_started"]({"job_name": arguments["launch_ticket"]["job_name"], "pid": 42})
                 return {"status": "completed", "output": {"summary": "report is not termination evidence"}}
             with patch.object(scheduled_operator, "ResearchRepository", return_value=repo), \
                  patch("do_math.initialization.adapter_for", return_value=self.capability_adapter()), \
@@ -870,7 +871,7 @@ class Audit1Tests(unittest.TestCase):
             runner = CodexModelRunner("not-called")
             runner._adapter = Adapter({"result": "output_collected", "final": {"raw": b'{}'}, "jsonl": {}})
             kwargs = dict(prompt=text, output_schema={}, workspace=root, evidence_dir=root / "evidence",
-                model=p["ai"]["model"], effort=p["ai"]["effort"], timeout_seconds=1, execution_id="EX-exact", profile=p)
+                model=p["ai"]["model"], effort=p["ai"]["effort"], timeout_seconds=1, execution_id="EX-exact", profile=p, launch_ticket=dispatched_launch("EX-exact", p))
             kwargs["input_seal"] = seal
             runner.run(**kwargs)
             self.assertEqual((root / "evidence/input.txt").read_bytes(), text.encode("utf-8"))
@@ -907,7 +908,7 @@ class Audit1Tests(unittest.TestCase):
         prompt = "input" + ep.boundary_prompt(p)
         with tempfile.TemporaryDirectory() as directory:
             kwargs = dict(prompt=prompt, output_schema={}, workspace=Path(directory), evidence_dir=Path(directory)/"evidence",
-                model=p["ai"]["model"], effort=p["ai"]["effort"], timeout_seconds=1, execution_id="EX-failure", profile=p)
+                model=p["ai"]["model"], effort=p["ai"]["effort"], timeout_seconds=1, execution_id="EX-failure", profile=p, launch_ticket=dispatched_launch("EX-failure", p))
             kwargs["input_seal"] = ep.prompt_seal(prompt)
             result = runner.run(**kwargs)
         self.assertIn("capability_evidence", result)
@@ -971,7 +972,7 @@ class Audit1Tests(unittest.TestCase):
             runner = ClaudeModelRunner("not-launched"); runner._adapter = Adapter(collected)
             result = runner.run(prompt=prompt, input_seal=ep.prompt_seal(prompt), output_schema={}, workspace=root,
                 evidence_dir=root/"runner", model="haiku", effort=p["ai"]["effort"], timeout_seconds=1,
-                profile=p, execution_id="EX-native")
+                profile=p, execution_id="EX-native", launch_ticket=dispatched_launch("EX-native", p))
             self.assertEqual(result["status"], "completed")
             stored = ep.execution_observation(result)
             reported = json.loads(stored["reported_fields_json"])
@@ -1006,7 +1007,7 @@ class Audit1Tests(unittest.TestCase):
             runner = CodexModelRunner("not-launched"); runner._adapter = Adapter({"result":"output_collected", "final":{"raw":b'{}'}, "jsonl":{}})
             runner.run(prompt=prompt, input_seal=fitted["manifest"]["prompt"], output_schema=schema, workspace=root,
                 evidence_dir=root/"evidence", model=p["ai"]["model"], effort=p["ai"]["effort"], timeout_seconds=1,
-                execution_id="EX-seal", profile=p)
+                execution_id="EX-seal", profile=p, launch_ticket=dispatched_launch("EX-seal", p))
             self.assertEqual((root/"evidence/input.txt").read_bytes(),
                              fitted["artifacts"][fitted["manifest"]["prompt"]["artifact_ref"]])
 

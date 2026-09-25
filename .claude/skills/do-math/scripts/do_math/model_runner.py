@@ -1,5 +1,7 @@
 """Evidence-producing CLI runners sharing validation and local lifetime handling."""
 from __future__ import annotations
+from .operation_trace import measured
+
 
 import json
 import math
@@ -28,9 +30,11 @@ class CodexModelRunner:
         return {"codex_path": self.codex_path, "sandbox": "danger-full-access",
                 "approval_policy": "never", "windows_sandbox": "unelevated"}
 
+    @measured('model_execution')
     def run(self, *, prompt: str, output_schema: dict, workspace: Path, evidence_dir: Path,
             model: str, effort: str, timeout_seconds: float | None,
             execution_id: str | None = None, profile: dict | None = None,
+            launch_ticket: dict | None = None,
             control_binding: dict | None = None,
             input_seal: dict | None = None,
             scholarly_server: dict | None = None,
@@ -45,6 +49,8 @@ class CodexModelRunner:
                 or not math.isfinite(timeout_seconds) or timeout_seconds <= 0):
             raise ValueError("timeout must be positive and finite or null")
         if profile is not None:
+            from .launch import validate_start
+            validate_start(launch_ticket, execution_id=execution_id, profile_sha256=profile['sha256'])
             from .execution_profiles import profile_ref, prompt_seal, job_resource_limits
             reference = profile_ref(profile)
             resource_limits = job_resource_limits(profile)
@@ -104,11 +110,16 @@ class CodexModelRunner:
         from .windows_job import WindowsJobUnsupportedError
         identity = self._adapter.capability_identity() if profile is not None and hasattr(self._adapter, "capability_identity") else None
         try:
-            execution = self._adapter.start(request_path, cwd=evidence_dir, env=os.environ)
+            execution = self._adapter.start(request_path, cwd=evidence_dir, env=os.environ,
+                **({'job_name':launch_ticket['job_name']} if launch_ticket is not None else {}))
+        except FileExistsError as error:
+            return {'status':'failed','output':None,'usage':{},'error_kind':'launch_conflict',
+                    'error':str(error),'launch_not_created':True,'evidence_dir':str(evidence_dir),
+                    'execution_id':execution_id,'profile_ref':reference}
         except WindowsJobUnsupportedError as error:
             result = {"status": "failed", "output": None, "usage": {}, "evidence_dir": str(evidence_dir),
                     "execution_id": execution_id, "profile_ref": reference, "assigned_model": model,
-                    "error_kind": "profile_unsupported", "error": str(error),
+                    "error_kind": "profile_unsupported", "error": str(error), "launch_not_created":True,
                     "capability_failure": {"capability": getattr(error, "capability", "atomic_local_job"), "status": "unsupported",
                                            "execution_profile_ref": reference, "error_type": type(error).__name__}}
             if profile is not None and isinstance(identity, dict) and identity:

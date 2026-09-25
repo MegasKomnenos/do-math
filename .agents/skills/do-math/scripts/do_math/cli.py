@@ -106,6 +106,7 @@ def build_parser() -> _Parser:
     timeline.add_argument("--format", choices=("json", "csv"), default="json")
     timeline.add_argument("--timezone", default="Asia/Seoul")
     timeline.add_argument("--include-operator", action="store_true", help="also read separately observed local operator logs")
+    timeline.add_argument('--include-operations', action='store_true', help='include separately observed operational phase timings')
     run.add_argument("--max-steps", type=int)
     run.add_argument("--watch", action="store_true")
 
@@ -114,12 +115,14 @@ def build_parser() -> _Parser:
     status.add_argument("--json", action="store_true")
     status.add_argument('--snapshot')
 
-    for name in ("pause", "resume", "close"):
+    for name in ("pause", "resume", "close", "quiesce", "release-quiesce"):
         command = commands.add_parser(name, help=f"queue and apply {name}")
         _instance_arguments(command)
         command.add_argument("--reason", default="")
         command.add_argument("--origin", choices=("user", "operator"), default="user")
         command.add_argument("--request-id", help="stable retry identity; changed payloads are rejected")
+        if name == 'release-quiesce':
+            command.add_argument('--fence', required=True)
 
     input_command = commands.add_parser("input", help="submit user input")
     _instance_arguments(input_command)
@@ -202,7 +205,7 @@ def build_parser() -> _Parser:
     operator.add_argument("--reason", default="")
     for name in ('configure', 'request', 'decision', 'knowledge', 'trust', 'external', 'conversation', 'source'):
         commands.choices[name].add_argument('--request-id', help='stable retry identity; changed payloads are rejected')
-    for name in ('pause','resume','close','input','configure','request','decision','knowledge','trust','external','conversation','source'):
+    for name in ('pause','resume','close','quiesce','release-quiesce','input','configure','request','decision','knowledge','trust','external','conversation','source'):
         commands.choices[name].add_argument('--idempotency-key', help='explicit key for an intentional new application of the same content')
     return parser
 
@@ -270,7 +273,7 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
     if command == "timeline":
         from .reporting import timeline, timeline_csv
         value = timeline(args.repository, args.instance, snapshot=args.snapshot, timezone_name=args.timezone,
-                         include_operator=args.include_operator)
+                         include_operator=args.include_operator, include_operations=args.include_operations)
         return (timeline_csv(value) if args.format == "csv" else value), 0
     if command == "init":
         _require_git(args.repository, args.create_repository)
@@ -302,6 +305,10 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
         if args.json:
             return status, 0
         return render_human_report(status), 0
+    if command == 'quiesce':
+        return _control(args, 'quiesce', text=args.reason), 0
+    if command == 'release-quiesce':
+        return _control(args, 'release_quiesce', text=args.reason, config={'fence_id':args.fence}), 0
     if command in {"pause", "resume", "close"}:
         return _control(args, command, text=args.reason), 0
     if command == "input":
