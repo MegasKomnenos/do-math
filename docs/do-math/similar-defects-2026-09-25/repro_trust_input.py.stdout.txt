@@ -1,0 +1,4 @@
+CONFIRMED foundation_profile restart 0 unhandled AttributeError("'list' object has no attribute 'get'")
+CONFIRMED foundation_profile restart 1 unhandled AttributeError("'list' object has no attribute 'get'")
+CONFIRMED validation restart 0 unhandled AttributeError("'list' object has no attribute 'get'")
+CONFIRMED validation restart 1 unhandled AttributeError("'list' object has no attribute 'get'")

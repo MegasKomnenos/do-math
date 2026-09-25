@@ -364,12 +364,13 @@ class StorageRedesignTests(unittest.TestCase):
             self.repository.validate_candidate(saved, loaded)
 
     def test_checkpoint_observation_evidence_uses_actual_same_cas_bytes(self):
-        from do_math.observations import recovered_checkpoint
+        from do_math.observations import preserve_checkpoint
         instance, runtime = self._execution_state()
         head = self.repository.initialize(instance, runtime)
         raw = b'{"type":"public_message","message":"observed"}\n'
         reference = "runtime/artifacts/BA-observation/provider-evidence/events.jsonl"
-        checkpoint = recovered_checkpoint(self.repository_path / "missing-checkpoint")
+        checkpoint, _ = preserve_checkpoint(self.repository_path / "missing-checkpoint",
+            artifact_prefix='runtime/artifacts/BA-observation/checkpoint', max_bytes=4096)
         checkpoint.update(observation_sources=[{"artifact_ref": reference, "path": "events.jsonl",
             "bytes": len(raw), "sha256": hashlib.sha256(raw).hexdigest()}],
             observation_evidence_complete=True, observation_evidence_omitted=[])

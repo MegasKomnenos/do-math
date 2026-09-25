@@ -1,0 +1,2 @@
+CONFIRMED orphan payload reuse rejects valid save: existing runtime artifact bundles are immutable
+CONFIRMED validated save commits unreadable payload: immutable payload bytes differ

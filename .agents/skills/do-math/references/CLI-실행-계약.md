@@ -18,7 +18,7 @@ python .agents/skills/do-math/scripts/do_math.py <command> [options]
 
 명령 예시는 스킬을 `.agents/skills/do-math/`에 설치한 경우다. 다른 위치에 설치했다면 명령의 이 경로를 실제 스킬 폴더 경로로 바꾼다. 운영할 때는 같은 설치본의 문서와 코드를 함께 사용한다. 별도 위치의 사본을 함께 참고한다면 두 사본의 판본이 같은지 먼저 확인한다.
 
-`profile`은 인스턴스 식별 인자를 받지 않는다. `init`은 `--repository`와 목표·`--workspace`를 받아 새 인스턴스를 만든다. 나머지 명령은 `--repository`와 `--instance`를 요구한다. JSON을 입력받는 제어 명령은 UTF-8 JSON 객체 하나를 담은 `--file`을 사용한다. 중복 JSON 키, 배열이나 scalar 최상위 값, 읽기·디코딩 실패는 입력 오류다. 제어의 `--origin`은 `user`가 기본이며 승인된 자동 운영 제어는 `operator`를 사용한다. 자동 출처는 `pause`, `resume`, `request`, `configure`, `source`만 사용할 수 있고 예산·모델 대응·역할 등급을 변경할 수 없다.
+`profile`은 인스턴스 식별 인자를 받지 않는다. `init`은 `--repository`와 목표·`--workspace`를 받아 새 인스턴스를 만든다. 나머지 명령은 `--repository`와 `--instance`를 요구한다. JSON을 입력받는 제어 명령은 UTF-8 JSON 객체 하나를 담은 `--file`을 사용한다. 중복 JSON 키, 배열이나 scalar 최상위 값, 읽기·디코딩 실패는 입력 오류다. 제어의 `--origin`은 `user`가 기본이며 승인된 자동 운영 제어는 `operator`를 사용한다. 자동 출처는 `pause`, `resume`, `request`, `configure`, `source`, `quiesce`, `release-quiesce`를 사용할 수 있고 예산·모델 대응·역할 등급을 변경할 수 없다. 정비 해제에는 해당 출처가 해제할 수 있는 현재 fence를 정확히 지정해야 한다.
 
 ### 종료 코드
 
@@ -42,6 +42,8 @@ exit 0은 요청이 수학적으로 승인됐거나 과제·활동·실행이 �
 | `status`, `snapshot` | 적용 뒤 CLI 상태와 상태 commit. lock이 busy이면 아직 없을 수 있다 |
 
 동일 인스턴스의 writer lock을 다른 실행기가 보유하면 요청은 inbox에 남고 `effect="pending engine processing"`, `lock="busy"`를 반환한다. 다음 실행기 제어 처리에서 전제가 달라졌으면 해당 요청은 `effect="rejected"`와 이유를 남기고 소비된다. 접수 사실은 적용·실행·성공을 뜻하지 않는다.
+
+공개 Python 제어와 CLI는 같은 payload 구조 검사를 사용한다. `config`는 객체이며, 생략을 뜻하는 Python `None`만 빈 객체로 처리한다. 중첩 결정·과거 실행 복구·신뢰 환경 등의 값도 사용 전에 해당 구조를 확인한다. 수신자는 inbox의 식별 가능한 요청을 다시 검사하고, 잘못된 payload를 거절 영수증과 함께 한 번 정산한 뒤 다음 요청을 처리한다. 입력 구조 검사는 현재 권한·참조·환경 관측을 대신하지 않는다. JSON 해석이나 요청 정체성 자체가 손상된 파일은 정상 사용자 요청으로 간주하지 않는다.
 
 `pause`, `resume`, `close`, `input`, `configure`, `request`, `decision`, `knowledge`, `trust`, `external`, `conversation`, `source`는 제어 요청의 재전송과 새 적용을 구별한다. `--request-id`를 생략하면 인스턴스·명령·출처·원문·payload·선택적 `--idempotency-key`에서 요청 ID를 계산한다. 같은 내용의 재전송은 이미 처리한 효과를 반복하지 않고 최초 영수증을 `replayed=true`로 돌려준다. 이 영수증의 상태와 snapshot은 현재 상태가 아니므로 현재 상태는 `status`로 조회한다.
 

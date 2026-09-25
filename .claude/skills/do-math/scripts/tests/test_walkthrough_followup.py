@@ -59,7 +59,7 @@ class RepetitionReceiptTests(unittest.TestCase):
                 self.assertEqual(engine.instance['knowledge'], {})
 
     def test_collected_checkpoint_keeps_exact_resume_reference(self):
-        from do_math.observations import recovered_checkpoint, bind_checkpoint_artifact
+        from do_math.observations import preserve_checkpoint
         value = {'current_claim': 'Partial claim', 'evidence_paths': [], 'attempts': ['Compared the definitions'],
                  'remaining_work': ['Finish the argument'], 'next_step': 'Check the remaining case',
                  'progress_state': 'working', 'counters': {}}
@@ -67,14 +67,11 @@ class RepetitionReceiptTests(unittest.TestCase):
             workspace = Path(directory)
             raw = json.dumps(value).encode()
             (workspace / 'checkpoint.json').write_bytes(raw)
-            checkpoint = recovered_checkpoint(workspace)
+            checkpoint, artifacts = preserve_checkpoint(workspace,
+                artifact_prefix='runtime/artifacts/BA/checkpoint', max_bytes=4096)
         self.assertEqual(checkpoint['kind'], 'worker_checkpoint')
-        entry = {'path': 'checkpoint.json', 'artifact_ref': 'runtime/artifacts/BA/files/checkpoint.json',
-                 'sha256': hashlib.sha256(raw).hexdigest()}
-        bound = bind_checkpoint_artifact(checkpoint, [entry])
-        self.assertEqual(bound['artifact_ref'], entry['artifact_ref'])
-        self.assertNotIn('artifact_ref', bind_checkpoint_artifact(checkpoint, [{**entry, 'sha256': 'wrong'}]))
-        self.assertEqual(bind_checkpoint_artifact(checkpoint, [], bound)['artifact_ref'], entry['artifact_ref'])
+        self.assertEqual(artifacts[checkpoint['artifact_ref']], raw)
+        self.assertEqual(checkpoint['sha256'], hashlib.sha256(raw).hexdigest())
 
     def test_retry_waits_for_unknown_effect_from_an_ancestor(self):
         engine = routing_engine()

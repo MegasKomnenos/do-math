@@ -210,6 +210,7 @@ def validate_disposition_authority(task, row, instance, runtime, *, evaluation_c
 
 def assessment_basis(task, assessment, instance, runtime):
     from .planning import _records,_hash,task_reference_basis,condition_refs
+    from .relation_refs import relation_references, relation_evidence_references
     records=_records(instance,runtime)
     refs={ref for row in assessment.get('item_dispositions',[]) for ref in row.get('evidence_refs',[])}
     refs.update(row['authority_ref'] for row in assessment.get('item_dispositions',[]) if row.get('authority_ref'))
@@ -230,7 +231,7 @@ def assessment_basis(task, assessment, instance, runtime):
             continue
         family, record = found
         linked = {item for key in ('inputs', 'reuse', 'dependencies', 'basis_refs', 'authority_refs')
-                  for item in record.get(key, []) if isinstance(item, str)}
+                  if isinstance(record.get(key), list) for item in record[key] if isinstance(item, str)}
         fields = ('formal_result_id', 'exposition_id', 'kind_definition_id', 'source_ref', 'assessment_id')
         if family != 'formal-result' or ref in strict:
             fields += ('trust_environment_id',)
@@ -239,8 +240,16 @@ def assessment_basis(task, assessment, instance, runtime):
                       if isinstance(row.get('id') or row.get('name'), str))
         linked.update(row['id'] for row in record.get('profile_refs', []) if isinstance(row.get('id'), str))
         linked.update(condition_refs(record.get('occurrence_condition')))
-        claim = record.get('relation_claim') or {}
-        linked.update(claim[key] for key in ('source', 'target') if isinstance(claim.get(key), str))
+        linked.update(relation_references(record.get('relation_claim') or {}))
+        if family == 'relation':
+            linked.update(relation_references(record))
+            # Explicit expert evidence has the same force here as a direct
+            # assessment citation; structural KN endpoints still bind content.
+            judgments = {item for item in relation_evidence_references(record)
+                if records.get(item, (None,))[0] in
+                {'formal-result', 'identity-assessment', 'assessment-use', 'goal-judgment'}}
+            pending.extend(judgments - strict)
+            strict.update(judgments)
         for review in record.get('reviews', []):
             linked.update(row['id'] for row in review.get('decision_basis', {}).get('records', []))
         if family == 'identity-assessment':

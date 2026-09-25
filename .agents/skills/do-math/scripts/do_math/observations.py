@@ -1169,24 +1169,37 @@ def request_checkpoint(workspace: Path, reason: str, *, immediate: bool, deadlin
     return request
 
 
-def recovered_checkpoint(workspace: Path, messages: list[dict] | None = None) -> dict:
+def preserve_checkpoint(workspace: Path, *, artifact_prefix: str, max_bytes: int, previous=None):
+    """Capture final checkpoint bytes independently of submitted output selection.
+
+    A checkpoint already observed owns its evidence version. A later read of
+    the same JSON must not substitute changed evidence files for that version.
+    Invalid or unpreservable final reads retain the last valid sealed record.
+    """
     checkpoint = read_checkpoint(workspace)
-    if checkpoint["status"] == "valid":
-        return {"kind": "worker_checkpoint", "checkpoint": checkpoint["value"], "sha256": checkpoint["sha256"]}
-    return {"kind": "observed_partial_state", "checkpoint_status": checkpoint["status"],
-            "messages": messages or [], "workspace": str(workspace),
-            "limitation": "No complete worker checkpoint was received; infer no unreported result."}
-
-
-def bind_checkpoint_artifact(checkpoint, output_files, previous=None):
-    """Connect a valid checkpoint to the exact bytes that were preserved."""
-    result = deepcopy(checkpoint)
-    if result.get('kind') != 'worker_checkpoint':
-        return result
-    entry = next((row for row in output_files if row.get('path') == 'checkpoint.json'
-                  and row.get('sha256') == result['sha256']), None)
-    if entry:
-        result['artifact_ref'] = entry['artifact_ref']
-    elif previous and previous.get('sha256') == result['sha256'] and previous.get('artifact_ref'):
-        result['artifact_ref'] = previous['artifact_ref']
-    return result
+    prior = previous if previous and previous.get('kind') == 'worker_checkpoint' and previous.get('artifact_ref') else None
+    if checkpoint['status'] == 'valid':
+        if prior and prior['sha256'] == checkpoint['sha256']:
+            return deepcopy(prior), {}
+        raw = checkpoint['raw']
+        if len(raw) <= max_bytes:
+            reference = artifact_prefix + '/checkpoint.json'
+            files, omitted = capture_checkpoint_files(workspace, checkpoint['value'], max_bytes=max_bytes - len(raw))
+            artifacts = {reference: raw}
+            evidence = []
+            for name, data in files.items():
+                path = artifact_prefix + '/evidence/' + name
+                artifacts[path] = data
+                evidence.append({'path': name, 'artifact_ref': path,
+                    'sha256': hashlib.sha256(data).hexdigest(), 'bytes': len(data)})
+            return {'kind': 'worker_checkpoint', 'checkpoint': checkpoint['value'],
+                    'sha256': checkpoint['sha256'], 'bytes': len(raw), 'artifact_ref': reference,
+                    'observed_at': checkpoint['observed_at'], 'evidence_files': evidence,
+                    'evidence_omitted': omitted}, artifacts
+        checkpoint = {'status': 'not_preserved', 'error': 'checkpoint exceeds artifact byte limit'}
+    final = {'kind': 'observed_partial_state', 'checkpoint_status': checkpoint['status'],
+             'messages': [], 'workspace': str(workspace),
+             'limitation': 'No complete final worker checkpoint was preserved; infer no unreported result.'}
+    if checkpoint.get('error'):
+        final['reason'] = checkpoint['error']
+    return ({**deepcopy(prior), 'final_observation': final} if prior else final), {}

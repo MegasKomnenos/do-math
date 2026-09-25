@@ -300,6 +300,7 @@ def _apply_domain_decision(instance, runtime, change, source_ref, actor, at):
     record = change.get("record")
     if not isinstance(record, dict): raise ValueError("governance decision requires a structured governance record")
     if record.get("kind") != change["kind"]: raise ValueError("record owner differs from decision kind")
+    validate_governance_record(record)
     previous_charter = governance_view(instance)["charter"]
     academic_only = (record["kind"] == "charter"
                      and {k: v for k, v in previous_charter["content"].items() if k != "academic_requirements"}
@@ -334,7 +335,9 @@ def _apply_domain_decision(instance, runtime, change, source_ref, actor, at):
 
 
 def timestamp(value: str | None = None) -> datetime:
-    result = datetime.fromisoformat(value.replace("Z", "+00:00")) if value else datetime.now(timezone.utc)
+    if value is not None and (not isinstance(value, str) or not value):
+        raise ValueError('time must be a nonempty timestamp string or null')
+    result = datetime.fromisoformat(value.replace("Z", "+00:00")) if value is not None else datetime.now(timezone.utc)
     if result.tzinfo is None:
         raise ValueError("a timezone is required")
     return result.astimezone(timezone.utc)
@@ -530,6 +533,8 @@ def expire_grants(instance, runtime, *, at):
 def apply_decision(instance: dict, runtime: dict, change: dict, *, source_ref: str,
                    actor: str = "user", at: str | None = None) -> tuple[dict, dict, dict]:
     """Apply one explicit decision atomically to copies of the two roots."""
+    from .control_contracts import validate_decision_shape
+    validate_decision_shape(change)
     if actor != "user" or not source_ref:
         raise ValueError("a preserved user decision is required")
     if change.get("kind") in GOVERNANCE_KINDS:
@@ -884,6 +889,8 @@ def validate_import_units(instance, runtime, source, output, *, owner_handlers=N
         referenced_questions.update(unit["question_refs"])
         payload = unit["payload"]
         if payload:
+            from .control_contracts import validate_decision_shape
+            validate_decision_shape(payload)
             if payload.get("kind") != unit["owner_kind"]: raise ValueError("payload and unit have different owners")
             if payload.get("record", {}).get("id", unit["owner_ref"]) != unit["owner_ref"]: raise ValueError("payload target differs from owner coordinate")
             kind = unit["owner_kind"]
@@ -1046,6 +1053,9 @@ def validate_independent_execution(runtime, execution_id, author_ids):
 
 
 def apply_import(instance, runtime, import_id, *, approvals=None, owner_handlers=None):
+    from .control_contracts import validate_import_approvals
+    approvals = {} if approvals is None else approvals
+    validate_import_approvals(approvals)
     owner_handlers = _owner_handlers(owner_handlers)
     bundle = _current_import(instance, runtime, import_id, owner_handlers=owner_handlers)
     if bundle.get("application", {}).get("status") == "applied": return deepcopy(instance), deepcopy(runtime), deepcopy(bundle["application"])

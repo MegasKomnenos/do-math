@@ -11,6 +11,8 @@ from urllib.request import HTTPRedirectHandler, Request, build_opener
 def _canon(value: Any) -> bytes: return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()
 def _hash(value: Any) -> str: return hashlib.sha256(_canon(value)).hexdigest()
 def _now(value: str) -> datetime:
+    if not isinstance(value, str) or not value:
+        raise ValueError('external authority time must be a nonempty timestamp string')
     result = datetime.fromisoformat(value.replace("Z", "+00:00"))
     if result.tzinfo is None: raise ValueError("external authority time requires timezone")
     return result.astimezone(timezone.utc)

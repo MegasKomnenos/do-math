@@ -165,9 +165,14 @@ class ResearchRepository:
             if family.shape == "derived" and family.name in state:
                 state[family.name] = family.derived(instance, runtime)
         self.contract.validate(instance, runtime)
-        self._validate_artifact_evidence(runtime, expected_head, artifacts)
         files = _encode_families(instance, runtime, self.contract, self._store.object_format)
-        self._store._validate_candidate_paths(set(files))
+        supplied = self._snapshot_artifacts(artifacts) or {}
+        for path in files.keys() & supplied.keys():
+            if files[path] != supplied[path]:
+                raise ValueError('immutable artifact differs from encoded state: ' + path)
+        # Evidence validation and publication must see the same merged bytes.
+        self._validate_artifact_evidence(runtime, expected_head, {**files, **supplied})
+        self._store._validate_candidate_paths(set(files) | set(supplied))
         return {"instance": instance, "runtime": runtime, "files": files,
                 "contract": self.contract.manifest(), "valid": True}
 
@@ -184,6 +189,15 @@ class ResearchRepository:
         candidate = self._validate_candidate(instance, runtime, expected_head, artifacts=artifact_snapshot,
                                              parent_state=(parent_instance, parent_runtime))
         files = candidate["files"]
+        # Unreferenced payloads remain immutable Git blobs. They are reusable
+        # even when the parent decoder did not need to read them into old_files.
+        missing = {p for p in files if p.startswith('runtime/artifacts/') and p not in old_files}
+        if missing:
+            existing = self._store.read_many(expected_head, sorted(missing & self._store._tree_paths(expected_head)))
+            for path, raw in existing.items():
+                if files[path] != raw:
+                    raise ValueError('immutable artifact differs from encoded state: ' + path)
+            old_files = {**old_files, **existing}
         changes = {p: None for p in old_files if p not in files and not p.startswith('runtime/artifacts/')}
         changes.update({p: raw for p, raw in files.items() if old_files.get(p) != raw})
         if artifact_snapshot is not None:

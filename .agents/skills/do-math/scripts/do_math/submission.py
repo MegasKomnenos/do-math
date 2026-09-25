@@ -215,6 +215,7 @@ def read_extensions(workspace: Path) -> dict:
 
 def reported_references(output: dict, extensions: dict, context: dict | None = None) -> list[str]:
     """Read explicit dependency fields, never historical records or free prose."""
+    from .relation_refs import relation_references
     refs = list(output.get("used_sources", []))
     for item in output.get("knowledge", []):
         refs.extend(item.get("dependencies", []))
@@ -238,8 +239,7 @@ def reported_references(output: dict, extensions: dict, context: dict | None = N
     if context:
         refs.extend(context.get("action", {}).get("revision_targets", {}))
     for relation in [*output.get("relations", []), *extensions.get("relations", [])]:
-        refs.extend([relation.get("source"), relation.get("target"),
-                     *relation.get("evidence_refs", []), *relation.get("formal_result_refs", [])])
+        refs.extend(sorted(relation_references(relation)))
     for entry in extensions.get("research_insights", []):
         refs.extend(entry.get("evidence_ids", []))
     for entry in extensions.get("knowledge_changes", []):
@@ -248,8 +248,7 @@ def reported_references(output: dict, extensions: dict, context: dict | None = N
         refs.extend(entry.get("changes", {}).get("source_refs", []))
         refs.extend(entry.get("impact_set", []))
     for entry in extensions.get("knowledge_metadata", []):
-        claim = entry.get("relation_claim", {})
-        refs.extend([claim.get("source"), claim.get("target")])
+        refs.extend(sorted(relation_references(entry.get('relation_claim') or {})))
     for entry in extensions.get("research_requests", []):
         refs.extend(entry.get("source_refs", []))
     return list(dict.fromkeys(normalize_reference(ref, context or {}) for ref in refs if isinstance(ref, str)))

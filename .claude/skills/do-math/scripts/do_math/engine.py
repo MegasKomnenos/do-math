@@ -28,7 +28,7 @@ from .input_basis import capture_sources, sources_current, capture_decision_basi
 from .context_store import collect_outputs, prepare_role_input, defer_input_overflow, materialize_inputs, read_source, prefetch_artifacts
 from .operation_trace import engine_operation, tracing, phase, measured, progress as operation_progress
 from .observation_transport import ObservationBatch
-from .observations import ObservationTracker, CHECKPOINT_SCHEMA, recovered_checkpoint, request_checkpoint, validate_rules, write_checkpoint_reminder, self_check_feedback, publish_worker_feedback, tracker_config, persistent_record, read_checkpoint
+from .observations import ObservationTracker, CHECKPOINT_SCHEMA, preserve_checkpoint, request_checkpoint, validate_rules, write_checkpoint_reminder, self_check_feedback, publish_worker_feedback, tracker_config, persistent_record, read_checkpoint
 from .review_engine import ReviewEngineMixin
 from .lifecycle_engine import LifecycleEngineMixin
 from .academic_engine import AcademicEngineMixin
@@ -154,6 +154,8 @@ def _evaluation_context_for(store, snapshot):
 
 
 def validate_config(config: dict) -> None:
+    from .control_contracts import validate_config_shape
+    validate_config_shape(config)
     if set(config) - set(DEFAULT_CONFIG) - OPTIONAL_CONFIG - {'host_resources'}:
         raise ValueError("configuration fields differ from do-math-cli/5")
     for key in OPTIONAL_CONFIG & config.keys():
@@ -262,10 +264,10 @@ def _control_result(store, head, runtime, request_id):
 def control(repository: Path, instance_id: str, action: str, *, text: str = "", config: dict | None = None,
             origin: str = "user", request_id: str | None = None, idempotency_key: str | None = None) -> dict:
     """Queue user commands; only the owning engine publishes authority changes."""
-    if action not in {"pause", "resume", "close", "input", "configure", "request",
-                      "decision", "knowledge", "trust", "external", "conversation", "source", "quiesce", "release_quiesce"}:
-        raise ValueError("unknown control action")
-    if origin not in {"user", "operator"}:
+    from .control_contracts import validate_control_payload
+    config = {} if config is None else config
+    validate_control_payload(action, text, config)
+    if not isinstance(origin, str) or origin not in {"user", "operator"}:
         raise ValueError("control origin must be user or operator")
     if origin == "operator" and action not in {"pause", "resume", "request", "configure", "source", "quiesce", "release_quiesce"}:
         raise ValueError("operator controls are limited to pause, resume, request, configure, source, quiesce, and release_quiesce")
@@ -838,8 +840,10 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             if file.stem in self.runtime["processed_controls"]:
                 continue
             request = json.loads(file.read_text(encoding="utf-8"))
-            if request.get("id") != file.stem or request.get("instance_id") != self.instance["id"]:
+            if not isinstance(request, dict) or request.get("id") != file.stem or request.get("instance_id") != self.instance["id"]:
                 raise ValueError("control identity mismatch")
+            if any(not isinstance(request.get(key), str) for key in ('created_at', 'accepted_order')):
+                raise ValueError('control ordering envelope is invalid')
             results.append(request)
         # ULID suffixes are random within a millisecond; they do not preserve
         # the order in which a pause, release, or newer user control arrived.
@@ -854,11 +858,22 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             self._transport.pump(self._publish_control_request)
         for request in self._inbox():
             action = request["action"]
+            try:
+                from .control_contracts import validate_control_payload
+                validate_control_payload(action, request.get('text'), request.get('config'))
+            except ValueError as error:
+                self._reject_control(request, str(error))
+                continue
             if action == "source":
                 spec = request["config"]
-                raw = base64.b64decode(spec["body_base64"], validate=True)
-                if hashlib.sha256(raw).hexdigest() != spec["sha256"]:
-                    self._reject_control(request, "source bytes differ from the accepted request")
+                try:
+                    if set(spec) != {'name', 'body_base64', 'sha256', 'bytes'}:
+                        raise ValueError('accepted source requires normalized exact bytes')
+                    raw = base64.b64decode(spec['body_base64'], validate=True)
+                    if hashlib.sha256(raw).hexdigest() != spec['sha256'] or len(raw) != spec['bytes']:
+                        raise ValueError('source bytes differ from the accepted request')
+                except ValueError as error:
+                    self._reject_control(request, str(error))
                     continue
                 old = next((s for s in self.instance["sources"] if s["name"] == spec["name"]), None)
                 if old and old["sha256"] == spec["sha256"]:
@@ -1656,9 +1671,13 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                      or collect_outputs(workspace, max_bytes=self.instance["config"]["max_artifact_bytes"]))
             control_files = collect_outputs(workspace / ".control",
                                             max_bytes=self.instance["config"]["max_artifact_bytes"])
-            checkpoint = json_safe(recovered_checkpoint(workspace))
+            checkpoint, checkpoint_artifacts = preserve_checkpoint(workspace,
+                artifact_prefix=f'runtime/artifacts/{bundle}/checkpoint',
+                max_bytes=self.instance['config']['max_artifact_bytes'],
+                previous=self.runtime.get('checkpoints', {}).get(eid))
             reference = f"runtime/artifacts/{bundle}/checkpoint-recovery.json"
             artifacts = {
+                **checkpoint_artifacts,
                 reference: canonical_json(checkpoint),
                 f"runtime/artifacts/{bundle}/control-manifest.json": canonical_json(control_files["manifest"]),
                 f"runtime/artifacts/{bundle}/control-omitted.json": canonical_json(control_files["omitted"]),
@@ -1672,8 +1691,6 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 artifacts[f"runtime/artifacts/{bundle}/control/{path}"] = raw
             execution.update(result_ref=reference, artifact_bundle=bundle, output_files=entries,
                              outputs_complete=files["complete"], error="previous executor disappeared")
-            from .observations import bind_checkpoint_artifact
-            checkpoint = bind_checkpoint_artifact(checkpoint, entries, self.runtime.get('checkpoints', {}).get(eid))
             artifacts[reference] = canonical_json(checkpoint)
             self.runtime.setdefault("checkpoints", {})[eid] = checkpoint
             if not self._settle_recovered_execution(eid, at=now(), disposition={
@@ -3590,7 +3607,10 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             artifacts[ref] = raw
         if result.get("output") is not None:
             artifacts[f"runtime/artifacts/{bundle}/output.json"] = canonical_json(result["output"])
-        checkpoint = json_safe(recovered_checkpoint(workspace))
+        checkpoint, checkpoint_artifacts = preserve_checkpoint(workspace,
+            artifact_prefix=f'runtime/artifacts/{bundle}/checkpoint', max_bytes=config['max_artifact_bytes'],
+            previous=self.runtime.get('checkpoints', {}).get(execution_id))
+        artifacts.update(checkpoint_artifacts)
         evidence = collect_outputs(base / "evidence", max_bytes=config["max_artifact_bytes"])
         checkpoint["observation_sources"] = []
         for path, raw in evidence["files"].items():
@@ -3600,12 +3620,6 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 "sha256": hashlib.sha256(raw).hexdigest(), "bytes": len(raw), "path": path})
         checkpoint["observation_evidence_complete"] = evidence["complete"]
         checkpoint["observation_evidence_omitted"] = deepcopy(evidence["omitted"])
-        observed = self.runtime.get("checkpoints", {}).get(execution_id)
-        if checkpoint["kind"] != "worker_checkpoint" and isinstance(observed, dict) and observed.get("kind") == "worker_checkpoint":
-            # An unreadable final checkpoint file never replaces the last valid checkpoint observed during execution.
-            checkpoint = {**observed, "final_observation": checkpoint}
-        from .observations import bind_checkpoint_artifact
-        checkpoint = bind_checkpoint_artifact(checkpoint, output_files, observed)
         self.runtime.setdefault("checkpoints", {})[execution_id] = checkpoint
         artifacts[f"runtime/artifacts/{bundle}/checkpoint-recovery.json"] = canonical_json(checkpoint)
         execution = self.runtime["executions"][execution_id]

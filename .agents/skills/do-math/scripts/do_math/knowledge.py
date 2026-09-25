@@ -228,15 +228,17 @@ def _impact_records(instance, runtime):
 
 
 def _impact_refs(record, known_ids):
+    from .relation_refs import relation_endpoints
     refs = _explicit_refs(record, known_ids)
     # Only declared authority coordinates count; prose and historical judgments do not.
     for key in ("formal_result_id", "exposition_id", "assessment_id", "kind_definition_id",
-                "source", "target", "trust_environment_id"):
+                "trust_environment_id"):
         if isinstance(record.get(key), str):
             refs.add(record[key])
-    claim = record.get("relation_claim")
-    if isinstance(claim, dict):
-        refs.update(claim.get(k) for k in ("source", "target") if isinstance(claim.get(k), str))
+    # Evidence locators use _explicit_refs' existing record filter. Unlike a
+    # read/source catalog, impact closure cannot treat a file path as a record.
+    refs.update(relation_endpoints(record))
+    refs.update(relation_endpoints(record.get('relation_claim') or {}))
     return refs
 
 

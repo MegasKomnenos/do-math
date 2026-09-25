@@ -109,8 +109,11 @@ class AdvancedCliTests(unittest.TestCase):
         self.assertEqual(instance["knowledge"][kid]["lifecycle"], "withdrawn")
         self.assertIn(child, plan["computed_impact"])
         self.assertNotIn("formal", instance["knowledge"][kid])
-        trust = self.control("trust", {"operation": "register", "toolchain": {"executable": "lean", "sha256": "abc"}, "allowed_axioms": []})
-        self.assertEqual((trust[0], trust[1]["effect"]), (0, "rejected"), trust)
+        path = self.root / 'invalid-trust.json'
+        path.write_text(json.dumps({'operation': 'register',
+            'toolchain': {'executable': 'lean', 'sha256': 'abc'}, 'allowed_axioms': []}), encoding='utf-8')
+        trust = self.cli('trust', '--repository', str(self.repo), '--instance', self.instance_id, '--file', str(path))
+        self.assertEqual((trust[0], trust[1]['kind']), (2, 'input_error'), trust)
         self.assertIsNone(self.load()[1].get("active_trust_environment"))
 
     def test_external_prepare_is_model_free_and_conversation_lifecycle(self):

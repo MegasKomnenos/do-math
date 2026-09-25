@@ -1,0 +1,59 @@
+[
+  {
+    "case": "charter_content_list",
+    "payload": {
+      "kind": "charter",
+      "record": {
+        "kind": "charter",
+        "content": []
+      }
+    },
+    "cli_returncode": 1,
+    "cli_stdout": "",
+    "cli_stderr_tail": [
+      "  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\governance.py\", line 306, in _apply_domain_decision",
+      "    == {k: v for k, v in record.get(\"content\", {}).items() if k != \"academic_requirements\"}",
+      "                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+      "AttributeError: 'list' object has no attribute 'items'"
+    ],
+    "retries": [
+      "AttributeError: 'list' object has no attribute 'items'",
+      "AttributeError: 'list' object has no attribute 'items'"
+    ],
+    "processed": false,
+    "published_control_result": null
+  },
+  {
+    "case": "grant_expiry_number",
+    "payload": {
+      "kind": "grant",
+      "grant": {
+        "kind": "local",
+        "roles": [
+          "maintenance"
+        ],
+        "expires_at": 1
+      }
+    },
+    "cli_returncode": 1,
+    "cli_stdout": "",
+    "cli_stderr_tail": [
+      "  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\governance.py\", line 337, in timestamp",
+      "    result = datetime.fromisoformat(value.replace(\"Z\", \"+00:00\")) if value else datetime.now(timezone.utc)",
+      "                                    ^^^^^^^^^^^^^",
+      "AttributeError: 'int' object has no attribute 'replace'"
+    ],
+    "retries": [
+      "AttributeError: 'int' object has no attribute 'replace'",
+      "AttributeError: 'int' object has no attribute 'replace'"
+    ],
+    "processed": false,
+    "published_control_result": null
+  },
+  {
+    "case": "python_public_change_list",
+    "accepted": true,
+    "failure": "AttributeError: 'list' object has no attribute 'get'",
+    "processed": false
+  }
+]

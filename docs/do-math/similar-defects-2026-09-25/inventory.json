@@ -1,0 +1,8573 @@
+{
+  "head": "c44dd7b7f34813d525ef4b79758dea7369984296",
+  "scope": ".claude/skills/do-math/",
+  "note": "Every tracked canonical file inventoried. Regex hits are navigation only; see manual coverage report for verdicts.",
+  "file_count": 242,
+  "changed_file_count": 81,
+  "rules": {
+    "T1_trust_observation": "trust_environment_errors|require_trust_environment|verify_environment_files|EnvironmentChecks|_observe_environment|verify_formal",
+    "T2_storage_identity": "payload|_validated_read|save_with_state|validate_candidate|exact_content_hash|fingerprint",
+    "T3_launch_termination": "launch_ticket|termination_confirmed|named_job_empty|local_termination|owner_ended|launch_not_created",
+    "T4_observation_order": "ObservationBatch|_observe_running|on_observation|request_self_check|record_delivery|acknowledged_source|def pump|def collect",
+    "T5_evidence_handoff": "operational_evidence|admissible_basis_refs|capture_checkpoint_files|bind_checkpoint_artifact|recovered_checkpoint|reference_catalog|validation_context|request_source_ref",
+    "T6_semantic_currentness": "assessment_basis|assessment_current|action_read_ids|contract_review_current|refresh_task_assessments|relation_claim|formal_result_refs|assessment_refs",
+    "T7_event_responsibility": "event_refs|pending_events|dispatch_occupied|_consume_action_events|task_assessment_invalidated",
+    "T8_maintenance_telemetry": "maintenance_fence|quiesce|operation_trace|engine_operation|workspace_operation|phase_rows",
+    "N1_public_input_boundary": "def control|def _.*control|_json_document|manifest_errors|except \\(ValueError, KeyError, TypeError\\)",
+    "N2_detached_state_continuation": "continuation_of|queued.update|save_with_state|self.head, self.instance, self.runtime"
+  },
+  "files": [
+    {
+      "path": ".claude/skills/do-math/.gitattributes",
+      "sha256": "57bda072be28b9f5886f54e43ac2bcec44204e661e2b8f2c625bef5070893b72",
+      "lines": 2,
+      "surface": "document_or_data",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/AGENTS.md",
+      "sha256": "146f03d26b91d822cde07018ef5f4da313c4a4e61e5ddd7330643326bab57353",
+      "lines": 11,
+      "surface": "document_or_data",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/GLOSSARY.md",
+      "sha256": "8a351800a977dbab1d94d6bfb2a90ef8e152b87065168eac8d667b27213308e7",
+      "lines": 707,
+      "surface": "document_or_data",
+      "changed_in": [],
+      "navigation_hits": {
+        "N2_detached_state_continuation": [
+          369
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/README.md",
+      "sha256": "e2eb986eda26656a03a9c497950d1ca9878e26612feecd7a0b4b11425af0e7ac",
+      "lines": 562,
+      "surface": "document_or_data",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T8_maintenance_telemetry": [
+          3
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/SKILL.md",
+      "sha256": "f75122e976066237db8826afdcd249cd9ea0e91af5135dc84432f7e5d463de0a",
+      "lines": 173,
+      "surface": "document_or_data",
+      "changed_in": [
+        "c44dd7b7"
+      ],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/examples/claude-codex-sessions.json",
+      "sha256": "6f76de2d4878e8cb06001c26f1e905d6f21cdb03ea629905d8b5675fa601e200",
+      "lines": 13,
+      "surface": "document_or_data",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/examples/nat-add-zero.txt",
+      "sha256": "13594af7329b33b2af7194acfeb042b68a67b3eb87918e949d3605ca69718e1b",
+      "lines": 1,
+      "surface": "document_or_data",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/references/CLI-실행-계약.md",
+      "sha256": "ce61e60a73d2ec168b9e02ee73f2a461ba50f5d70d84274431bcb71467aa0363",
+      "lines": 950,
+      "surface": "document_or_data",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          3,
+          46,
+          48,
+          279,
+          285,
+          294,
+          305,
+          706,
+          841
+        ],
+        "T3_launch_termination": [
+          3,
+          819
+        ],
+        "T6_semantic_currentness": [
+          460,
+          505
+        ],
+        "T7_event_responsibility": [
+          863
+        ],
+        "T8_maintenance_telemetry": [
+          3
+        ],
+        "N2_detached_state_continuation": [
+          254,
+          340,
+          819
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/references/공통-실행.md",
+      "sha256": "1250e495a921b1d61b3de4f3a4589e69c33a0d191d54e2c64a9bc448ea7533fd",
+      "lines": 334,
+      "surface": "document_or_data",
+      "changed_in": [
+        "ff9b2b9c",
+        "c44dd7b7"
+      ],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          124,
+          165
+        ],
+        "T5_evidence_handoff": [
+          3,
+          37
+        ],
+        "T6_semantic_currentness": [
+          294
+        ],
+        "T7_event_responsibility": [
+          29
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/references/과제-착수조건.md",
+      "sha256": "2c45325c162ee9ed318e859409f995d3cb5bad6429094a282721eb2fc7150a7d",
+      "lines": 55,
+      "surface": "document_or_data",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/references/모델과-실행예산.md",
+      "sha256": "e80281b05ca12be69b73ae121709aabf9ad1c117d2bd1bd2d5f37345e4dd9d7c",
+      "lines": 121,
+      "surface": "document_or_data",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/references/입력-소비자.md",
+      "sha256": "acdae70be6fb277bea3a08eb678681d5e0512ef313aac8ccdf2206cef317167b",
+      "lines": 54,
+      "surface": "document_or_data",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          3,
+          5,
+          9,
+          22,
+          26,
+          30,
+          34,
+          38,
+          42,
+          46,
+          50
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/references/지식-저작과-재사용.md",
+      "sha256": "66275a7cc6e8c35f77c2d7725f56a7b860bdba4baa8ce3b62bb3ed36bb98ad88",
+      "lines": 99,
+      "surface": "document_or_data",
+      "changed_in": [],
+      "navigation_hits": {
+        "T6_semantic_currentness": [
+          71,
+          73
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/references/초기화-운전.md",
+      "sha256": "dca2f821fa2c7d997bfa1dcfbc3ddff461e392360b6173bebd5e18ddd85825af",
+      "lines": 367,
+      "surface": "document_or_data",
+      "changed_in": [
+        "ff9b2b9c",
+        "c44dd7b7"
+      ],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          3,
+          316,
+          329,
+          331,
+          338,
+          347
+        ],
+        "T7_event_responsibility": [
+          365
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/references/초기화-효율과-정비.md",
+      "sha256": "3c29284bceebb6b4d347c49eb7ce65707a3b7091d7017d0edb134a11710d80b6",
+      "lines": 71,
+      "surface": "document_or_data",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          25,
+          27,
+          29,
+          31
+        ],
+        "T3_launch_termination": [
+          37
+        ],
+        "T5_evidence_handoff": [
+          33
+        ],
+        "T8_maintenance_telemetry": [
+          48,
+          52,
+          57
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/references/학술자료-활용.md",
+      "sha256": "2ee3e60169745aa89b9912ad57d6ac56da676dd04becde0de7e641ece39529d2",
+      "lines": 49,
+      "surface": "document_or_data",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/requirements.txt",
+      "sha256": "756cc9e506ae4ee1a6f6c0507088b5cfc0dc8ba350fb2d2d46f1ffa72033adb6",
+      "lines": 1,
+      "surface": "document_or_data",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/check_coverage.py",
+      "sha256": "2b66c4cc79bdb2f7c762f1d1d1db31bbce7febcc852b5b8b4ee1dd764740f2d7",
+      "lines": 357,
+      "surface": "code",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math.py",
+      "sha256": "24403f801deb26dcad72b4fc327109223eab76fb9d373aa1f3ddd27c0510b604",
+      "lines": 7,
+      "surface": "code",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/__init__.py",
+      "sha256": "a1c57a32d3d32541a69ca3b870252dd232d81960119ff051d71e502d0a8e732a",
+      "lines": 1,
+      "surface": "code",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/academic.py",
+      "sha256": "29a9280f94c14c61b0fa0c56842155b816d4fc11011389a01426b25066661989",
+      "lines": 261,
+      "surface": "code",
+      "changed_in": [],
+      "navigation_hits": {
+        "T6_semantic_currentness": [
+          73,
+          75,
+          79,
+          138,
+          244,
+          256,
+          260
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/academic_engine.py",
+      "sha256": "93731b8ffe97e4d742e98787585223d42d9dd96e161ec49660f237603adb214e",
+      "lines": 227,
+      "surface": "code",
+      "changed_in": [],
+      "navigation_hits": {
+        "T6_semantic_currentness": [
+          11,
+          185,
+          192
+        ],
+        "N1_public_input_boundary": [
+          167
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/activities.py",
+      "sha256": "60bd4c64cab7430da6e4a2d593d1a1ca2877037d813e29927a9d4afc882f6acb",
+      "lines": 301,
+      "surface": "code",
+      "changed_in": [],
+      "navigation_hits": {
+        "N2_detached_state_continuation": [
+          133,
+          153,
+          158,
+          296
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/budget.py",
+      "sha256": "c93ad5e64231b4081ecf1b6cab8ae7c4e3650b8cbfb4e394b4e3e68b84b82fcb",
+      "lines": 367,
+      "surface": "code",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/claude_adapter.py",
+      "sha256": "24267d4e25c553cb09af6d50304362ad0c3b33a5ce8ab6e55a68e571e41b1126",
+      "lines": 61,
+      "surface": "code",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T8_maintenance_telemetry": [
+          3
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/claude_stream.py",
+      "sha256": "8e6d7adb2aa8feeeb013a6bed6ded037ee0440d41ccbcf0ed2d32f907da8231b",
+      "lines": 193,
+      "surface": "code",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/claude_worker.py",
+      "sha256": "051b79f3b9915788eeedbb2d4896ab5c6a6e93f8ac7a8366094409e8affe5631",
+      "lines": 135,
+      "surface": "code",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/cli.py",
+      "sha256": "9e860e881bfd852c8ec03eb33ad778c1cb06f1d6c3f5d92ad8dfd3fbbedc9007",
+      "lines": 669,
+      "surface": "code",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          123,
+          133,
+          207,
+          341,
+          343,
+          497,
+          503,
+          513,
+          516,
+          554,
+          558,
+          574,
+          575,
+          577,
+          578,
+          585,
+          586,
+          587,
+          590,
+          592,
+          594
+        ],
+        "T8_maintenance_telemetry": [
+          118,
+          124,
+          208,
+          308,
+          309,
+          310,
+          311
+        ],
+        "N1_public_input_boundary": [
+          42,
+          54,
+          213,
+          341,
+          494
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/codex_adapter.py",
+      "sha256": "a7a4ab8e676bc47661a6ab26d43b0ce7b78a6d7237930f363d99a59bdc14cd75",
+      "lines": 323,
+      "surface": "code",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T4_observation_order": [
+          246
+        ],
+        "T8_maintenance_telemetry": [
+          8
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/codex_worker.py",
+      "sha256": "6c93ff9ed9dffaf3ef9c7907f3fb26fbcbe616978f3c9f45b0b6c44c291b4b1e",
+      "lines": 211,
+      "surface": "code",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/context_store.py",
+      "sha256": "4756a17453aed765fbed7d2171982f703fe03c9b7293639ba6df8d2adf9602cc",
+      "lines": 891,
+      "surface": "code",
+      "changed_in": [
+        "ff9b2b9c",
+        "c44dd7b7"
+      ],
+      "navigation_hits": {
+        "T4_observation_order": [
+          127
+        ],
+        "T5_evidence_handoff": [
+          373,
+          431,
+          574,
+          577,
+          592,
+          595,
+          596,
+          597,
+          598,
+          687
+        ],
+        "T6_semantic_currentness": [
+          483
+        ],
+        "T7_event_responsibility": [
+          496,
+          504
+        ],
+        "T8_maintenance_telemetry": [
+          3
+        ],
+        "N2_detached_state_continuation": [
+          297,
+          317,
+          495,
+          532
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/contracts.py",
+      "sha256": "e4ef65435b66563dfc5ab74c92af3dbaddf7f862b97e21081e447e5fd5f37765",
+      "lines": 347,
+      "surface": "code",
+      "changed_in": [
+        "c44dd7b7"
+      ],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          325,
+          336
+        ],
+        "T5_evidence_handoff": [
+          162
+        ],
+        "T7_event_responsibility": [
+          149
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/control_transport.py",
+      "sha256": "b846cd58144532d004b46d0ab067f8f0099a8c227d6c8c1ecfe573a6bc8eb70e",
+      "lines": 518,
+      "surface": "code",
+      "changed_in": [
+        "c44dd7b7"
+      ],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          244,
+          247,
+          248,
+          254,
+          271,
+          275,
+          276,
+          284,
+          329,
+          340,
+          341,
+          345,
+          348,
+          450,
+          484
+        ],
+        "T4_observation_order": [
+          195,
+          244
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/decision_engine.py",
+      "sha256": "b089c02af0267f5d6d41d5a06519143560a6a4e5bec0a41c79301b7f4b5e4266",
+      "lines": 208,
+      "surface": "code",
+      "changed_in": [],
+      "navigation_hits": {
+        "T6_semantic_currentness": [
+          78
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/delegations.py",
+      "sha256": "c106589d04013ddf6ad130e3854a52194e8d2978e528fc283671c62949dc9f8f",
+      "lines": 183,
+      "surface": "code",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          110
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/engine.py",
+      "sha256": "9df0cf57fc928eeee131b2b5fdcd31295ef3ddcf347b2e3bad2a4e4632cfa4e2",
+      "lines": 4725,
+      "surface": "code",
+      "changed_in": [
+        "ff9b2b9c",
+        "c44dd7b7"
+      ],
+      "navigation_hits": {
+        "T1_trust_observation": [
+          4454,
+          4455
+        ],
+        "T2_storage_identity": [
+          37,
+          242,
+          296,
+          304,
+          305,
+          364,
+          423,
+          424,
+          785,
+          786,
+          787,
+          817,
+          1090,
+          1197,
+          1204,
+          1233,
+          1234,
+          1236,
+          1238,
+          1249,
+          1250,
+          1251,
+          1301,
+          2203,
+          2266,
+          2278,
+          2307,
+          2313,
+          2334,
+          2615,
+          2933,
+          2972,
+          2981,
+          3005,
+          3011,
+          3018,
+          4637,
+          4646,
+          4654
+        ],
+        "T3_launch_termination": [
+          640,
+          1590,
+          1599,
+          1635,
+          1636,
+          1637,
+          1638,
+          1682,
+          2531,
+          2879,
+          3448,
+          3520,
+          4170,
+          4324,
+          4541,
+          4542
+        ],
+        "T4_observation_order": [
+          30,
+          2827,
+          2830,
+          2835,
+          2930,
+          2932,
+          3527,
+          3528,
+          3540
+        ],
+        "T5_evidence_handoff": [
+          31,
+          1321,
+          1659,
+          1675,
+          1676,
+          1912,
+          1939,
+          2891,
+          2892,
+          3593,
+          3607,
+          3608,
+          4268
+        ],
+        "T6_semantic_currentness": [
+          3135,
+          3891,
+          3895,
+          3897,
+          3898,
+          3903,
+          4505
+        ],
+        "T7_event_responsibility": [
+          1511,
+          1799,
+          2245,
+          2765,
+          2766,
+          2774,
+          3736,
+          3737
+        ],
+        "T8_maintenance_telemetry": [
+          29,
+          266,
+          270,
+          271,
+          914,
+          1020,
+          1442,
+          1473,
+          1522
+        ],
+        "N1_public_input_boundary": [
+          246,
+          262,
+          824,
+          831,
+          850,
+          910,
+          971,
+          1175,
+          1297,
+          1306,
+          1318,
+          1331,
+          1336,
+          1407,
+          4615
+        ],
+        "N2_detached_state_continuation": [
+          242,
+          518,
+          565,
+          575,
+          591,
+          603,
+          737,
+          817,
+          818,
+          1277,
+          1446,
+          1457,
+          1535,
+          2266,
+          2280,
+          2292,
+          2296,
+          2465,
+          2564,
+          3072,
+          4336,
+          4357,
+          4486
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/environment_checks.py",
+      "sha256": "e08a1ca5a8ee8467af272220eaa110750275a0db5afe94859052d83692614e02",
+      "lines": 123,
+      "surface": "code",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T1_trust_observation": [
+          7,
+          22,
+          71,
+          108,
+          109,
+          117
+        ],
+        "T2_storage_identity": [
+          6,
+          18,
+          19,
+          31
+        ],
+        "T3_launch_termination": [
+          113
+        ],
+        "T8_maintenance_telemetry": [
+          33,
+          69
+        ],
+        "N1_public_input_boundary": [
+          7,
+          28
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/events.py",
+      "sha256": "d3f241ada6a97bd1af2e35ff3c4da98cf15e4e033d268dab464ccd2171a49bba",
+      "lines": 81,
+      "surface": "code",
+      "changed_in": [],
+      "navigation_hits": {
+        "T7_event_responsibility": [
+          41,
+          45,
+          47,
+          50,
+          57
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/execution_lifecycle.py",
+      "sha256": "8bedd3458eabc8149ebc97a4faa4c23f270cd363061c75506ef4a7f1430a9875",
+      "lines": 203,
+      "surface": "code",
+      "changed_in": [],
+      "navigation_hits": {
+        "T3_launch_termination": [
+          112
+        ],
+        "N2_detached_state_continuation": [
+          23,
+          33,
+          34,
+          35,
+          42
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/execution_profiles.py",
+      "sha256": "754527a30d267ee4052c8021bb9bae9283f44e8c24b59b9be8b77c5524a8d4c9",
+      "lines": 406,
+      "surface": "code",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T4_observation_order": [
+          355
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/execution_window.py",
+      "sha256": "84ac17727e6c89ee848090e5d838457d9e39a5a85dfa053d15f23ade99db58f8",
+      "lines": 69,
+      "surface": "code",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/external.py",
+      "sha256": "4ace40f96350e8e13d00762632bc0eb2abe05258057da998c8b17e40a999ec8b",
+      "lines": 183,
+      "surface": "code",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/formal.py",
+      "sha256": "6cf825caba6d3ddc2d3ef1ee5d939637241df64959c317e9a04df93c9fe288d4",
+      "lines": 516,
+      "surface": "code",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          183,
+          310,
+          325
+        ],
+        "T3_launch_termination": [
+          371,
+          376,
+          378,
+          379,
+          382,
+          408,
+          415
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/formal_preview.py",
+      "sha256": "f7f96de2655c0ae598651ad176fe00cb294ec1527f5019396581ea72d922f572",
+      "lines": 41,
+      "surface": "code",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/git_store.py",
+      "sha256": "d128913da309d6120bb84c5ef928e86be3d1ad68816b29f859bdd62cb49687b2",
+      "lines": 571,
+      "surface": "code",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          190,
+          356
+        ],
+        "T8_maintenance_telemetry": [
+          9
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/governance.py",
+      "sha256": "9cf3f94554340742b2f0eb5c5b840e8e1862ccd9a03107851791d300b2d28768",
+      "lines": 1157,
+      "surface": "code",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          14,
+          26,
+          27,
+          772,
+          778,
+          785,
+          786,
+          797,
+          830,
+          879,
+          885,
+          886,
+          887,
+          888,
+          891,
+          893,
+          896,
+          897,
+          899,
+          901,
+          927,
+          953,
+          979,
+          991,
+          1071,
+          1108,
+          1134,
+          1137
+        ],
+        "T4_observation_order": [
+          700
+        ],
+        "N1_public_input_boundary": [
+          490
+        ],
+        "N2_detached_state_continuation": [
+          1037,
+          1038
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/governance_engine.py",
+      "sha256": "1f7567cddaf3d955a84af6929437df378b97d17b15df5005bffc34e03b05ca16",
+      "lines": 453,
+      "surface": "code",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T1_trust_observation": [
+          442,
+          443
+        ],
+        "T2_storage_identity": [
+          126,
+          272
+        ],
+        "T6_semantic_currentness": [
+          427,
+          428
+        ],
+        "N1_public_input_boundary": [
+          215,
+          234
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/initialization.py",
+      "sha256": "3b853b8f59125b7e2370b4cf0fee6b0d7f934a27cf16472d5b7bba9905a8bf81",
+      "lines": 292,
+      "surface": "code",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T1_trust_observation": [
+          94,
+          95,
+          98,
+          105,
+          110,
+          114,
+          115,
+          206
+        ],
+        "T2_storage_identity": [
+          139
+        ],
+        "T7_event_responsibility": [
+          287
+        ],
+        "N1_public_input_boundary": [
+          95,
+          97,
+          176,
+          184,
+          195,
+          221
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/input_basis.py",
+      "sha256": "8430b6d3ca221283b01826abbda3583baad622da3062c7a4347c6c97ce104caf",
+      "lines": 114,
+      "surface": "code",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/input_recovery.py",
+      "sha256": "071f077344c49254da1f9e2f11cd6a85184e326a6dbac0006e746b9c4b92e17f",
+      "lines": 52,
+      "surface": "code",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/integration.py",
+      "sha256": "25857ede44cd28be23d8cfc3682be1364acd8403c829d476e24dd2249461ce69",
+      "lines": 558,
+      "surface": "code",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          75,
+          105,
+          147,
+          212,
+          459,
+          465,
+          487,
+          501,
+          506,
+          544,
+          552
+        ],
+        "T6_semantic_currentness": [
+          35
+        ],
+        "N2_detached_state_continuation": [
+          185
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/knowledge.py",
+      "sha256": "e46369597902d2bf0b90204cfbeffbe7ec76b539a37b9536a14268b93a0102a3",
+      "lines": 837,
+      "surface": "code",
+      "changed_in": [],
+      "navigation_hits": {
+        "T6_semantic_currentness": [
+          122,
+          125,
+          208,
+          220,
+          237,
+          465,
+          467,
+          500
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/knowledge_io.py",
+      "sha256": "fcfea63c26fb86b539ff10528e79da9e01160fd2c53e837fc88285a56df9b233",
+      "lines": 398,
+      "surface": "code",
+      "changed_in": [],
+      "navigation_hits": {
+        "T6_semantic_currentness": [
+          19,
+          23,
+          277,
+          280,
+          339,
+          341,
+          347,
+          354,
+          355,
+          356,
+          360,
+          362,
+          367
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/knowledge_records.py",
+      "sha256": "e9e0f1b9c019c3a0174bc6d64fd92554c54d2324079edc83d1ea369674805e5a",
+      "lines": 382,
+      "surface": "code",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          6,
+          18,
+          22,
+          26
+        ],
+        "T6_semantic_currentness": [
+          24,
+          92,
+          93,
+          145,
+          149,
+          169,
+          184,
+          256,
+          263,
+          264,
+          278,
+          282,
+          288,
+          299,
+          313
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/launch.py",
+      "sha256": "c1914a6188641f295ee69dd8f76bf154c56cb3041f1f9725c3b91a7f7830110e",
+      "lines": 63,
+      "surface": "code",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T3_launch_termination": [
+          49,
+          51,
+          62
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/lifecycle_engine.py",
+      "sha256": "e1608253a232e3749c9f9445c93c092b97ddd61d2ea7d29cd78a505d3df605bc",
+      "lines": 1485,
+      "surface": "code",
+      "changed_in": [
+        "ff9b2b9c",
+        "c44dd7b7"
+      ],
+      "navigation_hits": {
+        "T1_trust_observation": [
+          684,
+          685,
+          699,
+          700,
+          1074,
+          1075,
+          1076,
+          1079,
+          1081,
+          1087,
+          1088,
+          1182,
+          1183,
+          1309,
+          1310,
+          1353,
+          1354
+        ],
+        "T2_storage_identity": [
+          695,
+          934,
+          939,
+          1066,
+          1381
+        ],
+        "T3_launch_termination": [
+          1095,
+          1096,
+          1367,
+          1368
+        ],
+        "T6_semantic_currentness": [
+          17,
+          607,
+          925,
+          926,
+          963
+        ],
+        "T7_event_responsibility": [
+          67,
+          199,
+          941,
+          943,
+          997,
+          1001,
+          1003,
+          1004,
+          1008,
+          1015,
+          1024,
+          1025,
+          1046,
+          1051,
+          1056
+        ],
+        "T8_maintenance_telemetry": [
+          1201
+        ],
+        "N1_public_input_boundary": [
+          202,
+          420,
+          512,
+          625,
+          660,
+          720,
+          829
+        ],
+        "N2_detached_state_continuation": [
+          413,
+          674,
+          809,
+          1117,
+          1118,
+          1216,
+          1263,
+          1265,
+          1412,
+          1415
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/maintenance_gate.py",
+      "sha256": "6e29117d1bfdb91d7c058acfca8c46686fe219487011c3b99ecc16303c53668e",
+      "lines": 49,
+      "surface": "code",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T3_launch_termination": [
+          42
+        ],
+        "T8_maintenance_telemetry": [
+          7,
+          11,
+          12,
+          15,
+          22,
+          26,
+          31,
+          47
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/model_policy.py",
+      "sha256": "7b24a7c526beec1b74f236ffc6372650d647ac916276225caebc4c506c370878",
+      "lines": 143,
+      "surface": "code",
+      "changed_in": [],
+      "navigation_hits": {
+        "T6_semantic_currentness": [
+          78
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/model_runner.py",
+      "sha256": "a14f18b703f9a343f45309f6475e8ba193575ea98891142fa46e650a4120a864",
+      "lines": 375,
+      "surface": "code",
+      "changed_in": [
+        "ff9b2b9c",
+        "c44dd7b7"
+      ],
+      "navigation_hits": {
+        "T3_launch_termination": [
+          38,
+          54,
+          115,
+          118,
+          123,
+          316
+        ],
+        "T4_observation_order": [
+          21,
+          45,
+          141,
+          167,
+          204
+        ],
+        "T8_maintenance_telemetry": [
+          3
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/observation_transport.py",
+      "sha256": "bb7cf12bcb3b6df5ebd598c880d9440cc1e3b05c8ca2f8c44e8a5ff52802331b",
+      "lines": 26,
+      "surface": "code",
+      "changed_in": [
+        "c44dd7b7"
+      ],
+      "navigation_hits": {
+        "T4_observation_order": [
+          8
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/observations.py",
+      "sha256": "cd9a89ced6ab596f1644047cf988a9d5404e4dae5bb7bc0af6aa3370d334af32",
+      "lines": 1192,
+      "surface": "code",
+      "changed_in": [
+        "c44dd7b7"
+      ],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          111,
+          641,
+          668,
+          671,
+          672,
+          677,
+          684,
+          685,
+          689,
+          735,
+          736,
+          738,
+          741,
+          744,
+          863,
+          864,
+          906,
+          907
+        ],
+        "T4_observation_order": [
+          626,
+          628,
+          632,
+          723
+        ],
+        "T5_evidence_handoff": [
+          461,
+          1172,
+          1181
+        ],
+        "T6_semantic_currentness": [
+          157,
+          161
+        ],
+        "N1_public_input_boundary": [
+          649,
+          1122
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/operation_trace.py",
+      "sha256": "83ce9537d4be9fb841f943eb6f7962fbfa31792ae54a5b8f85dd273ba3b3815e",
+      "lines": 195,
+      "surface": "code",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T8_maintenance_telemetry": [
+          15,
+          115,
+          126,
+          179
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/operational_dispositions.py",
+      "sha256": "60779391d22a019ac8b837b031f8359d57a30a98a7579caca09422f7df838d4c",
+      "lines": 200,
+      "surface": "code",
+      "changed_in": [
+        "c44dd7b7"
+      ],
+      "navigation_hits": {
+        "T5_evidence_handoff": [
+          75,
+          93
+        ],
+        "N2_detached_state_continuation": [
+          196
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/parallel.py",
+      "sha256": "9f48dc27b88567738659943eedf0f50f53b0522b5e48872ea7a13a1c6a48c691",
+      "lines": 125,
+      "surface": "code",
+      "changed_in": [
+        "ff9b2b9c",
+        "c44dd7b7"
+      ],
+      "navigation_hits": {
+        "T4_observation_order": [
+          45,
+          62,
+          79
+        ],
+        "T8_maintenance_telemetry": [
+          30
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/payloads.py",
+      "sha256": "f4becdfc888f785ee69b074d2b7eedc0d2124989fa37bdb09c3a618788be08ca",
+      "lines": 141,
+      "surface": "code",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          16,
+          22,
+          40,
+          41,
+          47,
+          76,
+          77,
+          78,
+          86,
+          90,
+          92,
+          95,
+          96,
+          102,
+          103,
+          104,
+          107,
+          109,
+          112,
+          115,
+          119,
+          124,
+          127,
+          132,
+          136,
+          137,
+          138,
+          139,
+          140
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/planning.py",
+      "sha256": "515b642f6ea3a572e15c1f28690eb4d8dc5b4de07615e2179129146103c2091e",
+      "lines": 798,
+      "surface": "code",
+      "changed_in": [
+        "c44dd7b7"
+      ],
+      "navigation_hits": {
+        "T4_observation_order": [
+          761
+        ],
+        "T6_semantic_currentness": [
+          62,
+          93,
+          123,
+          135,
+          179,
+          206,
+          233,
+          243,
+          442,
+          539,
+          562,
+          564,
+          606
+        ],
+        "T7_event_responsibility": [
+          617,
+          708,
+          719,
+          737,
+          740,
+          772,
+          794
+        ],
+        "N1_public_input_boundary": [
+          540
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/preflight.py",
+      "sha256": "350ce00c0cfbbebe232607cd34954b786422474b37bc1ca2ba63dda1b5543898",
+      "lines": 151,
+      "surface": "code",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          91
+        ],
+        "N2_detached_state_continuation": [
+          91
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/provider_engine.py",
+      "sha256": "87446a0d36da7a26c0a0245f74fc2fde35583d27f513981f9581da8e35526c4d",
+      "lines": 173,
+      "surface": "code",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T3_launch_termination": [
+          52,
+          53,
+          54,
+          55,
+          56,
+          58
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/provider_wait.py",
+      "sha256": "1c5f68eea17518a8ca8a2882e338822860412aa012188b5744e92144fc5c44e7",
+      "lines": 58,
+      "surface": "code",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/question_engine.py",
+      "sha256": "4efe2069fd70eec1dacf11f153f2c6350ff6fcf1bcc0ec9ae4dad826f8cadf74",
+      "lines": 107,
+      "surface": "code",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/questions.py",
+      "sha256": "a9efdd6c1243018967ec5beeea50a9cc8a7b17cbe39b31750c3f72e10026d838",
+      "lines": 114,
+      "surface": "code",
+      "changed_in": [],
+      "navigation_hits": {
+        "T6_semantic_currentness": [
+          14,
+          15
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/record_schemas/__init__.py",
+      "sha256": "c70177d4b71e0c62805014b6c8e5d4e72b655e5e53f8e30116e174a53e69b1e4",
+      "lines": 563,
+      "surface": "code",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T1_trust_observation": [
+          479,
+          480
+        ],
+        "T2_storage_identity": [
+          502,
+          505
+        ],
+        "T3_launch_termination": [
+          216
+        ],
+        "T6_semantic_currentness": [
+          33,
+          55,
+          56,
+          363,
+          376
+        ],
+        "T7_event_responsibility": [
+          149
+        ],
+        "N2_detached_state_continuation": [
+          36,
+          42
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/record_schemas/domains.py",
+      "sha256": "6f5d6e677d10ed57361354b9ffc0fd755135dc2ecfbb5311ea4dea9d4ad5a902",
+      "lines": 510,
+      "surface": "code",
+      "changed_in": [
+        "ff9b2b9c",
+        "c44dd7b7"
+      ],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          268,
+          446,
+          448
+        ],
+        "T3_launch_termination": [
+          239,
+          278,
+          357,
+          358
+        ],
+        "T4_observation_order": [
+          228
+        ],
+        "T6_semantic_currentness": [
+          41
+        ],
+        "T7_event_responsibility": [
+          379
+        ],
+        "T8_maintenance_telemetry": [
+          124,
+          125
+        ],
+        "N2_detached_state_continuation": [
+          173,
+          372
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/record_schemas/schemas.py",
+      "sha256": "18878038d8bbbdf0f42ad1d60aca3264e6d19ec0a228a504bc0487485ab02a66",
+      "lines": 250,
+      "surface": "code",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          3,
+          15,
+          89,
+          91,
+          198
+        ],
+        "T3_launch_termination": [
+          102
+        ],
+        "T6_semantic_currentness": [
+          51,
+          64,
+          68,
+          73,
+          229
+        ],
+        "T7_event_responsibility": [
+          243
+        ],
+        "N2_detached_state_continuation": [
+          107
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/repair_execution.py",
+      "sha256": "ed983fcbb2c273fcc6c6086150bd20743d680992a8ee269b672c77a5947b19b7",
+      "lines": 481,
+      "surface": "code",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          117,
+          187
+        ],
+        "N2_detached_state_continuation": [
+          42,
+          202,
+          462
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/reporting.py",
+      "sha256": "caab50800e206bcc2e032bac814b17c2d8bd808da7e695c9da0ff4c009651505",
+      "lines": 218,
+      "surface": "code",
+      "changed_in": [
+        "ff9b2b9c",
+        "c44dd7b7"
+      ],
+      "navigation_hits": {
+        "T6_semantic_currentness": [
+          92
+        ],
+        "T7_event_responsibility": [
+          84,
+          94
+        ],
+        "T8_maintenance_telemetry": [
+          122,
+          198,
+          199
+        ],
+        "N2_detached_state_continuation": [
+          167,
+          180
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/repository.py",
+      "sha256": "8e37b57d5b216f32942f6ec53195d04283937745d03be306eba139c2dab5497d",
+      "lines": 670,
+      "surface": "code",
+      "changed_in": [
+        "ff9b2b9c",
+        "c44dd7b7"
+      ],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          54,
+          55,
+          56,
+          61,
+          62,
+          80,
+          90,
+          97,
+          98,
+          99,
+          100,
+          101,
+          102,
+          104,
+          108,
+          109,
+          117,
+          123,
+          126,
+          132,
+          170,
+          174,
+          184,
+          295,
+          296,
+          299,
+          302,
+          433,
+          434,
+          528,
+          567,
+          568,
+          569,
+          570,
+          571,
+          600,
+          610,
+          645,
+          654
+        ],
+        "T8_maintenance_telemetry": [
+          22,
+          89
+        ],
+        "N2_detached_state_continuation": [
+          174
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/retention.py",
+      "sha256": "0d40b9054bed0f116737ab68e6bfc2ca9642dca642c5eb75701bf1fb2a32efc6",
+      "lines": 268,
+      "surface": "code",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/review_cycle.py",
+      "sha256": "fd177e4e0bce4176905e4796bce5de13a723b0c5364623dfaadc1e4bcbf81df3",
+      "lines": 1211,
+      "surface": "code",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          306,
+          308,
+          640,
+          642
+        ],
+        "N2_detached_state_continuation": [
+          202,
+          905
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/review_engine.py",
+      "sha256": "eeb3d68e4b5322d2d724396e0ec96ef86f9686e797c2deec40d468105bb0bd18",
+      "lines": 1267,
+      "surface": "code",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T1_trust_observation": [
+          1028,
+          1029
+        ],
+        "T6_semantic_currentness": [
+          22,
+          78
+        ],
+        "N1_public_input_boundary": [
+          63,
+          951
+        ],
+        "N2_detached_state_continuation": [
+          105,
+          985,
+          994,
+          1219
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/review_policy.py",
+      "sha256": "99039af54c7e78d2ab0840290869ad38ffac6a1a99c343e97ba4c206791bb420",
+      "lines": 120,
+      "surface": "code",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/revision_engine.py",
+      "sha256": "36db872ff7ac0fbee5adc1c6e21d51d920fe8adf4c935e3165b3db4db0f77edb",
+      "lines": 257,
+      "surface": "code",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/revisions.py",
+      "sha256": "d668d4f0e2a0245aae67ab0643dc2cf1dfbcb8e31c21928a8fe4fe00e9f92dc8",
+      "lines": 404,
+      "surface": "code",
+      "changed_in": [],
+      "navigation_hits": {
+        "N2_detached_state_continuation": [
+          159,
+          177
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/scheduled_operator.py",
+      "sha256": "ef7243145744fc0cf92ab15ca84451dd0250c03e75a47f8e1599653669ab585f",
+      "lines": 612,
+      "surface": "code",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          375,
+          392,
+          419,
+          480,
+          486,
+          575
+        ],
+        "T3_launch_termination": [
+          381,
+          385,
+          479,
+          494,
+          549,
+          550
+        ],
+        "T4_observation_order": [
+          61,
+          356,
+          511
+        ],
+        "T8_maintenance_telemetry": [
+          28,
+          195,
+          234,
+          263,
+          372
+        ],
+        "N2_detached_state_continuation": [
+          419,
+          480,
+          486,
+          575
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/scheduler.py",
+      "sha256": "d7265e59ce0d950d01e82d3ac06388f3ce7bfebcefb322090807b78409367794",
+      "lines": 589,
+      "surface": "code",
+      "changed_in": [
+        "ff9b2b9c",
+        "c44dd7b7"
+      ],
+      "navigation_hits": {
+        "T3_launch_termination": [
+          21,
+          22
+        ],
+        "T6_semantic_currentness": [
+          8,
+          173,
+          264,
+          283,
+          292,
+          352,
+          361
+        ],
+        "T7_event_responsibility": [
+          104,
+          119
+        ],
+        "T8_maintenance_telemetry": [
+          504
+        ],
+        "N2_detached_state_continuation": [
+          70
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/scholarly.py",
+      "sha256": "ce8b3bec1ae073f066c30bb1abf211a3b26e3fe966e22f32ae55db06e8fee613",
+      "lines": 91,
+      "surface": "code",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/session_slots.py",
+      "sha256": "6cccee20b195b824047038ebd373a6a05846ad015d9e78bdbef86c74f9ad0eeb",
+      "lines": 358,
+      "surface": "code",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T3_launch_termination": [
+          199,
+          219,
+          229,
+          246,
+          264,
+          267,
+          268,
+          269,
+          272,
+          273,
+          274,
+          286
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/state_checks.py",
+      "sha256": "69459a9569fcfcafb3698caab60b1ecd9a1590c8513217bcc3968a4a679510be",
+      "lines": 468,
+      "surface": "code",
+      "changed_in": [],
+      "navigation_hits": {
+        "T1_trust_observation": [
+          267,
+          269
+        ],
+        "T6_semantic_currentness": [
+          71,
+          375,
+          384
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/state_contract.py",
+      "sha256": "d4f39f4c46c1c10caedef31b33b44751f9f9db52690e1f2151e7a6cd2a8fa099",
+      "lines": 177,
+      "surface": "code",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          100,
+          101
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/submission.py",
+      "sha256": "02a756e814210a4c4aaed6f67ea19c0d960332f88fb7667a70d448d992427b48",
+      "lines": 1554,
+      "surface": "code",
+      "changed_in": [
+        "ff9b2b9c",
+        "c44dd7b7"
+      ],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          46,
+          549,
+          888,
+          911,
+          935,
+          1052,
+          1056,
+          1063,
+          1070,
+          1097,
+          1108,
+          1166,
+          1393,
+          1462,
+          1506,
+          1511
+        ],
+        "T4_observation_order": [
+          274
+        ],
+        "T5_evidence_handoff": [
+          277,
+          290,
+          504,
+          508,
+          692,
+          1287
+        ],
+        "T6_semantic_currentness": [
+          129,
+          157,
+          242,
+          251,
+          731,
+          732,
+          733
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/task_contracts.py",
+      "sha256": "6727c3865c03ea1101e554d3ffe41319f14cb87218cae0c30cf6d6a0007326c6",
+      "lines": 276,
+      "surface": "code",
+      "changed_in": [],
+      "navigation_hits": {
+        "T7_event_responsibility": [
+          225
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/task_scope.py",
+      "sha256": "35b7026028939e1d065ccac1d949da9976f05b0de8f0c6bb6d72a333a2299718",
+      "lines": 476,
+      "surface": "code",
+      "changed_in": [
+        "c44dd7b7"
+      ],
+      "navigation_hits": {
+        "T6_semantic_currentness": [
+          33,
+          211,
+          242,
+          282,
+          287,
+          313,
+          322,
+          324,
+          457
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/trust_validation.py",
+      "sha256": "4ead2d043c99ce39fd74775c697e4000bda6545845833dded5dbe4fc5a2d022f",
+      "lines": 179,
+      "surface": "code",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T1_trust_observation": [
+          108,
+          118,
+          123
+        ],
+        "T2_storage_identity": [
+          19,
+          25,
+          39
+        ],
+        "T8_maintenance_telemetry": [
+          11
+        ],
+        "N1_public_input_boundary": [
+          18,
+          128
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/do_math/windows_job.py",
+      "sha256": "3f910002ca9679bc7ff70e04a33e5e1402a0bee66bbe3fb5e3cae64e24cddac7",
+      "lines": 622,
+      "surface": "code",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T3_launch_termination": [
+          561,
+          599
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/operator_bootstrap.py",
+      "sha256": "46abdc97e26bf7385a494f72050fe0cf6c40e7fc797b8619a05ead4119b72c03",
+      "lines": 150,
+      "surface": "code",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/operator_schedule.ps1",
+      "sha256": "a79dcb7f7b254e40564afdb9e0ef6b3c42d4027d4b17334f42ed220821e5bc4c",
+      "lines": 87,
+      "surface": "code",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/probe_cli.py",
+      "sha256": "e2fe67fd4b2a241697dc77b4ede9843eb0e077c18852d664c56a0f158d402e05",
+      "lines": 141,
+      "surface": "code",
+      "changed_in": [
+        "c44dd7b7"
+      ],
+      "navigation_hits": {
+        "T3_launch_termination": [
+          73
+        ],
+        "T4_observation_order": [
+          70
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/probe_codex.py",
+      "sha256": "76a8160051024b1456295105ea9d981d125f59a8fbf3a94cbff165b07d9e54cd",
+      "lines": 182,
+      "surface": "code",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/probe_native_isolation.py",
+      "sha256": "f59a60beb370d57def49dea808496352f5a65e61b1ed2b5b5c6b7bf96528cf21",
+      "lines": 339,
+      "surface": "code",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/run_tests.py",
+      "sha256": "0ca073eaef6cf26e4e476b3466c1c90ca88cd9233290bc5776a09e961e84f699",
+      "lines": 324,
+      "surface": "code",
+      "changed_in": [],
+      "navigation_hits": {
+        "T3_launch_termination": [
+          186
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/setup_lean.py",
+      "sha256": "73ce53f2c21ef97dd04ad5d4324a5bcc5e8e9394c886f3ad75f1b50bf1eb5caf",
+      "lines": 130,
+      "surface": "code",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/test_categories.py",
+      "sha256": "b2a684bf8d837f7568f84908b48478511c18a37329de3271a069e6ff6c05c036",
+      "lines": 34,
+      "surface": "code",
+      "changed_in": [],
+      "navigation_hits": {
+        "T5_evidence_handoff": [
+          11
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/research_fixtures.py",
+      "sha256": "3cd9cf283fe473527e0463695ccecbb7dc947f6380d960fd46650dc13749b789",
+      "lines": 457,
+      "surface": "test",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          170
+        ],
+        "T3_launch_termination": [
+          230
+        ],
+        "T7_event_responsibility": [
+          109
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/state_fixtures.py",
+      "sha256": "3d09fbe063d002e2e3f2ada24673264d03849b74664d46ba9a8d16ffc6a6491f",
+      "lines": 55,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_academic.py",
+      "sha256": "65f085b968cfb0fbbb37b3191e752c3f25e4c8f0cd52a89c5e2043ca212dd0b4",
+      "lines": 74,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_academic_engine.py",
+      "sha256": "3fff82fdc3d18932b67f410b174b2db28dd691ce7be55f5b2ea0daa9208f5323",
+      "lines": 425,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_academic_preparation.py",
+      "sha256": "b90d1aec36c332f56dd2fd755057db0fbb8920748a222d5fb71c924b54901cc5",
+      "lines": 178,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          14,
+          40
+        ],
+        "T6_semantic_currentness": [
+          11,
+          13,
+          31,
+          45,
+          71
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_approved_five_repairs.py",
+      "sha256": "b3b1fda30e54fef23d34199ddd771f416396156afae8a305a73f7da8830e32a1",
+      "lines": 334,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T1_trust_observation": [
+          76,
+          86
+        ],
+        "T6_semantic_currentness": [
+          189
+        ],
+        "N2_detached_state_continuation": [
+          238
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_background_processes.py",
+      "sha256": "54892e420352586fd1e7e47d1101c4cafcae242e3efad42aa6a9a21adcbb43cc",
+      "lines": 147,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_budget.py",
+      "sha256": "3693b97b3874cd29d32131ef442e7f4570e5a99b4df0100f470e7701b749bd57",
+      "lines": 151,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_claude_adapter.py",
+      "sha256": "cd9e941e7c40d7fa162160d5751acdb256d238ecb8713972833a8e41d3eabc73",
+      "lines": 246,
+      "surface": "test",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T3_launch_termination": [
+          53
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_claude_stream.py",
+      "sha256": "d720150b709e4c18b4b2f15ad73498ba0115d09e3ff0ce6f0ea2063c91204d39",
+      "lines": 115,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_cli.py",
+      "sha256": "243b5d6166176d8f957d8ced3e8e110799011ea01cdc54dfc05a6c141d148e4e",
+      "lines": 497,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          129,
+          197,
+          208,
+          256,
+          261,
+          331,
+          339,
+          348,
+          352,
+          375,
+          376,
+          378,
+          382,
+          418,
+          433
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_cli_advanced.py",
+      "sha256": "123922d41021d9b09fdaf5fe13bf0a69a3d495a87aa5c88edde1b6c50aca47f0",
+      "lines": 159,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          47,
+          49,
+          100
+        ],
+        "N1_public_input_boundary": [
+          47
+        ],
+        "N2_detached_state_continuation": [
+          100
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_codex_adapter.py",
+      "sha256": "737540aa9931001535bebc8bd05124c746248dd90eb551748641c2256cf82315",
+      "lines": 188,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_completion_settlement.py",
+      "sha256": "01c26aca16c2a9916bce5cbb9a313a501895b3f91db0625e8af007845f170034",
+      "lines": 107,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          36
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_connection_repairs.py",
+      "sha256": "146d5844982b5fffba5faf5fd23023ef4a5fa32fa00121b4b40ab3293ece6b49",
+      "lines": 523,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          309,
+          404
+        ],
+        "T5_evidence_handoff": [
+          474,
+          479
+        ],
+        "N2_detached_state_continuation": [
+          57,
+          66,
+          309,
+          511,
+          518
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_context_store.py",
+      "sha256": "8c16341debd136996a52eff4c827aa5123084cd2ffe178f97b6ab61c9d411576",
+      "lines": 159,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_contract_checks.py",
+      "sha256": "e6f9cae99bbd6237dc291c7fa9519686916c3a7af2a10ce4ceac7bb25f518f8d",
+      "lines": 146,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          15,
+          47
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_contracts.py",
+      "sha256": "51daa8daa77a85286ba26dc860a8c3e9e33e0b290de1648d58ad222e746657c7",
+      "lines": 115,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_control_preview.py",
+      "sha256": "f9d8c2e16c96b02c32a145e51848abb03a4f7184a9a2804c57b4750a8473041b",
+      "lines": 70,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          18,
+          36,
+          59
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_control_transport_io.py",
+      "sha256": "74ee4ab2b6ca14c65be9b8b08cad89bfdc707779eb4d08b91c4bd83813fb939e",
+      "lines": 218,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          40,
+          46,
+          50,
+          70,
+          91,
+          100,
+          106,
+          120,
+          169,
+          202
+        ],
+        "T4_observation_order": [
+          106
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_controls.py",
+      "sha256": "9637122eacff9eacc5b40ea4896f1fb06d4bdba5b287eb173a6c931f8deb8a6d",
+      "lines": 113,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          34
+        ],
+        "T3_launch_termination": [
+          107
+        ],
+        "N2_detached_state_continuation": [
+          34
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_current_contract.py",
+      "sha256": "149da240b5293ad46a17c8ec1f65b22b4f897ffe633ef1fa28b4135da0fff0f9",
+      "lines": 43,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_currentness_recovery.py",
+      "sha256": "93342fbb43cdd995d39e3cc6074cebd0e37abfaf4c9467fed4aa9140e4f5cf90",
+      "lines": 246,
+      "surface": "test",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T3_launch_termination": [
+          195,
+          196,
+          203,
+          204
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_decision_basis.py",
+      "sha256": "b923ccfd990c1e761fbd7688c30c886812c8994dbad6e09cfa69121e8f4f7094",
+      "lines": 193,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          35
+        ],
+        "T6_semantic_currentness": [
+          125,
+          127,
+          129
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_delegation_storage.py",
+      "sha256": "6ac36ac62f97c857df786547d8b81d854ec27dfeedeb3271fc0115d6a60e0927",
+      "lines": 114,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          75,
+          100,
+          106
+        ],
+        "N2_detached_state_continuation": [
+          75,
+          100,
+          106
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_diagnosed_installation_recovery.py",
+      "sha256": "a412bc53b6630ca4d141197e3e5f102928de06300cd4a35480310e9064522599",
+      "lines": 137,
+      "surface": "test",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          29
+        ],
+        "T3_launch_termination": [
+          33,
+          43
+        ],
+        "N2_detached_state_continuation": [
+          29,
+          74
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_document_followup.py",
+      "sha256": "d91315a5705621d99ec62ff33354d47c41cfade49b906f8cf296a40e41720a1d",
+      "lines": 78,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_efficiency.py",
+      "sha256": "39b359d2b7a437452b3f4ae9f62a5eeb8cf99f51b00c174c11c92b655a213164",
+      "lines": 315,
+      "surface": "test",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T3_launch_termination": [
+          30
+        ],
+        "T7_event_responsibility": [
+          74,
+          75,
+          76,
+          81,
+          88,
+          91,
+          99,
+          115,
+          223
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_engine.py",
+      "sha256": "fb486a293faad3029d8dfb6ede084fba828ded75c6138e1ce089f8fe0b91a10b",
+      "lines": 320,
+      "surface": "test",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          316
+        ],
+        "T3_launch_termination": [
+          64
+        ],
+        "N2_detached_state_continuation": [
+          316
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_environment_validation.py",
+      "sha256": "d4a301b1aefd65f60d86e7a32cd39fc6d16aff6234f5305d6f22ea83a34fa5c3",
+      "lines": 109,
+      "surface": "test",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T1_trust_observation": [
+          13,
+          32,
+          40,
+          42,
+          46,
+          50,
+          56,
+          58,
+          62,
+          71,
+          74,
+          77,
+          85
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_execution_observation_profile.py",
+      "sha256": "6d8f468f2385670acd6469862954118eb2fc09ca61eb2f9b1e16b1eb4fe3c82a",
+      "lines": 105,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_execution_window.py",
+      "sha256": "d2c0561af18eab1e7e7420b93be2a2ff8504e4f597db0ee8724510035d3fed99",
+      "lines": 54,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_external.py",
+      "sha256": "1ff2a008969988fad080df4430128cae1c3c9dcde77000ce03bedb46d34dc2de",
+      "lines": 110,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_formal.py",
+      "sha256": "a35252d05da303d459e57fe0c030edea91daef7c4f85f5ef94059813506f64e9",
+      "lines": 220,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          7,
+          17,
+          93,
+          197,
+          201,
+          202,
+          203,
+          216,
+          217,
+          218,
+          219
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_formal_input_manifest.py",
+      "sha256": "55e37f2c45e2bcd2093f1edc4c1d8965514cc709f6e81a4423b6a6ba78b80526",
+      "lines": 72,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          12,
+          31,
+          32,
+          33,
+          36,
+          37,
+          39,
+          42,
+          45,
+          47
+        ],
+        "T5_evidence_handoff": [
+          64
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_formal_runtime.py",
+      "sha256": "5abd9a7721785978af198a19793747dad77099df8fce193c102c30e5e6dc8354",
+      "lines": 138,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_git_store.py",
+      "sha256": "1594087b575cec9e3893743f8e132481b39ea5d61d3b13e544c314cac930de1a",
+      "lines": 288,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_governance_engine.py",
+      "sha256": "057fe5bcfb166c824072509468d68a7a0548fe01265cf3825518746e22bbd806",
+      "lines": 599,
+      "surface": "test",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          21,
+          26,
+          31,
+          39,
+          139,
+          142,
+          150,
+          181,
+          402,
+          407,
+          421,
+          520,
+          549
+        ],
+        "T3_launch_termination": [
+          526,
+          527
+        ],
+        "T7_event_responsibility": [
+          74,
+          221
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_host_resources.py",
+      "sha256": "07012facb4e587fcd6304c9f4bd68c4e6beaeab7c4331b36a2f4b06880ca5772",
+      "lines": 493,
+      "surface": "test",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          257,
+          274,
+          284,
+          286
+        ],
+        "T3_launch_termination": [
+          124,
+          125,
+          270,
+          317,
+          336,
+          362,
+          389
+        ],
+        "N2_detached_state_continuation": [
+          257,
+          274,
+          284,
+          286
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_impact_bundle.py",
+      "sha256": "f5bdaf8c81677a7764c866169f07248c73f965092d1fe4bdc387743011908999",
+      "lines": 437,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          80,
+          88
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_initial_intent_connection.py",
+      "sha256": "2323d49a85c5beeca2526c54b69e85e1f5d7977e087a79918d7bfcd4d2fb7e5e",
+      "lines": 187,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          47
+        ],
+        "T3_launch_termination": [
+          178
+        ],
+        "N2_detached_state_continuation": [
+          174,
+          181
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_initialization_efficiency.py",
+      "sha256": "f8d6cc9067cf0093c92e343b3a00c65dadbf3df8e0b30272a7f228bef0b83d42",
+      "lines": 275,
+      "surface": "test",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T1_trust_observation": [
+          15,
+          101,
+          124,
+          138,
+          139,
+          142,
+          242
+        ],
+        "T2_storage_identity": [
+          14,
+          59,
+          61,
+          63,
+          68,
+          72,
+          73,
+          74,
+          169,
+          180,
+          185,
+          190
+        ],
+        "T4_observation_order": [
+          92
+        ],
+        "T5_evidence_handoff": [
+          26,
+          40,
+          41,
+          44
+        ],
+        "T8_maintenance_telemetry": [
+          17,
+          47,
+          49,
+          56,
+          77,
+          80,
+          83,
+          84,
+          155,
+          164,
+          206,
+          214,
+          216,
+          217,
+          222,
+          224
+        ],
+        "N2_detached_state_continuation": [
+          185
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_initialization_probe_batch.py",
+      "sha256": "d47b24af718a72f7318838a485d825a439dfe04741e92e58abf9a7f34c66eb84",
+      "lines": 126,
+      "surface": "test",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_input_recovery.py",
+      "sha256": "244c998ce587a362b22cf7767f064485225a9697bd4f433cbdda31c99ee1eb2c",
+      "lines": 260,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_knowledge.py",
+      "sha256": "a2ac6b60391907451b02cb72758d4bfe9010cf9d35fdd18df1cea490a83d7efe",
+      "lines": 297,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_knowledge_import_engine.py",
+      "sha256": "497d58a6ae04972eb2fbfebbce0ebc763409c48770909c4386d966baad6d730c",
+      "lines": 384,
+      "surface": "test",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T1_trust_observation": [
+          128
+        ],
+        "T3_launch_termination": [
+          152
+        ],
+        "T4_observation_order": [
+          359
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_knowledge_io.py",
+      "sha256": "6f7753cdc080fc07c9f2ec7fdef134017eb56931def8f660627ad5730cd114e9",
+      "lines": 198,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T6_semantic_currentness": [
+          80,
+          94,
+          137,
+          143,
+          144,
+          156,
+          163,
+          164,
+          166,
+          167,
+          171
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_launch_recovery.py",
+      "sha256": "947904a3e561423877272099a53172b7d6f2d49256c68f4bbe94fd522e86b953",
+      "lines": 80,
+      "surface": "test",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T3_launch_termination": [
+          11,
+          12,
+          21,
+          22,
+          24,
+          26,
+          61,
+          64,
+          66
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_lean_preview.py",
+      "sha256": "6b2d61908af00ec8510db4b47e9d61a667f64b23aa44246d6643f1972bc7f731",
+      "lines": 73,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_lifecycle_currentness.py",
+      "sha256": "2787906755002db77f3e4f555e4ab9efda9e95178b6e33b8c9bcb2cb60908bb7",
+      "lines": 68,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_lifecycle_engine.py",
+      "sha256": "60c0f992df97158c57ccfb0fa590bdaac575f400bdf070035ca33aee0218769e",
+      "lines": 1165,
+      "surface": "test",
+      "changed_in": [
+        "ff9b2b9c",
+        "c44dd7b7"
+      ],
+      "navigation_hits": {
+        "T1_trust_observation": [
+          100,
+          102
+        ],
+        "T3_launch_termination": [
+          197,
+          285,
+          321
+        ],
+        "T7_event_responsibility": [
+          145,
+          408,
+          417,
+          418,
+          420,
+          421,
+          422,
+          605
+        ],
+        "N1_public_input_boundary": [
+          63,
+          67,
+          686
+        ],
+        "N2_detached_state_continuation": [
+          356,
+          597,
+          641,
+          1146
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_machine_parallel.py",
+      "sha256": "46fccf1c929d73fe47b7222fe09bf08237dc51d9542f40349ab7360d6441cc56",
+      "lines": 413,
+      "surface": "test",
+      "changed_in": [
+        "ff9b2b9c",
+        "c44dd7b7"
+      ],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          222
+        ],
+        "T3_launch_termination": [
+          101,
+          131,
+          149,
+          151,
+          182,
+          241,
+          254,
+          281,
+          386,
+          406
+        ],
+        "N1_public_input_boundary": [
+          58,
+          119,
+          246
+        ],
+        "N2_detached_state_continuation": [
+          179,
+          186,
+          222
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_machine_scheduling.py",
+      "sha256": "a992344e214e93a62cec8b6e45a01e7e8e661ac987f04090eed777a92cc0aa3d",
+      "lines": 74,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_model_assessment_flow.py",
+      "sha256": "510ac823cf79338284814642068bff684b0510afe75330d0efb6529c6ee4854a",
+      "lines": 444,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          21,
+          56,
+          86
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_model_metadata_boundary.py",
+      "sha256": "8bceb2c5c66a6fd171b49e6254716a61c5cf5103a66bcc3201c6ec25fbab57a4",
+      "lines": 86,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_model_runner.py",
+      "sha256": "dd1519218ffb75aa565fe5cee3daf85a581349e13240fe0612f9f55a002c61fc",
+      "lines": 136,
+      "surface": "test",
+      "changed_in": [
+        "c44dd7b7"
+      ],
+      "navigation_hits": {
+        "T4_observation_order": [
+          22,
+          110
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_native_final_submission.py",
+      "sha256": "757a64039756231c6c54ef0e34f98e8c167dc52f13322df9300915315f958c37",
+      "lines": 248,
+      "surface": "test",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          58,
+          62
+        ],
+        "T3_launch_termination": [
+          18,
+          26,
+          30,
+          63,
+          64,
+          65,
+          86,
+          87
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_native_probe.py",
+      "sha256": "03a0ad3a75920f84cb698e9f02aa1a7f078fbff7c206d1b5555bd9ff3c560d65",
+      "lines": 29,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_observation_admission.py",
+      "sha256": "1d9e73237419be1772b891f74c412101bc5c6d484942a29a60b9d4198b57842a",
+      "lines": 131,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_observation_audit1.py",
+      "sha256": "7ca313119e5d1192682b041ce3c8432a459789e1411c3af3a5499722a159533e",
+      "lines": 195,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          37,
+          68,
+          77
+        ],
+        "N2_detached_state_continuation": [
+          130
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_observations.py",
+      "sha256": "607e347bc53e6f7b8896ff4082c3115fd4a70abda15c245c6a95d75c700adbc5",
+      "lines": 331,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T4_observation_order": [
+          317
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_operator.py",
+      "sha256": "c69baa0ba6f082151cd9507170cb4222421765074edc9e6e61a6fc660cc9b621",
+      "lines": 232,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_operator_bootstrap.py",
+      "sha256": "633e5fcd229a4c065c91fc0141d46e74005a66d5d1ba8a2ee1553f1b87aee0f6",
+      "lines": 66,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_performance_repairs.py",
+      "sha256": "6a268f5df42c2a0aba66efd5d129bbc46283ac70f0ecaef29ec213a684a05a8c",
+      "lines": 315,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          137,
+          150,
+          215,
+          223,
+          224,
+          236,
+          245,
+          256
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_performance_save.py",
+      "sha256": "43e47cba8fa7b0cfbfae100b9333df72b9061658f6fb87cdb5d31516bbc2c3fc",
+      "lines": 119,
+      "surface": "test",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          43,
+          52,
+          53,
+          63,
+          69,
+          78,
+          85,
+          87,
+          93,
+          95,
+          103,
+          109
+        ],
+        "N2_detached_state_continuation": [
+          43,
+          53,
+          63,
+          69,
+          78,
+          85,
+          87,
+          93,
+          95,
+          103,
+          109
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_planning.py",
+      "sha256": "b3ace7bfdaf30a69d60dc9812af8b42dc000f80513d741ff88d794920ea74804",
+      "lines": 148,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T6_semantic_currentness": [
+          125,
+          129
+        ],
+        "T7_event_responsibility": [
+          59,
+          100,
+          110
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_preflight.py",
+      "sha256": "614cdf66cc6c3e1b7346bfc5c6b949e91ae49670e85a044679fd55fa02f25027",
+      "lines": 106,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_preparation_cache.py",
+      "sha256": "9c59c5843516d41d9dcd3a7ef0756cb3fe419eb192197f58242b7bb55f48a1b7",
+      "lines": 59,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_probe_codex.py",
+      "sha256": "8d11e525179b78ecaece874c07ac2bb247adebcae0d33c8482f94ef3cb66bf67",
+      "lines": 44,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_provider_final_contract.py",
+      "sha256": "9dd1bdb6ad53919a9da4ac2ab7e2a8354f444b861fc3a19d150f0d899e5cbc08",
+      "lines": 88,
+      "surface": "test",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T3_launch_termination": [
+          45
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_provider_recovery.py",
+      "sha256": "b6c1a6d557e77950afddbe065de6ac2b9479875c736142c6dd36ffa48e2206d2",
+      "lines": 103,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_provider_wait.py",
+      "sha256": "2b6ec6c611a567e96b4f443db416eb74afd78a112d696194eb57fea2907ac4a0",
+      "lines": 240,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          65,
+          143
+        ],
+        "T3_launch_termination": [
+          197
+        ],
+        "N2_detached_state_continuation": [
+          65,
+          143
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_purpose_engine.py",
+      "sha256": "a2e76fd69908916ecb256f8c5ff45f6beddee96f383cdb2464180463102e8a37",
+      "lines": 719,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          285,
+          656,
+          659
+        ],
+        "T4_observation_order": [
+          84,
+          101,
+          102,
+          106,
+          108,
+          120
+        ],
+        "N2_detached_state_continuation": [
+          638,
+          656,
+          659
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_query_records.py",
+      "sha256": "ac7b0be39671fae4e07f77949d79fe0f206cd6e0603389631f1f36c2d477357a",
+      "lines": 115,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          56,
+          62,
+          80,
+          102
+        ],
+        "N2_detached_state_continuation": [
+          56,
+          62,
+          80,
+          102
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_question_flow.py",
+      "sha256": "020175a4bcf4d23d1f8d32af95596f52a7458418631168a4c82f97de0812b45e",
+      "lines": 58,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_questions.py",
+      "sha256": "0c3cd3fdbcc8c9eee82d2f4fe23918c9f75518aeacc9f81de3875ff958204c49",
+      "lines": 141,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_reading_map.py",
+      "sha256": "afeb67dec06500862532e25a07bca69d5b4cf56545a795db76112897b06b8860",
+      "lines": 81,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_redesign_ACTIVITIES.py",
+      "sha256": "8d68b9573696357b29f4520c1e07dabbcab8d43418b67d9200f7c38b1746bc9a",
+      "lines": 543,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          128,
+          144,
+          148,
+          186,
+          318,
+          327,
+          329,
+          334,
+          351,
+          413,
+          507,
+          516
+        ],
+        "T3_launch_termination": [
+          296,
+          299,
+          302,
+          424,
+          429,
+          443,
+          446,
+          450
+        ],
+        "T4_observation_order": [
+          327
+        ],
+        "N2_detached_state_continuation": [
+          34,
+          37,
+          48,
+          67,
+          83,
+          110,
+          413,
+          465,
+          491,
+          496,
+          516
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_redesign_CONTRACTS.py",
+      "sha256": "39344b503646342b97ef7f22d01564f46f616414d13bc03aa2dda5d4cb1ceb38",
+      "lines": 1081,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          243,
+          288,
+          312,
+          382,
+          442,
+          445,
+          447,
+          456,
+          465,
+          489,
+          496,
+          513,
+          587,
+          599,
+          603,
+          606,
+          615,
+          730,
+          740,
+          743,
+          750,
+          763,
+          813,
+          819,
+          823,
+          832,
+          848,
+          863,
+          883,
+          916,
+          956,
+          970,
+          989,
+          999,
+          1009,
+          1028
+        ],
+        "N2_detached_state_continuation": [
+          337,
+          340,
+          442,
+          445,
+          730
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_redesign_ENGINE.py",
+      "sha256": "690028b0d61bb2d738e88496f2a745be0d42a566fcd46e1a99fa91bc7025d1c8",
+      "lines": 1632,
+      "surface": "test",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          42,
+          49,
+          94,
+          105,
+          115,
+          118,
+          119,
+          194,
+          197,
+          316,
+          394,
+          413,
+          440,
+          494,
+          495,
+          520,
+          866,
+          925,
+          1044,
+          1235,
+          1325
+        ],
+        "T3_launch_termination": [
+          831,
+          840,
+          847,
+          880,
+          919,
+          920
+        ],
+        "T4_observation_order": [
+          1293,
+          1296,
+          1298,
+          1301,
+          1436,
+          1439
+        ],
+        "T7_event_responsibility": [
+          210,
+          425,
+          692,
+          1017,
+          1214
+        ],
+        "N2_detached_state_continuation": [
+          194,
+          242,
+          246,
+          262,
+          574,
+          579,
+          866,
+          925,
+          1080,
+          1235,
+          1463,
+          1505,
+          1507,
+          1509,
+          1515,
+          1537
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_redesign_EVIDENCE.py",
+      "sha256": "276bc8f50f5642d27ef514cfb92047e0be526be3c0a51fca74be275f96f85427",
+      "lines": 401,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          252
+        ],
+        "T7_event_responsibility": [
+          75
+        ],
+        "N2_detached_state_continuation": [
+          189
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_redesign_EVIDENCE_binding.py",
+      "sha256": "f211347548bd9a0e0d1178b8d389fb7e5898e9de954b9383ac0f2ca190449029",
+      "lines": 118,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_redesign_EVIDENCE_host.py",
+      "sha256": "5263841b740db9ce285431fc06ffd2130e864a895b327b0899ec8ea1deb5f59d",
+      "lines": 91,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          81
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_redesign_EVIDENCE_run.py",
+      "sha256": "a8861ee5f2d45defdccc5489c7864767b4c50e942ff518b59be5aa4ed7f6fde7",
+      "lines": 82,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_redesign_EVIDENCE_scope.py",
+      "sha256": "c2eaf2d8f6c71d0ee1889bf5c8118e80d917c809c34bdd32f207941b0b344268",
+      "lines": 40,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_redesign_EVIDENCE_walkthroughs.py",
+      "sha256": "ea7c83df399e81e7f1377a47a9a02ac5290d396a650a95ef0d644856c90ef764",
+      "lines": 406,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T6_semantic_currentness": [
+          178,
+          179,
+          180,
+          256,
+          258
+        ],
+        "T7_event_responsibility": [
+          62,
+          127
+        ],
+        "N2_detached_state_continuation": [
+          211
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_redesign_GOVERNANCE.py",
+      "sha256": "ae7078095e223aa1c56ba43afc89ef7b69ebf1ab1c63032d016bea029ae4f224",
+      "lines": 1035,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          81,
+          138,
+          144,
+          480,
+          784,
+          787,
+          789,
+          790,
+          798,
+          848,
+          854,
+          875,
+          884,
+          889
+        ],
+        "T6_semantic_currentness": [
+          351,
+          392,
+          933
+        ],
+        "N2_detached_state_continuation": [
+          367
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_redesign_KNOWLEDGE.py",
+      "sha256": "2e721aa7cfe10381267fb865e42b92a3e838ddfd399a27b165f6f16c0cb68d1d",
+      "lines": 916,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T1_trust_observation": [
+          252,
+          263
+        ],
+        "T2_storage_identity": [
+          481,
+          528,
+          532,
+          711
+        ],
+        "T6_semantic_currentness": [
+          165,
+          166,
+          167,
+          172,
+          179,
+          184,
+          185,
+          363
+        ],
+        "N2_detached_state_continuation": [
+          481,
+          619,
+          622
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_redesign_LIFECYCLE.py",
+      "sha256": "f7b36aa4e10ff43d07f7aad96251e9835db8563741a8e3605d71755cf51f4e63",
+      "lines": 224,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_redesign_OBSERVATION.py",
+      "sha256": "e631afa0d9577a5f3ee7688dcd42df397c943acd9d7d1717e7f7ef2dc90677bc",
+      "lines": 227,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          145
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_redesign_PROFILES.py",
+      "sha256": "f2c553c05c5aa2907ad3ea9ff67ee25860584af8ee5a92176496e9078a9019a7",
+      "lines": 1029,
+      "surface": "test",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          204,
+          221,
+          228,
+          673,
+          698,
+          734
+        ],
+        "T3_launch_termination": [
+          167,
+          242,
+          351,
+          358,
+          438,
+          439,
+          442,
+          497,
+          526,
+          657,
+          676,
+          686,
+          707,
+          714,
+          874,
+          911,
+          975,
+          1010
+        ],
+        "T4_observation_order": [
+          221,
+          977,
+          1018,
+          1021,
+          1025
+        ],
+        "N2_detached_state_continuation": [
+          698,
+          734
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_redesign_REVIEWS.py",
+      "sha256": "2083e1afe36251f01337cca7a8cd4d0c9a25f6cce71dbcb01d6e917097c42585",
+      "lines": 601,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "N2_detached_state_continuation": [
+          588,
+          595
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_redesign_STORAGE.py",
+      "sha256": "8951ce35b0d9ea018199545214627ae11370f218bf361348a8b4a8cd5ed3ff97",
+      "lines": 1334,
+      "surface": "test",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T1_trust_observation": [
+          1135,
+          1144,
+          1146,
+          1148
+        ],
+        "T2_storage_identity": [
+          55,
+          106,
+          140,
+          168,
+          169,
+          172,
+          175,
+          176,
+          177,
+          205,
+          209,
+          210,
+          212,
+          215,
+          220,
+          223,
+          228,
+          229,
+          230,
+          242,
+          285,
+          310,
+          329,
+          341,
+          364,
+          378,
+          379,
+          390,
+          405,
+          413,
+          436,
+          449,
+          454,
+          483,
+          506,
+          510,
+          532,
+          569,
+          582,
+          591,
+          625,
+          731,
+          734,
+          745,
+          747,
+          750,
+          754,
+          757,
+          765,
+          790,
+          798,
+          824,
+          838,
+          870,
+          871,
+          879,
+          906,
+          909,
+          927,
+          931,
+          952,
+          964,
+          971,
+          975,
+          979,
+          1011,
+          1014,
+          1022,
+          1039,
+          1055,
+          1060,
+          1063,
+          1073,
+          1080,
+          1108,
+          1131,
+          1155,
+          1167,
+          1179,
+          1254,
+          1286,
+          1305,
+          1314,
+          1322,
+          1328
+        ],
+        "T5_evidence_handoff": [
+          367,
+          372
+        ],
+        "T6_semantic_currentness": [
+          27,
+          42,
+          144,
+          146
+        ],
+        "T7_event_responsibility": [
+          818,
+          821,
+          822,
+          967,
+          982,
+          1082,
+          1084
+        ],
+        "N2_detached_state_continuation": [
+          228,
+          242,
+          379,
+          405,
+          449,
+          532,
+          625,
+          731,
+          745,
+          747,
+          750,
+          754,
+          757,
+          765,
+          798,
+          824,
+          871,
+          971,
+          975,
+          979,
+          1055,
+          1305,
+          1322,
+          1328
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_redesign_SURFACE.py",
+      "sha256": "f116c8f90653135ca26e4d134e14597e0120a7223b834ec1549306fe290f7f9f",
+      "lines": 748,
+      "surface": "test",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          234,
+          525
+        ],
+        "T3_launch_termination": [
+          174,
+          175
+        ],
+        "N2_detached_state_continuation": [
+          234,
+          242,
+          244,
+          247,
+          322,
+          329,
+          341,
+          344,
+          346,
+          525
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_redesign_TASKS.py",
+      "sha256": "5816bde97c2c465b210077ddaade7d6081829411a69a8cc3d5f6d504310f7b5e",
+      "lines": 877,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          276,
+          292,
+          315,
+          327,
+          362
+        ],
+        "T6_semantic_currentness": [
+          91,
+          111,
+          117,
+          130,
+          148,
+          158,
+          191,
+          296,
+          320,
+          328,
+          365,
+          708,
+          715,
+          719,
+          742,
+          753,
+          757
+        ],
+        "T7_event_responsibility": [
+          43,
+          782
+        ],
+        "N2_detached_state_continuation": [
+          276,
+          292,
+          315,
+          327,
+          362,
+          813
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_reference_catalog.py",
+      "sha256": "48351de07b9cff9be3fdbded65dfc504d711fe679ac0cb1a6608d496286c9bc3",
+      "lines": 86,
+      "surface": "test",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          74,
+          80
+        ],
+        "T5_evidence_handoff": [
+          9,
+          19,
+          23,
+          43,
+          52,
+          61
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_repair_execution.py",
+      "sha256": "1a50ff4ac51782c459648a56c74e7e37a24043195e5b37d6760f70e6c0088280",
+      "lines": 219,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          23
+        ],
+        "N2_detached_state_continuation": [
+          23,
+          24,
+          87
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_repair_plan.py",
+      "sha256": "2d2f67ddcd5920819e6782f309fea63de070bfeb0cca5bb806a841cd88b836a7",
+      "lines": 300,
+      "surface": "test",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          91
+        ],
+        "T3_launch_termination": [
+          73,
+          95,
+          101,
+          102,
+          103
+        ],
+        "T7_event_responsibility": [
+          22,
+          46,
+          48,
+          182
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_reporting.py",
+      "sha256": "d088655e538b9da829c32b4867b4f7d17c100d4b47316533eb8015603e17d115",
+      "lines": 96,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          58
+        ],
+        "N2_detached_state_continuation": [
+          23,
+          26,
+          27,
+          28,
+          34,
+          35,
+          39,
+          58
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_repository.py",
+      "sha256": "abcbcdb131a04a5712f1d4c440cc9f08274cda10ec0f040bf356392f051f53a5",
+      "lines": 168,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          55,
+          61,
+          63,
+          67,
+          74,
+          80
+        ],
+        "N2_detached_state_continuation": [
+          55,
+          61,
+          63,
+          67,
+          74,
+          80
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_research_recovery.py",
+      "sha256": "0c6ddf7fa8f4962bd45581d7fd6088e33377bf53cfb6cdc7a9cc460e609487e3",
+      "lines": 466,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "N2_detached_state_continuation": [
+          40,
+          273,
+          407
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_research_reliability.py",
+      "sha256": "1deef46f53336f46b11c7b2c83eb57646a29900ad87ac3877d6ae357ab8c17bf",
+      "lines": 519,
+      "surface": "test",
+      "changed_in": [
+        "c44dd7b7"
+      ],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          32,
+          41,
+          49,
+          50,
+          153,
+          301,
+          315,
+          317,
+          479,
+          483
+        ],
+        "T4_observation_order": [
+          18,
+          32,
+          47,
+          79,
+          107,
+          109,
+          140,
+          178,
+          180,
+          204,
+          504,
+          508
+        ],
+        "T5_evidence_handoff": [
+          236,
+          257,
+          264,
+          277,
+          310
+        ],
+        "T6_semantic_currentness": [
+          350,
+          354,
+          360,
+          365,
+          370,
+          372,
+          378,
+          387,
+          393,
+          406
+        ],
+        "T7_event_responsibility": [
+          420,
+          423,
+          434,
+          437,
+          445,
+          448
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_review_cycle.py",
+      "sha256": "38630a565b7064c33a9fdd0ecb5ae3d2fc65e9c1af686e9997ea1eff52a879f9",
+      "lines": 296,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "N2_detached_state_continuation": [
+          248,
+          283,
+          286
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_review_engine.py",
+      "sha256": "93f673fb24c019b2a46a7b8b3055c4eef2e7c6ea616fbaab1a6118b961fbb133",
+      "lines": 1075,
+      "surface": "test",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T1_trust_observation": [
+          28
+        ],
+        "T2_storage_identity": [
+          566,
+          622
+        ],
+        "T6_semantic_currentness": [
+          619,
+          630,
+          893
+        ],
+        "N2_detached_state_continuation": [
+          566,
+          622
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_review_research.py",
+      "sha256": "47104229ec8bd2cb1778e42a0f986b2344ffb49af9f506cf1f499183558fd5c5",
+      "lines": 471,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          298
+        ],
+        "T4_observation_order": [
+          268
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_review_scope_wire.py",
+      "sha256": "e6acf5e0c5b9ebfc13e3549dac2b89f8507631aad1ab2c14e9288d60a81aec4d",
+      "lines": 87,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          67,
+          71
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_revision_obligations.py",
+      "sha256": "dbea004cc658c0c3e34354fc93ef9535a7322cd6ce098d5cf870dd0bd2423951",
+      "lines": 145,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_run_feedback.py",
+      "sha256": "726108efd5a9ad550b61b0cacf849e682cf8b1424fbd057edd4bacc2d1b95e85",
+      "lines": 146,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T7_event_responsibility": [
+          27,
+          30
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_schedule_lifetime.py",
+      "sha256": "82cf1aec11b2144a952e1132a1827074af39387c4dd6dbc26b1cae516c164d34",
+      "lines": 56,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_schedule_pythonw.py",
+      "sha256": "c0077791fc6549af02e9cb92f669703b3ecaf0a72f2c512023210e90da364c66",
+      "lines": 59,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_scholarly.py",
+      "sha256": "9f5f2f51208ce6ee35f08cc3569822804e7289cf116ab0863f628991b66751d8",
+      "lines": 92,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_session_scheduler.py",
+      "sha256": "71aac5890ae2f6f64a9d5f616ad067b6aac031102479e8daeb828aee7a5f4371",
+      "lines": 544,
+      "surface": "test",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T3_launch_termination": [
+          248,
+          252,
+          260
+        ],
+        "T4_observation_order": [
+          396,
+          404,
+          411,
+          419,
+          486,
+          494,
+          498
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_six_connections.py",
+      "sha256": "55cdf41ef98543bcc92df1755322a3f794bac5db8e83a1d0e197e125e85448fd",
+      "lines": 501,
+      "surface": "test",
+      "changed_in": [
+        "c44dd7b7"
+      ],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          301,
+          316,
+          381
+        ],
+        "T7_event_responsibility": [
+          194,
+          196
+        ],
+        "N2_detached_state_continuation": [
+          381
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_standalone.py",
+      "sha256": "549512ba65ed85b8cbd969b44d5c78bf1a2c88872c0e9e3af8569774b1886a91",
+      "lines": 64,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_state_checks.py",
+      "sha256": "a7099e886e42f1cfc2fe6248e4793b40d0eff733259152c6a5350281109b379c",
+      "lines": 158,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          18
+        ],
+        "T6_semantic_currentness": [
+          95
+        ],
+        "N2_detached_state_continuation": [
+          50
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_state_contract_registration.py",
+      "sha256": "dd0bc62a753445a7503021901ac590a937db3c820baa89b8442b25cebb8d1f44",
+      "lines": 39,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_static_review_repairs.py",
+      "sha256": "011473b540596d3e7d5af75bac759be2c7585e333e24663ef756ad3b0bd0d5bc",
+      "lines": 764,
+      "surface": "test",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          165,
+          169,
+          502,
+          504
+        ],
+        "T3_launch_termination": [
+          99,
+          100,
+          707
+        ],
+        "T6_semantic_currentness": [
+          475,
+          476
+        ],
+        "N2_detached_state_continuation": [
+          674
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_storage_validation.py",
+      "sha256": "f7c814e0c4c839ffd20afda85fcbb21a0996367a1150dff492d29dec51f7b502",
+      "lines": 40,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          35
+        ],
+        "N2_detached_state_continuation": [
+          35
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_submission_boundaries.py",
+      "sha256": "92690e741314016b864d0d0753602dffe1ae58e76e14a8c021a8f24130606917",
+      "lines": 443,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          53,
+          55
+        ],
+        "T5_evidence_handoff": [
+          375
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_submission_flow.py",
+      "sha256": "990381651cc37bb5637917d29372462f0e9fd62ae4ba7338d1d021f04f01f896",
+      "lines": 447,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          60,
+          68,
+          79,
+          119,
+          196,
+          197,
+          300,
+          357,
+          408,
+          433
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_submission_tools.py",
+      "sha256": "96684466f70c28d0fa299ad2aa16875800bfb0874519f814d85035364ba634b1",
+      "lines": 676,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          85,
+          100,
+          122,
+          150
+        ],
+        "N2_detached_state_continuation": [
+          540
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_task_scope.py",
+      "sha256": "216cd07b37290773852e70db80e9623870e4264e1d30b199861096eb8b697e73",
+      "lines": 185,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_test_runner.py",
+      "sha256": "738aa6a7700388abe62591089fe85ce6aa905f948e01fb2d3519905b06653cdc",
+      "lines": 134,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T3_launch_termination": [
+          62
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_unicode_flow.py",
+      "sha256": "9c0e572df33c1a492cbd7c0a6a8a2239b3ad393db5f5feb4de93f3805c8e70ed",
+      "lines": 113,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          55,
+          56,
+          59
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_walkthrough_contract_repairs.py",
+      "sha256": "15e09879fceceee96393306ae43181b905ca48bf6d49362525f508ef48a97560",
+      "lines": 310,
+      "surface": "test",
+      "changed_in": [
+        "c44dd7b7"
+      ],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          31
+        ],
+        "T4_observation_order": [
+          255
+        ],
+        "T5_evidence_handoff": [
+          56
+        ],
+        "N1_public_input_boundary": [
+          261
+        ],
+        "N2_detached_state_continuation": [
+          302
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_walkthrough_followup.py",
+      "sha256": "8d2227f2a19068191b92d8c5f8a7a4ca7f48ddd0fda2a62b91b702e50c100fe9",
+      "lines": 462,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          197
+        ],
+        "T5_evidence_handoff": [
+          62,
+          70,
+          74,
+          76,
+          77
+        ],
+        "T7_event_responsibility": [
+          302
+        ],
+        "N2_detached_state_continuation": [
+          83,
+          152,
+          411,
+          426
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_walkthrough_repairs.py",
+      "sha256": "854cdf437c2c6daf5c5c9789011d3592fab15ac760eaf0089ee9502e5c7ab695",
+      "lines": 324,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          59,
+          71,
+          74,
+          78,
+          90,
+          152,
+          187
+        ],
+        "T6_semantic_currentness": [
+          17,
+          31,
+          43
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_windows_job.py",
+      "sha256": "cfc21c38879eff79a419393d4dc3815d52d8dc9a929dd55ac7d5dc37d73739ea",
+      "lines": 281,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/test_worker_temporary_outputs.py",
+      "sha256": "57ad254bde9bd47df3aa37b7aa51d5de22a4e62559e0ed8ccadd94acbbd93609",
+      "lines": 56,
+      "surface": "test",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/계약/독립-운영.md",
+      "sha256": "905e27036672bd41fa271dafaf7b12d9f4e89a4ab81d1f96d194f4800b04e272",
+      "lines": 61,
+      "surface": "document_or_data",
+      "changed_in": [
+        "ff9b2b9c"
+      ],
+      "navigation_hits": {
+        "T8_maintenance_telemetry": [
+          3
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/계약/동일성-검토.md",
+      "sha256": "d2eccfcdb2bef07220c662d17c9ea56d6e2e7a21c89d80d92e7d237fdf96981a",
+      "lines": 107,
+      "surface": "document_or_data",
+      "changed_in": [],
+      "navigation_hits": {
+        "T6_semantic_currentness": [
+          39
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/계약/목표-감사.md",
+      "sha256": "b17092cbf9863706970c90f66b617bfd4477bf134b7b128a96f18a913c83c3c1",
+      "lines": 49,
+      "surface": "document_or_data",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/계약/보충-조사.md",
+      "sha256": "e06066f8d901239b47f4bd9ec3917c39e73d90c47b9040662d0117cebcb13a91",
+      "lines": 61,
+      "surface": "document_or_data",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/계약/연구-계획.md",
+      "sha256": "59491094452247babec8851e9e5f8233271613ffe1a9feb1a3118e984ab1c9fe",
+      "lines": 151,
+      "surface": "document_or_data",
+      "changed_in": [
+        "c44dd7b7"
+      ],
+      "navigation_hits": {
+        "T6_semantic_currentness": [
+          39,
+          151
+        ],
+        "T7_event_responsibility": [
+          39,
+          68
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/계약/연구-수행.md",
+      "sha256": "c93f7c5ebb9653dc388f127d6618ef10f6a35fc2fd78544bf1e02890e724cea6",
+      "lines": 167,
+      "surface": "document_or_data",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/계약/운영-점검.md",
+      "sha256": "d0186667736704d00e6419a62eb5865fce8e9a30b0836498ec5cd35b7fff03c8",
+      "lines": 89,
+      "surface": "document_or_data",
+      "changed_in": [
+        "c44dd7b7"
+      ],
+      "navigation_hits": {
+        "T3_launch_termination": [
+          19
+        ],
+        "T5_evidence_handoff": [
+          15,
+          39
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/계약/유지보수.md",
+      "sha256": "fa20f7b99aa9553ad8d35fe342f8583a40de0605b9b2280a08a9c6b215f36851",
+      "lines": 138,
+      "surface": "document_or_data",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/계약/의도-해석.md",
+      "sha256": "16cb06c99de591b9e14e1e54ff7f3c27ba22c8423a2ebd5c5dda2eb744a49459",
+      "lines": 77,
+      "surface": "document_or_data",
+      "changed_in": [],
+      "navigation_hits": {
+        "T2_storage_identity": [
+          12,
+          34,
+          38,
+          40,
+          44
+        ],
+        "T5_evidence_handoff": [
+          13
+        ]
+      }
+    },
+    {
+      "path": ".claude/skills/do-math/계약/작업-계약-검토.md",
+      "sha256": "910199a5d4102074acd0d82171518945f54dae095501d2c6b0db6595adc557fe",
+      "lines": 143,
+      "surface": "document_or_data",
+      "changed_in": [],
+      "navigation_hits": {}
+    },
+    {
+      "path": ".claude/skills/do-math/계약/후보-준비.md",
+      "sha256": "e21bc305bc7c5029ad980d1ae9b437da8df96051282979ad2d8b12a4c60909c8",
+      "lines": 220,
+      "surface": "document_or_data",
+      "changed_in": [],
+      "navigation_hits": {}
+    }
+  ],
+  "hits": {
+    "T1_trust_observation": [
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/engine.py",
+        "lines": [
+          4454,
+          4455
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/environment_checks.py",
+        "lines": [
+          7,
+          22,
+          71,
+          108,
+          109,
+          117
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/governance_engine.py",
+        "lines": [
+          442,
+          443
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/initialization.py",
+        "lines": [
+          94,
+          95,
+          98,
+          105,
+          110,
+          114,
+          115,
+          206
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/lifecycle_engine.py",
+        "lines": [
+          684,
+          685,
+          699,
+          700,
+          1074,
+          1075,
+          1076,
+          1079,
+          1081,
+          1087,
+          1088,
+          1182,
+          1183,
+          1309,
+          1310,
+          1353,
+          1354
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/record_schemas/__init__.py",
+        "lines": [
+          479,
+          480
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/review_engine.py",
+        "lines": [
+          1028,
+          1029
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/state_checks.py",
+        "lines": [
+          267,
+          269
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/trust_validation.py",
+        "lines": [
+          108,
+          118,
+          123
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_approved_five_repairs.py",
+        "lines": [
+          76,
+          86
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_environment_validation.py",
+        "lines": [
+          13,
+          32,
+          40,
+          42,
+          46,
+          50,
+          56,
+          58,
+          62,
+          71,
+          74,
+          77,
+          85
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_initialization_efficiency.py",
+        "lines": [
+          15,
+          101,
+          124,
+          138,
+          139,
+          142,
+          242
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_knowledge_import_engine.py",
+        "lines": [
+          128
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_lifecycle_engine.py",
+        "lines": [
+          100,
+          102
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_KNOWLEDGE.py",
+        "lines": [
+          252,
+          263
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_STORAGE.py",
+        "lines": [
+          1135,
+          1144,
+          1146,
+          1148
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_review_engine.py",
+        "lines": [
+          28
+        ]
+      }
+    ],
+    "T2_storage_identity": [
+      {
+        "path": ".claude/skills/do-math/references/CLI-실행-계약.md",
+        "lines": [
+          3,
+          46,
+          48,
+          279,
+          285,
+          294,
+          305,
+          706,
+          841
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/references/공통-실행.md",
+        "lines": [
+          124,
+          165
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/references/입력-소비자.md",
+        "lines": [
+          3,
+          5,
+          9,
+          22,
+          26,
+          30,
+          34,
+          38,
+          42,
+          46,
+          50
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/references/초기화-운전.md",
+        "lines": [
+          3,
+          316,
+          329,
+          331,
+          338,
+          347
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/references/초기화-효율과-정비.md",
+        "lines": [
+          25,
+          27,
+          29,
+          31
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/cli.py",
+        "lines": [
+          123,
+          133,
+          207,
+          341,
+          343,
+          497,
+          503,
+          513,
+          516,
+          554,
+          558,
+          574,
+          575,
+          577,
+          578,
+          585,
+          586,
+          587,
+          590,
+          592,
+          594
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/contracts.py",
+        "lines": [
+          325,
+          336
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/control_transport.py",
+        "lines": [
+          244,
+          247,
+          248,
+          254,
+          271,
+          275,
+          276,
+          284,
+          329,
+          340,
+          341,
+          345,
+          348,
+          450,
+          484
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/delegations.py",
+        "lines": [
+          110
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/engine.py",
+        "lines": [
+          37,
+          242,
+          296,
+          304,
+          305,
+          364,
+          423,
+          424,
+          785,
+          786,
+          787,
+          817,
+          1090,
+          1197,
+          1204,
+          1233,
+          1234,
+          1236,
+          1238,
+          1249,
+          1250,
+          1251,
+          1301,
+          2203,
+          2266,
+          2278,
+          2307,
+          2313,
+          2334,
+          2615,
+          2933,
+          2972,
+          2981,
+          3005,
+          3011,
+          3018,
+          4637,
+          4646,
+          4654
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/environment_checks.py",
+        "lines": [
+          6,
+          18,
+          19,
+          31
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/formal.py",
+        "lines": [
+          183,
+          310,
+          325
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/git_store.py",
+        "lines": [
+          190,
+          356
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/governance.py",
+        "lines": [
+          14,
+          26,
+          27,
+          772,
+          778,
+          785,
+          786,
+          797,
+          830,
+          879,
+          885,
+          886,
+          887,
+          888,
+          891,
+          893,
+          896,
+          897,
+          899,
+          901,
+          927,
+          953,
+          979,
+          991,
+          1071,
+          1108,
+          1134,
+          1137
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/governance_engine.py",
+        "lines": [
+          126,
+          272
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/initialization.py",
+        "lines": [
+          139
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/integration.py",
+        "lines": [
+          75,
+          105,
+          147,
+          212,
+          459,
+          465,
+          487,
+          501,
+          506,
+          544,
+          552
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/knowledge_records.py",
+        "lines": [
+          6,
+          18,
+          22,
+          26
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/lifecycle_engine.py",
+        "lines": [
+          695,
+          934,
+          939,
+          1066,
+          1381
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/observations.py",
+        "lines": [
+          111,
+          641,
+          668,
+          671,
+          672,
+          677,
+          684,
+          685,
+          689,
+          735,
+          736,
+          738,
+          741,
+          744,
+          863,
+          864,
+          906,
+          907
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/payloads.py",
+        "lines": [
+          16,
+          22,
+          40,
+          41,
+          47,
+          76,
+          77,
+          78,
+          86,
+          90,
+          92,
+          95,
+          96,
+          102,
+          103,
+          104,
+          107,
+          109,
+          112,
+          115,
+          119,
+          124,
+          127,
+          132,
+          136,
+          137,
+          138,
+          139,
+          140
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/preflight.py",
+        "lines": [
+          91
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/record_schemas/__init__.py",
+        "lines": [
+          502,
+          505
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/record_schemas/domains.py",
+        "lines": [
+          268,
+          446,
+          448
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/record_schemas/schemas.py",
+        "lines": [
+          3,
+          15,
+          89,
+          91,
+          198
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/repair_execution.py",
+        "lines": [
+          117,
+          187
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/repository.py",
+        "lines": [
+          54,
+          55,
+          56,
+          61,
+          62,
+          80,
+          90,
+          97,
+          98,
+          99,
+          100,
+          101,
+          102,
+          104,
+          108,
+          109,
+          117,
+          123,
+          126,
+          132,
+          170,
+          174,
+          184,
+          295,
+          296,
+          299,
+          302,
+          433,
+          434,
+          528,
+          567,
+          568,
+          569,
+          570,
+          571,
+          600,
+          610,
+          645,
+          654
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/review_cycle.py",
+        "lines": [
+          306,
+          308,
+          640,
+          642
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/scheduled_operator.py",
+        "lines": [
+          375,
+          392,
+          419,
+          480,
+          486,
+          575
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/state_contract.py",
+        "lines": [
+          100,
+          101
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/submission.py",
+        "lines": [
+          46,
+          549,
+          888,
+          911,
+          935,
+          1052,
+          1056,
+          1063,
+          1070,
+          1097,
+          1108,
+          1166,
+          1393,
+          1462,
+          1506,
+          1511
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/trust_validation.py",
+        "lines": [
+          19,
+          25,
+          39
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/research_fixtures.py",
+        "lines": [
+          170
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_academic_preparation.py",
+        "lines": [
+          14,
+          40
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_cli.py",
+        "lines": [
+          129,
+          197,
+          208,
+          256,
+          261,
+          331,
+          339,
+          348,
+          352,
+          375,
+          376,
+          378,
+          382,
+          418,
+          433
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_cli_advanced.py",
+        "lines": [
+          47,
+          49,
+          100
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_completion_settlement.py",
+        "lines": [
+          36
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_connection_repairs.py",
+        "lines": [
+          309,
+          404
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_contract_checks.py",
+        "lines": [
+          15,
+          47
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_control_preview.py",
+        "lines": [
+          18,
+          36,
+          59
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_control_transport_io.py",
+        "lines": [
+          40,
+          46,
+          50,
+          70,
+          91,
+          100,
+          106,
+          120,
+          169,
+          202
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_controls.py",
+        "lines": [
+          34
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_decision_basis.py",
+        "lines": [
+          35
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_delegation_storage.py",
+        "lines": [
+          75,
+          100,
+          106
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_diagnosed_installation_recovery.py",
+        "lines": [
+          29
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_engine.py",
+        "lines": [
+          316
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_formal.py",
+        "lines": [
+          7,
+          17,
+          93,
+          197,
+          201,
+          202,
+          203,
+          216,
+          217,
+          218,
+          219
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_formal_input_manifest.py",
+        "lines": [
+          12,
+          31,
+          32,
+          33,
+          36,
+          37,
+          39,
+          42,
+          45,
+          47
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_governance_engine.py",
+        "lines": [
+          21,
+          26,
+          31,
+          39,
+          139,
+          142,
+          150,
+          181,
+          402,
+          407,
+          421,
+          520,
+          549
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_host_resources.py",
+        "lines": [
+          257,
+          274,
+          284,
+          286
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_impact_bundle.py",
+        "lines": [
+          80,
+          88
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_initial_intent_connection.py",
+        "lines": [
+          47
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_initialization_efficiency.py",
+        "lines": [
+          14,
+          59,
+          61,
+          63,
+          68,
+          72,
+          73,
+          74,
+          169,
+          180,
+          185,
+          190
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_machine_parallel.py",
+        "lines": [
+          222
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_model_assessment_flow.py",
+        "lines": [
+          21,
+          56,
+          86
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_native_final_submission.py",
+        "lines": [
+          58,
+          62
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_observation_audit1.py",
+        "lines": [
+          37,
+          68,
+          77
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_performance_repairs.py",
+        "lines": [
+          137,
+          150,
+          215,
+          223,
+          224,
+          236,
+          245,
+          256
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_performance_save.py",
+        "lines": [
+          43,
+          52,
+          53,
+          63,
+          69,
+          78,
+          85,
+          87,
+          93,
+          95,
+          103,
+          109
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_provider_wait.py",
+        "lines": [
+          65,
+          143
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_purpose_engine.py",
+        "lines": [
+          285,
+          656,
+          659
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_query_records.py",
+        "lines": [
+          56,
+          62,
+          80,
+          102
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_ACTIVITIES.py",
+        "lines": [
+          128,
+          144,
+          148,
+          186,
+          318,
+          327,
+          329,
+          334,
+          351,
+          413,
+          507,
+          516
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_CONTRACTS.py",
+        "lines": [
+          243,
+          288,
+          312,
+          382,
+          442,
+          445,
+          447,
+          456,
+          465,
+          489,
+          496,
+          513,
+          587,
+          599,
+          603,
+          606,
+          615,
+          730,
+          740,
+          743,
+          750,
+          763,
+          813,
+          819,
+          823,
+          832,
+          848,
+          863,
+          883,
+          916,
+          956,
+          970,
+          989,
+          999,
+          1009,
+          1028
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_ENGINE.py",
+        "lines": [
+          42,
+          49,
+          94,
+          105,
+          115,
+          118,
+          119,
+          194,
+          197,
+          316,
+          394,
+          413,
+          440,
+          494,
+          495,
+          520,
+          866,
+          925,
+          1044,
+          1235,
+          1325
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_EVIDENCE.py",
+        "lines": [
+          252
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_EVIDENCE_host.py",
+        "lines": [
+          81
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_GOVERNANCE.py",
+        "lines": [
+          81,
+          138,
+          144,
+          480,
+          784,
+          787,
+          789,
+          790,
+          798,
+          848,
+          854,
+          875,
+          884,
+          889
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_KNOWLEDGE.py",
+        "lines": [
+          481,
+          528,
+          532,
+          711
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_OBSERVATION.py",
+        "lines": [
+          145
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_PROFILES.py",
+        "lines": [
+          204,
+          221,
+          228,
+          673,
+          698,
+          734
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_STORAGE.py",
+        "lines": [
+          55,
+          106,
+          140,
+          168,
+          169,
+          172,
+          175,
+          176,
+          177,
+          205,
+          209,
+          210,
+          212,
+          215,
+          220,
+          223,
+          228,
+          229,
+          230,
+          242,
+          285,
+          310,
+          329,
+          341,
+          364,
+          378,
+          379,
+          390,
+          405,
+          413,
+          436,
+          449,
+          454,
+          483,
+          506,
+          510,
+          532,
+          569,
+          582,
+          591,
+          625,
+          731,
+          734,
+          745,
+          747,
+          750,
+          754,
+          757,
+          765,
+          790,
+          798,
+          824,
+          838,
+          870,
+          871,
+          879,
+          906,
+          909,
+          927,
+          931,
+          952,
+          964,
+          971,
+          975,
+          979,
+          1011,
+          1014,
+          1022,
+          1039,
+          1055,
+          1060,
+          1063,
+          1073,
+          1080,
+          1108,
+          1131,
+          1155,
+          1167,
+          1179,
+          1254,
+          1286,
+          1305,
+          1314,
+          1322,
+          1328
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_SURFACE.py",
+        "lines": [
+          234,
+          525
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_TASKS.py",
+        "lines": [
+          276,
+          292,
+          315,
+          327,
+          362
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_reference_catalog.py",
+        "lines": [
+          74,
+          80
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_repair_execution.py",
+        "lines": [
+          23
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_repair_plan.py",
+        "lines": [
+          91
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_reporting.py",
+        "lines": [
+          58
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_repository.py",
+        "lines": [
+          55,
+          61,
+          63,
+          67,
+          74,
+          80
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_research_reliability.py",
+        "lines": [
+          32,
+          41,
+          49,
+          50,
+          153,
+          301,
+          315,
+          317,
+          479,
+          483
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_review_engine.py",
+        "lines": [
+          566,
+          622
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_review_research.py",
+        "lines": [
+          298
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_review_scope_wire.py",
+        "lines": [
+          67,
+          71
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_six_connections.py",
+        "lines": [
+          301,
+          316,
+          381
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_state_checks.py",
+        "lines": [
+          18
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_static_review_repairs.py",
+        "lines": [
+          165,
+          169,
+          502,
+          504
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_storage_validation.py",
+        "lines": [
+          35
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_submission_boundaries.py",
+        "lines": [
+          53,
+          55
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_submission_flow.py",
+        "lines": [
+          60,
+          68,
+          79,
+          119,
+          196,
+          197,
+          300,
+          357,
+          408,
+          433
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_submission_tools.py",
+        "lines": [
+          85,
+          100,
+          122,
+          150
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_unicode_flow.py",
+        "lines": [
+          55,
+          56,
+          59
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_walkthrough_contract_repairs.py",
+        "lines": [
+          31
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_walkthrough_followup.py",
+        "lines": [
+          197
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_walkthrough_repairs.py",
+        "lines": [
+          59,
+          71,
+          74,
+          78,
+          90,
+          152,
+          187
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/계약/의도-해석.md",
+        "lines": [
+          12,
+          34,
+          38,
+          40,
+          44
+        ]
+      }
+    ],
+    "T3_launch_termination": [
+      {
+        "path": ".claude/skills/do-math/references/CLI-실행-계약.md",
+        "lines": [
+          3,
+          819
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/references/초기화-효율과-정비.md",
+        "lines": [
+          37
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/engine.py",
+        "lines": [
+          640,
+          1590,
+          1599,
+          1635,
+          1636,
+          1637,
+          1638,
+          1682,
+          2531,
+          2879,
+          3448,
+          3520,
+          4170,
+          4324,
+          4541,
+          4542
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/environment_checks.py",
+        "lines": [
+          113
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/execution_lifecycle.py",
+        "lines": [
+          112
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/formal.py",
+        "lines": [
+          371,
+          376,
+          378,
+          379,
+          382,
+          408,
+          415
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/launch.py",
+        "lines": [
+          49,
+          51,
+          62
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/lifecycle_engine.py",
+        "lines": [
+          1095,
+          1096,
+          1367,
+          1368
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/maintenance_gate.py",
+        "lines": [
+          42
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/model_runner.py",
+        "lines": [
+          38,
+          54,
+          115,
+          118,
+          123,
+          316
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/provider_engine.py",
+        "lines": [
+          52,
+          53,
+          54,
+          55,
+          56,
+          58
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/record_schemas/__init__.py",
+        "lines": [
+          216
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/record_schemas/domains.py",
+        "lines": [
+          239,
+          278,
+          357,
+          358
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/record_schemas/schemas.py",
+        "lines": [
+          102
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/scheduled_operator.py",
+        "lines": [
+          381,
+          385,
+          479,
+          494,
+          549,
+          550
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/scheduler.py",
+        "lines": [
+          21,
+          22
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/session_slots.py",
+        "lines": [
+          199,
+          219,
+          229,
+          246,
+          264,
+          267,
+          268,
+          269,
+          272,
+          273,
+          274,
+          286
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/windows_job.py",
+        "lines": [
+          561,
+          599
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/probe_cli.py",
+        "lines": [
+          73
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/run_tests.py",
+        "lines": [
+          186
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/research_fixtures.py",
+        "lines": [
+          230
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_claude_adapter.py",
+        "lines": [
+          53
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_controls.py",
+        "lines": [
+          107
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_currentness_recovery.py",
+        "lines": [
+          195,
+          196,
+          203,
+          204
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_diagnosed_installation_recovery.py",
+        "lines": [
+          33,
+          43
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_efficiency.py",
+        "lines": [
+          30
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_engine.py",
+        "lines": [
+          64
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_governance_engine.py",
+        "lines": [
+          526,
+          527
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_host_resources.py",
+        "lines": [
+          124,
+          125,
+          270,
+          317,
+          336,
+          362,
+          389
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_initial_intent_connection.py",
+        "lines": [
+          178
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_knowledge_import_engine.py",
+        "lines": [
+          152
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_launch_recovery.py",
+        "lines": [
+          11,
+          12,
+          21,
+          22,
+          24,
+          26,
+          61,
+          64,
+          66
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_lifecycle_engine.py",
+        "lines": [
+          197,
+          285,
+          321
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_machine_parallel.py",
+        "lines": [
+          101,
+          131,
+          149,
+          151,
+          182,
+          241,
+          254,
+          281,
+          386,
+          406
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_native_final_submission.py",
+        "lines": [
+          18,
+          26,
+          30,
+          63,
+          64,
+          65,
+          86,
+          87
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_provider_final_contract.py",
+        "lines": [
+          45
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_provider_wait.py",
+        "lines": [
+          197
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_ACTIVITIES.py",
+        "lines": [
+          296,
+          299,
+          302,
+          424,
+          429,
+          443,
+          446,
+          450
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_ENGINE.py",
+        "lines": [
+          831,
+          840,
+          847,
+          880,
+          919,
+          920
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_PROFILES.py",
+        "lines": [
+          167,
+          242,
+          351,
+          358,
+          438,
+          439,
+          442,
+          497,
+          526,
+          657,
+          676,
+          686,
+          707,
+          714,
+          874,
+          911,
+          975,
+          1010
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_SURFACE.py",
+        "lines": [
+          174,
+          175
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_repair_plan.py",
+        "lines": [
+          73,
+          95,
+          101,
+          102,
+          103
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_session_scheduler.py",
+        "lines": [
+          248,
+          252,
+          260
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_static_review_repairs.py",
+        "lines": [
+          99,
+          100,
+          707
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_test_runner.py",
+        "lines": [
+          62
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/계약/운영-점검.md",
+        "lines": [
+          19
+        ]
+      }
+    ],
+    "T4_observation_order": [
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/codex_adapter.py",
+        "lines": [
+          246
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/context_store.py",
+        "lines": [
+          127
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/control_transport.py",
+        "lines": [
+          195,
+          244
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/engine.py",
+        "lines": [
+          30,
+          2827,
+          2830,
+          2835,
+          2930,
+          2932,
+          3527,
+          3528,
+          3540
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/execution_profiles.py",
+        "lines": [
+          355
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/governance.py",
+        "lines": [
+          700
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/model_runner.py",
+        "lines": [
+          21,
+          45,
+          141,
+          167,
+          204
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/observation_transport.py",
+        "lines": [
+          8
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/observations.py",
+        "lines": [
+          626,
+          628,
+          632,
+          723
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/parallel.py",
+        "lines": [
+          45,
+          62,
+          79
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/planning.py",
+        "lines": [
+          761
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/record_schemas/domains.py",
+        "lines": [
+          228
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/scheduled_operator.py",
+        "lines": [
+          61,
+          356,
+          511
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/submission.py",
+        "lines": [
+          274
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/probe_cli.py",
+        "lines": [
+          70
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_control_transport_io.py",
+        "lines": [
+          106
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_initialization_efficiency.py",
+        "lines": [
+          92
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_knowledge_import_engine.py",
+        "lines": [
+          359
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_model_runner.py",
+        "lines": [
+          22,
+          110
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_observations.py",
+        "lines": [
+          317
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_purpose_engine.py",
+        "lines": [
+          84,
+          101,
+          102,
+          106,
+          108,
+          120
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_ACTIVITIES.py",
+        "lines": [
+          327
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_ENGINE.py",
+        "lines": [
+          1293,
+          1296,
+          1298,
+          1301,
+          1436,
+          1439
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_PROFILES.py",
+        "lines": [
+          221,
+          977,
+          1018,
+          1021,
+          1025
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_research_reliability.py",
+        "lines": [
+          18,
+          32,
+          47,
+          79,
+          107,
+          109,
+          140,
+          178,
+          180,
+          204,
+          504,
+          508
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_review_research.py",
+        "lines": [
+          268
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_session_scheduler.py",
+        "lines": [
+          396,
+          404,
+          411,
+          419,
+          486,
+          494,
+          498
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_walkthrough_contract_repairs.py",
+        "lines": [
+          255
+        ]
+      }
+    ],
+    "T5_evidence_handoff": [
+      {
+        "path": ".claude/skills/do-math/references/공통-실행.md",
+        "lines": [
+          3,
+          37
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/references/초기화-효율과-정비.md",
+        "lines": [
+          33
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/context_store.py",
+        "lines": [
+          373,
+          431,
+          574,
+          577,
+          592,
+          595,
+          596,
+          597,
+          598,
+          687
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/contracts.py",
+        "lines": [
+          162
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/engine.py",
+        "lines": [
+          31,
+          1321,
+          1659,
+          1675,
+          1676,
+          1912,
+          1939,
+          2891,
+          2892,
+          3593,
+          3607,
+          3608,
+          4268
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/observations.py",
+        "lines": [
+          461,
+          1172,
+          1181
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/operational_dispositions.py",
+        "lines": [
+          75,
+          93
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/submission.py",
+        "lines": [
+          277,
+          290,
+          504,
+          508,
+          692,
+          1287
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/test_categories.py",
+        "lines": [
+          11
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_connection_repairs.py",
+        "lines": [
+          474,
+          479
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_formal_input_manifest.py",
+        "lines": [
+          64
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_initialization_efficiency.py",
+        "lines": [
+          26,
+          40,
+          41,
+          44
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_STORAGE.py",
+        "lines": [
+          367,
+          372
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_reference_catalog.py",
+        "lines": [
+          9,
+          19,
+          23,
+          43,
+          52,
+          61
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_research_reliability.py",
+        "lines": [
+          236,
+          257,
+          264,
+          277,
+          310
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_submission_boundaries.py",
+        "lines": [
+          375
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_walkthrough_contract_repairs.py",
+        "lines": [
+          56
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_walkthrough_followup.py",
+        "lines": [
+          62,
+          70,
+          74,
+          76,
+          77
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/계약/운영-점검.md",
+        "lines": [
+          15,
+          39
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/계약/의도-해석.md",
+        "lines": [
+          13
+        ]
+      }
+    ],
+    "T6_semantic_currentness": [
+      {
+        "path": ".claude/skills/do-math/references/CLI-실행-계약.md",
+        "lines": [
+          460,
+          505
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/references/공통-실행.md",
+        "lines": [
+          294
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/references/지식-저작과-재사용.md",
+        "lines": [
+          71,
+          73
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/academic.py",
+        "lines": [
+          73,
+          75,
+          79,
+          138,
+          244,
+          256,
+          260
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/academic_engine.py",
+        "lines": [
+          11,
+          185,
+          192
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/context_store.py",
+        "lines": [
+          483
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/decision_engine.py",
+        "lines": [
+          78
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/engine.py",
+        "lines": [
+          3135,
+          3891,
+          3895,
+          3897,
+          3898,
+          3903,
+          4505
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/governance_engine.py",
+        "lines": [
+          427,
+          428
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/integration.py",
+        "lines": [
+          35
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/knowledge.py",
+        "lines": [
+          122,
+          125,
+          208,
+          220,
+          237,
+          465,
+          467,
+          500
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/knowledge_io.py",
+        "lines": [
+          19,
+          23,
+          277,
+          280,
+          339,
+          341,
+          347,
+          354,
+          355,
+          356,
+          360,
+          362,
+          367
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/knowledge_records.py",
+        "lines": [
+          24,
+          92,
+          93,
+          145,
+          149,
+          169,
+          184,
+          256,
+          263,
+          264,
+          278,
+          282,
+          288,
+          299,
+          313
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/lifecycle_engine.py",
+        "lines": [
+          17,
+          607,
+          925,
+          926,
+          963
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/model_policy.py",
+        "lines": [
+          78
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/observations.py",
+        "lines": [
+          157,
+          161
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/planning.py",
+        "lines": [
+          62,
+          93,
+          123,
+          135,
+          179,
+          206,
+          233,
+          243,
+          442,
+          539,
+          562,
+          564,
+          606
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/questions.py",
+        "lines": [
+          14,
+          15
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/record_schemas/__init__.py",
+        "lines": [
+          33,
+          55,
+          56,
+          363,
+          376
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/record_schemas/domains.py",
+        "lines": [
+          41
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/record_schemas/schemas.py",
+        "lines": [
+          51,
+          64,
+          68,
+          73,
+          229
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/reporting.py",
+        "lines": [
+          92
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/review_engine.py",
+        "lines": [
+          22,
+          78
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/scheduler.py",
+        "lines": [
+          8,
+          173,
+          264,
+          283,
+          292,
+          352,
+          361
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/state_checks.py",
+        "lines": [
+          71,
+          375,
+          384
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/submission.py",
+        "lines": [
+          129,
+          157,
+          242,
+          251,
+          731,
+          732,
+          733
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/task_scope.py",
+        "lines": [
+          33,
+          211,
+          242,
+          282,
+          287,
+          313,
+          322,
+          324,
+          457
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_academic_preparation.py",
+        "lines": [
+          11,
+          13,
+          31,
+          45,
+          71
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_approved_five_repairs.py",
+        "lines": [
+          189
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_decision_basis.py",
+        "lines": [
+          125,
+          127,
+          129
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_knowledge_io.py",
+        "lines": [
+          80,
+          94,
+          137,
+          143,
+          144,
+          156,
+          163,
+          164,
+          166,
+          167,
+          171
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_planning.py",
+        "lines": [
+          125,
+          129
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_EVIDENCE_walkthroughs.py",
+        "lines": [
+          178,
+          179,
+          180,
+          256,
+          258
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_GOVERNANCE.py",
+        "lines": [
+          351,
+          392,
+          933
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_KNOWLEDGE.py",
+        "lines": [
+          165,
+          166,
+          167,
+          172,
+          179,
+          184,
+          185,
+          363
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_STORAGE.py",
+        "lines": [
+          27,
+          42,
+          144,
+          146
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_TASKS.py",
+        "lines": [
+          91,
+          111,
+          117,
+          130,
+          148,
+          158,
+          191,
+          296,
+          320,
+          328,
+          365,
+          708,
+          715,
+          719,
+          742,
+          753,
+          757
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_research_reliability.py",
+        "lines": [
+          350,
+          354,
+          360,
+          365,
+          370,
+          372,
+          378,
+          387,
+          393,
+          406
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_review_engine.py",
+        "lines": [
+          619,
+          630,
+          893
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_state_checks.py",
+        "lines": [
+          95
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_static_review_repairs.py",
+        "lines": [
+          475,
+          476
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_walkthrough_repairs.py",
+        "lines": [
+          17,
+          31,
+          43
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/계약/동일성-검토.md",
+        "lines": [
+          39
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/계약/연구-계획.md",
+        "lines": [
+          39,
+          151
+        ]
+      }
+    ],
+    "T7_event_responsibility": [
+      {
+        "path": ".claude/skills/do-math/references/CLI-실행-계약.md",
+        "lines": [
+          863
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/references/공통-실행.md",
+        "lines": [
+          29
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/references/초기화-운전.md",
+        "lines": [
+          365
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/context_store.py",
+        "lines": [
+          496,
+          504
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/contracts.py",
+        "lines": [
+          149
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/engine.py",
+        "lines": [
+          1511,
+          1799,
+          2245,
+          2765,
+          2766,
+          2774,
+          3736,
+          3737
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/events.py",
+        "lines": [
+          41,
+          45,
+          47,
+          50,
+          57
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/initialization.py",
+        "lines": [
+          287
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/lifecycle_engine.py",
+        "lines": [
+          67,
+          199,
+          941,
+          943,
+          997,
+          1001,
+          1003,
+          1004,
+          1008,
+          1015,
+          1024,
+          1025,
+          1046,
+          1051,
+          1056
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/planning.py",
+        "lines": [
+          617,
+          708,
+          719,
+          737,
+          740,
+          772,
+          794
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/record_schemas/__init__.py",
+        "lines": [
+          149
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/record_schemas/domains.py",
+        "lines": [
+          379
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/record_schemas/schemas.py",
+        "lines": [
+          243
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/reporting.py",
+        "lines": [
+          84,
+          94
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/scheduler.py",
+        "lines": [
+          104,
+          119
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/task_contracts.py",
+        "lines": [
+          225
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/research_fixtures.py",
+        "lines": [
+          109
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_efficiency.py",
+        "lines": [
+          74,
+          75,
+          76,
+          81,
+          88,
+          91,
+          99,
+          115,
+          223
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_governance_engine.py",
+        "lines": [
+          74,
+          221
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_lifecycle_engine.py",
+        "lines": [
+          145,
+          408,
+          417,
+          418,
+          420,
+          421,
+          422,
+          605
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_planning.py",
+        "lines": [
+          59,
+          100,
+          110
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_ENGINE.py",
+        "lines": [
+          210,
+          425,
+          692,
+          1017,
+          1214
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_EVIDENCE.py",
+        "lines": [
+          75
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_EVIDENCE_walkthroughs.py",
+        "lines": [
+          62,
+          127
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_STORAGE.py",
+        "lines": [
+          818,
+          821,
+          822,
+          967,
+          982,
+          1082,
+          1084
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_TASKS.py",
+        "lines": [
+          43,
+          782
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_repair_plan.py",
+        "lines": [
+          22,
+          46,
+          48,
+          182
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_research_reliability.py",
+        "lines": [
+          420,
+          423,
+          434,
+          437,
+          445,
+          448
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_run_feedback.py",
+        "lines": [
+          27,
+          30
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_six_connections.py",
+        "lines": [
+          194,
+          196
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_walkthrough_followup.py",
+        "lines": [
+          302
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/계약/연구-계획.md",
+        "lines": [
+          39,
+          68
+        ]
+      }
+    ],
+    "T8_maintenance_telemetry": [
+      {
+        "path": ".claude/skills/do-math/README.md",
+        "lines": [
+          3
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/references/CLI-실행-계약.md",
+        "lines": [
+          3
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/references/초기화-효율과-정비.md",
+        "lines": [
+          48,
+          52,
+          57
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/claude_adapter.py",
+        "lines": [
+          3
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/cli.py",
+        "lines": [
+          118,
+          124,
+          208,
+          308,
+          309,
+          310,
+          311
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/codex_adapter.py",
+        "lines": [
+          8
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/context_store.py",
+        "lines": [
+          3
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/engine.py",
+        "lines": [
+          29,
+          266,
+          270,
+          271,
+          914,
+          1020,
+          1442,
+          1473,
+          1522
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/environment_checks.py",
+        "lines": [
+          33,
+          69
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/git_store.py",
+        "lines": [
+          9
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/lifecycle_engine.py",
+        "lines": [
+          1201
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/maintenance_gate.py",
+        "lines": [
+          7,
+          11,
+          12,
+          15,
+          22,
+          26,
+          31,
+          47
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/model_runner.py",
+        "lines": [
+          3
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/operation_trace.py",
+        "lines": [
+          15,
+          115,
+          126,
+          179
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/parallel.py",
+        "lines": [
+          30
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/record_schemas/domains.py",
+        "lines": [
+          124,
+          125
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/reporting.py",
+        "lines": [
+          122,
+          198,
+          199
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/repository.py",
+        "lines": [
+          22,
+          89
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/scheduled_operator.py",
+        "lines": [
+          28,
+          195,
+          234,
+          263,
+          372
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/scheduler.py",
+        "lines": [
+          504
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/trust_validation.py",
+        "lines": [
+          11
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_initialization_efficiency.py",
+        "lines": [
+          17,
+          47,
+          49,
+          56,
+          77,
+          80,
+          83,
+          84,
+          155,
+          164,
+          206,
+          214,
+          216,
+          217,
+          222,
+          224
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/계약/독립-운영.md",
+        "lines": [
+          3
+        ]
+      }
+    ],
+    "N1_public_input_boundary": [
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/academic_engine.py",
+        "lines": [
+          167
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/cli.py",
+        "lines": [
+          42,
+          54,
+          213,
+          341,
+          494
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/engine.py",
+        "lines": [
+          246,
+          262,
+          824,
+          831,
+          850,
+          910,
+          971,
+          1175,
+          1297,
+          1306,
+          1318,
+          1331,
+          1336,
+          1407,
+          4615
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/environment_checks.py",
+        "lines": [
+          7,
+          28
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/governance.py",
+        "lines": [
+          490
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/governance_engine.py",
+        "lines": [
+          215,
+          234
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/initialization.py",
+        "lines": [
+          95,
+          97,
+          176,
+          184,
+          195,
+          221
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/lifecycle_engine.py",
+        "lines": [
+          202,
+          420,
+          512,
+          625,
+          660,
+          720,
+          829
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/observations.py",
+        "lines": [
+          649,
+          1122
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/planning.py",
+        "lines": [
+          540
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/review_engine.py",
+        "lines": [
+          63,
+          951
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/trust_validation.py",
+        "lines": [
+          18,
+          128
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_cli_advanced.py",
+        "lines": [
+          47
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_lifecycle_engine.py",
+        "lines": [
+          63,
+          67,
+          686
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_machine_parallel.py",
+        "lines": [
+          58,
+          119,
+          246
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_walkthrough_contract_repairs.py",
+        "lines": [
+          261
+        ]
+      }
+    ],
+    "N2_detached_state_continuation": [
+      {
+        "path": ".claude/skills/do-math/GLOSSARY.md",
+        "lines": [
+          369
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/references/CLI-실행-계약.md",
+        "lines": [
+          254,
+          340,
+          819
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/activities.py",
+        "lines": [
+          133,
+          153,
+          158,
+          296
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/context_store.py",
+        "lines": [
+          297,
+          317,
+          495,
+          532
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/engine.py",
+        "lines": [
+          242,
+          518,
+          565,
+          575,
+          591,
+          603,
+          737,
+          817,
+          818,
+          1277,
+          1446,
+          1457,
+          1535,
+          2266,
+          2280,
+          2292,
+          2296,
+          2465,
+          2564,
+          3072,
+          4336,
+          4357,
+          4486
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/execution_lifecycle.py",
+        "lines": [
+          23,
+          33,
+          34,
+          35,
+          42
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/governance.py",
+        "lines": [
+          1037,
+          1038
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/integration.py",
+        "lines": [
+          185
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/lifecycle_engine.py",
+        "lines": [
+          413,
+          674,
+          809,
+          1117,
+          1118,
+          1216,
+          1263,
+          1265,
+          1412,
+          1415
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/operational_dispositions.py",
+        "lines": [
+          196
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/preflight.py",
+        "lines": [
+          91
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/record_schemas/__init__.py",
+        "lines": [
+          36,
+          42
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/record_schemas/domains.py",
+        "lines": [
+          173,
+          372
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/record_schemas/schemas.py",
+        "lines": [
+          107
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/repair_execution.py",
+        "lines": [
+          42,
+          202,
+          462
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/reporting.py",
+        "lines": [
+          167,
+          180
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/repository.py",
+        "lines": [
+          174
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/review_cycle.py",
+        "lines": [
+          202,
+          905
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/review_engine.py",
+        "lines": [
+          105,
+          985,
+          994,
+          1219
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/revisions.py",
+        "lines": [
+          159,
+          177
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/scheduled_operator.py",
+        "lines": [
+          419,
+          480,
+          486,
+          575
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/scheduler.py",
+        "lines": [
+          70
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_approved_five_repairs.py",
+        "lines": [
+          238
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_cli_advanced.py",
+        "lines": [
+          100
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_connection_repairs.py",
+        "lines": [
+          57,
+          66,
+          309,
+          511,
+          518
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_controls.py",
+        "lines": [
+          34
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_delegation_storage.py",
+        "lines": [
+          75,
+          100,
+          106
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_diagnosed_installation_recovery.py",
+        "lines": [
+          29,
+          74
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_engine.py",
+        "lines": [
+          316
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_host_resources.py",
+        "lines": [
+          257,
+          274,
+          284,
+          286
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_initial_intent_connection.py",
+        "lines": [
+          174,
+          181
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_initialization_efficiency.py",
+        "lines": [
+          185
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_lifecycle_engine.py",
+        "lines": [
+          356,
+          597,
+          641,
+          1146
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_machine_parallel.py",
+        "lines": [
+          179,
+          186,
+          222
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_observation_audit1.py",
+        "lines": [
+          130
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_performance_save.py",
+        "lines": [
+          43,
+          53,
+          63,
+          69,
+          78,
+          85,
+          87,
+          93,
+          95,
+          103,
+          109
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_provider_wait.py",
+        "lines": [
+          65,
+          143
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_purpose_engine.py",
+        "lines": [
+          638,
+          656,
+          659
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_query_records.py",
+        "lines": [
+          56,
+          62,
+          80,
+          102
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_ACTIVITIES.py",
+        "lines": [
+          34,
+          37,
+          48,
+          67,
+          83,
+          110,
+          413,
+          465,
+          491,
+          496,
+          516
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_CONTRACTS.py",
+        "lines": [
+          337,
+          340,
+          442,
+          445,
+          730
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_ENGINE.py",
+        "lines": [
+          194,
+          242,
+          246,
+          262,
+          574,
+          579,
+          866,
+          925,
+          1080,
+          1235,
+          1463,
+          1505,
+          1507,
+          1509,
+          1515,
+          1537
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_EVIDENCE.py",
+        "lines": [
+          189
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_EVIDENCE_walkthroughs.py",
+        "lines": [
+          211
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_GOVERNANCE.py",
+        "lines": [
+          367
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_KNOWLEDGE.py",
+        "lines": [
+          481,
+          619,
+          622
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_PROFILES.py",
+        "lines": [
+          698,
+          734
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_REVIEWS.py",
+        "lines": [
+          588,
+          595
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_STORAGE.py",
+        "lines": [
+          228,
+          242,
+          379,
+          405,
+          449,
+          532,
+          625,
+          731,
+          745,
+          747,
+          750,
+          754,
+          757,
+          765,
+          798,
+          824,
+          871,
+          971,
+          975,
+          979,
+          1055,
+          1305,
+          1322,
+          1328
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_SURFACE.py",
+        "lines": [
+          234,
+          242,
+          244,
+          247,
+          322,
+          329,
+          341,
+          344,
+          346,
+          525
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_TASKS.py",
+        "lines": [
+          276,
+          292,
+          315,
+          327,
+          362,
+          813
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_repair_execution.py",
+        "lines": [
+          23,
+          24,
+          87
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_reporting.py",
+        "lines": [
+          23,
+          26,
+          27,
+          28,
+          34,
+          35,
+          39,
+          58
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_repository.py",
+        "lines": [
+          55,
+          61,
+          63,
+          67,
+          74,
+          80
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_research_recovery.py",
+        "lines": [
+          40,
+          273,
+          407
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_review_cycle.py",
+        "lines": [
+          248,
+          283,
+          286
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_review_engine.py",
+        "lines": [
+          566,
+          622
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_six_connections.py",
+        "lines": [
+          381
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_state_checks.py",
+        "lines": [
+          50
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_static_review_repairs.py",
+        "lines": [
+          674
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_storage_validation.py",
+        "lines": [
+          35
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_submission_tools.py",
+        "lines": [
+          540
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_walkthrough_contract_repairs.py",
+        "lines": [
+          302
+        ]
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_walkthrough_followup.py",
+        "lines": [
+          83,
+          152,
+          411,
+          426
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "stored_relation_snapshot": "6432ce3296232b788d696f8faf8d4d397da5452c",
+  "relation_id": "RL-01M3BBWFZE8WFMYEV6ER9QY50X",
+  "domain_validation": "QueryRecordTests current producers and ResearchRepository save/load passed",
+  "results": [
+    {
+      "endpoint": "KN-01M3BBWFYKVC8NFRNX48H2QAZR",
+      "relation_only_reader_waits": [],
+      "same_endpoint_direct_reader_waits": [
+        {
+          "kind": "contract_revision",
+          "execution_id": "EX-reader",
+          "record_ids": [
+            "KN-01M3BBWFYKVC8NFRNX48H2QAZR"
+          ],
+          "reason": "existing reader must finish before revision"
+        }
+      ]
+    },
+    {
+      "endpoint": "KN-01M3BBWFYT4DSPDSKK1G8BG3V7",
+      "relation_only_reader_waits": [],
+      "same_endpoint_direct_reader_waits": [
+        {
+          "kind": "contract_revision",
+          "execution_id": "EX-reader",
+          "record_ids": [
+            "KN-01M3BBWFYT4DSPDSKK1G8BG3V7"
+          ],
+          "reason": "existing reader must finish before revision"
+        }
+      ]
+    }
+  ],
+  "scope": "Revision admission/read dependency bug. Does not assert normal revision bypasses impact invalidation."
+}

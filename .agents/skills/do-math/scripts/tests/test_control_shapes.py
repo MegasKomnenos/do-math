@@ -1,0 +1,165 @@
+"""Invalid input is rejected at its boundary without blocking later controls."""
+from copy import deepcopy
+from pathlib import Path
+import json
+import subprocess
+import sys
+import tempfile
+import unittest
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from test_categories import test_group
+import test_query_records as query_fixtures
+from do_math.engine import ResearchEngine, control
+from do_math.repository import canonical_json, exact_content_hash
+
+ACTIONS = ('pause', 'resume', 'close', 'input', 'configure', 'request', 'decision',
+           'knowledge', 'trust', 'external', 'conversation', 'source', 'quiesce', 'release_quiesce')
+BAD_PAYLOADS = [
+    ('decision', {'change': []}),
+    ('decision', {'change': {'kind': 'charter', 'record': {'kind': 'charter', 'content': []}}}),
+    ('decision', {'change': {'kind': 'grant', 'grant': {'kind': 'local', 'roles': ['maintenance'], 'expires_at': 1}}}),
+    ('decision', {'change': {'kind': 'initialization', 'operation': 'probe', 'profile_ref': []}}),
+    ('request', {'role': 'maintenance', 'review_replacement': {'action': []}}),
+    ('request', {'role': 'maintenance', 'review_restoration': {'action': []}}),
+    ('knowledge', {'operation': 'import', 'candidate': []}),
+    ('knowledge', {'operation': 'import-relation', 'relation': []}),
+    ('knowledge', {'operation': 'revise', 'id': 'KN-one', 'changes': [], 'reason': 'test'}),
+    ('trust', {'operation': 'register', 'toolchain': [], 'manifest': {}, 'allowed_axioms': []}),
+    ('external', {'operation': 'reconcile', 'id': 'EO-one', 'evidence': []}),
+    ('conversation', {'operation': 'attach', 'id': 'one', 'generation': [], 'lease_seconds': 60}),
+]
+
+
+@test_group('integration')
+class ControlShapeBoundaryTests(unittest.TestCase):
+    def setUp(self):
+        self.fixture = query_fixtures.QueryRecordTests(); self.fixture.setUp()
+        self.addCleanup(self.fixture.tearDown)
+
+    def test_all_public_actions_reject_nonobject_config_without_creating_inbox(self):
+        f = self.fixture
+        for action in ACTIONS:
+            for value in ([], [1], False, 0, 'text'):
+                with self.subTest(action=action, value=value), self.assertRaises(ValueError):
+                    control(f.git, query_fixtures.INSTANCE_ID, action, config=value, text='input')
+        inbox = f.workspace / 'control' / query_fixtures.INSTANCE_ID
+        self.assertEqual(list(inbox.glob('*.json')), [])
+
+    def test_nested_shapes_are_rejected_before_publication(self):
+        f = self.fixture
+        for action, config in BAD_PAYLOADS:
+            with self.subTest(action=action, config=config), self.assertRaises(ValueError):
+                control(f.git, query_fixtures.INSTANCE_ID, action, config=config)
+        inbox = f.workspace / 'control' / query_fixtures.INSTANCE_ID
+        self.assertEqual(list(inbox.glob('*.json')), [])
+
+    def test_cli_nested_decision_errors_are_input_errors_without_pending_requests(self):
+        f = self.fixture
+        for index, (_, config) in enumerate(BAD_PAYLOADS[1:3]):
+            path = f.root / ('decision-' + str(index) + '.json')
+            path.write_bytes(canonical_json(config['change']))
+            result = subprocess.run([sys.executable, str(Path(__file__).resolve().parents[1] / 'do_math.py'),
+                'decision', '--repository', str(f.git), '--instance', query_fixtures.INSTANCE_ID,
+                '--file', str(path)], capture_output=True, text=True, encoding='utf-8')
+            self.assertEqual(result.returncode, 2, result.stderr)
+            self.assertEqual(json.loads(result.stdout)['error']['kind'], 'input_error')
+        self.assertEqual(list((f.workspace / 'control' / query_fixtures.INSTANCE_ID).glob('*.json')), [])
+
+    def test_receiver_rejects_bad_payload_once_then_processes_following_valid_control(self):
+        f = self.fixture
+        bad_ids = []
+        for index, (action, config) in enumerate([('pause', [1]), *BAD_PAYLOADS]):
+            identifier = 'UC-invalid-' + str(index)
+            control(f.git, query_fixtures.INSTANCE_ID, 'pause', request_id=identifier)
+            path = f.workspace / 'control' / query_fixtures.INSTANCE_ID / (identifier + '.json')
+            request = json.loads(path.read_bytes())
+            request.update(action=action, config=config)
+            path.write_bytes(canonical_json(request))
+            bad_ids.append(identifier)
+        control(f.git, query_fixtures.INSTANCE_ID, 'pause', text='valid later request', request_id='UC-good')
+        engine = ResearchEngine(f.git, query_fixtures.INSTANCE_ID)
+        engine.process_controls()
+        for identifier in bad_ids:
+            self.assertEqual(engine.runtime['processed_controls'].count(identifier), 1)
+            self.assertEqual(engine.control_result(identifier)['effect'], 'rejected')
+        self.assertEqual(engine.control_result('UC-good')['effect'], 'applied')
+        engine = ResearchEngine(f.git, query_fixtures.INSTANCE_ID)
+        engine.process_controls()
+        self.assertTrue(all(engine.runtime['processed_controls'].count(identifier) == 1 for identifier in bad_ids))
+
+    def test_out_of_range_lease_is_rejected_without_blocking_later_control(self):
+        f = self.fixture
+        control(f.git, query_fixtures.INSTANCE_ID, 'conversation', request_id='UC-lease', config={
+            'operation': 'attach', 'id': 'conversation', 'generation': 1,
+            'disconnect_policy': 'pause', 'lease_seconds': (1 << 53) - 1})
+        control(f.git, query_fixtures.INSTANCE_ID, 'pause', request_id='UC-after-lease')
+        engine = ResearchEngine(f.git, query_fixtures.INSTANCE_ID)
+        engine.process_controls()
+        self.assertEqual(engine.control_result('UC-lease')['effect'], 'rejected')
+        self.assertEqual(engine.control_result('UC-after-lease')['effect'], 'applied')
+
+
+@test_group('unit')
+class DomainShapeTests(unittest.TestCase):
+    def test_initialization_checks_the_boolean_flags_its_owner_actually_consumes(self):
+        from do_math.control_contracts import validate_control_payload
+        for key in ('adopt_current_config', 'adopt_current_governance', 'adopt_default_review_policy'):
+            with self.subTest(key=key):
+                validate_control_payload('decision', '', {'change': {'kind': 'initialization', key: True}})
+                with self.assertRaises(ValueError):
+                    validate_control_payload('decision', '', {'change': {'kind': 'initialization', key: ['yes']}})
+
+    def test_model_policy_notice_keeps_its_existing_object_shape(self):
+        from do_math.control_contracts import validate_control_payload
+        validate_control_payload('pause', 'reported model differed', {'model_policy_violation': {
+            'execution_id': 'EX-fixture', 'assigned_model': 'assigned', 'reported_models': ['other']}})
+
+    def test_import_approval_values_are_validated_at_control_and_domain_boundaries(self):
+        from do_math.control_contracts import validate_control_payload
+        from do_math import governance
+        from test_redesign_GOVERNANCE import AuditRepairTests
+        instance, runtime, bundle, _ = AuditRepairTests().checked_import()
+        for value in ([1], 'text', True, {'actor': 'user', 'source_ref': []}):
+            approvals = {'U': value}
+            with self.subTest(value=value):
+                with self.assertRaises(ValueError):
+                    validate_control_payload('input', 'text', {'import_approvals': approvals})
+                with self.assertRaises(ValueError):
+                    governance.apply_import(instance, runtime, bundle['id'], approvals=approvals)
+
+    def test_shape_check_preserves_partial_configuration_and_nullable_candidate_fields(self):
+        from do_math.control_contracts import validate_control_payload
+        validate_control_payload('configure', '', {'tier_models': {'low': 'custom-low',
+            'medium': 'custom-medium', 'high': 'custom-high'}})
+        validate_control_payload('knowledge', '', {'operation': 'import',
+            'candidate': {'relation_claim': None, 'formal_result_ref': None}})
+
+    def test_targetless_plan_can_be_resubmitted_as_the_exact_allowed_action(self):
+        from do_math.control_contracts import validate_decision_shape
+        validate_decision_shape({'kind': 'repetition_continue',
+            'allowed_action': {'id': 'AC-plan', 'role': 'research_plan', 'target': None}})
+
+    def test_trust_manifest_nested_structures_return_errors_without_host_io(self):
+        from research_fixtures import trust_fixture
+        from do_math.trust_validation import manifest_errors
+        with tempfile.TemporaryDirectory() as directory:
+            config = trust_fixture(Path(directory), ['lean'])
+            original = {**config, 'source_ref': 'UC-fixture'}
+            for field in ('foundation_profile', 'validation', 'files'):
+                for value in (None, False, 1, 'text', [{}]):
+                    environment = deepcopy(original)
+                    environment['manifest'][field] = value
+                    environment['manifest_sha256'] = exact_content_hash(environment['manifest'])
+                    with self.subTest(field=field, value=value):
+                        self.assertTrue(manifest_errors(environment))
+
+    def test_time_boundaries_reject_nonstrings_instead_of_treating_falsy_input_as_now(self):
+        from do_math import governance, delegations, external
+        for parse in (governance.timestamp, delegations._now, external._now):
+            for value in (False, 0, 1, [], {}, ''):
+                with self.subTest(parse=parse, value=value), self.assertRaises(ValueError):
+                    parse(value)
+
+
+if __name__ == '__main__':
+    unittest.main()

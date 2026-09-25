@@ -15,6 +15,31 @@ AXIOMS = {'propext', 'Classical.choice', 'Quot.sound'}
 _scan_gate = threading.BoundedSemaphore(1)
 
 
+def _strings(value):
+    return isinstance(value, list) and all(isinstance(item, str) and item for item in value)
+
+
+def manifest_structure_errors(manifest):
+    """Small structural envelope; per-file contracts retain their immutable cache."""
+    if not isinstance(manifest, dict):
+        return ['trust manifest must be an object']
+    errors = []
+    if set(manifest) != {'command', 'foundation_profile', 'files', 'validation'}:
+        errors.append('trust manifest fields differ from the current contract')
+    if not _strings(manifest.get('command')) or not manifest.get('command'):
+        errors.append('trust manifest command must be a nonempty argv')
+    if not isinstance(manifest.get('files'), list):
+        errors.append('trust manifest files must be a list')
+    foundation = manifest.get('foundation_profile')
+    if not isinstance(foundation, dict) or any(not _strings(foundation.get(key)) for key in ('allowed_axioms', 'forbidden')):
+        errors.append('foundation profile must declare string lists of allowed and forbidden axioms')
+    validation = manifest.get('validation')
+    if (not isinstance(validation, dict) or not isinstance(validation.get('status'), str)
+            or not _strings(validation.get('evidence_refs'))):
+        errors.append('trust validation requires a status and evidence reference list')
+    return errors
+
+
 def manifest_errors(environment):
     from .repository import exact_content_hash
     from .formal import toolchain_errors
@@ -24,16 +49,18 @@ def manifest_errors(environment):
     errors = toolchain_errors(environment.get('toolchain'))
     if not isinstance(manifest, dict) or environment.get('manifest_sha256') != exact_content_hash(manifest):
         return ['trust manifest missing or changed']
-    if set(manifest) != {'command', 'foundation_profile', 'files', 'validation'}:
-        errors.append('trust manifest fields differ from the current contract')
+    structural = manifest_structure_errors(manifest)
+    if structural:
+        return errors + structural
     if not environment.get('source_ref'):
         errors.append('trust environment has no explicit adoption')
-    if set(environment.get('allowed_axioms', [])) != AXIOMS:
+    if not _strings(environment.get('allowed_axioms')) or set(environment['allowed_axioms']) != AXIOMS:
         errors.append('foundation axiom profile differs')
     foundation = manifest.get('foundation_profile', {})
     if foundation.get('allowed_axioms') != sorted(AXIOMS) or not {'sorryAx', 'Lean.trustCompiler', 'additional_axioms'}.issubset(foundation.get('forbidden', [])):
         errors.append('foundation profile is incomplete')
-    command = environment.get('toolchain', {}).get('configured_command')
+    toolchain = environment.get('toolchain')
+    command = toolchain.get('configured_command') if isinstance(toolchain, dict) else None
     if not command or manifest.get('command') != command:
         errors.append('manifest command differs from toolchain')
     from .payloads import FrozenDict
@@ -52,11 +79,15 @@ def manifest_errors(environment):
 
 def manifest_file_errors(files):
     errors = []
-    if not isinstance(files, list) or not ROLES.issubset({r.get('role') for r in files if isinstance(r, dict)}):
+    if not isinstance(files, list) or not ROLES.issubset({r.get('role') for r in files
+            if isinstance(r, dict) and isinstance(r.get('role'), str)}):
         errors.append('manifest lacks required source, binary, build or checker evidence')
     else:
         paths = set()
         for entry in files:
+            if not isinstance(entry, dict) or not isinstance(entry.get('role'), str):
+                errors.append('manifest file must declare a role')
+                continue
             if not isinstance(entry, dict) or not isinstance(entry.get('path'), str) or not Path(entry['path']).is_absolute():
                 errors.append('manifest file must have an absolute path')
                 continue
@@ -127,8 +158,10 @@ def _verify_environment_files(environment, *, should_stop=None, on_progress=None
     fixed = deepcopy(environment)
     errors = manifest_errors(fixed)
     started = datetime.now(timezone.utc).isoformat()
+    manifest = fixed.get('manifest')
+    files = manifest.get('files') if isinstance(manifest, dict) else None
     base = {'manifest_sha256': fixed.get('manifest_sha256'), 'started_at': started,
-            'file_count': len(fixed.get('manifest', {}).get('files', [])),
+            'file_count': len(files) if isinstance(files, list) else 0,
             'completed_files': 0, 'read_bytes': 0, 'peak_pending': 0}
     if errors:
         return {**base, 'status': 'invalid', 'errors': errors}

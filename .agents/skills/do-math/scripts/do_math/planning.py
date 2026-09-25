@@ -60,7 +60,8 @@ def condition_refs(condition) -> set[str]:
 
 
 def action_read_ids(action: dict, instance: dict, runtime: dict) -> set[str]:
-    records = {key: row for key, (_, row) in _records(instance, runtime).items()}
+    from .relation_refs import relation_references
+    records = _records(instance, runtime)
     seeds = {action.get("target"), *action_write_ids(action)} - {None}
     if action.get("role") == "operational_review":
         parent = runtime.get("executions", {}).get(action.get("target"), {})
@@ -78,7 +79,7 @@ def action_read_ids(action: dict, instance: dict, runtime: dict) -> set[str]:
         visited.add(identifier)
         if identifier not in records:
             continue
-        record = records[identifier]
+        family, record = records[identifier]
         seeds.update(ref for key in ("inputs", "reuse", "dependencies", "basis_refs", "authority_refs")
                      if isinstance(record.get(key), list) for ref in record[key] if isinstance(ref, str))
         seeds.update(ref['id'] for ref in record.get('profile_refs', []) if isinstance(ref, dict) and isinstance(ref.get('id'), str))
@@ -90,8 +91,9 @@ def action_read_ids(action: dict, instance: dict, runtime: dict) -> set[str]:
         seeds.update(condition_refs(record.get("occurrence_condition")))
         for review in record.get("reviews", []):
             seeds.update(row["id"] for row in review.get("decision_basis", {}).get("records", []))
-        claim = record.get("relation_claim") or {}
-        seeds.update(ref for key in ("source", "target") if isinstance(ref := claim.get(key), str))
+        seeds.update(relation_references(record.get('relation_claim') or {}))
+        if family == 'relation':
+            seeds.update(relation_references(record))
     return visited
 
 
@@ -439,7 +441,8 @@ def evaluate_condition(condition: dict, instance: dict, runtime: dict, *, evalua
                     structural = [reason for reason in result["reasons"] if not reason.startswith(unavailable)]
                     if structural:
                         raise ValueError("invalid relation: " + ", ".join(structural))
-                    for record_id in dict.fromkeys([relation.get("source"), relation.get("target"), *relation.get("formal_result_refs", [])]):
+                    from .relation_refs import relation_references
+                    for record_id in sorted(relation_references(relation)):
                         record = records.get(record_id)
                         if record is not None:
                             basis.append(_basis(record[1]))

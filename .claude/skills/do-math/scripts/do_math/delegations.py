@@ -10,7 +10,9 @@ def _hash(value):
 
 
 def _now(value=None):
-    result = datetime.fromisoformat(value.replace("Z", "+00:00")) if value else datetime.now(timezone.utc)
+    if value is not None and (not isinstance(value, str) or not value):
+        raise ValueError('delegation time must be a nonempty timestamp string or null')
+    result = datetime.fromisoformat(value.replace("Z", "+00:00")) if value is not None else datetime.now(timezone.utc)
     if result.tzinfo is None: raise ValueError("delegation time requires timezone")
     return result
 

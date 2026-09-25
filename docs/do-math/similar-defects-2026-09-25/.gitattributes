@@ -1,0 +1,2 @@
+# Preserve exact bytes of the hash-bound audit and reproduction evidence.
+* -text -whitespace

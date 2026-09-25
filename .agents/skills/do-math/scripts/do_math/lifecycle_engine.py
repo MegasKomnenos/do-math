@@ -832,6 +832,11 @@ class LifecycleEngineMixin:
             raise ValueError('conversation requires an ID and positive connection generation')
         current = self.runtime['conversations'].get(conversation_id)
         now = self._lifecycle_now()
+        def lease_expiry(seconds):
+            try:
+                return (now + timedelta(seconds=seconds)).isoformat()
+            except OverflowError as error:
+                raise ValueError('conversation lease exceeds the supported timestamp range') from error
         if operation == 'attach':
             policy = config.get('disconnect_policy', self.instance.get('conversation_loss_policy'))
             if policy not in {'pause', 'continue_authorized'}:
@@ -843,7 +848,7 @@ class LifecycleEngineMixin:
                 raise ValueError('conversation lease_seconds must be finite and positive')
             current = {'id': conversation_id, 'generation': generation, 'status': 'connected',
                 'lease_seconds': lease, 'disconnect_policy': policy, 'attached_at': now.isoformat(),
-                'last_heartbeat_at': now.isoformat(), 'lease_expires_at': (now + timedelta(seconds=lease)).isoformat(),
+                'last_heartbeat_at': now.isoformat(), 'lease_expires_at': lease_expiry(lease),
                 'source_ref': source_ref}
             self.runtime['conversations'][conversation_id] = current
             self.instance['conversation_loss_policy'] = policy
@@ -853,7 +858,7 @@ class LifecycleEngineMixin:
             if operation == 'heartbeat':
                 if timestamp(current['lease_expires_at']) <= now:
                     raise ValueError('expired generation must reconnect with a new generation')
-                current.update(last_heartbeat_at=now.isoformat(), lease_expires_at=(now + timedelta(seconds=current['lease_seconds'])).isoformat(), source_ref=source_ref)
+                current.update(last_heartbeat_at=now.isoformat(), lease_expires_at=lease_expiry(current['lease_seconds']), source_ref=source_ref)
             else:
                 self._lose_conversation(current, 'explicit_detach', source_ref)
         else:
@@ -1182,6 +1187,14 @@ class LifecycleEngineMixin:
         from .trust_validation import verify_environment_files
         return self._run_machine_steps(self._trust_activation_steps(action), calculator=verify_environment_files)
 
+    def _record_machine_continuation(self, action, execution_id):
+        # A save replaces the state objects while this generator is suspended.
+        # Persist the continuation on the current queue, not only its old input.
+        action['continuation_of'] = execution_id
+        for queued in self.runtime['queue']:
+            if queued.get('id') == action.get('id'):
+                queued['continuation_of'] = execution_id
+
     def _trust_activation_steps(self, action):
         transition_id = action['transition_id']
         transition = self.runtime['trust_transitions'][transition_id]
@@ -1213,7 +1226,7 @@ class LifecycleEngineMixin:
             from .activities import wait_for
             wait_for(self.runtime, execution['owner_activity_id'], reason='environment_interrupted',
                      condition={'transition_id':transition_id}, next_owner='engine', at=self._lifecycle_now().isoformat())
-            action['continuation_of'] = execution_id
+            self._record_machine_continuation(action, execution_id)
             self._save({f'runtime/artifacts/{execution_id}/environment.json':canonical_json(verification)})
             return False
         self._action_lifecycle_gate(action)
@@ -1409,10 +1422,7 @@ class LifecycleEngineMixin:
             self.runtime['active_execution'] = None
         if result['status'] == 'stopped' or stop_requested:
             result.update(status='stopped', reason=result.get('reason') or 'trust verification stopped')
-            action['continuation_of'] = execution_id
-            for queued in self.runtime['queue']:
-                if queued.get('id') == action.get('id'):
-                    queued.update(deepcopy(action))
+            self._record_machine_continuation(action, execution_id)
             from .activities import wait_for
             wait_for(self.runtime, execution['owner_activity_id'], reason='trust_check_stopped',
                      condition={'transition_id': transition_id, 'target': knowledge_id, 'resume': True},
