@@ -589,10 +589,21 @@ def task_ready(task: dict, instance: dict, runtime: dict, *, include_scheduling_
             continue
         if any(review.get("task_basis", {}).get("profiles", {}).get(ref['id']) == _hash(profile) for review in approved):
             profiles.append(ref['id'])
-    selected = action.get("execution_profile_ref") or action.get("profile_ref")
+    selected = action.get("profile_ref")
     if not profiles or (selected and (not isinstance(selected,dict) or selected.get("id") not in profiles or
                                      selected != profile_ref(instance['execution_profiles'][selected['id']]))):
         return {"state": "not_ready", "basis": [], "errors": ["no current approved execution profile"]}
+    from .model_policy import work_profile_selection
+    try:
+        selected_work = work_profile_selection(instance['config'], task,
+            instance['execution_profiles'], action=action)
+        if selected_work['profile_ref']['id'] not in profiles:
+            raise ValueError('required work profile is outside the current contract approval')
+    except (ValueError, KeyError) as error:
+        return {'state': 'not_ready', 'basis': [],
+                'errors': ['work profile requirement: ' + str(error)],
+                'waits': [{'kind': 'contract_revision', 'target_refs': [task['id']],
+                           'next_owner': 'research_preparation'}]}
     if task.get("work_class") == "formal":
         trust = instance.get("trust_environments", {}).get(task.get("trust_environment_id"))
         if not trust or trust.get("status") != "active" or instance.get('active_trust_environment') != task.get('trust_environment_id'):

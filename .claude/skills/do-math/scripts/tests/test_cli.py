@@ -30,6 +30,25 @@ def response_body(response):
 
 
 class CliTests(unittest.TestCase):
+    def test_original_request_is_preserved_separately_from_the_mathematical_goal(self):
+        from do_math.engine import _repository
+        original='증명: n+0=n. 모델은 gpt-6-sol까지. 새 인스턴스.\n'
+        path=self.root/'original.txt';path.write_bytes(original.encode('utf-8'))
+        response=self.run_cli('init','--repository',str(self.repository),'--workspace',str(self.root/'second'),
+            '--goal','n+0=n','--request-text-file',str(path),'--config-file',str(self.operator_disabled))
+        self.assertEqual(response.returncode,0,response.stdout)
+        _,instance,runtime=_repository(self.repository,response_body(response)['instance_id']).load()
+        self.assertEqual(instance['lifecycle']['immutable_input']['text'],original)
+        self.assertEqual(runtime['inputs'][0]['config']['goal'],'n+0=n')
+        self.assertEqual(instance['lifecycle']['immutable_input']['sha256'],hashlib.sha256(original.encode()).hexdigest())
+
+    def test_profile_selection_respects_the_role_floor_without_model_execution(self):
+        response=self.run_cli('select-profile',*self.instance_args(),'--role','intent_interpretation')
+        self.assertEqual(response.returncode,0,response.stdout)
+        result=response_body(response)
+        self.assertEqual(result['selection']['tier'],'high')
+        self.assertEqual(result['profile']['id'],result['selection']['profile_ref']['id'])
+
     def test_audit2_retry_replays_first_receipt_after_later_state(self):
         from do_math.engine import control
         args=['pause',*self.instance_args(),'--reason','audit2 pause']

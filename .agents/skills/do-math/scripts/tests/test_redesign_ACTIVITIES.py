@@ -291,7 +291,7 @@ class ProviderAndParallelTests(unittest.TestCase):
         self.assertTrue(engine._provider_admit({"id": "AC-independent"}, other["id"],
             other_profile["budget_kind"], model, profile=other_profile, execution=other))
         slots = engine._provider_slots()
-        slots.started("EX-git", {"job_name": "local-test-job"})
+        slots.started("EX-git", {"job_name": execution['launch_ticket']['job_name']})
         transition_execution(execution, "running", at=TIME)
         with patch("do_math.windows_job.named_job_empty", return_value=False):
             self.assertFalse(engine._settle_recovered_execution("EX-git", at=TIME, outcome="cancelled"))
@@ -433,7 +433,7 @@ class AuditRecoveryTests(unittest.TestCase):
         transition_execution(self.execution, "starting", at=TIME)
         self.assertTrue(slots.acquire("EX-audit", self.profile["budget_kind"], self.profile["ai"]["model"],
                                      profile=self.profile, execution=self.execution))
-        slots.started("EX-audit", {"job_name": "audit-job"})
+        slots.started("EX-audit", {"job_name": self.execution['launch_ticket']['job_name']})
         transition_execution(self.execution, "running", at=TIME)
         self.reload()
         engine = ProviderEngineMixin()

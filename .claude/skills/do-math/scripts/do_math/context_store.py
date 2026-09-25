@@ -556,10 +556,18 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
             row['result_count'] = len(task.get('results', []))
             row['result_execution_ids'] = [item.get('execution_id') for item in task.get('results', [])]
             compared.append(row)
+        selected_ids={ref['id'] for refs in instance.get('role_profile_refs',{}).values() for ref in refs}
+        selected_ids.update(ref['id'] for row in compared for ref in row.get('profile_refs',[]))
+        editions=[p for identifier,p in sorted(instance.get('execution_profiles',{}).items()) if identifier in selected_ids]
+        selection_profiles_ref=preserve_detail('selection-profiles',editions)
         value['profile_selection'] = {
             'default_policy': {key: deepcopy(instance['config'][key]) for key in
                 ('role_tiers', 'tier_models', 'effort') if key in instance['config']},
-            'allowed_profiles': [deepcopy(p) for _, p in sorted(instance.get('execution_profiles', {}).items())],
+            'allowed_profiles': [{**{key:p[key] for key in ('id','revision','sha256','role','actor_kind','budget_kind')},
+                **({'ai':{key:p['ai'][key] for key in ('model','tier','effort')}} if p['actor_kind']=='ai' else {})}
+                for p in editions],
+            'profiles_ref':selection_profiles_ref,
+            'instruction':'Select the required tier and role; read the exact profile in profiles_ref before binding its tools or observation rules.',
             'capacity_constraints': deepcopy(instance.get('capacity_constraints', {})),
             'task_profile_constraints': {row['id']: deepcopy(row.get('profile_refs', [])) for row in compared}}
         population = value['ready_task_ids'] if role == 'research_plan' else [row['id'] for row in compared]

@@ -36,7 +36,7 @@
 
 ### 1. 요청과 설정 확정
 
-목표 원문과 사용자 제약을 보존하고, 생성에 필요한 경로·모델·설정을 확정한다. 기존에 승인된 결정은 재사용한다. 사용자만 정할 중요한 결정이 빠져 있으면 해당 항목을 질문하며, 이후 채택 단계에서 확정할 항목과 구별한다.
+사용자의 목표와 제약을 포함한 전체 원문을 보존하고, 생성에 필요한 경로·모델·설정을 확정한다. 수학 목표와 전체 요청이 다르면 `--goal` 또는 `--goal-file`에 수학 목표를, `--request-text` 또는 `--request-text-file`에 전체 원문을 전달한다. 기존에 승인된 결정은 재사용한다. 사용자만 정할 중요한 결정이 빠져 있으면 해당 항목을 질문하며, 이후 채택 단계에서 확정할 항목과 구별한다.
 
 새 인스턴스는 아래의 기본 운영 구성을 사용한다. 사용자 제약과 실제 실행 환경 때문에 필요한 항목을 변경하고 이유를 기록한다. 모델 상한은 사용할 모든 등급의 작업·운영 모델과 예산 설정에 반영하며, 설치 복구 AI의 모델도 포함한다. 예약 감독과 문헌 조사 도구인 scholarly의 설정 변경은 별도로 판단한다. 문제의 난이도만으로 수동 운영을 선택하지 않는다.
 
@@ -69,12 +69,12 @@ python .agents/skills/do-math/scripts/setup_lean.py
 
 준비 표지가 있으면 `lean_command`를 생략한 인스턴스는 이 프로젝트를 거쳐 Lean을 실행하므로 제출 소스에서 Mathlib을 import할 수 있다. 설정에 명시한 `lean_command`는 언제나 이 탐색보다 우선한다. 준비 전과 후에는 탐색되는 명령이 다르므로 검사 결과에 기록되는 toolchain도 달라진다.
 
-사전 빌드 캐시를 사용할 수 있으며 클린 빌드는 요구하지 않는다. 준비 완료 출력에는 등록에 사용할 완전한 `toolchain`과 실제 환경 검사의 `validation` 참조가 들어간다. 검사 원문·명령·출력·종료 코드·검사 전후 도구 정보는 `.skill-workspace/do-math-toolchains/validation/`의 고유 디렉터리에 보존한다. `validation.status=verified`는 Mathlib import와 대표 증명 검사의 통과를 뜻하며 전체 라이브러리 재검증을 뜻하지 않는다. 이미 설치된 환경은 `setup_lean.py --inspect-only`로 도구 정보만 관측할 수 있으며, 별도 명령은 `--command-file`로 지정한다. 이 관측은 실행 파일과 프로젝트의 식별이며 환경 검사나 채택은 아니다. 실제 등록과 증거의 결합은 [초기화 운전](references/초기화-운전.md)을 따른다.
+사전 빌드 캐시를 사용할 수 있으며 클린 빌드는 요구하지 않는다. 준비 완료 출력에는 등록에 사용할 `toolchain`, 실제 환경 검사의 `validation` 원문과 `evidence_path`가 들어간다. `--trust-file <새 JSON 경로>`를 함께 지정하면 전체 설치 목록과 봉인된 검증 기록을 포함한 등록 요청을 생성한다. 검사 원문·명령·출력·종료 코드·검사 전후 도구 정보는 `.skill-workspace/do-math-toolchains/validation/`의 고유 디렉터리에 보존한다. `validation.status=verified`는 Mathlib import와 대표 증명 검사의 통과를 뜻하며 전체 라이브러리 재검증을 뜻하지 않는다. 이미 설치된 환경은 `setup_lean.py --inspect-only`로 도구 정보만 관측할 수 있으며, 별도 명령은 `--command-file`로 지정한다. 이 관측은 실행 파일과 프로젝트의 식별이며 환경 검사나 채택은 아니다. 실제 등록과 증거의 결합은 [초기화 운전](references/초기화-운전.md)을 따른다.
 
 이미 설치한 환경은 다음 명령으로 다운로드 없이 검사하고 등록용 검증 참조를 얻는다. `--evidence-dir`는 선택 사항이며 증거를 둘 상위 경로를 바꾼다. 환경의 소스·빌드 디렉터리 밖을 사용한다.
 
 ```powershell
-python .agents/skills/do-math/scripts/setup_lean.py --verify-only
+python .agents/skills/do-math/scripts/setup_lean.py --verify-only --trust-file .skill-workspace/my-math/trust-register.json
 ```
 
 명시적인 명령은 `--command-file`로 지정할 수 있다. 이 검사는 신뢰 환경 등록·사용자 채택을 자동 수행하지 않는다. 실제 파일·판본·검증 증거의 결합은 [초기화 운전](references/초기화-운전.md)을 따른다.
@@ -146,7 +146,7 @@ python .agents/skills/do-math/scripts/do_math.py init `
 
 ### 3. 초기화 완료
 
-`init`은 입력 문자열의 코드 포인트열과 그 UTF-8 바이트 해시·크기를 `immutable_input.text/sha256/bytes`에 한 번만 보존하고 설정·초기 source를 고정한다. 이름과 원문을 정규화하거나 별도 원문 사본으로 바꾸지 않는다. 첫 commit에는 실행 grant나 연구 queue가 없다. 이후 [초기화 운전](references/초기화-운전.md)의 공개 명령과 요청 예시를 순서대로 따른다. 그 문서는 통치·권한 채택, 실제 프로필 참조 조회, 능력 증거, 신뢰 환경과 최초 의도 해석·검사·적용을 설명한다. 이미 채택한 기본값은 같은 승인 근거를 재사용한다.
+`init`은 입력 문자열의 코드 포인트열과 그 UTF-8 바이트 해시·크기를 `immutable_input.text/sha256/bytes`에 한 번만 보존하고 설정·초기 source를 고정한다. 이름과 원문을 정규화하거나 별도 원문 사본으로 바꾸지 않는다. 첫 commit에는 실행 grant나 연구 queue가 없다. 이후 [초기화 운전](references/초기화-운전.md)의 공개 명령과 요청 예시를 순서대로 따른다. 그 문서는 통치·권한 채택, 실제 프로필 참조 조회, 능력 증거, 신뢰 환경과 최초 의도 해석·검사·적용을 설명한다. 이미 채택한 기본값은 같은 승인 근거를 재사용한다. 초기화 실행에는 `run --until-active`를 사용한다. 이 명령은 활성화 관문이 충족되면 연구 역할을 배정하기 전에 반환하며, 남은 관문이 있으면 그 상태를 보고한다.
 
 초기화의 독립 검사와 실제 적용, 현재 능력·신뢰·용량·복구 관문이 모두 충족된 경우에만 연구가 활성화된다. 초기화 운전의 마지막 절에 따라 현재 인스턴스의 승인 원문, 독립 검사와 수입 적용 기록을 확인한다. 미완료 관문을 내부 함수 호출이나 저장 파일 편집으로 우회하지 않는다.
 
@@ -236,6 +236,7 @@ JSON status에서 먼저 볼 필드는 다음과 같다.
 | 필드 | 운영에서 읽는 뜻 |
 |---|---|
 | `snapshot` | 이번 상태가 고정된 Git commit OID |
+| `operating_summary` | lifecycle·실행 상태·최상위 대기 원인·다음 소유자·지속 정책·grant 만료·감독 설정. 호스트 관측은 별도다 |
 | `status` | 실행 루프의 현재 CLI 상태 |
 | `goal_status` | 현재 목표 감사 근거에 대한 CLI 목표 상태 |
 | `pending_actions` | 실행기가 아직 처리하지 않은 action 수 |

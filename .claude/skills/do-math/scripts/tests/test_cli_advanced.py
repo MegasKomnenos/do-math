@@ -156,7 +156,7 @@ class AdvancedCliTests(unittest.TestCase):
         engine = Mock(); engine.run.return_value = {"status": "waiting"}
         with patch.object(cli_module, "ResearchEngine", return_value=engine):
             value, code = cli_module.execute(args)
-        self.assertEqual(code, 0); self.assertEqual(value["status"], "waiting"); engine.run.assert_called_once_with(max_steps=None, watch=True)
+            self.assertEqual(code, 0); self.assertEqual(value["status"], "waiting"); engine.run.assert_called_once_with(max_steps=None, watch=True, until_active=False)
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

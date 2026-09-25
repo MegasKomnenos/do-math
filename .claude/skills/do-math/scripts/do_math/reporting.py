@@ -99,6 +99,46 @@ def task_status(instance, runtime):
     return rows
 
 
+def operating_summary(instance, runtime):
+    """One persisted-state handoff view; scheduler/process observations stay separate."""
+    from .repair_execution import pending_installation_repair
+    lifecycle=instance.get('lifecycle',{})
+    repair=pending_installation_repair(runtime)
+    if runtime.get('user_pause'):
+        blocker={'kind':'user_pause','next_owner':'user','reason':runtime['user_pause'].get('reason')}
+    elif runtime.get('maintenance_fence'):
+        blocker={'kind':'maintenance_fence','next_owner':'operator','reason':runtime['maintenance_fence'].get('state')}
+    elif runtime.get('model_policy_violation'):
+        blocker={'kind':'model_policy','next_owner':'user'}
+    elif runtime.get('status')=='paused':
+        blocker={'kind':'paused','next_owner':'operator','reason':runtime.get('stop_requested'),
+                 'questions':deepcopy(runtime.get('questions',[]))}
+    elif repair:
+        blocker={'kind':'installation_repair','next_owner':'installation_recovery',
+                 'record_id':repair['id'],'reason':repair['disposition']['reason']}
+    elif lifecycle.get('state')=='initializing':
+        blocker={'kind':'initialization','next_owner':'operator',
+                 'missing':deepcopy(lifecycle.get('activation',{}).get('missing',[]))}
+    elif runtime.get('status') in {'waiting','capacity_waiting'}:
+        waits=runtime.get('waiting_actions',{})
+        blocker={'kind':runtime['status'],'next_owner':None,
+                 'owners':sorted({row.get('next_owner','engine') for row in waits.values()})}
+    else:
+        blocker=None
+    config=instance.get('config',{})
+    return {'scope':'persisted_state_not_host_process_observation','lifecycle':lifecycle.get('state'),
+        'initialization':deepcopy(lifecycle.get('activation',{})),
+        'execution_status':runtime.get('status'),'goal_status':instance.get('goal_status'),
+        'primary_blocker':blocker,'workspace':instance.get('workspace'),
+        'conversation_loss_policy':instance.get('conversation_loss_policy'),
+        'active_execution_ids':sorted(e['id'] for e in runtime.get('executions',{}).values() if e['status']!='ended'),
+        'supervision':{'configured_enabled':config.get('operator_enabled'),
+                       'interval_seconds':config.get('operator_interval_seconds'),
+                       'actual_schedule':'operator status'},
+        'grants':[{'id':g['id'],'status':g.get('status'),'expires_at':g.get('expires_at')}
+                  for g in instance.get('grants',{}).values()]}
+
+
 def snapshot_report(repository: Path, instance_id: str, *, snapshot: str | None = None,
                     host_observation: dict | None = None, requested_areas=None) -> dict:
     """Build the JSON status projection from exactly one persisted snapshot.
@@ -118,6 +158,7 @@ def snapshot_report(repository: Path, instance_id: str, *, snapshot: str | None 
     from .retention import pending_cleanup_failures
     from .repair_execution import pending_installation_repair
     return {"instance_id": instance_id, "snapshot": head, "goal": goal, "goal_status": instance.get("goal_status"), "status": runtime.get('status'),
+            'operating_summary':operating_summary(instance,runtime),
             "pending_actions": len(runtime.get('queue', [])),
             "installation_repair": pending_installation_repair(runtime),
             "maintenance_fence": deepcopy(runtime.get('maintenance_fence')),
@@ -134,6 +175,9 @@ def render_human_report(report: dict) -> str:
     lines = [f"snapshot: {report['snapshot']}", f"goal: {report.get('goal') or 'unknown'}",
              f"goal_status: {report.get('goal_status') or 'unknown'}",
              f"inspection: {inspection['status']} ({inspection['checked_scope']})"]
+    blocker=report.get('operating_summary',{}).get('primary_blocker')
+    if blocker:
+        lines.append('blocking: '+str(blocker['kind'])+' next='+str(blocker.get('next_owner')))
     for finding in inspection["findings"]:
         lines.append(f"  {finding['area']}: {finding['status']} — {finding['message']} (next: {finding['next_owner']})")
     for task in report["tasks"]:

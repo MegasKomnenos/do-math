@@ -14,6 +14,7 @@ from jsonschema import Draft202012Validator
 
 from .context_store import _excluded, _safe_path
 from .repository import validate_storage_value, _unique_pairs, _reject_constant
+from .file_io import atomic_replace, read_bytes_shared
 
 CHECKPOINT_MAX_BYTES = 4 * 1024 * 1024
 RULES_MAX_BYTES = 65536
@@ -440,7 +441,7 @@ def read_checkpoint(workspace: Path) -> dict:
         before = path.stat()
         if before.st_size > CHECKPOINT_MAX_BYTES:
             raise ValueError("checkpoint exceeds the 4 MiB record limit")
-        raw = path.read_bytes()
+        raw = read_bytes_shared(path)
         after = path.stat()
         if (before.st_size, before.st_mtime_ns) != (after.st_size, after.st_mtime_ns):
             return {"status": "being_written"}
@@ -825,7 +826,7 @@ class ObservationTracker:
         try:
             if path.is_symlink() or not path.resolve().is_relative_to(self.workspace.resolve()):
                 raise ValueError("observation rules must stay in workspace")
-            raw = path.read_bytes()
+            raw = read_bytes_shared(path)
             digest = hashlib.sha256(raw).hexdigest()
             if digest == self.rule_proposal_digest: return []
             self.rule_proposal_digest = digest
@@ -1167,7 +1168,7 @@ def publish_worker_feedback(workspace: Path, feedback: dict) -> None:
     destination = _safe_path(control, "observation-feedback.json")
     temporary = _safe_path(control, "observation-feedback.json.tmp")
     temporary.write_text(encoded, encoding="utf-8")
-    temporary.replace(destination)
+    atomic_replace(temporary,destination)
 
 
 def write_checkpoint_reminder(workspace: Path) -> bool:
@@ -1180,7 +1181,7 @@ def write_checkpoint_reminder(workspace: Path) -> bool:
                           "이 알림은 실행기가 기계적으로 보낸 것이며 진전이나 실패의 판정이 아니다."}
     temporary = destination.with_suffix(".tmp")
     temporary.write_text(json.dumps(reminder, ensure_ascii=False), encoding="utf-8")
-    temporary.replace(destination)
+    atomic_replace(temporary,destination)
     return True
 
 
@@ -1190,7 +1191,7 @@ def request_checkpoint(workspace: Path, reason: str, *, immediate: bool, deadlin
     destination = _control_root(workspace) / "stop-request.json"
     temporary = destination.with_suffix(".tmp")
     temporary.write_text(json.dumps(request, ensure_ascii=False), encoding="utf-8")
-    temporary.replace(destination)
+    atomic_replace(temporary,destination)
     return request
 
 

@@ -57,11 +57,12 @@ def theorem():
 
 
 def formal_fixture(*, source, declarations, workspace, lean_command,
-                   allowed_axioms=(), should_stop=None, expected_toolchain=None, on_started=None):
+                   allowed_axioms=(), should_stop=None, expected_toolchain=None, on_started=None, launch_ticket=None):
     if source != SOURCE or declarations != ['add_zero_fixture']:
         raise AssertionError('The explicit formal test fixture only covers SOURCE/add_zero_fixture')
     result = formal_ok(source=source, declarations=declarations, workspace=workspace,
-        lean_command=lean_command,  allowed_axioms=allowed_axioms, expected_toolchain=expected_toolchain)
+        lean_command=lean_command, allowed_axioms=allowed_axioms, expected_toolchain=expected_toolchain,
+        launch_ticket=launch_ticket)
     result['dependency_closure'] = {'add_zero_fixture': ['Nat', 'Nat.add_zero']}
     result['dependency_evidence'] = {'add_zero_fixture': {'Nat': 'fixture-Nat', 'Nat.add_zero': 'fixture-Nat.add_zero'}}
     result['declaration_evidence'] = {'add_zero_fixture': {'type': '(n : Nat) -> n + 0 = n', 'value': 'Nat.add_zero'}}

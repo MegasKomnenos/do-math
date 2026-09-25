@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import re
 import threading
+import stat
 
 from .operation_trace import phase
 
@@ -24,7 +25,7 @@ def manifest_structure_errors(manifest):
     if not isinstance(manifest, dict):
         return ['trust manifest must be an object']
     errors = []
-    if set(manifest) != {'command', 'foundation_profile', 'files', 'validation'}:
+    if set(manifest) != {'command', 'foundation_profile', 'scope', 'files', 'validation'}:
         errors.append('trust manifest fields differ from the current contract')
     if not _strings(manifest.get('command')) or not manifest.get('command'):
         errors.append('trust manifest command must be a nonempty argv')
@@ -33,10 +34,11 @@ def manifest_structure_errors(manifest):
     foundation = manifest.get('foundation_profile')
     if not isinstance(foundation, dict) or any(not _strings(foundation.get(key)) for key in ('allowed_axioms', 'forbidden')):
         errors.append('foundation profile must declare string lists of allowed and forbidden axioms')
+    from .trust_inventory import scope_errors
+    errors.extend(scope_errors(manifest.get('scope')))
     validation = manifest.get('validation')
-    if (not isinstance(validation, dict) or not isinstance(validation.get('status'), str)
-            or not _strings(validation.get('evidence_refs'))):
-        errors.append('trust validation requires a status and evidence reference list')
+    if not isinstance(validation, dict) or set(validation) != {'record', 'sha256'}:
+        errors.append('trust validation requires a sealed self-contained record')
     return errors
 
 
@@ -71,21 +73,28 @@ def manifest_errors(environment):
         errors.extend(file_errors)
         if isinstance(manifest, FrozenDict):
             manifest._files_contract_errors = tuple(file_errors)
-    validation = manifest.get('validation', {})
-    if validation.get('status') != 'verified' or not validation.get('evidence_refs'):
-        errors.append('trust validation evidence absent')
+    if not errors:
+        from .trust_inventory import binding_errors, validation_errors
+        identity = exact_content_hash(toolchain)
+        cached = getattr(manifest, '_inventory_contract', None)
+        if cached is None or cached[0] != identity:
+            inventory_digest=exact_content_hash({'scope':manifest['scope'],'files':manifest['files']})
+            checks = binding_errors(environment) + validation_errors(manifest['validation'], toolchain, inventory_digest)
+            cached = (identity, tuple(checks))
+            if isinstance(manifest, FrozenDict):
+                manifest._inventory_contract = cached
+        errors.extend(cached[1])
     return errors
 
 
 def manifest_file_errors(files):
     errors = []
-    if not isinstance(files, list) or not ROLES.issubset({r.get('role') for r in files
-            if isinstance(r, dict) and isinstance(r.get('role'), str)}):
-        errors.append('manifest lacks required source, binary, build or checker evidence')
+    if not isinstance(files, list) or not files:
+        errors.append('manifest needs a nonempty complete file inventory')
     else:
         paths = set()
         for entry in files:
-            if not isinstance(entry, dict) or not isinstance(entry.get('role'), str):
+            if not isinstance(entry, dict) or entry.get('role') not in ROLES:
                 errors.append('manifest file must declare a role')
                 continue
             if not isinstance(entry, dict) or not isinstance(entry.get('path'), str) or not Path(entry['path']).is_absolute():
@@ -107,7 +116,7 @@ def _observe_file(entry, cancelled, account_bytes):
     try:
         resolved = str(path.resolve(strict=True)).casefold()
         before = path.stat()
-        if path.is_symlink():
+        if path.is_symlink() or not stat.S_ISREG(before.st_mode):
             return resolved, ['trust file changed: ' + str(path)], read
         digest = hashlib.sha256()
         with path.open('rb') as stream:
@@ -165,6 +174,19 @@ def _verify_environment_files(environment, *, should_stop=None, on_progress=None
             'completed_files': 0, 'read_bytes': 0, 'peak_pending': 0}
     if errors:
         return {**base, 'status': 'invalid', 'errors': errors}
+    from .trust_inventory import inventory, _key
+    try:
+        observed_members = inventory(fixed['manifest']['scope'], should_stop=should_stop)
+        declared = {_key(row['path']):{'path':row['path'], 'role':row['role']} for row in files}
+        if observed_members != declared:
+            missing = sorted(set(observed_members) - set(declared))
+            extra = sorted(set(declared) - set(observed_members))
+            return {**base, 'status':'invalid', 'errors':['inventory membership differs'],
+                    'missing_files':missing, 'extra_files':extra}
+    except InterruptedError:
+        return {**base,'status':'cancelled','errors':['inventory observation cancelled']}
+    except (OSError,ValueError) as error:
+        return {**base,'status':'invalid','errors':[str(error)]}
     files = fixed['manifest']['files']
     cancelled = threading.Event()
     read_bytes = 0
@@ -207,6 +229,15 @@ def _verify_environment_files(environment, *, should_stop=None, on_progress=None
                 paths.add(resolved)
             errors.extend(findings)
         stopped = cancelled.is_set() or base['completed_files'] != len(files) or any('cancelled' in e for e in errors)
+        if not stopped:
+            try:
+                if inventory(fixed['manifest']['scope'], should_stop=should_stop) != observed_members:
+                    errors.append('inventory membership changed during observation')
+            except InterruptedError:
+                stopped = True
+                errors.append('inventory observation cancelled')
+            except (OSError,ValueError) as error:
+                errors.append(str(error))
         metrics.update({k:base[k] for k in ('completed_files','read_bytes','peak_pending')})
         return {**base, 'finished_at': datetime.now(timezone.utc).isoformat(),
                 'status': 'cancelled' if stopped else 'invalid' if errors else 'verified', 'errors': errors}

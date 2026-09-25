@@ -19,6 +19,10 @@ import sys
 import tempfile
 import time
 from typing import Any, Callable
+if __package__:
+    from .file_io import atomic_replace, read_bytes_shared
+else:
+    from file_io import atomic_replace, read_bytes_shared
 
 
 _REQUEST_KINDS = frozenset({"safety_boundary", "submit_intent", "self_check_response", "submission_preview"})
@@ -62,7 +66,7 @@ def _atomic_json(path: Path, value: Any) -> None:
                                      prefix=path.name + ".", suffix=".tmp") as handle:
         handle.write(_canonical(value))
         temporary = Path(handle.name)
-    os.replace(temporary, path)
+    atomic_replace(temporary, path)
 
 
 def _create_json_once(path: Path, value: Any) -> bool:
@@ -89,7 +93,7 @@ def _create_json_once(path: Path, value: Any) -> bool:
 
 def _json(path: Path) -> dict | None:
     try:
-        raw = path.read_bytes()
+        raw = read_bytes_shared(path)
     except FileNotFoundError:
         return None
     return _decode_json(path, raw)

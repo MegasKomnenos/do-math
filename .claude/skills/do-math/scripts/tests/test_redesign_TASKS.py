@@ -11,10 +11,13 @@ from copy import deepcopy
 
 
 def approved_fixture():
+    from do_math.engine import DEFAULT_CONFIG
+    config={**deepcopy(DEFAULT_CONFIG), 'tier_models':{tier:'fixture-model' for tier in ('low','medium','high')},
+            'session_limits':{pool:{'fixture-model':3} for pool in ('work','operations')}}
     from do_math.execution_profiles import seal_profile, profile_ref, BOUNDARY
     from do_math.observations import observation_rule_contract
     profile = seal_profile({'role':'research_work','actor_kind':'ai','budget_kind':'work',
-        'ai':{'model':'fixture-model'},'boundary':BOUNDARY,
+        'ai':{'model':'fixture-model','tier':'high','effort':'high'},'boundary':BOUNDARY,
         'observation':{'mode':'event_driven','rule_bindings':observation_rule_contract()}})
     value = task()
     value.update(work_class='nonformal', basis_refs=['SO-1'], profile_refs=[profile_ref(profile)],
@@ -22,7 +25,7 @@ def approved_fixture():
     from test_redesign_GOVERNANCE import DomainGovernanceTests
     instance = {**DomainGovernanceTests().initial(), 'id':'IN-1',
         'sources':[{'id':'SO-1','name':'source','path':'source.txt','sha256':'a'*64}],
-        'execution_profiles':{profile['id']:profile},
+        'execution_profiles':{profile['id']:profile}, 'config':config,
         'grants':{'GR-1':{'id':'GR-1','kind':'local','status':'active','actor':'ai','roles':['research_work'],
                         'task_ids':[value['id']],'reuse':'reusable','valid_from':None,'expires_at':None}}}
     runtime = {'status':'active','tasks':{value['id']:value},'queue':[], 'executions':{},'history':[],'question_links':[]}
@@ -229,7 +232,8 @@ class AuditPersistenceTests(unittest.TestCase):
         from do_math.execution_profiles import profile_ref
         from research_fixtures import candidate
         wire = candidate()
-        profile = next(p for p in self.instance['execution_profiles'].values() if p['role']=='research_work')
+        profile = next(p for p in self.instance['execution_profiles'].values()
+                       if p['role']=='research_work' and p['ai']['tier']=='high')
         wire['profile_refs'] = [profile_ref(profile)]
         wire['authority_refs'] = ['GR-audit']
         task = task_candidate_record(wire, task_id=identifier)
@@ -267,7 +271,7 @@ class AuditPersistenceTests(unittest.TestCase):
         self.assertEqual(saved['reviews'][0]['goal_revision'], governance.governance_view(instance)['goal_revision'])
         self.assertEqual(saved['reviews'][0]['policy_revision'], governance.governance_view(instance)['policy_revision'])
         selected = resolve_profile(instance['execution_profiles'], saved['profile_refs'][0])
-        action = {'id':'AC-dispatch','role':'research_work','target':saved['id'], 'execution_profile_ref':profile_ref(selected)}
+        action = {'id':'AC-dispatch','role':'research_work','target':saved['id'], 'profile_ref':profile_ref(selected)}
         self.assertEqual(select_profile(instance['execution_profiles'], action, selected['ai'], saved['profile_refs'])['id'], selected['id'])
         self.assertEqual(planning.task_ready(saved, instance, runtime, action=action, include_scheduling_waits=False)['state'], 'ready')
         bad = deepcopy(runtime)
@@ -347,7 +351,8 @@ class AuditPersistenceTests(unittest.TestCase):
         engine.instance, engine.runtime, engine.store = self.instance, self.runtime, self.store
         engine.head = self.store.initialize(engine.instance, engine.runtime)
         wire = candidate()
-        profile = next(p for p in self.instance['execution_profiles'].values() if p['role']=='research_work')
+        profile = next(p for p in self.instance['execution_profiles'].values()
+                       if p['role']=='research_work' and p['ai']['tier']=='high')
         wire['profile_refs'] = [profile_ref(profile)]
         wire['authority_refs'] = ['GR-audit']
         Draft202012Validator(TASK_CANDIDATE).validate(wire)
@@ -510,9 +515,9 @@ class FollowupRegressions(unittest.TestCase):
         from do_math.execution_profiles import profile_ref
         t,i,r=approved_fixture();t.update(work_class='formal',trust_environment_id='TE-1')
         i.update(active_trust_environment='TE-1',trust_environments={'TE-1':{'id':'TE-1','status':'active'}});approve(t,i,r)
-        action={'id':'AC-work','role':'research_work','target':t['id'],'execution_profile_ref':profile_ref(next(iter(i['execution_profiles'].values())))}
+        action={'id':'AC-work','role':'research_work','target':t['id'],'profile_ref':profile_ref(next(iter(i['execution_profiles'].values())))}
         self.assertEqual(planning.task_ready(t,i,r,action=action)['state'],'ready')
-        action['execution_profile_ref']['revision']+=1
+        action['profile_ref']['revision']+=1
         self.assertEqual(planning.task_ready(t,i,r,action=action)['state'],'not_ready')
         i['active_trust_environment']='TE-2'
         self.assertEqual(planning.task_ready(t,i,r)['state'],'not_ready')

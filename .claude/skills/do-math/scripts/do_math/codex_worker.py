@@ -14,9 +14,11 @@ from typing import Any, Mapping
 try:  # This module is also the direct ``python codex_worker.py`` Job root.
     from do_math.scholarly import validate_scholarly_server
     from do_math.control_transport import ControlTransport
+    from do_math.file_io import atomic_replace
 except ModuleNotFoundError:  # pragma: no cover - exercised by the direct-script regression.
     from scholarly import validate_scholarly_server
     from control_transport import ControlTransport
+    from file_io import atomic_replace
 
 
 _REMOVED_ENV = frozenset({
@@ -161,7 +163,7 @@ def _write_status(path: Path, value: Mapping[str, Any]) -> None:
                                      prefix=path.name + ".", suffix=".tmp") as handle:
         json.dump(value, handle, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
         temporary = Path(handle.name)
-    os.replace(temporary, path)
+    atomic_replace(temporary, path)
 
 
 def run(request_path: Path) -> int:

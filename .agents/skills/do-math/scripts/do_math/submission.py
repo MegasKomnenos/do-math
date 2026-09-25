@@ -18,6 +18,7 @@ import sys
 import zipfile
 
 import jsonschema
+from .file_io import atomic_replace
 
 from . import knowledge_io, planning, review_cycle
 from .context_store import collect_outputs, materialize_inputs, read_source, _safe_path, _excluded, _read_stable, _is_reparse, _relative
@@ -1369,7 +1370,7 @@ def producer_check(workspace, draft):
             _validated_check(_read_stable(_safe_path(workspace, "checks/" + result["id"] + ".json")), result["id"])
             pending = _safe_path(workspace, "checks/.producer-head.pending")
             pending.write_bytes(canonical_json({"check_id": result["id"]}))
-            os.replace(pending, head)
+            atomic_replace(pending, head)
             return result
     finally:
         lock.unlink()

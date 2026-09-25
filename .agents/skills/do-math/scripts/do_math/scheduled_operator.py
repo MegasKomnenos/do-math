@@ -77,6 +77,7 @@ def collect_repair_verification(output, workspace):
 
 
 def _json(path: Path, value: dict[str, Any]) -> None:
+    from .file_io import write_bytes_atomic
     def evidence_default(item):
         if isinstance(item, bytes):
             import base64
@@ -85,17 +86,15 @@ def _json(path: Path, value: dict[str, Any]) -> None:
         if isinstance(item, Path):
             return str(item)
         raise TypeError("unsupported supervisor evidence: " + type(item).__name__)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(path.suffix + ".tmp")
-    temporary.write_text(json.dumps(value, default=evidence_default, allow_nan=False,
-                                    ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    temporary.replace(path)
+    write_bytes_atomic(path,(json.dumps(value,default=evidence_default,allow_nan=False,
+                                        ensure_ascii=False,indent=2)+'\n').encode('utf-8'))
 
 
 def _load_json(path: Path) -> dict[str, Any] | None:
+    from .file_io import read_bytes_shared
     if not path.is_file():
         return None
-    value = json.loads(path.read_text(encoding="utf-8"))
+    value = json.loads(read_bytes_shared(path).decode('utf-8'))
     return value if isinstance(value, dict) else None
 
 
@@ -218,6 +217,18 @@ def run_engine(repository: Path, instance: str, workspace: Path) -> dict[str, An
         (run_directory / "stderr.txt").write_text(completed.stderr, encoding="utf-8")
         record.update(outcome="completed" if completed.returncode == 0 else "engine_failed", exit_code=completed.returncode)
         record["after"] = read_status(repository, instance)
+        after=record['after']
+        if (after.get('installation_repair')
+                and after.get('operating_summary',{}).get('supervision',{}).get('configured_enabled') is True
+                and not after.get('user_pause')
+                and not after.get('maintenance_fence') and after.get('status') not in {'paused','closed','completed'}
+                and not (_operator_dir(workspace)/'HOLD.json').exists()):
+            try:
+                record['supervisor_request']=schedule('start-operator',repository=repository,
+                    instance=instance,workspace=workspace)
+            except (RuntimeError,OSError) as error:
+                record['supervisor_request']={'status':'failed','error':str(error),
+                    'next_owner':'scheduled_operator','fallback':'periodic supervision'}
     except Exception as error:
         record.update(outcome="engine_failed", error=f"{type(error).__name__}: {error}")
     _json(run_directory / "result.json", record)

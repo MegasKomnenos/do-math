@@ -88,9 +88,10 @@ class T(unittest.TestCase):
    command=[str(executable),'--dir',str(project),'env','lean']
    digest=lambda path:hashlib.sha256(path.read_bytes()).hexdigest()
    expected={'configured_command':command,'executable':str(executable),'sha256':digest(executable),
-    'verifier_sha256':digest(Path(formal.__file__)), 'executables':{str(executable):digest(executable)},
+    'verifier_sha256':digest(Path(formal.__file__)), 'verifier_path':str(Path(formal.__file__).resolve()),
+    'executables':{str(executable):digest(executable)},
     'version':'fixture','version_exit':0,'project':{'manifest_hashes':{'lakefile.toml':digest(manifest)},
-     'fingerprint':project_fingerprint(project)}}
+     'fingerprint':project_fingerprint(project),'search_paths':[]}}
    manifest.write_bytes(b'name = "changed"\n')
    run_job=formal._job_run
    def only_git(command,*args,**kwargs):

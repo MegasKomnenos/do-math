@@ -141,3 +141,11 @@ def selection(config: dict, action: dict, tasks: dict, knowledge: dict, *, profi
         selected = select_profile(profiles, action, result, allowed_refs=allowed)
         result["profile_ref"] = profile_ref(selected)
     return result
+
+
+def work_profile_selection(config: dict, task: dict, profiles: dict, *, action=None) -> dict:
+    """One admission rule for authored contracts, readiness and work dispatch."""
+    action = action or {'role': 'research_work', 'target': task['id']}
+    if action['role'] not in {'research_work', 'supplemental_research'}:
+        raise ValueError('work profile admission requires a work role')
+    return selection(config, action, {task['id']: task}, {}, profiles=profiles)

@@ -141,6 +141,25 @@ class GitStateStore:
             raise GitStateStoreError("unexpected trailing batch output")
         return result
 
+    def blob_sizes(self, commit: str, paths: list[str]) -> dict[str, int]:
+        """Read object lengths once so callers can bound batch-read memory."""
+        self._validate_oid(commit)
+        for path in paths:
+            self._validate_path(path)
+        if not paths:
+            return {}
+        output = self._git('cat-file', '--batch-check=%(objectsize) %(objecttype)',
+                          input=''.join(f'{commit}:{path}\n' for path in paths).encode()).stdout.splitlines()
+        if len(output) != len(paths):
+            raise GitStateStoreError('batch size response count differs')
+        result = {}
+        for path, row in zip(paths, output):
+            fields = row.split()
+            if len(fields) != 2 or not fields[0].isdigit() or fields[1] != b'blob':
+                raise GitStateStoreError('batch size did not return a blob: ' + path)
+            result[path] = int(fields[0])
+        return result
+
     def _write_blobs(self, changes: Mapping[str, bytes | None]) -> dict[str, str]:
         values = [(path, raw) for path, raw in changes.items() if raw is not None]
         if not values:

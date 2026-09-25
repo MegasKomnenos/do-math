@@ -205,7 +205,8 @@ def validate_config(config: dict) -> None:
 
 def initialize(repository: Path, *, goal: str, workspace: Path, config: dict | None = None,
                title: str = "", policies: str = "",
-               instance_id: str | None = None, sources: list[Path] | None = None) -> dict:
+               instance_id: str | None = None, sources: list[Path] | None = None,
+               source_input: str | None = None) -> dict:
     if not goal.strip():
         raise ValueError("a nonempty mathematical goal is required")
     settings = deepcopy(DEFAULT_CONFIG)
@@ -219,7 +220,7 @@ def initialize(repository: Path, *, goal: str, workspace: Path, config: dict | N
     workspace.mkdir(parents=True, exist_ok=True)
     with tracing(workspace / 'operations'), phase('initialize'):
         instance, runtime = initialization.initialize_state(instance_id=instance_id, goal=goal,
-            workspace=workspace, config=settings, source_input=goal,
+            workspace=workspace, config=settings, source_input=goal if source_input is None else source_input,
             title=title, policies=policies, created_at=now())
         from .governance_engine import bind_host_configuration
         settings = bind_host_configuration(instance, settings, origin='user')
@@ -319,10 +320,8 @@ def _next_control_order(inbox: Path) -> str:
         stream.flush()
         os.fsync(stream.fileno())
         temporary = Path(stream.name)
-    try:
-        os.replace(temporary, counter)
-    finally:
-        temporary.unlink(missing_ok=True)
+    from .file_io import atomic_replace
+    atomic_replace(temporary, counter)
     return f"{next_order:020d}"
 
 
@@ -1545,6 +1544,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         dispatch_waits = reporting.dispatch_waits(self.runtime)
         evaluation_context = self._evaluation_context()
         return {"instance_id": self.instance["id"], "snapshot": self.head, "title": self.instance["title"],
+                'operating_summary':reporting.operating_summary(self.instance,self.runtime),
                 "research_wake_reasons": planning.research_wake_reasons(self.instance, self.runtime,
                     now=evaluation_context["now"], evaluation_context=evaluation_context),
                 "submission_checks": self._submission_check_summary(self.head, self.runtime),
@@ -1602,15 +1602,15 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                               "review": "fresh_sessions_without_peer_results_in_inputs"}}
 
     @engine_operation('run')
-    def run(self, *, max_steps: int | None = None, watch: bool = False) -> dict:
+    def run(self, *, max_steps: int | None = None, watch: bool = False, until_active: bool = False) -> dict:
         # Budget-mode conversion is valid only while no executor loop can dispatch.
         self._executor_running = True
         try:
-            return self._run_executor(max_steps=max_steps, watch=watch)
+            return self._run_executor(max_steps=max_steps, watch=watch, until_active=until_active)
         finally:
             self._executor_running = False
 
-    def _run_executor(self, *, max_steps: int | None = None, watch: bool = False) -> dict:
+    def _run_executor(self, *, max_steps: int | None = None, watch: bool = False, until_active: bool = False) -> dict:
         if max_steps is not None and max_steps < 1:
             raise ValueError("max_steps must be positive")
         with self.store.writer_lock():
@@ -1637,7 +1637,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             if self.instance["lifecycle"]["state"] != "initializing":
                 self._ensure_academic_followup()
             self._retry_provider_actions()
-            self._run_parallel(max_steps=max_steps, watch=watch)
+            self._run_parallel(max_steps=max_steps, watch=watch, until_active=until_active)
         return self.status()
 
     def _restore_goal_audit_publication(self, execution):
@@ -2021,6 +2021,14 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                     materialize_inputs(workspace, {relative: raw})
                     evidence['checkpoint_files'].append({**source, 'snapshot': self.head, 'local_path': 'input/' + relative})
             context['operational_evidence'] = evidence
+            if reviewed_execution:
+                successor=activities.successor_state(self.runtime,reviewed_execution['id'])
+                evidence['activity_continuations']={
+                    'frontier':successor,
+                    'executions':[{key:self.runtime['executions'][eid].get(key)
+                                   for key in ('id','status','outcome','error','result_ref')}
+                                  for eid in successor['execution_ids']] if successor else [],
+                    'instruction':'An existing continuation owns retry/resume. A separate installation defect requires its own evidence; continuation success alone does not settle that defect.'}
             if reviewed_execution and not context["live_review"] and reviewed_execution.get("artifact_bundle"):
                 source_snapshot = self.head
                 bundle = reviewed_execution["artifact_bundle"]
@@ -4008,6 +4016,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 assessment = self.runtime["executions"][execution_id].get("model_decisions", {}).get(proposal["title"])
                 if assessment is not None:
                     contract["model_assessment"] = deepcopy(assessment)
+                model_policy.work_profile_selection(self.instance['config'], contract,
+                    self.instance['execution_profiles'])
                 if old:
                     # This is a complete replacement contract. Previous obligations
                     # remain in revision_history, not in the new completion criteria.
@@ -4331,6 +4341,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                   "disposition": disposition, "obligation_ids": deepcopy(action.get("obligation_ids", [])),
                   "created_at": now(), "status": "applied"}
         self.runtime.setdefault("operational_dispositions", {})[record_id] = record
+        if operational_dispositions.reconcile_recovery(self.runtime, record):
+            return
         kind = disposition["kind"]
         if kind == "repair":
             record["status"] = "repair_required"
@@ -4349,6 +4361,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         self._complete_operational_disposition(record)
 
     def _complete_operational_disposition(self, record):
+        if operational_dispositions.reconcile_recovery(self.runtime, record):
+            return record
         disposition = record["disposition"]
         target = self.runtime["executions"][record["target_execution_id"]]
         kind = disposition["kind"]
@@ -4435,6 +4449,11 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             return
         for identifier in list(self.runtime.get("operational_dispositions", {})):
             record = self.runtime["operational_dispositions"][identifier]
+            if record.get('status') == 'superseded':
+                continue
+            if operational_dispositions.reconcile_recovery(self.runtime, record):
+                self._save()
+                continue
             kind = record.get('disposition', {}).get('kind')
             if kind == 'repair':
                 if record['status'] in {'applied',

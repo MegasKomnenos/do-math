@@ -12,6 +12,7 @@ import sys
 import tempfile
 import unittest
 import base64
+from unittest.mock import patch
 
 
 SCRIPTS = Path(__file__).resolve().parents[1]
@@ -31,6 +32,18 @@ INSTANCE_ID = "RI-00000000000000000000000000"
 
 
 class ResearchRepositoryTests(unittest.TestCase):
+    def test_export_reads_bounded_batches_and_preserves_binary_contents(self):
+        head,instance,runtime=self.repository.load()
+        files={f'runtime/artifacts/BA-export/{i}.bin':bytes([i%256])*1024 for i in range(150)}
+        head=self.repository.save_with_state(head,instance,runtime,artifacts=files)[0]
+        with patch.object(self.repository._store,'read_bytes',side_effect=AssertionError('per-file Git read')), \
+             patch.object(self.repository._store,'read_many',wraps=self.repository._store.read_many) as batch:
+            result=self.repository.export(self.root/'batched',head,prefixes=('runtime/artifacts/',))
+        self.assertEqual(batch.call_count,3)
+        self.assertTrue(all(len(call.args[1])<=64 for call in batch.call_args_list))
+        self.assertEqual(set(result['files']),set(files))
+        for name,raw in files.items():self.assertEqual((self.root/'batched'/name).read_bytes(),raw)
+
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory()
         self.root = Path(self.temporary.name)

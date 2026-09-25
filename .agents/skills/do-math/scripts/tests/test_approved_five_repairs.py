@@ -74,16 +74,13 @@ class ToolchainContractTests(unittest.TestCase):
 
     def test_registration_rejects_the_incomplete_document_toolchain(self):
         from do_math.initialization import trust_environment_errors, digest
-        manifest = {'command': ['lean'], 'foundation_profile': {
-            'allowed_axioms': ['Classical.choice', 'Quot.sound', 'propext'],
-            'forbidden': ['sorryAx', 'Lean.trustCompiler', 'additional_axioms']},
-            'files': [{'role': role, 'path': str(Path(tempfile.gettempdir()) / role), 'sha256': 'a'*64}
-                      for role in ('lean_binary','lean_source','lake_binary','mathlib_source','mathlib_build','checker')],
-            'validation': {'status': 'verified', 'evidence_refs': ['fixture']}}
-        environment = {'source_ref': 'UC-adopt', 'allowed_axioms': ['Classical.choice','Quot.sound','propext'],
-            'manifest': manifest, 'manifest_sha256': digest(manifest),
-            'toolchain': {'executable': 'lean', 'sha256': 'a'*64, 'version': 'Lean', 'configured_command': ['lean']}}
-        errors = trust_environment_errors(environment, verify_files=False)
+        from research_fixtures import trust_fixture
+        with tempfile.TemporaryDirectory() as directory:
+            environment=trust_fixture(Path(directory),['test-lean'])
+            environment.update(source_ref='UC-adopt',manifest_sha256=digest(environment['manifest']))
+            self.assertEqual(trust_environment_errors(environment,verify_files=False),[])
+            del environment['toolchain']['verifier_sha256']
+            errors = trust_environment_errors(environment, verify_files=False)
         self.assertTrue(any('verifier_sha256' in error for error in errors), errors)
 
 

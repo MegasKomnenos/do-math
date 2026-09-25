@@ -6,6 +6,7 @@ from pathlib import Path
 import time
 
 from .observations import duration_ms
+from .file_io import write_bytes_atomic
 
 
 def observation_window(profile_observation, field):
@@ -31,10 +32,7 @@ def notice_seconds(config, pool=None):
 
 
 def _write(path, value):
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(path.suffix + ".tmp")
-    temporary.write_text(json.dumps(value, ensure_ascii=False, indent=2), encoding="utf-8")
-    temporary.replace(path)
+    write_bytes_atomic(path,json.dumps(value,ensure_ascii=False,indent=2).encode('utf-8'))
 
 
 def publish(workspace: Path, execution_id: str, deadline: float | None, config: dict, pool: str, *,

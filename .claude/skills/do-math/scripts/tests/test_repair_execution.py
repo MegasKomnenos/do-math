@@ -25,6 +25,24 @@ class RepositoryHost:
 
 
 class RepairExecutionTests(unittest.TestCase):
+    def test_operational_retry_of_an_ended_attempt_keeps_its_registered_successor(self):
+        host=self.host
+        parent=host.runtime['executions']['EX-target']
+        child=execution_lifecycle.create_execution(execution_id='EX-next',owner_activity_id=parent['owner_activity_id'],
+            actor_kind='ai',input_manifest={},profile_ref=parent['execution_profile_ref'],created_at=AT)
+        child.update(role=parent['role'],continuation_of=parent['id'],
+                     action={**parent['action'],'continuation_of':parent['id']})
+        activities.assign_execution(host.runtime,parent['owner_activity_id'],child)
+        host._save()
+        record=host.runtime['operational_dispositions']['OD-repair']
+        result=ResearchEngine._complete_operational_disposition(host,record)
+        self.assertEqual(result['status'],'superseded')
+        self.assertEqual(host.runtime['queue'],[])
+        host._save()
+        _,_,stored=host.store.load()
+        self.assertEqual(stored['operational_dispositions']['OD-repair']['status'],'superseded')
+        self.assertEqual(stored['executions']['EX-next']['continuation_of'],'EX-target')
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)

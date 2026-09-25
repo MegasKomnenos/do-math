@@ -132,6 +132,9 @@ class DesignWalkthroughs(unittest.TestCase):
             'inputs', 'reuse', 'dependencies', 'profile_refs', 'authority_refs', 'basis_refs')}
         # This case tests periodic scheduling, with no formal checker premise.
         proposal.update(title='Different approach', revises_task_id=None, work_class='nonformal')
+        from do_math.execution_profiles import profile_ref
+        proposal['profile_refs'] = [profile_ref(p) for p in e.instance['execution_profiles'].values()
+                                    if p['role'] == 'research_work']
         from jsonschema import Draft202012Validator
         self.assertEqual(list(Draft202012Validator(contracts.TASK_CANDIDATE).iter_errors(proposal)), [])
         e.runtime['executions']['EX-prep'] = {'id': 'EX-prep', 'role': 'research_preparation', 'status': 'ended', 'input_snapshot': e.head, 'extensions': {}}

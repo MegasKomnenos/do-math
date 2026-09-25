@@ -241,7 +241,9 @@ def _job_run(command: list[str], cwd: Path, *, should_stop=None, on_started=None
     root=Path(tempfile.mkdtemp(dir=cwd)); out=root/'out'; err=root/'err'; status=root/'status'; request=root/'request.json'
     request.write_text(json.dumps({'command':command,'cwd':str(cwd),'stdout':str(out),'stderr':str(err),'status':str(status)}))
     worker = "import sys; from pathlib import Path; sys.path.insert(0,sys.argv[1]); from do_math.formal import _worker; raise SystemExit(_worker(Path(sys.argv[2])))"
-    job=WindowsJob([sys.executable,'-B','-c',worker,str(Path(__file__).resolve().parents[1]),str(request)],cwd=root,env=os.environ,
+    environment={key:value for key,value in os.environ.items()
+                 if not key.upper().startswith(('LEAN_', 'LAKE_', 'ELAN_'))}
+    job=WindowsJob([sys.executable,'-B','-c',worker,str(Path(__file__).resolve().parents[1]),str(request)],cwd=root,env=environment,
                    name=job_name or 'do-math-formal-'+uuid.uuid4().hex)
     try:
         started={**process_identity(job),'job_name':job.name}
@@ -286,7 +288,7 @@ def _job_run(command: list[str], cwd: Path, *, should_stop=None, on_started=None
 def toolchain_errors(toolchain):
     """The structural contract shared by registration, inspection and execution."""
     required = {'executable', 'sha256', 'configured_command', 'version', 'version_exit',
-                'verifier_sha256', 'executables', 'project'}
+                'verifier_sha256', 'verifier_path', 'executables', 'project'}
     if not isinstance(toolchain, dict):
         return ['toolchain must be an object']
     errors = ['toolchain.' + key + ' is missing' for key in sorted(required - toolchain.keys())]
@@ -297,6 +299,8 @@ def toolchain_errors(toolchain):
     for key in ('executable', 'version'):
         if key in toolchain and (not isinstance(toolchain[key], str) or not toolchain[key].strip()):
             errors.append('toolchain.' + key + ' must be nonempty')
+    if not isinstance(toolchain.get('verifier_path'),str) or not Path(toolchain['verifier_path']).is_absolute():
+        errors.append('toolchain.verifier_path must identify the absolute checker source')
     command = toolchain.get('configured_command')
     if not isinstance(command, list) or not command or any(not isinstance(p, str) or not p or '\x00' in p for p in command):
         errors.append('toolchain.configured_command must be a nonempty argv')
@@ -307,12 +311,16 @@ def toolchain_errors(toolchain):
             not isinstance(h, str) or not re.fullmatch('[0-9a-f]{64}', h) for p, h in executables.items()):
         errors.append('toolchain.executables must map paths to SHA-256 values')
     if toolchain.get('project') is not None and (not isinstance(toolchain['project'], dict) or
-            set(toolchain['project']) != {'manifest_hashes', 'fingerprint'}):
+            set(toolchain['project']) != {'manifest_hashes', 'fingerprint', 'search_paths'}):
         errors.append('toolchain.project must be null or the observed Lake project identity')
+    elif toolchain.get('project') is not None:
+        paths=toolchain['project']['search_paths']
+        if not isinstance(paths,list) or any(not isinstance(p,str) or not Path(p).is_absolute() for p in paths):
+            errors.append('toolchain project search paths must be observed absolute paths')
     return errors
 
 
-def _project_identity(command, should_stop=None):
+def _project_identity(command, should_stop=None, *, workspace=None, expected=None):
     if not Path(command[0]).name.lower().startswith('lake') or '--dir' not in command:
         return None
     _check_stop(should_stop)
@@ -321,8 +329,25 @@ def _project_identity(command, should_stop=None):
         raise ValueError('Lake --dir requires a project path')
     root = Path(command[index]).resolve(strict=True)
     names = ('lean-toolchain', 'lake-manifest.json', 'lakefile.lean', 'lakefile.toml')
-    return {'manifest_hashes': {name: _file_hash(root/name,should_stop) for name in names if (root/name).is_file()},
-            'fingerprint': project_fingerprint(root,should_stop=should_stop)}
+    identity={'manifest_hashes': {name: _file_hash(root/name,should_stop) for name in names if (root/name).is_file()},
+              'fingerprint': project_fingerprint(root,should_stop=should_stop)}
+    # Never execute changed project code merely to discover its environment.
+    if expected is not None and any(identity[k]!=expected.get(k) for k in identity):
+        return {**identity,'search_paths':[]}
+    if workspace is None or 'env' not in command:
+        raise ValueError('Lake environment observation requires env and an observation workspace')
+    prefix=command[:command.index('env')+1]
+    script=('import os,json; print(json.dumps({"cwd":os.getcwd(),"paths":'
+            '[p for k in ("LEAN_PATH","LEAN_SRC_PATH") for p in os.environ.get(k,"").split(os.pathsep) if p]}))')
+    code,out,err,stopped=_job_run([*prefix,sys.executable,'-c',script],Path(workspace),should_stop=should_stop)
+    if stopped:raise VerificationStopped('project environment observation stopped')
+    if code!=0:raise RuntimeError('project environment observation failed: '+err)
+    observed=json.loads(out)
+    if (not isinstance(observed,dict) or not isinstance(observed.get('cwd'),str)
+            or not isinstance(observed.get('paths'),list) or any(not isinstance(p,str) for p in observed['paths'])):
+        raise ValueError('invalid project environment observation')
+    identity['search_paths']=sorted({str((Path(observed['cwd'])/p).resolve()) for p in observed['paths']})
+    return identity
 
 
 def inspect_toolchain(command, workspace, *, should_stop=None):
@@ -338,7 +363,8 @@ def inspect_toolchain(command, workspace, *, should_stop=None):
         raise RuntimeError('toolchain version observation failed: ' + stderr)
     result = {'executable': str(resolved), 'sha256': _file_hash(resolved,should_stop),
         'configured_command': command, 'version': stdout.strip(), 'version_exit': code,
-        'project': _project_identity(command,should_stop), 'verifier_sha256': _hash(__loader__.get_data(__file__)),
+        'project': _project_identity(command,should_stop,workspace=workspace),
+        'verifier_sha256': _hash(__loader__.get_data(__file__)), 'verifier_path':str(Path(__file__).resolve()),
         'executables': {str(Path(p).resolve()): _file_hash(Path(p),should_stop) for p in command
                         if Path(p).is_file() and Path(p).suffix.lower() in {'.exe', '.dll'}}}
     errors = toolchain_errors(result)
@@ -359,6 +385,7 @@ def _approved_files_current(command, resolved, expected, should_stop=None):
         return (expected.get('executable') == str(resolved)
             and expected.get('sha256') == _file_hash(resolved,should_stop)
             and expected.get('verifier_sha256') == _hash(__loader__.get_data(__file__))
+            and expected.get('verifier_path') == str(Path(__file__).resolve())
             and expected.get('executables') == {str(Path(part).resolve()): _file_hash(Path(part),should_stop)
                 for part in command if Path(part).is_file() and Path(part).suffix.lower() in {'.exe', '.dll'}})
     except OSError:
@@ -391,7 +418,8 @@ def verify_lean(*, source: str, declarations: list[str], workspace: Path,
         resolved=Path(command[0]) if Path(command[0]).is_absolute() else Path(shutil.which(command[0]) or command[0])
         if expected_toolchain is not None and not _approved_files_current(command,resolved,expected_toolchain,should_stop):
             return {**base,'status':'rejected','reason':'approved toolchain changed before execution'}
-        if expected_toolchain is not None and _project_identity(command,should_stop) != expected_toolchain.get('project'):
+        if expected_toolchain is not None and _project_identity(command,should_stop,workspace=workspace,
+                expected=expected_toolchain.get('project')) != expected_toolchain.get('project'):
             return {**base,'status':'rejected','reason':'approved project inputs changed before execution'}
         toolchain=inspect_toolchain(command,workspace,should_stop=should_stop) if expected_toolchain is None else dict(expected_toolchain)
     except VerificationStopped as error:

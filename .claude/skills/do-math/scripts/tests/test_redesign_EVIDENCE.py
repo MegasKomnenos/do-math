@@ -173,7 +173,9 @@ class PriorityVectorTests(unittest.TestCase):
                                  for key in profile['required_capabilities']}}
             observation['id'] = 'CE-' + digest(observation)
             e.instance['capability_evidence'][observation['id']] = observation
-        model = e.instance['config']['tier_models']['medium']
+        # No difficulty/importance judgment is authored in this fixture;
+        # the current admission rule therefore requires the high profile.
+        model = e.instance['config']['tier_models']['high']
         first = {'id': 'AC-first', 'role': 'research_work', 'target': task['id'], 'grant_id': 'GR-evidence',
                  'owner_activity_id': 'AY-first', 'model_selection': {'model': model}}
         other = {**first, 'id': 'AC-other', 'owner_activity_id': 'AY-other', 'role': 'supplemental_research'}

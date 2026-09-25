@@ -124,6 +124,31 @@ def bind_action(runtime: dict, action: dict, activity_id: str) -> dict:
     return activity
 
 
+def successor_state(runtime: dict, execution_id: str) -> dict | None:
+    """Read explicit continuation edges; unrelated success never resolves a failure."""
+    executions = runtime.get('executions', {})
+    target = executions[execution_id]
+    owner = target.get('owner_activity_id')
+    descendants, pending = set(), {execution_id}
+    while pending:
+        parent = pending.pop()
+        for eid, execution in executions.items():
+            previous = execution.get('continuation_of') or execution.get('action', {}).get('continuation_of')
+            if (eid != execution_id and eid not in descendants and previous == parent
+                    and execution.get('owner_activity_id') == owner):
+                descendants.add(eid)
+                pending.add(eid)
+    queued = [row['id'] for row in runtime.get('queue', [])
+              if row.get('continuation_of') in {execution_id, *descendants}
+              and row.get('owner_activity_id', owner) == owner]
+    if not descendants and not queued:
+        return None
+    live = sorted(eid for eid in descendants if executions[eid]['status'] != 'ended')
+    return {'state': 'in_progress' if live or queued else 'continued',
+            'execution_ids': sorted(descendants), 'live_execution_ids': live,
+            'action_ids': sorted(set(queued))}
+
+
 def continue_activity(runtime: dict, execution_id: str, *, at: str, reason: str,
                       condition: Any = None, next_owner: str = "engine") -> dict:
     """Preserve the exact ended attempt's obligation and request its successor.

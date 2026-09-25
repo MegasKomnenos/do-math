@@ -961,6 +961,22 @@ class LifecycleEngineMixin:
                 self._record_readiness(task_id, {'state': 'not_ready', 'basis': [],
                     'errors': ['model assessment or observation rules required before contract review']}, now.isoformat())
                 continue
+            from .model_policy import work_profile_selection
+            try:
+                work_profile_selection(self.instance['config'], task, self.instance['execution_profiles'])
+            except ValueError as error:
+                owner='governance' if task.get('academic_requirement_id') else 'research_preparation'
+                reason='work profile requirement: '+str(error)
+                self._record_readiness(task_id, {'state':'not_ready','basis':[], 'errors':[reason],
+                    'waits':[{'kind':'contract_revision','target_refs':[task_id],'next_owner':owner}]}, now.isoformat())
+                from .task_contracts import returned_task_ids
+                live=any(e['status']!='ended' and e.get('action',{}).get('target')==task_id
+                         for e in self.runtime['executions'].values())
+                if (owner=='research_preparation' and not live and task.get('status') in {'planned','waiting'}
+                        and task_id not in returned_task_ids(self.runtime['tasks'])):
+                    self._enqueue('research_preparation', task_id,
+                        reason='Reprepare the unchanged research obligation with a permitted current work profile: '+str(error))
+                continue
             required = {'revision': task['revision'], 'contract_sha256': contract_hash(task),
                         'goal_revision': query_instance['goal_revision'], 'policy_revision': query_instance['policy_revision']}
             review_key = review_basis_key(task, query_instance, self.runtime)

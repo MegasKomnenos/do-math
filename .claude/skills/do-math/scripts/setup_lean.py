@@ -16,6 +16,7 @@ import zipfile
 import uuid
 
 from do_math.formal import LEAN_VERSION, READY_MARKER, discover_lean, mathlib_project, portable_bin, toolchain_root, inspect_toolchain
+from do_math.trust_inventory import SMOKE, validation_program, collect_manifest, collect_inventory
 
 LEAN_ZIP = f"https://github.com/leanprover/lean4/releases/download/v{LEAN_VERSION}/lean-{LEAN_VERSION}-windows.zip"
 # Mathlib tags follow Lean releases; the tag equal to the toolchain is the one whose cached .olean files load.
@@ -24,7 +25,6 @@ PROJECT_FILES = {
     "lakefile.toml": ('name = "do_math_env"\n\n[[require]]\nname = "mathlib"\n'
                       f'git = "https://github.com/leanprover-community/mathlib4"\nrev = "v{LEAN_VERSION}"\n'),
 }
-SMOKE = "import Mathlib\nexample (n : Nat) : n + 0 = n := by rfl\nexample : (2 : ℝ) + 2 = 4 := by norm_num\n"
 
 
 def verify_environment(command, evidence_root):
@@ -32,21 +32,36 @@ def verify_environment(command, evidence_root):
     directory = evidence_root.resolve() / (datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ') + '-' + uuid.uuid4().hex)
     directory.mkdir(parents=True)
     source = directory / 'smoke.lean'
-    source.write_text(SMOKE, encoding='utf-8')
-    record = {'status': 'failed', 'scope': 'mathlib_import_and_representative_proofs',
+    record = {'status': 'failed',
               'started_at': datetime.now(timezone.utc).isoformat(),
-              'command': [*command, str(source)], 'source': str(source),
-              'source_sha256': hashlib.sha256(source.read_bytes()).hexdigest()}
+              'command': [*command, str(source)], 'source': str(source)}
     try:
+        from do_math.repository import exact_content_hash
+        from do_math.operation_trace import tracing, phase
         record['toolchain'] = inspect_toolchain(command, directory)
-        completed = subprocess.run([*command, str(source)], cwd=directory,
-                                   capture_output=True, text=True, encoding='utf-8', errors='replace')
-        record.update(exit_code=completed.returncode, stdout=completed.stdout, stderr=completed.stderr)
+        source_text, scope = validation_program(record['toolchain'])
+        source.write_bytes(source_text.encode('utf-8'))
+        record.update(scope=scope, source_text=source_text,
+                      source_sha256=hashlib.sha256(source.read_bytes()).hexdigest())
+        with tracing(directory/'operations'), phase('environment_inventory_before'):
+            before_inventory=collect_inventory(record['toolchain'])
+        if any(directory.is_relative_to(Path(root['path'])) for root in before_inventory['scope']['roots']):
+            raise ValueError('validation evidence must be outside the adopted installation roots')
+        record['inventory_sha256']=exact_content_hash(before_inventory)
+        from do_math.formal import _job_run
+        with tracing(directory / 'operations'), phase('environment_smoke_compile') as metrics:
+            code, stdout, stderr, stopped = _job_run([*command, str(source)], directory,
+                on_started=lambda process: metrics.update(process=process))
+        record.update(exit_code=code, stdout=stdout, stderr=stderr)
         record['toolchain_after'] = inspect_toolchain(command, directory)
-        if completed.returncode == 0 and record['toolchain_after'] == record['toolchain']:
+        with tracing(directory/'operations'), phase('environment_inventory_after'):
+            after_inventory=collect_inventory(record['toolchain_after'])
+        if (not stopped and code == 0 and record['toolchain_after'] == record['toolchain']
+                and after_inventory==before_inventory):
             record['status'] = 'verified'
-        elif completed.returncode == 0:
-            record['error'] = 'toolchain identity changed during environment validation'
+            (directory/'inventory.json').write_text(json.dumps(before_inventory,ensure_ascii=False),encoding='utf-8')
+        elif code == 0:
+            record['error'] = 'toolchain identity or complete inventory changed during environment validation'
     except Exception as error:
         record['error'] = f'{type(error).__name__}: {error}'
     record['finished_at'] = datetime.now(timezone.utc).isoformat()
@@ -54,7 +69,22 @@ def verify_environment(command, evidence_root):
     evidence.write_text(json.dumps(record, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     return {'status': record['status'], 'lean_command': list(command),
             'toolchain': record.get('toolchain'),
-            'validation': {'status': record['status'], 'evidence_refs': [str(evidence)]}}
+            'validation': record, 'evidence_path': str(evidence),
+            'inventory_path':str(directory/'inventory.json') if record['status']=='verified' else None}
+
+
+def write_trust_request(result, destination):
+    if result['status'] not in {'verified', 'ready'}:
+        raise ValueError('a successful environment validation is required')
+    observed=json.loads(Path(result['inventory_path']).read_text(encoding='utf-8'))
+    request={'operation':'register','toolchain':result['toolchain'],
+             'allowed_axioms':['Classical.choice','Quot.sound','propext'],
+             'manifest':collect_manifest(result['toolchain'],result['validation'],observed_inventory=observed)}
+    destination=destination.resolve()
+    destination.parent.mkdir(parents=True,exist_ok=True)
+    with destination.open('x',encoding='utf-8') as stream:
+        json.dump(request,stream,ensure_ascii=False,indent=2)
+    return {'path':str(destination),'file_count':len(request['manifest']['files'])}
 
 
 def run(command, cwd, env):
@@ -69,11 +99,14 @@ def main():
     mode.add_argument('--verify-only', action='store_true', help='validate an installed environment and preserve evidence without downloading or adopting it')
     parser.add_argument('--command-file', type=Path, help='UTF-8 JSON object with lean_command argv; requires --inspect-only or --verify-only')
     parser.add_argument('--evidence-dir', type=Path, help='parent directory for unique environment validation records')
+    parser.add_argument('--trust-file', type=Path, help='write a new complete registration request after successful validation')
     args = parser.parse_args()
     if args.command_file and not (args.inspect_only or args.verify_only):
         parser.error('--command-file requires --inspect-only or --verify-only')
     if args.inspect_only and args.evidence_dir:
         parser.error('--evidence-dir requires an environment validation run')
+    if args.inspect_only and args.trust_file:
+        parser.error('--trust-file requires an environment validation run')
     if args.inspect_only or args.verify_only:
         from do_math.submission import load_json
         command = load_json(args.command_file.read_bytes())['lean_command'] if args.command_file else discover_lean()
@@ -84,6 +117,8 @@ def main():
             if args.evidence_dir is None and root is None:
                 parser.error('--verify-only requires --evidence-dir for this installation')
             result = verify_environment(command, args.evidence_dir or root / 'validation')
+            if result['status']=='verified' and args.trust_file:
+                result['trust_request']=write_trust_request(result,args.trust_file)
             print(json.dumps(result))
             if result['status'] != 'verified':
                 raise SystemExit(1)
@@ -123,6 +158,8 @@ def main():
         print(json.dumps(result))
         raise SystemExit(1)
     marker.write_text(LEAN_VERSION, encoding="utf-8")
+    if args.trust_file:
+        result['trust_request']=write_trust_request(result,args.trust_file)
     print(json.dumps({**result, 'status': 'ready'}))
 
 

@@ -1052,6 +1052,21 @@ def validate_independent_execution(runtime, execution_id, author_ids):
             if execution.get(field) and execution[field] == author.get(field): raise ValueError("checker shares author conversation")
 
 
+def import_approval_draft(instance, runtime, import_id, *, owner_handlers=None):
+    """Derive exact approval coordinates without approving or applying a change."""
+    bundle = _current_import(instance, runtime, import_id, owner_handlers=owner_handlers)
+    check = bundle.get('check', {})
+    if (bundle.get('status') != 'approved' or check.get('decision') != 'approved'
+            or check.get('scope_complete') is not True
+            or check.get('bundle_sha256') != bundle['sha256']
+            or check.get('sha256') != digest({k:v for k,v in check.items() if k != 'sha256'})):
+        raise ValueError('approval draft requires a complete independently checked import')
+    validate_independent_execution(runtime, check['execution_id'], [bundle['execution_id']])
+    return {'kind':'import_approval', 'import_id':bundle['id'], 'bundle_sha256':bundle['sha256'],
+            'check_sha256':check['sha256'],
+            'unit_hashes':{u['unit_id']:digest(u['payload']) for u in bundle['output']['import_units'] if u['payload']}}
+
+
 def apply_import(instance, runtime, import_id, *, approvals=None, owner_handlers=None):
     from .control_contracts import validate_import_approvals
     approvals = {} if approvals is None else approvals

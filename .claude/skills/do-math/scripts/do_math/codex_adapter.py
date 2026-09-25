@@ -133,11 +133,12 @@ class LocalCLIAdapter:
         """Current local identity, without claiming any behavioral capability."""
         path = Path(shutil.which(self.cli_path) or self.cli_path).resolve()
         worker = Path(self.worker_module.__file__).resolve()
-        from . import control_transport, windows_job
+        from . import control_transport, windows_job, file_io
         return {"cli_path": str(path), "cli_sha256": _file_sha256(path) if path.is_file() else None,
                 "worker_sha256": _file_sha256(worker),
                 "windows_job_sha256": _file_sha256(windows_job.__file__),
                 "control_transport_sha256": _file_sha256(control_transport.__file__),
+                'file_io_sha256': _file_sha256(file_io.__file__),
                 "adapter_sha256": _file_sha256(__file__),
                 "provider_adapter_sha256": _file_sha256(sys.modules[type(self).__module__].__file__),
                 "host": {"system": platform.system(), "release": platform.release(), "version": platform.version(),

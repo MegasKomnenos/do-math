@@ -118,11 +118,23 @@ class FormalBoundaryTests(unittest.TestCase):
         trust = trust_fixture(workspace, toolchain['configured_command'] if toolchain else ['fixture'])
         trust.pop('operation')
         if toolchain is not None:
+            from do_math.trust_inventory import collect_manifest
+            from research_fixtures import validation_fixture
+            import shutil
             trust['toolchain'] = deepcopy(toolchain)
-            for row in trust['manifest']['files']:
-                if row['role'] in {'lean_binary', 'checker'}:
-                    path = Path(toolchain['executable']) if row['role'] == 'lean_binary' else Path(formal.__file__)
-                    row.update(path=str(path.resolve()), sha256=hashlib.sha256(path.read_bytes()).hexdigest())
+            inventory=deepcopy(self.native_inventory)
+            checker=next(r for r in inventory['scope']['roots'] if r['kind']=='checker')
+            old_root=Path(checker['path']); new_root=workspace/'checked-checker/scripts/do_math'
+            for row in inventory['files']:
+                if row['role']=='checker':
+                    source=Path(row['path']); destination=new_root/source.relative_to(old_root)
+                    destination.parent.mkdir(parents=True,exist_ok=True)
+                    shutil.copyfile(source,destination)
+                    row['path']=str(destination.resolve())
+            checker['path']=str(new_root.resolve())
+            trust['toolchain']['verifier_path']=str((new_root/'formal.py').resolve())
+            validation=validation_fixture(trust['toolchain'],inventory,workspace/'smoke.lean')
+            trust['manifest']=collect_manifest(trust['toolchain'],validation,observed_inventory=inventory)
         trust.update(id='TE-old', status='active', source_ref='synthetic:test-adoption',
                      manifest_sha256=initialization.digest(trust['manifest']))
         self.assertEqual(initialization.trust_environment_errors(trust), [])
@@ -267,12 +279,15 @@ class PortableFormalBoundaryTests(unittest.TestCase):
                 workspace=Path(d), lean_command=actual_command())
         if cls.baseline['status'] != 'verified':
             raise AssertionError(cls.baseline)
+        from do_math.trust_inventory import collect_inventory
+        cls.native_inventory=collect_inventory(cls.baseline['toolchain'])
 
     def run_formal(self, root, change=None):
         e, kid = self.host(root, self.baseline['toolchain'])
         observed = []
         def verify(**kwargs):
-            result = formal.verify_lean(**kwargs)
+            with patch.object(formal,'__file__',e.instance['trust_environments']['TE-old']['toolchain']['verifier_path']):
+                result = formal.verify_lean(**kwargs)
             self.assertEqual(result['status'], 'verified', result)
             observed.append(result)
             if change:
@@ -290,7 +305,7 @@ class PortableFormalBoundaryTests(unittest.TestCase):
             e, kid, observed, result = self.run_formal(Path(d))
             record = e.instance['formal_results'][e.instance['knowledge'][kid]['formal_result_id']]
             self.assertEqual(record['publication_state'], 'accepted')
-            self.assertEqual(record['verification']['toolchain'], self.baseline['toolchain'])
+            self.assertEqual(record['verification']['toolchain'], e.instance['trust_environments']['TE-old']['toolchain'])
             self.assertEqual(result['status'], 'verified')
             self.assertEqual(len(observed), 1)
             self.assertIn('True.intro', result['dependency_closure']['truth'])
@@ -316,7 +331,8 @@ class PortableFormalBoundaryTests(unittest.TestCase):
             def verify(**kwargs):
                 self.assertEqual(kwargs['source'].encode(), source.encode())
                 self.assertEqual(kwargs['declarations'], names)
-                result = formal.verify_lean(**kwargs)
+                with patch.object(formal,'__file__',e.instance['trust_environments']['TE-old']['toolchain']['verifier_path']):
+                    result = formal.verify_lean(**kwargs)
                 self.assertEqual(result['status'], 'verified', result.get('reason'))
                 observed.append(result)
                 return result
@@ -333,7 +349,8 @@ class PortableFormalBoundaryTests(unittest.TestCase):
 
     def test_manifest_file_change_after_actual_compile_prevents_publication(self):
         def change(e):
-            row = next(r for r in e.instance['trust_environments']['TE-old']['manifest']['files'] if r['role'] == 'lean_source')
+            row = next(r for r in e.instance['trust_environments']['TE-old']['manifest']['files'] if r['role'] == 'checker')
+            self.assertTrue(Path(row['path']).resolve().is_relative_to(Path(e.instance['workspace']).resolve()))
             Path(row['path']).write_text('changed after actual compilation', encoding='utf-8')
         with tempfile.TemporaryDirectory() as d:
             e, kid, observed, result = self.run_formal(Path(d), change)

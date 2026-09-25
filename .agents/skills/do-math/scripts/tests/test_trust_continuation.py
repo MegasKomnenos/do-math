@@ -16,8 +16,14 @@ def cancelled_activation():
         owner = ResearchEngine(fixture.repo, fixture.identifier)
         old = owner.instance['trust_environments'][owner.instance['active_trust_environment']]
         chain = deepcopy(old['toolchain']); chain['version'] = 'audit-next-version'
+        from research_fixtures import validation_fixture
+        from do_math.repository import exact_content_hash
+        manifest = deepcopy(old['manifest'])
+        validation = validation_fixture(chain, {k:manifest[k] for k in ('scope','files')},
+                                        Path(manifest['validation']['record']['source']))
+        manifest['validation'] = {'record':validation,'sha256':exact_content_hash(validation)}
         owner._apply_extended_control({'id':'UC-audit-register', 'action':'trust', 'origin':'user',
-            'config':{'operation':'register', 'toolchain':chain, 'manifest':deepcopy(old['manifest']),
+            'config':{'operation':'register', 'toolchain':chain, 'manifest':manifest,
                       'allowed_axioms':deepcopy(old['allowed_axioms'])}})
         env = next(k for k, v in owner.instance['trust_environments'].items() if v['toolchain'] == chain)
         owner._apply_extended_control({'id':'UC-audit-transition', 'action':'trust', 'origin':'user',

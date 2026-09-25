@@ -75,17 +75,9 @@ class FakeEngine(RevisionEngineMixin,LifecycleEngineMixin,SchedulerMixin,ReviewE
             grant.pop('budget_kind')  # This fixture explicitly grants both research pools.
         self.control('decision',{'change':{'kind':'grant','grant':{'id':identifier,**grant}}})
     def environment(self,name,active=False):
-        files=[]
-        for role in ['lean_binary','lean_source','lake_binary','mathlib_source','mathlib_build','checker']:
-            path=self.root/(name+'-'+role); path.write_bytes((name+role).encode())
-            files.append({'path':str(path.resolve()),'role':role,'sha256':hashlib.sha256(path.read_bytes()).hexdigest()})
-        chain={'executable':files[0]['path'],'sha256':files[0]['sha256'],'version':name,
-               'configured_command':[files[2]['path'],'env',files[0]['path']],
-               'version_exit':0, 'project':None, 'executables':{}, 'verifier_sha256':'f'*64}
-        manifest={'files':files,'command':chain['configured_command'],
-            'foundation_profile':{'allowed_axioms':sorted(FOUNDATION_AXIOMS),
-                                 'forbidden':['sorryAx','Lean.trustCompiler','additional_axioms']},
-            'validation':{'status':'verified','evidence_refs':['fixture-build-evidence']}}
+        from research_fixtures import trust_fixture
+        request=trust_fixture(self.root/name,['synthetic-lean',name])
+        chain,manifest=request['toolchain'],request['manifest']
         self._trust_control({'operation':'register','toolchain':chain,'manifest':manifest,
                              'allowed_axioms':sorted(FOUNDATION_AXIOMS)},'UI-env-'+name)
         eid=next(eid for eid,e in self.instance['trust_environments'].items() if e['toolchain']==chain)
@@ -293,6 +285,11 @@ class PublicLifecycleTests(unittest.TestCase):
             self.assertEqual(engine.instance['lifecycle']['state'],'active')
             self.assertEqual(len(engine.runtime['intent_imports']),1)
             self.assertTrue(engine.instance['active_trust_environment'])
+            queued=deepcopy(engine.runtime['queue'])
+            attempts=set(engine.runtime['executions'])
+            engine.run(until_active=True)
+            self.assertEqual(set(engine.runtime['executions']),attempts)
+            self.assertEqual(engine.runtime['queue'],queued)
             send_control(engine,'pause',config={})
             self.assertEqual(engine.runtime['resume_lifecycle'],'active')
             send_control(engine,'resume',config={})

@@ -349,6 +349,8 @@ class SchedulerMixin:
                 continue
             if not task.get('model_assessment'):
                 continue
+            from .model_policy import work_profile_selection
+            work_profile_selection(self.instance['config'], task, self.instance['execution_profiles'])
             basis = {**assessment_basis(task), 'goal_revision': view['goal_revision'], 'policy_revision': view['policy_revision']}
             self._enqueue('task_contract_review', tid, contract_basis=basis,
                 review_basis_key=review_basis_key(task, self.instance, self.runtime),
@@ -490,7 +492,7 @@ class SchedulerMixin:
             action['dispatch_wait'] = admission['wait']
         return admission['allowed']
 
-    def _run_parallel(self, *, max_steps=None, watch=False):
+    def _run_parallel(self, *, max_steps=None, watch=False, until_active=False):
         from .repository import new_id
         self._slots = SessionSlots(
                                    runtime=self.runtime, instance=self.instance)
@@ -520,6 +522,11 @@ class SchedulerMixin:
                         break
                     time.sleep(.02)
                     continue
+                if until_active and self.instance['lifecycle']['state'] == 'active':
+                    if self._calls.futures:
+                        time.sleep(.02)
+                        continue
+                    break
                 draining = max_steps is not None and steps >= max_steps
                 if draining:
                     if not self._calls.futures:

@@ -319,6 +319,7 @@ class KnowledgeRedesign(unittest.TestCase):
         approved = dict(executable=sys.executable, sha256=binary_hash, configured_command=[sys.executable],
             version='approved-version', version_exit=0, project=None,
             verifier_sha256=hashlib.sha256(Path(formal.__file__).read_bytes()).hexdigest(),
+            verifier_path=str(Path(formal.__file__).resolve()),
             executables={str(Path(sys.executable).resolve()): binary_hash})
         with tempfile.TemporaryDirectory() as directory:
             executable = Path(directory) / "lean.exe"

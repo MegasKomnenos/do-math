@@ -386,13 +386,23 @@ class ResearchRepository:
         boundary = PhysicalBoundary(destination)
 
         files = sorted({path for prefix in normalized_prefixes for path in self.list_files(prefix, head)})
-        for path in files:
-            output = destination.joinpath(*path.split("/"))
-            _assert_no_reparse_ancestor(output.parent)
-            output.parent.mkdir(parents=True, exist_ok=True)
-            _assert_no_reparse_ancestor(output.parent)
-            with boundary.open(output, "xb") as stream:
-                stream.write(self._store.read_bytes(head, path))
+        sizes = self._store.blob_sizes(head, files)
+        cursor = 0
+        while cursor < len(files):
+            batch, size = [], 0
+            while cursor < len(files) and len(batch) < 64:
+                path = files[cursor]
+                if batch and size + sizes[path] > 8 * 1024 * 1024:
+                    break
+                batch.append(path); size += sizes[path]; cursor += 1
+            contents = self._store.read_many(head, batch)
+            for path in batch:
+                output = destination.joinpath(*path.split('/'))
+                _assert_no_reparse_ancestor(output.parent)
+                output.parent.mkdir(parents=True, exist_ok=True)
+                _assert_no_reparse_ancestor(output.parent)
+                with boundary.open(output, 'xb') as stream:
+                    stream.write(contents[path])
         return {"snapshot": head, "files": files}
 
     def writer_lock(self) -> AbstractContextManager[None]:

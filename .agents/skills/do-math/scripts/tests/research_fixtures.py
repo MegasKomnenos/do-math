@@ -302,21 +302,48 @@ def install_adapter_fixture(test_case):
     test_case.addCleanup(mocked.stop)
 
 
+def validation_fixture(toolchain, inventory, source):
+    """Explicit compiler double; never present this record as native validation."""
+    from do_math.trust_inventory import validation_program
+    from do_math.repository import exact_content_hash
+    text,scope=validation_program(toolchain)
+    return {'status':'verified','scope':scope,'source':str(source.resolve()),'source_text':text,
+        'source_sha256':hashlib.sha256(text.encode()).hexdigest(),
+        'command':[*toolchain['configured_command'],str(source.resolve())],
+        'exit_code':0,'stdout':'synthetic external compiler result','stderr':'',
+        'toolchain':deepcopy(toolchain),'toolchain_after':deepcopy(toolchain),
+        'inventory_sha256':exact_content_hash(inventory),
+        'started_at':'2026-09-20T00:00:00Z','finished_at':'2026-09-20T00:00:01Z'}
+
+
 def trust_fixture(root, command):
     directory = root / "synthetic-trust"
     directory.mkdir(parents=True, exist_ok=True)
+    from do_math.trust_inventory import SMOKE
+    from do_math.repository import exact_content_hash
     files = []
-    for role in ("lean_binary", "lean_source", "lake_binary", "mathlib_source", "mathlib_build", "checker"):
-        path = directory / role
+    paths = {'lean_binary':'toolchain/bin/lean.exe', 'lean_source':'toolchain/src/Init/Prelude.lean',
+             'lake_binary':'toolchain/bin/lake.exe', 'mathlib_source':'project/Mathlib.lean',
+             'mathlib_build':'project/.lake/build/Mathlib.olean', 'checker':'checker/formal.py'}
+    for role, relative in paths.items():
+        path = directory / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
         raw = ("CORE_TESTS synthetic " + role).encode()
         path.write_bytes(raw)
         files.append({"role": role, "path": str(path.resolve()), "sha256": hashlib.sha256(raw).hexdigest()})
-    toolchain = {"executable": "test-lean", "sha256": "f" * 64, "version": "Lean test 4.32.0",
+    by_role={row['role']:row for row in files}
+    toolchain = {"executable": by_role['lean_binary']['path'], "sha256": by_role['lean_binary']['sha256'], "version": "Lean test 4.32.0",
                  "version_exit": 0, "configured_command": list(command),
-                 "verifier_sha256": "f" * 64, "executables": {}, "project": None}
+                 "verifier_sha256": by_role['checker']['sha256'],
+                 'verifier_path':by_role['checker']['path'],
+                 "executables": {by_role[r]['path']:by_role[r]['sha256'] for r in ('lean_binary','lake_binary')},
+                 "project": {'manifest_hashes':{}, 'fingerprint':{'root':str((directory/'project').resolve())},'search_paths':[]}}
+    scope={'roots':[{'kind':kind,'path':str((directory/kind).resolve())} for kind in ('toolchain','project','checker')]}
+    validation=validation_fixture(toolchain,{'scope':scope,'files':files},directory/'smoke.lean')
     manifest = {"command": list(command), "files": files,
+        'scope':scope,
         "foundation_profile": {"allowed_axioms": AXIOMS, "forbidden": ["sorryAx", "Lean.trustCompiler", "additional_axioms"]},
-        "validation": {"status": "verified", "evidence_refs": ["CORE_TESTS synthetic trust fixture; not a Lean build"]}}
+        "validation": {'record':validation,'sha256':exact_content_hash(validation)}}
     return {"operation": "register", "toolchain": toolchain, "allowed_axioms": AXIOMS, "manifest": manifest}
 
 
@@ -411,11 +438,8 @@ def activate(engine, root, *, initialization_runner, external_policy="disabled",
     previous = engine.runner
     engine.runner = initialization_runner
     try:
-        for _ in range(5):
-            engine.run(max_steps=1)
-            if engine.instance["lifecycle"]["state"] == "active":
-                break
-        else:
+        engine.run(until_active=True)
+        if engine.instance['lifecycle']['state'] != 'active':
             raise AssertionError("Public initialization did not reach active: " + repr({
                 "activation": engine.instance["lifecycle"]["activation"],
                 "status": engine.runtime["status"], "history": engine.runtime["history"][-3:]}))

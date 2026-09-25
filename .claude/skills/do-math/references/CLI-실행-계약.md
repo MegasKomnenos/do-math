@@ -153,7 +153,7 @@ GLOSSARY의 보편 상태가 개념의 뜻을 소유한다. 아래 값은 CLI가
 ```python
 import json, sys
 from pathlib import Path
-sys.path.insert(0, '.claude/skills/do-math/scripts')
+sys.path.insert(0, '.agents/skills/do-math/scripts')
 from do_math.execution_profiles import host_constraint
 approved = json.loads(Path('approved-host.json').read_text(encoding='utf-8'))
 constraint = host_constraint(host_id=approved['host_id'], limits=approved['limits'],
@@ -191,7 +191,7 @@ Path('host-config.json').write_text(json.dumps(settings, ensure_ascii=False, ind
 
 Claude는 기존 CLI 로그인을 사용한다. `PATH`에서 실행 파일을 찾으며 `CLAUDE_CONFIG_DIR`와 Windows의 `CLAUDE_CODE_GIT_BASH_PATH`를 전달한다. API 키·API 공급자 변경 환경변수는 전달하지 않는다. `--setting-sources`를 비우고 사용자 훅·자동 기억·스킬 호출·내부 Agent/Task 도구를 비활성화하며, `--strict-mcp-config`로 인스턴스에 고정된 scholarly만 연결한다. Claude만 사용하는 인스턴스도 scholarly의 자동 탐색 위치는 작업 경로에서 부모 방향으로 찾는 `.codex/config.toml`, 이어 `CODEX_HOME/config.toml`(미설정이면 사용자 홈의 `.codex/config.toml`) 순서이며, 다른 위치의 설정은 `scholarly_server`에 직접 지정한다.
 
-공통 `effort`의 지원 값은 `minimal`, `low`, `medium`, `high`, `xhigh`다. 이 가운데 Claude는 `minimal`을 지원하지 않는다. `operator_effort`는 추가로 `max`·`ultra`를 허용하지만 Claude에는 `ultra`를 전달할 수 없다. Claude worker는 지원하지 않는 수준을 CLI 시작 전에 거부한다. 모델 접근 권한과 해당 모델의 노력 수준 지원은 실제 CLI 응답으로 확인하며, 실패를 다른 모델·수준으로 우회하지 않는다.
+인스턴스 설정 `effort`의 지원 값은 `minimal`, `low`, `medium`, `high`, `xhigh`다. 이 가운데 Claude는 `minimal`을 지원하지 않는다. `operator_effort`는 추가로 `max`·`ultra`를 허용하지만 Claude에는 `ultra`를 전달할 수 없다. Claude worker는 지원하지 않는 수준을 CLI 시작 전에 거부한다. 모델 접근 권한과 해당 모델의 노력 수준 지원은 실제 CLI 응답으로 확인하며, 실패를 다른 모델·수준으로 우회하지 않는다.
 
 다음은 일부 설정을 명시하는 예다. `init`에서 생략한 필드는 코드의 기본값을 사용하고, `configure`에서 생략한 최상위 필드는 기존 값을 유지한다.
 
@@ -226,11 +226,12 @@ init --repository PATH [--create-repository] --workspace PATH
      (--goal TEXT | --goal-file PATH) [--title TEXT]
      [--policies-file PATH]
      [--source PATH ...] [--config-file PATH] [--effort VALUE]
+     [--request-text TEXT | --request-text-file PATH]
 ```
 
 `init`은 원입력과 설정·초기 source를 보존하고 `initializing` 인스턴스를 만든다. `--create-repository`는 새 경로나 빈 디렉터리에만 Git 저장소를 만든다. 생성 응답의 `instance_id`와 `snapshot`을 보존하고 이후 같은 인스턴스에 제어를 보낸다. 생성 시 grant와 연구 queue는 비어 있다.
 
-원입력은 `lifecycle.immutable_input`의 `text`, `sha256`, `bytes`에 하나의 정확한 UTF-8 표현으로 보존한다. 결정론 JSON은 문자열과 객체 키의 코드 포인트열을 바꾸지 않으며 NFC 사본이나 별도 Base64 원문을 만들지 않는다. 바이트 보존과 그 원문을 의미 해석에 실제 사용했다는 보증은 별개이므로, 문자열의 철자·코드 포인트 자체가 의미인 입력에서는 해석·피복·검사 대상이 이 `text`와 일치하는지 확인한다.
+원입력은 `lifecycle.immutable_input`의 `text`, `sha256`, `bytes`에 하나의 정확한 UTF-8 표현으로 보존한다. 수학 목표와 전체 요청이 다르면 `--request-text` 또는 `--request-text-file`을 지정한다. 이 원문을 의도 해석과 독립 검사의 대상으로 삼고, 수학 목표는 초기 입력의 `config.goal`에 별도로 보존한다. 별도 원문을 지정하지 않은 경우에는 goal 자체가 원문이다. 결정론 JSON은 문자열과 객체 키의 코드 포인트열을 바꾸지 않으며 NFC 사본이나 별도 Base64 원문을 만들지 않는다. 바이트 보존과 그 원문을 의미 해석에 실제 사용했다는 보증은 별개이므로, 문자열의 철자·코드 포인트 자체가 의미인 입력에서는 해석·피복·검사 대상이 이 `text`와 일치하는지 확인한다.
 
 공개 명령의 실행 순서, 완전한 요청 객체, 정확한 프로필 참조를 얻는 방법, 능력·신뢰 근거의 출처와 현재 승인 연결의 한계는 [초기화 운전](초기화-운전.md)을 따른다. 활성화는 채택된 통치·설정·정책, 초기화와 연구의 별도 권한, 고정 프로필과 현재 능력 증거, 실제 적용된 독립 의도 검사, 활성 신뢰 환경·운영 용량·복구 검사를 대조한다. 이미 채택된 값은 같은 근거를 재사용하며, 연구 권한이나 미확인 증거를 기본값에서 추론하지 않는다.
 
@@ -240,7 +241,10 @@ init --repository PATH [--create-repository] --workspace PATH
 
 `init`은 수학적 질문을 연구 목표로 받는다. 초기화가 완료된 뒤 형식 결과·동일성 판정·목표 감사로 해결 여부를 판정한다. 문헌 조사·계산·비형식 과제는 이 목표를 위한 작업 계약으로 수행한다.
 
-- `run [--max-steps N] [--watch]`는 writer lock 안에서 control을 적용하고, 사라진 실행을 복구하며, 모델별 용량 안에서 AI action을 병렬로 실행한다. 형식·신뢰·외부 기계 action과 상태 반영은 소유 실행기가 처리한다. `N`은 새로 처리할 action 수의 양의 상한이며, 도달한 뒤에는 새 일반 action을 열지 않고 이미 시작한 모델 호출을 회수한다. 그 호출의 생존·복구에 필요한 live 운영 점검은 독립된 운영 슬롯에서 계속 처리하며 일반 step 수에 넣지 않는다.
+- `run [--max-steps N] [--watch] [--until-active]`는 writer lock 안에서 control을 적용하고, 사라진 실행을 복구하며, 모델별 용량 안에서 AI action을 병렬로 실행한다. 형식·신뢰·외부 기계 action과 상태 반영은 소유 실행기가 처리한다. `N`은 새로 처리할 action 수의 양의 상한이며, 도달한 뒤에는 새 일반 action을 열지 않고 이미 시작한 모델 호출을 회수한다. 그 호출의 생존·복구에 필요한 live 운영 점검은 독립된 운영 슬롯에서 계속 처리하며 일반 step 수에 넣지 않는다.
+- `--until-active`는 lifecycle이 active가 되면 연구 action을 배정하기 전에 반환한다. 이미 active인 인스턴스에도 새 연구를 시작하지 않는다. 누락 관문이 있는 반환은 활성화 성공이 아니다.
+- `select-profile --role ROLE [--task TK-ID] [--snapshot OID]`는 현재 역할 하한·과제 평가·허용 프로필을 실제 선택과 같은 규칙으로 대조한다. 반환은 선택과 정확한 프로필 원문이며 실행·채택은 하지 않는다.
+- `prepare-import-approval --import-id IM-ID [--snapshot OID] --output NEW-PATH`는 독립 검사를 통과한 현행 수입의 정확한 승인 좌표를 새 파일로 생성한다. 파일 생성은 승인·적용이 아니며, 실제 결정은 기존 `decision --file`을 사용한다.
 - `status [--json]`은 같은 Git snapshot에서 연구 상태·예약·예산·공급자 대기를 재구성한다. 실제 새 배정은 최신 머리에서 권한과 여유를 다시 검사하고 예약한다. 별도 운영 로그나 현장 프로세스 관측을 함께 읽을 때에는 그 관측 시각과 범위를 구별한다. JSON 필드는 README의 운영 표를 따른다.
 - `check`는 상태 관계와 보존 artifact의 해시·크기를 검사해 `{passed, errors, ...}`를 반환한다. 결함이 있으면 exit 1이다. 자연어 의미를 새로 검증하지 않는다.
 - `profile [--provider codex|claude] [--codex-path PATH | --claude-path PATH]`은 선택한 CLI 표면을 조사한다. 기본 공급자는 `codex`이며 경로 옵션은 선택한 공급자와 일치해야 한다. 인스턴스 인자는 받지 않는다. `verified=true`는 명령 표면의 확인이며 로그인·모델 이용 가능성이나 실제 작업 성공의 증거는 아니다.
@@ -520,7 +524,7 @@ source --file PATH [--name FILE_NAME]
 
 ### `trust`
 
-`register`에는 정확한 `toolchain`, `allowed_axioms`, 실제 파일·검증 근거를 갖춘 `manifest`가 필요하다. manifest의 현행 필드는 `command`, `foundation_profile`, `files`, `validation`이다. 사전 빌드 캐시를 허용하며 클린 빌드는 요구하지 않는다. `validation.status=verified`는 명시한 환경 검사에 상대적인 통과이며 전체 라이브러리 재검증을 뜻하지 않는다. `setup_lean.py --verify-only`는 Mathlib import와 대표 증명 검사의 원문·결과 및 등록용 검증 참조를 보존한다. 완전한 요청 형식과 각 값의 출처는 [초기화 운전](초기화-운전.md)의 신뢰 환경 절에 있다. 등록 시 기계 검사는 manifest 구조·해시, 명령과 기초 공리 프로필을 대조해 비활성 후보를 보존한다. 실제 설치 파일의 경로·바이트 대조는 전환 뒤 활성화 기계 작업이 수행한다. 등록 성공이나 준비 표지 하나로 환경을 활성화하지 않는다.
+`register`에는 정확한 `toolchain`, `allowed_axioms`, 실제 파일·검증 근거를 갖춘 `manifest`가 필요하다. manifest의 현행 필드는 `command`, `foundation_profile`, `scope`, `files`, `validation`이다. scope는 설치·프로젝트·검사기 root의 전체 파일 모집단을 고정하며, validation은 실제 검사의 record와 내용 해시를 보존한다. 사전 빌드 캐시를 허용하며 클린 빌드는 요구하지 않는다. `validation.record.status=verified`는 명시한 환경 검사에 상대적인 통과이며 전체 라이브러리 재검증을 뜻하지 않는다. `setup_lean.py --verify-only --trust-file <새 경로>`는 실제 검사 원문·결과와 전체 파일 목록을 결합한 완전한 등록 요청을 생성한다. 수신기는 source·command·종료 코드·전후 toolchain과 record 해시를 검사한다. 완전한 요청 형식과 각 값의 출처는 [초기화 운전](초기화-운전.md)의 신뢰 환경 절에 있다. 등록 시 기계 검사는 manifest 구조·해시, 명령과 기초 공리 프로필을 대조해 비활성 후보를 보존한다. 실제 설치 파일의 경로·바이트와 관측 전후 목록의 추가·누락 대조는 전환 뒤 활성화 기계 작업이 수행한다. 등록 성공이나 준비 표지 하나로 환경을 활성화하지 않는다.
 
 ```json
 {"operation":"transition","env_id":"TE-실제-등록-ID"}
@@ -567,7 +571,7 @@ retry는 사용자 제어로 `unknown`, `failed`, 전송 전 `cancelled` operati
 {"operation":"attach","id":"conversation-1","generation":1,"disconnect_policy":"pause","lease_seconds":60}
 ```
 
-`generation`은 양의 정수이고, 재연결은 이전보다 큰 generation을 사용한다. `disconnect_policy`는 `pause` 또는 `continue_authorized`다. lease는 유한한 양수 초다.
+`generation`은 양의 정수이고, 재연결은 이전보다 큰 generation을 사용한다. `disconnect_policy`는 `pause` 또는 `continue_authorized`다. attach에서 이 값을 지정하면 연결 기록과 인스턴스의 `conversation_loss_policy`를 함께 갱신한다. 생략하면 인스턴스의 현행 값을 사용한다. 초기화 때 continue_authorized를 채택했어도 이후 attach가 pause를 지정하면 그 현행 정책으로 대화 소실을 처리한다. lease는 유한한 양수 초다.
 
 ```json
 {"operation":"heartbeat","id":"conversation-1","generation":1}
@@ -792,7 +796,9 @@ relation 항목은 `kind`, `source`, `target`, `evidence`를 가진다. source�
 
 작업자는 실행별 스키마를 만족하는 완전한 JSON 값 하나를 정상 최종 응답으로 반환한다. 중앙은 native stream의 정상 완료, 입력·출력 결속과 로컬 종료를 확인한 뒤 정확한 최종 응답 바이트와 종료된 작업 공간의 확장·참조·모집단·수집 파일을 한 번 포착한다. 같은 실행 중 결과를 먼저 봉인해야 할 때에는 `submit_draft(draft_path=<draft>)` 또는 `submission_contract.command --output <draft> --submit --wait-seconds N`으로 초안 하나를 명시적으로 조기 제출할 수 있다. 두 조기 제출 경로가 중앙에 보내는 의미 입력은 작업 공간 상대 `draft_path` 하나다. 중앙은 어느 전달 방식에서도 실제 포착본에서 검사 ID·해시·스키마·도구 판본·파일 크기와 manifest를 자동 생성하며, 작업자는 이 값을 전사하거나 검사 보고를 증빙으로 다시 제출하지 않는다. 명시 제출의 CLI 반환은 `delivery`이며 `state=accepted`일 때만 조기 접수됐다.
 
-필요할 때만 `submit_draft`의 `preview=true` 또는 셸 명령의 `--preview --wait-seconds N`으로 경로를 미리 진단한다. 셸에서 `--submit`과 `--preview` 없이 `--output <draft>`만 실행하면 로컬 `producer_check`의 `passed`와 문제 목록을 얻지만, 이 결과는 최종 접수의 필수 증거가 아니며 중앙으로 전송되지 않는다. `--preview`는 로컬 `check`와 별도로 중앙이 그 호출에서 포착한 후보의 `delivery.state=previewed`를 돌려준다. Preview는 비권위 결과이며 Git 공개, 외부 효과, 운영 수리, 수학 판정을 실행하지 않는다. 명시적 조기 제출과 정상 final은 각각의 호출 또는 정상 완료에서 포착한 정확한 바이트를 같은 봉인 규칙으로 처리한다. `check.passed`는 전건 구조 검사 통과이고 `capture_eligible`은 정확한 후보의 봉인 가능 여부다. 「공통 실행」의 독립 묶음 조건을 만족하면 국소 오류가 남아도 후보를 접수하여 정상 묶음부터 적용할 수 있다. 로컬 `--output`의 종료 코드는 전체 검사 결과를 나타내므로 중앙 `delivery.state=accepted`와 구별한다. 접수된 후보의 국소 오류는 후속 수리에서 다루며 다른 final로 후보를 대체하지 않는다. Preview와 로컬 검사를 생략해도 정상 최종 응답을 접수할 수 있다.
+필요할 때만 `submit_draft`의 `preview=true` 또는 셸 명령의 `--preview --wait-seconds N`으로 경로를 미리 진단한다. 셸에서 `--submit`과 `--preview` 없이 `--output <draft>`만 실행하면 로컬 `producer_check`의 `passed`와 문제 목록을 얻지만, 이 결과는 최종 접수의 필수 증거가 아니며 중앙으로 전송되지 않는다. `--preview`는 로컬 `check`와 별도로 중앙이 그 호출에서 포착한 후보의 `delivery.state=previewed`를 돌려준다. Preview는 비권위 결과이며 Git 공개, 외부 효과, 운영 수리, 수학 판정을 실행하지 않는다. 명시적 조기 제출과 정상 final은 각각의 호출 또는 정상 완료에서 포착한 정확한 바이트를 같은 봉인 규칙으로 처리한다.
+
+검사 결과의 `check.passed`는 전건 구조 검사 통과를 뜻한다. `capture_eligible`은 그 정확한 후보를 봉인할 수 있는지를 뜻하며, 두 값은 중앙 접수 결과인 `delivery.state=accepted`와 별개다. 「공통 실행」의 독립 묶음 조건을 만족하면 국소 오류가 남아도 후보를 접수하여 정상 묶음부터 적용할 수 있다. 로컬 `--output`의 종료 코드는 전체 검사 결과를 나타내므로 중앙 `delivery.state=accepted`와 구별한다. 접수된 후보의 국소 오류는 후속 수리에서 다루며 다른 final로 후보를 대체하지 않는다. Preview와 로컬 검사를 생략해도 정상 최종 응답을 접수할 수 있다.
 
 중앙 실행기는 구조 검사 뒤 실제 권한·입력 판본·현재성·참조·영향을 추가 대조한다. 정확한 제출 바이트와 확장·수집 파일·기계 검사·manifest를 불변 후보로 보존하고 정상 종료·허가된 복구·재시작에서 같은 후보를 사용한다. 이미 접수된 조기 봉인 후보가 있으면 그것만 사용하고 뒤의 다른 final로 바꾸지 않으며, 봉인본이 손상돼도 다른 final로 fallback하지 않는다. 봉인 후보가 없을 때에만 완전한 native stream, 정상 완료, 입력·출력 결속, 현재 권한과 로컬 종료가 확인된 final을 같은 중앙 경로로 포착한다. 오류·중단·불완전하거나 혼합된 stream, 정지, 권한·현재성 위반의 응답과 파일은 보존만 한다.
 
@@ -944,9 +950,11 @@ Claude 수집기는 같은 세션에서 이어진 init·result 구간 중 origin
 
 ```text
 timeline --repository PATH --instance RI-ID [--snapshot OID]
-         [--format json|csv] [--timezone Asia/Seoul] [--include-operator]
+         [--format json|csv] [--timezone Asia/Seoul] [--include-operator] [--include-operations]
 ```
 
 타임라인은 고정 snapshot의 내부 실행별 배정·보고 모델, 시작·종료·기한, 결과·실패, 계보·입력 snapshot·보존 자료·후속을 제공한다. UTC 원문과 날짜·offset을 가진 현지 시각을 함께 제공하며 과거에 기록하지 않은 시각은 null이다. 별도 운영 로그를 포함하면 파일 해시·관측 시각을 가진 다른 집계 단위로 추가한다. 연구 상태·예산 예약·공급자 대기는 같은 Git snapshot에 속한다. 별도 운영 로그와 현장 프로세스 관측은 그 snapshot 바깥의 자료이므로 각각의 해시·관측 시각·확인 범위를 구별한다.
 
 `input_metrics`는 UTF-8 바이트로 센 문서·스키마·문맥 구성과 프롬프트 크기다. 토큰이나 실제 청구액으로 환산해 확정하지 않는다. 축소된 과제 이력은 source_ref와 JSON Pointer로 회수하고 ready·returned 전건과 제출 검사기의 원 집합을 유지한다. `probe_cli.py --skill-only`는 문서와 정적·동적 역할·확장 스키마의 구조 검사다. 실호출은 명시한 provider·모델의 대표 프로토콜·파일·도구·정지 경계를 확인하며 연구 성능을 인증하지 않는다.
+
+`status.operating_summary`는 같은 snapshot에서 lifecycle, 실행·목표 상태, 최상위 차단 원인과 다음 소유자, 지속 정책, workspace, grant 만료, 감독 설정을 함께 제공한다. 실제 프로세스와 예약의 관측은 `operator status` 및 호스트 정보로 별도 확인한다.

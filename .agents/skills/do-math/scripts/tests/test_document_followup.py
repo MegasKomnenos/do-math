@@ -20,6 +20,12 @@ class FollowupDocumentTests(ActiveStateHarness):
 
     def test_prepared_observation_rule_reaches_contract_review(self):
         engine, _ = self.make()
+        from do_math.execution_profiles import profile_ref
+        def proposal(title, **kwargs):
+            value=candidate(title, **kwargs)
+            value['profile_refs']=[profile_ref(p) for p in engine.instance['execution_profiles'].values()
+                                   if p['role']=='research_work']
+            return value
         rule = {"id": "branches", "operator": "counter_gte", "threshold": 3,
                 "subject": {"kind": "counter", "id": "branches"},
                 "basis": {"source": "execution_events", "unit": "count"},
@@ -27,7 +33,7 @@ class FollowupDocumentTests(ActiveStateHarness):
         engine.runtime["executions"]["EX-preparation"] = {"status": "ended", "input_snapshot": engine.head, "extensions": {"task_conditions": [
             {"task_title": "Bounded branch investigation", "observation_rules": [rule]}]}}
         engine._apply({"role": "research_preparation"},
-                      {**common("Prepare an observable investigation"), "candidates": [candidate("Bounded branch investigation")]},
+                      {**common("Prepare an observable investigation"), "candidates": [proposal("Bounded branch investigation")]},
                       "EX-preparation")
         task = next(iter(engine.runtime["tasks"].values()))
         self.assertEqual(task.get("initial_observation_rules"), [rule])
@@ -43,7 +49,7 @@ class FollowupDocumentTests(ActiveStateHarness):
         engine.runtime["executions"]["EX-revision"] = {"status": "ended", "input_snapshot": engine.head, "extensions": {"task_conditions": [
             {"task_title": task["title"], "observation_rules": [revised_rule]}]}}
         engine._apply({"role": "research_preparation"},
-                      {**common("Revise the observation boundary"), "candidates": [candidate(task["title"], revises=task["id"])]},
+                      {**common("Revise the observation boundary"), "candidates": [proposal(task["title"], revises=task["id"])]},
                       "EX-revision")
         self.assertEqual(engine.runtime["tasks"][task["id"]]["initial_observation_rules"], [revised_rule])
         self.assertNotIn(task["id"], engine.runtime["task_observation_rules"],

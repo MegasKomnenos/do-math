@@ -14,6 +14,31 @@ from test_categories import group_for, test_group as category
 
 
 class RunnerTests(unittest.TestCase):
+    def test_failure_is_readable_while_the_next_test_runs_before_group_completion(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            observations = []
+            class Failed(unittest.TestCase):
+                def test_first(self): self.fail('preserve this exact failure')
+            class Following(unittest.TestCase):
+                def test_next(self):
+                    records = list((root / 'failures').glob('*.json'))
+                    self.assertEqual(len(records), 1)
+                    row = json.loads(records[0].read_bytes())
+                    self.assertFalse(row['complete'])
+                    self.assertEqual(row['test']['id'], first.id())
+                    self.assertEqual(row['test']['outcome'], 'failed')
+                    self.assertIn('preserve this exact failure', row['test']['details'][0])
+                    self.assertFalse((root / 'result.json').exists())
+                    observations.append(row)
+            first = Failed('test_first')
+            result = unittest.TextTestRunner(stream=io.StringIO(), resultclass=lambda *a, **k:
+                run_tests.TimedResult(*a, directory=root, **k)).run(unittest.TestSuite([
+                    first, Following('test_next')]))
+            self.assertEqual(len(observations), 1)
+            self.assertEqual(len(result.failures), 1)
+            self.assertFalse(result.wasSuccessful())
+
     def test_expensive_class_label_is_inherited_and_method_can_override_it(self):
         @category('lean')
         class Base(unittest.TestCase):

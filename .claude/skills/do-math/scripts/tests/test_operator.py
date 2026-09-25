@@ -149,6 +149,17 @@ class OperatorTests(unittest.TestCase):
         self.assertEqual(result["outcome"], "completed")
         self.assertEqual(Path(run.call_args.args[0][1]), live / "scripts/do_math.py")
 
+    def test_accepted_installation_repair_requests_supervisor_without_periodic_delay(self):
+        before={'status':'ready','user_pause':False}
+        after={'status':'waiting','installation_repair':{'status':'installation_repair_pending'},
+               'operating_summary':{'supervision':{'configured_enabled':True}}}
+        with patch.object(operator,'read_status',side_effect=[before,after]), \
+             patch.object(operator.subprocess,'run',return_value=subprocess.CompletedProcess([],0,'{}','')), \
+             patch.object(operator,'schedule',return_value={'operator':{'state':'Running'}}) as schedule:
+            result=operator.run_engine(self.repository,self.instance,self.workspace)
+        self.assertEqual(schedule.call_args.args[0],'start-operator')
+        self.assertIn('supervisor_request',result)
+
     def test_real_probe_persists_failure_when_engine_has_syntax_error(self) -> None:
         import shutil
         isolated = self.root / "isolated-skill"

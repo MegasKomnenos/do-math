@@ -145,7 +145,10 @@ class ScriptedRunner:
 
 
 def formal_ok(*, source, declarations, workspace, lean_command,
-              allowed_axioms=(), should_stop=None, expected_toolchain=None, on_started=None):
+              allowed_axioms=(), should_stop=None, expected_toolchain=None, on_started=None, launch_ticket=None):
+    if launch_ticket is not None:
+        from do_math.launch import validate_start
+        validate_start(launch_ticket)
     if source == "theorem t : True := by trivial" and declarations == ["t"]:
         signature, dependencies, value = "True", ["True", "True.intro"], "True.intro"
     elif (source == "theorem add_zero_fixture (n : Nat) : n + 0 = n := Nat.add_zero n"
@@ -154,7 +157,8 @@ def formal_ok(*, source, declarations, workspace, lean_command,
     else:
         raise AssertionError("No explicit compiler fixture covers this source and declaration set")
     signatures = {name: f"{name} : {signature}" for name in declarations}
-    return {"status": "verified", "source_sha256": hashlib.sha256(source.encode()).hexdigest(),
+    return {"status": "verified", "launch_not_created": True,
+            "source_sha256": hashlib.sha256(source.encode()).hexdigest(),
             "declarations": declarations, "axioms": {name: [] for name in declarations},
             "declaration_signatures": signatures,
             "signature_hash": hashlib.sha256(json.dumps(signatures, sort_keys=True).encode()).hexdigest(),
@@ -232,7 +236,11 @@ class EngineTests(unittest.TestCase):
             if solved['knowledge']['K'] == 1:
                 break
         else:
-            self.fail('The fixture did not publish formally reviewed knowledge')
+            self.fail('The fixture did not publish formally reviewed knowledge: ' + json.dumps({
+                'snapshot':engine.head, 'status':engine.runtime['status'],
+                'queue':engine.runtime['queue'], 'waiting':engine.runtime.get('waiting_actions',{}),
+                'executions':[{key:value.get(key) for key in ('id','role','status','outcome','error','result_ref')}
+                              for value in engine.runtime['executions'].values()]},ensure_ascii=False))
         from do_math.knowledge_records import usable_links
         self.assertEqual(solved["knowledge"]["K"], 1)
         kid = next(kid for kid in engine.instance['knowledge'] if usable_links(engine.instance, kid))
@@ -252,7 +260,8 @@ class EngineTests(unittest.TestCase):
         verified = engine.instance['knowledge'][kid]
         self.assertEqual(engine.instance["trust_environments"][engine.instance["formal_results"][verified["formal_result_id"]]["trust_environment_id"]]["status"], "active")
         self.assertEqual(engine.instance["active_trust_environment"], engine.instance["formal_results"][verified["formal_result_id"]]["trust_environment_id"])
-        self.assertEqual(engine.instance["formal_results"][verified["formal_result_id"]]["verification"]["toolchain"]["sha256"], "f" * 64)
+        self.assertEqual(engine.instance["formal_results"][verified["formal_result_id"]]["verification"]["toolchain"],
+                         engine.instance['trust_environments'][engine.instance['active_trust_environment']]['toolchain'])
         failed_runner = ScriptedRunner(formal=True); failed, _ = self.make(failed_runner, formal_fail, plan_settle_seconds=1)
         for _ in range(0, 20, 4):
             failed_status = failed.run(max_steps=4)
@@ -284,13 +293,26 @@ class EngineTests(unittest.TestCase):
         engine, instance = self.make(ScriptedRunner())
         action = engine.runtime['queue'][0]
         crashed = engine._register_execution(action, {'id': 'EX-crash', 'role': action['role'],
-            'status': 'running', 'input_snapshot': engine.head, 'input_manifest': []})
+            'status': 'queued', 'input_snapshot': engine.head, 'input_manifest': []})
+        profile=engine._execution_profile(action)
+        self.assertTrue(engine._provider_admit(action,crashed['id'],profile['budget_kind'],
+            profile['ai']['model'],profile=profile,execution=crashed))
         from do_math.windows_job import WindowsJob, process_identity
-        from uuid import uuid4
+        # A separate exited process supplies a real dead owner. The unittest
+        # process remains alive and must never count as a crashed launch owner.
+        owner_program=('import json,sys; sys.path.insert(0,sys.argv[1]); '
+            'from do_math.windows_job import owner_identity; print(json.dumps(owner_identity()))')
+        crashed['launch_ticket']['owner']=json.loads(subprocess.check_output(
+            [sys.executable,'-c',owner_program,str(SCRIPTS)]))
+        crashed['launch_ticket']['phase']='dispatched'
         job = WindowsJob([sys.executable, '-c', 'pass'], cwd=self.root,
-                         name='CORE-CRASH-' + uuid4().hex)
+                         name=crashed['launch_ticket']['job_name'])
         self.addCleanup(job.close)
         crashed['process'] = {**process_identity(job), 'job_name': job.name}
+        engine._provider_slots().started(crashed['id'],crashed['process'])
+        from do_math.execution_lifecycle import transition_execution
+        from do_math.engine import now
+        transition_execution(crashed,'running',at=now())
         job.resume()
         from types import SimpleNamespace
         from do_math.codex_adapter import CodexExecAdapter

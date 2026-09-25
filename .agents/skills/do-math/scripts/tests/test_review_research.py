@@ -106,9 +106,13 @@ class ReviewResearchEngineTests(PurposeHarness):
         document = engine._documents['identity_review'][0]
         document['content'] += fragment * (engine.instance['config']['max_input_bytes'] // len(fragment) + 1)
         document['sha256'] = hashlib.sha256(document['content'].encode()).hexdigest()
-        calls = len(runner.calls)
-        engine.run(max_steps=1)
-        self.assertEqual(len(runner.calls), calls)
+        calls = [row['action']['id'] for row in runner.calls if row['role']=='identity_review']
+        # A blocked review must not call its model. Other queued planning work
+        # remains dispatchable, so wait for this action's own overflow receipt.
+        self.drive(engine, predicate=lambda e:any(
+            w['action'].get('id')==action['id'] and w.get('reason')=='input_overflow'
+            for w in e.runtime.get('waiting_actions',{}).values()), limit=6)
+        self.assertEqual([row['action']['id'] for row in runner.calls if row['role']=='identity_review'], calls)
         self.assertEqual(engine.instance['knowledge'][knowledge_id], before)
         self.assertTrue(any(w['action'].get('id') == action['id'] and w['reason'] == 'input_overflow'
                             for w in engine.runtime.get('waiting_actions', {}).values()))

@@ -23,6 +23,19 @@ from test_categories import test_group
 
 @test_group('unit')
 class EfficiencyUnits(unittest.TestCase):
+    def test_telemetry_failure_identifies_operation_without_leaking_exception_text(self):
+        from do_math.operation_trace import OperationTrace
+        with tempfile.TemporaryDirectory() as directory:
+            sink=OperationTrace(directory)
+            with patch('do_math.operation_trace.atomic_replace',side_effect=PermissionError(13,'private request value')):
+                with self.assertWarns(RuntimeWarning):
+                    sink.emit({'event':'started','span_id':'span','phase':'unit'})
+            observed=progress(directory)['telemetry_errors'][0]
+            self.assertEqual(observed['operation'],'replace_live')
+            self.assertEqual(observed['errno'],13)
+            self.assertNotIn('private request value',json.dumps(observed))
+            self.assertTrue(sink.path.is_file())
+
     def test_large_control_is_archived_before_reference_catalog_construction(self):
         from test_lifecycle_engine import FakeEngine, AdapterDouble
         from do_math.context_store import prepare_role_input

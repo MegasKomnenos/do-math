@@ -11,6 +11,7 @@ import uuid
 import warnings
 from functools import wraps
 from inspect import signature
+from .file_io import atomic_replace, read_bytes_shared
 
 _sink = ContextVar('do_math_operation_trace', default=None)
 _parent = ContextVar('do_math_operation_span', default=None)
@@ -25,6 +26,7 @@ class OperationTrace:
         self.live = self.path.parent / 'live' / (self.id + '.json')
         self.live.parent.mkdir(parents=True, exist_ok=True)
         self.errors = 0
+        self.failure = None
         self.active = {}
         self.parent_operation_id = os.environ.get('DO_MATH_PARENT_OPERATION_ID')
 
@@ -33,6 +35,7 @@ class OperationTrace:
         row = {'operation_id': self.id, 'parent_operation_id':self.parent_operation_id,
                'observed_at': datetime.now(timezone.utc).isoformat(), **row}
         raw = json.dumps(row, ensure_ascii=False, separators=(',', ':')) + '\n'
+        operation = 'append_trace'
         try:
             with self.lock:
                 with self.path.open('a', encoding='utf-8') as stream:
@@ -43,13 +46,34 @@ class OperationTrace:
                 elif span:
                     self.active.pop(span, None)
                 temporary = self.live.with_suffix('.tmp')
+                operation = 'write_live'
                 temporary.write_text(json.dumps({**row, 'active_spans':list(self.active.values())},
                     ensure_ascii=False), encoding='utf-8')
-                os.replace(temporary, self.live)
-        except OSError:
+                operation = 'replace_live'
+                atomic_replace(temporary, self.live)
+        except OSError as error:
             self.errors += 1
+            observed = datetime.now(timezone.utc).isoformat()
+            self.failure = {'operation_id':self.id,'operation':operation,
+                'exception_type':type(error).__name__,'errno':error.errno,
+                'winerror':getattr(error,'winerror',None),'count':self.errors,
+                'first_at':self.failure['first_at'] if self.failure else observed,'last_at':observed,
+                'relative_path':self.path.name if operation=='append_trace' else 'live/'+self.live.name}
+            # A separate bounded record survives failure of the live replace.
+            # No exception message, raw argv or request is copied into telemetry.
+            try:
+                directory=self.path.parent/'errors'
+                directory.mkdir(exist_ok=True)
+                target=directory/(self.id+'.json')
+                # Diagnostics must also survive failure of rename itself. A
+                # partial diagnostic is reported unreadable, never as authority.
+                target.write_text(json.dumps(self.failure,ensure_ascii=False),encoding='utf-8')
+            except OSError:
+                pass
             if self.errors == 1:
-                warnings.warn('operation telemetry write failed; execution authority is unchanged', RuntimeWarning)
+                warnings.warn(f'operation telemetry {operation} failed ({type(error).__name__}, '
+                    f'errno={error.errno}, winerror={getattr(error,"winerror",None)}); '
+                    'execution authority is unchanged', RuntimeWarning)
 
 
 @contextmanager
@@ -146,11 +170,16 @@ def progress(directory):
     rows = []
     for path in sorted((Path(directory) / 'live').glob('*.json'))[:16]:
         try:
-            rows.append(json.loads(path.read_text(encoding='utf-8')))
+            rows.append(json.loads(read_bytes_shared(path).decode('utf-8')))
         except (OSError, ValueError):
             rows.append({'event':'unreadable_progress','operation_id':path.stem})
+    failures=[]
+    for path in sorted((Path(directory)/'errors').glob('*.json'))[-16:]:
+        try:failures.append(json.loads(read_bytes_shared(path).decode('utf-8')))
+        except (OSError,ValueError):failures.append({'operation_id':path.stem,'status':'unreadable_error_record'})
     return {'source':'local_operation_sidecars','observed_at':datetime.now(timezone.utc).isoformat(),
-            'rows':rows,'scope':'progress only; not process liveness or authoritative completion'}
+            'rows':rows,'telemetry_errors':failures,
+            'scope':'progress only; not process liveness or authoritative completion'}
 
 
 def trace_rows(directory):
@@ -158,7 +187,7 @@ def trace_rows(directory):
     rows = []
     for path in sorted(Path(directory).glob('*.jsonl')):
         try:
-            data = path.read_bytes()
+            data = read_bytes_shared(path)
         except OSError:
             rows.append({'event':'unreadable_trace','file':path.name})
             continue

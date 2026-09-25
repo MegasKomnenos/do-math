@@ -21,20 +21,19 @@ import unittest
 import uuid
 
 from test_categories import GROUPS, group_for
+from do_math.file_io import write_bytes_atomic, read_bytes_shared
 
 SCRIPTS = Path(__file__).resolve().parent
 TESTS = SCRIPTS / 'tests'
 
 
 def _write_json(path, value):
-    temporary = path.with_suffix(path.suffix + '.tmp')
-    temporary.write_text(json.dumps(value, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-    os.replace(temporary, path)
+    write_bytes_atomic(path,(json.dumps(value,ensure_ascii=False,indent=2)+'\n').encode('utf-8'))
 
 
 def _read_json(path):
     try:
-        return json.loads(path.read_text(encoding='utf-8'))
+        return json.loads(read_bytes_shared(path).decode('utf-8'))
     except FileNotFoundError:
         return None
 
@@ -74,6 +73,13 @@ class TimedResult(unittest.TextTestResult):
         row['outcome'] = outcome
         if detail:
             row['details'].append(detail)
+        if outcome in {'failed', 'error', 'unexpected_success'}:
+            # Publish this failure before the next possibly long test begins.
+            # It is diagnostic evidence, not a completed group result.
+            path = self.directory / 'failures' / (hashlib.sha256(test.id().encode()).hexdigest() + '.json')
+            _write_json(path, {'complete': False, 'event': 'test_failure', 'test': row})
+            self.stream.writeln('  failure evidence: ' + str(path))
+            self.stream.flush()
 
     def addSuccess(self, test):
         super().addSuccess(test)

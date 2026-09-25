@@ -92,6 +92,9 @@ def build_parser() -> _Parser:
     goal = init.add_mutually_exclusive_group(required=True)
     goal.add_argument("--goal")
     goal.add_argument("--goal-file")
+    original = init.add_mutually_exclusive_group()
+    original.add_argument('--request-text', help='complete original request, including constraints')
+    original.add_argument('--request-text-file', help='UTF-8 complete original request')
     init.add_argument("--title", default="")
     init.add_argument("--policies-file")
     init.add_argument("--source", action="append", default=[], type=Path)
@@ -109,6 +112,7 @@ def build_parser() -> _Parser:
     timeline.add_argument('--include-operations', action='store_true', help='include separately observed operational phase timings')
     run.add_argument("--max-steps", type=int)
     run.add_argument("--watch", action="store_true")
+    run.add_argument('--until-active', action='store_true', help='return after activation before dispatching research')
 
     status = commands.add_parser("status", help="show current status")
     _instance_arguments(status)
@@ -197,6 +201,16 @@ def build_parser() -> _Parser:
     profile.add_argument("--provider", choices=("codex", "claude"), default="codex")
     profile.add_argument("--codex-path")
     profile.add_argument("--claude-path")
+    choose = commands.add_parser('select-profile', help='resolve the current role/task model requirement without execution')
+    _instance_arguments(choose)
+    choose.add_argument('--role', required=True)
+    choose.add_argument('--task')
+    choose.add_argument('--snapshot')
+    draft = commands.add_parser('prepare-import-approval', help='write exact checked-import approval coordinates without applying them')
+    _instance_arguments(draft)
+    draft.add_argument('--import-id', required=True)
+    draft.add_argument('--snapshot')
+    draft.add_argument('--output', required=True, type=Path)
 
     operator = commands.add_parser("operator", help="manage the independent scheduled operator")
     operator.add_argument("mode", choices=("install", "uninstall", "status", "start", "start-operator", "check", "probe", "engine", "wake", "hold", "release"))
@@ -292,7 +306,9 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
             if not source.is_file():
                 raise CliInputError(f"--source is not a file: {source}")
         result = initialize(args.repository, goal=goal, workspace=args.workspace, config=config, title=args.title,
-                            policies=policies, sources=args.source)
+                            policies=policies, sources=args.source,
+                            source_input=args.request_text if args.request_text is not None else
+                                _text_file(args.request_text_file) if args.request_text_file else goal)
         _, initialized, _ = ResearchRepository(args.repository, result["instance_id"]).load()
         if initialized["config"]["operator_enabled"]:
             try:
@@ -301,7 +317,31 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
                 return _schedule_failure(result, error, args.repository, result["instance_id"])
         return result, 0
     if command == "run":
-        return ResearchEngine(args.repository, args.instance).run(max_steps=args.max_steps, watch=args.watch), 0
+        return ResearchEngine(args.repository, args.instance).run(max_steps=args.max_steps, watch=args.watch,
+                                                                 until_active=args.until_active), 0
+    if command == 'select-profile':
+        from .model_policy import selection
+        from .execution_profiles import resolve_profile
+        head, instance, runtime = ResearchRepository(args.repository, args.instance).load(args.snapshot)
+        if args.role not in instance['role_profile_refs']:
+            raise CliInputError('unknown execution role')
+        if args.task and args.task not in runtime['tasks']:
+            raise CliInputError('unknown task')
+        selected = selection(instance['config'], {'role':args.role, 'target':args.task},
+                             runtime['tasks'], instance['knowledge'], profiles=instance['execution_profiles'])
+        return {'snapshot':head, 'selection':selected,
+                'profile':resolve_profile(instance['execution_profiles'], selected['profile_ref'])}, 0
+    if command == 'prepare-import-approval':
+        from .governance import import_approval_draft
+        from .repository import canonical_json
+        engine = ResearchEngine(args.repository, args.instance)
+        engine.head, engine.instance, engine.runtime = engine.store.load(args.snapshot)
+        value = import_approval_draft(engine.instance, engine.runtime, args.import_id,
+                                     owner_handlers=engine._governance_owner_handlers())
+        with args.output.open('xb') as stream:
+            stream.write(canonical_json(value))
+        return {'snapshot':engine.head, 'output':str(args.output.resolve()),
+                'decision':value, 'effect':'draft_only'}, 0
     if command == "status":
         from .reporting import snapshot_report, render_human_report
         if args.snapshot is None:
@@ -478,6 +518,12 @@ def _human_status(status: dict[str, Any]) -> str:
         "observed (Asia/Seoul): " + str(display_time(status.get('research_observed_at')) or 'unknown'),
         f"unknown or bounded scope: {unknown}",
     ]
+    summary=status.get('operating_summary',{})
+    blocker=summary.get('primary_blocker')
+    if blocker:
+        lines.append('blocking: '+str(blocker['kind'])+' next='+str(blocker.get('next_owner')))
+    if summary.get('lifecycle')=='initializing':
+        lines.append('initialization missing: '+', '.join(summary.get('initialization',{}).get('missing',[])))
     for task in tasks:
         waits = ', '.join(row.get('kind', 'unknown') for row in task.get('waits', [])) or 'none'
         lines.append(f"  {task['id']} revision={task.get('revision', 'unknown')} stage={task['status']} "

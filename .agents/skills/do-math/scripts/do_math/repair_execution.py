@@ -179,6 +179,14 @@ def request_installation_repair(engine, record):
 def resume_installation_repair(runtime, record, *, repaired_by, at):
     """Resume the preserved rejected response, retaining its repair lineage."""
     target_id = record['target_execution_id']
+    successor=activities.successor_state(runtime,target_id)
+    if successor is not None:
+        record['status']='applied'
+        record.setdefault('result',{}).setdefault('installation_repair',{}).update(
+            status='repaired',repaired_by=repaired_by,successor=successor)
+        runtime['executions'][target_id].pop('pending_operational_disposition',None)
+        runtime['status']='ready'
+        return None
     target = runtime['executions'][target_id]
     previous = runtime.get('waiting_actions', {}).get(target['action']['id'])
     action = activities.continue_activity(runtime, target_id, at=at,
