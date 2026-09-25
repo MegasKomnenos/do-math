@@ -162,9 +162,8 @@ def cleanup_candidates(workspace, executions, *, protected_references,
                 if identifier in set(_strings(waiting)) and not waiting.get('resolved'):
                     reasons.append('recovery_pending')
             for recovery in runtime.get('recoveries', {}).values():
-                if identifier == recovery.get('execution_id') or identifier in recovery.get('execution_ids', []):
-                    if recovery.get('status') not in {'resolved', 'finished', 'closed', 'completed'}:
-                        reasons.append('recovery_pending')
+                if identifier in recovery.get('execution_ids', []) and not recovery.get('finished_at'):
+                    reasons.append('recovery_pending')
             for activity in runtime.get('activities', {}).values():
                 if identifier in activity.get('assigned_execution_ids', []) and (activity.get('status') != 'finished' or activity.get('unresolved')):
                     reasons.append('activity_obligation_pending')

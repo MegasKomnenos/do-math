@@ -162,7 +162,8 @@ class LocalCLIAdapter:
             return {"cli_path": self.codex_path, "verified": False, "error_type": type(exc).__name__}
         version, help_bytes = version_result.stdout, help_result.stdout
         required = (b"--json", b"--output-last-message", b"--model", b"--sandbox", b"--ephemeral",
-                    b"--ignore-user-config", b"--ignore-rules", b"--skip-git-repo-check", b"--output-schema", b"--config")
+                    b"--ignore-user-config", b"--ignore-rules", b"--skip-git-repo-check", b"--output-schema", b"--config",
+                    b"--strict-config", b"--color", b"--cd")
         verified = (version_result.returncode == 0 and global_help_result.returncode == 0 and help_result.returncode == 0
                     and b"--ask-for-approval" in global_help_result.stdout and all(flag in help_bytes for flag in required))
         return {"scope": "cli_command_surface_only", "identity": self.capability_identity(),

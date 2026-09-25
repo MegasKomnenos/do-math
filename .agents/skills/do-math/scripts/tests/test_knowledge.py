@@ -83,6 +83,46 @@ def finish_transition(state, env, tr):
 
 
 class KnowledgeTests(unittest.TestCase):
+    def test_explanation_revision_reuses_only_current_formal_evidence(self):
+        for status in ("candidate", "rejected", "suspended", "verified"):
+            with self.subTest(status=status):
+                ins = {"active_trust_environment": "TE-old", "trust_environments": {
+                    "TE-old": {"id": "TE-old", "status": "active",
+                               "toolchain": {"version": "fixture-old"}, "allowed_axioms": []}}}
+                ins, run, kid, _ = add(ins, {}, verified=False)
+                if status != "candidate":
+                    checked = evidence(ins, kid)
+                    if status == "rejected":
+                        checked["status"] = "failed"
+                    ins = kr.record_formal_result(ins, kid, checked, "TE-old", runtime=run)
+                old_fid = ins["knowledge"][kid]["formal_result_id"]
+                if status == "suspended":
+                    ins["formal_results"][old_fid]["formal_use"] = "suspended"
+                old_formal = deepcopy(ins["formal_results"][old_fid])
+                changed, queued = revise(ins, run, kid, {"summary": "Corrected summary"})
+                replacement = next(row for row in changed["knowledge"].values()
+                                   if row.get("supersedes") == kid)
+                current_fid = replacement["formal_result_id"]
+                reused = status == "verified"
+                self.assertEqual(current_fid == old_fid, reused)
+                self.assertEqual(changed["formal_results"][old_fid], old_formal)
+                self.assertEqual([a["role"] for a in queued["queue"]
+                                  if a.get("target") == replacement["id"]],
+                                 ["identity_review" if reused else "formal_check"])
+                self.assertFalse(any(a.get("target") == kid and a["role"] == "formal_check"
+                                     for a in queued["queue"]))
+                if not reused:
+                    self.assertEqual(changed["formal_results"][current_fid]["verification"], {})
+                    self.assertEqual(changed["formal_results"][current_fid]["publication_state"], "candidate")
+
+    def test_nonformal_explanation_revision_still_returns_to_planning(self):
+        ins, run, kid, _ = add({}, {}, verified=False, lean_code="", declaration_names=[])
+        changed, queued = revise(ins, run, kid, {"summary": "Corrected observation"})
+        replacement = next(row for row in changed["knowledge"].values()
+                           if row.get("supersedes") == kid)
+        self.assertIsNone(replacement["formal_result_id"])
+        self.assertEqual([a["role"] for a in queued["queue"]
+                          if a.get("target") == replacement["id"]], ["research_plan"])
     def test_candidate_dependency_not_promoted_by_prerequisite_reverification(self):
         ins, run, ids = fixture()
         ins = kr.set_assessment_use(ins, ids['ba'], 'suspended', 'requires review', 'reviewer')

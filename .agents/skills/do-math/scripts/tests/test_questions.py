@@ -137,5 +137,38 @@ class RepetitionQuestionTests(unittest.TestCase):
         self.assertEqual(len(host._user_questions()), 2)
 
 
+class QuestionRouteWireTests(unittest.TestCase):
+    def test_submission_route_controls_only_its_affected_user_wait(self):
+        from jsonschema import Draft202012Validator
+        from do_math.submission import extension_schema
+        validator = Draft202012Validator(extension_schema({'role': 'research_work'}))
+        for blocking in (None, False, True):
+            with self.subTest(blocking=blocking):
+                route = {'question_index': 0, 'owner': 'user', 'target_ids': ['A'],
+                         'reason': 'The answer determines the next action on A.'}
+                if blocking is not None:
+                    route['blocks'] = blocking
+                extensions = {'question_routes': [route]}
+                validator.validate(extensions)
+                owner = QuestionEngineMixin()
+                owner.instance = {'id': 'I', 'decisions': {}}
+                owner.runtime = {'tasks': {'A': {'id': 'A'}, 'B': {'id': 'B'}},
+                    'question_links': [], 'executions': {'EX-route': {
+                        'artifact_bundle': 'BA-route', 'extensions': extensions}}}
+                output = {'questions': ['Which action on A is authorized?']}
+                context = {'instance_id': 'I', 'action': {'role': 'research_work'},
+                           'tasks': list(owner.runtime['tasks'].values())}
+                self.assertEqual(questions.validate_extensions(output, extensions, context), [])
+                owner._record_output_questions({'role': 'research_work', 'target': 'A'}, output, 'EX-route')
+                linked = owner.runtime['question_links'][0]
+                self.assertEqual(linked['blocks'], blocking is True)
+                waits = lambda target: questions.user_waits(
+                    {'role': 'research_work', 'target': target}, owner.instance, owner.runtime)
+                self.assertEqual(bool(waits('A')), blocking is True)
+                self.assertEqual(waits('B'), [])
+                questions.resolve_user(owner.runtime, [linked['id']], resolution_ref='DC-answer', affected_ids=['A'])
+                self.assertEqual(waits('A'), [])
+        route['blocks'] = 'true'
+        self.assertTrue(list(validator.iter_errors({'question_routes': [route]})))
 if __name__ == "__main__":
     unittest.main()

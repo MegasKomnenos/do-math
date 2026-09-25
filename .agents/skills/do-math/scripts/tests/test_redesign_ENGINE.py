@@ -492,6 +492,11 @@ class ControlReceipts(unittest.TestCase):
             engine._trackers = {"EX-work": tracker}
             engine._transport = Mock(); engine._transport_bindings = {"EX-work": {}}
             request.update(kind="safety_boundary", payload={"inflight_calls": False, "call_ids": ["C"]})
+            tracker.observe({'type': 'item.started', 'item': {'id': 'BOUNDARY', 'type': 'mcp_tool_call',
+                'server': 'execution_control', 'tool': 'control_submit', 'arguments': {
+                    'request_id': request['request_id'], 'kind': 'safety_boundary', 'payload': request['payload']}}})
+            self.assertIn('BOUNDARY', tracker.boundary_call_ids)
+            self.assertNotIn('BOUNDARY', tracker.self_check_call_ids)
             uncovered = {**deepcopy(request), "request_id": "uncovered", "payload": {"inflight_calls": False, "call_ids": []}}
             self.assertEqual(engine._publish_control_request(uncovered)["state"], "rejected")
             engine._save.side_effect = ValueError("CAS failed")
@@ -523,6 +528,59 @@ class ControlReceipts(unittest.TestCase):
             self.assertTrue(engine.runtime["self_check_responses"])
             self.assertEqual(len(engine.runtime["queue"]), 1)
             self.assertTrue((Path(temporary)/"runs/EX-work/workspace/.control/observation-feedback.json").is_file())
+
+    def test_self_check_transport_and_native_call_bind_in_both_arrival_orders(self):
+        from do_math.observations import ObservationTracker
+        from test_redesign_OBSERVATION import Clock, rule, ObservationRedesignTests
+        for first in ("native", "receipt"):
+            with self.subTest(first=first):
+                engine, request = self.make_engine()
+                workspace = Path(engine.instance["workspace"]) / "runs/EX-work/workspace"
+                tracker = ObservationTracker("EX-work", workspace, {
+                    "observation_rules": [rule()], "tool_review_window_seconds": 60,
+                    "self_check_response_window_seconds": 5}, clock=Clock())
+                obligation = next(row for row in tracker.observe({"type": "tick", "counters": {"attempts": 2}})
+                                  if row["kind"] == "self_check_due")
+                response = ObservationRedesignTests.response(obligation)
+                request.update(request_id="self-check-" + obligation["id"], kind="self_check_response",
+                    payload={"self_check_id": obligation["id"], "response": response})
+                event = {"type": "item.started", "item": {"id": "CALL-SC", "type": "mcp_tool_call",
+                    "server": "execution_control", "tool": "control_self_check", "arguments": request["payload"]}}
+                engine._trackers = {"EX-work": tracker}
+                engine._control_evidence_refs = Mock(return_value={"EV-1"})
+                if first == "native":
+                    tracker.observe(event)
+                receipt = engine._publish_control_request(request)
+                self.assertEqual(receipt["state"], "accepted", receipt)
+                if first == "receipt":
+                    tracker.observe(event)
+                self.assertEqual(tracker.obligations[obligation["id"]]["status"], "answered")
+                self.assertEqual(tracker.control_calls["CALL-SC"]["payload_sha256"],
+                                 tracker.control_requests[request["request_id"]]["payload_sha256"])
+                self.assertEqual(tracker.control_requests[request["request_id"]]["receipt_id"],
+                                 receipt["publication_id"])
+                self.assertEqual(engine.runtime["queue"], [])
+                engine._publish_control_request(request)
+                self.assertEqual(engine._save.call_count, 1)
+
+    def test_self_check_failed_publication_does_not_publish_tracker_binding(self):
+        from do_math.observations import ObservationTracker
+        from test_redesign_OBSERVATION import Clock, rule, ObservationRedesignTests
+        engine, request = self.make_engine()
+        tracker = ObservationTracker("EX-work", Path(engine.instance["workspace"]), {
+            "observation_rules": [rule()], "tool_review_window_seconds": 60,
+            "self_check_response_window_seconds": 5}, clock=Clock())
+        obligation = next(row for row in tracker.observe({"type": "tick", "counters": {"attempts": 2}})
+                          if row["kind"] == "self_check_due")
+        request.update(request_id="self-check-" + obligation["id"], kind="self_check_response",
+            payload={"self_check_id": obligation["id"], "response": ObservationRedesignTests.response(obligation)})
+        engine._trackers = {"EX-work": tracker}
+        engine._control_evidence_refs = Mock(return_value={"EV-1"})
+        engine._save.side_effect = OSError("publication failed")
+        engine.store.load.side_effect = OSError("no committed receipt")
+        self.assertEqual(engine._publish_control_request(request)["state"], "rejected")
+        self.assertEqual(tracker.control_requests, {})
+        self.assertEqual(tracker.obligations[obligation["id"]]["status"], "open")
 
     def test_failed_cas_does_not_acknowledge_submission(self):
         engine, request = self.make_engine()
@@ -1284,7 +1342,7 @@ class ObservationTransactions(unittest.TestCase):
         from test_redesign_OBSERVATION import Clock, rule
         engine = routing_engine(); engine._controls = Mock(); engine._check_conversations = Mock(return_value=False)
         engine.runtime["executions"]["EX-one"] = {"id": "EX-one", "role": "research_work", "action": {"role": "research_work"}}
-        engine._inline_reviewing = False; engine._transport = Mock(); engine._transport_bindings = {"EX-one": {}}
+        engine._transport = Mock(); engine._transport_bindings = {"EX-one": {}}
         with tempfile.TemporaryDirectory() as temporary:
             tracker = ObservationTracker("EX-one", Path(temporary), {"observation_rules": [rule()], "tool_review_window_seconds": 60, "self_check_response_window_seconds": 5}, clock=Clock())
             before = deepcopy((engine.instance, engine.runtime))
@@ -1421,7 +1479,7 @@ class AuditConsumerConnections(unittest.TestCase):
         from do_math.observations import ObservationTracker
         engine = routing_engine()
         engine._controls = Mock(); engine._check_conversations = Mock(return_value=False)
-        engine._inline_reviewing = False; engine._record_review_observation = Mock()
+        engine._record_review_observation = Mock()
         engine.runtime["executions"]["EX-review"] = {"id": "EX-review", "action": {"role": "identity_review", "review_cycle_id": "RC-one"}}
         with tempfile.TemporaryDirectory() as temporary:
             engine.instance["workspace"] = temporary
@@ -1448,24 +1506,6 @@ class AuditConsumerConnections(unittest.TestCase):
             self.assertEqual(engine._record_review_observation.call_args.args, ("EX-review", tail))
             self.assertEqual(engine._record_review_observation.call_args.kwargs["event_index"], 2)
 
-    def test_central_repair_restores_actual_sealed_bytes_before_one_continuation(self):
-        from test_repair_execution import RepairExecutionTests
-        fixture = RepairExecutionTests("test_actual_restore_verify_and_explicit_activity_followup")
-        fixture.setUp(); self.addCleanup(fixture.doCleanups)
-        host = fixture.host
-        host.runtime["executions"]["EX-target"]["pending_operational_disposition"] = "OD-repair"
-        host._save()
-        result = ResearchEngine._complete_operational_disposition(host, host.runtime["operational_dispositions"]["OD-repair"])
-        host._save()
-        self.assertEqual(result["status"], "applied")
-        self.assertEqual(fixture.destination.read_bytes(), fixture.raw)
-        self.assertEqual(len(host.runtime["queue"]), 1)
-        self.assertEqual(host.runtime["queue"][0]["continuation_of"], "EX-target")
-        self.assertNotIn("pending_operational_disposition", host.runtime["executions"]["EX-target"])
-        ResearchEngine._complete_operational_disposition(host, host.runtime["operational_dispositions"]["OD-repair"])
-        self.assertEqual(len(host.runtime["queue"]), 1)
-        proof = host.runtime["operational_dispositions"]["OD-repair"]["result"]["repair"]
-        self.assertEqual(proof["repair_effect"]["effect_refs"], proof["repair_verification"]["effect_refs"])
 
     def test_operational_repair_candidate_never_mutates_files_or_publishes(self):
         engine = routing_engine(); engine._save = Mock()

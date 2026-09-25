@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from contextlib import contextmanager
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 import base64
 import binascii
 import hashlib
@@ -91,7 +91,7 @@ DEFAULT_CONFIG = {
     "review_rounds": 3, "review_research_limit": 3, "research_reconsider_seconds": 86400,
     "observation_mode": "event_driven", "observation_interval_seconds": 300,
     "plan_settle_seconds": 300,
-    "checkpoint_grace_seconds": 10, "max_artifact_bytes": 268435456,
+    "max_artifact_bytes": 268435456,
     "allowed_axioms": ["propext", "Classical.choice", "Quot.sound"],
     "operator_enabled": True, "operator_interval_seconds": 7200,
     "operator_timeout_seconds": 5400, "operator_effort": "high",
@@ -177,7 +177,7 @@ def validate_config(config: dict) -> None:
     for key in ("call_timeout_seconds",
                 "reviewers", "goal_auditors", "max_input_bytes",
                 "review_rounds", "review_research_limit", "research_reconsider_seconds", "observation_interval_seconds",
-                "checkpoint_grace_seconds", "max_artifact_bytes",
+                "max_artifact_bytes",
                 "operator_interval_seconds", "operator_timeout_seconds",
                 "provider_retry_initial_seconds", "provider_retry_max_seconds", "finish_notice_seconds",
                 "plan_settle_seconds"):
@@ -591,7 +591,6 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         _require_current_contract(self.instance, self.runtime)
         self._live_execution_ids = set()
         self._executor_running = False
-        self._inline_reviewing = False
         self._calls = None
         self._slots = None
         self._documents = all_prompt_documents()
@@ -744,7 +743,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         repairs = [row["id"] for row in self.runtime.get("operational_dispositions", {}).values()
             if row.get("disposition", {}).get("kind") == "repair"
             and row.get("target_execution_id") in activity["assigned_execution_ids"]
-            and row.get("status") not in {"applied", "repair_deferred", "repair_verification_failed"}]
+            and row.get("status") != "applied"]
         if repairs:
             if activity["status"] != "waiting":
                 activities.wait_for(self.runtime, aid, reason="operational repair remains pending",
@@ -1120,9 +1119,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                     schema = submission.load_json(self.store.read(prefix + "/schema.json", self.head))
                     self._receive_submission(action, {}, execution["id"], context, schema,
                         Path(self.instance["workspace"]) / "runs" / execution["id"] / "workspace", preserved=True)
-                    if (execution.get('role') == 'goal_audit'
-                            and self.runtime['executions'][execution['id']].get('outcome') == 'output_accepted'):
-                        self._settle_activity(execution['id'])
+                    self._settle_activity(execution['id'])
                     self._save()
                 except submission.SealedSubmissionError as error:
                     live = self.runtime.setdefault("waiting_actions", {})[action["id"]]
@@ -1321,7 +1318,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                     call_ids = payload.get("call_ids", [])
                     if not isinstance(call_ids, list) or any(cid not in tracker.pending_tools for cid in call_ids):
                         raise ValueError("safe boundary call IDs must identify observed calls of this execution")
-                    pending_research = set(tracker.pending_tools) - tracker.self_check_call_ids
+                    pending_research = (set(tracker.pending_tools) - tracker.self_check_call_ids
+                                        - tracker.boundary_call_ids)
                     if pending_research - set(call_ids):
                         raise ValueError("safe boundary omits observed inflight research calls")
                     boundary_updates = tracker.record_safe_boundary(receipt["id"], call_ids=call_ids)
@@ -1334,6 +1332,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 if response.get("obligation_id") != payload["self_check_id"]:
                     raise ValueError("self-check response refers to another issued obligation")
                 available = self._control_evidence_refs(execution)
+                tracker.bind_control_request(request, receipt_id=receipt["id"])
                 record = tracker.record_self_check_response(response, available_evidence_refs=available, receipt_id=receipt["id"])
                 record = persistent_record(record)
                 self.runtime.setdefault("self_check_responses", {})[record["id"]] = record
@@ -1895,7 +1894,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             context['review_followups'] = [deepcopy(cycle) for cid, cycle in self.runtime.get('review_cycles', {}).items()
                 if cid in action.get('evidence_refs', [])]
         context["execution_limits"] = {key: self.instance["config"][key] for key in
-            ("call_timeout_seconds", "checkpoint_grace_seconds", "review_rounds")}
+            ("call_timeout_seconds", "review_rounds")}
         scholarly_enabled = self.instance["config"]["scholarly_enabled"]
         context["scholarly"] = {"enabled": scholarly_enabled,
             "configured": bool(scholarly_enabled and self.instance["config"]["scholarly_server"]),
@@ -2920,18 +2919,6 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         batch = event if isinstance(event, ObservationBatch) else None
         events = batch.events if batch is not None else [event]
         live = batch is None or not batch.is_terminated()
-        # These are provider-observed MCP identities, not IDs claimed in a draft.
-        calls = []
-        for event in events:
-            item = event.get("item", {})
-            if (event.get("type") in {"item.started", "item.completed"} and item.get("type") == "mcp_tool_call"
-                    and item.get("server") == "execution_control" and item.get("tool") in {"control_self_check", "control_submit", "control_receipt"}):
-                calls.append(item)
-            if event.get("type") == "assistant":
-                calls.extend(block for block in event.get("message", {}).get("content", [])
-                    if isinstance(block, dict) and block.get("type") == "tool_use"
-                    and block.get("name") in {"mcp__execution_control__control_self_check", "mcp__execution_control__control_submit", "mcp__execution_control__control_receipt"})
-        candidate.register_self_check_calls([call["id"] for call in calls if isinstance(call.get("id"), str)])
         pending = set(candidate.pending_tools)
         if pending and pending <= candidate.self_check_call_ids:
             checkpoint = read_checkpoint(candidate.workspace)
@@ -2992,7 +2979,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                     self.runtime.setdefault("observation_facts", {})[record["id"]] = record
                     trigger = kind in {"operational_review_due", "tool_review_due", "periodic_review_due", "explicit_review_due"}
                     trigger = trigger or observed.get("followup", {}).get("kind") == "operational_review_due"
-                    if trigger and live and not self._inline_reviewing and self.runtime["status"] not in {"paused", "closed"}:
+                    if trigger and live and self.runtime["status"] not in {"paused", "closed"}:
                         observation = {**persistent_record(observed), "observation_refs": [record["id"]]}
                         self.runtime.setdefault("observations", {})[execution_id] = observation
                         self._enqueue("operational_review", execution_id, live=True, observation=observation,
@@ -3026,12 +3013,6 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         for item in feedback:
             publish_worker_feedback(candidate.workspace / ".control", item)
 
-    def _run_inline_review(self, parent_id: str, observation: dict) -> None:
-        # All operational reviews use the same fixed-profile execution and receipt path.
-        self._enqueue("operational_review", parent_id, live=True, observation=json_safe(observation),
-                      obligation_ids=observation.get("obligation_ids", []),
-                      observation_refs=observation.get("observation_refs", []))
-        self._save()
 
 
     def _runner_tools(self, arguments: dict) -> None:
@@ -3539,7 +3520,6 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         execution["input_published_at"] = now()
         self._trackers[execution_id] = tracker
         stop_started = None
-        before_resume = True
         # Research ends by submission or an effective stop/authority condition.
         # Only operations-budget AI has a per-call execution deadline.
         call_deadline = None if pool == "work" else time.monotonic() + config["call_timeout_seconds"]
@@ -3552,9 +3532,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             current.update(process=json_safe(identity), started_at=now(), execution_window=window)
             self._save()
         def should_stop():
-            nonlocal stop_started, before_resume
-            first_check = before_resume
-            before_resume = False
+            nonlocal stop_started
             self._controls()
             if self._check_conversations(): self._save()
             current = self.runtime["executions"][execution_id]
@@ -3585,9 +3563,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 return False
             reason = current.get("stop_requested") or ("authority_changed" if not allowed or changed else
                 "submission_intent" if current.get("submission_intent") else "user_or_deadline_stop")
-            # CodexModelRunner first checks this while its Job is suspended.
-            # There is no model work to checkpoint before that first resume.
-            immediate = True  # Instruction boundaries cannot enforce checkpoint-only research after stop.
+            # Instruction boundaries cannot enforce checkpoint-only research after stop.
             if stop_started is None:
                 stop_started = time.monotonic()
                 current["stop_reason"] = reason
@@ -3596,9 +3572,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 execution_lifecycle.transition_execution(current, "stopping", at=now(),
                     reason=str(reason), stop_phase="terminating")
                 self._save()
-                request_checkpoint(workspace / ".control", str(reason), immediate=immediate,
-                    deadline=(datetime.now(timezone.utc)+timedelta(seconds=0 if immediate else config["checkpoint_grace_seconds"])).isoformat())
-            return immediate or time.monotonic()-stop_started >= config["checkpoint_grace_seconds"]
+                request_checkpoint(workspace / ".control", str(reason), immediate=True, deadline=now())
+            return True
         arguments = dict(prompt=prompt, output_schema=schema, workspace=workspace, evidence_dir=base/"evidence",
                          model=execution["model"], effort=execution["effort"],
                          execution_id=execution_id, profile=profile,
@@ -4343,7 +4318,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                           kind_definition_id=identifier, kind_definition_sha256=integration.digest(self.instance["kind_definitions"][identifier]))
 
     def _apply_operational_disposition(self, action, proposal, execution_id):
-        disposition = operational_dispositions.validate_new_disposition(proposal)
+        disposition = operational_dispositions.validate_disposition(proposal)
         target = self.runtime["executions"].get(action.get("target"))
         if target is None:
             raise ValueError("operational disposition has no execution target")
@@ -4382,21 +4357,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             if self.runtime["executions"][record["execution_id"]]["status"] != "ended":
                 record["status"] = "repair_required"
                 return record
-            result = repair_execution.complete_repair(self, record)
-            target = self.runtime["executions"][record["target_execution_id"]]
-            if result["status"] in {"applied", "repair_verification_failed", "repair_deferred"}:
-                if target.get("pending_operational_disposition") == record["id"]:
-                    target.pop("pending_operational_disposition")
-                followup = result.get("result", {}).get("followup")
-                if followup:
-                    owner = followup["next_owner"]
-                    if owner in {"operational_review", "research_preparation"}:
-                        self._enqueue(owner, target["id"] if owner == "operational_review" else previous.get("target"),
-                            reason=followup["reason"], operational_disposition_id=record["id"])
-                    else:
-                        questions.link(self.runtime, execution_id=record["execution_id"], field="repair/" + record["id"],
-                            owner=owner, targets=[target["id"]], reason=followup["reason"])
-            return result
+            return repair_execution.complete_repair(self, record)
         if kind in {"resume", "retry"}:
             if record.get('result', {}).get('continuation_action_id'):
                 return record
@@ -4476,7 +4437,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             record = self.runtime["operational_dispositions"][identifier]
             kind = record.get('disposition', {}).get('kind')
             if kind == 'repair':
-                if record['status'] in {'applied', 'repair_deferred', 'repair_verification_failed',
+                if record['status'] in {'applied',
                         'installation_repair_pending', 'installation_repair_waiting', 'installation_repair_resolved'}:
                     continue
             elif kind not in {'resume', 'retry', 'task_disposition'} or record['status'] != 'awaiting_termination':

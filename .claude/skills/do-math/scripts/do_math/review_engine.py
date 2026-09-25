@@ -449,10 +449,8 @@ class ReviewEngineMixin:
         config = self.instance['config']
         policy = self._adopted_review_policy()
         reviewers = policy['minimum_initial_slots']
-        if previous is not None and isinstance(reviewers, int):
-            if reviewers < len(previous['reviewer_slots']):
-                raise ValueError('new revision cannot remove existing reviewer slots')
-            reviewers = previous['reviewer_slots'] + [f'initial-{i}' for i in range(len(previous['reviewer_slots']), reviewers)]
+        if previous is not None and previous['reviewer_slots']:
+            reviewers = list(previous['reviewer_slots'])
         round_limit = policy['round_limit']
         cycle = start_review(_proposal(self.instance, knowledge_id), reviewers=reviewers, max_rounds=round_limit,
                              judges=previous['judge_slots'] if previous else 3, previous=previous,

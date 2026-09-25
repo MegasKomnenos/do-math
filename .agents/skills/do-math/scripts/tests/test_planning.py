@@ -8,6 +8,22 @@ from do_math import planning
 from test_redesign_TASKS import approved_fixture, approve
 
 
+class ActivityConditionTests(unittest.TestCase):
+    def test_activity_kind_uses_the_stored_activity_contract(self):
+        from do_math.activities import open_activity
+        runtime = {'activities': {}, 'executions': {}}
+        open_activity(runtime, activity_id='AT-kind', activity_kind='research_work',
+            owner_ref='TK-kind', input_refs=[], opened_at='2026-09-25T00:00:00Z')
+        condition = {'op': 'record_field_equals', 'space': 'runtime', 'family': 'activity',
+            'record_id': 'AT-kind', 'pointer': '/activity_kind', 'value': 'research_work'}
+        planning.validate_condition(condition)
+        self.assertEqual(planning.evaluate_condition(condition, {}, runtime)['state'], 'ready')
+        self.assertEqual(planning.evaluate_condition(
+            {**condition, 'value': 'maintenance'}, {}, runtime)['state'], 'not_ready')
+        self.assertEqual(planning.evaluate_condition(
+            {**condition, 'record_id': 'AT-missing'}, {}, runtime)['state'], 'not_ready')
+        with self.assertRaisesRegex(ValueError, 'exposed machine field'):
+            planning.validate_condition({**condition, 'pointer': '/role'})
 class PlanningTests(unittest.TestCase):
     def setUp(self):
         self.task,self.instance,self.runtime=approved_fixture()
@@ -47,6 +63,31 @@ class PlanningTests(unittest.TestCase):
         self.assertEqual(planning.contract_hash(self.task),baseline)
         self.task['question']='changed'
         self.assertNotEqual(planning.contract_hash(self.task),baseline)
+
+    def test_periodic_exploration_is_not_consumed_by_preparation_only(self):
+        from do_math.model_policy import preparation_only
+        for field in ('assessment_targets', 'observation_rule_targets'):
+            with self.subTest(field=field):
+                runtime = deepcopy(self.runtime)
+                supplement = {'id': 'AC-supplement', 'role': 'research_preparation',
+                    field: {self.task['id']: {'revision': self.task['revision'],
+                        'contract_sha256': planning.contract_hash(self.task)}}}
+                runtime.update(status='active', queue=[supplement], executions={},
+                    waiting_actions={}, events=[], pending_events=[],
+                    next_research_reconsider_at='2026-09-24T00:00:00Z')
+                original = deepcopy(supplement)
+                planning.schedule_reconsideration(self.instance, runtime,
+                    now='2026-09-25T00:00:00Z')
+                self.assertEqual(supplement, original)
+                general = [a for a in runtime['queue']
+                           if a['role'] == 'research_preparation' and not preparation_only(a)]
+                self.assertEqual(len(general), 1)
+                due = [e['id'] for e in runtime['events'] if e['kind'] == 'research_reconsider_due']
+                self.assertEqual(general[0]['event_refs'], due)
+                self.assertTrue(general[0]['periodic_reconsideration'])
+                planning.schedule_reconsideration(self.instance, runtime,
+                    now='2026-09-25T00:00:01Z')
+                self.assertEqual(len(runtime['queue']), 2)
 
     def test_due_events_are_unique_and_paused_preserves_pending(self):
         self.runtime['next_research_reconsider_at']='2026-01-01T00:00:00Z'
@@ -145,4 +186,26 @@ class PlanningTests(unittest.TestCase):
         self.assertEqual(planning.task_reference_changes(basis,{}),['missing:TK-1'])
 
 
+class ConditionIndexTests(unittest.TestCase):
+    def test_compound_condition_scans_one_population_and_rechecks_the_next_evaluation(self):
+        from unittest.mock import patch
+        instance = {'knowledge': {'K' + str(i): {'id': 'K' + str(i)} for i in range(200)}}
+        condition = {'op': 'all', 'args': [
+            {'op': 'record_exists', 'space': 'research', 'family': 'knowledge', 'record_id': 'K' + str(i)}
+            for i in range(50)]}
+        with patch.object(planning, '_records', wraps=planning._records) as scans:
+            result = planning.evaluate_condition(condition, instance, {})
+            self.assertEqual(scans.call_count, 1)
+        self.assertEqual(result['state'], 'ready')
+        self.assertEqual(len(result['basis']), 50)
+        del instance['knowledge']['K0']
+        self.assertEqual(planning.evaluate_condition(condition, instance, {})['state'], 'not_ready')
+        duplicate = {'tasks': {'K1': {'id': 'K1'}}}
+        result = planning.evaluate_condition(condition, instance, duplicate)
+        self.assertEqual(result['state'], 'evaluation_error')
+        self.assertIn('duplicate', result['errors'][0])
+        wrong_family = {'op': 'record_exists', 'space': 'runtime', 'family': 'task', 'record_id': 'K1'}
+        result = planning.evaluate_condition(wrong_family, instance, {})
+        self.assertEqual(result['state'], 'evaluation_error')
+        self.assertIn('another family', result['errors'][0])
 if __name__=='__main__':unittest.main(verbosity=2)

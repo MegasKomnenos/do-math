@@ -269,8 +269,7 @@ def submit_intent(binding, should_stop, workspace, output):
 def producer_result(result, arguments):
     """Add only producer transport/envelope facts to a scenario's explicit response."""
     if result.get("status") == "completed" and isinstance(result.get("output"), dict):
-        marker = "--- CANONICAL INPUT CONTEXT ---\n"
-        context = json.loads(arguments["prompt"].split(marker, 1)[1].split("\n--- OUTPUT JSON SCHEMA ---", 1)[0])
+        context = read_fixture_context(arguments["prompt"], arguments["workspace"])
         bind_candidates(result["output"], context)
         seal_response(result["output"], context, arguments["workspace"])
         submit_intent(arguments.get("control_binding"), arguments["should_stop"],

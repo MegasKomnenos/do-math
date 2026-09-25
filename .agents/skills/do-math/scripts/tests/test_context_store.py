@@ -103,6 +103,26 @@ class OpenedHandleBoundaryTests(unittest.TestCase):
     self.assertEqual(state['executions']['EX-1']['status'],'ended')
 
 class ContextStoreTests(unittest.TestCase):
+ def test_directory_read_failure_is_an_omission_even_without_required_paths(self):
+  for required in ([], ['blocked/proof.txt']):
+   with self.subTest(required=required), tempfile.TemporaryDirectory() as directory:
+    root=Path(directory)
+    (root/'blocked').mkdir()
+    (root/'visible.txt').write_bytes(b'preserved sibling')
+    def walk(path, topdown=True, followlinks=False, onerror=None):
+     yield str(root), ['blocked'], ['visible.txt']
+     error=PermissionError(13, 'Permission denied', str(root/'blocked'))
+     if onerror is not None:
+      onerror(error)
+    with patch.object(store.os, 'walk', side_effect=walk):
+     result=store.collect_outputs(root, required_paths=required)
+    self.assertEqual(result['files'], {'visible.txt': b'preserved sibling'})
+    self.assertFalse(result['complete'])
+    omission=next(row for row in result['omitted'] if row['path']=='blocked')
+    self.assertEqual(omission['reason'], 'read_error')
+    self.assertEqual(omission['error_type'], 'PermissionError')
+    self.assertEqual(omission['required'], bool(required))
+    self.assertIn('Permission denied', omission['error'])
  def test_large_ongoing_preparation_is_recoverable_without_prompt_overflow(self):
   with tempfile.TemporaryDirectory() as d:
    root=Path(d); entries=[{'execution_id':'E','status':'running','reason':'assigned obligation '*1000}]

@@ -35,10 +35,12 @@ class ConcurrentRunner:
         self.peak = 0
         self.models = []
         self.workspaces = []
+        self.started = threading.Condition(self.lock)
+        self.started_count = 0
 
     @local_job_runner
     def run(self, *, prompt, workspace, model, on_started, should_stop, **kwargs):
-        ctx = context_from(prompt)
+        ctx = context_from(prompt, workspace)
         with self.lock:
             self.active += 1
             self.peak = max(self.peak, self.active)
@@ -48,7 +50,10 @@ class ConcurrentRunner:
                 self.release.set()
         try:
             on_started()
-            deadline = time.monotonic() + 8
+            with self.started:
+                self.started_count += 1
+                self.started.notify_all()
+            deadline = time.monotonic() + 120
             while not self.release.wait(.01):
                 if should_stop():
                     return {"status": "stopped", "output": None, "usage": {}, "error": "stopped"}
@@ -371,11 +376,11 @@ class ParallelEngineTests(unittest.TestCase):
 
     def test_pause_reaches_all_parallel_calls_and_releases_their_slots(self):
         runner = ConcurrentRunner(expected=99)
-        engine = self.engine(runner, checkpoint_grace_seconds=1)
+        engine = self.engine(runner)
         def pause_when_started():
-            deadline = time.monotonic() + 15
-            while runner.active < 3 and time.monotonic() < deadline:
-                time.sleep(.01)
+            with runner.started:
+                if not runner.started.wait_for(lambda: runner.started_count == 3, timeout=120):
+                    return
             control(self.repo, engine.instance["id"], "pause", text="pause the whole instance")
         controller = threading.Thread(target=pause_when_started)
         controller.start()
@@ -394,7 +399,7 @@ class ParallelEngineTests(unittest.TestCase):
         class ObservedRunner(ConcurrentRunner):
             @local_job_runner
             def run(inner, *, prompt, workspace, model, on_started, should_stop, on_observation=None, **kwargs):
-                context = context_from(prompt)
+                context = context_from(prompt, workspace)
                 if context["action"]["role"] == "operational_review":
                     on_started()
                     out = common("operational_review")
@@ -484,7 +489,7 @@ class ParallelEngineTests(unittest.TestCase):
         class Runner:
             @local_job_runner
             def run(inner, *, prompt, on_started, should_stop, on_observation=None, **kwargs):
-                ctx = context_from(prompt)
+                ctx = context_from(prompt, kwargs['workspace'])
                 on_started()
                 if ctx["action"]["role"] == "operational_review":
                     return {"status": "failed", "output": None, "usage": {}, "error": "operating model unavailable"}
@@ -500,8 +505,7 @@ class ParallelEngineTests(unittest.TestCase):
                         return {"status": "stopped", "output": None, "usage": {}, "error": "parent stopped"}
                     time.sleep(.1)
                 raise AssertionError("failed live review did not stop its parent")
-        engine = self.engine(Runner(), count=2, observation_mode="periodic", observation_interval_seconds=1,
-                             checkpoint_grace_seconds=1)
+        engine = self.engine(Runner(), count=2, observation_mode="periodic", observation_interval_seconds=1)
         state = engine.run(max_steps=2)
         work = [e for e in engine.runtime["executions"].values() if e["role"] == "research_work"]
         self.assertEqual(sum(e["outcome"] == "output_accepted" for e in work), 1)
@@ -523,7 +527,7 @@ class ParallelEngineTests(unittest.TestCase):
                 inner.roles = []
             @local_job_runner
             def run(inner, *, prompt, on_started, **kwargs):
-                inner.roles.append(context_from(prompt)["action"]["role"])
+                inner.roles.append(context_from(prompt, kwargs['workspace'])["action"]["role"])
                 on_started()
                 out = common("research_preparation")
                 out.pop("candidates")

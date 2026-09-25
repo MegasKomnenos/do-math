@@ -66,7 +66,7 @@ CONFIG_PATCH = obj({
     **fields(text='effort operator_effort observation_mode', lists='allowed_axioms'),
     **{key: INTEGER for key in ('call_timeout_seconds reviewers goal_auditors max_input_bytes max_output_repairs '
         'review_rounds review_research_limit research_reconsider_seconds observation_interval_seconds '
-        'plan_settle_seconds checkpoint_grace_seconds max_artifact_bytes operator_interval_seconds '
+        'plan_settle_seconds max_artifact_bytes operator_interval_seconds '
         'operator_timeout_seconds provider_retry_initial_seconds provider_retry_max_seconds finish_notice_seconds '
         'tool_review_window_seconds self_check_response_window_seconds no_progress_limit import_rework_limit '
         'selection_failure_limit exhaustion_empty_limit proposal_version_limit contract_revision_limit').split()},

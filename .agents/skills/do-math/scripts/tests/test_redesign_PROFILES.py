@@ -19,7 +19,6 @@ CONFIG = {
     "max_input_bytes": 500000, "call_timeout_seconds": 600,
     "operator_timeout_seconds": 5400, "operator_effort": "high",
     "observation_mode": "event_driven", "observation_interval_seconds": 300,
-    "checkpoint_grace_seconds": 10,
     "finish_notice_seconds": 60,
     "scholarly_enabled": True, "scholarly_server": None, "claude_only_assigned_model": False,
      "provider_retry_initial_seconds": 300, "provider_retry_max_seconds": 7200,

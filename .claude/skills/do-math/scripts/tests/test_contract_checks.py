@@ -84,6 +84,27 @@ class ContractCheckTests(unittest.TestCase):
         self.assertIn("revision", self.issues(checks(sibling_boundaries=[entry])))
         self.assertEqual(self.issues(checks(sibling_boundaries=[{**entry, "revision": 2}])), "[]")
 
+    def test_sibling_boundary_reads_the_exact_catalog_contract(self):
+        import hashlib
+        self.sibling(status='completed')
+        task = self.context['tasks'].pop()
+        raw = json.dumps(task).encode('utf-8')
+        root = Path(self.temp.name)
+        path = root / 'input' / 'details' / 'sibling.json'
+        path.parent.mkdir(parents=True)
+        path.write_bytes(raw)
+        self.context['snapshot'] = 'fixed-input'
+        self.context['task_catalog'] = [{'id': task['id'], 'title': task['title'],
+            'revision': task['revision'], 'status': task['status'], 'source_ref': {
+                'path': path.relative_to(root).as_posix(), 'snapshot': 'fixed-input',
+                'sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)}}]
+        entry = {'task_id': task['id'], 'revision': task['revision'],
+                 'boundary': 'k <= tau - 3', 'independent_of_next_revision': True}
+        self.assertEqual(self.issues(checks(sibling_boundaries=[entry])), '[]')
+        self.assertIn('revision', self.issues(checks(sibling_boundaries=[{**entry, 'revision': 1}])))
+        path.write_bytes(raw + b' ')
+        self.assertIn('sibling contract source', self.issues(checks(sibling_boundaries=[entry])))
+
     def test_primary_and_extension_dependencies_have_the_same_self_check(self):
         self.context['tasks'] = [{**candidate('exact'), 'id': 'TK-exact', 'revision': 1, 'status': 'active'}]
         branches = [{'outcome': 'TK-exact holds', 'completion': 'Report proof'},

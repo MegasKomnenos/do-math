@@ -160,7 +160,14 @@ def collect_outputs(workspace: Path, *, required_paths: list[str] = [],
         total_bytes += len(data)
         seen.add(name)
     boundary = PhysicalBoundary(workspace)
-    for directory, dirnames, filenames in os.walk(workspace, topdown=True, followlinks=False):
+    def traversal_error(error):
+        path = Path(error.filename) if error.filename else workspace
+        name = path.relative_to(workspace).as_posix()
+        omitted.append({"path": name, "reason": "read_error", "error_type": type(error).__name__,
+                        "error": str(error), "required": any(
+                            name == "." or ref == name or ref.startswith(name + "/") for ref in required)})
+    for directory, dirnames, filenames in os.walk(workspace, topdown=True, followlinks=False,
+                                                 onerror=traversal_error):
         base = Path(directory)
         kept = []
         for dirname in sorted(dirnames):

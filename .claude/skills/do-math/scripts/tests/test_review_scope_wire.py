@@ -83,5 +83,52 @@ class ScopeWireTests(unittest.TestCase):
             jsonschema.Draft202012Validator(self.wire).validate(changed)
 
 
+class ExpandedScopeRevisionTests(unittest.TestCase):
+    def test_revision_retains_all_prior_slots_above_the_policy_minimum(self):
+        from unittest.mock import patch
+        from do_math.review_engine import ReviewEngineMixin
+        policy = review_policy.build_review_policy(reviewer_count=2, max_rounds=2)
+        slots = ['initial-0', 'initial-1', 'specialist']
+        scope = {'assessment_id': 'SA-expanded', 'policy_id': policy['id'], 'policy_version': 5,
+            'required_perspectives': [], 'initial_slots': [
+                {'id': slot, 'perspective': 'full proposal', 'required_source_refs': ['proposal']}
+                for slot in slots], 'selected_profile_ref': None,
+            'activity_execution_limit': policy['activity_execution_limit'], 'overflow_disposition': 'unresolved'}
+        previous = review_cycle.start_review({'id': 'KN-old', 'revision': 1}, 2,
+            policy=policy, scope_assessment=scope)
+        for index, action in enumerate(review_cycle.next_actions(previous)):
+            previous = review_cycle.accept_result(previous, action, {
+                'proposal_digest': previous['proposal_digest'], 'summary': 'Complete comparison',
+                'used_sources': ['proposal'], 'questions': [], 'decision': 'match',
+                'scope_complete': True, 'findings': []}, 'EX-prior-' + str(index))
+        previous.update(id='RC-old', knowledge_id='KN-old')
+        owner = ReviewEngineMixin()
+        owner.instance = {'knowledge': {'KN-new': {'id': 'KN-new', 'supersedes': 'KN-old'}},
+                          'config': {}, 'review_policy': policy}
+        owner.runtime = {'review_cycles': {'RC-old': previous}}
+        owner.head = 'fixed-input'
+        owner._settle_review_resource_dispositions = lambda: None
+        owner._review_publication_premises = lambda _: {}
+        queued = []
+        owner._queue_identity_actions = lambda kid, cid: queued.append((kid, cid))
+        with patch('do_math.review_engine._proposal', return_value={'id': 'KN-new', 'revision': 2}), \
+                patch('do_math.review_engine.kr.identity_basis', return_value={}):
+            cid = owner._start_identity_review('KN-new', previous_cycle_id='RC-old')
+        current = owner.runtime['review_cycles'][cid]
+        self.assertEqual(current['retained_reviewer_slots'], slots)
+        self.assertEqual(current['requested_reviewer_slots'], slots)
+        self.assertEqual(current['phase'], 'scope')
+        self.assertEqual(current['results'], {})
+        self.assertIsNone(current['decision'])
+        self.assertEqual(current['previous_reviews'][-1]['decision'], 'match')
+        self.assertEqual(queued, [('KN-new', cid)])
+        next_scope = {**deepcopy(scope), 'assessment_id': 'SA-next'}
+        next_scope['initial_slots'].pop()
+        action = review_cycle.next_actions(current)[0]
+        with self.assertRaisesRegex(ValueError, 'retained logical slots'):
+            review_cycle.accept_result(current, action, {
+                'proposal_digest': current['proposal_digest'], 'summary': 'Incorrectly removes a seat',
+                'used_sources': ['proposal'], 'questions': [], 'scope_complete': True,
+                'scope_assessment': next_scope}, 'EX-next-scope')
 if __name__ == "__main__":
     unittest.main()

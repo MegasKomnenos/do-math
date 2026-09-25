@@ -157,7 +157,7 @@ def install(contract):
                              identity=False, derived=_task_readiness)
     # Configuration is an authoring input with a closed field vocabulary.
     text_keys = "effort operator_effort observation_mode".split()
-    int_keys = "call_timeout_seconds reviewers goal_auditors max_input_bytes max_output_repairs review_rounds review_research_limit research_reconsider_seconds observation_interval_seconds plan_settle_seconds checkpoint_grace_seconds max_artifact_bytes operator_interval_seconds operator_timeout_seconds provider_retry_initial_seconds provider_retry_max_seconds finish_notice_seconds self_check_response_window_seconds tool_review_window_seconds contract_revision_limit exhaustion_empty_limit import_rework_limit proposal_version_limit selection_failure_limit".split()
+    int_keys = "call_timeout_seconds reviewers goal_auditors max_input_bytes max_output_repairs review_rounds review_research_limit research_reconsider_seconds observation_interval_seconds plan_settle_seconds max_artifact_bytes operator_interval_seconds operator_timeout_seconds provider_retry_initial_seconds provider_retry_max_seconds finish_notice_seconds self_check_response_window_seconds tool_review_window_seconds contract_revision_limit exhaustion_empty_limit import_rework_limit proposal_version_limit selection_failure_limit".split()
     config = {**{k: TEXT for k in text_keys}, **{k: NAT for k in int_keys},
               "no_progress_limit": {"type": "integer", "minimum": 1},
               **{k: BOOL for k in ("operator_enabled", "scholarly_enabled", "claude_only_assigned_model")},

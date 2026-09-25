@@ -261,9 +261,15 @@ def _reconcile_operator(repository: Path, instance: str, configuration: dict[str
                                        operator_timeout_seconds=configuration["operator_timeout_seconds"])
 
 
-def _schedule_failure(result: dict[str, Any], error: RuntimeError, repository: Path,
+def _schedule_failure(result: dict[str, Any], error: Exception, repository: Path,
                       instance: str) -> tuple[dict[str, Any], int]:
-    reconcile = subprocess.list2cmdline(["operator", "install", "--repository", str(repository), "--instance", instance])
+    mode = "install" if result.get("config", {}).get("operator_enabled", True) else "uninstall"
+    def quote(value):
+        return "'" + str(value).replace("'", "''") + "'"
+    entrypoint = Path(__file__).resolve().parents[1] / "do_math.py"
+    reconcile = ("& " + quote(sys.executable) + " " + quote(entrypoint)
+                 + " operator " + mode + " --repository " + quote(repository.resolve())
+                 + " --instance " + quote(instance))
     result["operator_schedule"] = {"status": "failed", "error": str(error), "reconcile": reconcile}
     return result, 5
 
@@ -291,7 +297,7 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
         if initialized["config"]["operator_enabled"]:
             try:
                 result["operator_schedule"] = _reconcile_operator(args.repository, result["instance_id"], initialized["config"])
-            except RuntimeError as error:
+            except (RuntimeError, OSError, subprocess.SubprocessError) as error:
                 return _schedule_failure(result, error, args.repository, result["instance_id"])
         return result, 0
     if command == "run":
@@ -325,7 +331,7 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
         elif result["effect"] == "applied" and operator_keys.intersection(requested):
             try:
                 result["operator_schedule"] = _reconcile_operator(args.repository, args.instance, result["config"])
-            except RuntimeError as error:
+            except (RuntimeError, OSError, subprocess.SubprocessError) as error:
                 return _schedule_failure(result, error, args.repository, args.instance)
         elif operator_keys.intersection(requested):
             result["operator_schedule"] = {"status": "pending", "reason": "run operator install or uninstall after the control is applied"}

@@ -23,7 +23,7 @@ from . import knowledge_io, planning, review_cycle
 from .context_store import collect_outputs, materialize_inputs, read_source, _safe_path, _excluded, _read_stable, _is_reparse, _relative
 from .external import prepare_operation, validate_operation
 from .model_policy import ASSESSMENT_SCHEMA, assessment_key, validate_assessments, preparation_only
-from .observations import read_checkpoint, validate_rules, CHECKPOINT_SCHEMA, CHECKPOINT_MAX_BYTES, RULES_MAX_BYTES
+from .observations import read_checkpoint, validate_rule_proposal, CHECKPOINT_SCHEMA, CHECKPOINT_MAX_BYTES, RULES_MAX_BYTES
 from .repository import canonical_json, _unique_pairs, _reject_constant
 from . import integration
 
@@ -173,7 +173,8 @@ def extension_schema(action: dict) -> dict:
         "revision_resolutions": _object({"record_id": TEXT, "disposition": {"enum": ["revised", "unchanged", "deferred", "delegated"]},
             "reason": TEXT, "task_title": TEXT}, ["record_id", "disposition", "reason"]),
         "question_routes": _object({"question_index": {"type": "integer", "minimum": 0},
-            "owner": {"enum": ["user", "research", "operations"]}, "target_ids": STRINGS, "reason": TEXT}),
+            "owner": {"enum": ["user", "research", "operations"]}, "target_ids": STRINGS, "reason": TEXT,
+            "blocks": {"type": "boolean"}}, ["question_index", "owner", "target_ids", "reason"]),
         "question_resolutions": _object({"question_id": TEXT, "disposition": {"enum": ["resolved", "superseded"]},
             "evidence_refs": {**STRINGS, "minItems": 1}, "reason": TEXT}),
         "action_resolutions": _object({"action_id": TEXT, "evidence_execution_id": TEXT, "reason": TEXT}),
@@ -664,6 +665,24 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
                 json.dumps(sorted(set(expected) - set(titles)), ensure_ascii=False)))
             revising = {target for row in context.get("pending_revisions", []) if row["action"].get("id") != action.get("id")
                         for target in planning.action_write_ids(row['action'])}
+            reference_tasks = dict(tasks)
+            catalog = {row["id"]: row for row in context.get("task_catalog", [])}
+            sibling_ids = {row["task_id"] for entry in entries for row in entry["sibling_boundaries"]}
+            for identifier in sorted(sibling_ids & catalog.keys()):
+                def read_sibling(identifier=identifier):
+                    row = catalog[identifier]
+                    ref = row["source_ref"]
+                    require(ref["snapshot"] == context["snapshot"],
+                            "sibling contract source belongs to another snapshot")
+                    source = read_source(workspace, ref, limit=max(1, ref["bytes"]))
+                    require(source["status"] == "ok" and not source["truncated"],
+                            "sibling contract source is missing or corrupt: " + identifier)
+                    record = load_json(source["bytes"])
+                    require(isinstance(record, dict) and record.get("id") == identifier
+                            and record.get("revision") == row["revision"],
+                            "sibling contract source differs from its catalog identity or revision")
+                    reference_tasks[identifier] = record
+                check("activity-extensions.json/contract_checks", read_sibling)
             for index, entry in enumerate(entries):
                 item = next((x for x in output["candidates"] if x["title"] == entry["task_title"]), None)
                 if item is None:
@@ -673,7 +692,7 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
                     if row.get('task_title') == item['title'] or
                        item.get('revises_task_id') and row.get('task_id') == item['revises_task_id']), {})
                 dependencies = prepared_dependencies(item, condition)
-                for message in contract_check_errors(item, entry, dependencies, tasks, known, revising):
+                for message in contract_check_errors(item, entry, dependencies, reference_tasks, known, revising):
                     issues.append(_issue(f"activity-extensions.json/contract_checks/{index}", message))
     if action["role"] == "research_plan":
         check("output", lambda: planning.validate_plan_submission(output, tasks, context.get("ready_task_ids", [])))
@@ -685,8 +704,8 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
         from .contracts import contract_review_decision
         check("output/item_reviews", lambda: contract_review_decision(output))
     if action["role"] == "operational_review":
-        from .operational_dispositions import validate_new_disposition, require_basis_refs
-        check("output/disposition", lambda: validate_new_disposition(output["disposition"]))
+        from .operational_dispositions import validate_disposition, require_basis_refs
+        check("output/disposition", lambda: validate_disposition(output["disposition"]))
         check("output/disposition/basis_refs", lambda: require_basis_refs(
             output['disposition'], context['admissible_basis_refs']))
     definitions = deepcopy(context.get("kind_definitions", {}))
@@ -995,7 +1014,13 @@ def _workspace_checks(context, workspace, candidate=None):
             rules = rules if candidate is not None else _read_stable(rules_path)
             if len(rules) > limits.get("observation_rules_bytes", RULES_MAX_BYTES):
                 raise ValueError("observation rules exceed the supplied byte limit")
-            validate_rules(load_json(rules))
+            proposal = load_json(rules)
+            if (not isinstance(proposal, dict) or type(proposal.get("current_revision")) is not int
+                    or proposal["current_revision"] < 0):
+                raise ValueError("rule proposal requires a nonnegative current_revision")
+            # The file preserves a proposal; only a self-check response can
+            # compare the active revision and install its rules.
+            validate_rule_proposal(proposal, current_revision=proposal["current_revision"])
         except (ValueError, TypeError, OSError) as error:
             issues.append(_issue("observation-rules.json", str(error), "observation.rules"))
     return issues, files["manifest"]

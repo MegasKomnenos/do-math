@@ -73,6 +73,29 @@ def archived_run(root):
 
 
 class SurfaceRedesignTests(unittest.TestCase):
+    def test_cleanup_uses_current_recovery_completion_and_obligations(self):
+        from do_math.record_schemas import RECORDS
+        from jsonschema import Draft202012Validator
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            _, state, _, reader = archived_run(root)
+            recovery = {'id': 'RY-1', 'started_at': '2026-09-25T00:00:00Z',
+                        'execution_ids': ['EX-1'], 'dispositions': []}
+            state['runtime']['recoveries'] = {'RY-1': recovery}
+            Draft202012Validator(RECORDS['recoveries']).validate(recovery)
+            pending = cleanup_candidates(root, **state, read_artifact=reader)[0]
+            self.assertIn('recovery_pending', pending['reasons'])
+            recovery['finished_at'] = '2026-09-25T00:01:00Z'
+            Draft202012Validator(RECORDS['recoveries']).validate(recovery)
+            self.assertTrue(cleanup_candidates(root, **state, read_artifact=reader)[0]['eligible'])
+            state['runtime']['waiting_actions'] = {'AC-1': {'execution_id': 'EX-1'}}
+            waiting = cleanup_candidates(root, **state, read_artifact=reader)[0]
+            self.assertIn('recovery_pending', waiting['reasons'])
+            state['runtime']['waiting_actions'] = {}
+            state['runtime']['reservations'] = {'RS-1': {'owner_id': 'EX-1', 'state': 'held'}}
+            reserved = cleanup_candidates(root, **state, read_artifact=reader)[0]
+            self.assertIn('unsettled_reservation', reserved['reasons'])
+            self.assertFalse(reserved['eligible'])
     def test_checker_sees_canonical_catalog_beyond_direct_comparison(self):
         from test_redesign_TASKS import task, disposition
         from research_fixtures import assessment, candidate
@@ -506,7 +529,8 @@ class SurfaceRedesignTests(unittest.TestCase):
                 elif mutation == 'archive': archive['runtime/artifacts/EX-1/output.txt'] = b'corrupt'
                 elif mutation == 'termination': archive['runtime/artifacts/EX-1/termination.json'] = b'{}'
                 elif mutation == 'reservation': state['runtime']['reservations'] = {'RS': {'owner_id': 'EX-1', 'state': 'held'}}
-                else: state['runtime']['recoveries'] = {'RC': {'execution_ids': ['EX-1'], 'status': 'checking'}}
+                else: state['runtime']['recoveries'] = {'RY-1': {'id': 'RY-1',
+                    'started_at': '2026-09-25T00:00:00Z', 'execution_ids': ['EX-1'], 'dispositions': []}}
                 original = deepcopy(state)
                 result = cleanup(root, candidates, current_state=lambda: state, read_artifact=reader)
                 self.assertEqual(result['status'], 'degraded')

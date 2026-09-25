@@ -255,7 +255,7 @@ class AcceptanceTests(unittest.TestCase):
                         return {"status": "stopped", "output": None, "usage": {}, "error": "unrelated pause"}
                     time.sleep(.02)
                 return returned("research_work")
-        engine = self.fixture.engine(Runner(), count=2, checkpoint_grace_seconds=1)
+        engine = self.fixture.engine(Runner(), count=2)
         failed_action = next(a for a in engine.runtime['queue'] if a['role'] == 'research_work'
                              and engine.runtime['tasks'][a['target']]['title'] == '0')
         failed_action["recovery_attempt"] = 1

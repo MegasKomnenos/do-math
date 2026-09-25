@@ -55,6 +55,25 @@ class Tests(unittest.TestCase):
             self.assertEqual(observations.read_checkpoint(self.ws)["status"], "invalid")
         self.assertLessEqual(checks.call_count, 1)
 
+    def test_duplicate_checkpoint_keys_are_invalid_live_and_at_final_capture(self):
+        from do_math.submission import _captured_checkpoint
+        self.write(current_claim="last valid", counters={"attempts": 1})
+        prior, _ = observations.preserve_checkpoint(self.ws,
+            artifact_prefix="runtime/artifacts/prior", max_bytes=100000)
+        raw = (self.ws / "checkpoint.json").read_bytes()
+        variants = [raw.replace(b'"current_claim": "last valid"',
+                                b'"current_claim": "first", "current_claim": "last valid"'),
+                    raw.replace(b'"attempts": 1', b'"attempts": 0, "attempts": 1')]
+        for malformed in variants:
+            (self.ws / "checkpoint.json").write_bytes(malformed)
+            self.assertEqual(observations.read_checkpoint(self.ws)["status"], "invalid")
+            self.assertEqual(_captured_checkpoint({"checkpoint.json": malformed})["status"], "invalid")
+            preserved, artifacts = observations.preserve_checkpoint(self.ws, previous=prior,
+                artifact_prefix="runtime/artifacts/final", max_bytes=100000)
+            self.assertEqual(preserved["sha256"], prior["sha256"])
+            self.assertEqual(preserved["final_observation"]["checkpoint_status"], "invalid")
+            self.assertEqual(artifacts, {})
+
     def test_checkpoint_rejects_numbers_outside_the_storage_value_domain(self):
         for changes in ({"iteration": 1.0}, {"counters": {"attempts": 2.0}},
                         {"iteration": 2 ** 53}):
@@ -227,6 +246,25 @@ class Tests(unittest.TestCase):
         self.assertEqual(result["rule_update"]["kind"], "observation_rules_rejected")
         self.assertEqual(self.t.rule_revision, 0)
 
+    def test_rule_proposal_file_has_the_same_shape_in_live_and_captured_submission(self):
+        from do_math.context_store import collect_outputs
+        from do_math.submission import _workspace_checks
+        proposal = {"current_revision": 0, "reason": "Use a renamed rule",
+                    "rules": [rule(id="renamed", repeat_interval=2)]}
+        obligation = self.due()
+        result = self.t.record_self_check_response({**response_for(obligation), "rule_proposal": proposal},
+            available_evidence_refs={"EV-1"})
+        self.assertEqual(result["rule_update"]["kind"], "observation_rules_accepted")
+        context = {"submission_contract": {"limits": {"max_artifact_bytes": 100000}}}
+        path = self.ws / "observation-rules.json"
+        for value, valid in ((proposal, True), (proposal["rules"], False),
+                             ({**proposal, "current_revision": -1}, False)):
+            path.write_text(json.dumps(value), encoding="utf-8")
+            for captured in (None, collect_outputs(self.ws)):
+                issues, _ = _workspace_checks(context, self.ws, candidate=captured)
+                self.assertEqual(not issues, valid, issues)
+        self.assertEqual(self.t.rule_revision, 1)
+
     def test_malformed_rule_proposal_does_not_reject_valid_self_check(self):
         obligation = self.due()
         response = {**response_for(obligation), "rule_proposal": {"current_revision": 0, "reason": "bad", "rules": [rule(threshold=1.5)]}}
@@ -277,8 +315,11 @@ class Tests(unittest.TestCase):
         self.assertEqual(self.t.observe({"type": "tick"}), [])
 
     def test_self_check_calls_and_checkpoints_do_not_trigger_themselves(self):
-        self.t.register_self_check_calls(["SC-CALL"])
-        self.t.observe({"type": "item.completed", "item": {"type": "command_execution", "id": "SC-CALL"}})
+        obligation = self.due()
+        self.t.obligations[obligation['id']]['status'] = 'answered'
+        self.t.observe({"type": "item.completed", "item": {"type": "mcp_tool_call", "id": "SC-CALL",
+            "server": "execution_control", "tool": "control_self_check",
+            "arguments": {"self_check_id": obligation['id']}}}, evaluate=False)
         self.assertNotIn("SC-CALL", self.t.completed_call_ids)
         self.write()
         checkpoint = observations.read_checkpoint(self.ws)
@@ -306,9 +347,9 @@ class Tests(unittest.TestCase):
         workspace.mkdir(parents=True)
         queued = []
         fake = SimpleNamespace(_controls=lambda: None, _check_conversations=lambda: False, _save=lambda *a: None,
-            _inline_reviewing=False, instance={"workspace": str(self.ws)}, runtime={"status": "running"}, _trackers={},
+            instance={"workspace": str(self.ws)}, runtime={"status": "running"}, _trackers={},
             _review_observation_source=lambda execution_id, event: None,
-            _run_inline_review=lambda *a: queued.append(a))
+            _enqueue=lambda *a, **kw: queued.append((a, kw)))
         tracker = observations.ObservationTracker("E", workspace, {"observation_mode": "periodic", "observation_interval_seconds": 300,
                                                   "checkpoint_expected": True}, clock=self.clock)
         # This check targets ENGINE's mechanical reminder dispatch, not tracker

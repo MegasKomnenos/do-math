@@ -519,9 +519,11 @@ def replace_knowledge(instance: dict, runtime: dict, knowledge_id: str, changes:
     output["knowledge"][knowledge_id]["lifecycle"] = "superseded"
     output["expositions"][old["exposition_id"]]["lifecycle"] = "superseded"
     old_fid = old.get("formal_result_id")
-    # Same formal source/declarations/dependencies permit the exact same sealed result.
+    # Reuse unchanged formal evidence only while it is currently usable.
     formal_changed = any(candidate.get(key) != view.get(key) for key in ("lean_code", "declaration_names", "dependencies"))
-    if not formal_changed:
+    reuse_formal = not formal_changed and kr.formal_usable(
+        output, output.get("formal_results", {}).get(old_fid, {}))
+    if reuse_formal:
         unused = replacement.get("formal_result_id")
         if unused:
             del output["formal_results"][unused]
@@ -535,7 +537,7 @@ def replace_knowledge(instance: dict, runtime: dict, knowledge_id: str, changes:
             action.get("target") == knowledge_id and (
                 action.get("role") in {"formal_check", "identity_review"}
                 or (action.get("role") == "supplemental_research" and action.get("review_cycle_id"))))]
-    next_role = "formal_check" if formal_changed else "identity_review"
+    next_role = "identity_review" if reuse_formal else "formal_check"
     if not replacement.get("formal_result_id"):
         next_role = "research_plan"
     action_id = new_id("AC")

@@ -20,7 +20,7 @@ class CurrentnessTests(ActiveStateHarness):
     def make(self, **config):
         settings = {'max_input_bytes': 2_000_000,
             'tool_review_window_seconds': 60, 'self_check_response_window_seconds': 5,
-            'checkpoint_grace_seconds': 1, 'scholarly_enabled': False, 'operator_enabled': False}
+            'scholarly_enabled': False, 'operator_enabled': False}
         return super().make(**{**settings, **config})
 
     def test_same_source_is_idempotent_changed_source_preserves_completed_task_history(self):

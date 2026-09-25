@@ -405,7 +405,6 @@ class PurposeHarness(unittest.TestCase):
                     'max_input_bytes': 2_000_000,
                     'lean_command': ['test-double'],
                     'tool_review_window_seconds': 60, 'self_check_response_window_seconds': 5,
-                    'checkpoint_grace_seconds': 1,
                     'scholarly_enabled': False, 'operator_enabled': False, **config}
         return settings
 

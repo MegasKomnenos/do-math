@@ -80,6 +80,47 @@ class CompletionSettlementTests(unittest.TestCase):
         self.assertEqual(engine.runtime['activities']['AC-input']['status'], 'finished')
         self.assertEqual(engine.runtime['history'][0]['action']['id'], 'A-input')
 
+    def test_delayed_publication_settles_each_role_and_preserves_pending_followups(self):
+        from unittest.mock import Mock
+        for role in ('maintenance', 'identity_review', 'research_work', 'goal_audit'):
+            for followup in (False, True):
+                with self.subTest(role=role, followup=followup):
+                    engine = self.engine()
+                    engine.instance['workspace'] = 'unused'
+                    engine.runtime['status'] = 'ready'
+                    action = {'id': 'A-publication', 'role': role,
+                              'owner_activity_id': 'AC-producer'}
+                    execution = {'id': 'EX-publication', 'role': role, 'action': action,
+                        'owner_activity_id': 'AC-producer', 'status': 'stopping',
+                        'input_bundle': 'BA-input', 'result_ref': 'runtime/artifacts/BA-result/result.json'}
+                    engine.runtime['executions'][execution['id']] = execution
+                    engine.runtime['activities']['AC-producer'].update(
+                        status='working', assigned_execution_ids=[execution['id']])
+                    engine.runtime['waiting_actions'][action['id']] = {
+                        'kind': 'submission_publication', 'action': action,
+                        'execution_id': execution['id']}
+                    engine.head = 'snapshot'
+                    engine.store = Mock()
+                    engine.store.read.return_value = b'{}'
+                    engine._save = Mock()
+                    engine._settle_review_resource_dispositions = lambda: None
+                    def receive(*args, **kwargs):
+                        engine.runtime = deepcopy(engine.runtime)
+                        engine.runtime['executions']['EX-publication'].update(
+                            status='ended', outcome='output_accepted')
+                        del engine.runtime['waiting_actions']['A-publication']
+                        if followup:
+                            engine.runtime['queue'].append({'id': 'A-next', 'role': role,
+                                'owner_activity_id': 'AC-producer'})
+                    engine._receive_submission = Mock(side_effect=receive)
+                    engine._retry_submission_publications()
+                    activity = engine.runtime['activities']['AC-producer']
+                    self.assertEqual(activity['status'], 'working' if followup else 'finished')
+                    self.assertEqual(activity['result_refs'], [execution['result_ref']])
+                    self.assertEqual(activity['unresolved'], [])
+                    engine._receive_submission.assert_called_once()
+                    engine._save.assert_called_once()
+
 
 @test_group('unit')
 class CleanupInterruptionTests(unittest.TestCase):

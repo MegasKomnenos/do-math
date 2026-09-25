@@ -207,6 +207,23 @@ class ObservationRedesignTests(unittest.TestCase):
             self.assertEqual(preserved["artifact_ref"], "ART-1")
             canonical_json(preserved)
 
+    def test_maximum_interval_keeps_distinct_ids_for_every_due_rule(self):
+        clock = Clock()
+        with tempfile.TemporaryDirectory() as directory:
+            tracker = ObservationTracker("EX-1", Path(directory), {
+                "observation_rules": [rule(id="@maximum_interval"), rule(id="@maximum_interval:1")],
+                "observation_interval_seconds": 10, "tool_review_window_seconds": 60,
+                "self_check_response_window_seconds": 5}, clock=clock)
+            clock.value = 10
+            obligation = next(row for row in tracker.observe({"type": "tick", "counters": {"attempts": 2}})
+                              if row["kind"] == "self_check_due")
+            ids = [row["rule_id"] for row in obligation["due"]]
+            self.assertEqual(len(ids), 3)
+            self.assertEqual(len(set(ids)), 3)
+            self.assertTrue({"@maximum_interval", "@maximum_interval:1"}.issubset(ids))
+            received = tracker.record_self_check_response(self.response(obligation), available_evidence_refs={"EV-1"})
+            self.assertEqual(received["kind"], "self_check_received")
+
     def test_dispositions_are_validated_before_engine_application(self):
         disposition = {"kind": "resume", "basis_refs": ["OF-1", "SC-1"], "next_owner": "engine",
                        "reason": "checkpoint is complete", "checkpoint_ref": "CK-1", "scope": "remaining proof"}

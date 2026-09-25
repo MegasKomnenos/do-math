@@ -573,7 +573,7 @@ class WakeRepairs(unittest.TestCase):
 class RecoveryBoundaryRepairs(unittest.TestCase):
     def test_restart_finishes_an_accepted_retry_after_target_termination_once(self):
         from test_repair_execution import RepairExecutionTests
-        fixture = RepairExecutionTests('test_actual_restore_verify_and_explicit_activity_followup')
+        fixture = RepairExecutionTests('test_installation_repair_handoff_preserves_failure_and_is_idempotent')
         fixture.setUp(); self.addCleanup(fixture.doCleanups)
         host = fixture.host
         target = host.runtime['executions']['EX-target']
@@ -625,7 +625,7 @@ class RecoveryBoundaryRepairs(unittest.TestCase):
 
     def test_retry_queue_and_disposition_publish_together_and_replay_is_noop(self):
         from test_repair_execution import RepairExecutionTests
-        fixture = RepairExecutionTests('test_actual_restore_verify_and_explicit_activity_followup')
+        fixture = RepairExecutionTests('test_installation_repair_handoff_preserves_failure_and_is_idempotent')
         fixture.setUp(); self.addCleanup(fixture.doCleanups)
         host = fixture.host
         target = host.runtime['executions']['EX-target']

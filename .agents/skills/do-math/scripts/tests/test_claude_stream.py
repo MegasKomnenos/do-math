@@ -32,6 +32,29 @@ def noop():
 
 
 class StreamTests(unittest.TestCase):
+    def test_native_usage_metadata_fits_the_execution_storage_contract(self):
+        from jsonschema import Draft202012Validator, ValidationError
+        from do_math.engine import json_safe
+        from do_math.record_schemas import RECORDS
+        from test_redesign_SURFACE import surface_state
+        parsed = parse_stream(stream(INIT, RESULT))
+        self.assertTrue(parsed['turn_completed'])
+        _, runtime = surface_state()
+        execution = runtime['executions']['EX-1']
+        metadata = json_safe({key: parsed[key] for key in
+            ('usage_segments', 'model_usage_reported', 'usage_scope', 'reported_models')})
+        execution.update(metadata)
+        validator = Draft202012Validator(RECORDS['executions'])
+        validator.validate(execution)
+        restored = json.loads(json.dumps(execution))
+        self.assertEqual({key: restored[key] for key in metadata}, metadata)
+        with self.assertRaises(ValidationError):
+            validator.validate({**execution, 'unregistered_provider_field': {}})
+        for key, invalid in (('usage_segments', {}), ('model_usage_reported', []),
+                             ('usage_scope', 'unknown'), ('reported_models', {})):
+            with self.subTest(key=key), self.assertRaises(ValidationError):
+                validator.validate({**execution, key: invalid})
+
     def test_three_segments_choose_correction_and_separate_usage_scopes(self):
         corrected = notification(structured_output={"summary": "computation failed; not rerun"},
             modelUsage={"claude-opus-5": {"outputTokens": 14}}, total_cost_usd=.2)

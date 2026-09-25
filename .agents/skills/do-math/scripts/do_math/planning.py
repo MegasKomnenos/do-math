@@ -353,7 +353,7 @@ LIFECYCLE_VALUES = {
 EXPOSED_FIELDS = {
     'goal-judgment': {'/decision', '/current'},
     'knowledge': {'/lifecycle','/kind','/value','/kind_use_suspended','/usable_as_k'}, 'task': {'/status','/revision'},
-    'activity': {'/status','/role'}, 'execution': {'/status','/role','/outcome','/stop_phase'},
+    'activity': {'/status','/activity_kind'}, 'execution': {'/status','/role','/outcome','/stop_phase'},
     'governance': {'/status','/lifecycle'}, 'grant': {'/status'}, 'decision': {'/kind'},
     'external-operation': {'/status','/http_status','/succeeded'}, 'source': {'/status','/revision','/sha256'},
     'trust-environment': {'/status'}, 'review-cycle': {'/status','/decision','/phase'},
@@ -379,9 +379,9 @@ def _records(instance: dict, runtime: dict) -> dict[str, tuple[str, dict]]:
     return found
 
 
-def _record_candidates(instance: dict, runtime: dict, identifier: str, family: str | None = None) -> list[tuple[str, dict]]:
-    """Resolve a condition target without silently choosing a colliding ID."""
-    found = _records(instance, runtime).get(identifier)
+def _record_candidates(records: dict[str, tuple[str, dict]], identifier: str, family: str | None = None) -> list[tuple[str, dict]]:
+    """Resolve a condition target in this evaluation's validated record index."""
+    found = records.get(identifier)
     if found and family is not None and found[0]!=family:
         raise ValueError('existing record belongs to another family: '+identifier)
     return [found] if found and (family is None or found[0] == family) else []
@@ -453,13 +453,13 @@ def evaluate_condition(condition: dict, instance: dict, runtime: dict, *, evalua
                 basis.append({"absencequery": {"op": op, "subkind": node.get("subkind"), "from_id": node.get("from_id"), "to_id": node.get("to_id")}})
                 return "not_ready"
             if op == "task_disposition_is":
-                candidates = _record_candidates(instance, runtime, node.get("task_id"), "task")
+                candidates = _record_candidates(records, node.get("task_id"), "task")
                 record = candidates[0] if len(candidates) == 1 else None
                 if record is None: basis.append({"absencequery": {"op": op, "task_id": node.get("task_id")}}); return "not_ready"
                 if record[0] != "task": raise ValueError("task disposition requires a task")
                 basis.append(_basis(record[1])); return "ready" if record[1].get("status") == node.get("value") else "not_ready"
             if op == "decision_value_is":
-                candidates = _record_candidates(instance, runtime, node.get("decision_id"), "decision")
+                candidates = _record_candidates(records, node.get("decision_id"), "decision")
                 if len(candidates) > 1:
                     raise ValueError("decision ID is ambiguous")
                 if not candidates:
@@ -485,7 +485,7 @@ def evaluate_condition(condition: dict, instance: dict, runtime: dict, *, evalua
                     raise ValueError("artifact format validation failed")
                 basis.append({"artifact_ref": deepcopy(ref), "bytes": len(data)})
                 return "ready"
-            candidates = _record_candidates(instance, runtime, node.get("record_id"), node.get("family"))
+            candidates = _record_candidates(records, node.get("record_id"), node.get("family"))
             if len(candidates) > 1:
                 raise ValueError("condition record ID is ambiguous without a family")
             record = candidates[0] if candidates else None
@@ -735,7 +735,9 @@ def schedule_reconsideration(instance, runtime, *, now, evaluation_context=None)
                for e in runtime.get('executions', {}).values()):
             return state
     if any(e.get('role')==role and e.get('status')!='ended' for e in runtime.get('executions',{}).values()): return state
-    queued=next((a for a in runtime.setdefault('queue',[]) if a.get('role')==role),None)
+    from .model_policy import preparation_only
+    queued = next((a for a in runtime.setdefault('queue', []) if a.get('role') == role
+                   and (role != 'research_preparation' or not preparation_only(a))), None)
     if not queued:
         queued={'id':new_id('AC'),'role':role,'reason':'research reconsideration','event_refs':[]}
         runtime['queue'].append(queued)

@@ -1,0 +1,2258 @@
+[
+  {
+    "agent": 5,
+    "files": 39,
+    "lines": 15201,
+    "missing": [],
+    "manual_check": [],
+    "rows": [
+      {
+        "path": ".claude/skills/do-math/.gitattributes",
+        "lines": 2,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/.gitattributes: 1~2행 / 2행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/AGENTS.md",
+        "lines": 11,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/AGENTS.md: 1~11행 / 11행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/examples/claude-codex-sessions.json",
+        "lines": 13,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/examples/claude-codex-sessions.json: 1~13행 / 13행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/examples/nat-add-zero.txt",
+        "lines": 1,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/examples/nat-add-zero.txt: 1~1행 / 1행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/GLOSSARY.md",
+        "lines": 707,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/GLOSSARY.md: 1~707행 / 707행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/README.md",
+        "lines": 562,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/README.md: 1~562행 / 562행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/references/CLI-실행-계약.md",
+        "lines": 952,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/references/CLI-실행-계약.md: 1~952행 / 952행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/references/초기화-운전.md",
+        "lines": 367,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/references/초기화-운전.md: 1~367행 / 367행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/references/초기화-효율과-정비.md",
+        "lines": 73,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/references/초기화-효율과-정비.md: 1~73행 / 73행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/requirements.txt",
+        "lines": 1,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/requirements.txt: 1~1행 / 1행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/check_coverage.py",
+        "lines": 357,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/check_coverage.py: 1~357행 / 357행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/__init__.py",
+        "lines": 1,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/__init__.py: 1~1행 / 1행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/budget.py",
+        "lines": 367,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/budget.py: 1~367행 / 367행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/cli.py",
+        "lines": 669,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/cli.py: 1~669행 / 669행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/control_contracts.py",
+        "lines": 140,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/control_contracts.py: 1~140행 / 140행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/control_transport.py",
+        "lines": 518,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/control_transport.py: 1~518행 / 518행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/engine.py",
+        "lines": 4807,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/engine.py: 1~4807행 / 4807행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/environment_checks.py",
+        "lines": 123,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/environment_checks.py: 1~123행 / 123행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/events.py",
+        "lines": 81,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/events.py: 1~81행 / 81행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/governance.py",
+        "lines": 1167,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/governance.py: 1~1167행 / 1167행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/governance_engine.py",
+        "lines": 453,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/governance_engine.py: 1~453행 / 453행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/initialization.py",
+        "lines": 292,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/initialization.py: 1~292행 / 292행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/launch.py",
+        "lines": 63,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/launch.py: 1~63행 / 63행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/maintenance_gate.py",
+        "lines": 49,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/maintenance_gate.py: 1~49행 / 49행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/model_policy.py",
+        "lines": 143,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/model_policy.py: 1~143행 / 143행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/preflight.py",
+        "lines": 151,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/preflight.py: 1~151행 / 151행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/scheduled_operator.py",
+        "lines": 612,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/scheduled_operator.py: 1~612행 / 612행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/scheduler.py",
+        "lines": 594,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/scheduler.py: 1~594행 / 594행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/session_slots.py",
+        "lines": 358,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/session_slots.py: 1~358행 / 358행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math.py",
+        "lines": 7,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math.py: 1~7행 / 7행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/operator_bootstrap.py",
+        "lines": 150,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/operator_bootstrap.py: 1~150행 / 150행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/operator_schedule.ps1",
+        "lines": 87,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/operator_schedule.ps1: 1~87행 / 87행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/probe_cli.py",
+        "lines": 141,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/probe_cli.py: 1~141행 / 141행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/probe_codex.py",
+        "lines": 182,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/probe_codex.py: 1~182행 / 182행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/probe_native_isolation.py",
+        "lines": 339,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/probe_native_isolation.py: 1~339행 / 339행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/run_tests.py",
+        "lines": 324,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/run_tests.py: 1~324행 / 324행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/setup_lean.py",
+        "lines": 130,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/setup_lean.py: 1~130행 / 130행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/test_categories.py",
+        "lines": 34,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/test_categories.py: 1~34행 / 34행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/SKILL.md",
+        "lines": 173,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/SKILL.md: 1~173행 / 173행",
+        "complete_range": true
+      }
+    ]
+  },
+  {
+    "agent": 7,
+    "files": 23,
+    "lines": 7847,
+    "missing": [],
+    "manual_check": [],
+    "rows": [
+      {
+        "path": ".claude/skills/do-math/references/지식-저작과-재사용.md",
+        "lines": 99,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/references/지식-저작과-재사용.md: 1~99행 / 99",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/references/학술자료-활용.md",
+        "lines": 49,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/references/학술자료-활용.md: 1~49행 / 49",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/academic.py",
+        "lines": 261,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/academic.py: 1~261행 / 261",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/academic_engine.py",
+        "lines": 227,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/academic_engine.py: 1~227행 / 227",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/context_store.py",
+        "lines": 891,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/context_store.py: 1~891행 / 891",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/contracts.py",
+        "lines": 347,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/contracts.py: 1~347행 / 347",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/external.py",
+        "lines": 185,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/external.py: 1~185행 / 185",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/git_store.py",
+        "lines": 571,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/git_store.py: 1~571행 / 571",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/knowledge.py",
+        "lines": 839,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/knowledge.py: 1~839행 / 839",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/knowledge_io.py",
+        "lines": 398,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/knowledge_io.py: 1~398행 / 398",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/knowledge_records.py",
+        "lines": 382,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/knowledge_records.py: 1~382행 / 382",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/payloads.py",
+        "lines": 141,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/payloads.py: 1~141행 / 141",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/record_schemas/__init__.py",
+        "lines": 563,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/record_schemas/__init__.py: 1~563행 / 563",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/record_schemas/domains.py",
+        "lines": 510,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/record_schemas/domains.py: 1~510행 / 510",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/record_schemas/schemas.py",
+        "lines": 250,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/record_schemas/schemas.py: 1~250행 / 250",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/relation_refs.py",
+        "lines": 16,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/relation_refs.py: 1~16행 / 16",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/reporting.py",
+        "lines": 218,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/reporting.py: 1~218행 / 218",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/repository.py",
+        "lines": 684,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/repository.py: 1~684행 / 684",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/retention.py",
+        "lines": 268,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/retention.py: 1~268행 / 268",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/scholarly.py",
+        "lines": 91,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/scholarly.py: 1~91행 / 91",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/state_checks.py",
+        "lines": 468,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/state_checks.py: 1~468행 / 468",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/state_contract.py",
+        "lines": 177,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/state_contract.py: 1~177행 / 177",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/trust_validation.py",
+        "lines": 212,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/trust_validation.py: 1~212행 / 212",
+        "complete_range": true
+      }
+    ]
+  },
+  {
+    "agent": 8,
+    "files": 26,
+    "lines": 10483,
+    "missing": [],
+    "manual_check": [],
+    "rows": [
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/activities.py",
+        "lines": 301,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/activities.py: 1~301행 / 301",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/decision_engine.py",
+        "lines": 208,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/decision_engine.py: 1~208행 / 208",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/delegations.py",
+        "lines": 185,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/delegations.py: 1~185행 / 185",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/input_basis.py",
+        "lines": 114,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/input_basis.py: 1~114행 / 114",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/input_recovery.py",
+        "lines": 52,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/input_recovery.py: 1~52행 / 52",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/integration.py",
+        "lines": 558,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/integration.py: 1~558행 / 558",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/lifecycle_engine.py",
+        "lines": 1495,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/lifecycle_engine.py: 1~1495행 / 1495",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/planning.py",
+        "lines": 801,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/planning.py: 1~801행 / 801",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/question_engine.py",
+        "lines": 107,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/question_engine.py: 1~107행 / 107",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/questions.py",
+        "lines": 114,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/questions.py: 1~114행 / 114",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/review_cycle.py",
+        "lines": 1211,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/review_cycle.py: 1~1211행 / 1211",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/review_engine.py",
+        "lines": 1267,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/review_engine.py: 1~1267행 / 1267",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/review_policy.py",
+        "lines": 120,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/review_policy.py: 1~120행 / 120",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/revision_engine.py",
+        "lines": 257,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/revision_engine.py: 1~257행 / 257",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/revisions.py",
+        "lines": 404,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/revisions.py: 1~404행 / 404",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/submission.py",
+        "lines": 1553,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/submission.py: 1~1553행 / 1553",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/task_contracts.py",
+        "lines": 276,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/task_contracts.py: 1~276행 / 276",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/task_scope.py",
+        "lines": 485,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/task_scope.py: 1~485행 / 485",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/계약/동일성-검토.md",
+        "lines": 107,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/계약/동일성-검토.md: 1~107행 / 107",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/계약/목표-감사.md",
+        "lines": 49,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/계약/목표-감사.md: 1~49행 / 49",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/계약/보충-조사.md",
+        "lines": 61,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/계약/보충-조사.md: 1~61행 / 61",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/계약/연구-계획.md",
+        "lines": 151,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/계약/연구-계획.md: 1~151행 / 151",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/계약/연구-수행.md",
+        "lines": 167,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/계약/연구-수행.md: 1~167행 / 167",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/계약/의도-해석.md",
+        "lines": 77,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/계약/의도-해석.md: 1~77행 / 77",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/계약/작업-계약-검토.md",
+        "lines": 143,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/계약/작업-계약-검토.md: 1~143행 / 143",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/계약/후보-준비.md",
+        "lines": 220,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/계약/후보-준비.md: 1~220행 / 220",
+        "complete_range": true
+      }
+    ]
+  },
+  {
+    "agent": 3,
+    "files": 63,
+    "lines": 19540,
+    "missing": [],
+    "manual_check": [],
+    "rows": [
+      {
+        "path": ".claude/skills/do-math/references/지식-저작과-재사용.md",
+        "lines": 99,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/references/지식-저작과-재사용.md: 1~99행 / 99",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/references/학술자료-활용.md",
+        "lines": 49,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/references/학술자료-활용.md: 1~49행 / 49",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/academic.py",
+        "lines": 261,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/academic.py: 1~261행 / 261",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/academic_engine.py",
+        "lines": 227,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/academic_engine.py: 1~227행 / 227",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/context_store.py",
+        "lines": 891,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/context_store.py: 1~891행 / 891",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/contracts.py",
+        "lines": 347,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/contracts.py: 1~347행 / 347",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/external.py",
+        "lines": 185,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/external.py: 1~185행 / 185",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/git_store.py",
+        "lines": 571,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/git_store.py: 1~571행 / 571",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/knowledge.py",
+        "lines": 839,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/knowledge.py: 1~839행 / 839",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/knowledge_io.py",
+        "lines": 398,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/knowledge_io.py: 1~398행 / 398",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/knowledge_records.py",
+        "lines": 382,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/knowledge_records.py: 1~382행 / 382",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/payloads.py",
+        "lines": 141,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/payloads.py: 1~141행 / 141",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/record_schemas/__init__.py",
+        "lines": 563,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/record_schemas/__init__.py: 1~563행 / 563",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/record_schemas/domains.py",
+        "lines": 510,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/record_schemas/domains.py: 1~510행 / 510",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/record_schemas/schemas.py",
+        "lines": 250,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/record_schemas/schemas.py: 1~250행 / 250",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/relation_refs.py",
+        "lines": 16,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/relation_refs.py: 1~16행 / 16",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/reporting.py",
+        "lines": 218,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/reporting.py: 1~218행 / 218",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/repository.py",
+        "lines": 684,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/repository.py: 1~684행 / 684",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/retention.py",
+        "lines": 268,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/retention.py: 1~268행 / 268",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/scholarly.py",
+        "lines": 91,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/scholarly.py: 1~91행 / 91",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/state_checks.py",
+        "lines": 468,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/state_checks.py: 1~468행 / 468",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/state_contract.py",
+        "lines": 177,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/state_contract.py: 1~177행 / 177",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/trust_validation.py",
+        "lines": 212,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/trust_validation.py: 1~212행 / 212",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_STORAGE.py",
+        "lines": 1335,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_redesign_STORAGE.py: 1~1335행 / 1335",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_CONTRACTS.py",
+        "lines": 1081,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_redesign_CONTRACTS.py: 1~1081행 / 1081",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_KNOWLEDGE.py",
+        "lines": 916,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_redesign_KNOWLEDGE.py: 1~916행 / 916",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_purpose_engine.py",
+        "lines": 719,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_purpose_engine.py: 1~719행 / 719",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_ACTIVITIES.py",
+        "lines": 543,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_redesign_ACTIVITIES.py: 1~543행 / 543",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_connection_repairs.py",
+        "lines": 523,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_connection_repairs.py: 1~523행 / 523",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_cli.py",
+        "lines": 497,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_cli.py: 1~497행 / 497",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_model_assessment_flow.py",
+        "lines": 444,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_model_assessment_flow.py: 1~444행 / 444",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_submission_boundaries.py",
+        "lines": 443,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_submission_boundaries.py: 1~443행 / 443",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_impact_bundle.py",
+        "lines": 437,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_impact_bundle.py: 1~437행 / 437",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_EVIDENCE_walkthroughs.py",
+        "lines": 406,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_redesign_EVIDENCE_walkthroughs.py: 1~406행 / 406",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_engine.py",
+        "lines": 320,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_engine.py: 1~320행 / 320",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_performance_repairs.py",
+        "lines": 315,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_performance_repairs.py: 1~315행 / 315",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_review_cycle.py",
+        "lines": 299,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_review_cycle.py: 1~299행 / 299",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_knowledge.py",
+        "lines": 297,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_knowledge.py: 1~297행 / 297",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_git_store.py",
+        "lines": 288,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_git_store.py: 1~288행 / 288",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_provider_wait.py",
+        "lines": 244,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_provider_wait.py: 1~244행 / 244",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_operator.py",
+        "lines": 232,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_operator.py: 1~232행 / 232",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_knowledge_io.py",
+        "lines": 198,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_knowledge_io.py: 1~198행 / 198",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_task_scope.py",
+        "lines": 185,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_task_scope.py: 1~185행 / 185",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_repository.py",
+        "lines": 168,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_repository.py: 1~168행 / 168",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_control_shapes.py",
+        "lines": 165,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_control_shapes.py: 1~165행 / 165",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_cli_advanced.py",
+        "lines": 162,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_cli_advanced.py: 1~162행 / 162",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_diagnosed_installation_recovery.py",
+        "lines": 137,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_diagnosed_installation_recovery.py: 1~137행 / 137",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_model_runner.py",
+        "lines": 136,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_model_runner.py: 1~136행 / 136",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_performance_save.py",
+        "lines": 119,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_performance_save.py: 1~119행 / 119",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_contracts.py",
+        "lines": 115,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_contracts.py: 1~115행 / 115",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_query_records.py",
+        "lines": 115,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_query_records.py: 1~115행 / 115",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_unicode_flow.py",
+        "lines": 113,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_unicode_flow.py: 1~113행 / 113",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_reporting.py",
+        "lines": 96,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_reporting.py: 1~96행 / 96",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_scholarly.py",
+        "lines": 92,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_scholarly.py: 1~92행 / 92",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_boundary_repairs.py",
+        "lines": 83,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_boundary_repairs.py: 1~83행 / 83",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_reading_map.py",
+        "lines": 81,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_reading_map.py: 1~81행 / 81",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_academic.py",
+        "lines": 74,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_academic.py: 1~74행 / 74",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_control_preview.py",
+        "lines": 70,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_control_preview.py: 1~70행 / 70",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_operator_bootstrap.py",
+        "lines": 66,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_operator_bootstrap.py: 1~66행 / 66",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_schedule_lifetime.py",
+        "lines": 56,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_schedule_lifetime.py: 1~56행 / 56",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_probe_codex.py",
+        "lines": 44,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_probe_codex.py: 1~44행 / 44",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_storage_validation.py",
+        "lines": 40,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_storage_validation.py: 1~40행 / 40",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_state_contract_registration.py",
+        "lines": 39,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_state_contract_registration.py: 1~39행 / 39",
+        "complete_range": true
+      }
+    ]
+  },
+  {
+    "agent": 4,
+    "files": 64,
+    "lines": 19488,
+    "missing": [],
+    "manual_check": [],
+    "rows": [
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/activities.py",
+        "lines": 301,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/activities.py: 1~301행 / 301",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/decision_engine.py",
+        "lines": 208,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/decision_engine.py: 1~208행 / 208",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/delegations.py",
+        "lines": 185,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/delegations.py: 1~185행 / 185",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/input_basis.py",
+        "lines": 114,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/input_basis.py: 1~114행 / 114",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/input_recovery.py",
+        "lines": 52,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/input_recovery.py: 1~52행 / 52",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/integration.py",
+        "lines": 558,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/integration.py: 1~558행 / 558",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/lifecycle_engine.py",
+        "lines": 1495,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/lifecycle_engine.py: 1~1495행 / 1495",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/planning.py",
+        "lines": 801,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/planning.py: 1~801행 / 801",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/question_engine.py",
+        "lines": 107,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/question_engine.py: 1~107행 / 107",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/questions.py",
+        "lines": 114,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/questions.py: 1~114행 / 114",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/review_cycle.py",
+        "lines": 1211,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/review_cycle.py: 1~1211행 / 1211",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/review_engine.py",
+        "lines": 1267,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/review_engine.py: 1~1267행 / 1267",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/review_policy.py",
+        "lines": 120,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/review_policy.py: 1~120행 / 120",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/revision_engine.py",
+        "lines": 257,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/revision_engine.py: 1~257행 / 257",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/revisions.py",
+        "lines": 404,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/revisions.py: 1~404행 / 404",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/submission.py",
+        "lines": 1553,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/submission.py: 1~1553행 / 1553",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/task_contracts.py",
+        "lines": 276,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/task_contracts.py: 1~276행 / 276",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/task_scope.py",
+        "lines": 485,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/task_scope.py: 1~485행 / 485",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/계약/동일성-검토.md",
+        "lines": 107,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/계약/동일성-검토.md: 1~107행 / 107",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/계약/목표-감사.md",
+        "lines": 49,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/계약/목표-감사.md: 1~49행 / 49",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/계약/보충-조사.md",
+        "lines": 61,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/계약/보충-조사.md: 1~61행 / 61",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/계약/연구-계획.md",
+        "lines": 151,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/계약/연구-계획.md: 1~151행 / 151",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/계약/연구-수행.md",
+        "lines": 167,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/계약/연구-수행.md: 1~167행 / 167",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/계약/의도-해석.md",
+        "lines": 77,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/계약/의도-해석.md: 1~77행 / 77",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/계약/작업-계약-검토.md",
+        "lines": 143,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/계약/작업-계약-검토.md: 1~143행 / 143",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/계약/후보-준비.md",
+        "lines": 220,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/계약/후보-준비.md: 1~220행 / 220",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_TASKS.py",
+        "lines": 877,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_redesign_TASKS.py: 1~877행 / 877",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_submission_tools.py",
+        "lines": 676,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_submission_tools.py: 1~676행 / 676",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_governance_engine.py",
+        "lines": 599,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_governance_engine.py: 1~599행 / 599",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_host_resources.py",
+        "lines": 493,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_host_resources.py: 1~493행 / 493",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_review_research.py",
+        "lines": 471,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_review_research.py: 1~471행 / 471",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_walkthrough_followup.py",
+        "lines": 459,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_walkthrough_followup.py: 1~459행 / 459",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_submission_flow.py",
+        "lines": 447,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_submission_flow.py: 1~447행 / 447",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_EVIDENCE.py",
+        "lines": 401,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_redesign_EVIDENCE.py: 1~401행 / 401",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_walkthrough_repairs.py",
+        "lines": 324,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_walkthrough_repairs.py: 1~324행 / 324",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_efficiency.py",
+        "lines": 315,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_efficiency.py: 1~315행 / 315",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_walkthrough_contract_repairs.py",
+        "lines": 310,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_walkthrough_contract_repairs.py: 1~310행 / 310",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_windows_job.py",
+        "lines": 281,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_windows_job.py: 1~281행 / 281",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_input_recovery.py",
+        "lines": 260,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_input_recovery.py: 1~260행 / 260",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_currentness_recovery.py",
+        "lines": 246,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_currentness_recovery.py: 1~246행 / 246",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_control_transport_io.py",
+        "lines": 218,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_control_transport_io.py: 1~218행 / 218",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_observation_audit1.py",
+        "lines": 195,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_observation_audit1.py: 1~195행 / 195",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_decision_basis.py",
+        "lines": 193,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_decision_basis.py: 1~193행 / 193",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_initial_intent_connection.py",
+        "lines": 187,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_initial_intent_connection.py: 1~187행 / 187",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_academic_preparation.py",
+        "lines": 178,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_academic_preparation.py: 1~178행 / 178",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_context_store.py",
+        "lines": 163,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_context_store.py: 1~163행 / 163",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_budget.py",
+        "lines": 151,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_budget.py: 1~151행 / 151",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_planning.py",
+        "lines": 148,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_planning.py: 1~148행 / 148",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_revision_obligations.py",
+        "lines": 145,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_revision_obligations.py: 1~145행 / 145",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_questions.py",
+        "lines": 141,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_questions.py: 1~141행 / 141",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_test_runner.py",
+        "lines": 134,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_test_runner.py: 1~134행 / 134",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_delegation_storage.py",
+        "lines": 114,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_delegation_storage.py: 1~114행 / 114",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_external.py",
+        "lines": 110,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_external.py: 1~110행 / 110",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_execution_observation_profile.py",
+        "lines": 105,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_execution_observation_profile.py: 1~105행 / 105",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_relation_dependencies.py",
+        "lines": 98,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_relation_dependencies.py: 1~98행 / 98",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_review_scope_wire.py",
+        "lines": 87,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_review_scope_wire.py: 1~87행 / 87",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_reference_catalog.py",
+        "lines": 86,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_reference_catalog.py: 1~86행 / 86",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_trust_continuation.py",
+        "lines": 79,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_trust_continuation.py: 1~79행 / 79",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_lean_preview.py",
+        "lines": 73,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_lean_preview.py: 1~73행 / 73",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_preparation_cache.py",
+        "lines": 59,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_preparation_cache.py: 1~59행 / 59",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_schedule_pythonw.py",
+        "lines": 59,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_schedule_pythonw.py: 1~59행 / 59",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_execution_window.py",
+        "lines": 54,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_execution_window.py: 1~54행 / 54",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_EVIDENCE_scope.py",
+        "lines": 40,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_redesign_EVIDENCE_scope.py: 1~40행 / 40",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_native_probe.py",
+        "lines": 29,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_native_probe.py: 1~29행 / 29",
+        "complete_range": true
+      }
+    ]
+  },
+  {
+    "agent": 2,
+    "files": 68,
+    "lines": 19475,
+    "missing": [],
+    "manual_check": [],
+    "rows": [
+      {
+        "path": ".claude/skills/do-math/references/공통-실행.md",
+        "lines": 336,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/references/공통-실행.md: 1~336행 / 336행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/references/과제-착수조건.md",
+        "lines": 55,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/references/과제-착수조건.md: 1~55행 / 55행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/references/모델과-실행예산.md",
+        "lines": 121,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/references/모델과-실행예산.md: 1~121행 / 121행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/references/입력-소비자.md",
+        "lines": 54,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/references/입력-소비자.md: 1~54행 / 54행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/claude_adapter.py",
+        "lines": 61,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/claude_adapter.py: 1~61행 / 61행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/claude_stream.py",
+        "lines": 193,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/claude_stream.py: 1~193행 / 193행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/claude_worker.py",
+        "lines": 135,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/claude_worker.py: 1~135행 / 135행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/codex_adapter.py",
+        "lines": 323,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/codex_adapter.py: 1~323행 / 323행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/codex_worker.py",
+        "lines": 211,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/codex_worker.py: 1~211행 / 211행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/execution_lifecycle.py",
+        "lines": 203,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/execution_lifecycle.py: 1~203행 / 203행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/execution_profiles.py",
+        "lines": 406,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/execution_profiles.py: 1~406행 / 406행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/execution_window.py",
+        "lines": 69,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/execution_window.py: 1~69행 / 69행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/formal.py",
+        "lines": 516,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/formal.py: 1~516행 / 516행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/formal_preview.py",
+        "lines": 41,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/formal_preview.py: 1~41행 / 41행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/model_runner.py",
+        "lines": 375,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/model_runner.py: 1~375행 / 375행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/observation_transport.py",
+        "lines": 26,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/observation_transport.py: 1~26행 / 26행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/observations.py",
+        "lines": 1205,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/observations.py: 1~1205행 / 1205행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/operation_trace.py",
+        "lines": 195,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/operation_trace.py: 1~195행 / 195행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/operational_dispositions.py",
+        "lines": 200,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/operational_dispositions.py: 1~200행 / 200행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/parallel.py",
+        "lines": 125,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/parallel.py: 1~125행 / 125행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/provider_engine.py",
+        "lines": 173,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/provider_engine.py: 1~173행 / 173행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/provider_wait.py",
+        "lines": 58,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/provider_wait.py: 1~58행 / 58행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/repair_execution.py",
+        "lines": 481,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/repair_execution.py: 1~481행 / 481행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/windows_job.py",
+        "lines": 622,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/windows_job.py: 1~622행 / 622행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/계약/독립-운영.md",
+        "lines": 61,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/계약/독립-운영.md: 1~61행 / 61행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/계약/운영-점검.md",
+        "lines": 89,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/계약/운영-점검.md: 1~89행 / 89행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/계약/유지보수.md",
+        "lines": 138,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/계약/유지보수.md: 1~138행 / 138행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_lifecycle_engine.py",
+        "lines": 1165,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_lifecycle_engine.py: 1~1165행 / 1165행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_GOVERNANCE.py",
+        "lines": 1035,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_redesign_GOVERNANCE.py: 1~1035행 / 1035행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_PROFILES.py",
+        "lines": 1029,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_redesign_PROFILES.py: 1~1029행 / 1029행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_static_review_repairs.py",
+        "lines": 764,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_static_review_repairs.py: 1~764행 / 764행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_SURFACE.py",
+        "lines": 748,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_redesign_SURFACE.py: 1~748행 / 748행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_REVIEWS.py",
+        "lines": 601,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_redesign_REVIEWS.py: 1~601행 / 601행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_session_scheduler.py",
+        "lines": 544,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_session_scheduler.py: 1~544행 / 544행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_research_reliability.py",
+        "lines": 519,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_research_reliability.py: 1~519행 / 519행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_six_connections.py",
+        "lines": 501,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_six_connections.py: 1~501행 / 501행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/research_fixtures.py",
+        "lines": 457,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/research_fixtures.py: 1~457행 / 457행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_academic_engine.py",
+        "lines": 425,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_academic_engine.py: 1~425행 / 425행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_machine_parallel.py",
+        "lines": 413,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_machine_parallel.py: 1~413행 / 413행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_knowledge_import_engine.py",
+        "lines": 384,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_knowledge_import_engine.py: 1~384행 / 384행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_approved_five_repairs.py",
+        "lines": 334,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_approved_five_repairs.py: 1~334행 / 334행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_observations.py",
+        "lines": 331,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_observations.py: 1~331행 / 331행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_repair_plan.py",
+        "lines": 300,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_repair_plan.py: 1~300행 / 300행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_initialization_efficiency.py",
+        "lines": 275,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_initialization_efficiency.py: 1~275행 / 275행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_native_final_submission.py",
+        "lines": 248,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_native_final_submission.py: 1~248행 / 248행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_claude_adapter.py",
+        "lines": 246,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_claude_adapter.py: 1~246행 / 246행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_OBSERVATION.py",
+        "lines": 227,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_redesign_OBSERVATION.py: 1~227행 / 227행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_formal.py",
+        "lines": 220,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_formal.py: 1~220행 / 220행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_repair_execution.py",
+        "lines": 219,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_repair_execution.py: 1~219행 / 219행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_codex_adapter.py",
+        "lines": 188,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_codex_adapter.py: 1~188행 / 188행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_state_checks.py",
+        "lines": 158,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_state_checks.py: 1~158행 / 158행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_background_processes.py",
+        "lines": 147,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_background_processes.py: 1~147행 / 147행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_contract_checks.py",
+        "lines": 146,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_contract_checks.py: 1~146행 / 146행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_checkpoint_persistence.py",
+        "lines": 143,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_checkpoint_persistence.py: 1~143행 / 143행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_formal_runtime.py",
+        "lines": 138,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_formal_runtime.py: 1~138행 / 138행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_EVIDENCE_binding.py",
+        "lines": 118,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_redesign_EVIDENCE_binding.py: 1~118행 / 118행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_claude_stream.py",
+        "lines": 115,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_claude_stream.py: 1~115행 / 115행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_environment_validation.py",
+        "lines": 109,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_environment_validation.py: 1~109행 / 109행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_preflight.py",
+        "lines": 106,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_preflight.py: 1~106행 / 106행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_EVIDENCE_host.py",
+        "lines": 91,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_redesign_EVIDENCE_host.py: 1~91행 / 91행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_provider_final_contract.py",
+        "lines": 88,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_provider_final_contract.py: 1~88행 / 88행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_EVIDENCE_run.py",
+        "lines": 82,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_redesign_EVIDENCE_run.py: 1~82행 / 82행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_launch_recovery.py",
+        "lines": 80,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_launch_recovery.py: 1~80행 / 80행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_machine_scheduling.py",
+        "lines": 74,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_machine_scheduling.py: 1~74행 / 74행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_formal_input_manifest.py",
+        "lines": 72,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_formal_input_manifest.py: 1~72행 / 72행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_standalone.py",
+        "lines": 64,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_standalone.py: 1~64행 / 64행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_worker_temporary_outputs.py",
+        "lines": 56,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_worker_temporary_outputs.py: 1~56행 / 56행",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_current_contract.py",
+        "lines": 43,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_current_contract.py: 1~43행 / 43행",
+        "complete_range": true
+      }
+    ]
+  },
+  {
+    "agent": 6,
+    "files": 27,
+    "lines": 6472,
+    "missing": [],
+    "manual_check": [],
+    "rows": [
+      {
+        "path": ".claude/skills/do-math/references/공통-실행.md",
+        "lines": 336,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/references/공통-실행.md: 1~336 / 336",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/references/과제-착수조건.md",
+        "lines": 55,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/references/과제-착수조건.md: 1~55 / 55",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/references/모델과-실행예산.md",
+        "lines": 121,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/references/모델과-실행예산.md: 1~121 / 121",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/references/입력-소비자.md",
+        "lines": 54,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/references/입력-소비자.md: 1~54 / 54",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/claude_adapter.py",
+        "lines": 61,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/claude_adapter.py: 1~61 / 61",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/claude_stream.py",
+        "lines": 193,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/claude_stream.py: 1~193 / 193",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/claude_worker.py",
+        "lines": 135,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/claude_worker.py: 1~135 / 135",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/codex_adapter.py",
+        "lines": 323,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/codex_adapter.py: 1~323 / 323",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/codex_worker.py",
+        "lines": 211,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/codex_worker.py: 1~211 / 211",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/execution_lifecycle.py",
+        "lines": 203,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/execution_lifecycle.py: 1~203 / 203",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/execution_profiles.py",
+        "lines": 406,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/execution_profiles.py: 1~406 / 406",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/execution_window.py",
+        "lines": 69,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/execution_window.py: 1~69 / 69",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/formal.py",
+        "lines": 516,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/formal.py: 1~516 / 516",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/formal_preview.py",
+        "lines": 41,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/formal_preview.py: 1~41 / 41",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/model_runner.py",
+        "lines": 375,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/model_runner.py: 1~375 / 375",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/observation_transport.py",
+        "lines": 26,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/observation_transport.py: 1~26 / 26",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/observations.py",
+        "lines": 1205,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/observations.py: 1~1205 / 1205",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/operation_trace.py",
+        "lines": 195,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/operation_trace.py: 1~195 / 195",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/operational_dispositions.py",
+        "lines": 200,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/operational_dispositions.py: 1~200 / 200",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/parallel.py",
+        "lines": 125,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/parallel.py: 1~125 / 125",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/provider_engine.py",
+        "lines": 173,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/provider_engine.py: 1~173 / 173",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/provider_wait.py",
+        "lines": 58,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/provider_wait.py: 1~58 / 58",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/repair_execution.py",
+        "lines": 481,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/repair_execution.py: 1~481 / 481",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/windows_job.py",
+        "lines": 622,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/windows_job.py: 1~622 / 622",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/계약/독립-운영.md",
+        "lines": 61,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/계약/독립-운영.md: 1~61 / 61",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/계약/운영-점검.md",
+        "lines": 89,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/계약/운영-점검.md: 1~89 / 89",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/계약/유지보수.md",
+        "lines": 138,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/계약/유지보수.md: 1~138 / 138",
+        "complete_range": true
+      }
+    ]
+  },
+  {
+    "agent": 1,
+    "files": 54,
+    "lines": 19693,
+    "missing": [],
+    "manual_check": [],
+    "rows": [
+      {
+        "path": ".claude/skills/do-math/.gitattributes",
+        "lines": 2,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/.gitattributes: 1~2행 / 2",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/AGENTS.md",
+        "lines": 11,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/AGENTS.md: 1~11행 / 11",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/GLOSSARY.md",
+        "lines": 707,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/GLOSSARY.md: 1~707행 / 707",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/README.md",
+        "lines": 562,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/README.md: 1~562행 / 562",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/SKILL.md",
+        "lines": 173,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/SKILL.md: 1~173행 / 173",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/examples/claude-codex-sessions.json",
+        "lines": 13,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/examples/claude-codex-sessions.json: 1~13행 / 13",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/examples/nat-add-zero.txt",
+        "lines": 1,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/examples/nat-add-zero.txt: 1~1행 / 1",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/references/CLI-실행-계약.md",
+        "lines": 952,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/references/CLI-실행-계약.md: 1~952행 / 952",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/references/초기화-운전.md",
+        "lines": 367,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/references/초기화-운전.md: 1~367행 / 367",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/references/초기화-효율과-정비.md",
+        "lines": 73,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/references/초기화-효율과-정비.md: 1~73행 / 73",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/requirements.txt",
+        "lines": 1,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/requirements.txt: 1~1행 / 1",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/check_coverage.py",
+        "lines": 357,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/check_coverage.py: 1~357행 / 357",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math.py",
+        "lines": 7,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math.py: 1~7행 / 7",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/__init__.py",
+        "lines": 1,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/__init__.py: 1~1행 / 1",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/budget.py",
+        "lines": 367,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/budget.py: 1~367행 / 367",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/cli.py",
+        "lines": 669,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/cli.py: 1~669행 / 669",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/control_contracts.py",
+        "lines": 140,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/control_contracts.py: 1~140행 / 140",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/control_transport.py",
+        "lines": 518,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/control_transport.py: 1~518행 / 518",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/engine.py",
+        "lines": 4807,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/engine.py: 1~4807행 / 4807",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/environment_checks.py",
+        "lines": 123,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/environment_checks.py: 1~123행 / 123",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/events.py",
+        "lines": 81,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/events.py: 1~81행 / 81",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/governance.py",
+        "lines": 1167,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/governance.py: 1~1167행 / 1167",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/governance_engine.py",
+        "lines": 453,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/governance_engine.py: 1~453행 / 453",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/initialization.py",
+        "lines": 292,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/initialization.py: 1~292행 / 292",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/launch.py",
+        "lines": 63,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/launch.py: 1~63행 / 63",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/maintenance_gate.py",
+        "lines": 49,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/maintenance_gate.py: 1~49행 / 49",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/model_policy.py",
+        "lines": 143,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/model_policy.py: 1~143행 / 143",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/preflight.py",
+        "lines": 151,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/preflight.py: 1~151행 / 151",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/scheduled_operator.py",
+        "lines": 612,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/scheduled_operator.py: 1~612행 / 612",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/scheduler.py",
+        "lines": 594,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/scheduler.py: 1~594행 / 594",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/do_math/session_slots.py",
+        "lines": 358,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/do_math/session_slots.py: 1~358행 / 358",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/operator_bootstrap.py",
+        "lines": 150,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/operator_bootstrap.py: 1~150행 / 150",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/operator_schedule.ps1",
+        "lines": 87,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/operator_schedule.ps1: 1~87행 / 87",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/probe_cli.py",
+        "lines": 141,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/probe_cli.py: 1~141행 / 141",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/probe_codex.py",
+        "lines": 182,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/probe_codex.py: 1~182행 / 182",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/probe_native_isolation.py",
+        "lines": 339,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/probe_native_isolation.py: 1~339행 / 339",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/run_tests.py",
+        "lines": 324,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/run_tests.py: 1~324행 / 324",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/setup_lean.py",
+        "lines": 130,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/setup_lean.py: 1~130행 / 130",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/test_categories.py",
+        "lines": 34,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/test_categories.py: 1~34행 / 34",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_ENGINE.py",
+        "lines": 1632,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_redesign_ENGINE.py: 1~1632행 / 1632",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_review_engine.py",
+        "lines": 1075,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_review_engine.py: 1~1075행 / 1075",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_research_recovery.py",
+        "lines": 490,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_research_recovery.py: 1~490행 / 490",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_redesign_LIFECYCLE.py",
+        "lines": 224,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_redesign_LIFECYCLE.py: 1~224행 / 224",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_run_feedback.py",
+        "lines": 146,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_run_feedback.py: 1~146행 / 146",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_observation_admission.py",
+        "lines": 131,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_observation_admission.py: 1~131행 / 131",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_initialization_probe_batch.py",
+        "lines": 126,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_initialization_probe_batch.py: 1~126행 / 126",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_controls.py",
+        "lines": 113,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_controls.py: 1~113행 / 113",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_completion_settlement.py",
+        "lines": 107,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_completion_settlement.py: 1~107행 / 107",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_provider_recovery.py",
+        "lines": 103,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_provider_recovery.py: 1~103행 / 103",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_model_metadata_boundary.py",
+        "lines": 86,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_model_metadata_boundary.py: 1~86행 / 86",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_document_followup.py",
+        "lines": 78,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_document_followup.py: 1~78행 / 78",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_lifecycle_currentness.py",
+        "lines": 68,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_lifecycle_currentness.py: 1~68행 / 68",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/test_question_flow.py",
+        "lines": 58,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/test_question_flow.py: 1~58행 / 58",
+        "complete_range": true
+      },
+      {
+        "path": ".claude/skills/do-math/scripts/tests/state_fixtures.py",
+        "lines": 55,
+        "record": "- 임시/do-math_검증_20260925_full/라운드1/사본/.claude/skills/do-math/scripts/tests/state_fixtures.py: 1~55행 / 55",
+        "complete_range": true
+      }
+    ]
+  }
+]

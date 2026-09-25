@@ -22,6 +22,39 @@ from test_redesign_OBSERVATION import Clock
 
 @test_group('unit')
 class ObservationCollectionTests(unittest.TestCase):
+    def test_owner_distinguishes_preview_and_boundary_from_self_check(self):
+        from unittest.mock import Mock
+        from test_redesign_ENGINE import routing_engine
+        from test_redesign_OBSERVATION import rule
+        for provider in ('codex', 'claude'):
+            for kind in ('submission_preview', 'safety_boundary', 'self_check'):
+                with self.subTest(provider=provider, kind=kind), tempfile.TemporaryDirectory() as directory:
+                    root = Path(directory)
+                    tracker = ObservationTracker('EX-one', root, {'observation_rules': [rule()],
+                        'tool_review_window_seconds': 60, 'self_check_response_window_seconds': 5}, clock=Clock())
+                    obligation = next(row for row in tracker.observe({'type': 'tick', 'counters': {'attempts': 2}})
+                                      if row['kind'] == 'self_check_due')
+                    tracker.record_delivery(obligation['id'], source_offset=0)
+                    tool = 'control_self_check' if kind == 'self_check' else 'control_submit'
+                    arguments = ({'self_check_id': obligation['id']} if kind == 'self_check' else
+                        {'request_id': 'NEXT', 'kind': kind, 'payload': {'inflight_calls': False, 'call_ids': []}})
+                    event = ({'type': 'item.started', 'item': {'id': 'CALL', 'type': 'mcp_tool_call',
+                        'server': 'execution_control', 'tool': tool, 'arguments': arguments}}
+                        if provider == 'codex' else {'type': 'assistant', 'message': {'content': [
+                            {'type': 'tool_use', 'id': 'CALL', 'name': 'mcp__execution_control__' + tool,
+                             'input': arguments}]}})
+                    engine = routing_engine()
+                    engine._controls = Mock(); engine._check_conversations = Mock(return_value=False)
+                    engine._save = Mock(); engine._enqueue = Mock()
+                    engine._review_observation_source = Mock(return_value=None)
+                    engine.runtime['executions']['EX-one'] = {'id': 'EX-one', 'status': 'running',
+                        'role': 'research_work', 'action': {'role': 'research_work'}}
+                    engine._observe_running('EX-one', tracker, event)
+                    self.assertEqual(tracker.obligations[obligation['id']].get('missed_reason'),
+                                     'research_action_before_response' if kind == 'submission_preview' else None)
+                    self.assertEqual('CALL' in tracker.self_check_call_ids, kind == 'self_check')
+                    self.assertEqual('CALL' in tracker.boundary_call_ids, kind == 'safety_boundary')
+
     def test_self_check_is_discoverable_inside_the_assigned_workspace(self):
         from do_math.control_transport import ControlTransport
         with tempfile.TemporaryDirectory() as directory:
@@ -93,7 +126,7 @@ class ObservationCollectionTests(unittest.TestCase):
         engine = routing_engine()
         engine.instance['config']['max_artifact_bytes'] = 4096
         engine._controls = Mock(); engine._check_conversations = Mock(return_value=False)
-        engine._save = Mock(); engine._inline_reviewing = False
+        engine._save = Mock()
         engine.runtime['executions']['EX-one'] = {'id': 'EX-one', 'status': 'running',
             'role': 'research_work', 'action': {'role': 'research_work'}}
         with tempfile.TemporaryDirectory() as directory:
@@ -164,7 +197,7 @@ class ObservationCollectionTests(unittest.TestCase):
         from unittest.mock import Mock
         engine = routing_engine()
         engine._controls = Mock(); engine._check_conversations = Mock(return_value=False)
-        engine._save = Mock(); engine._inline_reviewing = False
+        engine._save = Mock()
         engine.runtime['executions']['EX-one'] = {'id': 'EX-one', 'status': 'running',
             'role': 'research_work', 'action': {'role': 'research_work'}}
         with tempfile.TemporaryDirectory() as directory:
@@ -490,7 +523,7 @@ class NativeBatchTests(unittest.TestCase):
             workspace = root / 'workspace'; workspace.mkdir()
             engine = routing_engine()
             engine._controls = Mock(); engine._check_conversations = Mock(return_value=False)
-            engine._save = Mock(); engine._inline_reviewing = False
+            engine._save = Mock()
             engine.runtime['executions']['EX-real'] = {'id': 'EX-real', 'status': 'running',
                 'role': 'research_work', 'action': {'role': 'research_work'}}
             tracker = ObservationTracker('EX-real', workspace, {'observation_mode': 'periodic',

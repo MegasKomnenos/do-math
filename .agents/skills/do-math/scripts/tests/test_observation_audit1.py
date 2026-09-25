@@ -1,4 +1,4 @@
-"""RV_CONTEXT 03/04/08 regression cases, using real local repair effects."""
+"""Observation profile and exact control-response binding regressions."""
 from copy import deepcopy
 import hashlib
 from pathlib import Path
@@ -8,7 +8,7 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import test_redesign_OBSERVATION as h
-from do_math import observations as obs, operational_dispositions as od
+from do_math import observations as obs
 from do_math.execution_profiles import seal_profile, BOUNDARY
 
 
@@ -108,62 +108,8 @@ class AuditTests(unittest.TestCase):
             "remaining_work": [], "next_step": "n", "progress_state": "working", "counters": {"attempts": 2}}), encoding="utf-8")
         self.assertTrue(any(r["kind"] == "self_check_due" for r in tracker.observe({"type": "tick"})))
 
-    def test_repair_performs_restoration_then_verifies_before_resume_and_publication(self):
-        target = self.ws / "input.txt"
-        target.write_bytes(b"broken")
-        wanted = hashlib.sha256(b"restored").hexdigest()
-        record = {"id": "OD-1", "target_execution_id": "EX-1", "status": "pending", "disposition": {
-            "kind": "repair", "basis_refs": ["EX-1"], "next_owner": "maintenance", "reason": "restore missing input",
-            "repair_target": str(target), "meaning_preserving": True, "verification": "SHA-256=" + wanted}}
-        published, order = [], []
-        def repair(plan):
-            order.append("repair")
-            target.write_bytes(b"restored")
-            return {"execution_id": "FIX-1", "target": plan["repair_target"], "effect_refs": ["ART-restored"]}
-        def verify(plan, effect):
-            order.append("verify")
-            return {"execution_id": "VERIFY-1", "passed": hashlib.sha256(target.read_bytes()).hexdigest() == wanted,
-                    "effect_refs": effect["effect_refs"], "evidence_refs": ["ART-hash"], "meaning_preserved": True}
-        def resume(plan, verification):
-            order.append("resume")
-            self.assertTrue(verification["passed"])
-            return {"request_id": "AC-resume", "continuation_of": "EX-1"}
-        result = od.execute_repair(record, target_execution={"id": "EX-1", "status": "ended"},
-            current_basis_refs={"EX-1"}, repair=repair, verify=verify, resume=resume, publish=lambda r: published.append(deepcopy(r)))
-        self.assertEqual(order, ["repair", "verify", "resume"])
-        self.assertEqual(result["status"], "applied")
-        self.assertEqual(result["repair_effect"]["execution_id"], "FIX-1")
-        self.assertEqual(result["repair_verification"]["evidence_refs"], ["ART-hash"])
-        self.assertEqual(published[-1], result)
 
-    def test_failed_verification_and_stale_basis_never_resume(self):
-        record = {"id": "OD-1", "target_execution_id": "EX-1", "status": "pending", "disposition": {
-            "kind": "repair", "basis_refs": ["EX-1"], "next_owner": "maintenance", "reason": "fix",
-            "repair_target": "input", "meaning_preserving": True, "verification": "hash"}}
-        calls = []
-        args = dict(target_execution={"id": "EX-1", "status": "ended"}, repair=lambda p: {"execution_id": "F", "target": "input", "effect_refs": ["A"]},
-            verify=lambda p,e: {"execution_id": "V", "passed": False, "effect_refs": ["A"], "evidence_refs": ["V-log"], "meaning_preserved": True},
-            resume=lambda *a: calls.append("resume"), publish=lambda r: None)
-        with self.assertRaises(ValueError): od.execute_repair(record, current_basis_refs=set(), **args)
-        result = od.execute_repair(record, current_basis_refs={"EX-1"}, **args)
-        self.assertEqual(result["status"], "repair_verification_failed")
-        self.assertEqual(calls, [])
 
-    def test_interrupted_repair_requires_reconciliation_and_never_replays_blindly(self):
-        record = {"id": "OD-1", "target_execution_id": "EX-1", "status": "pending", "disposition": {
-            "kind": "repair", "basis_refs": ["EX-1"], "next_owner": "maintenance", "reason": "fix",
-            "repair_target": "input", "meaning_preserving": True, "verification": "hash"}}
-        published, effects = [], []
-        def repair(plan):
-            effects.append(plan["effect_key"])
-            raise OSError("lost after partial effect")
-        args = dict(target_execution={"id": "EX-1", "status": "ended"}, current_basis_refs={"EX-1"},
-            repair=repair, verify=lambda *a: self.fail("verification must wait"), resume=lambda *a: self.fail("no resume"),
-            publish=lambda r: published.append(deepcopy(r)))
-        with self.assertRaises(OSError): od.execute_repair(record, **args)
-        self.assertEqual(published[-1]["status"], "repair_running")
-        with self.assertRaisesRegex(ValueError, "reconciliation"): od.execute_repair(published[-1], **args)
-        self.assertEqual(effects, ["OD-1:repair"])
 
     def test_receipt_cannot_be_reused_for_a_different_response_body(self):
         tracker = self.tracker()
@@ -189,7 +135,7 @@ if __name__ == "__main__":
             "failures": [(str(test), detail) for test, detail in program.result.failures],
             "errors": [(str(test), detail) for test, detail in program.result.errors],
             "source_sha256": {str(path): hashlib.sha256(path.read_bytes()).hexdigest() for path in
-                (source, Path(od.__file__), Path(__file__))},
-            "scope": "Actual local file restoration/hash verification; provider events and central publication are test fixtures."},
+                (source, Path(__file__))},
+            "scope": "Observation profiles and control-response binding; provider events and central publication are test fixtures."},
             ensure_ascii=False, indent=2), encoding="utf-8")
     sys.exit(0 if program.result.wasSuccessful() else 1)

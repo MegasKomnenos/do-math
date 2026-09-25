@@ -13,7 +13,7 @@ from typing import Any
 from jsonschema import Draft202012Validator
 
 from .context_store import _excluded, _safe_path
-from .repository import validate_storage_value
+from .repository import validate_storage_value, _unique_pairs, _reject_constant
 
 CHECKPOINT_MAX_BYTES = 4 * 1024 * 1024
 RULES_MAX_BYTES = 65536
@@ -445,7 +445,8 @@ def read_checkpoint(workspace: Path) -> dict:
         if (before.st_size, before.st_mtime_ns) != (after.st_size, after.st_mtime_ns):
             return {"status": "being_written"}
         digest = hashlib.sha256(raw).hexdigest()
-        value = json.loads(raw.decode("utf-8-sig"))
+        value = json.loads(raw.decode("utf-8-sig"), object_pairs_hook=_unique_pairs,
+                           parse_constant=_reject_constant)
         validate_storage_value(value)
         _CHECKPOINT_VALIDATOR.validate(value)
         for reference in value["evidence_paths"]:
@@ -537,6 +538,8 @@ class ObservationTracker:
         if self.no_progress_limit is not None and (type(self.no_progress_limit) is not int or self.no_progress_limit < 1):
             raise ValueError("no_progress_limit must be a positive contract integer")
         self.self_check_call_ids: set[str] = set()
+        self.boundary_call_ids: set[str] = set()
+        self.boundary_request_ids: set[str] = set()
         self.control_calls: dict[str, dict] = {}
         self.control_requests: dict[str, dict] = {}
         self.self_check_polls: dict[str, str] = {}
@@ -620,7 +623,8 @@ class ObservationTracker:
             return
         self.pending_tools[call_id] = {"started": when, "name": name, "review_due": False,
                                        "safe_boundary": False, "review_window_ms": self.tool_review_window_ms}
-        if self.live_observation and call_id not in self.self_check_call_ids and call_id not in self.control_calls:
+        if (self.live_observation and call_id not in self.self_check_call_ids
+                and call_id not in self.boundary_call_ids and call_id not in self.control_calls):
             for obligation in self.obligations.values():
                 after_delivery = (self.observation_source is None or
                     obligation.get('acknowledged_source_offset') is not None and
@@ -643,7 +647,8 @@ class ObservationTracker:
 
     def _complete_call(self, call_id: str) -> None:
         self.pending_tools.pop(call_id, None)
-        if call_id not in self.self_check_call_ids and call_id not in self.control_calls:
+        if (call_id not in self.self_check_call_ids and call_id not in self.boundary_call_ids
+                and call_id not in self.control_calls):
             self.completed_call_ids.add(call_id)
 
     def _observe_control_calls(self, event: dict) -> None:
@@ -663,6 +668,26 @@ class ObservationTracker:
                         calls.append((block.get("id"), name[len(prefix):], block.get("input")))
         for call_id, tool, arguments in calls:
             if not isinstance(call_id, str) or not isinstance(arguments, dict): continue
+            if tool == "control_submit" and arguments.get("kind") == "safety_boundary":
+                payload = arguments.get("payload")
+                request_id = arguments.get("request_id")
+                if (isinstance(request_id, str) and request_id and isinstance(payload, dict)
+                        and payload.get("inflight_calls") is False
+                        and isinstance(payload.get("call_ids", []), list)
+                        and all(isinstance(cid, str) for cid in payload.get("call_ids", []))):
+                    # Submitting the boundary is not an inflight research operation.
+                    # Its receipt still owns validation and making obligations available.
+                    self.boundary_call_ids.add(call_id)
+                    self.boundary_request_ids.add(request_id)
+                continue
+            if tool == "control_receipt":
+                request_id = arguments.get("request_id")
+                if isinstance(request_id, str):
+                    if request_id in self.control_requests:
+                        self.self_check_call_ids.add(call_id)
+                    elif request_id in self.boundary_request_ids:
+                        self.boundary_call_ids.add(call_id)
+                continue
             if tool == "control_self_check":
                 oid = arguments.get("self_check_id")
                 payload = {"self_check_id": oid, "response": arguments.get("response")}
@@ -746,12 +771,6 @@ class ObservationTracker:
         self.control_requests[request_id] = row
         self.self_check_call_ids.update(matching)
         return {**row, "call_ids": matching}
-
-    def register_self_check_calls(self, call_ids: list[str]) -> None:
-        """ENGINE supplies actual request/call lineage, never a worker claim."""
-        if any(not isinstance(call_id, str) or not call_id for call_id in call_ids):
-            raise ValueError("self-check call IDs must be nonempty strings")
-        self.self_check_call_ids.update(call_ids)
 
     def register_self_check_checkpoint(self, sha256: str) -> None:
         """Register the response's actual artifact before the next file poll."""
@@ -1033,7 +1052,13 @@ class ObservationTracker:
                     "followup": {"kind": "operational_review_due", "trigger": "observation_unavailable", "next_owner": "operational_review"}})
             due = evaluate_rules(self.rules, snapshot, consumed_boundaries=self.consumed_rules)
             if self.next_self_check_offset_ms is not None and _offset_ms(self.started, when) >= self.next_self_check_offset_ms:
-                due.append({"rule_id": "@maximum_interval", "operator": "wall_time_reached", "subject": self.execution_id,
+                rule_ids = {rule["id"] for rule in self.rules}
+                maximum_id = "@maximum_interval"
+                suffix = 0
+                while maximum_id in rule_ids:
+                    suffix += 1
+                    maximum_id = f"@maximum_interval:{suffix}"
+                due.append({"rule_id": maximum_id, "operator": "wall_time_reached", "subject": self.execution_id,
                     "basis": {"source": "selected_profile" if self.profile_ref else "admitted_settings", "unit": "milliseconds"},
                     "required_evidence": sorted({ref for rule in self.rules for ref in rule["required_evidence"]}),
                     "value": _offset_ms(self.started, when), "boundary": self.next_self_check_offset_ms,

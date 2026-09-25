@@ -35,6 +35,22 @@ class CodexWorkerTests(unittest.TestCase):
         self.assertEqual(argv[-1], "-")
         self.assertNotIn("shell", " ".join(argv).lower())
 
+    def test_surface_requires_the_flags_used_by_the_worker(self):
+        import subprocess
+        flags = [b"--json", b"--output-last-message", b"--model", b"--sandbox", b"--ephemeral",
+                 b"--ignore-user-config", b"--ignore-rules", b"--skip-git-repo-check", b"--output-schema",
+                 b"--config", b"--strict-config", b"--color", b"--cd"]
+        for missing in (None, b"--strict-config", b"--color", b"--cd"):
+            with self.subTest(missing=missing):
+                adapter = CodexExecAdapter("fixture-cli")
+                results = [subprocess.CompletedProcess([], 0, b"fixture-version"),
+                           subprocess.CompletedProcess([], 0, b"--ask-for-approval"),
+                           subprocess.CompletedProcess([], 0, b" ".join(flag for flag in flags if flag != missing))]
+                with patch("do_math.codex_adapter.subprocess.run", side_effect=results), \
+                     patch.object(adapter, "capability_identity", return_value={"fixture": True}):
+                    description = adapter.describe()
+                self.assertEqual(description["verified"], missing is None)
+
     def test_worker_does_not_accept_fake_argument_prefixes(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory); prompt = root / "prompt"; prompt.write_bytes(b"hello")

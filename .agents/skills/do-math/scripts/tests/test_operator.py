@@ -222,6 +222,51 @@ class OperatorTests(unittest.TestCase):
         self.assertEqual(result["status"], completed)
         runner.assert_not_called()
 
+    def test_saved_results_survive_schedule_process_start_errors(self):
+        configuration = {'operator_enabled': True}
+        for command in ('init', 'configure'):
+            for error in (OSError('scheduler executable unavailable'),
+                          subprocess.SubprocessError('scheduler process failed')):
+                with self.subTest(command=command, error=type(error).__name__):
+                    argv = [command, '--repository', str(self.repository)]
+                    if command == 'init':
+                        argv += ['--workspace', str(self.workspace), '--goal', 'Keep the saved instance']
+                        saved = {'instance_id': self.instance, 'snapshot': 'saved-head',
+                                 'status': 'initializing'}
+                    else:
+                        argv += ['--instance', self.instance, '--config-file', 'unused.json']
+                        saved = {'effect': 'applied', 'request_id': 'UC-saved',
+                                 'snapshot': 'saved-head', 'config': configuration}
+                    args = cli.build_parser().parse_args(argv)
+                    with patch.object(cli, '_require_git'), \
+                         patch.object(cli, 'initialize', return_value=dict(saved)), \
+                         patch.object(cli, '_control', return_value=dict(saved)), \
+                         patch.object(cli, '_json_file', return_value=configuration), \
+                         patch.object(cli, 'ResearchRepository') as repository, \
+                         patch.object(cli, '_reconcile_operator', side_effect=error):
+                        repository.return_value.load.return_value = ('saved-head', {'config': configuration}, {})
+                        result, code = cli.execute(args)
+                    self.assertEqual(code, 5)
+                    self.assertEqual({key: result[key] for key in saved}, saved)
+                    self.assertEqual(result['operator_schedule']['status'], 'failed')
+                    self.assertEqual(result['operator_schedule']['error'], str(error))
+
+    def test_schedule_reconcile_preserves_entrypoint_paths_and_disable_direction(self):
+        repository = self.root / "research owner's repository"
+        for enabled in (True, False):
+            with self.subTest(enabled=enabled):
+                result, code = cli._schedule_failure(
+                    {'config': {'operator_enabled': enabled}}, RuntimeError('failed'),
+                    repository, self.instance)
+                command = result['operator_schedule']['reconcile']
+                quote = lambda value: "'" + str(value).replace("'", "''") + "'"
+                self.assertTrue(command.startswith('& ' + quote(sys.executable) + ' '))
+                self.assertIn(quote(Path(cli.__file__).resolve().parents[1] / 'do_math.py'), command)
+                self.assertIn(' operator ' + ('install' if enabled else 'uninstall') + ' ', command)
+                self.assertIn('--repository ' + quote(repository.resolve()), command)
+                self.assertTrue(command.endswith('--instance ' + quote(self.instance)))
+                self.assertEqual(code, 5)
+
     def _config(self, value: dict) -> Path:
         path = self.root / "config.json"
         path.write_text(json.dumps(value), encoding="utf-8")

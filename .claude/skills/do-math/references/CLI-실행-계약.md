@@ -520,7 +520,7 @@ source --file PATH [--name FILE_NAME]
 
 ### `trust`
 
-`register`에는 정확한 `toolchain`, `allowed_axioms`, 실제 파일·검증 근거를 갖춘 `manifest`가 필요하다. manifest의 현행 필드는 `command`, `foundation_profile`, `files`, `validation`이다. 사전 빌드 캐시를 허용하며 클린 빌드는 요구하지 않는다. `validation.status=verified`는 명시한 환경 검사에 상대적인 통과이며 전체 라이브러리 재검증을 뜻하지 않는다. `setup_lean.py --verify-only`는 Mathlib import와 대표 증명 검사의 원문·결과 및 등록용 검증 참조를 보존한다. 완전한 요청 형식과 각 값의 출처는 [초기화 운전](초기화-운전.md)의 신뢰 환경 절에 있다. 등록 시 기계 검사는 manifest 해시, 실제 파일 해시, 명령과 기초 공리 프로필을 대조한다. 검사 예정이나 준비 표지 하나로 환경을 활성화하지 않는다.
+`register`에는 정확한 `toolchain`, `allowed_axioms`, 실제 파일·검증 근거를 갖춘 `manifest`가 필요하다. manifest의 현행 필드는 `command`, `foundation_profile`, `files`, `validation`이다. 사전 빌드 캐시를 허용하며 클린 빌드는 요구하지 않는다. `validation.status=verified`는 명시한 환경 검사에 상대적인 통과이며 전체 라이브러리 재검증을 뜻하지 않는다. `setup_lean.py --verify-only`는 Mathlib import와 대표 증명 검사의 원문·결과 및 등록용 검증 참조를 보존한다. 완전한 요청 형식과 각 값의 출처는 [초기화 운전](초기화-운전.md)의 신뢰 환경 절에 있다. 등록 시 기계 검사는 manifest 구조·해시, 명령과 기초 공리 프로필을 대조해 비활성 후보를 보존한다. 실제 설치 파일의 경로·바이트 대조는 전환 뒤 활성화 기계 작업이 수행한다. 등록 성공이나 준비 표지 하나로 환경을 활성화하지 않는다.
 
 ```json
 {"operation":"transition","env_id":"TE-실제-등록-ID"}
@@ -591,7 +591,7 @@ query [--snapshot OID] [--kind KIND] [--text TEXT] [--limit 1..1000]
 
 구조화 record를 ID 순서로 조회한다. `kind`는 record family 또는 구체 kind와 일치한다. text는 정규 JSON 전체를 대소문자 구분 없이 찾는다. 관계 이웃 조회는 relation record와 반대편 endpoint를 함께 반환한다. `--direction`은 `--related-to`와 함께 사용하며 생략하면 `both`다. `--prefix`는 파일 조회 전용이므로 이 모드에서 지정하면 입력 오류다.
 
-응답은 `snapshot`, 전체 `total`, 이번 `loaded`, `truncated`, `items`, `next_cursor`다. 각 item은 `record`와 그 정규 JSON `sha256`을 가진다. cursor는 query 인자와 snapshot에 결박되며 조건을 바꾸어 재사용할 수 없다.
+응답은 `snapshot`, 전체 `total`, 이번 `loaded`, `truncated`, `items`, `next_cursor`다. 각 item의 `record`는 조회용 표현이다. `sha256`과 `bytes`는 `path`가 가리키는 저장 파일의 원 바이트를 식별하며 `byte_scope`는 `persisted_file`이다. `logical_sha256`은 외부 payload를 복원한 저장 레코드의 정규 해시다. 조회용 family 표기가 붙은 `record`를 재직렬화한 해시와 구별한다. 외부 payload가 있으면 `payload_refs`와 `json_pointer_scope=decoded_record`도 제공한다. cursor는 query 인자와 snapshot에 결박되며 조건을 바꾸어 재사용할 수 없다.
 
 ### raw file `query --files`
 
@@ -609,7 +609,7 @@ read [--snapshot OID] --id RECORD_ID
 read [--snapshot OID] --path POSIX_PATH [--output PATH]
 ```
 
-`--id`는 구조화 record와 정규 JSON hash를 반환한다. `--path`는 exact snapshot의 파일을 읽어 UTF-8이면 `text`, 아니면 `base64`로 반환한다. `--output`은 `--path`와 함께 사용할 때 바이트를 로컬 파일로 쓰고 path·snapshot·size를 반환한다. `--id`와 `--output`을 함께 쓰면 입력 오류다.
+`--id`는 구조화 `record`와 record query의 동일한 파일·논리 해시 및 출처 필드를 반환한다. `sha256`은 저장 파일의 원 바이트 해시이고 `logical_sha256`은 복원한 저장 레코드의 정규 해시다. `--path`는 exact snapshot의 파일을 읽어 UTF-8이면 `text`, 아니면 `base64`로 반환한다. `--output`은 `--path`와 함께 사용할 때 바이트를 로컬 파일로 쓰고 path·snapshot·size를 반환한다. `--id`와 `--output`을 함께 쓰면 입력 오류다.
 
 ### `export`
 
@@ -693,7 +693,7 @@ relation 항목은 `kind`, `source`, `target`, `evidence`를 가진다. source�
 
 `action.stage=scope`에서는 독립 `scope_assessment`를 반환한다. 평가 ID, 정책 ID와 판본 5, 필수 관점, 관점·필수 원자료 참조를 가진 초기 자리, 선택한 불변 프로필의 정확한 `{id, revision, sha256}`, 활동 실행 상한과 초과 처분(`unresolved` 또는 `defer`)을 구조화한다. 필수 관점은 적어도 한 초기 자리에 배정하고 자리 ID는 scope·organize·judge 자리와 겹치지 않는다. 범위 계획 자체는 동일성 판정이 아니다.
 
-검토 계보 action이 아닌 이전 단순 검토 경로에서는 `decision`, `findings`, `scope_complete`를 사용한다. decision은 `match`, `mismatch`, `unresolved`다. 현재 기능 판본의 일반 수학 제안은 아래 검토 계보의 동적 schema를 사용한다.
+일반 수학 제안의 동일성 검토는 아래 검토 계보의 단계별 동적 schema를 사용한다. 계보가 없는 요청은 실행기가 먼저 독립 범위 계획과 검토 계보를 만든 뒤 처리한다. 생산자는 배정된 `action.stage`의 실행별 schema에 맞춰 응답한다.
 
 ### 목표 감사 `goal_audit`
 
@@ -715,7 +715,7 @@ relation 항목은 `kind`, `source`, `target`, `evidence`를 가진다. source�
 
 종류 정의의 독립 의미 검사에는 동적 `kind_definition_check`가 추가된다. `definition_id`·`definition_sha256`은 입력 후보와 정확히 같아야 하고, `decision`은 `approved`, `revision_required`, `unresolved`, `findings`는 의미·제약·권한 경계의 근거다. 승인된 `{family, token, meaning, constraints}`만 활성화되어 이후 종류 catalog에 들어간다.
 
-배정된 동적 단계가 `impact_review`이면 정확한 원 묶음과 변경별 영향 계획을 읽고 제공된 `impact_review` 스키마로 판단한다. 일반 유지보수 보고만으로 수리 효과나 편입 승인을 만들지 않는다. 운영의 봉인 입력 복원은 아래 제출·편입 절의 결정론적 수리 경로를 따른다.
+배정된 동적 단계가 `impact_review`이면 정확한 원 묶음과 변경별 영향 계획을 읽고 제공된 `impact_review` 스키마로 판단한다. 일반 유지보수 보고만으로 수리 효과나 편입 승인을 만들지 않는다. 운영의 입력 손상은 아래 제출·편입 절의 `retry` 계약을 따른다.
 
 ## 동일성 검토 계보의 동적 JSON
 
@@ -808,7 +808,7 @@ relation 항목은 `kind`, `source`, `target`, `evidence`를 가진다. source�
 
 종료된 실행의 로컬 입력 사본만 손상됐고 Git에 봉인된 원문은 온전하면 운영 점검은 `retry`를 제출한다. `scope`에는 남은 수행 범위를, `replay_safety`에는 이미 편입된 묶음·완료된 외부 효과와 재실행의 경계를 적는다. 중앙은 선행 실행의 종료와 봉인 자료를 확인하고 같은 활동의 후속 요청을 만든다. 다음 실행은 새 작업 공간과 현재 입력을 받으며 현재 프로필·권한·예산 관문을 다시 통과한다. 옛 로컬 사본을 복원하는 일은 이 재시도의 선행조건이 아니다. 봉인 원문 자체가 없거나 손상됐다면 자료 보존 문제와 필요한 다음 소유자를 먼저 밝힌다.
 
-새 `repair`는 `installation:<스킬 상대 파일 경로>`의 설치 결함에 사용하며, 아래 실행 수명·복구 절과 「운영 점검」의 진단·검증 절차를 따른다. 저장된 입력 복원 이력의 `repair_deferred`·`repair_verification_failed`는 당시의 실패 상태로 읽고 성공으로 바꾸지 않는다. 작업자의 수리 산문을 셸 코드로 실행하지 않는다. 설치 기동 실패와 수락된 설치 결함 진단에서 사용하는 외부 복구 launcher는 `operator`의 별도 승인·잠금·설치 검사 계약을 따른다.
+`repair`는 `installation:<스킬 상대 파일 경로>`의 설치 결함에 사용한다. 작업 공간의 입력 손상은 봉인 원문을 검증하고 새 작업 공간을 지급하는 `retry`로 처리한다. 설치 수리의 진단·권한·잠금·검증은 아래 실행 수명·복구 절과 「운영 점검」·「독립 운영」 계약을 따른다.
 
 늦은 산출이 이미 닫힌 과제나 종결된 검토 자리를 가리키면 그 산출은 보존하되 대상을 다시 열지 않는다. 원문을 읽지 못한 실행, 실패한 공급자 호출과 의미상 미해결 결과도 구별해 기록한다.
 
