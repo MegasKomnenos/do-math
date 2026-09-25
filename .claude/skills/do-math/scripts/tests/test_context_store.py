@@ -128,6 +128,10 @@ class ContextStoreTests(unittest.TestCase):
   with tempfile.TemporaryDirectory() as d:
    root=Path(d);(root/'large').write_bytes(b'x'*20)
    got=store.collect_outputs(root,required_paths=['missing','large'],max_bytes=5);self.assertFalse(got['complete']);self.assertEqual({x['reason'] for x in got['omitted']},{'required_missing','max_bytes_exceeded'})
+ def test_invalid_empty_capture_does_not_disappear(self):
+  with tempfile.TemporaryDirectory() as d:
+   with self.assertRaisesRegex(TypeError, 'captured_files must be'):
+    store.collect_outputs(Path(d), captured_files=[])
  def test_changed_during_read_is_not_success(self):
   with tempfile.TemporaryDirectory() as d:
    root=Path(d);(root/'x').write_bytes(b'x')

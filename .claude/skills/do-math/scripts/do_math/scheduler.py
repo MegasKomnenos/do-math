@@ -499,7 +499,7 @@ class SchedulerMixin:
         try:
             while True:
                 self._controls(pump=False)
-                self._calls.collect()
+                collected = self._calls.collect()
                 self._check_installation()
                 if self.runtime.get('maintenance_fence'):
                     if self._calls.futures:
@@ -523,6 +523,11 @@ class SchedulerMixin:
                 draining = max_steps is not None and steps >= max_steps
                 if draining:
                     if not self._calls.futures:
+                        # A completed local check can unblock a sealed submission.
+                        # Give the owner loop one more control/publication pass
+                        # before returning from a bounded run.
+                        if collected:
+                            continue
                         break
                 self.instance["available_input_refs"] = self._available_inputs()
                 self._retry_provider_actions()

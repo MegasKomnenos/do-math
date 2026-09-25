@@ -1,5 +1,6 @@
 """Regression tests for state/evidence boundaries found in the September audit."""
 from pathlib import Path
+import json
 import subprocess
 import sys
 import tempfile
@@ -7,7 +8,18 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.repository import ResearchRepository, new_id
+from do_math.payloads import decode, encode, seal_large
+from do_math.repository import canonical_json
 from test_categories import test_group
+
+
+class PayloadCodecTests(unittest.TestCase):
+    def test_multiple_payload_references_follow_canonical_key_order(self):
+        value = {'z': 'z' * 70000, 'a': 'a' * 70000}
+        envelope, blobs = encode({'contract_id': 'test', 'family': 'test', 'record': seal_large(value)})
+        stored = json.loads(canonical_json(envelope))
+        self.assertEqual([row['tokens'] for row in stored['payloads']], [['a'], ['z']])
+        self.assertEqual(decode(stored, lambda path: blobs[path]), value)
 
 
 @test_group('integration')

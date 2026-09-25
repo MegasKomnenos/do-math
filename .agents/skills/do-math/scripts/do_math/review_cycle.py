@@ -885,7 +885,7 @@ def accept_result(cycle, action, output, execution_id, input_manifest=None):
         producers.update(previous["proposal"].get("producer_execution_ids", []))
     if execution_id in producers:
         raise ValueError("author execution cannot review")
-    manifest = copy.deepcopy(input_manifest or {})
+    manifest = {} if input_manifest is None else copy.deepcopy(input_manifest)
     if not isinstance(manifest, dict):
         raise ValueError("input manifest must be an object")
     if manifest.get("proposal_digest", cycle["proposal_digest"]) != cycle["proposal_digest"]:

@@ -79,7 +79,7 @@ def encode(envelope):
             blobs[path] = raw
             references.append({'tokens':tokens, 'path':path, 'sha256':digest, 'bytes':len(raw)})
             return None
-        if isinstance(value, dict): return {k:visit(v, [*tokens,k]) for k,v in value.items()}
+        if isinstance(value, dict): return {k:visit(value[k], [*tokens,k]) for k in sorted(value)}
         if isinstance(value, list): return [visit(v, [*tokens,i]) for i,v in enumerate(value)]
         return value
     result = {**envelope, 'record':visit(envelope['record'], [])}

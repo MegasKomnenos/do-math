@@ -16,7 +16,7 @@ from do_math.execution_profiles import build_profiles, profile_ref
 from do_math.git_store import GitStateStoreLockError
 from do_math.repository import ResearchRepository, new_id
 from do_math.session_slots import SessionSlots
-from do_math.provider_wait import timestamp
+from do_math.provider_wait import provider_wait_disposition, timestamp
 
 MODEL = "claude-opus-5"
 FAILURE = {"kind": "provider_limit", "provider": "claude", "retry_at": None,
@@ -95,6 +95,10 @@ def compete(root, iid, ready, release, output, name):
 
 class ProviderTests(unittest.TestCase):
     """No model execution or research activation is asserted by these fixtures."""
+    def test_empty_nonmapping_failure_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, 'failure must be a dictionary'):
+            provider_wait_disposition(model=MODEL, failure=[], current=100)
+
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)

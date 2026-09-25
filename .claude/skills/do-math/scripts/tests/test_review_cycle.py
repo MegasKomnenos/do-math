@@ -275,6 +275,9 @@ class ReviewCycleTests(unittest.TestCase):
             context_for(restored, next_actions(restored)[0])
 
     def test_manifest_peer_and_judge_origin_checks(self):
+        cycle = self.start()
+        with self.assertRaisesRegex(ValueError, 'input manifest must be an object'):
+            accept_result(cycle, next_actions(cycle)[0], self.output(cycle, 'initial'), 'review', [])
         cycle = self.submit(self.start())
         with self.assertRaisesRegex(ValueError, 'unsealed peer'):
             accept_result(cycle, next_actions(cycle)[0], self.output(cycle, 'initial'), 'e2', {'visible_execution_ids': ['e-0']})

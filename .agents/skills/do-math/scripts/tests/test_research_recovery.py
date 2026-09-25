@@ -1,5 +1,6 @@
 """Regressions for contract replacement and recovery, using temporary Git stores."""
 from copy import deepcopy
+from concurrent.futures import ThreadPoolExecutor
 import json
 from pathlib import Path
 import sys
@@ -170,9 +171,32 @@ class RecoveryRoutingTests(PurposeHarness):
         with patch('do_math.engine.new_id', side_effect=ids), patch('do_math.engine.now', side_effect=times):
             control(self.repo, engine.instance['id'], 'pause', text='first')
             control(self.repo, engine.instance['id'], 'resume', text='second')
+        pending = engine._inbox()
+        self.assertEqual([row['action'] for row in pending], ['pause', 'resume'])
+        self.assertEqual(int(pending[1]['accepted_order']) - int(pending[0]['accepted_order']), 1)
+        engine.process_controls()
+        self.assertEqual(engine.runtime['status'], 'ready')
+
+    def test_controls_preserve_acceptance_order_when_wall_clock_moves_back(self):
+        engine, _ = self.make_active()
+        times = ['2026-09-16T01:00:01+00:00', '2026-09-16T01:00:00+00:00']
+        with patch('do_math.engine.now', side_effect=times):
+            control(self.repo, engine.instance['id'], 'pause', text='first')
+            control(self.repo, engine.instance['id'], 'resume', text='second')
         self.assertEqual([row['action'] for row in engine._inbox()], ['pause', 'resume'])
         engine.process_controls()
         self.assertEqual(engine.runtime['status'], 'ready')
+
+    def test_concurrent_controls_receive_distinct_durable_order(self):
+        engine, _ = self.make_active()
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            accepted = list(pool.map(lambda index: control(self.repo, engine.instance['id'],
+                'pause', text=f'parallel {index}'), range(4)))
+        identifiers = {row['request_id'] for row in accepted}
+        pending = [row for row in engine._inbox() if row['id'] in identifiers]
+        orders = sorted(int(row['accepted_order']) for row in pending)
+        self.assertEqual(len(identifiers), 4)
+        self.assertEqual(orders, list(range(orders[0], orders[0] + 4)))
 
     def test_preparation_cannot_replace_a_user_academic_requirement_contract(self):
         from test_academic_engine import requirement

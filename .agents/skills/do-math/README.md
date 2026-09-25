@@ -482,7 +482,7 @@ python .agents/skills/do-math/scripts/do_math.py resume `
 
 ## 오류와 반환 코드
 
-모든 명령은 JSON을 반환하며 `status`만 `--json`이 없을 때 사람이 읽는 텍스트를 반환한다.
+모든 명령은 기본적으로 JSON을 반환한다. `status`는 `--json`이 없을 때 사람이 읽는 텍스트를, `timeline --format csv`는 CSV 텍스트를 반환한다.
 
 | 종료 코드 | 뜻 |
 |---|---|

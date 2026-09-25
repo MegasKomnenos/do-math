@@ -141,7 +141,7 @@ def collect_outputs(workspace: Path, *, required_paths: list[str] = [],
         return {"files": files, "manifest": manifest,
                 "omitted": [{"path": name, "reason": "workspace_missing"} for name in sorted(required)],
                 "complete": False}
-    captured_files = captured_files or {}
+    captured_files = {} if captured_files is None else captured_files
     if not isinstance(captured_files, dict):
         raise TypeError("captured_files must be a path-to-bytes object")
     for name, data in sorted(captured_files.items()):

@@ -7,6 +7,7 @@ instructions and do not claim OS isolation.
 from __future__ import annotations
 
 from copy import deepcopy
+from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 import base64
 import binascii
@@ -16,6 +17,7 @@ import inspect
 import os
 import shutil
 from pathlib import Path
+import tempfile
 import time
 from typing import Any
 
@@ -261,6 +263,69 @@ def _control_result(store, head, runtime, request_id):
     return {**deepcopy(row["result"]), "snapshot": commits[0]}
 
 
+@contextmanager
+def _control_acceptance_lock(inbox: Path):
+    """Serialize local control publication without taking the engine writer lock."""
+    lock_path = inbox / ".acceptance.lock"
+    if not lock_path.exists():
+        with tempfile.NamedTemporaryFile("wb", delete=False, dir=inbox,
+                                         prefix=".acceptance-lock.", suffix=".tmp") as stream:
+            stream.write(b"\0")
+            temporary = Path(stream.name)
+        try:
+            try:
+                os.link(temporary, lock_path)
+            except FileExistsError:
+                pass
+        finally:
+            temporary.unlink(missing_ok=True)
+    descriptor = os.open(lock_path, os.O_RDWR)
+    try:
+        os.lseek(descriptor, 0, os.SEEK_SET)
+        if os.name == "nt":
+            import msvcrt
+            msvcrt.locking(descriptor, msvcrt.LK_LOCK, 1)
+        else:
+            import fcntl
+            fcntl.flock(descriptor, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            os.lseek(descriptor, 0, os.SEEK_SET)
+            if os.name == "nt":
+                msvcrt.locking(descriptor, msvcrt.LK_UNLCK, 1)
+            else:
+                fcntl.flock(descriptor, fcntl.LOCK_UN)
+    finally:
+        os.close(descriptor)
+
+
+def _next_control_order(inbox: Path) -> str:
+    """Persist an order that remains comparable after a restart or clock change."""
+    counter = inbox / ".acceptance-counter"
+    if counter.exists():
+        previous = int(counter.read_text(encoding="ascii"))
+    else:
+        # The inbox retains processed requests. Recover if only the counter was
+        # lost, without allowing a new request to overtake an older pending one.
+        previous = max((int(json.loads(path.read_bytes())["accepted_order"])
+                        for path in inbox.glob("*.json")), default=0)
+    if previous < 0:
+        raise ValueError("control acceptance counter is invalid")
+    next_order = previous + 1
+    with tempfile.NamedTemporaryFile("wb", delete=False, dir=inbox,
+                                     prefix=".acceptance-counter.", suffix=".tmp") as stream:
+        stream.write(str(next_order).encode("ascii"))
+        stream.flush()
+        os.fsync(stream.fileno())
+        temporary = Path(stream.name)
+    try:
+        os.replace(temporary, counter)
+    finally:
+        temporary.unlink(missing_ok=True)
+    return f"{next_order:020d}"
+
+
 def control(repository: Path, instance_id: str, action: str, *, text: str = "", config: dict | None = None,
             origin: str = "user", request_id: str | None = None, idempotency_key: str | None = None) -> dict:
     """Queue user commands; only the owning engine publishes authority changes."""
@@ -363,18 +428,21 @@ def control(repository: Path, instance_id: str, action: str, *, text: str = "", 
                 raise ValueError("supplemental research requires a task whose current contract is ready")
         if role == "operational_review" and (config or {}).get("target") not in runtime["executions"]:
             raise ValueError("operational review requires an existing execution ID")
-    request = {"id": request_id, **payload, "created_at": now(),
-               "accepted_order": f"{time.perf_counter_ns():020d}"}
     inbox.mkdir(parents=True, exist_ok=True)
-    temporary = inbox / (request_id + "." + new_id("TMP") + ".tmp")
-    temporary.write_bytes(canonical_json(request))
-    try:
-        # Publish a complete inbox record without overwriting a concurrent same-ID request.
-        os.link(temporary, destination)
-    except FileExistsError:
-        return replay(json.loads(destination.read_bytes()))
-    finally:
-        temporary.unlink(missing_ok=True)
+    with _control_acceptance_lock(inbox):
+        if destination.is_file():
+            return replay(json.loads(destination.read_bytes()))
+        request = {"id": request_id, **payload, "created_at": now(),
+                   "accepted_order": _next_control_order(inbox)}
+        temporary = inbox / (request_id + "." + new_id("TMP") + ".tmp")
+        temporary.write_bytes(canonical_json(request))
+        try:
+            # Publish a complete inbox record without overwriting a concurrent same-ID request.
+            os.link(temporary, destination)
+        except FileExistsError:
+            return replay(json.loads(destination.read_bytes()))
+        finally:
+            temporary.unlink(missing_ok=True)
     return {"accepted": True, "request_id": request["id"], "effect": "pending engine processing"}
 
 
@@ -849,7 +917,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         # the order in which a pause, release, or newer user control arrived.
         # Distinct calls can share even the complete wall-clock timestamp.
         # Preserve their host acceptance order, including equal wall-clock timestamps.
-        return sorted(results, key=lambda request: (request["created_at"], request["accepted_order"], request["id"]))
+        return sorted(results, key=lambda request: (request["accepted_order"], request["created_at"], request["id"]))
 
     def _controls(self, *, pump=True) -> None:
         if pump and self._calls is not None:

@@ -46,7 +46,7 @@ def provider_wait_disposition(*, model, failure=None, attempts=1, current=None,
     if (isinstance(initial, bool) or not isinstance(initial, (int, float)) or initial <= 0 or
             isinstance(maximum, bool) or not isinstance(maximum, (int, float)) or maximum < initial):
         raise ValueError("retry bounds are invalid")
-    failure = failure or {}
+    failure = {} if failure is None else failure
     if not isinstance(failure, dict):
         raise ValueError("failure must be a dictionary")
     resolved_provider = provider or provider_for(model)
