@@ -9,6 +9,10 @@ from datetime import datetime, timezone
 import hashlib
 import json
 import math
+if __package__:
+    from .file_io import json_digest
+else:  # Direct Python worker inside the Windows Job.
+    from file_io import json_digest
 
 
 def _pairs(pairs):
@@ -22,11 +26,6 @@ def _pairs(pairs):
 
 def _constant(value):
     raise ValueError("non-finite JSON number: " + value)
-
-
-def _hash(value):
-    raw = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
-    return hashlib.sha256(raw).hexdigest()
 
 
 def _number(value):
@@ -94,7 +93,7 @@ def parse_stream(raw: bytes | None, *, require_structured_output: bool = True) -
             event = json.loads(line, object_pairs_hook=_pairs, parse_constant=_constant)
             if not isinstance(event, dict) or not isinstance(event.get("type"), str):
                 raise ValueError("event requires a type")
-            _hash(event)  # Also reject numeric overflow such as 1e999.
+            json_digest(event)  # Also reject numeric overflow such as 1e999.
         except (ValueError, UnicodeError):
             errors.append("invalid_jsonl")
             parsed["unparsed_tail_bytes"] = len(raw) - parsed["parsed_bytes"]
@@ -151,7 +150,7 @@ def parse_stream(raw: bytes | None, *, require_structured_output: bool = True) -
                    "result_line": line_number, "result_sha256": hashlib.sha256(line.rstrip(b"\r\n")).hexdigest(),
                    "success": success, "origin": event.get("origin"), "num_turns": event.get("num_turns")}
         if "structured_output" in event:
-            summary["output_sha256"] = _hash(event["structured_output"])
+            summary["output_sha256"] = json_digest(event["structured_output"])
         parsed["result_segments"].append(summary)
         if isinstance(event.get("usage"), dict):
             parsed["usage"].append(event["usage"])
@@ -168,7 +167,7 @@ def parse_stream(raw: bytes | None, *, require_structured_output: bool = True) -
         elif "structured_output" in event:
             selected = (summary, "structured_output", event["structured_output"])
         elif not require_structured_output and isinstance(event.get("result"), str):
-            summary["output_sha256"] = _hash(event["result"])
+            summary["output_sha256"] = json_digest(event["result"])
             selected = (summary, "final_text", event["result"])
         elif not (segment["index"] and not segment["work"] and event.get("num_turns") == 0
                   and all(value == 0 for value in usage_total(parsed["usage_segments"][-1:]).values())):

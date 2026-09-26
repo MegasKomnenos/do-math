@@ -176,6 +176,7 @@ class EfficiencyTests(unittest.TestCase):
         try:
             with self.model_process(arguments, resume=False):
                 control(e.store._store.repository, e.instance['id'], 'pause', text='stop before model resume')
+                e._controls(pump=False)  # The owner pass applies and publishes the control.
                 self.assertTrue(arguments['should_stop'](), 'a suspended model must not resume for checkpoint grace')
         finally:
             with self.assertRaises(StopIteration):
@@ -189,6 +190,7 @@ class EfficiencyTests(unittest.TestCase):
             with self.model_process(arguments, resume=True):
                 self.assertFalse(arguments['should_stop']())
                 control(e.store._store.repository, e.instance['id'], 'pause', text='stop running work')
+                e._controls(pump=False)  # The owner pass applies and publishes the control.
                 self.assertTrue(arguments['should_stop']())
                 execution = e.runtime['executions'][e.runtime['active_execution']]
                 self.assertEqual(execution['status'], 'stopping')
@@ -208,8 +210,27 @@ class EfficiencyTests(unittest.TestCase):
             self.assertFalse(e._check_installation(force=True))
         self.assertEqual(e.runtime["status"], "paused")
 
+    def test_construction_and_status_leave_installation_and_artifact_bytes_to_run_and_check(self):
+        from do_math import engine as engine_module
+        repository = self.engine.store._store.repository
+        source = self.root / 'note.txt'
+        source.write_bytes(b'archived source bytes')
+        control(repository, self.engine.instance['id'], 'source', config={'path': str(source)})
+        self.engine.process_controls()
+        self.assertTrue(self.engine.instance['sources'])
+        with patch.object(ResearchEngine, '_installation_manifest', side_effect=AssertionError('run hashes the installation')), \
+                patch.object(engine_module, 'all_prompt_documents', side_effect=AssertionError('a prompt loads documents')):
+            engine = ResearchEngine(repository, self.engine.instance['id'])
+            with patch.object(engine.store, 'read', side_effect=AssertionError('status reads no artifact bytes')), \
+                    patch.object(engine.store, 'read_many', side_effect=AssertionError('status reads no artifact bytes')):
+                status = engine.status()
+        self.assertEqual(status['submission_checks']['status'], 'not_evaluated')
+        storage = next(area for area in status['inspection']['areas'] if area['name'] == 'record_storage')
+        self.assertIn('artifact presence and length', storage['checked_invariants'])
+
     def test_installation_change_cannot_reopen_a_terminal_instance(self):
         e = self.engine
+        e._installation  # run hashes the loaded edition before any periodic check
         for terminal in ('closed', 'completed'):
             with self.subTest(terminal=terminal):
                 e.runtime['status'] = terminal

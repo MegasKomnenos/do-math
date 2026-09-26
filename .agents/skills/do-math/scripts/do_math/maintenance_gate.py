@@ -35,7 +35,7 @@ def settle(runtime):
     from datetime import datetime, timezone
     settled_at = datetime.now(timezone.utc).isoformat()
     publication = {w.get('execution_id') for w in runtime.get('waiting_actions', {}).values()
-                   if w.get('kind') in {'submission_publication','environment_observation'}}
+                   if w.get('kind') == 'submission_publication'}
     for identifier in publication:
         execution = runtime.get('executions', {}).get(identifier)
         if (execution and execution['status'] == 'stopping'

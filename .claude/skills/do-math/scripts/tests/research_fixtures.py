@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
+from contextlib import contextmanager
 from functools import wraps
 import hashlib
 import json
@@ -253,17 +254,38 @@ def dispatched_launch(execution_id, profile):
     return value
 
 
-def submit_intent(binding, should_stop, workspace, output):
+def submit_intent(binding, workspace, output):
     if binding is None:
         raise AssertionError("The engine must supply its real control transport")
     from do_math.submission import request_control
     (workspace / "output.json").write_bytes(canonical_json(output))
     delivery = request_control(workspace, "output.json", kind="submit_intent", wait_seconds=0, binding=binding)
     request_id = delivery["request_id"]
-    should_stop()  # Pumps the actual engine receiver; does not create a receipt in the fixture.
-    receipt = ControlTransport.worker_receipt(binding, request_id)
+    # The owner loop receives transport requests every pass; the worker only waits.
+    receipt = ControlTransport.wait_receipt(binding, request_id, 60)
     if not receipt or receipt["state"] != "accepted":
         raise AssertionError("Submission intent did not receive engine acceptance: " + repr(receipt))
+
+
+def await_control(engine, request, timeout=60):
+    """Wait until the running owner loop has applied a queued public control."""
+    import time
+    until = time.monotonic() + timeout
+    while request["request_id"] not in engine.runtime.get("processed_controls", []):
+        if time.monotonic() > until:
+            raise AssertionError("The owner loop did not apply control " + request["request_id"])
+        time.sleep(.01)
+
+
+def await_stop(should_stop, timeout=60):
+    """Wait until the owner's stop judgment has set the calculation's flag."""
+    import time
+    until = time.monotonic() + timeout
+    while not should_stop():
+        if time.monotonic() > until:
+            return False
+        time.sleep(.01)
+    return True
 
 
 def producer_result(result, arguments):
@@ -272,8 +294,7 @@ def producer_result(result, arguments):
         context = read_fixture_context(arguments["prompt"], arguments["workspace"])
         bind_candidates(result["output"], context)
         seal_response(result["output"], context, arguments["workspace"])
-        submit_intent(arguments.get("control_binding"), arguments["should_stop"],
-                      arguments["workspace"], result["output"])
+        submit_intent(arguments.get("control_binding"), arguments["workspace"], result["output"])
     return result
 
 
@@ -302,49 +323,77 @@ def install_adapter_fixture(test_case):
     test_case.addCleanup(mocked.stop)
 
 
-def validation_fixture(toolchain, inventory, source):
+@contextmanager
+def fixture_setup_lean(toolchain, smoke, *, validation=True):
+    """setup_lean with host observations replaced by a fixture toolchain.
+
+    Fixture files are created moments before, so the racy window is closed for
+    them; recording would otherwise wait for their fingerprints to settle.
+    """
+    import setup_lean
+    compiled = validation_fixture(toolchain, smoke)
+    result = compiled if validation else {**compiled, 'status': 'failed', 'exit_code': 1}
+    with patch.object(setup_lean, 'observe_identity', return_value=deepcopy(toolchain)), \
+         patch.object(setup_lean, 'verify_environment', return_value=result), \
+         patch('do_math.file_io.RACY_NS', 0):
+        yield
+
+
+def validation_fixture(toolchain, source):
     """Explicit compiler double; never present this record as native validation."""
     from do_math.trust_inventory import validation_program
-    from do_math.repository import exact_content_hash
     text,scope=validation_program(toolchain)
     return {'status':'verified','scope':scope,'source':str(source.resolve()),'source_text':text,
         'source_sha256':hashlib.sha256(text.encode()).hexdigest(),
         'command':[*toolchain['configured_command'],str(source.resolve())],
         'exit_code':0,'stdout':'synthetic external compiler result','stderr':'',
-        'toolchain':deepcopy(toolchain),'toolchain_after':deepcopy(toolchain),
-        'inventory_sha256':exact_content_hash(inventory),
         'started_at':'2026-09-20T00:00:00Z','finished_at':'2026-09-20T00:00:01Z'}
 
 
+SYNTHETIC_TOOLCHAIN_FILES = ('bin/lean.exe', 'bin/lake.exe', 'bin/libleanshared.dll', 'lib/lean/Init/Prelude.olean')
+
+
 def trust_fixture(root, command):
-    directory = root / "synthetic-trust"
-    directory.mkdir(parents=True, exist_ok=True)
-    from do_math.trust_inventory import SMOKE
-    from do_math.repository import exact_content_hash
-    files = []
-    paths = {'lean_binary':'toolchain/bin/lean.exe', 'lean_source':'toolchain/src/Init/Prelude.lean',
-             'lake_binary':'toolchain/bin/lake.exe', 'mathlib_source':'project/Mathlib.lean',
-             'mathlib_build':'project/.lake/build/Mathlib.olean', 'checker':'checker/formal.py'}
-    for role, relative in paths.items():
-        path = directory / relative
+    """A synthetic installation, its shared toolchain record and the registration request.
+
+    The checker identity is the real formal.py, so publication gates recompute a
+    consistent identity. Each call owns a new directory and record.
+    """
+    import tempfile
+    from do_math import formal, trust_inventory as records
+    Path(root).mkdir(parents=True, exist_ok=True)
+    directory = Path(tempfile.mkdtemp(prefix='synthetic-trust-', dir=root)).resolve()
+    for relative in SYNTHETIC_TOOLCHAIN_FILES:
+        path = directory / 'toolchain' / relative
         path.parent.mkdir(parents=True, exist_ok=True)
-        raw = ("CORE_TESTS synthetic " + role).encode()
-        path.write_bytes(raw)
-        files.append({"role": role, "path": str(path.resolve()), "sha256": hashlib.sha256(raw).hexdigest()})
-    by_role={row['role']:row for row in files}
-    toolchain = {"executable": by_role['lean_binary']['path'], "sha256": by_role['lean_binary']['sha256'], "version": "Lean test 4.32.0",
+        path.write_bytes(("CORE_TESTS synthetic " + relative + " for " + " ".join(command)).encode())
+    digest = lambda path: hashlib.sha256(Path(path).read_bytes()).hexdigest()
+    lean, lake = directory / 'toolchain/bin/lean.exe', directory / 'toolchain/bin/lake.exe'
+    checker = Path(formal.__file__).resolve()
+    toolchain = {"executable": str(lean), "sha256": digest(lean), "version": "Lean test 4.32.0",
                  "version_exit": 0, "configured_command": list(command),
-                 "verifier_sha256": by_role['checker']['sha256'],
-                 'verifier_path':by_role['checker']['path'],
-                 "executables": {by_role[r]['path']:by_role[r]['sha256'] for r in ('lean_binary','lake_binary')},
-                 "project": {'manifest_hashes':{}, 'fingerprint':{'root':str((directory/'project').resolve())},'search_paths':[]}}
-    scope={'roots':[{'kind':kind,'path':str((directory/kind).resolve())} for kind in ('toolchain','project','checker')]}
-    validation=validation_fixture(toolchain,{'scope':scope,'files':files},directory/'smoke.lean')
-    manifest = {"command": list(command), "files": files,
-        'scope':scope,
-        "foundation_profile": {"allowed_axioms": sorted(AXIOMS), "forbidden": ["sorryAx", "Lean.trustCompiler", "additional_axioms"]},
-        "validation": {'record':validation,'sha256':exact_content_hash(validation)}}
-    return {"operation": "register", "toolchain": toolchain, "allowed_axioms": sorted(AXIOMS), "manifest": manifest}
+                 "verifier_sha256": digest(checker), "verifier_path": str(checker),
+                 "executables": {str(lean): digest(lean), str(lake): digest(lake)}, "project": None}
+    fingerprint = records.observe_fingerprint(toolchain)
+    content = records.content_hashes(toolchain, fingerprint['files'])
+    record = records.new_record(toolchain, records.new_baseline(
+        fingerprint, content, validation_fixture(toolchain, directory / 'smoke.lean')))
+    path = directory / 'records' / (record['id'] + '.json')
+    records.write_record(path, record)
+    return {"operation": "register", "toolchain": toolchain, "allowed_axioms": sorted(AXIOMS),
+            "toolchain_record": {"path": str(path), "id": record['id']}, "binding": records.binding(record)}
+
+
+def trust_environment(request, *, environment_id='TE-fixture', status='active', source_ref='fixture:trust'):
+    """The instance record and runtime binding that registering this request produces.
+
+    Store the record in instance['trust_environments'] and the binding in
+    runtime['trust_bindings'] under the same ID.
+    """
+    environment = {'id': environment_id, 'status': status, 'toolchain': deepcopy(request['toolchain']),
+                   'allowed_axioms': list(request['allowed_axioms']), 'source_ref': source_ref,
+                   'toolchain_record': deepcopy(request['toolchain_record'])}
+    return environment, deepcopy(request['binding'])
 
 
 def send_control(engine, action, **kwargs):

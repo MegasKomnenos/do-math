@@ -1,7 +1,11 @@
-"""Prepare the machine-wide Lean toolchain and the Mathlib project that discover_lean() prefers.
+"""Prepare the machine-wide Lean toolchain and record it for the research instances.
 
-Idempotent: finished steps are skipped. The ready marker is written only after `import Mathlib`
-compiles through the exact command the verifier will use, so a half-downloaded cache is never selected.
+Installation is idempotent: finished steps are skipped. A toolchain record is written
+only after `import Mathlib` compiles through the exact command the verifier will use,
+and the ready marker follows the record, so a half-downloaded cache is never selected.
+Record writers (installation, --verify-only, --rerecord, --check-contents) exclude each
+other with the lock file of the records directory. Exit codes: 0 success, 1 a refused,
+failed or mismatching result, 2 an execution error. Every mode prints one JSON object.
 """
 import argparse
 from datetime import datetime, timezone
@@ -11,13 +15,15 @@ import os
 from pathlib import Path
 import subprocess
 import tempfile
+import time
 import urllib.request
-import zipfile
 import uuid
+import zipfile
 
 from do_math.formal import LEAN_VERSION, READY_MARKER, discover_lean, mathlib_project, portable_bin, toolchain_root, inspect_toolchain
-from do_math.trust_inventory import SMOKE, validation_program, collect_manifest, collect_inventory
+from do_math import trust_inventory as records
 from do_math.trust_validation import AXIOMS
+from do_math.file_io import RACY_NS, fingerprint_settled
 
 LEAN_ZIP = f"https://github.com/leanprover/lean4/releases/download/v{LEAN_VERSION}/lean-{LEAN_VERSION}-windows.zip"
 # Mathlib tags follow Lean releases; the tag equal to the toolchain is the one whose cached .olean files load.
@@ -28,64 +34,156 @@ PROJECT_FILES = {
 }
 
 
-def verify_environment(command, evidence_root):
-    """Preserve a bounded-scope environment check; no trust adoption is implied."""
+class Refused(Exception):
+    """A record operation that must not proceed; exit code 1 with the stated result."""
+    def __init__(self, result):
+        super().__init__(result.get('reason', result.get('status')))
+        self.result = result
+
+
+def observe_identity(command):
+    with tempfile.TemporaryDirectory() as directory:
+        identity = inspect_toolchain(command, Path(directory))
+    errors = records.identity_errors(identity)
+    if errors:
+        raise ValueError('; '.join(errors))
+    return identity
+
+
+def verify_environment(command, evidence_root, identity):
+    """Compile the representative examples through the exact command; nothing is adopted."""
     directory = evidence_root.resolve() / (datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ') + '-' + uuid.uuid4().hex)
+    if any(directory.is_relative_to(root.resolve()) for root in records.roots(identity).values()):
+        raise ValueError('validation evidence must be outside the recorded toolchain and project roots')
     directory.mkdir(parents=True)
     source = directory / 'smoke.lean'
-    record = {'status': 'failed',
-              'started_at': datetime.now(timezone.utc).isoformat(),
-              'command': [*command, str(source)], 'source': str(source)}
+    source_text, scope = records.validation_program(identity)
+    source.write_bytes(source_text.encode('utf-8'))
+    validation = {'status': 'failed', 'scope': scope, 'source': str(source), 'source_text': source_text,
+                  'source_sha256': hashlib.sha256(source_text.encode('utf-8')).hexdigest(),
+                  'command': [*command, str(source)], 'exit_code': None, 'stdout': '', 'stderr': '',
+                  'started_at': records.now()}
     try:
-        from do_math.repository import exact_content_hash
-        from do_math.operation_trace import tracing, phase
-        record['toolchain'] = inspect_toolchain(command, directory)
-        source_text, scope = validation_program(record['toolchain'])
-        source.write_bytes(source_text.encode('utf-8'))
-        record.update(scope=scope, source_text=source_text,
-                      source_sha256=hashlib.sha256(source.read_bytes()).hexdigest())
-        with tracing(directory/'operations'), phase('environment_inventory_before'):
-            before_inventory=collect_inventory(record['toolchain'])
-        if any(directory.is_relative_to(Path(root['path'])) for root in before_inventory['scope']['roots']):
-            raise ValueError('validation evidence must be outside the adopted installation roots')
-        record['inventory_sha256']=exact_content_hash(before_inventory)
         from do_math.formal import _job_run
+        from do_math.operation_trace import tracing, phase
         with tracing(directory / 'operations'), phase('environment_smoke_compile') as metrics:
             code, stdout, stderr, stopped = _job_run([*command, str(source)], directory,
                 on_started=lambda process: metrics.update(process=process))
-        record.update(exit_code=code, stdout=stdout, stderr=stderr)
-        record['toolchain_after'] = inspect_toolchain(command, directory)
-        with tracing(directory/'operations'), phase('environment_inventory_after'):
-            after_inventory=collect_inventory(record['toolchain_after'])
-        if (not stopped and code == 0 and record['toolchain_after'] == record['toolchain']
-                and after_inventory==before_inventory):
-            record['status'] = 'verified'
-            (directory/'inventory.json').write_text(json.dumps(before_inventory,ensure_ascii=False),encoding='utf-8')
-        elif code == 0:
-            record['error'] = 'toolchain identity or complete inventory changed during environment validation'
+        validation.update(exit_code=code, stdout=stdout, stderr=stderr)
+        if not stopped and code == 0:
+            validation['status'] = 'verified'
     except Exception as error:
-        record['error'] = f'{type(error).__name__}: {error}'
-    record['finished_at'] = datetime.now(timezone.utc).isoformat()
-    evidence = directory / 'validation.json'
-    evidence.write_text(json.dumps(record, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-    return {'status': record['status'], 'lean_command': list(command),
-            'toolchain': record.get('toolchain'),
-            'validation': record, 'evidence_path': str(evidence),
-            'inventory_path':str(directory/'inventory.json') if record['status']=='verified' else None}
+        validation['error'] = f'{type(error).__name__}: {error}'
+    validation['finished_at'] = records.now()
+    (directory / 'validation.json').write_text(json.dumps(validation, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+    return validation
+
+
+def _baseline(command, evidence_root, identity, fingerprint, content):
+    validation = verify_environment(command, evidence_root, identity)
+    if validation['status'] != 'verified':
+        raise Refused({'status': 'failed', 'reason': 'the representative compile did not succeed', 'validation': validation})
+    if records.observe_fingerprint(identity)['sha256'] != fingerprint['sha256']:
+        raise Refused({'status': 'failed', 'reason': 'judgment files changed while the baseline was being recorded'})
+    return records.new_baseline(fingerprint, content, validation)
+
+
+def _summary(path, record, **fields):
+    return {'record_path': str(path), 'record_id': record['id'], 'binding': records.binding(record), **fields}
+
+
+def _settled_fingerprint(identity, attempts=3):
+    """Observe the judgment files once every fingerprint is older than the racy window.
+
+    A baseline is compared by metadata later, so it must not record a time that a
+    same-size rewrite could still share.
+    """
+    for _ in range(attempts):
+        observed = records.observe_fingerprint(identity)
+        if all(fingerprint_settled((size, int(modified), int(born)))
+               for size, modified, born in observed['files'].values()):
+            return observed
+        time.sleep(RACY_NS / 1e9)
+    raise RuntimeError('judgment files are still changing; record the installation once it is idle')
+
+
+def record_installation(command, records_dir, evidence_root):
+    """Create the record of an installed identity or confirm an unchanged one; never append a baseline."""
+    identity = observe_identity(command)
+    with records.writer_lock(records_dir):
+        fingerprint = _settled_fingerprint(identity)
+        for path, record in records.records_for(records_dir, identity):
+            if record['baselines'][-1]['fingerprint']['sha256'] == fingerprint['sha256'] and not records.usable_errors(record):
+                return _summary(path, record, status='recorded', created=False)
+        content = records.content_hashes(identity, fingerprint['files'])
+        path = Path(records_dir) / (records.record_id(identity, content['sha256']) + '.json')
+        if path.exists():
+            raise Refused({'status': 'rerecord_required', 'record_path': str(path),
+                'reason': 'the installed bytes match this record but its metadata or check history changed; '
+                          'a user or operator decides whether to run --rerecord'})
+        record = records.new_record(identity, _baseline(command, evidence_root, identity, fingerprint, content))
+        records.write_record(path, record)
+        return _summary(path, record, status='recorded', created=True)
+
+
+def resolve_record(records_dir, record_id, identity):
+    """The named record, or the only record of the identity (a callable observes it on demand)."""
+    if record_id is not None:
+        path = Path(records_dir) / (record_id + '.json')
+        return path, records.read_record(path)
+    candidates = records.records_for(records_dir, identity())
+    if len(candidates) != 1:
+        raise ValueError('name the record with --record; records of the current identity: '
+                         + (', '.join(record['id'] for _, record in candidates) or 'none'))
+    return candidates[0]
+
+
+def rerecord(command, records_dir, evidence_root, record_id):
+    """Append a baseline after metadata-only changes. Users and operators only (D5)."""
+    identity = observe_identity(command)
+    with records.writer_lock(records_dir):
+        path, record = resolve_record(records_dir, record_id, lambda: identity)
+        if record['identity'] != identity:
+            raise Refused({'status': 'refused', 'record_path': str(path),
+                'reason': 'the installed identity differs from the record; create a new record and register and transition to it'})
+        fingerprint = _settled_fingerprint(identity)
+        content = records.content_hashes(identity, fingerprint['files'])
+        mismatched = records.changed_files(record['baselines'][-1]['content']['files'], content['files'])
+        if mismatched:
+            raise Refused({'status': 'refused', 'record_path': str(path), 'mismatched': mismatched,
+                'reason': 'judgment file contents differ from the current baseline; create a new record and '
+                          'register and transition to it'})
+        record['baselines'].append(_baseline(command, evidence_root, identity, fingerprint, content))
+        records.write_record(path, record)
+        return _summary(path, record, status='recorded')
+
+
+def check_contents(records_dir, record_id, command):
+    """Hash every judgment file and append the comparison with the current baseline."""
+    with records.writer_lock(records_dir):
+        path, record = resolve_record(records_dir, record_id, lambda: observe_identity(command))
+        current = len(record['baselines']) - 1
+        fingerprint = records.observe_fingerprint(record['identity'])
+        content = records.content_hashes(record['identity'], fingerprint['files'])
+        mismatched = records.changed_files(record['baselines'][current]['content']['files'], content['files'])
+        check = {'checked_at': records.now(), 'baseline': current,
+                 'result': 'mismatch' if mismatched else 'passed', 'mismatched': mismatched}
+        record['checks'].append(check)
+        records.write_record(path, record)
+        return _summary(path, record, status=check['result'], check=check)
 
 
 def write_trust_request(result, destination):
-    if result['status'] not in {'verified', 'ready'}:
-        raise ValueError('a successful environment validation is required')
-    observed=json.loads(Path(result['inventory_path']).read_text(encoding='utf-8'))
-    request={'operation':'register','toolchain':result['toolchain'],
-             'allowed_axioms':sorted(AXIOMS),
-             'manifest':collect_manifest(result['toolchain'],result['validation'],observed_inventory=observed)}
-    destination=destination.resolve()
-    destination.parent.mkdir(parents=True,exist_ok=True)
-    with destination.open('x',encoding='utf-8') as stream:
-        json.dump(request,stream,ensure_ascii=False,indent=2)
-    return {'path':str(destination),'file_count':len(request['manifest']['files'])}
+    """A registration request binding the record's identity and one baseline."""
+    record = records.read_record(result['record_path'])
+    request = {'operation': 'register', 'toolchain': record['identity'], 'allowed_axioms': sorted(AXIOMS),
+               'toolchain_record': {'path': str(Path(result['record_path']).resolve()), 'id': record['id']},
+               'binding': result['binding']}
+    destination = destination.resolve()
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    with destination.open('x', encoding='utf-8') as stream:
+        json.dump(request, stream, ensure_ascii=False, indent=2)
+    return {'path': str(destination), 'toolchain_record': request['toolchain_record'], 'binding': request['binding']}
 
 
 def run(command, cwd, env):
@@ -93,47 +191,8 @@ def run(command, cwd, env):
     subprocess.run(command, cwd=cwd, env=env, check=True)
 
 
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    mode = parser.add_mutually_exclusive_group()
-    mode.add_argument('--inspect-only', action='store_true', help='observe an installed command without installing or adopting it')
-    mode.add_argument('--verify-only', action='store_true', help='validate an installed environment and preserve evidence without downloading or adopting it')
-    parser.add_argument('--command-file', type=Path, help='UTF-8 JSON object with lean_command argv; requires --inspect-only or --verify-only')
-    parser.add_argument('--evidence-dir', type=Path, help='parent directory for unique environment validation records')
-    parser.add_argument('--trust-file', type=Path, help='write a new complete registration request after successful validation')
-    args = parser.parse_args()
-    if args.command_file and not (args.inspect_only or args.verify_only):
-        parser.error('--command-file requires --inspect-only or --verify-only')
-    if args.inspect_only and args.evidence_dir:
-        parser.error('--evidence-dir requires an environment validation run')
-    if args.inspect_only and args.trust_file:
-        parser.error('--trust-file requires an environment validation run')
-    if args.inspect_only or args.verify_only:
-        from do_math.submission import load_json
-        command = load_json(args.command_file.read_bytes())['lean_command'] if args.command_file else discover_lean()
-        if not command:
-            parser.error('Lean was not found; supply --command-file')
-        if args.verify_only:
-            root = toolchain_root()
-            if args.evidence_dir is None and root is None:
-                parser.error('--verify-only requires --evidence-dir for this installation')
-            result = verify_environment(command, args.evidence_dir or root / 'validation')
-            if result['status']=='verified' and args.trust_file:
-                result['trust_request']=write_trust_request(result,args.trust_file)
-            print(json.dumps(result))
-            if result['status'] != 'verified':
-                raise SystemExit(1)
-        else:
-            with tempfile.TemporaryDirectory() as directory:
-                observed = inspect_toolchain(command, Path(directory))
-            print(json.dumps({'status':'observed', 'lean_command':command, 'toolchain':observed}))
-        return
-    root = toolchain_root()
-    if root is None:
-        raise SystemExit("this installation has no repository root above it; set lean_command explicitly instead")
+def install(root):
     project = mathlib_project(root)
-    marker = project / READY_MARKER
-    marker.unlink(missing_ok=True)
     bin_dir = portable_bin(root)
     if not (bin_dir / "lean.exe").is_file():
         archive = bin_dir.parents[1] / f"lean-{LEAN_VERSION}-windows.zip"
@@ -152,16 +211,75 @@ def main():
     if not (project / "lake-manifest.json").is_file():
         run([lake, "update"], project, env)
     run([lake, "exe", "cache", "get"], project, env)
-    command = [lake, "--dir", str(project), "env", str(bin_dir / "lean.exe")]
-    result = verify_environment(command, args.evidence_dir or root / 'validation')
-    if result['status'] != 'verified':
-        marker.unlink(missing_ok=True)
-        print(json.dumps(result))
+    return [lake, "--dir", str(project), "env", str(bin_dir / "lean.exe")]
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument('--inspect-only', action='store_true', help='observe an installed command without installing or recording it')
+    mode.add_argument('--verify-only', action='store_true',
+                      help='record an installed environment without downloading: identity, fingerprints, content hashes and a representative compile')
+    mode.add_argument('--rerecord', action='store_true',
+                      help='users and operators only: append a baseline when only metadata changed; refused if any content differs')
+    mode.add_argument('--check-contents', action='store_true',
+                      help='hash every judgment file, compare with the current baseline and append the result to the record')
+    parser.add_argument('--command-file', type=Path, help='UTF-8 JSON object with lean_command argv; not for installation')
+    parser.add_argument('--record', help='toolchain record ID (TC-...); default: the only record of the current identity')
+    parser.add_argument('--records-dir', type=Path, help='toolchain record directory; default: <toolchain root>/records')
+    parser.add_argument('--evidence-dir', type=Path, help='parent directory for representative compile evidence')
+    parser.add_argument('--trust-file', type=Path, help='write a new registration request for the resulting record baseline')
+    args = parser.parse_args()
+    installing = not (args.inspect_only or args.verify_only or args.rerecord or args.check_contents)
+    if args.command_file and installing:
+        parser.error('--command-file requires --inspect-only, --verify-only, --rerecord or --check-contents')
+    if args.inspect_only and (args.evidence_dir or args.trust_file or args.record or args.records_dir):
+        parser.error('--inspect-only neither records nor validates an environment')
+    if args.check_contents and (args.evidence_dir or args.trust_file):
+        parser.error('--check-contents runs no compile and writes no registration request')
+    if args.record and not (args.rerecord or args.check_contents):
+        parser.error('--record names the record for --rerecord or --check-contents')
+    root = toolchain_root()
+    try:
+        if installing:
+            if root is None:
+                raise SystemExit("this installation has no repository root above it; set lean_command explicitly instead")
+            (mathlib_project(root) / READY_MARKER).unlink(missing_ok=True)
+            command = install(root)
+        else:
+            from do_math.submission import load_json
+            command = load_json(args.command_file.read_bytes())['lean_command'] if args.command_file else discover_lean()
+            if not command:
+                parser.error('Lean was not found; supply --command-file')
+        if args.inspect_only:
+            with tempfile.TemporaryDirectory() as directory:
+                print(json.dumps({'status': 'observed', 'lean_command': command,
+                                  'toolchain': inspect_toolchain(command, Path(directory))}))
+            return
+        if root is None and (args.records_dir is None or args.evidence_dir is None and not args.check_contents):
+            parser.error('this installation has no toolchain root; supply --records-dir and --evidence-dir')
+        records_dir = args.records_dir or root / 'records'
+        evidence_root = args.evidence_dir or (root / 'validation' if root else None)
+        if args.check_contents:
+            result = check_contents(records_dir, args.record, command)
+        elif args.rerecord:
+            result = rerecord(command, records_dir, evidence_root, args.record)
+        else:
+            result = record_installation(command, records_dir, evidence_root)
+        result['lean_command'] = command
+        if args.trust_file:
+            result['trust_request'] = write_trust_request(result, args.trust_file)
+        if installing:
+            (mathlib_project(root) / READY_MARKER).write_text(LEAN_VERSION, encoding="utf-8")
+    except Refused as refused:
+        print(json.dumps(refused.result, ensure_ascii=False))
         raise SystemExit(1)
-    marker.write_text(LEAN_VERSION, encoding="utf-8")
-    if args.trust_file:
-        result['trust_request']=write_trust_request(result,args.trust_file)
-    print(json.dumps({**result, 'status': 'ready'}))
+    except (OSError, RuntimeError, ValueError, KeyError, subprocess.CalledProcessError) as error:
+        print(json.dumps({'status': 'error', 'error': f'{type(error).__name__}: {error}'}, ensure_ascii=False))
+        raise SystemExit(2)
+    print(json.dumps(result, ensure_ascii=False))
+    if result['status'] == 'mismatch':
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":

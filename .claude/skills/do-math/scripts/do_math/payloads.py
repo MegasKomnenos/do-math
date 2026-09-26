@@ -1,7 +1,8 @@
 """Content-addressed immutable large JSON leaves, with exact logical values.
 
 The codec is a storage boundary, not an authority cache. Blob bytes are checked
-on read; only these decoded immutable values can reuse their encoding in memory.
+the first time this process reads them from a repository (VERIFIED_ARTIFACTS);
+only these decoded immutable values can reuse their encoding in memory.
 """
 from copy import deepcopy
 import hashlib
@@ -33,12 +34,13 @@ def frozen(value):
     return value
 
 
-def seal(value, raw=None):
+def seal(value, raw=None, digest=None):
+    """Freeze ``value`` with its canonical bytes; ``digest`` is their SHA-256 when already known."""
     from .repository import canonical_json
     raw = canonical_json(value) if raw is None else raw
     result = FrozenText(value) if isinstance(value, str) else frozen(value)
     result._payload_bytes = raw
-    result._payload_hash = hashlib.sha256(raw).hexdigest()
+    result._payload_hash = digest or hashlib.sha256(raw).hexdigest()
     return result
 
 
@@ -87,8 +89,15 @@ def encode(envelope):
     return result, blobs
 
 
-def decode(envelope, read_payload):
-    from .repository import canonical_json, _unique_pairs, _reject_constant
+def decode(envelope, read_payload, git_dir=None):
+    """Restore externalized payloads; ``git_dir`` names the repository they are read from.
+
+    A payload blob this process already matched in that repository
+    (repository.VERIFIED_ARTIFACTS) is parsed but not hashed or re-checked
+    for canonical encoding again: its path is its digest and bundles are
+    immutable.
+    """
+    from .repository import canonical_json, _unique_pairs, _reject_constant, artifact_verified, mark_artifact_verified
     if set(envelope) not in ({'contract_id','family','record'}, {'contract_id','family','record','payloads'}):
         raise ValueError('invalid record envelope fields')
     value = deepcopy(envelope['record'])
@@ -105,12 +114,16 @@ def decode(envelope, read_payload):
         key = (ref['path'], ref['sha256'], ref['bytes'])
         if key not in cache:
             raw = read_payload(ref['path'])
-            if len(raw) != ref['bytes'] or hashlib.sha256(raw).hexdigest() != ref['sha256']:
+            known = git_dir is not None and artifact_verified(git_dir, ref['path'], ref['sha256'], ref['bytes'])
+            if len(raw) != ref['bytes'] or not known and hashlib.sha256(raw).hexdigest() != ref['sha256']:
                 raise ValueError('immutable payload bytes differ')
             decoded = json.loads(raw, object_pairs_hook=_unique_pairs, parse_constant=_reject_constant)
-            if canonical_json(decoded) != raw:
-                raise ValueError('noncanonical immutable payload')
-            cache[key] = seal(decoded, raw)
+            if not known:
+                if canonical_json(decoded) != raw:
+                    raise ValueError('noncanonical immutable payload')
+                if git_dir is not None:
+                    mark_artifact_verified(git_dir, ref['path'], ref['sha256'], len(raw))
+            cache[key] = seal(decoded, raw, ref['sha256'])  # matched above or earlier
         if not _eligible(ref['tokens'][-1] if ref['tokens'] else 'manifest', cache[key]):
             raise ValueError('payload is not an externalized immutable field')
         parent = value
@@ -133,9 +146,10 @@ def decode(envelope, read_payload):
     return value
 
 
-def fingerprint(value):
+def payload_identity_view(value):
+    """The value with each sealed payload replaced by its digest and size."""
     if hasattr(value, '_payload_bytes'):
         return ['immutable-payload',value._payload_hash,len(value._payload_bytes)]
-    if isinstance(value, dict): return {k:fingerprint(v) for k,v in value.items()}
-    if isinstance(value, list): return [fingerprint(v) for v in value]
+    if isinstance(value, dict): return {k:payload_identity_view(v) for k,v in value.items()}
+    if isinstance(value, list): return [payload_identity_view(v) for v in value]
     return value

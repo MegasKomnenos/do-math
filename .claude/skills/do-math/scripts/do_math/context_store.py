@@ -9,7 +9,8 @@ import os
 from pathlib import Path, PurePosixPath
 import stat
 
-from .repository import canonical_json
+from .repository import canonical_json, exact_content_hash
+from .file_io import stat_fingerprint
 from .git_store import PhysicalBoundary
 
 
@@ -22,10 +23,6 @@ class _ChangedDuringRead(OSError):
 
 class _PhysicalBoundaryError(ValueError):
     pass
-
-
-def _sha256(data: bytes) -> str:
-    return hashlib.sha256(data).hexdigest()
 
 
 def _relative(name: str) -> PurePosixPath:
@@ -52,8 +49,6 @@ def _safe_path(root: Path, name: str, *, require_input: bool = False) -> Path:
     root = _physical_root(root)
     candidate = root.joinpath(*relative.parts)
     cursor = root
-    if _is_reparse(cursor):
-        raise ValueError(f"root is a reparse point: {root}")
     for part in relative.parts:
         cursor /= part
         if cursor.exists() and _is_reparse(cursor):
@@ -73,20 +68,19 @@ def _physical_root(root: Path) -> Path:
 
 
 def _read_stable(path: Path, *, boundary: PhysicalBoundary | None = None) -> bytes:
-    # Keep the approved lexical root: resolving a raced junction would approve
-    # its destination. Read and inspect the same descriptor, not a second open.
+    # The boundary proves its root once (a caller reading many files passes
+    # one). Reading compares the same descriptor's metadata before and after,
+    # so a file written while it is read is not taken as one version.
     path = Path(os.path.abspath(path))
     try:
         boundary = boundary or PhysicalBoundary(path.parent)
         with boundary.open(path, "rb") as stream:
-            before = os.fstat(stream.fileno())
+            before = stat_fingerprint(os.fstat(stream.fileno()))
             data = stream.read()
-            after = os.fstat(stream.fileno())
-            boundary.verify_descriptor(stream.fileno(), path)
+            after = stat_fingerprint(os.fstat(stream.fileno()))
     except ValueError as error:
         raise _PhysicalBoundaryError(f"physical boundary rejected read: {error}") from error
-    signature = lambda value: (value.st_size, value.st_mtime_ns, getattr(value, "st_ino", None))
-    if signature(before) != signature(after) or len(data) != after.st_size:
+    if before != after or len(data) != after[0]:
         raise _ChangedDuringRead(f"file changed while being read: {path}")
     return data
 
@@ -111,11 +105,11 @@ def materialize_inputs(workspace: Path, documents: dict[str, bytes]) -> dict:
         planned.append((logical.as_posix(), target, data))
     manifest = []
     for logical, target, data in sorted(planned):
+        # The planned path was checked above; directories created here are ours.
         target.parent.mkdir(parents=True, exist_ok=True)
-        _safe_path(workspace, logical, require_input=True)
         with target.open("xb") as stream:
             stream.write(data)
-        manifest.append({"path": logical, "sha256": _sha256(data), "bytes": len(data)})
+        manifest.append({"path": logical, "sha256": hashlib.sha256(data).hexdigest(), "bytes": len(data)})
     return {"input_root": "input", "manifest": manifest}
 
 
@@ -156,7 +150,7 @@ def collect_outputs(workspace: Path, *, required_paths: list[str] = [],
                             "required": name in required})
             continue
         files[name] = data
-        manifest.append({"path": name, "sha256": _sha256(data), "bytes": len(data)})
+        manifest.append({"path": name, "sha256": hashlib.sha256(data).hexdigest(), "bytes": len(data)})
         total_bytes += len(data)
         seen.add(name)
     boundary = PhysicalBoundary(workspace)
@@ -214,7 +208,7 @@ def collect_outputs(workspace: Path, *, required_paths: list[str] = [],
                 omitted.append({"path": name, "reason": "max_bytes_exceeded", "bytes": len(data), "required": name in required})
                 continue
             files[name] = data
-            manifest.append({"path": name, "sha256": _sha256(data), "bytes": len(data)})
+            manifest.append({"path": name, "sha256": hashlib.sha256(data).hexdigest(), "bytes": len(data)})
             total_bytes += len(data)
     for name in sorted(required - set(files)):
         if not any(row["path"] == name for row in omitted):
@@ -239,24 +233,27 @@ def write_source_catalog(context: dict, workspace: Path) -> dict:
         raise ValueError("workspace must not be a reparse point")
     entries: dict[str, dict] = {}
     manifest: list[dict] = []
+    files: dict[str, bytes] = {}
+    boundary = None
     for key in sorted(context):
         logical = "input/catalog/" + _catalog_name(key)
         target = _safe_path(workspace, logical, require_input=True)
         data = canonical_json(context[key])
         if target.exists():
-            observed = _read_stable(target)
-            if observed != data:
+            boundary = boundary or PhysicalBoundary(workspace)  # one root proof per catalog
+            if _read_stable(target, boundary=boundary) != data:
                 raise FileExistsError(f"catalog path contains different bytes: {logical}")
         else:
             target.parent.mkdir(parents=True, exist_ok=True)
             with target.open("xb") as stream:
                 stream.write(data)
-            observed = _read_stable(target)
-        ref = {"path": logical, "sha256": _sha256(observed), "bytes": len(observed),
+        # The written bytes are these memory bytes; hash them once, never a reread.
+        ref = {"path": logical, "sha256": hashlib.sha256(data).hexdigest(), "bytes": len(data),
                "format": "canonical-json"}
         entries[key] = ref
         manifest.append({"key": key, **ref})
-    return {"entries": entries, "manifest": manifest, "total": len(manifest)}
+        files[logical] = data
+    return {"entries": entries, "manifest": manifest, "total": len(manifest), "files": files}
 
 
 def build_role_manifest(context: dict, *, workspace: Path, role: str,
@@ -298,12 +295,23 @@ def _encoded_size(value: dict) -> int:
     return len(canonical_json(value))
 
 
-def restore_continuation(runtime, action, workspace, *, snapshot, read_artifact, checkpoint=None):
+def restore_continuation(runtime, action, workspace, *, snapshot, read_artifact, checkpoint=None, git_dir=None):
     """Restore explicit ancestry, retaining the latest preserved copy per file.
 
     read_artifact(path) is bound to snapshot. This is provenance restoration,
-    not a certification that retained work is mathematically complete.
+    not a certification that retained work is mathematically complete. With
+    ``git_dir``, sealed rows already matched in this process are not hashed again.
     """
+    from .repository import artifact_verified, verify_artifact
+
+    def sealed(path, sha256, size, message):
+        raw = read_artifact(path)
+        if git_dir is None or not artifact_verified(git_dir, path, sha256, size):
+            try:
+                verify_artifact(git_dir, path, raw, sha256, size)
+            except ValueError as mismatch:
+                raise ValueError(message) from mismatch
+        return raw
     def parent(value):
         return (value.get('continuation_of') or value.get('repair', {}).get('execution_id')
                 or value.get('refresh', {}).get('execution_id') or value.get('recovery', {}).get('execution_id'))
@@ -341,27 +349,23 @@ def restore_continuation(runtime, action, workspace, *, snapshot, read_artifact,
         result_ref = execution.get('result_ref')
         if result_ref:
             raw = read_artifact(result_ref)
-            logical = 'resume-history/' + _sha256(execution['id'].encode()) + '/result.json'
+            logical = 'resume-history/' + hashlib.sha256(execution['id'].encode()).hexdigest() + '/result.json'
             documents[logical] = raw
             stage['result_source'] = {'artifact_ref': result_ref, 'snapshot': snapshot,
-                'local_path': 'input/' + logical, 'sha256': _sha256(raw), 'bytes': len(raw)}
+                'local_path': 'input/' + logical, 'sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)}
         history.append(stage)
     repair = action.get('repair', {})
     raw_ref = repair.get('raw_output_ref')
     if raw_ref:
-        raw = read_artifact(raw_ref)
-        if _sha256(raw) != repair.get('raw_output_sha256'):
-            raise ValueError('rejected response bytes differ from central capture')
+        raw = sealed(raw_ref, repair.get('raw_output_sha256'), None, 'rejected response bytes differ from central capture')
         documents['resume-history/rejected-response.txt'] = raw
         history[-1]['rejected_response'] = {'artifact_ref': raw_ref, 'snapshot': snapshot,
-            'local_path': 'input/resume-history/rejected-response.txt', 'sha256': _sha256(raw), 'bytes': len(raw)}
+            'local_path': 'input/resume-history/rejected-response.txt', 'sha256': repair['raw_output_sha256'], 'bytes': len(raw)}
     restored = []
     for logical, entry in sorted(latest.items()):
         if checkpoint:
             checkpoint()
-        raw = read_artifact(entry['artifact_ref'])
-        if _sha256(raw) != entry['sha256'] or len(raw) != entry['bytes']:
-            raise ValueError('resume artifact differs from its preserved reference')
+        raw = sealed(entry['artifact_ref'], entry['sha256'], entry['bytes'], 'resume artifact differs from its preserved reference')
         path = 'previous-output/' + logical
         documents[path] = raw
         restored.append({**entry, 'local_path': 'input/' + path})
@@ -424,7 +428,7 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
         raw = canonical_json(record)
         logical = 'details/' + name + '.json'
         materialize_inputs(workspace, {logical: raw})
-        ref = {'path': 'input/' + logical, 'snapshot': snapshot, 'sha256': _sha256(raw), 'bytes': len(raw)}
+        ref = {'path': 'input/' + logical, 'snapshot': snapshot, 'sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)}
         if artifact_prefix is not None:
             ref['artifact_ref'] = _relative(artifact_prefix).as_posix() + '/' + ref['path']
             detail_bytes[ref['artifact_ref']] = raw
@@ -482,7 +486,7 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
                 raise ValueError('review transcript source bytes could not be verified')
         private_scope = {'review_cycle_id': action['review_cycle_id'], 'slot': action.get('slot'),
                          'stage': action.get('stage'), 'source_refs': deepcopy(supplied.get('source_refs', [])),
-                         'view_sha256': _sha256(canonical_json(supplied))}
+                         'view_sha256': exact_content_hash(supplied)}
     if role in {'research_preparation', 'research_plan'}:
         tasks = runtime.get('tasks', {})
         reader_tasks = {task['id']: task for task in value.get('tasks', [])}
@@ -494,7 +498,7 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
              'assessment_current': task.get('assessment', {}).get('current'),
              'assessment_invalidated_reason': task.get('assessment', {}).get('invalidated_reason'),
              'result_execution_ids': [row['execution_id'] for row in task.get('results', []) if row.get('execution_id')],
-             'source_ref': preserve_detail('tasks/' + _sha256(identifier.encode()), task)}
+             'source_ref': preserve_detail('tasks/' + hashlib.sha256(identifier.encode()).hexdigest(), task)}
             for identifier, task in sorted(reader_tasks.items())]
         task_refs = {row['id']: row['source_ref'] for row in value['task_catalog']}
         value['ongoing_work'] = [
@@ -527,7 +531,7 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
                 {'id': cycle['id'], 'knowledge_id': cycle['knowledge_id'], 'status': cycle['status'],
                  'decision': cycle['decision'], 'proposal_digest': cycle['proposal_digest'],
                  'followup': deepcopy(cycle['followup']),
-                 'source_ref': preserve_detail('review-followups/' + _sha256(cycle['id'].encode()), cycle)}
+                 'source_ref': preserve_detail('review-followups/' + hashlib.sha256(cycle['id'].encode()).hexdigest(), cycle)}
                 for cycle in value.get('review_followups', [])]
             ready = value.get('ready_task_ids')
             if (not isinstance(ready, list) or any(not isinstance(tid, str) or tid not in tasks for tid in ready)
@@ -607,7 +611,7 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
         raw = canonical_json(relation_state)
         materialize_inputs(workspace, {'submission/relation-state.json': raw})
         ref = {'path': 'input/submission/relation-state.json', 'snapshot': snapshot,
-               'sha256': _sha256(raw), 'bytes': len(raw)}
+               'sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)}
         value['relation_validation_source'] = deepcopy(ref)
         validation_context['relation_validation_source'] = ref
     if install_submission_tools:
@@ -677,10 +681,10 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
     manifest = build_role_manifest(value, workspace=workspace, role=role, direct_keys=required,
         reference_keys=sorted(k for k in value if k not in required), catalog=catalog)
     manifest.update(feature_version=5, snapshot=snapshot, execution_profile_ref=profile_ref(profile),
-        output_contract={'id': schema.get('x-contract-id'), 'sha256': _sha256(canonical_json(schema))},
-        documents=[{'path': doc['path'], 'sha256': _sha256(doc['content'].encode('utf-8')),
+        output_contract={'id': schema.get('x-contract-id'), 'sha256': exact_content_hash(schema)},
+        documents=[{'path': doc['path'], 'sha256': hashlib.sha256(doc['content'].encode('utf-8')).hexdigest(),
                     'bytes': len(doc['content'].encode('utf-8'))} for doc in documents],
-        prompt={'sha256': _sha256(prompt.encode('utf-8')), 'bytes': actual}, required_direct_keys=required,
+        prompt={'sha256': hashlib.sha256(prompt.encode('utf-8')).hexdigest(), 'bytes': actual}, required_direct_keys=required,
         private_scope=private_scope)
     manifest['detail_sources'] = detail_sources
     if 'candidate_order' in value:
@@ -715,7 +719,7 @@ def _candidate_order(ids, snapshot, role, action_id, replay=None):
     seed = replay.get('seed') if isinstance(replay, dict) else os.urandom(32).hex()
     if not isinstance(seed, str) or len(seed) != 64 or any(c not in '0123456789abcdef' for c in seed):
         raise ValueError('candidate order requires a 256-bit seed')
-    ordered = sorted(ids, key=lambda identifier: (_sha256(bytes.fromhex(seed) + b'\0' + identifier.encode()), identifier))
+    ordered = sorted(ids, key=lambda identifier: (hashlib.sha256(bytes.fromhex(seed) + b'\0' + identifier.encode()).hexdigest(), identifier))
     result = {'algorithm': algorithm, 'seed': seed, 'basis': basis, 'ids': ordered}
     if replay is not None and replay != result:
         raise ValueError('candidate order replay differs from population or input basis')
@@ -778,8 +782,14 @@ def prefetch_artifacts(paths, read_artifact, read_artifacts=None):
     return read
 
 
-def verify_manifest_artifacts(manifest, read_artifact, *, read_artifacts=None):
-    """Verify published component bytes; return the exact unavailable bindings."""
+def verify_manifest_artifacts(manifest, read_artifact, *, read_artifacts=None, artifact_sizes=None, git_dir=None):
+    """Verify published component bytes; return the exact unavailable bindings.
+
+    With ``artifact_sizes`` only presence and stored length are compared; the
+    full-byte comparison belongs to the explicit ``check`` command. With
+    ``git_dir``, rows this process already matched (contract S3) are not read.
+    """
+    from .repository import artifact_verified, verify_artifact
     validate_role_manifest(manifest)
     missing = []
     rows = [('prompt', manifest['prompt'])]
@@ -787,6 +797,17 @@ def verify_manifest_artifacts(manifest, read_artifact, *, read_artifacts=None):
     rows += [(row['path'], row) for row in manifest['documents']]
     rows += [(row['key'], row['source_ref']) for row in manifest['references']]
     rows += [(row['path'], row) for row in manifest.get('detail_sources', [])]
+    if artifact_sizes is not None:
+        sizes = artifact_sizes([row['artifact_ref'] for _, row in rows if row.get('artifact_ref')])
+        for name, row in rows:
+            if not row.get('artifact_ref'):
+                missing.append(name)
+            elif sizes[row['artifact_ref']] != row['bytes']:
+                raise ValueError('input artifact size differs: ' + name)
+        return missing
+    if git_dir is not None:
+        rows = [(name, row) for name, row in rows if not (row.get('artifact_ref') and artifact_verified(
+            git_dir, row['artifact_ref'], row['sha256'], row['bytes']))]
     batch = (read_artifacts([row['artifact_ref'] for _, row in rows if row.get('artifact_ref')])
              if read_artifacts is not None else None)
     for name, row in rows:
@@ -795,7 +816,12 @@ def verify_manifest_artifacts(manifest, read_artifact, *, read_artifacts=None):
             missing.append(name)
             continue
         raw = batch[path] if batch is not None else read_artifact(path)
-        if len(raw) != row['bytes'] or _sha256(raw) != row['sha256']:
+        if git_dir is not None:
+            try:
+                verify_artifact(git_dir, path, raw, row['sha256'], row['bytes'])
+            except ValueError as mismatch:
+                raise ValueError('input artifact bytes differ: ' + name) from mismatch
+        elif len(raw) != row['bytes'] or hashlib.sha256(raw).hexdigest() != row['sha256']:
             raise ValueError('input artifact bytes differ: ' + name)
     return missing
 
@@ -878,8 +904,8 @@ def fit_context(context: dict, *, max_bytes: int, workspace: Path,
                             "role": role, "required_direct_keys": list(mandatory_keys),
                             "question": "Which authorized profile or scope change should resolve this input overflow?",
                             "next_owner": "research_plan" if role == "research_work" else "user"})
-    return {"context": fitted, "manifest": catalog["manifest"], "actual_bytes": actual,
-            "original_bytes": original_bytes, "reductions": reductions, "overflow": overflow}
+    return {"context": fitted, "manifest": catalog["manifest"], "catalog_files": catalog["files"],
+            "actual_bytes": actual, "original_bytes": original_bytes, "reductions": reductions, "overflow": overflow}
 
 
 def read_source(workspace: Path, ref: dict, offset: int = 0,
@@ -897,7 +923,7 @@ def read_source(workspace: Path, ref: dict, offset: int = 0,
                     "sha256": None, "range": {"start": offset, "end": offset, "total": 0},
                     "truncated": False, "reason": "source_missing"}
         data = _read_stable(path, boundary=PhysicalBoundary(_physical_root(workspace)))
-        digest = _sha256(data)
+        digest = hashlib.sha256(data).hexdigest()
         if "sha256" in ref and ref["sha256"] != digest:
             raise ValueError("source hash differs from reference")
         if "bytes" in ref and ref["bytes"] != len(data):

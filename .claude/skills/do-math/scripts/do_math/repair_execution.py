@@ -2,12 +2,11 @@
 from __future__ import annotations
 
 from copy import deepcopy
-import hashlib
 from pathlib import Path, PurePosixPath
 
 from . import activities, operational_dispositions
 from .git_store import GitStateStoreError
-from .repository import canonical_json
+from .repository import exact_content_hash
 
 
 def route_failed_action(engine, action, execution_id, *, reason, front=False):
@@ -100,12 +99,14 @@ def continue_initial_retries(engine):
         engine._save()
 
 
-def installation_fingerprint(root):
+def installation_sha256(root):
+    """Identity of the whole installed skill; unchanged files reuse their digests."""
+    from .file_io import cached_sha256
     root = Path(root)
-    files = {path.relative_to(root).as_posix(): _digest(path.read_bytes())
+    files = {path.relative_to(root).as_posix(): cached_sha256(path)
         for path in root.rglob('*') if path.is_file() and '__pycache__' not in path.parts
         and (path.suffix in {'.py', '.md', '.ps1'} or path.name == 'requirements.txt')}
-    return _digest(canonical_json(files))
+    return exact_content_hash(files)
 
 
 def pending_installation_repair(runtime):
@@ -135,13 +136,13 @@ def installation_failure(runtime, record):
     return {'kind': 'installation_defect', 'diagnosis_id': record['id'],
         'error': disposition['reason'], 'repair_target': disposition['repair_target'],
         'verification': disposition['verification'], 'target_execution_id': target['id'],
-        'failure_sha256': _digest(canonical_json({'role': target.get('role'),
+        'failure_sha256': exact_content_hash({'role': target.get('role'),
             'lineage': target.get('action', {}).get('lineage_id') or target.get('action', {}).get('id'),
             'target': target.get('action', {}).get('target'),
             'contract_sha256': target.get('contract_sha256'),
             'goal_revision': target.get('goal_revision'), 'policy_revision': target.get('policy_revision'),
             'decision_basis': target.get('decision_basis'),
-            'issues': target.get('integration_result', {}).get('issues') or target['error']})),
+            'issues': target.get('integration_result', {}).get('issues') or target['error']}),
         **{key: deepcopy(binding[key]) for key in ('installation_sha256', 'evidence_refs')}}
 
 
@@ -170,7 +171,7 @@ def request_installation_repair(engine, record):
     refs = validate_installation_target(disposition, target, root)
     record['status'] = 'installation_repair_pending'
     record.setdefault('result', {})['installation_repair'] = {
-        'installation_sha256': installation_fingerprint(root), 'evidence_refs': refs}
+        'installation_sha256': installation_sha256(root), 'evidence_refs': refs}
     engine.runtime['operational_dispositions'][record['id']] = record
     engine._save()
     return deepcopy(engine.runtime['operational_dispositions'][record['id']])
@@ -202,10 +203,6 @@ def resume_installation_repair(runtime, record, *, repaired_by, at):
     target.pop('pending_operational_disposition', None)
     runtime['status'] = 'ready'
     return action
-
-
-def _digest(raw):
-    return hashlib.sha256(raw).hexdigest()
 
 
 def complete_repair(engine, record):

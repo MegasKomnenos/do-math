@@ -5,6 +5,7 @@ from copy import deepcopy
 from datetime import datetime, timezone
 
 from .planning import contract_hash
+from .repository import exact_content_hash
 
 
 _WITHDRAWABLE_STATES = {"planned", "waiting", "active"}
@@ -47,7 +48,6 @@ def _validate(task: dict, snapshot_task: dict, runtime: dict, task_id: str, inst
 
 def validate_withdrawal_scope(task, snapshot_task, *, proposed_assessment=None):
     """Shared producer/receiver scope check, before live provenance checks."""
-    from .planning import _hash
     from .task_contracts import validate_item_dispositions
     if task.get('status') not in _WITHDRAWABLE_STATES:
         raise ValueError('withdrawal requires an unfinished task')
@@ -58,11 +58,11 @@ def validate_withdrawal_scope(task, snapshot_task, *, proposed_assessment=None):
     if not task.get('results'):
         return
     assessment = proposed_assessment if proposed_assessment is not None else task.get('assessment', {})
-    if (_hash(task['results']) != _hash(snapshot_task.get('results', []))
+    if (exact_content_hash(task['results']) != exact_content_hash(snapshot_task.get('results', []))
             or assessment.get('decision') != 'incomplete' or assessment.get('current') is False):
         raise ValueError('performed obligations need current item dispositions for all returned work')
     if proposed_assessment is None and (assessment.get('contract_sha256') != contract_hash(task)
-            or assessment.get('results_sha256') != _hash(task['results'])):
+            or assessment.get('results_sha256') != exact_content_hash(task['results'])):
         raise ValueError('item dispositions do not cover the current contract and results')
     validate_item_dispositions(task, assessment)
 
@@ -105,7 +105,6 @@ def apply_task_dispositions(instance: dict, runtime: dict, dispositions: list[di
                 removed_waiting.append({"id": action_id, "entry": deepcopy(entry)})
                 waiting_actions.pop(action_id)
         previous_hash = contract_hash(task)
-        from .planning import _hash
         from .task_contracts import remaining_obligations
         assessment = task.get('assessment')
         remaining = remaining_obligations(task, assessment)
@@ -117,8 +116,8 @@ def apply_task_dispositions(instance: dict, runtime: dict, dispositions: list[di
             "previous_revision": task.get("revision"), "previous_contract_sha256": previous_hash,
             "at": datetime.now(timezone.utc).isoformat(), "cancelled_queue_actions": removed_queue,
             "cancelled_waiting_actions": removed_waiting,
-            'results_sha256': _hash(task.get('results', [])),
-            'assessment_sha256': _hash(assessment) if assessment else None,
+            'results_sha256': exact_content_hash(task.get('results', [])),
+            'assessment_sha256': exact_content_hash(assessment) if assessment else None,
             'remaining_obligation_ids': remaining,
         }
         task.pop('waiting', None)
@@ -128,15 +127,14 @@ def apply_task_dispositions(instance: dict, runtime: dict, dispositions: list[di
 
 def validate_withdrawal_record(task):
     """A closure preserves the actual incomplete assessment; it never fulfils it."""
-    from .planning import _hash
     from .task_contracts import remaining_obligations
     record = task['scope_disposition']
     if task['status'] != 'closed' or record['previous_contract_sha256'] != contract_hash(task):
         raise ValueError('withdrawal contract or status differs')
-    if record.get('results_sha256') != _hash(task.get('results', [])):
+    if record.get('results_sha256') != exact_content_hash(task.get('results', [])):
         raise ValueError('withdrawal results changed')
     assessment = next((a for a in task.get('assessment_history', [])
-                       if _hash(a) == record.get('assessment_sha256')), None)
+                       if exact_content_hash(a) == record.get('assessment_sha256')), None)
     if task.get('results') and (not assessment or assessment.get('decision') != 'incomplete'):
         raise ValueError('withdrawal lacks its preserved incomplete assessment')
     if record.get('remaining_obligation_ids') != remaining_obligations(
@@ -207,7 +205,7 @@ def validate_disposition_authority(task, row, instance, runtime, *, evaluation_c
 
 
 def assessment_basis(task, assessment, instance, runtime):
-    from .planning import _records,_hash,task_reference_basis,condition_refs
+    from .planning import _records,task_reference_basis,condition_refs
     from .relation_refs import relation_references, relation_evidence_references
     records=_records(instance,runtime)
     refs={ref for row in assessment.get('item_dispositions',[]) for ref in row.get('evidence_refs',[])}
@@ -282,15 +280,14 @@ def assessment_basis(task, assessment, instance, runtime):
             # did not exist yet. Explicit FR citations still bind the full record.
             value = {key: value[key] for key in ('id', 'family', 'lean_code', 'declaration_names',
                      'dependencies', 'producer_execution', 'origin_refs') if key in value}
-        result[ref]=_hash(value) if value is not None else None
+        result[ref]=exact_content_hash(value) if value is not None else None
     return result
 
 
 def assessment_current(task,instance,runtime,*,evaluation_context=None):
-    from .planning import _hash
     assessment=task.get('assessment',{})
     if (not assessment or assessment.get('current') is False or assessment.get('contract_sha256')!=contract_hash(task)
-        or assessment.get('results_sha256')!=_hash(task.get('results',[]))
+        or assessment.get('results_sha256')!=exact_content_hash(task.get('results',[]))
         or assessment.get('basis')!=assessment_basis(task,assessment,instance,runtime)):
         return False
     from .task_contracts import validate_item_dispositions
@@ -381,7 +378,7 @@ def designated_judgment(task, obligation, disposition, instance, runtime):
 def apply_task_assessments(instance, runtime, assessments, *, execution_id, input_tasks, reference_tasks=None, evaluation_context=None):
     """Apply the whole assessment set on copies, including recipient obligations."""
     from .task_contracts import validate_item_dispositions, contract_obligations
-    from .planning import _hash, _records
+    from .planning import _records
     new_instance, new_runtime = deepcopy(instance), deepcopy(runtime)
     reference_tasks = input_tasks if reference_tasks is None else reference_tasks
     actor = new_runtime.get('executions', {}).get(execution_id)
@@ -398,7 +395,7 @@ def apply_task_assessments(instance, runtime, assessments, *, execution_id, inpu
             raise ValueError('unknown completion decision')
         task = tasks[assessment['task_id']]
         old = input_tasks.get(task['id'])
-        if not old or contract_hash(old) != contract_hash(task) or _hash(old.get('results', [])) != _hash(task.get('results', [])):
+        if not old or contract_hash(old) != contract_hash(task) or exact_content_hash(old.get('results', [])) != exact_content_hash(task.get('results', [])):
             raise ValueError('assessment contract or returned work changed')
         if task['status'] in {'completed', 'closed'} or not task.get('results'):
             raise ValueError('assessment requires unfinished returned work')
@@ -460,7 +457,7 @@ def apply_task_assessments(instance, runtime, assessments, *, execution_id, inpu
         if task.get('assessment'):
             task.setdefault('assessment_history', []).append(deepcopy(task['assessment']))
         task['assessment'] = {**deepcopy(assessment), 'execution_id':execution_id, 'contract_sha256':contract_hash(task),
-                              'results_sha256':_hash(task['results']), 'current':True,
+                              'results_sha256':exact_content_hash(task['results']), 'current':True,
                               'basis':assessment_basis(task,assessment,new_instance,new_runtime)}
         task['assessment']['specialist_support'] = {
             row['obligation_id']: designated_judgment(task,

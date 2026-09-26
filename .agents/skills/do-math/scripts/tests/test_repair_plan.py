@@ -7,6 +7,7 @@ import unittest
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from do_math.repository import exact_content_hash
 from test_categories import test_group
 from do_math.engine import ResearchEngine, DEFAULT_CONFIG
 from do_math import execution_profiles, reporting
@@ -62,7 +63,6 @@ class GoalAuditFlowRepairTests(unittest.TestCase):
         from types import SimpleNamespace
         from do_math.repository import canonical_json
         from do_math.contracts import schema_reference
-        from do_math.integration import digest as content_digest
         e = self.host()
         action, _ = self.seal(e)
         e.head = 'fixed'
@@ -77,11 +77,10 @@ class GoalAuditFlowRepairTests(unittest.TestCase):
         ex['submission_intent']['schema_ref'] = schema_ref
         check = {'passed': True, 'capture_eligible': True, 'issues': [],
                  'mode': 'receiver', 'execution_id': ex['id'], 'schema_ref': schema_ref,
-                 'input_hashes': {'output': content_digest(output), 'extensions': content_digest(extensions)}}
+                 'input_hashes': {'output': exact_content_hash(output), 'extensions': exact_content_hash(extensions)}}
         for name, value in (('output', output), ('extensions', extensions), ('check', check)):
             if name == 'check':
-                from do_math.integration import digest
-                value['id'] = 'MC-' + digest(value)[:24]
+                value['id'] = 'MC-' + exact_content_hash(value)[:24]
             raw = canonical_json(value)
             digest = hashlib.sha256(raw).hexdigest()
             artifacts[name] = raw
@@ -90,7 +89,7 @@ class GoalAuditFlowRepairTests(unittest.TestCase):
         ex['submission_receipt'] = {'state': 'accepted', 'execution_id': ex['id'],
                                     'payload': {'submission_check': {'artifacts': refs}}}
         e.runtime['integrations'] = {'IB-one': {'execution_id': ex['id'], 'members': ['output']}}
-        e.store = SimpleNamespace(read=lambda path, snapshot: artifacts[path])
+        e.store = SimpleNamespace(read=lambda path, snapshot: artifacts[path], git_dir="fixture-git")
         e._slots = SessionSlots(e.runtime, e.instance)
         with patch.object(e, '_save'), patch('do_math.windows_job.named_job_empty', return_value=True), \
                 patch('do_math.engine.collect_outputs', side_effect=AssertionError('must retain original files')):

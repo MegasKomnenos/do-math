@@ -8,6 +8,7 @@ import math
 import shutil
 import os
 from pathlib import Path
+from threading import Lock
 import time
 from typing import Callable
 
@@ -110,7 +111,6 @@ class CodexModelRunner:
         request_path = evidence_dir / "request.json"
         request_path.write_text(json.dumps(request, ensure_ascii=False, sort_keys=True), encoding="utf-8")
         from .windows_job import WindowsJobUnsupportedError
-        identity = self._adapter.capability_identity() if profile is not None and hasattr(self._adapter, "capability_identity") else None
         try:
             execution = self._adapter.start(request_path, cwd=evidence_dir, env=os.environ,
                 **({'job_name':launch_ticket['job_name']} if launch_ticket is not None else {}))
@@ -124,6 +124,8 @@ class CodexModelRunner:
                     "error_kind": "profile_unsupported", "error": str(error), "launch_not_created":True,
                     "capability_failure": {"capability": getattr(error, "capability", "atomic_local_job"), "status": "unsupported",
                                            "execution_profile_ref": reference, "error_type": type(error).__name__}}
+            # Only a failed start records the local identity it failed under.
+            identity = self._adapter.capability_identity() if profile is not None and hasattr(self._adapter, "capability_identity") else None
             if profile is not None and isinstance(identity, dict) and identity:
                 from .execution_profiles import structural_failure_evidence
                 failure_path = evidence_dir / "capability-failure.json"
@@ -136,6 +138,13 @@ class CodexModelRunner:
         offset = 0
         buffer = b""
         last_tick = 0.0
+        # The owner applies queued batches later and may probe after this call
+        # returns. A closed Job has terminated; never inspect its closed handle.
+        job_closed, job_guard = False, Lock()
+
+        def terminated() -> bool:
+            with job_guard:
+                return job_closed or self._adapter.wait_for_termination(execution, 0)
 
         def observe() -> None:
             nonlocal offset, buffer, last_tick
@@ -166,8 +175,7 @@ class CodexModelRunner:
             if chunk or current - last_tick >= 1:
                 last_tick = current
                 on_observation(ObservationBatch(events, offsets, datetime.now(timezone.utc).isoformat(),
-                    current, len(chunk), offset, stdout_path,
-                    lambda: self._adapter.wait_for_termination(execution, 0)))
+                    current, len(chunk), offset, stdout_path, terminated))
         from .windows_job import process_identity
         started = {**process_identity(execution.job),
                    "request_sha256": execution.request_sha256, "job_name": getattr(execution.job, "name", None)}
@@ -211,6 +219,8 @@ class CodexModelRunner:
                 raise RuntimeError("termination barrier not reached during exception cleanup")
             raise
         finally:
+            with job_guard:
+                job_closed = True
             execution.job.close()
         parsed = collected.get("jsonl", {})
         usage = parsed.get("usage", [])
@@ -299,7 +309,6 @@ def verified_native_final(result, execution, context):
     A completed runner status or an arbitrary final file is not sufficient.
     """
     import base64
-    import hashlib
     from .submission import load_json
     from .codex_adapter import CodexExecAdapter
     from .claude_adapter import ClaudePrintAdapter
@@ -315,20 +324,20 @@ def verified_native_final(result, execution, context):
                 or execution.get('capacity', {}).get('local_termination') != 'confirmed'):
             raise ValueError('native collection or local termination is incomplete')
         def raw_artifact(name):
+            # Collection hashed these bytes once; its recorded digests are compared, not recomputed.
             artifact = collected[name]; raw = artifact['raw']
             if isinstance(raw, dict):
-                decoded = base64.b64decode(raw['base64'], validate=True)
-                if raw['sha256'] != hashlib.sha256(decoded).hexdigest():
+                if raw['sha256'] != artifact['sha256']:
                     raise ValueError('serialized native artifact differs')
-                raw = decoded
+                raw = base64.b64decode(raw['base64'], validate=True)
             if (not isinstance(raw, bytes) or artifact.get('present') is not True
-                    or artifact['sha256'] != hashlib.sha256(raw).hexdigest() or artifact['bytes'] != len(raw)):
+                    or not isinstance(artifact['sha256'], str) or artifact['bytes'] != len(raw)):
                 raise ValueError('native artifact hash or size differs: ' + name)
             return raw
-        request_raw = raw_artifact('source_request'); prompt = raw_artifact('source_prompt')
+        request_raw = raw_artifact('source_request'); raw_artifact('source_prompt')
         stdout = raw_artifact('stdout'); final = raw_artifact('final')
         request = json.loads(request_raw, object_pairs_hook=_unique_pairs, parse_constant=_reject_constant); status = collected['worker_status']
-        request_hash = hashlib.sha256(request_raw).hexdigest(); prompt_hash = hashlib.sha256(prompt).hexdigest()
+        request_hash = collected['source_request']['sha256']; prompt_hash = collected['source_prompt']['sha256']
         if (started.get('request_sha256') != request_hash
                 or execution.get('process', {}).get('request_sha256') != request_hash
                 or prompt_hash != execution.get('input_sha256')

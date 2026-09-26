@@ -119,7 +119,8 @@ class CliTests(unittest.TestCase):
         self.assertEqual(done.returncode,0,done.stdout)
         self.assertEqual(response_body(done)['request_id'],queued['request_id'])
         self.assertEqual(response_body(done)['effect'],'applied')
-        path=self.root/'rejected.json';path.write_text(json.dumps({'operation':'unknown'}),encoding='utf-8')
+        # A well-formed request the engine refuses: the named environment does not exist.
+        path=self.root/'rejected.json';path.write_text(json.dumps({'operation':'invalidate','env_id':'TE-missing'}),encoding='utf-8')
         rejected=self.run_cli('trust',*self.instance_args(),'--file',str(path))
         self.assertEqual(rejected.returncode,0,rejected.stdout)
         original=response_body(rejected)

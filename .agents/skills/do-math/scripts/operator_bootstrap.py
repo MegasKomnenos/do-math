@@ -12,6 +12,8 @@ import uuid
 
 
 MANIFEST = "bootstrap-manifest.json"
+# Settled fingerprints of verified files; a cache beside the manifest, not identity.
+MARKS = "bootstrap-fingerprints.json"
 FORMAT = 1
 _REPARSE_POINT = 0x400
 
@@ -30,21 +32,47 @@ def _ordinary_path(path: Path):
             raise ValueError("bootstrap path crosses a reparse point: " + str(part))
 
 
-def _source_files(root: Path):
-    files = {}
+def _source_paths(root: Path):
+    paths = {}
     for path in sorted(root.rglob("*")):
         relative = path.relative_to(root)
         if any(part in {"__pycache__", ".git", ".lake"} for part in relative.parts):
             continue
-        if relative.parts[:2] == ("scripts", "tests") or path.suffix == ".pyc" or relative.as_posix() == MANIFEST:
+        if relative.parts[:2] == ("scripts", "tests") or path.suffix == ".pyc" or relative.as_posix() in {MANIFEST, MARKS}:
             continue
         _ordinary_path(path)
         if path.is_file():
-            files[relative.as_posix()] = hashlib.sha256(path.read_bytes()).hexdigest()
-    return files
+            paths[relative.as_posix()] = path
+    return paths
+
+
+def _source_files(root: Path):
+    return {name: hashlib.sha256(path.read_bytes()).hexdigest() for name, path in _source_paths(root).items()}
+
+
+def _file_io():
+    # The fingerprint primitives ship in this snapshot's own package.
+    sys.dont_write_bytecode = True
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from do_math import file_io
+    return file_io
+
+
+def _marks(root: Path):
+    try:
+        value = json.loads((root / MARKS).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    return value if isinstance(value, dict) else {}
 
 
 def verify_snapshot(manifest_path: Path):
+    """Verify the frozen copy; hash only files whose settled fingerprint changed.
+
+    The first verification hashes every file and records settled fingerprints
+    beside the manifest. Later starts compare fingerprints (accidental-change
+    threat model, design D1) and hash a file again only when it differs.
+    """
     _ordinary_path(manifest_path)
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     if not isinstance(manifest, dict) or set(manifest) != {"format", "installation_root", "files", "snapshot_sha256"}:
@@ -57,6 +85,8 @@ def verify_snapshot(manifest_path: Path):
     root = manifest_path.parent.resolve(strict=True)
     if root.name != manifest["snapshot_sha256"]:
         raise ValueError("bootstrap directory identity mismatch")
+    file_io = _file_io()
+    recorded, settled = _marks(root), {}
     for name, digest in manifest["files"].items():
         relative = PurePosixPath(name)
         if relative.is_absolute() or relative.as_posix() != name or ".." in relative.parts or "\\" in name:
@@ -65,10 +95,17 @@ def verify_snapshot(manifest_path: Path):
         _ordinary_path(target)
         if not target.resolve(strict=True).is_relative_to(root) or not target.is_file():
             raise ValueError("bootstrap file escaped its snapshot")
-        if hashlib.sha256(target.read_bytes()).hexdigest() != digest:
-            raise ValueError("bootstrap file hash mismatch: " + name)
-    if _source_files(root) != manifest["files"]:
+        mark = file_io.file_fingerprint(target)
+        stored = file_io.fingerprint_json(mark)
+        if recorded.get(name) != stored or not file_io.fingerprint_settled(mark):
+            if file_io.sha256_file(target) != digest:
+                raise ValueError("bootstrap file hash mismatch: " + name)
+        if file_io.fingerprint_settled(mark):
+            settled[name] = stored
+    if set(_source_paths(root)) != set(manifest["files"]):
         raise ValueError("bootstrap snapshot has unlisted or missing files")
+    if settled != recorded:
+        file_io.write_bytes_atomic(root / MARKS, json.dumps(settled, sort_keys=True).encode("utf-8"))
     return manifest
 
 

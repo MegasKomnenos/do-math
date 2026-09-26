@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import test_purpose_engine as purpose
 from do_math.repository import canonical_json
 from do_math import contracts, submission, knowledge_io
-from research_fixtures import local_job_runner, seal_response
+from research_fixtures import local_job_runner, seal_response, await_control, await_stop
 from test_submission_boundaries import CheckedRunner
 
 
@@ -189,9 +189,8 @@ class ProducerToolTests(purpose.PurposeHarness):
             def run(inner, **args):
                 args["on_started"]({"pid": 1})
                 execution = next(value for value in engine.runtime["executions"].values() if value["status"] == "running")
-                control(self.repo, engine.instance['id'], 'decision', config={'change': {
-                    'kind': 'revoke', 'grant_id': execution['grant_id']}})
-                args["should_stop"]()
+                await_control(engine, control(self.repo, engine.instance['id'], 'decision', config={'change': {
+                    'kind': 'revoke', 'grant_id': execution['grant_id']}}))
                 unbound = {key: value for key, value in execution['action'].items() if key != 'grant_id'}
                 self.assertTrue(governance.authorize(engine.instance, unbound)['allowed'])
                 return {"status": "completed", "output": {**purpose.common("Completed before revocation."),
@@ -225,7 +224,8 @@ class ProducerToolTests(purpose.PurposeHarness):
 
     def test_local_call_timeout_parks_only_the_timed_out_request(self):
         import time
-        engine, _ = self.make(scholarly_enabled=False, call_timeout_seconds=1)
+        # The one-second deadline belongs to the calls under test, not to activation's intent calls.
+        engine, _ = purpose.ActiveStateHarness.make(self, **self.fixture_config(scholarly_enabled=False, call_timeout_seconds=1))
         engine.runtime["queue"] = [{"id": "AC-timeout", "role": "maintenance"},
                                    {"id": "AC-independent", "role": "research_preparation"}]
         engine._save()
@@ -233,7 +233,7 @@ class ProducerToolTests(purpose.PurposeHarness):
             def run(inner, **args):
                 args["on_started"]({"pid": 1})
                 time.sleep(1.05)
-                self.assertTrue(args["should_stop"]())
+                self.assertTrue(await_stop(args["should_stop"], 10))
                 return {"status": "stopped", "output": None, "usage": {}, "error": "local call deadline"}
         engine.runner = CheckedRunner(Runner())
         engine.run(max_steps=1)
@@ -429,6 +429,21 @@ class ProducerToolTests(purpose.PurposeHarness):
                 self.assertTrue((workspace / part).resolve().is_relative_to(workspace.resolve()))
 
 
+    def test_producer_check_reuses_the_prepared_tool_digest(self):
+        from unittest.mock import patch
+        _, workspace, context = self.prepare()
+        output = {**purpose.common("No proposal."), "candidates": []}
+        seal_response(output, context, workspace)
+        draft = workspace / ".scratch/submission.json"
+        draft.parent.mkdir(exist_ok=True)
+        draft.write_bytes(canonical_json(output))
+        with patch.object(submission, "_read_stable", wraps=submission._read_stable) as read:
+            result = submission._producer_check(workspace, ".scratch/submission.json", [])
+        self.assertEqual(result["tool_sha256"], context["submission_contract"]["tool_sha256"])
+        # Preparation fixed the archive digest; a tool call never rereads the archive.
+        self.assertFalse(any(str(call.args[0]).endswith("submission-support.zip") for call in read.call_args_list))
+
+
 class OperatorProducerTests(unittest.TestCase):
     def test_failure_recovery_preserves_a_structured_nonresearch_report(self):
         from unittest.mock import patch
@@ -556,10 +571,9 @@ class ReviewFailureTests(purpose.PurposeHarness):
             from do_math.knowledge import plan_impact, revision_roots
             changes = {'explanation': 'A replacement explanation of the same domain.'}
             roots = revision_roots(engine.instance, context['action']['target'])
-            control(self.repo, engine.instance["id"], "knowledge", config={"operation": "revise", "id": context["action"]["target"],
+            await_control(engine, control(self.repo, engine.instance["id"], "knowledge", config={"operation": "revise", "id": context["action"]["target"],
                 'changes': changes, 'declared_impact': plan_impact(engine.instance, engine.runtime, roots, [])['computed_impact'],
-                "reason": "Revise the sealed proposal."})
-            args["should_stop"]()
+                "reason": "Revise the sealed proposal."}))
             return result
         runner.run = run
         engine.run(max_steps=1)
@@ -633,10 +647,9 @@ class ReviewFailureTests(purpose.PurposeHarness):
                 from do_math.knowledge import plan_impact, revision_roots
                 changes = {'statement': 'The corrected answer is two.'}
                 roots = revision_roots(engine.instance, kid)
-                control(self.repo, engine.instance['id'], 'knowledge', config={'operation': 'revise', 'id': kid,
+                await_control(engine, control(self.repo, engine.instance['id'], 'knowledge', config={'operation': 'revise', 'id': kid,
                     'changes': changes, 'declared_impact': plan_impact(engine.instance, engine.runtime, roots, [])['computed_impact'],
-                    'reason': 'Correct a computation.'})
-                args['should_stop']()
+                    'reason': 'Correct a computation.'}))
             return result
         runner.run, runner.answer = run, answer
         self.drive(engine, predicate=lambda e: any(k["title"] == "Private followup" for k in e.instance["knowledge"].values()))

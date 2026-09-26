@@ -1,19 +1,19 @@
 """Auditable, grant-bounded external HTTP operations."""
 from __future__ import annotations
-import base64, hashlib, json, os
+import base64, hashlib, os
 from datetime import datetime, timezone
 from typing import Any, Callable
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit, unquote
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
+from .file_io import json_digest
 
-def _canon(value: Any) -> bytes: return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()
-def _hash(value: Any) -> str: return hashlib.sha256(_canon(value)).hexdigest()
+
 def idempotency_key(operation_id: str, request_sha256: str) -> str: return hashlib.sha256((operation_id + request_sha256).encode()).hexdigest()
 def request_binding_current(operation: dict) -> bool:
     """The stored request bytes and idempotency key still bind this operation ID."""
-    digest = _hash(operation.get("request"))
+    digest = json_digest(operation.get("request"))
     return operation.get("request_sha256") == digest and operation.get("idempotency_key") == idempotency_key(operation.get("id", ""), digest)
 def _now(value: str) -> datetime:
     if not isinstance(value, str) or not value:
@@ -44,7 +44,7 @@ def prepare_operation(request: dict, grant_id: str, source_ref: str, operation_i
     parsed=_url(request)
     if not isinstance(grant_id,str) or not isinstance(source_ref,str) or not grant_id or not source_ref: raise ValueError("grant and source refs required")
     normalized={"method":request["method"],"url":parsed.geturl(),"body":_body(request)}
-    digest=_hash(normalized); oid=operation_id or hashlib.sha256((grant_id+source_ref+digest).encode()).hexdigest()[:24]
+    digest=json_digest(normalized); oid=operation_id or hashlib.sha256((grant_id+source_ref+digest).encode()).hexdigest()[:24]
     scope = {key: value for key, value in {"target_id": target_id, "purpose": purpose, "subject": subject,
              "budget_kind": budget_kind, "actor_kind": actor_kind}.items() if value is not None}
     if any(not isinstance(value, str) or not value.strip() for value in scope.values()):
@@ -74,7 +74,7 @@ def validate_operation(operation: dict, grant: dict, now_iso: str, *, runtime=No
         if reason: raise ValueError(reason)
     if grant.get("academic_only") or grant.get("requires_academic") or operation.get("academic_binding") or operation.get("academic_basis"):
         if academic_check is None or not academic_check(operation, grant): raise ValueError("current academic prerequisite is not established")
-    if _hash(operation["request"])!=operation.get("request_sha256"): raise ValueError("request bytes changed")
+    if json_digest(operation["request"])!=operation.get("request_sha256"): raise ValueError("request bytes changed")
     if operation.get("idempotency_key")!=idempotency_key(operation["id"],operation["request_sha256"]): raise ValueError("idempotency key changed")
     if operation.get("status") != "prepared": raise ValueError("operation is not startable")
 

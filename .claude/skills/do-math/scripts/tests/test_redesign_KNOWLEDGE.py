@@ -5,6 +5,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from do_math.repository import exact_content_hash
 from test_categories import test_group as category
 from do_math import knowledge, knowledge_io
 from do_math import knowledge_records as kr
@@ -39,12 +40,14 @@ class KnowledgeRedesign(unittest.TestCase):
         self.assertIn("mid", result["dependency_closure"]["leaf"])
         self.assertIn("leaf", result["declaration_evidence"])
 
-    def verified(self, environment=None, *, identity=True):
+    def verified(self, environment=None, *, binding=None, identity=True):
         state, runtime, kid = knowledge_io.import_candidate({}, {}, candidate(), source_ref="source", actor_ref="producer")
         state.update(active_trust_environment="TE-test", trust_environments={"TE-test": {
             "id": "TE-test", "status": "active", "toolchain": {"version": "test-fixture"}, "allowed_axioms": []}})
         if environment is not None:
             state['trust_environments']['TE-test'] = copy.deepcopy(environment)
+        if binding is not None:
+            runtime['trust_bindings'] = {'TE-test': copy.deepcopy(binding)}
         verification = {"status": "verified", "source_sha256": hashlib.sha256(candidate()["lean_code"].encode()).hexdigest(),
             "declarations": ["truth"], "toolchain": {"version": "test-fixture"}, "axioms": {"truth": []},
             "dependency_closure": {"truth": ["True", "True.intro"]},
@@ -227,7 +230,7 @@ class KnowledgeRedesign(unittest.TestCase):
         result = copy.deepcopy(state["formal_results"][state["knowledge"][kid]["formal_result_id"]]["verification"])
         result.update(id=kid, toolchain={"version": "next"})
         result.pop("dependency_closure")
-        result["identity_review"] = {"decision": "match", "result_digest": kr.digest(result), "review_ref": "review", "policy_ref": "policy:1"}
+        result["identity_review"] = {"decision": "match", "result_digest": exact_content_hash(result), "review_ref": "review", "policy_ref": "policy:1"}
         transition = knowledge.record_transition_result(state, transition, result)
         with self.assertRaises(ValueError):
             knowledge.activate_transition(state, transition)
@@ -248,20 +251,19 @@ class KnowledgeRedesign(unittest.TestCase):
         contract = default_state_contract()
         with tempfile.TemporaryDirectory() as directory:
             # Real Git and domain validators; compiler/reviewer/approval evidence is synthetic.
-            from research_fixtures import trust_fixture
-            from do_math.initialization import digest, trust_environment_errors
+            from research_fixtures import trust_environment, trust_fixture
+            from do_math.trust_validation import check_environment, environment_errors
             from do_math.execution_profiles import build_profiles, profile_ref
             from do_math.engine import DEFAULT_CONFIG
             from do_math import activities, execution_lifecycle
             from do_math.review_cycle import accept_result, next_actions
             from do_math.review_engine import ReviewEngineMixin
             from test_review_cycle import scoped_start
-            environment = trust_fixture(Path(directory), ['synthetic-lean'])
-            environment.pop('operation')
-            environment.update(id='TE-test', status='active', source_ref='synthetic:approval',
-                               manifest_sha256=digest(environment['manifest']))
-            self.assertEqual(trust_environment_errors(environment), [])
-            state, runtime, kid, _ = self.verified(environment, identity=False)
+            environment, binding = trust_environment(trust_fixture(Path(directory), ['synthetic-lean']),
+                                                     environment_id='TE-test', source_ref='synthetic:approval')
+            self.assertEqual(environment_errors(environment, binding), [])
+            self.assertEqual(check_environment(environment, binding)['status'], 'verified')
+            state, runtime, kid, _ = self.verified(environment, binding=binding, identity=False)
             state['feature_version'] = runtime['feature_version'] = 5
             profiles = build_profiles(DEFAULT_CONFIG)
             profile = next(p for p in profiles['execution_profiles'].values() if p['role'] == 'identity_review')
@@ -410,18 +412,15 @@ class KnowledgeAudit2(unittest.TestCase):
         from do_math.repository import ResearchRepository, new_id
         from do_math.engine import DEFAULT_CONFIG
         from do_math.execution_profiles import build_profiles
-        from do_math.initialization import digest
-        from research_fixtures import trust_fixture
+        from research_fixtures import trust_environment, trust_fixture
         self.directory = tempfile.TemporaryDirectory()
         self.addCleanup(self.directory.cleanup)
         self.root = Path(self.directory.name)
         subprocess.run(['git', 'init', '-q', str(self.root)], check=True)
         self.repo = ResearchRepository(self.root, new_id('RI'))
-        environment = trust_fixture(self.root, ['synthetic-lean'])
-        environment.pop('operation')
-        environment.update(id='TE-test', status='active', source_ref='synthetic:approval',
-                           manifest_sha256=digest(environment['manifest']))
-        self.state, self.runtime, self.kid, _ = KnowledgeRedesign().verified(environment, identity=False)
+        environment, binding = trust_environment(trust_fixture(self.root, ['synthetic-lean']),
+                                                 environment_id='TE-test', source_ref='synthetic:approval')
+        self.state, self.runtime, self.kid, _ = KnowledgeRedesign().verified(environment, binding=binding, identity=False)
         self.state['feature_version'] = self.runtime['feature_version'] = 5
         profiles = build_profiles({**DEFAULT_CONFIG, 'lean_command': ['synthetic-lean']})
         self.profile = next(p for p in profiles['execution_profiles'].values() if p['role'] == 'identity_review')
@@ -500,6 +499,8 @@ class KnowledgeAudit2(unittest.TestCase):
             self.state["trust_environments"][environment_id] = {
                 **copy.deepcopy(self.state["trust_environments"][current_environment]),
                 "id": environment_id, "status": "registered"}
+            # Registering the same shared toolchain record again binds the same baseline.
+            self.runtime["trust_bindings"][environment_id] = copy.deepcopy(self.runtime["trust_bindings"][current_environment])
             transition = knowledge.begin_transition(self.state, environment_id)
             self.assertEqual({target["id"] for target in transition["targets"]}, {first, second})
             for target in transition["targets"]:
@@ -709,7 +710,7 @@ class KnowledgeAudit2(unittest.TestCase):
         execution['input_snapshot'] = self.head
         # Candidate application now owns knowledge revisions; extension-only
         # bundles do not own the separate research response/task disposition.
-        bundle = {'integration_id': new_id('IN'), 'payload_sha256': kr.exact_digest(execution['extensions']),
+        bundle = {'integration_id': new_id('IN'), 'payload_sha256': exact_content_hash(execution['extensions']),
             'members': ['activity-extensions.json/knowledge_changes/0'], 'extensions': execution['extensions'],
             'output': {}, 'owns_response': False, 'impact_set': impact,
             'previous_hashes': {self.kid: knowledge.content_hash(self.state['knowledge'][self.kid])}}
@@ -807,7 +808,7 @@ class KnowledgeRawSource(unittest.TestCase):
         result = copy.deepcopy(self.state['formal_results'][self.state['knowledge'][self.kid]['formal_result_id']]['verification'])
         result['id'] = self.kid
         result['declaration_evidence']['truth']['type'] = 'Exact expression \u212a'
-        result['identity_review'] = {'decision': 'match', 'result_digest': kr.exact_digest(result),
+        result['identity_review'] = {'decision': 'match', 'result_digest': exact_content_hash(result),
             'review_ref': 'synthetic:eligible-review', 'policy_ref': 'synthetic:frozen-policy'}
         before = copy.deepcopy(self.state)
         synthetic = knowledge.record_transition_result(self.state, transition, result)
@@ -869,7 +870,8 @@ class KnowledgeRawSource(unittest.TestCase):
         profiles, constraints = self.state['execution_profiles'], self.state['capacity_constraints']
         self.state = engine.instance
         self.state.update(feature_version=5, execution_profiles=profiles, capacity_constraints=constraints)
-        self.runtime = {'feature_version': 5, 'queue': [], 'history': []}
+        self.runtime = {'feature_version': 5, 'queue': [], 'history': [],
+                        'trust_bindings': copy.deepcopy(engine.runtime['trust_bindings'])}
         fid = self.state['knowledge'][self.kid]['formal_result_id']
         self.state['formal_results'][fid].update(lean_code=source, declaration_names=names)
         persist()  # The Git case checks candidate transport before compilation.
@@ -896,6 +898,7 @@ class KnowledgeRawSource(unittest.TestCase):
         self.assertEqual(kr.proposal_view(self.state, self.kid)['summary'], changes['summary'])
         self.state['trust_environments']['TE-next'] = {**copy.deepcopy(self.state['trust_environments']['TE-old']),
             'id': 'TE-next', 'status': 'registered', 'source_ref': 'synthetic:next-adoption'}
+        self.runtime['trust_bindings']['TE-next'] = copy.deepcopy(self.runtime['trust_bindings']['TE-old'])
         transition = knowledge.begin_transition(self.state, 'TE-next')
         transition = knowledge.record_transition_result(self.state, transition, {'id': self.kid, **observed})
         self.runtime['trust_transitions'] = {transition['id']: transition}

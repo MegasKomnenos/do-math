@@ -8,10 +8,9 @@ from __future__ import annotations
 from copy import deepcopy
 import hashlib
 import json
-from pathlib import Path
-import shutil
 
 from .model_policy import ROLE_TIERS, TIERS
+from .repository import exact_content_hash
 from .provider_wait import provider_for
 from .state_contract import STATE_FORMAT_VERSION
 
@@ -29,11 +28,6 @@ BOUNDARY = {"mode": "instructions", "os_isolation": False, "authenticated_caller
                       "Do not issue user controls or expand research goals, budgets or external authority."]}
 
 
-def _digest(value):
-    from .repository import canonical_json
-    return hashlib.sha256(canonical_json(value)).hexdigest()
-
-
 def _research_observation_rule_contract() -> list[dict]:
     from .observations import observation_rule_contract
     return observation_rule_contract()
@@ -46,7 +40,7 @@ def seal_profile(body: dict) -> dict:
     value.pop("sha256", None)
     value.setdefault("revision", 1)
     value.setdefault("feature_version", STATE_FORMAT_VERSION)
-    digest = _digest(value)
+    digest = exact_content_hash(value)
     value.update(id="EP-" + digest, sha256=digest)
     validate_profile(value)
     return value
@@ -59,7 +53,7 @@ def profile_ref(profile: dict) -> dict:
 
 def validate_profile(profile: dict) -> None:
     body = {key: value for key, value in profile.items() if key not in {"id", "sha256"}}
-    digest = _digest(body)
+    digest = exact_content_hash(body)
     if profile.get("sha256") != digest or profile.get("id") != "EP-" + digest:
         raise ValueError("execution profile content differs from its immutable identity")
     if profile.get("feature_version") != STATE_FORMAT_VERSION or type(profile.get("revision")) is not int or profile["revision"] < 1:
@@ -70,13 +64,12 @@ def validate_profile(profile: dict) -> None:
     if actor == "machine":
         if role not in MACHINE_ROLES or "ai" in profile:
             raise ValueError("machine profile cannot contain AI fields")
-        if role == 'trust_activate':
-            scan = profile.get('machine', {})
-            if (set(scan) != {'mechanism','workers','max_inflight','checker_sha256'}
-                    or scan.get('mechanism') != 'full_environment_scan'
-                    or type(scan.get('workers')) is not int or not 1 <= scan['workers'] <= 16
-                    or scan.get('max_inflight') != scan['workers'] * 2):
-                raise ValueError('trust activation requires its bounded environment scan profile')
+        # Lean roles pin only the command; the approved trust environment fixes its identity.
+        # Activation reads the toolchain record and needs no machine settings.
+        machine = profile.get("machine")
+        if (role in {"formal_check", "trust_check"} and (not isinstance(machine, dict) or set(machine) != {"lean_command"})
+                or role not in {"formal_check", "trust_check"} and machine is not None):
+            raise ValueError("machine profile settings differ from the role contract")
     elif not isinstance(profile.get("ai"), dict) or not profile["ai"].get("model"):
         raise ValueError("AI profile requires a model")
     expected_mode = ("deadline_only" if actor == "machine" or profile["budget_kind"] == "operations"
@@ -131,7 +124,7 @@ def host_constraint(*, host_id: str, limits: dict, control_reserve: dict, author
             "max_jobs": limits["jobs"], "memory_bytes": limits["memory_bytes"],
             "cpu_rate_basis_points": limits["cpu_rate_basis_points"],
             "control_reserve": deepcopy(control_reserve), "authority_refs": deepcopy(authority_refs)}
-    return {"id": "CP-" + _digest(body), **body}
+    return {"id": "CP-" + exact_content_hash(body), **body}
 
 
 def validate_host_constraint(constraint: dict) -> None:
@@ -197,7 +190,7 @@ def build_profiles(config: dict, *, roles: set[str] | None = None) -> dict:
         work, operations = limits["work"].get(model, 0), limits["operations"].get(model, 0)
         if any(type(n) is not int or n < 0 for n in (work, operations)):
             raise ValueError("session capacity must be a nonnegative integer")
-        identifier = "CP-" + _digest({"model": model, "work": work, "operations": operations})
+        identifier = "CP-" + exact_content_hash({"model": model, "work": work, "operations": operations})
         constraints[identifier] = {"id": identifier, "kind": "concurrency", "model": model,
             "accounting_unit": "execution", "work_slots": work, "operations_slots": operations,
             "total_slots": work + operations, "scope": "local_execution_not_provider_operations"}
@@ -222,10 +215,6 @@ def build_profiles(config: dict, *, roles: set[str] | None = None) -> dict:
                     "capability_evidence_refs": []}
             if machine and role in {"formal_check", "trust_check"}:
                 body["machine"] = deepcopy(lean)
-            elif role == 'trust_activate':
-                from . import trust_validation
-                body['machine'] = {'mechanism':'full_environment_scan', 'workers':4, 'max_inflight':8,
-                    'checker_sha256':hashlib.sha256(Path(trust_validation.__file__).read_bytes()).hexdigest()}
             if not machine:
                 model = config["tier_models"][tier]
                 capacity = next((c["id"] for c in constraints.values() if c.get("model") == model), None)
@@ -300,21 +289,7 @@ def runtime_config(profile: dict) -> dict:
 
 def _lean_contract(config: dict) -> dict:
     from .formal import discover_lean
-    command = deepcopy(config.get("lean_command") or discover_lean())
-    return {"lean_command": command,
-            "tool_manifest": _command_manifest(command),
-            "tool_manifest_scope": "local_command_files_and_checker_not_dependency_closure"}
-
-
-def _command_manifest(command) -> list:
-    if not command:
-        return []
-    # Preserve adopted argv, but bind its current executable resolution too.
-    parts = [shutil.which(command[0]) or command[0], *command[1:]]
-    paths = [Path(part).resolve() for part in parts if Path(part).is_file()]
-    paths.append(Path(__file__).with_name("formal.py").resolve())
-    return [{"path": str(path), "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
-            for path in dict.fromkeys(paths)]
+    return {"lean_command": deepcopy(config.get("lean_command") or discover_lean())}
 
 
 def machine_invocation(profile: dict, *, trust_environment: dict, on_started=None) -> dict:
@@ -324,8 +299,7 @@ def machine_invocation(profile: dict, *, trust_environment: dict, on_started=Non
     command = machine.get("lean_command")
     if profile["actor_kind"] != "machine" or not command:
         raise ValueError("profile has no pinned Lean command")
-    if _command_manifest(command) != machine["tool_manifest"]:
-        raise ValueError("profile tool resolution or edition changed")
+    # The verifier checks the approved identity's files once, before compiling.
     toolchain = trust_environment["toolchain"]
     if command != toolchain.get("configured_command"):
         raise ValueError("profile command differs from the approved trust environment")
@@ -370,7 +344,7 @@ def structural_failure_evidence(profile: dict, identity: dict, *, observed_at: s
     record = capability_evidence(profile, {"identity": identity, "verified": True,
         "scope": "actual_local_start_failure", "supported": {capability: False}}, observed_at=observed_at)
     record["capabilities"][capability].update(execution_id=execution_id, evidence_ref=evidence_ref)
-    record["id"] = "CE-" + _digest({k: v for k, v in record.items() if k != "id"})
+    record["id"] = "CE-" + exact_content_hash({k: v for k, v in record.items() if k != "id"})
     return record
 
 
@@ -403,5 +377,5 @@ def capability_evidence(profile: dict, description: dict, *, observed_at: str) -
               "version_sha256": description.get("version_sha256"),
               "help_sha256": description.get("exec_help_sha256"),
               "boundary": "instructions_not_os_isolation"}
-    record["id"] = "CE-" + _digest(record)
+    record["id"] = "CE-" + exact_content_hash(record)
     return record

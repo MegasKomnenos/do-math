@@ -8,7 +8,6 @@ worker to an execution; it is not strong same-user authentication.
 from __future__ import annotations
 
 from copy import deepcopy
-from collections import OrderedDict
 import argparse
 import hashlib
 import json
@@ -20,9 +19,9 @@ import tempfile
 import time
 from typing import Any, Callable
 if __package__:
-    from .file_io import atomic_replace, read_bytes_shared
+    from .file_io import atomic_replace, read_bytes_shared, file_fingerprint, fingerprint_settled, json_digest
 else:
-    from file_io import atomic_replace, read_bytes_shared
+    from file_io import atomic_replace, read_bytes_shared, file_fingerprint, fingerprint_settled, json_digest
 
 
 _REQUEST_KINDS = frozenset({"safety_boundary", "submit_intent", "self_check_response", "submission_preview"})
@@ -37,10 +36,6 @@ _WINDOWS_DEVICE_NAMES = frozenset(
 def _canonical(value: Any) -> bytes:
     return json.dumps(value, ensure_ascii=False, allow_nan=False, sort_keys=True,
                       separators=(",", ":")).encode("utf-8")
-
-
-def _digest(value: Any) -> str:
-    return hashlib.sha256(_canonical(value)).hexdigest()
 
 
 def _require_text(value: Any, name: str) -> str:
@@ -118,7 +113,7 @@ class ControlTransport:
         self._publish = publish
         self._capabilities: dict[str, dict] = {}
         self._receipts: dict[str, dict] = {}
-        self._pump_cache: OrderedDict[Path, tuple[bytes, str]] = OrderedDict()
+        self._pump_cache: dict[Path, tuple[tuple, dict]] = {}
 
     def issue(self, execution_id: str, grant_id: str, *, workspace: Path | str | None = None) -> dict:
         _require_text(execution_id, "execution_id")
@@ -163,7 +158,7 @@ class ControlTransport:
         if not isinstance(request, dict):
             raise ValueError("control request must be an object")
         request_id = _require_file_name(request.get("request_id"), "request_id")
-        request_sha256 = _digest(request)
+        request_sha256 = json_digest(request)
         previous = self._receipt(request_id)
         if previous is not None:
             if previous.get("request_sha256") != request_sha256:
@@ -205,30 +200,28 @@ class ControlTransport:
         results = []
         for path in sorted(self.root.glob("*/inbox/*.json"))[:limit]:
             try:
+                mark = file_fingerprint(path)
+            except FileNotFoundError:
+                continue
+            # A delivery with a final receipt is not read again while its settled
+            # fingerprint is unchanged; a rewritten delivery is read and received.
+            cached = self._pump_cache.get(path)
+            if cached is not None and cached[0] == mark:
+                results.append(deepcopy(cached[1]))
+                continue
+            self._pump_cache.pop(path, None)
+            try:
                 try:
                     raw = path.read_bytes()
                 except FileNotFoundError:
                     continue
-                cached = self._pump_cache.get(path)
-                if cached is not None and cached[0] == raw:
-                    receipt = self._receipt(cached[1])
-                    if receipt is not None and receipt.get('state') in _FINAL_RECEIPTS:
-                        self._pump_cache.move_to_end(path)
-                        results.append(receipt)
-                        continue
-                self._pump_cache.pop(path, None)
-                request = _decode_json(path, raw)
-                receipt = self.receive(request, publish=publish)
-                results.append(receipt)
-                # Retain only small finalized deliveries. Read bytes every time:
-                # replacing a file while keeping its size/mtime must be detected.
-                if receipt.get('state') in _FINAL_RECEIPTS and len(raw) <= 65536:
-                    self._pump_cache[path] = (raw, request['request_id'])
-                    if len(self._pump_cache) > 128:
-                        self._pump_cache.popitem(last=False)
+                receipt = self.receive(_decode_json(path, raw), publish=publish)
             except ValueError as error:
                 receipt = self._reject_delivery_file(path, error)
-                results.append(receipt)
+            results.append(receipt)
+            if (receipt.get('state') in _FINAL_RECEIPTS and fingerprint_settled(mark)
+                    and file_fingerprint(path) == mark):
+                self._pump_cache[path] = (mark, deepcopy(receipt))
         return results
 
     def close(self, binding: dict, *, reason: str, withdrawn: bool = False) -> dict:
@@ -289,7 +282,7 @@ class ControlTransport:
         path = endpoint / "inbox" / (request_id + ".json")
         receipt = _json(endpoint / "outbox" / (request_id + ".json"))
         if receipt is not None:
-            if receipt.get("request_sha256") != _digest(request):
+            if receipt.get("request_sha256") != json_digest(request):
                 raise ValueError("request_id was already received with different content")
             return {"request_id": request_id, "state": "already_received"}
         existing = _json(path)
@@ -356,7 +349,7 @@ class ControlTransport:
         return result
 
     def _store(self, request: dict, decision: dict) -> dict:
-        receipt = {"request_id": request["request_id"], "request_sha256": _digest(request), "kind": request["kind"],
+        receipt = {"request_id": request["request_id"], "request_sha256": json_digest(request), "kind": request["kind"],
                    "execution_id": request["execution_id"], "state": decision["state"]}
         fields = (("reason", "result") if request["kind"] == "submission_preview" else
                   ("reason", "result", "snapshot", "publication_id"))
@@ -371,7 +364,7 @@ class ControlTransport:
 
     def _reject_unvalidated(self, request: dict, reason: str) -> dict:
         """Return a queryable rejection when the transport endpoint is known."""
-        receipt = {"request_id": request["request_id"], "request_sha256": _digest(request),
+        receipt = {"request_id": request["request_id"], "request_sha256": json_digest(request),
                    "kind": request.get("kind"), "execution_id": request.get("execution_id"),
                    "state": "rejected", "reason": reason}
         self._receipts[request["request_id"]] = deepcopy(receipt)

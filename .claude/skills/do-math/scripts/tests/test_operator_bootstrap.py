@@ -61,6 +61,24 @@ class OperatorBootstrapTests(unittest.TestCase):
             self.assertIn("bootstrap file hash mismatch", rejected.stderr)
             self.assertNotIn("RuntimeError: unverified code executed", rejected.stderr)
 
+    def test_verified_frozen_files_are_rehashed_only_after_their_fingerprint_changes(self):
+        from unittest.mock import patch
+        scripts = Path(__file__).resolve().parents[1]
+        sys.path.insert(0, str(scripts))
+        import operator_bootstrap as bootstrap
+        from do_math import file_io
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = Path(bootstrap.freeze(scripts.parent, Path(directory))["manifest"])
+            # Fresh copies cannot age their birth time; treat any past fingerprint as settled.
+            with patch.object(file_io, "RACY_NS", 0):
+                bootstrap.verify_snapshot(manifest)
+                self.assertTrue((manifest.parent / bootstrap.MARKS).is_file())
+                with patch.object(file_io, "sha256_file", side_effect=AssertionError("unchanged frozen file was rehashed")):
+                    bootstrap.verify_snapshot(manifest)
+                (manifest.parent / "scripts/do_math/repository.py").write_text("changed\n", encoding="utf-8")
+                with self.assertRaisesRegex(ValueError, "bootstrap file hash mismatch"):
+                    bootstrap.verify_snapshot(manifest)
+
 
 if __name__ == "__main__":
     unittest.main()

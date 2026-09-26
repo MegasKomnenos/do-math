@@ -41,17 +41,10 @@ class CodexExecution:
     job: WindowsJob
     snapshot_dir: Path
     schema_sha256: str | None
+    request_raw: bytes
+    prompt_raw: bytes
     stop_requested: bool = False
     stop_receipts: list[dict[str, Any]] = field(default_factory=list)
-
-
-def _sha256(value: bytes) -> str:
-    return hashlib.sha256(value).hexdigest()
-
-
-def _file_sha256(path):
-    with Path(path).open('rb') as stream:
-        return hashlib.file_digest(stream, 'sha256').hexdigest()
 
 
 def _read(path: Path) -> bytes | None:
@@ -133,6 +126,8 @@ class LocalCLIAdapter:
         path = Path(shutil.which(self.cli_path) or self.cli_path).resolve()
         worker = Path(self.worker_module.__file__).resolve()
         from . import control_transport, windows_job, file_io
+        # Digests are recomputed only when a file's fingerprint changes (R22).
+        _file_sha256 = file_io.cached_sha256
         return {"cli_path": str(path), "cli_sha256": _file_sha256(path) if path.is_file() else None,
                 "worker_sha256": _file_sha256(worker),
                 "windows_job_sha256": _file_sha256(windows_job.__file__),
@@ -167,8 +162,8 @@ class LocalCLIAdapter:
         verified = (version_result.returncode == 0 and global_help_result.returncode == 0 and help_result.returncode == 0
                     and b"--ask-for-approval" in global_help_result.stdout and all(flag in help_bytes for flag in required))
         return {"scope": "cli_command_surface_only", "identity": self.capability_identity(),
-                "cli_path": self.cli_path, "version_bytes": version, "version_sha256": _sha256(version),
-                "exec_help_bytes": help_bytes, "exec_help_sha256": _sha256(help_bytes),
+                "cli_path": self.cli_path, "version_bytes": version, "version_sha256": hashlib.sha256(version).hexdigest(),
+                "exec_help_bytes": help_bytes, "exec_help_sha256": hashlib.sha256(help_bytes).hexdigest(),
                 "verified": verified, "supported": {"jsonl": verified, "model": verified, "structured_output": verified,
                               "effort_via_config": verified, "sandbox": verified, "local_job_stop": True},
                 "unknown": ["actual_input_bytes", "provider_operation_ids", "remote_termination", "per_call_usage",
@@ -197,23 +192,20 @@ class LocalCLIAdapter:
         schema_sha256 = None
         if "output_schema_path" in request:
             snapshot_schema = stage / "schema.json"; schema_bytes = Path(request["output_schema_path"]).read_bytes()
-            snapshot_schema.write_bytes(schema_bytes); schema_sha256 = _sha256(schema_bytes)
+            snapshot_schema.write_bytes(schema_bytes); schema_sha256 = hashlib.sha256(schema_bytes).hexdigest()
         worker_request = dict(request); worker_request["prompt_path"] = str(snapshot_prompt)
         if snapshot_schema is not None: worker_request["output_schema_path"] = str(snapshot_schema)
-        snapshot_request = stage / "request.json"; snapshot_request.write_text(json.dumps(worker_request, ensure_ascii=False, sort_keys=True, separators=(",", ":")), encoding="utf-8")
+        snapshot_raw = json.dumps(worker_request, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        snapshot_request = stage / "request.json"; snapshot_request.write_bytes(snapshot_raw)
         worker = Path(self.worker_module.__file__)
         worker_argv = (sys.executable, str(worker), str(snapshot_request))
         job = WindowsJob(worker_argv, cwd=cwd, env=self.worker_module.sanitized_environment(env),
                          name=job_name or "Local\\DoMath-" + uuid.uuid4().hex, resource_limits=request.get("resource_limits"))
-        return CodexExecution(snapshot_request, snapshot_prompt, _sha256(snapshot_request.read_bytes()), _sha256(prompt_raw), worker_argv,
-                              stdout_path, stderr_path, final_path, status_path, job, stage, schema_sha256)
+        return CodexExecution(snapshot_request, snapshot_prompt, hashlib.sha256(snapshot_raw).hexdigest(), hashlib.sha256(prompt_raw).hexdigest(), worker_argv,
+                              stdout_path, stderr_path, final_path, status_path, job, stage, schema_sha256,
+                              snapshot_raw, prompt_raw)
 
     def resume(self, execution: CodexExecution) -> None:
-        if _sha256(execution.prompt_path.read_bytes()) != execution.prompt_sha256:
-            raise RuntimeError("private prompt snapshot changed before resume")
-        schema = execution.snapshot_dir / "schema.json"
-        if execution.schema_sha256 is not None and _sha256(schema.read_bytes()) != execution.schema_sha256:
-            raise RuntimeError("private schema snapshot changed before resume")
         execution.job.resume()
 
     def inspect(self, execution: CodexExecution) -> dict[str, Any]:
@@ -252,9 +244,10 @@ class LocalCLIAdapter:
                     "termination_barrier": {"active_processes": job_state.active_processes,
                     "process_ids": job_state.process_ids, "root_signaled": job_state.root_signaled, "confirmed": False},
                     "artifacts_read": False, "provider_operation_ids": "unknown", "remote_termination": "unknown"}
-        request_raw, prompt_raw, stdout, stderr, final, status_raw = (_read(path) for path in
-                                             (execution.request_path, execution.prompt_path, execution.stdout_path,
-                                              execution.stderr_path, execution.final_path, execution.status_path))
+        # The private request and prompt snapshots are the bytes hashed at start.
+        request_raw, prompt_raw = execution.request_raw, execution.prompt_raw
+        stdout, stderr, final, status_raw = (_read(path) for path in (execution.stdout_path,
+                                             execution.stderr_path, execution.final_path, execution.status_path))
         status = None
         if status_raw is not None:
             try:
@@ -269,8 +262,6 @@ class LocalCLIAdapter:
             request = {}
         parsed = self.parse_response(stdout, request)
         reasons = []
-        if request_raw is None or _sha256(request_raw) != execution.request_sha256: reasons.append("source_request_changed")
-        if prompt_raw is None or _sha256(prompt_raw) != execution.prompt_sha256: reasons.append("source_prompt_changed")
         if not isinstance(status, dict): reasons.append("worker_status_missing")
         elif status.get("state") == "timeout": reasons.append("max_runtime_elapsed")
         elif status.get("state") != "exited": reasons.append("worker_not_exited")
@@ -287,7 +278,8 @@ class LocalCLIAdapter:
         if not parsed["parse_complete"]: reasons.append("jsonl_parse_incomplete")
         if final is None: reasons.append("final_message_missing")
         reasons.extend(self.validate_final(parsed, final))
-        return {"source_request": _artifact(request_raw), "source_prompt": _artifact(prompt_raw),
+        return {"source_request": _artifact(request_raw, execution.request_sha256),
+                "source_prompt": _artifact(prompt_raw, execution.prompt_sha256),
                 "host_resources": execution.job.resource_usage() if request.get("resource_limits") is not None else None,
                 "stdout": _artifact(stdout), "stderr": _artifact(stderr), "final": _artifact(final),
                 "worker_status": status, "jsonl": parsed, "worker_argv": execution.worker_argv,
@@ -305,7 +297,7 @@ class LocalCLIAdapter:
                     "usage_scope": "reported_execution_counters_not_invoice",
                     "model_usage_reported": parsed.get("model_usage_reported", {}),
                     "model_usage_scope": "last_reported_cumulative_not_added_to_segment_usage",
-                    "evidence_sha256": _sha256(stdout) if stdout is not None else None}}
+                    "evidence_sha256": hashlib.sha256(stdout).hexdigest() if stdout is not None else None}}
 
     def parse_response(self, raw: bytes | None, request: dict) -> dict:
         return self.parse_output(raw)
@@ -318,6 +310,7 @@ class CodexExecAdapter(LocalCLIAdapter):
     """Codex events and command surface with the shared local Job lifecycle."""
 
 
-def _artifact(raw: bytes | None) -> dict[str, Any]:
+def _artifact(raw: bytes | None, sha256: str | None = None) -> dict[str, Any]:
+    """Describe collected bytes; a caller may supply the digest it already computed."""
     return {"present": raw is not None, "bytes": None if raw is None else len(raw),
-            "sha256": None if raw is None else _sha256(raw), "raw": raw}
+            "sha256": None if raw is None else sha256 or hashlib.sha256(raw).hexdigest(), "raw": raw}

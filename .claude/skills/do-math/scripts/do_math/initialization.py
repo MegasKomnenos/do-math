@@ -9,13 +9,9 @@ import shutil
 from .state_contract import STATE_FORMAT_VERSION, STATE_CONTRACT_ID
 from .execution_profiles import resolve_profile
 from .governance import timestamp
-from .repository import canonical_json, new_id
+from .repository import exact_content_hash, new_id
 
 INITIAL_ROLES = {"intent_interpretation", "maintenance"}
-
-
-def digest(value):
-    return hashlib.sha256(canonical_json(value)).hexdigest()
 
 
 def original_input_bytes(record):
@@ -51,7 +47,7 @@ def capability_requirements(instance, reference, required=(), *, current_identit
         current_time = timestamp(at)
         evidence = [row for row in instance.get("capability_evidence", {}).values()
                     if row.get("execution_profile_ref") == reference and row.get("identity") == identity
-                    and row.get('id') == 'CE-' + digest({key: value for key, value in row.items() if key != 'id'})
+                    and row.get('id') == 'CE-' + exact_content_hash({key: value for key, value in row.items() if key != 'id'})
                     and timestamp(row["observed_at"]) <= current_time]
         # The most recent observation supersedes older contradictory claims.
         evidence.sort(key=lambda row: (timestamp(row["observed_at"]), row["id"]))
@@ -90,31 +86,8 @@ def _capability_batch_requirements(instance, references, *, at=None):
             yield {"satisfied": False, "profile_ref": reference, "reason": str(exc)}
 
 
-def trust_environment_errors(environment, *, verify_files=True):
-    from .trust_validation import manifest_errors, verify_environment_files
-    if not verify_files:
-        return manifest_errors(environment)
-    return verify_environment_files(environment)['errors']
-
-
 def governance_basis(instance):
-    return digest(instance.get('governance', {}))
-
-
-def require_trust_environment(instance, runtime, *, observe=None, verify_files=True):
-    """Check the actual current environment at a formal-use admission boundary."""
-    if any(row.get('status') in {'checking', 'ready'} for row in runtime.get('trust_transitions', {}).values()):
-        raise ValueError('formal admission is blocked during a trust transition')
-    environment = instance.get('trust_environments', {}).get(instance.get('active_trust_environment'))
-    errors = trust_environment_errors(environment, verify_files=False)
-    if not environment or environment.get('status') != 'active' or errors:
-        raise ValueError('approved fixed trust environment required: ' + '; '.join(errors))
-    if verify_files:
-        from .trust_validation import verify_environment_files
-        result = observe(environment) if observe is not None else verify_environment_files(environment)
-        if result.get('status') != 'verified':
-            raise ValueError('current trust observation required: ' + '; '.join(result.get('errors', [])))
-    return deepcopy(environment)
+    return exact_content_hash(instance.get('governance', {}))
 
 
 def governance_working_view(instance):
@@ -140,7 +113,7 @@ def initial_intent_evidence(instance, runtime, *, owner_handlers=None):
                 or any(q.get('blocks') for q in bundle['output'].get('question_details', [])) or bundle['status'] != 'approved'
                 or check.get('decision') != 'approved' or check.get('scope_complete') is not True
                 or check.get('bundle_sha256') != bundle['sha256']
-                or check.get('sha256') != digest({k:v for k,v in check.items() if k != 'sha256'})
+                or check.get('sha256') != exact_content_hash({k:v for k,v in check.items() if k != 'sha256'})
                 or application.get('status') != 'applied' or application.get('import_id') != bundle['id']
                 or set(application.get('applied_units', [])) != expected_units):
             raise ValueError('initial input requires a sealed, fully checked applied import')
@@ -182,7 +155,7 @@ def activation_requirements(instance, runtime, *, at=None, owner_handlers=None):
         governance_working_view(instance)
     except (ValueError, KeyError, TypeError):
         missing.append('governance')
-    if adoption.get("config_sha256") != digest(instance.get("config", {})):
+    if adoption.get("config_sha256") != exact_content_hash(instance.get("config", {})):
         missing.append("configuration")
     if instance.get("conversation_loss_policy") not in {"pause", "continue_authorized"}:
         missing.append("conversation_policy")
@@ -197,12 +170,14 @@ def activation_requirements(instance, runtime, *, at=None, owner_handlers=None):
     try:
         from .review_policy import build_review_policy
         build_review_policy(policy)
-        if adoption.get("review_policy_sha256") != digest(policy):
+        if adoption.get("review_policy_sha256") != exact_content_hash(policy):
             raise ValueError("review policy not adopted")
     except (ValueError, TypeError):
         missing.append("review_policy")
+    from .trust_validation import environment_errors
     env = instance.get("trust_environments", {}).get(instance.get("active_trust_environment"))
-    if not env or env.get("status") != "active" or trust_environment_errors(env, verify_files=False):
+    if (not env or env.get("status") != "active"
+            or environment_errors(env, runtime.get("trust_bindings", {}).get(instance.get("active_trust_environment")))):
         missing.append("trust_environment")
     references = adoption.get("profile_refs", [])
     if not references:

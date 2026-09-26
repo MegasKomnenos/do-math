@@ -12,6 +12,11 @@ from .session_slots import SessionSlots
 MACHINE_ROLES = {"formal_check", "trust_check", "trust_activate", "external_action"}
 WORK_ROLES = {"research_work", "supplemental_research", "task_contract_review", "identity_review", "goal_audit"}
 
+# Upper bound of an owner wait while calls run. Calls wake the owner at once;
+# this bound only paces file-borne controls, transport requests and clock
+# checks. Tunable: stop response is at most one pass plus the call's flag check.
+OWNER_POLL_SECONDS = 0.25
+
 
 class SchedulerMixin:
     def _local_call_returned(self, execution_id, result):
@@ -20,6 +25,53 @@ class SchedulerMixin:
         execution = self.runtime['executions'][execution_id]
         if execution.get('launch_ticket'):
             execution['launch_ticket']['phase'] = 'not_started' if result.get('launch_not_created') is True else 'finished'
+
+    def _evaluate_stops(self):
+        """Every head movement passes here: judge live calls' stop reasons; flags carry the verdict."""
+        calls = getattr(self, '_calls', None)
+        if calls is not None:
+            calls.judge()
+
+    def _settle_stops(self, *, clock=True):
+        """Publish pending owner changes, then compare time-bound stop reasons with the clock."""
+        if not self._calls.futures:
+            return
+        if clock:
+            self._check_conversations()
+        self._save()  # A publication runs the stop judgments; an unchanged state does not.
+        if clock and self._stop_time_due():
+            self._calls.judge()
+
+    def _goal_basis_key_at_head(self):
+        """Stop judgments read published state, so one goal basis serves every judgment at a head."""
+        memo = getattr(self, '_goal_basis_memo', None)
+        if memo is None or memo[0] != self.head:
+            memo = self._goal_basis_memo = (self.head, self._goal_basis_key())
+        return memo[1]
+
+    def _stop_time_due(self):
+        """True when a time-bound stop reason fell due since the previous owner pass."""
+        from .governance import timestamp
+        now, instant = self._lifecycle_now(), time.monotonic()
+        since, self._stop_clock = getattr(self, '_stop_clock', None), (now, instant)
+        if since is None or not self._clock_guard()['usable']:
+            return True
+        expiries = [grant['expires_at'] for grant in self.instance.get('grants', {}).values()
+                    if grant.get('status') == 'active' and grant.get('expires_at')]
+        expiries += [execution['action']['repair']['limited_recovery']['expires_at']
+                     for execution in self.runtime['executions'].values()
+                     if execution.get('status') != 'ended'
+                     and execution.get('action', {}).get('repair', {}).get('limited_recovery', {}).get('expires_at')]
+        if any(since[0] < timestamp(at) <= now for at in expiries):
+            return True
+        return any(since[1] < at <= instant
+                   for deadlines in getattr(self, '_stop_deadlines', {}).values() for at in deadlines)
+
+    def _observation_failed(self, execution_id, error):
+        """An unapplied observation stops its execution; the error is its recorded stop reason."""
+        execution = self.runtime['executions'][execution_id]
+        execution.setdefault('stop_requested', f'observation_failed: {type(error).__name__}: {error}')
+        self._save()
 
     def _run_machine_steps(self, generator, *, calculator=None):
         """Start only the blocking calculation; resume its owner continuation once."""
@@ -69,6 +121,7 @@ class SchedulerMixin:
             generator.close()
         self.head, self.instance, self.runtime = self.store.load()
         self._saved_state = self._state_signature()
+        self._evaluate_stops()
         artifacts = {}
         for execution_id, raw, local_path, result in returned:
             execution = self.runtime['executions'].get(execution_id)
@@ -240,14 +293,15 @@ class SchedulerMixin:
 
     def _rule_deferral_inputs(self, deferrals):
         from .input_basis import aliases
-        from .planning import _records, _hash
+        from .planning import _records
+        from .repository import exact_content_hash
         records = _records(self.instance, self.runtime)
         values = {}
         for ref in {ref for row in deferrals for ref in row['missing_inputs']}:
             if ref == 'user_input':
                 values[ref] = [row.get('id') for row in self.runtime['inputs']]
             elif ref in records:
-                values[ref] = _hash(records[ref][1])
+                values[ref] = exact_content_hash(records[ref][1])
             else:
                 source = next((s for s in self.instance['sources'] if ref in aliases(s)), None)
                 values[ref] = source['sha256'] if source else None
@@ -493,16 +547,23 @@ class SchedulerMixin:
         from .repository import new_id
         self._slots = SessionSlots(
                                    runtime=self.runtime, instance=self.instance)
-        self._calls = ModelCalls(on_returned=self._local_call_returned)
+        self._calls = ModelCalls(on_returned=self._local_call_returned,
+                                 on_observation_error=self._observation_failed)
+        self._stop_deadlines, self._stop_clock = {}, None
         steps = 0
         try:
             while True:
-                self._controls(pump=False)
+                # Calculations only read stop flags, so the owner receives controls and
+                # transport requests every pass. Controls enter a published state, and a
+                # request received in this pass precedes the clock's stop reasons.
+                self._settle_stops(clock=False)
+                self._controls(pump=True)
+                self._settle_stops()
                 collected = self._calls.collect()
                 self._check_installation()
                 if self.runtime.get('maintenance_fence'):
                     if self._calls.futures:
-                        time.sleep(.02)
+                        self._calls.wait(OWNER_POLL_SECONDS)
                         continue
                     from .maintenance_gate import settle
                     settle(self.runtime)
@@ -517,11 +578,11 @@ class SchedulerMixin:
                 if stopping:
                     if not self._calls.futures:
                         break
-                    time.sleep(.02)
+                    self._calls.wait(OWNER_POLL_SECONDS)
                     continue
                 if until_active and self.instance['lifecycle']['state'] == 'active':
                     if self._calls.futures:
-                        time.sleep(.02)
+                        self._calls.wait(OWNER_POLL_SECONDS)
                         continue
                     break
                 draining = max_steps is not None and steps >= max_steps
@@ -538,6 +599,7 @@ class SchedulerMixin:
                 self._refresh_readiness()
                 if self.runtime["status"] in {"closed", "completed"} or (self.runtime['status'] == 'paused' and not limited):
                     continue
+                self._resume_environment_waits()
                 if not self.runtime["queue"] and not self._calls.futures:
                     if self.instance["lifecycle"]["state"] == "initializing":
                         self._save()
@@ -568,7 +630,7 @@ class SchedulerMixin:
                         steps += 1
                     continue
                 if self._calls.futures:
-                    time.sleep(.02)
+                    self._calls.wait(OWNER_POLL_SECONDS)
                     continue
                 only_capacity = bool(self.runtime["queue"]) and all(
                     a.get("dispatch_wait", {}).get("kind") in {"capacity", "host_capacity"}

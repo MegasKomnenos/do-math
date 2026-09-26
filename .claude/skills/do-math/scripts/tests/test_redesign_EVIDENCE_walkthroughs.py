@@ -392,6 +392,7 @@ class DesignWalkthroughs(unittest.TestCase):
                 'trust_environments', 'active_trust_environment', 'execution_profiles', 'capacity_constraints')}
             state.update(id=identifier, feature_version=5, sources=[])
             runtime = deepcopy(archived_runtime)
+            runtime['trust_bindings'] = deepcopy(e.runtime['trust_bindings'])
             head = store.initialize(state, runtime)
             found = query_records(root, identifier, kind='knowledge', snapshot=head)
             self.assertEqual(found['snapshot'], head)

@@ -113,6 +113,10 @@ def _active_execution_references(value):
     yield from ((identifier, "executions") for identifier in value)
 
 
+def _trust_binding_references(value):
+    yield from ((identifier, "trust_environments") for identifier in value)
+
+
 def install(contract):
     from ..execution_profiles import validate_profile
     from ..budget import _validate_reservation
@@ -150,7 +154,8 @@ def install(contract):
                     ("runtime", "academic_assessments"): _academic_assessment_references,
                     ("runtime", "active_execution"): _active_execution_reference,
                     ("research", "host_capacity_ref"): _host_capacity_reference,
-                    ("runtime", "active_executions"): _active_execution_references}.get((root, name))
+                    ("runtime", "active_executions"): _active_execution_references,
+                    ("runtime", "trust_bindings"): _trust_binding_references}.get((root, name))
                 contract.register_family(root, name, shape="metadata" if name in metadata[root] else "singleton",
                                          schema=schema, identity=False, references=reference)
     contract.register_family("runtime", "task_readiness", shape="derived", schema=EVIDENCE,
@@ -181,26 +186,61 @@ def _validate_active_grant(instance, runtime, grant):
     validate_grant_source(instance, grant)
 
 
-def validate_semantics(instance, runtime, identifiers):
+def _prior_rows(state, family):
+    rows = state.get(family, {})
+    return {row.get("id"): row for row in rows if isinstance(row, dict)} if isinstance(rows, list) else rows
+
+
+def resolve_profile(profiles, reference):
+    """Resolve an exact profile reference among already validated profiles.
+
+    StateContract.validate runs validate_profile on every stored profile (or
+    on the parent's equal record), so hashing the profile again for each
+    reference would repeat that check.
+    """
+    if not isinstance(reference, dict) or set(reference) != {"id", "revision", "sha256"}:
+        raise ValueError("profile reference requires exact id, revision and sha256")
+    profile = profiles.get(reference["id"])
+    if profile is None or {key: profile.get(key) for key in reference} != reference:
+        raise ValueError("profile reference is absent or stale")
+    return profile
+
+
+def validate_semantics(instance, runtime, identifiers, parent=None):
+    """Whole-state semantic rules.
+
+    ``parent`` is an (instance, runtime) pair already validated under the same
+    contract. Self-contained hash checks of immutable rows (original input,
+    sources, grants, academic seals, observation events, intent imports) are
+    not repeated for rows equal to the parent's; cross-record rules always run.
+    """
+    parent_instance, parent_runtime = parent if parent is not None else ({}, {})
     if "lifecycle" in instance:
         from ..preflight import inspect_current_state
         checked = inspect_current_state(instance, runtime)
         if not checked["valid"]:
             raise ValueError("current lifecycle contract: " + str(checked["errors"]))
         from ..initialization import original_input_bytes
-        original_input_bytes(instance["lifecycle"]["immutable_input"])
+        if parent_instance.get("lifecycle", {}).get("immutable_input") != instance["lifecycle"]["immutable_input"]:
+            original_input_bytes(instance["lifecycle"]["immutable_input"])
     from ..knowledge_records import validate_knowledge_records
     from ..activities import validate_activities
-    from ..execution_profiles import resolve_profile
     from ..task_contracts import validate_item_dispositions
     from ..operational_dispositions import validate_disposition
     from ..governance import validate_governance_state, validate_source
     if "governance" in instance:
         validate_governance_state(instance)
-    for source in instance.get("governance_sources", {}).values():
-        validate_source(source)
-    for grant in instance.get("grants", {}).values():
-        if grant["status"] == "active":
+    sources, prior_sources = instance.get("governance_sources", {}), parent_instance.get("governance_sources", {})
+    for identifier, source in sources.items():
+        if prior_sources.get(identifier) != source:
+            validate_source(source)
+    prior_grants, prior_decisions = parent_instance.get("grants", {}), parent_instance.get("decisions", {})
+    for identifier, grant in instance.get("grants", {}).items():
+        # The grant check reads only the grant, its source and its decision.
+        if grant["status"] == "active" and (
+                prior_grants.get(identifier) != grant
+                or prior_sources.get(grant.get("source_ref")) != sources.get(grant.get("source_ref"))
+                or prior_decisions.get(grant.get("decision_id")) != instance.get("decisions", {}).get(grant.get("decision_id"))):
             _validate_active_grant(instance, runtime, grant)
     if instance.get("review_policy"):
         from ..review_policy import build_review_policy
@@ -317,10 +357,13 @@ def validate_semantics(instance, runtime, identifiers):
             validate_item_dispositions(task, task["assessment"], require_complete=task.get("status") == "completed")
     for row in runtime.get("operational_dispositions", {}).values():
         validate_disposition(row["disposition"])
-    from ..academic import _hash as academic_hash
+    from ..file_io import json_digest
+    prior_academic = _prior_rows(parent_runtime, "academic_resolution_records")
     for row in runtime.get("academic_resolution_records", []):
+        if prior_academic.get(row.get("id")) == row:
+            continue
         if (not row["evidence_refs"] or set(row["evidence_refs"]) != set(row["evidence_hashes"])
-                or row["sha256"] != academic_hash({k: v for k, v in row.items() if k != "sha256"})):
+                or row["sha256"] != json_digest({k: v for k, v in row.items() if k != "sha256"})):
             raise ValueError("academic resolution seal/evidence binding is invalid")
     from ..external import request_binding_current
     for row in runtime.get("external_operations", {}).values():
@@ -344,8 +387,9 @@ def validate_semantics(instance, runtime, identifiers):
             raise ValueError("self-check response execution differs from obligation")
     import hashlib
     import json
-    for row in runtime.get("observation_facts", {}).values():
-        if "event_json" in row:
+    prior_facts = parent_runtime.get("observation_facts", {})
+    for identifier, row in runtime.get("observation_facts", {}).items():
+        if "event_json" in row and prior_facts.get(identifier) != row:
             json.loads(row["event_json"], parse_constant=lambda x: (_ for _ in ()).throw(ValueError("nonfinite raw observation")))
             if hashlib.sha256(row["event_json"].encode()).hexdigest() != row["event_sha256"]:
                 raise ValueError("observation event bytes hash mismatch")
@@ -413,9 +457,6 @@ def validate_semantics(instance, runtime, identifiers):
                 exposition = instance["expositions"][assessment["exposition_id"]]
                 verification = {key: value for key, value in transition.get("results", {}).get(cycle.get("knowledge_id"), {}).items()
                                 if key not in {"id", "identity_review"}}
-                from ..knowledge_records import digest
-                activation_environment = {**staged.get("target_environment", {}), "status": "active"}
-                verification["trust_environment_digest"] = digest(activation_environment)
                 if (transition.get("status") not in {"active", "activated"}
                         or cycle.get("transition_id") != assessment["transition_id"]
                         or target is None
@@ -438,7 +479,7 @@ def validate_semantics(instance, runtime, identifiers):
         _check_proposal(cycle)
         validate_resource_disposition(cycle, runtime, instance=instance)
         if cycle.get("staged_candidate") is not None or cycle.get("transition_id") is not None:
-            from ..knowledge_records import digest
+            from ..repository import exact_content_hash
             staged = cycle.get("staged_candidate", {})
             transition = runtime.get("trust_transitions", {}).get(cycle.get("transition_id"), {})
             target = next((row for row in transition.get("targets", []) if row["id"] == cycle.get("knowledge_id")), None)
@@ -448,7 +489,7 @@ def validate_semantics(instance, runtime, identifiers):
             if (target is None or environment.get("id") != transition.get("to_environment")
                     or environment.get("id") not in instance.get("trust_environments", {})
                     or staged.get("proposal") != cycle["proposal"] or staged.get("identity_basis") != cycle.get("identity_basis")
-                    or staged.get("transition_basis") != digest({"transition_id": transition["id"], "target": target,
+                    or staged.get("transition_basis") != exact_content_hash({"transition_id": transition["id"], "target": target,
                         "verification": verification, "target_environment": environment, "from_environment": transition["from_environment"]})):
                 raise ValueError("staged review does not bind its actual transition target/environment")
             # Pending reviews must reproduce the current producer. Historical
@@ -474,8 +515,8 @@ def validate_semantics(instance, runtime, identifiers):
         env = instance.get("trust_environments", {}).get(instance["active_trust_environment"])
         if env is None or env.get("status") != "active":
             raise ValueError("active trust environment reference is not active")
-        from ..initialization import trust_environment_errors
-        errors = trust_environment_errors(env, verify_files=False)
+        from ..trust_validation import environment_errors
+        errors = environment_errors(env, runtime.get("trust_bindings", {}).get(instance["active_trust_environment"]))
         if errors:
             raise ValueError("active trust environment contract: " + "; ".join(errors))
     current_kinds = set()
@@ -497,14 +538,19 @@ def validate_semantics(instance, runtime, identifiers):
         if definition["constraints"].get("mathematical_claim") and not all(
             definition["constraints"].get(k) for k in ("requires_formal_results", "requires_assessments")):
             raise ValueError("mathematical relation kind cannot waive formal evidence")
-    from ..governance import digest, _import_payload
-    for bundle in runtime.get("intent_imports", {}).values():
+    from ..governance import _import_payload
+    from ..repository import exact_content_hash
+    prior_imports = parent_runtime.get("intent_imports", {})
+    for identifier, bundle in runtime.get("intent_imports", {}).items():
+        if prior_imports.get(identifier) == bundle:
+            continue
         validate_source(bundle["source"])
-        if digest(_import_payload(bundle)) != bundle["sha256"]:
+        if exact_content_hash(_import_payload(bundle)) != bundle["sha256"]:
             raise ValueError("sealed intent import hash mismatch")
-    from ..delegations import _hash, case_basis_reference_ids
+    from ..delegations import case_basis_reference_ids
+    from ..file_io import json_digest
     for application in runtime.get("delegation_applications", {}).values():
-        if _hash(application["basis"]) != application["input_sha256"]:
+        if json_digest(application["basis"]) != application["input_sha256"]:
             raise ValueError("delegation application basis hash mismatch")
         basis = application["basis"]
         if set(basis["references"]) != set(case_basis_reference_ids(basis["case"])):
@@ -520,7 +566,7 @@ def validate_semantics(instance, runtime, identifiers):
         execution_ids = []
         for judgment in application["judgments"].values():
             execution_ids.append(judgment["execution_id"])
-            if judgment["execution_id"] not in runtime.get("executions", {}) or _hash(judgment["output"]) != judgment["sha256"]:
+            if judgment["execution_id"] not in runtime.get("executions", {}) or json_digest(judgment["output"]) != judgment["sha256"]:
                 raise ValueError("delegation judgment provenance mismatch")
         if len(execution_ids) != len(set(execution_ids)):
             raise ValueError("delegation judgments must use distinct executions")

@@ -100,8 +100,6 @@ RECORDS["activities"] = record({"activity_kind": TEXT, "owner_ref": {"type": ["s
     ("activity_kind", "owner_ref", "opened_at", "input_refs", "status", "assigned_execution_ids", "result_refs", "unresolved", "followups"))
 RECORDS["executions"] = record({"owner_activity_id": ID, "actor_kind": enum("ai", "machine"),
     "launch_ticket": EVIDENCE,
-    "environment_observations": array(obj({'artifact_ref':TEXT,'sha256':HASH,'environment_key':HASH},
-                                         ('artifact_ref','sha256','environment_key'))),
     "input_manifest": {"type": ["object", "array", "string"]}, "execution_profile_ref": PROFILE_REF,
     "created_at": TEXT, "status": enum("queued", "starting", "running", "stopping", "ended"),
     "continuation_of": nullable(ID), "context_origin": REFS, "role": TEXT, "action": EVIDENCE,
@@ -196,11 +194,13 @@ RECORDS["operational_dispositions"] = record({"execution_id": ID, "disposition":
     "source_execution_id": ID, "created_at": TEXT, "status": TEXT}, ("execution_id", "disposition"))
 RECORDS["control_receipts"] = record({"request_id": ID, "execution_id": ID, "kind": TEXT, "state": TEXT,
     "payload": EVIDENCE, "received_at": TEXT, "grant_id": ID, "reason": TEXT}, ("execution_id", "kind", "state"))
-RECORDS["trust_environments"] = record({"status": enum("candidate", "active", "retired", "withdrawn", "observed"),
-    "toolchain": TEXT, "manifest_sha256": HASH, "manifest": EVIDENCE, "allowed_axioms": array(TEXT),
-    "command": array(TEXT), "created_at": TEXT, "source_ref": TEXT, "approval_ref": TEXT,
-    "engine_sha256": HASH, "workspace_sha256": HASH, "lean_command": array(TEXT), "history": HISTORY,
-    "environment": EVIDENCE, "observation": EVIDENCE}, ("status",))
+# The identity copied from one shared toolchain record and that record's file.
+# The accepted baseline is the runtime trust binding, outside this record.
+RECORDS["trust_environments"] = record({"status": enum("registered", "active", "superseded", "invalid"),
+    "toolchain": EVIDENCE, "allowed_axioms": array(TEXT), "source_ref": TEXT,
+    "toolchain_record": obj({"path": TEXT, "id": TEXT}, ("path", "id")),
+    "validation_receipt": EVIDENCE, "invalidated_reason": TEXT},
+    ("status", "toolchain", "allowed_axioms", "source_ref", "toolchain_record"))
 RECORDS["review_cycles"] = record({
     **{k: EVIDENCE for k in ("proposal", "review_policy", "execution_accounting", "results", "turns", "transcript_manifest", "issues", "findings", "deferred_actions", "research")},
     **{k: HISTORY for k in ("history", "previous_reviews", "followup", "pending_findings", "answer_requests", "recovery_events")},
@@ -241,4 +241,8 @@ RUNTIME_FIELDS = {"feature_version": {"const": STATE_FORMAT_VERSION}, "contract_
     "interpretation_history": HISTORY, "implementation_history": HISTORY,
     "model_policy_violation": EVIDENCE, "provider_wake": EVIDENCE,
     "pending_knowledge_impacts": HISTORY, "permission_requests": HISTORY,
+    # Per trust environment: the toolchain-record baseline whose fingerprint was last accepted.
+    "trust_bindings": {"type": "object", "additionalProperties": obj({"baseline": NAT,
+        "fingerprint_sha256": HASH, "content_sha256": HASH, "validation_sha256": HASH},
+        ("baseline", "fingerprint_sha256", "content_sha256", "validation_sha256"))},
 }

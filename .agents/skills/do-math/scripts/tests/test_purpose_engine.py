@@ -24,7 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import do_math.engine as engine_module
 from do_math.engine import ResearchEngine, initialize, control
 from do_math.repository import canonical_json
-from research_fixtures import local_job_runner, planning_model_assessments, supply_observation_rules, read_fixture_context
+from research_fixtures import local_job_runner, await_stop, planning_model_assessments, supply_observation_rules, read_fixture_context
 from research_fixtures import (charter_change, policy_change, candidate as v5_candidate, contract_review, disposition, assessment,
                          intent_response, seal_response, submit_intent, activate, install_adapter_fixture, bind_candidates)
 from test_engine import ScriptedRunner, formal_ok
@@ -108,19 +108,25 @@ class PurposeRunner:
                 time.sleep(1.05)
                 on_observation({'type': 'tick'})
                 until = time.monotonic() + 120
+                ticked = time.monotonic()
                 while time.monotonic() < until:
                     if should_stop():
                         break
                     feedback = workspace / '.control/observation-feedback.json'
                     if feedback.exists() and json.loads(feedback.read_bytes()).get('kind') == 'continue':
                         break
+                    if time.monotonic() - ticked >= .5:
+                        # Like the real runner, keep ticking: queued observations are
+                        # applied, and their clock read, when the owner reaches them.
+                        on_observation({'type': 'tick'})
+                        ticked = time.monotonic()
                     time.sleep(.05)
                 else:
                     raise AssertionError('The live reviewer did not return its disposition')
                 if self.observation == 'continue':
                     on_observation({'type': 'item.completed', 'item': {'type': 'command_execution', 'id': 'observed-tool'}})
             if self.observation in {'stop', 'external_pause'}:
-                should_stop()
+                if not await_stop(should_stop): raise AssertionError('The owner did not judge the stop')
                 if not (workspace / '.control/stop-request.json').exists(): raise AssertionError('Stop did not request a checkpoint')
                 return {'status': 'stopped', 'output': None, 'usage': {'input_tokens': 30, 'output_tokens': 4}, 'error': 'Fixture honored the stop request'}
         if role == 'research_preparation' and action.get('revision_targets'):
@@ -171,7 +177,7 @@ class PurposeRunner:
         bind_candidates(output, context)
         seal_response(output, context, workspace)
         jsonschema.validate(output, output_schema)
-        submit_intent(control_binding, should_stop, workspace, output)
+        submit_intent(control_binding, workspace, output)
         self.returned.append({'role': role, 'action': deepcopy(action), 'output': deepcopy(output)})
         return {'status': 'completed', 'output': output, 'usage': {'input_tokens': 20, 'output_tokens': 10}, 'error': None}
 
@@ -566,7 +572,8 @@ class PurposeEngineTests(PurposeHarness):
         self.assertTrue(engine.instance['goal_judgments'][-1].get('current', True))
 
     def test_work_budget_execution_is_not_bounded_by_operations_call_timeout(self):
-        engine, runner = self.make(call_timeout_seconds=1, )
+        # The rule starts after initialization; public activation has its own test.
+        engine, runner = ActiveStateHarness.make(self, **self.fixture_config(call_timeout_seconds=30))
         seen = []
         original = runner.run
         def recording_run(**arguments):
@@ -578,7 +585,7 @@ class PurposeEngineTests(PurposeHarness):
         work = [timeout for role, timeout in seen if role in {'research_work', 'task_contract_review'}]
         operations = [timeout for role, timeout in seen if role in {'research_preparation', 'research_plan'}]
         self.assertTrue(work and all(timeout is None for timeout in work))
-        self.assertTrue(operations and all(timeout <= 1 for timeout in operations))
+        self.assertTrue(operations and all(timeout <= 30 for timeout in operations))
 
     def test_live_continue_preserves_checkpoint_and_uses_operating_budget(self):
         engine, runner = self.make(observation='continue',  )
@@ -661,7 +668,10 @@ class PurposeEngineTests(PurposeHarness):
     def test_environment_revalidation_does_not_clear_independent_meaning_dispute(self):
         from do_math.knowledge_records import usable_links
         from do_math import knowledge
-        engine, _ = self.make(plan_settle_seconds=1)
+        from state_fixtures import ACTIVE_LEAN_COMMAND
+        # The rule starts after initialization; public activation has its own test.
+        engine, _ = ActiveStateHarness.make(self, **self.fixture_config(
+            plan_settle_seconds=1, lean_command=list(ACTIVE_LEAN_COMMAND)))
         self.drive(engine, predicate=lambda e: any(usable_links(e.instance, kid) for kid in e.instance['knowledge']))
         kid = next(iter(engine.instance['knowledge']))
         old_environment = engine.instance['active_trust_environment']

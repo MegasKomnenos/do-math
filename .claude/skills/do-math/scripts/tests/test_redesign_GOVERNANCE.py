@@ -11,6 +11,7 @@ import sys
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from do_math.repository import exact_content_hash
 
 from do_math.external import execute_operation, prepare_operation
 from do_math.governance import apply_decision, authorize, interpretation_schema
@@ -33,7 +34,7 @@ class DomainGovernanceTests(unittest.TestCase):
         source = gov.preserve_source("S", "User approves P", origin="user", revision=1)
         records = [charter()]
         approval = {"id": "D", "actor": "user", "source_ref": "S", "source_sha256": source["sha256"],
-                    "record_hashes": {r["id"]: gov.digest(r) for r in records}}
+                    "record_hashes": {r["id"]: exact_content_hash(r) for r in records}}
         return gov.initialize_governance({"id": "I", "feature_version": 5}, source, approval, records)
 
     def test_initialized_charter_is_single_authority_and_binds_approved_original(self):
@@ -141,7 +142,7 @@ class DomainGovernanceTests(unittest.TestCase):
         gov.check_import(i, rt, b["id"], {"bundle_sha256": b["sha256"], "decision": "approved", "scope_complete": True,
                                       "unit_ids": ["U"], "question_ids": [], "findings": []}, execution_id="E2")
         with self.assertRaises(ValueError): gov.apply_import(i, rt, b["id"])
-        approvals = {"U": {"actor": "user", "source_ref": "IN", "source_sha256": s["sha256"], "change_sha256": gov.digest(unit["payload"])}}
+        approvals = {"U": {"actor": "user", "source_ref": "IN", "source_sha256": s["sha256"], "change_sha256": exact_content_hash(unit["payload"])}}
         changed, state, event = gov.apply_import(i, rt, b["id"], approvals=approvals)
         self.assertEqual(gov.governance_view(changed)["goal"], "Prove Q")
         self.assertEqual(event["status"], "applied")
@@ -210,7 +211,7 @@ class DomainGovernanceTests(unittest.TestCase):
     def test_initialization_cannot_rebind_another_immutable_original(self):
         source = gov.preserve_source("S", "P", origin="user")
         records = [charter()]
-        approval = {"id":"D", "actor":"user", "source_ref":"S", "source_sha256":source["sha256"], "record_hashes":{"CH1":gov.digest(records[0])}}
+        approval = {"id":"D", "actor":"user", "source_ref":"S", "source_sha256":source["sha256"], "record_hashes":{"CH1":exact_content_hash(records[0])}}
         with self.assertRaises(ValueError):
             gov.initialize_governance({"feature_version":5, "lifecycle":{"immutable_input":{"text":"Q", "sha256":"different", "bytes":1}}}, source, approval, records)
 
@@ -242,7 +243,7 @@ class DomainGovernanceTests(unittest.TestCase):
              "content":{"scope":["P"],"required_inputs":["CH1"],"assessor":"goal_audit","verdict_mapping":{"pass":"satisfied","fail":"not_satisfied","unknown":"unresolved"}}}
         i, _, _ = gov.apply_decision(i,rt,{"kind":"additional_audit","record":r},source_ref="S")
         with self.assertRaises(ValueError): gov.evaluate_additional_audit(i,"AU","pass",assessor="goal_audit",input_hashes={})
-        verdict = gov.evaluate_additional_audit(i,"AU","pass",assessor="goal_audit",input_hashes={"CH1":gov.digest(i["governance"]["CH1"])})
+        verdict = gov.evaluate_additional_audit(i,"AU","pass",assessor="goal_audit",input_hashes={"CH1":exact_content_hash(i["governance"]["CH1"])})
         self.assertEqual(verdict["decision"],"satisfied")
         self.assertEqual(i["goal_status"],"unsolved")
 
@@ -356,7 +357,7 @@ class DomainGovernanceTests(unittest.TestCase):
         source=gov.preserve_source("ORIG","Research P",origin="user")
         approval_source=gov.preserve_source("APPROVAL","Approve this exact charter",origin="user")
         record=charter();approval={"id":"D","actor":"user","source_ref":"APPROVAL","source_sha256":approval_source["sha256"],
-            "input_source_ref":"ORIG","input_source_sha256":source["sha256"],"record_hashes":{"CH1":gov.digest(record)}}
+            "input_source_ref":"ORIG","input_source_sha256":source["sha256"],"record_hashes":{"CH1":exact_content_hash(record)}}
         i=gov.initialize_governance({"id":"I","feature_version":5,"lifecycle":{"immutable_input":{k:source[k] for k in ("text","sha256","bytes")}}},source,approval,[record],approval_source=approval_source)
         self.assertEqual(i["governance"]["CH1"]["source_ref"],"ORIG")
         self.assertEqual(i["decisions"]["D"]["source_ref"],"APPROVAL")
@@ -549,7 +550,7 @@ class AcademicConsumerTests(unittest.TestCase):
             'assessor': 'research_plan', 'criteria': ['Explain the proof', 'Discuss the limitations']}]
         h.instance = gov.initialize_governance({'id': 'I', 'feature_version': 5}, source,
             {'id': 'D', 'actor': 'user', 'source_ref': 'S', 'source_sha256': source['sha256'],
-             'record_hashes': {'CH1': gov.digest(record)}}, [record])
+             'record_hashes': {'CH1': exact_content_hash(record)}}, [record])
         from do_math.execution_profiles import build_profiles
         from do_math.engine import DEFAULT_CONFIG
         config = {**deepcopy(DEFAULT_CONFIG),
@@ -795,7 +796,7 @@ class AuditRepairTests(unittest.TestCase):
             owner_handlers=handlers)
         request = {'id': 'LATER', 'action': 'decision', 'origin': 'user', 'text': 'Approve this exact checked change',
             'config': {'kind': 'import_approval', 'import_id': bundle['id'], 'bundle_sha256': bundle['sha256'],
-                       'check_sha256': bundle['check']['sha256'], 'unit_hashes': {'U': gov.digest(payload)}}}
+                       'check_sha256': bundle['check']['sha256'], 'unit_hashes': {'U': exact_content_hash(payload)}}}
         rt['waiting_actions'] = {'CHECK': {'kind': 'import_application_authority', 'import_id': bundle['id'],
                                          'action': {'id': 'CHECK', 'role': 'intent_interpretation', 'stage': 'check'}}}
         return i, rt, bundle, request
@@ -906,7 +907,7 @@ class AuditRepairTests(unittest.TestCase):
         basis = gov.additional_audit_input(i, rt)
         rt['executions']['AUDIT'] = {'role': 'goal_audit', 'additional_audit_input': basis}
         row = {'audit_ref': 'AU', 'assessor': 'goal_audit', 'verdict': 'partial', 'reason': 'Only partial',
-               'input_hashes': {'CH1': gov.digest(i['governance']['CH1'])}}
+               'input_hashes': {'CH1': exact_content_hash(i['governance']['CH1'])}}
         jsonschema.Draft202012Validator(gov.additional_audit_schema(i)).validate([row])
         mapped = gov.evaluate_goal_audits(i, rt, 'AUDIT', [row])
         self.assertEqual(mapped[0]['decision'], 'not_satisfied')
@@ -923,7 +924,7 @@ class AuditRepairTests(unittest.TestCase):
         rt['executions']['AUDIT'] = {'role': 'goal_audit', 'additional_audit_input': gov.additional_audit_input(i, rt)}
         with self.assertRaises(ValueError): gov.evaluate_goal_audits(i, rt, 'AUDIT', [{
             'audit_ref': 'AU', 'verdict': 'pass', 'assessor': 'someone-else', 'reason': 'Claimed authority',
-            'input_hashes': {'CH1': gov.digest(i['governance']['CH1'])}}])
+            'input_hashes': {'CH1': exact_content_hash(i['governance']['CH1'])}}])
 
     def test_goal_assurance_cannot_omit_active_additional_audit(self):
         from unittest.mock import patch

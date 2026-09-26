@@ -58,20 +58,60 @@ class GitStateStoreTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             oid_shape("A" * 40)
 
-    def test_tree_cache_reuses_only_immutable_oids_and_rechecks_boundaries(self):
+    def test_tree_cache_reuses_only_immutable_oids(self):
         snapshot = self.store.publish(None, self.initial_changes())
+        self.store._listed = None
         with patch.object(self.store, '_git', wraps=self.store._git) as calls:
             first = self.store._tree_paths(snapshot.head)
             second = self.store._tree_paths(snapshot.head)
         self.assertEqual(first, second)
         self.assertEqual(sum(c.args[0] == 'ls-tree' for c in calls.call_args_list), 1)
-        with patch.object(self.store._repository_boundary, 'check', side_effect=ValueError('boundary changed')):
+
+    def test_own_publication_lists_the_new_tree_without_enumerating_it(self):
+        first = self.store.publish(None, {**self.initial_changes(), 'runtime/artifacts/one/a.bin': b'a'})
+        with patch.object(self.store, '_git', wraps=self.store._git) as calls:
+            later = self.store.publish(first.head, {'runtime/state.json': None, 'research/next.json': b'{}\n',
+                                                    'runtime/artifacts/two/b.bin': b'b'})
+            listed = self.store._tree_paths(later.head)
+        # The parent list also came from its own publication.
+        self.assertEqual(sum(c.args[0] == 'ls-tree' for c in calls.call_args_list), 0)
+        self.store._listed = None
+        self.assertEqual(listed, self.store._tree_paths(later.head))
+
+    def test_path_that_is_also_a_directory_is_rejected_before_git_drops_it(self):
+        first = self.store.publish(None, {**self.initial_changes(), 'research/a': b'file'})
+        with self.assertRaisesRegex(ValueError, 'both a file and a directory'):
+            self.store.publish(first.head, {'research/a/b': b'child'})
+        with self.assertRaisesRegex(ValueError, 'both a file and a directory'):
+            self.store._validate_candidate_paths({'research/x', 'research/x/y'})
+        self.assertEqual(self.store.read_snapshot().head, first.head)
+
+    def test_physical_boundary_is_proved_on_open_and_after_git_errors_only(self):
+        snapshot = self.store.publish(None, self.initial_changes())
+        changed = ValueError('boundary changed')
+        with patch.object(self.store._repository_boundary, 'check', side_effect=changed) as repository_check, \
+             patch.object(self.store._git_boundary, 'check', side_effect=changed) as git_check:
+            later = self.store.publish(snapshot.head, {'runtime/state.json': b'{"state": "running"}\n'})
+            self.assertEqual(self.store.read_many(later.head, ['runtime/state.json']),
+                             {'runtime/state.json': b'{"state": "running"}\n'})
+            self.assertEqual((repository_check.call_count, git_check.call_count), (0, 0))
             with self.assertRaisesRegex(ValueError, 'boundary changed'):
-                self.store._tree_paths(snapshot.head)
-        with patch.object(self.store._git_boundary, 'check', side_effect=ValueError('git boundary changed')):
-            with self.assertRaisesRegex(ValueError, 'git boundary changed'):
-                self.store._tree_paths(snapshot.head)
-        self.assertEqual(first, self.store._tree_paths(snapshot.head))
+                self.store.read_bytes(later.head, 'runtime/absent.json')
+
+    def test_writer_lock_leaves_the_final_cas_as_the_only_ref_comparison(self):
+        first = self.store.publish(None, self.initial_changes())
+        with self.store.writer_lock():
+            with patch.object(self.store, '_git', wraps=self.store._git) as calls:
+                later = self.store.publish(first.head, {'runtime/state.json': b'{"state": "running"}\n'})
+            ref_reads = [c for c in calls.call_args_list if c.args[0] in {'rev-parse', 'update-ref'}
+                         or c.args[:2] == ('cat-file', '-t')]
+            self.assertEqual([c.args[0] for c in ref_reads], ['update-ref'])
+            # A writer outside the lock is still refused by that final CAS.
+            outside = GitStateStore(self.repository, INSTANCE_ID)
+            moved = outside.publish(later.head, {'runtime/state.json': b'{"state": "moved"}\n'})
+            with self.assertRaises(GitStateStoreConflict):
+                self.store.publish(later.head, {'runtime/state.json': b'{"state": "lost"}\n'})
+        self.assertEqual(self.store.read_snapshot().head, moved.head)
 
     def test_unicode_artifact_path_preserves_the_supplied_code_points(self):
         path = "runtime/artifacts/one/e\u0301.txt"
@@ -253,6 +293,25 @@ class GitStateStoreTests(unittest.TestCase):
         outside = Path(self.temporary.name) / "outside.bin"
         with self.assertRaises(ValueError):
             boundary.open(outside, "xb").__enter__()
+        with self.assertRaises(ValueError):
+            boundary.open(self.repository / ".." / "outside.bin", "xb").__enter__()
+
+    def test_physical_boundary_refuses_a_reparse_point_below_its_root(self):
+        from do_math import git_store
+        root = Path(self.temporary.name) / "bounded"
+        target = Path(self.temporary.name) / "elsewhere"
+        root.mkdir()
+        target.mkdir()
+        (target / "file.bin").write_bytes(b"outside")
+        boundary = git_store.PhysicalBoundary(root)
+        link = root / "link"
+        if os.name == "nt":
+            created = subprocess.run(["cmd.exe", "/d", "/c", "mklink", "/J", str(link), str(target)], capture_output=True)
+            self.assertEqual(created.returncode, 0, created.stderr)
+        else:
+            link.symlink_to(target, target_is_directory=True)
+        with self.assertRaisesRegex(ValueError, "reparse|symlink"):
+            boundary.open(link / "file.bin", "rb").__enter__()
 
     def test_non_commit_or_corrupt_existing_ref_is_not_treated_as_absent(self) -> None:
         blob = git(self.repository, "hash-object", "-w", "--stdin", input=b"not a commit").decode().strip()

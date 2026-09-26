@@ -62,11 +62,6 @@ def extend():
         "results": mapping(EVIDENCE), "status": enum("checking", "ready", "active", "activated", "failed", "withdrawn"),
         "source_ref": TEXT, "created_at": TEXT, "activated_at": TEXT, "semantic_pending": REFS,
         "semantic_results": mapping(EVIDENCE), "history": HISTORY}, ("from_environment", "to_environment", "targets", "results", "status"))
-    RECORDS["trust_environments"]["properties"].update({"toolchain": EVIDENCE,
-        "validation_receipt": EVIDENCE,
-        "status": enum("registered", "candidate", "active", "superseded", "retired", "withdrawn", "observed", "invalid"),
-        "approval": EVIDENCE, "semantic_validation": EVIDENCE, "invalidated_reason": TEXT})
-    RECORDS["trust_environments"]["required"] = ["id", "status", "toolchain", "allowed_axioms"]
     RECORDS["identity_assessments"]["properties"].update({"transition_id": ID, "transition_basis": HASH,
         "reviewed_identity_basis": EVIDENCE,
         "continuity_comparison": obj({"equivalent": BOOL, "missing": array(TEXT), "changed": array(TEXT),
@@ -132,7 +127,6 @@ def extend():
             "slot": TEXT, "visible_execution_ids": REFS, "workspace": TEXT, "supplied_sources": array(supplied_source),
             "source_snapshot": TEXT}, ("proposal_digest", "proposal", "request", "slot", "visible_execution_ids", "workspace", "supplied_sources", "source_snapshot"))),
         "waiting_actions": mapping(obj({"action": EVIDENCE, "reason": TEXT, "kind": TEXT,
-            "environment_request": TEXT,
             "execution_id": ID, "detail": EVIDENCE, "condition": EVIDENCE, "next_owner": TEXT,
             "retry_at": TEXT, "waiting_reason": EVIDENCE, "waiting_since": TEXT}, ("action", "reason"))),
         "private_insights": mapping(HISTORY)})
@@ -312,14 +306,7 @@ def extend():
                                          ("kind", "grant_id", "at", "affected"))
     from ..execution_profiles import OBSERVATION_KEYS, WINDOW_KEYS
     profile = RECORDS["execution_profiles"]["properties"]
-    lean_machine = obj({"lean_command": nullable(array(TEXT)),
-        "tool_manifest": array(obj({"path": TEXT, "sha256": HASH}, ("path", "sha256"))),
-        "tool_manifest_scope": enum("local_command_files_and_checker_not_dependency_closure")},
-        ("lean_command", "tool_manifest", "tool_manifest_scope"))
-    environment_machine = obj({'mechanism':enum('full_environment_scan'),
-        'workers':{'type':'integer','minimum':1,'maximum':16}, 'max_inflight':NAT, 'checker_sha256':HASH},
-        ('mechanism','workers','max_inflight','checker_sha256'))
-    profile['machine'] = {'oneOf':[lean_machine, environment_machine]}
+    profile['machine'] = obj({"lean_command": nullable(array(TEXT))}, ("lean_command",))
     observation_binding = obj({"source": TEXT, "operator": TEXT, "subject_kind": TEXT, "unit": TEXT},
                               ("source", "operator", "subject_kind", "unit"))
     profile["observation"] = obj({"mode": enum("event_driven", "periodic", "deadline_only"),

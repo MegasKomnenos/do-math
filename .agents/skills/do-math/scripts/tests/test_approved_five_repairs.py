@@ -12,6 +12,7 @@ from unittest.mock import Mock, patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.engine import ResearchEngine, DEFAULT_CONFIG
 from do_math import observations, execution_profiles, task_scope, planning
+from do_math.repository import exact_content_hash
 from test_categories import test_group
 
 
@@ -26,7 +27,7 @@ class WaitOwnershipTests(unittest.TestCase):
         engine.runtime = {'status': 'initializing', 'history': [], 'waiting_actions': {},
             'executions': {'EX-one': {'status': 'ended', 'submission_intent': {
                 'output_ref': 'out', 'extensions_ref': 'ext', 'check_ref': 'check'}}}}
-        engine.store = SimpleNamespace(read=lambda ref, head: json.dumps(
+        engine.store = SimpleNamespace(git_dir='fixture-git', read=lambda ref, head: json.dumps(
             {'out': output, 'ext': {}, 'check': {'issues': []}}[ref]).encode())
         def apply(*args):
             if creates_wait:
@@ -73,14 +74,16 @@ class ToolchainContractTests(unittest.TestCase):
             self.assertEqual(result['toolchain'], observed)
 
     def test_registration_rejects_the_incomplete_document_toolchain(self):
-        from do_math.initialization import trust_environment_errors, digest
-        from research_fixtures import trust_fixture
+        from do_math.trust_validation import environment_errors, register_request_errors
+        from research_fixtures import trust_environment, trust_fixture
         with tempfile.TemporaryDirectory() as directory:
-            environment=trust_fixture(Path(directory),['test-lean'])
-            environment.update(source_ref='UC-adopt',manifest_sha256=digest(environment['manifest']))
-            self.assertEqual(trust_environment_errors(environment,verify_files=False),[])
+            request=trust_fixture(Path(directory),['test-lean'])
+            environment, binding = trust_environment(request, source_ref='UC-adopt')
+            self.assertEqual(environment_errors(environment, binding),[])
             del environment['toolchain']['verifier_sha256']
-            errors = trust_environment_errors(environment, verify_files=False)
+            del request['toolchain']['verifier_sha256']
+            errors = environment_errors(environment, binding)
+            self.assertIn('toolchain.verifier_sha256 is missing', register_request_errors(request))
         self.assertTrue(any('verifier_sha256' in error for error in errors), errors)
 
 
@@ -182,7 +185,7 @@ class PartialWithdrawalTests(unittest.TestCase):
         assessment = {'decision':'incomplete', 'execution_id':'EX-plan',
             'item_dispositions':[{'obligation_id':o['id'],'kind':'open','evidence_refs':[]}
                                  for o in task['completion_obligations']], 'unresolved':[]}
-        assessment.update(contract_sha256=planning.contract_hash(task), results_sha256=planning._hash(task['results']),
+        assessment.update(contract_sha256=planning.contract_hash(task), results_sha256=exact_content_hash(task['results']),
             current=True, basis=task_scope.assessment_basis(task, assessment, instance, runtime))
         task['assessment'] = assessment
         return instance, runtime, {task['id']:deepcopy(task)}
@@ -323,7 +326,7 @@ class ResearchAdmissionTests(unittest.TestCase):
         # manifests. Persisted-state inspection also cannot inspect live Lean.
         self.assertEqual(report['inspection']['status'], 'incomplete', report)
         self.assertEqual({row['message'] for row in report['inspection']['findings']}, {
-            'live installed trust-environment files (persisted snapshot inspection only) not examined',
+            'shared toolchain records and installed files (persisted snapshot inspection only) not examined',
             'EX-check: role input manifest not examined', 'EX-interpret: role input manifest not examined'})
 
 

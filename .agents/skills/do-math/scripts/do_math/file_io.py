@@ -5,6 +5,8 @@ Retries repeat only the same rename, never the operation described by the file.
 """
 from contextlib import contextmanager
 from functools import lru_cache
+import hashlib
+import json
 import os
 from pathlib import Path
 import tempfile
@@ -106,3 +108,71 @@ def write_bytes_atomic(path, raw):
         temporary=Path(stream.name)
     # On a permanent publication failure, retain the temporary as evidence.
     atomic_replace(temporary,path)
+
+
+def stat_fingerprint(st):
+    """Metadata fingerprint (지문) of one file: size, modification and birth time.
+
+    Accepts ``os.stat`` results and ``os.DirEntry.stat(follow_symlinks=False)``.
+    A rewrite that preserves all three values is not detected; only an explicit
+    full-byte check catches it (accidental-change threat model). NTFS tunneling
+    keeps the birth time when a name is deleted and recreated within ~15 s, so a
+    same-size replacement that also restores the modification time is missed.
+    """
+    return (st.st_size, st.st_mtime_ns, getattr(st, 'st_birthtime_ns', st.st_ctime_ns))
+
+
+def fingerprint_json(fingerprint):
+    """Stored form: nanosecond times exceed canonical_json's safe integer range."""
+    size, modified, born = fingerprint
+    return [size, str(modified), str(born)]
+
+
+def file_fingerprint(path):
+    return stat_fingerprint(os.stat(path))
+
+
+# Windows file times advance in ~15.6 ms ticks, so a same-size rewrite shortly
+# after a read can keep the fingerprint (the racy-git case). Only fingerprints
+# older than this may stand in for the bytes. Tunable, not a proven bound.
+RACY_NS=2_000_000_000
+
+
+def fingerprint_settled(fingerprint):
+    """True when a fingerprint may justify skipping a content read."""
+    return time.time_ns()-max(fingerprint[1],fingerprint[2])>RACY_NS
+
+
+def json_digest(value):
+    """SHA-256 of compact sorted JSON, for values outside the state tree.
+
+    Provider responses and transport files may hold fractional numbers, which
+    ``repository.exact_content_hash`` rejects. NaN and infinities are refused.
+    """
+    return hashlib.sha256(json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"),
+                                     allow_nan=False).encode("utf-8")).hexdigest()
+
+
+def sha256_file(path):
+    digest=hashlib.sha256()
+    with shared_reader(path) as stream:
+        for block in iter(lambda: stream.read(1<<20), b''):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+_hashed={}
+
+
+def cached_sha256(path):
+    """Full-byte SHA-256, recomputed only when the file's fingerprint changes."""
+    key=os.path.normcase(os.path.abspath(path))
+    before=file_fingerprint(key)
+    hit=_hashed.get(key)
+    if hit and hit[0]==before:
+        return hit[1]
+    value=sha256_file(key)
+    # A file that changed while being read is hashed again on the next call.
+    if file_fingerprint(key)==before and fingerprint_settled(before):
+        _hashed[key]=(before,value)
+    return value

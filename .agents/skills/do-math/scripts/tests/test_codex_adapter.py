@@ -173,10 +173,27 @@ class CodexWorkerTests(unittest.TestCase):
             status.write_text('{"state":"exited","cli_exit_code":0}', encoding="utf-8")
             execution = CodexExecution(request, prompt, __import__("hashlib").sha256(b"{}").hexdigest(),
                                        __import__("hashlib").sha256(b"p").hexdigest(), ("worker",), stdout, stderr, final, status,
-                                       _FakeJob(JobInspection(0, (), True)), root, None)
+                                       _FakeJob(JobInspection(0, (), True)), root, None, b"{}", b"p")
             result = CodexExecAdapter(sys.executable).collect(execution)
             self.assertEqual(result["result"], "incomplete")
             self.assertIn("jsonl_parse_incomplete", result["reasons"])
+
+    def test_collect_reports_start_snapshot_bytes_without_rereading_them(self):
+        import hashlib
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            request, prompt, stdout, stderr, final, status = (root / name for name in ("r", "p", "o", "e", "f", "s"))
+            stdout.write_bytes(b""); stderr.write_bytes(b""); final.write_bytes(b"final")
+            status.write_text('{"state":"exited","cli_exit_code":0}', encoding="utf-8")
+            # The private snapshot files are absent: collection uses the bytes hashed at start.
+            execution = CodexExecution(request, prompt, hashlib.sha256(b"{}").hexdigest(),
+                                       hashlib.sha256(b"p").hexdigest(), ("worker",), stdout, stderr, final, status,
+                                       _FakeJob(JobInspection(0, (), True)), root, None, b"{}", b"p")
+            result = CodexExecAdapter(sys.executable).collect(execution)
+        self.assertNotIn("source_request_changed", result["reasons"])
+        self.assertEqual(result["source_request"], {"present": True, "bytes": 2,
+                         "sha256": execution.request_sha256, "raw": b"{}"})
+        self.assertEqual(result["source_prompt"]["sha256"], execution.prompt_sha256)
 
     def test_timeout_with_descendant_still_in_job_cannot_collect_stale_files(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -185,7 +202,7 @@ class CodexWorkerTests(unittest.TestCase):
             for path in (request, prompt, stdout, stderr, final): path.write_bytes(b"old")
             status.write_text('{"state":"timeout","runner_stop_required":true}', encoding="utf-8")
             execution = CodexExecution(request, prompt, "x", "y", ("worker",), stdout, stderr, final, status,
-                                       _FakeJob(JobInspection(1, (99,), True)), root, None)
+                                       _FakeJob(JobInspection(1, (99,), True)), root, None, b"old", b"old")
             result = CodexExecAdapter(sys.executable).collect(execution)
             self.assertFalse(result["artifacts_read"])
             self.assertIn("termination_barrier_unconfirmed", result["reasons"])

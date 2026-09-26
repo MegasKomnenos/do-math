@@ -1,4 +1,5 @@
 """Runner regressions use synthetic tests/clocks, never a compiler or provider."""
+from contextlib import redirect_stderr, redirect_stdout
 import io
 import json
 from pathlib import Path
@@ -153,6 +154,41 @@ class RunnerTests(unittest.TestCase):
                 report = run_tests._isolated([test], destination, 1)
             self.assertFalse(report['successful'])
             self.assertEqual(report['returncode'], 7)
+
+    def test_a_pass_on_the_same_inputs_is_reported_from_the_cache_not_rerun(self):
+        target = 'test_file_io.FingerprintTests.test_recent_fingerprint_is_not_cached'
+        with tempfile.TemporaryDirectory() as directory, \
+             patch.object(run_tests, 'CACHE', Path(directory) / 'cache'), \
+             patch.object(run_tests, '_input_key', return_value='k' * 64), \
+             redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+            def run(name, *extra):
+                self.assertEqual(run_tests.main(['--group', 'unit', '--match', target, '--output',
+                                                 str(Path(directory) / name), *extra]), 0)
+                return json.loads((Path(directory) / name / 'report.json').read_bytes())
+            first, second, forced = run('first'), run('second'), run('forced', '--no-cache')
+        self.assertEqual((first['cached'], first['counts']), (0, {'passed': 1}))
+        self.assertEqual((second['cached'], second['counts']), (1, {'passed': 1}))
+        self.assertEqual(second['reports'][0]['rows'][0]['cached_from'],
+                         str(Path(directory) / 'first' / 'report.json'))
+        self.assertEqual(forced['cached'], 0)
+
+    def test_editing_a_test_module_invalidates_it_and_its_importers_only(self):
+        with tempfile.TemporaryDirectory() as directory:
+            tests = Path(directory)
+            (tests / 'test_base.py').write_text('HELPER = 1\n', encoding='utf-8')
+            (tests / 'test_user.py').write_text('from test_base import HELPER\n', encoding='utf-8')
+            (tests / 'test_other.py').write_text('X = 1\n', encoding='utf-8')
+            with patch.object(run_tests, 'TESTS', tests):
+                before = run_tests._module_keys()
+                (tests / 'test_base.py').write_text('HELPER = 2\n', encoding='utf-8')
+                shared = run_tests._module_keys()
+                (tests / 'test_user.py').write_text('from test_base import HELPER\nY = 1\n', encoding='utf-8')
+                own = run_tests._module_keys()
+        self.assertNotEqual(shared['test_base'], before['test_base'])
+        self.assertNotEqual(shared['test_user'], before['test_user'], 'an importer reads the edited module')
+        self.assertEqual(shared['test_other'], before['test_other'])
+        self.assertEqual(own['test_base'], shared['test_base'], 'an importer edit does not reach the imported module')
+        self.assertNotEqual(own['test_user'], shared['test_user'])
 
 
 if __name__ == '__main__':

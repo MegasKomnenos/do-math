@@ -112,11 +112,13 @@ def inspection_exit_code(inspection):
 
 def inspect_state(instance: dict, runtime: dict, *, requested_areas: list[str] | None = None,
                   snapshot: str | None = None, read_artifact=None, artifact_errors=None,
-                  read_artifacts=None) -> dict[str, Any]:
+                  read_artifacts=None, artifact_sizes=None) -> dict[str, Any]:
     """Inspect declared persisted-state areas without inventing semantic facts.
 
     Each area lists its actual checked invariants and missing evidence.
     No result certifies mathematical truth, live providers or OS isolation.
+    ``artifact_sizes(paths)`` replaces byte-hash checks of referenced artifacts
+    with presence and stored-length checks; ``check`` omits it to compare bytes.
     """
     if requested_areas is None:
         requested_areas = list(CHECK_AREAS)
@@ -134,7 +136,7 @@ def inspect_state(instance: dict, runtime: dict, *, requested_areas: list[str] |
             areas.append({"name": area, "status": "incomplete", "checked": False, "findings": 1})
             continue
         try:
-            local, checked, missing = _inspect_area(area, instance, runtime, read_artifact, read_artifacts)
+            local, checked, missing = _inspect_area(area, instance, runtime, read_artifact, read_artifacts, artifact_sizes)
         except (ValueError, TypeError, KeyError, AttributeError) as error:
             local = [_finding(area, status='blocked', message='malformed domain records: ' + str(error),
                               blocked_scope=[area], next_owner='maintenance')]
@@ -162,7 +164,22 @@ def inspect_state(instance: dict, runtime: dict, *, requested_areas: list[str] |
             "checked_scope": "persisted records only; no new mathematical, provider, or host verification"}
 
 
-def _inspect_area(area, instance, runtime, read_artifact, read_artifacts=None):
+def _artifact_sizes(artifact_sizes, paths):
+    """Batch stored lengths; after a failed batch, an absent path is only its own defect."""
+    paths = list(dict.fromkeys(paths))
+    try:
+        return artifact_sizes(paths)
+    except (RuntimeError, OSError, ValueError, KeyError):
+        sizes = {}
+        for path in paths:
+            try:
+                sizes.update(artifact_sizes([path]))
+            except (RuntimeError, OSError, ValueError, KeyError):
+                pass
+        return sizes
+
+
+def _inspect_area(area, instance, runtime, read_artifact, read_artifacts=None, artifact_sizes=None):
     from copy import deepcopy
     findings, checked, missing = [], [], []
 
@@ -238,7 +255,17 @@ def _inspect_area(area, instance, runtime, read_artifact, read_artifacts=None):
         refs = list(instance.get('sources', []))
         for execution in runtime.get('executions', {}).values():
             refs.extend(execution.get('output_files', []))
-        if refs and read_artifact is None:
+        if artifact_sizes is not None:
+            sizes = _artifact_sizes(artifact_sizes, [ref.get('artifact_ref') or ref.get('path') for ref in refs])
+            for ref in refs:
+                def verify_size(ref=ref):
+                    path = ref.get('artifact_ref') or ref.get('path')
+                    if path not in sizes:
+                        raise ValueError('artifact is missing')
+                    if 'bytes' in ref and sizes[path] != ref['bytes']:
+                        raise ValueError('artifact length differs')
+                run('artifact presence and length', verify_size, ref.get('artifact_ref') or ref.get('path', 'source'))
+        elif refs and read_artifact is None:
             omitted('referenced artifact bytes')
         elif read_artifact:
             from .context_store import prefetch_artifacts
@@ -264,11 +291,13 @@ def _inspect_area(area, instance, runtime, read_artifact, read_artifacts=None):
         if len(active) > 1 or (instance.get('active_trust_environment') and active != [instance['active_trust_environment']]):
             defect('active trust environment is not unique or does not match pointer', 'trust_environments')
         checked.append('active trust environment uniqueness')
-        from .initialization import trust_environment_errors
+        from .trust_validation import environment_errors
+        bindings = runtime.get('trust_bindings', {})
         for identifier, environment in envs.items():
-            run('fixed trust manifest structure', lambda e=environment: trust_environment_errors(e, verify_files=False), identifier)
+            run('trust environment and binding structure',
+                lambda e=environment, b=bindings.get(identifier): environment_errors(e, b), identifier)
         if envs:
-            omitted('live installed trust-environment files (persisted snapshot inspection only)')
+            omitted('shared toolchain records and installed files (persisted snapshot inspection only)')
     elif area == 'tasks_activities_executions':
         from .activities import validate_activities
         from .execution_lifecycle import EXECUTION_STATUSES, OUTCOMES, STOP_PHASES
@@ -432,7 +461,10 @@ def _inspect_area(area, instance, runtime, read_artifact, read_artifacts=None):
             from .context_store import validate_role_manifest, verify_manifest_artifacts
             run('role input byte and revision manifest', lambda m=manifest: validate_role_manifest(m), identifier)
             def input_bytes(m=manifest, identifier=identifier):
-                absent = verify_manifest_artifacts(m, read_artifact, read_artifacts=read_artifacts)
+                sizes = (None if artifact_sizes is None else
+                         lambda paths: _artifact_sizes(artifact_sizes, paths))
+                absent = verify_manifest_artifacts(m, read_artifact, read_artifacts=read_artifacts,
+                                                   artifact_sizes=sizes)
                 if absent:
                     omitted(identifier + ': actual input bytes for ' + ', '.join(absent))
             run('published role input bytes', input_bytes, identifier)

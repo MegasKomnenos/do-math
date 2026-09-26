@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from copy import deepcopy
 from datetime import timedelta
-import hashlib
 import json
 import math
 import time
@@ -17,15 +16,10 @@ from .knowledge import (revise_knowledge, invalidate_knowledge, register_environ
 from .planning import (task_ready, contract_hash, apply_event_schedule, contract_review_current, review_basis_key,
                        capture_task_basis)
 from .input_basis import sources_current
-from .repository import canonical_json, new_id
+from .repository import canonical_json, exact_content_hash, new_id
 from .initialization import activation_requirements, capability_requirements, governance_working_view
 
-from .trust_validation import AXIOMS
 _SCHEDULABLE = {'planned', 'waiting', 'active'}
-
-
-def _digest(value):
-    return hashlib.sha256(canonical_json(value)).hexdigest()
 
 
 def _reconsider_interval(config):
@@ -202,7 +196,7 @@ class LifecycleEngineMixin:
 
     def _initialization_control(self, change, source_ref):
         """Existing decision control adopts settings or refreshes observed CLI evidence."""
-        from .initialization import digest, governance_basis, grant_current, INITIAL_ROLES, adapter_for
+        from .initialization import governance_basis, grant_current, INITIAL_ROLES, adapter_for
         from .execution_profiles import resolve_profile, capability_evidence
         from .review_policy import build_review_policy
         lifecycle = self.instance['lifecycle']
@@ -219,7 +213,7 @@ class LifecycleEngineMixin:
             approval = {'id': new_id('DC'), 'kind': 'initial_governance', 'actor': 'user',
                 'source_ref': source_ref, 'source_sha256': approval_source['sha256'],
                 'input_source_ref': initial_source['id'], 'input_source_sha256': initial_source['sha256'],
-                'record_hashes': {r['id']: digest(r) for r in records}}
+                'record_hashes': {r['id']: exact_content_hash(r) for r in records}}
             self.instance = initialize_governance(self.instance, initial_source, approval, records,
                                                   approval_source=approval_source)
             self.instance['lifecycle']['adoption']['governance_sha256'] = governance_basis(self.instance)
@@ -251,7 +245,7 @@ class LifecycleEngineMixin:
             raise ValueError('initialization operation must be governance, adopt or probe')
         adoption = deepcopy(lifecycle.get('adoption', {}))
         if change.get('adopt_current_config') is True:
-            adoption['config_sha256'] = digest(self.instance['config'])
+            adoption['config_sha256'] = exact_content_hash(self.instance['config'])
         if change.get('adopt_current_governance') is True:
             adoption['governance_sha256'] = governance_basis(self.instance)
         if 'conversation_loss_policy' in change:
@@ -267,7 +261,7 @@ class LifecycleEngineMixin:
                 reviewer_count=self.instance['config'].get('reviewers'),
                 max_rounds=self.instance['config'].get('review_rounds'))
             self.instance['review_policy'] = policy
-            adoption['review_policy_sha256'] = digest(policy)
+            adoption['review_policy_sha256'] = exact_content_hash(policy)
         if 'profile_refs' in change:
             refs = change['profile_refs']
             if not isinstance(refs, list) or not refs:
@@ -287,7 +281,7 @@ class LifecycleEngineMixin:
                 'profile_ref': change['initial_profile_ref']}, {}, self.instance['knowledge'],
                 profiles=self.instance['execution_profiles'])
             adoption['initial_profile_ref'] = deepcopy(change['initial_profile_ref'])
-        elif adoption.get('config_sha256') == digest(self.instance['config']) and adoption.get('profile_refs'):
+        elif adoption.get('config_sha256') == exact_content_hash(self.instance['config']) and adoption.get('profile_refs'):
             from .model_policy import selection
             chosen = selection(self.instance['config'], {'role': 'intent_interpretation'}, {},
                                self.instance['knowledge'], profiles=self.instance['execution_profiles'])['profile_ref']
@@ -412,10 +406,10 @@ class LifecycleEngineMixin:
     def _recovery_action_basis(action):
         transient = {'repair', 'dispatch_wait', 'model_selection', 'owner_activity_id', 'activity_id',
                      'execution_id', 'continuation_of', 'actor_kind', 'budget_kind'}
-        return _digest({k: v for k, v in action.items() if k not in transient})
+        return exact_content_hash({k: v for k, v in action.items() if k not in transient})
 
     def _recovery_pause_basis(self):
-        return _digest({key:self.runtime.get(key) for key in
+        return exact_content_hash({key:self.runtime.get(key) for key in
                         ('stop_requested', 'user_pause', 'model_policy_violation', 'resume_lifecycle')})
 
     def _limited_recovery_control(self, change, source_ref):
@@ -446,7 +440,7 @@ class LifecycleEngineMixin:
             'pause_basis': self._recovery_pause_basis()}
         self._lifecycle_event('limited_recovery_approved', target=action['id'], source_ref=source_ref,
             schedule=False, basis={**deepcopy(action['repair']['limited_recovery']),
-                                   'approval_sha256': _digest(change)})
+                                   'approval_sha256': exact_content_hash(change)})
         # Validate against the just-preserved request before the common control
         # handler publishes it in extended_controls. No second authority ledger.
         self._check_limited_recovery(action, change=change)
@@ -470,7 +464,7 @@ class LifecycleEngineMixin:
             change = request['config']['change']
         approvals = [event for event in self.runtime['events']
                      if event.get('kind') == 'limited_recovery_approved' and event.get('source_ref') == binding.get('source_ref')]
-        expected = {**binding, 'approval_sha256': _digest(change)}
+        expected = {**binding, 'approval_sha256': exact_content_hash(change)}
         if len(approvals) != 1 or approvals[0].get('basis') != expected or approvals[0].get('target') != action.get('id'):
             raise ValueError('limited recovery lacks its immutable approval binding')
         if (change.get('kind') != 'limited_recovery' or change.get('action_id') != action.get('id')
@@ -541,10 +535,10 @@ class LifecycleEngineMixin:
             self._resume_lifecycle(request)
             return True
         self._require_action_clock()
-        digest = _digest(request)
+        digest = exact_content_hash(request)
         old = self.runtime['extended_controls'].get(source_ref)
         if old:
-            if _digest(old['request']) != digest:
+            if exact_content_hash(old['request']) != digest:
                 raise ValueError('user control ID reused with changed content')
             return True
         before_instance, before_runtime = deepcopy(self.instance), deepcopy(self.runtime)
@@ -600,6 +594,7 @@ class LifecycleEngineMixin:
                 rejection = preserve_rejected_candidate(self.store, self.head, raw=canonical_json(request),
                     reason=f'{type(error).__name__}: {error}')
                 self.head = rejection['snapshot']
+                self._evaluate_stops()
             raise
         return True
 
@@ -663,30 +658,31 @@ class LifecycleEngineMixin:
 
     def _trust_control(self, config, source_ref):
         operation = config.get('operation')
-        if operation == 'recheck':
-            if config.get('env_id') not in self.instance['trust_environments']:
-                raise ValueError('environment recheck needs an existing environment')
-            checks = getattr(self, '_environment_checks', None)
-            if checks is not None:
-                checks.entries = {k:v for k,v in checks.entries.items()
-                                  if v['result'] is None or v.get('environment_id') != config['env_id']}
-            for aid, waiting in list(self.runtime.get('waiting_actions', {}).items()):
-                if (waiting.get('kind') == 'formal_environment'
-                        and waiting.get('detail', {}).get('environment_id') == config['env_id']):
-                    if not any(a.get('id') == aid for a in self.runtime['queue']):
-                        self.runtime['queue'].append({**deepcopy(waiting['action']),
-                            'continuation_of':waiting['execution_id']})
-                    del self.runtime['waiting_actions'][aid]
-            self._lifecycle_event('trust_recheck_requested', target=config['env_id'], source_ref=source_ref)
-            return
+        from .trust_validation import environment_errors
         if operation == 'register':
-            self.instance, environment_id = register_environment(self.instance, config.get('toolchain', {}),
-                                                                 config.get('allowed_axioms', list(AXIOMS)))
+            from .trust_validation import register_request_errors
+            from .trust_inventory import read_record, usable_errors, binding as baseline_binding
+            errors = register_request_errors(config)
+            if errors:
+                raise ValueError('; '.join(errors))
+            reference, bound = config['toolchain_record'], config['binding']
+            try:
+                record = read_record(reference['path'])
+            except OSError as error:
+                raise ValueError('toolchain record unavailable: ' + str(error)) from error
+            if (record['id'] != reference['id'] or record['identity'] != config['toolchain']
+                    or bound['baseline'] >= len(record['baselines']) or baseline_binding(record, bound['baseline']) != bound):
+                raise ValueError('trust registration differs from its toolchain record')
+            errors = usable_errors(record)
+            if record['baselines'][bound['baseline']]['validation']['status'] != 'verified':
+                errors.append('bound toolchain baseline has no successful representative check')
+            if errors:
+                raise ValueError('; '.join(errors))
+            self.instance, environment_id = register_environment(self.instance, config['toolchain'], config['allowed_axioms'])
             environment = self.instance['trust_environments'][environment_id]
-            environment.update(source_ref=source_ref, manifest=deepcopy(config.get('manifest', {})),
-                               manifest_sha256=_digest(config.get('manifest', {})))
-            from .initialization import trust_environment_errors
-            errors = trust_environment_errors(environment, verify_files=False)
+            environment.update(source_ref=source_ref, toolchain_record=deepcopy(reference))
+            self.runtime.setdefault('trust_bindings', {})[environment_id] = deepcopy(bound)
+            errors = environment_errors(environment, bound)
             if errors:
                 raise ValueError('; '.join(errors))
             self._lifecycle_event('trust_environment_registered', target=environment_id, source_ref=source_ref)
@@ -700,13 +696,12 @@ class LifecycleEngineMixin:
             if any(t.get('status') in {'checking', 'ready'} for t in self.runtime['trust_transitions'].values()):
                 raise ValueError('a trust transition is already in progress')
             transition = begin_transition(self.instance, environment_id)
-            from .initialization import trust_environment_errors
-            errors = trust_environment_errors(environment, verify_files=False)
+            errors = environment_errors(environment, self.runtime.get('trust_bindings', {}).get(environment_id))
             if errors:
                 raise ValueError('; '.join(errors))
             transition.update(source_ref=source_ref, created_at=self._lifecycle_now().isoformat())
             transition.setdefault('history', []).append({'kind': 'environment_fixed',
-                'environment_id': environment_id, 'environment_sha256': _digest(environment),
+                'environment_id': environment_id, 'environment_sha256': exact_content_hash(environment),
                 'source_ref': source_ref, 'at': transition['created_at']})
             self.runtime['trust_transitions'][transition['id']] = transition
             for target in transition['targets']:
@@ -940,7 +935,6 @@ class LifecycleEngineMixin:
         if reassess:
             self._enqueue('research_plan', reason='Assessment evidence changed; reassess existing results: '
                           + ', '.join(sorted(reassess)))
-        from .repository import exact_content_hash
         for task_id, task in self.runtime['tasks'].items():
             assessment = task.get('assessment', {})
             if task.get('status') not in {'completed', 'closed'} or assessment.get('current') is not False:
@@ -1083,36 +1077,36 @@ class LifecycleEngineMixin:
         # exact event_refs in an accepted execution's immutable input.
         if assigned and self.runtime.get('status') == 'waiting': self.runtime['status'] = 'ready'
 
-    def _bind_formal_environment(self, result):
-        output = deepcopy(result)
-        toolchain = output.get('toolchain')
-        allowed = output.get('allowed_axioms', self.instance.get('config', {}).get('allowed_axioms', list(AXIOMS)))
-        output['allowed_axioms'] = deepcopy(allowed)
-        if not isinstance(toolchain, dict) or not toolchain.get('sha256') or not toolchain.get('version'):
-            output.update(trust_environment_id=None, trust_environment_status='unknown',
-                          trust_environment_reason='Actual compiler fingerprint and version require a real probe')
-            return output
-        environment = self._formal_environment()
-        if not _toolchain_matches(environment['toolchain'], toolchain) or set(environment['allowed_axioms']) != set(allowed):
-            raise ValueError('formal result differs from the previously approved environment')
-        output.update(trust_environment_id=environment['id'], trust_environment_status='active')
-        return output
-
-    def _observe_environment(self, environment):
-        from .environment_checks import EnvironmentChecks
-        from .trust_validation import verify_environment_files
-        operation = getattr(self, '_environment_operation', None)
-        if operation is None:
-            return verify_environment_files(environment)
-        if not hasattr(self, '_environment_checks'):
-            self._environment_checks = EnvironmentChecks(self)
-        return self._environment_checks.observe(environment, operation)
-
-    def _formal_environment(self, *, verify_files=True):
-        """Required before checking and again before admitting a formal result."""
+    def _formal_environment(self):
+        """The active environment's stored contract; live files are checked by the formal step."""
         self._require_action_clock()
-        from .initialization import require_trust_environment
-        return require_trust_environment(self.instance, self.runtime, observe=self._observe_environment, verify_files=verify_files)
+        from .trust_validation import require_active_environment
+        return require_active_environment(self.instance, self.runtime)
+
+    def _apply_trust_rebind(self, check):
+        """Follow a baseline that setup_lean.py --rerecord appended; never author one."""
+        rebind = check.get('rebind')
+        environment_id = check.get('environment_id')
+        bindings = self.runtime.setdefault('trust_bindings', {})
+        if not rebind or bindings.get(environment_id) != rebind['previous']:
+            return
+        bindings[environment_id] = deepcopy(rebind['current'])
+        self._lifecycle_event('trust_environment_rebound', target=environment_id, schedule=False,
+            toolchain_record=deepcopy(check['toolchain_record']), previous=deepcopy(rebind['previous']),
+            current=deepcopy(rebind['current']), recorded_at=rebind['recorded_at'])
+
+    def _resume_environment_waits(self):
+        """Requeue formal checks stopped by the environment once its record or the active environment changes."""
+        from .trust_validation import environment_changed
+        for identifier, waiting in list(self.runtime.get('waiting_actions', {}).items()):
+            detail = waiting.get('detail', {})
+            if waiting.get('kind') != 'formal_environment' or not environment_changed(self.instance, detail):
+                continue
+            if not any(queued.get('id') == identifier for queued in self.runtime['queue']):
+                self.runtime['queue'].append({**deepcopy(waiting['action']), 'continuation_of': waiting['execution_id']})
+            del self.runtime['waiting_actions'][identifier]
+            self.runtime['history'].append({'kind': 'formal_environment_wait_resumed', 'action_id': identifier,
+                                            'previous': deepcopy(detail)})
 
     def _end_machine_execution(self, execution, *, outcome, disposition):
         from .execution_lifecycle import transition_execution
@@ -1206,8 +1200,8 @@ class LifecycleEngineMixin:
         return True
 
     def _run_trust_activation(self, action):
-        from .trust_validation import verify_environment_files
-        return self._run_machine_steps(self._trust_activation_steps(action), calculator=verify_environment_files)
+        from .trust_validation import check_environment
+        return self._run_machine_steps(self._trust_activation_steps(action), calculator=check_environment)
 
     def _record_machine_continuation(self, action, execution_id):
         # A save replaces the state objects while this generator is suspended.
@@ -1226,24 +1220,19 @@ class LifecycleEngineMixin:
         execution = self._register_execution(action, {'id': execution_id, 'role': 'trust_activate',
             'status': 'running', 'created_at': self._lifecycle_now().isoformat(),
              'input_snapshot': self.head,
-             'input_manifest': [{'kind': 'trust_transition', 'id': transition_id, 'sha256': _digest(transition)}]})
+             'input_manifest': [{'kind': 'trust_transition', 'id': transition_id, 'sha256': exact_content_hash(transition)}]})
         if execution is None:
             return False
         self.runtime['active_execution'] = execution_id
         self._save()
         environment = deepcopy(self.instance['trust_environments'][transition['to_environment']])
-        def stop():
-            return (self._execution_stop_requested(action, self.runtime['executions'][execution_id]) or bool(self.runtime.get('maintenance_fence'))
-                    or self.instance['trust_environments'].get(transition['to_environment']) != environment)
-        from .execution_profiles import resolve_profile
-        from . import trust_validation
-        scan_profile = resolve_profile(self.instance['execution_profiles'], execution['execution_profile_ref'])['machine']
-        if scan_profile['checker_sha256'] != hashlib.sha256(Path(trust_validation.__file__).read_bytes()).hexdigest():
-            raise ValueError('environment checker changed before execution')
-        verification = yield execution_id, {'environment':environment, 'should_stop':stop, 'workers':scan_profile['workers']}
+        binding = deepcopy(self.runtime.get('trust_bindings', {}).get(transition['to_environment']))
+        # One record read, identity check and fingerprint scan; there is no long scan to cancel.
+        verification = yield execution_id, {'environment': environment, 'binding': binding}
         self._live_execution_ids.discard(execution_id)
         execution = self.runtime['executions'][execution_id]
-        if verification.get('status') == 'cancelled' or stop():
+        if (self._execution_stop_requested(action, execution) or bool(self.runtime.get('maintenance_fence'))
+                or self.instance['trust_environments'].get(transition['to_environment']) != environment):
             self._end_machine_execution(execution, outcome='execution_incomplete', disposition={'kind':'environment_interrupted'})
             from .activities import wait_for
             wait_for(self.runtime, execution['owner_activity_id'], reason='environment_interrupted',
@@ -1252,6 +1241,8 @@ class LifecycleEngineMixin:
             self._save({f'runtime/artifacts/{execution_id}/environment.json':canonical_json(verification)})
             return False
         self._action_lifecycle_gate(action)
+        if verification.get('status') == 'verified':
+            self._apply_trust_rebind(verification)
         self._finish_trust_transition(transition_id, verification)
         transition = self.runtime['trust_transitions'][transition_id]
         execution = self.runtime['executions'][execution_id]
@@ -1265,7 +1256,7 @@ class LifecycleEngineMixin:
         if accepted:
             execution['submission_receipt'] = {'kind': 'machine_output', 'state': 'accepted',
                 'execution_id': execution_id, 'evidence_ref': artifact,
-                'source_sha256': _digest(result), 'trust_environment_id': transition['to_environment'],
+                'source_sha256': exact_content_hash(result), 'trust_environment_id': transition['to_environment'],
                 'accepted_at': self._lifecycle_now().isoformat()}
         if not self._end_machine_execution(execution, outcome='output_accepted' if accepted else 'execution_incomplete',
                                            disposition={'kind': 'trust_activation', **result, 'artifact_ref': artifact}):
@@ -1341,7 +1332,7 @@ class LifecycleEngineMixin:
                               source_ref=result['source_ref'], request_sha256=result['request_sha256'])
 
     def _run_trust_check(self, action):
-        from .environment_checks import verify_formal
+        from .trust_validation import verify_formal
         return self._run_machine_steps(self._trust_check_steps(action), calculator=verify_formal)
 
     def _trust_check_steps(self, action):
@@ -1371,12 +1362,11 @@ class LifecycleEngineMixin:
         stop_requested = False
         raw_result = None
         def should_stop():
+            # Owner-thread judgment of published state; the verifier reads only its flag.
             nonlocal stop_requested
             if getattr(self, '_calls', None) is not None and self._calls.stopping:
                 stop_requested = True
                 return True
-            self._controls()
-            if self._check_conversations(): self._save()
             stop_requested = stop_requested or bool(
                 self._execution_stop_requested(action, self.runtime['executions'][execution_id]) or
                 self.instance['trust_environments'].get(transition['to_environment']) != environment or
@@ -1384,9 +1374,10 @@ class LifecycleEngineMixin:
             from .governance import authorize
             stop_requested = stop_requested or not authorize(self.instance, action, runtime=self.runtime)['allowed']
             return stop_requested
+        binding = deepcopy(self.runtime.get('trust_bindings', {}).get(transition['to_environment']))
         try:
-            from .initialization import trust_environment_errors
-            errors = trust_environment_errors(environment, verify_files=False)
+            from .trust_validation import environment_errors
+            errors = environment_errors(environment, binding)
             if errors: raise ValueError('; '.join(errors))
             if not check['valid']: raise ValueError('trust transition basis changed: ' + ', '.join(check['reasons']))
             if environment.get('status') == 'invalid': raise ValueError('trust transition environment was invalidated')
@@ -1396,7 +1387,7 @@ class LifecycleEngineMixin:
                 on_started=lambda identity: self._machine_started(execution_id, identity))
             import inspect
             arguments = dict(source=item['lean_code'], declarations=item['declaration_names'], workspace=workspace,
-                environment=environment, verifier=self.formal_verifier,
+                environment=environment, binding=binding, verifier=self.formal_verifier,
                 **invocation, allowed_axioms=tuple(environment['allowed_axioms']))
             parameters = inspect.signature(self.formal_verifier).parameters
             if 'launch_ticket' in parameters or any(p.kind == inspect.Parameter.VAR_KEYWORD for p in parameters.values()):
@@ -1419,6 +1410,8 @@ class LifecycleEngineMixin:
                 result['identity_comparison'] = compare_formal_results(target, result)
         except Exception as error:
             result = {'status': 'failed', 'reason': f'{type(error).__name__}: {error}'}
+        if result.get('environment_check', {}).get('status') == 'verified':
+            self._apply_trust_rebind(result['environment_check'])
         result.update(id=knowledge_id, execution_id=execution_id, trust_environment_id=transition['to_environment'],
                       allowed_axioms=deepcopy(environment['allowed_axioms']))
         artifact = f'runtime/artifacts/{execution_id}/trust-result.json'
@@ -1476,11 +1469,12 @@ class LifecycleEngineMixin:
             bindings = [row for row in transition.get('history', []) if row.get('kind') == 'environment_fixed']
             if (not environment or environment.get('status') == 'invalid' or len(bindings) != 1
                     or bindings[0]['environment_id'] != transition['to_environment']
-                    or _digest(environment) != bindings[0]['environment_sha256']):
+                    or exact_content_hash(environment) != bindings[0]['environment_sha256']):
                 raise ValueError('target trust environment changed during transition')
-            if (verification.get('status') != 'verified'
-                    or verification.get('manifest_sha256') != environment['manifest_sha256']):
-                raise ValueError('complete current environment observation required: ' + '; '.join(verification.get('errors', [])))
+            if (verification.get('status') != 'verified' or verification.get('environment_id') != transition['to_environment']
+                    or verification.get('identity_sha256') != exact_content_hash(environment['toolchain'])
+                    or verification.get('binding') != self.runtime.get('trust_bindings', {}).get(transition['to_environment'])):
+                raise ValueError('current environment check required: ' + '; '.join(verification.get('errors', [])))
             from .formal import compare_formal_results
             reviewed = {}
             pending = False

@@ -9,6 +9,7 @@ import unittest
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from do_math.repository import exact_content_hash
 from research_fixtures import dispatched_launch
 from do_math import model_policy, scheduled_operator
 
@@ -604,6 +605,19 @@ class ProfileTests(unittest.TestCase):
             self.assertEqual(first["worker_sha256"], second["worker_sha256"])
             self.assertIn("host", first)
 
+    def test_unchanged_cli_and_sources_are_not_rehashed_for_each_identity(self):
+        from do_math import file_io
+        from do_math.codex_adapter import CodexExecAdapter
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "cli.exe"
+            path.write_bytes(b"first")
+            adapter = CodexExecAdapter(str(path))
+            # A fresh file's birth time cannot be aged; treat any past fingerprint as settled.
+            with patch.object(file_io, "RACY_NS", 0):
+                first = adapter.capability_identity()
+                with patch.object(file_io, "sha256_file", side_effect=AssertionError("unchanged file was rehashed")):
+                    self.assertEqual(adapter.capability_identity(), first)
+
     def test_git_publication_and_recovery_exclude_engine_writer(self):
         import subprocess
         from do_math.repository import ResearchRepository
@@ -669,7 +683,7 @@ class ProfileTests(unittest.TestCase):
                 return {"outcome": "engine_requested"}
             with patch.object(scheduled_operator.ModelRunner, "run", side_effect=repaired), \
                  patch("do_math.initialization.adapter_for", return_value=self.capability_adapter()), \
-                 patch('do_math.repair_execution.installation_fingerprint', return_value='b' * 64), \
+                 patch('do_math.repair_execution.installation_sha256', return_value='b' * 64), \
                  patch.object(scheduled_operator.subprocess, "run", side_effect=verification), \
                  patch.object(scheduled_operator, "wake", side_effect=restart), \
                  patch("do_math.windows_job.named_job_empty", return_value=True):
@@ -796,43 +810,61 @@ class Audit1Tests(unittest.TestCase):
         from do_math import execution_profiles as ep
         return ep, ep.build_profiles({**CONFIG, "lean_command": ["lean-A"],  **changes})
 
-    def test_machine_profile_changes_with_command_deadline_and_tool_bytes(self):
+    def approved(self, tool, command):
+        """An approved identity whose recorded executable is this tool file."""
+        import hashlib
+        from do_math import formal
+        digest = lambda path: hashlib.sha256(Path(path).read_bytes()).hexdigest()
+        checker = Path(formal.__file__).resolve()
+        return {"executable": str(Path(tool).resolve()), "sha256": digest(tool), "configured_command": command,
+                "version": "fixture", "version_exit": 0, "verifier_sha256": digest(checker),
+                "verifier_path": str(checker), "executables": {str(Path(tool).resolve()): digest(tool)}, "project": None}
+
+    def test_machine_profile_pins_the_command_and_the_verifier_checks_tool_bytes(self):
+        from do_math import formal
         ep, a = self.profiles()
         _, b = self.profiles(lean_command=["lean-B"], )
-        def formal(state):
+        def formal_profile(state):
             return next(p for p in state["execution_profiles"].values() if p["role"] == "formal_check")
-        self.assertNotEqual(ep.profile_ref(formal(a)), ep.profile_ref(formal(b)))
+        self.assertNotEqual(ep.profile_ref(formal_profile(a)), ep.profile_ref(formal_profile(b)))
         self.assertTrue(hasattr(ep, "machine_invocation"), "machine invocation has no profile consumer")
         with tempfile.TemporaryDirectory() as directory:
             tool = Path(directory) / "lean.exe"
             tool.write_bytes(b"edition one")
             _, first = self.profiles(lean_command=[str(tool)])
-            p = formal(first)
-            env = {"toolchain": {"configured_command": [str(tool)], "version": "fixture"}}
+            p = formal_profile(first)
+            env = {"toolchain": self.approved(tool, [str(tool)])}
             args = ep.machine_invocation(p, trust_environment=env)
             self.assertNotIn("timeout_seconds", args)
             self.assertEqual(args["lean_command"], [str(tool)])
             self.assertEqual(args["expected_toolchain"], env["toolchain"])
             tool.write_bytes(b"edition two")
             _, second = self.profiles(lean_command=[str(tool)])
-            self.assertNotEqual(ep.profile_ref(p), ep.profile_ref(formal(second)))
-            with self.assertRaisesRegex(ValueError, "tool.*changed"):
-                ep.machine_invocation(p, trust_environment=env)
+            # The profile names the command only; the approved identity binds its bytes once, in the verifier.
+            self.assertEqual(ep.profile_ref(p), ep.profile_ref(formal_profile(second)))
+            self.assertEqual(ep.machine_invocation(p, trust_environment=env), args)
+            with patch("do_math.formal._job_run", side_effect=AssertionError("changed tool was started")):
+                result = formal.verify_lean(source="theorem t : True := True.intro", declarations=["t"],
+                                            workspace=Path(directory), **args)
+            self.assertEqual((result["status"], result["reason"]), ("rejected", "approved toolchain changed before execution"))
+            self.assertEqual(result["identity_errors"], ["approved toolchain file changed: " + str(tool.resolve())])
             with self.assertRaises(ValueError):
-                ep.machine_invocation(formal(second), trust_environment={"toolchain": {"configured_command": ["different"]}})
+                ep.machine_invocation(formal_profile(second), trust_environment={"toolchain": {"configured_command": ["different"]}})
 
-    def test_machine_command_alias_keeps_adopted_argv_and_checks_resolution(self):
+    def test_machine_command_alias_keeps_adopted_argv_and_the_verifier_checks_resolution(self):
+        from do_math import formal
         with tempfile.TemporaryDirectory() as directory:
             tool = Path(directory) / "lean.exe"; tool.write_bytes(b"edition")
-            with patch("do_math.execution_profiles.shutil.which", return_value=str(tool)):
-                ep, state = self.profiles(lean_command=["lean"])
-                p = next(p for p in state["execution_profiles"].values() if p["role"] == "formal_check")
-                args = ep.machine_invocation(p, trust_environment={"toolchain": {"configured_command": ["lean"]}})
-                self.assertEqual(args["lean_command"], ["lean"])
+            ep, state = self.profiles(lean_command=["lean"])
+            p = next(p for p in state["execution_profiles"].values() if p["role"] == "formal_check")
+            args = ep.machine_invocation(p, trust_environment={"toolchain": self.approved(tool, ["lean"])})
+            self.assertEqual(args["lean_command"], ["lean"])
             other = Path(directory) / "other.exe"; other.write_bytes(b"edition")
-            with patch("do_math.execution_profiles.shutil.which", return_value=str(other)):
-                with self.assertRaisesRegex(ValueError, "tool.*changed"):
-                    ep.machine_invocation(p, trust_environment={"toolchain": {"configured_command": ["lean"]}})
+            with patch("do_math.formal.shutil.which", return_value=str(other)), \
+                 patch("do_math.formal._job_run", side_effect=AssertionError("another resolution was started")):
+                result = formal.verify_lean(source="theorem t : True := True.intro", declarations=["t"],
+                                            workspace=Path(directory), **args)
+            self.assertEqual((result["status"], result["reason"]), ("rejected", "approved toolchain changed before execution"))
 
 
     def test_explicit_old_edition_uses_its_model_but_preserves_floor_and_allowlist(self):
@@ -915,7 +947,25 @@ class Audit1Tests(unittest.TestCase):
         self.assertEqual(evidence["identity"], identity)
         self.assertEqual(evidence["execution_profile_ref"], ep.profile_ref(p))
         self.assertEqual(evidence["capabilities"]["atomic_local_job"]["status"], "unsupported")
-        self.assertEqual(evidence["id"], "CE-" + ep._digest({k: v for k, v in evidence.items() if k != "id"}))
+        self.assertEqual(evidence["id"], "CE-" + exact_content_hash({k: v for k, v in evidence.items() if k != "id"}))
+
+    def test_identity_is_observed_only_for_a_structural_start_failure(self):
+        from do_math.model_runner import CodexModelRunner
+        from unittest.mock import Mock
+        ep, registry = self.profiles()
+        p = next(p for p in registry["execution_profiles"].values() if p["role"] == "maintenance")
+        runner = CodexModelRunner("not-called")
+        runner._adapter = Mock()
+        runner._adapter.start.side_effect = FileExistsError("fixture launch conflict")
+        prompt = "input" + ep.boundary_prompt(p)
+        with tempfile.TemporaryDirectory() as directory:
+            result = runner.run(prompt=prompt, output_schema={}, workspace=Path(directory),
+                evidence_dir=Path(directory) / "evidence", model=p["ai"]["model"], effort=p["ai"]["effort"],
+                timeout_seconds=1, execution_id="EX-conflict", profile=p,
+                launch_ticket=dispatched_launch("EX-conflict", p), input_seal=ep.prompt_seal(prompt))
+        self.assertEqual(result["error_kind"], "launch_conflict")
+        # Hashing the CLI and adapter sources is evidence for a failed start only.
+        runner._adapter.capability_identity.assert_not_called()
 
     def test_negative_job_fact_vetoes_next_matching_assignment(self):
         from do_math.initialization import capability_requirements
@@ -965,7 +1015,7 @@ class Audit1Tests(unittest.TestCase):
             status.write_bytes(json.dumps({"state": "exited", "cli_exit_code": 0, "stdin_sha256": source_hash,
                 "request_sha256": request_hash, "schema_sha256": None, "execution_id": "EX-native", "profile_ref": ep.profile_ref(p)}).encode())
             ex = CodexExecution(request, source, request_hash, source_hash, ("worker",), stdout, stderr, final, status,
-                                _FakeJob(JobInspection(0, (), True)), root, None)
+                                _FakeJob(JobInspection(0, (), True)), root, None, request.read_bytes(), source.read_bytes())
             collected = ClaudePrintAdapter("not-launched").collect(ex)
             self.assertEqual(collected["result"], "output_collected", collected["reasons"])
             runner = ClaudeModelRunner("not-launched"); runner._adapter = Adapter(collected)

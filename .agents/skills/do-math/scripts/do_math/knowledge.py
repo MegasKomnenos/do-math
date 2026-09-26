@@ -10,7 +10,7 @@ import hashlib
 import re
 from typing import Any, Iterable
 
-from .repository import new_id, semantic_content_hash
+from .repository import exact_content_hash, new_id, semantic_content_hash
 from .input_basis import capture_sources, sources_current
 
 
@@ -671,7 +671,7 @@ def _staged_review_basis(instance, transition, knowledge_id):
                              trust_environment_id=transition["to_environment"])
     return {
         "identity_basis": kr.identity_basis(view, knowledge_id),
-        "transition_basis": kr.exact_digest({
+        "transition_basis": exact_content_hash({
             "transition_id": transition["id"], "target": target,
             "verification": verification, "target_environment": environment,
             "from_environment": transition["from_environment"],
@@ -773,7 +773,6 @@ def activate_transition(instance: dict, transition: dict, *, runtime=None) -> di
         old_xid = record["exposition_id"]
         fid, xid = new_id("FR"), new_id("XP")
         result = {key: deepcopy(value) for key, value in results[kid].items() if key not in {"id", "identity_review"}}
-        result["trust_environment_digest"] = kr.digest(environment)
         output["formal_results"][fid] = {**deepcopy(old_formal), "id": fid, "verification": result,
             "trust_environment_id": target_env_id, "formal_use": "active", "transition_id": transition["id"],
             "supersedes": old_formal["id"]}

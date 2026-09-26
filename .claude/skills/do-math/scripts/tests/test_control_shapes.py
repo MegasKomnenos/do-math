@@ -6,6 +6,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from test_categories import test_group
 import test_query_records as query_fixtures
@@ -133,19 +134,28 @@ class DomainShapeTests(unittest.TestCase):
         validate_decision_shape({'kind': 'repetition_continue',
             'allowed_action': {'id': 'AC-plan', 'role': 'research_plan', 'target': None}})
 
-    def test_trust_manifest_nested_structures_return_errors_without_host_io(self):
-        from research_fixtures import trust_fixture
-        from do_math.trust_validation import manifest_errors
+    def test_trust_registration_nested_structures_return_errors_without_host_io(self):
+        from research_fixtures import trust_environment, trust_fixture
+        from do_math.control_contracts import validate_control_payload
+        from do_math.trust_validation import environment_errors
         with tempfile.TemporaryDirectory() as directory:
             config = trust_fixture(Path(directory), ['lean'])
-            original = {**config, 'source_ref': 'UC-fixture'}
-            for field in ('foundation_profile', 'validation', 'files'):
-                for value in (None, False, 1, 'text', [{}]):
-                    environment = deepcopy(original)
-                    environment['manifest'][field] = value
-                    environment['manifest_sha256'] = exact_content_hash(environment['manifest'])
-                    with self.subTest(field=field, value=value):
-                        self.assertTrue(manifest_errors(environment))
+            environment, binding = trust_environment(config)
+            with patch.object(Path, 'resolve', side_effect=AssertionError('host access')), \
+                 patch('os.stat', side_effect=AssertionError('host access')):
+                validate_control_payload('trust', 'register', config)
+                self.assertEqual(environment_errors(environment, binding), [])
+                for field in ('toolchain_record', 'binding', 'toolchain'):
+                    for value in (None, False, 1, 'text', [{}], {}):
+                        with self.subTest(field=field, value=value):
+                            with self.assertRaises(ValueError):
+                                validate_control_payload('trust', 'register', {**config, field: value})
+                            changed = {**environment, field: value} if field != 'binding' else environment
+                            self.assertTrue(environment_errors(changed, value if field == 'binding' else binding))
+                with self.assertRaises(ValueError):
+                    validate_control_payload('trust', 'register', {**config, 'unrecognized': True})
+                with self.assertRaisesRegex(ValueError, 'enum'):
+                    validate_control_payload('trust', 'recheck', {'operation': 'recheck', 'env_id': 'TE-x'})
 
     def test_time_boundaries_reject_nonstrings_instead_of_treating_falsy_input_as_now(self):
         from do_math import governance, delegations, external

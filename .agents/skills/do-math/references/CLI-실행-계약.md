@@ -1,6 +1,6 @@
 # do-math CLI 실행 계약
 
-초기화의 검사 분리, 큰 불변 payload의 저장 코덱, `launch_ticket`, `quiesce`/`release-quiesce`, `trust`의 `recheck`, `timeline --include-operations`는 [초기화 효율과 정비](초기화-효율과-정비.md)의 현행 계약을 함께 따른다. `maintenance_fence`와 `operation_progress`는 각각 정비 상태와 별도 로컬 진행 관측이며 수학적 완료 판정이 아니다.
+초기화의 검사 분리, 큰 불변 payload의 저장 코덱, `launch_ticket`, `quiesce`/`release-quiesce`, 신뢰 환경의 툴체인 기록·재기록, `timeline --include-operations`는 [초기화 효율과 정비](초기화-효율과-정비.md)의 현행 계약을 함께 따른다. `maintenance_fence`와 `operation_progress`는 각각 정비 상태와 별도 로컬 진행 관측이며 수학적 완료 판정이 아니다.
 
 이 문서는 기능 판본 5의 구체 인터페이스 참조다. 역할 응답의 wire 계약은 `do-math-cli/5`, 저장 계약은 `do-math-state/5`이며 서로 같은 스키마가 아니다. 명령행 인자, 구조화 제어, 저장 형식, CLI 상태 투영, AI 입력·출력과 산출 경로를 설명한다. do-math의 목적과 전체 연구 흐름은 `SKILL.md`, 보편 개념의 정의는 `GLOSSARY.md`, 역할별 판단·산출·실패 행동은 `계약/` 문서가 소유한다.
 
@@ -240,12 +240,12 @@ init --repository PATH [--create-repository] --workspace PATH
 
 `init`은 수학적 질문을 연구 목표로 받는다. 초기화가 완료된 뒤 형식 결과·동일성 판정·목표 감사로 해결 여부를 판정한다. 문헌 조사·계산·비형식 과제는 이 목표를 위한 작업 계약으로 수행한다.
 
-- `run [--max-steps N] [--watch] [--until-active]`는 writer lock 안에서 control을 적용하고, 사라진 실행을 복구하며, 모델별 용량 안에서 AI action을 병렬로 실행한다. 형식·신뢰·외부 기계 action과 상태 반영은 소유 실행기가 처리한다. `N`은 새로 처리할 action 수의 양의 상한이며, 도달한 뒤에는 새 일반 action을 열지 않고 이미 시작한 모델 호출을 회수한다. 그 호출의 생존·복구에 필요한 live 운영 점검은 독립된 운영 슬롯에서 계속 처리하며 일반 step 수에 넣지 않는다.
+- `run [--max-steps N] [--watch] [--until-active]`는 writer lock 안에서 control을 적용하고, 사라진 실행을 복구하며, 모델별 용량 안에서 AI action을 병렬로 실행한다. 쓰기 전에는 현재 기록이 참조하는 보존 artifact가 있고 저장 길이가 기록과 같은지 확인한다. 제어 적용도 같은 사전 점검을 거친다. 전 바이트 대조는 `check`가 맡는다. 형식·신뢰·외부 기계 action과 상태 반영은 소유 실행기가 처리한다. `N`은 새로 처리할 action 수의 양의 상한이며, 도달한 뒤에는 새 일반 action을 열지 않고 이미 시작한 모델 호출을 회수한다. 그 호출의 생존·복구에 필요한 live 운영 점검은 독립된 운영 슬롯에서 계속 처리하며 일반 step 수에 넣지 않는다.
 - `--until-active`는 lifecycle이 active가 되면 연구 action을 배정하기 전에 반환한다. 이미 active인 인스턴스에도 새 연구를 시작하지 않는다. 누락 관문이 있는 반환은 활성화 성공이 아니다.
 - `select-profile --role ROLE [--task TK-ID] [--snapshot OID]`는 현재 역할 하한·과제 평가·허용 프로필을 실제 선택과 같은 규칙으로 대조한다. 반환은 선택과 정확한 프로필 원문이며 실행·채택은 하지 않는다.
 - `prepare-import-approval --import-id IM-ID [--snapshot OID] --output NEW-PATH`는 독립 검사를 통과한 현행 수입의 정확한 승인 좌표를 새 파일로 생성한다. 파일 생성은 승인·적용이 아니며, 실제 결정은 기존 `decision --file`을 사용한다.
-- `status [--json]`은 같은 Git snapshot에서 연구 상태·예약·예산·공급자 대기를 재구성한다. 실제 새 배정은 최신 머리에서 권한과 여유를 다시 검사하고 예약한다. 별도 운영 로그나 현장 프로세스 관측을 함께 읽을 때에는 그 관측 시각과 범위를 구별한다. JSON 필드는 README의 운영 표를 따른다.
-- `check`는 상태 관계와 보존 artifact의 해시·크기를 검사해 `{passed, errors, ...}`를 반환한다. 결함이 있으면 exit 1이다. 자연어 의미를 새로 검증하지 않는다.
+- `status [--json]`은 같은 Git snapshot에서 연구 상태·예약·예산·공급자 대기를 재구성한다. 저장된 기록을 보고하며, `inspection`은 기록 관계와 참조 artifact의 존재·저장 길이만 확인한다. 보존 artifact를 다시 읽는 제출 검사 진단은 계산하지 않고 `submission_checks.status=not_evaluated`로 둔다. 실제 새 배정은 최신 머리에서 권한과 여유를 다시 검사하고 예약한다. 별도 운영 로그나 현장 프로세스 관측을 함께 읽을 때에는 그 관측 시각과 범위를 구별한다. JSON 필드는 README의 운영 표를 따른다.
+- `check`는 상태 관계와 보존 artifact의 전 바이트 해시·크기를 검사하고 제출 검사 진단을 계산해 `{passed, errors, ...}`를 반환한다. 결함이 있으면 exit 1이다. 자연어 의미를 새로 검증하지 않는다.
 - `profile [--provider codex|claude] [--codex-path PATH | --claude-path PATH]`은 선택한 CLI 표면을 조사한다. 기본 공급자는 `codex`이며 경로 옵션은 선택한 공급자와 일치해야 한다. 인스턴스 인자는 받지 않는다. `verified=true`는 명령 표면의 확인이며 로그인·모델 이용 가능성이나 실제 작업 성공의 증거는 아니다.
 
 ### `pause`, `resume`, `close`, `input`, `configure`, `request`
@@ -525,19 +525,23 @@ source --file PATH [--name FILE_NAME]
 
 ### `trust`
 
-`register`에는 정확한 `toolchain`, `allowed_axioms`, 실제 파일·검증 근거를 갖춘 `manifest`가 필요하다. manifest의 현행 필드는 `command`, `foundation_profile`, `scope`, `files`, `validation`이다. scope는 설치·프로젝트·검사기 root의 전체 파일 모집단을 고정하며, validation은 실제 검사의 record와 내용 해시를 보존한다. 사전 빌드 캐시를 허용하며 클린 빌드는 요구하지 않는다. `validation.record.status=verified`는 명시한 환경 검사에 상대적인 통과이며 전체 라이브러리 재검증을 뜻하지 않는다. `setup_lean.py --verify-only --trust-file <새 경로>`는 실제 검사 원문·결과와 전체 파일 목록을 결합한 완전한 등록 요청을 생성한다. 수신기는 source·command·종료 코드·전후 toolchain과 record 해시를 검사한다. 완전한 요청 형식과 각 값의 출처는 [초기화 운전](초기화-운전.md)의 신뢰 환경 절에 있다. 등록 시 기계 검사는 manifest 구조·해시, 명령과 기초 공리 프로필을 대조해 비활성 후보를 보존한다. 실제 설치 파일의 경로·바이트와 관측 전후 목록의 추가·누락 대조는 전환 뒤 활성화 기계 작업이 수행한다. 등록 성공이나 준비 표지 하나로 환경을 활성화하지 않는다.
+`trust`의 연산은 `register`, `transition`, `invalidate` 셋이다.
+
+`register`에는 `toolchain`(판본 식별), `allowed_axioms`, `toolchain_record`(툴체인 기록 파일의 절대 경로와 기록 ID), `binding`(결박할 기준 항목의 번호, 지문 다이제스트, 내용 해시 다이제스트, 대표 검사 요약 해시)이 필요하다. `setup_lean.py --verify-only --trust-file <새 경로>`나 설치의 `--trust-file`이 기록의 현재 기준으로 이 요청을 만든다. 완전한 요청 형식과 각 값의 출처는 [초기화 운전](초기화-운전.md)의 5절에 있다. 수신기는 요청 구조를 검사한 뒤 기록 파일을 읽어 ID·판본 식별·결박 다이제스트가 요청과 같은지, 현재 기준의 대표 검사가 성공했고 불일치 점검이 없는지 확인하고 비활성 후보를 보존한다. 설치 파일은 읽지 않는다. 사전 빌드 캐시를 허용하며 클린 빌드는 요구하지 않는다. 대표 검사의 통과는 명시한 예제에 상대적이며 전체 라이브러리 재검증을 뜻하지 않는다. 현재 판본 식별과 지문의 대조는 전환 뒤 활성화 기계 작업이 수행한다. 등록 성공이나 준비 표지 하나로 환경을 활성화하지 않는다.
 
 ```json
 {"operation":"transition","env_id":"TE-실제-등록-ID"}
 ```
 
-등록 응답 뒤 `query --kind trust-environment`로 대상 ID와 내용을 확인한다. `transition`은 그 환경을 대상으로 전환 기록과 `trust_check` 또는 `trust_activate` 기계 요청을 만든다. `run`이 이를 처리하며, 현재 형식 결과의 재검사와 필요한 의미 대조가 끝나기 전에는 새 환경을 활성으로 사용하지 않는다. 형식 재검사 성공만으로 이전 동일성 결론을 새 의미에 승계하지 않는다. 상태는 전환 기록과 `active_trust_environment`에서 확인한다.
+등록 응답 뒤 `query --kind trust-environment`로 대상 ID와 내용을 확인한다. `transition`은 그 환경을 대상으로 전환 기록을 만들고, 현재 형식 결과를 가진 K마다 `trust_check` 기계 요청을 만든다. 재검사할 K가 없으면 곧바로 `trust_activate`를 만들고, 있으면 재검사가 모두 끝난 뒤 `trust_activate`가 이어진다. `run`이 이를 처리하며, 현재 형식 결과의 재검사와 필요한 의미 대조가 끝나기 전에는 새 환경을 활성으로 사용하지 않는다. 형식 재검사 성공만으로 이전 동일성 결론을 새 의미에 승계하지 않는다. 상태는 전환 기록과 `active_trust_environment`에서 확인한다.
 
 ```json
 {"operation":"invalidate","env_id":"TE-실제-등록-ID","reason":"실제로 확인한 무효화 근거"}
 ```
 
 무효화는 해당 환경에 의존하는 현재 사용을 정지한다. 원 형식 결과와 판정 이력은 보존하며 실제 영향 범위의 후속 판단을 연다.
+
+지문 불일치로 멈춘 형식 검사를 다시 진행시키는 `trust` 연산은 없다. 판본이 같고 메타데이터만 바뀌었으면 사용자나 운전자가 `setup_lean.py --rerecord`로 기준을 덧붙이고, 판본이 바뀌었으면 새 기록을 `register`·`transition`한다. 실행기는 툴체인 기록 파일의 크기나 수정 시각이 바뀌었거나 활성 환경이 바뀐 것을 보고 멈춘 작업을 다시 배정한다. 재기록, 재결박, 선택적 전수 점검(`--check-contents`)과 종료 코드는 [초기화 효율과 정비](초기화-효율과-정비.md)를 따른다.
 
 ### `external`
 
@@ -843,11 +847,11 @@ relation 항목은 `kind`, `source`, `target`, `evidence`를 가진다. source�
 
 사용자 pause·close, 권한 철회·만료, 실행 근거 변경과 기한은 해당 실행의 정지·회수 경계를 연다. `.control/finish-request.json`은 정상 부분 제출의 예고이고 `.control/stop-request.json`은 새 연구 권한의 회수다. 허용된 마무리 시간에는 이미 얻은 결과와 남은 의무를 보존한다. Windows Job의 로컬 종료 확인은 호스트 격리나 원격 종료의 보증이 아니다.
 
-실행 중 설치 코드·필수 문서의 해시가 바뀌면 일관된 설치본에서 재시작하도록 정지한다. 입력 준비·확정·결과 수신 경계의 검사와 순회 검사는 파일 변경 즉시 감지와 다르다. 이미 고정한 입력·산출은 당시 판본으로 보존한다. 입력 준비 중 제어로 전제가 바뀌면 아직 공개하지 않은 입력 준비를 정리하고 현재 입력으로 다시 판단한다.
+`run`은 기동할 때 설치 코드·필수 문서를 해시해 기준으로 삼는다. 실행 중에는 파일 지문(크기·수정 시각·생성 시각)이 바뀐 파일만 다시 해시해 기준과 대조하고, 해시가 바뀌면 일관된 설치본에서 재시작하도록 정지한다. 세 값을 모두 보존한 채 내용만 바뀐 경우는 이 대조로 잡지 않는다. 입력 준비·확정·결과 수신 경계의 검사와 순회 검사는 파일 변경 즉시 감지와 다르다. 이미 고정한 입력·산출은 당시 판본으로 보존한다. 입력 준비 중 제어로 전제가 바뀌면 아직 공개하지 않은 입력 준비를 정리하고 현재 입력으로 다시 판단한다.
 
 ## 형식 검사, 동일성 검토와 목표
 
-Lean source가 있는 knowledge candidate는 중앙 `formal_check` action으로 간다. 실행기는 실제 실행파일, version·hash, project fingerprint, source hash, 선언 signature와 전이 공리 의존을 보존하고 `allowed_axioms` 밖 의존과 `sorryAx`를 거부한다. 형식 검사는 Lean 실행이 만든 다른 host 효과나 수학 해설의 의미를 보증하지 않는다.
+Lean source가 있는 knowledge candidate는 중앙 `formal_check` action으로 간다. 실행기는 컴파일 전에 툴체인 기록과 판정 파일의 지문을 대조하고, 실제 실행파일, version·hash, 프로젝트 소스 식별, source hash, 선언 signature와 전이 공리 의존을 보존하고 `allowed_axioms` 밖 의존과 `sorryAx`를 거부한다. 형식 검사는 Lean 실행이 만든 다른 host 효과나 수학 해설의 의미를 보증하지 않는다.
 
 형식 검사가 사용자 pause·HOLD로 멈추면 프로세스 종료와 예약 반환 뒤 원 action·활동과 종료 execution의 계보를 남긴다. 정상 resume·release 뒤에는 동일한 소스·선언·신뢰 환경과 현재 허가를 다시 확인하여 새 execution으로 검사한다. 컴파일러의 중간 메모리를 복원하는 것은 아니다. 소스·환경·허가가 바뀌었거나 인스턴스가 닫혔으면 이 일시 정지 재개를 적용하지 않는다.
 

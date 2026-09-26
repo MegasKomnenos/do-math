@@ -1,4 +1,6 @@
 """The installed skill must work without its author's repository documents."""
+from contextlib import redirect_stdout
+import io
 import json
 from pathlib import Path
 import shutil
@@ -54,9 +56,13 @@ class StandaloneTests(unittest.TestCase):
             marker.write_text(setup_lean.LEAN_VERSION, encoding='utf-8')
             with patch.object(sys, 'argv', ['setup_lean.py']), \
                     patch.object(setup_lean, 'toolchain_root', return_value=root), \
-                    patch.object(setup_lean, 'run', side_effect=subprocess.CalledProcessError(1, ['lake', 'update'])):
-                with self.assertRaises(subprocess.CalledProcessError):
+                    patch.object(setup_lean, 'run', side_effect=subprocess.CalledProcessError(1, ['lake', 'update'])), \
+                    redirect_stdout(io.StringIO()) as output:
+                with self.assertRaises(SystemExit) as stopped:
                     setup_lean.main()
+            # An execution error is exit code 2 with a JSON status, and never leaves a ready marker.
+            self.assertEqual(stopped.exception.code, 2)
+            self.assertEqual(json.loads(output.getvalue())['status'], 'error')
             self.assertFalse(marker.exists())
 
 

@@ -3,12 +3,9 @@ from __future__ import annotations
 
 from copy import deepcopy
 import hashlib
-import json
 from typing import Any
 
-
-def _hash(value: Any) -> str:
-    return hashlib.sha256(json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+from .file_io import json_digest
 
 
 def _strings(value: Any, label: str) -> list[str]:
@@ -54,13 +51,13 @@ def requirement_record(requirements: list[dict]) -> dict:
     if len({item["id"] for item in items}) != len(items):
         raise ValueError("requirements need distinct IDs")
     record = {"items": items}
-    return {**record, "sha256": _hash(record)}
+    return {**record, "sha256": json_digest(record)}
 
 
 def solution_basis(goal_ref: str, records: list[dict]) -> dict:
     if not isinstance(goal_ref, str) or not goal_ref or not records:
         raise ValueError("solution basis needs goal and records")
-    return {"goal_ref": goal_ref, "records": [{"id": record["id"], "sha256": _hash(record)} for record in records]}
+    return {"goal_ref": goal_ref, "records": [{"id": record["id"], "sha256": json_digest(record)} for record in records]}
 
 
 def criterion_obligations(task_id, requirement):
@@ -74,7 +71,7 @@ def assessment_current(instance, runtime, record):
     task = runtime.get("tasks", {}).get(record.get("task_id"), {})
     from .task_scope import assessment_current as task_assessment_current
     applied = task.get("assessment", {})
-    return (record.get("task_assessment_sha256") == _hash(applied)
+    return (record.get("task_assessment_sha256") == json_digest(applied)
             and applied.get("execution_id") == record.get("execution_id")
             and task_assessment_current(task, instance, runtime))
 
@@ -171,7 +168,7 @@ def _evidence(instance, runtime, identifier, resolve_evidence=None):
 
 
 def _evidence_hash(value):
-    return hashlib.sha256(value).hexdigest() if isinstance(value, bytes) else _hash(value)
+    return hashlib.sha256(value).hexdigest() if isinstance(value, bytes) else json_digest(value)
 
 
 def record_resolution(instance, runtime, basis, resolution, *, execution_id, resolve_evidence=None):
@@ -184,12 +181,12 @@ def record_resolution(instance, runtime, basis, resolution, *, execution_id, res
         raise ValueError("resolution requires verdict and actual assessment")
     refs = _strings(resolution.get("evidence_refs"), "resolution evidence refs")
     if not refs: raise ValueError("resolution needs resolvable evidence")
-    record = {"rejection_id": rejection["id"], "rejection_sha256": _hash(rejection), "solution_basis": deepcopy(basis),
+    record = {"rejection_id": rejection["id"], "rejection_sha256": json_digest(rejection), "solution_basis": deepcopy(basis),
               "requirements_sha256": current_requirements(instance).get("sha256"), "execution_id": execution_id,
               "decision": resolution["decision"], "evidence": resolution["evidence"],
               "evidence_refs": refs, "evidence_hashes": {ref:_evidence_hash(_evidence(instance, runtime, ref, resolve_evidence)) for ref in refs}}
-    record["id"] = "AR-" + _hash(record)[:24]
-    record["sha256"] = _hash(record)
+    record["id"] = "AR-" + json_digest(record)[:24]
+    record["sha256"] = json_digest(record)
     records = runtime.setdefault("academic_resolution_records", [])
     if not any(r.get("id") == record["id"] for r in records): records.append(record)
     return deepcopy(record)
@@ -203,9 +200,9 @@ def unresolved_rejections(instance, runtime, basis, *, resolve_evidence=None):
         record = matches[-1] if matches else {}
         try:
             valid = (bool(record) and record.get("decision") == "resolved" and record.get("solution_basis") == basis
-                     and record.get("rejection_sha256") == _hash(rejection)
+                     and record.get("rejection_sha256") == json_digest(rejection)
                      and record.get("requirements_sha256") == current_requirements(instance).get("sha256")
-                     and record.get("sha256") == _hash({k:v for k,v in record.items() if k != "sha256"})
+                     and record.get("sha256") == json_digest({k:v for k,v in record.items() if k != "sha256"})
                      and runtime.get("executions", {}).get(record.get("execution_id"), {}).get("input_solution_basis") == basis
                      and bool(record.get("evidence_refs"))
                      and all(_evidence_hash(_evidence(instance, runtime, ref, resolve_evidence)) == record["evidence_hashes"][ref] for ref in record["evidence_refs"]))

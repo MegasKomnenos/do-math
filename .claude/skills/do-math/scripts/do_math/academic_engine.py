@@ -2,7 +2,8 @@
 from copy import deepcopy
 
 from . import academic, governance
-from .repository import new_id
+from .file_io import json_digest
+from .repository import exact_content_hash, new_id
 
 
 def current_solution_basis(instance, runtime):
@@ -39,7 +40,7 @@ def current_solution_basis(instance, runtime):
     records = [support[ref] for ref in sorted(visited | support_ids)]
     records += [{"id": j["execution_id"], **j} for j in judgments]
     charter = governance.governance_view(instance).get("charter")
-    goal_ref = (governance.digest({"content": {key: value for key, value in charter["content"].items()
+    goal_ref = (exact_content_hash({"content": {key: value for key, value in charter["content"].items()
                                               if key != "academic_requirements"}, "document": charter.get("document")})
                 if charter else str(instance.get("goal_revision", 1)))
     # Academic requirements have their own edition binding; changing them
@@ -212,7 +213,7 @@ class AcademicEngineMixin:
         result = academic.assess(task["academic_requirement_id"], task["solution_basis"], academic.current_requirements(self.instance),
                                  decision, evidence)
         result.update(execution_id=execution_id, task_id=task["id"], external_effect_receipts=receipts,
-                      task_assessment_sha256=academic._hash(applied))
+                      task_assessment_sha256=json_digest(applied))
         records = self.runtime.setdefault("academic_assessments", [])
         if result not in records: records.append(result)
 

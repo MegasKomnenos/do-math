@@ -2,8 +2,9 @@
 from __future__ import annotations
 
 from copy import deepcopy
-import hashlib
-import json
+
+from .file_io import json_digest
+from .repository import exact_content_hash
 
 
 def aliases(source: dict) -> set[str]:
@@ -30,24 +31,19 @@ class CurrentnessChanged(ValueError):
         super().__init__("decision premises changed: " + json.dumps(changes, ensure_ascii=False, sort_keys=True))
 
 
-def _review_basis_digest(value):
-    return hashlib.sha256(json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"),
-                                     allow_nan=False).encode("utf-8")).hexdigest()
-
-
 def capture_review_input_basis(cycle: dict) -> dict:
     """Freeze the non-proposal inputs that make a review result interpretable."""
     fields = ("review_policy", "scope_assessment", "owner_activity_id", "activity_execution_limit",
               "identity_basis", "policy_ref", "publication_premises")
     values = {field: deepcopy(cycle.get(field)) for field in fields}
-    return {"version": 5, "values": values, "sha256": _review_basis_digest(values)}
+    return {"version": 5, "values": values, "sha256": json_digest(values)}
 
 
 def review_input_basis_changes(basis: dict, cycle: dict) -> list[dict]:
     """Report precise policy/scope/profile drift; do not infer semantic equivalence."""
     if not isinstance(basis, dict) or basis.get("version") != 5 or not isinstance(basis.get("values"), dict):
         return [{"field": "review_input_basis", "reason": "missing_or_unsupported_basis", "next": "refresh_review"}]
-    if basis.get('sha256') != _review_basis_digest(basis['values']):
+    if basis.get('sha256') != json_digest(basis['values']):
         return [{'field': 'review_input_basis', 'reason': 'basis_digest_changed', 'next': 'refresh_review'}]
     current = capture_review_input_basis(cycle)["values"]
     changes = []
@@ -95,7 +91,7 @@ def decision_basis_changes(basis: dict, instance: dict, runtime: dict) -> list[d
             current = planning.task_reference_basis(record)
             if current["contract_sha256"] != row["contract_sha256"]:
                 add(identifier, "contract_sha256", row["contract_sha256"], current["contract_sha256"])
-            prefix_hash = planning._hash(record.get("results", [])[:row["result_count"]])
+            prefix_hash = exact_content_hash(record.get("results", [])[:row["result_count"]])
             if prefix_hash != row["results_sha256"]:
                 add(identifier, "results_sha256", row["results_sha256"], prefix_hash)
         else:

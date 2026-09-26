@@ -147,20 +147,33 @@ class ObservationCollectionTests(unittest.TestCase):
             self.assertEqual(artifacts[record['evidence_files'][0]['artifact_ref']], proof)
 
     def test_returned_result_is_collected_before_unrelated_observation_callbacks(self):
-        from concurrent.futures import Future
+        import threading
+        import time
         from do_math.parallel import ModelCalls
         calls = ModelCalls()
         order = []
         def continuation():
             result = yield
             order.append('result')
-        generator = continuation(); next(generator)
-        ready = Future(); ready.execution_id = 'EX-ready'; ready.set_result({'status': 'completed'})
-        calls.futures[ready] = generator
-        response = Future()
-        calls.events.put((lambda: order.append('observation'), (), response, False))
-        calls.collect()
-        self.assertEqual(order, ['result', 'observation'])
+        ready = continuation(); next(ready)
+        calls.start_call(ready, lambda: {'status': 'completed'}, {}, execution_id='EX-ready').result(timeout=5)
+        release = threading.Event()
+        def observe_then_wait(on_observation):
+            on_observation()
+            release.wait(5)
+            return {'status': 'completed'}
+        live = continuation(); next(live)
+        future = calls.start_call(live, observe_then_wait, {'on_observation': lambda: order.append('observation')},
+                                  execution_id='EX-live')
+        until = time.monotonic() + 5
+        while not future.observations and time.monotonic() < until:
+            time.sleep(.01)
+        try:
+            self.assertEqual(calls.collect(), 1)
+            self.assertEqual(order, ['result', 'observation'])
+        finally:
+            release.set()
+            calls.close()
 
     def test_buffered_command_before_delivery_is_not_a_new_action_violation(self):
         from test_redesign_OBSERVATION import rule
@@ -517,7 +530,7 @@ class NativeBatchTests(unittest.TestCase):
                 job = WindowsJob(argv, cwd=cwd, env=os.environ)
                 return CodexExecution(request_path, prompt, status['request_sha256'], status['stdin_sha256'], argv,
                     Path(request['stdout_path']), Path(request['stderr_path']), Path(request['final_path']),
-                    Path(request['status_path']), job, cwd, schema_hash)
+                    Path(request['status_path']), job, cwd, schema_hash, request_path.read_bytes(), prompt.read_bytes())
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             workspace = root / 'workspace'; workspace.mkdir()

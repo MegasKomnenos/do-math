@@ -23,6 +23,8 @@ from do_math.input_basis import capture_decision_basis
 from do_math.repository import canonical_json
 from do_math import submission
 from do_math.control_transport import ControlTransport
+from research_fixtures import await_control
+from state_fixtures import ACTIVE_LEAN_COMMAND
 from research_fixtures import (candidate, seal_response, bind_candidates, contract_review,
                          disposition, scope_response, assessment, supply_observation_rules)
 
@@ -53,7 +55,7 @@ class CheckedRunner:
             payload = {"draft_path": check["raw_output_path"]}
             request_id = "submit-" + check["id"]
             ControlTransport.worker_submit(binding, request_id=request_id, kind="submit_intent", payload=payload)
-            args["should_stop"]()
+            ControlTransport.wait_receipt(binding, request_id, 60)  # The owner receives it on its next pass.
         return result
 
 
@@ -107,10 +109,9 @@ class AcceptanceTests(unittest.TestCase):
                         args["on_started"]({"pid": 1})
                         original = json.loads((args["workspace"] / "input/knowledge" / (kid + ".json")).read_bytes())
                         self.assertEqual(original["statement"], "The result is one.")
-                        control(self.fixture.repo, engine.instance["id"], "knowledge", config={
+                        await_control(engine, control(self.fixture.repo, engine.instance["id"], "knowledge", config={
                             "operation": "revise", "id": kid, "changes": {"statement": "The result is two."},
-                            "reason": "Correct the computation."})
-                        args["should_stop"]()
+                            "reason": "Correct the computation."}))
                         dependencies = [kid] if declaration == "dependencies" else []
                         used = [kid] if declaration == "used_sources" else []
                         if declaration == "knowledge_path":
@@ -141,12 +142,13 @@ class AcceptanceTests(unittest.TestCase):
                         context = purpose.parse_context(args["prompt"], args["workspace"])
                         args["on_started"]({"pid": 1})
                         source.write_text("corrected", encoding="utf-8")
-                        control(self.fixture.repo, engine.instance["id"], "source", config={"path": str(source)})
-                        args["should_stop"]()
+                        await_control(engine, control(self.fixture.repo, engine.instance["id"], "source", config={"path": str(source)}))
                         return returned("identity_review", proposal_digest=context["role_review"]["proposal_digest"],
                                         used_sources=["proposal:statement"], decision="match", findings=[], scope_complete=True)
-                engine, _ = self.fixture.make(max_output_repairs=0)
-                engine.runner = CheckedRunner(Runner())
+                # Validated active state without prepared tasks; the formal check
+                # needs the active environment's configured command.
+                engine = self.fixture.engine(Runner(), count=0, max_output_repairs=0,
+                                             lean_command=list(ACTIVE_LEAN_COMMAND))
                 engine.formal_verifier = formal_ok
                 control(self.fixture.repo, engine.instance["id"], "source", config={"path": str(source)})
                 control(self.fixture.repo, engine.instance["id"], "knowledge", config={"operation": "import", "candidate":
@@ -198,7 +200,7 @@ class AcceptanceTests(unittest.TestCase):
                 request_id = control(self.fixture.repo, engine.instance["id"], "knowledge", config={
                     "operation": "revise", "id": kid, "changes": changes,
                     "declared_impact": impact["computed_impact"], "reason": "Correct a prerequisite result."})
-                args["should_stop"]()
+                await_control(engine, request_id)
                 self.assertTrue(any(h.get("kind") == "user_control" and
                     h.get("request", {}).get("id") == request_id["request_id"] for h in engine.runtime["history"]),
                     "The concurrent knowledge revision must actually be accepted")

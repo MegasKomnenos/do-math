@@ -88,7 +88,7 @@ class BatchedInspectionTests(unittest.TestCase):
         self.assertEqual(read('one'), b'single')
         self.assertEqual(read('another'), b'single')
 
-    def test_engine_entry_and_check_batch_inputs_at_the_fixed_snapshot(self):
+    def test_engine_entry_checks_presence_and_length_while_check_compares_bytes(self):
         head = 'a' * 40
         output_path = 'runtime/artifacts/BA-output/result.bin'
         input_path = 'runtime/artifacts/BA-input/input.txt'
@@ -107,18 +107,120 @@ class BatchedInspectionTests(unittest.TestCase):
             engine.head = 'b' * 40  # Later callbacks must retain the observed snapshot.
             return {path: files[path] for path in paths}
 
+        def sizes(paths, snapshot):
+            self.assertEqual(snapshot, head)
+            missing = [path for path in paths if path not in files]
+            if missing:
+                raise GitStateStoreError('batch size did not return a blob: ' + missing[0])
+            return {path: len(files[path]) for path in paths}
+
         engine.store.read_many.side_effect = batch
-        # This fixture exercises byte inspection, not lifecycle activation.
-        with patch.object(engine_module, '_require_current_contract'), \
-                patch.object(engine_module, 'inspect_current_state', return_value={'valid': True}):
+        engine.store.blob_sizes.side_effect = sizes
+        # This fixture exercises artifact inspection, not lifecycle activation.
+        with patch.object(engine_module, '_require_current_contract'),                 patch.object(engine_module, 'inspect_current_state', return_value={'valid': True}):
             engine._inspect_before_write()
-            self.assertTrue(engine.check(requested_areas=['record_storage'])['passed'])
-            files[input_path] = b'changed prompt'
+            # Entry to run/controls reads no artifact bytes: same-length changes are check's.
+            self.assertEqual(engine.store.read_many.call_count, 0)
+            files[input_path] = b'exact prompX'
+            engine._inspect_before_write()
+            engine.head = head
             result = engine.check(requested_areas=['record_storage'])
-        self.assertFalse(result['passed'])
-        self.assertIn(input_path, result['errors'][0])
-        self.assertEqual(engine.store.read_many.call_count, 6)
+            self.assertFalse(result['passed'])
+            self.assertIn(input_path, result['errors'][0])
+            del files[input_path]
+            engine.head = head
+            with self.assertRaisesRegex(ValueError, 'input artifact is missing'):
+                engine._inspect_before_write()
+            files[output_path] = b'\x00'
+            with self.assertRaisesRegex(ValueError, 'repaired before publication'):
+                engine._inspect_before_write()
         engine.store.read.assert_not_called()
+
+
+@category('unit')
+class ImpactReviewRetryTests(unittest.TestCase):
+    def test_sealed_bytes_are_read_only_after_every_requested_review_ended(self):
+        engine = engine_module.ResearchEngine.__new__(engine_module.ResearchEngine)
+        engine.head = 'a' * 40
+        request = {'integration_id': 'IN-1', 'payload_sha256': 'p' * 64}
+        engine.runtime = {'status': 'ready', 'executions': {'EX-producer': {'id': 'EX-producer'}},
+            'waiting_actions': {'A-1': {'action': {'id': 'A-1'}, 'kind': 'impact_review',
+                'execution_id': 'EX-producer', 'review_requests': {'IN-1': request}}}}
+        engine._hold_unreadable_impact_submission = Mock()
+        engine.store = Mock(git_dir="fixture-git")
+        with patch.object(engine_module.submission, 'read_sealed_submission',
+                          side_effect=submission.SealedSubmissionError('unreadable fixture')) as read:
+            # Control processing retries every waiting item; a pending review reads nothing.
+            engine._retry_impact_reviews()
+            read.assert_not_called()
+            engine.runtime['executions']['EX-review'] = {'id': 'EX-review', 'status': 'ended',
+                'outcome': 'output_accepted', 'action': {'stage': 'impact_review',
+                                                         'input_basis': {'impact_review': request}}}
+            engine._retry_impact_reviews()
+            read.assert_called_once()
+        engine._hold_unreadable_impact_submission.assert_called_once()
+
+
+@category('unit')
+class SealedArtifactTests(unittest.TestCase):
+    def test_a_sealed_row_is_hashed_once_and_matched_rows_are_not_reread(self):
+        import uuid
+        raw = b'sealed bytes'
+        digest = hashlib.sha256(raw).hexdigest()
+        path = 'runtime/artifacts/BA-sealed/output.json'
+        engine = engine_module.ResearchEngine.__new__(engine_module.ResearchEngine)
+        engine.head = 'a' * 40
+        engine.store = Mock(git_dir='git-' + uuid.uuid4().hex)
+        engine.store.read.return_value = raw
+        with self.assertRaisesRegex(ValueError, 'differs from its record'):
+            engine._sealed_bytes(path, 'b' * 64, len(raw))
+        self.assertEqual(engine._sealed_bytes(path, digest, len(raw)), raw)
+        with patch.object(repository.hashlib, 'sha256', side_effect=AssertionError('matched row rehashed')):
+            self.assertEqual(engine._sealed_bytes(path, digest, len(raw)), raw)
+            engine.store.read.reset_mock()
+            self.assertIsNone(engine._sealed_bytes(path, digest, len(raw), needed=False))
+        engine.store.read.assert_not_called()
+
+    def test_artifact_condition_reads_and_validates_a_sealed_artifact_once(self):
+        import uuid
+        from do_math import planning
+        raw = b'{"result": true}'
+        ref = {'snapshot': 'a' * 40, 'path': 'runtime/artifacts/BA-cond/result.json',
+               'sha256': hashlib.sha256(raw).hexdigest()}
+        read, validate = Mock(return_value=raw), Mock(return_value=True)
+        context = {'snapshot': 'b' * 40, 'read_artifact': read, 'validate_artifact': validate,
+                   'git_dir': 'git-' + uuid.uuid4().hex, 'now': '2026-09-26T00:00:00+00:00'}
+        condition = {'op': 'artifact_valid', 'artifact_ref': ref}
+        for _ in range(3):
+            self.assertEqual(planning.evaluate_condition(condition, {}, {}, evaluation_context=context)['state'], 'ready')
+        self.assertEqual((read.call_count, validate.call_count), (1, 1))
+
+
+@category('unit')
+class ToolDiscoveryTests(unittest.TestCase):
+    def test_lean_is_rediscovered_at_most_once_per_second(self):
+        engine = engine_module.ResearchEngine.__new__(engine_module.ResearchEngine)
+        engine.instance = {'config': {'scholarly_enabled': False, 'scholarly_server': None},
+                           'knowledge': {}, 'sources': []}
+        engine.runtime = {'tasks': {}}
+        clock = [100.0]
+        with patch.object(engine_module, 'discover_lean', return_value=['lean']) as discover, \
+                patch.object(engine_module.time, 'monotonic', side_effect=lambda: clock[0]):
+            for _ in range(5):
+                self.assertIn('tool:lean', engine._available_inputs())
+            self.assertEqual(discover.call_count, 1)
+            discover.return_value = None
+            clock[0] += 1.0
+            self.assertNotIn('tool:lean', engine._available_inputs())
+            self.assertEqual(discover.call_count, 2)
+
+    def test_periodic_installation_check_rehashes_no_unchanged_file(self):
+        from do_math import file_io
+        # Freshly edited files are not yet settled; age every fingerprint for this check.
+        with patch.object(file_io, 'RACY_NS', 0):
+            baseline = engine_module.ResearchEngine._installation_manifest()
+            with patch.object(file_io, 'sha256_file', side_effect=AssertionError('unchanged file was rehashed')):
+                self.assertEqual(engine_module.ResearchEngine._installation_manifest(), baseline)
 
 
 @category('unit')

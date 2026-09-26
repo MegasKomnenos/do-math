@@ -64,7 +64,14 @@ class GitStateStore:
 
     ``publish`` uses Git's expected-old-OID ref update as its concurrency
     guarantee.  ``writer_lock`` is a separate, optional local OS lock for
-    callers that need to serialize work before that final CAS.
+    callers that need to serialize work before that final CAS; while this
+    store holds it, the final CAS is the only ref comparison.
+
+    Physical boundaries (no reparse ancestor, local fixed NTFS volume, final
+    path) are established when the store is opened and re-established when
+    Git reports an error, which is how a move or remount surfaces. They are
+    not re-proved before every Git process: racing a path swap is deliberate
+    tampering, outside the accidental-change threat model.
     """
 
     def __init__(self, repository: str | os.PathLike[str], instance_id: str) -> None:
@@ -83,6 +90,7 @@ class GitStateStore:
             raise GitStateStoreError(f"unsupported Git object format: {self.object_format!r}")
         self.oid_length = 40 if self.object_format == "sha1" else 64
         self._listed: tuple[str, frozenset[str]] | None = None
+        self._holds_writer_lock = False
 
     def read_snapshot(self) -> StateSnapshot:
         """Return the current state commit and its research/runtime tree OIDs."""
@@ -194,8 +202,9 @@ class GitStateStore:
         if expected_head is not None:
             self._validate_oid(expected_head)
         normalized_changes = self._validate_changes(changes)
-        current = self._head()
-        if current != expected_head:
+        # Under this store's writer lock no other do-math writer can move the
+        # ref, so the final update-ref CAS below is the only comparison.
+        if not self._holds_writer_lock and self._head() != expected_head:
             raise GitStateStoreConflict("expected head no longer matches the instance ref")
 
         existing_paths = self._tree_paths(expected_head) if expected_head is not None else set()
@@ -252,6 +261,9 @@ class GitStateStore:
         updated = self._git("update-ref", self.ref, commit, old, check=False)
         if updated.returncode:
             raise GitStateStoreConflict("state ref changed before the publish compare-and-swap")
+        # The new tree is the parent tree with exactly these index updates, so
+        # its path list is known without re-enumerating it (ls-tree -r).
+        self._listed = (commit, frozenset(candidate_paths))
         return StateSnapshot(commit, research_tree, runtime_tree)
 
     @contextmanager
@@ -260,7 +272,6 @@ class GitStateStore:
         lock_path = self._git_dir / f"do-math-{self.instance_id}.lock"
         descriptor = os.open(lock_path, os.O_RDWR | os.O_CREAT, 0o600)
         try:
-            self._git_boundary.verify_descriptor(descriptor, lock_path)
             if os.fstat(descriptor).st_size == 0:
                 os.write(descriptor, b"\0")
             os.lseek(descriptor, 0, os.SEEK_SET)
@@ -275,9 +286,11 @@ class GitStateStore:
                     fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
             except OSError as error:
                 raise GitStateStoreLockError("another local writer owns this instance lock") from error
+            self._holds_writer_lock = True
             try:
                 yield
             finally:
+                self._holds_writer_lock = False
                 os.lseek(descriptor, 0, os.SEEK_SET)
                 if os.name == "nt":
                     msvcrt.locking(descriptor, msvcrt.LK_UNLCK, 1)
@@ -337,8 +350,6 @@ class GitStateStore:
 
     def _tree_paths(self, commit: str) -> frozenset[str]:
         self._validate_oid(commit)
-        self._repository_boundary.check()
-        self._git_boundary.check()
         if self._listed is not None and self._listed[0] == commit:
             return self._listed[1]
         raw_paths = self._git("ls-tree", "-r", "-z", "--name-only", commit).stdout.split(b"\0")
@@ -374,6 +385,7 @@ class GitStateStore:
 
     def _validate_candidate_paths(self, paths: set[str]) -> None:
         folded_prefixes: dict[str, str] = {}
+        directories: set[str] = set()
         for path in paths:
             self._validate_path(path)
             parts = path.split("/")
@@ -384,6 +396,12 @@ class GitStateStore:
                 if prior is not None and prior != original:
                     raise ValueError(f"Windows case-colliding path segments: {prior!r} and {original!r}")
                 folded_prefixes[key] = original
+                if position < len(parts):
+                    directories.add(original)
+        # Git's index would silently drop the file side of such a pair.
+        conflicts = directories.intersection(paths)
+        if conflicts:
+            raise ValueError("state path is both a file and a directory: " + min(conflicts))
 
     def _validate_artifact_changes(self, existing_paths: set[str], changes: Mapping[str, bytes | None]) -> None:
         existing_bundles = {
@@ -422,10 +440,7 @@ class GitStateStore:
     @contextmanager
     def _private_index(self) -> Iterator[dict[str, str]]:
         descriptor, index_path = tempfile.mkstemp(prefix="do-math-index-", dir=self._git_dir)
-        try:
-            self._git_boundary.verify_descriptor(descriptor, index_path)
-        finally:
-            os.close(descriptor)
+        os.close(descriptor)
         environment = {"GIT_INDEX_FILE": index_path}
         try:
             yield environment
@@ -443,9 +458,6 @@ class GitStateStore:
         env: Mapping[str, str] | None = None,
         check: bool = True,
     ) -> subprocess.CompletedProcess[bytes]:
-        self._repository_boundary.check()
-        if hasattr(self, "_git_boundary"):
-            self._git_boundary.check()
         disabled_hooks = getattr(self, "_git_dir", self.repository) / "do-math-disabled-hooks"
         environment = os.environ.copy()
         environment.update({
@@ -471,15 +483,24 @@ class GitStateStore:
             check=False,
             creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
         )
+        if completed.returncode and completed.stderr:
+            # A moved or remounted repository surfaces as a Git error; report
+            # the changed boundary rather than only the Git symptom.
+            self._repository_boundary.check()
+            if hasattr(self, "_git_boundary"):
+                self._git_boundary.check()
         if check and completed.returncode:
             detail = completed.stderr.decode("utf-8", "replace").strip()
             raise GitStateStoreError(f"git {' '.join(arguments)} failed: {detail}")
         return completed
 
 
-def _no_reparse(path: Path) -> None:
+def _no_reparse(path: Path, *, below: Path | None = None) -> None:
+    """Reject reparse components of ``path``, stopping at ``below`` when given."""
     candidate = path.absolute()
     for part in (candidate, *candidate.parents):
+        if part == below:
+            return
         try:
             value = part.lstat()
         except FileNotFoundError:
@@ -525,9 +546,17 @@ def _windows_handle_facts(handle):
 
 
 class PhysicalBoundary:
-    """Check actual open handles; does not assert an unspecified ACL policy."""
+    """A root proved physical once, when the boundary is opened.
+
+    ``check`` proves the root: no reparse ancestor, the same local fixed NTFS
+    volume, and a directory handle whose final path is the lexical root.
+    Opening a file below the root only rejects reparse points between the root
+    and the file. Handles are not re-verified after opening: swapping a path
+    between check and use is deliberate tampering, not an accidental change.
+    Does not assert an unspecified ACL policy.
+    """
     def __init__(self, root):
-        self.root = Path(root).absolute()
+        self.root = Path(os.path.abspath(root))
         _no_reparse(self.root)
         if not self.root.is_dir():
             raise ValueError("physical boundary root must be an existing directory")
@@ -561,30 +590,14 @@ class PhysicalBoundary:
             finally:
                 close(handle)
 
-    def verify_descriptor(self, descriptor, path):
-        path = Path(path).absolute()
-        self.check()
-        _no_reparse(path)
-        if not path.is_relative_to(self.root) or os.fstat(descriptor).st_dev != self.device:
-            raise ValueError("opened file is outside the physical root/volume")
-        if os.name == "nt":
-            import msvcrt
-            final, volume = _windows_handle_facts(msvcrt.get_osfhandle(descriptor))
-            if not final.is_relative_to(self.root) or volume != self.volume or os.path.normcase(str(final)) != os.path.normcase(str(path)):
-                raise ValueError("opened handle final path is outside the physical boundary")
-        else:
-            if (os.fstat(descriptor).st_dev, os.fstat(descriptor).st_ino) != (path.stat().st_dev, path.stat().st_ino):
-                raise ValueError("opened file identity changed")
-
     @contextmanager
     def open(self, path, mode):
         if mode not in {"rb", "xb"}:
             raise ValueError("physical boundary supports read or exclusive creation")
-        path = Path(path).absolute()
+        path = Path(os.path.abspath(path))
         if not path.is_relative_to(self.root):
             raise ValueError("file path is outside the physical boundary")
-        self.check()
-        _no_reparse(path)
+        # The root and its ancestors were proved when this boundary opened.
+        _no_reparse(path, below=self.root)
         with path.open(mode) as stream:
-            self.verify_descriptor(stream.fileno(), path)
             yield stream

@@ -6,6 +6,7 @@ import tempfile
 import unittest
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
+from do_math.repository import exact_content_hash
 from do_math import governance as gov
 from do_math.initialization import initialize_state, initial_intent_evidence
 from test_redesign_GOVERNANCE import charter
@@ -36,7 +37,7 @@ class InitialIntentConnectionTests(unittest.TestCase):
         source=gov.preserve_source('GS-adoption',text,origin='user')
         records=[charter()]
         approval={'id':'DC-adopt','actor':'user','source_ref':source['id'],'source_sha256':source['sha256'],
-                  'record_hashes':{r['id']:gov.digest(r) for r in records}}
+                  'record_hashes':{r['id']:exact_content_hash(r) for r in records}}
         instance=gov.initialize_governance(instance,source,approval,records)
         input_id=instance['lifecycle']['input_id']
         source=gov.import_input_source(instance,runtime,input_id)

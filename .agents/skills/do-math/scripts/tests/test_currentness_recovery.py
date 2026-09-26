@@ -12,7 +12,7 @@ from do_math.engine import control
 from do_math.observations import ObservationTracker, validate_rules
 from do_math.planning import task_ready, contract_hash
 from do_math.input_basis import capture_decision_basis
-from research_fixtures import producer_result
+from research_fixtures import producer_result, await_control
 from test_purpose_engine import ActiveStateHarness, common
 
 
@@ -82,8 +82,7 @@ class CurrentnessTests(ActiveStateHarness):
             def run(inner, **kwargs):
                 kwargs['on_started']({'fixture': True})
                 source.write_text('new')
-                control(self.repo, engine.instance['id'], 'source', config={'path': str(source)})
-                kwargs['should_stop']()
+                await_control(engine, control(self.repo, engine.instance['id'], 'source', config={'path': str(source)}))
                 (kwargs['workspace'] / 'partial.txt').write_text('The old input was read.')
                 return producer_result({'status': 'completed', 'output': {**common('Old-source response'),
                     'used_sources': ['basis.txt'], 'candidates': []}, 'usage': {}}, kwargs)

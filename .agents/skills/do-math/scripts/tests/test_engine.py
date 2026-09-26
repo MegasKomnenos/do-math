@@ -7,6 +7,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import jsonschema
 
@@ -140,7 +141,7 @@ class ScriptedRunner:
         bind_candidates(out, ctx)
         seal_response(out, ctx, workspace)
         jsonschema.validate(out, output_schema)
-        submit_intent(control_binding, should_stop, workspace, out)
+        submit_intent(control_binding, workspace, out)
         return {"status": "completed", "output": out, "usage": {"calls": 1}, "error": None}
 
 
@@ -188,6 +189,17 @@ class EngineTests(unittest.TestCase):
         activate(engine, self.root, initialization_runner=ScriptedRunner())
         return engine, init["instance_id"]
 
+    def active(self, runner, verifier=formal_ok, **config):
+        """Start from validated active state; only the public-initialization test needs make()."""
+        from state_fixtures import ACTIVE_LEAN_COMMAND, active_engine
+        from test_lifecycle_engine import AdapterDouble
+        self.enterContext(patch("do_math.initialization.adapter_for", return_value=AdapterDouble()))
+        config = {"reviewers": 2, "goal_auditors": 2, "lean_command": list(ACTIVE_LEAN_COMMAND),
+                  "scholarly_enabled": False, "operator_enabled": False, "plan_settle_seconds": 1, **config}
+        workspace = self.root / ("work-" + str(len(list(self.root.glob("work-*")))))
+        engine = active_engine(self.repo, workspace, config=config, runner=runner, formal_verifier=verifier)
+        return engine, engine.instance["id"]
+
     def assert_persisted_state_clean(self, engine):
         checked = engine.check()
         self.assertEqual(checked['errors'], [], checked)
@@ -222,15 +234,23 @@ class EngineTests(unittest.TestCase):
         self.assertEqual(engine.instance["lifecycle"]["activation"]["missing"], [])
 
     def test_nonformal_mathematical_goal_is_not_solved(self):
-        engine, _ = self.make(ScriptedRunner())
-        status = engine.run(max_steps=20)
+        engine, _ = self.active(ScriptedRunner())
+        # The decisive point is the required goal audits' judgment of the
+        # nonformal result; later steps only repeat preparation and that judgment.
+        for _ in range(20):
+            status = engine.run(max_steps=1)
+            audits = [e for e in engine.runtime["executions"].values()
+                      if e["role"] == "goal_audit" and e["status"] == "ended"]
+            if len(audits) >= engine.instance["config"]["goal_auditors"]:
+                break
+        self.assertTrue(audits, engine.runtime["history"][-3:])
         self.assertTrue(any(task.get("results") for task in engine.runtime["tasks"].values()),
                         engine.runtime["history"][-3:])
         self.assertNotEqual(status["goal_status"], "mathematically_solved")
         self.assertEqual(status["knowledge"]["K"], 0)
 
     def test_formal_requires_two_blind_reviews_and_failure_does_not_create_k(self):
-        runner = ScriptedRunner(formal=True); engine, _ = self.make(runner, plan_settle_seconds=1)
+        runner = ScriptedRunner(formal=True); engine, _ = self.active(runner)
         for step in range(0, 30, 4):
             solved = engine.run(max_steps=min(4, 30 - step))
             if solved['knowledge']['K'] == 1:
@@ -262,7 +282,7 @@ class EngineTests(unittest.TestCase):
         self.assertEqual(engine.instance["active_trust_environment"], engine.instance["formal_results"][verified["formal_result_id"]]["trust_environment_id"])
         self.assertEqual(engine.instance["formal_results"][verified["formal_result_id"]]["verification"]["toolchain"],
                          engine.instance['trust_environments'][engine.instance['active_trust_environment']]['toolchain'])
-        failed_runner = ScriptedRunner(formal=True); failed, _ = self.make(failed_runner, formal_fail, plan_settle_seconds=1)
+        failed_runner = ScriptedRunner(formal=True); failed, _ = self.active(failed_runner, formal_fail)
         for _ in range(0, 20, 4):
             failed_status = failed.run(max_steps=4)
             if any(ex['role'] == 'formal_check' and ex.get('status') == 'ended'
@@ -274,7 +294,8 @@ class EngineTests(unittest.TestCase):
 
     def test_plan_rejects_missing_candidate_and_criterion(self):
         for invalid in ("missing", "criterion"):
-            engine, _ = self.make(ScriptedRunner(invalid_plan=invalid))
+            # Output repair is covered elsewhere; the first rejection is the rule here.
+            engine, _ = self.active(ScriptedRunner(invalid_plan=invalid), max_output_repairs=0)
             for _ in range(20):
                 state = engine.run(max_steps=1)
                 failed = [w for w in state['waiting_actions'].values() if w['role'] == 'research_plan'
@@ -290,7 +311,8 @@ class EngineTests(unittest.TestCase):
 
 
     def test_crash_recovery_and_artifact_immutability(self):
-        engine, instance = self.make(ScriptedRunner())
+        engine, instance = self.active(ScriptedRunner())
+        engine._enqueue('research_preparation', reason='The first AI action of an active instance')
         action = engine.runtime['queue'][0]
         crashed = engine._register_execution(action, {'id': 'EX-crash', 'role': action['role'],
             'status': 'queued', 'input_snapshot': engine.head, 'input_manifest': []})

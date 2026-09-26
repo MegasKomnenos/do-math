@@ -142,19 +142,18 @@ class WalkthroughRepairs(unittest.TestCase):
         with self.assertRaises(ValueError):
             task_fixtures.AssessmentApplicationTests().apply(instance, runtime, assessment)
 
-    def test_changed_installed_trust_bytes_block_match_publication(self):
+    def test_changed_identity_blocks_match_publication_but_olean_metadata_is_not_rechecked(self):
         from do_math.engine import ResearchEngine
-        from do_math.initialization import digest
+        from research_fixtures import trust_environment
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             request = trust_fixture(root, ['synthetic-lean'])
-            request.pop('operation')
-            environment = {**request, 'id':'TE-test', 'status':'active', 'source_ref':'approved-test',
-                           'manifest_sha256':digest(request['manifest'])}
+            environment, binding = trust_environment(request, environment_id='TE-test', source_ref='approved-test')
             engine = object.__new__(ResearchEngine)
             engine.instance = {'active_trust_environment':'TE-test', 'trust_environments':{'TE-test':environment}}
             from datetime import datetime, timezone
-            engine.runtime = {'trust_transitions':{}, 'last_observed_utc':datetime.now(timezone.utc).isoformat()}
+            engine.runtime = {'trust_transitions':{}, 'last_observed_utc':datetime.now(timezone.utc).isoformat(),
+                              'trust_bindings':{'TE-test':binding}}
             engine._review_publication_premises = lambda _: {'fixed':'same stored environment'}
             engine._identity_assessment = lambda *a, **k: {'decision':'match'}
             updated = {'id':'RC-test','proposal':{},'decision':'match','identity_basis':{},'policy_ref':'policy',
@@ -162,8 +161,13 @@ class WalkthroughRepairs(unittest.TestCase):
             with patch('do_math.review_engine.kr.record_identity_assessment', side_effect=RuntimeError('publication reached')):
                 with self.assertRaisesRegex(RuntimeError, 'publication reached'):
                     engine._publish_identity_review_result({'target':'KN-test'}, updated, 'EX-review')
-                Path(environment['manifest']['files'][0]['path']).write_bytes(b'changed compiler')
-                with self.assertRaisesRegex(ValueError, 'trust'):
+                # The fingerprint was checked before compiling; publication checks only the identity.
+                olean = Path(environment['toolchain']['executable']).parents[1] / 'lib/lean/Init/Prelude.olean'
+                olean.write_bytes(b'changed module after the formal check')
+                with self.assertRaisesRegex(RuntimeError, 'publication reached'):
+                    engine._publish_identity_review_result({'target':'KN-test'}, updated, 'EX-review')
+                Path(environment['toolchain']['executable']).write_bytes(b'changed compiler')
+                with self.assertRaisesRegex(ValueError, 'current trust identity required: approved toolchain file changed'):
                     engine._publish_identity_review_result({'target':'KN-test'}, updated, 'EX-review')
 
     def test_repeated_submission_return_stops_producer_and_opens_one_diagnosis(self):
@@ -256,11 +260,13 @@ class WalkthroughRepairs(unittest.TestCase):
                 self.collected += 1
                 if self.collected == 2: self.futures.clear()
             def close(self): self.closed = True
+            def wait(self, timeout): pass
         calls = Calls()
         class Host(SchedulerMixin):
             def _controls(self, *, pump=True): pass
             def _check_installation(self): pass
             def _save(self): pass
+            def _settle_stops(self, *, clock=True): pass  # stop judgment is not this rule
             def _dispatchable(self, *args): raise AssertionError('new work must not be dispatched')
         host = Host()
         host.instance = {'workspace':'.','id':'RI-test','config':{}}

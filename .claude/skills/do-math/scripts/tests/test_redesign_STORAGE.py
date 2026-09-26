@@ -13,6 +13,8 @@ from copy import deepcopy
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from do_math.file_io import json_digest
+from do_math.repository import exact_content_hash
 
 from do_math.repository import ResearchRepository, canonical_json, semantic_content_hash
 from do_math.events import EventPublisher
@@ -875,7 +877,7 @@ class StorageRedesignTests(unittest.TestCase):
         broken = deepcopy(runtime)
         row = broken["academic_resolution_records"][0]
         row["evidence_hashes"][path] = "0" * 64
-        row["sha256"] = academic._hash({k: v for k, v in row.items() if k != "sha256"})
+        row["sha256"] = json_digest({k: v for k, v in row.items() if k != "sha256"})
         with self.assertRaisesRegex(ValueError, "artifact evidence"):
             self.repository.validate_candidate(instance, broken, saved)
 
@@ -938,7 +940,7 @@ class StorageRedesignTests(unittest.TestCase):
             "partial_success_criteria": [], "included_scope": ["P"], "excluded_scope": [], "priorities": [],
             "preferences": [], "evidence_boundary": "proof", "academic_requirements": [], "decision_authority": "user", "stop_conditions": []}}
         source = gov.preserve_source("GS-1", "Study P", origin="user")
-        approval = {"id": "DC-1", "actor": "user", "source_ref": source["id"], "source_sha256": source["sha256"], "record_hashes": {record["id"]: gov.digest(record)}}
+        approval = {"id": "DC-1", "actor": "user", "source_ref": source["id"], "source_sha256": source["sha256"], "record_hashes": {record["id"]: exact_content_hash(record)}}
         instance = gov.initialize_governance({"id": INSTANCE_ID, "feature_version": 5}, source, approval, [record])
         return instance
 
@@ -1131,9 +1133,9 @@ class StorageRedesignTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             engine.store.validate_candidate(broken, runtime)
 
-    def test_public_trust_owner_flow_round_trip_requires_complete_manifest(self):
+    def test_public_trust_owner_flow_round_trip_requires_the_current_record_shape(self):
         from do_math.engine import initialize, ResearchEngine
-        from do_math.initialization import trust_environment_errors
+        from do_math.trust_validation import check_environment, environment_errors
         from research_fixtures import send_control, trust_fixture
         initialized = initialize(self.repository_path, goal="Check a synthetic environment contract",
             workspace=self.repository_path / "trust-work", config={"scholarly_enabled": False})
@@ -1142,18 +1144,27 @@ class StorageRedesignTests(unittest.TestCase):
         config = trust_fixture(self.repository_path, ["synthetic-lean"])
         send_control(engine, "trust", config=config)
         eid = next(reversed(engine.instance["trust_environments"]))
-        self.assertEqual(trust_environment_errors(engine.instance["trust_environments"][eid], verify_files=True), [])
+        environment, binding = engine.instance["trust_environments"][eid], engine.runtime["trust_bindings"][eid]
+        self.assertEqual(environment_errors(environment, binding), [])
+        self.assertEqual(binding, config["binding"])
         send_control(engine, "trust", config={"operation": "transition", "env_id": eid})
-        from do_math.trust_validation import verify_environment_files
-        engine._finish_trust_transition(next(reversed(engine.runtime["trust_transitions"])),
-                                       verify_environment_files(engine.instance['trust_environments'][eid]))
+        check = check_environment(environment, binding)
+        self.assertEqual((check["status"], check["fingerprint_sha256"]), ("verified", binding["fingerprint_sha256"]))
+        engine._finish_trust_transition(next(reversed(engine.runtime["trust_transitions"])), check)
         engine._save()
         _, instance, runtime = engine.store.load()
         self.assertEqual(instance["active_trust_environment"], eid)
-        broken = deepcopy(instance)
-        broken["trust_environments"][eid]["manifest"] = {"validation": {"status": "verified", "evidence_refs": ["a claim"]}}
-        with self.assertRaisesRegex(ValueError, "trust"):
-            engine.store.validate_candidate(broken, runtime)
+        self.assertEqual(runtime["trust_bindings"][eid], binding)
+        self.assertEqual(instance["trust_environments"][eid]["validation_receipt"], check)
+        for field, value in (("manifest", {"files": []}), ("toolchain_record", {"path": "relative.json", "id": "TC-x"})):
+            broken = deepcopy(instance)
+            broken["trust_environments"][eid][field] = value
+            with self.subTest(field=field), self.assertRaisesRegex(ValueError, "trust|additional"):
+                engine.store.validate_candidate(broken, runtime)
+        unbound = deepcopy(runtime)
+        del unbound["trust_bindings"][eid]
+        with self.assertRaisesRegex(ValueError, "trust binding"):
+            engine.store.validate_candidate(instance, unbound)
 
     def test_actual_repetition_binding_is_a_closed_queue_contract(self):
         from do_math.revisions import bind_repetition_bases
@@ -1205,6 +1216,7 @@ class StorageRedesignTests(unittest.TestCase):
             instance["trust_environments"] = deepcopy(owner.instance["trust_environments"])
             instance["active_trust_environment"] = eid
             runtime["trust_transitions"] = deepcopy(owner.runtime["trust_transitions"])
+            runtime["trust_bindings"] = deepcopy(owner.runtime["trust_bindings"])
         instance = knowledge_io.ensure_ontology(instance)
         instance, runtime, kid = knowledge_io.import_candidate(instance, runtime, {"kind": "theorem", "title": "Truth", "summary": "Truth",
             "statement": "True", "explanation": "Truth", "lean_code": "theorem t : True := True.intro",
@@ -1265,6 +1277,7 @@ class StorageRedesignTests(unittest.TestCase):
         environment_owner = FakeEngine(self.repository_path)
         eid = environment_owner.environment("synthetic-staged")
         instance["trust_environments"][eid] = deepcopy(environment_owner.instance["trust_environments"][eid])
+        runtime["trust_bindings"][eid] = deepcopy(environment_owner.runtime["trust_bindings"][eid])
         instance["review_policy"] = build_review_policy(reviewer_count=1, max_rounds=1)
         transition = k.begin_transition(instance, eid)
         transition = k.record_transition_result(instance, transition, {"id": kid, **evidence(instance, kid, eid)})
@@ -1298,6 +1311,7 @@ class StorageRedesignTests(unittest.TestCase):
         owner = FakeEngine(self.repository_path)
         eid = owner.environment("synthetic-next")
         instance["trust_environments"][eid] = deepcopy(owner.instance["trust_environments"][eid])
+        runtime["trust_bindings"][eid] = deepcopy(owner.runtime["trust_bindings"][eid])
         transition = k.begin_transition(instance, eid)
         transition = k.record_transition_result(instance, transition, {"id": kid, **evidence(instance, kid, eid)})
         instance = k.activate_transition(instance, transition)

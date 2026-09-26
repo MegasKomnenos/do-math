@@ -10,6 +10,7 @@ import unittest
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from do_math.repository import exact_content_hash
 
 from do_math import contracts, execution_lifecycle, submission
 from do_math.engine import ResearchEngine
@@ -89,6 +90,12 @@ class SubmissionFlowTests(unittest.TestCase):
             lambda snapshot, path: store.read_bytes(snapshot, path))
         self.assertEqual(recovered['output'], self.output)
         self.assertEqual(recovered['extensions'], {})
+        # With the repository identity, a sealed row is hashed once per process (contract S3).
+        from unittest.mock import Mock, patch
+        read = lambda snapshot, path: store.read_bytes(snapshot, path)
+        self.assertEqual(submission.read_sealed_submission(execution, head, read, git_dir=store._git_dir), recovered)
+        with patch.object(submission, 'hashlib', Mock(sha256=Mock(side_effect=AssertionError('sealed row rehashed')))):
+            self.assertEqual(submission.read_sealed_submission(execution, head, read, git_dir=store._git_dir), recovered)
         self.assertTrue(recovered['check']['passed'])
 
         for mutation in ('output', 'extensions', 'execution', 'mode', 'schema'):
@@ -109,7 +116,7 @@ class SubmissionFlowTests(unittest.TestCase):
                     changed_check['mode'] = 'producer'
                 else:
                     changed_check['schema_ref']['sha256'] = '0' * 64
-                changed_check['id'] = 'MC-' + submission.integration.digest({
+                changed_check['id'] = 'MC-' + exact_content_hash({
                     key: value for key, value in changed_check.items() if key != 'id'})[:24]
                 changed[intent['check_ref']] = canonical_json(changed_check)
                 for field in ('output', 'extensions'):

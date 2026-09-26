@@ -3,21 +3,25 @@ from __future__ import annotations
 from copy import deepcopy
 from dataclasses import dataclass, replace
 from functools import lru_cache
-import hashlib
-import json
 import re
 from typing import Callable
 
 import jsonschema
 
+from .file_io import json_digest
+
 STATE_FORMAT_VERSION = 5
 STATE_CONTRACT_ID = "do-math-state/5"
+_ABSENT = object()
 
 
-@lru_cache(maxsize=256)
-def _check_schema_text(text):
-    """Reuse only schema well-formedness, never record or authority validation."""
-    jsonschema.Draft202012Validator.check_schema(json.loads(text))
+def check_schema(schema):
+    """Meta-schema check for a schema from outside the product.
+
+    Built-in family schemas are product constants; their well-formedness is a
+    test (test_state_contract_registration), not a check at every process start.
+    """
+    jsonschema.Draft202012Validator.check_schema(schema)
 
 
 @dataclass(frozen=True)
@@ -36,12 +40,18 @@ class StateContract:
     def __init__(self):
         self._families = {}
         self.validation_generation = 0
+        # Generation at which this contract equals the installed default;
+        # None for contracts built by hand.
+        self.installed_generation = None
+        self._manifest = None
 
     @classmethod
     def default(cls):
         # Installation validates every built-in schema. Keep that validated
         # template, but give each repository an independent mutable contract.
-        return deepcopy(_default_template(cls))
+        contract = deepcopy(_default_template(cls))
+        contract.installed_generation = contract.validation_generation
+        return contract
 
     def register_family(self, root, name, *, shape="map", schema=None,
                         validator=None, references=None, identity=True, derived=None):
@@ -79,9 +89,6 @@ class StateContract:
         if schema is None:
             raise ValueError("explicit record schema is required: " + name)
         schema = deepcopy(schema)
-        schema_text = json.dumps(schema, ensure_ascii=False, sort_keys=True,
-                                 separators=(",", ":"), allow_nan=False)
-        _check_schema_text(schema_text)
         if (shape in {"map", "list", "events"} or identity) and (schema.get("type") != "object" or schema.get("additionalProperties") is not False):
             raise ValueError("record schema must reject unknown fields: " + name)
         self._families[root, name] = RegisteredFamily(root, name, shape, schema, validator, references, identity, derived)
@@ -94,17 +101,31 @@ class StateContract:
         return tuple(self._families[key] for key in sorted(self._families))
 
     def manifest(self):
-        """Describe the installed schema; its digest identifies the writer."""
-        families = [{"root": f.root, "name": f.name, "shape": f.shape, "identity": f.identity,
-                     "schema": f.schema} for f in self.families()]
-        payload = {"contract_id": STATE_CONTRACT_ID, "families": families}
-        digest = hashlib.sha256(json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
-        return {"contract_id": STATE_CONTRACT_ID, "sha256": digest}
+        """Describe the installed schema; its digest identifies the writer.
 
-    def validate(self, instance, runtime):
-        """Pure schema and relationship validation; no ID/time allocation."""
+        Families change only through register_family, which advances the
+        validation generation, so the digest is computed once per generation.
+        """
+        if self._manifest is None or self._manifest[0] != self.validation_generation:
+            families = [{"root": f.root, "name": f.name, "shape": f.shape, "identity": f.identity,
+                         "schema": f.schema} for f in self.families()]
+            payload = {"contract_id": STATE_CONTRACT_ID, "families": families}
+            digest = json_digest(payload)
+            self._manifest = (self.validation_generation, digest)
+        return {"contract_id": STATE_CONTRACT_ID, "sha256": self._manifest[1]}
+
+    def validate(self, instance, runtime, parent=None):
+        """Pure schema and relationship validation; no ID/time allocation.
+
+        ``parent`` is an (instance, runtime) pair already validated under this
+        contract. A record equal to the parent's record at the same family and
+        ID skips the record-local checks (schema and family validator), whose
+        result depends on the record alone. Relations, identity uniqueness and
+        semantic rules are still checked over the whole state.
+        """
         rows, identifiers = [], {}
-        for root, state in (("research", instance), ("runtime", runtime)):
+        for index, (root, state) in enumerate((("research", instance), ("runtime", runtime))):
+            prior_state = parent[index] if parent is not None else {}
             if not isinstance(state, dict):
                 raise ValueError(root + " must be an object")
             if root == "research" and state.get("object_format") not in {"sha1", "sha256"}:
@@ -130,13 +151,22 @@ class StateContract:
                         raise ValueError(name + " must be a record list")
                 else:
                     entries = [(None, value)]
+                prior = prior_state.get(name, _ABSENT)
+                if family.shape in {"list", "events"} and isinstance(prior, list):
+                    prior = {row.get("id"): row for row in prior if isinstance(row, dict)}
                 for key, record in entries:
-                    errors = sorted(jsonschema.Draft202012Validator(family.schema).iter_errors(record), key=lambda e: str(e.path))
-                    if errors:
-                        location = "/".join(str(part) for part in errors[0].absolute_path)
-                        raise ValueError(f"{root}/{name}/{key}/{location}: {errors[0].message}")
-                    if family.validator:
-                        family.validator(deepcopy(record))
+                    if family.shape in {"map", "list", "events"}:
+                        identifier = key if key is not None else record.get("id") if isinstance(record, dict) else None
+                        before = prior.get(identifier, _ABSENT) if isinstance(prior, dict) else _ABSENT
+                    else:
+                        before = prior
+                    if before is _ABSENT or before != record:
+                        errors = sorted(jsonschema.Draft202012Validator(family.schema).iter_errors(record), key=lambda e: str(e.path))
+                        if errors:
+                            location = "/".join(str(part) for part in errors[0].absolute_path)
+                            raise ValueError(f"{root}/{name}/{key}/{location}: {errors[0].message}")
+                        if family.validator:
+                            family.validator(deepcopy(record))
                     if family.identity:
                         identifier = record.get("id") if isinstance(record, dict) else None
                         if not isinstance(identifier, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.:-]*", identifier):
@@ -161,7 +191,7 @@ class StateContract:
                 if expected_family and identifiers[target][1] not in expected_family.split("|"):
                     raise ValueError(f"{family.name} reference has wrong family: {target}")
         from .record_schemas import validate_semantics
-        validate_semantics(instance, runtime, identifiers)
+        validate_semantics(instance, runtime, identifiers, parent)
         return identifiers
 
 

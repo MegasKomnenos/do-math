@@ -5,6 +5,7 @@ from pathlib import Path
 import sys
 import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from do_math.repository import exact_content_hash
 
 
 class CentralGovernanceTests(unittest.TestCase):
@@ -147,7 +148,7 @@ class CentralGovernanceTests(unittest.TestCase):
                 'scope_complete': True, 'unit_ids': ['U'], 'question_ids': [], 'findings': []}, execution_id='CHECK', owner_handlers=handlers)
             request = {'id': 'CONF-APPROVE', 'action': 'decision', 'origin': 'user', 'text': 'Approve exact capacities', 'config': {
                 'kind': 'import_approval', 'import_id': bundle['id'], 'bundle_sha256': bundle['sha256'],
-                'check_sha256': bundle['check']['sha256'], 'unit_hashes': {'U': gov.digest(payload)}}}
+                'check_sha256': bundle['check']['sha256'], 'unit_hashes': {'U': exact_content_hash(payload)}}}
             h._governance_control(request)
             for field in ('config', 'execution_profiles', 'capacity_constraints', 'role_profile_refs'):
                 self.assertEqual(h.instance[field], public_i[field])
@@ -200,8 +201,8 @@ class CentralGovernanceTests(unittest.TestCase):
 
     def test_original_literal_changes_are_not_equal_approval_hashes(self):
         from do_math import governance as gov
-        self.assertNotEqual(gov.digest({'statement': 'e\u0301 has two codepoints'}),
-                            gov.digest({'statement': '\u00e9 has two codepoints'}))
+        self.assertNotEqual(exact_content_hash({'statement': 'e\u0301 has two codepoints'}),
+                            exact_content_hash({'statement': '\u00e9 has two codepoints'}))
 
     def test_import_source_and_public_input_have_distinct_global_identity(self):
         h, bundle, _ = self.host()
@@ -257,8 +258,7 @@ class CentralGovernanceTests(unittest.TestCase):
     def test_goal_consumer_and_final_assurance_with_explicit_formal_double(self):
         from unittest.mock import patch
         import tempfile
-        from research_fixtures import trust_fixture
-        from do_math.initialization import digest
+        from research_fixtures import trust_environment, trust_fixture
         for verdict, expected in [('partial', False), ('pass', True)]:
             with self.subTest(verdict=verdict):
                 h, action, output = self.audit_host()
@@ -269,11 +269,10 @@ class CentralGovernanceTests(unittest.TestCase):
                 h.instance['goal_judgments'].append(deepcopy(old_judgment))
                 temporary = tempfile.TemporaryDirectory()
                 self.addCleanup(temporary.cleanup)
-                trusted = trust_fixture(Path(temporary.name), ['synthetic-audit-lean'])
-                trusted.pop('operation')
-                trusted.update(id='TE-audit', status='active', source_ref='synthetic-audit-approval',
-                               manifest_sha256=digest(trusted['manifest']))
+                trusted, binding = trust_environment(trust_fixture(Path(temporary.name), ['synthetic-audit-lean']),
+                    environment_id='TE-audit', source_ref='synthetic-audit-approval')
                 h.instance.update(active_trust_environment='TE-audit', trust_environments={'TE-audit':trusted})
+                h.runtime['trust_bindings'] = {'TE-audit': binding}
                 h.runtime.update(questions=[], history=[])
                 h._ensure_academic_followup = lambda: setattr(h, 'academic_followup', True)
                 output['additional_audits'][0]['verdict'] = verdict
@@ -304,7 +303,7 @@ class CentralGovernanceTests(unittest.TestCase):
         instance = {'id': 'I', 'feature_version': 5, 'lifecycle': {'immutable_input': {
             'text': text, 'sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)}}}
         approval = {'id': 'D', 'actor': 'user', 'source_ref': 'S', 'source_sha256': source['sha256'],
-                    'record_hashes': {'CH1': gov.digest(record)}}
+                    'record_hashes': {'CH1': exact_content_hash(record)}}
         result = gov.initialize_governance(instance, source, approval, [record])
         self.assertEqual(result['governance_sources']['S']['text'], text)
         changed = gov.preserve_source('S', work.decode(), origin='user')
@@ -418,7 +417,7 @@ class PublicGitGovernanceTests(unittest.TestCase):
             engine = self.engine_type()(root, iid)
             sealed = deepcopy(engine.runtime['intent_imports'][bundle['id']]['check'])
             spec = {'kind': 'import_approval', 'import_id': bundle['id'], 'bundle_sha256': bundle['sha256'],
-                'check_sha256': sealed['sha256'], 'unit_hashes': {'U': gov.digest(output['import_units'][0]['payload'])}}
+                'check_sha256': sealed['sha256'], 'unit_hashes': {'U': exact_content_hash(output['import_units'][0]['payload'])}}
             if scenario == 'changed_premise':
                 audit = {'id': 'AU-LATER', 'kind': 'additional_audit', 'revision': 1, 'supersedes': [], 'content': {
                     'scope': ['P'], 'required_inputs': ['CH1'], 'assessor': 'goal_audit',

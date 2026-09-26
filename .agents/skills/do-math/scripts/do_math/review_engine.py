@@ -6,7 +6,7 @@ import hashlib
 import json
 from pathlib import Path
 
-from .repository import canonical_json, new_id
+from .repository import canonical_json, exact_content_hash, new_id, artifact_verified, verify_artifact
 from .review_cycle import (accept_result, context_for, next_actions, record_turn, stage_schema, start_review,
                           defer_for_research, accept_research_result, research_schema, record_recovery_event,
                           authorize_record_replacement, reserved_review_slots, ReviewRestorationError,
@@ -24,10 +24,9 @@ from .review_policy import build_review_policy, minimum_scope_executions
 _PROPOSAL_FIELDS = ('id', 'revision', 'formal_result_id', 'exposition_id', 'definitions', 'assumptions', 'statement', 'explanation', 'summary', 'lean_code',
                     'declaration_names', 'dependencies', 'relation_claim', 'relation_endpoint_basis', 'confirmed_scope', 'epistemic_status')
 _FORMAL_FIELDS = ('status', 'source_sha256', 'declarations', 'axioms', 'toolchain',
-                  'environment', 'environment_sha256', 'trust_manifest', 'artifact_ref', 'execution_id',
-                  'trust_environment_id', 'trust_environment_status', 'allowed_axioms')
+                  'artifact_ref', 'execution_id', 'trust_environment_id', 'allowed_axioms')
 _FORMAL_FIELDS += ('declaration_signatures', 'signature_hash')
-_FORMAL_FIELDS += ('dependency_closure', 'declaration_evidence', 'dependency_evidence', 'trust_environment_digest')
+_FORMAL_FIELDS += ('dependency_closure', 'declaration_evidence', 'dependency_evidence')
 
 
 def _proposal(instance, knowledge_id):
@@ -126,7 +125,7 @@ class ReviewEngineMixin:
         from .activities import open_activity
         from datetime import datetime, timezone
         assessment = self.instance['identity_assessments'].get(assessment_id)
-        if assessment is None or kr.digest(assessment) != assessment_sha256:
+        if assessment is None or exact_content_hash(assessment) != assessment_sha256:
             raise ValueError('reassessment requires the exact original assessment')
         original = self.runtime.get('review_cycles', {}).get(assessment['review_cycle_id'])
         if not original or original['status'] == 'working' or original.get('assessment_id', assessment_id) != assessment_id:
@@ -175,7 +174,8 @@ class ReviewEngineMixin:
         from .knowledge import apply_assessment_reassessment
         self._review_cycle(action)
         reader = getattr(self.store, 'read', None)
-        validate_sealed_review(cycle, self.runtime, instance=self.instance, read_artifact=reader)
+        validate_sealed_review(cycle, self.runtime, instance=self.instance, read_artifact=reader,
+                               git_dir=getattr(self.store, "git_dir", None))
         aid = cycle['proposal']['assessment_reassessment']['assessment_id']
         self.instance, self.runtime = apply_assessment_reassessment(self.instance, self.runtime, aid, cycle['id'],
             reason='Sealed independent reassessment of the original judgment: ' + cycle['decision'], actor_ref=execution_id)
@@ -234,7 +234,7 @@ class ReviewEngineMixin:
         view = kr.formal_overlay(self.instance, formal['id'], verification=verification,
                                  trust_environment_id=transition['to_environment'])
         return {'proposal': _proposal(view, knowledge_id), 'identity_basis': kr.identity_basis(view, knowledge_id),
-                'transition_basis': kr.exact_digest({'transition_id': transition_id, 'target': target,
+                'transition_basis': exact_content_hash({'transition_id': transition_id, 'target': target,
                     'verification': verification, 'target_environment': environment, 'from_environment': transition['from_environment']}),
                 'target_environment': deepcopy(environment)}
 
@@ -259,7 +259,7 @@ class ReviewEngineMixin:
                 *([self.runtime['trust_transitions'][transition_id]['results'][knowledge_id]['execution_id']]
                   if self.runtime['trust_transitions'][transition_id]['results'][knowledge_id].get('execution_id') else [])])),
             slot_profiles={}, input_bindings={},
-            policy_ref=policy['id'] + '@' + str(policy['version']) + ':' + kr.digest(policy),
+            policy_ref=policy['id'] + '@' + str(policy['version']) + ':' + exact_content_hash(policy),
             publication_premises=self._review_publication_premises(knowledge_id))
         cycle['review_input_basis'] = capture_review_input_basis(cycle)
         self.runtime.setdefault('review_cycles', {})[cid] = cycle
@@ -458,7 +458,7 @@ class ReviewEngineMixin:
         cycle['identity_basis'] = kr.identity_basis(self.instance, knowledge_id)
         cycle['slot_profiles'] = deepcopy(previous.get('slot_profiles', {})) if previous else {}
         cycle['input_bindings'] = deepcopy(previous.get('input_bindings', {})) if previous else {}
-        cycle['policy_ref'] = cycle['review_policy']['id'] + '@' + str(cycle['review_policy']['version']) + ':' + kr.digest(cycle['review_policy'])
+        cycle['policy_ref'] = cycle['review_policy']['id'] + '@' + str(cycle['review_policy']['version']) + ':' + exact_content_hash(cycle['review_policy'])
         cycle['publication_premises'] = self._review_publication_premises(knowledge_id)
         cycle['review_input_basis'] = capture_review_input_basis(cycle)
         cycles[cycle_id] = cycle
@@ -628,8 +628,8 @@ class ReviewEngineMixin:
         if not replacement.get('delegation_id'):
             return None
         app = self.runtime['delegation_applications'][replacement['case']['application_id']]
-        return {'application_id': app['id'], 'application_sha256': kr.digest(app),
-                'judgment_executions': {j['execution_id']: kr.digest(self.runtime['executions'][j['execution_id']])
+        return {'application_id': app['id'], 'application_sha256': exact_content_hash(app),
+                'judgment_executions': {j['execution_id']: exact_content_hash(self.runtime['executions'][j['execution_id']])
                                         for j in app['judgments'].values()}}
 
     def _review_replacement_authority(self, action, execution_id=None):
@@ -1021,9 +1021,10 @@ class ReviewEngineMixin:
         if updated.get('publication_premises') != self._review_publication_premises(knowledge_id):
             raise ValueError('review publication premises changed before publication')
         if updated['decision'] == 'match':
-            # A stored manifest cannot attest to currently installed file bytes.
-            from .initialization import require_trust_environment
-            require_trust_environment(self.instance, self.runtime, observe=self._observe_environment)
+            # Publication rechecks the current identity; the olean fingerprint was
+            # checked before compiling and a later change surfaces at the next check.
+            from .trust_validation import require_active_environment
+            require_active_environment(self.instance, self.runtime, current_identity=True)
         assessment = self._identity_assessment(updated, reason='Complete independent review')
         assessment.pop('cycle_id', None)
         assessment.update(review_cycle_id=updated['id'], basis=deepcopy(updated['identity_basis']))
@@ -1085,10 +1086,11 @@ class ReviewEngineMixin:
                 if supplied:
                     snapshot = prepared.get('source_snapshot', self.head)
                     raw = self.store.read(supplied['path'], snapshot)
-                    if supplied.get('sha256') and hashlib.sha256(raw).hexdigest() != supplied['sha256']:
-                        raise ValueError('supplied research source bytes changed')
+                    if supplied.get('sha256'):
+                        self._sealed_bytes(supplied['path'], supplied['sha256'], raw=raw,
+                                           error='supplied research source bytes changed')
                     return {'ref': reference, 'artifact_ref': supplied['path'], 'snapshot': snapshot,
-                            'sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)}
+                            'sha256': supplied.get('sha256') or hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)}
                 record = self.instance.get('knowledge', {}).get(reference)
                 if record is None: raise ValueError('research source is not in the supplied readable source set: ' + reference)
                 value = {**_proposal(self.instance, reference), 'usable_links': kr.usable_links(self.instance, reference)}
@@ -1180,9 +1182,18 @@ class ReviewEngineMixin:
                     coordinate={**coordinate, 'errno': error.errno, 'path': error.filename},
                     expected_sha256=source['sha256'],
                     retryable=error.errno in {errno.EAGAIN, errno.EINTR, errno.EBUSY, errno.ETIMEDOUT}) from error
-            if hashlib.sha256(raw).hexdigest() != source['sha256'] or len(raw) != source['bytes']:
+            # Inline text is derived from state and compared; a sealed artifact row
+            # already matched in this process (contract S3) is not hashed again.
+            try:
+                if 'inline' in source:
+                    if hashlib.sha256(raw).hexdigest() != source['sha256'] or len(raw) != source['bytes']:
+                        raise ValueError('inline source differs from its record')
+                elif not artifact_verified(self.store.git_dir, source['artifact_ref'], source['sha256'], source['bytes']):
+                    verify_artifact(self.store.git_dir, source['artifact_ref'], raw, source['sha256'], source['bytes'])
+            except ValueError as mismatch:
                 raise ReviewRestorationError('fixed research source bytes changed', cause_kind='fixed_source_content_mismatch',
-                    coordinate=coordinate, expected_sha256=source['sha256'], observed_sha256=hashlib.sha256(raw).hexdigest())
+                    coordinate=coordinate, expected_sha256=source['sha256'],
+                    observed_sha256=hashlib.sha256(raw).hexdigest()) from mismatch
             suffix = '.json' if 'inline' in source else Path(source['artifact_ref']).suffix
             path = directory / f"{i:04d}-{source['sha256']}{suffix}"
             if not path.resolve().is_relative_to(directory.resolve()): raise ValueError('research source file escapes workspace')

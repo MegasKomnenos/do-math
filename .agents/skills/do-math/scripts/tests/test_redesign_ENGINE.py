@@ -372,12 +372,12 @@ class FormalBindingConnections(unittest.TestCase):
         engine = routing_engine()
         directory = tempfile.TemporaryDirectory(); self.addCleanup(directory.cleanup)
         config = {**deepcopy(DEFAULT_CONFIG), "lean_command": [sys.executable], }
-        from research_fixtures import trust_fixture
-        from do_math.initialization import digest
-        environment = trust_fixture(Path(directory.name), [sys.executable])
-        environment.update(id="TE-one", status="active", source_ref="fixture", manifest_sha256=digest(environment["manifest"]))
+        from research_fixtures import trust_environment, trust_fixture
+        environment, binding = trust_environment(trust_fixture(Path(directory.name), [sys.executable]),
+                                                 environment_id="TE-one", source_ref="fixture")
         engine.instance.update(feature_version=5, workspace=directory.name, sources=[], config=config,
             active_trust_environment="TE-one", trust_environments={"TE-one": environment})
+        engine.runtime["trust_bindings"] = {"TE-one": binding}
         engine.instance.update(execution_profiles.build_profiles(config))
         engine.instance["config"] = {**config, "lean_command": ["unapproved-config-command"], }
         engine.instance, engine.runtime, kid = knowledge_io.import_candidate(engine.instance, engine.runtime,
@@ -765,12 +765,11 @@ class PublicGitFlow(unittest.TestCase):
                 seal_response(output, context, workspace)
                 draft = workspace / "draft.json"; draft.write_bytes(canonical_json(output))
                 self.assertEqual(context["control_binding"], arguments["control_binding"])
-                # Queue through the real transport, let the engine's stop probe pump
-                # the request, then read the durable receipt without a fixture sleep.
+                # Queue through the real transport; the owner loop receives it on its
+                # next pass and the worker waits for the durable receipt.
                 delivery = submission.request_control(workspace, "draft.json", kind="submit_intent", wait_seconds=0)
                 self.assertIn(delivery["state"], {"submitted", "already_received"}, delivery)
-                arguments["should_stop"]()
-                receipt = ControlTransport.worker_receipt(arguments["control_binding"], delivery["request_id"])
+                receipt = ControlTransport.wait_receipt(arguments["control_binding"], delivery["request_id"], 60)
                 self.assertEqual(receipt["state"], "accepted", receipt)
                 return {"status": "completed", "output": output, "usage": {}}
         with tempfile.TemporaryDirectory() as temporary:
@@ -1138,14 +1137,14 @@ class ImpactReviewRouting(unittest.TestCase):
         self.assertNotIn("continuation_of", review_action)
         engine._receive_submission = Mock(); engine._save = Mock(); engine._settle_activity = Mock()
         with patch("do_math.engine.submission.read_sealed_submission",
-                   side_effect=lambda execution, *_: {"output": execution["output"]}):
+                   side_effect=lambda execution, *_, **__: {"output": execution["output"]}):
             engine._retry_impact_reviews()
         engine._receive_submission.assert_not_called()
         engine.runtime["executions"]["EX-review"] = {"id": "EX-review", "status": "ended", "outcome": "output_accepted",
             "action": review_action, "output": source.review_output(request)}
         engine.store = Mock(); engine.store.read.return_value = b"{}"
         with patch("do_math.engine.submission.read_sealed_submission",
-                   side_effect=lambda execution, *_: {"output": execution["output"]}):
+                   side_effect=lambda execution, *_, **__: {"output": execution["output"]}):
             engine._retry_impact_reviews()
         self.assertEqual(engine._receive_submission.call_args.args[2], "EX-producer")
         self.assertTrue(engine._receive_submission.call_args.kwargs["preserved"])
@@ -1179,8 +1178,9 @@ class ImpactReviewRouting(unittest.TestCase):
         engine.runtime["executions"]["EX-review"] = {"id": "EX-review", "status": "ended", "outcome": "output_accepted",
             "action": deepcopy(next(row for row in engine.runtime["queue"] if row.get("stage") == "impact_review")), "output": output}
         engine._record_task_receipt = Mock(); engine._save = Mock(); engine._receive_submission = Mock()
+        engine.store = Mock(git_dir="fixture-git")
         with patch("do_math.engine.submission.read_sealed_submission",
-                   side_effect=lambda execution, *_: {"output": execution["output"]}):
+                   side_effect=lambda execution, *_, **__: {"output": execution["output"]}):
             engine._retry_impact_reviews(); engine._retry_impact_reviews()
         engine._receive_submission.assert_not_called()
         engine._record_task_receipt.assert_called_once()
@@ -1392,7 +1392,7 @@ class ReceiptAndQuotaConnections(unittest.TestCase):
                 prefix = intent['output_ref'].removesuffix('output.json')
                 intent.update(extensions_ref=prefix+'extensions.json', check_ref=prefix+'check.json')
                 engine = routing_engine()
-                engine.store = SimpleNamespace(read=lambda path, head: artifacts[path])
+                engine.store = SimpleNamespace(read=lambda path, head: artifacts[path], git_dir='fixture-git-' + str(owner))
                 engine.head = 'fixture-snapshot'
                 output = submission.load_json(artifacts[intent['output_ref']])
                 context = submission.load_json((workspace/'input/submission/context.json').read_bytes())
@@ -1541,7 +1541,7 @@ class AuditConsumerConnections(unittest.TestCase):
         self.assertFalse(engine.runtime.get('operational_dispositions'))
         self.assertEqual(engine.runtime["queue"], [])
 
-    def test_current_corrupt_source_is_rejected_before_any_recovery_publication(self):
+    def test_current_corrupt_source_is_found_by_the_explicit_full_byte_check(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             subprocess.run(["git", "init", "-q", str(root / "repo")], check=True)
@@ -1554,8 +1554,11 @@ class AuditConsumerConnections(unittest.TestCase):
             # guard while injecting damage. The tested read and recovery gates are real.
             with patch.object(raw_store, "_validate_artifact_changes", return_value=None):
                 damaged = raw_store.publish(head, {instance["sources"][0]["path"]: b"corrupt bytes"}).head
-            with self.assertRaises((ValueError, RuntimeError)):
-                ResearchEngine(root / "repo", created["instance_id"]).run(max_steps=1)
+            # run and controls check artifact presence and length only; full bytes belong to check.
+            report = ResearchEngine(root / "repo", created["instance_id"]).check(requested_areas=["record_storage"])
+            self.assertFalse(report["passed"])
+            self.assertTrue(any(instance["sources"][0]["path"] in row["evidence"]
+                                for row in report["inspection"]["findings"]), report["inspection"]["findings"])
             self.assertEqual(raw_store.read_snapshot().head, damaged)
 
     def test_continuation_preserves_older_files_and_latest_replacements(self):

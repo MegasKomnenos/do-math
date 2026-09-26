@@ -57,11 +57,12 @@ class ReportingTests(unittest.TestCase):
             self.assertEqual(saved["model_usage_reported"]["claude-opus-5"]["costUSD"],
                              {"reported_decimal": "0.01"})
 
-    def test_status_batches_fixed_snapshot_artifacts_and_still_checks_their_bytes(self):
+    def test_status_reports_artifact_presence_and_length_in_one_batch_without_bytes(self):
         import hashlib
         from types import SimpleNamespace
         from unittest.mock import Mock, patch
         from do_math.reporting import snapshot_report
+        from do_math.git_store import GitStateStoreError
         instance, runtime = surface_state()
         raw = b'preserved result'
         paths = ['runtime/artifacts/BA-1/' + str(index) for index in range(12)]
@@ -70,18 +71,29 @@ class ReportingTests(unittest.TestCase):
              'sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)}
             for index, path in enumerate(paths)]
         head = 'a' * 40
+        stored = dict.fromkeys(paths, len(raw))
+
+        def sizes(requested, snapshot):
+            self.assertEqual(snapshot, head)
+            if any(path not in stored for path in requested):
+                raise GitStateStoreError('batch size did not return a blob')
+            return {path: stored[path] for path in requested}
+
         store = SimpleNamespace(load=Mock(return_value=(head, instance, runtime)),
-            read=Mock(return_value=raw), read_many=Mock(return_value=dict.fromkeys(paths, raw)))
+            read=Mock(side_effect=AssertionError('status reads no artifact bytes')),
+            read_many=Mock(side_effect=AssertionError('status reads no artifact bytes')),
+            blob_sizes=Mock(side_effect=sizes))
         with patch('do_math.reporting._repository', return_value=store):
             report = snapshot_report(Path('.'), 'RI-test', requested_areas=['record_storage'])
-        self.assertEqual(report['inspection']['status'], 'healthy')
-        store.read_many.assert_called_once_with(paths, head)
-        store.read.assert_not_called()
-        store.read_many.return_value[paths[0]] = b'changed'
-        with patch('do_math.reporting._repository', return_value=store):
+            self.assertEqual(report['inspection']['status'], 'healthy')
+            store.blob_sizes.assert_called_once_with(paths, head)
+            # A changed length or a missing artifact blocks; same-length byte changes are for check.
+            stored[paths[0]] = len(raw) + 1
+            del stored[paths[1]]
             report = snapshot_report(Path('.'), 'RI-test', requested_areas=['record_storage'])
         self.assertEqual(report['inspection']['status'], 'blocked')
-        self.assertTrue(any(paths[0] in row['evidence'] for row in report['inspection']['findings']))
+        blocked = {evidence for row in report['inspection']['findings'] for evidence in row['evidence']}
+        self.assertEqual(blocked & set(paths), {paths[0], paths[1]})
     def test_timeline_preserves_explicit_continuation_and_pending_successor(self):
         from copy import deepcopy
         from types import SimpleNamespace

@@ -54,6 +54,7 @@ class Host(FakeEngine):
         if threading.get_ident() != self.owner_thread:
             raise AssertionError('engine mutation escaped the owner thread')
         super()._save(artifacts)
+        self._evaluate_stops()  # The real publication point judges stops after every save.
 
     def _controls(self, *, pump=True):
         if pump and self._calls is not None:
@@ -115,9 +116,9 @@ class MachineSchedulerTests(unittest.TestCase):
         second = host.candidate('K2')
         host.runtime['queue'] = [action, {'id': new_id('AC'), 'role': 'maintenance'}, second]
         observed = []
-        verifier_entered = threading.Event()
+        verifier_entered, applied = threading.Event(), threading.Event()
         def control():
-            if host.ai_finished.is_set() and verifier_entered.is_set():
+            if host.ai_finished.is_set() and verifier_entered.is_set() and not applied.is_set():
                 host.tick = 100000.
                 if cancel == 'revoke':
                     for grant in host.instance['grants'].values():
@@ -125,6 +126,8 @@ class MachineSchedulerTests(unittest.TestCase):
                 elif cancel:
                     host.runtime['status'] = 'paused'
                     host.instance['lifecycle']['state'] = 'paused'
+                host._save()  # A control is effective once published.
+                applied.set()
         host.control_action = control
         def verify(**args):
             verifier_entered.set()
@@ -132,6 +135,7 @@ class MachineSchedulerTests(unittest.TestCase):
             for _ in range(500):
                 stopped = args['should_stop']()
                 if host.ai_finished.is_set():
+                    self.assertTrue(applied.wait(5), 'the owner loop did not apply the control')
                     observed.append(args['should_stop']())
                     # Return a late success intentionally; currentness must decide.
                     return host.verification(args['source'], args['declarations'], args['expected_toolchain'])
@@ -157,14 +161,18 @@ class MachineSchedulerTests(unittest.TestCase):
     def test_formal_allows_ai_collection_after_long_elapsed_time(self):
         self.run_case()
 
-    def test_environment_failure_waits_for_explicit_recheck_before_compiler_retry(self):
+    def test_environment_failure_waits_for_rerecord_before_compiler_retry(self):
+        import os
+        import setup_lean
+        from research_fixtures import fixture_setup_lean
         host = self.host
         action = host.candidate('K-env')
         host.runtime['queue'] = [action]
         environment = host.instance['trust_environments'][host.instance['active_trust_environment']]
-        path = Path(next(row['path'] for row in environment['manifest']['files'] if row['role']=='lean_source'))
-        original = path.read_bytes()
-        path.write_bytes(b'changed installation')
+        bound = deepcopy(host.runtime['trust_bindings'][environment['id']])
+        olean = Path(environment['toolchain']['executable']).parents[1] / 'lib/lean/Init/Prelude.olean'
+        info = os.stat(olean)
+        os.utime(olean, ns=(info.st_atime_ns, info.st_mtime_ns + 10**9))  # e.g. a cache re-download
         from unittest.mock import Mock
         host.formal_verifier = Mock()
         host._formal(action)
@@ -173,8 +181,12 @@ class MachineSchedulerTests(unittest.TestCase):
         self.assertEqual(waiting['kind'], 'formal_environment')
         self.assertEqual(waiting['next_owner'], 'trust_governance')
         previous = waiting['execution_id']
-        path.write_bytes(original)
-        host._trust_control({'operation':'recheck','env_id':environment['id']}, 'UI-recheck')
+        host._resume_environment_waits()
+        self.assertIn(action['id'], host.runtime['waiting_actions'])
+        record_path = Path(environment['toolchain_record']['path'])
+        with fixture_setup_lean(environment['toolchain'], record_path.parent / 'smoke.lean'):
+            recorded =setup_lean.rerecord(['unused'], record_path.parent, record_path.parent / 'evidence', None)
+        host._resume_environment_waits()
         successor = next(a for a in host.runtime['queue'] if a['id']==action['id'])
         self.assertEqual(successor['continuation_of'], previous)
         self.assertNotIn(action['id'], host.runtime['waiting_actions'])
@@ -185,6 +197,9 @@ class MachineSchedulerTests(unittest.TestCase):
         host._formal(successor)
         latest = next(e for e in host.runtime['executions'].values() if e.get('continuation_of')==previous)
         self.assertEqual(latest['outcome'], 'output_accepted')
+        self.assertEqual(host.runtime['trust_bindings'][environment['id']], recorded['binding'])
+        rebound = [row for row in host.runtime['events'] if row['kind'] == 'trust_environment_rebound']
+        self.assertEqual([(row['previous'], row['current']) for row in rebound], [(bound, recorded['binding'])])
 
     def test_formal_user_stop_rejects_a_late_verified_result(self):
         self.run_case(cancel=True)
@@ -230,6 +245,37 @@ class MachineSchedulerTests(unittest.TestCase):
                 self.assertIn(b'verified', store.read_bytes(head, machine['raw_result_ref']))
                 self.assertIn(b'verified', store.read_bytes(head, machine['result_ref']))
                 self.assertEqual(machine['outcome'], 'output_accepted')
+
+    def test_stop_request_reaches_the_calculation_within_one_owner_pass(self):
+        host = self.host
+        host.runtime['queue'] = [host.candidate('K1')]
+        passes, seen, flag = [0], {}, {}
+        started = threading.Event()
+        def control():
+            passes[0] += 1
+            if started.is_set() and 'applied' not in seen:
+                host.runtime['status'] = 'paused'
+                host.instance['lifecycle']['state'] = 'paused'
+                host._save()  # The pause control's publication.
+                seen['applied'] = passes[0]
+                seen['flag_after_publication'] = flag['read']()
+        host.control_action = control
+        def verify(**args):
+            args['on_started']({'job_name': args['launch_ticket']['job_name']})
+            flag['read'] = args['should_stop']
+            started.set()
+            for _ in range(6000):
+                if args['should_stop']():
+                    seen['observed'] = passes[0]
+                    return {'status': 'stopped', 'reason': 'flag observed'}
+                time.sleep(.005)
+            raise AssertionError('the stop never reached the calculation')
+        host.formal_verifier = verify
+        host._run_parallel(max_steps=1)
+        self.assertTrue(seen['flag_after_publication'], 'the publication itself sets the flag')
+        self.assertLessEqual(seen['observed'] - seen['applied'], 1, 'the calculation stops within one owner pass')
+        formal = next(e for e in host.runtime['executions'].values() if e['role'] == 'formal_check')
+        self.assertEqual(formal['result_disposition']['stop_reasons'], ['instance_paused'])
 
     def test_owner_exception_stops_worker_preserves_result_and_reconciles_capacity(self):
         host = self.host
@@ -347,25 +393,161 @@ class CallManagerTests(unittest.TestCase):
                 profile=profile, execution=execution))
         self.assertEqual(execution['transitions'][-1]['at'], instant.isoformat())
 
-    def test_close_answers_pending_stop_queries_and_fails_other_callbacks(self):
+    def test_close_sets_every_stop_flag_and_fails_pending_start_callbacks(self):
         calls = ModelCalls()
         seen = []
         def continuation():
             seen.append((yield))
         one, two = continuation(), continuation()
         next(one); next(two)
-        calls.start_call(one, lambda should_stop: {'stopped': should_stop()}, {'should_stop': lambda: False}, execution_id='EX-one')
+        def wait_for_flag(should_stop):
+            while not should_stop():
+                time.sleep(.01)
+            return {'stopped': True}
+        calls.start_call(one, wait_for_flag, {'should_stop': lambda: False}, execution_id='EX-one')
         calls.start_call(two, lambda on_started: on_started({}), {'on_started': lambda identity: self.fail('must not run')}, execution_id='EX-two')
         until = time.monotonic() + 3
-        while calls.events.qsize() < 2 and time.monotonic() < until:
+        while calls.events.qsize() < 1 and time.monotonic() < until:
             time.sleep(.01)
-        self.assertEqual(calls.events.qsize(), 2)
+        self.assertEqual(calls.events.qsize(), 1, 'only the start callback waits for the owner')
         calls.close()
         self.assertEqual(calls.collect(), 2)
         self.assertEqual(calls.collect(), 0)
         self.assertIn({'stopped': True}, seen)
         self.assertTrue(any(r.get('status') == 'failed' for r in seen))
         self.assertFalse(any(t.is_alive() for t in calls.threads))
+
+    @test_group('unit')
+    def test_owner_wait_wakes_on_a_returned_call_not_its_bound(self):
+        calls = ModelCalls()
+        def continuation():
+            yield
+        generator = continuation(); next(generator)
+        release = threading.Event()
+        calls.start_call(generator, lambda: release.wait(5), {}, execution_id='EX-wake')
+        calls.wait(0); release.set()
+        started = time.monotonic()
+        calls.wait(30)
+        self.assertLess(time.monotonic() - started, 5, 'a returned call wakes the owner')
+        calls.collect()
+        started = time.monotonic()
+        calls.wait(.2)
+        self.assertGreaterEqual(time.monotonic() - started, .15, 'nothing pending: the bound paces the owner')
+        calls.close()
+
+    @test_group('unit')
+    def test_stop_flag_reads_never_wait_for_the_owner(self):
+        calls = ModelCalls()
+        judged = []
+        def continuation():
+            judged.append((yield))
+        generator = continuation(); next(generator)
+        def poll(should_stop):
+            started = time.monotonic()
+            for _ in range(1000):
+                should_stop()
+            return {'stopped': should_stop(), 'seconds': time.monotonic() - started}
+        # The owner never pumps while the calculation polls its flag.
+        future = calls.start_call(generator, poll, {'should_stop': lambda: judged.append('judged') or False},
+                                  execution_id='EX-poll')
+        result = future.result(timeout=5)
+        self.assertFalse(result['stopped'])
+        self.assertLess(result['seconds'], 1)
+        self.assertEqual(judged, ['judged'], 'the judgment runs on the owner, once at start')
+        calls.close()
+
+    @test_group('unit')
+    def test_owner_judgment_sets_the_flag_once_and_stops_the_calculation(self):
+        calls = ModelCalls()
+        owner = threading.get_ident()
+        reasons, returned, judgments = [], [], []
+        def judge():
+            self.assertEqual(threading.get_ident(), owner)
+            judgments.append(bool(reasons))
+            return bool(reasons)
+        def continuation():
+            returned.append((yield))
+        generator = continuation(); next(generator)
+        def wait_for_flag(should_stop):
+            while not should_stop():
+                time.sleep(.01)
+            return {'status': 'stopped'}
+        future = calls.start_call(generator, wait_for_flag, {'should_stop': judge}, execution_id='EX-judged')
+        calls.judge()
+        self.assertFalse(future.stop.is_set())
+        reasons.append('paused')  # A published stop reason.
+        calls.judge()
+        calls.judge()  # A set flag is not judged again.
+        until = time.monotonic() + 5
+        while calls.futures and time.monotonic() < until:
+            calls.collect(); time.sleep(.01)
+        self.assertEqual(returned, [{'status': 'stopped'}])
+        self.assertEqual(judgments, [False, False, True])
+        calls.close()
+
+    @test_group('unit')
+    def test_failed_judgment_fails_only_its_own_call(self):
+        calls = ModelCalls()
+        returned = []
+        def continuation():
+            returned.append((yield))
+        generator = continuation(); next(generator)
+        def wait_for_flag(should_stop):
+            while not should_stop():
+                time.sleep(.01)
+            return {'status': 'stopped', 'evidence': 'kept'}
+        state = {'fail': False}
+        def judge():
+            if state['fail']:
+                raise KeyError('missing record')
+            return False
+        calls.start_call(generator, wait_for_flag, {'should_stop': judge}, execution_id='EX-broken')
+        state['fail'] = True
+        calls.judge()  # The owner does not raise.
+        until = time.monotonic() + 5
+        while calls.futures and time.monotonic() < until:
+            calls.collect(); time.sleep(.01)
+        self.assertEqual(returned[0]['status'], 'failed')
+        self.assertEqual(returned[0]['evidence'], 'kept')
+        self.assertIn('stop judgment failed: KeyError', returned[0]['error'])
+        calls.close()
+
+    @test_group('unit')
+    def test_observations_queue_without_waiting_and_apply_before_collection(self):
+        failures, applied, order = [], [], []
+        calls = ModelCalls(on_observation_error=lambda eid, error: failures.append((eid, str(error))))
+        def continuation():
+            order.append(('collected', (yield)))
+        def observe(item):
+            if item == 'bad':
+                raise ValueError('unapplied observation')
+            applied.append(item)
+            order.append(('applied', item))
+        generator = continuation(); next(generator)
+        def produce(on_observation, should_stop):
+            for item in ('one', 'two'):
+                on_observation(item)  # Returns without an owner round trip.
+            return {'status': 'completed'}
+        future = calls.start_call(generator, produce, {'on_observation': observe, 'should_stop': lambda: False},
+                                  execution_id='EX-observed')
+        future.result(timeout=5)
+        self.assertEqual(applied, [], 'nothing is applied until the owner pumps')
+        self.assertEqual(calls.collect(), 1)
+        self.assertEqual(order, [('applied', 'one'), ('applied', 'two'), ('collected', {'status': 'completed'})])
+        second = continuation(); next(second)
+        def fail_then_wait(on_observation, should_stop):
+            on_observation('bad')
+            while not should_stop():
+                time.sleep(.01)
+            return {'status': 'stopped'}
+        calls.start_call(second, fail_then_wait, {'on_observation': observe, 'should_stop': lambda: False},
+                         execution_id='EX-failed-observation')
+        until = time.monotonic() + 5
+        while calls.futures and time.monotonic() < until:
+            calls.collect(); time.sleep(.01)
+        self.assertEqual(failures, [('EX-failed-observation', 'unapplied observation')])
+        self.assertEqual(order[-1], ('collected', {'status': 'stopped'}))
+        calls.close()
 
     @unittest.skipUnless(os.name == 'nt', 'Windows Job required')
     def test_failed_start_publication_never_resumes_the_real_job(self):
@@ -381,7 +563,7 @@ class CallManagerTests(unittest.TestCase):
             self.assertFalse(marker.exists())
 
     @unittest.skipUnless(os.name == 'nt', 'Windows Job required')
-    def test_real_job_cancellation_uses_owner_callbacks_and_collects_once(self):
+    def test_real_job_cancellation_uses_owner_judgment_and_collects_once(self):
         from do_math.formal import _job_run
         from do_math.windows_job import named_job_empty
         owner = threading.get_ident()
@@ -399,7 +581,7 @@ class CallManagerTests(unittest.TestCase):
             until = time.monotonic() + 15
             try:
                 while calls.futures and time.monotonic() < until:
-                    calls.collect(); time.sleep(.01)
+                    calls.collect(); calls.judge(); time.sleep(.01)
                 self.assertFalse(calls.futures)
                 self.assertEqual(len(returned), 1)
                 self.assertTrue(returned[0][-1])

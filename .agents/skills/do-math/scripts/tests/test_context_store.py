@@ -1,106 +1,27 @@
 from __future__ import annotations
-import json, os, sys, tempfile, unittest, subprocess
-from contextlib import contextmanager
+import json, os, sys, tempfile, unittest
 from pathlib import Path
 from unittest.mock import patch
 SCRIPTS=Path(__file__).resolve().parents[1];sys.path.insert(0,str(SCRIPTS))
 import do_math.context_store as store
 
-@contextmanager
-def junction_at_open(target, outside, *, restore_before_return):
- """Real junction swap at the actual open, after callers' path prechecks."""
- original_open=Path.open
- parent=target.parent
- saved=parent.with_name(parent.name+'-held')
- fired=[]
- def intercepted(path,*args,**kwargs):
-  if path==target and not fired and (args[0] if args else kwargs.get('mode','r'))=='rb':
-   fired.append(True)
-   parent.rename(saved)
-   def quoted(value):return "'"+str(value).replace("'","''")+"'"
-   subprocess.run(['powershell','-NoProfile','-NonInteractive','-Command',
-    'New-Item -ItemType Junction -Path '+quoted(parent)+' -Target '+quoted(outside)+' | Out-Null'],check=True,capture_output=True)
-   stream=original_open(path,*args,**kwargs)
-   if restore_before_return:
-    # Remove only this known test junction, never recurse into its target.
-    parent.rmdir()
-    saved.rename(parent)
-   return stream
-  return original_open(path,*args,**kwargs)
- try:
-  with patch.object(Path,'open',intercepted):yield fired
- finally:
-  if saved.exists():
-   if parent.exists():parent.rmdir()
-   saved.rename(parent)
+class StableReadTests(unittest.TestCase):
+ def test_metadata_change_during_one_read_is_not_one_version(self):
+  with tempfile.TemporaryDirectory() as d:
+   path=Path(d)/'x';path.write_bytes(b'bytes')
+   self.assertEqual(store._read_stable(path),b'bytes')
+   with patch.object(store,'stat_fingerprint',side_effect=[(5,1,1),(5,2,1)]):
+    with self.assertRaises(store._ChangedDuringRead):store._read_stable(path)
 
+ def test_one_boundary_proves_its_root_once_for_many_reads(self):
+  with tempfile.TemporaryDirectory() as d:
+   root=Path(d);(root/'sub').mkdir()
+   for i in range(3):(root/'sub'/f'{i}.txt').write_bytes(b'%d'%i)
+   with patch.object(store.PhysicalBoundary,'check',autospec=True,wraps=store.PhysicalBoundary.check) as check:
+    got=store.collect_outputs(root)
+   self.assertEqual(len(got['files']),3)
+   self.assertEqual(check.call_count,1)
 
-@unittest.skipUnless(os.name=='nt','actual Windows junction boundary')
-class OpenedHandleBoundaryTests(unittest.TestCase):
- def test_collection_rejects_real_junction_swap_at_open(self):
-  for transient in (False,True):
-   with self.subTest(transient=transient),tempfile.TemporaryDirectory() as directory:
-    base=Path(directory); root=base/'workspace'; sub=root/'sub'; sub.mkdir(parents=True)
-    outside=base/'outside';outside.mkdir()
-    target=sub/'result.txt';target.write_bytes(b'worker output')
-    (outside/'result.txt').write_bytes(b'outside bytes')
-    self.assertEqual(store.collect_outputs(root)['files']['sub/result.txt'],b'worker output')
-    with junction_at_open(target,outside,restore_before_return=transient) as fired:
-     result=store.collect_outputs(root,required_paths=['sub/result.txt'])
-    self.assertTrue(fired)
-    self.assertNotIn('sub/result.txt',result['files'],result)
-    self.assertFalse(result['complete'])
-    omission=next(row for row in result['omitted'] if row['path']=='sub/result.txt')
-    self.assertEqual(omission['reason'],'physical_boundary')
-    self.assertTrue(omission['required'])
-    self.assertTrue(omission['error'])
-    self.assertEqual((outside/'result.txt').read_bytes(),b'outside bytes')
-
- def test_source_read_rejects_handle_outside_restored_lexical_path(self):
-  with tempfile.TemporaryDirectory() as directory:
-   base=Path(directory);root=base/'workspace';sub=root/'input';sub.mkdir(parents=True)
-   outside=base/'outside';outside.mkdir();target=sub/'result.txt'
-   target.write_bytes(b'worker output');(outside/'result.txt').write_bytes(b'outside bytes')
-   with junction_at_open(target,outside,restore_before_return=True):
-    result=store.read_source(root,{'path':'input/result.txt'})
-   self.assertEqual(result['status'],'error',result)
-   self.assertEqual(result['bytes'],b'')
-   self.assertIn('physical',result['reason'])
-
- def test_retention_inventory_rejects_same_real_open_race(self):
-  from do_math.retention import _inventory
-  with tempfile.TemporaryDirectory() as directory:
-   base=Path(directory);root=base/'runs/EX-1';root.mkdir(parents=True)
-   outside=base/'outside';outside.mkdir();target=root/'result.txt'
-   target.write_bytes(b'worker output');(outside/'result.txt').write_bytes(b'outside bytes')
-   with junction_at_open(target,outside,restore_before_return=True):
-    with self.assertRaisesRegex(ValueError,'physical'):_inventory(root)
-
- def test_cleanup_preserves_run_when_open_boundary_changes(self):
-  from do_math.retention import cleanup_candidates,cleanup
-  from test_redesign_SURFACE import archived_run
-  for phase in ('eligibility','deletion'):
-   with self.subTest(phase=phase),tempfile.TemporaryDirectory() as directory:
-    base=Path(directory);root=base/'workspace'
-    run,state,archive,read=archived_run(root)
-    outside=base/'outside';outside.mkdir()
-    # Matching archived bytes must not make an outside handle admissible.
-    (outside/'output.txt').write_bytes(b'preserved result')
-    candidates=cleanup_candidates(root,read_artifact=read,**state)
-    self.assertTrue(candidates[0]['eligible'])
-    with junction_at_open(run/'output.txt',outside,restore_before_return=True):
-     if phase=='eligibility':
-      result=cleanup_candidates(root,read_artifact=read,**state)
-      self.assertFalse(result[0]['eligible'])
-      self.assertTrue(any('physical' in reason for reason in result[0]['reasons']))
-     else:
-      result=cleanup(root,candidates,current_state=lambda:state,read_artifact=read)
-      self.assertEqual(result['deleted'],[])
-      self.assertEqual(result['status'],'degraded')
-      self.assertTrue(any('physical' in row['error'] for row in result['failures']))
-    self.assertEqual((run/'output.txt').read_bytes(),b'preserved result')
-    self.assertEqual((outside/'output.txt').read_bytes(),b'preserved result')
-    self.assertEqual(state['executions']['EX-1']['status'],'ended')
 
 class ContextStoreTests(unittest.TestCase):
  def test_directory_read_failure_is_an_omission_even_without_required_paths(self):
@@ -130,6 +51,21 @@ class ContextStoreTests(unittest.TestCase):
    self.assertIsNone(result['overflow'])
    ref=result['context']['ongoing_preparation']['source_ref']
    self.assertEqual(json.loads(store.read_source(root,ref,limit=100000)['bytes']),entries)
+ def test_new_catalog_is_hashed_from_the_bytes_it_wrote(self):
+  import hashlib
+  from do_math.repository import canonical_json
+  with tempfile.TemporaryDirectory() as d:
+   root=Path(d); context={'goal':'g','tasks':[{'id':'T-1'}]}
+   with patch.object(store,'_read_stable',side_effect=AssertionError('a new catalog file is never reread')):
+    catalog=store.write_source_catalog(context,root)
+   for key,value in context.items():
+    logical='input/catalog/'+key+'.json'; data=canonical_json(value)
+    self.assertEqual(catalog['files'][logical],data)
+    self.assertEqual(catalog['entries'][key]['sha256'],hashlib.sha256(data).hexdigest())
+    self.assertEqual((root/logical).read_bytes(),data)
+   # Existing catalog files are still compared before reuse.
+   (root/'input/catalog/goal.json').write_bytes(b'"other"')
+   with self.assertRaises(FileExistsError): store.write_source_catalog(context,root)
  def test_materialize_and_invalid_utf8_round_trip(self):
   with tempfile.TemporaryDirectory() as d:
    root=Path(d); data=b'\xff\x00abc'; result=store.materialize_inputs(root,{'sources/raw.bin':data})

@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 import hashlib
 from typing import Any
 
-from .repository import canonical_json, exact_content_hash, new_id
+from .repository import exact_content_hash, new_id
 from .academic import requirement_record
 from .external import recover_operation
 
@@ -20,12 +20,6 @@ OPERATING_ROLES = {"research_preparation", "research_plan", "operational_review"
                    "trust_check", "trust_activate"}
 
 GOVERNANCE_KINDS = {"charter", "policy", "research_context", "additional_audit"}
-
-
-def digest(value: Any) -> str:
-    # User wording can explicitly concern literal Unicode/codepoint identity.
-    # Canonical storage syntax and lossless authority payloads are distinct.
-    return exact_content_hash(value)
 
 
 def preserve_source(identifier: str, text: str, *, origin: str, revision: int = 1) -> dict:
@@ -113,7 +107,7 @@ def _install_record(instance, record, approval_ref, source_ref):
         raise ValueError("same rule requires explicit supersession")
     for old_id in record["supersedes"]: records[old_id].update(status="superseded", superseded_by=identifier)
     records[identifier] = {**deepcopy(record), "status": "active", "approval_ref": approval_ref, "source_ref": source_ref,
-                           "content_sha256": digest(record)}
+                           "content_sha256": exact_content_hash(record)}
 
 
 def initialize_governance(instance, source, approval, records, *, approval_source=None):
@@ -130,7 +124,7 @@ def initialize_governance(instance, source, approval, records, *, approval_sourc
     if approval.get("input_source_ref", approval["source_ref"]) != source["id"] or approval.get("input_source_sha256",approval["source_sha256"]) != source["sha256"]:
         raise ValueError("approval does not bind the original initialization input")
     _require_text(approval.get("id"), "approval id")
-    if not records or len({r["id"] for r in records}) != len(records) or approval.get("record_hashes") != {r["id"]: digest(r) for r in records}:
+    if not records or len({r["id"] for r in records}) != len(records) or approval.get("record_hashes") != {r["id"]: exact_content_hash(r) for r in records}:
         raise ValueError("approval must bind the exact proposed records")
     result = deepcopy(instance)
     if source["id"] in result.get("governance_sources", {}) and result["governance_sources"][source["id"]] != source:
@@ -157,7 +151,7 @@ def governance_view(instance):
     if len(charters) != 1: raise ValueError("no unique approved charter")
     charter = charters[0]; policies = sorted((r for r in active if r["kind"] == "policy"), key=lambda r: r["id"])
     return {"charter": charter, "goal": charter["content"]["goal"], "goal_revision": charter["revision"],
-            "policies": "\n\n".join(r["content"]["text"] for r in policies), "policy_revision": digest(policies), "policy_records": policies,
+            "policies": "\n\n".join(r["content"]["text"] for r in policies), "policy_revision": exact_content_hash(policies), "policy_records": policies,
             "research_context": [r for r in active if r["kind"] == "research_context"],
             "additional_audits": [r for r in active if r["kind"] == "additional_audit"],
             "academic_requirements": requirement_record(charter["content"]["academic_requirements"])}
@@ -179,7 +173,7 @@ def validate_governance_state(instance):
         approval = instance["decisions"][record["approval_ref"]]
         approved_hash = approval.get("record_hashes", {}).get(record["id"])
         if approved_hash is None and approval.get("change", {}).get("record") is not None:
-            approved_hash = digest(approval["change"]["record"])
+            approved_hash = exact_content_hash(approval["change"]["record"])
         approval_source = instance.get("governance_sources", {}).get(approval.get("source_ref"))
         validate_source(approval_source)
         if (approval.get("actor") != "user" or approval.get("revoked")
@@ -187,7 +181,7 @@ def validate_governance_state(instance):
                 or approval.get("input_source_sha256",approval.get("source_sha256")) != source["sha256"]
                 or approval.get("source_sha256") != approval_source["sha256"]):
             raise ValueError("record lacks actual source-bound user approval")
-        if digest(proposal) != record.get("content_sha256") or approved_hash != digest(proposal):
+        if exact_content_hash(proposal) != record.get("content_sha256") or approved_hash != exact_content_hash(proposal):
             raise ValueError("governance content differs from approved proposal")
         if record.get("status") not in {"active", "superseded"}: raise ValueError("invalid governance lifecycle")
         if record["status"] == "superseded":
@@ -212,8 +206,8 @@ def evaluate_additional_audit(instance, audit_id, verdict, *, assessor, input_ha
     if set(input_hashes) != set(content["required_inputs"]): raise ValueError("audit inputs differ from the approved required set")
     for ref in content["required_inputs"]:
         record = records.get(ref, (None, None))[1]
-        if record is None or input_hashes.get(ref) != digest(record): raise ValueError("audit required input is absent or stale")
-    return {"audit_ref": audit_id, "audit_sha256": digest(audit), "assessor": assessor, "verdict": verdict,
+        if record is None or input_hashes.get(ref) != exact_content_hash(record): raise ValueError("audit required input is absent or stale")
+    return {"audit_ref": audit_id, "audit_sha256": exact_content_hash(audit), "assessor": assessor, "verdict": verdict,
             "decision": content["verdict_mapping"][verdict], "input_hashes": deepcopy(input_hashes)}
 
 
@@ -233,8 +227,8 @@ def additional_audit_input(instance, runtime=None):
             record = records.get(ref, (None, None))[1]
             if record is None: raise ValueError("additional audit required input is unavailable: " + ref)
             inputs[ref] = deepcopy(record)
-        result.append({"audit": deepcopy(audit), "audit_sha256": digest(audit), "inputs": inputs,
-                       "input_hashes": {ref: digest(record) for ref, record in inputs.items()}})
+        result.append({"audit": deepcopy(audit), "audit_sha256": exact_content_hash(audit), "inputs": inputs,
+                       "input_hashes": {ref: exact_content_hash(record) for ref, record in inputs.items()}})
     return result
 
 
@@ -437,7 +431,7 @@ def authorize(instance: dict, action: dict, at: str | None = None, *, runtime: d
         return {"allowed": False, "grant_id": None, "reason": "ambiguous current grants", "rejected": rejected}
     grant = accepted[0]
     return {"allowed": True, "grant_id": grant["id"],
-            "grant_sha256": hashlib.sha256(canonical_json(grant)).hexdigest(),
+            "grant_sha256": exact_content_hash(grant),
             "expires_at": grant.get("expires_at"), "checkpoint_allowed": grant.get("checkpoint_allowed", False)}
 
 
@@ -732,7 +726,7 @@ def _import_basis(instance, runtime, output):
             if isinstance(ref, str) and ref not in references:
                 references.add(ref)
                 pending.append(ref)
-    return digest({'governance': governance,
+    return exact_content_hash({'governance': governance,
         'references': {ref: deepcopy(records.get(ref)) for ref in sorted(references)}})
 
 
@@ -940,7 +934,7 @@ def import_input_source(instance, runtime, input_id):
     if input_id == lifecycle.get('input_id') and lifecycle.get('immutable_input'):
         from .initialization import original_input_bytes
         text = original_input_bytes(lifecycle['immutable_input']).decode('utf-8')
-    identifier = 'GS-' + digest({'input_ref': input_id})
+    identifier = 'GS-' + exact_content_hash({'input_ref': input_id})
     return preserve_source(identifier, text, origin=request.get('origin', 'user'))
 
 
@@ -953,7 +947,7 @@ def prepare_import(instance, runtime, source, output, *, execution_id, previous_
     if previous_id:
         if not previous or previous.get("superseded_by") or previous.get("status") not in {"revision_required", "unresolved", "approved"}:
             raise ValueError("rework must follow a sealed failed or changed import")
-        if previous["sha256"] != digest(_import_payload(previous)): raise ValueError("rework parent seal changed")
+        if previous["sha256"] != exact_content_hash(_import_payload(previous)): raise ValueError("rework parent seal changed")
         repair = output.get("repair", {})
         if repair.get("previous_sha256") != previous["sha256"] or not repair.get("actions") or not isinstance(repair.get("changed_unit_ids"), list):
             raise ValueError("rework requires parent findings and exact changed coordinates")
@@ -979,7 +973,7 @@ def prepare_import(instance, runtime, source, output, *, execution_id, previous_
               "previous_id": previous_id, "previous_findings": deepcopy(previous.get("check", {}).get("findings", [])) if previous else [],
               "status": "checking"}
     if input_ref is not None: bundle['input_ref'] = input_ref
-    bundle["sha256"] = digest(_import_payload(bundle))
+    bundle["sha256"] = exact_content_hash(_import_payload(bundle))
     if previous: previous["superseded_by"] = identifier
     runtime.setdefault("intent_imports", {})[identifier] = bundle
     return deepcopy(bundle)
@@ -991,11 +985,11 @@ def _current_import(instance, runtime, import_id, *, owner_handlers=None):
     validate_source(bundle["source"])
     if bundle.get('input_ref') is not None and import_input_source(instance, runtime, bundle['input_ref']) != bundle['source']:
         raise ValueError('original public input changed')
-    if bundle["sha256"] != digest(_import_payload(bundle)): raise ValueError("sealed import changed")
+    if bundle["sha256"] != exact_content_hash(_import_payload(bundle)): raise ValueError("sealed import changed")
     source = instance.get("governance_sources", {}).get(bundle["source"]["id"])
     if source is not None and source != bundle["source"]: raise ValueError("original version changed")
     receipt = bundle.get("application")
-    if receipt and receipt.get("sha256") != digest({k: v for k, v in receipt.items() if k != "sha256"}):
+    if receipt and receipt.get("sha256") != exact_content_hash({k: v for k, v in receipt.items() if k != "sha256"}):
         raise ValueError("sealed import application receipt changed")
     expected_basis = bundle.get("application", {}).get("post_basis_sha256", bundle["basis_sha256"])
     if expected_basis != _import_basis(instance, runtime, bundle["output"]): raise ValueError("import authority or affected targets changed")
@@ -1026,7 +1020,7 @@ def check_import(instance, runtime, import_id, output, *, execution_id, owner_ha
     _strings(output.get("findings"), "check findings")
     if output["decision"] == "revision_required" and not output["findings"]: raise ValueError("failed check needs repair findings")
     check = {**deepcopy(output), "execution_id": execution_id}
-    check["sha256"] = digest(check)
+    check["sha256"] = exact_content_hash(check)
     bundle["check"] = check
     bundle["status"] = output["decision"] if output["scope_complete"] else "unresolved"
     return deepcopy(bundle)
@@ -1055,12 +1049,12 @@ def import_approval_draft(instance, runtime, import_id, *, owner_handlers=None):
     if (bundle.get('status') != 'approved' or check.get('decision') != 'approved'
             or check.get('scope_complete') is not True
             or check.get('bundle_sha256') != bundle['sha256']
-            or check.get('sha256') != digest({k:v for k,v in check.items() if k != 'sha256'})):
+            or check.get('sha256') != exact_content_hash({k:v for k,v in check.items() if k != 'sha256'})):
         raise ValueError('approval draft requires a complete independently checked import')
     validate_independent_execution(runtime, check['execution_id'], [bundle['execution_id']])
     return {'kind':'import_approval', 'import_id':bundle['id'], 'bundle_sha256':bundle['sha256'],
             'check_sha256':check['sha256'],
-            'unit_hashes':{u['unit_id']:digest(u['payload']) for u in bundle['output']['import_units'] if u['payload']}}
+            'unit_hashes':{u['unit_id']:exact_content_hash(u['payload']) for u in bundle['output']['import_units'] if u['payload']}}
 
 
 def apply_import(instance, runtime, import_id, *, approvals=None, owner_handlers=None):
@@ -1073,7 +1067,7 @@ def apply_import(instance, runtime, import_id, *, approvals=None, owner_handlers
     if bundle["status"] != "approved": raise ValueError("independent complete approval required")
     check = bundle["check"]
     validate_independent_execution(runtime,check["execution_id"],[bundle["execution_id"]])
-    if check["sha256"] != digest({k: v for k, v in check.items() if k != "sha256"}): raise ValueError("sealed check changed")
+    if check["sha256"] != exact_content_hash({k: v for k, v in check.items() if k != "sha256"}): raise ValueError("sealed check changed")
     if runtime.get("executions", {}).get(check["execution_id"], {}).get("intent_import_sha256") != bundle["sha256"]:
         raise ValueError("checker input evidence no longer resolves")
     result, state = deepcopy(instance), deepcopy(runtime)
@@ -1092,7 +1086,7 @@ def apply_import(instance, runtime, import_id, *, approvals=None, owner_handlers
             change = unit["payload"]
             if not change: continue
             approval = (approvals or {}).get(unit["unit_id"])
-            if not approval or approval.get("actor") != "user" or approval.get("change_sha256") != digest(change): raise ValueError("semantic check is not user approval of the exact change")
+            if not approval or approval.get("actor") != "user" or approval.get("change_sha256") != exact_content_hash(change): raise ValueError("semantic check is not user approval of the exact change")
             source_ref = approval.get("source_ref")
             source = result["governance_sources"].get(source_ref)
             if not source or approval.get("source_sha256") != source["sha256"]: raise ValueError("change approval original is unavailable")
@@ -1108,7 +1102,7 @@ def apply_import(instance, runtime, import_id, *, approvals=None, owner_handlers
     outcome["bundle_sha256"] = bundle["sha256"]
     outcome["check_sha256"] = check["sha256"]
     outcome["approvals"] = deepcopy(approvals or {})
-    outcome["sha256"] = digest(outcome)
+    outcome["sha256"] = exact_content_hash(outcome)
     state["intent_imports"][import_id]["application"] = deepcopy(outcome)
     return result, state, outcome
 
@@ -1126,7 +1120,7 @@ def apply_import_control(instance, runtime, request, *, owner_handlers=None):
     bundle = _current_import(instance, runtime, spec.get("import_id"), owner_handlers=owner_handlers)
     if spec.get("bundle_sha256") != bundle["sha256"] or spec.get("check_sha256") != bundle.get("check", {}).get("sha256"):
         raise ValueError("approval does not name the exact sealed interpretation and check")
-    required = {u["unit_id"]: digest(u["payload"]) for u in bundle["output"]["import_units"] if u["payload"]}
+    required = {u["unit_id"]: exact_content_hash(u["payload"]) for u in bundle["output"]["import_units"] if u["payload"]}
     if spec.get("unit_hashes") != required: raise ValueError("approval must bind every exact proposed change")
     source = preserve_source(request["id"], request.get("text", ""), origin="user")
     _require_text(source["text"], "approval original")

@@ -1,7 +1,6 @@
 """Feature-5 lifecycle boundaries: initialization, trust, and clock safety."""
 from datetime import datetime, timezone
 from pathlib import Path
-import hashlib
 import sys
 import tempfile
 import unittest
@@ -59,14 +58,11 @@ class LifecycleRedesignTests(unittest.TestCase):
         self.assertIn("trust_environment", activation_requirements(instance, runtime)["missing"])
         self.assertEqual(runtime["availability"]["state"], "blocked")
 
-    def test_formal_discovery_registers_but_cannot_activate_feature_five_environment(self):
+    def test_formal_use_cannot_register_or_activate_an_environment(self):
         engine = FixtureEngine()
-        toolchain = {"executable": "lean", "configured_command": ["lean"],
-                     "sha256": hashlib.sha256(b"lean").hexdigest(), "version": "Lean fixture"}
 
         with self.assertRaisesRegex(ValueError, 'approved'):
-            engine._bind_formal_environment({"status": "verified", "toolchain": toolchain,
-                                               "allowed_axioms": ["propext"]})
+            engine._formal_environment()
 
         self.assertIsNone(engine.instance["active_trust_environment"])
         self.assertEqual(engine.instance['trust_environments'], {})

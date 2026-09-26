@@ -157,7 +157,8 @@ def snapshot_report(repository: Path, instance_id: str, *, snapshot: str | None 
     head, instance, runtime = store.load(snapshot)
     inspection = inspect_state(instance, runtime, snapshot=head, requested_areas=requested_areas,
                                read_artifact=lambda path: store.read(path, head),
-                               read_artifacts=lambda paths: store.read_many(paths, head))
+                               read_artifacts=lambda paths: store.read_many(paths, head),
+                               artifact_sizes=lambda paths: store.blob_sizes(paths, head))
     observation = host_observation if isinstance(host_observation, dict) else None
     from .governance import governance_view
     goal = governance_view(instance).get('goal') if instance.get('governance') else instance.get('goal')

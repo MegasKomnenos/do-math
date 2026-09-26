@@ -25,7 +25,7 @@ from .context_store import collect_outputs, materialize_inputs, read_source, _sa
 from .external import prepare_operation, validate_operation
 from .model_policy import ASSESSMENT_SCHEMA, assessment_key, validate_assessments, preparation_only
 from .observations import read_checkpoint, validate_rule_proposal, CHECKPOINT_SCHEMA, CHECKPOINT_MAX_BYTES, RULES_MAX_BYTES
-from .repository import canonical_json, _unique_pairs, _reject_constant
+from .repository import canonical_json, exact_content_hash, _unique_pairs, _reject_constant
 from . import integration
 
 
@@ -36,8 +36,13 @@ class SealedSubmissionError(ValueError):
     """A centrally accepted submission cannot be recovered from its receipt."""
 
 
-def read_sealed_submission(execution: dict, snapshot: str, read_artifact):
-    """Read the exact bytes accepted by the central submission receipt."""
+def read_sealed_submission(execution: dict, snapshot: str, read_artifact, *, git_dir=None):
+    """Read the exact bytes accepted by the central submission receipt.
+
+    With the repository's ``git_dir``, a sealed row this process already matched
+    (contract S3) is not hashed again.
+    """
+    from .repository import artifact_verified, verify_artifact
     identifier = execution.get("id", "<unknown>")
     intent = execution.get("submission_intent") or {}
     receipt = execution.get("submission_receipt") or {}
@@ -62,8 +67,17 @@ def read_sealed_submission(execution: dict, snapshot: str, read_artifact):
         entry = recorded.get(path)
         if not expected and entry:
             expected = entry.get("sha256")
-        if not isinstance(expected, str) or hashlib.sha256(raw).hexdigest() != expected:
-            raise SealedSubmissionError(f"execution {identifier}: sealed {field} hash differs at {path}")
+        mismatch = SealedSubmissionError(f"execution {identifier}: sealed {field} hash differs at {path}")
+        if not isinstance(expected, str):
+            raise mismatch
+        if git_dir is None:
+            if hashlib.sha256(raw).hexdigest() != expected:
+                raise mismatch
+        elif not artifact_verified(git_dir, path, expected, len(raw)):
+            try:
+                verify_artifact(git_dir, path, raw, expected)
+            except ValueError as error:
+                raise mismatch from error
         if not entry or entry.get("sha256") != expected:
             raise SealedSubmissionError(f"execution {identifier}: {field} receipt differs at {path}")
         if entry and entry.get("bytes") != len(raw):
@@ -77,8 +91,8 @@ def read_sealed_submission(execution: dict, snapshot: str, read_artifact):
     hashes = check.get('input_hashes', {})
     if (not isinstance(hashes, dict) or check.get('mode') != 'receiver' or check.get('execution_id') != identifier
             or check.get('schema_ref') != intent.get('schema_ref')
-            or hashes.get('output') != integration.digest(result['output'])
-            or hashes.get('extensions') != integration.digest(result['extensions'])):
+            or hashes.get('output') != exact_content_hash(result['output'])
+            or hashes.get('extensions') != exact_content_hash(result['extensions'])):
         raise SealedSubmissionError(f"execution {identifier}: sealed check does not bind this candidate")
     if not captured_check(check):
         raise SealedSubmissionError(f"execution {identifier}: sealed check_ref at {intent['check_ref']} is not capture eligible")
@@ -1033,8 +1047,8 @@ def _workspace_checks(context, workspace, candidate=None):
 
 
 def _check_hashes(output, schema, context, extensions):
-    return {"output": integration.digest(output), "extensions": integration.digest(extensions),
-            "context": integration.digest(context), "schema": integration.digest(schema)}
+    return {"output": exact_content_hash(output), "extensions": exact_content_hash(extensions),
+            "context": exact_content_hash(context), "schema": exact_content_hash(schema)}
 
 
 def capture_eligible(output, extensions, context, issues):
@@ -1118,7 +1132,7 @@ def check_submission(output, schema, context, extensions, workspace, *, mode,
                                           "machine_check.tool_defect"))
         result["repairs"] = _repair_links([previous], result)
     result['capture_eligible'] = capture_eligible(output, extensions, context, result['issues'])
-    result["id"] = "MC-" + integration.digest(result)[:24]
+    result["id"] = "MC-" + exact_content_hash(result)[:24]
     return result
 
 
@@ -1157,7 +1171,7 @@ def preview_submission(output, schema, context, extensions, workspace, *, execut
 
 
 def _failure_key(record, issue):
-    return (record.get("execution_id"), record.get("tool_sha256"), integration.digest({
+    return (record.get("execution_id"), record.get("tool_sha256"), exact_content_hash({
                 'subject': record.get('check_subject', {}), 'schema_ref': record.get('schema_ref'),
                 'input_snapshot': record.get('input_snapshot')}),
             issue["rule_id"], issue["path"], issue.get("integration_id"))
@@ -1230,20 +1244,26 @@ def summarize_checks(records, *, history_window):
 def _validated_check(raw, identifier):
     row = load_json(raw)
     if (not isinstance(row, dict) or row.get("id") != identifier or
-            identifier != "MC-" + integration.digest({k: v for k, v in row.items() if k != "id"})[:24]):
+            identifier != "MC-" + exact_content_hash({k: v for k, v in row.items() if k != "id"})[:24]):
         raise ValueError("machine-check content identity differs")
     return row
 
 
-def read_producer_checks(workspace, check_id):
-    """Read the exact predecessor chain named by the intent, never directory order."""
+def read_producer_checks(workspace, check_id, *, boundary=None):
+    """Read the exact predecessor chain named by the intent, never directory order.
+
+    One physical boundary of the workspace serves every read in the chain.
+    """
+    from .git_store import PhysicalBoundary
     workspace = Path(workspace).resolve()
     rows, seen = [], set()
     while check_id is not None:
         if not isinstance(check_id, str) or not re.fullmatch(r"MC-[0-9a-f]{24}", check_id) or check_id in seen:
             raise ValueError("invalid or cyclic producer check chain")
         seen.add(check_id)
-        row = _validated_check(_read_stable(_safe_path(workspace, "checks/" + check_id + ".json")), check_id)
+        boundary = boundary or PhysicalBoundary(workspace)
+        row = _validated_check(_read_stable(_safe_path(workspace, "checks/" + check_id + ".json"), boundary=boundary),
+                               check_id)
         if row.get("mode") != "producer" or type(row.get("producer_sequence")) is not int:
             raise ValueError("producer check lacks an explicit sequence")
         rows.append(row)
@@ -1301,14 +1321,14 @@ def summarize_snapshot_checks(seals, *, snapshot, read_artifact, history_window)
 
 
 @lru_cache(maxsize=2)
-def _support_archive(sources: tuple[tuple[str, bytes], ...]) -> bytes:
-    """Reuse compression only for exactly the same relative names and bytes."""
+def _support_archive(package: Path, sources: tuple[tuple[str, str], ...]) -> bytes:
+    """Reuse compression only for exactly the same relative names and digests."""
     archive = io.BytesIO()
     with zipfile.ZipFile(archive, "w") as bundle:
-        for relative, raw in sources:
+        for relative, _ in sources:
             entry = zipfile.ZipInfo("do_math/" + relative, date_time=(1980, 1, 1, 0, 0, 0))
             entry.compress_type = zipfile.ZIP_DEFLATED
-            bundle.writestr(entry, raw)
+            bundle.writestr(entry, (package / relative).read_bytes())
     return archive.getvalue()
 
 
@@ -1316,12 +1336,14 @@ def install_tools(workspace: Path, context: dict, schema: dict, max_artifact_byt
     """Copy one installed code edition, never the central research state."""
     context["reference_catalog"] = reference_catalog(context, workspace)
     package = Path(__file__).resolve().parent
-    # Read afresh: path/mtime caches would miss same-size edits or restored times.
-    # Application callbacks remain central; only shared checker code is shipped.
-    sources = tuple((path.relative_to(package).as_posix(), path.read_bytes())
+    # The installed edition is identified by fingerprint-cached digests; code
+    # bytes are read only to compress a new edition. Application callbacks
+    # remain central; only shared checker code is shipped.
+    from .file_io import cached_sha256
+    sources = tuple((path.relative_to(package).as_posix(), cached_sha256(path))
                     for path in sorted(package.rglob("*.py"))
                     if path.name != "engine.py" and not path.name.endswith("_engine.py"))
-    archive = _support_archive(sources)
+    archive = _support_archive(package, sources)
     files = {"tools/submission-support.zip": archive}
     files["tools/check_submission.py"] = (b"import sys\nfrom pathlib import Path\nsys.dont_write_bytecode = True\n"
         b"sys.path.insert(0, str(Path(__file__).with_name('submission-support.zip')))\n"
@@ -1369,10 +1391,14 @@ def producer_check(workspace, draft):
         raise ValueError("another producer check owns this workspace") from error
     try:
         with handle:
+            from .git_store import PhysicalBoundary
+            boundary = PhysicalBoundary(workspace)  # one root proof for this check's reads
             head = _safe_path(workspace, "checks/.producer-head")
-            history = read_producer_checks(workspace, load_json(_read_stable(head))["check_id"]) if head.exists() else []
+            history = (read_producer_checks(workspace, load_json(_read_stable(head, boundary=boundary))["check_id"],
+                                            boundary=boundary) if head.exists() else [])
             result = _producer_check(workspace, draft, history)
-            _validated_check(_read_stable(_safe_path(workspace, "checks/" + result["id"] + ".json")), result["id"])
+            _validated_check(_read_stable(_safe_path(workspace, "checks/" + result["id"] + ".json"), boundary=boundary),
+                             result["id"])
             pending = _safe_path(workspace, "checks/.producer-head.pending")
             pending.write_bytes(canonical_json({"check_id": result["id"]}))
             atomic_replace(pending, head)
@@ -1402,9 +1428,8 @@ def _producer_check(workspace, draft, history):
         extensions = read_extensions(workspace)
         phase = 'check'
         contract = context["submission_contract"]
-        tool_hash = hashlib.sha256(_read_stable(_safe_path(workspace, "input/tools/submission-support.zip"))).hexdigest()
-        if tool_hash != contract["tool_sha256"]:
-            raise ValueError("installed checker bytes differ from the fixed contract")
+        # Preparation fixed the support archive's digest; each check reuses it.
+        tool_hash = contract["tool_sha256"]
         from .contracts import schema_reference
         if schema_reference(schema) != contract["schema_ref"]:
             raise ValueError("installed response schema differs from its exact contract reference")
@@ -1431,7 +1456,7 @@ def _producer_check(workspace, draft, history):
     result["schema_ref"] = schema_reference(schema) if schema is not None else None
     if raw is not None:
         result.update(output_sha256=hashlib.sha256(raw).hexdigest(), raw_output_path=relative)
-    result["id"] = "MC-" + integration.digest({key: value for key, value in result.items() if key != "id"})[:24]
+    result["id"] = "MC-" + exact_content_hash({key: value for key, value in result.items() if key != "id"})[:24]
     try:
         check_path = _safe_path(workspace, "checks/" + result["id"] + ".json")
         check_path.parent.mkdir(parents=True, exist_ok=True)
@@ -1497,7 +1522,7 @@ def seal_submission(workspace, draft=None, *, execution_id, context, schema, max
         if phase == 'parse' and isinstance(error, (ValueError, TypeError)) and collected.get('complete'):
             check['failure_kind'] = 'output_validation'
     check.setdefault('capture_eligible', False)
-    check['id'] = 'MC-' + integration.digest({key: value for key, value in check.items() if key != 'id'})[:24]
+    check['id'] = 'MC-' + exact_content_hash({key: value for key, value in check.items() if key != 'id'})[:24]
     artifacts = {"check.json": canonical_json(check), "manifest.json": canonical_json(collected["manifest"])}
     if raw is not None:
         artifacts["output.json"] = raw
@@ -1510,7 +1535,7 @@ def seal_submission(workspace, draft=None, *, execution_id, context, schema, max
     identity = {"draft_path": relative, "output_sha256": hashlib.sha256(raw).hexdigest(),
         "extensions_sha256": hashlib.sha256(extension_raw).hexdigest(), "schema_ref": check["schema_ref"],
         "manifest": collected["manifest"]}
-    candidate_id = "CS-" + integration.digest(identity)[:24]
+    candidate_id = "CS-" + exact_content_hash(identity)[:24]
     result.update(passed=check['passed'], capture_eligible=True, check=check, manifest=collected["manifest"], artifacts=artifacts,
         intent={"candidate_id": candidate_id, **identity})
     return result

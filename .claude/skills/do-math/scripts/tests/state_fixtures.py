@@ -12,6 +12,11 @@ from unittest.mock import patch
 from do_math.engine import ResearchEngine
 from do_math.repository import ResearchRepository, new_id
 
+# FakeEngine.activate registers its active trust environment for this command.
+# Formal checks pin the configured command and must equal that environment, as
+# public activation arranges; callers whose rule needs formal checks configure it.
+ACTIVE_LEAN_COMMAND = ('synthetic-lean', 'base')
+
 
 def active_engine(repository, workspace, *, config=None, runner=None, formal_verifier=None):
     from test_lifecycle_engine import AdapterDouble, FakeEngine

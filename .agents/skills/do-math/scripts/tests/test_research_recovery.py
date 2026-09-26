@@ -8,7 +8,7 @@ import unittest
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from research_fixtures import local_job_runner
+from research_fixtures import local_job_runner, await_stop
 from do_math.engine import DEFAULT_CONFIG, control
 from research_fixtures import charter_change, policy_change, producer_result, disposition, send_control
 from test_purpose_engine import PurposeHarness, candidate, common
@@ -468,7 +468,7 @@ class LimitedRecoveryCallTests(PurposeHarness):
                         if stop_again:
                             control(case.repo, engine.instance['id'], 'pause',
                                 text='Stop the approved recovery too')
-                            case.assertTrue(arguments['should_stop']())
+                            case.assertTrue(await_stop(arguments['should_stop']))
                             return {'status': 'stopped', 'output': None, 'usage': {},
                                     'error': 'New user pause observed'}
                         return producer_result({'status': 'completed', 'usage': {}, 'output': {

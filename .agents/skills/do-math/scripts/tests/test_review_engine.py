@@ -7,6 +7,7 @@ import sys
 import tempfile
 import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from do_math.repository import exact_content_hash
 from do_math.review_cycle import record_turn
 from do_math.review_engine import ReviewEngineMixin
 from do_math.question_engine import QuestionEngineMixin
@@ -24,8 +25,6 @@ def grant_replacement(engine, *, reuse='reusable'):
 
 
 class FakeEngine(QuestionEngineMixin, ReviewEngineMixin):
-    from do_math.lifecycle_engine import LifecycleEngineMixin
-    _observe_environment = LifecycleEngineMixin._observe_environment
     def __init__(self, root, rounds=2):
         source = 'theorem sample : 1 = 1 := rfl'
         policy = {'id': 'fixture-review-policy-v5', 'version': 5, 'required_perspectives': [],
@@ -56,14 +55,13 @@ class FakeEngine(QuestionEngineMixin, ReviewEngineMixin):
         self.profile = profile_ref(next(p for p in profiles['execution_profiles'].values() if p['role'] == 'identity_review'))
         self.research_profile = profile_ref(next(p for p in profiles['execution_profiles'].values() if p['role'] == 'supplemental_research'))
         self.instance['review_policy'] = deepcopy(policy)
-        from research_fixtures import trust_fixture
-        from do_math.initialization import digest
+        from research_fixtures import trust_environment, trust_fixture
         trusted = trust_fixture(Path(root), ['fixture-review-lean'])
-        trusted.pop('operation')  # Registration wire fields are not persisted environment fields.
+        environment, binding = trust_environment(trusted, environment_id='TE-review', source_ref='fixture-review-trust')
         legacy['formal']['toolchain'] = deepcopy(trusted['toolchain'])
         self.instance.update(feature_version=5, active_trust_environment='TE-review',
-            trust_environments={'TE-review': {**trusted, 'id': 'TE-review', 'status': 'active',
-                'source_ref':'fixture-review-trust', 'manifest_sha256':digest(trusted['manifest'])}})
+            trust_environments={'TE-review': environment})
+        self.runtime['trust_bindings'] = {'TE-review': binding}
         definition = next(row for row in self.instance['kind_definitions'].values() if row['token'] == 'theorem')
         candidate = {key: value for key, value in legacy.items() if key not in {'formal', 'status', 'reviews'}}
         candidate.update(revision=1, kind='theorem', kind_definition_id=definition['id'])
@@ -487,23 +485,19 @@ class ReviewEngineTests(unittest.TestCase):
 
     def _staged_activation_git_round_trip(self, *, followup_transition):
         engine = self.engine
-        from do_math.initialization import digest as initialization_digest
-        from research_fixtures import trust_fixture
+        from research_fixtures import trust_environment, trust_fixture
         old_fixture = trust_fixture(Path(self.temp.name), ['old-lean'])
-        old_environment = engine.instance['trust_environments']['TE-review']
-        old_environment.update(toolchain=old_fixture['toolchain'], allowed_axioms=old_fixture['allowed_axioms'],
-                               manifest=old_fixture['manifest'], manifest_sha256=initialization_digest(old_fixture['manifest']),
-                               source_ref='fixture:old-trust-environment')
+        old_environment, old_binding = trust_environment(old_fixture, environment_id='TE-review',
+                                                         source_ref='fixture:old-trust-environment')
+        engine.instance['trust_environments']['TE-review'] = old_environment
         formal = engine.instance['formal_results'][engine.instance['knowledge']['K1']['formal_result_id']]
         formal['verification'].update(toolchain=deepcopy(old_environment['toolchain']),
-                                      allowed_axioms=deepcopy(old_environment['allowed_axioms']),
-                                      trust_environment_digest=kr.digest(old_environment))
+                                      allowed_axioms=deepcopy(old_environment['allowed_axioms']))
         next_fixture = trust_fixture(Path(self.temp.name), ['next-lean'])
-        engine.instance['trust_environments']['TE-next'] = {
-            'id': 'TE-next', 'status': 'registered', 'toolchain': next_fixture['toolchain'],
-            'allowed_axioms': next_fixture['allowed_axioms'], 'manifest': next_fixture['manifest'],
-            'manifest_sha256': initialization_digest(next_fixture['manifest']),
-            'source_ref': 'fixture:next-trust-environment'}
+        next_environment, next_binding = trust_environment(next_fixture, environment_id='TE-next', status='registered',
+                                                           source_ref='fixture:next-trust-environment')
+        engine.instance['trust_environments']['TE-next'] = next_environment
+        engine.runtime['trust_bindings'] = {'TE-review': old_binding, 'TE-next': next_binding}
         transition = knowledge.begin_transition(engine.instance, 'TE-next')
         result = deepcopy(formal['verification'])
         result.update(id='K1', toolchain=deepcopy(next_fixture['toolchain']),
@@ -526,7 +520,7 @@ class ReviewEngineTests(unittest.TestCase):
         subprocess.run(['git', '-C', str(repository_path), 'init', '-q'], check=True)
         instance_id = 'RI-00000000000000000000000000'
         repository = ResearchRepository(repository_path, instance_id)
-        persisted_runtime_before = {'feature_version': 5}
+        persisted_runtime_before = {'feature_version': 5, 'trust_bindings': {'TE-review': old_binding}}
         persisted_runtime_after = deepcopy(engine.runtime)
         persisted_runtime_after['feature_version'] = 5
         persisted_runtime_after['trust_transitions'][transition_id]['status'] = 'active'
@@ -588,11 +582,10 @@ class ReviewEngineTests(unittest.TestCase):
             'assessment': deepcopy(assessment),
         }
         final_fixture = trust_fixture(Path(self.temp.name), ['final-lean'])
-        persisted_after['trust_environments']['TE-final'] = {
-            'id': 'TE-final', 'status': 'registered', 'toolchain': final_fixture['toolchain'],
-            'allowed_axioms': final_fixture['allowed_axioms'], 'manifest': final_fixture['manifest'],
-            'manifest_sha256': initialization_digest(final_fixture['manifest']),
-            'source_ref': 'fixture:final-trust-environment'}
+        final_environment, final_binding = trust_environment(final_fixture, environment_id='TE-final', status='registered',
+                                                             source_ref='fixture:final-trust-environment')
+        persisted_after['trust_environments']['TE-final'] = final_environment
+        persisted_runtime_after['trust_bindings']['TE-final'] = final_binding
         continuity = knowledge.begin_transition(persisted_after, 'TE-final')
         continuity_result = deepcopy(first_transition_records['formal']['verification'])
         continuity_result.update(id='K1', toolchain=deepcopy(final_fixture['toolchain']),
@@ -612,10 +605,11 @@ class ReviewEngineTests(unittest.TestCase):
         reviewed_environment = persisted_runtime_after['review_cycles'][cid]['staged_candidate']['target_environment']
         self.assertEqual(reviewed_environment['status'], 'registered')
         self.assertEqual(twice_activated['trust_environments']['TE-next']['status'], 'superseded')
-        sealed_environment_digest = first_transition_records['formal']['verification']['trust_environment_digest']
-        self.assertEqual(sealed_environment_digest, kr.digest({**reviewed_environment, 'status': 'active'}))
-        self.assertNotEqual(sealed_environment_digest,
-                            kr.digest(twice_activated['trust_environments']['TE-next']))
+        # The sealed result binds the identity (toolchain), not a hash of the mutable environment record.
+        sealed = twice_activated['formal_results'][current['formal_result_id']]
+        self.assertNotIn('trust_environment_digest', sealed['verification'])
+        self.assertEqual(sealed['verification']['toolchain'], reviewed_environment['toolchain'])
+        self.assertFalse(kr.formal_usable(twice_activated, sealed))
         self.assertFalse(kr.assessment_current(twice_activated, assessment['id']))
         self.assertTrue(kr.usable_links(twice_activated, 'K1'))
 
@@ -876,7 +870,7 @@ class ReviewEngineTests(unittest.TestCase):
         source = gov.preserve_source('US-goal-fixture', 'User approves the fixture goal', origin='user')
         audit.instance = gov.initialize_governance(audit.instance, source,
             {'id': 'DC-goal-fixture', 'actor': 'user', 'source_ref': source['id'],
-             'source_sha256': source['sha256'], 'record_hashes': {record['id']: gov.digest(record)}}, [record])
+             'source_sha256': source['sha256'], 'record_hashes': {record['id']: exact_content_hash(record)}}, [record])
         assessment = audit.instance['identity_assessments'][link['assessment_id']]
         audit._render_prompt = Mock(return_value='fixed goal-audit instructions')
         audit.runtime['inputs'] = []
@@ -1022,7 +1016,7 @@ class ReviewEngineTests(unittest.TestCase):
         engine._start_identity_review('K1')
         engine.execute()
         formal = engine.instance['formal_results'][engine.instance['knowledge']['K1']['formal_result_id']]
-        verification = {k: deepcopy(v) for k, v in formal['verification'].items() if k != 'trust_environment_digest'}
+        verification = deepcopy(formal['verification'])
         engine.instance = kr.record_formal_result(engine.instance, 'K1', verification, 'TE-review', runtime=engine.runtime)
         engine.execute()
         self.assertTrue(engine.usable())

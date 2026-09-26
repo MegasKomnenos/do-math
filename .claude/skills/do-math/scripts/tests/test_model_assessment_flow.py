@@ -9,7 +9,9 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import threading
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from research_fixtures import local_job_runner
@@ -262,6 +264,19 @@ class AssessmentFlowTests(PurposeHarness):
         engine = self.prepare_engine()
         engine.runtime['queue'].sort(key=lambda a: not bool(a.get('assessment_targets') or a.get('observation_rule_targets')))
         engine._save()
+        # The user's revision is published by the owner thread while the call runs;
+        # the calculation thread only asks for it and waits (engine state is owner-confined).
+        revise, revised = threading.Event(), threading.Event()
+        pending = []
+        owner_pass = engine._check_installation
+        def check_installation(*args, **kwargs):
+            if revise.is_set() and not revised.is_set():
+                task = engine.runtime["tasks"][pending[0]]
+                task["revision"] += 1
+                task["scope"] = {"included": ["A revised user requirement"], "excluded": []}
+                engine._save()
+                revised.set()
+            return owner_pass(*args, **kwargs)
         class RevisingRunner:
             @local_job_runner
             def run(inner, **args):
@@ -272,13 +287,13 @@ class AssessmentFlowTests(PurposeHarness):
                 if context['action'].get('observation_rule_targets'):
                     extensions['task_conditions'] = prepared_rule_conditions(context['action']['observation_rule_targets'])
                 (args["workspace"] / "activity-extensions.json").write_bytes(canonical_json(extensions))
-                task = engine.runtime["tasks"][next(iter(targets))]
-                task["revision"] += 1
-                task["scope"] = {"included": ["A revised user requirement"], "excluded": []}
-                engine._save()
+                pending.append(next(iter(targets)))
+                revise.set()
+                assert revised.wait(30), "the owner did not publish the revision"
                 return producer_result({"status": "completed", "output": {**common("research_preparation"), "candidates": []}, "usage": {}}, args)
         engine.runner = RevisingRunner()
-        engine.run(max_steps=1)
+        with patch.object(engine, "_check_installation", side_effect=check_installation):
+            engine.run(max_steps=1)
         execution = next(e for e in engine.runtime["executions"].values() if e["action"].get("assessment_targets"))
         self.assertEqual(execution['outcome'], 'execution_incomplete')
         self.assertEqual(execution['result_disposition']['kind'], 'preserved_after_target_change')

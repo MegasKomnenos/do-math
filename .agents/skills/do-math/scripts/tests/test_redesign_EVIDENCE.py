@@ -10,6 +10,7 @@ import jsonschema
 
 SCRIPTS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SCRIPTS))
+from do_math.repository import exact_content_hash
 import check_coverage
 from test_categories import test_group as category
 from do_math import contracts, execution_profiles, governance, knowledge, knowledge_io, knowledge_records as kr, planning
@@ -64,7 +65,7 @@ def engine_fixture(goal='Establish P', *, academic_requirements=None):
     source = governance.preserve_source('US-fixture', 'User approves: ' + goal, origin='user', revision=1)
     e.instance = governance.initialize_governance(e.instance, source, {'id': 'DC-fixture', 'actor': 'user',
         'source_ref': source['id'], 'source_sha256': source['sha256'],
-        'record_hashes': {charter['id']: governance.digest(charter)}}, [charter])
+        'record_hashes': {charter['id']: exact_content_hash(charter)}}, [charter])
     # ENGINE currently consumes this read projection. It is never persisted.
     from do_math.initialization import governance_working_view
     e.instance = governance_working_view(e.instance)
@@ -127,14 +128,12 @@ def accept_knowledge(e, proposed=None):
     proposed = proposed or candidate()
     e.instance, e.runtime, kid = knowledge_io.import_candidate(e.instance, e.runtime, proposed,
         source_ref='fixture:source', actor_ref='EX-producer')
-    from research_fixtures import trust_fixture
-    from do_math.initialization import digest
+    from research_fixtures import trust_environment, trust_fixture
     if not hasattr(e, '_trust_fixture_directory'):
         e._trust_fixture_directory = tempfile.TemporaryDirectory()
-    trust = trust_fixture(Path(e._trust_fixture_directory.name), ['synthetic-lean'])
-    trust.pop('operation')
-    trust.update(id='TE-fixture', status='active', source_ref='fixture:trust', manifest_sha256=digest(trust['manifest']))
+    trust, binding = trust_environment(trust_fixture(Path(e._trust_fixture_directory.name), ['synthetic-lean']))
     e.instance.update(active_trust_environment='TE-fixture', trust_environments={'TE-fixture': trust})
+    e.runtime['trust_bindings'] = {'TE-fixture': binding}
     response = {'status': 'verified', 'source_sha256': hashlib.sha256(proposed['lean_code'].encode()).hexdigest(),
         'declarations': ['truth'], 'toolchain': deepcopy(trust['toolchain']), 'allowed_axioms': deepcopy(trust['allowed_axioms']), 'axioms': {'truth': []},
         'dependency_closure': {'truth': ['True', 'True.intro']},
@@ -161,7 +160,7 @@ def audit_goal(e, kid, decision='satisfied'):
 class PriorityVectorTests(unittest.TestCase):
     def test_v45_scheduler_blocks_other_activity_and_allows_ended_retry(self):
         e = engine_fixture(); task = reviewed_task(e)
-        from do_math.initialization import adapter_for, digest
+        from do_math.initialization import adapter_for
         # Fixture behavioral capability observations are bound to actual local
         # adapter/worker identity. Reading hashes does not execute the CLI.
         e.instance['capability_evidence'] = {}
@@ -171,7 +170,7 @@ class PriorityVectorTests(unittest.TestCase):
                 'identity': adapter_for(profile).capability_identity(), 'observed_at': TIME,
                 'capabilities': {key: {'status': 'supported', 'evidence': 'fixture only'}
                                  for key in profile['required_capabilities']}}
-            observation['id'] = 'CE-' + digest(observation)
+            observation['id'] = 'CE-' + exact_content_hash(observation)
             e.instance['capability_evidence'][observation['id']] = observation
         # No difficulty/importance judgment is authored in this fixture;
         # the current admission rule therefore requires the high profile.

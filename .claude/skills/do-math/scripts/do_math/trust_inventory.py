@@ -1,19 +1,67 @@
-"""Complete installation inventories and self-contained environment evidence.
+"""Shared toolchain records: installation identity, fingerprints and content baselines.
 
-The declared roots are the adopted scope. Files are enumerated by one fixed
-rule at collection and at every observation; a role label is not completeness.
+One record file describes one installed Lean/Mathlib identity. setup_lean.py
+writes it when a toolchain is installed or replaced, re-recorded or explicitly
+content-checked; research instances only read it. The threat model is
+accidental change (updates, reinstallation, synchronization, mistakes, disk
+damage). A fingerprint row is the scandir metadata of one judgment file, so
+bytes changed while size and both times are preserved are found only by an
+explicit content check against the recorded full hashes.
 """
 from concurrent.futures import ThreadPoolExecutor
-import hashlib
+from contextlib import contextmanager
+from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
-import stat
+
+from jsonschema import Draft202012Validator
+
+from .repository import exact_content_hash
+from .file_io import fingerprint_json, sha256_file, stat_fingerprint
 
 SMOKE = 'import Mathlib\nexample (n : Nat) : n + 0 = n := by rfl\nexample : (2 : ℝ) + 2 = 4 := by norm_num\n'
 CORE_SMOKE = 'example (n : Nat) : n + 0 = n := by rfl\nexample : True := True.intro\n'
-EXCLUDED_DIRECTORIES = frozenset({'.git', '__pycache__'})
-KINDS = frozenset({'toolchain', 'project', 'checker'})
+SCHEMA = 'do-math-toolchain-record/1'
+# Imported modules and the runtime libraries that contain the kernel. The thin
+# lean.exe/lake.exe launchers and the checker are bound by the identity hashes.
+JUDGMENT_SUFFIXES = ('.olean', '.dll', '.so', '.dylib')
+VALIDATION_SUMMARY = ('command', 'source_sha256', 'exit_code', 'stdout', 'stderr', 'started_at', 'finished_at')
+
+_TEXT = {'type': 'string'}
+_HASH = {'type': 'string', 'pattern': '^[0-9a-f]{64}$'}
+_NANOSECONDS = {'type': 'string', 'pattern': '^[0-9]+$'}
+_BASELINE = {'type': 'object', 'additionalProperties': False,
+    'required': ['recorded_at', 'fingerprint', 'content', 'validation', 'validation_sha256'],
+    'properties': {
+        'recorded_at': _TEXT,
+        'fingerprint': {'type': 'object', 'additionalProperties': False, 'required': ['files', 'sha256'],
+            'properties': {'sha256': _HASH, 'files': {'type': 'object', 'additionalProperties': {
+                'type': 'array', 'minItems': 3, 'maxItems': 3,
+                'prefixItems': [{'type': 'integer', 'minimum': 0}, _NANOSECONDS, _NANOSECONDS]}}}},
+        'content': {'type': 'object', 'additionalProperties': False, 'required': ['files', 'sha256'],
+            'properties': {'sha256': _HASH, 'files': {'type': 'object', 'additionalProperties': _HASH}}},
+        'validation': {'type': 'object', 'additionalProperties': False,
+            'required': ['status', 'scope', 'source', 'source_text', 'source_sha256', 'command',
+                         'exit_code', 'stdout', 'stderr', 'started_at', 'finished_at'],
+            'properties': {'status': {'enum': ['verified', 'failed']}, 'scope': _TEXT, 'source': _TEXT,
+                'source_text': _TEXT, 'source_sha256': _HASH, 'command': {'type': 'array', 'items': _TEXT},
+                'exit_code': {'type': ['integer', 'null']}, 'stdout': _TEXT, 'stderr': _TEXT,
+                'started_at': _TEXT, 'finished_at': _TEXT, 'error': _TEXT}},
+        'validation_sha256': _HASH}}
+RECORD_SCHEMA = {'type': 'object', 'additionalProperties': False,
+    'required': ['schema', 'id', 'identity', 'identity_sha256', 'baselines', 'checks'],
+    'properties': {
+        'schema': {'const': SCHEMA},
+        'id': {'type': 'string', 'pattern': '^TC-[0-9a-f]{64}$'},
+        'identity': {'type': 'object'},
+        'identity_sha256': _HASH,
+        'baselines': {'type': 'array', 'minItems': 1, 'items': _BASELINE},
+        'checks': {'type': 'array', 'items': {'type': 'object', 'additionalProperties': False,
+            'required': ['checked_at', 'baseline', 'result', 'mismatched'],
+            'properties': {'checked_at': _TEXT, 'baseline': {'type': 'integer', 'minimum': 0},
+                'result': {'enum': ['passed', 'mismatch']}, 'mismatched': {'type': 'array', 'items': _TEXT}}}}}}
+_VALIDATOR = Draft202012Validator(RECORD_SCHEMA)
 
 
 def validation_program(toolchain):
@@ -21,185 +69,168 @@ def validation_program(toolchain):
             else (CORE_SMOKE, 'lean_core_representative_proofs'))
 
 
+def now():
+    return datetime.now(timezone.utc).isoformat()
+
+
+def roots(identity):
+    """Named fingerprint roots: the Lean installation and the Lake project, if any."""
+    executable = Path(identity['executable'])
+    result = {'toolchain': executable.parent.parent if executable.parent.name.lower() == 'bin' else executable.parent}
+    if identity.get('project') is not None:
+        result['project'] = Path(identity['project']['source_identity']['root'])
+    return result
+
+
 def _key(path):
     return os.path.normcase(os.path.normpath(str(path)))
 
 
-def scope_errors(scope):
-    if not isinstance(scope, dict) or set(scope) != {'roots'} or not isinstance(scope['roots'], list) or not scope['roots']:
-        return ['inventory scope requires a nonempty roots list']
-    paths, kinds, errors = [], [], []
-    for root in scope['roots']:
-        if (not isinstance(root, dict) or set(root) != {'path', 'kind'} or root.get('kind') not in KINDS
-                or not isinstance(root.get('path'), str) or not Path(root['path']).is_absolute()):
-            errors.append('inventory root requires an absolute path and a supported kind')
-            continue
-        path = Path(_key(root['path']))
-        if any(path == prior or path.is_relative_to(prior) or prior.is_relative_to(path) for prior in paths):
-            errors.append('inventory roots must be distinct and nonoverlapping')
-        paths.append(path); kinds.append(root['kind'])
-    if kinds.count('toolchain') != 1 or kinds.count('checker') != 1 or kinds.count('project') > 1:
-        errors.append('inventory requires one toolchain, one checker and at most one project root')
-    return errors
-
-
-def file_role(root, relative):
-    parts = relative.parts
-    if root['kind'] == 'checker':
-        return 'checker'
-    if root['kind'] == 'project':
-        return 'mathlib_build' if '.lake' in parts and 'build' in parts else 'mathlib_source'
-    if relative.name.lower() in {'lake', 'lake.exe'}:
-        return 'lake_binary'
-    return 'lean_source' if parts and parts[0] == 'src' else 'lean_binary'
-
-
-def _ordinary(path):
-    for parent in (path, *path.parents):
-        stat = parent.lstat()
-        if parent.is_symlink() or getattr(stat, 'st_file_attributes', 0) & 0x400:
-            raise ValueError('inventory path crosses a reparse point: ' + str(parent))
-
-
-def inventory(scope, *, should_stop=None):
-    errors = scope_errors(scope)
-    if errors:
-        raise ValueError('; '.join(errors))
-    result = {}
-    for root in scope['roots']:
-        base = Path(root['path'])
-        _ordinary(base)
-        if not base.is_dir():
-            raise ValueError('inventory root is not a directory: ' + str(base))
-        def unreadable(error):
-            raise error
-        for directory, dirs, files in os.walk(base, followlinks=False, onerror=unreadable):
-            if should_stop and should_stop():
-                raise InterruptedError('inventory observation cancelled')
-            dirs[:] = sorted(d for d in dirs if d not in EXCLUDED_DIRECTORIES)
-            for name in dirs:
-                path = Path(directory) / name
-                stat = path.lstat()
-                if path.is_symlink() or getattr(stat, 'st_file_attributes', 0) & 0x400:
-                    raise ValueError('inventory directory crosses a reparse point: ' + str(path))
-            for name in sorted(files):
-                if name == '.do-math-ready' or name.endswith('.pyc'):
-                    continue
-                path = Path(directory) / name
-                relative = path.relative_to(base)
-                key=_key(path)
-                if key in result:
-                    raise ValueError('inventory paths have an ambiguous identity: '+str(path))
-                result[key] = {'path': str(path), 'role': file_role(root, relative)}
-    return result
-
-
-def binding_errors(environment):
-    manifest, chain = environment['manifest'], environment['toolchain']
-    errors = scope_errors(manifest.get('scope'))
+def identity_errors(identity):
+    """Lexical scope rules of an identity; no host path is resolved or read."""
+    from .formal import toolchain_errors
+    errors = toolchain_errors(identity)
     if errors:
         return errors
-    roots = {row['kind']:Path(_key(row['path'])) for row in manifest['scope']['roots']}
-    files = {_key(row['path']):row for row in manifest['files'] if isinstance(row, dict) and isinstance(row.get('path'), str)}
-    for entry in manifest['files']:
-        if not isinstance(entry, dict) or not isinstance(entry.get('path'), str):
-            continue
-        path=Path(_key(entry['path']))
-        matches=[r for r in manifest['scope']['roots'] if path.is_relative_to(Path(_key(r['path'])))]
-        if len(matches)!=1 or entry.get('role')!=file_role(matches[0],path.relative_to(Path(_key(matches[0]['path'])))):
-            errors.append('manifest file role or scope differs: ' + entry['path'])
-    executables=chain.get('executables', {})
-    if not executables or executables.get(chain.get('executable')) != chain.get('sha256'):
-        errors.append('toolchain executable must have an exact inventory binding')
-    for path,digest in executables.items():
-        row=files.get(_key(path))
-        if (not Path(path).is_absolute() or not Path(_key(path)).is_relative_to(roots['toolchain'])
-                or row is None or row.get('sha256')!=digest):
-            errors.append('configured executable is absent or differs from inventory: ' + path)
-    checkers=[r for r in manifest['files'] if r.get('role')=='checker'
-              and _key(r['path'])==_key(chain.get('verifier_path',''))]
-    if len(checkers)!=1 or checkers[0].get('sha256')!=chain.get('verifier_sha256'):
-        errors.append('formal checker must have an exact inventory binding')
-    project=chain.get('project')
-    if project is None:
-        if 'project' in roots:errors.append('inventory project has no observed toolchain project')
-    elif (not isinstance(project,dict) or not isinstance(project.get('fingerprint'),dict)
-          or _key(project['fingerprint'].get('root','')) != str(roots.get('project',''))):
-        errors.append('inventory project differs from the observed toolchain project')
-    if isinstance(project,dict):
-        for path in project.get('search_paths',[]):
-            if not any(Path(_key(path)).is_relative_to(root) for kind,root in roots.items() if kind!='checker'):
-                errors.append('Lean search path is outside the adopted installation roots: '+path)
-    if not any(r.get('role')=='lean_source' for r in manifest['files']):
-        errors.append('toolchain inventory lacks Lean sources')
+    named = {name: Path(_key(path)) for name, path in roots(identity).items()}
+    if any(a != b and (named[a] == named[b] or named[a].is_relative_to(named[b])) for a in named for b in named):
+        errors.append('toolchain and project roots must not overlap')
+    for path in (identity['project'] or {}).get('search_paths', []):
+        if not any(Path(_key(path)).is_relative_to(root) for root in named.values()):
+            errors.append('Lean search path is outside the recorded toolchain and project roots: ' + path)
     return errors
 
 
-def validation_errors(validation, toolchain, inventory_digest):
-    from .repository import exact_content_hash
-    if not isinstance(validation,dict) or set(validation)!={'record','sha256'}:
-        return ['validation requires a sealed self-contained record']
-    record=validation['record']
-    if not isinstance(record,dict) or validation['sha256']!=exact_content_hash(record):
-        return ['validation record hash differs']
-    errors=[]
-    source_text, scope = validation_program(toolchain)
-    if record.get('inventory_sha256') != inventory_digest:
-        errors.append('validation does not bind this complete inventory')
-    if (record.get('status')!='verified' or type(record.get('exit_code')) is not int or record['exit_code']!=0
-            or record.get('scope')!=scope):
-        errors.append('validation did not successfully check the required environment examples')
-    if record.get('toolchain')!=toolchain or record.get('toolchain_after')!=toolchain:
-        errors.append('validation toolchain differs from the adopted environment')
-    if (record.get('source_text')!=source_text or record.get('source_sha256')!=hashlib.sha256(source_text.encode()).hexdigest()
-            or not isinstance(record.get('source'),str) or not Path(record['source']).is_absolute()
-            or record.get('command')!=[*toolchain.get('configured_command',[]),record.get('source')]):
-        errors.append('validation source or invocation differs')
-    if any(not isinstance(record.get(k),str) for k in ('stdout','stderr','started_at','finished_at')):
-        errors.append('validation output and observation times are required')
-    else:
-        from .governance import timestamp
-        try:
-            if timestamp(record['finished_at'])<timestamp(record['started_at']):
-                raise ValueError('validation time order')
-        except (ValueError,TypeError):errors.append('validation observation times are invalid')
-    return errors
+def observe_fingerprint(identity):
+    """Rows (size, modification ns, creation ns) of every judgment file under the roots."""
+    rows = {}
+    for name, base in sorted(roots(identity).items()):
+        _scan(base, name, rows)
+    return {'files': rows, 'sha256': exact_content_hash(rows)}
 
 
-def collect_inventory(toolchain):
-    executable=Path(toolchain['executable'])
-    tool_root=executable.parent.parent if executable.parent.name=='bin' else executable.parent
-    roots=[{'kind':'toolchain','path':str(tool_root)}, {'kind':'checker','path':str(Path(toolchain['verifier_path']).parent)}]
-    if toolchain.get('project') is not None:
-        roots.append({'kind':'project','path':toolchain['project']['fingerprint']['root']})
-    scope={'roots':roots}
-    members=inventory(scope)
-    def hashed(entry):
-        info=Path(entry['path']).lstat()
-        if not stat.S_ISREG(info.st_mode) or getattr(info,'st_file_attributes',0)&0x400:
-            raise ValueError('inventory member is not an ordinary file: '+entry['path'])
-        with open(entry['path'],'rb') as stream:
-            digest=hashlib.file_digest(stream,'sha256').hexdigest()
-        return {**entry,'sha256':digest}
-    # Executor.map eagerly submits its iterable on Python 3.12. Bound each batch.
-    files=[]; entries=list(members.values())
+def _scan(directory, prefix, rows):
+    with os.scandir(directory) as entries:
+        for entry in entries:
+            relative = prefix + '/' + entry.name
+            if entry.is_dir(follow_symlinks=False):
+                if entry.name != '.git':
+                    _scan(entry.path, relative, rows)
+            elif entry.name.lower().endswith(JUDGMENT_SUFFIXES):
+                rows[relative] = fingerprint_json(stat_fingerprint(entry.stat(follow_symlinks=False)))
+
+
+def changed_files(expected, observed):
+    return sorted(path for path in set(expected) | set(observed) if expected.get(path) != observed.get(path))
+
+
+def content_hashes(identity, paths):
+    """Full SHA-256 of each named file; used at recording and explicit content checks only."""
+    base = roots(identity)
+    def one(relative):
+        name, _, rest = relative.partition('/')
+        return relative, sha256_file(base[name] / rest)
     with ThreadPoolExecutor(max_workers=4) as pool:
-        for start in range(0,len(entries),64):files.extend(pool.map(hashed,entries[start:start+64]))
-    if inventory(scope)!=members:
-        raise ValueError('inventory membership changed during collection')
-    return {'scope':scope,'files':files}
+        files = dict(pool.map(one, sorted(paths)))
+    return {'files': files, 'sha256': exact_content_hash(files)}
 
 
-def collect_manifest(toolchain, validation_record, *, observed_inventory=None):
-    from .repository import exact_content_hash
-    from .trust_validation import AXIOMS
-    observed=collect_inventory(toolchain) if observed_inventory is None else observed_inventory
-    scope,files=observed['scope'],observed['files']
-    manifest={'command':toolchain['configured_command'],'scope':scope,'files':files,
-        'foundation_profile':{'allowed_axioms':sorted(AXIOMS),
-                              'forbidden':['sorryAx','Lean.trustCompiler','additional_axioms']},
-        'validation':{'record':validation_record,'sha256':exact_content_hash(validation_record)}}
-    errors=binding_errors({'manifest':manifest,'toolchain':toolchain})+validation_errors(
-        manifest['validation'],toolchain,exact_content_hash(observed))
-    if errors:raise ValueError('; '.join(errors))
-    return manifest
+def validation_sha256(validation):
+    return exact_content_hash({key: validation.get(key) for key in VALIDATION_SUMMARY})
+
+
+def new_baseline(fingerprint, content, validation):
+    return {'recorded_at': now(), 'fingerprint': fingerprint, 'content': content,
+            'validation': validation, 'validation_sha256': validation_sha256(validation)}
+
+
+def record_id(identity, content_sha256):
+    return 'TC-' + exact_content_hash({'identity_sha256': exact_content_hash(identity), 'content_sha256': content_sha256})
+
+
+def new_record(identity, baseline):
+    return {'schema': SCHEMA, 'id': record_id(identity, baseline['content']['sha256']), 'identity': identity,
+            'identity_sha256': exact_content_hash(identity), 'baselines': [baseline], 'checks': []}
+
+
+def binding(record, index=None):
+    """The instance-side reference to one baseline entry of a record."""
+    index = len(record['baselines']) - 1 if index is None else index
+    entry = record['baselines'][index]
+    return {'baseline': index, 'fingerprint_sha256': entry['fingerprint']['sha256'],
+            'content_sha256': entry['content']['sha256'], 'validation_sha256': entry['validation_sha256']}
+
+
+def record_errors(record):
+    """Schema and self-consistency of a record; the listed file hashes are not recomputed."""
+    error = next(_VALIDATOR.iter_errors(record), None)
+    if error is not None:
+        return ['toolchain record differs from ' + SCHEMA + ': ' + '/'.join(map(str, error.absolute_path))
+                + ': ' + error.message]
+    errors = identity_errors(record['identity'])
+    if record['identity_sha256'] != exact_content_hash(record['identity']):
+        errors.append('toolchain record identity digest differs from its identity')
+    elif record['id'] != record_id(record['identity'], record['baselines'][0]['content']['sha256']):
+        errors.append('toolchain record ID differs from its identity and first content baseline')
+    if any(check['baseline'] >= len(record['baselines']) for check in record['checks']):
+        errors.append('toolchain record check names an absent baseline')
+    return errors
+
+
+def usable_errors(record):
+    """A current baseline with a successful representative check and no later mismatch."""
+    current = len(record['baselines']) - 1
+    validation = record['baselines'][current]['validation']
+    errors = []
+    if validation['status'] != 'verified' or validation['exit_code'] != 0:
+        errors.append('current toolchain baseline has no successful representative check')
+    if any(check['baseline'] == current and check['result'] == 'mismatch' for check in record['checks']):
+        errors.append('a content check found files that differ from the current toolchain baseline')
+    return errors
+
+
+def read_record(path):
+    from .file_io import read_bytes_shared
+    record = json.loads(read_bytes_shared(path))
+    errors = record_errors(record)
+    if errors:
+        raise ValueError('; '.join(errors))
+    return record
+
+
+def write_record(path, record):
+    from .file_io import write_bytes_atomic
+    from .repository import canonical_json
+    errors = record_errors(record)
+    if errors:
+        raise ValueError('; '.join(errors))
+    write_bytes_atomic(path, canonical_json(record))
+
+
+@contextmanager
+def writer_lock(directory):
+    """Exclude other record writers; a lock left by a killed writer is removed by hand."""
+    directory = Path(directory)
+    directory.mkdir(parents=True, exist_ok=True)
+    lock = directory / '.lock'
+    try:
+        with lock.open('x', encoding='utf-8') as stream:
+            stream.write(str(os.getpid()))
+    except FileExistsError:
+        raise RuntimeError('another toolchain record writer holds ' + str(lock)
+                           + '; remove it only after confirming no setup_lean.py is running') from None
+    try:
+        yield
+    finally:
+        lock.unlink()
+
+
+def records_for(directory, identity):
+    """Record files in a records directory that describe exactly this identity."""
+    wanted = exact_content_hash(identity)
+    found = []
+    for path in sorted(Path(directory).glob('TC-*.json')):
+        record = read_record(path)
+        if record['identity_sha256'] == wanted:
+            found.append((path, record))
+    return found

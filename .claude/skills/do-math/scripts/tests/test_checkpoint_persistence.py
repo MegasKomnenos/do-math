@@ -88,6 +88,10 @@ class CheckpointPersistenceTests(unittest.TestCase):
                 (workspace / 'checkpoint.json').write_bytes(canonical_json(CHECKPOINT))
                 kwargs['on_observation'](ObservationBatch([], [], '2026-09-25T00:00:00Z',
                     time.monotonic(), 0, 0, kwargs['evidence_dir'] / 'stdout.jsonl', lambda: False))
+                # Observations are queued; the owner applies them on its next pass.
+                until = time.monotonic() + 60
+                while kwargs['execution_id'] not in engine.runtime.get('checkpoints', {}) and time.monotonic() < until:
+                    time.sleep(.01)
                 captured.update(deepcopy(engine.runtime['checkpoints'][kwargs['execution_id']]))
                 (workspace / 'proof.txt').write_bytes(b'changed after checkpoint')
                 return {'status': 'failed', 'output': None, 'usage': {}, 'error': 'fixture interruption'}

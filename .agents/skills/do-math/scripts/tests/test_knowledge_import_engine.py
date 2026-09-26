@@ -14,7 +14,7 @@ from test_categories import test_group as category
 from do_math.engine import ResearchEngine, initialize, control, query_records
 from do_math import knowledge as k, knowledge_records as kr
 from do_math.repository import new_id
-from do_math import activities, formal, initialization
+from do_math import activities, formal
 from research_fixtures import trust_fixture
 from test_formal import actual_command
 import hashlib
@@ -110,35 +110,30 @@ class KnowledgeImportTests(unittest.TestCase):
 class FormalBoundaryTests(unittest.TestCase):
     def host(self, workspace, toolchain=None):
         e = object.__new__(ResearchEngine)
-        trust = trust_fixture(workspace, toolchain['configured_command'] if toolchain else ['fixture'])
-        trust.pop('operation')
+        from research_fixtures import trust_environment, validation_fixture
+        from do_math.trust_validation import environment_errors
+        request = trust_fixture(workspace, toolchain['configured_command'] if toolchain else ['fixture'])
         if toolchain is not None:
-            from do_math.trust_inventory import collect_manifest
-            from research_fixtures import validation_fixture
-            import shutil
-            trust['toolchain'] = deepcopy(toolchain)
-            inventory=deepcopy(self.native_inventory)
-            checker=next(r for r in inventory['scope']['roots'] if r['kind']=='checker')
-            old_root=Path(checker['path']); new_root=workspace/'checked-checker/scripts/do_math'
-            for row in inventory['files']:
-                if row['role']=='checker':
-                    source=Path(row['path']); destination=new_root/source.relative_to(old_root)
-                    destination.parent.mkdir(parents=True,exist_ok=True)
-                    shutil.copyfile(source,destination)
-                    row['path']=str(destination.resolve())
-            checker['path']=str(new_root.resolve())
-            trust['toolchain']['verifier_path']=str((new_root/'formal.py').resolve())
-            validation=validation_fixture(trust['toolchain'],inventory,workspace/'smoke.lean')
-            trust['manifest']=collect_manifest(trust['toolchain'],validation,observed_inventory=inventory)
-        trust.update(id='TE-old', status='active', source_ref='synthetic:test-adoption',
-                     manifest_sha256=initialization.digest(trust['manifest']))
-        self.assertEqual(initialization.trust_environment_errors(trust), [])
+            # The actual installation. Its content baseline is a double: only
+            # --rerecord and --check-contents read it.
+            from do_math import trust_inventory as records
+            from do_math.repository import exact_content_hash
+            identity = deepcopy(toolchain)
+            record = records.new_record(identity, records.new_baseline(records.observe_fingerprint(identity),
+                {'files': {}, 'sha256': exact_content_hash({})}, validation_fixture(identity, workspace / 'smoke.lean')))
+            path = workspace / 'records' / (record['id'] + '.json')
+            records.write_record(path, record)
+            request.update(toolchain=identity, toolchain_record={'path': str(path), 'id': record['id']},
+                           binding=records.binding(record))
+        trust, binding = trust_environment(request, environment_id='TE-old', source_ref='synthetic:test-adoption')
+        self.assertEqual(environment_errors(trust, binding), [])
         e.instance = {'active_trust_environment': 'TE-old', 'trust_environments': {'TE-old': trust}}
         e.runtime = {'queue': [], 'history': []}
         e.instance, e.runtime, kid, _ = add(e.instance, e.runtime, verified=False)
         # Deliberately different: central execution must use the approved command.
         e.instance.update(workspace=str(workspace), config={'lean_command': ['unapproved-config-command'], })
-        e.runtime.update(status='ready', executions={}, activities={}, trust_transitions={})
+        e.runtime.update(status='ready', executions={}, activities={}, trust_transitions={},
+                         trust_bindings={'TE-old': binding})
         e.head = 'fixture-snapshot'
         for name in ('_save', '_controls', '_execution_profile', '_settle_activity', '_remove_action',
                      '_start_identity_review', '_action_lifecycle_gate', '_require_action_clock', '_enqueue'):
@@ -214,11 +209,12 @@ class FormalBoundaryTests(unittest.TestCase):
             runtime['waiting_actions'] = deepcopy(e.runtime['waiting_actions'])
             default_state_contract().validate(instance, runtime)
 
-    def test_changed_manifest_file_blocks_even_fake_verifier(self):
+    def test_changed_olean_blocks_even_fake_verifier(self):
         with tempfile.TemporaryDirectory() as d:
             e, kid = self.host(Path(d))
             environment = e.instance['trust_environments']['TE-old']
-            Path(environment['manifest']['files'][0]['path']).write_text('changed', encoding='utf-8')
+            olean = Path(environment['toolchain']['executable']).parents[1] / 'lib/lean/Init/Prelude.olean'
+            olean.write_text('changed', encoding='utf-8')
             with patch('do_math.engine.governance.authorize', return_value={'allowed': True, 'grant_id': 'GR-fixture'}):
                 e._formal({'id': new_id('AC'), 'role': 'formal_check', 'target': kid})
             e.formal_verifier.assert_not_called()
@@ -226,7 +222,8 @@ class FormalBoundaryTests(unittest.TestCase):
             self.assertEqual((execution['status'], execution['outcome']), ('ended', 'execution_incomplete'))
             waiting = next(iter(e.runtime['waiting_actions'].values()))
             self.assertEqual(waiting['next_owner'], 'trust_governance')
-            self.assertIn('trust file changed', waiting['reason'])
+            self.assertIn('olean fingerprint differs', waiting['reason'])
+            self.assertEqual(waiting['detail']['environment_id'], 'TE-old')
             e._enqueue.assert_not_called()
 
     def test_revision_consumer_passes_declared_scope_and_queues_replacement(self):
@@ -274,11 +271,9 @@ class PortableFormalBoundaryTests(unittest.TestCase):
                 workspace=Path(d), lean_command=actual_command())
         if cls.baseline['status'] != 'verified':
             raise AssertionError(cls.baseline)
-        from do_math.trust_inventory import collect_inventory
-        cls.native_inventory=collect_inventory(cls.baseline['toolchain'])
 
-    def run_formal(self, root, change=None):
-        e, kid = self.host(root, self.baseline['toolchain'])
+    def run_formal(self, root, change=None, toolchain=None):
+        e, kid = self.host(root, toolchain or self.baseline['toolchain'])
         observed = []
         def verify(**kwargs):
             with patch.object(formal,'__file__',e.instance['trust_environments']['TE-old']['toolchain']['verifier_path']):
@@ -342,19 +337,25 @@ class PortableFormalBoundaryTests(unittest.TestCase):
             stored = json.loads(next(raw for path, raw in artifacts.items() if path.endswith('/formal.json')))
             self.assertEqual(stored, observed[0])
 
-    def test_manifest_file_change_after_actual_compile_prevents_publication(self):
+    def test_identity_change_after_actual_compile_is_caught_at_publication(self):
+        from do_math.trust_validation import EnvironmentUnavailable, require_active_environment
+        checker = lambda e: Path(e.instance['trust_environments']['TE-old']['toolchain']['verifier_path'])
         def change(e):
-            row = next(r for r in e.instance['trust_environments']['TE-old']['manifest']['files'] if r['role'] == 'checker')
-            self.assertTrue(Path(row['path']).resolve().is_relative_to(Path(e.instance['workspace']).resolve()))
-            Path(row['path']).write_text('changed after actual compilation', encoding='utf-8')
+            self.assertTrue(checker(e).resolve().is_relative_to(Path(e.instance['workspace']).resolve()))
+            checker(e).write_text('changed after actual compilation', encoding='utf-8')
         with tempfile.TemporaryDirectory() as d:
-            e, kid, observed, result = self.run_formal(Path(d), change)
-            self.assertEqual(observed[0]['status'], 'verified')
-            self.assertEqual(result['status'], 'failed')
-            self.assertIn('trust file changed', result['reason'])
-            self.assertEqual(e.instance['formal_results'][e.instance['knowledge'][kid]['formal_result_id']]['publication_state'], 'candidate')
-            self.assertEqual(next(iter(e.runtime['executions'].values()))['status'], 'ended')
-            e._start_identity_review.assert_not_called()
+            # A copied checker is the one identity file this test may change.
+            import shutil
+            copied = Path(d) / 'checked-checker/scripts/do_math'
+            shutil.copytree(Path(formal.__file__).parent, copied, ignore=shutil.ignore_patterns('__pycache__'))
+            toolchain = {**deepcopy(self.baseline['toolchain']), 'verifier_path': str((copied / 'formal.py').resolve())}
+            e, kid, observed, result = self.run_formal(Path(d), change, toolchain)
+            # Nothing is re-observed after compiling; the formal result itself is accepted.
+            self.assertEqual((observed[0]['status'], result['status']), ('verified', 'verified'))
+            self.assertEqual(e.instance['formal_results'][e.instance['knowledge'][kid]['formal_result_id']]['publication_state'], 'accepted')
+            with patch.object(formal, '__file__', str(checker(e))), self.assertRaises(EnvironmentUnavailable) as caught:
+                require_active_environment(e.instance, e.runtime, current_identity=True)
+            self.assertIn('approved toolchain file changed: ' + str(checker(e)), str(caught.exception))
 
     def test_current_environment_change_after_actual_compile_prevents_publication(self):
         def change(e):

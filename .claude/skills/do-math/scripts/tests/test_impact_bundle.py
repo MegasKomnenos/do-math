@@ -10,6 +10,7 @@ import unittest
 import jsonschema
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from do_math.repository import exact_content_hash
 
 from do_math import contracts, integration, knowledge_io, submission
 from do_math.git_store import GitStateStore
@@ -86,7 +87,7 @@ class ImpactBundleTests(unittest.TestCase):
                 "id": "IN-review",
                 "execution_id": "EX-review",
                 "payload_sha256": review_bundle["payload_sha256"],
-                "response_sha256": integration.digest(
+                "response_sha256": exact_content_hash(
                     integration.member_values(output, {}, fixed)["output"]
                 ),
             }

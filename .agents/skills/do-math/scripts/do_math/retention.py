@@ -12,7 +12,9 @@ import shutil
 import stat
 
 from .context_store import _read_stable
+from .file_io import file_fingerprint, fingerprint_settled
 from .git_store import PhysicalBoundary
+from .repository import artifact_verified, verify_artifact
 
 
 def _physical(path):
@@ -85,7 +87,13 @@ def reference_closure(references, records):
     return paths, unresolved
 
 
-def _inventory(path):
+def _inventory(path, marks=None, contents=None):
+    """Hash every local file once per cleanup.
+
+    ``marks`` maps a file to (settled fingerprint, proof) from an earlier read in
+    this cleanup; an unchanged fingerprint reuses the proof without reading.
+    ``contents`` receives the bytes that were read.
+    """
     result = {}
     if not path.is_dir():
         raise ValueError('execution directory missing')
@@ -97,8 +105,18 @@ def _inventory(path):
             _physical(Path(base) / name)
         for name in files:
             file = Path(base) / name
+            relative = file.relative_to(path).as_posix()
+            mark = file_fingerprint(file)
+            known = marks.get(file) if marks is not None else None
+            if known is not None and known[0] == mark:
+                result[relative] = dict(known[1])
+                continue
             data = _read_stable(file, boundary=boundary)
-            result[file.relative_to(path).as_posix()] = {'sha256': hashlib.sha256(data).hexdigest(), 'bytes': len(data)}
+            result[relative] = {'sha256': hashlib.sha256(data).hexdigest(), 'bytes': len(data)}
+            if contents is not None:
+                contents[relative] = data
+            if marks is not None and fingerprint_settled(mark) and file_fingerprint(file) == mark:
+                marks[file] = (mark, dict(result[relative]))
     return result
 
 
@@ -112,11 +130,14 @@ def _archive_reference(path, snapshot):
 
 
 def cleanup_candidates(workspace, executions, *, protected_references,
-                       approved_execution_ids=None, read_artifact=None, runtime=None, reference_records=None):
+                       approved_execution_ids=None, read_artifact=None, runtime=None, reference_records=None,
+                       git_dir=None, marks=None):
     """Verify every file against collection.retention_manifest rows.
 
     Each row: path (relative to run), artifact_ref, snapshot, sha256, bytes.
     read_artifact(path, snapshot) reads the archive, never the local run copy.
+    An archive row already matched in this process (repository.VERIFIED_ARTIFACTS
+    of ``git_dir``) is not read again; ``marks`` is passed to ``_inventory``.
     """
     candidates = []
     references, unresolved = reference_closure(protected_references, reference_records or {})
@@ -126,7 +147,7 @@ def cleanup_candidates(workspace, executions, *, protected_references,
             path = _run_path(workspace, identifier)
             if _references_run(workspace, path, references):
                 reasons.append('protected_reference')
-            inventory = _inventory(path)
+            inventory = _inventory(path, marks)
         except (ValueError, OSError) as error:
             reasons.append(str(error))
         if not isinstance(execution, dict) or execution.get('id') != identifier:
@@ -143,8 +164,8 @@ def cleanup_candidates(workspace, executions, *, protected_references,
             try:
                 _archive_reference(termination['evidence_ref'], termination['snapshot'])
                 receipt = read_artifact(termination['evidence_ref'], termination['snapshot'])
-                if hashlib.sha256(receipt).hexdigest() != termination['sha256'] or len(receipt) != termination['bytes']:
-                    raise ValueError('termination receipt hash/size differs')
+                if git_dir is None or not artifact_verified(git_dir, termination['evidence_ref'], termination['sha256'], termination['bytes']):
+                    verify_artifact(git_dir, termination['evidence_ref'], receipt, termination['sha256'], termination['bytes'])
                 fact = json.loads(receipt)
                 if not isinstance(fact, dict) or fact.get('execution_id') != identifier or fact.get('local_terminated') is not True:
                     raise ValueError('termination receipt does not confirm this execution')
@@ -181,10 +202,9 @@ def cleanup_candidates(workspace, executions, *, protected_references,
                     _archive_reference(archive, snapshot)
                     if local in archived:
                         raise ValueError('invalid archive reference')
-                    raw = read_artifact(archive, snapshot)
-                    proof = {'sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)}
-                    if proof != {k: row[k] for k in proof}:
-                        raise ValueError('archive hash/size mismatch')
+                    proof = {'sha256': row['sha256'], 'bytes': row['bytes']}
+                    if git_dir is None or not artifact_verified(git_dir, archive, proof['sha256'], proof['bytes']):
+                        verify_artifact(git_dir, archive, read_artifact(archive, snapshot), proof['sha256'], proof['bytes'])
                     archived[local] = proof
                 except (ValueError, TypeError, KeyError, OSError, RuntimeError) as error:
                     reasons.append('archive_unverified: ' + str(error))
@@ -195,11 +215,12 @@ def cleanup_candidates(workspace, executions, *, protected_references,
     return candidates
 
 
-def cleanup(workspace, candidates, *, current_state=None, read_artifact=None):
+def cleanup(workspace, candidates, *, current_state=None, read_artifact=None, git_dir=None, marks=None):
     """Re-read eligibility immediately before removal; never mutate research state.
 
     current_state() supplies executions, protected_references,
-    approved_execution_ids, runtime under the caller's writer lock.
+    approved_execution_ids, runtime under the caller's writer lock. With the
+    candidates' ``marks``, local files are re-examined by fingerprint.
     """
     deleted, failures = [], []
     for candidate in candidates:
@@ -215,13 +236,11 @@ def cleanup(workspace, candidates, *, current_state=None, read_artifact=None):
                 raise ValueError('execution disappeared from current state')
             refreshed = cleanup_candidates(workspace, {identifier: execution},
                 protected_references=state['protected_references'], approved_execution_ids=state['approved_execution_ids'],
-                read_artifact=read_artifact, runtime=state['runtime'], reference_records=state.get('reference_records'))[0]
+                read_artifact=read_artifact, runtime=state['runtime'], reference_records=state.get('reference_records'),
+                git_dir=git_dir, marks=marks)[0]
             if not refreshed['eligible'] or refreshed['inventory'] != candidate['inventory']:
                 raise ValueError('cleanup prerequisites changed: ' + ', '.join(refreshed['reasons']))
-            path = _run_path(workspace, identifier)
-            if _inventory(path) != candidate['inventory']:
-                raise ValueError('cleanup files changed')
-            shutil.rmtree(path)
+            shutil.rmtree(_run_path(workspace, identifier))
             deleted.append(f'runs/{identifier}')
         except (OSError, ValueError, KeyError, TypeError, RuntimeError) as error:
             failures.append({'path': candidate.get('path'), 'error': str(error),

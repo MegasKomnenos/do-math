@@ -66,8 +66,10 @@ def inspect_current_state(instance: dict, runtime: dict) -> dict:
 def inspect_persisted_state(store, snapshot):
     """Validate the exact current family bytes without publishing repairs."""
     try:
-        head, instance, runtime = store.load(snapshot)
-        # load verifies envelopes, family schemas/relations, IDs and public events.
+        head = store._resolve_snapshot(snapshot)
+        # The validated read checks envelopes, family schemas/relations, IDs
+        # and public events once per head; this inspection only reads it.
+        instance, runtime = store._read_documents(head)[:2]
         result = inspect_current_state(instance, runtime)
         result['snapshot'] = head
         return result
@@ -120,7 +122,7 @@ def inspect_bundle(skill_root: Path | None = None) -> dict:
         from .governance import interpretation_schema
         from .scheduled_operator import OPERATOR_SCHEMA
         from .submission import extension_schema
-        from .repository import canonical_json
+        from .repository import exact_content_hash
         schemas = {role: schema_for(role) for role in ROLES}
         schemas.update({"identity_review:" + stage: stage_schema(stage) for stage in ("initial", "organize", "answer", "judge")})
         schemas.update({"intent_interpretation:" + stage: interpretation_schema(stage) for stage in ("interpret", "check")})
@@ -140,7 +142,7 @@ def inspect_bundle(skill_root: Path | None = None) -> dict:
             _check_schema_pair(json.dumps(schema, ensure_ascii=False, sort_keys=True,
                                           separators=(",", ":"), allow_nan=False))
         checks.append({"check": "role_output_schemas", "status": "verified", "roles": len(ROLES),
-                       "schemas": {name: hashlib.sha256(canonical_json(schema)).hexdigest() for name, schema in schemas.items()},
+                       "schemas": {name: exact_content_hash(schema) for name, schema in schemas.items()},
                        "claude_conversion": "Only top-level $schema and x-contract-id are removed; constraints are preserved."})
     except (ValueError, SchemaError) as exc:
         checks.append({"check": "role_output_schemas", "status": "incomplete", "reason": str(exc)})

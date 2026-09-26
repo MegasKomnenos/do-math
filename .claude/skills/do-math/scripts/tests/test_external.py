@@ -4,6 +4,7 @@ from http.server import BaseHTTPRequestHandler,HTTPServer
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
+from do_math.file_io import json_digest
 from do_math.external import *
 from do_math import external
 class H(BaseHTTPRequestHandler):
@@ -34,7 +35,7 @@ class Tests(unittest.TestCase):
       self.assertEqual(sent.data,b'\xc3\xa9' if body == 'é' else None)
      if method in ('GET','DELETE'):
       old={**operation,'request':{**operation['request'],'body':'legacy'}}
-      old['request_sha256']=external._hash(old['request'])
+      old['request_sha256']=json_digest(old['request'])
       old['idempotency_key']=__import__('hashlib').sha256((old['id']+old['request_sha256']).encode()).hexdigest()
       calls=[]
       with self.assertRaises(ValueError):execute_operation(old,grant,persist=lambda _:True,

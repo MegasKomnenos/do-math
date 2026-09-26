@@ -93,7 +93,8 @@ PAYLOADS = {
         'candidate': CANDIDATE, 'relation': RELATION, 'changes': OBJECT,
         'definition': obj({**fields(text='family token meaning'), 'constraints': OBJECT}),
         'declared_impact': {'type': ['array', 'null'], 'items': TEXT}, 'independent_confirmation': CONFIRMATION}),
-    'trust': obj({**fields(text='operation env_id reason', objects='toolchain manifest'), 'allowed_axioms': TEXTS}),
+    'trust': obj({**fields(text='env_id reason', objects='toolchain toolchain_record binding'),
+        'operation': {'enum': ['register', 'transition', 'invalidate']}, 'allowed_axioms': TEXTS}),
     'external': obj({**fields(text='operation id grant_id source_ref target_id purpose subject budget_kind actor_kind result'),
         'request': obj(fields(text='method url body')), 'evidence': EVIDENCE,
         'idempotency_evidence': {'type': ['string', 'null']}}),
@@ -133,9 +134,7 @@ def validate_control_payload(action, text, config):
         raise ValueError('control text must be a string')
     _check(_VALIDATORS[action], config, 'config')
     if action == 'trust' and config.get('operation') == 'register':
-        from .trust_validation import manifest_structure_errors
-        from .formal import toolchain_errors
-        errors = (manifest_structure_errors(config.get('manifest'))
-                  + toolchain_errors(config.get('toolchain')))
+        from .trust_validation import register_request_errors
+        errors = register_request_errors(config)
         if errors:
             raise ValueError('config: ' + '; '.join(errors))

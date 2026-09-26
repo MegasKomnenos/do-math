@@ -43,7 +43,9 @@ def add(state, runtime, *, verified=True, **changes):
 
 def fixture():
     state = {'active_trust_environment': 'TE-old', 'trust_environments': {
-        'TE-old': {'id': 'TE-old', 'status': 'active', 'toolchain': {'version': 'fixture-old'}, 'allowed_axioms': []}}}
+        'TE-old': {'id': 'TE-old', 'status': 'active', 'toolchain': {'version': 'fixture-old'}, 'allowed_axioms': [],
+                   'source_ref': 'fixture:trust', 'toolchain_record': {'path': str(Path.cwd() / 'records' / ('TC-' + '0' * 64 + '.json')),
+                                                                        'id': 'TC-' + '0' * 64}}}}
     runtime = {'tasks': {}, 'queue': [], 'history': []}
     state, runtime, a, aa = add(state, runtime)
     state, runtime, b, ba = add(state, runtime, dependencies=[a])

@@ -4,7 +4,7 @@ from unittest.mock import patch, Mock
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from test_categories import test_group as category
-from do_math.formal import project_fingerprint, verify_lean, _ident, portable_bin, toolchain_root, compare_formal_results
+from do_math.formal import project_source_identity, verify_lean, _ident, portable_bin, toolchain_root, compare_formal_results
 from do_math import formal
 
 def actual_command():
@@ -14,7 +14,7 @@ class T(unittest.TestCase):
  def test_project_preparation_honors_stop_before_starting_git(self):
   with tempfile.TemporaryDirectory() as d, patch('do_math.formal.subprocess.Popen',side_effect=AssertionError('must stop before Git')):
    with self.assertRaisesRegex(RuntimeError,'stopped'):
-    project_fingerprint(Path(d),should_stop=lambda:True)
+    project_source_identity(Path(d),should_stop=lambda:True)
 
 
  def test_nested_stop_preserves_flushed_child_output(self):
@@ -91,7 +91,7 @@ class T(unittest.TestCase):
     'verifier_sha256':digest(Path(formal.__file__)), 'verifier_path':str(Path(formal.__file__).resolve()),
     'executables':{str(executable):digest(executable)},
     'version':'fixture','version_exit':0,'project':{'manifest_hashes':{'lakefile.toml':digest(manifest)},
-     'fingerprint':project_fingerprint(project),'search_paths':[]}}
+     'source_identity':project_source_identity(project),'search_paths':[]}}
    manifest.write_bytes(b'name = "changed"\n')
    run_job=formal._job_run
    def only_git(command,*args,**kwargs):
@@ -128,7 +128,9 @@ class T(unittest.TestCase):
     lean_command=command,expected_toolchain=approved)
    self.assertEqual(result['status'],'rejected',result)
    run.assert_not_called()
- def test_approved_executable_change_during_run_is_rejected_before_evidence_parsing(self):
+ def test_executable_change_during_run_is_left_to_the_next_identity_check(self):
+  # The verifier checks the approved identity once, before compiling; a change during the
+  # compile is found by the publication gate or the next formal check, not re-observed here.
   with tempfile.TemporaryDirectory() as d:
    executable=Path(d)/'synthetic-lean.exe';executable.write_bytes(b'approved fixture executable')
    command=[str(executable)]
@@ -141,8 +143,8 @@ class T(unittest.TestCase):
    with patch('do_math.formal._job_run',side_effect=run):
     result=verify_lean(source='theorem x : True := True.intro',declarations=['x'],workspace=Path(d),
      lean_command=command,expected_toolchain=expected)
-   self.assertEqual(result['status'],'rejected',result)
-   self.assertEqual(result['reason'],'approved toolchain changed during verification')
+   self.assertEqual((result['status'],result['reason']),('failed','signature output missing'),result)
+   self.assertEqual(formal.toolchain_identity_errors(expected),['approved toolchain file changed: '+str(executable.resolve())])
  def test_path_lookup_spelling_matches_the_inspected_executable(self):
   if os.name!='nt': self.skipTest('Windows PATHEXT lookup keeps the spelling of its argument')
   with tempfile.TemporaryDirectory() as d, patch('do_math.formal._job_run',return_value=(0,'fixture version','',False)):
@@ -204,13 +206,13 @@ class T(unittest.TestCase):
   self.assertTrue(comparison['requires_identity_review'])
   self.assertIn('dependency_evidence',comparison['changed'])
   self.assertFalse(compare_formal_results(results[0],results[0])['requires_identity_review'])
- def test_project_fingerprint_excludes_unrelated_and_tracks_project_changes(self):
+ def test_project_source_identity_excludes_unrelated_and_tracks_project_changes(self):
   with tempfile.TemporaryDirectory() as d:
    root=Path(d);project=root/'project';project.mkdir();(project/'Main.lean').write_text('def x := 1',encoding='utf8');(root/'unrelated').mkdir();(root/'unrelated'/'x').write_text('a',encoding='utf8')
    subprocess.run(['git','-C',str(root),'init','-q'],check=True);subprocess.run(['git','-C',str(root),'add','.'],check=True);subprocess.run(['git','-C',str(root),'-c','user.name=t','-c','user.email=t@x','commit','-qm','base'],check=True)
-   before=project_fingerprint(project);(project/'.lake'/'packages'/'dep').mkdir(parents=True);(project/'.lake'/'packages'/'dep'/'Dep.lean').write_text('def y := 1',encoding='utf8');self.assertEqual(before,project_fingerprint(project))
-   (root/'unrelated'/'x').write_text('b',encoding='utf8');subprocess.run(['git','-C',str(root),'add','unrelated/x'],check=True);subprocess.run(['git','-C',str(root),'-c','user.name=t','-c','user.email=t@x','commit','-qm','unrelated'],check=True);self.assertEqual(before,project_fingerprint(project))
-   (project/'Main.lean').write_text('def x := 2',encoding='utf8');self.assertNotEqual(before,project_fingerprint(project))
+   before=project_source_identity(project);(project/'.lake'/'packages'/'dep').mkdir(parents=True);(project/'.lake'/'packages'/'dep'/'Dep.lean').write_text('def y := 1',encoding='utf8');self.assertEqual(before,project_source_identity(project))
+   (root/'unrelated'/'x').write_text('b',encoding='utf8');subprocess.run(['git','-C',str(root),'add','unrelated/x'],check=True);subprocess.run(['git','-C',str(root),'-c','user.name=t','-c','user.email=t@x','commit','-qm','unrelated'],check=True);self.assertEqual(before,project_source_identity(project))
+   (project/'Main.lean').write_text('def x := 2',encoding='utf8');self.assertNotEqual(before,project_source_identity(project))
  def test_stop_is_not_a_math_failure(self):
   with tempfile.TemporaryDirectory() as d:
    root=Path(d); fake=root/'fake.py';fake.write_text("import sys,time\nif '--version' in sys.argv: print('v')\nelse: time.sleep(10)",encoding='utf8')
@@ -223,8 +225,25 @@ class T(unittest.TestCase):
    subprocess.run(['git','-C',str(root),'init','-q'],check=True)
    subprocess.run(['git','-C',str(root),'add','tracked.txt'],check=True)
    subprocess.run(['git','-C',str(root),'-c','user.name=t','-c','user.email=t@x','commit','-qm','fixture'],check=True)
-   fingerprint=project_fingerprint(project)
-   self.assertIsNone(fingerprint['git_tree'])
-   self.assertEqual(fingerprint['untracked_file_count'],1)
-   self.assertRegex(fingerprint['untracked_sha256'],r'^[0-9a-f]{64}$')
+   identity=project_source_identity(project)
+   self.assertIsNone(identity['git_tree'])
+   self.assertEqual(identity['untracked_file_count'],1)
+   self.assertRegex(identity['untracked_sha256'],r'^[0-9a-f]{64}$')
+ def test_lake_search_paths_are_observed_once_per_unchanged_project_input(self):
+  from unittest.mock import patch
+  import json
+  from do_math import formal
+  with tempfile.TemporaryDirectory() as d:
+   root=Path(d);project=root/'project';project.mkdir();(project/'lake-manifest.json').write_text('{}',encoding='utf8')
+   lake=root/'lake.exe';lake.write_bytes(b'fixture lake')
+   observed=json.dumps({'cwd':str(project),'paths':['.lake/build/lib']})
+   command=[str(lake),'--dir',str(project),'env','lean']
+   with patch.object(formal,'project_source_identity',return_value={'root':str(project)}), \
+        patch.object(formal,'_job_run',return_value=(0,observed,'',False)) as run:
+    first=formal._project_identity(command,workspace=root)
+    self.assertEqual(formal._project_identity(command,workspace=root),first)
+    self.assertEqual(run.call_count,1,'unchanged inputs reuse the observed search paths')
+    (project/'lake-manifest.json').write_text('{"packages":[]}',encoding='utf8')
+    formal._project_identity(command,workspace=root)
+    self.assertEqual(run.call_count,2,'a changed project input is observed again')
 if __name__=='__main__':unittest.main()

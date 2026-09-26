@@ -5,19 +5,13 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
-import time
-from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math import payloads, maintenance_gate
-from do_math.environment_checks import EnvironmentChecks, ObservationPending
-from do_math.parallel import ModelCalls
 from do_math.operation_trace import tracing, phase, phase_rows, progress
 from do_math.repository import ResearchRepository, canonical_json, new_id
-from research_fixtures import trust_fixture
-from do_math.initialization import digest
 from test_categories import test_group
 
 
@@ -42,8 +36,9 @@ class EfficiencyUnits(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory, patch('do_math.initialization.adapter_for', return_value=AdapterDouble()):
             root = Path(directory)
             owner = FakeEngine(root); owner.activate()
-            request = {'id':'UC-large','action':'trust','origin':'user','config':{
-                'files':[{'path':str(root/f'module-{i}'), 'sha256':'a'*64} for i in range(1000)]}}
+            import base64
+            request = {'id':'UC-large','action':'source','origin':'user','config':{
+                'name':'large-notes.txt','body_base64':base64.b64encode(b'notes ' * 20000).decode('ascii')}}
             context = {'action':{'id':'AC-test','role':'maintenance'},'execution_id':'EX-test',
                        'recent_history':[{'kind':'user_control','request':request}]}
             profile = next(p for p in owner.instance['execution_profiles'].values() if p['role']=='maintenance')
@@ -102,61 +97,6 @@ class EfficiencyUnits(unittest.TestCase):
         self.assertEqual(runtime['user_pause'],{'request_id':'UC-user'})
         self.assertEqual(runtime['status'],'paused')
 
-    def test_publication_observation_is_deferred_and_not_reused_after_an_attempt(self):
-        with tempfile.TemporaryDirectory() as directory:
-            env=trust_fixture(Path(directory),['lean'])
-            env.update(id='TE-test',status='active',source_ref='test',manifest_sha256=digest(env['manifest']))
-            saved={}
-            calls=ModelCalls()
-            engine=SimpleNamespace(instance={'trust_environments':{'TE-test':env},'active_trust_environment':'TE-test'},
-                runtime={'status':'running','executions':{'EX-one':{}},'waiting_actions':{}},
-                _calls=calls,_save=lambda files:saved.update(files),_environment_attempt='attempt-1')
-            checks=EnvironmentChecks(engine)
-            try:
-                with self.assertRaises(ObservationPending): checks.observe(env,'EX-one')
-                deadline=time.monotonic()+5
-                while calls.futures and time.monotonic()<deadline:
-                    calls.collect(); time.sleep(.001)
-                self.assertFalse(calls.futures)
-                self.assertEqual(checks.observe(env,'EX-one')['status'],'verified')
-                self.assertEqual(len(saved),1)
-                engine._environment_attempt='attempt-2'
-                with self.assertRaises(ObservationPending): checks.observe(env,'EX-one')
-                while calls.futures and time.monotonic()<deadline:
-                    calls.collect(); time.sleep(.001)
-                self.assertEqual(len(saved),2)
-                # Even an unconsumed result belongs to the executor that observed it.
-                calls.close()
-                calls = engine._calls = ModelCalls()
-                with self.assertRaises(ObservationPending): checks.observe(env,'EX-one')
-                while calls.futures and time.monotonic()<deadline:
-                    calls.collect(); time.sleep(.001)
-                self.assertEqual(checks.observe(env,'EX-one')['status'],'verified')
-                self.assertEqual(len(saved),3)
-                engine._environment_attempt = 'attempt-3'
-                with patch('do_math.environment_checks.verify_environment_files', return_value={'status':'cancelled','errors':['fixture pause']}):
-                    with self.assertRaises(ObservationPending) as pending: checks.observe(env,'EX-one')
-                    while calls.futures and time.monotonic()<deadline:
-                        calls.collect(); time.sleep(.001)
-                self.assertTrue(checks.ready(pending.exception.request_id))
-                with self.assertRaises(ObservationPending): checks.observe(env,'EX-one')
-                while calls.futures and time.monotonic()<deadline:
-                    calls.collect(); time.sleep(.001)
-                self.assertEqual(checks.observe(env,'EX-one')['status'],'verified')
-                self.assertEqual(len(saved),5)
-                from do_math.lifecycle_engine import LifecycleEngineMixin
-                engine._environment_checks = checks
-                engine._environment_operation = 'EX-one'
-                engine._calls = None
-                with patch('do_math.trust_validation.verify_environment_files', side_effect=AssertionError('control path blocked')):
-                    with self.assertRaises(ObservationPending): LifecycleEngineMixin._observe_environment(engine,env)
-                    engine._calls = calls
-                    engine._environment_operation = 'preview'
-                    with self.assertRaises(ObservationPending): LifecycleEngineMixin._observe_environment(engine,env)
-                self.assertFalse(calls.futures)
-            finally:
-                calls.close()
-
     def test_phase_timings_preserve_overlap_and_incomplete_work(self):
         with tempfile.TemporaryDirectory() as directory:
             with tracing(directory):
@@ -183,7 +123,8 @@ class PayloadStorageTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory)
             subprocess.run(['git','init','-q',str(root)],check=True)
-            repo=ResearchRepository(root,new_id('RI'))
+            identifier=new_id('RI')
+            repo=ResearchRepository(root,identifier)
             repo.register_family('research','label',shape='metadata',schema={'type':'string'},identity=False)
             text='exact 원문\n'*20000
             head=repo.initialize({'feature_version':5,'title':text,'label':text},
@@ -193,7 +134,11 @@ class PayloadStorageTests(unittest.TestCase):
             self.assertEqual(len({r['path'] for r in stored['payloads']}),1)
             _, instance, runtime=repo.load(head)
             self.assertEqual(instance['title'],text)
-            self.assertTrue(instance['title'] is instance['label'], 'decoded values should share immutable bytes')
+            # Decoding (a head this repository object did not publish) shares one value per payload.
+            reader=ResearchRepository(root,identifier)
+            reader.register_family('research','label',shape='metadata',schema={'type':'string'},identity=False)
+            decoded=reader.load(head)[1]
+            self.assertTrue(decoded['title'] is decoded['label'], 'decoded values should share immutable bytes')
             with patch.object(repo._store,'read_many',wraps=repo._store.read_many) as reads:
                 new_head, new_i, new_r=repo.save_with_state(head,instance,{**runtime,'status':'ready'})
             self.assertEqual(len([c for c in reads.call_args_list if c.args[0]==head]),0)
@@ -238,8 +183,11 @@ class DeferredPublicationTests(unittest.TestCase):
         self.assertEqual(restored.runtime['status'], 'paused')
         self.assertEqual(restored.runtime['user_pause']['reason'], 'separate user pause')
 
-    def test_sealed_response_survives_deferred_domain_observation_and_git_publication(self):
+    def test_sealed_response_waits_for_a_record_change_after_a_failed_identity_check(self):
+        import setup_lean
         from test_submission_flow import CentralSubmissionHistoryTests
+        from research_fixtures import fixture_setup_lean
+        from do_math.trust_validation import require_active_environment
         fixture = CentralSubmissionHistoryTests()
         fixture.setUp()
         self.addCleanup(fixture.doCleanups)
@@ -247,42 +195,33 @@ class DeferredPublicationTests(unittest.TestCase):
         raw = canonical_json(fixture.output)
         _, receipt = fixture.submit('CT-environment', raw)
         self.assertEqual(receipt['state'], 'accepted')
-        execution = engine.runtime['executions']['EX-history']
-        sealed_ref = execution['submission_intent']['output_ref']
+        sealed_ref = engine.runtime['executions']['EX-history']['submission_intent']['output_ref']
+        environment = engine.instance['trust_environments'][engine.instance['active_trust_environment']]
+        lake = Path(environment['toolchain']['executable']).with_name('lake.exe')
+        original = lake.read_bytes()
         apply = engine._apply
-        def observed_apply(*args, **kwargs):
-            # Synthetic domain consumer, real observation/defer/receiver/Git path.
-            engine._observe_environment(engine.instance['trust_environments'][engine.instance['active_trust_environment']])
+        def gated_apply(*args, **kwargs):
+            # Synthetic domain consumer; the publication gate and wait are the real ones.
+            require_active_environment(engine.instance, engine.runtime, current_identity=True)
             return apply(*args, **kwargs)
-        calls = ModelCalls(on_returned=engine._local_call_returned)
-        try:
-            with patch.object(engine, '_apply', side_effect=observed_apply):
-                first = engine._apply_submission_bundles(fixture.context['action'], fixture.output, {},
-                    'EX-history', fixture.context, [])
-                self.assertEqual(first['status'], 'partial')
-                self.assertEqual(first['bundles'][0]['status'], 'returned')
-                self.assertTrue(first['bundles'][0]['environment_request'])
-                self.assertEqual(first['bundles'][0]['next_owner'], 'engine')
-                self.assertFalse(calls.futures, 'a control-only owner must defer without scanning')
-                engine._calls = calls
-                pending = engine._apply_submission_bundles(fixture.context['action'], fixture.output, {},
-                    'EX-history', fixture.context, [])
-                self.assertEqual(pending['status'], 'partial')
-                deadline = time.monotonic() + 10
-                while calls.futures and time.monotonic() < deadline:
-                    calls.collect(); time.sleep(.001)
-                self.assertFalse(calls.futures)
-                accepted = engine._apply_submission_bundles(fixture.context['action'], fixture.output, {},
-                    'EX-history', fixture.context, [])
-                self.assertEqual(accepted['status'], 'accepted', accepted)
-            _, _, saved = ResearchRepository(fixture.repo, fixture.identifier).load()
-            evidence = saved['executions']['EX-history']['environment_observations']
-            self.assertEqual(len(evidence), 1)
-            self.assertEqual(engine.store.read(sealed_ref), raw)
-            observation = json.loads(engine.store.read(evidence[0]['artifact_ref']))
-            self.assertEqual(observation['observation']['status'], 'verified')
-            with patch('do_math.trust_validation._observe_file', side_effect=AssertionError('status read a trust file')):
-                engine.status()
-        finally:
-            calls.close()
-            engine._calls = None
+        with patch.object(engine, '_apply', side_effect=gated_apply):
+            lake.write_bytes(b'accidentally replaced launcher')
+            engine._receive_submission(fixture.context['action'], {}, 'EX-history', fixture.context, fixture.schema,
+                                       fixture.workspace, preserved=True)
+            waiting = engine.runtime['waiting_actions'][fixture.context['action']['id']]
+            self.assertEqual((waiting['kind'], waiting['next_owner']), ('submission_publication', 'engine'))
+            self.assertEqual(waiting['detail']['environment_id'], environment['id'])
+            lake.write_bytes(original)
+            with patch.object(engine, '_receive_submission', side_effect=AssertionError('retried before a change')):
+                engine._retry_submission_publications()
+            # A user re-records after restoring the files; the record change releases the wait.
+            record_path = Path(environment['toolchain_record']['path'])
+            with fixture_setup_lean(environment['toolchain'], record_path.parent / 'smoke.lean'):
+                setup_lean.rerecord(['unused'], record_path.parent, record_path.parent / 'evidence', None)
+            engine._retry_submission_publications()
+        self.assertNotIn(fixture.context['action']['id'], engine.runtime['waiting_actions'])
+        self.assertEqual(engine.runtime['executions']['EX-history']['outcome'], 'output_accepted')
+        self.assertEqual(engine.store.read(sealed_ref), raw)
+        with patch('do_math.formal.toolchain_identity_errors', side_effect=AssertionError('status checked identity')), \
+             patch('do_math.trust_inventory.observe_fingerprint', side_effect=AssertionError('status scanned files')):
+            engine.status()

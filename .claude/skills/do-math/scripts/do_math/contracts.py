@@ -77,18 +77,18 @@ def identify_schema(schema: dict) -> dict:
     The URI hashes the canonical schema excluding its own $id. The evidence
     reference separately hashes the complete installed schema, including $id.
     """
-    from .repository import canonical_json
+    from .repository import exact_content_hash
     result = copy.deepcopy(schema)
     result.pop("$id", None)
-    digest = hashlib.sha256(canonical_json(result)).hexdigest()
+    digest = exact_content_hash(result)
     result["$id"] = "https://do-math.invalid/schemas/cli/5/sha256/" + digest
     return result
 
 
 def schema_reference(schema: dict) -> dict:
-    from .repository import canonical_json
+    from .repository import exact_content_hash
     return {"family": schema.get("x-contract-id", "do-math-cli/5"), "id": schema.get("$id"),
-            "sha256": hashlib.sha256(canonical_json(schema)).hexdigest()}
+            "sha256": exact_content_hash(schema)}
 
 
 def _schema(extra: dict[str, dict[str, Any]]) -> dict[str, Any]:

@@ -9,6 +9,7 @@ import copy
 import hashlib
 import json
 
+from .file_io import json_digest
 from .review_policy import build_review_policy, validate_scope_assessment, minimum_scope_executions
 
 
@@ -25,10 +26,6 @@ class ReviewRestorationError(ValueError):
 
 def _bytes(value):
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False).encode("utf-8")
-
-
-def _digest(value):
-    return hashlib.sha256(_bytes(value)).hexdigest()
 
 
 def review_action(action):
@@ -139,7 +136,7 @@ def start_review(proposal, reviewers, judges=3, max_rounds=3, previous=None, *, 
     actual_reviewer_slots = [slot["id"] for slot in assessment["initial_slots"]] if assessment else []
     judge_slots, max_rounds = list(policy["judge_slots"]), policy["round_limit"]
     _unique(actual_reviewer_slots + judge_slots + ["scope", "organize"], "role slot")
-    digest = _digest(proposal)
+    digest = json_digest(proposal)
     previous_reviews, turns, manifests = [], {}, {}
     lineage = proposal.get("review_lineage_id", digest)
     if previous is not None:
@@ -179,7 +176,7 @@ def start_review(proposal, reviewers, judges=3, max_rounds=3, previous=None, *, 
 
 
 def _check_proposal(cycle):
-    if _digest(cycle["proposal"]) != cycle["proposal_digest"] or cycle["revision"] != cycle["proposal"]["revision"]:
+    if json_digest(cycle["proposal"]) != cycle["proposal_digest"] or cycle["revision"] != cycle["proposal"]["revision"]:
         raise ValueError("sealed proposal changed")
 
 
@@ -237,7 +234,7 @@ def validate_review_execution(cycle, runtime, execution_id, action, output=None,
     return execution
 
 
-def validate_sealed_review(cycle, runtime, *, instance=None, excluded_execution_ids=(), read_artifact=None, _seen=()):
+def validate_sealed_review(cycle, runtime, *, instance=None, excluded_execution_ids=(), read_artifact=None, git_dir=None, _seen=()):
     """Reconstruct a conclusion using the same accepting state machine as live review.
 
     No caller-supplied approval bit substitutes for execution, source or authority
@@ -258,7 +255,7 @@ def validate_sealed_review(cycle, runtime, *, instance=None, excluded_execution_
         if previous['proposal'].get('assessment_reassessment') != cycle['proposal'].get('assessment_reassessment'):
             raise ValueError('previous review has a different judgment purpose')
         validate_sealed_review(previous, runtime, instance=instance, excluded_execution_ids=excluded_execution_ids,
-                               read_artifact=read_artifact, _seen=(*_seen, cid))
+                               read_artifact=read_artifact, git_dir=git_dir, _seen=(*_seen, cid))
     has_scope = any(e['action']['stage'] == 'scope' for e in cycle['results'].values())
     resource = validate_resource_disposition(cycle, runtime, read_artifact=read_artifact, instance=instance)
     if cycle['proposal'].get('assessment_reassessment') and not has_scope and resource is None:
@@ -304,10 +301,19 @@ def validate_sealed_review(cycle, runtime, *, instance=None, excluded_execution_
                 if sources:
                     if research_request_digest(record['question'], cycle['proposal_digest'], sources) != record['request_digest']:
                         raise ValueError('supplemental fixed source digest changed')
+                    from .repository import artifact_verified, verify_artifact
                     for source in sources:
-                        raw = _bytes(source['inline']) if 'inline' in source else (read_artifact(source['artifact_ref'], source['snapshot']) if read_artifact else None)
-                        if raw is not None and (len(raw) != source['bytes'] or hashlib.sha256(raw).hexdigest() != source['sha256']):
-                            raise ValueError('supplemental source bytes changed')
+                        if 'inline' in source:
+                            raw = _bytes(source['inline'])
+                            if len(raw) != source['bytes'] or hashlib.sha256(raw).hexdigest() != source['sha256']:
+                                raise ValueError('supplemental source bytes changed')
+                        elif read_artifact and (git_dir is None or not artifact_verified(git_dir, source['artifact_ref'], source['sha256'], source['bytes'])):
+                            # A sealed row is compared once per process (contract S3).
+                            try:
+                                verify_artifact(git_dir, source['artifact_ref'], read_artifact(source['artifact_ref'], source['snapshot']),
+                                                source['sha256'], source['bytes'])
+                            except ValueError as mismatch:
+                                raise ValueError('supplemental source bytes changed') from mismatch
                     generated.update(source_records=copy.deepcopy(sources), request_digest=record['request_digest'])
                 elif generated['request_digest'] != record['request_digest']:
                     raise ValueError('supplemental request digest changed')
@@ -390,7 +396,7 @@ def _verified_transcript(turns, manifests):
                 and isinstance(manifests[position], dict)
                 and {'sha256', 'bytes', 'index', 'proposal_digest', 'ref'} <= manifests[position].keys()
                 and manifests[position]['index'] == position
-                and _digest(turns[position]) == manifests[position].get('sha256')
+                and json_digest(turns[position]) == manifests[position].get('sha256')
                 and len(_bytes(turns[position])) == manifests[position].get('bytes')):
             verified.append((turns[position], manifests[position]))
         else:
@@ -426,7 +432,7 @@ def _replay_replacement(replay, cycle, action, instance, runtime):
     verified, omitted = _verified_transcript(archive['turns'], archive['manifest'])
     sealed_input = _replacement_sealed_input(replay, [manifest for _, manifest in verified])
     if (omitted != authorization['omitted_indices'] or omitted != archive['omitted_indices']
-            or _digest(sealed_input) != authorization['sealed_input_sha256']):
+            or json_digest(sealed_input) != authorization['sealed_input_sha256']):
         raise ValueError('replacement sealed input changed')
     replay['blocked_actions'][_key(action)] = index
     replay['replacement_actions'][_key(action)] = copy.deepcopy(authorization)
@@ -436,7 +442,7 @@ def _replay_replacement(replay, cycle, action, instance, runtime):
 def replacement_authority(instance, runtime, cycle, replacement, execution_id=None):
     """One authority check for live admission/acceptance and sealed reconstruction."""
     from .governance import authorize_review_replacement
-    from .knowledge_records import digest
+    from .repository import exact_content_hash
     binding = cycle.get('input_bindings', {}).get(execution_id, {})
     consumed = binding.get('delegation_authority') or cycle.get('execution_accounting', {}).get(
         'admissions', {}).get(execution_id, {}).get('delegation_authority')
@@ -444,7 +450,7 @@ def replacement_authority(instance, runtime, cycle, replacement, execution_id=No
         from .delegations import validate_delegation
         try:
             app = runtime['delegation_applications'][consumed['application_id']]
-            if digest(app) != consumed['application_sha256'] or not app.get('application'):
+            if exact_content_hash(app) != consumed['application_sha256'] or not app.get('application'):
                 raise ValueError('applied delegation receipt changed')
             if replacement.get('case', {}).get('application_id') != app['id'] or replacement.get('delegation_id') != app['delegation_id']:
                 raise ValueError('replacement names another applied delegation')
@@ -458,7 +464,7 @@ def replacement_authority(instance, runtime, cycle, replacement, execution_id=No
                 if instance['governance_sources'].get(basis[name]['id']) != basis[name]:
                     raise ValueError('delegation source changed after admission')
             for judgment in app['judgments'].values():
-                if digest(runtime['executions'][judgment['execution_id']]) != consumed['judgment_executions'][judgment['execution_id']]:
+                if exact_content_hash(runtime['executions'][judgment['execution_id']]) != consumed['judgment_executions'][judgment['execution_id']]:
                     raise ValueError('delegation judgment execution changed after admission')
         except (KeyError, ValueError) as error:
             return {'allowed': False, 'reason': str(error)}
@@ -603,9 +609,9 @@ def validate_resource_disposition(cycle, runtime, *, read_artifact=None, instanc
 
 def research_request_digest(question, proposal_digest, sources):
     """Bind a fixed investigation to its question, proposal edition and exact source bytes."""
-    from .repository import canonical_json
-    return hashlib.sha256(canonical_json({'question': question, 'proposal_digest': proposal_digest,
-        'sources': [{key: source[key] for key in ('ref', 'sha256', 'bytes')} for source in sources]})).hexdigest()
+    from .repository import exact_content_hash
+    return exact_content_hash({'question': question, 'proposal_digest': proposal_digest,
+        'sources': [{key: source[key] for key in ('ref', 'sha256', 'bytes')} for source in sources]})
 
 
 def research_schema():
@@ -654,7 +660,7 @@ def defer_for_research(cycle, action, output, requests, execution_id, *, limit=3
         if identifier in n.setdefault("research", {}): raise ValueError("research request execution was already used")
         payload = {"question": request["question"], "source_refs": request["source_refs"],
                    "proposal_digest": n["proposal_digest"]}
-        n["research"][identifier] = {"id": identifier, **copy.deepcopy(payload), "request_digest": _digest(payload),
+        n["research"][identifier] = {"id": identifier, **copy.deepcopy(payload), "request_digest": json_digest(payload),
             "action": copy.deepcopy(action), "requested_by": execution_id, "status": "pending", "result": None}
         identifiers.append(identifier)
     n.setdefault("deferred_actions", {})[_key(action)] = identifiers
@@ -698,7 +704,7 @@ def _add_findings(cycle, action, output):
     findings = output.get("findings", output.get("new_findings", []))
     for finding in findings:
         ref = {**{k: action[k] for k in ('stage', 'slot', 'round')}, 'id': finding['id']}
-        key = _digest(ref)
+        key = json_digest(ref)
         cycle["findings"][key] = {"ref": ref, "finding": copy.deepcopy(finding)}
         cycle["pending_findings"].append(key)
     # Questions and uncompleted scope must remain explicit input to organization.
@@ -707,7 +713,7 @@ def _add_findings(cycle, action, output):
         questions.append("Required initial review scope or judgment remains unresolved.")
     for i, question in enumerate(questions):
         ref = {**{k: action[k] for k in ('stage', 'slot', 'round')}, 'id': f'__question_{i}'}
-        key = _digest(ref)
+        key = json_digest(ref)
         cycle["findings"][key] = {"ref": ref, "finding": {"id": ref["id"],
             "statement": question, "evidence": output["used_sources"]}}
         cycle["pending_findings"].append(key)
@@ -728,7 +734,7 @@ def _organize(cycle, output):
         refs = issue["finding_refs"]
         if not refs:
             raise ValueError("issue requires original finding references")
-        keys = [_digest(ref) for ref in refs]
+        keys = [json_digest(ref) for ref in refs]
         if any(key not in cycle["pending_findings"] for key in keys):
             raise ValueError("organizer forged or reused an original finding")
         _unique(keys, "finding reference")
@@ -827,7 +833,7 @@ def validate_visible_output(context, action, output, *, requesting_research=Fals
     _validate_content(context, action, output)
     view = {"issues": copy.deepcopy(context["issues"]), "round": action["round"],
             "answer_requests": list(context["answer_requests"]), "reviewer_slots": context["reviewer_slots"],
-            "pending_findings": [_digest(row["ref"]) for row in context["pending_findings"]], "history": []}
+            "pending_findings": [json_digest(row["ref"]) for row in context["pending_findings"]], "history": []}
     if action["stage"] == "organize":
         _organize(view, output)
     elif action["stage"] == "answer":
@@ -1139,7 +1145,7 @@ def authorize_record_replacement(cycle, action, instance, *, runtime, grant_id=N
         'action': replacement, 'recovery_event': index, 'grant_id': authority['grant_id'],
         'grant_sha256': authority['grant_sha256'], 'authority_request': request,
         'authority': copy.deepcopy(authority), 'delegation_id': delegation_id, 'case': copy.deepcopy(case),
-        'sealed_input_sha256': _digest(sealed_input), 'omitted_indices': omitted}
+        'sealed_input_sha256': json_digest(sealed_input), 'omitted_indices': omitted}
     n.setdefault('history', []).append({'event': 'replacement_authorized', 'action': expected,
                                        'recovery_event': index, 'grant_id': authority['grant_id']})
     return {'disposition': 'replacement_ready', 'cycle': n, 'action': copy.deepcopy(replacement),
@@ -1161,10 +1167,10 @@ def validate_transcript(cycle, slot):
                 or entry['index'] != position):
             raise ReviewRestorationError('transcript restoration manifest is incomplete', cause_kind='invalid_manifest',
                 coordinate={'slot': slot, 'index': position}, verified_indices=range(position))
-        if _digest(message) != entry["sha256"] or len(_bytes(message)) != entry['bytes']:
+        if json_digest(message) != entry["sha256"] or len(_bytes(message)) != entry['bytes']:
             raise ReviewRestorationError('transcript bytes changed', cause_kind='content_mismatch',
                 coordinate={'slot': slot, 'index': position}, expected_sha256=entry['sha256'],
-                observed_sha256=_digest(message), verified_indices=range(position))
+                observed_sha256=json_digest(message), verified_indices=range(position))
     return turns, manifests
 
 

@@ -2,6 +2,7 @@
 from copy import deepcopy
 
 from . import knowledge, planning
+from .repository import exact_content_hash
 
 
 def capture_targets(instance, runtime, identifiers, *, required=False, source_ref=None):
@@ -350,7 +351,7 @@ def bind_repetition_bases(instance,runtime,action):
         # The preserved original input survives new import/action IDs.
         common = {'instance': instance.get('id'), 'input_id': action.get('target')}
         lineage='import_rework'
-    action['repetition_bases']={lineage:planning._hash(common)}
+    action['repetition_bases']={lineage:exact_content_hash(common)}
 
 
 def record_execution_outcome(instance, runtime, action, output, execution_id, *, accepted):
@@ -367,7 +368,7 @@ def record_execution_outcome(instance, runtime, action, output, execution_id, *,
             'output_contract':'rejected','publication_failure':'waiting',
             'provider_failure':'transport_failure','provider_error':'transport_failure',
             'semantic_rejection':'rejected','plan_disposition_invalid':'rejected','submission_semantic':'rejected'}.get(failure,'unclassified_failure')
-        basis=action.get('repetition_bases',{}).get('selection_failure') or planning._hash({
+        basis=action.get('repetition_bases',{}).get('selection_failure') or exact_content_hash({
             'instance':instance['id'],'population':execution.get('ready_task_ids',[]),'basis':execution.get('decision_basis',{})})
         record_repetition(instance,runtime,lineage='selection_failure',lineage_id=basis,event_ref=execution_id,
                           outcome=result,owner='ai',reason=reason)
@@ -375,7 +376,7 @@ def record_execution_outcome(instance, runtime, action, output, execution_id, *,
     if role=='research_preparation' and not preparation_only(action):
         preserved=[t for t in runtime.get('tasks',{}).values() if t.get('producer_execution')==execution_id or
                    any(h.get('execution_id')==execution_id for h in t.get('revision_history',[]))]
-        basis=action.get('repetition_bases',{}).get('exhaustion_empty') or planning._hash({
+        basis=action.get('repetition_bases',{}).get('exhaustion_empty') or exact_content_hash({
             'instance':instance['id'],'governance':instance.get('governance', {}),
             'sources':instance.get('sources',[])})
         observed_at = execution.get('observed_at') or execution.get('started_at')

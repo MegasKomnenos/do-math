@@ -7,25 +7,18 @@ sys.path[:0] = [str(SCRIPTS), str(SCRIPTS / 'tests')]
 import test_input_recovery as input_fixtures
 from do_math.engine import ResearchEngine
 from do_math import maintenance_gate
-from do_math.trust_validation import verify_environment_files
+from do_math.trust_validation import check_environment
 
-def cancelled_activation():
+def interrupted_activation():
     fixture = input_fixtures.InputRecoveryPublicTests()
     fixture.setUp()
     try:
         owner = ResearchEngine(fixture.repo, fixture.identifier)
         old = owner.instance['trust_environments'][owner.instance['active_trust_environment']]
-        chain = deepcopy(old['toolchain']); chain['version'] = 'audit-next-version'
-        from research_fixtures import validation_fixture
-        from do_math.repository import exact_content_hash
-        manifest = deepcopy(old['manifest'])
-        validation = validation_fixture(chain, {k:manifest[k] for k in ('scope','files')},
-                                        Path(manifest['validation']['record']['source']))
-        manifest['validation'] = {'record':validation,'sha256':exact_content_hash(validation)}
-        owner._apply_extended_control({'id':'UC-audit-register', 'action':'trust', 'origin':'user',
-            'config':{'operation':'register', 'toolchain':chain, 'manifest':manifest,
-                      'allowed_axioms':deepcopy(old['allowed_axioms'])}})
-        env = next(k for k, v in owner.instance['trust_environments'].items() if v['toolchain'] == chain)
+        from research_fixtures import trust_fixture
+        request = trust_fixture(fixture.root / 'next-trust', old['toolchain']['configured_command'])
+        owner._apply_extended_control({'id':'UC-audit-register', 'action':'trust', 'origin':'user', 'config':request})
+        env = next(k for k, v in owner.instance['trust_environments'].items() if v['toolchain'] == request['toolchain'])
         owner._apply_extended_control({'id':'UC-audit-transition', 'action':'trust', 'origin':'user',
             'config':{'operation':'transition', 'env_id':env}})
         owner._save()
@@ -35,9 +28,9 @@ def cancelled_activation():
         owner._live_execution_ids.add(execution_id)
         maintenance_gate.apply_control(owner.runtime, {'id':'UC-fence', 'action':'quiesce', 'origin':'user',
             'text':'audit controlled interruption', 'created_at':owner.runtime['last_observed_utc']})
-        assert arguments['should_stop']()
-        result = verify_environment_files(**arguments)
-        assert result['status'] == 'cancelled', result
+        # The short check completes; the fence found after it interrupts the activation.
+        result = check_environment(**arguments)
+        assert result['status'] == 'verified', result
         owner._local_call_returned(execution_id, result)
         try: generator.send(result)
         except StopIteration: pass
@@ -54,7 +47,7 @@ def cancelled_activation():
         second_id, second_args = next(second_generator)
         successor = deepcopy(owner.runtime['executions'][second_id])
         owner._live_execution_ids.add(second_id)
-        second_result = verify_environment_files(**second_args)
+        second_result = check_environment(**second_args)
         owner._local_call_returned(second_id, second_result)
         try: second_generator.send(second_result)
         except StopIteration: pass
@@ -74,8 +67,8 @@ from test_categories import test_group
 
 @test_group('integration')
 class TrustContinuationTests(unittest.TestCase):
-    def test_cancelled_activation_preserves_explicit_lineage_through_save_and_retry(self):
-        result = cancelled_activation()
+    def test_interrupted_activation_preserves_explicit_lineage_through_save_and_retry(self):
+        result = interrupted_activation()
         for field in ('queued_continuation', 'persisted_action_continuation', 'successor_continuation'):
             self.assertEqual(result[field], result['first_execution'], field)
         self.assertTrue(result['same_owner_activity'])

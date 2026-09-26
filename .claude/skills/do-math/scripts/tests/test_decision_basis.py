@@ -7,7 +7,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.input_basis import capture_decision_basis, decision_basis_changes
 from do_math import integration, planning, revisions
 from research_fixtures import candidate, contract_review, charter_record
-from do_math.governance import initialize_governance, preserve_source, digest
+from do_math.governance import initialize_governance, preserve_source
+from do_math.repository import exact_content_hash
 from do_math.knowledge_records import create_candidate
 
 
@@ -85,7 +86,7 @@ class BasisTests(unittest.TestCase):
         self.instance = initialize_governance(
             {"feature_version": 5, "knowledge": {}, "sources": []}, source,
             {"id": "DC-basis-fixture", "actor": "user", "source_ref": source["id"],
-             "source_sha256": source["sha256"], "record_hashes": {charter["id"]: digest(charter)}},
+             "source_sha256": source["sha256"], "record_hashes": {charter["id"]: exact_content_hash(charter)}},
             [charter])
         self.runtime = {"tasks": {"A": {**candidate("A"), "id": "A", "revision": 1, "question": "original", "status": "planned", "results": [{"report": "first"}], "inputs": []}}, "queue": [], "executions": {}, "waiting_actions": {}}
 

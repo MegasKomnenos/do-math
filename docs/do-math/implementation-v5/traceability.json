@@ -4202,17 +4202,11 @@
           "observations": []
         },
         {
-          "coordinate": ".claude/skills/do-math/scripts/tests/test_redesign_PROFILES.py::Audit1Tests.test_machine_profile_changes_with_command_deadline_and_tool_bytes",
-          "asserts": "명령·시간 한도·실제 도구 파일 바이트 변경에 프로필 해시가 달라지고 pinned command/fingerprint 소비기가 바이트 변조를 거부한다.",
+          "coordinate": ".claude/skills/do-math/scripts/tests/test_redesign_PROFILES.py::Audit1Tests.test_machine_profile_pins_the_command_and_the_verifier_checks_tool_bytes",
+          "asserts": "명령 변경에 프로필 해시가 달라지고, 도구 파일 바이트 변경은 프로필이 아니라 승인된 판본 식별을 대조하는 검사기가 컴파일 전에 거부한다.",
           "boundary": [
             "Actual local domain/storage APIs; model/provider/OS observations are fixtures unless stated",
             "Fixed-run outcomes are assertion-scoped, not a whole requirement pass"
-          ],
-          "observations": [
-            {
-              "run_id": "EVIDENCE-owner-assertions-01",
-              "outcome": "passed"
-            }
           ]
         },
         {
@@ -4238,13 +4232,7 @@
       "gaps": [
         "runner-worker의 exact control/workspace binding 좌표는 존재하지만 고정 호환 실행은 아직 붙지 않았다. 모든 요청 종류의 조건부 schema 음성 조합도 별도다."
       ],
-      "execution": {
-        "state": "partial",
-        "run_ids": [
-          "EVIDENCE-owner-assertions-01"
-        ],
-        "scope": "각 인용 시험의 가장 나중에 동결된 실행만 요약하며 과거 관찰은 evidence.observations에 보존한다. 서로 다른 사본의 부분 통과를 한 판본의 기능 통과로 합치지 않는다."
-      },
+      "execution": {"state": "not_run", "run_ids": [], "scope": "인용한 도구 바이트 시험은 판본 식별 검사로 개정되며 이름이 바뀌었고, 동결된 실행은 새 시험을 관찰하지 않았다. 옛 시험의 관찰은 현재 판본 통과로 이월되지 않는다."},
       "unproven": [
         {
           "gap_indexes": [
@@ -5256,17 +5244,11 @@
           "observations": []
         },
         {
-          "coordinate": ".claude/skills/do-math/scripts/tests/test_redesign_PROFILES.py::Audit1Tests.test_machine_profile_changes_with_command_deadline_and_tool_bytes",
-          "asserts": "명령·시간 한도·실제 도구 파일 바이트 변경에 프로필 해시가 달라지고 pinned command/fingerprint 소비기가 바이트 변조를 거부한다.",
+          "coordinate": ".claude/skills/do-math/scripts/tests/test_redesign_PROFILES.py::Audit1Tests.test_machine_profile_pins_the_command_and_the_verifier_checks_tool_bytes",
+          "asserts": "명령 변경에 프로필 해시가 달라지고, 도구 파일 바이트 변경은 프로필이 아니라 승인된 판본 식별을 대조하는 검사기가 컴파일 전에 거부한다.",
           "boundary": [
             "Actual local domain/storage APIs; model/provider/OS observations are fixtures unless stated",
             "Fixed-run outcomes are assertion-scoped, not a whole requirement pass"
-          ],
-          "observations": [
-            {
-              "run_id": "EVIDENCE-owner-assertions-01",
-              "outcome": "passed"
-            }
           ]
         },
         {
@@ -23258,17 +23240,11 @@
           "observations": []
         },
         {
-          "coordinate": ".claude/skills/do-math/scripts/tests/test_redesign_PROFILES.py::Audit1Tests.test_machine_profile_changes_with_command_deadline_and_tool_bytes",
-          "asserts": "명령·시간 한도·실제 도구 파일 바이트 변경에 프로필 해시가 달라지고 pinned command/fingerprint 소비기가 바이트 변조를 거부한다.",
+          "coordinate": ".claude/skills/do-math/scripts/tests/test_redesign_PROFILES.py::Audit1Tests.test_machine_profile_pins_the_command_and_the_verifier_checks_tool_bytes",
+          "asserts": "명령 변경에 프로필 해시가 달라지고, 도구 파일 바이트 변경은 프로필이 아니라 승인된 판본 식별을 대조하는 검사기가 컴파일 전에 거부한다.",
           "boundary": [
             "Actual local domain/storage APIs; model/provider/OS observations are fixtures unless stated",
             "Fixed-run outcomes are assertion-scoped, not a whole requirement pass"
-          ],
-          "observations": [
-            {
-              "run_id": "EVIDENCE-owner-assertions-01",
-              "outcome": "passed"
-            }
           ]
         },
         {

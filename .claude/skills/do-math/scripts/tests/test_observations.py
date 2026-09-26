@@ -55,6 +55,33 @@ class Tests(unittest.TestCase):
             self.assertEqual(observations.read_checkpoint(self.ws)["status"], "invalid")
         self.assertLessEqual(checks.call_count, 1)
 
+    def test_live_polling_rereads_checkpoint_and_rules_only_after_a_change(self):
+        import os
+        from do_math import file_io
+        checkpoint = self.ws / "checkpoint.json"
+        rules = self.ws / "observation-rules.json"
+        self.write(evidence_paths=["proof.txt"])
+        rules.write_text("{not json", encoding="utf-8")
+        # Fresh files cannot age their birth time; treat any past fingerprint as settled.
+        with patch.object(file_io, "RACY_NS", 0), \
+                patch.object(observations, "read_checkpoint", wraps=observations.read_checkpoint) as reads, \
+                patch.object(observations, "read_bytes_shared", wraps=observations.read_bytes_shared) as raw:
+            self.assertEqual(self.t._changed_checkpoint()["status"], "invalid")
+            # An invalid read is not remembered: its named evidence may appear later.
+            (self.ws / "proof.txt").write_bytes(b"evidence")
+            self.assertEqual(self.t._changed_checkpoint()["status"], "valid")
+            self.assertEqual(self.t._changed_checkpoint()["status"], "unchanged")
+            self.assertEqual(reads.call_count, 2)
+            self.write(evidence_paths=["proof.txt"], next_step="later")
+            later = checkpoint.stat().st_mtime_ns + 10 ** 9
+            os.utime(checkpoint, ns=(later, later))
+            self.assertEqual(self.t._changed_checkpoint()["status"], "valid")
+            self.assertEqual(reads.call_count, 3)
+            self.assertEqual(len(self.t._rule_file_events()), 1)
+            before = raw.call_count
+            self.assertEqual(self.t._rule_file_events(), [])
+            self.assertEqual(raw.call_count, before, "unchanged rules were reread")
+
     def test_duplicate_checkpoint_keys_are_invalid_live_and_at_final_capture(self):
         from do_math.submission import _captured_checkpoint
         self.write(current_claim="last valid", counters={"attempts": 1})

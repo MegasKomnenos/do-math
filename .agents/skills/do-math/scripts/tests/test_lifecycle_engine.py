@@ -78,9 +78,8 @@ class FakeEngine(RevisionEngineMixin,LifecycleEngineMixin,SchedulerMixin,ReviewE
     def environment(self,name,active=False):
         from research_fixtures import trust_fixture
         request=trust_fixture(self.root/name,['synthetic-lean',name])
-        chain,manifest=request['toolchain'],request['manifest']
-        self._trust_control({'operation':'register','toolchain':chain,'manifest':manifest,
-                             'allowed_axioms':sorted(AXIOMS)},'UI-env-'+name)
+        chain=request['toolchain']
+        self._trust_control(request,'UI-env-'+name)
         eid=next(eid for eid,e in self.instance['trust_environments'].items() if e['toolchain']==chain)
         # Explicit synthetic profile edition for this synthetic toolchain.
         configured = profiles.build_profiles({**self.instance['config'], 'lean_command':chain['configured_command']})
@@ -90,9 +89,9 @@ class FakeEngine(RevisionEngineMixin,LifecycleEngineMixin,SchedulerMixin,ReviewE
                 self.instance['role_profile_refs']['trust_check'] = [profiles.profile_ref(profile)]
         if active:
             self._trust_control({'operation':'transition','env_id':eid},'UI-transition-'+name)
-            from do_math.trust_validation import verify_environment_files
+            from do_math.trust_validation import check_environment
             self._finish_trust_transition(next(reversed(self.runtime['trust_transitions'])),
-                                          verify_environment_files(self.instance['trust_environments'][eid]))
+                check_environment(self.instance['trust_environments'][eid], self.runtime['trust_bindings'][eid]))
         return eid
     def activate(self):
         self.grant('GR-init',True); self.grant('GR-research')
@@ -190,10 +189,11 @@ class PublicInitializationRunner:
         on_started({'job_name':kwargs['launch_ticket']['job_name']})
         output = seal_response(intent_response(context), context, workspace)
         (workspace/'draft.json').write_bytes(canonical_json(output))
-        submission.request_control(workspace, 'draft.json', kind='submit_intent', wait_seconds=0, binding=control_binding)
-        # Pump the real receipt. submit_intent closes further research authority;
-        # a true stop signal here is the expected barrier, not a failed result.
-        should_stop()
+        delivery = submission.request_control(workspace, 'draft.json', kind='submit_intent', wait_seconds=0, binding=control_binding)
+        # The owner loop receives the request on its next pass. submit_intent closes
+        # further research authority; the flag it sets is the expected barrier.
+        from do_math.control_transport import ControlTransport
+        ControlTransport.wait_receipt(control_binding, delivery['request_id'], 60)
         return {'status':'completed','output':output,'usage':{},'error':None}
 
 
@@ -493,10 +493,10 @@ class LifecycleTests(unittest.TestCase):
                     e._complete_initial_intent(e.instance['lifecycle']['input_id'])
 
     def test_formal_requires_preapproved_environment(self):
-        e=self.engine; env=e._formal_environment(); result=e.verification('x',['x'],env['toolchain'])
-        self.assertEqual(e._bind_formal_environment(result)['trust_environment_id'],env['id'])
+        e=self.engine; env=e._formal_environment()
+        self.assertEqual(env['id'],e.instance['active_trust_environment'])
         e.instance['active_trust_environment']=None
-        with self.assertRaises(ValueError): e._bind_formal_environment(result)
+        with self.assertRaises(ValueError): e._formal_environment()
     def transition(self):
         e=self.engine; old=e.instance['active_trust_environment']; e.knowledge('K1'); e.knowledge('K2')
         new=e.environment('next'); e.control('trust',{'operation':'transition','env_id':new})
@@ -537,10 +537,50 @@ class LifecycleTests(unittest.TestCase):
         e=self.engine; old,new,tid=self.transition(); a=e.machine('trust_check')
         calls=len(e.formal_calls); e._run_trust_check(a); self.assertEqual(len(e.formal_calls),calls)
         e.machine('trust_check'); e.machine('trust_activate'); self.assertEqual(e.instance['active_trust_environment'],new)
-    def test_manifest_change_blocks_trust_check(self):
+    def olean(self,environment_id):
+        return Path(self.engine.instance['trust_environments'][environment_id]['toolchain']['executable']).parents[1]/'lib/lean/Init/Prelude.olean'
+    def test_changed_olean_blocks_trust_check_before_compiling(self):
         e=self.engine; old,new,tid=self.transition()
-        Path(e.instance['trust_environments'][new]['manifest']['files'][0]['path']).write_bytes(b'changed')
-        e.machine('trust_check'); self.assertEqual(e.runtime['trust_transitions'][tid]['results']['K1']['status'],'failed')
+        self.olean(new).write_bytes(b'changed module bytes')
+        e.machine('trust_check')
+        result=e.runtime['trust_transitions'][tid]['results']['K1']
+        self.assertEqual(result['status'],'failed')
+        self.assertEqual(result['error_kind'],'trust_environment')
+        self.assertIn('olean fingerprint differs',result['reason'])
+        self.assertEqual(result['environment_check']['changed_files'],['toolchain/lib/lean/Init/Prelude.olean'])
+        self.assertEqual(e.formal_calls,[])
+    def test_registration_reads_the_shared_record_without_scanning_files(self):
+        from research_fixtures import trust_fixture
+        e=self.engine; request=trust_fixture(self.engine.root/'shared',['synthetic-lean','shared'])
+        with patch('do_math.trust_inventory.observe_fingerprint',side_effect=AssertionError('registration scanned files')), \
+             patch('do_math.trust_inventory.content_hashes',side_effect=AssertionError('registration hashed files')):
+            e._trust_control(request,'UI-shared-one'); e._trust_control(request,'UI-shared-two')
+        shared=[eid for eid,row in e.instance['trust_environments'].items() if row['toolchain']==request['toolchain']]
+        self.assertEqual(len(shared),2)
+        for eid in shared:
+            self.assertEqual(e.instance['trust_environments'][eid]['toolchain_record'],request['toolchain_record'])
+            self.assertEqual(e.runtime['trust_bindings'][eid],request['binding'])
+        changed={**request,'binding':{**request['binding'],'fingerprint_sha256':'0'*64}}
+        with self.assertRaisesRegex(ValueError,'differs from its toolchain record'): e._trust_control(changed,'UI-shared-bad')
+    def test_rerecorded_baseline_is_followed_once_with_an_event(self):
+        import os, setup_lean
+        from research_fixtures import fixture_setup_lean
+        e=self.engine; old,new,tid=self.transition()
+        environment=e.instance['trust_environments'][new]; before=deepcopy(e.runtime['trust_bindings'][new])
+        path=self.olean(new); info=os.stat(path); os.utime(path,ns=(info.st_atime_ns,info.st_mtime_ns+10**9))
+        record_path=Path(environment['toolchain_record']['path'])
+        with fixture_setup_lean(environment['toolchain'],self.engine.root/'smoke.lean'):
+            recorded=setup_lean.rerecord(['unused'],record_path.parent,self.engine.root/'evidence',None)
+        e.machine('trust_check'); e.machine('trust_check'); e.machine('trust_activate')
+        self.assertEqual(e.instance['active_trust_environment'],new)
+        self.assertEqual(e.runtime['trust_bindings'][new],recorded['binding'])
+        events=[row for row in e.runtime['events'] if row['kind']=='trust_environment_rebound']
+        self.assertEqual(len(events),1)
+        self.assertEqual((events[0]['previous'],events[0]['current']),(before,recorded['binding']))
+        # Rebinding changed only the runtime binding; activation adds its status and receipt.
+        activated=e.instance['trust_environments'][new]
+        self.assertEqual(environment,{**{k:v for k,v in activated.items() if k!='validation_receipt'},'status':'registered'})
+        self.assertEqual(activated['validation_receipt']['binding'],recorded['binding'])
     def test_clock_regression_precedes_authority(self):
         e=self.engine; e.runtime['last_observed_utc']=(e.current_time+timedelta(seconds=1)).isoformat()
         before=deepcopy(e.instance['grants'])

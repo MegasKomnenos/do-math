@@ -1,12 +1,8 @@
 """Case-scoped reuse of user authority, with blind independent judgments."""
 from copy import deepcopy
 from datetime import datetime, timezone
-import hashlib
-import json
 
-
-def _hash(value):
-    return hashlib.sha256(json.dumps(value, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode()).hexdigest()
+from .file_io import json_digest
 
 
 def _now(value=None):
@@ -99,7 +95,7 @@ def _basis(instance, runtime, delegation_id, case, now_iso=None):
 
 def prepare_application(instance, runtime, delegation_id, case, *, now_iso=None):
     basis = _basis(instance, runtime, delegation_id, case, now_iso)
-    input_sha = _hash(basis)
+    input_sha = json_digest(basis)
     identifier = "DA-" + input_sha[:24]
     record = {"id": identifier, "delegation_id": delegation_id, "basis": basis, "input_sha256": input_sha, "judgments": {}}
     existing = runtime.setdefault("delegation_applications", {}).get(identifier)
@@ -132,7 +128,7 @@ def record_judgment(runtime, application_id, output, *, execution_id, stage):
     validate_independent_execution(runtime,execution_id,author_ids)
     if output.get("input_sha256") != record["input_sha256"] or output.get("decision") not in {"within_scope", "outside_scope", "unresolved"} or not isinstance(output.get("reason"), str) or not output["reason"].strip():
         raise ValueError("judgment needs current input, verdict, reasons")
-    record["judgments"][stage] = {"execution_id": execution_id, "output": deepcopy(output), "sha256": _hash(output)}
+    record["judgments"][stage] = {"execution_id": execution_id, "output": deepcopy(output), "sha256": json_digest(output)}
     return deepcopy(record)
 
 
@@ -142,8 +138,8 @@ def _checked(instance, runtime, application_id, now_iso=None):
     basis = _basis(instance, runtime, record["delegation_id"], record["basis"]["case"], now_iso)
     receipt = record.get("application", {})
     expected = receipt.get("post_basis_sha256",record["input_sha256"])
-    if receipt and receipt.get("sha256") != _hash({k:v for k,v in receipt.items() if k != "sha256"}): raise ValueError("delegation receipt changed")
-    if _hash(basis) != expected or _hash(record["basis"]) != record["input_sha256"]: raise ValueError("delegation application stale")
+    if receipt and receipt.get("sha256") != json_digest({k:v for k,v in receipt.items() if k != "sha256"}): raise ValueError("delegation receipt changed")
+    if json_digest(basis) != expected or json_digest(record["basis"]) != record["input_sha256"]: raise ValueError("delegation application stale")
     judgments = record["judgments"]
     if set(judgments) != {"interpret", "check"} or len({j["execution_id"] for j in judgments.values()}) != 2: raise ValueError("two independent judgments required")
     from .governance import validate_independent_execution
@@ -152,7 +148,7 @@ def _checked(instance, runtime, application_id, now_iso=None):
         execution = runtime.get("executions", {}).get(judgment["execution_id"], {})
         validate_independent_execution(runtime, judgment["execution_id"],
             record["basis"]["original_decision"].get("author_execution_ids", []))
-        if (judgment["sha256"] != _hash(judgment["output"]) or judgment["output"]["decision"] != "within_scope"
+        if (judgment["sha256"] != json_digest(judgment["output"]) or judgment["output"]["decision"] != "within_scope"
                 or judgment["output"].get("input_sha256") != record["input_sha256"]
                 or execution.get("role") != "intent_interpretation"
                 or _judgment_input_hash(execution) != record["input_sha256"]):
@@ -179,7 +175,7 @@ def apply_application(instance, runtime, application_id, *, apply_effect, now_is
         if result.get(family) != instance.get(family): raise ValueError("delegated application cannot alter authority")
     receipt = {"status": "applied", "application_id": application_id, "input_sha256": record["input_sha256"],
                "original_decision_id": record["basis"]["original_decision"]["id"], "effect": deepcopy(record["basis"]["case"]["effect"])}
-    receipt["post_basis_sha256"] = _hash(_basis(result,state,record["delegation_id"],record["basis"]["case"],now_iso))
-    receipt["sha256"] = _hash(receipt)
+    receipt["post_basis_sha256"] = json_digest(_basis(result,state,record["delegation_id"],record["basis"]["case"],now_iso))
+    receipt["sha256"] = json_digest(receipt)
     state["delegation_applications"][application_id]["application"] = receipt
     return result, state, receipt

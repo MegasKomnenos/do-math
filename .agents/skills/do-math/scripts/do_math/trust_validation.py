@@ -1,244 +1,176 @@
-"""Pure manifest contracts and cancellable, bounded full-scope file observation."""
-from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
+"""Instance trust environments: lexical contracts and live checks against toolchain records.
+
+An environment copies the identity of one shared toolchain record and names
+the record file. The runtime binding names the record baseline whose olean
+fingerprint this instance last accepted. Checks cover accidental change only;
+they do not isolate the checker from a writer with the same OS identity.
+"""
 from copy import deepcopy
-from datetime import datetime, timezone
-import hashlib
-import os
 from pathlib import Path
 import re
-import threading
-import stat
 
-from .operation_trace import phase
+from .file_io import file_fingerprint, fingerprint_json
 
-ROLES = {'lean_binary', 'lean_source', 'lake_binary', 'mathlib_source', 'mathlib_build', 'checker'}
 AXIOMS = ('propext', 'Classical.choice', 'Quot.sound')
 _AXIOM_SET = frozenset(AXIOMS)
-_scan_gate = threading.BoundedSemaphore(1)
+ENVIRONMENT_FIELDS = {'id', 'status', 'toolchain', 'allowed_axioms', 'source_ref', 'toolchain_record'}
+OPTIONAL_FIELDS = {'validation_receipt', 'invalidated_reason'}
+BINDING_FIELDS = ('baseline', 'fingerprint_sha256', 'content_sha256', 'validation_sha256')
+REGISTER_FIELDS = {'operation', 'toolchain', 'allowed_axioms', 'toolchain_record', 'binding'}
+_HASH = re.compile('[0-9a-f]{64}')
+_RECORD_ID = re.compile('TC-[0-9a-f]{64}')
 
 
-def _strings(value):
-    return isinstance(value, list) and all(isinstance(item, str) and item for item in value)
+def binding_errors(binding):
+    if (not isinstance(binding, dict) or set(binding) != set(BINDING_FIELDS)
+            or type(binding['baseline']) is not int or binding['baseline'] < 0
+            or any(not isinstance(binding[k], str) or not _HASH.fullmatch(binding[k]) for k in BINDING_FIELDS[1:])):
+        return ['trust binding requires a baseline index and its fingerprint, content and validation digests']
+    return []
 
 
-def manifest_structure_errors(manifest):
-    """Small structural envelope; per-file contracts retain their immutable cache."""
-    if not isinstance(manifest, dict):
-        return ['trust manifest must be an object']
-    errors = []
-    if set(manifest) != {'command', 'foundation_profile', 'scope', 'files', 'validation'}:
-        errors.append('trust manifest fields differ from the current contract')
-    if not _strings(manifest.get('command')) or not manifest.get('command'):
-        errors.append('trust manifest command must be a nonempty argv')
-    if not isinstance(manifest.get('files'), list):
-        errors.append('trust manifest files must be a list')
-    foundation = manifest.get('foundation_profile')
-    if not isinstance(foundation, dict) or any(not _strings(foundation.get(key)) for key in ('allowed_axioms', 'forbidden')):
-        errors.append('foundation profile must declare string lists of allowed and forbidden axioms')
-    from .trust_inventory import scope_errors
-    errors.extend(scope_errors(manifest.get('scope')))
-    validation = manifest.get('validation')
-    if not isinstance(validation, dict) or set(validation) != {'record', 'sha256'}:
-        errors.append('trust validation requires a sealed self-contained record')
-    return errors
+def record_reference_errors(reference):
+    if (not isinstance(reference, dict) or set(reference) != {'path', 'id'}
+            or not isinstance(reference['path'], str) or not Path(reference['path']).is_absolute()
+            or not isinstance(reference['id'], str) or not _RECORD_ID.fullmatch(reference['id'])
+            or Path(reference['path']).name != reference['id'] + '.json'):
+        return ['toolchain_record requires the absolute path of <record ID>.json and that ID']
+    return []
 
 
-def manifest_errors(environment):
-    from .repository import exact_content_hash
-    from .formal import toolchain_errors
+def environment_errors(environment, binding):
+    """Lexical contract of a stored environment and its runtime binding; no host IO."""
+    from .trust_inventory import identity_errors
     if not isinstance(environment, dict):
         return ['trust environment absent']
-    manifest = environment.get('manifest', {})
-    errors = toolchain_errors(environment.get('toolchain'))
-    if not isinstance(manifest, dict) or environment.get('manifest_sha256') != exact_content_hash(manifest):
-        return ['trust manifest missing or changed']
-    structural = manifest_structure_errors(manifest)
-    if structural:
-        return errors + structural
+    errors = []
+    if not ENVIRONMENT_FIELDS <= set(environment) or set(environment) - ENVIRONMENT_FIELDS - OPTIONAL_FIELDS:
+        errors.append('trust environment fields differ from the current contract')
+    errors.extend(identity_errors(environment.get('toolchain')))
     if not environment.get('source_ref'):
         errors.append('trust environment has no explicit adoption')
-    if not _strings(environment.get('allowed_axioms')) or set(environment['allowed_axioms']) != _AXIOM_SET:
+    axioms = environment.get('allowed_axioms')
+    if not isinstance(axioms, list) or any(not isinstance(a, str) for a in axioms) or set(axioms) != _AXIOM_SET:
         errors.append('foundation axiom profile differs')
-    foundation = manifest.get('foundation_profile', {})
-    if foundation.get('allowed_axioms') != sorted(AXIOMS) or not {'sorryAx', 'Lean.trustCompiler', 'additional_axioms'}.issubset(foundation.get('forbidden', [])):
-        errors.append('foundation profile is incomplete')
-    toolchain = environment.get('toolchain')
-    command = toolchain.get('configured_command') if isinstance(toolchain, dict) else None
-    if not command or manifest.get('command') != command:
-        errors.append('manifest command differs from toolchain')
-    from .payloads import FrozenDict
-    if isinstance(manifest, FrozenDict) and hasattr(manifest, '_files_contract_errors'):
-        errors.extend(manifest._files_contract_errors)
-    else:
-        file_errors = manifest_file_errors(manifest.get('files', []))
-        errors.extend(file_errors)
-        if isinstance(manifest, FrozenDict):
-            manifest._files_contract_errors = tuple(file_errors)
-    if not errors:
-        from .trust_inventory import binding_errors, validation_errors
-        identity = exact_content_hash(toolchain)
-        cached = getattr(manifest, '_inventory_contract', None)
-        if cached is None or cached[0] != identity:
-            inventory_digest=exact_content_hash({'scope':manifest['scope'],'files':manifest['files']})
-            checks = binding_errors(environment) + validation_errors(manifest['validation'], toolchain, inventory_digest)
-            cached = (identity, tuple(checks))
-            if isinstance(manifest, FrozenDict):
-                manifest._inventory_contract = cached
-        errors.extend(cached[1])
+    errors.extend(record_reference_errors(environment.get('toolchain_record')))
+    errors.extend(binding_errors(binding))
     return errors
 
 
-def manifest_file_errors(files):
+def register_request_errors(config):
+    """Lexical shape of a registration request, before the record file is read."""
+    from .trust_inventory import identity_errors
+    if not isinstance(config, dict) or set(config) != REGISTER_FIELDS:
+        return ['trust register requires exactly toolchain, allowed_axioms, toolchain_record and binding']
+    return (identity_errors(config['toolchain']) + record_reference_errors(config['toolchain_record'])
+            + binding_errors(config['binding']))
+
+
+class EnvironmentUnavailable(ValueError):
+    """A live check of the approved environment failed. The sealed result is kept
+    until the toolchain record or the active environment changes."""
+    def __init__(self, message, detail):
+        super().__init__(message)
+        self.detail = detail
+
+
+def record_state(environment):
+    """Cheap change marker of the named record file, or None when it cannot be read."""
+    try:
+        return fingerprint_json(file_fingerprint(environment['toolchain_record']['path']))
+    except OSError:
+        return None
+
+
+def wait_detail(instance):
+    environment_id = instance.get('active_trust_environment')
+    environment = instance.get('trust_environments', {}).get(environment_id)
+    return {'environment_id': environment_id, 'record_state': record_state(environment) if environment else None}
+
+
+def environment_changed(instance, detail):
+    """True once a re-record, a repair or a transition may have resolved an environment wait."""
+    return wait_detail(instance) != {key: detail.get(key) for key in ('environment_id', 'record_state')}
+
+
+def check_environment(environment, binding, *, identity=True):
+    """Live admission: record contract, identity and the olean fingerprint.
+
+    A different fingerprint is accepted only when it equals the record's current
+    baseline, the bound baseline is older and the identity still matches. The
+    caller then rebinds; this function never writes a baseline.
+    """
+    from .trust_inventory import read_record, usable_errors, observe_fingerprint, binding as baseline_binding, changed_files, now
+    from .formal import toolchain_identity_errors
+    from .repository import exact_content_hash
+    reference = environment['toolchain_record']
+    result = {'environment_id': environment.get('id'), 'toolchain_record': deepcopy(reference),
+              'record_state': record_state(environment), 'checked_at': now(),
+              'identity_sha256': exact_content_hash(environment['toolchain']), 'binding': deepcopy(binding)}
+    try:
+        record = read_record(reference['path'])
+    except (OSError, ValueError) as error:
+        return {**result, 'status': 'invalid', 'errors': ['toolchain record unavailable: ' + str(error)]}
     errors = []
-    if not isinstance(files, list) or not files:
-        errors.append('manifest needs a nonempty complete file inventory')
-    else:
-        paths = set()
-        for entry in files:
-            if not isinstance(entry, dict) or entry.get('role') not in ROLES:
-                errors.append('manifest file must declare a role')
-                continue
-            if not isinstance(entry, dict) or not isinstance(entry.get('path'), str) or not Path(entry['path']).is_absolute():
-                errors.append('manifest file must have an absolute path')
-                continue
-            # Lexical only: status/schema validation must not inspect the host.
-            key = os.path.normcase(os.path.normpath(entry['path']))
-            if key in paths:
-                errors.append('duplicate manifest path')
-            paths.add(key)
-            if not re.fullmatch('[0-9a-f]{64}', str(entry.get('sha256', ''))):
-                errors.append('manifest file needs an exact SHA-256')
-    return errors
-
-
-def _observe_file(entry, cancelled, account_bytes):
-    path = Path(entry['path'])
-    read = 0
-    try:
-        resolved = str(path.resolve(strict=True)).casefold()
-        before = path.stat()
-        if path.is_symlink() or not stat.S_ISREG(before.st_mode):
-            return resolved, ['trust file changed: ' + str(path)], read
-        digest = hashlib.sha256()
-        with path.open('rb') as stream:
-            opened = os.fstat(stream.fileno())
-            while not cancelled.is_set():
-                chunk = stream.read(1024 * 1024)
-                if not chunk:
-                    break
-                read += len(chunk)
-                digest.update(chunk)
-                account_bytes(len(chunk))
-            after_open = os.fstat(stream.fileno())
-        if cancelled.is_set():
-            return resolved, ['file observation cancelled'], read
-        after = path.stat()
-        identity = lambda s: (s.st_dev, s.st_ino, s.st_size, s.st_mtime_ns)
-        # Windows path stat and handle fstat expose different ctime semantics.
-        # Compare each observation channel against itself, not against the other.
-        stable = (identity(before) == identity(opened) == identity(after_open) == identity(after)
-                  and before.st_ctime_ns == after.st_ctime_ns
-                  and opened.st_ctime_ns == after_open.st_ctime_ns)
-        if not stable or digest.hexdigest() != entry['sha256']:
-            return resolved, ['trust file changed: ' + str(path)], read
-        return resolved, [], read
-    except (OSError, RuntimeError):
-        return None, ['trust file unavailable: ' + str(path)], read
-
-
-def verify_environment_files(environment, *, should_stop=None, on_progress=None, workers=4):
-    if not isinstance(environment, dict):
-        return {'status':'invalid','errors':['trust environment absent']}
-    with phase('environment_scan_wait', manifest_sha256=environment.get('manifest_sha256')):
-        while not _scan_gate.acquire(timeout=.1):
-            if should_stop and should_stop():
-                return {'status':'cancelled','manifest_sha256':environment.get('manifest_sha256'),
-                        'errors':['environment observation cancelled before admission'],
-                        'completed_files':0,'read_bytes':0,'peak_pending':0}
-    try:
-        return _verify_environment_files(environment, should_stop=should_stop, on_progress=on_progress, workers=workers)
-    finally:
-        _scan_gate.release()
-
-
-def _verify_environment_files(environment, *, should_stop=None, on_progress=None, workers=4):
-    """Observe every declared file afresh. A result certifies this observation only."""
-    if type(workers) is not int or not 1 <= workers <= 16:
-        raise ValueError('environment workers must be in 1..16')
-    fixed = deepcopy(environment)
-    errors = manifest_errors(fixed)
-    started = datetime.now(timezone.utc).isoformat()
-    manifest = fixed.get('manifest')
-    files = manifest.get('files') if isinstance(manifest, dict) else None
-    base = {'manifest_sha256': fixed.get('manifest_sha256'), 'started_at': started,
-            'file_count': len(files) if isinstance(files, list) else 0,
-            'completed_files': 0, 'read_bytes': 0, 'peak_pending': 0}
+    if record['id'] != reference['id']:
+        errors.append('toolchain record ID differs from the registered record')
+    if record['identity'] != environment['toolchain']:
+        errors.append('toolchain record identity differs from the registered environment')
+    errors.extend(usable_errors(record))
+    if not errors and identity:
+        errors.extend(toolchain_identity_errors(environment['toolchain']))
     if errors:
-        return {**base, 'status': 'invalid', 'errors': errors}
-    from .trust_inventory import inventory, _key
+        return {**result, 'status': 'invalid', 'errors': errors}
     try:
-        observed_members = inventory(fixed['manifest']['scope'], should_stop=should_stop)
-        declared = {_key(row['path']):{'path':row['path'], 'role':row['role']} for row in files}
-        if observed_members != declared:
-            missing = sorted(set(observed_members) - set(declared))
-            extra = sorted(set(declared) - set(observed_members))
-            return {**base, 'status':'invalid', 'errors':['inventory membership differs'],
-                    'missing_files':missing, 'extra_files':extra}
-    except InterruptedError:
-        return {**base,'status':'cancelled','errors':['inventory observation cancelled']}
-    except (OSError,ValueError) as error:
-        return {**base,'status':'invalid','errors':[str(error)]}
-    files = fixed['manifest']['files']
-    cancelled = threading.Event()
-    read_bytes = 0
-    byte_lock = threading.Lock()
-    def account_bytes(count):
-        nonlocal read_bytes
-        with byte_lock:
-            read_bytes += count
-    results, pending, cursor = {}, {}, 0
-    with phase('environment_files', manifest_sha256=base['manifest_sha256'], file_count=len(files)) as metrics:
-        with ThreadPoolExecutor(max_workers=workers, thread_name_prefix='do-math-environment') as pool:
-            try:
-                while pending or cursor < len(files):
-                    if should_stop and should_stop():
-                        cancelled.set()
-                    while not cancelled.is_set() and cursor < len(files) and len(pending) < workers * 2:
-                        pending[pool.submit(_observe_file, files[cursor], cancelled, account_bytes)] = cursor
-                        cursor += 1
-                    base['peak_pending'] = max(base['peak_pending'], len(pending))
-                    if not pending:
-                        break
-                    done, _ = wait(pending, timeout=.1, return_when=FIRST_COMPLETED)
-                    for future in done:
-                        index = pending.pop(future)
-                        results[index] = future.result()
-                        base['completed_files'] += 1
-                    with byte_lock:
-                        base['read_bytes'] = read_bytes
-                    metrics.update({k:base[k] for k in ('completed_files','read_bytes','peak_pending')})
-                    if done and on_progress:
-                        on_progress({k: base[k] for k in ('file_count', 'completed_files', 'read_bytes', 'peak_pending')})
-            finally:
-                cancelled.set() if cursor < len(files) or pending else None
-        paths = set()
-        for index in sorted(results):
-            resolved, findings, _ = results[index]
-            if resolved is not None:
-                if resolved in paths:
-                    errors.append('duplicate manifest path')
-                paths.add(resolved)
-            errors.extend(findings)
-        stopped = cancelled.is_set() or base['completed_files'] != len(files) or any('cancelled' in e for e in errors)
-        if not stopped:
-            try:
-                if inventory(fixed['manifest']['scope'], should_stop=should_stop) != observed_members:
-                    errors.append('inventory membership changed during observation')
-            except InterruptedError:
-                stopped = True
-                errors.append('inventory observation cancelled')
-            except (OSError,ValueError) as error:
-                errors.append(str(error))
-        metrics.update({k:base[k] for k in ('completed_files','read_bytes','peak_pending')})
-        return {**base, 'finished_at': datetime.now(timezone.utc).isoformat(),
-                'status': 'cancelled' if stopped else 'invalid' if errors else 'verified', 'errors': errors}
+        fingerprint = observe_fingerprint(record['identity'])
+    except OSError as error:
+        return {**result, 'status': 'invalid', 'errors': ['judgment files unavailable: ' + str(error)]}
+    result['fingerprint_sha256'] = fingerprint['sha256']
+    if fingerprint['sha256'] == binding['fingerprint_sha256']:
+        return {**result, 'status': 'verified', 'errors': []}
+    current = baseline_binding(record)
+    if fingerprint['sha256'] == current['fingerprint_sha256'] and current != binding:
+        if not identity:
+            errors.extend(toolchain_identity_errors(environment['toolchain']))
+        if not errors:
+            entry = record['baselines'][current['baseline']]
+            return {**result, 'status': 'verified', 'errors': [], 'binding': current,
+                    'rebind': {'previous': deepcopy(binding), 'current': current,
+                               'recorded_at': entry['recorded_at']}}
+        return {**result, 'status': 'invalid', 'errors': errors}
+    bound = record['baselines'][binding['baseline']] if binding['baseline'] < len(record['baselines']) else None
+    expected = (bound['fingerprint']['files'] if bound and bound['fingerprint']['sha256'] == binding['fingerprint_sha256']
+                else record['baselines'][-1]['fingerprint']['files'])
+    changed = changed_files(expected, fingerprint['files'])
+    return {**result, 'status': 'invalid', 'changed_files': changed[:50], 'changed_file_count': len(changed),
+            'errors': ['olean fingerprint differs from the bound toolchain baseline; '
+                       'setup_lean.py --rerecord (user or operator) or a new record and transition is required']}
+
+
+def verify_formal(*, environment, binding, verifier, **arguments):
+    """Check the record and fingerprint before compiling; nothing is re-observed afterwards."""
+    check = check_environment(environment, binding, identity=False)
+    if check['status'] != 'verified':
+        return {'status': 'failed', 'reason': 'environment admission failed: ' + '; '.join(check['errors']),
+                'error_kind': 'trust_environment', 'environment_check': check, 'launch_not_created': True}
+    result = verifier(**arguments)
+    result['environment_check'] = check
+    return result
+
+
+def require_active_environment(instance, runtime, *, current_identity=False):
+    """Formal-use admission: an active, structurally valid environment and, at
+    publication gates, the current local identity of its executables, checker and project."""
+    if any(row.get('status') in {'checking', 'ready'} for row in runtime.get('trust_transitions', {}).values()):
+        raise ValueError('formal admission is blocked during a trust transition')
+    environment_id = instance.get('active_trust_environment')
+    environment = instance.get('trust_environments', {}).get(environment_id)
+    errors = environment_errors(environment, runtime.get('trust_bindings', {}).get(environment_id))
+    if not environment or environment.get('status') != 'active' or errors:
+        raise ValueError('approved fixed trust environment required: ' + '; '.join(errors))
+    if current_identity:
+        from .formal import toolchain_identity_errors
+        errors = toolchain_identity_errors(environment['toolchain'])
+        if errors:
+            raise EnvironmentUnavailable('current trust identity required: ' + '; '.join(errors), wait_detail(instance))
+    return deepcopy(environment)

@@ -1,8 +1,10 @@
-"""Cached environments need real validation evidence, not a build-method label."""
+"""Toolchain records, identity and olean fingerprints under the accidental-change model."""
+from copy import deepcopy
+import ctypes
 import hashlib
 import json
+import os
 from pathlib import Path
-import subprocess
 import sys
 import tempfile
 import unittest
@@ -10,26 +12,303 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import setup_lean
-from do_math.initialization import digest, trust_environment_errors
-from research_fixtures import trust_fixture
+from do_math import trust_inventory as records
+from do_math.repository import exact_content_hash
+from do_math.trust_validation import check_environment, environment_errors, register_request_errors
+from research_fixtures import fixture_setup_lean, trust_environment, trust_fixture, validation_fixture
 from test_categories import test_group
 
 
+def set_birthtime(path, nanoseconds):
+    """Change only the creation time (Windows SetFileTime)."""
+    from ctypes import wintypes
+    kernel = ctypes.WinDLL('kernel32', use_last_error=True)
+    kernel.CreateFileW.restype = wintypes.HANDLE
+    kernel.CreateFileW.argtypes = [wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD, ctypes.c_void_p,
+                                   wintypes.DWORD, wintypes.DWORD, wintypes.HANDLE]
+    handle = kernel.CreateFileW(str(path), 0x100, 0x7, None, 3, 0x80, None)
+    if handle in (None, wintypes.HANDLE(-1).value):
+        raise ctypes.WinError(ctypes.get_last_error())
+    try:
+        ticks = nanoseconds // 100 + 116444736000000000
+        created = wintypes.FILETIME(ticks & 0xFFFFFFFF, ticks >> 32)
+        if not kernel.SetFileTime(handle, ctypes.byref(created), None, None):
+            raise ctypes.WinError(ctypes.get_last_error())
+    finally:
+        kernel.CloseHandle(handle)
+
+
 @test_group('unit')
-class EnvironmentValidationTests(unittest.TestCase):
-    def test_inventory_does_not_silently_collapse_ambiguous_path_identities(self):
-        from do_math import trust_inventory
+class ToolchainRecordTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name)
+        self.request = trust_fixture(self.root, ['synthetic-lean'])
+        self.environment, self.binding = trust_environment(self.request)
+        self.record_path = Path(self.request['toolchain_record']['path'])
+        self.olean = Path(self.request['toolchain']['executable']).parents[1] / 'lib/lean/Init/Prelude.olean'
+
+    def record(self):
+        return records.read_record(self.record_path)
+
+    def rewrite(self, change):
+        record = json.loads(self.record_path.read_text(encoding='utf-8'))
+        change(record)
+        self.record_path.write_text(json.dumps(record), encoding='utf-8')
+
+    def recorded(self, *, validation=True):
+        return fixture_setup_lean(self.request['toolchain'], self.root / 'smoke.lean', validation=validation)
+
+    def rerecord(self):
+        with self.recorded():
+            return setup_lean.rerecord(['synthetic-lean'], self.record_path.parent, self.root / 'evidence', None)
+
+    def test_current_environment_is_verified_from_record_identity_and_fingerprint(self):
+        self.assertEqual(environment_errors(self.environment, self.binding), [])
+        self.assertEqual(register_request_errors({k: v for k, v in self.request.items()}), [])
+        result = check_environment(self.environment, self.binding)
+        self.assertEqual(result['status'], 'verified')
+        self.assertEqual(result['identity_sha256'], exact_content_hash(self.request['toolchain']))
+        self.assertEqual(result['fingerprint_sha256'], self.binding['fingerprint_sha256'])
+        self.assertNotIn('rebind', result)
+        self.assertEqual(set(self.record()['baselines'][0]['fingerprint']['files']),
+                         {'toolchain/bin/libleanshared.dll', 'toolchain/lib/lean/Init/Prelude.olean'})
+
+    def test_unknown_record_field_and_other_schema_are_rejected(self):
+        # An identity edited inside one record file no longer matches its digest and ID.
+        for change in (lambda r: r.update(unrecognized=True), lambda r: r.update(schema='do-math-toolchain-record/2'),
+                       lambda r: r['baselines'][0].update(files=[]), lambda r: r['identity'].update(version='edited')):
+            with self.subTest(change=change):
+                original = self.record_path.read_bytes()
+                self.rewrite(change)
+                result = check_environment(self.environment, self.binding)
+                self.assertEqual(result['status'], 'invalid')
+                self.assertIn('toolchain record unavailable', result['errors'][0])
+                self.record_path.write_bytes(original)
+
+    def test_success_label_cannot_replace_failed_representative_evidence(self):
+        for change in ({'exit_code': 17}, {'status': 'failed'}):
+            with self.subTest(change=change):
+                original = self.record_path.read_bytes()
+                self.rewrite(lambda r: r['baselines'][-1]['validation'].update(change))
+                result = check_environment(self.environment, self.binding)
+                self.assertIn('current toolchain baseline has no successful representative check', result['errors'])
+                self.record_path.write_bytes(original)
+
+    def test_search_paths_outside_the_recorded_roots_are_rejected(self):
+        identity = deepcopy(self.request['toolchain'])
+        project = self.root / 'project'
+        identity['project'] = {'manifest_hashes': {}, 'source_identity': {'root': str(project)},
+                               'search_paths': [str(project / '.lake/build/lib/lean'), str(self.root / 'outside')]}
+        errors = records.identity_errors(identity)
+        self.assertEqual(errors, ['Lean search path is outside the recorded toolchain and project roots: '
+                                  + str(self.root / 'outside')])
+        identity['project']['source_identity']['root'] = str(Path(identity['executable']).parents[1] / 'lib')
+        self.assertIn('toolchain and project roots must not overlap', records.identity_errors(identity))
+
+    def test_identity_detects_executable_checker_and_project_input_changes(self):
+        from do_math.formal import toolchain_identity_errors
+        self.assertEqual(toolchain_identity_errors(self.request['toolchain']), [])
+        # Each recorded hash holds on its own, even when the executable is also a command file.
+        wrong = {**self.request['toolchain'], 'sha256': '0' * 64}
+        self.assertEqual(toolchain_identity_errors(wrong),
+                         ['approved toolchain file changed: ' + self.request['toolchain']['executable']])
+        lake = Path(self.request['toolchain']['executable']).with_name('lake.exe')
+        lake.write_bytes(b'replaced by an update')
+        self.assertEqual(toolchain_identity_errors(self.request['toolchain']),
+                         ['approved toolchain file changed: ' + str(lake)])
+        moved = {**self.request['toolchain'], 'verifier_path': str(self.root / 'formal.py')}
+        self.assertIn('approved checker is not the running checker', toolchain_identity_errors(moved))
+        project = self.root / 'project'
+        project.mkdir()
+        (project / 'lean-toolchain').write_text('leanprover/lean4:v4.32.0\n', encoding='utf-8')
+        (project / 'lake-manifest.json').write_text('{"packages": []}', encoding='utf-8')
+        command = ['lake', '--dir', str(project), 'env', 'lean']
+        from do_math.formal import _project_identity
+        with tempfile.TemporaryDirectory() as workspace:
+            observed = _project_identity(command, workspace=Path(workspace),
+                                         expected={'manifest_hashes': None, 'source_identity': None})
+        lake.write_bytes(('CORE_TESTS synthetic bin/lake.exe for synthetic-lean').encode())
+        for name, text in (('lean-toolchain', 'leanprover/lean4:v4.33.0\n'), ('lake-manifest.json', '{"packages": [1]}')):
+            with self.subTest(name=name):
+                original = (project / name).read_bytes()
+                (project / name).write_text(text, encoding='utf-8')
+                chain = {**self.request['toolchain'], 'configured_command': command, 'project': observed}
+                self.assertEqual(toolchain_identity_errors(chain), ['approved project inputs changed'])
+                (project / name).write_bytes(original)
+
+    def test_fingerprint_detects_size_modification_creation_and_recreation(self):
+        original = self.olean.read_bytes()
+        info = os.stat(self.olean)
+        def restore():
+            self.olean.write_bytes(original)
+            os.utime(self.olean, ns=(info.st_atime_ns, info.st_mtime_ns))
+            set_birthtime(self.olean, info.st_birthtime_ns)
+            self.assertEqual(check_environment(self.environment, self.binding)['status'], 'verified')
+        changes = {
+            'size': lambda: self.olean.write_bytes(original + b'x'),
+            'modification time': lambda: os.utime(self.olean, ns=(info.st_atime_ns, info.st_mtime_ns + 10**9)),
+            'creation time': lambda: set_birthtime(self.olean, info.st_birthtime_ns - 10**10),
+            'recreated with the same bytes': lambda: (self.olean.unlink(), self.olean.write_bytes(original),
+                                                      os.utime(self.olean, ns=(info.st_atime_ns, info.st_mtime_ns + 10**9))),
+            'added module': lambda: self.olean.with_name('Extra.olean').write_bytes(b'new'),
+        }
+        for name, change in changes.items():
+            with self.subTest(change=name):
+                change()
+                result = check_environment(self.environment, self.binding)
+                self.assertEqual(result['status'], 'invalid')
+                self.assertIn('olean fingerprint differs', result['errors'][0])
+                self.assertTrue(result['changed_files'])
+                self.olean.with_name('Extra.olean').unlink(missing_ok=True)
+                restore()
+
+    def test_fingerprint_does_not_see_content_changed_with_all_metadata_preserved(self):
+        """The declared limit of the accidental-change model; only a content check finds it."""
+        info = os.stat(self.olean)
+        raw = self.olean.read_bytes()
+        with self.olean.open('r+b') as stream:
+            stream.write(bytes([raw[0] ^ 1]))
+        os.utime(self.olean, ns=(info.st_atime_ns, info.st_mtime_ns))
+        self.assertEqual(os.stat(self.olean).st_birthtime_ns, info.st_birthtime_ns)
+        self.assertEqual(check_environment(self.environment, self.binding)['status'], 'verified')
+        with self.recorded():
+            result = setup_lean.check_contents(self.record_path.parent, None, ['synthetic-lean'])
+        self.assertEqual(result['status'], 'mismatch')
+        self.assertEqual(result['check']['mismatched'], ['toolchain/lib/lean/Init/Prelude.olean'])
+        blocked = check_environment(self.environment, self.binding)
+        self.assertEqual(blocked['status'], 'invalid')
+        self.assertIn('a content check found files that differ from the current toolchain baseline', blocked['errors'])
+
+    def test_content_check_passes_records_history_and_never_blocks_readers(self):
+        with records.writer_lock(self.record_path.parent):
+            # Instances only read the record; a running writer never blocks them.
+            self.assertEqual(check_environment(self.environment, self.binding)['status'], 'verified')
+            with self.assertRaisesRegex(RuntimeError, 'another toolchain record writer'):
+                self.rerecord()
+        result = setup_lean.check_contents(self.record_path.parent, self.request['toolchain_record']['id'], None)
+        self.assertEqual((result['status'], result['check']['baseline']), ('passed', 0))
+        self.assertEqual(self.record()['checks'], [result['check']])
+        self.assertEqual(check_environment(self.environment, self.binding)['status'], 'verified')
+
+    def test_rerecord_after_metadata_only_change_rebinds_each_instance_once(self):
+        other_environment, other_binding = trust_environment(self.request, environment_id='TE-other')
+        info = os.stat(self.olean)
+        os.utime(self.olean, ns=(info.st_atime_ns, info.st_mtime_ns + 10**9))
+        self.assertEqual(check_environment(self.environment, self.binding)['status'], 'invalid')
+        result = self.rerecord()
+        self.assertEqual(result['status'], 'recorded')
+        record = self.record()
+        self.assertEqual(len(record['baselines']), 2)
+        self.assertEqual(record['baselines'][1]['content'], record['baselines'][0]['content'])
+        current = records.binding(record)
+        self.assertEqual(result['binding'], current)
+        for environment, binding in ((self.environment, self.binding), (other_environment, other_binding)):
+            checked = check_environment(environment, binding)
+            self.assertEqual(checked['status'], 'verified')
+            self.assertEqual(checked['rebind']['previous'], binding)
+            self.assertEqual(checked['rebind']['current'], current)
+            self.assertEqual(checked['binding'], current)
+        followed = check_environment(self.environment, current)
+        self.assertEqual(followed['status'], 'verified')
+        self.assertNotIn('rebind', followed)
+
+    def test_rerecord_refuses_changed_content_identity_or_failed_compile(self):
+        with self.olean.open('r+b') as stream:
+            stream.write(b'Z')
+        with self.assertRaises(setup_lean.Refused) as refused:
+            self.rerecord()
+        self.assertEqual(refused.exception.result['mismatched'], ['toolchain/lib/lean/Init/Prelude.olean'])
+        self.olean.write_bytes(('CORE_TESTS synthetic lib/lean/Init/Prelude.olean for synthetic-lean').encode())
+        changed = {**self.request['toolchain'], 'version': 'Lean test 4.33.0'}
+        with patch.object(setup_lean, 'observe_identity', return_value=changed):
+            with self.assertRaises(setup_lean.Refused) as refused:
+                setup_lean.rerecord(['synthetic-lean'], self.record_path.parent, self.root / 'evidence',
+                                    self.request['toolchain_record']['id'])
+        self.assertIn('identity differs', refused.exception.result['reason'])
+        with self.recorded(validation=False), self.assertRaises(setup_lean.Refused) as refused:
+            setup_lean.rerecord(['synthetic-lean'], self.record_path.parent, self.root / 'evidence', None)
+        self.assertEqual(refused.exception.result['status'], 'failed')
+        self.assertEqual(len(self.record()['baselines']), 1)
+
+    def test_rebind_requires_the_current_baseline_and_the_same_identity(self):
+        info = os.stat(self.olean)
+        os.utime(self.olean, ns=(info.st_atime_ns, info.st_mtime_ns + 10**9))
+        self.rerecord()
+        os.utime(self.olean, ns=(info.st_atime_ns, info.st_mtime_ns + 2 * 10**9))
+        self.assertEqual(check_environment(self.environment, self.binding)['status'], 'invalid')
+        os.utime(self.olean, ns=(info.st_atime_ns, info.st_mtime_ns + 10**9))
+        replaced = Path(self.request['toolchain']['executable'])
+        replaced.write_bytes(b'different launcher')
+        result = check_environment(self.environment, self.binding, identity=False)
+        self.assertEqual(result['status'], 'invalid')
+        self.assertNotIn('rebind', result)
+
+    def test_install_records_once_and_never_appends_a_baseline(self):
+        with self.recorded():
+            confirmed =setup_lean.record_installation(['synthetic-lean'], self.record_path.parent, self.root / 'evidence')
+            self.assertEqual((confirmed['status'], confirmed['created']), ('recorded', False))
+            info = os.stat(self.olean)
+            os.utime(self.olean, ns=(info.st_atime_ns, info.st_mtime_ns + 10**9))
+            with self.assertRaises(setup_lean.Refused) as refused:
+                setup_lean.record_installation(['synthetic-lean'], self.record_path.parent, self.root / 'evidence')
+        self.assertEqual(refused.exception.result['status'], 'rerecord_required')
+        self.assertEqual(len(self.record()['baselines']), 1)
+        changed = {**self.request['toolchain'], 'version': 'Lean test 4.33.0'}
+        with fixture_setup_lean(changed, self.root / 'smoke.lean'):
+            created =setup_lean.record_installation(['synthetic-lean'], self.record_path.parent, self.root / 'evidence')
+        self.assertTrue(created['created'])
+        self.assertNotEqual(created['record_id'], self.request['toolchain_record']['id'])
+        self.assertEqual(len(list(self.record_path.parent.glob('TC-*.json'))), 2)
+
+    def test_baseline_waits_for_settled_fingerprints_and_refuses_a_changing_install(self):
+        # The fixture files were just written, so their fingerprints are inside the racy window.
+        with patch.object(setup_lean, 'observe_identity', return_value=deepcopy(self.request['toolchain'])), \
+             patch.object(setup_lean.time, 'sleep') as waited, \
+             self.assertRaisesRegex(RuntimeError, 'still changing'):
+            setup_lean.rerecord(['synthetic-lean'], self.record_path.parent, self.root / 'evidence', None)
+        self.assertEqual(waited.call_count, 3)
+        self.assertEqual(len(self.record()['baselines']), 1)
+
+    def test_trust_request_names_the_record_and_its_current_baseline(self):
+        result = {'record_path': str(self.record_path), 'binding': records.binding(self.record())}
+        written = setup_lean.write_trust_request(result, self.root / 'request.json')
+        request = json.loads(Path(written['path']).read_text(encoding='utf-8'))
+        self.assertEqual(request, self.request)
+        with self.assertRaises(FileExistsError):
+            setup_lean.write_trust_request(result, self.root / 'request.json')
+
+
+@test_group('unit')
+class RepresentativeCompileTests(unittest.TestCase):
+    def test_validation_preserves_source_output_and_exact_command(self):
         with tempfile.TemporaryDirectory() as directory:
-            request=trust_fixture(Path(directory),['lean'])
-            folder=Path(directory)/'synthetic-trust/toolchain/bin'
-            (folder/'one.txt').write_bytes(b'one');(folder/'two.txt').write_bytes(b'two')
-            key=trust_inventory._key
-            def ambiguous(path):
-                value=Path(path)
-                return key(value.with_name('one.txt') if value.name=='two.txt' else value)
-            with patch.object(trust_inventory,'_key',side_effect=ambiguous):
-                with self.assertRaisesRegex(ValueError,'ambiguous identity'):
-                    trust_inventory.inventory(request['manifest']['scope'])
+            identity = {'executable': str(Path(directory) / 'lean/bin/lean.exe'), 'project': None}
+            with patch('do_math.formal._job_run', return_value=(0, 'ok', '', False)) as run:
+                record = setup_lean.verify_environment(['test-lean'], Path(directory) / 'evidence', identity)
+            self.assertEqual(record['status'], 'verified')
+            self.assertEqual(record['scope'], 'lean_core_representative_proofs')
+            self.assertEqual(record['command'], run.call_args.args[0])
+            self.assertEqual(record['stdout'], 'ok')
+            self.assertEqual(record['source_sha256'], hashlib.sha256(Path(record['source']).read_bytes()).hexdigest())
+            preserved = json.loads((Path(record['source']).parent / 'validation.json').read_text(encoding='utf-8'))
+            self.assertEqual(preserved, record)
+
+    def test_failure_and_stop_never_produce_verified_evidence(self):
+        for returned in [(1, '', 'diagnostic', False), (None, '', '', True)]:
+            with self.subTest(returned=returned), tempfile.TemporaryDirectory() as directory:
+                identity = {'executable': str(Path(directory) / 'lean/bin/lean.exe'), 'project': None}
+                with patch('do_math.formal._job_run', return_value=returned):
+                    record = setup_lean.verify_environment(['test-lean'], Path(directory) / 'evidence', identity)
+                self.assertEqual(record['status'], 'failed')
+                self.assertEqual(record['stderr'], returned[2])
+
+    def test_evidence_inside_a_recorded_root_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            identity = {'executable': str(Path(directory) / 'lean/bin/lean.exe'), 'project': None}
+            with self.assertRaisesRegex(ValueError, 'outside the recorded'):
+                setup_lean.verify_environment(['test-lean'], Path(directory) / 'lean/evidence', identity)
 
     def test_compiler_job_does_not_inherit_unregistered_library_overrides(self):
         from do_math import formal
@@ -43,167 +322,24 @@ class EnvironmentValidationTests(unittest.TestCase):
         self.assertNotIn('LEAN_SYSROOT',supplied)
         self.assertNotIn('LAKE_HOME',supplied)
 
-    def test_inventory_detects_omissions_additions_and_unrelated_executables(self):
-        from do_math.trust_validation import verify_environment_files
-        with tempfile.TemporaryDirectory() as directory:
-            request=trust_fixture(Path(directory),['lean'])
-            environment={key:value for key,value in request.items() if key!='operation'}
-            environment.update(source_ref='test',manifest_sha256=digest(request['manifest']))
-            library=Path(directory)/'synthetic-trust/toolchain/bin/runtime.dll'
-            library.write_bytes(b'new dependency')
-            result=verify_environment_files(environment)
-            self.assertEqual(result['status'],'invalid')
-            self.assertIn(str(library).lower(),[p.lower() for p in result['missing_files']])
-            library.unlink()
-            environment['manifest']['files'].pop(0)
-            environment['manifest_sha256']=digest(environment['manifest'])
-            self.assertTrue(any('configured executable' in error for error in trust_environment_errors(environment)))
 
-    def test_success_label_cannot_replace_failed_or_mismatched_evidence(self):
-        with tempfile.TemporaryDirectory() as directory:
-            request=trust_fixture(Path(directory),['lean'])
-            environment={key:value for key,value in request.items() if key!='operation'}
-            environment['source_ref']='test'
-            record=environment['manifest']['validation']['record']
-            for field,value in [('exit_code',17),('source_text','example : False := by sorry'),
-                                ('toolchain_after',{}),('stdout',None)]:
-                with self.subTest(field=field):
-                    old=record[field];record[field]=value
-                    environment['manifest']['validation']['sha256']=digest(record)
-                    environment['manifest_sha256']=digest(environment['manifest'])
-                    self.assertTrue(trust_environment_errors(environment,verify_files=False))
-                    record[field]=old
+@test_group('unit')
+class ActivationProfileTests(unittest.TestCase):
+    def test_lean_roles_pin_only_the_command_and_activation_has_no_machine_settings(self):
+        from do_math import execution_profiles as profiles
+        from do_math.engine import DEFAULT_CONFIG
+        built = profiles.build_profiles({**DEFAULT_CONFIG, 'lean_command': ['synthetic-lean']})
+        by_role = {p['role']: p for p in built['execution_profiles'].values() if p['actor_kind'] == 'machine'}
+        self.assertNotIn('machine', by_role['trust_activate'])
+        for role in ('formal_check', 'trust_check'):
+            self.assertEqual(by_role[role]['machine'], {'lean_command': ['synthetic-lean']})
+        body = {k: v for k, v in by_role['trust_activate'].items() if k not in {'id', 'sha256'}}
+        with self.assertRaisesRegex(ValueError, 'machine profile settings differ'):
+            profiles.seal_profile({**body, 'machine': {'mechanism': 'full_environment_scan', 'workers': 4}})
+        lean = {k: v for k, v in by_role['formal_check'].items() if k not in {'id', 'sha256'}}
+        with self.assertRaisesRegex(ValueError, 'machine profile settings differ'):
+            profiles.seal_profile({**lean, 'machine': {'lean_command': ['synthetic-lean'], 'tool_manifest': []}})
 
-    def test_external_search_roots_are_not_covered_by_an_unchanged_local_manifest(self):
-        with tempfile.TemporaryDirectory() as directory:
-            request=trust_fixture(Path(directory),['lean'])
-            environment={key:value for key,value in request.items() if key!='operation'}
-            chain=environment['toolchain']
-            chain['project']['search_paths']=[str((Path(directory)/'outside').resolve())]
-            record=environment['manifest']['validation']['record']
-            from copy import deepcopy
-            record['toolchain']=deepcopy(chain);record['toolchain_after']=deepcopy(chain)
-            environment['manifest']['validation']['sha256']=digest(record)
-            environment.update(source_ref='test',manifest_sha256=digest(environment['manifest']))
-            self.assertTrue(any('search path is outside' in error for error in trust_environment_errors(environment)))
 
-    def test_membership_changes_during_scan_are_not_verified(self):
-        from do_math.trust_validation import verify_environment_files
-        with tempfile.TemporaryDirectory() as directory:
-            request=trust_fixture(Path(directory),['lean'])
-            environment={key:value for key,value in request.items() if key!='operation'}
-            environment.update(source_ref='test',manifest_sha256=digest(request['manifest']))
-            def add_file(progress):
-                (Path(directory)/'synthetic-trust/toolchain/bin/late.dll').write_bytes(b'late')
-            result=verify_environment_files(environment,on_progress=add_file)
-            self.assertEqual(result['status'],'invalid')
-            self.assertIn('inventory membership changed during observation',result['errors'])
-
-    def test_large_manifest_rechecks_every_file_and_keeps_ordered_findings(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            request = trust_fixture(root, ['lean'])
-            environment = {key: value for key, value in request.items() if key != 'operation'}
-            files = environment['manifest']['files']
-            for i in range(40):
-                path = root / 'synthetic-trust/project/.lake/build' / f'module-{i}'
-                path.write_bytes(b'original')
-                files.append({'role':'mathlib_build', 'path':str(path.resolve()),
-                              'sha256':hashlib.sha256(b'original').hexdigest()})
-            validation=environment['manifest']['validation']
-            validation['record']['inventory_sha256']=digest({'scope':environment['manifest']['scope'],'files':files})
-            validation['sha256']=digest(validation['record'])
-            environment.update(source_ref='test', manifest_sha256=digest(environment['manifest']))
-            self.assertEqual(trust_environment_errors(environment), [])
-            changed, missing = files[-2]['path'], files[-1]['path']
-            Path(changed).write_bytes(b'changed')
-            Path(missing).unlink()
-            files.append(dict(files[0]))
-            files.append({'role':'checker','path':'relative','sha256':'0'*64})
-            environment['manifest_sha256'] = digest(environment['manifest'])
-            # A malformed manifest fails before any live observation.
-            self.assertEqual(trust_environment_errors(environment), [
-                'duplicate manifest path', 'manifest file must have an absolute path'])
-            self.assertEqual(trust_environment_errors(environment, verify_files=False), [
-                'duplicate manifest path', 'manifest file must have an absolute path'])
-            del files[-2:]
-            environment['manifest_sha256'] = digest(environment['manifest'])
-            self.assertEqual(trust_environment_errors(environment), ['inventory membership differs'])
-            Path(missing).write_bytes(b'original')
-            self.assertEqual(trust_environment_errors(environment), ['trust file changed: ' + changed])
-
-    def test_structure_never_resolves_host_paths_and_live_hashing_streams(self):
-        from do_math.trust_validation import verify_environment_files
-        with tempfile.TemporaryDirectory() as directory:
-            request = trust_fixture(Path(directory), ['lean'])
-            environment = {key:value for key,value in request.items() if key != 'operation'}
-            environment.update(source_ref='test', manifest_sha256=digest(request['manifest']))
-            with patch.object(Path, 'resolve', side_effect=AssertionError('host access')):
-                self.assertEqual(trust_environment_errors(environment, verify_files=False), [])
-            with patch.object(Path, 'read_bytes', side_effect=AssertionError('whole file read')):
-                result = verify_environment_files(environment, workers=2)
-            self.assertEqual(result['status'], 'verified')
-            self.assertLessEqual(result['peak_pending'], 4)
-            self.assertEqual(result['completed_files'], 6)
-            stopped = verify_environment_files(environment, should_stop=lambda:True)
-            self.assertEqual(stopped['status'], 'cancelled')
-            self.assertEqual(stopped['read_bytes'], 0)
-
-    def test_cached_environment_requires_evidence_and_unchanged_files(self):
-        with tempfile.TemporaryDirectory() as directory:
-            request = trust_fixture(Path(directory), ['lean'])
-            environment = {key: value for key, value in request.items() if key != 'operation'}
-            environment.update(source_ref='explicit-test-adoption', manifest_sha256=digest(request['manifest']))
-            self.assertEqual(trust_environment_errors(environment), [])
-            entry = environment['manifest']['files'][-1]
-            Path(entry['path']).write_bytes(b'changed checker')
-            self.assertTrue(any('trust file changed' in error for error in trust_environment_errors(environment)))
-            environment['manifest']['validation'].pop('record')
-            environment['manifest_sha256'] = digest(environment['manifest'])
-            self.assertIn('trust validation requires a sealed self-contained record', trust_environment_errors(environment))
-
-    def test_unknown_manifest_field_is_not_silently_ignored(self):
-        with tempfile.TemporaryDirectory() as directory:
-            request = trust_fixture(Path(directory), ['lean'])
-            environment = {key: value for key, value in request.items() if key != 'operation'}
-            environment['manifest']['unrecognized'] = True
-            environment.update(source_ref='test', manifest_sha256=digest(environment['manifest']))
-            self.assertIn('trust manifest fields differ from the current contract', trust_environment_errors(environment))
-
-    def test_validation_preserves_source_output_and_exact_toolchain(self):
-        with tempfile.TemporaryDirectory() as directory:
-            chain = {'identity': 'synthetic test environment','project':{'fixture':True}}
-            with patch.object(setup_lean, 'inspect_toolchain', return_value=chain), \
-                    patch.object(setup_lean,'collect_inventory',return_value={'scope':{'roots':[]},'files':[]}), \
-                    patch('do_math.formal._job_run', return_value=(0, 'ok', '', False)) as run:
-                result = setup_lean.verify_environment(['test-lean'], Path(directory))
-            self.assertEqual(result['status'], 'verified')
-            record = json.loads(Path(result['evidence_path']).read_text(encoding='utf-8'))
-            self.assertEqual(record['scope'], 'mathlib_import_and_representative_proofs')
-            self.assertEqual(record['command'], run.call_args.args[0])
-            self.assertEqual(record['stdout'], 'ok')
-            self.assertEqual(record['toolchain_after'], chain)
-            self.assertEqual(record['source_sha256'], hashlib.sha256(Path(record['source']).read_bytes()).hexdigest())
-
-    def test_failure_and_toolchain_change_never_produce_verified_evidence(self):
-        for exit_code, after in [(1, 'before'), (0, 'changed')]:
-            with self.subTest(exit_code=exit_code, after=after), tempfile.TemporaryDirectory() as directory:
-                with patch.object(setup_lean, 'inspect_toolchain', side_effect=[{'identity':'before'}, {'identity':after}]), \
-                        patch.object(setup_lean,'collect_inventory',return_value={'scope':{'roots':[]},'files':[]}), \
-                        patch('do_math.formal._job_run', return_value=(exit_code, '', 'diagnostic', False)):
-                    result = setup_lean.verify_environment(['test-lean'], Path(directory))
-                self.assertEqual(result['status'], 'failed')
-                record = json.loads(Path(result['evidence_path']).read_text(encoding='utf-8'))
-                self.assertEqual(record['stderr'], 'diagnostic')
-
-    def test_library_change_with_unchanged_toolchain_metadata_fails_validation(self):
-        with tempfile.TemporaryDirectory() as directory:
-            chain={'identity':'same executable metadata'}
-            before={'scope':{'roots':[]},'files':[{'path':'dependency','sha256':'a'*64}]}
-            after={'scope':{'roots':[]},'files':[{'path':'dependency','sha256':'b'*64}]}
-            with patch.object(setup_lean,'inspect_toolchain',return_value=chain), \
-                 patch.object(setup_lean,'collect_inventory',side_effect=[before,after]), \
-                 patch('do_math.formal._job_run',return_value=(0,'','',False)):
-                result=setup_lean.verify_environment(['test-lean'],Path(directory))
-            self.assertEqual(result['status'],'failed')
-            self.assertIsNone(result['inventory_path'])
+if __name__ == '__main__':
+    unittest.main()

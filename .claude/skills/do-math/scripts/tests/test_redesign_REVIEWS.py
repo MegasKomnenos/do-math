@@ -5,6 +5,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from do_math.repository import exact_content_hash
 
 from do_math.review_cycle import (accept_result, authorize_record_replacement, context_for,
                                   next_actions, record_recovery_event, start_review)
@@ -214,7 +215,7 @@ class ReassessmentGitTests(unittest.TestCase):
     def test_actual_split_state_suspend_review_save_reload_and_next_owner(self):
         from test_redesign_KNOWLEDGE import KnowledgeAudit2
         from test_review_cycle import ReviewCycleTests, scoped_start
-        from do_math import activities, execution_lifecycle, knowledge_records as kr
+        from do_math import activities, execution_lifecycle
         from do_math.execution_profiles import profile_ref
         from do_math.repository import new_id
         fixture = KnowledgeAudit2()
@@ -239,7 +240,7 @@ class ReassessmentGitTests(unittest.TestCase):
             engine.runtime.setdefault('queue', []).append({'id': identifier, 'lineage_id': identifier,
                 'role': role, **({'target': target} if target else {}), **extra})
         engine._enqueue = enqueue
-        result = engine._start_assessment_reassessment(aid, kr.digest(assessment), {'kind': 'author_context', 'execution_id': flawed})
+        result = engine._start_assessment_reassessment(aid, exact_content_hash(assessment), {'kind': 'author_context', 'execution_id': flawed})
         fixture.state, fixture.runtime = engine.instance, engine.runtime
         fixture.roundtrip()
         engine.instance, engine.runtime, engine.head = fixture.state, fixture.runtime, fixture.head
@@ -398,8 +399,7 @@ class AssessmentReassessmentTests(unittest.TestCase):
         self.assessment = self.engine.assessment()
 
     def request(self, evidence):
-        from do_math import knowledge_records as kr
-        return {'assessment_id': self.assessment['id'], 'assessment_sha256': kr.digest(self.assessment),
+        return {'assessment_id': self.assessment['id'], 'assessment_sha256': exact_content_hash(self.assessment),
                 'evidence': evidence}
 
     def defect(self):

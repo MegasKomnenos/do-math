@@ -3,7 +3,7 @@ from copy import deepcopy
 
 from . import planning, submission
 from .input_basis import capture_decision_basis, decision_basis_changes, CurrentnessChanged
-from .repository import new_id
+from .repository import exact_content_hash, new_id
 
 
 class DecisionEngineMixin:
@@ -131,7 +131,7 @@ class DecisionEngineMixin:
                 identifier = assessment["task_id"]
                 before = original_runtime["tasks"].get(identifier, {})
                 after = self.runtime["tasks"].get(identifier, {})
-                if planning._hash(before.get("results", [])) != planning._hash(after.get("results", [])):
+                if exact_content_hash(before.get("results", [])) != exact_content_hash(after.get("results", [])):
                     changes.append({"id": identifier, "field": "assessment_result_set", "reason": "assessment requires the current complete results"})
         if changes:
             raise CurrentnessChanged(changes)

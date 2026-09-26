@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib, json, os, re, shutil, subprocess, sys, tempfile, time, traceback, uuid
 from pathlib import Path
 from .trust_validation import AXIOMS
+from .file_io import cached_sha256, json_digest
 from do_math.windows_job import WindowsJob, process_identity
 
 class VerificationStopped(RuntimeError):
@@ -12,17 +13,6 @@ class VerificationStopped(RuntimeError):
 def _check_stop(should_stop):
     if should_stop and should_stop():
         raise VerificationStopped('verification stopped')
-
-
-def _file_hash(path, should_stop=None):
-    digest=hashlib.sha256()
-    _check_stop(should_stop)
-    with Path(path).open('rb') as stream:
-        while chunk := stream.read(1024*1024):
-            _check_stop(should_stop)
-            digest.update(chunk)
-    _check_stop(should_stop)
-    return digest.hexdigest()
 
 
 def _git(command, should_stop=None):
@@ -154,7 +144,6 @@ def compare_formal_results(previous: dict, current: dict) -> dict:
     return {"equivalent": not missing and not changed, "missing": missing, "changed": changed,
             "requires_identity_review": bool(missing or changed)}
 
-def _hash(b: bytes) -> str: return hashlib.sha256(b).hexdigest()
 LEAN_VERSION='4.32.0'; READY_MARKER='.do-math-ready'
 def toolchain_root() -> Path | None:
     """Machine-wide toolchain location shared by instances; None for a shallow installation."""
@@ -181,21 +170,31 @@ def _ident(x: str) -> bool:
     parts = [part.rstrip("'") for part in x.split('.')]
     return all(part and part.replace('_', 'a').isalnum() and part[0].isalpha() for part in parts)
 
-def project_fingerprint(project_root: Path, *, should_stop=None) -> dict | None:
-    """Fingerprint only the configured Lake project's tracked subtree and local inputs."""
+# Per-process memos of facts derived from unchanged inputs (accidental-change model).
+_GIT_ROOTS = {}     # resolved project path -> git top level
+_SEARCH_PATHS = {}  # digest of (Lake command, project identity, Lake executable) -> search paths
+
+
+def project_source_identity(project_root: Path, *, should_stop=None) -> dict:
+    """Identify the configured Lake project's tracked subtree and local inputs (not its .lake)."""
     _check_stop(should_stop)
     root=project_root.resolve()
-    gitroot=_git(['git','-C',str(root),'rev-parse','--show-toplevel'],should_stop).stdout.decode().strip()
-    if not gitroot:return None
-    gitroot=Path(gitroot); relative='.' if root==gitroot else root.relative_to(gitroot).as_posix()
-    target='HEAD^{tree}' if relative=='.' else f'HEAD:{relative}'
-    tree_result=_git(['git','-C',str(gitroot),'rev-parse','--verify',target],should_stop)
-    tree=tree_result.stdout.decode().strip() if tree_result.returncode == 0 else None
-    diff=_git(['git','-C',str(gitroot),'diff','--no-ext-diff','HEAD','--',relative],should_stop).stdout
-    tracked_result=_git(['git','-C',str(gitroot),'ls-files','-z','--',relative],should_stop)
-    if tracked_result.returncode:
-        raise RuntimeError('cannot read tracked paths for the configured project')
-    tracked_paths={name.decode('utf-8') for name in tracked_result.stdout.split(b'\0') if name}
+    if root not in _GIT_ROOTS:  # Where the repository starts changes only if it is moved.
+        _GIT_ROOTS[root]=_git(['git','-C',str(root),'rev-parse','--show-toplevel'],should_stop).stdout.decode().strip()
+    gitroot=_GIT_ROOTS[root]
+    tree,diff,tracked_paths=None,b'',set()
+    if gitroot:
+        gitroot=Path(gitroot); relative='.' if root==gitroot else root.relative_to(gitroot).as_posix()
+        target='HEAD^{tree}' if relative=='.' else f'HEAD:{relative}'
+        tree_result=_git(['git','-C',str(gitroot),'rev-parse','--verify',target],should_stop)
+        tree=tree_result.stdout.decode().strip() if tree_result.returncode == 0 else None
+        diff=_git(['git','-C',str(gitroot),'diff','--no-ext-diff','HEAD','--',relative],should_stop).stdout
+        tracked_result=_git(['git','-C',str(gitroot),'ls-files','-z','--',relative],should_stop)
+        if tracked_result.returncode:
+            raise RuntimeError('cannot read tracked paths for the configured project')
+        tracked_paths={name.decode('utf-8') for name in tracked_result.stdout.split(b'\0') if name}
+    else:
+        gitroot=root  # Outside Git every project input is an untracked file.
     untracked={}
     # .lake holds dependency sources and build output; lake-manifest.json already pins them.
     for directory,dirs,names in os.walk(root):
@@ -205,14 +204,13 @@ def project_fingerprint(project_root: Path, *, should_stop=None) -> dict | None:
             _check_stop(should_stop)
             if path.suffix=='.lean' or path.name in {'lean-toolchain','lake-manifest.json','lakefile.lean','lakefile.toml'}:
                 tracked=path.relative_to(gitroot).as_posix() in tracked_paths
-                if not tracked: untracked[path.relative_to(root).as_posix()]=_file_hash(path,should_stop)
+                if not tracked: untracked[path.relative_to(root).as_posix()]=cached_sha256(path)
     # Consumers compare project identity; no runtime consumer reads individual
     # entries. Keep the full filename/content sensitivity without copying a
     # large inventory into every role prompt and formal result.
-    untracked_digest = _hash(json.dumps(untracked, ensure_ascii=False, sort_keys=True,
-                                       separators=(',', ':')).encode('utf-8'))
+    untracked_digest = json_digest(untracked)
     _check_stop(should_stop)
-    return {'root':str(root),'git_tree':tree,'working_diff_hash':_hash(diff),
+    return {'root':str(root),'git_tree':tree,'working_diff_hash':hashlib.sha256(diff).hexdigest(),
             'untracked_file_count':len(untracked),'untracked_sha256':untracked_digest}
 
 def _worker(request_path: Path) -> int:
@@ -311,11 +309,15 @@ def toolchain_errors(toolchain):
     if not isinstance(executables, dict) or any(not isinstance(p, str) or not p or
             not isinstance(h, str) or not re.fullmatch('[0-9a-f]{64}', h) for p, h in executables.items()):
         errors.append('toolchain.executables must map paths to SHA-256 values')
-    if toolchain.get('project') is not None and (not isinstance(toolchain['project'], dict) or
-            set(toolchain['project']) != {'manifest_hashes', 'fingerprint', 'search_paths'}):
+    project = toolchain.get('project')
+    if project is not None and (not isinstance(project, dict) or
+            set(project) != {'manifest_hashes', 'source_identity', 'search_paths'}
+            or not isinstance(project['source_identity'], dict)
+            or not isinstance(project['source_identity'].get('root'), str)
+            or not Path(project['source_identity']['root']).is_absolute()):
         errors.append('toolchain.project must be null or the observed Lake project identity')
-    elif toolchain.get('project') is not None:
-        paths=toolchain['project']['search_paths']
+    elif project is not None:
+        paths=project['search_paths']
         if not isinstance(paths,list) or any(not isinstance(p,str) or not Path(p).is_absolute() for p in paths):
             errors.append('toolchain project search paths must be observed absolute paths')
     return errors
@@ -330,14 +332,20 @@ def _project_identity(command, should_stop=None, *, workspace=None, expected=Non
         raise ValueError('Lake --dir requires a project path')
     root = Path(command[index]).resolve(strict=True)
     names = ('lean-toolchain', 'lake-manifest.json', 'lakefile.lean', 'lakefile.toml')
-    identity={'manifest_hashes': {name: _file_hash(root/name,should_stop) for name in names if (root/name).is_file()},
-              'fingerprint': project_fingerprint(root,should_stop=should_stop)}
+    identity={'manifest_hashes': {name: cached_sha256(root/name) for name in names if (root/name).is_file()},
+              'source_identity': project_source_identity(root,should_stop=should_stop)}
     # Never execute changed project code merely to discover its environment.
     if expected is not None and any(identity[k]!=expected.get(k) for k in identity):
         return {**identity,'search_paths':[]}
     if workspace is None or 'env' not in command:
         raise ValueError('Lake environment observation requires env and an observation workspace')
     prefix=command[:command.index('env')+1]
+    # Lake derives the search paths from its executable and the inputs identified
+    # above; unchanged inputs give the same paths, so one observation per process.
+    lake=Path(shutil.which(prefix[0]) or prefix[0])
+    key=json_digest([prefix,identity,cached_sha256(lake) if lake.is_file() else None])
+    if key in _SEARCH_PATHS:
+        return {**identity,'search_paths':list(_SEARCH_PATHS[key])}
     script=('import os,json; print(json.dumps({"cwd":os.getcwd(),"paths":'
             '[p for k in ("LEAN_PATH","LEAN_SRC_PATH") for p in os.environ.get(k,"").split(os.pathsep) if p]}))')
     code,out,err,stopped=_job_run([*prefix,sys.executable,'-c',script],Path(workspace),should_stop=should_stop)
@@ -348,6 +356,7 @@ def _project_identity(command, should_stop=None, *, workspace=None, expected=Non
             or not isinstance(observed.get('paths'),list) or any(not isinstance(p,str) for p in observed['paths'])):
         raise ValueError('invalid project environment observation')
     identity['search_paths']=sorted({str((Path(observed['cwd'])/p).resolve()) for p in observed['paths']})
+    _SEARCH_PATHS[key]=tuple(identity['search_paths'])
     return identity
 
 
@@ -362,11 +371,11 @@ def inspect_toolchain(command, workspace, *, should_stop=None):
     if stopped: raise VerificationStopped('toolchain observation stopped')
     if code != 0:
         raise RuntimeError('toolchain version observation failed: ' + stderr)
-    result = {'executable': str(resolved), 'sha256': _file_hash(resolved,should_stop),
+    result = {'executable': str(resolved), 'sha256': cached_sha256(resolved),
         'configured_command': command, 'version': stdout.strip(), 'version_exit': code,
         'project': _project_identity(command,should_stop,workspace=workspace),
-        'verifier_sha256': _hash(__loader__.get_data(__file__)), 'verifier_path':str(Path(__file__).resolve()),
-        'executables': {str(Path(p).resolve()): _file_hash(Path(p),should_stop) for p in command
+        'verifier_sha256': hashlib.sha256(__loader__.get_data(__file__)).hexdigest(), 'verifier_path':str(Path(__file__).resolve()),
+        'executables': {str(Path(p).resolve()): cached_sha256(Path(p)) for p in command
                         if Path(p).is_file() and Path(p).suffix.lower() in {'.exe', '.dll'}}}
     errors = toolchain_errors(result)
     if errors:
@@ -374,23 +383,41 @@ def inspect_toolchain(command, workspace, *, should_stop=None):
     return result
 
 
-def _approved_files_current(command, resolved, expected, should_stop=None):
-    """Check fixed local identities before running even the version command.
+def toolchain_identity_errors(toolchain, *, should_stop=None):
+    """Recompute the local facts of an approved identity: the recorded executable
+    and checker bytes, the running checker and the Lake project inputs.
 
-    The caller validates the wider trust manifest. This byte check does not
-    isolate processes from concurrent writers under the same OS identity.
+    Formal checks, activation and publication gates share this one check. It does
+    not isolate processes from concurrent writers under the same OS identity.
     """
-    if toolchain_errors(expected) or expected.get('configured_command') != command:
-        return False
+    errors = toolchain_errors(toolchain)
+    if errors:
+        return errors
+    if toolchain['verifier_path'] != str(Path(__file__).resolve()):
+        errors.append('approved checker is not the running checker')
+    # Pairs, not a mapping: the executable may also appear among the command's
+    # files, and each recorded hash must hold on its own.
+    files = [(toolchain['executable'], toolchain['sha256']), *toolchain['executables'].items(),
+             (toolchain['verifier_path'], toolchain['verifier_sha256'])]
+    for path, expected in files:
+        try:
+            current = cached_sha256(Path(path))
+        except OSError:
+            current = None
+        message = 'approved toolchain file changed: ' + path
+        if current != expected and message not in errors:
+            errors.append(message)
     try:
-        return (expected.get('executable') == str(resolved)
-            and expected.get('sha256') == _file_hash(resolved,should_stop)
-            and expected.get('verifier_sha256') == _hash(__loader__.get_data(__file__))
-            and expected.get('verifier_path') == str(Path(__file__).resolve())
-            and expected.get('executables') == {str(Path(part).resolve()): _file_hash(Path(part),should_stop)
-                for part in command if Path(part).is_file() and Path(part).suffix.lower() in {'.exe', '.dll'}})
-    except OSError:
-        return False
+        with tempfile.TemporaryDirectory(prefix='do-math-identity-') as workspace:
+            project = _project_identity(toolchain['configured_command'], should_stop,
+                                        workspace=Path(workspace), expected=toolchain['project'])
+    except VerificationStopped:
+        raise
+    except (OSError, RuntimeError, ValueError) as error:
+        return errors + ['approved project inputs could not be observed: ' + str(error)]
+    if project != toolchain['project']:
+        errors.append('approved project inputs changed')
+    return errors
 
 
 def verify_lean(*, source: str, declarations: list[str], workspace: Path,
@@ -406,7 +433,7 @@ def verify_lean(*, source: str, declarations: list[str], workspace: Path,
         validate_start(launch_ticket)
         if launch_ticket['kind'] != 'native_job' or launch_ticket['phase'] != 'dispatched':
             raise ValueError('formal runner needs the dispatched native launch ticket')
-    workspace=workspace.resolve(); raw=source.encode(); base={"source_sha256":_hash(raw),"declarations":declarations,"axioms":{},"declaration_signatures":{},"dependency_closure":{},"declaration_evidence":{},"signature_hash":None,"stdout":"","stderr":"","command":None,"toolchain":None,"reason":None}
+    workspace=workspace.resolve(); raw=source.encode(); base={"source_sha256":hashlib.sha256(raw).hexdigest(),"declarations":declarations,"axioms":{},"declaration_signatures":{},"dependency_closure":{},"declaration_evidence":{},"signature_hash":None,"stdout":"","stderr":"","command":None,"toolchain":None,"reason":None}
     base['launch_not_created'] = True
     if not all(_ident(x) for x in declarations): return {**base,"status":"rejected","reason":"invalid declaration"}
     if not declarations: return {**base,"status":"rejected","reason":"no declaration to audit"}
@@ -418,11 +445,14 @@ def verify_lean(*, source: str, declarations: list[str], workspace: Path,
         _check_stop(should_stop)
         # Compare the same canonical executable identity that inspect_toolchain records.
         resolved=Path(shutil.which(command[0]) or command[0]).resolve()
-        if expected_toolchain is not None and not _approved_files_current(command,resolved,expected_toolchain,should_stop):
-            return {**base,'status':'rejected','reason':'approved toolchain changed before execution'}
-        if expected_toolchain is not None and _project_identity(command,should_stop,workspace=workspace,
-                expected=expected_toolchain.get('project')) != expected_toolchain.get('project'):
-            return {**base,'status':'rejected','reason':'approved project inputs changed before execution'}
+        if expected_toolchain is not None:
+            if expected_toolchain.get('configured_command') != command or expected_toolchain.get('executable') != str(resolved):
+                return {**base,'status':'rejected','reason':'approved toolchain changed before execution'}
+            identity_errors=toolchain_identity_errors(expected_toolchain,should_stop=should_stop)
+            if identity_errors:
+                reason=('approved project inputs changed before execution' if identity_errors == ['approved project inputs changed']
+                        else 'approved toolchain changed before execution')
+                return {**base,'status':'rejected','reason':reason,'identity_errors':identity_errors}
         toolchain=inspect_toolchain(command,workspace,should_stop=should_stop) if expected_toolchain is None else dict(expected_toolchain)
     except VerificationStopped as error:
         return {**base,'status':'stopped','reason':str(error),'phase':'preparation'}
@@ -451,12 +481,6 @@ def verify_lean(*, source: str, declarations: list[str], workspace: Path,
     base.update(stdout=stdout,stderr=stderr,command=[*command,str(check)],toolchain=toolchain,exit_code=code,
                 local_job_usage=local_job_usage)
     if stopped: return {**base,'status':'stopped','reason':'stopped'}
-    try:
-        if expected_toolchain is not None and not _approved_files_current(command,resolved,expected_toolchain,should_stop):
-            return {**base,'status':'rejected','reason':'approved toolchain changed during verification'}
-        _check_stop(should_stop)
-    except VerificationStopped as error:
-        return {**base,'status':'stopped','reason':str(error)}
     if code:
         crashed=(code & 0x80000000 != 0) if os.name=='nt' else code<0
         return {**base,'status':'failed','reason':'compiler crashed' if crashed else 'lean rejected'}
@@ -491,8 +515,8 @@ def _parse_evidence(base, declarations, allowed_axioms, should_stop=None):
                         or not isinstance(evidence,dict) or not isinstance(evidence.get('type'),str)
                         or evidence.get('value') is not None and not isinstance(evidence['value'],str)):
                     raise ValueError('invalid dependency evidence')
-                dependency_hashes[name]=_hash(json.dumps({'type':evidence['type'],'value':evidence.get('value')},
-                    sort_keys=True,separators=(',',':')).encode())
+                dependency_hashes[name]=hashlib.sha256(json.dumps({'type':evidence['type'],'value':evidence.get('value')},
+                    sort_keys=True,separators=(',',':')).encode()).hexdigest()
                 del row
             except (KeyError,TypeError,ValueError,RecursionError):
                 return {**base,'status':'failed','reason':'malformed dependency evidence'}
@@ -528,7 +552,7 @@ def _parse_evidence(base, declarations, allowed_axioms, should_stop=None):
         if declaration not in axiom_rows: return {**base,'status':'failed','reason':'axiom output missing'}
     base['declaration_signatures']=signatures
     base['axioms']=axiom_rows
-    base['signature_hash']=_hash(json.dumps(signatures,sort_keys=True,separators=(',',':')).encode())
+    base['signature_hash']=hashlib.sha256(json.dumps(signatures,sort_keys=True,separators=(',',':')).encode()).hexdigest()
     if any(axiom=='sorryAx' or axiom not in allowed_axioms for axioms in axiom_rows.values() for axiom in axioms):
         return {**base,'status':'rejected','reason':'forbidden axiom'}
     if set(extracted)!=selected: return {**base,'status':'failed','reason':'dependency output missing'}
@@ -542,5 +566,5 @@ def _parse_evidence(base, declarations, allowed_axioms, should_stop=None):
         base['dependency_closure'][declaration]=dependencies
         base['declaration_evidence'][declaration]=row['evidence']
         base.setdefault('dependency_evidence',{})[declaration]={name:dependency_hashes[name] for name in dependencies}
-    base['dependency_hash']=_hash(json.dumps(base['dependency_closure'],sort_keys=True,separators=(',',':')).encode())
+    base['dependency_hash']=hashlib.sha256(json.dumps(base['dependency_closure'],sort_keys=True,separators=(',',':')).encode()).hexdigest()
     return {**base,'status':'verified','reason':None,'expression_encoding':'lean-expr-dag/1'}

@@ -177,5 +177,121 @@ class ResearchRepositoryTests(unittest.TestCase):
         self.assertEqual(canonical_json({"b": 1, "a": [True, None]}), b'{\n  "a": [\n    true,\n    null\n  ],\n  "b": 1\n}\n')
 
 
+class ValidatedReadReuseTests(unittest.TestCase):
+    """Same-fact rechecks stay out of reads: own heads, shared heads, matched bytes."""
+
+    def setUp(self) -> None:
+        from do_math.initialization import initialize_state
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        subprocess.run(["git", "-C", str(self.root), "init", "-q"], check=True)
+        self.identifier = new_id("RI")
+        self.repository = ResearchRepository(self.root, self.identifier)
+        # The large original input is stored as a sealed payload blob.
+        instance, runtime = initialize_state(instance_id=self.identifier, goal="G", workspace=self.root / "work",
+                                             config={}, source_input="x" * 70000)
+        self.head = self.repository.initialize(instance, runtime)
+
+    def counters(self):
+        from contextlib import ExitStack
+        from do_math import repository as module
+        from do_math.state_contract import StateContract
+        stack = ExitStack()
+        decode = stack.enter_context(patch.object(module, "_decode_families", wraps=module._decode_families))
+        validate = stack.enter_context(patch.object(StateContract, "validate", autospec=True,
+                                                    side_effect=StateContract.validate))
+        return stack, decode, validate
+
+    def outside_head(self, parent, bundle):
+        """A head another writer published: same state plus one artifact bundle."""
+        return self.repository._store.publish(parent, {f"runtime/artifacts/{bundle}/note.bin": bundle.encode()}).head
+
+    def test_own_publication_is_not_revalidated_but_an_outside_head_is(self):
+        from do_math.preflight import inspect_persisted_state
+        head, instance, runtime = self.repository.load()
+        runtime["cycles"] = 1
+        stack, decode, validate = self.counters()
+        with stack:
+            new_head, saved_instance, saved_runtime = self.repository.save_with_state(head, instance, runtime)
+            _, loaded_instance, loaded_runtime = self.repository.load(new_head)
+            self.assertTrue(inspect_persisted_state(self.repository, new_head)["valid"])
+        self.assertEqual((decode.call_count, validate.call_count), (0, 1))  # the candidate check only
+        self.assertEqual(loaded_runtime["cycles"], 1)
+        saved_runtime["cycles"] = 99  # returned views are detached from the shared entry
+        self.assertEqual(self.repository.load(new_head)[2]["cycles"], 1)
+        rows = self.repository.records(new_head, family="lifecycle")
+        self.assertEqual(len(rows), 1)
+        outside = self.outside_head(new_head, "BA-outside")
+        stack, decode, validate = self.counters()
+        with stack:
+            self.assertEqual(self.repository.load(outside)[2]["cycles"], 1)
+        self.assertEqual((decode.call_count, validate.call_count), (1, 1))
+
+    def test_one_head_is_validated_once_across_repository_objects(self):
+        outside = self.outside_head(self.head, "BA-shared")
+        stack, decode, _ = self.counters()
+        with stack:
+            ResearchRepository(self.root, self.identifier).load(outside)
+            ResearchRepository(self.root, self.identifier).load(outside)
+            self.assertEqual(decode.call_count, 1)
+            from do_math.state_contract import StateContract
+            custom = StateContract.default()
+            custom.register_family("research", "sources", shape="list", validator=lambda record: None)
+            ResearchRepository(self.root, self.identifier, contract=custom).load(outside)
+            self.assertEqual(decode.call_count, 2)  # another contract is another validation
+
+    def test_payload_bytes_are_hashed_once_per_repository(self):
+        import hashlib
+        payloads = {path: raw for path, raw in self.repository._read_documents(self.head)[3].items()
+                    if path.startswith("runtime/artifacts/payload-")}
+        self.assertEqual(len(payloads), 1)
+        raw = next(iter(payloads.values()))
+        outside = self.outside_head(self.head, "BA-payload")
+        with patch.object(hashlib, "sha256", wraps=hashlib.sha256) as sha256:
+            self.assertEqual(len(self.repository.load(outside)[1]["lifecycle"]["immutable_input"]["text"]), 70000)
+        self.assertFalse(any(call.args and call.args[0] == raw for call in sha256.call_args_list))
+
+    def test_evidence_rows_are_read_once_and_new_rows_are_still_matched(self):
+        import hashlib
+        path, raw = "runtime/artifacts/BA-evidence/observation.json", b'{"observed": true}\n'
+        head, instance, runtime = self.repository.load()
+        head = self.repository.save_with_state(head, instance, runtime, artifacts={path: raw})[0]
+        def rows(digest):
+            return {"checkpoints": {"CP-1": {"evidence_files": [{"artifact_ref": path, "sha256": digest, "bytes": len(raw)}]}}}
+        digest = hashlib.sha256(raw).hexdigest()
+        with patch.object(self.repository._store, "read_many", wraps=self.repository._store.read_many) as reads:
+            self.repository._validate_artifact_evidence(rows(digest), head)
+            self.repository._validate_artifact_evidence(rows(digest), self.outside_head(head, "BA-evidence-2"))
+        self.assertEqual(reads.call_count, 1)
+        with self.assertRaisesRegex(ValueError, "hash differs"):
+            self.repository._validate_artifact_evidence(rows("0" * 64), head)
+
+    def test_unchanged_records_skip_record_local_and_immutable_hash_checks(self):
+        from do_math import governance, initialization
+        from do_math.state_contract import StateContract
+        checked = []
+        contract = StateContract.default()
+        contract.register_family("research", "governance_sources", shape="map",
+                                 validator=lambda record: checked.append(record["id"]))
+        repository = ResearchRepository(self.root, self.identifier, contract=contract)
+        head, instance, runtime = repository.load()
+        instance["governance_sources"]["GS-1"] = governance.preserve_source("GS-1", "first", origin="user")
+        head, instance, runtime = repository.save_with_state(head, instance, runtime)
+        self.assertEqual(checked, ["GS-1"])
+        instance["governance_sources"]["GS-2"] = governance.preserve_source("GS-2", "second", origin="user")
+        runtime["cycles"] = 1
+        with patch.object(governance, "validate_source", wraps=governance.validate_source) as source, \
+             patch.object(initialization, "original_input_bytes", wraps=initialization.original_input_bytes) as original:
+            head, instance, runtime = repository.save_with_state(head, instance, runtime)
+        self.assertEqual(checked, ["GS-1", "GS-2"])
+        self.assertEqual([call.args[0]["id"] for call in source.call_args_list], ["GS-2"])
+        self.assertEqual(original.call_count, 0)
+        instance["governance_sources"]["GS-3"] = {**governance.preserve_source("GS-3", "third", origin="user"),
+                                                  "sha256": "0" * 64}
+        with self.assertRaisesRegex(ValueError, "immutable source"):
+            repository.save_with_state(head, instance, runtime)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

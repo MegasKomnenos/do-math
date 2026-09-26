@@ -6,10 +6,9 @@ from datetime import datetime, timedelta, timezone
 import hashlib
 from typing import Any
 
-from .repository import canonical_json
+from .repository import exact_content_hash
 
 
-def _hash(value: Any) -> str: return hashlib.sha256(canonical_json(value)).hexdigest()
 CONTRACT_FIELDS = ("id", "revision", "title", "question", "scope", "expected", "description",
                    "completion_obligations", "progress_criteria", "basis_refs", "inputs", "reuse", "dependencies", "occurrence_condition",
                    "work_class", "profile_refs", "authority_refs", "trust_environment_id",
@@ -18,10 +17,13 @@ CONTRACT_FIELDS = ("id", "revision", "title", "question", "scope", "expected", "
 
 def contract_hash(task: dict) -> str:
     """Hash only fields whose revision approval is intended to cover."""
-    return _hash({key: task[key] for key in CONTRACT_FIELDS if key in task})
+    return exact_content_hash({key: task[key] for key in CONTRACT_FIELDS if key in task})
 
 
 TERMINAL_TASK_STATUSES = frozenset({"completed", "closed"})
+# (git_dir, artifact path, sha256) -> byte length of a sealed artifact that passed
+# its format validation in this process; the key matches repository.VERIFIED_ARTIFACTS.
+_VALID_ARTIFACTS: dict[tuple[str, str, str], int] = {}
 
 
 def task_reference_basis(task: dict) -> dict:
@@ -31,7 +33,7 @@ def task_reference_basis(task: dict) -> dict:
     re-checks every task that a result actually selects, assesses or revises."""
     results = task.get("results", [])
     return {"id": task["id"], "contract_sha256": contract_hash(task), "result_count": len(results),
-            "results_sha256": _hash(results), "terminal": task.get("status") in TERMINAL_TASK_STATUSES}
+            "results_sha256": exact_content_hash(results), "terminal": task.get("status") in TERMINAL_TASK_STATUSES}
 
 
 def task_reference_changes(basis: list[dict], tasks: dict) -> list[str]:
@@ -44,7 +46,7 @@ def task_reference_changes(basis: list[dict], tasks: dict) -> list[str]:
         if contract_hash(task) != row["contract_sha256"]:
             reasons.append("contract_changed:" + row["id"])
         # Results are append-only; later returns do not change what the producer read.
-        if _hash(task.get("results", [])[:row["result_count"]]) != row["results_sha256"]:
+        if exact_content_hash(task.get("results", [])[:row["result_count"]]) != row["results_sha256"]:
             reasons.append("results_changed:" + row["id"])
     return reasons
 
@@ -222,10 +224,10 @@ def capture_task_basis(task, instance, runtime):
             family, record = found
             value = task_reference_basis(record) if family == "task" else record
             # Review append/selection bookkeeping never changes a dependency's contract.
-            common[ref] = {"family": family, "sha256": _hash(value)}
+            common[ref] = {"family": family, "sha256": exact_content_hash(value)}
         else:
             common[ref] = {"available": ref in instance.get("available_input_refs", [])}
-    return {"common": common, "profiles": {ref: _hash(records[ref][1]) if ref in records else None for ref in profile_ids}}
+    return {"common": common, "profiles": {ref: exact_content_hash(records[ref][1]) if ref in records else None for ref in profile_ids}}
 
 
 def seal_contract_review(task, output, instance, runtime, *, execution_id):
@@ -244,7 +246,7 @@ def seal_contract_review(task, output, instance, runtime, *, execution_id):
 def review_basis_key(task: dict, instance: dict, runtime: dict, *, task_basis=None) -> str:
     from .input_basis import capture_decision_basis
     refs = action_read_ids({"role": "task_contract_review", "target": task["id"]}, instance, runtime)
-    return _hash({"contract": contract_hash(task), **governance_revisions(instance),
+    return exact_content_hash({"contract": contract_hash(task), **governance_revisions(instance),
                   "decision_basis": capture_decision_basis(instance, runtime, refs),
                   "task_basis": task_basis if task_basis is not None else capture_task_basis(task, instance, runtime)})
 
@@ -388,7 +390,7 @@ def _record_candidates(records: dict[str, tuple[str, dict]], identifier: str, fa
     return [found] if found and (family is None or found[0] == family) else []
 
 
-def _basis(record: dict) -> dict: return {"id": record["id"], "sha256": _hash(record), "status": record.get("status", record.get("lifecycle"))}
+def _basis(record: dict) -> dict: return {"id": record["id"], "sha256": exact_content_hash(record), "status": record.get("status", record.get("lifecycle"))}
 
 
 def _pointer(record: dict, family: str, pointer: str) -> Any:
@@ -479,12 +481,27 @@ def evaluate_condition(condition: dict, instance: dict, runtime: dict, *, evalua
                 context, ref = evaluation_context or {}, node["artifact_ref"]
                 if not context.get("snapshot") or not callable(context.get("read_artifact")) or not callable(context.get("validate_artifact")):
                     raise ValueError("artifact requires a fixed-snapshot reader and format validator")
-                data = context["read_artifact"](ref["snapshot"], ref["path"])
-                if not isinstance(data, bytes) or hashlib.sha256(data).hexdigest() != ref["sha256"]:
-                    raise ValueError("artifact bytes differ from sealed hash")
-                if context["validate_artifact"](ref, data) is not True:
-                    raise ValueError("artifact format validation failed")
-                basis.append({"artifact_ref": deepcopy(ref), "bytes": len(data)})
+                # Sealed bytes never change: one match and one format check per
+                # (git_dir, path, sha256) serve every later evaluation (contract S3).
+                git_dir = context.get("git_dir")
+                key = (str(git_dir), ref["path"], ref["sha256"])
+                size = _VALID_ARTIFACTS.get(key) if git_dir is not None else None
+                if size is None:
+                    from .repository import artifact_verified, verify_artifact
+                    data = context["read_artifact"](ref["snapshot"], ref["path"])
+                    if not isinstance(data, bytes):
+                        raise ValueError("artifact bytes differ from sealed hash")
+                    if git_dir is None or not artifact_verified(git_dir, ref["path"], ref["sha256"], len(data)):
+                        try:
+                            verify_artifact(git_dir, ref["path"], data, ref["sha256"])
+                        except ValueError as mismatch:
+                            raise ValueError("artifact bytes differ from sealed hash") from mismatch
+                    if context["validate_artifact"](ref, data) is not True:
+                        raise ValueError("artifact format validation failed")
+                    size = len(data)
+                    if git_dir is not None:
+                        _VALID_ARTIFACTS[key] = size
+                basis.append({"artifact_ref": deepcopy(ref), "bytes": size})
                 return "ready"
             candidates = _record_candidates(records, node.get("record_id"), node.get("family"))
             if len(candidates) > 1:
@@ -589,7 +606,7 @@ def task_ready(task: dict, instance: dict, runtime: dict, *, include_scheduling_
             continue
         if profile.get('role') != action['role']:
             continue
-        if any(review.get("task_basis", {}).get("profiles", {}).get(ref['id']) == _hash(profile) for review in approved):
+        if any(review.get("task_basis", {}).get("profiles", {}).get(ref['id']) == exact_content_hash(profile) for review in approved):
             profiles.append(ref['id'])
     selected = action.get("profile_ref")
     if not profiles or (selected and (not isinstance(selected,dict) or selected.get("id") not in profiles or
@@ -681,7 +698,7 @@ def exhaustion_state(instance, runtime, *, now=None, evaluation_context=None):
         answer.update(reasons=['preparation_or_review_in_progress']);return answer
     receipts=[r for r in runtime.get('history',[]) if r.get('kind')=='task_repetition' and r.get('lineage')=='exhaustion_empty']
     answer['exhausted']=True
-    answer['basis']={'tasks':{tid:{'contract_sha256':contract_hash(t),'results_sha256':_hash(t.get('results',[])),
+    answer['basis']={'tasks':{tid:{'contract_sha256':contract_hash(t),'results_sha256':exact_content_hash(t.get('results',[])),
         'waiting':deepcopy(t.get('waiting'))} for tid,t in runtime.get('tasks',{}).items()},
         'governance':deepcopy(instance.get('governance', {})),
         'source_hashes':{s.get('id',s.get('path')):s.get('sha256') for s in instance.get('sources',[])},
@@ -726,7 +743,7 @@ def schedule_reconsideration(instance, runtime, *, now, evaluation_context=None)
     if runtime.get('status')!='active' or instance.get('goal_status')=='mathematically_solved': return state
     exhaustion_event=None
     if state['exhausted']:
-        basis_sha256=_hash(state['basis'])
+        basis_sha256=exact_content_hash(state['basis'])
         exhaustion_event=next((e for e in runtime['events'] if e.get('kind')=='research_exhausted' and e.get('basis_sha256')==basis_sha256),None)
         if not exhaustion_event:
             exhaustion_event={'id':new_id('EV'),'kind':'research_exhausted','observed_at':now,
@@ -789,12 +806,12 @@ def collect_due_events(instance: dict, runtime: dict, now_iso: str, *, evaluatio
             references={e.get('id') for e in runtime.get('events',[])}
             triggers=sorted(set(revisit.get('event_refs',[])) & references)
             if (revisit.get('at') and _utc(revisit['at'])<=now) or triggers:
-                event=_event('task_revisit_due',_hash({'decision':disposition.get('execution_id'),'revisit':revisit,'triggers':triggers}),task.get('id'))
+                event=_event('task_revisit_due',exact_content_hash({'decision':disposition.get('execution_id'),'revisit':revisit,'triggers':triggers}),task.get('id'))
                 event.update(observed_at=now_iso,basis=deepcopy(disposition));events.append(event)
         if task.get("wake_at") and _utc(task["wake_at"]) <= now: events.append(_event("task_wake_due", task["wake_at"], task.get("id")))
         for condition in task.get("due_conditions", []):
             outcome = evaluate_condition(condition, instance, runtime,evaluation_context=evaluation_context)
-            key=_hash(condition); previous=runtime.get("condition_states",{}).get(f"{task.get('id')}:{key}")
+            key=exact_content_hash(condition); previous=runtime.get("condition_states",{}).get(f"{task.get('id')}:{key}")
             if outcome["state"] == "ready" and previous != "ready":
                 event = _event("task_condition_due", key + "|" + now_iso, task.get("id"))
                 event["at"] = now_iso
@@ -814,5 +831,5 @@ def apply_event_schedule(instance: dict, runtime: dict, now_iso: str, *, evaluat
     new_runtime.setdefault("pending_events", []).extend(event["id"] for event in events if event["id"] not in new_runtime.get("pending_events", []))
     states=new_runtime.setdefault("condition_states",{})
     for task in new_runtime.get("tasks",{}).values():
-        for condition in task.get("due_conditions",[]): states[f"{task.get('id')}:{_hash(condition)}"]=evaluate_condition(condition,instance,new_runtime,evaluation_context=evaluation_context)["state"]
+        for condition in task.get("due_conditions",[]): states[f"{task.get('id')}:{exact_content_hash(condition)}"]=evaluate_condition(condition,instance,new_runtime,evaluation_context=evaluation_context)["state"]
     return {"instance": instance, "runtime": new_runtime, "events": events}

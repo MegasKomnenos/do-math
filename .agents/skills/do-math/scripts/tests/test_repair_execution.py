@@ -101,7 +101,7 @@ class RepairExecutionTests(unittest.TestCase):
             "reason": "Repair the installed receiver", "repair_target": "installation:scripts/do_math/engine.py",
             "meaning_preserving": True, "verification": "Run the receiver regression"})
         host._save()
-        with patch.object(repair_execution, "installation_fingerprint", return_value="a" * 64):
+        with patch.object(repair_execution, "installation_sha256", return_value="a" * 64):
             result = ResearchEngine._complete_operational_disposition(host,
                 host.runtime["operational_dispositions"]["OD-repair"])
         self.assertEqual(result["status"], "installation_repair_pending")

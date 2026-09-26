@@ -7,6 +7,7 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from do_math.repository import exact_content_hash
 
 from do_math import governance as gov, planning, submission, task_contracts
 
@@ -87,7 +88,7 @@ class WalkthroughRepairs(unittest.TestCase):
         instance, runtime, _ = gov.apply_import_control(instance, runtime, {'id': 'APPROVAL-config',
             'action': 'decision', 'origin': 'user', 'text': 'Approve this exact effort', 'config': {
                 'kind': 'import_approval', 'import_id': bundle['id'], 'bundle_sha256': bundle['sha256'],
-                'check_sha256': bundle['check']['sha256'], 'unit_hashes': {'U': gov.digest(payload)}}},
+                'check_sha256': bundle['check']['sha256'], 'unit_hashes': {'U': exact_content_hash(payload)}}},
             owner_handlers=handlers)
         self.assertEqual(instance['config']['effort'], 'high')
         receipt = initial_intent_evidence(instance, runtime, owner_handlers=handlers)

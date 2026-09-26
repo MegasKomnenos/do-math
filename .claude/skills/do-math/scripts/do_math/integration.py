@@ -7,9 +7,10 @@ they must not perform external effects. A failed publish never returns acceptanc
 from __future__ import annotations
 
 from copy import deepcopy
-import hashlib
 
 import jsonschema
+
+from .repository import exact_content_hash
 
 
 TEXT = {"type": "string", "minLength": 1, "pattern": r"\S"}
@@ -37,14 +38,9 @@ REFERENCE_KEYS = {"dependencies", "inputs", "reuse", "source", "target", "eviden
                   "knowledge_revision_targets", "evidence_ids", "task_id", "task_title"}
 
 
-def digest(value):
-    from .repository import canonical_json
-    return hashlib.sha256(canonical_json(value)).hexdigest()
-
-
 def issue(rule_id, path, message, integration_id=None):
     identity = [rule_id, integration_id, path]
-    return {"issue_id": "SI-" + digest(identity)[:24], "rule_id": rule_id,
+    return {"issue_id": "SI-" + exact_content_hash(identity)[:24], "rule_id": rule_id,
             "integration_id": integration_id, "path": path, "message": message}
 
 
@@ -218,7 +214,7 @@ def _reviewed_impact_request(instance, runtime, bundle, *, producer_execution_id
         raise ValueError("impact review must be one isolated response bundle")
     receipt = runtime.get("integrations", {}).get(bundles[0]["integration_id"], {})
     if (receipt.get("execution_id") != review_execution_id or receipt.get("payload_sha256") != bundles[0]["payload_sha256"] or
-            receipt.get("response_sha256") != digest(member_values(output, {}, {"action": action})["output"])):
+            receipt.get("response_sha256") != exact_content_hash(member_values(output, {}, {"action": action})["output"])):
         raise ValueError("impact review has no matching published response receipt")
     if any(row["decision"] != "approve" for row in rows.values()):
         raise ValueError("independent impact review did not approve every assigned scope")
@@ -329,7 +325,7 @@ def protocol_output(output, extensions, context):
     members = member_values(output, extensions, context)
     grants = sorted({ref for ref in (action.get("grant_id"), context.get("control_binding", {}).get("grant_id")) if ref})
     declaration = {"members": sorted(members), "impact_set": [], "authority_refs": grants}
-    identifier = "IN-" + digest({"execution_id": context["execution_id"], "snapshot": context["snapshot"],
+    identifier = "IN-" + exact_content_hash({"execution_id": context["execution_id"], "snapshot": context["snapshot"],
         "action": action, "declaration": declaration, "values": members})
     return {**output, "integration_bundles": [{"integration_id": identifier, **declaration}]}
 
@@ -368,7 +364,7 @@ def inspect_bundles(output, extensions, context):
     accepted_response = context.get("accepted_response")
     already_owned = set()
     if accepted_response and _split_research(context):
-        if ("output" in owners or digest(members["output"]) != accepted_response.get("response_sha256")):
+        if ("output" in owners or exact_content_hash(members["output"]) != accepted_response.get("response_sha256")):
             issues.append(issue("integration.response_replay", "output",
                                 "accepted response must be unchanged and must not be reassigned"))
         else:
@@ -462,7 +458,7 @@ def split_bundles(output, extensions, context):
                 family = path.split("/")[1]
                 bundle["extensions"].setdefault(family, []).append(deepcopy(members[path]))
         # Hash only assigned values, never another independent bundle's report.
-        bundle["payload_sha256"] = digest({"declaration": declaration,
+        bundle["payload_sha256"] = exact_content_hash({"declaration": declaration,
             "values": {path: members[path] for path in declaration["members"]}})
         yield bundle
 
@@ -507,7 +503,7 @@ def apply_bundles(instance, runtime, output, extensions, context, *, execution_i
                 "id": ident, "execution_id": execution_id, "payload_sha256": bundle["payload_sha256"],
                 "members": deepcopy(bundle["members"]), "input_snapshot": context.get("snapshot")}
             if bundle["owns_response"]:
-                candidate_runtime["integrations"][ident]["response_sha256"] = digest(member_values(output, extensions, context)["output"])
+                candidate_runtime["integrations"][ident]["response_sha256"] = exact_content_hash(member_values(output, extensions, context)["output"])
             stage = "candidate"
             validate_candidate(candidate_instance, candidate_runtime, bundle)
             stage = "publication"
@@ -519,9 +515,9 @@ def apply_bundles(instance, runtime, output, extensions, context, *, execution_i
                             "next_owner": "producer" if stage != "publication" else "engine"})
             if isinstance(error, ImpactReviewRequired):
                 results[-1].update(next_owner="impact_review", impact_review_request=deepcopy(error.request))
-            from .environment_checks import ObservationPending
-            if isinstance(error, ObservationPending):
-                results[-1].update(next_owner='engine', environment_request=error.request_id)
+            from .trust_validation import EnvironmentUnavailable
+            if isinstance(error, EnvironmentUnavailable):
+                results[-1].update(next_owner='engine', environment_wait=dict(error.detail))
             # The durable parent may have changed. ENGINE must reload before
             # trying any further publication, never bless a stale candidate.
             if stage == "publication":

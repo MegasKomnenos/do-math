@@ -395,7 +395,7 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict)
             if (runtime.get("user_pause") or runtime.get('maintenance_fence') or runtime.get("status") in {"paused", "closed", "completed"}
                     or (_operator_dir(workspace) / "HOLD.json").exists()):
                 return {"outcome": "held"}
-            from .repair_execution import installation_failure, installation_fingerprint, resume_installation_repair
+            from .repair_execution import installation_failure, installation_sha256 as installed_skill_sha256, resume_installation_repair
             diagnosis = None
             if failure['kind'] == 'installation_defect':
                 diagnosis = runtime.get('operational_dispositions', {}).get(failure.get('diagnosis_id'))
@@ -412,7 +412,7 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict)
             if maintenance is None:
                 return {"outcome": "recovery_waiting", "reason": "installation maintenance is already active"}
             try:
-                installation_sha256 = installation_fingerprint(LIVE_INSTALLATION_ROOT)
+                installation_sha256 = installed_skill_sha256(LIVE_INSTALLATION_ROOT)
                 identity_fields = ('kind', 'diagnosis_id', 'error', 'repair_target', 'verification',
                     'target_execution_id', 'evidence_refs', 'installation_sha256', 'evidence_path', 'engine_run_directory')
                 failure_identity = hashlib.sha256(json.dumps({key: failure[key] for key in identity_fields if key in failure},

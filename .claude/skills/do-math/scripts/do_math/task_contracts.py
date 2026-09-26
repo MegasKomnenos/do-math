@@ -185,10 +185,11 @@ def readiness_for_task(task: dict, instance: dict, runtime: dict, **kwargs) -> d
 
 
 def returned_task_ids(tasks):
-    from .planning import _hash, contract_hash
+    from .planning import contract_hash
+    from .repository import exact_content_hash
     return sorted(identifier for identifier, task in tasks.items()
         if task.get('status') not in {'completed', 'closed'} and task.get('results') and (
-            task.get('assessment', {}).get('results_sha256') != _hash(task['results']) or
+            task.get('assessment', {}).get('results_sha256') != exact_content_hash(task['results']) or
             task.get('assessment', {}).get('contract_sha256') != contract_hash(task) or
             task.get('assessment', {}).get('current') is False))
 

@@ -11,6 +11,7 @@ from .trust_validation import AXIOMS
 from copy import deepcopy
 from contextlib import contextmanager
 from datetime import datetime, timezone
+from functools import cached_property
 import base64
 import binascii
 import hashlib
@@ -29,7 +30,7 @@ from .contracts import render_prompt, all_prompt_documents, reading_map, prompt_
 from .formal import verify_lean, discover_lean
 from . import governance, knowledge, planning, knowledge_io, knowledge_records, academic, task_scope, delegations
 from .input_basis import capture_sources, sources_current, capture_decision_basis, decision_basis_changes, CurrentnessChanged
-from .context_store import collect_outputs, prepare_role_input, defer_input_overflow, materialize_inputs, read_source, prefetch_artifacts
+from .context_store import collect_outputs, prepare_role_input, defer_input_overflow, materialize_inputs, prefetch_artifacts
 from .operation_trace import engine_operation, tracing, phase, measured, progress as operation_progress
 from .observation_transport import ObservationBatch
 from .observations import ObservationTracker, CHECKPOINT_SCHEMA, preserve_checkpoint, request_checkpoint, validate_rules, write_checkpoint_reminder, self_check_feedback, publish_worker_feedback, tracker_config, persistent_record, read_checkpoint
@@ -39,6 +40,7 @@ from .academic_engine import AcademicEngineMixin
 from .governance_engine import GovernanceEngineMixin
 from .model_runner import ModelRunner
 from .repository import ResearchRepository, canonical_json, exact_content_hash, semantic_content_hash, new_id
+from .repository import artifact_verified, mark_artifact_verified, verify_artifact
 from .state_checks import inspect_state
 from .git_store import GitStateStoreError
 from .scholarly import resolve_scholarly_server, validate_scholarly_server
@@ -57,6 +59,7 @@ from .preflight import inspect_current_state
 from .state_contract import STATE_FORMAT_VERSION, STATE_CONTRACT_ID, default_state_contract
 from . import task_contracts, operational_dispositions, retention, repair_execution
 from .control_transport import ControlTransport
+from .file_io import cached_sha256
 
 CONTRACT = STATE_CONTRACT_ID
 
@@ -153,7 +156,7 @@ def _evaluation_context_for(store, snapshot):
         if not isinstance(path, str) or not path.startswith("runtime/artifacts/"):
             raise ValueError("task evidence must identify an immutable archived artifact")
         return store.read(path, commit)
-    return {"snapshot": snapshot, "read_artifact": read_artifact,
+    return {"snapshot": snapshot, "read_artifact": read_artifact, "git_dir": getattr(store, "git_dir", None),
             "validate_artifact": _artifact_format_valid, "now": now()}
 
 
@@ -410,7 +413,7 @@ def control(repository: Path, instance_id: str, action: str, *, text: str = "", 
                     or not isinstance(reassessment["evidence"], dict)):
                 raise ValueError("assessment reassessment requires the exact assessment hash and defect evidence")
             assessment = instance.get("identity_assessments", {}).get(reassessment["assessment_id"])
-            if not assessment or knowledge_records.digest(assessment) != reassessment["assessment_sha256"]:
+            if not assessment or exact_content_hash(assessment) != reassessment["assessment_sha256"]:
                 raise ValueError("assessment reassessment must identify the current original judgment")
             original = runtime.get("review_cycles", {}).get(assessment["review_cycle_id"], {})
             if config.get("target") not in {None, original.get("knowledge_id")}:
@@ -598,8 +601,6 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         self._executor_running = False
         self._calls = None
         self._slots = None
-        self._documents = all_prompt_documents()
-        self._installation = self._installation_manifest()
         self._next_installation_check = 0.0
         self._preparing_input = False
         self._transport = ControlTransport(Path(self.instance["workspace"]) / "execution-control" / instance_id)
@@ -607,14 +608,25 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         self._trackers = {}
         self.instance = knowledge_io.ensure_ontology(self.instance)
 
+    @cached_property
+    def _documents(self):
+        """Role documents, read once by the first command that renders a prompt."""
+        return all_prompt_documents()
+
+    @cached_property
+    def _installation(self):
+        """The installed edition this engine loaded, hashed on first use by ``run``."""
+        return self._installation_manifest()
+
     @staticmethod
     def _installation_manifest() -> dict:
+        """Hash the installed code and role documents; unchanged files reuse their digests."""
         root = Path(__file__).resolve().parents[2]
         documents = dict.fromkeys(relative for paths in reading_map(skill_root=root).values() for relative in paths)
         documents.update(dict.fromkeys(["계약/독립-운영.md", "scripts/operator_schedule.ps1", "scripts/do_math.py"]))
         paths = [*sorted((root / "scripts" / "do_math").rglob("*.py")), *(root / relative for relative in documents)]
-        files = {path.relative_to(root).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest() for path in paths}
-        return {"feature_version": STATE_FORMAT_VERSION, "files": files, "sha256": hashlib.sha256(canonical_json(files)).hexdigest()}
+        files = {path.relative_to(root).as_posix(): cached_sha256(path) for path in paths}
+        return {"feature_version": STATE_FORMAT_VERSION, "files": files, "sha256": exact_content_hash(files)}
 
     def _execution_profile(self, action):
         profiles = self.instance["execution_profiles"]
@@ -838,10 +850,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                      **{f"{base}/input/implementation/{document['path']}": document["content"].encode("utf-8")
                         for document in documents}}
         for entry in manifest["catalog"]:
-            source = read_source(workspace, entry, limit=max(1, entry["bytes"]))
-            if source["status"] != "ok" or source["truncated"]:
-                raise ValueError("input catalog could not be preserved: " + entry["path"])
-            artifacts[f"{base}/{entry['path']}"] = source["bytes"]
+            artifacts[f"{base}/{entry['path']}"] = fitted["catalog_files"][entry["path"]]
         for directory in (workspace / "input/tools", workspace / "input/submission"):
             for path in sorted(directory.rglob("*")):
                 if not path.is_file() or "__pycache__" in path.parts:
@@ -856,9 +865,15 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         return artifacts
 
     def _state_signature(self):
-        from .payloads import fingerprint
-        return (self.head, canonical_json(fingerprint(self.instance)),
-                canonical_json(fingerprint({k: v for k, v in self.runtime.items() if k != "updated_at"})))
+        # Exact no-change test for _save. State dicts are edited in place at
+        # hundreds of sites, so a mutation counter could miss a change. The
+        # compact C encoder replaces the indented, pre-validated canonical
+        # form; publication still validates every stored value.
+        from .payloads import payload_identity_view
+        return (self.head, json.dumps(
+            [payload_identity_view(self.instance),
+             payload_identity_view({k: v for k, v in self.runtime.items() if k != "updated_at"})],
+            ensure_ascii=False, sort_keys=True, separators=(",", ":")))
 
     def _save(self, artifacts: dict[str, bytes] | None = None) -> None:
         live = [eid for eid, e in self.runtime["executions"].items() if e["status"] != "ended"]
@@ -894,6 +909,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         slots = getattr(self, "_slots", None)
         if slots is not None and hasattr(slots, "runtime"):
             slots.runtime, slots.instance = self.runtime, self.instance
+        self._evaluate_stops()
 
     def _record_control_result(self, request, *, rejected=False, reason=None, **details):
         self.runtime["history"].append({"kind": "rejected_user_control" if rejected else "user_control",
@@ -907,9 +923,10 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
 
     def _inbox(self) -> list[dict]:
         path = Path(self.instance["workspace"]) / "control" / self.instance["id"]
+        processed = set(self.runtime["processed_controls"])
         results = []
         for file in sorted(path.glob("*.json")):
-            if file.stem in self.runtime["processed_controls"]:
+            if file.stem in processed:
                 continue
             request = json.loads(file.read_text(encoding="utf-8"))
             if not isinstance(request, dict) or request.get("id") != file.stem or request.get("instance_id") != self.instance["id"]:
@@ -1074,12 +1091,12 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         if self.runtime.get("status") in {"paused", "closed"} or getattr(self, "_retrying_publication", False):
             return
         pending = [deepcopy(row) for row in self.runtime.get("waiting_actions", {}).values()
-                   if row.get("kind") in {"submission_publication", "environment_observation"}]
+                   if row.get("kind") == "submission_publication"]
         self._retrying_publication = True
         try:
+            from .trust_validation import environment_changed
             for waiting in pending:
-                checks = getattr(self, '_environment_checks', None)
-                if waiting.get('environment_request') and checks is not None and not checks.ready(waiting['environment_request']):
+                if waiting.get('detail', {}).get('environment_id') and not environment_changed(self.instance, waiting['detail']):
                     continue
                 execution = self.runtime["executions"][waiting["execution_id"]]
                 action = waiting["action"]
@@ -1103,6 +1120,23 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         finally:
             self._retrying_publication = False
 
+    def _sealed_bytes(self, path, sha256, size=None, *, raw=None, error="sealed artifact differs from its record",
+                      needed=True):
+        """Stored artifact bytes, hashed only if this process has not matched the row (contract S3).
+
+        With ``needed=False`` only the match is established; an already matched row is not read.
+        """
+        if artifact_verified(self.store.git_dir, path, sha256, size):
+            if raw is None and needed:
+                raw = self.store.read(path, self.head)
+            return raw
+        raw = self.store.read(path, self.head) if raw is None else raw
+        try:
+            verify_artifact(self.store.git_dir, path, raw, sha256, size)
+        except ValueError as mismatch:
+            raise ValueError(error + ": " + path) from mismatch
+        return raw
+
     def _sealed_submission_files(self, execution):
         """Recover exact research files frozen by the accepted submission receipt."""
         intent = execution.get("submission_intent", {})
@@ -1112,9 +1146,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         files = {}
         manifest = []
         for row in entries:
-            raw = self.store.read(row["artifact_ref"], self.head)
-            if hashlib.sha256(raw).hexdigest() != row["sha256"] or len(raw) != row["bytes"]:
-                raise ValueError("sealed submission file differs from its receipt: " + row["path"])
+            raw = self._sealed_bytes(row["artifact_ref"], row["sha256"], row["bytes"],
+                                     error="sealed submission file differs from its receipt")
             files[row["path"]] = raw
             manifest.append({key: deepcopy(row[key]) for key in ("path", "sha256", "bytes")})
         return {"files": files, "manifest": manifest, "omitted": [], "complete": True}
@@ -1156,14 +1189,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                    if row.get("kind") == "impact_review"]
         for waiting in pending:
             judgments, references = {}, {}
-            try:
-                producer = self.runtime["executions"][waiting["execution_id"]]
-                producer_output = submission.read_sealed_submission(producer, self.head,
-                    lambda snapshot, path: self.store.read(path, snapshot))["output"]
-            except (ValueError, OSError, GitStateStoreError) as error:
-                self._hold_unreadable_impact_submission(waiting, error)
-                continue
-            failed = False
+            finished = {}
             for identifier, request in waiting["review_requests"].items():
                 reviews = [execution for execution in self.runtime["executions"].values()
                     if execution.get("status") == "ended" and execution.get("outcome") == "output_accepted"
@@ -1171,10 +1197,23 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                     and execution["action"].get("input_basis", {}).get("impact_review") == request]
                 if not reviews:
                     break
-                review = reviews[-1]
+                finished[identifier] = reviews[-1]
+            # Sealed bytes are read only once every requested review has ended.
+            if set(finished) != set(waiting["review_requests"]):
+                continue
+            try:
+                producer = self.runtime["executions"][waiting["execution_id"]]
+                producer_output = submission.read_sealed_submission(producer, self.head,
+                    lambda snapshot, path: self.store.read(path, snapshot), git_dir=self.store.git_dir)["output"]
+            except (ValueError, OSError, GitStateStoreError) as error:
+                self._hold_unreadable_impact_submission(waiting, error)
+                continue
+            failed = False
+            for identifier, review in finished.items():
+                request = waiting["review_requests"][identifier]
                 try:
                     review_output = submission.read_sealed_submission(review, self.head,
-                        lambda snapshot, path: self.store.read(path, snapshot))["output"]
+                        lambda snapshot, path: self.store.read(path, snapshot), git_dir=self.store.git_dir)["output"]
                     judgments[identifier] = integration.validate_impact_review_response(request, review_output)
                 except (ValueError, OSError, GitStateStoreError) as error:
                     self._hold_unreadable_impact_submission(waiting, error)
@@ -1225,7 +1264,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
     def _publish_control_request(self, request):
         """A transport acceptance acknowledges this CAS, not mathematical acceptance."""
         safe_request = {key: deepcopy(value) for key, value in request.items() if key != "capability"}
-        digest = hashlib.sha256(canonical_json(safe_request)).hexdigest()
+        digest = exact_content_hash(safe_request)
         prior = next((row for row in self.runtime.get("control_receipts", {}).values()
                       if row["request_id"] == request["request_id"]), None)
         if prior:
@@ -1327,6 +1366,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 persisted = next((row for row in runtime.get("control_receipts", {}).values()
                     if row["request_id"] == request["request_id"] and row["request_sha256"] == digest), None)
                 self.head, self.instance, self.runtime = head, instance, runtime
+                self._evaluate_stops()
             except Exception:
                 if self.head == original_head:
                     self.instance, self.runtime = original_instance, original_runtime
@@ -1375,9 +1415,11 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             refs.update(row["id"] for row in self.runtime.get(family, {}).values()
                         if row.get("execution_id") == execution["id"])
         for row in execution.get("output_files", []):
-            raw = self.store.read(row["artifact_ref"], self.head)
-            if hashlib.sha256(raw).hexdigest() == row["sha256"]:
-                refs.add(row["artifact_ref"])
+            try:
+                self._sealed_bytes(row["artifact_ref"], row["sha256"], row.get("bytes"), needed=False)
+            except ValueError:
+                continue
+            refs.add(row["artifact_ref"])
         return refs
 
     def _reject_control(self, request: dict, reason: str) -> None:
@@ -1487,6 +1529,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             self.head, self.instance, self.runtime = self.store.load()
             self._inspect_before_write()
             self._saved_state = self._state_signature()
+            self._evaluate_stops()
             self.instance = knowledge_io.ensure_ontology(self.instance)
             self._controls()
             _, persisted_instance, persisted_runtime = self.store.load(self.head)
@@ -1495,6 +1538,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
     def status(self, snapshot=None) -> dict:
         self.head, self.instance, self.runtime = self.store.load(snapshot)
         self._saved_state = self._state_signature()
+        self._evaluate_stops()
         slots = getattr(self, "_slots", None)
         if slots is not None and hasattr(slots, "runtime"):
             slots.runtime, slots.instance = self.runtime, self.instance
@@ -1505,7 +1549,9 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 'operating_summary':reporting.operating_summary(self.instance,self.runtime),
                 "research_wake_reasons": planning.research_wake_reasons(self.instance, self.runtime,
                     now=evaluation_context["now"], evaluation_context=evaluation_context),
-                "submission_checks": self._submission_check_summary(self.head, self.runtime),
+                # Deriving check diagnostics reads every sealed check artifact; ``check`` does it.
+                "submission_checks": {"status": "not_evaluated",
+                    "reason": "status reports persisted records; check derives submission check diagnostics"},
                 "goal": self._governance()["goal"], "goal_status": self.instance["goal_status"],
                 "status": self.runtime["status"], "active_execution": self.runtime["active_execution"],
                 "pending_actions": len(self.runtime["queue"]), "cycles": self.runtime["cycles"],
@@ -1521,7 +1567,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                               "identity_assessments": len(self.instance.get("identity_assessments", {}))},
                 "inspection": inspect_state(self.instance, self.runtime, snapshot=self.head,
                     read_artifact=lambda path: self.store.read(path, self.head),
-                    read_artifacts=lambda paths: self.store.read_many(paths, self.head)),
+                    read_artifacts=lambda paths: self.store.read_many(paths, self.head),
+                    artifact_sizes=lambda paths: self.store.blob_sizes(paths, self.head)),
                 "research_effectiveness": {"status": "not_evaluated"},
                 "budget": self._session_resources(),
                 "budget_unit": "concurrent_sessions",
@@ -1573,6 +1620,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             self.head, self.instance, self.runtime = self.store.load()
             self._inspect_before_write()
             self._saved_state = self._state_signature()
+            self._evaluate_stops()
             previous = self.runtime.get("installation")
             if previous != self._installation:
                 self.runtime.setdefault("implementation_history", []).append({
@@ -1612,7 +1660,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         waits[action['id']] = waiting
         try:
             submission.read_sealed_submission(execution, self.head,
-                lambda snapshot, path: self.store.read(path, snapshot))
+                lambda snapshot, path: self.store.read(path, snapshot), git_dir=self.store.git_dir)
         except submission.SealedSubmissionError as error:
             waiting.update(kind='submission_failure', reason=str(error))
             repair_execution.route_failed_action(self, action, execution['id'],
@@ -1632,7 +1680,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         if restored:
             self._save()
         publication_pending = {row["execution_id"] for row in self.runtime.get("waiting_actions", {}).values()
-            if row.get("kind") in {"submission_publication", "environment_observation"} and
+            if row.get("kind") == "submission_publication" and
             self.runtime["executions"].get(row.get("execution_id"), {}).get("capacity", {}).get("local_termination") == "confirmed"}
         unfinished = [row["id"] for row in self.runtime["executions"].values()
                       if row["status"] != "ended" and row["id"] not in publication_pending]
@@ -1779,17 +1827,17 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                     action["role"] == "identity_review" and action.get("review_cycle_id") == cycle_id):
                 cycle_path = directory / "review-cycles" / (cycle_id + ".json")
                 cycle_path.parent.mkdir(exist_ok=True)
-                cycle_path.write_bytes(canonical_json(cycle))
+                raw = canonical_json(cycle)
+                cycle_path.write_bytes(raw)
                 catalog[-1]["review_cycle_source"] = {"path": cycle_path.relative_to(workspace).as_posix(),
-                    "sha256": hashlib.sha256(cycle_path.read_bytes()).hexdigest()}
+                    "sha256": hashlib.sha256(raw).hexdigest()}
         sources = []
         self._preparation_checkpoint()
         source_bytes = self.store.read_many([s["path"] for s in self.instance["sources"]], self.head)
         for i, source in enumerate(self.instance["sources"]):
             self._preparation_checkpoint()
-            raw = source_bytes[source["path"]]
-            if hashlib.sha256(raw).hexdigest() != source["sha256"]:
-                raise ValueError("source artifact hash changed")
+            raw = self._sealed_bytes(source["path"], source["sha256"], raw=source_bytes[source["path"]],
+                                     error="source artifact hash changed")
             path = directory / "sources" / f"{i:04d}-{source['name']}"
             path.parent.mkdir(exist_ok=True)
             path.write_bytes(raw)
@@ -1810,9 +1858,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                     restored = []
                     for file in result.get("output_files", producing.get("output_files", [])):
                         self._preparation_checkpoint()
-                        raw = result_bytes[file["artifact_ref"]]
-                        if hashlib.sha256(raw).hexdigest() != file["sha256"]:
-                            raise ValueError("task result artifact hash changed")
+                        raw = self._sealed_bytes(file["artifact_ref"], file["sha256"], raw=result_bytes[file["artifact_ref"]],
+                                                 error="task result artifact hash changed")
                         path = directory / "task-results" / view["id"] / result["execution_id"] / file["path"]
                         if not path.resolve().is_relative_to(directory.resolve()):
                             raise ValueError("task result artifact path escapes input")
@@ -1879,7 +1926,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             context["relation_templates"] = knowledge_io.relation_templates()
         if action.get("kind_definition_id"):
             definition = self.instance["kind_definitions"][action["kind_definition_id"]]
-            if integration.digest(definition) != action["kind_definition_sha256"]:
+            if exact_content_hash(definition) != action["kind_definition_sha256"]:
                 raise ValueError("kind definition changed before independent review")
             context["kind_definition_to_check"] = deepcopy(definition)
             context["proposal"] = deepcopy(definition)
@@ -1891,7 +1938,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             request = action["input_basis"]["impact_review"]
             producer = self.runtime["executions"][request["producer_execution_id"]]
             sealed = submission.read_sealed_submission(producer, self.head,
-                lambda snapshot, path: self.store.read(path, snapshot))
+                lambda snapshot, path: self.store.read(path, snapshot), git_dir=self.store.git_dir)
             context["impact_review_input"] = {"request": deepcopy(request),
                 "output": sealed["output"], "extensions": sealed["extensions"],
                 "records": {rid: deepcopy(record) for rid, (_, record) in planning._records(self.instance, self.runtime).items()
@@ -1960,18 +2007,16 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 'source_snapshot': self.head, 'checkpoint_files': [],
                 'checkpoint_evidence_omitted': deepcopy(checkpoint.get('evidence_omitted', [])) if checkpoint else []}
             if checkpoint and checkpoint.get('artifact_ref'):
-                raw = self.store.read(checkpoint['artifact_ref'], self.head)
-                if hashlib.sha256(raw).hexdigest() != checkpoint['sha256']:
-                    raise ValueError('operational review checkpoint hash changed')
+                raw = self._sealed_bytes(checkpoint['artifact_ref'], checkpoint['sha256'],
+                                         error='operational review checkpoint hash changed')
                 relative = 'operational-review/' + target + '/latest-checkpoint.json'
                 materialize_inputs(workspace, {relative: raw})
                 evidence.update(checkpoint_status='preserved', checkpoint_source={
                     'artifact_ref': checkpoint['artifact_ref'], 'snapshot': self.head,
                     'local_path': 'input/' + relative, 'sha256': checkpoint['sha256'], 'bytes': len(raw)})
                 for source in checkpoint.get('evidence_files', []):
-                    raw = self.store.read(source['artifact_ref'], self.head)
-                    if len(raw) != source['bytes'] or hashlib.sha256(raw).hexdigest() != source['sha256']:
-                        raise ValueError('operational checkpoint evidence bytes changed')
+                    raw = self._sealed_bytes(source['artifact_ref'], source['sha256'], source['bytes'],
+                                             error='operational checkpoint evidence bytes changed')
                     relative = 'operational-review/' + target + '/evidence/' + source['path']
                     materialize_inputs(workspace, {relative: raw})
                     evidence['checkpoint_files'].append({**source, 'snapshot': self.head, 'local_path': 'input/' + relative})
@@ -1993,9 +2038,12 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 def recover(artifact_ref: str, relative: str, *, expected_sha256: str | None = None,
                             expected_bytes: int | None = None) -> dict:
                     raw = self.store.read(artifact_ref, source_snapshot)
-                    digest = hashlib.sha256(raw).hexdigest()
-                    if expected_sha256 is not None and digest != expected_sha256:
-                        raise ValueError("operational review artifact hash changed")
+                    if expected_sha256 is None:
+                        digest = hashlib.sha256(raw).hexdigest()  # no record yet: identity is created here
+                    else:
+                        digest = expected_sha256
+                        self._sealed_bytes(artifact_ref, expected_sha256, raw=raw,
+                                           error="operational review artifact hash changed")
                     if expected_bytes is not None and len(raw) != expected_bytes:
                         raise ValueError("operational review artifact size changed")
                     logical = prefix + "/" + relative
@@ -2055,7 +2103,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             context["interpretation_to_check"] = None
         from .context_store import restore_continuation
         context.update(restore_continuation(self.runtime, action, workspace, snapshot=self.head,
-            read_artifact=lambda path: self.store.read(path, self.head), checkpoint=self._preparation_checkpoint))
+            read_artifact=lambda path: self.store.read(path, self.head), checkpoint=self._preparation_checkpoint,
+            git_dir=self.store.git_dir))
         self._submission_repair_context(context, action)
         if action["role"] == "supplemental_research" and action.get("review_cycle_id"):
             context.update(self._review_research_context(action, workspace))
@@ -2252,8 +2301,6 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
     def _apply_bundle_candidate(self, instance, runtime, bundle, *, action, execution_id, extensions,
                                 question_source_ref=None):
         previous_instance, previous_runtime = self.instance, self.runtime
-        previous_operation = getattr(self, '_environment_operation', None)
-        self._environment_operation = 'preview' if question_source_ref else execution_id
         try:
             self.instance, self.runtime = instance, runtime
             if bundle["extensions"].get("knowledge_changes"):
@@ -2301,12 +2348,10 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             runtime["executions"][execution_id].pop("integration_id", None)
         finally:
             self.instance, self.runtime = previous_instance, previous_runtime
-            self._environment_operation = previous_operation
 
 
     def _apply_submission_bundles(self, action, output, extensions, execution_id, context, issues):
         """Publish independent candidates without an enclosing execution rollback."""
-        self._environment_attempt = new_id('VA')
         def publish(instance, runtime, bundle):
             # Normalize public events before the CAS. No fallible post-commit read
             # may make an already published bundle look like a rejected candidate.
@@ -2329,6 +2374,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         else:
             self.instance, self.runtime = result["instance"], result["runtime"]
         self._saved_state = self._state_signature()
+        self._evaluate_stops()
         self.runtime["executions"][execution_id]["integration_result"] = {
             key: deepcopy(result[key]) for key in ("status", "bundles", "issues", "retry_bundle_ids")}
         return result
@@ -2404,7 +2450,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             preserved = True
         if preserved:
             sealed = submission.read_sealed_submission(execution, self.head,
-                lambda snapshot, path: self.store.read(path, snapshot))
+                lambda snapshot, path: self.store.read(path, snapshot), git_dir=self.store.git_dir)
             output, extensions, check = sealed["output"], sealed["extensions"], sealed["check"]
         else:
             try:
@@ -2424,7 +2470,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 "worker output was not captured by the central submit path"))
             check["passed"] = not check["issues"]
             check['capture_eligible'] = False
-            check["id"] = "MC-" + integration.digest({key: value for key, value in check.items() if key != "id"})[:24]
+            check["id"] = "MC-" + exact_content_hash({key: value for key, value in check.items() if key != "id"})[:24]
             bundle_id = new_id("BA")
             prefix = f"runtime/artifacts/{bundle_id}"
             execution = self.runtime["executions"][execution_id]
@@ -2451,7 +2497,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 execution_lifecycle.transition_execution(execution, "ended", at=now(), outcome="output_accepted", disposition=disposition)
             # Domain application may have replaced this wait with a new obligation.
             # Only the exact publication/impact wait discharged by this receipt ends.
-            if (previous_wait and previous_wait.get('kind') in {'submission_publication', 'environment_observation', 'impact_review'}
+            if (previous_wait and previous_wait.get('kind') in {'submission_publication', 'impact_review'}
                     and previous_wait.get('execution_id') == execution_id
                     and self.runtime.get('waiting_actions', {}).get(action.get('id')) == previous_wait):
                 del self.runtime['waiting_actions'][action['id']]
@@ -2486,21 +2532,19 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                              error="one or more integration bundles were returned")
             # This remains an AI-owned repair; a counter never creates user authority.
             if any(row.get("next_owner") == "engine" for row in received["bundles"]):
-                observation = next((row['environment_request'] for row in received['bundles'] if row.get('environment_request')), None)
+                environment = next((row['environment_wait'] for row in received['bundles'] if row.get('environment_wait')), None)
                 self.runtime.setdefault("waiting_actions", {})[action["id"]] = {
                     **self.runtime.get("waiting_actions", {}).get(action["id"], {}), "action": deepcopy(action),
-                    "kind": "environment_observation" if observation else "submission_publication", "execution_id": execution_id, "next_owner": "engine",
-                    **({'environment_request':observation} if observation else {}),
-                    "reason": "Reload current Git state and reapply only unpublished candidate bundles"}
+                    "kind": "submission_publication", "execution_id": execution_id, "next_owner": "engine",
+                    **({'detail': environment} if environment else {}),
+                    "reason": ("Keep the sealed result until the toolchain record or active trust environment changes"
+                               if environment else "Reload current Git state and reapply only unpublished candidate bundles")}
             elif any(row.get("next_owner") == "impact_review" for row in received["bundles"]):
                 self._hold_impact_reviews(action, execution_id, received)
             else:
                 repair_execution.route_submission_return(self, action, received, execution_id, output)
         publication_pending = any(row.get("next_owner") in {"engine", "impact_review"} for row in received["bundles"])
         if not publication_pending:
-            checks = getattr(self, '_environment_checks', None)
-            if checks is not None:
-                checks.discard(execution_id)
             self._record_task_receipt(action, output or {}, execution_id, accepted=received["status"] == "accepted")
             if action["role"] == "operational_review":
                 self._save()
@@ -2511,6 +2555,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                     # never revokes an accepted bundle or repeats its task receipt.
                     self.head, self.instance, self.runtime = self.store.load()
                     self._saved_state = self._state_signature()
+                    self._evaluate_stops()
                     self.runtime["history"].append({"kind": "operational_repair_interrupted",
                         "execution_id": execution_id, "reason": str(error), "next_owner": "engine"})
         if received["status"] == "accepted" and action["role"] == "maintenance" and action.get("cleanup_execution_ids"):
@@ -2525,9 +2570,17 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             self.runtime["status"] = "ready"
         return received
 
+    def _lean_discovered(self) -> bool:
+        """Rediscover the local Lean at most once per second, the installation-check period."""
+        current = time.monotonic()
+        if current >= getattr(self, "_next_lean_discovery", 0.0):
+            self._next_lean_discovery = current + 1.0
+            self._lean_found = discover_lean() is not None
+        return self._lean_found
+
     def _available_inputs(self) -> list[str]:
         result = {"SKILL.md", "GLOSSARY.md", "context:goal", "context:policy"}
-        if self.instance["config"].get("lean_command") or discover_lean():
+        if self.instance["config"].get("lean_command") or self._lean_discovered():
             result.add("tool:lean")
         if self.instance["config"]["scholarly_enabled"] and self.instance["config"]["scholarly_server"]:
             result.add("tool:scholarly")
@@ -2642,10 +2695,10 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         files, manifest = {}, []
         for row in execution.get('output_files', []):
             path = row['path']
-            data = self.store.read(row['artifact_ref'], self.head)
-            if path in files or hashlib.sha256(data).hexdigest() != row['sha256'] or len(data) != row['bytes']:
+            if path in files:
                 raise ValueError('preserved native output differs from its execution manifest')
-            files[path] = data
+            files[path] = self._sealed_bytes(row['artifact_ref'], row['sha256'], row['bytes'],
+                error='preserved native output differs from its execution manifest')
             manifest.append({key: row[key] for key in ('path', 'sha256', 'bytes')})
         if sum(map(len, files.values())) > self.instance['config']['max_artifact_bytes']:
             raise ValueError('preserved native outputs exceed the current artifact limit')
@@ -2875,9 +2928,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
 
     @measured('observation_application')
     def _observe_running(self, execution_id: str, tracker: ObservationTracker, event: dict | ObservationBatch) -> None:
-        self._controls()
-        if self._check_conversations():
-            self._save()
+        # The owner loop applies controls and conversation leases. Observation
+        # changes only the runtime, so only the runtime needs a rollback copy.
         candidate = deepcopy(tracker)
         batch = event if isinstance(event, ObservationBatch) else None
         events = batch.events if batch is not None else [event]
@@ -2887,7 +2939,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             checkpoint = read_checkpoint(candidate.workspace)
             if checkpoint["status"] == "valid" and checkpoint["sha256"] not in candidate.seen_checkpoints:
                 candidate.register_self_check_checkpoint(checkpoint["sha256"])
-        original_instance, original_runtime = deepcopy(self.instance), deepcopy(self.runtime)
+        original_runtime = deepcopy(self.runtime)
         original_cursors = deepcopy(getattr(self, '_review_event_cursors', {}))
         artifacts, self_checks, feedback = {}, [], []
         remind = False
@@ -2958,7 +3010,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             self.runtime.setdefault("self_check_obligations", {}).update(deepcopy(candidate.obligations))
             self._save(artifacts or None)
         except Exception:
-            self.instance, self.runtime = original_instance, original_runtime
+            self.runtime = original_runtime
             self._review_event_cursors = original_cursors
             raise
         tracker.__dict__.clear()
@@ -3022,9 +3074,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 or self._execution_stop_requested(execution['action'], execution)):
             return result
         try:
-            raw = self.store.read(intent['output_ref'], self.head)
-            if hashlib.sha256(raw).hexdigest() != intent.get('output_sha256'):
-                raise ValueError('sealed submission output hash differs')
+            raw = self._sealed_bytes(intent['output_ref'], intent['output_sha256'],
+                                     error='sealed submission output hash differs')
             output = submission.load_json(raw)
         except (ValueError, TypeError, KeyError, OSError, GitStateStoreError) as error:
             return {**result, 'status': 'failed', 'output': None, 'error_kind': 'execution_failure',
@@ -3104,6 +3155,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         except Exception:
             head, instance, runtime = self.store.load()
             self.head, self.instance, self.runtime = head, instance, runtime
+            self._evaluate_stops()
             saved = next((event['basis']['receipt'] for event in runtime.get('events', [])
                 if event['kind'] == 'submission_checked' and event.get('basis', {}).get('origin') == 'native_final'
                 and event['basis']['receipt']['id'] == receipt['id']), None)
@@ -3500,9 +3552,9 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             current.update(process=json_safe(identity), started_at=now(), execution_window=window)
             self._save()
         def should_stop():
+            # Owner-thread judgment. The owner loop applies controls and conversation
+            # leases; this reads the published state and records a stop transition once.
             nonlocal stop_started
-            self._controls()
-            if self._check_conversations(): self._save()
             current = self.runtime["executions"][execution_id]
             if role == "operational_review" and action.get("live") and self._obsolete_action_reason(action):
                 current["stop_requested"] = "observation_target_ended"
@@ -3510,7 +3562,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             changed = any(current[key] != value for key, value in self._governance_revisions().items())
             premise_changes = decision_basis_changes(current.get("decision_basis"), self.instance, self.runtime)
             premise_changes.extend(self._execution_requirement_changes(action, evaluation_context=self._evaluation_context()))
-            if role == "goal_audit" and action.get("basis") != self._goal_basis_key():
+            if role == "goal_audit" and action.get("basis") != self._goal_basis_key_at_head():
                 premise_changes.append({"field": "goal_audit_basis", "reason": "complete goal judgment basis changed"})
             if premise_changes:
                 changed = True
@@ -3526,7 +3578,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                          or not allowed or changed
                          or (call_deadline is not None and time.monotonic() >= call_deadline))
             if not requested:
-                execution_window.request_finish(workspace, call_deadline, config, pool)
+                # The notice compares the same clock as the deadline above.
+                execution_window.request_finish(workspace, call_deadline, config, pool, clock=time.monotonic)
                 return False
             reason = current.get("stop_requested") or ("authority_changed" if not allowed or changed else
                 "submission_intent" if current.get("submission_intent") else "user_or_deadline_stop")
@@ -3553,7 +3606,12 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         params = inspect.signature(self.runner.run).parameters
         if "on_observation" in params or any(p.kind == inspect.Parameter.VAR_KEYWORD for p in params.values()):
             arguments["on_observation"] = lambda event: self._observe_running(execution_id, tracker, event)
+        deadlines = getattr(self, "_stop_deadlines", {})
+        if call_deadline is not None:
+            # The owner loop compares these instants with the clock; the judgment runs when one passes.
+            deadlines[execution_id] = (call_deadline - execution_window.notice_seconds(config, pool), call_deadline)
         result = yield arguments
+        deadlines.pop(execution_id, None)
         self._local_call_returned(execution_id, result)
         tracker.set_execution_status("stopping")
         self._drain_review_observations(execution_id, tracker)
@@ -4054,7 +4112,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             definition = self.instance.get("kind_definitions", {}).get(action.get("kind_definition_id"))
             if definition and definition["status"] == "candidate":
                 self._enqueue("maintenance", definition["id"], kind_definition_id=definition["id"],
-                    kind_definition_sha256=integration.digest(definition),
+                    kind_definition_sha256=exact_content_hash(definition),
                     reason="Independently reconsider the unresolved kind using the newly prepared evidence")
         elif role == "task_contract_review":
             task = self.runtime["tasks"][target]
@@ -4191,21 +4249,21 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         scope = self._cleanup_scope(action)
         artifacts, archived, failures = {}, {}, []
         workspace = Path(self.instance["workspace"])
+        marks = {}  # local file -> (settled fingerprint, proof) within this cleanup
         for identifier in scope:
             execution = self.runtime["executions"].get(identifier, {})
             if execution.get("status") != "ended" or execution.get("capacity", {}).get("local_termination") != "confirmed":
                 continue
             try:
                 path = retention._run_path(workspace, identifier)
-                inventory = retention._inventory(path)
+                contents = {}
+                inventory = retention._inventory(path, marks, contents)
                 prefix = f"runtime/artifacts/{new_id('BA')}"
                 manifest = []
                 for relative, proof in inventory.items():
-                    raw = submission._read_stable(submission._safe_path(path, relative))
-                    if hashlib.sha256(raw).hexdigest() != proof["sha256"] or len(raw) != proof["bytes"]:
-                        raise ValueError("run changed during archival")
                     ref = prefix + "/files/" + relative
-                    artifacts[ref] = raw
+                    # The archive holds exactly the bytes this inventory hashed.
+                    artifacts[ref] = contents[relative]
                     manifest.append({"path": relative, "artifact_ref": ref, **proof})
                 termination = canonical_json({"execution_id": identifier, "local_terminated": True,
                     "basis": deepcopy(execution["capacity"]), "remote_termination": "not_established"})
@@ -4219,6 +4277,9 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             self._save(artifacts)
             archive_snapshot = self.head
             for identifier, (manifest, termination) in archived.items():
+                # The published archive rows are the bytes hashed above.
+                for ref, row in [(row["artifact_ref"], row) for row in manifest] + [(termination["evidence_ref"], termination)]:
+                    mark_artifact_verified(self.store.git_dir, ref, row["sha256"], row["bytes"])
                 execution = self.runtime["executions"][identifier]
                 execution["termination"] = {**termination, "snapshot": archive_snapshot}
                 execution.setdefault("collection", {})["retention_manifest"] = [
@@ -4226,8 +4287,10 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             self._save()
         state = self._retention_state(action)
         reader = lambda path, snapshot: self.store.read(path, snapshot)
-        candidates = retention.cleanup_candidates(workspace, **state, read_artifact=reader)
-        result = retention.cleanup(workspace, candidates, current_state=lambda: self._retention_state(action), read_artifact=reader)
+        candidates = retention.cleanup_candidates(workspace, **state, read_artifact=reader,
+                                                  git_dir=self.store.git_dir, marks=marks)
+        result = retention.cleanup(workspace, candidates, current_state=lambda: self._retention_state(action),
+                                   read_artifact=reader, git_dir=self.store.git_dir, marks=marks)
         result["failures"].extend(failures)
         if failures:
             result["status"] = "degraded"
@@ -4254,7 +4317,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         self.runtime.setdefault("pending_kind_checks", []).append({"family": definition["family"],
             "token": token, "definition_id": registered["id"], "source_ref": source_ref, "actor_ref": source_ref})
         self._enqueue("maintenance", registered["id"], kind_definition_id=registered["id"],
-            kind_definition_sha256=integration.digest(registered),
+            kind_definition_sha256=exact_content_hash(registered),
             reason="Independently check the proposed kind meaning, constraints and authority boundary before activation")
 
     def _apply_kind_definition_check(self, action, output, execution_id):
@@ -4263,7 +4326,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         governance.validate_independent_execution(self.runtime, execution_id, [definition["actor_ref"]])
         expected = {"id": identifier, "sha256": action["kind_definition_sha256"]}
         if (output["definition_id"] != identifier or output["definition_sha256"] != expected["sha256"]
-                or integration.digest(definition) != expected["sha256"]
+                or exact_content_hash(definition) != expected["sha256"]
                 or self.runtime["executions"][execution_id].get("input_basis", {}).get("kind_definition") != expected):
             raise ValueError("kind checker did not read the current exact definition")
         verdict = output["decision"]
@@ -4284,7 +4347,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 definition["family"], definition["token"], reason="; ".join(output["findings"]), actor_ref=execution_id)
         if verdict != "approved":
             self._enqueue("research_preparation", reason="Resolve the independent kind definition findings; revise withdrawn definitions or provide the missing evidence for an unresolved candidate",
-                          kind_definition_id=identifier, kind_definition_sha256=integration.digest(self.instance["kind_definitions"][identifier]))
+                          kind_definition_id=identifier, kind_definition_sha256=exact_content_hash(self.instance["kind_definitions"][identifier]))
 
     def _apply_operational_disposition(self, action, proposal, execution_id):
         disposition = operational_dispositions.validate_disposition(proposal)
@@ -4343,9 +4406,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 raise ValueError("resume must name the preserved current checkpoint")
             if kind == 'resume':
                 checkpoint = self.runtime['checkpoints'][target['id']]
-                raw = self.store.read(disposition['checkpoint_ref'], self.head)
-                if hashlib.sha256(raw).hexdigest() != checkpoint.get('sha256'):
-                    raise ValueError('resume checkpoint bytes differ from the preserved checkpoint')
+                self._sealed_bytes(disposition['checkpoint_ref'], checkpoint.get('sha256'), checkpoint.get('bytes'),
+                                   needed=False, error='resume checkpoint bytes differ from the preserved checkpoint')
             predecessors, predecessor = set(), target
             while predecessor and predecessor['id'] not in predecessors:
                 predecessors.add(predecessor['id'])
@@ -4359,13 +4421,12 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 base = 'runtime/artifacts/' + target['input_bundle']
                 manifest = submission.load_json(self.store.read(base + '/manifest.json', self.head))
                 if manifest != target['input_manifest'] or verify_manifest_artifacts(
-                        manifest, lambda ref: self.store.read(ref, self.head)):
+                        manifest, lambda ref: self.store.read(ref, self.head), git_dir=self.store.git_dir):
                     raise ValueError('retry requires intact sealed input evidence')
                 support = submission.load_json(self.store.read(base + '/support-manifest.json', self.head))
                 for entry in support:
-                    raw = self.store.read(base + '/' + entry['path'], self.head)
-                    if len(raw) != entry['bytes'] or hashlib.sha256(raw).hexdigest() != entry['sha256']:
-                        raise ValueError('retry submission support differs from its sealed input')
+                    self._sealed_bytes(base + '/' + entry['path'], entry['sha256'], entry['bytes'], needed=False,
+                                       error='retry submission support differs from its sealed input')
             held = self.runtime.get('waiting_actions', {}).get(previous.get('id'))
             retry = activities.continue_activity(self.runtime, target['id'], at=now(),
                 reason='operational_' + kind + ':' + record['id'])
@@ -4434,7 +4495,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         if getattr(self, "_goal_audit_contract", None) is None:
             # Installed role documents are fixed for this engine; a changed installation pauses it.
             self._goal_audit_contract = hashlib.sha256(self._render_prompt("goal_audit", {}).encode()).hexdigest()
-        return hashlib.sha256(canonical_json({"goal": view["goal"], "goal_revision": view.get("goal_revision", 1),
+        return exact_content_hash({"goal": view["goal"], "goal_revision": view.get("goal_revision", 1),
             "policy_revision": view.get("policy_revision", 1), "knowledge": self.instance["knowledge"],
             "formal_results": self.instance.get("formal_results", {}), "expositions": self.instance.get("expositions", {}),
             "identity_assessments": self.instance.get("identity_assessments", {}),
@@ -4442,7 +4503,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             "trust_environments": self.instance.get("trust_environments", {}),
             "tasks": tasks, "sources": capture_sources(self.instance),
             "user_inputs": self.runtime["inputs"], "required": self.instance["config"]["goal_auditors"],
-            "input_contract": self._goal_audit_contract})).hexdigest()
+            "input_contract": self._goal_audit_contract})
 
     def _apply_plan(self, output: dict, execution_id: str) -> None:
         execution = self.runtime["executions"][execution_id]
@@ -4455,9 +4516,10 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         reference_tasks = dict(input_tasks)
         for row in fixed.get('task_catalog', []):
             source = row['source_ref']
-            raw = self.store.read(source['artifact_ref'], self.head)
-            if source['snapshot'] != execution['input_snapshot'] or hashlib.sha256(raw).hexdigest() != source['sha256']:
+            if source['snapshot'] != execution['input_snapshot']:
                 raise ValueError('planning task catalog differs from its fixed source')
+            raw = self._sealed_bytes(source['artifact_ref'], source['sha256'], source.get('bytes'),
+                                     error='planning task catalog differs from its fixed source')
             task = input_runtime['tasks'][row['id']]
             if planning.contract_hash(submission.load_json(raw)) != planning.contract_hash(task):
                 raise ValueError('planning task catalog differs from its input snapshot')
@@ -4476,7 +4538,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         self._ensure_academic_followup()
 
     def _formal(self, action: dict) -> None:
-        from .environment_checks import verify_formal
+        from .trust_validation import verify_formal
         return self._run_machine_steps(self._formal_steps(deepcopy(action)), calculator=verify_formal)
 
     def _formal_steps(self, action: dict):
@@ -4489,7 +4551,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         environment_error = None
         try:
             self._action_lifecycle_gate(action)
-            environment = deepcopy(self._formal_environment(verify_files=False))
+            environment = deepcopy(self._formal_environment())
+            binding = deepcopy(self.runtime["trust_bindings"][environment["id"]])
             invocation = execution_profiles.machine_invocation(profile, trust_environment=environment,
                 on_started=lambda identity: self._machine_started(execution_id, identity))
         except ValueError as error:
@@ -4512,7 +4575,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         manifest = [{"kind": "formal_source", "sha256": hashlib.sha256(source.encode()).hexdigest(),
                      "declaration_names": declarations},
                     {"kind": "trust_environment", "id": environment_id,
-                     "sha256": knowledge_records.digest(environment)}]
+                     "sha256": exact_content_hash(environment)}]
         if predecessor and predecessor.get("role") == "formal_check":
             prior = predecessor.get("input_manifest", [])
             if prior != manifest:
@@ -4537,9 +4600,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         self._save()
         stop_reasons = set()
         def stop():
-            self._controls()
-            if self._check_conversations():
-                self._save()
+            # Owner-thread judgment of published state; the verifier reads only its flag.
             reasons = set()
             if self.runtime["status"] in {"closed", "completed"}:
                 reasons.add("instance_ended")
@@ -4559,7 +4620,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             stop_reasons.update(reasons)
             return bool(reasons)
         kwargs = dict(source=source, declarations=declarations, workspace=workspace,
-                      environment=environment, verifier=self.formal_verifier,
+                      environment=environment, binding=binding, verifier=self.formal_verifier,
                       **invocation)
         parameters = inspect.signature(self.formal_verifier).parameters
         accepts_extra = any(p.kind == inspect.Parameter.VAR_KEYWORD for p in parameters.values())
@@ -4596,13 +4657,15 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         # Failed compiler runs remain evidence. Only complete checked evidence can seal a formal result.
         if result["status"] == "verified":
             try:
-                if self._formal_environment(verify_files=False) != environment:
+                if self._formal_environment() != environment:
                     raise ValueError("fixed trust environment changed before admission")
                 self.instance = knowledge_records.record_formal_result(self.instance, kid,
                     {**result, "execution_id": execution_id, "artifact_ref": reference}, environment_id, runtime=self.runtime)
             except ValueError as error:
                 result = {**result, "status": "failed", "reason": str(error)}
                 execution["formal_status"] = "failed"
+        if result.get("environment_check", {}).get("status") == "verified":
+            self._apply_trust_rebind(result["environment_check"])
         execution_lifecycle.transition_execution(execution, "stopping", at=now(), stop_phase="terminating")
         if result["status"] == "verified":
             execution["submission_receipt"] = {"kind": "machine_output", "state": "accepted", "execution_id": execution_id,
@@ -4625,7 +4688,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             self.runtime.setdefault('waiting_actions', {})[action['id']] = {
                 'action':deepcopy(action), 'kind':'formal_environment', 'reason':result['reason'],
                 'execution_id':execution_id, 'next_owner':'trust_governance',
-                'detail':{'environment_id':environment_id}}
+                'detail':{'environment_id':environment_id,
+                          'record_state':result.get('environment_check', {}).get('record_state')}}
         elif result["status"] != "verified" and result["status"] != "stopped":
             self._enqueue("research_plan", reason="Assess preserved formal verification result", formal_target=kid)
         elif result["status"] == "stopped" and not resumable and "instance_ended" not in stop_reasons:
@@ -4687,23 +4751,29 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         return summary
 
     def _inspect_before_write(self):
-        """Reject damaged current evidence before any recovery or installation write."""
+        """Reject missing or truncated current evidence before any recovery or installation write.
+
+        Presence and stored length only; ``check`` compares full bytes.
+        """
         _require_current_contract(self.instance, self.runtime)
         snapshot = self.head
+        sizes = lambda paths: self.store.blob_sizes(paths, snapshot)
         inspection = inspect_state(self.instance, self.runtime, requested_areas=["record_storage"],
-            snapshot=snapshot, read_artifact=lambda path: self.store.read(path, snapshot),
-            read_artifacts=lambda paths: self.store.read_many(paths, snapshot))
+            snapshot=snapshot, artifact_sizes=sizes)
         failed = [row for row in inspection["findings"] if row.get("status") in {"blocked", "incomplete"}]
         if failed:
             raise ValueError("current state evidence must be repaired before publication: " + str(failed))
         inputs = [(execution, f"runtime/artifacts/{execution['input_bundle']}/input.txt")
                   for execution in self.runtime["executions"].values()
                   if execution.get("input_bundle") and execution.get("input_sha256")]
-        read = prefetch_artifacts([path for _, path in inputs],
-            lambda path: self.store.read(path, snapshot), lambda paths: self.store.read_many(paths, snapshot))
-        for execution, path in inputs:
-            if hashlib.sha256(read(path)).hexdigest() != execution["input_sha256"]:
-                raise ValueError("current input artifact is damaged: " + execution["id"])
+        try:
+            sizes([path for _, path in inputs])
+        except GitStateStoreError:
+            for execution, path in inputs:
+                try:
+                    sizes([path])
+                except GitStateStoreError as error:
+                    raise ValueError("current input artifact is missing: " + execution["id"]) from error
 
     def check(self, snapshot=None, requested_areas=None) -> dict:
         head, instance, runtime = self.store.load(snapshot)

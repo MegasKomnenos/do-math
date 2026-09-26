@@ -9,7 +9,7 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math import execution_profiles
 from do_math.context_store import prepare_role_input
-from do_math.formal import project_fingerprint
+from do_math.formal import project_source_identity
 from test_redesign_SURFACE import surface_state
 
 
@@ -28,23 +28,23 @@ class FormalInputManifestTests(unittest.TestCase):
             (project / 'lakefile.toml').write_text('name = "test"\n', encoding='utf-8')
             for index in range(40):
                 (project / f'Module{index}.lean').write_text(f'-- source {index}\n', encoding='utf-8')
-            fingerprint = project_fingerprint(project)
-            self.assertLess(len(json.dumps(fingerprint).encode('utf-8')), 1024)
-            self.assertEqual(fingerprint['untracked_file_count'], 41)
+            identity = project_source_identity(project)
+            self.assertLess(len(json.dumps(identity).encode('utf-8')), 1024)
+            self.assertEqual(identity['untracked_file_count'], 41)
             path = project / 'Module0.lean'
             path.write_text('-- changed source\n', encoding='utf-8')
-            changed = project_fingerprint(project)
-            self.assertNotEqual(changed, fingerprint)
+            changed = project_source_identity(project)
+            self.assertNotEqual(changed, identity)
             path.rename(project / 'Renamed.lean')
-            renamed = project_fingerprint(project)
+            renamed = project_source_identity(project)
             self.assertNotEqual(renamed, changed)
             (project / 'Renamed.lean').unlink()
-            removed = project_fingerprint(project)
+            removed = project_source_identity(project)
             self.assertNotEqual(removed, renamed)
             self.assertEqual(removed['untracked_file_count'], 40)
-            self.assertEqual(removed, project_fingerprint(project))
+            self.assertEqual(removed, project_source_identity(project))
             toolchain = {'version': 'Lean test edition', 'executable': 'test-lean', 'sha256': 'b' * 64,
-                         'project': {'fingerprint': removed}}
+                         'project': {'source_identity': removed}}
             verifier = {'command': ['test-lean'], 'observed_toolchain': toolchain,
                         'expected_toolchain': deepcopy(toolchain), 'allowed_axioms': [],
                         'environment_id': 'TE-fixed', 'environment_status': 'active'}

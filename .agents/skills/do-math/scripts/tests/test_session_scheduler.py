@@ -17,13 +17,13 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.engine import ResearchEngine, initialize, control, DEFAULT_CONFIG
 from do_math.model_policy import LIMITS, MODELS, assessment_tier, selection, validate_policy
-from do_math.planning import contract_hash
+from do_math.planning import contract_hash, seal_contract_review
 from do_math.input_basis import capture_decision_basis
 from do_math.repository import new_id
 from do_math.session_slots import SessionSlots
 from test_engine import ScriptedRunner, common, context_from
 from research_fixtures import local_job_runner
-from research_fixtures import activate, install_adapter_fixture, candidate, producer_result
+from research_fixtures import activate, install_adapter_fixture, candidate, contract_review, producer_result
 
 
 class ConcurrentRunner:
@@ -291,17 +291,40 @@ class ParallelEngineTests(unittest.TestCase):
     def tearDown(self):
         self.temp.cleanup()
 
-    def engine(self, runner, count=3, **config):
+    def engine(self, runner, count=3, *, public=False, **config):
+        """Ready tasks with queued work.
+
+        By default: validated active state, a real preparation and sealed contract
+        approvals, since public activation and contract review have their own tests.
+        public=True keeps public activation and real reviews for tests whose outcome
+        depends on that state: check() of synthetic initialization executions
+        reports an unexamined role input, and activation leaves queue events.
+        """
         desired_limits = config.pop("session_limits", None)
-        result = initialize(self.repo, goal="bounded research", workspace=self.root / "work",
-                            config={"operator_enabled": False, "scholarly_enabled": False, "lean_command": ["test-lean"], **config})
-        engine = ResearchEngine(self.repo, result["instance_id"], runner=runner)
-        activate(engine, self.root, initialization_runner=ScriptedRunner())
+        if public:
+            result = initialize(self.repo, goal="bounded research", workspace=self.root / "work",
+                                config={"operator_enabled": False, "scholarly_enabled": False, "lean_command": ["test-lean"], **config})
+            engine = ResearchEngine(self.repo, result["instance_id"], runner=runner)
+            activate(engine, self.root, initialization_runner=ScriptedRunner())
+        else:
+            from state_fixtures import ACTIVE_LEAN_COMMAND, active_engine
+            from test_lifecycle_engine import AdapterDouble
+            self.enterContext(patch("do_math.initialization.adapter_for", return_value=AdapterDouble()))
+            engine = active_engine(self.repo, self.root / "work", runner=runner, config={
+                "operator_enabled": False, "scholarly_enabled": False,
+                "lean_command": list(ACTIVE_LEAN_COMMAND), **config})
         if count:
             engine.runner = ScriptedRunner(preparation_candidates=[candidate(str(i)) for i in range(count)],
                 model_rating={"difficulty": "high", "importance": "medium", "reason": "Independent novel fixture approaches"})
             engine.run(max_steps=1)
-            engine.run(max_steps=count)
+            if public:
+                engine.run(max_steps=count)
+            else:
+                # Seal the approval the review role returns; the engine judges readiness.
+                for task in engine.runtime["tasks"].values():
+                    task["reviews"].append(seal_contract_review(task, contract_review({"task": task}),
+                        engine.instance, engine.runtime, execution_id=new_id("EX")))
+                engine._refresh_readiness()
             self.assertEqual(len(engine.runtime["tasks"]), count)
             self.assertTrue(all(row["state"] == "ready" for row in engine._task_readiness.values()))
         engine.runner = runner
@@ -323,7 +346,7 @@ class ParallelEngineTests(unittest.TestCase):
 
     def test_three_calls_overlap_and_apply_serially_to_distinct_workspaces(self):
         runner = ConcurrentRunner()
-        engine = self.engine(runner)
+        engine = self.engine(runner, public=True)  # judges check(); see engine()
         main = threading.get_ident()
         save = engine._save
         def checked_save(*args, **kwargs):
@@ -337,7 +360,8 @@ class ParallelEngineTests(unittest.TestCase):
         self.assertEqual(len({(p / "same-name.txt").read_text(encoding="utf-8") for p in runner.workspaces}), 3)
         self.assertEqual(len([e for e in engine.runtime["executions"].values() if e["role"] == "research_work" and e.get("outcome") == "output_accepted"]), 3)
         self.assertEqual(state["budget"]["work"][MODELS["high"]]["used"], 0)
-        self.assertTrue(engine.check()["passed"], engine.check())
+        checked = engine.check()
+        self.assertTrue(checked["passed"], checked)
 
     def test_unavailable_assigned_model_waits_without_spending_other_model_slots(self):
         limits = deepcopy(LIMITS); limits["work"][MODELS["high"]] = 0
@@ -425,7 +449,8 @@ class ParallelEngineTests(unittest.TestCase):
                 finally:
                     with inner.lock: inner.active -= 1
         runner = ObservedRunner(expected=99)
-        engine = self.engine(runner, observation_mode="periodic", observation_interval_seconds=1)
+        # Its outcome differs from the active-state start; keep the public state.
+        engine = self.engine(runner, public=True, observation_mode="periodic", observation_interval_seconds=1)
         engine.run(max_steps=3)
         operating = [e for e in engine.runtime["executions"].values() if e["role"] == "operational_review"]
         self.assertTrue(operating)
@@ -534,7 +559,8 @@ class ParallelEngineTests(unittest.TestCase):
                 return {"status": "completed", "output": out, "usage": {}, "error": None}
         limits = deepcopy(LIMITS); limits["operations"][MODELS["medium"]] = 0
         runner = InvalidPreparation()
-        engine = self.engine(runner, count=0, session_limits=limits)
+        # Activation leaves queue events that this queue-order rule meets.
+        engine = self.engine(runner, count=0, public=True, session_limits=limits)
         engine.runtime["queue"] = [{"id": "AC-older", "role": "maintenance", "reason": "older operating request"},
                                    {"id": "AC-preparation", "role": "research_preparation", "reason": "newer operating request"}]
         engine._save()

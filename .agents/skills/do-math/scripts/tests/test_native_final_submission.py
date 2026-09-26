@@ -66,7 +66,7 @@ def job_native_result(case, execution, context, raw, workspace):
     native = CodexExecution(evidence/'request.json', evidence/'prompt.txt',
         collected['source_request']['sha256'], collected['source_prompt']['sha256'], argv,
         evidence/'stdout.jsonl', evidence/'stderr.txt', evidence/'final.txt', evidence/'status.json',
-        job, evidence, None)
+        job, evidence, None, collected['source_request']['raw'], collected['source_prompt']['raw'])
     adapter = CodexExecAdapter('fixture-cli')
     try:
         early = adapter.collect(native)
@@ -99,6 +99,18 @@ class NativeFinalProtocolTests(unittest.TestCase):
         from do_math.engine import json_safe
         for value in [self.result, json_safe(self.result)]:
             self.assertEqual(verified_native_final(value, self.execution, self.context), self.raw)
+
+    def test_collected_digests_are_compared_as_records_without_rehashing(self):
+        from unittest.mock import patch
+        from do_math.engine import json_safe
+        serialized = json_safe(self.result)
+        with patch('hashlib.sha256', side_effect=AssertionError('collection already hashed these bytes')):
+            for value in [self.result, serialized]:
+                self.assertEqual(verified_native_final(value, self.execution, self.context), self.raw)
+        # The serialized copy and the collected record must still name the same digest.
+        serialized['execution']['collect']['stdout']['raw']['sha256'] = 'c' * 64
+        with self.assertRaisesRegex(ValueError, 'serialized native artifact differs'):
+            verified_native_final(serialized, self.execution, self.context)
 
     def test_changed_creation_identity_or_pid_and_float_identity_are_rejected(self):
         mutations = [lambda r: r['execution']['started'].update(creation_filetime=134345064658094592),
@@ -185,7 +197,11 @@ class NativeFinalGitTests(unittest.TestCase):
         collected = self.engine._collect_submitted_result(execution, result, self.context, self.schema, self.workspace)
         self.assertEqual(collected['output'], self.output)
         head = self.engine.head
-        with patch.object(self.engine.store, 'read', return_value=b'{"summary":"damaged"}'):
+        from do_math import repository
+        # Sealed rows are matched once per process (contract S3); damage is found by a
+        # process that has not matched the row yet, modelled by an empty match set.
+        with patch.object(self.engine.store, 'read', return_value=b'{"summary":"damaged"}'), \
+                patch.dict(repository.VERIFIED_ARTIFACTS, clear=True):
             rejected = self.engine._collect_submitted_result(execution, result, self.context, self.schema, self.workspace)
         self.assertEqual(rejected['status'], 'failed')
         self.assertIsNone(rejected['output'])

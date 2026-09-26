@@ -196,19 +196,23 @@ class ControlTransportIoTests(unittest.TestCase):
         self.assertFalse(any(isinstance(error, PermissionError) for error in errors), errors)
         self.assertEqual([], errors)
 
-    def test_final_delivery_cache_still_detects_same_size_same_mtime_replacement(self):
+    def test_final_delivery_is_not_reread_until_its_fingerprint_changes(self):
         import os
+        from do_math import file_io
         ControlTransport.worker_submit(self.binding, request_id='cached', kind='submit_intent',
                                        payload={'manifest': ['first.json']})
         path = self.endpoint / 'inbox/cached.json'
         original = path.stat()
-        with patch.object(self.transport, 'receive', wraps=self.transport.receive) as receive:
+        # A fresh file's birth time cannot be aged; treat any past fingerprint as settled.
+        with patch.object(self.transport, 'receive', wraps=self.transport.receive) as receive, \
+                patch.object(file_io, 'RACY_NS', 0):
             first = self.transport.pump(lambda _: {'state': 'rejected', 'reason': 'fixture'})
-            self.assertEqual(self.transport.pump(lambda _: self.fail('must not republish')), first)
+            with patch.object(transport_module, '_decode_json', side_effect=AssertionError('final delivery reread')):
+                self.assertEqual(self.transport.pump(lambda _: self.fail('must not republish')), first)
             self.assertEqual(receive.call_count, 1)
             raw = path.read_bytes()
             path.write_bytes(raw.replace(b'first.json', b'other.json'))
-            os.utime(path, ns=(original.st_atime_ns, original.st_mtime_ns))
+            os.utime(path, ns=(original.st_atime_ns, original.st_mtime_ns + 10 ** 9))
             with self.assertRaisesRegex(ValueError, 'different content'):
                 self.transport.pump(lambda _: self.fail('changed identity must not publish'))
             self.assertEqual(receive.call_count, 2)

@@ -9,6 +9,7 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from do_math.repository import exact_content_hash
 from do_math import contracts, submission
 from do_math.repository import canonical_json
 
@@ -310,7 +311,7 @@ class ImpactReviewTests(unittest.TestCase):
             "action": action, "output": output, "input_bundle": "BA-review-input"}
         self.runtime["integrations"] = {"IN-review": {"id": "IN-review", "execution_id": "EX-review",
             "payload_sha256": review_bundle["payload_sha256"],
-            "response_sha256": self.api.digest(self.api.member_values(output, {}, fixed)["output"])}}
+            "response_sha256": exact_content_hash(self.api.member_values(output, {}, fixed)["output"])}}
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             subprocess.run(["git", "-C", str(root), "init", "-q"], check=True)
@@ -380,7 +381,7 @@ class ImpactReviewTests(unittest.TestCase):
                 rejected_runtime["integrations"]["IN-review"].update(
                     execution_id=negative_id,
                     payload_sha256=rejected_bundle["payload_sha256"],
-                    response_sha256=self.api.digest(self.api.member_values(negative, {}, negative_fixed)["output"]))
+                    response_sha256=exact_content_hash(self.api.member_values(negative, {}, negative_fixed)["output"]))
                 negative_head = store.publish(saved, {**negative_artifacts,
                     'runtime/artifacts/' + negative_input + '/input/submission/context.json': canonical_json(negative_fixed)}).head
                 with self.subTest(decision=decision), self.assertRaisesRegex(ValueError, "did not approve"):
@@ -981,7 +982,7 @@ class ContractBoundaryTests(unittest.TestCase):
         base = module.member_values(output, {}, context())["output"]
         output["knowledge"] = [output["knowledge"][1]]
         output["integration_bundles"] = [dict(integration_id="IN-B", members=["output/knowledge/0"], impact_set=[], authority_refs=[])]
-        ctx = {**context(), "accepted_response": {"integration_id": "IN-A", "response_sha256": module.digest(base)}}
+        ctx = {**context(), "accepted_response": {"integration_id": "IN-A", "response_sha256": exact_content_hash(base)}}
         self.assertEqual([], module.inspect_bundles(output, {}, ctx))
         calls = []
         result = module.apply_bundles({}, {}, output, {}, ctx, execution_id="EX-2",

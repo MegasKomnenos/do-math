@@ -14,6 +14,7 @@ import unittest
 
 SCRIPTS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SCRIPTS))
+from do_math.repository import exact_content_hash
 
 from do_math.context_store import build_role_manifest, fit_context, prepare_role_input, validate_role_manifest, defer_input_overflow
 from do_math.reporting import ASSURANCE, render_human_report, snapshot_report
@@ -33,7 +34,7 @@ def surface_state():
             'evidence_boundary': 'Proof', 'academic_requirements': [], 'decision_authority': 'user', 'stop_conditions': []}}
     source = governance.preserve_source('GS-1', 'User approves P', origin='user', revision=1)
     approval = {'id': 'DC-1', 'actor': 'user', 'source_ref': source['id'], 'source_sha256': source['sha256'],
-                'record_hashes': {record['id']: governance.digest(record)}}
+                'record_hashes': {record['id']: exact_content_hash(record)}}
     instance = governance.initialize_governance({'id': 'IN-1', 'feature_version': 5}, source, approval, [record])
     instance.update(config=deepcopy(DEFAULT_CONFIG), knowledge={}, formal_results={}, expositions={},
                     identity_assessments={}, assessment_uses={}, sources=[], trust_environments={})
@@ -504,6 +505,27 @@ class SurfaceRedesignTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             build_role_manifest(context, workspace=Path(directory), role="research_plan",
                                 direct_keys=["missing"], reference_keys=[])
+
+    def test_cleanup_hashes_local_files_and_archive_rows_once(self):
+        import uuid
+        from unittest.mock import Mock, patch
+        from do_math import file_io, retention
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            run, state, archive, read = archived_run(root)
+            reader, git_dir, marks = Mock(side_effect=read), 'git-' + uuid.uuid4().hex, {}
+            # A fresh file's birth time cannot be aged; treat any past fingerprint as settled.
+            with patch.object(file_io, 'RACY_NS', 0), \
+                    patch.object(retention, '_read_stable', wraps=retention._read_stable) as local:
+                candidates = cleanup_candidates(root, **state, read_artifact=reader, git_dir=git_dir, marks=marks)
+                self.assertTrue(candidates[0]['eligible'], candidates)
+                self.assertEqual((local.call_count, reader.call_count), (1, 2))
+                result = cleanup(root, candidates, current_state=lambda: state, read_artifact=reader,
+                                 git_dir=git_dir, marks=marks)
+            self.assertEqual(result['deleted'], ['runs/EX-1'])
+            # The pre-deletion recheck used fingerprints and matched archive rows.
+            self.assertEqual(local.call_count, 1)
+            self.assertEqual(reader.call_count, 3)  # only the termination receipt is parsed again
 
     def test_retention_requires_ended_closed_preserved_unrecovered_execution(self):
         with tempfile.TemporaryDirectory() as directory:

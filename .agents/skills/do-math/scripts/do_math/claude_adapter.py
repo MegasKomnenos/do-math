@@ -3,11 +3,12 @@ from __future__ import annotations
 from .operation_trace import measured
 
 
+import hashlib
 import json
 import subprocess
 
 from . import claude_worker
-from .codex_adapter import LocalCLIAdapter, _sha256
+from .codex_adapter import LocalCLIAdapter
 from .repository import canonical_json, _reject_constant
 
 
@@ -34,8 +35,8 @@ class ClaudePrintAdapter(LocalCLIAdapter):
                     b"--mcp-config", b"--disable-slash-commands", b"--disallowedTools", b"--permission-mode")
         verified = version.returncode == help_result.returncode == 0 and all(flag in help_result.stdout for flag in required)
         return {"scope": "cli_command_surface_only", "identity": self.capability_identity(), "provider": "claude", "cli_path": self.cli_path,
-                "version_bytes": version.stdout, "version_sha256": _sha256(version.stdout),
-                "exec_help_bytes": help_result.stdout, "exec_help_sha256": _sha256(help_result.stdout),
+                "version_bytes": version.stdout, "version_sha256": hashlib.sha256(version.stdout).hexdigest(),
+                "exec_help_bytes": help_result.stdout, "exec_help_sha256": hashlib.sha256(help_result.stdout).hexdigest(),
                 "verified": verified, "supported": {"jsonl": verified, "model": verified,
                 "structured_output": verified, "local_job_stop": True},
                 "reported_evidence": ["segment_usage", "cumulative_model_usage", "stop_reason_when_present"],

@@ -2,6 +2,16 @@
 
 Normal unittest discovery is still supported but does not impose these outer
 process deadlines. This runner never changes the product's Lean time limits.
+
+A unit or integration test that already passed on the same inputs is not run
+again: its pass is reported from the result cache with the report it came from.
+The inputs are split in two. The shared key covers everything but the test
+modules (product code, documents, shared fixtures, the repository's
+docs/do-math, Python and git versions); any edit there invalidates all
+entries. A test module's key covers its own file and every test module it
+imports, transitively, so editing a test re-runs only the tests that read it.
+Failures are never cached. Lean and resource tests depend on host toolchains
+and processes and always run. ``--no-cache`` forces execution.
 """
 from __future__ import annotations
 
@@ -14,6 +24,8 @@ import json
 import math
 import os
 from pathlib import Path
+import re
+import subprocess
 import sys
 import tempfile
 import time
@@ -25,6 +37,47 @@ from do_math.file_io import write_bytes_atomic, read_bytes_shared
 
 SCRIPTS = Path(__file__).resolve().parent
 TESTS = SCRIPTS / 'tests'
+CACHE = Path(tempfile.gettempdir()) / 'do-math-test-cache'
+CACHED_GROUPS = frozenset({'unit', 'integration'})
+
+
+TEST_IMPORT = re.compile(r'^\s*(?:from|import)\s+(test_\w+)', re.M)
+
+
+def _is_test_module(path):
+    return path.parent == TESTS and path.name.startswith('test_') and path.suffix == '.py'
+
+
+def _module_keys():
+    """Per test module: its own bytes and those of every test module it imports, transitively."""
+    sources = {path.stem: path.read_bytes() for path in TESTS.glob('test_*.py')}
+    imports = {name: set(TEST_IMPORT.findall(raw.decode('utf-8'))) & sources.keys() for name, raw in sources.items()}
+    keys = {}
+    for name in sources:
+        seen, pending = set(), [name]
+        while pending:
+            current = pending.pop()
+            if current not in seen:
+                seen.add(current)
+                pending.extend(imports[current])
+        keys[name] = hashlib.sha256(b''.join(hashlib.sha256(sources[n]).digest() for n in sorted(seen))).hexdigest()
+    return keys
+
+
+def _input_key():
+    """Content key of everything a unit or integration test may read, except the test modules."""
+    skill = SCRIPTS.parent
+    files = {}
+    for base, name in ((skill, 'skill'), (skill.parents[2] / 'docs' / 'do-math', 'docs')):
+        for path in sorted(base.rglob('*')) if base.is_dir() else ():
+            if path.is_file() and '__pycache__' not in path.parts and not _is_test_module(path):
+                files[name + '/' + path.relative_to(base).as_posix()] = hashlib.sha256(path.read_bytes()).hexdigest()
+    try:
+        git = subprocess.run(['git', '--version'], capture_output=True, text=True).stdout.strip()
+    except OSError:
+        git = None
+    raw = json.dumps({'files': files, 'python': sys.version, 'git': git}, sort_keys=True).encode()
+    return hashlib.sha256(raw).hexdigest()
 
 
 def _write_json(path, value):
@@ -261,6 +314,8 @@ def main(argv=None):
     parser.add_argument('--list', action='store_true', help='discover and list without running tests')
     parser.add_argument('--timeout', type=float, default=300, help='seconds per isolated test/fixture phase (default: 300)')
     parser.add_argument('--output', type=Path, help='new or empty results directory; default: a unique temporary directory')
+    parser.add_argument('--no-cache', action='store_true',
+                        help='run every selected test even if it already passed on the same inputs')
     parser.add_argument('--worker', type=Path, help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
     if args.worker:
@@ -289,11 +344,27 @@ def main(argv=None):
     if directory.exists() and any(directory.iterdir()):
         parser.error('--output must be new or empty; previous evidence is never overwritten')
     directory.mkdir(parents=True, exist_ok=True)
+    key = None if args.no_cache else _input_key()
+    modules = _module_keys() if key else {}
+    passes = (_read_json(CACHE / f'{key}.json') or {}) if key else {}
+    def cached(test):
+        entry = passes.get(test.id())
+        return entry is not None and entry['module'] == modules.get(test.id().split('.', 1)[0])
     reports = []
     for group in GROUPS:
         tests = [test for test in selected if group_for(test) == group]
         if not tests:
             continue
+        if group in CACHED_GROUPS:
+            hits = [test for test in tests if cached(test)]
+            if hits:
+                print(f'[{group}] {len(hits)} tests passed earlier on the same inputs (cached)', flush=True)
+                reports.append({'group': group, 'cached': True, 'complete': True, 'successful': True,
+                                'rows': [{'id': test.id(), 'outcome': 'passed', 'seconds': 0, 'details': [],
+                                          'cached_from': passes[test.id()]['report']} for test in hits]})
+            tests = [test for test in tests if not cached(test)]
+            if not tests:
+                continue
         print(f'[{group}] {len(tests)} tests', flush=True)
         if group in {'lean', 'resource'}:
             classes = defaultdict(list)
@@ -318,8 +389,19 @@ def main(argv=None):
         'source_sha256': before, 'changed_during_run': changed, 'reports': reports,
         'slowest': sorted((row for row in rows if not row.get('fixture')),
                           key=lambda row: row['seconds'], reverse=True)[:20]}
+    result['cached'] = sum(len(report['rows']) for report in reports if report.get('cached'))
     _write_json(directory / 'report.json', result)
-    print(json.dumps({key: result[key] for key in ('complete', 'successful', 'counts')}, ensure_ascii=False))
+    if key and not changed and _input_key() == key:
+        # Only passes on inputs that stayed the same for the whole run are reusable.
+        # ponytail: concurrent runs on one key may drop each other's entries; that only costs a rerun.
+        stable = _module_keys()
+        fresh = {row['id']: {'module': modules[module], 'report': str(directory / 'report.json')}
+                 for report in reports if report['group'] in CACHED_GROUPS and not report.get('cached')
+                 for row in report['rows'] if row['outcome'] == 'passed' and not row.get('fixture')
+                 for module in [row['id'].split('.', 1)[0]] if stable.get(module) == modules.get(module)}
+        if fresh:
+            _write_json(CACHE / f'{key}.json', {**passes, **fresh})
+    print(json.dumps({name: result[name] for name in ('complete', 'successful', 'counts', 'cached')}, ensure_ascii=False))
     for row in result['slowest']:
         print(f"{row['seconds']:9.3f}s {row['outcome']:18} {row['id']}")
     print('Report: ' + str(directory / 'report.json'))

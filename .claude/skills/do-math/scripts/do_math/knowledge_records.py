@@ -3,27 +3,18 @@ from __future__ import annotations
 
 from copy import deepcopy
 import hashlib
-from .repository import canonical_json, exact_content_hash, new_id
+from .repository import exact_content_hash, new_id
 
 FAMILIES = ("knowledge", "formal_results", "expositions", "identity_assessments", "assessment_uses")
 EXPOSITION_FIELDS = ("definitions", "assumptions", "statement", "explanation", "summary")
-
-
-def digest(value):
-    return hashlib.sha256(canonical_json(value)).hexdigest()
-
-
-def exact_digest(value):
-    """Bind mathematical text and declaration keys without Unicode normalization."""
-    return exact_content_hash(value)
 
 
 def record_digest(record):
     """Canonical metadata plus exact hashes of the family's mathematical payload."""
     fields = {'formal_results': ('lean_code', 'declaration_names', 'verification'),
               'expositions': ('items', 'relation_claim')}.get(record.get('family'), ())
-    return digest({'metadata': {k: v for k, v in record.items() if k not in fields},
-                   'exact_payload': {k: exact_digest(record[k]) for k in fields if k in record}})
+    return exact_content_hash({'metadata': {k: v for k, v in record.items() if k not in fields},
+                   'exact_payload': {k: exact_content_hash(record[k]) for k in fields if k in record}})
 
 
 def initialize_families(instance):
@@ -131,6 +122,8 @@ def reader_view(instance, knowledge_id):
 
 
 def formal_usable(instance, formal):
+    # The toolchain dict is the identity of the environment; comparing it
+    # replaces hashing the whole environment record on every use check.
     env_id = formal.get("trust_environment_id")
     env = instance.get("trust_environments", {}).get(env_id, {})
     verification = formal.get("verification", {})
@@ -138,15 +131,14 @@ def formal_usable(instance, formal):
             and verification.get("status") == "verified" and env_id is not None
             and env.get("status") == "active" and instance.get("active_trust_environment") == env_id
             and verification.get("source_sha256") == hashlib.sha256(formal["lean_code"].encode()).hexdigest()
-            and verification.get("toolchain") == env.get("toolchain")
-            and verification.get("trust_environment_digest") == digest(env))
+            and verification.get("toolchain") == env.get("toolchain"))
 
 
 def _assessment_basis(formal, exposition):
     # Mutable use state is deliberately outside the immutable judgment premise.
-    return {"formal": exact_digest({key: formal.get(key) for key in
+    return {"formal": exact_content_hash({key: formal.get(key) for key in
             ("id", "lean_code", "declaration_names", "verification", "trust_environment_id")}),
-            "exposition": exact_digest({key: exposition.get(key) for key in ("id", "formal_result_id", "items", "relation_claim")})}
+            "exposition": exact_content_hash({key: exposition.get(key) for key in ("id", "formal_result_id", "items", "relation_claim")})}
 
 
 def usable_links(instance, knowledge_id, _visiting=None):
@@ -228,7 +220,7 @@ def record_formal_result(instance, knowledge_id, verification, trust_environment
     if any(t.get("status") in {"checking", "ready"} for t in runtime.get("trust_transitions", {}).values()):
         raise ValueError("formal publication waits for the trust transition")
     validate_formal_evidence(formal, verification, env)
-    sealed = {**deepcopy(verification), "trust_environment_digest": digest(env)}
+    sealed = deepcopy(verification)
     if formal.get("verification"):
         if formal["verification"] == sealed and formal.get("trust_environment_id") == trust_environment_id:
             return output

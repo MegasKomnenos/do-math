@@ -18,7 +18,7 @@ from .engine import ResearchEngine, control, initialize, json_safe
 from .git_store import GitStateStoreConflict, GitStateStoreError, GitStateStoreLockError
 from .engine import _repository as ResearchRepository
 from . import scheduled_operator
-from .repository import canonical_json
+from .repository import canonical_json, exact_content_hash
 
 
 class CliInputError(ValueError):
@@ -559,7 +559,7 @@ def control_request_id(instance_id, action, *, text='', config=None, origin='use
     value = {'schema_version':5,'command':action,'caller':origin,
              'payload':{'instance_id':instance_id,'text':text,'config':config or {}},
              'idempotency_key':idempotency_key}
-    return 'UC-' + hashlib.sha256(canonical_json(value)).hexdigest()
+    return 'UC-' + exact_content_hash(value)
 
 
 def _command_parsers(parser):
@@ -686,7 +686,7 @@ def main(argv: list[str] | None = None) -> int:
             if len(argv) > 2:
                 raise CliInputError('--describe accepts at most one command name')
             result = describe_commands(parser,argv[1] if len(argv)==2 else None)
-            _emit(result,command='describe',request_id='QR-'+hashlib.sha256(canonical_json(argv)).hexdigest())
+            _emit(result,command='describe',request_id='QR-'+exact_content_hash(argv))
             return 0
         if force_json:
             if len(argv) != 2:
@@ -699,7 +699,7 @@ def main(argv: list[str] | None = None) -> int:
         command = args.command
         normalized = {key:(str(value) if isinstance(value,Path) else value) for key,value in vars(args).items()
                       if key not in {'describe','request_file','json'}}
-        identifier = 'QR-' + hashlib.sha256(canonical_json(json_safe(normalized))).hexdigest()
+        identifier = 'QR-' + exact_content_hash(json_safe(normalized))
         try:
             result, code = execute(args)
         finally:

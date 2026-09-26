@@ -14,7 +14,7 @@ from jsonschema import Draft202012Validator
 
 from .context_store import _excluded, _safe_path
 from .repository import validate_storage_value, _unique_pairs, _reject_constant
-from .file_io import read_bytes_shared, write_bytes_atomic
+from .file_io import read_bytes_shared, write_bytes_atomic, file_fingerprint, fingerprint_settled
 
 CHECKPOINT_MAX_BYTES = 4 * 1024 * 1024
 RULES_MAX_BYTES = 65536
@@ -438,12 +438,11 @@ def read_checkpoint(workspace: Path) -> dict:
         resolved = path.resolve(strict=True)
         if not resolved.is_relative_to(workspace.resolve()) or path.is_symlink():
             raise ValueError("checkpoint must stay within the execution workspace")
-        before = path.stat()
-        if before.st_size > CHECKPOINT_MAX_BYTES:
+        before = file_fingerprint(path)
+        if before[0] > CHECKPOINT_MAX_BYTES:
             raise ValueError("checkpoint exceeds the 4 MiB record limit")
         raw = read_bytes_shared(path)
-        after = path.stat()
-        if (before.st_size, before.st_mtime_ns) != (after.st_size, after.st_mtime_ns):
+        if file_fingerprint(path) != before:
             return {"status": "being_written"}
         digest = hashlib.sha256(raw).hexdigest()
         value = json.loads(raw.decode("utf-8-sig"), object_pairs_hook=_unique_pairs,
@@ -463,13 +462,17 @@ def read_checkpoint(workspace: Path) -> dict:
 def capture_checkpoint_files(workspace, checkpoint, *, max_bytes):
     """Capture only named evidence with stable reads, preserving explicit omissions."""
     from .context_store import _read_stable
+    from .git_store import PhysicalBoundary
     files, omitted, total = {}, [], 0
+    boundary = None
     for name in dict.fromkeys(checkpoint['evidence_paths']):
         try:
             path = _safe_path(workspace, name)
             if total + path.stat().st_size > max_bytes:
                 raise ValueError('checkpoint evidence exceeds artifact byte limit')
-            raw = _read_stable(path)
+            # One proof of the workspace root serves every evidence read.
+            boundary = boundary or PhysicalBoundary(workspace)
+            raw = _read_stable(path, boundary=boundary)
             if total + len(raw) > max_bytes:
                 raise ValueError('checkpoint evidence exceeds artifact byte limit')
             files[name] = raw
@@ -504,8 +507,9 @@ class ObservationTracker:
         for rule in self.rules:
             if _execution_bound_subject(rule) and rule["subject"]["id"] != execution_id:
                 raise ValueError("rule subject belongs to a different execution")
-        self.rules_digest = hashlib.sha256(json.dumps(self.rules, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
+        self.rules_digest = hashlib.sha256(_raw_json(self.rules).encode()).hexdigest()
         self.rule_proposal_digest = None
+        self.rule_file_mark = self.checkpoint_mark = None
         self.consumed_rules: dict[str, int] = {}
         self.obligations: dict[str, dict] = {}
         self.responses: list[dict] = []
@@ -820,14 +824,35 @@ class ObservationTracker:
             "followup": {"kind": "operational_review_due", "trigger": reason,
                 "next_owner": "operational_review", "basis_refs": [obligation["id"]]}})
 
+    def _changed_checkpoint(self) -> dict:
+        """Read the checkpoint unless the settled bytes of a valid read are unchanged.
+
+        Only a valid read is remembered: an invalid one can become valid when
+        its named evidence appears, so it is read again.
+        """
+        try:
+            mark = file_fingerprint(self.workspace / "checkpoint.json")
+        except OSError:
+            mark = None
+        if mark is not None and mark == self.checkpoint_mark:
+            return {"status": "unchanged"}
+        checkpoint = read_checkpoint(self.workspace)
+        self.checkpoint_mark = (mark if checkpoint["status"] == "valid" and mark is not None
+                                and fingerprint_settled(mark) else None)
+        return checkpoint
+
     def _rule_file_events(self) -> list[dict]:
         path = self.workspace / "observation-rules.json"
         if not path.exists(): return []
         try:
             if path.is_symlink() or not path.resolve().is_relative_to(self.workspace.resolve()):
                 raise ValueError("observation rules must stay in workspace")
+            # A settled, unchanged fingerprint names the bytes this tracker already judged.
+            mark = file_fingerprint(path)
+            if mark == self.rule_file_mark: return []
             raw = read_bytes_shared(path)
             digest = hashlib.sha256(raw).hexdigest()
+            self.rule_file_mark = mark if fingerprint_settled(mark) and file_fingerprint(path) == mark else None
             if digest == self.rule_proposal_digest: return []
             self.rule_proposal_digest = digest
             if len(raw) > RULES_MAX_BYTES: raise ValueError("observation rules exceed 64 KiB")
@@ -850,7 +875,7 @@ class ObservationTracker:
             rules = validate_rule_proposal(proposal, current_revision=self.rule_revision, allowed_subjects=self.allowed_subjects)
             if self.rule_bindings is not None:
                 rules = validate_execution_rules(rules, bindings=self.rule_bindings, execution_id=self.execution_id)
-            digest = hashlib.sha256(json.dumps(rules, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
+            digest = hashlib.sha256(_raw_json(rules).encode()).hexdigest()
             changed = digest != before
             if changed:
                 self.rules, self.rules_digest, self.rule_revision = rules, digest, self.rule_revision + 1
@@ -1014,7 +1039,7 @@ class ObservationTracker:
             self.pending_records.clear()
             return emitted
         emitted.extend(self._rule_file_events())
-        checkpoint = read_checkpoint(self.workspace)
+        checkpoint = self._changed_checkpoint()
         if checkpoint["status"] == "valid" and checkpoint["sha256"] not in self.seen_checkpoints:
             self.last_checkpoint = checkpoint["sha256"]
             self.seen_checkpoints.add(checkpoint["sha256"])
